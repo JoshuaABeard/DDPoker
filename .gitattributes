@@ -1,0 +1,21 @@
+# Default behavior: convert line endings to LF on commit, CRLF on checkout
+* text=auto
+
+# Force LF for shell scripts (important for Docker)
+*.sh text eol=lf
+
+# Force LF for Docker-related files
+Dockerfile text eol=lf
+docker-compose.yml text eol=lf
+
+# Windows-specific files
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files
+*.jar binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.pdf binary
