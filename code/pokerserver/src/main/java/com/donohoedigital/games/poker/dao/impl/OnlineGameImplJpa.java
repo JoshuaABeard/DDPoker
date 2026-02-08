@@ -292,7 +292,7 @@ public class OnlineGameImplJpa extends JpaBaseDao<OnlineGame, Long> implements O
 
         // query natively since JPA doesn't do order by count well
         Query query = entityManager.createNativeQuery(
-                "select wgm_host_player, count(wgm_id) 'cnt', wpr_is_retired " +
+                "select wgm_host_player, count(wgm_id) AS cnt, wpr_is_retired " +
                 "from wan_game, wan_profile " +
                 "where wgm_host_player = wpr_name " +
                 "and wgm_host_player like :name " +

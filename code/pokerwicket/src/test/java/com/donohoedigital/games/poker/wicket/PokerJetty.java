@@ -55,14 +55,23 @@ public class PokerJetty {
         Server server = getServer();
 
         try {
-            logger.info(">>> STARTING EMBEDDED JETTY SERVER, PRESS ANY KEY TO STOP");
+            logger.info(">>> STARTING EMBEDDED JETTY SERVER");
             server.start();
-            while (System.in.available() == 0) {
-                //noinspection BusyWait
-                Thread.sleep(500);
+
+            // In Docker (no TTY), just wait for the server to stop via signal
+            // Locally, press any key to stop
+            if (System.getProperty("pokerweb.daemon", "false").equals("true")) {
+                logger.info(">>> Running in daemon mode. Send SIGTERM to stop.");
+                server.join();
+            } else {
+                logger.info(">>> PRESS ANY KEY TO STOP");
+                while (System.in.available() == 0) {
+                    //noinspection BusyWait
+                    Thread.sleep(500);
+                }
+                server.stop();
+                server.join();
             }
-            server.stop();
-            server.join();
         } catch (Exception e) {
             // need to re-fetch logger since logging is re-initialized
             logger = LogManager.getLogger(PokerJetty.class);
@@ -72,14 +81,16 @@ public class PokerJetty {
     }
 
     private static Server getServer() {
-        Server server = new Server(8080);
+        int port = Integer.parseInt(System.getProperty("pokerweb.port", "8080"));
+        Server server = new Server(port);
 
         // setup context
         WebAppContext bb = new WebAppContext();
         bb.setServer(server);
         bb.setContextPath("/");
-        // path is from root of repo (at least in IntelliJ, where that is default current dir)
-        bb.setWar("code/pokerwicket/src/main/webapp");
+        // Configurable webapp path: defaults to repo-relative path for local dev
+        String warPath = System.getProperty("pokerweb.war.path", "code/pokerwicket/src/main/webapp");
+        bb.setWar(warPath);
 
         server.setHandler(bb);
         return server;

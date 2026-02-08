@@ -224,12 +224,12 @@ public class TournamentHistoryImplJpa extends JpaBaseDao<TournamentHistory, Long
         // user native query since a pain in the ass in JPA Query Language
         // note: need to join with wan_profile to get correct profile name (e.g., for AI players)
         Query query = entityManager.createNativeQuery(
-                "SELECT count(whi_profile_id) 'gamesplayed', " +
+                "SELECT count(whi_profile_id) AS gamesplayed, " +
                 "       whi_profile_id, " +
                 "       wpr_name, \n" +
-                "       avg(whi_rank_1) 'rank1', \n" +
+                "       avg(whi_rank_1) AS rank1, \n" +
                 "       sum(whi_prize-(whi_buy_in+whi_total_rebuy+whi_total_add_on)) / \n" +
-                "           sum(whi_buy_in+whi_total_rebuy+whi_total_add_on)*100 'roi', \n" +
+                "           sum(whi_buy_in+whi_total_rebuy+whi_total_add_on)*100 AS roi, \n" +
                 "       sum(whi_total_add_on), \n" +
                 "       sum(whi_total_rebuy), \n" +
                 "       sum(whi_buy_in),\n" +

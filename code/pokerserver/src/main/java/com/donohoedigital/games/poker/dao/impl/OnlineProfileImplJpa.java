@@ -195,7 +195,7 @@ public class OnlineProfileImplJpa extends JpaBaseDao<OnlineProfile, Long> implem
         // get profile info along with count of histories for that profile
         // using native since JPA queries are fraking impossible to write
         Query query = entityManager.createNativeQuery(
-                "select wpr_id, wpr_license_key, wpr_name, wpr_modify_date, count(whi_profile_id) 'num'" +
+                "select wpr_id, wpr_license_key, wpr_name, wpr_modify_date, count(whi_profile_id) AS num " +
                 "        from wan_profile left outer join wan_history on (wpr_id = whi_profile_id)" +
                 "        group by (wpr_id)" +
                 "        order by wpr_license_key, num desc");

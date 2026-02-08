@@ -1,0 +1,22 @@
+services:
+  ddpoker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8877:8877"       # pokerserver HTTP API (game client)
+      - "8080:8080"       # pokerweb Jetty (website)
+      - "11886:11886/udp" # pokerserver UDP (chat)
+      - "11889:11889/udp" # pokerserver UDP (connection test)
+    volumes:
+      - ddpoker_data:/data
+    restart: unless-stopped
+    # To switch to MySQL, uncomment and configure:
+    # environment:
+    #   DB_DRIVER: com.mysql.cj.jdbc.Driver
+    #   DB_URL: "jdbc:mysql://your-mysql-host/poker?useUnicode=true&characterEncoding=UTF8&useSSL=false"
+    #   DB_USER: poker
+    #   DB_PASSWORD: "p0k3rdb!"
+
+volumes:
+  ddpoker_data:
