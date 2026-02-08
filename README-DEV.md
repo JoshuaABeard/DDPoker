@@ -82,6 +82,46 @@ servers.
 If you start `poker` with `enabled=true`, but your servers are not running, you may see a
 several-second delay on startup as a connection attempt is made and freezes the UI until it times out.
 
+## Docker Deployment (Recommended for Hosting)
+
+For hosting a DD Poker server for friends or a small community, Docker deployment is the easiest approach.
+A single Docker container runs both the poker server and web interface with an embedded H2 database.
+
+**Quick Start:**
+
+```shell
+# Build the project
+mvn clean install -DskipTests
+
+# Copy dependencies for Docker
+cd code
+mvn dependency:copy-dependencies -pl poker,pokerserver,pokerwicket -DoutputDirectory=target/dependency -DincludeScope=runtime
+cd ..
+
+# Build and start the container
+docker compose up -d --build
+
+# Check logs
+docker logs ddpoker-ddpoker-1 --tail 50 -f
+```
+
+The server will be available at:
+- **Game Server**: `localhost:8877` (configure in client: Options → Online)
+- **Website**: `http://localhost:8080/online`
+- **Downloads**: `http://localhost:8080/downloads/DDPoker.jar`
+
+**Key Features:**
+- Single container with poker server + web interface
+- Embedded H2 database (no external database required)
+- Optional MySQL support via environment variables
+- Gmail/SMTP email support for profile activation
+- Persistent data in Docker volumes
+
+**See comprehensive documentation:**
+- [`.claude/DDPOKER-DOCKER.md`](.claude/DDPOKER-DOCKER.md) - Complete Docker deployment guide
+- [`.claude/EMAIL-CONFIGURATION.md`](.claude/EMAIL-CONFIGURATION.md) - Email/SMTP setup for profile creation
+- [`.claude/CLIENT-CONFIGURATION.md`](.claude/CLIENT-CONFIGURATION.md) - Connecting clients to your server
+
 ## Development
 
 IntelliJ can be used to run the programs described below.  If you open up the
@@ -96,9 +136,17 @@ set to Java 25 (you may need to add it (_+ Add SDK_) as a new SDK if not already
 
 ## Server Dependencies
 
-To run server code, you need to have MySql running and an SMTP server.  See the
-appendices below for more details:
+To run server code locally (not in Docker), you have options for the database:
 
+1. **H2 Database** (Default) - Embedded database, no setup required. Data stored in `./data/poker.mv.db`
+2. **MySQL** - Traditional setup, requires running MySQL server
+
+For email functionality (profile creation/activation), you'll need SMTP access:
+- Use Gmail with App Password (recommended, see `.claude/EMAIL-CONFIGURATION.md`)
+- Use local SMTP server
+- Disable email (profiles won't work, but local games will)
+
+**Historical Setup Guides** (if using MySQL):
 * `Appendix A` Setup Database via Docker
 * `Appendix B` Setup Email SMTP server on Mac
 * `Appendix C` Setup Database directly on a Mac

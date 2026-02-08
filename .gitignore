@@ -14,3 +14,11 @@ installer/builds
 
 # Docker local overrides (contains secrets)
 docker-compose.override.yml
+
+# Temporary test files
+DDPoker-latest.jar
+EMAIL-TEST-READY.md
+TEST-GMAIL.md
+GMAIL-SETUP.md
+test-client*.bat
+/config/
