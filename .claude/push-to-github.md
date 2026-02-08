@@ -19,12 +19,6 @@ git fetch origin
 git merge origin/main
 ```
 
-### Push to both remotes:
-```bash
-git push origin main
-git push github main
-```
-
 ## Automated Push Script
 
 You can ask Claude to commit and push changes by saying:

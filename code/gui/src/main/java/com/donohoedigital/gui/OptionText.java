@@ -82,8 +82,8 @@ public class OptionText extends DDOption implements PropertyChangeListener
         // text
         text_ = new DDTextField(GuiManager.DEFAULT, STYLE, sBevelStyle);
         text_.setTextLengthLimit(nLengthLimit);
-        if (sRegExp != null) text_.setRegExp(sRegExp);
-        resetToPrefs();
+        text_.setText(prefs_.get(sName_, sDefault_)); // set text before regexp to avoid false invalid state
+        if (sRegExp != null) text_.setRegExp(sRegExp); // regexp validates after being set
         saveToMap();
         Dimension pref = text_.getPreferredSize(); // tweak size
         text_.setPreferredSize(new Dimension(nWidth, pref.height));

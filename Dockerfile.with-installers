@@ -1,31 +1,30 @@
 # ============================================================
-# DD Poker - Production Container
-#
-# Strategy:
-#   BUILD TIME: Build universal JAR
-#   RUNTIME: Serve JAR via downloads directory
-#
-# Clients configure their own server settings on first run!
+# DD Poker - Combined Server Container with Installer Builder
+# Runs pokerserver + pokerweb + H2 embedded database
+# Builds client installers at startup with runtime URL configuration
 #
 # Build: (from repo root, after Maven build)
-#   docker build -t ddpoker:latest .
+#   docker compose -f docker-compose-with-installers.yml build
 #
 # Run:
-#   docker run -p 8080:8080 -p 8877:8877 ddpoker:latest
+#   SERVER_HOST=your-server.com docker compose -f docker-compose-with-installers.yml up
 # ============================================================
 FROM eclipse-temurin:25-jdk
 
 LABEL maintainer="DD Poker Docker"
-LABEL description="DD Poker server with client installers"
+LABEL description="DD Poker server with embedded H2 database and installer builder"
+
+# Install build tools
+RUN apt-get update && apt-get install -y \
+    maven \
+    dos2unix \
+    perl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create directories
 RUN mkdir -p /app/lib /app/classes /app/downloads /data
 
 WORKDIR /app
-
-# ============================================================
-# SERVER RUNTIME
-# ============================================================
 
 # Copy compiled classes from all modules
 COPY code/common/target/classes/ /app/classes/
@@ -81,54 +80,38 @@ RUN rm -f /app/lib/pokerserver-*.jar \
     /app/lib/server-*.jar \
     /app/lib/udp-*.jar
 
-# ============================================================
-# BUILD UNIVERSAL CLIENT JAR (at build time)
-# ============================================================
+# Copy source code for installer builds
+COPY code/ /app/src/code/
+COPY runtime/ /app/src/runtime/
+COPY tools/ /app/src/tools/
+COPY installer/ /app/src/installer/
 
-# Copy ALL client materials
-COPY code/poker/target/classes/ /tmp/client-build/
-COPY code/poker/target/dependency/ /tmp/client-libs/
+# Copy installer build scripts
+COPY docker/ /app/src/docker/
+RUN chmod +x /app/src/docker/*.sh
 
-# Extract all dependency JARs into client build (for fat JAR)
-RUN cd /tmp/client-build && \
-    for jar in /tmp/client-libs/*.jar; do \
-        jar xf "$jar" 2>/dev/null || true; \
-    done && \
-    rm -rf META-INF/*.SF META-INF/*.RSA META-INF/*.DSA
-
-# Build universal FAT JAR (no server configuration)
-RUN cd /tmp/client-build && \
-    printf "Manifest-Version: 1.0\nMain-Class: com.donohoedigital.games.poker.PokerMain\n" > MANIFEST.MF && \
-    "${JAVA_HOME}/bin/jar" cfm /app/downloads/DDPoker.jar MANIFEST.MF -C . . && \
-    echo "✓ Universal JAR built: $(du -h /app/downloads/DDPoker.jar | cut -f1)"
-
-# Cleanup temp files
-RUN rm -rf /tmp/client-build /tmp/client-libs
-
-# ============================================================
-# ENTRYPOINT
-# ============================================================
-
-COPY docker/entrypoint.sh /app/entrypoint.sh
+# Copy entrypoint (the one with installer support)
+COPY docker/entrypoint-with-installers.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-# ============================================================
-# ENVIRONMENT & CONFIGURATION
-# ============================================================
+# Fix line endings for scripts
+RUN dos2unix /app/entrypoint.sh /app/src/docker/*.sh /app/src/tools/bin/* || true
 
-# Database configuration
+# Environment defaults
 ENV DB_DRIVER=org.h2.Driver
 ENV DB_URL="jdbc:h2:file:/data/poker;MODE=MySQL;AUTO_SERVER=TRUE"
 ENV DB_USER=sa
 ENV DB_PASSWORD=
-
-# Server ports (no SERVER_HOST needed - clients configure themselves!)
+ENV SERVER_HOST=localhost
 ENV SERVER_PORT=8877
 ENV CHAT_PORT=11886
 ENV WEB_PORT=8080
 
 # Expose ports
-EXPOSE 8877 8080 11886/udp 11889/udp
+EXPOSE 8877
+EXPOSE 8080
+EXPOSE 11886/udp
+EXPOSE 11889/udp
 
 # Persistent volumes
 VOLUME /data

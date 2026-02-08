@@ -1,30 +1,34 @@
 # ============================================================
-# DD Poker - Production Container
+# DD Poker - Optimized Container with Fast Runtime Installer Builds
 #
 # Strategy:
-#   BUILD TIME: Build universal JAR
-#   RUNTIME: Serve JAR via downloads directory
+#   BUILD TIME: Compile all Java code, create complete client build
+#   RUNTIME: Only modify config files + repackage JAR (1-2 seconds!)
 #
-# Clients configure their own server settings on first run!
+# Native Installers: Uses JDK's built-in jpackage (no external tools!)
 #
 # Build: (from repo root, after Maven build)
-#   docker build -t ddpoker:latest .
+#   docker build -f Dockerfile.optimized -t ddpoker:optimized .
 #
 # Run:
-#   docker run -p 8080:8080 -p 8877:8877 ddpoker:latest
+#   SERVER_HOST=your-server.com docker run -p 8080:8080 ddpoker:optimized
 # ============================================================
 FROM eclipse-temurin:25-jdk
 
 LABEL maintainer="DD Poker Docker"
-LABEL description="DD Poker server with client installers"
+LABEL description="DD Poker server with fast runtime installer builds"
+
+# No external installer tools needed!
+# JDK 25 includes jpackage for native installers
+# This eliminates external dependencies and licensing concerns
 
 # Create directories
-RUN mkdir -p /app/lib /app/classes /app/downloads /data
+RUN mkdir -p /app/lib /app/classes /app/downloads /app/client-build /data
 
 WORKDIR /app
 
 # ============================================================
-# SERVER RUNTIME
+# SERVER RUNTIME (same as before)
 # ============================================================
 
 # Copy compiled classes from all modules
@@ -82,34 +86,41 @@ RUN rm -f /app/lib/pokerserver-*.jar \
     /app/lib/udp-*.jar
 
 # ============================================================
-# BUILD UNIVERSAL CLIENT JAR (at build time)
+# CLIENT BUILD PREPARATION (pre-build everything possible)
 # ============================================================
 
-# Copy ALL client materials
-COPY code/poker/target/classes/ /tmp/client-build/
-COPY code/poker/target/dependency/ /tmp/client-libs/
+# Copy ALL client classes and resources to /app/client-build
+# This is the complete client ready to be packaged
+COPY code/poker/target/classes/ /app/client-build/
 
-# Extract all dependency JARs into client build (for fat JAR)
-RUN cd /tmp/client-build && \
-    for jar in /tmp/client-libs/*.jar; do \
+# Copy all client dependencies
+RUN mkdir -p /app/client-build-libs
+COPY code/poker/target/dependency/ /app/client-build-libs/
+
+# Extract all dependency JARs into client-build (for fat JAR)
+RUN cd /app/client-build && \
+    for jar in /app/client-build-libs/*.jar; do \
         jar xf "$jar" 2>/dev/null || true; \
     done && \
-    rm -rf META-INF/*.SF META-INF/*.RSA META-INF/*.DSA
+    rm -rf META-INF/*.SF META-INF/*.RSA META-INF/*.DSA && \
+    rm -rf /app/client-build-libs
 
-# Build universal FAT JAR (no server configuration)
-RUN cd /tmp/client-build && \
-    printf "Manifest-Version: 1.0\nMain-Class: com.donohoedigital.games.poker.PokerMain\n" > MANIFEST.MF && \
-    "${JAVA_HOME}/bin/jar" cfm /app/downloads/DDPoker.jar MANIFEST.MF -C . . && \
-    echo "✓ Universal JAR built: $(du -h /app/downloads/DDPoker.jar | cut -f1)"
-
-# Cleanup temp files
-RUN rm -rf /tmp/client-build /tmp/client-libs
+# At this point, /app/client-build contains EVERYTHING needed for the client
+# Only config files need to be modified at runtime
 
 # ============================================================
-# ENTRYPOINT
+# RUNTIME SCRIPTS
 # ============================================================
 
-COPY docker/entrypoint.sh /app/entrypoint.sh
+# Copy runtime installer builder
+COPY docker/runtime-build-installer.sh /app/
+RUN chmod +x /app/runtime-build-installer.sh
+
+# jpackage configuration is handled via command-line args
+# No separate config files needed
+
+# Copy optimized entrypoint
+COPY docker/entrypoint-optimized.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
 # ============================================================
@@ -122,7 +133,8 @@ ENV DB_URL="jdbc:h2:file:/data/poker;MODE=MySQL;AUTO_SERVER=TRUE"
 ENV DB_USER=sa
 ENV DB_PASSWORD=
 
-# Server ports (no SERVER_HOST needed - clients configure themselves!)
+# Server URL configuration
+ENV SERVER_HOST=localhost
 ENV SERVER_PORT=8877
 ENV CHAT_PORT=11886
 ENV WEB_PORT=8080

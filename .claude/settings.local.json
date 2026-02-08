@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git clone:*)",
+      "Bash(dir \"C:\\\\Repos\\\\DDPoker\")",
+      "Bash(dir:*)",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)",
+      "Bash(docker search:*)",
+      "Bash(winget search:*)",
+      "Bash(curl:*)",
+      "Bash(powershell -Command \"Expand-Archive -Path ''C:\\\\Repos\\\\maven.zip'' -DestinationPath ''C:\\\\Program Files'' -Force\")",
+      "Bash(powershell -Command:*)",
+      "Bash(\"C:\\\\Program Files\\\\Eclipse Adoptium\\\\jdk-25.0.2.10-hotspot\\\\bin\\\\java.exe\" -version)",
+      "Bash(export JAVA_HOME=\"C:\\\\Program Files\\\\Eclipse Adoptium\\\\jdk-25.0.2.10-hotspot\")",
+      "Bash(export PATH=\"/c/Program Files/Eclipse Adoptium/jdk-25.0.2.10-hotspot/bin:/c/Tools/apache-maven-3.9.12/bin:$PATH\":*)",
+      "Bash(java:*)",
+      "Bash(mvn:*)",
+      "Bash(winget install:*)",
+      "Bash(find:*)",
+      "Bash(export PATH=\"/c/Tools/apache-maven-3.9.12/bin:$PATH\")",
+      "Bash(export JAVA_HOME=\"/c/Program Files/Eclipse Adoptium/jdk-25.0.1.1-hotspot\")",
+      "Bash(where:*)",
+      "Bash(export JAVA_HOME=\"/c/Program Files/Eclipse Adoptium/jdk-25.0.2.10-hotspot\")",
+      "Bash(export PATH=\"/c/Tools/apache-maven-3.9.12/bin:$JAVA_HOME/bin:$PATH\")",
+      "Bash(ls \"C:\\\\Repos\\\\DDPoker\\\\code\\\\pokerserver\\\\target\\\\dependency\"\" | wc -l && ls \"C:ReposDDPokercodepokerwickettargetdependency\"\")",
+      "Bash(docker compose build:*)",
+      "Bash(export PATH=\"/c/Program Files/Docker/Docker/resources/bin:$PATH\")"
+    ]
+  }
+}

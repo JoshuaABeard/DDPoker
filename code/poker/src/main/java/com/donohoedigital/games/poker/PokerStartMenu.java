@@ -66,6 +66,7 @@ public class PokerStartMenu extends StartMenu
 
     private static boolean messageCheck = true;
     private static boolean firstTimeMusic = true;
+    private static boolean serverConfigCheck = true;
 
     private PlayerProfile profile_ = null;
     private DDLabel label_;
@@ -251,6 +252,27 @@ public class PokerStartMenu extends StartMenu
 
 
     /**
+     * server config check - show dialog if server not configured
+     */
+    private void serverConfigCheck()
+    {
+        // Only check once per session
+        if (!serverConfigCheck) return;
+
+        String serverAddress = Prefs.getUserPrefs(engine_.getPrefsNodeName()).get(
+                EngineConstants.OPTION_ONLINE_SERVER,
+                PropertyConfig.getStringProperty("option.onlineserver.default", ""));
+
+        // If server is unconfigured (still default), show welcome dialog
+        if (serverAddress.contains("your-server.com"))
+        {
+            context_.processPhaseNow("ServerConfigDialog", null);
+        }
+
+        serverConfigCheck = false;
+    }
+
+    /**
      * profile check
      */
     private void profileCheck()
@@ -345,6 +367,7 @@ public class PokerStartMenu extends StartMenu
                             public void run()
                             {
                                 licenseCheck();
+                                serverConfigCheck();
                                 profileCheck();
                             }
                         }

@@ -479,8 +479,8 @@ public class GamePrefsPanel extends DDPanel implements ActionListener
     private class OnlineOptions extends OptionTab
     {
         public static final int ONLINE_SERVER_LIMIT = 50;
-        public static final String ONLINE_SERVER_REGEXP = // server.domain.com:port or ip:port
-           "^(?:(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,}|\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b):\\d{1,5}$";
+        public static final String ONLINE_SERVER_REGEXP = // localhost, server.domain.com:port or ip:port
+           "^(?:localhost|(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,}|(?:\\d{1,3}\\.){3}\\d{1,3}):\\d{1,5}$";
 
         @Override
         protected void createUILocal()

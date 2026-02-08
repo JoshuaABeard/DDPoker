@@ -996,6 +996,21 @@
 
   <!-- COMMON GAME ELEMENTS -->
 
+  <phase name="ServerConfigDialog" class="com.donohoedigital.games.poker.ServerConfigDialog" cache="false" transient="true">
+    <param name="style" strvalue="PokerStandardDialog"/>
+    <param name="dialog-windowtitle-image" strvalue="pokerbannerwintitle"/>
+    <param name="dialog-windowtitle-prop" strvalue="msg.serverconfigwelcome"/>
+    <param name="dialog-style" strvalue="PokerStandardDialog"/>
+    <param name="dialog-modal" boolvalue="true"/>
+    <param name="dialog-background-image" strvalue="pokerdialog"/>
+    <param name="dialog-window-close-activates-button" strvalue="okay"/>
+    <param name="default-button" strvalue="okay"/>
+    <paramlist name="buttons">
+      <strvalue>okay</strvalue>
+      <strvalue>cancel</strvalue>
+    </paramlist>
+  </phase>
+
   <phase name="GamePrefsDialog" class="com.donohoedigital.games.poker.GamePrefsDialog" cache="false" transient="true">
     <param name="style" strvalue="PokerStandardDialog"/>
     <param name="dialog-windowtitle-image" strvalue="pokerbannerwintitle"/>

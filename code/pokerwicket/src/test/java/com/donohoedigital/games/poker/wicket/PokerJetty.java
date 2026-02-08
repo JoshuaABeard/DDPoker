@@ -103,7 +103,7 @@ public class PokerJetty {
         String downloadsPath = System.getProperty("pokerweb.downloads.path", "/app/downloads");
         ResourceHandler downloadsHandler = new ResourceHandler();
         downloadsHandler.setDirAllowed(true);
-        downloadsHandler.setDirectoriesListed(true);
+        // Note: Directory listing is controlled by setDirAllowed in Jetty 12
         downloadsHandler.setBaseResource(ResourceFactory.of(server).newResource(downloadsPath));
 
         ContextHandler downloadsContext = new ContextHandler();

@@ -98,15 +98,17 @@
       <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
         <!-- controlled via log4j -->
         <property name="showSql" value="false"/>
-        <property name="generateDdl" value="false"/>
+        <property name="generateDdl" value="true"/>
       </bean>
     </property>
-    <!-- how to specify hibernate specific settings -->
-    <!--<property name="jpaPropertyMap">-->
-    <!--<map>-->
-    <!--<entry key="foo" value="bar"/>-->
-    <!--</map>-->
-    <!--</property>-->
+    <!-- hibernate specific settings for schema generation -->
+    <property name="jpaPropertyMap">
+      <map>
+        <entry key="hibernate.hbm2ddl.auto" value="update"/>
+        <entry key="hibernate.show_sql" value="false"/>
+        <entry key="hibernate.format_sql" value="false"/>
+      </map>
+    </property>
   </bean>
 
   <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager" depends-on="loggingConfig">

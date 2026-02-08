@@ -408,6 +408,8 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
     @Override
     protected void initialStart()
     {
+        // Server config check moved to PokerStartMenu (after license, before profile)
+
         // start p2p server if we are validated (have a valid key)
         // see processTODO() below for case startup after activation
         // start after main window initialized required (so engine is ready)

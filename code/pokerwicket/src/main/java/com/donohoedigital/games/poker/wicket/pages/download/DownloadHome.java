@@ -47,5 +47,9 @@ public class DownloadHome extends DownloadPokerPage {
     public DownloadHome() {
         super(null);
         add(new StringLabel("version", PokerConstants.VERSION.toString()));
+        // Get the server address from system property or environment, defaulting to localhost
+        String serverAddress = System.getProperty("poker.server.address",
+                               System.getenv().getOrDefault("POKER_SERVER_ADDRESS", "localhost:8877"));
+        add(new StringLabel("serverAddress", serverAddress));
     }
 }
