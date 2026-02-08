@@ -39,6 +39,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.ee10.webapp.WebAppContext;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.util.resource.ResourceFactory;
 
 /**
  * Class for running Poker Wicket website via Jetty (mainly for use locally).
@@ -84,15 +88,33 @@ public class PokerJetty {
         int port = Integer.parseInt(System.getProperty("pokerweb.port", "8080"));
         Server server = new Server(port);
 
-        // setup context
-        WebAppContext bb = new WebAppContext();
-        bb.setServer(server);
-        bb.setContextPath("/");
+        // Create handler collection for multiple contexts
+        ContextHandlerCollection handlers = new ContextHandlerCollection();
+
+        // Setup webapp context
+        WebAppContext webAppContext = new WebAppContext();
+        webAppContext.setServer(server);
+        webAppContext.setContextPath("/");
         // Configurable webapp path: defaults to repo-relative path for local dev
         String warPath = System.getProperty("pokerweb.war.path", "code/pokerwicket/src/main/webapp");
-        bb.setWar(warPath);
+        webAppContext.setWar(warPath);
 
-        server.setHandler(bb);
+        // Setup static file handler for /downloads directory
+        String downloadsPath = System.getProperty("pokerweb.downloads.path", "/app/downloads");
+        ResourceHandler downloadsHandler = new ResourceHandler();
+        downloadsHandler.setDirAllowed(true);
+        downloadsHandler.setDirectoriesListed(true);
+        downloadsHandler.setBaseResource(ResourceFactory.of(server).newResource(downloadsPath));
+
+        ContextHandler downloadsContext = new ContextHandler();
+        downloadsContext.setContextPath("/downloads");
+        downloadsContext.setHandler(downloadsHandler);
+
+        // Add both handlers
+        handlers.addHandler(downloadsContext);
+        handlers.addHandler(webAppContext);
+
+        server.setHandler(handlers);
         return server;
     }
 }

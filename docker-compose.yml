@@ -10,13 +10,21 @@ services:
       - "11889:11889/udp" # pokerserver UDP (connection test)
     volumes:
       - ddpoker_data:/data
+      - installer_cache:/app/downloads  # Cache installers for faster restarts
+    environment:
+      # Server URL configuration for installers
+      - SERVER_HOST=${SERVER_HOST:-localhost}
+      - SERVER_PORT=8877
+      - CHAT_PORT=11886
+      - WEB_PORT=8080
+      # Database configuration (H2 by default)
+      # To switch to MySQL, uncomment and configure:
+      # - DB_DRIVER=com.mysql.cj.jdbc.Driver
+      # - DB_URL=jdbc:mysql://your-mysql-host/poker?useUnicode=true&characterEncoding=UTF8&useSSL=false
+      # - DB_USER=poker
+      # - DB_PASSWORD=p0k3rdb!
     restart: unless-stopped
-    # To switch to MySQL, uncomment and configure:
-    # environment:
-    #   DB_DRIVER: com.mysql.cj.jdbc.Driver
-    #   DB_URL: "jdbc:mysql://your-mysql-host/poker?useUnicode=true&characterEncoding=UTF8&useSSL=false"
-    #   DB_USER: poker
-    #   DB_PASSWORD: "p0k3rdb!"
 
 volumes:
   ddpoker_data:
+  installer_cache:  # Persistent installer cache
