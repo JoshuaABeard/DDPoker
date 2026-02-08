@@ -183,25 +183,9 @@ directly in IntelliJ, or via the `pokerweb` script:
 pokerweb
 ```
 
-The second option is to run using Tomcat via Docker, similar to
-what a production setup might look like.
-
-```shell
-mvn-package-no-tests
-docker build -f Dockerfile.pokerweb.docker -t pokerweb .
-docker run -it --rm -p 8080:8080 pokerweb
-
-# get container id for following commands
-CONTAINER=$(docker ps | grep pokerweb | cut -f 1 -d " ")
-
-# To see logs
-docker exec -it $CONTAINER tail -200f /home/ddpoker3/work/ddpoker/runtime/log/poker-web.log
-
-# To login to running server
-docker exec -it $CONTAINER bash
-```
-
 Once started, you can visit [http://localhost:8080/online](http://localhost:8080/online).
+
+For a production deployment, see the Docker Deployment section above.
 
 ## Code Notes
 
@@ -381,7 +365,7 @@ explains the design of DD Poker's computer opponents.
 Back when this code was originally written and deployed, the code ran on the same machine
 as the database, so using the MySQL host of `localhost` or `127.0.0.1` was sufficient.  To allow
 use from within Docker, we needed more flexibility here, so I added use of the `DB_HOST` environment
-variable. The use of `host.docker.internal` in the `Dockerfile.pokerweb.docker` is likely Mac-specific.
+variable.
 
 ### Game Engine Tools
 
@@ -581,57 +565,7 @@ mysql -h 127.0.0.1 -u root
 
 Follow the instructions above to create the database tables (via `reset_db.sh`).
 
-## Appendix D: Testing on Ubuntu via Docker
-
-It is possible to run DD Poker in Ubuntu in Docker and display it on your Mac, but
-it can be a little finicky.  Here's what I got to work with help from
-[this helpful gist](https://gist.github.com/cschiewek/246a244ba23da8b9f0e7b11a68bf3285).
-
-First Install XQuartz from [www.xquartz.org](https://www.xquartz.org/) and then launch it from `Applications` or
-from the command line:
-
-```shell
-open -a XQuartz
-```
-
-Next, got to _XQuartz → Settings → Security_ and ensure **Allow connections
-from network clients** is checked.
-
-<img src="images/quartz-settings.png" alt="Quartz Settings" width="400px">
-
-Then logout and log back in to ensure these settings are in effect (a reboot
-may also be necessary).
-
-Next, follow these steps:
-
-```shell
-# Start XQuartz again
-open -a XQuartz
-
-# Tell X to allow connections
-xhost + localhost
-
-# Build docker image
-docker build -f Dockerfile.ubuntu.docker -t pokerubuntu .
-
-# Run it, mapping ddpoker dir and maven .m2 dir to the image
-docker run -it --rm -v $(pwd):$(pwd) -v $HOME/.m2:/root/.m2 \
-  -w $(pwd) -e DISPLAY=host.docker.internal:0 pokerubuntu
-```
-
-You can test X is working by running `xeyes`.  It should display the iconic X app that
-follows your cursor with big oval eyes.  If you encounter problems, the gist mentioned above
-has good troubleshooting tips.
-
-Next, you should be able to build and run poker from the Ubuntu container:
-
-```shell
-source ddpoker.rc
-mvn-package-notests
-poker
-```
-
-## Appendix E: Running GitHub Actions Locally
+## Appendix D: Running GitHub Actions Locally
 
 You can run GitHub actions locally using the [`act`](https://nektosact.com/) tool (which requires Docker).
 
@@ -663,7 +597,7 @@ external connectivity on endpoint act-DD-Poker-CI-test
 Bind for 0.0.0.0:3306 failed: port is already allocated
 ```
 
-## Appendix F: Testing Notes
+## Appendix E: Testing Notes
 
 When testing major changes, here's a checklist of things to manually
 verify:
@@ -682,7 +616,7 @@ verify:
 * Start game from Ubuntu Docker
 * Build `act` docker image and running `act-ddpoker` (remember to stop MySQL)
 
-## Appendix G: DD Poker Website
+## Appendix F: DD Poker Website
 
 Back in the day, the Wicket-based webapp (aka the Online Portal) was also the 
 source of `ddpoker.com`.  This site was replaced with a simple static memorial page in

@@ -465,15 +465,7 @@ services:
 
 ## Legacy Dockerfiles
 
-The repository includes older Dockerfiles that are preserved but not used by the current implementation:
-
-| File | Purpose | Status |
-|------|---------|--------|
-| `Dockerfile.pokerweb.docker` | Tomcat-based pokerweb | **Deprecated** - Use main `Dockerfile` |
-| `Dockerfile.ubuntu.docker` | X11 dev container | **Optional** - For GUI testing |
-| `Dockerfile.act` | GitHub Actions testing | **Optional** - For CI/CD testing |
-
-The main `Dockerfile` (at repo root) replaces `Dockerfile.pokerweb.docker` and adds pokerserver support.
+The main `Dockerfile` (at repo root) provides the complete production deployment with both pokerserver and pokerweb using embedded Jetty.
 
 ## Client Installer Distribution
 

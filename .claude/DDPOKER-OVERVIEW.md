@@ -113,9 +113,6 @@ ddpoker/
     entrypoint.sh          # Container entrypoint (dual-process manager)
   Dockerfile               # Primary Dockerfile (pokerserver + pokerweb + H2)
   docker-compose.yml       # Docker Compose configuration
-  Dockerfile.pokerweb.docker   # DEPRECATED - Use main Dockerfile
-  Dockerfile.ubuntu.docker     # Ubuntu dev/test container (optional)
-  Dockerfile.act               # GitHub Actions local testing (optional)
   ddpoker.rc               # Environment setup script (aliases, PATH, JAVA_HOME)
 ```
 
