@@ -72,6 +72,22 @@ That's it! The server is now running with:
 | 11886 | UDP | pokerserver | Chat server — client chat lobby |
 | 11889 | UDP | pokerserver | Connection test — client verifies connectivity |
 
+### Known Limitation: UDP on Docker Desktop for Windows
+
+**Important**: Docker Desktop for Windows has known issues with UDP port mapping. While TCP ports (8877, 8080) work fine, UDP ports (11886, 11889) may not forward correctly from the Windows host to the Linux container.
+
+**Impact**: Chat functionality may timeout when connecting from a Windows client to the Docker container.
+
+**Workarounds**:
+1. **Production deployments on Linux**: UDP works fine - no issues
+2. **Windows development testing**:
+   - Use WSL2 backend for Docker Desktop (better UDP support)
+   - Run client from inside WSL2 or a Linux VM
+   - Test chat functionality on CI/CD (Linux)
+3. **Future solution**: Convert chat from UDP to TCP (see `.claude/CHAT-TCP-CONVERSION.md`)
+
+This is a Docker Desktop limitation, not a DDPoker issue. The game server itself works correctly.
+
 ## Container Details
 
 ### Base Image
