@@ -22,3 +22,9 @@ TEST-GMAIL.md
 GMAIL-SETUP.md
 test-client*.bat
 /config/
+
+# Local development (contains secrets/local paths)
+run-server-local.ps1
+run-client-local.ps1
+/runtime/
+/data/
