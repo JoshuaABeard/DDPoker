@@ -97,6 +97,13 @@ public class DDPostalServiceImpl implements Runnable, DDPostalService
         int nTimeout = PropertyConfig.getRequiredIntegerProperty("settings.smtp.timeout.millis");
         int nConnectionTimeout = PropertyConfig.getRequiredIntegerProperty("settings.smtp.connectiontimeout.millis");
 
+        // Modern SMTP settings for Gmail, Outlook, etc.
+        int nPort = PropertyConfig.getIntegerProperty("settings.smtp.port", 587);
+        boolean bStartTLS = PropertyConfig.getBooleanProperty("settings.smtp.starttls.enable", true);
+        boolean bStartTLSRequired = PropertyConfig.getBooleanProperty("settings.smtp.starttls.required", false);
+        boolean bSSL = PropertyConfig.getBooleanProperty("settings.smtp.ssl.enable", false);
+        String sSSLProtocols = PropertyConfig.getStringProperty("settings.smtp.ssl.protocols", "TLSv1.2 TLSv1.3", false);
+
         threadQ_ = new Thread(this, "DD Postal Service");
         threadQ_.start();
 
@@ -106,8 +113,27 @@ public class DDPostalServiceImpl implements Runnable, DDPostalService
         // properties
         props_ = new Properties();
         props_.put("mail.smtp.host", sHost);
+        props_.put("mail.smtp.port", Integer.toString(nPort));
         props_.put("mail.smtp.timeout", Integer.toString(nTimeout)); // milli
         props_.put("mail.smtp.connectiontimeout", Integer.toString(nConnectionTimeout)); // milli
+
+        // STARTTLS support (required for Gmail, modern SMTP servers)
+        props_.put("mail.smtp.starttls.enable", Boolean.toString(bStartTLS));
+        if (bStartTLSRequired)
+        {
+            props_.put("mail.smtp.starttls.required", "true");
+        }
+
+        // SSL/TLS support (for port 465)
+        if (bSSL)
+        {
+            props_.put("mail.smtp.ssl.enable", "true");
+            props_.put("mail.smtp.ssl.protocols", sSSLProtocols);
+        }
+
+        // SSL protocols for STARTTLS
+        props_.put("mail.smtp.ssl.protocols", sSSLProtocols);
+
         //props_.put("mail.smtp.from", "bouncer@example.com");
         //props_.put("mail.smtp.localhost", "games.example.com");
 

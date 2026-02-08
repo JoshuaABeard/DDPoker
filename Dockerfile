@@ -127,6 +127,17 @@ ENV SERVER_PORT=8877
 ENV CHAT_PORT=11886
 ENV WEB_PORT=8080
 
+# Email configuration (optional - set to enable email notifications)
+# For Gmail, use smtp.gmail.com:587 with app password
+# Generate app password: https://myaccount.google.com/apppasswords
+ENV SMTP_HOST=127.0.0.1
+ENV SMTP_PORT=587
+ENV SMTP_USER=
+ENV SMTP_PASSWORD=
+ENV SMTP_AUTH=false
+ENV SMTP_STARTTLS_ENABLE=true
+ENV SMTP_FROM=noreply@ddpoker.local
+
 # Expose ports
 EXPOSE 8877 8080 11886/udp 11889/udp
 

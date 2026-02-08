@@ -17,12 +17,35 @@ services:
       - SERVER_PORT=8877
       - CHAT_PORT=11886
       - WEB_PORT=8080
+
       # Database configuration (H2 by default)
       # To switch to MySQL, uncomment and configure:
       # - DB_DRIVER=com.mysql.cj.jdbc.Driver
       # - DB_URL=jdbc:mysql://your-mysql-host/poker?useUnicode=true&characterEncoding=UTF8&useSSL=false
       # - DB_USER=poker
       # - DB_PASSWORD=p0k3rdb!
+
+      # Email configuration (optional - required for online profile creation)
+      # For Gmail (recommended):
+      # 1. Enable 2FA: https://myaccount.google.com/security
+      # 2. Generate App Password: https://myaccount.google.com/apppasswords
+      # 3. Use the 16-character app password below (not your regular password)
+      # - SMTP_HOST=smtp.gmail.com
+      # - SMTP_PORT=587
+      # - SMTP_USER=your-email@gmail.com
+      # - SMTP_PASSWORD=your-16-char-app-password
+      # - SMTP_AUTH=true
+      # - SMTP_STARTTLS_ENABLE=true
+      # - SMTP_FROM=your-email@gmail.com
+      #
+      # For Outlook/Office 365:
+      # - SMTP_HOST=smtp.office365.com
+      # - SMTP_PORT=587
+      # - SMTP_USER=your-email@outlook.com
+      # - SMTP_PASSWORD=your-password
+      # - SMTP_AUTH=true
+      # - SMTP_STARTTLS_ENABLE=true
+      # - SMTP_FROM=your-email@outlook.com
     restart: unless-stopped
 
 volumes:

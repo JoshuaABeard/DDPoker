@@ -344,11 +344,22 @@ public class PropertyConfig extends Properties
 
     /**
      * Get a string property
+     * Checks system properties first (for Docker/environment variable overrides),
+     * then falls back to properties file values.
      */
     private static String getStringProperty(String sKey, boolean bReportMissing)
     {
         ApplicationError.assertNotNull(propConfig, "PropertyConfig has not been initialized");
-        String sValue = propConfig.getProperty(sKey);
+
+        // Check system properties first (allows -D overrides and environment variable passthrough)
+        String sValue = System.getProperty(sKey);
+
+        // Fall back to properties file if not in system properties
+        if (sValue == null)
+        {
+            sValue = propConfig.getProperty(sKey);
+        }
+
         if (sValue != null) sValue = sValue.trim(); // need to remove trailing spaces
 
         if (sValue == null && testing) return "TESTING-MISSING-" + sKey;

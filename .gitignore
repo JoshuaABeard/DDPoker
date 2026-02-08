@@ -11,3 +11,6 @@ Thumbs.db
 build
 release
 installer/builds
+
+# Docker local overrides (contains secrets)
+docker-compose.override.yml

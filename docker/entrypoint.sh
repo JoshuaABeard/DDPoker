@@ -34,11 +34,35 @@ export CLASSPATH
 # Common JVM options
 JAVA_OPTS="-server -Dfile.encoding=UTF-8"
 
+# Email configuration (if provided via environment variables)
+if [ -n "$SMTP_HOST" ]; then
+  JAVA_OPTS="$JAVA_OPTS -Dsettings.smtp.host=$SMTP_HOST"
+fi
+if [ -n "$SMTP_PORT" ]; then
+  JAVA_OPTS="$JAVA_OPTS -Dsettings.smtp.port=$SMTP_PORT"
+fi
+if [ -n "$SMTP_USER" ]; then
+  JAVA_OPTS="$JAVA_OPTS -Dsettings.smtp.user=$SMTP_USER"
+fi
+if [ -n "$SMTP_PASSWORD" ]; then
+  JAVA_OPTS="$JAVA_OPTS -Dsettings.smtp.pass=$SMTP_PASSWORD"
+fi
+if [ -n "$SMTP_AUTH" ]; then
+  JAVA_OPTS="$JAVA_OPTS -Dsettings.smtp.auth=$SMTP_AUTH"
+fi
+if [ -n "$SMTP_STARTTLS_ENABLE" ]; then
+  JAVA_OPTS="$JAVA_OPTS -Dsettings.smtp.starttls.enable=$SMTP_STARTTLS_ENABLE"
+fi
+if [ -n "$SMTP_FROM" ]; then
+  JAVA_OPTS="$JAVA_OPTS -Dsettings.server.profilefrom=$SMTP_FROM"
+fi
+
 echo "============================================"
 echo "  DD Poker Server Starting"
 echo "============================================"
 echo "  Data directory: $DATA_DIR"
 echo "  DB Driver: ${DB_DRIVER:-org.h2.Driver}"
+echo "  SMTP Host: ${SMTP_HOST:-127.0.0.1}:${SMTP_PORT:-587}"
 echo "============================================"
 
 # Start pokerserver (background)
