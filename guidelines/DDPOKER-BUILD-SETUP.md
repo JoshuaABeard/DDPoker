@@ -1,0 +1,255 @@
+# DD Poker - Build & Environment Setup
+
+## Prerequisites (Windows)
+
+All tools installed and verified on Windows 11 (2026-02-08).
+
+| Tool              | Version       | Location                                                         | Install Method |
+|-------------------|---------------|------------------------------------------------------------------|----------------|
+| Eclipse Temurin   | JDK 25.0.2    | `C:\Program Files\Eclipse Adoptium\jdk-25.0.2.10-hotspot`       | `winget install EclipseAdoptium.Temurin.25.JDK` |
+| Apache Maven      | 3.9.12        | `C:\Tools\apache-maven-3.9.12`                                  | Manual download from maven.apache.org |
+| Docker Desktop    | 4.59.0        | Standard install                                                 | `winget install Docker.DockerDesktop` |
+
+## Environment Variables
+
+Set permanently for the current user:
+
+```
+JAVA_HOME = C:\Program Files\Eclipse Adoptium\jdk-25.0.2.10-hotspot
+PATH += C:\Program Files\Eclipse Adoptium\jdk-25.0.2.10-hotspot\bin
+PATH += C:\Tools\apache-maven-3.9.12\bin
+```
+
+**Note:** Open a new terminal after installation for these to take effect.
+
+## Verification
+
+```shell
+java -version
+# openjdk version "25.0.2" 2026-01-20 LTS
+# OpenJDK Runtime Environment Temurin-25.0.2+10
+
+mvn -version
+# Apache Maven 3.9.12
+# Java version: 25.0.2, vendor: Eclipse Adoptium
+
+docker --version
+# Docker Desktop 4.59.0
+```
+
+## Building the Project
+
+### Quick Build (skip tests)
+
+From Git Bash or similar shell:
+
+```shell
+cd C:\Repos\DDPoker
+source ddpoker.rc
+mvn-package-notests
+```
+
+Or directly:
+
+```shell
+cd C:\Repos\DDPoker\code
+mvn package -DskipTests=true
+```
+
+Build time: ~60 seconds. All 22 modules should report SUCCESS.
+
+### Build with Tests
+
+Requires MySQL running with `pokertest` database:
+
+```shell
+source ddpoker.rc
+mvn-test
+```
+
+### Install to Local Maven Repo
+
+```shell
+source ddpoker.rc
+mvn-install-notests
+```
+
+## Running Components
+
+### Poker Game (Desktop Client)
+
+```shell
+source ddpoker.rc
+poker
+```
+
+### Poker Server (Backend API)
+
+Requires MySQL with `poker` database.
+
+```shell
+source ddpoker.rc
+pokerserver
+```
+
+### Poker Website (Wicket via Jetty)
+
+Requires MySQL with `poker` database.
+
+```shell
+source ddpoker.rc
+pokerweb
+```
+
+Access at: http://localhost:8080/online
+
+## Docker Deployment
+
+### Quick Start
+
+The easiest way to run DDPoker server is using Docker:
+
+```shell
+# 1. Build the Java project
+cd C:\Repos\DDPoker\code
+mvn clean install -DskipTests
+
+# 2. Build and start Docker container
+cd C:\Repos\DDPoker
+docker compose up -d
+
+# 3. View logs
+docker compose logs -f
+
+# 4. Access web interface
+# Open browser to: http://localhost:8080/online
+```
+
+This runs both pokerserver and pokerweb in a single container with an embedded H2 database (no external database required).
+
+### Docker Build Process
+
+The Dockerfile copies:
+- Compiled classes from all 22 modules → `/app/classes/`
+- All dependency JARs → `/app/lib/`
+- Webapp files → `/app/webapp/`
+- Runtime message files → `/app/runtime/messages/`
+
+The entrypoint script (`docker/entrypoint.sh`) starts both services:
+1. **pokerserver** - Game server API + chat
+2. **pokerweb** - Embedded Jetty with Wicket webapp
+
+### Exposed Ports
+
+| Port | Protocol | Service |
+|------|----------|---------|
+| 8877 | TCP | Game server API |
+| 8080 | TCP | Web interface |
+| 11886 | UDP | Chat server |
+| 11889 | UDP | Connection test |
+
+### Rebuilding After Changes
+
+```shell
+# 1. Make code changes
+# 2. Rebuild Java project
+cd code
+mvn clean install -DskipTests
+
+# 3. Rebuild Docker image
+cd ..
+docker compose build
+
+# 4. Restart container (keeps data)
+docker compose up -d
+
+# 5. Verify
+docker compose logs --tail=100
+```
+
+### Database Options
+
+**H2 (Default):**
+- No setup required
+- Automatic schema initialization
+- Data persists in Docker volume
+- Perfect for development and small deployments
+
+**MySQL (Optional):**
+Edit `docker-compose.yml` to uncomment MySQL environment variables:
+```yaml
+environment:
+  DB_DRIVER: com.mysql.cj.jdbc.Driver
+  DB_URL: "jdbc:mysql://your-mysql-host/poker?..."
+  DB_USER: poker
+  DB_PASSWORD: "p0k3rdb!"
+```
+
+### Data Management
+
+```shell
+# View data
+docker compose exec ddpoker ls -lh /data/
+
+# Backup database
+docker compose down
+docker run --rm -v ddpoker_ddpoker_data:/data \
+  -v $(pwd):/backup alpine \
+  tar czf /backup/ddpoker-backup.tar.gz -C /data .
+
+# Reset database (WARNING: deletes all data)
+docker compose down -v
+docker compose up -d
+```
+
+### Common Commands
+
+```shell
+# Start container
+docker compose up -d
+
+# Stop container
+docker compose down
+
+# View logs
+docker compose logs -f
+
+# Restart
+docker compose restart
+
+# Check status
+docker compose ps
+
+# Execute command in container
+docker compose exec ddpoker sh
+```
+
+For complete Docker documentation, see **[DDPOKER-DOCKER.md](./DDPOKER-DOCKER.md)**.
+
+## Database Setup (Local Development)
+
+### MySQL via Docker
+
+```shell
+docker run --name my-mysql -e MYSQL_ROOT_PASSWORD='d@t@b@s3' \
+  -d -p 3306:3306 -v mysql_data:/var/lib/mysql mysql:latest
+
+# Create databases
+source ddpoker.rc
+reset_dbs.sh poker
+reset_dbs.sh pokertest
+```
+
+### Verify Database Access
+
+```shell
+mysql -h 127.0.0.1 -D poker -u poker -pp0k3rdb!
+mysql -h 127.0.0.1 -D pokertest -u pokertest -pp0k3rdb!
+```
+
+## Windows-Specific Notes
+
+- The `ddpoker.rc` script uses bash syntax. Use Git Bash, WSL, or MSYS2.
+- The `source ddpoker.rc` command sets `$WORK`, adds `tools/bin` and `tools/db` to PATH, and creates Maven aliases.
+- Docker Desktop may require a reboot after first install and must be launched before using `docker` commands.
+- Maven was not available via winget; manual download was required.
