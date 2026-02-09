@@ -35,18 +35,16 @@ package com.donohoedigital.games.server;
 import com.donohoedigital.games.server.dao.BannedKeyDao;
 import com.donohoedigital.games.server.model.BannedKey;
 import org.apache.logging.log4j.*;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 
 /**
@@ -57,10 +55,9 @@ import static org.junit.Assert.*;
  * To change this template use File | Settings | File Templates.
  */
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@SpringJUnitConfig(locations = {"/app-context-jpatests.xml"})
 @Transactional
-@ContextConfiguration(locations = {"/app-context-jpatests.xml"})
-public class BannedKeyTest {
+class BannedKeyTest {
     private final Logger logger = LogManager.getLogger(BannedKeyTest.class);
 
     @Autowired
@@ -68,33 +65,33 @@ public class BannedKeyTest {
 
     @Test
     @Rollback
-    public void shouldPersist() {
+    void should_PersistAndUpdateBannedKey_When_SavedAndUpdated() {
         BannedKey newKey = ServerTestData.createBannedKey("0000-0000-1111-2222");
         dao.save(newKey);
-        assertNotNull(newKey.getId());
+        assertThat(newKey.getId()).isNotNull();
 
         BannedKey nullComment = ServerTestData.createBannedKey("0000-0000-1111-3332");
         nullComment.setComment(null);
         dao.save(nullComment);
-        assertNotNull(nullComment.getId());
+        assertThat(nullComment.getId()).isNotNull();
 
         BannedKey fetch = dao.get(newKey.getId());
-        assertEquals("name should match", newKey.getKey(), fetch.getKey());
+        assertThat(fetch.getKey()).as("name should match").isEqualTo(newKey.getKey());
 
         String key = "1111-1111-1111-1111";
         newKey.setKey(key);
         dao.update(newKey);
 
         BannedKey updated = dao.get(newKey.getId());
-        assertEquals("key should match", key, updated.getKey());
+        assertThat(updated.getKey()).as("key should match").isEqualTo(key);
     }
 
     @Test
     @Rollback
-    public void saveBeforeDelete() {
+    void should_DeleteBannedKey_When_SavedAndThenDeleted() {
         BannedKey bannedKey = ServerTestData.createBannedKey("9999-8888-7777-6666");
         dao.save(bannedKey);
-        assertNotNull(bannedKey.getId());
+        assertThat(bannedKey.getId()).isNotNull();
         logger.info(bannedKey.getKey() + " saved with id " + bannedKey.getId());
 
         BannedKey lookup = dao.get(bannedKey.getId());
@@ -102,12 +99,12 @@ public class BannedKeyTest {
         logger.info("Should have deleted profile with id " + lookup.getId());
 
         BannedKey delete = dao.get(lookup.getId());
-        assertNull(delete);
+        assertThat(delete).isNull();
     }
 
     @Test
     @Rollback
-    public void loadAll() {
+    void should_LoadAllBannedKeys_When_MultipleSaved() {
         BannedKey key1 = ServerTestData.createBannedKey("0000-0000-1111-2222");
         BannedKey key2 = ServerTestData.createBannedKey("0000-0000-1111-3333");
 
@@ -119,40 +116,39 @@ public class BannedKeyTest {
             logger.info("Loaded: " + key);
         }
 
-        assertTrue(list.contains(key1));
-        assertTrue(list.contains(key2));
+        assertThat(list).contains(key1, key2);
     }
 
     @Test
     @Rollback
-    public void testFindByKey() {
+    void should_FindByKey_When_SingleKeyProvided() {
         String sKey = "0000-0000-1111-2222";
         BannedKey newKey = ServerTestData.createBannedKey(sKey);
         dao.save(newKey);
-        assertNotNull(newKey.getId());
+        assertThat(newKey.getId()).isNotNull();
 
         List<BannedKey> fetch = dao.getByKeys(sKey);
-        assertEquals(1, fetch.size());
-        assertEquals(sKey, fetch.get(0).getKey());
+        assertThat(fetch).hasSize(1);
+        assertThat(fetch.get(0).getKey()).isEqualTo(sKey);
     }
 
     @Test
     @Rollback
-    public void testMultipleFindByKey() {
+    void should_FindByMultipleKeys_When_MultipleKeysProvided() {
         String sKey = "0000-0000-1111-2222";
         BannedKey newKey = ServerTestData.createBannedKey(sKey);
         newKey.setUntil(new Date());
         dao.save(newKey);
-        assertNotNull(newKey.getId());
+        assertThat(newKey.getId()).isNotNull();
 
         String key2 = "dexter@example.com";
         BannedKey newKey2 = ServerTestData.createBannedKey(key2);
         dao.save(newKey2);
-        assertNotNull(newKey2.getId());
+        assertThat(newKey2.getId()).isNotNull();
 
         List<BannedKey> fetch = dao.getByKeys(sKey, key2);
-        assertEquals(2, fetch.size());
-        assertEquals(key2, fetch.get(0).getKey()); // default date is later, should get returned first
-        assertEquals(sKey, fetch.get(1).getKey());
+        assertThat(fetch).hasSize(2);
+        assertThat(fetch.get(0).getKey()).isEqualTo(key2); // default date is later, should get returned first
+        assertThat(fetch.get(1).getKey()).isEqualTo(sKey);
     }
 }

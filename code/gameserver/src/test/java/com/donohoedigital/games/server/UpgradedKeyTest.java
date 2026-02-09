@@ -35,17 +35,15 @@ package com.donohoedigital.games.server;
 import com.donohoedigital.games.server.dao.UpgradedKeyDao;
 import com.donohoedigital.games.server.model.UpgradedKey;
 import org.apache.logging.log4j.*;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 
 /**
@@ -56,10 +54,9 @@ import static org.junit.Assert.*;
  * To change this template use File | Settings | File Templates.
  */
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@SpringJUnitConfig(locations = {"/app-context-jpatests.xml"})
 @Transactional
-@ContextConfiguration(locations = {"/app-context-jpatests.xml"})
-public class UpgradedKeyTest
+class UpgradedKeyTest
 {
     private final Logger logger = LogManager.getLogger(UpgradedKeyTest.class);
 
@@ -68,31 +65,31 @@ public class UpgradedKeyTest
 
     @Test
     @Rollback
-    public void shouldPersist()
+    void should_PersistAndUpdateUpgradedKey_When_SavedAndUpdated()
     {
         UpgradedKey newKey = ServerTestData.createUpgradedKey("0000-0000-1111-2222");
         dao.save(newKey);
 
-        assertNotNull(newKey.getId());
+        assertThat(newKey.getId()).isNotNull();
 
         UpgradedKey fetch = dao.get(newKey.getId());
-        assertEquals("name should match", newKey.getLicenseKey(), fetch.getLicenseKey());
+        assertThat(fetch.getLicenseKey()).as("name should match").isEqualTo(newKey.getLicenseKey());
 
         String key = "1111-1111-1111-1111";
         newKey.setLicenseKey(key);
         dao.update(newKey);
 
         UpgradedKey updated = dao.get(newKey.getId());
-        assertEquals("key should match", key, updated.getLicenseKey());
+        assertThat(updated.getLicenseKey()).as("key should match").isEqualTo(key);
     }
 
     @Test
     @Rollback
-    public void saveBeforeDelete()
+    void should_DeleteUpgradedKey_When_SavedAndThenDeleted()
     {
         UpgradedKey upgradedKey = ServerTestData.createUpgradedKey("9999-8888-7777-6666");
         dao.save(upgradedKey);
-        assertNotNull(upgradedKey.getId());
+        assertThat(upgradedKey.getId()).isNotNull();
         logger.info(upgradedKey.getLicenseKey() + " saved with id " + upgradedKey.getId());
 
         UpgradedKey lookup = dao.get(upgradedKey.getId());
@@ -100,16 +97,16 @@ public class UpgradedKeyTest
         logger.info("Should have deleted profile with id " + lookup.getId());
 
         UpgradedKey delete = dao.get(lookup.getId());
-        assertNull(delete);
+        assertThat(delete).isNull();
     }
 
     @Test
     @Rollback
-    public void loadAll()
+    void should_LoadAllUpgradedKeys_When_MultipleSaved()
     {
         // empty db should not return null
-        assertNotNull(dao.getAll());
-        
+        assertThat(dao.getAll()).isNotNull();
+
         UpgradedKey key1 = ServerTestData.createUpgradedKey("0000-0000-1111-2222");
         UpgradedKey key2 = ServerTestData.createUpgradedKey("0000-0000-1111-3333");
 
@@ -122,20 +119,19 @@ public class UpgradedKeyTest
             logger.info("Loaded: " + key);
         }
 
-        assertTrue(list.contains(key1));
-        assertTrue(list.contains(key2));
+        assertThat(list).contains(key1, key2);
     }
 
     @Test
     @Rollback
-    public void testFindByKey()
+    void should_FindByKey_When_KeyProvided()
     {
         String sKey = "0000-0000-1111-2222";
         UpgradedKey newKey = ServerTestData.createUpgradedKey(sKey);
         dao.save(newKey);
-        assertNotNull(newKey.getId());
+        assertThat(newKey.getId()).isNotNull();
 
         UpgradedKey fetch = dao.getByKey(sKey);
-        assertNotNull(fetch);
+        assertThat(fetch).isNotNull();
     }
 }

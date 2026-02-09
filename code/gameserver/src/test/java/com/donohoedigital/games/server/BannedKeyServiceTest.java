@@ -34,17 +34,15 @@ package com.donohoedigital.games.server;
 
 import com.donohoedigital.games.server.model.BannedKey;
 import com.donohoedigital.games.server.service.BannedKeyService;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Calendar;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -53,33 +51,32 @@ import static org.junit.Assert.*;
  * Time: 2:52:25 PM
  * To change this template use File | Settings | File Templates.
  */
-@RunWith(SpringJUnit4ClassRunner.class)
+@SpringJUnitConfig(locations = {"/app-context-jpatests.xml"})
 @Transactional
-@ContextConfiguration(locations = {"/app-context-jpatests.xml"})
-public class BannedKeyServiceTest
+class BannedKeyServiceTest
 {
     @Autowired
     private BannedKeyService service;
 
     @Test
     @Rollback
-    public void testLookupAndDelete()
+    void should_LookupAndDeleteBannedKey_When_SavedAndThenDeleted()
     {
         String key = "0000-0000-1111-2222";
         BannedKey key1 = ServerTestData.createBannedKey(key);
 
         service.saveBannedKey(key1);
-        assertTrue(service.isBanned(key));
-        assertEquals(key, service.getIfBanned(key).getKey());
-        assertTrue(service.isBanned("blah", key));
+        assertThat(service.isBanned(key)).isTrue();
+        assertThat(service.getIfBanned(key).getKey()).isEqualTo(key);
+        assertThat(service.isBanned("blah", key)).isTrue();
 
         service.deleteBannedKey(key);
-        assertFalse(service.isBanned(key));
+        assertThat(service.isBanned(key)).isFalse();
     }
 
     @Test
     @Rollback
-    public void testBanByOldDate()
+    void should_NotBeBanned_When_BanDateIsInPast()
     {
         String key = "0000-0000-1111-2222";
         BannedKey key1 = ServerTestData.createBannedKey(key);
@@ -87,14 +84,14 @@ public class BannedKeyServiceTest
         cal.add(Calendar.DAY_OF_MONTH, -1);
         key1.setUntil(cal.getTime());
         service.saveBannedKey(key1);
-        assertFalse(service.isBanned(key));
+        assertThat(service.isBanned(key)).isFalse();
         service.deleteBannedKey(key);
-        assertFalse(service.isBanned(key));
+        assertThat(service.isBanned(key)).isFalse();
     }
 
     @Test
     @Rollback
-    public void testBanByTodaysDate()
+    void should_BeBanned_When_BanDateIsTomorrow()
     {
         String key = "0000-0000-1111-4444";
         BannedKey key1 = ServerTestData.createBannedKey(key);
@@ -102,14 +99,14 @@ public class BannedKeyServiceTest
         cal.add(Calendar.DAY_OF_MONTH, 1);
         key1.setUntil(cal.getTime());
         service.saveBannedKey(key1);
-        assertTrue(service.isBanned(key));
+        assertThat(service.isBanned(key)).isTrue();
         service.deleteBannedKey(key);
-        assertFalse(service.isBanned(key));
+        assertThat(service.isBanned(key)).isFalse();
     }
 
     @Test
     @Rollback
-    public void testBanByFutureDate()
+    void should_BeBanned_When_BanDateIsInFuture()
     {
         String key = "0000-0000-1111-3333";
         BannedKey key1 = ServerTestData.createBannedKey(key);
@@ -117,19 +114,19 @@ public class BannedKeyServiceTest
         cal.add(Calendar.DAY_OF_MONTH, 100);
         key1.setUntil(cal.getTime());
         service.saveBannedKey(key1);
-        assertTrue(service.isBanned(key));
-        assertTrue(service.isBanned(key, null)); // test null in params
+        assertThat(service.isBanned(key)).isTrue();
+        assertThat(service.isBanned(key, null)).isTrue(); // test null in params
         service.deleteBannedKey(key);
-        assertFalse(service.isBanned(key));
+        assertThat(service.isBanned(key)).isFalse();
     }
 
     @Test
     @Rollback
-    public void testNull()
+    void should_NotBeBanned_When_KeyIsNull()
     {
-        assertFalse(service.isBanned((String) null));
-        assertFalse(service.isBanned(null, null));
-        assertFalse(service.isBanned((String[]) null));
-        assertNull(service.getIfBanned((String) null));
+        assertThat(service.isBanned((String) null)).isFalse();
+        assertThat(service.isBanned(null, null)).isFalse();
+        assertThat(service.isBanned((String[]) null)).isFalse();
+        assertThat(service.getIfBanned((String) null)).isNull();
     }
 }
