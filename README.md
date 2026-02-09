@@ -44,18 +44,33 @@ no longer run a server, but you can run your own using the code in this repo.
 ### For Players
 
 **Docker Deployment (Recommended):**
-The easiest way to run DD Poker server is using Docker. See [DDPOKER-DOCKER.md](.claude/DDPOKER-DOCKER.md) for complete instructions.
 
-Quick start:
+The easiest way to run DD Poker server is using Docker Compose.
+
+**Quick Start:**
 ```bash
-docker run -d \
-  -p 8080:8080 \
-  -p 8877:8877 \
-  -v ddpoker_data:/data \
-  joshuaabeard/ddpoker:latest
+# Clone the repository
+git clone https://github.com/JoshuaABeard/DDPoker.git
+cd DDPoker
+
+# Build and start the server
+cd docker
+docker compose up -d
 ```
 
-Access the web interface at http://localhost:8080 to download desktop clients for Windows, Mac, and Linux.
+**What you get:**
+- 🌐 **Web Interface**: http://localhost:8080 - Download clients and manage games
+- 🎮 **Game Server**: Port 8877 - Connect your desktop client here
+- 💬 **Chat Server**: Ports 11886/11889 (UDP) - In-game chat
+
+**Download Desktop Client:**
+1. Visit http://localhost:8080/downloads/
+2. Download `DDPoker.jar` (21MB universal JAR)
+3. Run with: `java -jar DDPoker.jar`
+
+**Version:** 3.2.0-community
+
+For complete Docker documentation, configuration options, and troubleshooting, see [DDPOKER-DOCKER.md](.claude/DDPOKER-DOCKER.md).
 
 **Unraid Users:**
 DD Poker is available as an Unraid Community Application. See [unraid/README.md](unraid/README.md) for installation instructions.
