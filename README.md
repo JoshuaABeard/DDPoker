@@ -2,7 +2,7 @@
 
 > **Community-maintained fork** of DD Poker with enhanced Docker deployment and modern build tooling.
 >
-> **Version:** 3.2.1-community
+> **Version:** 3.3.0-community
 > **Original Work:** [DD Poker by Doug Donohoe](https://github.com/dougdonohoe/ddpoker) (2003-2017)
 
 ![dd-poker-3.jpg](images/dd-poker-3.jpg)
@@ -17,6 +17,22 @@ This is a **community-maintained fork** of DD Poker, created to provide:
 - 📚 **Comprehensive documentation** for deployment and development
 
 **This fork is not affiliated with or endorsed by Doug Donohoe or Donohoe Digital LLC.** All original code, trademarks, and creative assets remain the property of their respective owners. See [Copyright and Licenses](#copyright-and-licenses) for details.
+
+### What's New in 3.3.0-community
+
+- 📁 **File-based JSON configuration** - Replaced Java Preferences with portable JSON config files
+- 🔄 **Easy backup/restore** - Configuration now in human-readable format at platform-specific locations
+- 🐳 **Container-friendly settings** - No Windows Registry dependencies, perfect for Docker deployments
+- 💾 **Automatic backup & recovery** - Config files automatically backed up before changes with corruption recovery
+- 🧪 **Rock-solid reliability** - 98 comprehensive tests ensuring configuration system stability
+- 📖 **Complete documentation** - Detailed guides for configuration management and troubleshooting
+
+**Configuration file locations:**
+- Windows: `%APPDATA%\ddpoker\config.json`
+- macOS: `~/Library/Application Support/ddpoker/config.json`
+- Linux: `~/.ddpoker/config.json`
+
+See [docs/FILE-BASED-CONFIGURATION.md](docs/FILE-BASED-CONFIGURATION.md) for complete documentation.
 
 ### What's New in 3.2.0-community
 

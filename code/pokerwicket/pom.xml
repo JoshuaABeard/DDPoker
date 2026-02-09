@@ -39,25 +39,25 @@
   <parent>
     <groupId>com.donohoedigital</groupId>
     <artifactId>all</artifactId>
-    <version>3.2.1-community</version>
+    <version>3.3.0-community</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>pokerwicket</artifactId>
   <packaging>war</packaging>
-  <version>3.2.1-community</version>
+  <version>3.3.0-community</version>
   <name>pokerwicket</name>
 
   <dependencies>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>wicket</artifactId>
-      <version>3.2.1-community</version>
+      <version>3.3.0-community</version>
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>pokerserver</artifactId>
-      <version>3.2.1-community</version>
+      <version>3.3.0-community</version>
       <exclusions>
         <!-- exclude tomcat, which is pulled in by 'jsp' module, which we don't use here
              this is an issue currently because jsp uses a newer version of tomcat
