@@ -1,7 +1,17 @@
-# Misc
+# Build artifacts
 target
 *.sparseimage
+
+# Logs
+*.log
+
+# Database files
+*.mv.db
+*.trace.db
+
+# OS files
 Thumbs.db
+.DS_Store
 
 # /runtime/
 /runtime/data
@@ -26,3 +36,11 @@ test-client*.bat
 # Local runtime data
 /runtime/
 /data/
+
+# Module-specific data directories
+code/pokerserver/data/
+
+# IDE
+.vscode/
+.idea/
+*.iml
