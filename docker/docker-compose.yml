@@ -1,6 +1,6 @@
 services:
   ddpoker:
-    image: ddpoker:3.2.0-community
+    image: joshuaabeard/ddpoker:3.2.0-community
     build:
       context: ..
       dockerfile: docker/Dockerfile

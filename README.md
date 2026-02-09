@@ -45,16 +45,27 @@ no longer run a server, but you can run your own using the code in this repo.
 
 **Docker Deployment (Recommended):**
 
-The easiest way to run DD Poker server is using Docker Compose.
+The easiest way to run DD Poker server is using Docker.
 
-**Quick Start:**
+**Quick Start (Using Pre-built Image):**
+```bash
+docker run -d \
+  --name ddpoker \
+  -p 8080:8080 \
+  -p 8877:8877 \
+  -p 11886:11886/udp \
+  -p 11889:11889/udp \
+  -v ddpoker_data:/data \
+  joshuaabeard/ddpoker:3.2.0-community
+```
+
+**Or with Docker Compose:**
 ```bash
 # Clone the repository
 git clone https://github.com/JoshuaABeard/DDPoker.git
-cd DDPoker
+cd DDPoker/docker
 
-# Build and start the server
-cd docker
+# Start the server (pulls from Docker Hub if not built locally)
 docker compose up -d
 ```
 

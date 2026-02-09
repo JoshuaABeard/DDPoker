@@ -4,23 +4,39 @@ This directory contains all Docker-related files for DD Poker.
 
 ## Quick Start
 
-From this directory (`docker/`), run:
+**Using Pre-built Image from Docker Hub:**
 
+```bash
+docker run -d \
+  --name ddpoker \
+  -p 8080:8080 \
+  -p 8877:8877 \
+  -p 11886:11886/udp \
+  -p 11889:11889/udp \
+  -v ddpoker_data:/data \
+  joshuaabeard/ddpoker:3.2.0-community
+```
+
+**Or with Docker Compose:**
+
+From this directory (`docker/`):
 ```bash
 docker compose up -d
 ```
 
-Or from the repository root:
-
+From the repository root:
 ```bash
 docker compose -f docker/docker-compose.yml up -d
 ```
+
+Docker Compose will automatically pull the image from Docker Hub if not available locally, or build it from source if you've cloned the repository.
 
 ## Files
 
 - **docker-compose.yml** - Docker Compose configuration with service definitions, ports, volumes, and environment variables
 - **Dockerfile** - Container image definition for building the DD Poker server
 - **entrypoint.sh** - Container startup script that manages both pokerserver and pokerweb processes
+- **DOCKER-HUB-PUBLISHING.md** - Guide for publishing Docker images to Docker Hub
 
 ## Configuration
 
