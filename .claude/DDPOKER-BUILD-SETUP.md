@@ -156,7 +156,7 @@ docker compose logs --tail=100
 
 ### Database Options
 
-**H2 (Default):**
+**H2**
 - No setup required
 - Automatic schema initialization
 - Data persists in Docker volume

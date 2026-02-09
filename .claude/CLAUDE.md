@@ -80,23 +80,6 @@ Repeat for next behavior
 4. **Refactor if needed** - Simplify while tests stay green
 5. **Repeat** - Next requirement, back to step 1
 
-### Test-First Examples
-```csharp
-// 1. Write test FIRST (it will fail - no ClassifyQuery exists yet)
-[Theory]
-[InlineData("What is 2+2?", "simple")]
-[InlineData("Search for drill presses", "websearch")]
-public void ClassifyQuery_ReturnsExpectedAgent(string query, string expected)
-{
-    var decision = _router.ClassifyQuery(query);
-    decision.AgentType.Should().Be(expected);
-}
-
-// 2. NOW implement ClassifyQuery to make test pass
-// 3. Refactor if needed (tests still green)
-// 4. Add next test for next scenario
-```
-
 ### When to Write Tests First
 - ✅ **New features** - Design the interface via tests
 - ✅ **Bug fixes** - Reproduce bug with test, then fix

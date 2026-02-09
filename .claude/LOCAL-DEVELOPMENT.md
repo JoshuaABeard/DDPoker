@@ -94,7 +94,7 @@ Use that IP in your client settings.
 
 ### Email Not Sending
 
-The server is configured with Gmail SMTP. If activation emails aren't sending:
+The server is configured with Gmail SMTP by default. If activation emails aren't sending:
 
 1. **Check Gmail credentials** in `tools\scripts\run-server-local.ps1`
 2. **Verify Gmail App Password** is still valid
@@ -106,8 +106,8 @@ The server is configured with Gmail SMTP. If activation emails aren't sending:
 
 - Builds classpath from all compiled modules
 - Excludes duplicate JARs (uses classes, not JARs for our modules)
-- Configures H2 database with MySQL compatibility
-- Sets up Gmail SMTP for activation emails
+- Configures H2 database
+- Sets up SMTP for activation emails
 - Runs `com.donohoedigital.games.poker.server.PokerServerMain`
 
 ### Client Script (`tools\scripts\run-client-local.ps1`)

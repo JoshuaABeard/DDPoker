@@ -31,7 +31,6 @@ WORKDIR /app
 COPY code/common/target/classes/ /app/classes/
 COPY code/mail/target/classes/ /app/classes/
 COPY code/gui/target/classes/ /app/classes/
-COPY code/installer/target/classes/ /app/classes/
 COPY code/db/target/classes/ /app/classes/
 COPY code/wicket/target/classes/ /app/classes/
 COPY code/jsp/target/classes/ /app/classes/
