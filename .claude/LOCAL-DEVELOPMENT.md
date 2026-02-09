@@ -21,7 +21,7 @@ Running the server and client natively on Windows (instead of in Docker) provide
 ### 1. Start the Server
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File run-server-local.ps1
+powershell -ExecutionPolicy Bypass -File tools\scripts\run-server-local.ps1
 ```
 
 **What it does:**
@@ -38,7 +38,7 @@ powershell -ExecutionPolicy Bypass -File run-server-local.ps1
 ### 2. Start the Client
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File run-client-local.ps1
+powershell -ExecutionPolicy Bypass -File tools\scripts\run-client-local.ps1
 ```
 
 Or just launch the client normally from your IDE/installer.
@@ -96,13 +96,13 @@ Use that IP in your client settings.
 
 The server is configured with Gmail SMTP. If activation emails aren't sending:
 
-1. **Check Gmail credentials** in `run-server-local.ps1`
+1. **Check Gmail credentials** in `tools\scripts\run-server-local.ps1`
 2. **Verify Gmail App Password** is still valid
 3. **Check server logs** for email errors in server console
 
 ## How It Works
 
-### Server Script (`run-server-local.ps1`)
+### Server Script (`tools\scripts\run-server-local.ps1`)
 
 - Builds classpath from all compiled modules
 - Excludes duplicate JARs (uses classes, not JARs for our modules)
@@ -110,7 +110,7 @@ The server is configured with Gmail SMTP. If activation emails aren't sending:
 - Sets up Gmail SMTP for activation emails
 - Runs `com.donohoedigital.games.poker.server.PokerServerMain`
 
-### Client Script (`run-client-local.ps1`)
+### Client Script (`tools\scripts\run-client-local.ps1`)
 
 - Builds classpath including poker (client) module
 - Runs `com.donohoedigital.games.poker.PokerMain`
@@ -145,11 +145,11 @@ The server uses Gmail SMTP hardcoded in the script. The credentials come from `d
 - **App Password**: (stored in script)
 - **From Address**: ddpokeserver@gmail.com
 
-To change email provider, edit the `run-server-local.ps1` SMTP settings.
+To change email provider, edit the `tools\scripts\run-server-local.ps1` SMTP settings.
 
 ## Notes
 
-- **Do NOT commit Gmail credentials** - they're in run-server-local.ps1 (gitignored)
+- **Do NOT commit Gmail credentials** - they're in tools\scripts\run-server-local.ps1 (gitignored)
 - **Use actual IP addresses** for client configuration, not localhost
 - **Stop server cleanly** with Ctrl+C to avoid database locks
 - **One server at a time** - only run one instance to avoid port conflicts

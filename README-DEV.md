@@ -517,12 +517,12 @@ For local development testing of online multiplayer, you can run multiple client
 
 **Start the first client:**
 ```powershell
-.\run-client-local.ps1
+.\tools\scripts\run-client-local.ps1
 ```
 
 **Start the second client (in a new terminal):**
 ```powershell
-.\run-client-local-2.ps1
+.\tools\scripts\run-client-local-2.ps1
 ```
 
 The second client script uses a separate user profile directory (`.dd-poker3-client2`) to avoid database conflicts. Each client maintains its own:
