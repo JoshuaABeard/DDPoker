@@ -208,3 +208,8 @@ code base as employees of Donohoe Digital:
 + Greg King
 + Sam Neth
 + Brian Zak
+
+Additional contributors to this repository:
+
++ Joshua Beard - Repository maintenance, Docker deployment, build improvements
++ Claude (Anthropic) - Documentation, code refactoring, and development assistance
