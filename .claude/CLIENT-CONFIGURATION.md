@@ -140,20 +140,11 @@ If your Docker server is running on a different machine:
    - **Online Server**: `<server-ip>:8877`
    - **Chat Server**: `<server-ip>:11886`
 
-### MySQL Instead of H2
+### Email Configuration
 
-If you've configured MySQL instead of the default H2 database:
+To enable email functionality for profile activation:
 
-1. Ensure MySQL is accessible from Docker
-2. Update `docker/docker-compose.yml` environment variables:
-   ```yaml
-   environment:
-     DB_DRIVER: com.mysql.cj.jdbc.Driver
-     DB_URL: "jdbc:mysql://your-mysql-host/poker?useUnicode=true&characterEncoding=UTF8&useSSL=false"
-     DB_USER: poker
-     DB_PASSWORD: "p0k3rdb!"
-   ```
-3. Restart container: `docker compose up -d`
+See [EMAIL-CONFIGURATION.md](EMAIL-CONFIGURATION.md) for complete setup instructions.
 
 ## Data Persistence
 

@@ -5,8 +5,8 @@
 DD Poker is a full-featured Texas Hold'em poker simulator originally developed by Donohoe Digital LLC (2003-2017), now open-sourced under GPLv3. It consists of three main components:
 
 1. **DD Poker Game** - Java Swing desktop application (client)
-2. **Poker Server** - Backend API + chat server (Spring-based, MySQL)
-3. **Poker Web** - Apache Wicket website / "Online Portal" (deployed as `.war` on Tomcat)
+2. **Poker Server** - Backend API + chat server (Spring-based, embedded H2 database)
+3. **Poker Web** - Apache Wicket website / "Online Portal" (embedded Jetty server)
 
 ## Tech Stack
 
@@ -17,8 +17,8 @@ DD Poker is a full-featured Texas Hold'em poker simulator originally developed b
 | Desktop UI        | Java Swing                          | (JDK built-in) |
 | Web Framework     | Apache Wicket                       | 10.8.0         |
 | ORM               | Hibernate                           | 6.6.42.Final   |
-| App Server        | Embedded Jetty (Docker) / Tomcat    | 12.1.6 / 11.0.18 |
-| Database          | H2 (default) / MySQL                | 2.3.232 / 9.0  |
+| App Server        | Embedded Jetty                      | 12.1.6         |
+| Database          | H2 Embedded                         | 2.3.232        |
 | Logging           | Log4j2                              | 2.25.3         |
 | Spring Framework  | Spring                              | 6.2.15         |
 | Tests             | JUnit                               | 4.13.2         |
@@ -63,18 +63,13 @@ The project is a Maven multi-module build with 22 modules. Build order (later mo
 
 ## Server Dependencies
 
-### Database Options
+### Database
 
-1. **H2 (Default for Docker)** - Embedded database, no setup required
-   - Automatic schema initialization
-   - MySQL compatibility mode
-   - File-based storage in Docker volume
-   - Perfect for development and single-server deployments
-
-2. **MySQL (Optional)** - External database for advanced deployments
-   - DB scripts in `tools/db/`
-   - Configurable via environment variables
-   - Supports clustering and replication
+**H2 Embedded** - File-based database, no setup required
+- Automatic schema initialization
+- MySQL compatibility mode for SQL queries
+- File-based storage in Docker volume (`/data/poker.mv.db`)
+- Zero configuration required
 
 ### Other Dependencies
 
@@ -87,12 +82,11 @@ The project uses a layered properties system:
 - **LoggingConfig** - `log4j2.[apptype].properties` files loaded by app type (client/webapp/server/cmdline)
 - **PropertyConfig** - `[appname]/[apptype].properties` files, with per-user overrides via `[username].properties`
 - **Debug Settings** - Controlled via `settings.debug.*` entries in user-specific properties files
-- **Database Configuration** - Environment variables for flexible database selection:
+- **Database Configuration** - Environment variables (H2 defaults are automatic):
   - `DB_DRIVER` - JDBC driver class (default: `org.h2.Driver`)
-  - `DB_URL` - JDBC connection URL
-  - `DB_USER` - Database username
-  - `DB_PASSWORD` - Database password
-  - `DB_HOST` - MySQL host (legacy, for MySQL-only setups)
+  - `DB_URL` - JDBC connection URL (default: `jdbc:h2:file:/data/poker`)
+  - `DB_USER` - Database username (default: `sa`)
+  - `DB_PASSWORD` - Database password (default: empty)
 
 ## Repository Layout
 
@@ -120,4 +114,4 @@ ddpoker/
 - **Password handling** - Server stores reversibly-encrypted passwords and can email them in plaintext (legacy design).
 - **HSQLDB** - Pinned at 1.8.0.10 (latest is 2.7.4) to avoid database migration.
 - **Test coverage** - Acknowledged as lacking, especially in core poker logic.
-- **DB passwords in git** - `p0k3rdb!` for local dev databases, `d@t@b@s3` for MySQL root. Acceptable for local dev.
+- **Embedded H2 database** - No passwords needed, automatic setup.

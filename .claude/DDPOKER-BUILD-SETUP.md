@@ -60,7 +60,7 @@ Build time: ~60 seconds. All 22 modules should report SUCCESS.
 
 ### Build with Tests
 
-Requires MySQL running with `pokertest` database:
+Tests use embedded H2 database:
 
 ```shell
 source ddpoker.rc
@@ -85,7 +85,7 @@ poker
 
 ### Poker Server (Backend API)
 
-Requires MySQL with `poker` database.
+Uses embedded H2 database (automatic, no setup needed):
 
 ```shell
 source ddpoker.rc
@@ -94,7 +94,7 @@ pokerserver
 
 ### Poker Website (Wicket via Jetty)
 
-Requires MySQL with `poker` database.
+Uses embedded H2 database (automatic, no setup needed):
 
 ```shell
 source ddpoker.rc
@@ -175,15 +175,6 @@ docker compose logs --tail=100
 - Data persists in Docker volume
 - Perfect for development and small deployments
 
-**MySQL (Optional):**
-Edit `docker/docker-compose.yml` to uncomment MySQL environment variables:
-```yaml
-environment:
-  DB_DRIVER: com.mysql.cj.jdbc.Driver
-  DB_URL: "jdbc:mysql://your-mysql-host/poker?..."
-  DB_USER: poker
-  DB_PASSWORD: "p0k3rdb!"
-```
 
 ### Data Management
 
@@ -226,26 +217,13 @@ docker compose exec ddpoker sh
 
 For complete Docker documentation, see **[DDPOKER-DOCKER.md](./DDPOKER-DOCKER.md)**.
 
-## Database Setup (Local Development)
+## Database (Local Development)
 
-### MySQL via Docker
+DD Poker uses embedded H2 database - no setup required. Database files are automatically created in:
+- Server: `runtime/poker.mv.db`
+- Tests: `target/` directories (temporary)
 
-```shell
-docker run --name my-mysql -e MYSQL_ROOT_PASSWORD='d@t@b@s3' \
-  -d -p 3306:3306 -v mysql_data:/var/lib/mysql mysql:latest
-
-# Create databases
-source ddpoker.rc
-reset_dbs.sh poker
-reset_dbs.sh pokertest
-```
-
-### Verify Database Access
-
-```shell
-mysql -h 127.0.0.1 -D poker -u poker -pp0k3rdb!
-mysql -h 127.0.0.1 -D pokertest -u pokertest -pp0k3rdb!
-```
+Database is automatically initialized on first run.
 
 ## Windows-Specific Notes
 
