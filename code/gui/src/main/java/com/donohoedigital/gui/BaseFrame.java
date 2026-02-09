@@ -111,7 +111,6 @@ public class BaseFrame extends JFrame implements DDWindow
         // need to run later so that window is drawn first/initialized
         if (bFull)
         {
-            //frame_.setDisplayMode(800, 600, 32, 75); // TODO: configure, get depth/refresh from current
             SwingUtilities.invokeLater(
                     this::setFullScreenOn
             );
@@ -399,13 +398,8 @@ public class BaseFrame extends JFrame implements DDWindow
         // then restore to passed in component if it is visible
         if (restoreTo == null || !restoreTo.isVisible())
         {
-            //logger.debug("XX BASE window activated focus to " + getContentPane());
             restoreTo = getContentPane();
         }
-//        else
-//        {
-//            //logger.debug("YY BASE window activated focus to " + restoreTo);
-//        }
 
         restoreTo.requestFocus();
     }
@@ -441,12 +435,11 @@ public class BaseFrame extends JFrame implements DDWindow
         {
             //System.out.println("Window Activated " + getName());
             bActive_ = true;
-            //restoreFocus(null); // TODO: remove perm?  turned off for testing for 2.5 (leave off for now - seems not needed)
         }
 
         /**
          * If window deactivated in full screen mode,
-         * need to reset values to work around JDK 1.4.1 bug
+         * need to reset values to work around alt-tab bug
          */
         @Override
         public void windowDeactivated(WindowEvent e)
