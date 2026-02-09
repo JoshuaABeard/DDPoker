@@ -150,7 +150,7 @@ See [EMAIL-CONFIGURATION.md](EMAIL-CONFIGURATION.md) for detailed SMTP setup ins
 
 ## Notes
 
-- **Do NOT commit Gmail credentials** - they're in tools\scripts\run-server-local.ps1 (gitignored)
-- **Use actual IP addresses** for client configuration, not localhost
+- **Configure your own SMTP credentials** in tools\scripts\run-server-local.ps1 for email functionality
+- **Use actual IP addresses** for client configuration, not localhost for UDP chat
 - **Stop server cleanly** with Ctrl+C to avoid database locks
 - **One server at a time** - only run one instance to avoid port conflicts

@@ -92,21 +92,21 @@ The project uses a layered properties system:
 
 ```
 ddpoker/
-  code/                    # All Java source (Maven multi-module)
+  .claude/                 # Project documentation and guides
+  code/                    # All Java source (Maven multi-module, 21 modules)
     pom.xml                # Parent POM
-    common/                # Through proto/ (22 modules)
-  docs/                    # Documentation (AI whitepaper, etc.)
-  images/                  # Screenshots, logos
-  runtime/                 # Runtime files (messages, logs)
+  docs/                    # Technical documentation (AI whitepaper, etc.)
+  images/                  # Screenshots, logos (README assets)
+  runtime/                 # Runtime files (messages, logs) - gitignored
   tools/
-    bin/                   # Shell scripts (poker, pokerserver, pokerweb, runjava, etc.)
-    db/                    # Database scripts (create_dbs.sql, reset_dbs.sh, etc.)
-  guidelines/              # Project guidelines and documentation
-  docker/                  # Docker-related files
+    scripts/               # Windows PowerShell development scripts
+  docker/                  # Docker deployment files
     docker-compose.yml     # Docker Compose configuration
     Dockerfile             # Container image definition (pokerserver + pokerweb + H2)
     entrypoint.sh          # Container startup script (dual-process manager)
-  ddpoker.rc               # Environment setup script (aliases, PATH, JAVA_HOME)
+    README.md              # Docker usage instructions
+  unraid/                  # Unraid Community App template
+  ddpoker.rc               # Environment setup script (Linux/Mac only)
 ```
 
 ## Known Quirks

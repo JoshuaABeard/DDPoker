@@ -41,67 +41,54 @@ docker --version
 
 ### Quick Build (skip tests)
 
-From Git Bash or similar shell:
-
-```shell
-cd C:\Repos\DDPoker
-source ddpoker.rc
-mvn-package-notests
-```
-
-Or directly:
-
 ```shell
 cd C:\Repos\DDPoker\code
 mvn package -DskipTests=true
 ```
 
-Build time: ~60 seconds. All 22 modules should report SUCCESS.
+Build time: ~60 seconds. All 21 modules should report SUCCESS.
 
 ### Build with Tests
 
 Tests use embedded H2 database:
 
 ```shell
-source ddpoker.rc
-mvn-test
+cd C:\Repos\DDPoker\code
+mvn test
 ```
 
 ### Install to Local Maven Repo
 
 ```shell
-source ddpoker.rc
-mvn-install-notests
+cd C:\Repos\DDPoker\code
+mvn install -DskipTests=true
 ```
 
-## Running Components
+## Running Components (Windows)
+
+For Windows development, use the PowerShell scripts in `tools/scripts/`:
 
 ### Poker Game (Desktop Client)
 
-```shell
-source ddpoker.rc
-poker
+```powershell
+.\tools\scripts\run-client-local.ps1
 ```
 
 ### Poker Server (Backend API)
 
 Uses embedded H2 database (automatic, no setup needed):
 
-```shell
-source ddpoker.rc
-pokerserver
+```powershell
+.\tools\scripts\run-server-local.ps1
 ```
 
-### Poker Website (Wicket via Jetty)
+Includes both pokerserver and pokerweb. Access web interface at: http://localhost:8080/online
 
-Uses embedded H2 database (automatic, no setup needed):
+### Second Client (for multiplayer testing)
 
-```shell
-source ddpoker.rc
-pokerweb
+```powershell
+.\tools\scripts\run-client-local-2.ps1
 ```
-
-Access at: http://localhost:8080/online
 
 ## Docker Deployment
 
