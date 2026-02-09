@@ -547,39 +547,591 @@ DESCRIBE online_profile;
 - Compile after each major change
 - Thorough testing of all game modes
 
+## TDD Approach
+
+This feature will be developed using **Test-Driven Development (TDD)** with modern testing frameworks.
+
+### Testing Framework: JUnit 5 (Jupiter)
+
+**Why JUnit 5:**
+- Modern annotations (`@Test`, `@BeforeEach`, `@AfterEach`, `@TempDir`)
+- Better parameterized testing for cross-platform scenarios (`@ParameterizedTest`)
+- Improved assertions and test organization
+- Compatible with existing JUnit 4 tests (can coexist in same project)
+
+**Additional Testing Tools:**
+- **AssertJ** - Fluent assertions for better readability
+- **Mockito** - Mocking for GameEngine and legacy code isolation
+- **@TempDir** - Clean test isolation for file operations
+- Project already has Jackson for JSON
+
+**Add to `code/common/pom.xml`:**
+```xml
+<!-- JUnit 5 (Jupiter) -->
+<dependency>
+    <groupId>org.junit.jupiter</groupId>
+    <artifactId>junit-jupiter</artifactId>
+    <version>5.11.0</version>
+    <scope>test</scope>
+</dependency>
+
+<!-- AssertJ for fluent assertions -->
+<dependency>
+    <groupId>org.assertj</groupId>
+    <artifactId>assertj-core</artifactId>
+    <version>3.27.0</version>
+    <scope>test</scope>
+</dependency>
+
+<!-- Mockito for mocking -->
+<dependency>
+    <groupId>org.mockito</groupId>
+    <artifactId>mockito-core</artifactId>
+    <version>5.11.0</version>
+    <scope>test</scope>
+</dependency>
+
+<!-- Mockito-JUnit Jupiter integration -->
+<dependency>
+    <groupId>org.mockito</groupId>
+    <artifactId>mockito-junit-jupiter</artifactId>
+    <version>5.11.0</version>
+    <scope>test</scope>
+</dependency>
+```
+
+### TDD Cycle for Each Feature
+
+Follow **Red-Green-Refactor** for each capability:
+
+1. **🔴 RED** - Write a failing test that defines desired behavior
+2. **🟢 GREEN** - Write minimal code to make the test pass
+3. **🔵 REFACTOR** - Clean up code while keeping tests green
+4. **♻️ REPEAT** - Next test for next behavior
+
+### Test-First Development Order
+
+**Cycle 1: PlayerIdentity - UUID Generation**
+```java
+@Test
+void should_GenerateValidUUIDv4_When_CreateCalled() {
+    // RED: Test fails (PlayerIdentity doesn't exist yet)
+    String playerId = PlayerIdentity.generatePlayerId();
+
+    // GREEN: Implement generatePlayerId() using UUID.randomUUID()
+    assertThat(playerId).matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
+
+    // REFACTOR: Verify UUID v4 format specifically
+}
+
+@Test
+void should_GenerateUniqueIds_When_CalledMultipleTimes() {
+    // Ensure no collisions
+    Set<String> ids = new HashSet<>();
+    for (int i = 0; i < 1000; i++) {
+        ids.add(PlayerIdentity.generatePlayerId());
+    }
+    assertThat(ids).hasSize(1000);
+}
+```
+
+**Cycle 2: PlayerIdentity - Platform Detection**
+```java
+@ParameterizedTest
+@ValueSource(strings = {"windows 10", "windows 11", "windows server 2022"})
+void should_DetectWindowsConfigDirectory_When_RunningOnWindows(String osName) {
+    // RED: Test fails (getConfigDirectory() not implemented)
+    // Mock system property
+    System.setProperty("os.name", osName);
+
+    // GREEN: Implement getConfigDirectory() for Windows
+    String configDir = PlayerIdentity.getConfigDirectory();
+
+    // REFACTOR: Verify correct APPDATA path
+    assertThat(configDir).contains("\\ddpoker");
+    assertThat(configDir).doesNotStartWith(".");
+}
+
+@Test
+void should_UseMacOSPath_When_RunningOnMacOS() {
+    System.setProperty("os.name", "Mac OS X");
+
+    String configDir = PlayerIdentity.getConfigDirectory();
+
+    assertThat(configDir).contains("/Library/Application Support/ddpoker");
+}
+
+@Test
+void should_UseLinuxHiddenPath_When_RunningOnLinux() {
+    System.setProperty("os.name", "Linux");
+
+    String configDir = PlayerIdentity.getConfigDirectory();
+
+    assertThat(configDir).endsWith("/.ddpoker");
+}
+```
+
+**Cycle 3: PlayerIdentity - Save/Load**
+```java
+@Test
+void should_SavePlayerIdToFile_When_SaveCalled(@TempDir Path tempDir) {
+    // RED: Test fails (save() not implemented)
+    // Override config directory for testing
+    PlayerIdentity.setConfigDirectory(tempDir.toString());
+
+    String playerId = "550e8400-e29b-41d4-a716-446655440000";
+
+    // GREEN: Implement save() with Jackson
+    PlayerIdentity.save(playerId);
+
+    // REFACTOR: Verify file exists and contains correct JSON
+    Path playerFile = tempDir.resolve("player.json");
+    assertThat(playerFile).exists();
+
+    String content = Files.readString(playerFile);
+    assertThat(content).contains("\"playerId\" : \"550e8400-e29b-41d4-a716-446655440000\"");
+}
+
+@Test
+void should_LoadPlayerIdFromFile_When_FileExists(@TempDir Path tempDir) {
+    // Setup: Create player.json
+    PlayerIdentity.setConfigDirectory(tempDir.toString());
+    String originalId = "550e8400-e29b-41d4-a716-446655440000";
+    PlayerIdentity.save(originalId);
+
+    // Test load
+    String loadedId = PlayerIdentity.loadOrCreate();
+
+    assertThat(loadedId).isEqualTo(originalId);
+}
+
+@Test
+void should_GenerateNewId_When_FileDoesNotExist(@TempDir Path tempDir) {
+    PlayerIdentity.setConfigDirectory(tempDir.toString());
+
+    String playerId = PlayerIdentity.loadOrCreate();
+
+    assertThat(playerId).isNotNull();
+    assertThat(playerId).matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
+
+    // Verify file was created
+    Path playerFile = tempDir.resolve("player.json");
+    assertThat(playerFile).exists();
+}
+
+@Test
+void should_GenerateNewId_When_FileCorrupted(@TempDir Path tempDir) {
+    // Setup: Create corrupted player.json
+    PlayerIdentity.setConfigDirectory(tempDir.toString());
+    Path playerFile = tempDir.resolve("player.json");
+    Files.createDirectories(playerFile.getParent());
+    Files.writeString(playerFile, "invalid json {{{");
+
+    // Test recovery
+    String playerId = PlayerIdentity.loadOrCreate();
+
+    assertThat(playerId).isNotNull();
+    assertThat(playerId).matches("[0-9a-f]{8}-.*");
+}
+```
+
+**Cycle 4: GameEngine - Player ID Management**
+```java
+@Test
+void should_GetPlayerId_When_Called() {
+    // RED: Test fails (getPlayerId() not implemented)
+    GameEngine engine = new GameEngine("test", "poker");
+
+    // GREEN: Implement getPlayerId()
+    String playerId = engine.getPlayerId();
+
+    // REFACTOR: Verify valid UUID returned
+    assertThat(playerId).isNotNull();
+    assertThat(playerId).matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
+}
+
+@Test
+void should_PersistPlayerId_When_SetPlayerIdCalled(@TempDir Path tempDir) {
+    PlayerIdentity.setConfigDirectory(tempDir.toString());
+    GameEngine engine = new GameEngine("test", "poker");
+
+    String newId = "550e8400-e29b-41d4-a716-446655440000";
+    engine.setPlayerId(newId);
+
+    // Verify saved to file
+    String loadedId = PlayerIdentity.loadOrCreate();
+    assertThat(loadedId).isEqualTo(newId);
+}
+
+@Test
+void should_NotHaveLicenseKeyMethods_When_RefactoringComplete() {
+    // Verify old methods removed
+    GameEngine engine = new GameEngine("test", "poker");
+
+    assertThatThrownBy(() -> {
+        Method method = GameEngine.class.getMethod("getRealLicenseKey");
+        method.invoke(engine);
+    }).isInstanceOf(NoSuchMethodException.class);
+
+    // Verify more removed methods
+    assertThatThrownBy(() -> GameEngine.class.getMethod("setLicenseKey", String.class))
+        .isInstanceOf(NoSuchMethodException.class);
+    assertThatThrownBy(() -> GameEngine.class.getMethod("isActivationNeeded"))
+        .isInstanceOf(NoSuchMethodException.class);
+}
+```
+
+**Cycle 5: PokerPlayer - Player ID Field**
+```java
+@Test
+void should_UsePlayerId_When_ConstructorCalled() {
+    // RED: Test fails (playerId parameter doesn't exist)
+    String playerId = "550e8400-e29b-41d4-a716-446655440000";
+
+    // GREEN: Change constructor from (String sKey, ...) to (String playerId, ...)
+    PokerPlayer player = new PokerPlayer(playerId, 1, "TestPlayer", true);
+
+    // REFACTOR: Verify playerId stored
+    assertThat(player.getPlayerId()).isEqualTo(playerId);
+}
+
+@Test
+void should_NotHaveKeyMethods_When_RefactoringComplete() {
+    // Verify old methods removed
+    assertThatThrownBy(() -> PokerPlayer.class.getMethod("getKey"))
+        .isInstanceOf(NoSuchMethodException.class);
+    assertThatThrownBy(() -> PokerPlayer.class.getMethod("setKey", String.class))
+        .isInstanceOf(NoSuchMethodException.class);
+}
+
+@Test
+void should_HavePlayerIdMethods_When_RefactoringComplete() {
+    // Verify new methods exist
+    assertThatCode(() -> {
+        Method getMethod = PokerPlayer.class.getMethod("getPlayerId");
+        Method setMethod = PokerPlayer.class.getMethod("setPlayerId", String.class);
+    }).doesNotThrowAnyException();
+}
+```
+
+**Cycle 6: OnlineProfile - Remove License Fields**
+```java
+@Test
+void should_NotHaveLicenseKeyField_When_RefactoringComplete() {
+    OnlineProfile profile = new OnlineProfile();
+
+    // Verify field removed
+    assertThatThrownBy(() -> {
+        Method method = OnlineProfile.class.getMethod("getLicenseKey");
+        method.invoke(profile);
+    }).isInstanceOf(NoSuchMethodException.class);
+}
+
+@Test
+void should_HaveUUIDField_When_RefactoringComplete() {
+    OnlineProfile profile = new OnlineProfile();
+
+    String uuid = "550e8400-e29b-41d4-a716-446655440000";
+    profile.setUuid(uuid);
+
+    assertThat(profile.getUuid()).isEqualTo(uuid);
+}
+
+@Test
+void should_NotHaveActivatedField_When_RefactoringComplete() {
+    // Verify isActivated() and setActivated() removed
+    assertThatThrownBy(() -> OnlineProfile.class.getMethod("isActivated"))
+        .isInstanceOf(NoSuchMethodException.class);
+}
+```
+
+**Cycle 7: Database Migration**
+```java
+@Test
+void should_RemoveLicenseKeyColumn_When_MigrationRun() {
+    // RED: Test fails (migration not created)
+    // Setup in-memory H2 database
+    Connection conn = DriverManager.getConnection("jdbc:h2:mem:test");
+
+    // Create old schema with license columns
+    Statement stmt = conn.createStatement();
+    stmt.execute("CREATE TABLE online_profile (" +
+                 "wpr_id INT PRIMARY KEY, " +
+                 "wpr_license_key VARCHAR(50), " +
+                 "wpr_is_activated BOOLEAN, " +
+                 "wpr_uuid VARCHAR(36))");
+
+    // GREEN: Run migration script
+    runMigrationScript(conn, "migration-remove-licensing.sql");
+
+    // REFACTOR: Verify columns removed
+    DatabaseMetaData meta = conn.getMetaData();
+    ResultSet columns = meta.getColumns(null, null, "ONLINE_PROFILE", "WPR_LICENSE_KEY");
+    assertThat(columns.next()).isFalse(); // Column should not exist
+
+    columns = meta.getColumns(null, null, "ONLINE_PROFILE", "WPR_IS_ACTIVATED");
+    assertThat(columns.next()).isFalse();
+}
+
+@Test
+void should_MakeUUIDNotNull_When_MigrationRun() {
+    Connection conn = DriverManager.getConnection("jdbc:h2:mem:test");
+    setupOldSchema(conn);
+
+    runMigrationScript(conn, "migration-remove-licensing.sql");
+
+    // Verify UUID is NOT NULL
+    ResultSet columns = conn.getMetaData().getColumns(null, null, "ONLINE_PROFILE", "WPR_UUID");
+    assertThat(columns.next()).isTrue();
+    assertThat(columns.getInt("NULLABLE")).isEqualTo(DatabaseMetaData.columnNoNulls);
+}
+
+@Test
+void should_EnforceUUIDUniqueness_When_MigrationRun() {
+    Connection conn = DriverManager.getConnection("jdbc:h2:mem:test");
+    setupOldSchema(conn);
+    runMigrationScript(conn, "migration-remove-licensing.sql");
+
+    Statement stmt = conn.createStatement();
+    stmt.execute("INSERT INTO online_profile (wpr_id, wpr_uuid) VALUES (1, '550e8400-e29b-41d4-a716-446655440000')");
+
+    // Try to insert duplicate UUID
+    assertThatThrownBy(() -> {
+        stmt.execute("INSERT INTO online_profile (wpr_id, wpr_uuid) VALUES (2, '550e8400-e29b-41d4-a716-446655440000')");
+    }).hasMessageContaining("UNIQUE"); // Should fail on unique constraint
+}
+```
+
+**Cycle 8: Integration Tests - Online Game Flow**
+```java
+@Test
+void should_CreatePlayerWithUUID_When_JoiningOnlineGame() {
+    // Integration test: Full flow from profile creation to game join
+
+    // 1. Create profile (no license key)
+    OnlineProfile profile = new OnlineProfile();
+    profile.setName("TestPlayer");
+    profile.setUuid(PlayerIdentity.generatePlayerId());
+
+    // 2. Create PokerPlayer
+    PokerPlayer player = new PokerPlayer(profile.getUuid(), 1, profile.getName(), true);
+
+    // 3. Verify UUID used as identifier
+    assertThat(player.getPlayerId()).isEqualTo(profile.getUuid());
+    assertThat(player.getPlayerId()).matches("[0-9a-f]{8}-.*");
+}
+
+@Test
+void should_UseUUIDForSessionKey_When_ValidatingProfile() {
+    // Test ValidateProfile.java logic
+    OnlineProfile profile = new OnlineProfile();
+    profile.setUuid("550e8400-e29b-41d4-a716-446655440000");
+
+    // Simulate validation
+    String sessionKey = profile.getUuid();
+    DDMessage.setDefaultKey(sessionKey);
+
+    assertThat(DDMessage.getDefaultKey()).isEqualTo(profile.getUuid());
+}
+```
+
+**Cycle 9: Code Cleanup Verification**
+```java
+@Test
+void should_NotFindLicensingReferences_When_CleanupComplete() throws IOException {
+    // Grep-style test to verify no licensing code remains
+    Path codeDir = Paths.get("code");
+
+    List<Path> javaFiles = Files.walk(codeDir)
+        .filter(p -> p.toString().endsWith(".java"))
+        .collect(Collectors.toList());
+
+    List<String> violations = new ArrayList<>();
+
+    for (Path file : javaFiles) {
+        String content = Files.readString(file);
+
+        // Check for forbidden patterns
+        if (content.contains("Activation.REGKEY")) {
+            violations.add(file + " contains Activation.REGKEY");
+        }
+        if (content.contains("getRealLicenseKey")) {
+            violations.add(file + " contains getRealLicenseKey");
+        }
+        if (content.contains("isBannedLicenseKey")) {
+            violations.add(file + " contains isBannedLicenseKey");
+        }
+        if (content.contains("keyValidated")) {
+            violations.add(file + " contains keyValidated");
+        }
+    }
+
+    assertThat(violations).isEmpty();
+}
+
+@Test
+void should_NotHaveDeletedClasses_When_CleanupComplete() {
+    // Verify deleted classes don't exist
+    assertThatThrownBy(() -> Class.forName("com.donohoedigital.config.Activation"))
+        .isInstanceOf(ClassNotFoundException.class);
+
+    assertThatThrownBy(() -> Class.forName("com.donohoedigital.games.engine.Activate"))
+        .isInstanceOf(ClassNotFoundException.class);
+
+    assertThatThrownBy(() -> Class.forName("com.donohoedigital.games.engine.License"))
+        .isInstanceOf(ClassNotFoundException.class);
+}
+```
+
+### Test Organization
+
+**PlayerIdentityTest.java** - Unit tests for UUID management
+- UUID v4 generation and validation
+- Platform-specific directory detection
+- JSON save/load operations
+- Corruption recovery
+
+**GameEnginePlayerIdTest.java** - GameEngine refactoring tests
+- Player ID getter/setter
+- Verification of removed license methods
+- Integration with PlayerIdentity
+
+**PokerPlayerRefactoringTest.java** - PokerPlayer field rename tests
+- Constructor parameter changes
+- playerId getter/setter
+- Verification of removed key methods
+
+**OnlineProfileRefactoringTest.java** - OnlineProfile cleanup tests
+- UUID field usage
+- License field removal verification
+- Database column mapping
+
+**DatabaseMigrationTest.java** - Database schema tests
+- License column removal
+- UUID constraints (NOT NULL, UNIQUE)
+- Migration script execution
+
+**LicensingRemovalIntegrationTest.java** - End-to-end tests
+- Online game flow with UUID
+- Session management
+- Player creation and authentication
+
+**CodeCleanupVerificationTest.java** - Static analysis tests
+- Grep-style checks for forbidden patterns
+- Deleted class verification
+- Import statement validation
+
+### Test Naming Convention
+```java
+@Test
+void should_GenerateValidUUID_When_PlayerIdentityCreated() { }
+
+@Test
+void should_RemoveLicenseKey_When_OnlineProfileRefactored() { }
+
+@Test
+void should_UsePlayerId_When_PokerPlayerConstructed() { }
+```
+
+### Mocking Strategy
+
+**When to Mock:**
+- GameEngine initialization (heavy Spring context)
+- Database connections (use H2 in-memory for tests)
+- File system operations (use @TempDir instead)
+
+**Example with Mockito:**
+```java
+@ExtendWith(MockitoExtension.class)
+class PokerGameRefactoringTest {
+
+    @Mock
+    private GameEngine mockEngine;
+
+    @Test
+    void should_UseEnginePlayerId_When_CreatingAIPlayer() {
+        when(mockEngine.getPlayerId()).thenReturn("550e8400-e29b-41d4-a716-446655440000");
+
+        PokerGame game = new PokerGame(mockEngine);
+        PokerPlayer ai = game.createAIPlayer(1, "AI Player");
+
+        verify(mockEngine).getPlayerId();
+        assertThat(ai.getPlayerId()).isEqualTo("550e8400-e29b-41d4-a716-446655440000");
+    }
+}
+```
+
+### TDD Benefits for This Feature
+
+✅ **Confidence** - Every refactored line has tests proving it works
+✅ **Regression Protection** - Ensure no licensing code slips through
+✅ **Refactoring Safety** - Can rename fields/methods with confidence
+✅ **Documentation** - Tests show how UUID system replaces licensing
+✅ **Integration Validation** - Verify online game flow still works
+✅ **Database Safety** - Migration scripts tested before production
+
+### Test Coverage Goals
+
+**Minimum Coverage:**
+- PlayerIdentity.java: **95%** (core functionality)
+- GameEngine player ID methods: **90%**
+- PokerPlayer refactoring: **85%**
+- OnlineProfile refactoring: **85%**
+- Database migration: **100%** (critical)
+
+**Overall Project Coverage:**
+- Maintain existing 65% minimum threshold
+- No decrease in coverage from refactoring
+
 ## Implementation Phases
 
-### Phase 1: Core Refactoring (8-10 hours)
-1. Create `PlayerIdentity.java` class
-2. Delete 6 licensing files (Activation, License, etc.)
-3. Refactor `GameEngine.java` (remove 260 lines)
-4. Update `PokerPlayer.java` (sKey_ → playerId_)
-5. Update `OnlineProfile.java` (remove license fields)
-6. Compile and fix immediate errors
+### Phase 0: TDD Setup (1-2 hours)
+1. **Add JUnit 5 and Mockito** to `code/common/pom.xml`
+2. **Configure test runner** - Ensure Maven Surefire runs JUnit 5 tests
+3. **Create test structure** - Package layout for new test files
+4. **Verify setup** - Run existing tests to ensure no conflicts
 
-### Phase 2: Propagate Changes (6-8 hours)
-1. Update all PokerPlayer constructors (23 files)
-2. Update player creation points (PokerGame, OnlineManager, etc.)
-3. Remove UI activation menus/dialogs
-4. Update property files (remove activation text)
-5. Clean up Java Preferences usage
-6. Compile and test
+### Phase 1: Core Refactoring with TDD (10-12 hours)
+1. **Write tests** for `PlayerIdentity.java` (UUID generation, save/load, platform detection)
+2. **Implement** `PlayerIdentity.java` to make tests pass
+3. **Write tests** for GameEngine player ID methods
+4. **Delete** 6 licensing files (Activation, License, etc.)
+5. **Refactor** `GameEngine.java` (remove 260 lines, add player ID methods)
+6. **Write tests** for PokerPlayer field changes
+7. **Update** `PokerPlayer.java` (sKey_ → playerId_)
+8. **Write tests** for OnlineProfile refactoring
+9. **Update** `OnlineProfile.java` (remove license fields)
+10. **Compile and verify** all tests pass
 
-### Phase 3: Database & Server (4-5 hours)
-1. Create database migration script
-2. Update server-side validation (PokerServlet)
-3. Test online profile creation
-4. Test online game sessions
-5. Verify UUID uniqueness enforcement
+### Phase 2: Propagate Changes with TDD (7-9 hours)
+1. **Write integration tests** for player creation flows
+2. **Update** all PokerPlayer constructors (23 files)
+3. **Update** player creation points (PokerGame, OnlineManager, etc.)
+4. **Write tests** verifying old methods removed
+5. **Remove** UI activation menus/dialogs
+6. **Update** property files (remove activation text)
+7. **Clean up** Java Preferences usage
+8. **Compile and test** - all unit tests pass
 
-### Phase 4: Testing & Polish (5-6 hours)
-1. Full regression testing (single player, multiplayer)
-2. Cross-platform testing (Windows, macOS, Linux)
-3. UUID generation/persistence testing
-4. Help documentation updates
-5. Final grep verification (no license references)
+### Phase 3: Database & Server with TDD (5-6 hours)
+1. **Write tests** for database migration
+2. **Create** database migration script
+3. **Write tests** for server-side UUID validation
+4. **Update** server-side validation (PokerServlet)
+5. **Write integration tests** for online profile creation
+6. **Test** online game sessions
+7. **Verify** UUID uniqueness enforcement
 
-**Total Effort:** 23-29 hours
+### Phase 4: Testing & Polish (5-7 hours)
+1. **Write code cleanup verification tests** (grep-style checks)
+2. **Full regression testing** (single player, multiplayer)
+3. **Cross-platform testing** (Windows, macOS, Linux)
+4. **UUID generation/persistence testing**
+5. **Help documentation updates**
+6. **Final grep verification** (no license references)
+7. **Code coverage review** - ensure 65% minimum maintained
+
+**Total Effort with TDD:** 27-34 hours (includes test writing time, higher quality outcome)
 
 ## Success Criteria
 
@@ -593,6 +1145,9 @@ The license removal is successful when:
 6. **Functional gameplay** - All modes work without activation
 7. **Online multiplayer** - UUID-based sessions work correctly
 8. **Professional UX** - Open source experience with no commercial artifacts
+9. **Comprehensive test coverage** - All new code has unit tests (95%+ for PlayerIdentity, 85%+ for refactored classes)
+10. **All tests passing** - Zero test failures, project builds successfully with `mvn clean test`
+11. **Code cleanup verified** - Static analysis tests confirm no licensing references remain
 
 ## Notes and Considerations
 
