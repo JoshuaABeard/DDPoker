@@ -142,6 +142,5 @@ EXPOSE 8877 8080 11886/udp 11889/udp
 
 # Persistent volumes
 VOLUME /data
-VOLUME /app/downloads
 
 ENTRYPOINT ["/app/entrypoint.sh"]

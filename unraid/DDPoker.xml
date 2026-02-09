@@ -41,9 +41,6 @@
   <Config Name="Data" Target="/data" Default="/mnt/user/appdata/ddpoker/data" Mode="rw"
           Description="Database and runtime files" Type="Path" Display="always" Required="true" />
 
-  <Config Name="Client Installers" Target="/app/downloads" Default="/mnt/user/appdata/ddpoker/clientInstallers" Mode="rw"
-          Description="Client installer cache (Windows/Mac/Linux)" Type="Path" Display="always" Required="true" />
-
   <!-- Note: Database configuration is automatic using embedded H2 database -->
   <!-- No manual database configuration required -->
 

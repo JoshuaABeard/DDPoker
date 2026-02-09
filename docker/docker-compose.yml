@@ -11,7 +11,6 @@ services:
       - "11889:11889/udp" # pokerserver UDP (connection test)
     volumes:
       - ddpoker_data:/data
-      - installer_cache:/app/downloads  # Cache installers for faster restarts
     environment:
       # Server URL configuration for installers
       - SERVER_HOST=${SERVER_HOST:-localhost}
@@ -51,4 +50,3 @@ services:
 
 volumes:
   ddpoker_data:
-  installer_cache:  # Persistent installer cache
