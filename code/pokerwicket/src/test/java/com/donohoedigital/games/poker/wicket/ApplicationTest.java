@@ -39,11 +39,12 @@ import com.donohoedigital.games.poker.service.OnlineGameService;
 import com.donohoedigital.games.poker.service.OnlineProfileService;
 import com.donohoedigital.games.poker.wicket.pages.online.Search;
 import com.donohoedigital.games.server.service.BannedKeyService;
-import junit.framework.TestCase;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.wicket.spring.test.ApplicationContextMock;
 import org.apache.wicket.util.tester.WicketTester;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,13 +52,10 @@ import java.util.List;
 import static org.easymock.EasyMock.*;
 
 /**
- * Created by IntelliJ IDEA.
- * User: donohoe
- * Date: May 12, 2008
- * Time: 10:47:51 AM
- * Rudimentary test which uses mocking and WicketTester
+ * Tests for PokerWicketApplication using WicketTester and EasyMock.
+ * Verifies that Wicket pages render correctly with mocked services.
  */
-public class ApplicationTest extends TestCase
+class ApplicationTest
 {
     Logger logger = LogManager.getLogger(ApplicationTest.class);
 
@@ -67,8 +65,8 @@ public class ApplicationTest extends TestCase
 
     private final String searchString = "+";
 
-    @Override
-    public void setUp()
+    @BeforeEach
+    void setUp()
     {
         new ConfigManager("test", ApplicationType.WEBAPP);
 
@@ -114,7 +112,8 @@ public class ApplicationTest extends TestCase
         tester = new WicketTester(wicketApplication);
     }
 
-    public void testSearch()
+    @Test
+    void should_RenderSearchPage_When_FormSubmitted()
     {
         // start and render the test page
         tester.startPage(Search.class);
@@ -127,8 +126,6 @@ public class ApplicationTest extends TestCase
 
         // to get actual HTML
         if (verbose) tester.dumpPage();
-
-        logger.debug("XXXXXXXXXXXXXXXXXXX ===== form submit ===== XXXXXXXXXXXXXXXXXXX");
 
         // set search criteria
         tester.getLastRenderedPage().getPageParameters().set("form:name", searchString);

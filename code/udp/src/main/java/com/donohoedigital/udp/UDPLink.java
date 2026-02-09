@@ -667,7 +667,7 @@ public class UDPLink
                             {
                                 if (UDPServer.DEBUG_RESEND)
                                 {
-                                    logger.debug("  XXXX RESEND FAIL " + data + " " + toStringNameIP());
+                                    logger.debug("  RESEND FAIL " + data + " " + toStringNameIP());
                                 }
 
                                 iter.remove();
