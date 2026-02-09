@@ -107,7 +107,7 @@ public class CSVParser
                 {
                     if (!bInsideQuote)
                     {
-                        // TODO: ERROR CONDITION - what to do?
+                        throw new IllegalArgumentException("CSV parsing error: unmatched quote at end of line");
                     }
                     bInsideQuote = false;
                 }
