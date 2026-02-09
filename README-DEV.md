@@ -411,8 +411,7 @@ killall -u $USER cfprefsd
 ### Classpath and Dependency Tree
 
 We override the `mvn dependency:tree` to create `target/classpath.txt` in each module, which
-is used by the `runjava` and `buildall.pl` scripts to determine the jar files needed to
-run a program.
+is used by the `runjava` script to determine the jar files needed to run a program.
 
 To get the default tree output, to diagnose dependency issues, run this in `code` or in a particular
 module, like `code/wicket`.

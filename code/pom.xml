@@ -46,7 +46,6 @@
     <module>common</module>
     <module>mail</module>
     <module>gui</module>
-    <module>installer</module>
     <module>db</module>
     <module>wicket</module>
     <module>jsp</module>

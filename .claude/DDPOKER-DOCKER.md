@@ -549,23 +549,8 @@ The build happens automatically at container startup if needed:
 
 1. **Configure URLs**: Updates `client.properties` and `gamedef.xml` with your server URL
 2. **Build Client**: Compiles Java code with Maven
-3. **Generate Installers**: Uses Install4j to create native installers (if available)
-4. **Fallback**: Creates fat JAR if Install4j not present
-5. **Cache**: Saves to `/app/downloads` volume for reuse
-
-### Install4j Support
-
-The project has an **open source Install4j license** for building native installers.
-
-**To enable Install4j in Docker** (future enhancement):
-```dockerfile
-# Add to Dockerfile
-RUN wget https://download.ej-technologies.com/install4j/install4j_linux_10_0_9.tar.gz && \
-    tar -xzf install4j_linux_10_0_9.tar.gz -C /opt/ && \
-    ln -s /opt/install4j10 /opt/install4j
-```
-
-**Without Install4j**: Container automatically falls back to fat JAR distribution (20 MB, requires Java 25).
+3. **Generate JAR**: Creates fat JAR distribution (20 MB, requires Java 25)
+4. **Cache**: Saves to `/app/downloads` volume for reuse
 
 ### Viewing Available Downloads
 
@@ -596,10 +581,9 @@ docker compose restart
 
 | Scenario | Time | Notes |
 |----------|------|-------|
-| **First startup** (building installers) | 5-10 min | Maven + Install4j build |
-| **Subsequent restarts** (cached) | <10 sec | Uses cached installers |
-| **SERVER_HOST changed** | 5-10 min | Rebuilds with new URL |
-| **Fat JAR fallback** (no Install4j) | ~2 min | Maven build only |
+| **First startup** (building installer) | ~2 min | Maven build |
+| **Subsequent restarts** (cached) | <10 sec | Uses cached installer |
+| **SERVER_HOST changed** | ~2 min | Rebuilds with new URL |
 
 ### Volume Management
 
@@ -672,10 +656,9 @@ docker compose up --force-recreate
 - Subsequent restarts use cached installers (<10 sec)
 - Check logs: `docker compose logs -f`
 
-**Fat JAR instead of native installers:**
-- Install4j not present in container (expected currently)
-- Fat JAR fallback works but requires Java 25
-- Future: Add Install4j to Dockerfile for native installers
+**Client installer:**
+- Fat JAR distribution (requires Java 25 on client machines)
+- Download available at http://localhost:8080/downloads/
 
 ## Future Plans
 

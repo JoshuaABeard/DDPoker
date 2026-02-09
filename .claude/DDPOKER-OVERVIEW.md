@@ -103,7 +103,6 @@ ddpoker/
     common/                # Through proto/ (22 modules)
   docs/                    # Documentation (AI whitepaper, etc.)
   images/                  # Screenshots, logos
-  installer/               # install4j configuration
   runtime/                 # Runtime files (messages, logs)
   tools/
     bin/                   # Shell scripts (poker, pokerserver, pokerweb, runjava, etc.)

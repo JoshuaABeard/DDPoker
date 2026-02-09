@@ -40,15 +40,7 @@ SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPTDIR"
 DDHOME="$(git rev-parse --show-toplevel)"
 
-JAVAOPTS=""
-
-# Mac only options
-if [[ "${OSTYPE:0:6}" == "darwin" ]]; then
-  JAVAOPTS="-Xdock:icon="$DDHOME/installer/install4j/custom/ddpokericon.icns""
-fi
-
 runjava poker \
-  $JAVAOPTS \
   -Dsun.java2d.noddraw=true -Dverbose:gc \
   -Dlog4j.rootLogger="DEBUG, Console" \
   -Xms32m -Xmx64m com.donohoedigital.games.poker.PokerMain "$@"
