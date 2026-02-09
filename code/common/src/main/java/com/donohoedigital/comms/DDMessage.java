@@ -926,7 +926,7 @@ public class DDMessage extends TypedHashMap implements PostWriter, PostReader, D
     /**
      * Get key
      */
-    static String getDefaultRealKey()
+    public static String getDefaultRealKey()
     {
         return realkey_;
     }

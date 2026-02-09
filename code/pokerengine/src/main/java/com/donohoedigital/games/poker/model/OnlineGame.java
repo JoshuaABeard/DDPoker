@@ -233,7 +233,7 @@ public class OnlineGame implements BaseModel<Long>, SimpleXMLEncodable
     private String tournamentAsString;
     private boolean ignoreSet = false;
 
-    @Column(name = "wgm_tournament_data", nullable = false)
+    @Column(name = "wgm_tournament_data", nullable = false, columnDefinition = "TEXT")
     String getTournamentAsString()
     {
         return tournamentAsString;
