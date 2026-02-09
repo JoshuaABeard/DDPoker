@@ -33,13 +33,35 @@ DDPoker now runs in a **single Docker container** with an embedded H2 database, 
 
 ## Quick Start
 
-### Prerequisites
+### Option 1: Use Pre-Built Image (Recommended)
 
+**Prerequisites:** Docker Desktop installed and running
+
+```bash
+# Run the latest version from Docker Hub
+docker run -d \
+  --name ddpoker \
+  -p 8080:8080 \
+  -p 8877:8877 \
+  -p 11886:11886/udp \
+  -p 11889:11889/udp \
+  -v ddpoker_data:/data \
+  -v ddpoker_installers:/app/downloads \
+  joshuaabeard/ddpoker:latest
+
+# View logs
+docker logs -f ddpoker
+
+# Access the web interface
+# Open browser to: http://localhost:8080/online
+```
+
+### Option 2: Build From Source
+
+**Prerequisites:**
 - Docker Desktop installed and running
-- Java 25+ and Maven 3.9+ (for building)
+- Java 25+ and Maven 3.9+
 - DDPoker source code
-
-### Build and Run
 
 ```bash
 # 1. Build the Java project

@@ -337,8 +337,7 @@ distribute this `.jar` file and run it like so:
 java -jar poker-3.0-jar-with-dependencies.jar
 ```
 
-For Mac users, if you also distribute the `installer/install4j/custom/ddpokericon.icns` file,
-you can get a dock icon:
+For Mac users, you can set a custom dock icon if available:
 
 ```shell
 java -Xdock:icon=ddpokericon.icns -jar poker-3.0-jar-with-dependencies.jar

@@ -39,18 +39,34 @@ this requires opening a port to allow inbound connections to your computer).
 The server component of DD Poker facilitates finding games posted by other users.  We
 no longer run a server, but you can run your own using the code in this repo.
 
-## Installers
+## Getting Started
 
-See [Releases](https://github.com/dougdonohoe/ddpoker/releases) for the latest Mac, Linux and Windows installers.
+### For Players
 
-[<img src="images/install4j_small.png">](https://www.ej-technologies.com/install4j)
-Installers are built by [Donohoe Digital LLC](https://www.donohoedigital.com/) 
-courtesy of a license to ej-technologies' 
-[excellent multi-platform installer builder, install4j](https://www.ej-technologies.com/install4j).
-We are grateful that they provided us an open source license.
+**Docker Deployment (Recommended):**
+The easiest way to run DD Poker server is using Docker. See [DDPOKER-DOCKER.md](.claude/DDPOKER-DOCKER.md) for complete instructions.
 
-There is also an option to distribute a jar file, which the _Installers_ section of
-the [Developer Notes](README-DEV.md) explains.
+Quick start:
+```bash
+docker run -d \
+  -p 8080:8080 \
+  -p 8877:8877 \
+  -v ddpoker_data:/data \
+  joshuaabeard/ddpoker:latest
+```
+
+Access the web interface at http://localhost:8080 to download desktop clients for Windows, Mac, and Linux.
+
+**Unraid Users:**
+DD Poker is available as an Unraid Community Application. See [unraid/README.md](unraid/README.md) for installation instructions.
+
+### For Developers
+
+See [README-DEV.md](README-DEV.md) for comprehensive development documentation, including:
+- Building from source
+- Running locally for development
+- Testing online multiplayer
+- Architecture overview
 
 ## TL;DR Running DD Poker From Source
 
