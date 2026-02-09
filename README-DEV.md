@@ -35,9 +35,8 @@ Required software:
 
 Both `java` and `mvn` must be on your `PATH`.
 
-We provide the `ddpoker.rc` file, which sets some environment variables required by the scripts in
-`tools/bin` and `tools/db`, adds these script directories to the `PATH`, creates some useful
-`mvn` aliases (used below) and performs some sanity checks.
+We provide the `ddpoker.rc` file (Linux/Mac only), which sets environment variables, creates
+`mvn` aliases, and performs sanity checks. For Windows, use the PowerShell scripts in `tools/scripts/`.
 
 **NOTE**: all commands below assume you have sourced `ddpoker.rc`, have `mvn` and `java` installed and are
 in the root of the `ddpoker` repository.

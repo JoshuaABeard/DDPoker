@@ -228,6 +228,6 @@ Database is automatically initialized on first run.
 ## Windows-Specific Notes
 
 - The `ddpoker.rc` script uses bash syntax. Use Git Bash, WSL, or MSYS2.
-- The `source ddpoker.rc` command sets `$WORK`, adds `tools/bin` and `tools/db` to PATH, and creates Maven aliases.
+- The `source ddpoker.rc` command sets `$WORK` and creates Maven aliases.
 - Docker Desktop may require a reboot after first install and must be launched before using `docker` commands.
 - Maven was not available via winget; manual download was required.
