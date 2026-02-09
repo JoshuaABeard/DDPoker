@@ -1,43 +1,49 @@
-# DD Poker
+# DD Poker - Community Edition
 
-## About This Repo
+> **Community-maintained fork** of DD Poker with enhanced Docker deployment and modern build tooling.
+>
+> **Version:** 3.2.0-community
+> **Original Work:** [DD Poker by Doug Donohoe](https://github.com/dougdonohoe/ddpoker) (2003-2017)
 
 ![dd-poker-3.jpg](images/dd-poker-3.jpg)
 
-This repository contains all the source code for the [DD Poker](https://www.ddpoker.com/home/)
-computer game, the underlying game engine, the supporting 
-backend server, and the companion website. The game itself is 
-a Java Swing-based desktop application that is capable of running
-on Mac, Linux and Windows.  The backend-server uses an embedded H2 database
-for data storage.  The website (aka "Online Portal") is built on the
-Apache Wicket framework.
+## About This Fork
 
-## About The Game
+This is a **community-maintained fork** of DD Poker, created to provide:
+- 🐳 **Modern Docker deployment** with Docker Compose support
+- 🏗️ **Streamlined build process** optimized for Windows development
+- 📦 **Universal client JAR** for easy distribution (21MB)
+- 🔧 **Updated dependencies** compatible with Java 25
+- 📚 **Comprehensive documentation** for deployment and development
 
-For a full description of the game, visit [ddpoker.com](https://www.ddpoker.com/about/).
+**This fork is not affiliated with or endorsed by Doug Donohoe or Donohoe Digital LLC.** All original code, trademarks, and creative assets remain the property of their respective owners. See [Copyright and Licenses](#copyright-and-licenses) for details.
 
-The DD Poker game is a full-featured Texas Hold'em (no-limit, pot-limit, limit) simulator, allowing
-you to play against AI and human opponents.  It also has a poker clock for running your own 
-home tournaments and a sophisticated calculator tool for exploring the strength of various hands 
-and the odds of winning.
+### What's New in 3.2.0-community
 
-The following screenshots show (from left to right):
+- Docker deployment with pre-built images on Docker Hub
+- Maven dependency plugin for reliable builds
+- Sanitized PII and removed legacy components
+- Enhanced documentation and quick-start guides
+- Windows-focused development environment
+- Unraid Community Application template
 
-* Main menu
-* A sample hand showing the primary hand UI, including the "DD Dashboard" tools, chat window, and other controls 
-* Poker clock
-* Calculator tool
+## About DD Poker
+
+DD Poker is a full-featured **Texas Hold'em** (no-limit, pot-limit, limit) simulator originally developed by [Doug Donohoe](https://www.donohoedigital.com/) and Donohoe Digital LLC from 2003-2017.
+
+**Key Features:**
+- 🎮 Play against AI and human opponents
+- 🏆 Customizable tournament modes
+- ⏱️ Poker clock for home tournaments
+- 🧮 Sophisticated hand strength calculator
+- 💬 In-game chat and lobby system
+- 🌐 Online multiplayer with game discovery
+
+The game is a Java Swing-based desktop application that runs on Mac, Linux, and Windows. The backend server uses an embedded H2 database, and the web portal (for game discovery and client downloads) is built on Apache Wicket.
 
 ![screenshots.png](images/screenshots.png)
 
-_See [ddpoker.com](https://www.ddpoker.com/about/screenshots/) for more screenshots._
-
-You can play against other human opponents by setting up an online game and sharing
-the game URL (unless everyone is running on the LAN,
-this requires opening a port to allow inbound connections to your computer).
-
-The server component of DD Poker facilitates finding games posted by other users.  We
-no longer run a server, but you can run your own using the code in this repo.
+_For more screenshots, visit [ddpoker.com](https://www.ddpoker.com/about/screenshots/)_
 
 ## Getting Started
 
@@ -45,9 +51,9 @@ no longer run a server, but you can run your own using the code in this repo.
 
 **Docker Deployment (Recommended):**
 
-The easiest way to run DD Poker server is using Docker.
+The easiest way to run DD Poker server is using Docker. Pre-built images are available on [Docker Hub](https://hub.docker.com/r/joshuaabeard/ddpoker).
 
-**Quick Start (Using Pre-built Image):**
+**Quick Start (Single Command):**
 ```bash
 docker run -d \
   --name ddpoker \
@@ -65,7 +71,7 @@ docker run -d \
 git clone https://github.com/JoshuaABeard/DDPoker.git
 cd DDPoker/docker
 
-# Start the server (pulls from Docker Hub if not built locally)
+# Start the server
 docker compose up -d
 ```
 
@@ -78,8 +84,7 @@ docker compose up -d
 1. Visit http://localhost:8080/downloads/
 2. Download `DDPoker.jar` (21MB universal JAR)
 3. Run with: `java -jar DDPoker.jar`
-
-**Version:** 3.2.0-community
+4. Connect to your server at `localhost:8877`
 
 For complete Docker documentation, configuration options, and troubleshooting, see [DDPOKER-DOCKER.md](.claude/DDPOKER-DOCKER.md).
 
@@ -89,135 +94,118 @@ DD Poker is available as an Unraid Community Application. See [unraid/README.md]
 ### For Developers
 
 See [README-DEV.md](README-DEV.md) for comprehensive development documentation, including:
-- Building from source
+- Building from source with Maven
 - Running locally for development
 - Testing online multiplayer
 - Architecture overview
+- Email configuration
 
-## TL;DR Running DD Poker From Source
+**Quick Start for Developers:**
 
-If you are impatient and just want to run the DD Poker game without
-reading all the [developer documentation](README-DEV.md) or worrying
-about servers and databases, follow these steps:
+```bash
+# Prerequisites: Java 25, Maven 3.9+
+git clone https://github.com/JoshuaABeard/DDPoker.git
+cd DDPoker/code
 
-1. Clone this repo
-2. Install [Java 25](https://adoptium.net/temurin/releases/?os=any&package=jdk&version=25)
-   and [Maven 3](https://maven.apache.org/install.html)
-3. Run these commands in the `ddpoker` directory:
+# Build (Windows PowerShell)
+mvn clean package -DskipTests
 
-```shell
-source ddpoker.rc
-mvn-package-notests
-poker
+# Run server
+..\tools\scripts\run-server-local.ps1
+
+# Run client (separate terminal)
+..\tools\scripts\run-client-local.ps1
 ```
-
-## Developer Notes
-
-For details on how to build and run DD Poker and
-the backend server and website, please see [README-DEV.md](README-DEV.md).
 
 ## History
 
-DD Poker was developed by Donohoe Digital LLC, a small computer
-games studio founded by Doug Donohoe in 2003.  Its first game,
-[War! Age of Imperialism](https://www.donohoedigital.com/war/) was
-a computer version of the eponymous table-top board game, and it
-was a finalist in the 2005 Independent Games Festival.  After releasing
-the game in October 2003, Doug was celebrating in Las Vegas
-and, while at a poker tournament, the proverbial lightbulb went 
-off that there were no good poker software simulators out there,
-especially for tournaments.  Leveraging the game 
-engine he built for War!, Doug immediately started building
-a poker game.  Less than a year later, DD Poker was ready for 
-release.
+DD Poker was originally developed by **Donohoe Digital LLC**, a small computer games studio founded by [Doug Donohoe](https://www.donohoedigital.com/) in 2003.
 
-DD Poker 1.0 was originally released (and sold in boxes!) in 
-June 2004 under the name 
-_DD Tournament Poker No Limit Texas Hold'em_ and 
-later re-released in early 2005 as _DD Tournament Poker 2005 Collector's 
-Edition_, featuring Annie Duke on the box.  The game featured 
-Limit, Pot-Limit and No-Limit Texas Hold'em against computer
-components, a poker clock, but no online play.
+**Timeline:**
+- **2003**: Development begins after inspiration at a Las Vegas poker tournament
+- **June 2004**: DD Poker 1.0 released in boxes as *DD Tournament Poker No Limit Texas Hold'em*
+- **August 2005**: DD Poker 2.0 released featuring online multiplayer and Phil Gordon on the box
+- **January 2009**: DD Poker 3.0 released as donation-ware
+- **July 2017**: Backend servers shut down, but game continued to be played via manual URL sharing
+- **2024**: Original source code [open-sourced by Doug Donohoe](https://github.com/dougdonohoe/ddpoker) under GPL-3.0
+- **February 2026**: Community fork created with Docker support and modern tooling
 
-DD Poker 2.0 added the ability to play online against other
-human opponents, a sophisticated hand calculator, a brand-new UI, and dozens
-of other new features.  It was originally released in August
-2005 as _DD No Limit Texas Hold'em Tournament Edition_, featuring 
-Phil Gordon on the box.  To support online play, a back-end
-API server and companion "Online Portal" was built and operated
-by Donohoe Digital.  New functionality continued to be added
-until early 2007.
+Donohoe Digital's first game, [War! Age of Imperialism](https://www.donohoedigital.com/war/), was a finalist in the 2005 Independent Games Festival.
 
-DD Poker 3.0 was released as donation-ware in January 2009,
-adding only minor new features while removing license-key 
-validation logic. It continued to be updated sporadically until 
-it was shutdown in July 2017.
+For detailed release history, see [whatsnew.html](code/poker/src/main/resources/config/poker/help/whatsnew.html).
 
-See [whatsnew.html](code/poker/src/main/resources/config/poker/help/whatsnew.html) 
-for a detailed release history starting with version 2.0.
+## Why This Fork Exists
 
-## Why Open Source?
+The original DD Poker backend servers were shut down in July 2017, but the community continued to play by manually sharing game URLs. This fork was created to:
 
-Even though DD Poker and the backend servers were shutdown
-in July 2017, folks continue to play it by manually
-sharing game URLs.  There was a minor revival during the 
-2020 pandemic and sporadic inquiries regarding the source
-code have come in over the years.
+1. **Simplify deployment** - Docker makes it easy to run your own server
+2. **Modernize the build** - Updated dependencies and streamlined development
+3. **Enable self-hosting** - Run servers for local poker communities
+4. **Preserve the game** - Ensure DD Poker remains playable for years to come
 
-While Donohoe Digital LLC can no longer
-run the old DD Poker servers, there might be folks out there that
-want to run servers for their own local poker communities.
-Releasing the code allows them to do this.
-
-In addition, even though the core code is almost 20 years
-old, it still actually works and might be useful to
-somebody, somewhere.
+This fork maintains the spirit of Doug Donohoe's open-sourcing decision: making DD Poker available to anyone who wants to host their own poker server.
 
 ## Copyright and Licenses
 
-Unless otherwise noted, the contents of this repository are
-Copyright (c) 2003-2026 Doug Donohoe.  All rights reserved.
+### Source Code
+
+Unless otherwise noted, the **source code** in this repository is:
+
+**Copyright (c) 2003-2026 Doug Donohoe. All rights reserved.**
 
 This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
+it under the terms of the **GNU General Public License** as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
-For the full License text, please see the [LICENSE.txt](LICENSE.txt) file
-in the root directory of this project.
+For the full License text, please see the [LICENSE.txt](LICENSE.txt) file.
 
-The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
+### Names, Logos, and Creative Assets
+
+The **"DD Poker" and "Donohoe Digital"** names and logos, as well as any images,
 graphics, text, and documentation found in this repository (including but not
 limited to written documentation, website content, and marketing materials)
-are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
-4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
-without explicit written permission for any uses not covered by this License.
+are licensed under the **Creative Commons Attribution-NonCommercial-NoDerivatives
+4.0 International License (CC BY-NC-ND 4.0)**.
+
+You may not use these assets without explicit written permission for any uses not covered by this License.
 For the full License text, please see the [LICENSE-CREATIVE-COMMONS.txt](LICENSE-CREATIVE-COMMONS.txt) file.
 
 For inquiries regarding commercial licensing of this source code or
 the use of names, logos, images, text, or other assets, please contact
 doug [at] donohoe [dot] info.
 
+### Community Fork Modifications
+
+Modifications made in this community fork (version 3.2.0-community and later) are:
+
+**Copyright (c) 2026 Joshua Beard and contributors**
+
+These modifications include:
+- Docker deployment configuration and scripts
+- Build system improvements
+- Documentation updates and guides
+- Version management and release tooling
+
+These modifications are also licensed under **GPL-3.0** to maintain compatibility with the original license.
+
 ## Trademarks
 
-Donohoe Digital owns the following registered trademarks:
+**Donohoe Digital owns the following registered trademarks:**
 
  * `DD Poker` (registration #7856123) — The mark consists of standard characters without claim to
    any particular font style, size or color.
- * The `DD` spade logo (registration #7856124) — The mark consists of the letters "DD", colored red with a black 
+ * The `DD` spade logo (registration #7856124) — The mark consists of the letters "DD", colored red with a black
    border superimposed over a black playing card spade symbol.
 
-## Third Party Licenses and Other Open Source Code
+**This community fork is not affiliated with, endorsed by, or sponsored by Donohoe Digital LLC or Doug Donohoe.** Use of the DD Poker name and logos is permitted under fair use for the purpose of identifying the software and its origins.
 
-DD Poker incorporates various other open source code, either directly as source files
-or via maven dependencies as seen in the `pom.xml` files.  These are explained in 
-[code/poker/src/main/resources/config/poker/help/credits.html](https://static.ddpoker.com/gamehelp/help/credits.html) and the licenses 
-mentioned therein can be found in the `docs/license` directory.
+## Third-Party Code
 
 Third party source code directly copied into this repository includes the following:
 
@@ -228,14 +216,38 @@ Third party source code directly copied into this repository includes the follow
 
 ## Contributors
 
+**Original DD Poker Development (2003-2017):**
+
 The following folks made excellent contributions to the DD Poker
 code base as employees of Donohoe Digital:
 
++ **Doug Donohoe** - Creator, lead developer, and founder of Donohoe Digital LLC
 + Greg King
 + Sam Neth
 + Brian Zak
 
-Additional contributors to this repository:
+**Community Fork Contributors (2026-):**
 
-+ Joshua Beard - Repository maintenance, Docker deployment, build improvements
-+ Claude (Anthropic) - Documentation, code refactoring, and development assistance
++ **Joshua Beard** - Repository maintenance, Docker deployment, build improvements
++ **Claude (Anthropic)** - Documentation, code refactoring, and development assistance
+
+## Links
+
+- **Original Repository**: https://github.com/dougdonohoe/ddpoker
+- **Community Fork**: https://github.com/JoshuaABeard/DDPoker
+- **Docker Hub**: https://hub.docker.com/r/joshuaabeard/ddpoker
+- **Official Website**: https://www.ddpoker.com/
+- **Donohoe Digital**: https://www.donohoedigital.com/
+
+## Support
+
+For issues related to this community fork:
+- Open an issue: https://github.com/JoshuaABeard/DDPoker/issues
+- Discussions: https://github.com/JoshuaABeard/DDPoker/discussions
+
+For questions about the original DD Poker or licensing:
+- Contact Doug Donohoe: doug [at] donohoe [dot] info
+
+---
+
+**Note:** This is a community-maintained fork. For the original DD Poker source code, visit https://github.com/dougdonohoe/ddpoker
