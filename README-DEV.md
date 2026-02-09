@@ -616,6 +616,32 @@ verify:
 * Start game from Ubuntu Docker
 * Build `act` docker image and running `act-ddpoker` (remember to stop MySQL)
 
+### Known Limitation: Multiple Clients on Same Machine
+
+When testing online multiplayer with multiple clients on the same machine, you may encounter
+**asymmetric chat behavior** where one client can send messages but not receive them.
+
+**Symptoms:**
+- Client A (host) can see their own messages but not Client B's messages
+- Client B (joining) can see both their own and Client A's messages
+- Game functionality works correctly (players can join and play)
+
+**Root Cause:**
+The in-game chat system uses UDP for direct peer-to-peer communication. When both clients
+run on the same machine, they compete for the same UDP port (11885):
+- The host client successfully binds to the port
+- The joining client fails to bind (gets "Address already in use" error)
+- This creates one-way communication (joining client → host works, host → joining client fails)
+
+**Workarounds:**
+- For development testing, accept this limitation - game functionality works fine
+- For real testing, use clients on different machines
+- Chat through the lobby (before joining a game) uses the server and works correctly
+
+**Future Fix:**
+This can be resolved by implementing dynamic port selection or routing in-game chat
+through the TCP server instead of direct UDP communication. See issue tracking for details.
+
 ## Appendix F: DD Poker Website
 
 Back in the day, the Wicket-based webapp (aka the Online Portal) was also the 
