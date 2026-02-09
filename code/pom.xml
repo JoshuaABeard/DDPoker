@@ -39,7 +39,7 @@
   <groupId>com.donohoedigital</groupId>
   <artifactId>all</artifactId>
   <packaging>pom</packaging>
-  <version>3.2.0-community</version>
+  <version>3.2.1-community</version>
   <name>all</name>
 
   <modules>

@@ -34,13 +34,25 @@ package com.donohoedigital.games.poker.server;
 
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.LoggingConfig;
+import com.donohoedigital.games.poker.engine.PokerConstants;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class PokerServerMain {
+    private static final Logger logger = LogManager.getLogger(PokerServerMain.class);
+
     public static void main(String[] argv)
     {
         LoggingConfig loggingConfig = new LoggingConfig("poker", ApplicationType.SERVER);
         loggingConfig.init();
+
+        // Log version at startup
+        logger.info("========================================");
+        logger.info("DD Poker Server Starting");
+        logger.info("Version: {}", PokerConstants.VERSION);
+        logger.info("========================================");
+
         // create application context (spring creates everything, including the "server" bean, calling init())
         new ClassPathXmlApplicationContext("app-context-pokerserver.xml");
     }

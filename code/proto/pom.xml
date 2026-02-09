@@ -39,40 +39,40 @@
   <parent>
     <groupId>com.donohoedigital</groupId>
     <artifactId>all</artifactId>
-    <version>3.2.0-community</version>
+    <version>3.2.1-community</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>proto</artifactId>
   <packaging>jar</packaging>
-  <version>3.2.0-community</version>
+  <version>3.2.1-community</version>
   <name>proto</name>
 
   <dependencies>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>udp</artifactId>
-      <version>3.2.0-community</version>
+      <version>3.2.1-community</version>
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>server</artifactId>
-      <version>3.2.0-community</version>
+      <version>3.2.1-community</version>
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>poker</artifactId>
-      <version>3.2.0-community</version>
+      <version>3.2.1-community</version>
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>pokerserver</artifactId>
-      <version>3.2.0-community</version>
+      <version>3.2.1-community</version>
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>wicket</artifactId>
-      <version>3.2.0-community</version>
+      <version>3.2.1-community</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

@@ -2,13 +2,13 @@
 <Container version="2">
   <!-- Metadata -->
   <Name>DDPoker</Name>
-  <Repository>joshuaabeard/ddpoker:3.2.0-community</Repository>
+  <Repository>joshuaabeard/ddpoker:3.2.1-community</Repository>
   <Registry>https://hub.docker.com/r/joshuaabeard/ddpoker</Registry>
   <Network>bridge</Network>
   <Privileged>false</Privileged>
   <Support>https://github.com/JoshuaABeard/DDPoker/issues</Support>
   <Project>https://github.com/JoshuaABeard/DDPoker</Project>
-  <Overview>DD Poker Community Edition - Community-maintained fork with Docker deployment. Full-featured Texas Hold'em tournament software with online multiplayer, AI opponents, poker clock, and hand calculator. Version 3.2.0-community includes pre-built Docker images and universal client JAR.</Overview>
+  <Overview>DD Poker Community Edition - Community-maintained fork with Docker deployment. Full-featured Texas Hold'em tournament software with online multiplayer, AI opponents, poker clock, and hand calculator. Version 3.2.1-community includes pre-built Docker images and universal client JAR.</Overview>
   <Category>GameServers:</Category>
   <WebUI>http://[IP]:[PORT:8080]</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/JoshuaABeard/DDPoker/main/unraid/DDPoker.xml</TemplateURL>
@@ -16,6 +16,11 @@
   <Banner>https://raw.githubusercontent.com/JoshuaABeard/DDPoker/main/unraid/icons/banner/ddpoker.png</Banner>
   <Date>2026-02-09</Date>
   <Changes>
+    [b]3.2.1-community (2026-02-09)[/b]
+    - Fixed missing DDPoker.jar download issue
+    - Removed problematic /app/downloads volume mapping
+    - JAR file now correctly embedded in Docker image
+
     [b]3.2.0-community (2026-02-09)[/b]
     - Community-maintained fork with Docker deployment
     - Added all SMTP configuration options (AUTH, STARTTLS)

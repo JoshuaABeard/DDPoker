@@ -35,6 +35,7 @@ package com.donohoedigital.games.poker.wicket;
 import com.donohoedigital.base.Utils;
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.LoggingConfig;
+import com.donohoedigital.games.poker.engine.PokerConstants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.ee10.webapp.WebAppContext;
@@ -59,6 +60,10 @@ public class PokerJetty {
         Server server = getServer();
 
         try {
+            logger.info("========================================");
+            logger.info("DD Poker Web Server Starting");
+            logger.info("Version: {}", PokerConstants.VERSION);
+            logger.info("========================================");
             logger.info(">>> STARTING EMBEDDED JETTY SERVER");
             server.start();
 

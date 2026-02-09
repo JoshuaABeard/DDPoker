@@ -2,7 +2,7 @@
 
 > **Community-maintained fork** of DD Poker with enhanced Docker deployment and modern build tooling.
 >
-> **Version:** 3.2.0-community
+> **Version:** 3.2.1-community
 > **Original Work:** [DD Poker by Doug Donohoe](https://github.com/dougdonohoe/ddpoker) (2003-2017)
 
 ![dd-poker-3.jpg](images/dd-poker-3.jpg)
@@ -62,7 +62,7 @@ docker run -d \
   -p 11886:11886/udp \
   -p 11889:11889/udp \
   -v ddpoker_data:/data \
-  joshuaabeard/ddpoker:3.2.0-community
+  joshuaabeard/ddpoker:3.2.1-community
 ```
 
 **Or with Docker Compose:**
@@ -182,7 +182,7 @@ doug [at] donohoe [dot] info.
 
 ### Community Fork Modifications
 
-Modifications made in this community fork (version 3.2.0-community and later) are:
+Modifications made in this community fork (version 3.2.1-community and later) are:
 
 **Copyright (c) 2026 Joshua Beard and contributors**
 
