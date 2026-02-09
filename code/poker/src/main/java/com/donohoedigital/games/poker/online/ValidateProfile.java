@@ -38,17 +38,22 @@
 
 package com.donohoedigital.games.poker.online;
 
+import com.donohoedigital.comms.*;
 import com.donohoedigital.games.comms.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.network.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
  */
 public class ValidateProfile extends SendMessageDialog
 {
+    private static final Logger logger = LogManager.getLogger(ValidateProfile.class);
+
     public static final String PARAM_AUTH = "auth";
 
     private OnlineProfile auth_ = null;
@@ -94,5 +99,35 @@ public class ValidateProfile extends SendMessageDialog
     protected boolean doServerQuery()
     {
         return false;
+    }
+
+    /**
+     * Process response from server - load profile UUID and set it as session key
+     */
+    @Override
+    public void messageReceived(DDMessage message)
+    {
+        super.messageReceived(message);
+
+        // Extract profile data from response
+        OnlineMessage omsg = new OnlineMessage(message);
+        DMTypedHashMap profileData = omsg.getWanAuth();
+
+        if (profileData != null)
+        {
+            OnlineProfile validatedProfile = new OnlineProfile(profileData);
+
+            if (validatedProfile.getUuid() != null && !validatedProfile.getUuid().isEmpty())
+            {
+                // Set this profile's UUID as the session key for online games
+                DDMessage.setDefaultRealKey(validatedProfile.getUuid());
+                DDMessage.setDefaultKey(validatedProfile.getUuid());
+                logger.info("Loaded profile UUID for " + validatedProfile.getName() + ": " + validatedProfile.getUuid());
+            }
+            else
+            {
+                logger.warn("Profile validation successful but no UUID received for: " + validatedProfile.getName());
+            }
+        }
     }
 }

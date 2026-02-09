@@ -349,7 +349,8 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
     @Override
     protected boolean isAutoGenLicenseKey()
     {
-        return true;
+        // Don't auto-generate license keys - for online games, UUID comes from profile
+        return false;
     }
 
     @Override

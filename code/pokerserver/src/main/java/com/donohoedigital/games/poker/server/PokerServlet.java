@@ -77,6 +77,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import static com.donohoedigital.config.DebugConfig.TESTING;
 import static com.donohoedigital.games.config.EngineConstants.*;
@@ -676,11 +677,14 @@ public class PokerServlet extends EngineServlet
         OnlineMessage banMsg = banCheck(auth);
         if (banMsg != null) return banMsg.getData();
 
-        if (onlineProfileService.authenticateOnlineProfile(auth) != null)
+        // Authenticate and get the full profile from database (includes UUID)
+        OnlineProfile authenticatedProfile = onlineProfileService.authenticateOnlineProfile(auth);
+
+        if (authenticatedProfile != null)
         {
-            // If the profile was authenticated, return the same value without the password.
-            auth.setPassword(null);
-            resMsg.setWanAuth(auth.getData());
+            // Return the authenticated profile from database (has UUID), not the request profile
+            authenticatedProfile.setPassword(null);
+            resMsg.setWanAuth(authenticatedProfile.getData());
         }
         else
         {
@@ -722,10 +726,11 @@ public class PokerServlet extends EngineServlet
             }
             else
             {
-                // Generate a password and set values.
+                // Generate a password and UUID and set values.
                 String generatedPassword = onlineProfileService.generatePassword();
                 profile.setPassword(generatedPassword);
                 profile.setLicenseKey(ddreceived.getKey());
+                profile.setUuid(UUID.randomUUID().toString());
                 profile.setActivated(false);
 
                 // Insert the database record - returns false if it is a duplicate

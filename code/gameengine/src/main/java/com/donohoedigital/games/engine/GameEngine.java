@@ -48,6 +48,7 @@ import com.donohoedigital.udp.*;
 import org.apache.logging.log4j.*;
 
 import javax.swing.*;
+import java.util.UUID;
 import java.awt.*;
 import java.io.*;
 import java.net.*;
@@ -196,6 +197,17 @@ public abstract class GameEngine extends BaseApp
                 DDMessage.setDefaultRealKey(sKey);
                 DDMessage.setDefaultKey(getPublicUseKey());
             }
+        }
+
+        // For online games, UUID comes from the online profile (set during login/validation)
+        // For offline/local games, no UUID is needed
+        // Don't set any default key here - it will be set when user validates with their profile
+        if (activationNeeded || DDMessage.getDefaultRealKey() == null)
+        {
+            // Leave key null - online profile login will set it
+            DDMessage.setDefaultRealKey(null);
+            DDMessage.setDefaultKey(null);
+            logger.info("No activation key - user must login with online profile for online games");
         }
 
         // expired?

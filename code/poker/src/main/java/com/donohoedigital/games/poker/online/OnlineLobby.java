@@ -34,10 +34,12 @@ package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.base.*;
 import static com.donohoedigital.config.DebugConfig.*;
+import com.donohoedigital.comms.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
+import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.network.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.gui.*;
@@ -62,6 +64,7 @@ public class OnlineLobby extends BasePhase implements ChatHandler, DDTable.Table
     static Logger logger = LogManager.getLogger(OnlineLobby.class);
 
     private static OnlineLobby LOBBY = null;
+    private static String lastValidatedProfileName_ = null;
 
     private PokerMain main_;
     private DDPanel base_;
@@ -104,6 +107,44 @@ public class OnlineLobby extends BasePhase implements ChatHandler, DDTable.Table
                                                     Utils.encodeHTML(profile.getName())));
 
             return false;
+        }
+
+        // Automatically validate profile to load UUID if needed
+        // Only validate if: (1) no UUID loaded, or (2) profile has changed since last validation
+        String currentKey = DDMessage.getDefaultRealKey();
+        boolean needsValidation = (currentKey == null || currentKey.isEmpty() ||
+                                   !profile.getName().equals(lastValidatedProfileName_));
+
+        if (needsValidation)
+        {
+            TypedHashMap hmParams = new TypedHashMap();
+            hmParams.setBoolean(SendMessageDialog.PARAM_FACELESS, true);
+            OnlineProfile auth = new OnlineProfile(profile.getName());
+            auth.setPassword(profile.getPassword());
+            hmParams.setObject(ValidateProfile.PARAM_AUTH, auth);
+
+            SendMessageDialog dialog = (SendMessageDialog) context.processPhaseNow("ValidateProfile", hmParams);
+
+            if (dialog.getStatus() != DDMessageListener.STATUS_OK)
+            {
+                // Validation failed
+                EngineUtils.displayInformationDialog(context, PropertyConfig.getMessage("msg.lobby.validationfailed",
+                                                        Utils.encodeHTML(profile.getName())));
+                return false;
+            }
+
+            // Check if UUID was successfully loaded
+            String loadedKey = DDMessage.getDefaultRealKey();
+            if (loadedKey == null || loadedKey.isEmpty())
+            {
+                // UUID wasn't loaded - authentication might have failed
+                EngineUtils.displayInformationDialog(context, PropertyConfig.getMessage("msg.lobby.validationfailed",
+                                                        Utils.encodeHTML(profile.getName())));
+                return false;
+            }
+
+            // Remember this profile as validated
+            lastValidatedProfileName_ = profile.getName();
         }
 
         return true;

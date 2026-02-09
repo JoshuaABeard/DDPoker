@@ -38,13 +38,15 @@ CREATE TABLE wan_profile (
     wpr_license_key VARCHAR(55) NOT NULL,
     wpr_email VARCHAR(255) NOT NULL,
     wpr_password VARCHAR(255) NOT NULL,
+    wpr_uuid VARCHAR(36) NOT NULL,
     wpr_is_activated BOOLEAN NOT NULL,
     wpr_is_retired BOOLEAN NOT NULL,
     wpr_create_date DATETIME NOT NULL,
     wpr_modify_date DATETIME NOT NULL,
 
     UNIQUE INDEX wpr_name (wpr_name),
-	INDEX wpr_email (wpr_email)
+	INDEX wpr_email (wpr_email),
+    UNIQUE INDEX wpr_uuid (wpr_uuid)
 ) Engine = InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE wan_game (

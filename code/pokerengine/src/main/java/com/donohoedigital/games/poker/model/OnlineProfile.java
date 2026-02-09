@@ -81,6 +81,7 @@ public class OnlineProfile implements BaseModel<Long>
     public static final String PROFILE_EMAIL = "profileemail";
     public static final String PROFILE_PASSWORD = "profilepassword";
     public static final String PROFILE_PASSWORD_IN_DB = "profilepasswordindb";
+    public static final String PROFILE_UUID = "profileuuid";
     public static final String PROFILE_ACTIVATED = "profileactivated";
     public static final String PROFILE_CREATE_DATE = "profilecreatedate";
     public static final String PROFILE_MODIFY_DATE = "profilemodifydate";
@@ -156,6 +157,17 @@ public class OnlineProfile implements BaseModel<Long>
     public void setLicenseKey(String s)
     {
         data_.setString(PROFILE_LICENSE_KEY, s);
+    }
+
+    @Column(name = "wpr_uuid", nullable = false, unique = true, length = 36)
+    public String getUuid()
+    {
+        return data_.getString(PROFILE_UUID);
+    }
+
+    public void setUuid(String s)
+    {
+        data_.setString(PROFILE_UUID, s);
     }
 
     @Column(name = "wpr_email", nullable = false)

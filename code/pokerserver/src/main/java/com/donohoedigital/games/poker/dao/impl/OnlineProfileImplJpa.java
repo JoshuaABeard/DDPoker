@@ -171,6 +171,7 @@ public class OnlineProfileImplJpa extends JpaBaseDao<OnlineProfile, Long> implem
         {
             profile = new OnlineProfile(dummy.getName());
             profile.setLicenseKey(PokerConstants.DUMMY_PROFILE_KEY_START + dummy.ordinal());
+            profile.setUuid(java.util.UUID.randomUUID().toString());
             profile.setPassword("!!DUMMY!!");
             profile.setEmail("dummy-profile-" + dummy.ordinal() + "@example.com");
             profile.setActivated(true);

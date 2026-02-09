@@ -133,9 +133,15 @@ public class DDMessenger
      */
     public DDMessage sendMessage(URL url, DDMessage send, DDMessageListener listener)
     {
-        // when talking to server, override the public key to send the real key
-        // so server can validate this as a valid client
-        send.setKey(DDMessage.getDefaultRealKey());
+        // For online games, use the UUID from the online profile
+        // This is set when user validates/logs in with their profile
+        String key = DDMessage.getDefaultRealKey();
+        if (key == null || key.isEmpty()) {
+            // No profile logged in - use empty string
+            // Server will reject if profile is required for the operation
+            key = "";
+        }
+        send.setKey(key);
         DDMessage ret = createNewMessage();
         int nStatus = DDMessageListener.STATUS_OK;
         
