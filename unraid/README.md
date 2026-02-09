@@ -42,9 +42,9 @@ Texas Hold'em tournament software with online multiplayer support. This containe
 
 **Note:** UDP ports are optional. Core functionality (game server, web UI) works without them.
 
-**Database Configuration:**
-- Default: H2 embedded database (no configuration needed)
-- For MySQL: Change `DB_DRIVER`, `DB_URL`, `DB_USER`, `DB_PASSWORD`
+**Database:**
+- Uses embedded H2 database (automatic, no configuration needed)
+- All data stored in the Data volume
 
 **SMTP Configuration (Optional):**
 - Required only for email notifications
@@ -165,26 +165,6 @@ This is expected in some configurations:
 | 11889 | UDP | Connection Test | Optional |
 
 ## Advanced Configuration
-
-### Using External MySQL Database
-
-1. Set these environment variables:
-   ```
-   DB_DRIVER=com.mysql.cj.jdbc.Driver
-   DB_URL=jdbc:mysql://[MYSQL-HOST]:3306/ddpoker
-   DB_USER=ddpoker_user
-   DB_PASSWORD=your_secure_password
-   ```
-
-2. Create database and user in MySQL:
-   ```sql
-   CREATE DATABASE ddpoker;
-   CREATE USER 'ddpoker_user'@'%' IDENTIFIED BY 'your_secure_password';
-   GRANT ALL PRIVILEGES ON ddpoker.* TO 'ddpoker_user'@'%';
-   FLUSH PRIVILEGES;
-   ```
-
-3. Tables will be created automatically on first startup
 
 ### SMTP Email Configuration
 

@@ -140,44 +140,23 @@ Both processes are managed by `/app/entrypoint.sh`:
 
 ## Database Configuration
 
-### H2 Embedded (Default)
+### H2 Embedded Database
 
-By default, the container uses H2 database in MySQL compatibility mode:
+DD Poker uses an embedded H2 database for all data storage. No external database configuration is required.
 
 ```yaml
-environment:
-  DB_DRIVER: org.h2.Driver
-  DB_URL: "jdbc:h2:file:/data/poker;MODE=MySQL;AUTO_SERVER=TRUE"
-  DB_USER: sa
-  DB_PASSWORD: ""
+# Database configuration is automatic
+# Data stored in /data volume:
+#   - /data/poker.mv.db (main database file)
+#   - /data/poker.trace.db (trace logs, if enabled)
 ```
 
 **Features:**
-- No external database needed
+- Zero configuration - works out of the box
 - Automatic schema initialization on first run
 - Data persists in Docker volume `/data`
-- MySQL-compatible SQL mode
-
-### Switching to MySQL
-
-To use an external MySQL database instead:
-
-1. Edit `docker-compose.yml` and uncomment the environment section:
-
-```yaml
-services:
-  ddpoker:
-    # ... existing config ...
-    environment:
-      DB_DRIVER: com.mysql.cj.jdbc.Driver
-      DB_URL: "jdbc:mysql://your-mysql-host:3306/poker?useUnicode=true&characterEncoding=UTF8&useSSL=false"
-      DB_USER: poker
-      DB_PASSWORD: "p0k3rdb!"
-```
-
-2. Ensure MySQL is accessible from Docker
-3. Create the database schema using `tools/db/create_tables.sql`
-4. Restart: `docker compose up -d`
+- No external dependencies
+- Lightweight and fast
 
 ## Data Management
 
@@ -751,7 +730,7 @@ The DDPoker Docker deployment provides:
 ✅ Persistent data storage
 ✅ Simple `docker compose up` deployment
 ✅ Easy backup and restore
-✅ MySQL fallback option
+✅ Embedded H2 database (zero configuration)
 ✅ Production-ready with Jetty + Wicket
 
 Perfect for development, testing, and production deployment!

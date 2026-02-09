@@ -36,18 +36,8 @@
   <Config Name="Client Installers" Target="/app/downloads" Default="/mnt/user/appdata/ddpoker/clientInstallers" Mode="rw"
           Description="Client installer cache (Windows/Mac/Linux)" Type="Path" Display="always" Required="true" />
 
-  <!-- Environment Variables - Database -->
-  <Config Name="Database Driver" Target="DB_DRIVER" Default="org.h2.Driver"
-          Description="Database driver class (H2 or MySQL)" Type="Variable" Display="advanced" Required="false" />
-
-  <Config Name="Database URL" Target="DB_URL" Default="jdbc:h2:file:/data/poker;MODE=MySQL;AUTO_SERVER=TRUE"
-          Description="JDBC connection string" Type="Variable" Display="advanced" Required="false" />
-
-  <Config Name="Database User" Target="DB_USER" Default="sa"
-          Description="Database username" Type="Variable" Display="advanced" Required="false" />
-
-  <Config Name="Database Password" Target="DB_PASSWORD" Default=""
-          Description="Database password (leave empty for H2)" Type="Variable" Display="advanced" Required="false" Mask="true" />
+  <!-- Note: Database configuration is automatic using embedded H2 database -->
+  <!-- No manual database configuration required -->
 
   <!-- Environment Variables - SMTP (Optional) -->
   <Config Name="SMTP Host" Target="SMTP_HOST" Default="127.0.0.1"

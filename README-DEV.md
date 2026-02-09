@@ -112,8 +112,7 @@ The server will be available at:
 
 **Key Features:**
 - Single container with poker server + web interface
-- Embedded H2 database (no external database required)
-- Optional MySQL support via environment variables
+- Embedded H2 database (zero configuration)
 - Gmail/SMTP email support for profile activation
 - Persistent data in Docker volumes
 
@@ -136,20 +135,21 @@ set to Java 25 (you may need to add it (_+ Add SDK_) as a new SDK if not already
 
 ## Server Dependencies
 
-To run server code locally (not in Docker), you have options for the database:
+To run server code locally (not in Docker):
 
-1. **H2 Database** (Default) - Embedded database, no setup required. Data stored in `./data/poker.mv.db`
-2. **MySQL** - Traditional setup, requires running MySQL server
+**Database:**
+- **H2 Database** (Automatic) - Embedded database, no setup required
+- Data stored in `./data/poker.mv.db`
+- Creates schema automatically on first run
 
+**Email (Optional):**
 For email functionality (profile creation/activation), you'll need SMTP access:
 - Use Gmail with App Password (recommended, see `.claude/EMAIL-CONFIGURATION.md`)
 - Use local SMTP server
 - Disable email (profiles won't work, but local games will)
 
-**Historical Setup Guides** (if using MySQL):
-* `Appendix A` Setup Database via Docker
-* `Appendix B` Setup Email SMTP server on Mac
-* `Appendix C` Setup Database directly on a Mac
+**Historical Setup Guides:**
+* `Appendix B` Setup Email SMTP server on Mac (if not using Gmail)
 
 ## Run Tests
 
@@ -434,58 +434,7 @@ mvn dependency:tree -q -Dscope=runtime -Ddependency.classpath.outputFile=/tmp/t 
 mvn-tree
 ```
 
-## Appendix A — Database via Docker
-
-DD Poker's server uses MySQL.  You can easily run an instance locally using Docker.
-
-```shell
-# Create and run in background.  Data is persisted across restarts
-docker run --name my-mysql -e MYSQL_ROOT_PASSWORD='d@t@b@s3' \
-  -d -p 3306:3306 -v mysql_data:/var/lib/mysql mysql:latest
- 
-# Start/Stop
-docker stop my-mysql
-docker start my-mysql
- 
-# Remove
-docker stop my-mysql && docker rm my-mysql && docker volume rm mysql_data
- 
-# Poke around on instance
-docker exec -it my-mysql bash
-
-# Test database access
-export MYSQL_PWD='d@t@b@s3'
-mysql -h 127.0.0.1 -u root
-```
-
-You can also run MySQL directly on your machine. See _Appendix C_ below for Mac instructions.
-
-Once you have it running you need to create the `pokertest` and `poker` databases which are used
-for unit tests and the backend servers respectively.
-
-```shell
-reset_dbs.sh poker
-reset_dbs.sh pokertest
-```
-
-The password for these local databases is `p0k3rdb!`. You can connect to them directly:
-
-```shell
-mysql -h 127.0.0.1 -D poker -u poker -pp0k3rdb!
-mysql -h 127.0.0.1 -D pokertest -u pokertest -pp0k3rdb!
-```
-
-**NOTE 1**: I've seen an issue where the DD Poker tests or servers cannot connect to MySQL
-until at least one command line connection has been made first.  I haven't spent time trying
-to figure out why this is (could be a weird Docker issue).  After restarting MySQL, run the
-two commands above to verify things are working properly.
-
-**NOTE 2**: Yes, it is bad practice to store database passwords in `git`, but keep the database
-and servers all used to run on the same machine and in production, the MySQL installation only
-allowed access from localhost, so it wasn't a huge risk.  For development purposes, this
-is also fine.
-
-## Appendix B - Email
+## Appendix A - Email
 
 DD Poker's backend server and website are configured to send emails during
 the Online Profile setup process (a password is emailed to the user).  It is
@@ -525,46 +474,7 @@ q # to quit
 **NOTE**: Emails sent this way typically go to spam because they are coming from a random machine,
 so check your spam folder and mark as "not spam".
 
-## Appendix C: Database via Mac MySQL Install
-
-To run MySQL directly on your Mac instead of via Docker:
-
-```shell
-# Install MySQL
-brew install mysql
-
-# Start MySQL immediately and enable auto-start on boot
-brew services start mysql
-
-# To undo auto-start configuration and stop the service
-brew services stop mysql
-
-# To connect to the MySQL server
-mysql -u root
-```
-
-Set the root password expected by our scripts:
-
-```shell
-# Connect to MySQL as the root user
-mysql -u root
-
-# Set or change the root password
-ALTER USER 'root'@'localhost' IDENTIFIED BY 'd@t@b@s3';
-quit
-```
-
-Test new password:
-
-```shell
-# Test database access using host IP and new password
-export MYSQL_PWD='d@t@b@s3'
-mysql -h 127.0.0.1 -u root
-```
-
-Follow the instructions above to create the database tables (via `reset_db.sh`).
-
-## Appendix D: Running GitHub Actions Locally
+## Appendix B: Running GitHub Actions Locally
 
 You can run GitHub actions locally using the [`act`](https://nektosact.com/) tool (which requires Docker).
 
@@ -586,24 +496,11 @@ To run the GitHub testing action locally, just use the alias:
 act-ddpoker
 ```
 
-**NOTE**: This will fail if MySQL is already running, since it will prevent `act` from starting MySQL.  You'll
-see an error like this:
-
-```
-[DD Poker CI/test] failed to start container: Error response from daemon: 
-failed to set up container networking: driver failed programming 
-external connectivity on endpoint act-DD-Poker-CI-test
-Bind for 0.0.0.0:3306 failed: port is already allocated
-```
-
-## Appendix E: Testing Notes
+## Appendix C: Testing Notes
 
 When testing major changes, here's a checklist of things to manually
 verify:
 
-* Start MySQL (either in Docker or locally), then connect via `mysql`
-  * `mysql -h 127.0.0.1 -D poker -u poker -pp0k3rdb!`
-  * `mysql -h 127.0.0.1 -D pokertest -u pokertest -pp0k3rdb!`
 * `mvn-package`
 * Start server via `PokerServerMain` and `pokerserver`
 * Start website via `PokerJetty` and `pokerweb`
@@ -613,7 +510,7 @@ verify:
   * verify game can start an online game (adjust online settings using server's IP)
   * verify global *Online Lobby*
 * Start game from Ubuntu Docker
-* Build `act` docker image and running `act-ddpoker` (remember to stop MySQL)
+* Build `act` docker image and running `act-ddpoker`
 
 ### Testing Online Multiplayer Locally
 
@@ -666,7 +563,7 @@ run on the same machine, they compete for the same UDP port (11885):
 This can be resolved by implementing dynamic port selection or routing in-game chat
 through the TCP server instead of direct UDP communication. See issue tracking for details.
 
-## Appendix F: DD Poker Website
+## Appendix D: DD Poker Website
 
 Back in the day, the Wicket-based webapp (aka the Online Portal) was also the 
 source of `ddpoker.com`.  This site was replaced with a simple static memorial page in
