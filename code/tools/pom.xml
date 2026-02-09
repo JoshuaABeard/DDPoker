@@ -39,30 +39,30 @@
   <parent>
     <groupId>com.donohoedigital</groupId>
     <artifactId>all</artifactId>
-    <version>3.0</version>
+    <version>3.2.0-community</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>tools</artifactId>
   <packaging>jar</packaging>
-  <version>3.0</version>
+  <version>3.2.0-community</version>
   <name>tools</name>
 
   <dependencies>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>mail</artifactId>
-      <version>3.0</version>
+      <version>3.2.0-community</version>
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>gui</artifactId>
-      <version>3.0</version>
+      <version>3.2.0-community</version>
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>poker</artifactId>
-      <version>3.0</version>
+      <version>3.2.0-community</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

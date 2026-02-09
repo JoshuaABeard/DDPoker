@@ -39,45 +39,45 @@
   <parent>
     <groupId>com.donohoedigital</groupId>
     <artifactId>all</artifactId>
-    <version>3.0</version>
+    <version>3.2.0-community</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>gameserver</artifactId>
   <packaging>jar</packaging>
-  <version>3.0</version>
+  <version>3.2.0-community</version>
   <name>gameserver</name>
 
   <dependencies>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>mail</artifactId>
-      <version>3.0</version>
+      <version>3.2.0-community</version>
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>jsp</artifactId>
-      <version>3.0</version>
+      <version>3.2.0-community</version>
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>server</artifactId>
-      <version>3.0</version>
+      <version>3.2.0-community</version>
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>udp</artifactId>
-      <version>3.0</version>
+      <version>3.2.0-community</version>
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>gamecommon</artifactId>
-      <version>3.0</version>
+      <version>3.2.0-community</version>
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>db</artifactId>
-      <version>3.0</version>
+      <version>3.2.0-community</version>
     </dependency>
     <dependency>
       <groupId>com.mysql</groupId>

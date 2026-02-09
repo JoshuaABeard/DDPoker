@@ -39,30 +39,30 @@
   <parent>
     <groupId>com.donohoedigital</groupId>
     <artifactId>all</artifactId>
-    <version>3.0</version>
+    <version>3.2.0-community</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>poker</artifactId>
   <packaging>jar</packaging>
-  <version>3.0</version>
+  <version>3.2.0-community</version>
   <name>poker</name>
 
   <dependencies>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>gameengine</artifactId>
-      <version>3.0</version>
+      <version>3.2.0-community</version>
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>pokernetwork</artifactId>
-      <version>3.0</version>
+      <version>3.2.0-community</version>
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>db</artifactId>
-      <version>3.0</version>
+      <version>3.2.0-community</version>
     </dependency>
     <dependency>
       <groupId>hsqldb</groupId>

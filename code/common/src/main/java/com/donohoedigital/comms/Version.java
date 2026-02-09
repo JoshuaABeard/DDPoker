@@ -55,6 +55,7 @@ public class Version implements DataMarshal
     private int nAlphaBetaVersion_;
     private boolean bDemo_;
     private String sLocale_;
+    private String sSuffix_; // version suffix (e.g., "-community")
     private boolean bVerify_; // only used on client - don't send down
 
     public static final int TYPE_PRODUCTION = 0;
@@ -135,9 +136,25 @@ public class Version implements DataMarshal
     }
 
     /**
+     * Creates a new instance of Version with suffix
+     */
+    public Version(int nMajor, int nMinor, int nPatch, boolean bVerify, String sSuffix)
+    {
+        this(TYPE_PRODUCTION, nMajor, nMinor, 0, nPatch, bVerify, sSuffix);
+    }
+
+    /**
      * Creates a new instance of Version
      */
     public Version(int nType, int nMajor, int nMinor, int nAlphaBetaVersion, int nPatchVersion, boolean bVerify)
+    {
+        this(nType, nMajor, nMinor, nAlphaBetaVersion, nPatchVersion, bVerify, null);
+    }
+
+    /**
+     * Creates a new instance of Version with suffix
+     */
+    public Version(int nType, int nMajor, int nMinor, int nAlphaBetaVersion, int nPatchVersion, boolean bVerify, String sSuffix)
     {
         bVerify_ = bVerify;
         nMajor_ = nMajor;
@@ -146,6 +163,7 @@ public class Version implements DataMarshal
         bBeta_ = nType == TYPE_BETA;
         bAlpha_ = nType == TYPE_ALPHA;
         nAlphaBetaVersion_ = nAlphaBetaVersion;
+        sSuffix_ = sSuffix;
         if (bDemo_ && (bBeta_ || bAlpha_)) throw new ApplicationError(ErrorCodes.ERROR_CODE_ERROR,
                                                                       "Can't be demo and alpha/beta at same time", "fix code");
     }
@@ -332,6 +350,7 @@ public class Version implements DataMarshal
         return nMajor_ + "." + nMinor_ + (bAlpha_ | bBeta_ ? (bAlpha_ ? "a" : "b") + nAlphaBetaVersion_ : "") +
                (nPatch_ > 0 ? "." + nPatch_ : "") +
                (bDemo_ ? "d" : "") +
-               (sLocale_ != null ? "_" + sLocale_ : "");
+               (sLocale_ != null ? "_" + sLocale_ : "") +
+               (sSuffix_ != null ? sSuffix_ : "");
     }
 }
