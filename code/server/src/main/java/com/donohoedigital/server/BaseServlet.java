@@ -142,8 +142,7 @@ public abstract class BaseServlet extends HttpServlet
         received.setFromIP(request.getRemoteAddr());
         
         try {
-            
-            // TODO: needed for email
+
             if (!(request instanceof GameServletRequest))
             {
                 setThreadServletContext(getServletContext());
