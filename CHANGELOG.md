@@ -113,6 +113,16 @@ This release includes two major architectural improvements:
   - All configuration now managed by FilePrefs system
 
 ### Fixed
+- **Public IP Detection for P2P Game Hosting**
+  - "Test Online" feature now correctly returns public IP address instead of private/local IP
+  - Fixed NAT/router scenarios where server-side detection would return 192.168.x.x or 127.0.0.1
+  - Client now queries external IP detection services directly (ipify.org, icanhazip.com, checkip.amazonaws.com)
+  - Implements caching (5-minute TTL) to reduce external service calls
+  - Thread-safe implementation for concurrent access
+  - Falls back to server query if all external services fail
+  - Properly rejects invalid IPs: private ranges (10.x, 172.16-31.x, 192.168.x), loopback (127.x), link-local (169.254.x), broadcast (255.255.255.255), and zero address (0.0.0.0)
+  - Added 40 comprehensive unit tests covering edge cases, concurrency, IPv6 handling, and malformed responses
+  - Configurable via properties: `settings.publicip.service.url` and `settings.publicip.cache.ttl`
 - Potential file corruption during player ID persistence
 - Race conditions in concurrent player ID access
 - Platform path detection for config directory

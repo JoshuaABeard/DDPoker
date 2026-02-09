@@ -42,13 +42,20 @@ import com.donohoedigital.comms.DDMessageListener;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.comms.*;
 import com.donohoedigital.games.engine.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
+ * Get public IP address for P2P game hosting.
+ * Fetches IP directly from external services (ipify.org, etc.) rather than
+ * querying the game server, which correctly handles NAT/router scenarios.
  *
  * @author  Doug Donohoe
  */
 public class GetPublicIP extends SendMessageDialog
 {
+    private static final Logger logger = LogManager.getLogger(GetPublicIP.class);
+
     public static final String PARAM_TEST_SERVER = "testServer";
 
     /**
@@ -98,5 +105,57 @@ public class GetPublicIP extends SendMessageDialog
 
     protected boolean isAutoClose() {
         return !testServer_;
+    }
+
+    /**
+     * Override start() to fetch public IP from external service directly
+     * instead of querying the game server. This correctly handles NAT/router
+     * scenarios where the server would only see the client's private IP.
+     * Falls back to server query if external services fail.
+     */
+    @Override
+    public void start()
+    {
+        // Initialize parent (sets up UI if not faceless)
+        if (!isFaceless()) {
+            super.start();
+        }
+
+        testServer_ = gamephase_.getBoolean(PARAM_TEST_SERVER, false);
+
+        // Update status to show we're connecting
+        updateStep(DDMessageListener.STEP_CONNECTING);
+
+        // Try to fetch public IP from external service
+        logger.info("Fetching public IP from external service");
+        PublicIPDetector detector = new PublicIPDetector();
+        String publicIP = detector.fetchPublicIP();
+
+        if (publicIP != null) {
+            // Success - create result message with public IP
+            logger.info("Successfully detected public IP: {}", publicIP);
+            updateStep(DDMessageListener.STEP_DONE);
+
+            EngineMessage result = new EngineMessage(
+                    EngineMessage.GAME_NOTDEFINED,
+                    EngineMessage.PLAYER_SERVER,
+                    EngineMessage.CAT_PUBLIC_IP
+            );
+            result.setString(EngineMessage.PARAM_IP, publicIP);
+
+            // Simulate successful server response
+            messageReceived(result);
+        } else {
+            // Fallback: use original server query behavior
+            logger.warn("Failed to fetch public IP from external services, falling back to server query");
+
+            if (isFaceless()) {
+                // Initialize parent now for faceless mode
+                super.start();
+            }
+
+            // Let parent class handle server query
+            sendMessage(null);
+        }
     }
 }
