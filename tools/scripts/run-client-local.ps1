@@ -60,7 +60,7 @@ $classpath = $cp -join ";"
 Write-Host "Starting DD Poker client..."
 Write-Host ""
 Write-Host "NOTE: If chat doesn't connect with localhost, configure the client to use"
-Write-Host "your actual IP address instead (e.g., 192.168.1.240:11886 for chat)"
+Write-Host "your actual IP address instead (e.g., 192.168.1.x:11886 for chat)"
 Write-Host ""
 
 # Run the client

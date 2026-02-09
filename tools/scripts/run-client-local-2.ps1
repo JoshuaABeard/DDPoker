@@ -69,7 +69,7 @@ Write-Host "NOTE: This is CLIENT #2 with a separate user profile"
 Write-Host "      Use run-client-local.ps1 for the first client"
 Write-Host ""
 Write-Host "NOTE: If chat doesn't connect with localhost, configure the client to use"
-Write-Host "your actual IP address instead (e.g., 192.168.1.240:11886 for chat)"
+Write-Host "your actual IP address instead (e.g., 192.168.1.x:11886 for chat)"
 Write-Host ""
 
 # Run the client with a different user.home

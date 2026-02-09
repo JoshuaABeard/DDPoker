@@ -123,12 +123,10 @@ The server will be available at:
 ## Development
 
 IntelliJ can be used to run the programs described below.  If you open up the
-root of this project in IntelliJ, it should auto-detect
-the `code/pom.xml` file and prompt you to load it:
+root of this project in IntelliJ, it should auto-detect the `code/pom.xml` file
+and prompt you to load it as a Maven project.
 
-<img src="images/intellij-maven.png" alt="IntelliJ Maven" width="400px">
-
-**NOTE**: You will probably need to edit the Project Structure to tell IntelliJ to use Java 25.
+**NOTE**: You will need to edit the Project Structure to tell IntelliJ to use Java 25.
 Go to _File → Project Structure... → Project Settings → Project → SDK_ and
 set to Java 25 (you may need to add it (_+ Add SDK_) as a new SDK if not already there).
 

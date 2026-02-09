@@ -48,8 +48,8 @@ Or just launch the client normally from your IDE/installer.
 **IMPORTANT:** Do NOT use `localhost` for UDP chat - it won't work!
 
 In the client, go to **Options → Online**:
-- **Online Server**: `192.168.1.240:8877` (use your actual LAN IP)
-- **Online Chat**: `192.168.1.240:11886` (use your actual LAN IP)
+- **Online Server**: `192.168.1.x:8877` (use your actual LAN IP)
+- **Online Chat**: `192.168.1.x:11886` (use your actual LAN IP)
 
 **Why not localhost?**
 - The UDP stack binds to all network interfaces
@@ -86,8 +86,8 @@ If chat connection times out:
 
 Look at server startup logs for binding addresses:
 ```
-INFO  Binding: 192.168.1.240:11886
-INFO  Binding: 192.168.1.240:11889
+INFO  Binding: 192.168.1.x:11886
+INFO  Binding: 192.168.1.x:11889
 ```
 
 Use that IP in your client settings.
@@ -139,13 +139,14 @@ Remove-Item runtime\poker.mv.db
 
 ## Email Configuration
 
-The server uses Gmail SMTP hardcoded in the script. The credentials come from `docker-compose.override.yml`:
+The server can be configured with SMTP credentials in `tools\scripts\run-server-local.ps1`:
 
-- **Account**: ddpokeserver@gmail.com
-- **App Password**: (stored in script)
-- **From Address**: ddpokeserver@gmail.com
+- **SMTP Host**: smtp.gmail.com (or your email provider)
+- **Account**: your-email@gmail.com
+- **App Password**: Configure in script
+- **From Address**: your-email@gmail.com
 
-To change email provider, edit the `tools\scripts\run-server-local.ps1` SMTP settings.
+See [EMAIL-CONFIGURATION.md](EMAIL-CONFIGURATION.md) for detailed SMTP setup instructions.
 
 ## Notes
 

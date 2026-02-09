@@ -76,14 +76,14 @@ $javaArgs = @(
     "-Ddb.url=jdbc:h2:file:$dbPath;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_ON_EXIT=FALSE"
     "-Ddb.user=sa"
     "-Ddb.password="
-    # Gmail SMTP Configuration
-    '-Dsettings.smtp.host=smtp.gmail.com'
-    '-Dsettings.smtp.port=587'
-    '-Dsettings.smtp.user=ddpokeserver@gmail.com'
-    '-Dsettings.smtp.pass=uthivvycoyghmgpm'
-    '-Dsettings.smtp.auth=true'
-    '-Dsettings.smtp.starttls.enable=true'
-    '-Dsettings.server.profilefrom=ddpokeserver@gmail.com'
+    # SMTP Configuration (optional - uncomment and configure for email functionality)
+    # '-Dsettings.smtp.host=smtp.gmail.com'
+    # '-Dsettings.smtp.port=587'
+    # '-Dsettings.smtp.user=your-email@gmail.com'
+    # '-Dsettings.smtp.pass=your-app-password'
+    # '-Dsettings.smtp.auth=true'
+    # '-Dsettings.smtp.starttls.enable=true'
+    # '-Dsettings.server.profilefrom=your-email@gmail.com'
     '-cp'
     $classpath
     'com.donohoedigital.games.poker.server.PokerServerMain'
