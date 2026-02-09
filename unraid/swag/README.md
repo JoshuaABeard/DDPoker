@@ -49,22 +49,27 @@ No additional DNS needed.
 
 ## Network Configuration
 
-These configs assume DD Poker is at **192.168.4.18:8080** on a bridge network accessible to SWAG.
+**Before using these configs, you MUST update the IP address:**
 
-**To change the IP/port**, edit the config file:
-```nginx
-set $upstream_app 192.168.4.18;  # Change to your IP
-set $upstream_port 8080;          # Change to your port
-```
+1. Find your DD Poker container IP:
+   ```bash
+   docker inspect DDPoker | grep IPAddress
+   ```
+
+2. Edit the config file and replace `YOUR_DDPOKER_IP` with your actual IP:
+   ```nginx
+   set $upstream_app YOUR_DDPOKER_IP;  # Replace with your IP (e.g., 192.168.x.x)
+   set $upstream_port 8080;             # Usually 8080, change if different
+   ```
 
 ## Game Server Ports
 
 **Important:** SWAG only proxies the web interface (HTTP/HTTPS). The game server and UDP ports need direct access:
 
 **Required port forwards on your router:**
-- `8877` TCP → 192.168.4.18:8877 (Game Server)
-- `11886` UDP → 192.168.4.18:11886 (Chat)
-- `11889` UDP → 192.168.4.18:11889 (Connection Test)
+- `8877` TCP → YOUR_IP:8877 (Game Server)
+- `11886` UDP → YOUR_IP:11886 (Chat)
+- `11889` UDP → YOUR_IP:11889 (Connection Test)
 
 **Client connection:**
 - Web: `https://ddpoker.yourdomain.com`
