@@ -1,8 +1,8 @@
 services:
   ddpoker:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     ports:
       - "8877:8877"       # pokerserver HTTP API (game client)
       - "8080:8080"       # pokerweb Jetty (website)

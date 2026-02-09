@@ -145,7 +145,7 @@ If your Docker server is running on a different machine:
 If you've configured MySQL instead of the default H2 database:
 
 1. Ensure MySQL is accessible from Docker
-2. Update `docker-compose.yml` environment variables:
+2. Update `docker/docker-compose.yml` environment variables:
    ```yaml
    environment:
      DB_DRIVER: com.mysql.cj.jdbc.Driver

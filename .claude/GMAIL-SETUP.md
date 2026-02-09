@@ -19,9 +19,9 @@
 
 ### Step 2: Configure Docker (2 minutes)
 
-1. **Edit docker-compose.yml:**
+1. **Edit docker/docker-compose.yml:**
    ```bash
-   nano docker-compose.yml
+   nano docker/docker-compose.yml
    ```
 
 2. **Find the email section and uncomment these lines:**
@@ -100,14 +100,14 @@ See the complete guide: [EMAIL-CONFIGURATION.md](guidelines/EMAIL-CONFIGURATION.
 
 ---
 
-## Complete docker-compose.yml Example
+## Complete docker/docker-compose.yml Example
 
 ```yaml
 services:
   ddpoker:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
     ports:
       - "8877:8877"
       - "8080:8080"

@@ -109,9 +109,9 @@ ddpoker/
     db/                    # Database scripts (create_dbs.sql, reset_dbs.sh, etc.)
   guidelines/              # Project guidelines and documentation
   docker/                  # Docker-related files
-    entrypoint.sh          # Container entrypoint (dual-process manager)
-  Dockerfile               # Primary Dockerfile (pokerserver + pokerweb + H2)
-  docker-compose.yml       # Docker Compose configuration
+    docker-compose.yml     # Docker Compose configuration
+    Dockerfile             # Container image definition (pokerserver + pokerweb + H2)
+    entrypoint.sh          # Container startup script (dual-process manager)
   ddpoker.rc               # Environment setup script (aliases, PATH, JAVA_HOME)
 ```
 

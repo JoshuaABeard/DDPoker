@@ -434,7 +434,7 @@ This ensures:
 
 ### Environment Variables
 
-All configuration can be overridden via environment variables in `docker-compose.yml`:
+All configuration can be overridden via environment variables in `docker/docker-compose.yml`:
 
 ```yaml
 environment:
@@ -450,7 +450,7 @@ environment:
 
 ### Custom Ports
 
-To use different ports, edit `docker-compose.yml`:
+To use different ports, edit `docker/docker-compose.yml`:
 
 ```yaml
 ports:
@@ -464,7 +464,7 @@ ports:
 
 ### Resource Limits
 
-Add resource constraints in `docker-compose.yml`:
+Add resource constraints in `docker/docker-compose.yml`:
 
 ```yaml
 services:
@@ -482,7 +482,7 @@ services:
 
 ## Legacy Dockerfiles
 
-The main `Dockerfile` (at repo root) provides the complete production deployment with both pokerserver and pokerweb using embedded Jetty.
+The main `docker/Dockerfile` provides the complete production deployment with both pokerserver and pokerweb using embedded Jetty.
 
 ## Client Installer Distribution
 

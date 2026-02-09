@@ -129,7 +129,7 @@ This runs both pokerserver and pokerweb in a single container with an embedded H
 
 ### Docker Build Process
 
-The Dockerfile copies:
+The docker/Dockerfile copies:
 - Compiled classes from all 22 modules → `/app/classes/`
 - All dependency JARs → `/app/lib/`
 - Webapp files → `/app/webapp/`
@@ -176,7 +176,7 @@ docker compose logs --tail=100
 - Perfect for development and small deployments
 
 **MySQL (Optional):**
-Edit `docker-compose.yml` to uncomment MySQL environment variables:
+Edit `docker/docker-compose.yml` to uncomment MySQL environment variables:
 ```yaml
 environment:
   DB_DRIVER: com.mysql.cj.jdbc.Driver

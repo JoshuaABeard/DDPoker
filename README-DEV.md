@@ -486,7 +486,7 @@ brew install act
 The `act-ddpoker` alias uses a custom Docker image you need to build once:
 
 ```shell
-docker build -t ddpoker-act-runner -f Dockerfile.act .
+docker build -t ddpoker-act-runner -f docker/Dockerfile.act .
 ```
 
 To run the GitHub testing action locally, just use the alias:

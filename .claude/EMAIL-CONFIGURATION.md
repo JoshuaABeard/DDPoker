@@ -28,7 +28,7 @@ Without email configured, users cannot create or activate online profiles.
 
 ### Method 1: Docker Environment Variables (Recommended)
 
-Edit `docker-compose.yml` and uncomment the email section:
+Edit `docker/docker-compose.yml` and uncomment the email section:
 
 ```yaml
 environment:
@@ -88,7 +88,7 @@ Gmail is the easiest option for most users.
 
 ### Step 3: Configure Docker
 
-Edit `docker-compose.yml`:
+Edit `docker/docker-compose.yml`:
 
 ```yaml
 environment:
@@ -448,8 +448,8 @@ Only disable for testing/development.
 # 1. Generate Gmail App Password
 # Visit: https://myaccount.google.com/apppasswords
 
-# 2. Edit docker-compose.yml
-vim docker-compose.yml
+# 2. Edit docker/docker-compose.yml
+vim docker/docker-compose.yml
 
 # 3. Add these lines under 'environment:'
   - SMTP_HOST=smtp.gmail.com
