@@ -81,9 +81,9 @@ public class PokerP2PDialog extends SendMessageDialog implements OnlineMessageLi
         
         omsg_ = (OnlineMessage) gamephase_.getObject(PARAM_MSG);
         ApplicationError.assertNotNull(omsg_, "No OnlineMessage to send", null);
-        
+
         url_ = omsg_.getConnectURL();
-        ApplicationError.assertNotNull(omsg_, "No URL to send to", null);
+        ApplicationError.assertNotNull(url_, "No URL to send to", null);
         
         super.start();
     }

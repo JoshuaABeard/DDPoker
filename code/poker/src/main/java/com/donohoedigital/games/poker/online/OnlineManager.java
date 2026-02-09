@@ -1345,6 +1345,11 @@ public class OnlineManager implements ChatManager
             if (isUDP())
             {
                 PokerUDPDialog dialog = (PokerUDPDialog) context_.processPhaseNow("ConnectGameUDP", params);
+                if (dialog == null)
+                {
+                    logger.warn("ConnectGameUDP phase returned null - connection failed");
+                    return new DDMessage(DDMessage.CAT_APPL_ERROR, "msg.udp.connect.failed");
+                }
                 bOK = dialog.getStatus() == DDMessageListener.STATUS_OK;
                 error = dialog.getErrorMessage();
                 reply = dialog.getReply();
@@ -1352,6 +1357,11 @@ public class OnlineManager implements ChatManager
             else
             {
                 PokerP2PDialog dialog = (PokerP2PDialog) context_.processPhaseNow("ConnectGameTCP", params);
+                if (dialog == null)
+                {
+                    logger.warn("ConnectGameTCP phase returned null - connection failed");
+                    return new DDMessage(DDMessage.CAT_APPL_ERROR, "msg.p2p.connect.failed");
+                }
                 msgr = dialog.getPeer2PeerMessenger();
                 bOK = dialog.getStatus() == DDMessageListener.STATUS_OK;
                 error = dialog.getErrorMessage();

@@ -616,6 +616,31 @@ verify:
 * Start game from Ubuntu Docker
 * Build `act` docker image and running `act-ddpoker` (remember to stop MySQL)
 
+### Testing Online Multiplayer Locally
+
+For local development testing of online multiplayer, you can run multiple client instances on the same machine using different scripts:
+
+**Start the first client:**
+```powershell
+.\run-client-local.ps1
+```
+
+**Start the second client (in a new terminal):**
+```powershell
+.\run-client-local-2.ps1
+```
+
+The second client script uses a separate user profile directory (`.dd-poker3-client2`) to avoid database conflicts. Each client maintains its own:
+- Local HSQLDB database
+- Player profiles and settings
+- Save games and hand histories
+- Preferences and window layouts
+
+**Important Notes:**
+- Both clients can connect to the same local server (`localhost:11886`)
+- Each client must create/use a different online profile (e.g., "User1" and "User2")
+- See the Known Limitations section below for chat behavior on the same machine
+
 ### Known Limitation: Multiple Clients on Same Machine
 
 When testing online multiplayer with multiple clients on the same machine, you may encounter

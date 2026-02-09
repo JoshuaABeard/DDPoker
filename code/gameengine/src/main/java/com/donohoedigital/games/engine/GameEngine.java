@@ -540,6 +540,13 @@ public abstract class GameEngine extends BaseApp
      */
     public String getPublicUseKey()
     {
+        // For online games, use the profile UUID if available (set by ValidateProfile)
+        String defaultKey = DDMessage.getDefaultKey();
+        if (defaultKey != null && !defaultKey.isEmpty())
+        {
+            return defaultKey;
+        }
+
         String sReal;
 
         // get key upon which public key is based

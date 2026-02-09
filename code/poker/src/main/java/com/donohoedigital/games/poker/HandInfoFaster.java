@@ -99,6 +99,8 @@ public class HandInfoFaster
             for (int i = h.size()-1; i >= 0; i--)
             {
                 Card c1 = h.getCard(i);
+                // Skip blank/unknown cards (e.g., when player joins mid-game)
+                if (c1.isBlank()) continue;
                 all_.cards[all_.size].suit = c1.getSuit();
                 all_.cards[all_.size].rank = c1.getRank();
                 all_.size++;
@@ -108,6 +110,8 @@ public class HandInfoFaster
             for (int i1 = c.size()-1; i1 >= 0; i1--)
             {
                 Card c1 = c.getCard(i1);
+                // Skip blank/unknown cards (e.g., when player joins mid-game)
+                if (c1.isBlank()) continue;
                 all_.cards[all_.size].suit = c1.getSuit();
                 all_.cards[all_.size].rank = c1.getRank();
                 all_.size++;
