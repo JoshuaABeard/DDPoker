@@ -91,7 +91,6 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
     public PokerAI()
     {
         super(false);
-        if (false) Perf.construct(this, null);
     }
 
     public void propertyChange(PropertyChangeEvent evt)

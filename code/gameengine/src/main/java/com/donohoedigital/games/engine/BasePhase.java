@@ -64,7 +64,6 @@ public abstract class BasePhase implements Phase
      * Creates a new instance of BasePhase 
      */
     public BasePhase() {
-        if (false) Perf.construct(this, null);
     }
 
     /**

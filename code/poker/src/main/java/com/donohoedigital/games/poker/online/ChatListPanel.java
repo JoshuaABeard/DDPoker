@@ -579,7 +579,6 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
         public ChatItemPanel(ListPanel p, Object item, String sStyle)
         {
             super(p, item, sStyle);
-            if (false) Perf.construct(this, "Chat");
 
             ChatListPanel panel = (ChatListPanel) p;
 
