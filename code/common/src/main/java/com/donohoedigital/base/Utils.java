@@ -86,7 +86,7 @@ public class Utils
 
     /**
      * Figure out if this a mac/windows/linux
-     * TODO:  GAH!  this code is crap
+     * Note: Platform detection using system properties and version checking
      */
     static
     {
