@@ -40,31 +40,39 @@ package com.donohoedigital.config;
 
 
 import com.donohoedigital.base.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.prefs.*;
 
 /**
+ * Preferences facade that delegates to FilePrefs (file-based JSON configuration).
+ * Maintains backward compatibility with existing code that uses Java Preferences API.
+ *
  * @author Doug Donohoe
  */
 public class Prefs
 {
+    private static final Logger logger = LogManager.getLogger(Prefs.class);
 
-    static
-    {
-        if (Utils.ISLINUX)
-        {
-            // need to change system root to user dir
-            // because default is /etc
-            String userRoot = System.getProperty("user.home");
-            System.setProperty("java.util.prefs.systemRoot", userRoot + "/.java");
-            // TODO: this is probably broken now
-            System.setProperty("javax.xml.transform.TransformerFactory", "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl");
-        }
-    }
+    private static FilePrefsAdapter rootPrefs;
 
     // store root node override
     private static String ROOT = null;
     public static final String NODE_OPTIONS = "options/";
+
+    /**
+     * Initialize FilePrefs backend. Should be called early in application startup.
+     */
+    public static void initialize()
+    {
+        // Initialize FilePrefs singleton
+        FilePrefs filePrefs = FilePrefs.getInstance();
+        logger.info("Initialized file-based preferences at: {}", filePrefs.getConfigDir());
+
+        // Create root preferences adapter
+        rootPrefs = new FilePrefsAdapter();
+    }
 
     /**
      * Set root node name - overrides default of ConfigManager.getAppName();
@@ -91,11 +99,12 @@ public class Prefs
     }
 
     /**
-     * Get root user prefs.  Users "com/donohoedigital/" + appname
+     * Get root user prefs.  Uses FilePrefsAdapter instead of Java Preferences.
      */
     public static Preferences getUserRootPrefs()
     {
-        return Preferences.userRoot().node("com/donohoedigital/" + getRootNodeName());
+        ensureInitialized();
+        return rootPrefs.node("com/donohoedigital/" + getRootNodeName());
     }
 
     /**
@@ -105,13 +114,13 @@ public class Prefs
     {
         try
         {
-            Preferences prefs = getUserRootPrefs();
-            prefs.clear();
-            prefs.removeNode();
+            ensureInitialized();
+            FilePrefs.getInstance().clear();
+            logger.info("Cleared all preferences");
         }
-        catch (BackingStoreException bse)
+        catch (Exception e)
         {
-            // no worries
+            logger.warn("Failed to clear preferences", e);
         }
     }
 
@@ -121,5 +130,17 @@ public class Prefs
     public static Preferences getUserPrefs(String sNodeName)
     {
         return getUserRootPrefs().node(sNodeName);
+    }
+
+    /**
+     * Ensure FilePrefs is initialized (auto-initialize if not already done)
+     */
+    private static void ensureInitialized()
+    {
+        if (rootPrefs == null)
+        {
+            logger.warn("FilePrefs not explicitly initialized, auto-initializing now");
+            initialize();
+        }
     }
 }

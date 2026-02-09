@@ -105,6 +105,10 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
         LoggingConfig loggingConfig = new LoggingConfig(APP_NAME, ApplicationType.CLIENT);
         loggingConfig.init();
         logger = LogManager.getLogger(PokerMain.class);
+
+        // initialize file-based preferences (replaces Java Preferences API)
+        Prefs.initialize();
+        logger.info("File-based preferences initialized at: {}", FilePrefs.getInstance().getConfigDir());
     }
 
     /**
