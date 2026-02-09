@@ -399,21 +399,8 @@ public abstract class EngineServlet extends BaseServlet
             return ret;
         }
 
-        // check if valid license key
+        // License key validation removed in open source version - always valid in Community Edition
         String sKey = received.getKey();
-        //noinspection PointlessNullCheck
-        if (bCategoryValidated && (sKey == null || !Activation.validate(receivedKeyStart, sKey, locale)))
-        {
-            ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED,
-                                    EngineMessage.PLAYER_SERVER,
-                                    EngineMessage.CAT_APPL_ERROR);
-
-            if (sKey == null) sKey = PropertyConfig.getLocalizedMessage("msg.missing", locale);
-            if (setFlagToResetClient) ret.setBoolean(EngineMessage.PARAM_BAD_KEY, Boolean.TRUE);
-            ret.setApplicationErrorMessage(PropertyConfig.getLocalizedMessage("msg.invalidkey", locale, sKey));
-            logger.warn("Invalid key: " + sKey + " from " + sFromForLogging + ", msg: " + received.getDebugInfo());
-            return ret;
-        }
 
         // check database if required by the given category, see if undergoing maintenance
         if (bDatabaseRequired && PropertyConfig.getBooleanProperty("settings.db.maintenance", false))
