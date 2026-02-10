@@ -27,7 +27,22 @@
       "Bash(export PATH=\"/c/Tools/apache-maven-3.9.12/bin:$JAVA_HOME/bin:$PATH\")",
       "Bash(ls \"C:\\\\Repos\\\\DDPoker\\\\code\\\\pokerserver\\\\target\\\\dependency\"\" | wc -l && ls \"C:ReposDDPokercodepokerwickettargetdependency\"\")",
       "Bash(docker compose build:*)",
-      "Bash(export PATH=\"/c/Program Files/Docker/Docker/resources/bin:$PATH\")"
+      "Bash(export PATH=\"/c/Program Files/Docker/Docker/resources/bin:$PATH\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(grep:*)",
+      "Bash(for file in PokerGame.java PokerUDPServer.java PokerDatabase.java PokerStartMenu.java ShowTournamentTable.java online/ChatPanel.java dashboard/ObserversDash.java)",
+      "Bash(do sed -i 's/\\\\.getKey\\(\\)/\\\\.getPlayerId\\(\\)/g' \"$file\")",
+      "Bash(echo:*)",
+      "Bash(done)",
+      "Bash(do sed -i 's/\\\\.setKey\\(/\\\\.setPlayerId\\(/g' \"$file\")",
+      "Bash(tee:*)",
+      "Bash(javap:*)",
+      "Bash(ls:*)",
+      "Bash(test:*)",
+      "Bash(xargs git show:*)",
+      "WebFetch(domain:www.ddpoker.com)"
     ]
   }
 }
