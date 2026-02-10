@@ -97,20 +97,20 @@
     <!-- JETTY -->
 
     <!--
-      We include Jetty mainly so that we can run PokerJetty for dev purposes (don't need a full
-      tomcat install).  PokerJetty is in test code to not conflict with Tomcat.
+      We include Jetty for running PokerJetty in production Docker deployments.
+      Changed from test scope to compile scope since PokerJetty is now in main sources.
     -->
     <dependency>
       <groupId>org.eclipse.jetty.ee10</groupId>
       <artifactId>jetty-ee10-servlet</artifactId>
       <version>${jetty.version}</version>
-      <scope>test</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.eclipse.jetty.ee10</groupId>
       <artifactId>jetty-ee10-webapp</artifactId>
       <version>${jetty.version}</version>
-    <scope>test</scope>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
 
@@ -129,7 +129,36 @@
             </goals>
             <configuration>
               <outputDirectory>${project.build.directory}/dependency</outputDirectory>
-              <includeScope>test</includeScope>
+              <includeScope>runtime</includeScope>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Jacoco Coverage Enforcement -->
+      <!-- Baseline: 9% instruction coverage -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>jacoco-check</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <rule>
+                  <element>BUNDLE</element>
+                  <limits>
+                    <limit>
+                      <counter>INSTRUCTION</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.09</minimum>
+                    </limit>
+                  </limits>
+                </rule>
+              </rules>
             </configuration>
           </execution>
         </executions>

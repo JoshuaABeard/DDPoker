@@ -42,9 +42,9 @@ Docker Compose will automatically pull the image from Docker Hub if not availabl
 
 All configuration is managed through environment variables in `docker-compose.yml`. See the main documentation for details:
 
-- [DDPOKER-DOCKER.md](../.claude/DDPOKER-DOCKER.md) - Complete Docker deployment guide
-- [EMAIL-CONFIGURATION.md](../.claude/EMAIL-CONFIGURATION.md) - Email/SMTP setup
-- [CLIENT-CONFIGURATION.md](../.claude/CLIENT-CONFIGURATION.md) - Client connection setup
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - Complete Docker deployment guide (includes client configuration)
+- [EMAIL-CONFIGURATION.md](./EMAIL-CONFIGURATION.md) - Email/SMTP setup
+- [DOCKER-HUB-PUBLISHING.md](./DOCKER-HUB-PUBLISHING.md) - Publishing to Docker Hub
 
 ## Local Overrides
 
