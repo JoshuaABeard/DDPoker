@@ -39,8 +39,14 @@
 package com.donohoedigital.games.poker.server;
 
 import com.donohoedigital.base.Utils;
+import com.donohoedigital.config.PropertyConfig;
+import com.donohoedigital.games.poker.model.OnlineProfile;
+import com.donohoedigital.games.poker.service.OnlineProfileService;
 import com.donohoedigital.games.server.EngineServer;
 import com.donohoedigital.udp.*;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.UUID;
 
 import static com.donohoedigital.config.DebugConfig.TESTING;
 
@@ -54,6 +60,9 @@ public class PokerServer extends EngineServer implements UDPLinkHandler, UDPMana
     private UDPServer udp_;
     private ChatServer chat_;
 
+    @Autowired
+    private OnlineProfileService onlineProfileService;
+
     /**
      * Initialize, start UDP and run
      */
@@ -61,9 +70,77 @@ public class PokerServer extends EngineServer implements UDPLinkHandler, UDPMana
     public void init()
     {
         super.init();
+        initializeAdminProfile();
         udp_.manager().addMonitor(this);
         udp_.start();
         start();
+    }
+
+    /**
+     * Initialize or update admin profile based on environment variables
+     */
+    void initializeAdminProfile()
+    {
+        String adminUsername = PropertyConfig.getStringProperty("settings.admin.user", null, false);
+        String adminPassword = PropertyConfig.getStringProperty("settings.admin.password", null, false);
+        boolean passwordExplicitlySet = adminPassword != null;
+
+        // If no admin username provided, default to "admin"
+        if (adminUsername == null)
+        {
+            adminUsername = "admin";
+        }
+
+        OnlineProfile profile = onlineProfileService.getOnlineProfileByName(adminUsername);
+
+        if (profile == null)
+        {
+            // Create new admin profile
+            // Generate password only if not explicitly set
+            if (adminPassword == null)
+            {
+                adminPassword = onlineProfileService.generatePassword();
+                logger.warn("Admin credentials not configured, using defaults:");
+                logger.warn("  Username: {}", adminUsername);
+                logger.warn("  Password: {}", adminPassword);
+                logger.warn("  Set ADMIN_USERNAME and ADMIN_PASSWORD environment variables to customize");
+            }
+
+            profile = new OnlineProfile();
+            profile.setName(adminUsername);
+            profile.setPassword(adminPassword);
+            profile.setEmail("admin@localhost");
+            profile.setUuid(UUID.randomUUID().toString());
+            profile.setActivated(true);
+            profile.setRetired(false);
+            profile.setLicenseKey("0000-0000-0000-0000");
+
+            if (onlineProfileService.saveOnlineProfile(profile))
+            {
+                logger.info("Admin profile created: {}", adminUsername);
+            }
+            else
+            {
+                logger.error("Failed to create admin profile: {}", adminUsername);
+            }
+        }
+        else
+        {
+            // Update existing admin profile only if password was explicitly set
+            if (passwordExplicitlySet)
+            {
+                profile.setPassword(adminPassword);
+                profile.setActivated(true);
+                profile.setRetired(false);
+
+                onlineProfileService.updateOnlineProfile(profile);
+                logger.info("Admin profile password updated: {}", adminUsername);
+            }
+            else
+            {
+                logger.info("Admin profile exists, keeping existing password: {}", adminUsername);
+            }
+        }
     }
 
     /**

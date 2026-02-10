@@ -84,6 +84,8 @@ public class OnlineProfile implements BaseModel<Long>
     public static final String PROFILE_CREATE_DATE = "profilecreatedate";
     public static final String PROFILE_MODIFY_DATE = "profilemodifydate";
     public static final String PROFILE_RETIRED = "profileretired";
+    public static final String PROFILE_ACTIVATED = "profileactivated";
+    public static final String PROFILE_LICENSE_KEY = "profilelicensekey";
 
     // security key for encryption
     private static final byte[] SECURITY_KEY = new byte[]{(byte) 0x8c, (byte) 0xab, (byte) 0x4c, (byte) 0x92,
@@ -359,40 +361,37 @@ public class OnlineProfile implements BaseModel<Long>
     // ===================================================================
 
     /**
-     * @deprecated License key removed in open source version
+     * Returns the license key (always a placeholder in open source version).
      */
-    @Deprecated
-    @Transient
+    @Column(name = "wpr_license_key", nullable = false, length = 19)
     public String getLicenseKey()
     {
-        return null;  // No license keys in open source version
+        return data_.getString(PROFILE_LICENSE_KEY, "0000-0000-0000-0000");
     }
 
     /**
-     * @deprecated License key removed in open source version
+     * Sets the license key (stored for database compatibility).
      */
-    @Deprecated
     public void setLicenseKey(String key)
     {
-        // No-op: license keys not used in open source version
+        data_.setString(PROFILE_LICENSE_KEY, key);
     }
 
     /**
-     * @deprecated Activation removed in open source version
+     * Returns whether this profile is activated.
+     * Always defaults to true in open source version.
      */
-    @Deprecated
-    @Transient
+    @Column(name = "wpr_is_activated", nullable = false)
     public boolean isActivated()
     {
-        return true;  // Always activated in open source version
+        return data_.getBoolean(PROFILE_ACTIVATED, true);
     }
 
     /**
-     * @deprecated Activation removed in open source version
+     * Sets whether this profile is activated.
      */
-    @Deprecated
     public void setActivated(boolean activated)
     {
-        // No-op: activation not needed in open source version
+        data_.setBoolean(PROFILE_ACTIVATED, activated);
     }
 }
