@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Optimized logging configuration for pokerserver module tests
+  Reduces Hibernate verbosity for faster test execution
+-->
+<Configuration status="WARN">
+  <Appenders>
+    <Console name="Console" target="SYSTEM_ERR">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} [%-5level] %logger{1} - %msg%n"/>
+    </Console>
+  </Appenders>
+
+  <Loggers>
+    <!-- Default to WARN for faster test execution -->
+    <Root level="WARN">
+      <AppenderRef ref="Console"/>
+    </Root>
+
+    <!-- Silence Hibernate's verbose output -->
+    <Logger name="org.hibernate" level="ERROR"/>
+    <Logger name="org.hibernate.SQL" level="ERROR"/>
+    <Logger name="org.hibernate.type" level="ERROR"/>
+    <Logger name="org.hibernate.engine" level="ERROR"/>
+
+    <!-- Silence Spring -->
+    <Logger name="org.springframework" level="ERROR"/>
+
+    <!-- Application logging -->
+    <Logger name="com.donohoedigital.games.poker.server" level="WARN"/>
+  </Loggers>
+</Configuration>

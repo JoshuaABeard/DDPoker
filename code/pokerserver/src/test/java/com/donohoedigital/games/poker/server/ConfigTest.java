@@ -33,6 +33,7 @@
 package com.donohoedigital.games.poker.server;
 
 import junit.framework.*;
+import org.junit.jupiter.api.Tag;
 import org.springframework.context.support.*;
 import org.springframework.context.*;
 import org.springframework.util.*;
@@ -47,6 +48,7 @@ import java.io.*;
  *
  * Simple Spring test - configure logging, load app context, get a bean
  */
+@Tag("slow")
 public class ConfigTest extends TestCase
 {
     /**

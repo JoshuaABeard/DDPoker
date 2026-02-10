@@ -41,6 +41,7 @@ import com.donohoedigital.games.engine.BasePhase;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.GameEngine;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
@@ -50,6 +51,7 @@ import static org.assertj.core.api.Assertions.*;
  *
  * <p>Tests BasePhase business logic and state management with minimal mocking.</p>
  */
+@Tag("slow")
 class BasePhaseIntegrationTest extends IntegrationTestBase {
 
     private TestableBasePhase phase;

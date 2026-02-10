@@ -97,6 +97,7 @@ import org.junit.jupiter.api.TestInstance;
  *
  * <p>Tests should focus on business logic, not UI or event system behavior.</p>
  */
+@Tag("slow")
 @Tag("integration")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class IntegrationTestBase {

@@ -38,6 +38,7 @@ import com.donohoedigital.games.engine.ChainPhase;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.GameEngine;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
@@ -47,6 +48,7 @@ import static org.assertj.core.api.Assertions.*;
  *
  * <p>Tests ChainPhase chaining logic and phase processing with minimal mocking.</p>
  */
+@Tag("slow")
 class ChainPhaseIntegrationTest extends IntegrationTestBase {
 
     private TestableChainPhase phase;

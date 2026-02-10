@@ -34,6 +34,7 @@ package com.donohoedigital.games.poker.integration;
 
 import com.donohoedigital.games.engine.*;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
@@ -43,6 +44,7 @@ import static org.assertj.core.api.Assertions.*;
  *
  * <p>Tests that all Phase implementations follow the Phase contract correctly.</p>
  */
+@Tag("slow")
 class PhaseContractsIntegrationTest extends IntegrationTestBase {
 
     private GameEngine engine;

@@ -36,6 +36,7 @@ import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
@@ -54,6 +55,7 @@ import static org.assertj.core.api.Assertions.*;
  * mvn test -Dgroups=integration
  * </pre>
  */
+@Tag("slow")
 class PokerGameIntegrationTest extends IntegrationTestBase {
 
     private PokerGame game;

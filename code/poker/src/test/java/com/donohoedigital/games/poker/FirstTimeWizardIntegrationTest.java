@@ -53,6 +53,7 @@ import static org.assertj.core.api.Assertions.*;
  * application startup flow, including profile creation, preference management,
  * and wizard state persistence.
  */
+@Tag("slow")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class FirstTimeWizardIntegrationTest {
 

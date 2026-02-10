@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<cache xmlns="http://maven.apache.org/BUILD-CACHE-CONFIG/1.0.0"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://maven.apache.org/BUILD-CACHE-CONFIG/1.0.0
+                           https://maven.apache.org/xsd/build-cache-config-1.0.0.xsd">
+  <configuration>
+    <enabled>true</enabled>
+    <hashAlgorithm>SHA-256</hashAlgorithm>
+
+    <!-- Local cache only (no remote) -->
+    <local>
+      <maxBuildsCached>5</maxBuildsCached>
+    </local>
+    <remote enabled="false"/>
+
+    <!-- Input filtering -->
+    <input>
+      <global>
+        <!-- Exclude build output and IDE files from cache key -->
+        <exclude>target/**</exclude>
+        <exclude>.idea/**</exclude>
+        <exclude>.vscode/**</exclude>
+        <exclude>*.iml</exclude>
+        <exclude>.settings/**</exclude>
+        <exclude>.project</exclude>
+        <exclude>.classpath</exclude>
+      </global>
+    </input>
+
+    <!-- Project versioning reconciliation -->
+    <projectVersioning adjustMetaInf="true"/>
+  </configuration>
+
+  <!-- Execution control -->
+  <executionControl>
+    <runAlways>
+      <plugins>
+        <!-- Always run clean -->
+        <plugin artifactId="maven-clean-plugin"/>
+      </plugins>
+    </runAlways>
+
+    <reconcile logAllProperties="false">
+      <plugins>
+        <!-- Reconcile compiler output -->
+        <plugin artifactId="maven-compiler-plugin">
+          <reconciles>
+            <reconcile propertyName="source"/>
+            <reconcile propertyName="target"/>
+          </reconciles>
+        </plugin>
+
+        <!-- Reconcile test output -->
+        <plugin artifactId="maven-surefire-plugin">
+          <reconciles>
+            <reconcile propertyName="test"/>
+            <reconcile propertyName="skipTests"/>
+          </reconciles>
+        </plugin>
+      </plugins>
+    </reconcile>
+  </executionControl>
+</cache>

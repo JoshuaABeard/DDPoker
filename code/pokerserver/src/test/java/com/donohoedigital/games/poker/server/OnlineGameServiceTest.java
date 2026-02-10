@@ -36,6 +36,7 @@ import com.donohoedigital.db.PagedList;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.model.util.OnlineGameList;
 import com.donohoedigital.games.poker.service.OnlineGameService;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Rollback;
@@ -50,6 +51,7 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for OnlineGameService business logic beyond simple DAO pass-through operations.
  */
+@Tag("slow")
 @SpringJUnitConfig(locations = {"/app-context-pokerservertests.xml"})
 @Transactional
 class OnlineGameServiceTest

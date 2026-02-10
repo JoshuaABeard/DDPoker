@@ -39,12 +39,14 @@ import com.donohoedigital.xml.*;
 import com.donohoedigital.base.*;
 import junit.framework.*;
 import org.apache.logging.log4j.*;
+import org.junit.jupiter.api.Tag;
 
 import java.util.*;
 
 /**
  * @author Doug Donohoe
  */
+@Tag("slow")
 public class XMLExportTest extends TestCase
 {
     public void testSimpleXMLEncoder()

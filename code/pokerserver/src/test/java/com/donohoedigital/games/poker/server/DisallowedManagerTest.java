@@ -35,6 +35,7 @@ package com.donohoedigital.games.poker.server;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.service.helper.*;
 import junit.framework.*;
+import org.junit.jupiter.api.Tag;
 
 import java.net.*;
 
@@ -45,6 +46,7 @@ import java.net.*;
  * Time: 10:57:08 AM
  * To change this template use File | Settings | File Templates.
  */
+@Tag("slow")
 public class DisallowedManagerTest extends TestCase
 {
     //private static final Logger logger = LogManager.getLogger(DisallowedManagerTest.class);

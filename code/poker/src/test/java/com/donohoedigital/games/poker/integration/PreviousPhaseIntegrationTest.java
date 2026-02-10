@@ -37,6 +37,7 @@ import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.engine.PreviousLoopPhase;
 import com.donohoedigital.games.engine.PreviousPhase;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
@@ -46,6 +47,7 @@ import static org.assertj.core.api.Assertions.*;
  *
  * <p>Tests phase navigation classes with minimal mocking.</p>
  */
+@Tag("slow")
 class PreviousPhaseIntegrationTest extends IntegrationTestBase {
 
     private GameEngine engine;

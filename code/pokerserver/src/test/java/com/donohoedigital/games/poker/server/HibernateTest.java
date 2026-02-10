@@ -41,6 +41,7 @@ import jakarta.persistence.Persistence;
 import junit.framework.TestCase;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Tag;
 
 import java.io.FileNotFoundException;
 import java.util.List;
@@ -53,6 +54,7 @@ import java.util.List;
  *
  * Test of Hibernate/JPA without Spring.
  */
+@Tag("slow")
 public class HibernateTest extends TestCase
 {
     @SuppressWarnings({"RawUseOfParameterizedType"})

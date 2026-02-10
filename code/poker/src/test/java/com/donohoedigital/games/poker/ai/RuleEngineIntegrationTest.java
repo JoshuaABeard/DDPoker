@@ -46,6 +46,7 @@ import static org.assertj.core.api.Assertions.*;
  * Note: Full AI execution tests (with V2Player) require complete game scenarios
  * and are better suited for end-to-end testing.
  */
+@Tag("slow")
 @Tag("integration")
 class RuleEngineIntegrationTest extends IntegrationTestBase
 {

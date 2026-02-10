@@ -41,6 +41,7 @@ import com.donohoedigital.games.poker.model.OnlineProfile;
 import com.donohoedigital.games.poker.model.TournamentHistory;
 import com.donohoedigital.games.poker.model.util.TournamentHistoryList;
 import org.apache.logging.log4j.*;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Rollback;
@@ -56,6 +57,7 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for TournamentHistory DAO operations.
  */
+@Tag("slow")
 @SpringJUnitConfig(locations = {"/app-context-pokerservertests.xml"})
 @Transactional
 class TournamentHistoryTest

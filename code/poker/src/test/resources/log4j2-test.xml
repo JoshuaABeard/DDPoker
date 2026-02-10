@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Optimized logging configuration for poker module tests
+-->
+<Configuration status="WARN">
+  <Appenders>
+    <Console name="Console" target="SYSTEM_ERR">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} [%-5level] %logger{1} - %msg%n"/>
+    </Console>
+  </Appenders>
+
+  <Loggers>
+    <!-- Default to WARN for faster test execution -->
+    <Root level="WARN">
+      <AppenderRef ref="Console"/>
+    </Root>
+
+    <!-- Application logging -->
+    <Logger name="com.donohoedigital.games.poker" level="WARN"/>
+
+    <!-- Silence framework logging -->
+    <Logger name="org.springframework" level="ERROR"/>
+  </Loggers>
+</Configuration>

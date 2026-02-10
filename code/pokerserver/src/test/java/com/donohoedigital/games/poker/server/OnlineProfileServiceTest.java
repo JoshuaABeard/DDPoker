@@ -34,6 +34,7 @@ package com.donohoedigital.games.poker.server;
 
 import com.donohoedigital.games.poker.model.OnlineProfile;
 import com.donohoedigital.games.poker.service.OnlineProfileService;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Rollback;
@@ -47,6 +48,7 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for OnlineProfileService business logic beyond simple DAO pass-through operations.
  */
+@Tag("slow")
 @SpringJUnitConfig(locations = {"/app-context-pokerservertests.xml"})
 @Transactional
 class OnlineProfileServiceTest

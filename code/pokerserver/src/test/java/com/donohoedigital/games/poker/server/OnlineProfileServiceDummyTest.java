@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker.server;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -40,6 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Test dummy profile behavior (currently disabled due to caching issues).
  */
+@Tag("slow")
 @SpringJUnitConfig(locations = {"/app-context-pokerservertests.xml"})
 @Transactional
 class OnlineProfileServiceDummyTest
