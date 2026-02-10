@@ -336,6 +336,15 @@ public class StylesConfig extends XMLConfigFileLoader
         }
     }
 
+    /**
+     * Reset StylesConfig for testing.
+     * <p><strong>WARNING:</strong> Only call this from test code, never from production code.</p>
+     */
+    public static void resetForTesting()
+    {
+        stylesConfig = null;
+    }
+
 //    /**
 //     * Code to list all fonts
 //     */

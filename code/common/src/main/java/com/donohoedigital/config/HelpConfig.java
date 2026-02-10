@@ -159,4 +159,13 @@ public class HelpConfig extends XMLConfigFileLoader
         helps_.put(sName, topic);
         helparray_.add(topic);
     }
+
+    /**
+     * Reset HelpConfig for testing.
+     * <p><strong>WARNING:</strong> Only call this from test code, never from production code.</p>
+     */
+    public static void resetForTesting()
+    {
+        helpConfig = null;
+    }
 }

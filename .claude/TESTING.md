@@ -303,12 +303,18 @@ class DatabaseTest {
 ### Run All Tests
 
 ```bash
-# From project root
+# From project root (parallel build, ~69s)
 cd code
-mvn clean test
+mvn clean test -T 1C
 
-# With coverage report
-mvn clean test jacoco:report
+# Fast build: skip integration tests and coverage (~50-55s)
+mvn clean test -T 1C -Pfast
+
+# With coverage reports (~75-80s)
+mvn clean verify -T 1C
+
+# Generate coverage report without rebuilding
+mvn jacoco:report
 ```
 
 ### Run Tests for Specific Module

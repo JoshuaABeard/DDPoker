@@ -91,6 +91,13 @@
           <source>25</source>
           <target>25</target>
           <fork>true</fork>
+          <!-- Enable incremental compilation -->
+          <useIncrementalCompilation>true</useIncrementalCompilation>
+          <!-- Optimize compiler performance -->
+          <compilerArgs>
+            <arg>-J-Xms256m</arg>
+            <arg>-J-Xmx512m</arg>
+          </compilerArgs>
         </configuration>
       </plugin>
 
@@ -124,6 +131,23 @@
       </plugin>
 
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.2</version>
+        <configuration>
+          <!-- Parallel execution at class level (thread-safe with proper cleanup) -->
+          <parallel>classes</parallel>
+          <threadCount>2</threadCount>
+          <perCoreThreadCount>true</perCoreThreadCount>
+          <!-- Fork once per module (memory efficient) -->
+          <forkCount>1</forkCount>
+          <reuseForks>true</reuseForks>
+          <!-- Memory settings -->
+          <argLine>-Xmx512m -XX:+UseParallelGC @{argLine}</argLine>
+        </configuration>
+      </plugin>
+
+      <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>0.8.13</version>
@@ -133,15 +157,17 @@
               <goal>prepare-agent</goal>
             </goals>
           </execution>
+          <!-- Report generation moved to verify phase (run with 'mvn verify' or 'mvn jacoco:report') -->
           <execution>
             <id>report</id>
-            <phase>test</phase>
+            <phase>verify</phase>
             <goals>
               <goal>report</goal>
             </goals>
           </execution>
           <execution>
             <id>jacoco-check</id>
+            <phase>verify</phase>
             <goals>
               <goal>check</goal>
             </goals>
@@ -223,5 +249,52 @@
     </testResources>
 
   </build>
+
+  <profiles>
+    <!-- Fast build profile - skip coverage and integration tests -->
+    <profile>
+      <id>fast</id>
+      <properties>
+        <jacoco.skip>true</jacoco.skip>
+        <skipITs>true</skipITs>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <excludedGroups>integration</excludedGroups>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- Full coverage profile - for CI/CD -->
+    <profile>
+      <id>coverage</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>report-aggregate</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>report-aggregate</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

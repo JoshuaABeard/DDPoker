@@ -639,4 +639,20 @@ public class PropertyConfig extends Properties
     {
         return getStringProperty("build.number", "[dev]", false);
     }
+
+    /**
+     * Reset PropertyConfig for testing.
+     * <p><strong>WARNING:</strong> Only call this from test code, never from production code.</p>
+     */
+    public static void resetForTesting()
+    {
+        if (propConfig != null)
+        {
+            propConfig.clear();
+        }
+        propConfig = null;
+        formats_.clear();
+        dates_.clear();
+        locales_.clear();
+    }
 }

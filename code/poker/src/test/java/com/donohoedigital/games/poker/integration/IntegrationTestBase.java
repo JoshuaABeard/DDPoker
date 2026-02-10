@@ -34,6 +34,7 @@ package com.donohoedigital.games.poker.integration;
 
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
+import com.donohoedigital.config.ConfigTestHelper;
 import com.donohoedigital.games.poker.mock.MockGameEngine;
 import com.donohoedigital.games.poker.mock.MockPokerMain;
 import org.apache.logging.log4j.LogManager;
@@ -119,14 +120,9 @@ public abstract class IntegrationTestBase {
         logger.info("Setting up integration test infrastructure");
 
         try {
-            // Initialize ConfigManager for headless testing
-            ConfigManager configMgr = new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
-            logger.debug("ConfigManager initialized for headless testing");
-
-            // Load GUI config (StylesConfig and ImageConfig)
-            // Normally only loaded for CLIENT type, but GameEngine needs styles/images
-            configMgr.loadGuiConfig();
-            logger.debug("GUI config (StylesConfig, ImageConfig) initialized");
+            // Initialize ConfigManager with GUI config using helper
+            ConfigManager configMgr = ConfigTestHelper.initializeWithGuiForTesting("poker");
+            logger.debug("ConfigManager initialized for headless testing with GUI config");
 
             // Initialize mock GameEngine (must be first - PokerMain extends GameEngine)
             MockGameEngine.initializeForTesting();
@@ -151,9 +147,10 @@ public abstract class IntegrationTestBase {
      * <ul>
      *   <li>MockPokerMain singleton</li>
      *   <li>MockGameEngine singleton</li>
+     *   <li>ConfigManager and all config singletons</li>
      * </ul>
      *
-     * <p>This prevents test pollution between test classes.</p>
+     * <p>This prevents test pollution between test classes and enables parallel test execution.</p>
      */
     @AfterAll
     void teardownIntegrationInfrastructure() {
@@ -166,6 +163,10 @@ public abstract class IntegrationTestBase {
 
             MockGameEngine.resetForTesting();
             logger.debug("MockGameEngine reset");
+
+            // Reset all config singletons to allow parallel test execution
+            ConfigTestHelper.resetForTesting();
+            logger.debug("ConfigManager and all config singletons reset");
 
             logger.info("Integration test infrastructure cleaned up");
 

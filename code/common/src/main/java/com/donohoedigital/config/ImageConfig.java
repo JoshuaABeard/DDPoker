@@ -273,5 +273,13 @@ public class ImageConfig extends XMLConfigFileLoader
 
         images_.put(sName, new ImageDef(sName, url, x, y, cache, bComposite, bComposite ? sComponents : null));
     }
-    
+
+    /**
+     * Reset ImageConfig for testing.
+     * <p><strong>WARNING:</strong> Only call this from test code, never from production code.</p>
+     */
+    public static void resetForTesting()
+    {
+        imageConfig = null;
+    }
 }

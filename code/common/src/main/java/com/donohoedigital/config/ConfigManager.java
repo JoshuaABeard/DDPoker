@@ -169,4 +169,27 @@ public class ConfigManager
     {
         return configMgr.runtimeDir.getServerHome();
     }
+
+    /**
+     * Reset ConfigManager for testing.
+     * <p>
+     * This method resets all singleton config instances to allow clean state
+     * between test classes when running tests in parallel.
+     * </p>
+     * <p><strong>WARNING:</strong> Only call this from test code, never from production code.</p>
+     */
+    public static void resetForTesting()
+    {
+        // Reset child singletons first (in reverse order of creation)
+        StylesConfig.resetForTesting();
+        ImageConfig.resetForTesting();
+        HelpConfig.resetForTesting();
+        AudioConfig.resetForTesting();
+        DataElementConfig.resetForTesting();
+        PropertyConfig.resetForTesting();
+
+        // Finally reset ConfigManager itself
+        configMgr = null;
+        appName = null;
+    }
 }

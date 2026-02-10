@@ -224,4 +224,13 @@ public class DataElementConfig extends HashMap<String, DataElement> implements X
         return domain + " [" + key + "] " +
                e.getMessage() + " at line " + e.getLineNumber();
     }
+
+    /**
+     * Reset DataElementConfig for testing.
+     * <p><strong>WARNING:</strong> Only call this from test code, never from production code.</p>
+     */
+    public static void resetForTesting()
+    {
+        dataConfig = null;
+    }
 }

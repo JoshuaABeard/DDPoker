@@ -477,4 +477,13 @@ public class AudioConfig extends XMLConfigFileLoader
 
         audios_.put(sName, new AudioDef(sName, url));
     }
+
+    /**
+     * Reset AudioConfig for testing.
+     * <p><strong>WARNING:</strong> Only call this from test code, never from production code.</p>
+     */
+    public static void resetForTesting()
+    {
+        audioConfig = null;
+    }
 }
