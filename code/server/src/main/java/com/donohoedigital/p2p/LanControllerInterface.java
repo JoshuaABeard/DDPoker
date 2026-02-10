@@ -48,9 +48,9 @@ import com.donohoedigital.comms.*;
 public interface LanControllerInterface
 {
     /**
-     * Get key for this client
+     * Get player ID for this client (UUID v4)
      */
-    public String getPublicUseKey();
+    public String getPlayerId();
 
     /**
      * Get global unique id for instance of game

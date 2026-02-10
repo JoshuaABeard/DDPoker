@@ -504,17 +504,8 @@ public abstract class SendMessageDialog extends DialogPhase implements DDMessage
             }
             _setStatusText(sErrorMsg);
 
-            // banned keys
-            if (mReturn_.getBoolean(EngineMessage.PARAM_BANNED_KEY, false))
-            {
-                engine_.banLicenseKey();
-            }
-
-            // bad key
-            if (mReturn_.getBoolean(EngineMessage.PARAM_BAD_KEY, false))
-            {
-                engine_.resetLicenseKey();
-            }
+            // Note: License key banning removed in open source version
+            // Server validation now uses UUID-based player identification
         }
         // else a standard error, display the corresponding message
         else

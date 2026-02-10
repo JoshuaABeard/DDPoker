@@ -422,7 +422,7 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
                 if (emailWidgets_ != null)
                 {
                     // submit new profile
-                    profile.setActivated(false);
+                    // Activation removed in open source
                     profile.setEmail(emailWidgets_.getText());
                     bSuccess = SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_ADD, profile, null);
                 }
@@ -440,7 +440,7 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
                         OnlineMessage resOnlineMsg = new OnlineMessage(resEngineMsg);
                         OnlineProfile resProfile = new OnlineProfile(resOnlineMsg.getOnlineProfileData());
 
-                        profile.setActivated(true);
+                        // Activation removed in open source
                         profile.setEmail(resProfile.getEmail());
                     }
                 }
@@ -448,7 +448,7 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
             else if (bEmailMode_)
             {
                 // submit email change
-                profile.setActivated(false);
+                // Activation removed in open source
                 profile.setEmail(emailWidgets_.getText());
                 bSuccess = SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_RESET, profile, null);
 
@@ -466,7 +466,7 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
             else
             {
                 // submit profile activation
-                profile.setActivated(true);
+                // Activation removed in open source
                 profile.setPassword(passwordWidgets_.getText());
                 bSuccess = SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_ACTIVATE, profile, null);
             }
@@ -474,7 +474,6 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
             if (bSuccess)
             {
                 // update local profile values
-                profile_.setActivated(profile.isActivated());
                 profile_.setEmail(profile.getEmail());
 
                 if (passwordWidgets_ != null)

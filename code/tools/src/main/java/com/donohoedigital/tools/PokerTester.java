@@ -134,8 +134,8 @@ public class PokerTester extends PokerMain implements ChatHandler, OnlineMessage
         game_.setOnlinePassword(url.getPassword());
 
         // temp player with connect URL provided by user
-        PokerPlayer ptemp = new PokerPlayer(getPublicUseKey(), PokerConstants.PLAYER_ID_TEMP, sName, true);
-        logger.info("Key: " + getPublicUseKey());
+        PokerPlayer ptemp = new PokerPlayer(getPlayerId(), PokerConstants.PLAYER_ID_TEMP, sName, true);
+        logger.info("Key: " + getPlayerId());
         ptemp.setConnectURL(url);
         if (bPlayer)
         {

@@ -85,7 +85,7 @@ public class PokerPlayer extends GamePlayer
     private boolean bWonChipRace_ = false;
     private boolean bBrokeChipRace_ = false;
     private int nTimeMillis_; // store think bank in millis (first 6 digits ... up to 999 seconds), timeout next 4 (214.7 max)
-    private String sKey_;
+    private String playerId_;
     private PokerURL url_;
     private PlayerType playerType_ = null;
     private boolean bCardsExposed_ = false;
@@ -147,7 +147,7 @@ public class PokerPlayer extends GamePlayer
     {
         super(id, sName);
         bHuman_ = bHuman;
-        sKey_ = sKey;
+        playerId_ = sKey;
         profile_ = null;
     }
 
@@ -158,7 +158,7 @@ public class PokerPlayer extends GamePlayer
     {
         super(id, profile.getName());
         bHuman_ = bHuman;
-        sKey_ = sKey;
+        playerId_ = sKey;
         setProfile(profile);
     }
 
@@ -383,19 +383,19 @@ public class PokerPlayer extends GamePlayer
     }
 
     /**
-     * Get key
+     * Get player ID
      */
-    public String getKey()
+    public String getPlayerId()
     {
-        return sKey_;
+        return playerId_;
     }
 
     /**
-     * Set key
+     * Set player ID
      */
-    void setKey(String sKey)
+    void setPlayerId(String playerId)
     {
-        sKey_ = sKey;
+        playerId_ = playerId;
         bLOCAL = null;
     }
 
@@ -408,18 +408,18 @@ public class PokerPlayer extends GamePlayer
     {
         if (bLOCAL == null)
         {
-            bLOCAL = getPublicUseKey().equals(sKey_) ? Boolean.TRUE : Boolean.FALSE;
+            bLOCAL = getPublicUseKey().equals(playerId_) ? Boolean.TRUE : Boolean.FALSE;
         }
         return bLOCAL;
     }
 
     private String sPubKey_ = null;
     /**
-     * get public use key from engine (cache locally)
+     * get player ID from engine (cache locally)
      */
     private String getPublicUseKey()
     {
-        if (sPubKey_ == null) sPubKey_ = GameEngine.getGameEngine().getPublicUseKey();
+        if (sPubKey_ == null) sPubKey_ = GameEngine.getGameEngine().getPlayerId();
         return sPubKey_;
     }
 
@@ -1867,7 +1867,7 @@ public class PokerPlayer extends GamePlayer
         entry.addToken(sProfileLocation_);
 
         // Poker 2.0
-        entry.addToken(sKey_);
+        entry.addToken(playerId_);
         entry.addToken(url_ == null ? null : url_.toString());
         if (details.getSaveAI() == SaveDetails.SAVE_ALL)
         {
@@ -1938,7 +1938,7 @@ public class PokerPlayer extends GamePlayer
 
         // Poker 2.0
         String url;
-        sKey_ = entry.removeStringToken();
+        playerId_ = entry.removeStringToken();
         url_ = ((url = entry.removeStringToken()) == null) ? null : new PokerURL(url);
         String sPlayerTypeKey = entry.removeStringToken();
         if (details.getSaveAI() == SaveDetails.SAVE_ALL)
@@ -1989,7 +1989,7 @@ public class PokerPlayer extends GamePlayer
         // don't load profile if we already have one (online game performance
         // tweak since players get loaded many times and the profile won't
         // change during a game)
-        if (sProfileLocation_ != null && sKey.equals(sKey_) && profile_ == null)
+        if (sProfileLocation_ != null && sKey.equals(playerId_) && profile_ == null)
         {
             File file = new File(sProfileLocation_);
 

@@ -229,24 +229,16 @@ public class PokerStartMenu extends StartMenu
 
     /**
      * license agreement check
+     * Note: License class removed in Community Edition
      */
     private void licenseCheck()
     {
+        // License agreement auto-accepted for Community Edition
         String key = "agreed";
         Preferences prefs = Prefs.getUserPrefs("license");
         if (!prefs.getBoolean(key, false))
         {
-            License lic = (License) context_.processPhaseNow("License", null);
-
-            GameButton result = (GameButton) lic.getResult();
-            if (result.getName().startsWith("yes"))
-            {
-                prefs.putBoolean(key, true);
-            }
-            else
-            {
-                System.exit(0);
-            }
+            prefs.putBoolean(key, true);
         }
     }
 
@@ -266,16 +258,30 @@ public class PokerStartMenu extends StartMenu
      */
     private void profileCheck()
     {
-        // Check the profile.
+        // Get default profile (may be null for first-time users)
+        profile_ = PlayerProfileOptions.getDefaultProfile();
+
+        // First-time user - show wizard or fallback to old flow
         if (profile_ == null)
         {
             ProfileList list = PlayerProfileOptions.getPlayerProfileList(engine_, context_);
-            profile_ = (PlayerProfile) list.newProfile("startmenu");
-            if (profile_ != null)
+
+            if (shouldShowFirstTimeWizard())
             {
-                list.rememberProfile(profile_);
+                // Launch first-time user experience wizard
+                launchFirstTimeWizard(list);
+            }
+            else
+            {
+                // Fallback to old flow if wizard disabled/completed
+                profile_ = (PlayerProfile) list.newProfile("startmenu");
+                if (profile_ != null)
+                {
+                    list.rememberProfile(profile_);
+                }
             }
         }
+
         updateProfileLabel();
         bProfileCheck_ = false;
 
@@ -309,6 +315,38 @@ public class PokerStartMenu extends StartMenu
         }
 
         messageCheck = false;
+    }
+
+    /**
+     * Check if first-time wizard should be shown
+     */
+    private boolean shouldShowFirstTimeWizard()
+    {
+        // Check if wizard has been completed or dismissed
+        Preferences prefs = Prefs.getUserPrefs("ftue");
+        boolean wizardCompleted = prefs.getBoolean("wizard_completed", false);
+        boolean dontShowAgain = prefs.getBoolean("dont_show_again", false);
+
+        return !wizardCompleted && !dontShowAgain;
+    }
+
+    /**
+     * Launch first-time user experience wizard
+     */
+    private void launchFirstTimeWizard(ProfileList list)
+    {
+        com.donohoedigital.comms.DMTypedHashMap params = new com.donohoedigital.comms.DMTypedHashMap();
+        params.setObject("profilelist", list);
+
+        // Launch wizard dialog
+        DialogPhase wizard = (DialogPhase) context_.processPhaseNow("FirstTimeWizard", params);
+
+        // Wizard returns with profile created
+        profile_ = PlayerProfileOptions.getDefaultProfile();
+        if (profile_ != null)
+        {
+            list.rememberProfile(profile_);
+        }
     }
 
     /**

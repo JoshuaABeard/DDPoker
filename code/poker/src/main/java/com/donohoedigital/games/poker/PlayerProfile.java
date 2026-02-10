@@ -216,19 +216,20 @@ public class PlayerProfile extends BaseProfile
     }
 
     /**
-     * Is this an activated online profile
+     * Is this an activated online profile (always true in open source version)
      */
     public boolean isActivated()
     {
-        return bActivated_;
+        return true;  // Always activated in open source version
     }
 
     /**
-     * Set activated flag
+     * Set activated flag (no-op in open source version)
      */
     public void setActivated(boolean bActivated)
     {
-        bActivated_ = bActivated;
+        // No-op: activation not needed in open source version
+        bActivated_ = bActivated;  // Keep for serialization compatibility
     }
 
     /**
@@ -288,7 +289,7 @@ public class PlayerProfile extends BaseProfile
     {
         OnlineProfile profile = new OnlineProfile(getName());
         profile.setPassword(getPassword());
-        profile.setActivated(isActivated());
+        // Activation removed in open source version
         profile.setEmail(getEmail());
 
         return profile;

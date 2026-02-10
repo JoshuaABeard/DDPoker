@@ -642,8 +642,8 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
         PokerPlayer p = getSelectedPlayer(table);
         if (!p.isLocallyControlled() && p.isHuman())
         {
-            menu.add(new ShowTournamentTable.MutePlayer("PokerTable", p, muted_.containsPlayer(p.getName(), p.getKey()), mgr_, true));
-            menu.add(new ShowTournamentTable.BanPlayer(context_, "PokerTable", p, banned_.containsPlayer(p.getName(), p.getKey()), mgr_, mgr_, true, bHost_ && !bStarting_));
+            menu.add(new ShowTournamentTable.MutePlayer("PokerTable", p, muted_.containsPlayer(p.getName(), p.getPlayerId()), mgr_, true));
+            menu.add(new ShowTournamentTable.BanPlayer(context_, "PokerTable", p, banned_.containsPlayer(p.getName(), p.getPlayerId()), mgr_, mgr_, true, bHost_ && !bStarting_));
         }
 
         if (bHost_ && p.isHuman() && !bStarting_)

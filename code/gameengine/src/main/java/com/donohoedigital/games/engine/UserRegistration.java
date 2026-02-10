@@ -202,9 +202,9 @@ public class UserRegistration extends BasePhase implements PropertyChangeListene
     {             
         if (nRegTime_ != 0)
         {
-            text_.setText(PropertyConfig.getMessage("msg.userRegistered", 
+            text_.setText(PropertyConfig.getMessage("msg.userRegistered",
                                 PropertyConfig.getDateFormat(engine_.getLocale()).format(new Date(nRegTime_)),
-                                engine_.getRealLicenseKey()));
+                                engine_.getPlayerId()));
             for (DDOption opt : options_)
             {
                 opt.setDisplayOnly(true);
@@ -218,7 +218,7 @@ public class UserRegistration extends BasePhase implements PropertyChangeListene
         }
         else
         {
-            text_.setText(PropertyConfig.getMessage("msg.userNotRegistered", engine_.getRealLicenseKey()));
+            text_.setText(PropertyConfig.getMessage("msg.userNotRegistered", engine_.getPlayerId()));
 
             for (DDOption opt : options_)
             {

@@ -1992,8 +1992,8 @@ public class ShowTournamentTable extends ShowPokerTable implements
                 {
                     PokerPrefsPlayerList muted = PokerPrefsPlayerList.getSharedList(PokerPrefsPlayerList.LIST_MUTE);
                     PokerPrefsPlayerList banned = PokerPrefsPlayerList.getSharedList(PokerPrefsPlayerList.LIST_BANNED);
-                    menu.add(new MutePlayer(sStyle, PokerUtils.getPokerPlayer(context_, t), muted.containsPlayer(p.getName(), p.getKey()), TD(), false));
-                    menu.add(new BanPlayer(context_, sStyle, PokerUtils.getPokerPlayer(context_, t), banned.containsPlayer(p.getName(), p.getKey()), null, TD(), false, false));
+                    menu.add(new MutePlayer(sStyle, PokerUtils.getPokerPlayer(context_, t), muted.containsPlayer(p.getName(), p.getPlayerId()), TD(), false));
+                    menu.add(new BanPlayer(context_, sStyle, PokerUtils.getPokerPlayer(context_, t), banned.containsPlayer(p.getName(), p.getPlayerId()), null, TD(), false, false));
                 }
 
                 if (bShowCheatItems)
@@ -2628,7 +2628,7 @@ public class ShowTournamentTable extends ShowPokerTable implements
         {
             PokerPrefsPlayerList muted = PokerPrefsPlayerList.getSharedList(PokerPrefsPlayerList.LIST_MUTE);
             if (bMuted) muted.remove(player.getName(), true);
-            else muted.add(player.getName(), player.getKey(), true);
+            else muted.add(player.getName(), player.getPlayerId(), true);
 
             chat.deliverChatLocal(PokerConstants.CHAT_ALWAYS,
                                   PropertyConfig.getMessage(bMuted ? "msg.chat.unmuted" : "msg.chat.muted",
@@ -2679,7 +2679,7 @@ public class ShowTournamentTable extends ShowPokerTable implements
             {
                 PokerPrefsPlayerList banned = PokerPrefsPlayerList.getSharedList(PokerPrefsPlayerList.LIST_BANNED);
                 if (bBanned) banned.remove(player.getName(), true);
-                else banned.add(player.getName(), player.getKey(), true);
+                else banned.add(player.getName(), player.getPlayerId(), true);
 
                 chat.deliverChatLocal(PokerConstants.CHAT_ALWAYS, PropertyConfig.getMessage(
                         bBanNow ? "msg.chat.banned" :

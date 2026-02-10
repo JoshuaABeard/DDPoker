@@ -656,7 +656,7 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
                 else if (!PokerUtils.isOptionOn(PokerConstants.OPTION_CHAT_PLAYERS)) return;
 
                 // muted specifically?
-                if (muted_.containsPlayer(player.getName(), player.getKey())) return;
+                if (muted_.containsPlayer(player.getName(), player.getPlayerId())) return;
             }
 
             sName = Utils.encodeHTML(player.getName());

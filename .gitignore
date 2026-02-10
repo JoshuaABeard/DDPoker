@@ -41,3 +41,11 @@ code/pokerserver/data/
 .vscode/
 .idea/
 *.iml
+
+# Compiled installers and binaries
+docker/downloads/
+*.msi
+*.exe
+
+# Windows null device
+nul

@@ -409,7 +409,7 @@ public class PokerGame extends Game implements PlayerActionListener
         {
             p = getPokerPlayerAt(i);
             if (p.isComputer()) continue;
-            if (sKey.equals(p.getKey())) return p;
+            if (sKey.equals(p.getPlayerId())) return p;
         }
 
         // search observers 2nd
@@ -417,7 +417,7 @@ public class PokerGame extends Game implements PlayerActionListener
         for (int i = 0; i < nNum; i++)
         {
             p = getPokerObserverAt(i);
-            if (sKey.equals(p.getKey())) return p;
+            if (sKey.equals(p.getPlayerId())) return p;
         }
 
         return null;
@@ -462,7 +462,7 @@ public class PokerGame extends Game implements PlayerActionListener
      */
     public PokerPlayer getLocalPlayer()
     {
-        String sKey = getPublicUseKey();
+        String sKey = getPlayerId();
         PokerPlayer local = getPokerPlayerFromKey(sKey);
         ApplicationError.assertNotNull(local, "No player matching current key", sKey);
         return local;
@@ -473,9 +473,9 @@ public class PokerGame extends Game implements PlayerActionListener
     /**
      * get public use key from engine (cache locally to avoid unnecessary String creation)
      */
-    private String getPublicUseKey()
+    private String getPlayerId()
     {
-        if (sPubKey_ == null) sPubKey_ = GameEngine.getGameEngine().getPublicUseKey();
+        if (sPubKey_ == null) sPubKey_ = GameEngine.getGameEngine().getPlayerId();
         return sPubKey_;
     }
 
@@ -1088,7 +1088,7 @@ public class PokerGame extends Game implements PlayerActionListener
         // fill remaining players with computer players
         PlayerType playerType;
         String sName;
-        String sKey = getPublicUseKey();
+        String sKey = getPlayerId();
         Map<String, List<String>> hmRoster = new HashMap<String, List<String>>();
         List<String> roster;
         for (int i = getNumPlayers(); i < nNumPlayers; i++)
@@ -1591,8 +1591,8 @@ public class PokerGame extends Game implements PlayerActionListener
         if (p == null) return false;
 
         // and the host's key must equal our game
-        String sKey = getPublicUseKey();
-        if (!sKey.equals(p.getKey())) return false;
+        String sKey = getPlayerId();
+        if (!sKey.equals(p.getPlayerId())) return false;
 
         return nOnlineMode_ == MODE_REG ||
                nOnlineMode_ == MODE_PLAY;
@@ -2184,17 +2184,17 @@ public class PokerGame extends Game implements PlayerActionListener
         }
 
         PokerPlayer host = getPokerPlayerFromID(PokerConstants.PLAYER_ID_HOST);
-        String sHostKey = host.getKey();
-        String sCurrentKey = getPublicUseKey();
+        String sHostKey = host.getPlayerId();
+        String sCurrentKey = getPlayerId();
         if (!sHostKey.equals(sCurrentKey))
         {
             PokerPlayer player;
             for (int i = getNumPlayers() - 1; i >= 0; i--)
             {
                 player = getPokerPlayerAt(i);
-                if (player.getKey().equals(sHostKey))
+                if (player.getPlayerId().equals(sHostKey))
                 {
-                    player.setKey(sCurrentKey);
+                    player.setPlayerId(sCurrentKey);
 
                     // info message
                     if (player.isHuman())

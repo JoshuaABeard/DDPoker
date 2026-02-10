@@ -97,12 +97,22 @@ docker compose up -d
 - 💬 **Chat Server**: Ports 11886/11889 (UDP) - In-game chat
 
 **Download Desktop Client:**
-1. Visit http://localhost:8080/downloads/
-2. Download `DDPoker.jar` (21MB universal JAR)
-3. Run with: `java -jar DDPoker.jar`
-4. Connect to your server at `localhost:8877`
 
-For complete Docker documentation, configuration options, and troubleshooting, see [DDPOKER-DOCKER.md](.claude/DDPOKER-DOCKER.md).
+**Option 1: Windows Installer (Recommended for Windows Users)**
+1. Visit http://localhost:8080/downloads/
+2. Download `DDPokerCommunityEdition-3.3.0.msi` (~98MB)
+3. Double-click to install (Windows SmartScreen may warn - click "More info" → "Run anyway")
+4. Launch from Start Menu → DD Poker Community Edition → DDPokerCommunityEdition
+5. **No Java installation required!** JRE is bundled with the installer.
+
+**Option 2: Universal JAR (Cross-Platform, Advanced Users)**
+1. Visit http://localhost:8080/downloads/
+2. Download `DDPokerCommunityEdition-3.3.0.jar` (21MB universal JAR)
+3. Requires Java 25 to be installed separately
+4. Run with: `java -jar DDPokerCommunityEdition-3.3.0.jar`
+5. Connect to your server at `localhost:8877`
+
+For complete Docker documentation, configuration options, and troubleshooting, see [docker/DEPLOYMENT.md](docker/DEPLOYMENT.md).
 
 **Unraid Users:**
 DD Poker is available as an Unraid Community Application. See [unraid/README.md](unraid/README.md) for installation instructions.

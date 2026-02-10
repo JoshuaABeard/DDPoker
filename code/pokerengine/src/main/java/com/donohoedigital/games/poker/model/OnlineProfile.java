@@ -77,12 +77,10 @@ public class OnlineProfile implements BaseModel<Long>
 
     public static final String PROFILE_ID = "profileid";
     public static final String PROFILE_NAME = "profilename";
-    public static final String PROFILE_LICENSE_KEY = "profilelicensekey";
     public static final String PROFILE_EMAIL = "profileemail";
     public static final String PROFILE_PASSWORD = "profilepassword";
     public static final String PROFILE_PASSWORD_IN_DB = "profilepasswordindb";
     public static final String PROFILE_UUID = "profileuuid";
-    public static final String PROFILE_ACTIVATED = "profileactivated";
     public static final String PROFILE_CREATE_DATE = "profilecreatedate";
     public static final String PROFILE_MODIFY_DATE = "profilemodifydate";
     public static final String PROFILE_RETIRED = "profileretired";
@@ -148,17 +146,6 @@ public class OnlineProfile implements BaseModel<Long>
         data_.setString(PROFILE_NAME, s);
     }
 
-    @Column(name = "wpr_license_key", nullable = false)
-    public String getLicenseKey()
-    {
-        return data_.getString(PROFILE_LICENSE_KEY);
-    }
-
-    public void setLicenseKey(String s)
-    {
-        data_.setString(PROFILE_LICENSE_KEY, s);
-    }
-
     @Column(name = "wpr_uuid", nullable = false, unique = true, length = 36)
     public String getUuid()
     {
@@ -207,18 +194,6 @@ public class OnlineProfile implements BaseModel<Long>
         if (s != null) enc = encryptInternal(s);
         data_.setString(PROFILE_PASSWORD, enc);
     }
-
-    @Column(name = "wpr_is_activated", nullable = false)
-    public boolean isActivated()
-    {
-        return data_.getBoolean(PROFILE_ACTIVATED, false);
-    }
-
-    public void setActivated(boolean b)
-    {
-        data_.setBoolean(PROFILE_ACTIVATED, b);
-    }
-
 
     @Column(name = "wpr_is_retired", nullable = false)
     public boolean isRetired()
@@ -377,5 +352,47 @@ public class OnlineProfile implements BaseModel<Long>
             throw new ApplicationError(ErrorCodes.ERROR_INVALID,
                                        "Unable to decrypt database value", t, value);
         }
+    }
+
+    // ===================================================================
+    // License key and activation stubs (removed in Community Edition)
+    // ===================================================================
+
+    /**
+     * @deprecated License key removed in open source version
+     */
+    @Deprecated
+    @Transient
+    public String getLicenseKey()
+    {
+        return null;  // No license keys in open source version
+    }
+
+    /**
+     * @deprecated License key removed in open source version
+     */
+    @Deprecated
+    public void setLicenseKey(String key)
+    {
+        // No-op: license keys not used in open source version
+    }
+
+    /**
+     * @deprecated Activation removed in open source version
+     */
+    @Deprecated
+    @Transient
+    public boolean isActivated()
+    {
+        return true;  // Always activated in open source version
+    }
+
+    /**
+     * @deprecated Activation removed in open source version
+     */
+    @Deprecated
+    public void setActivated(boolean activated)
+    {
+        // No-op: activation not needed in open source version
     }
 }

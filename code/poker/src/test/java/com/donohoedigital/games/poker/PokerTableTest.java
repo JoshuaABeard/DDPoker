@@ -37,7 +37,6 @@ import com.donohoedigital.config.ConfigManager;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
@@ -209,28 +208,6 @@ class PokerTableTest {
     // Button and Position Tests
     // =================================================================
 
-    @Test
-    @Disabled("Integration test - requires players at seats and GameEngine validation")
-    void should_SetButton_When_ButtonSet() {
-        table.setButton(3);
-
-        assertThat(table.getButton()).isEqualTo(3);
-    }
-
-    @Test
-    @Disabled("Integration test - requires GameEngine.isDemo() for button calculation")
-    void should_CallSetButton_When_SetButtonNoArgsCalled() {
-        PokerPlayer player1 = createTestPlayer("Player1");
-        PokerPlayer player2 = createTestPlayer("Player2");
-        table.setPlayer(player1, 0);
-        table.setPlayer(player2, 1);
-
-        // setButton() with no args calculates button position based on players
-        table.setButton();
-
-        assertThat(table.getButton()).isGreaterThanOrEqualTo(0);
-    }
-
     // =================================================================
     // Table State Tests
     // =================================================================
@@ -265,43 +242,6 @@ class PokerTableTest {
 
         assertThat(stateChangeTime).isGreaterThanOrEqualTo(beforeTime);
         assertThat(stateChangeTime).isLessThanOrEqualTo(afterTime);
-    }
-
-    // =================================================================
-    // Observer Tests
-    // =================================================================
-
-    @Test
-    @Disabled("Integration test - requires GameEngine event system for observer registration")
-    void should_AddObserver_When_ObserverAdded() {
-        PokerPlayer observer = createTestPlayer("Observer");
-
-        table.addObserver(observer);
-
-        assertThat(table.getNumObservers()).isEqualTo(1);
-    }
-
-    @Test
-    @Disabled("Integration test - requires GameEngine event system for observer registration")
-    void should_RemoveObserver_When_ObserverRemoved() {
-        PokerPlayer observer = createTestPlayer("Observer");
-        table.addObserver(observer);
-
-        table.removeObserver(observer);
-
-        assertThat(table.getNumObservers()).isZero();
-    }
-
-    @Test
-    @Disabled("Integration test - requires GameEngine event system for observer registration")
-    void should_AddMultipleObservers_When_MultipleObserversAdded() {
-        PokerPlayer observer1 = createTestPlayer("Observer1");
-        PokerPlayer observer2 = createTestPlayer("Observer2");
-
-        table.addObserver(observer1);
-        table.addObserver(observer2);
-
-        assertThat(table.getNumObservers()).isEqualTo(2);
     }
 
     // =================================================================

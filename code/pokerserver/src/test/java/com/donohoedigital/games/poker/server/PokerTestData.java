@@ -63,6 +63,7 @@ public class PokerTestData
     {
         OnlineProfile profile = new OnlineProfile();
         profile.setName(sName);
+        profile.setUuid(UUID.randomUUID().toString());
         profile.setEmail("hibernate@example.com");
         profile.setLicenseKey("0000-0000-0000-0000");
         profile.setActivated(false);

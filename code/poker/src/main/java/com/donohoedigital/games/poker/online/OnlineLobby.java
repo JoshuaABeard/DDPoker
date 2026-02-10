@@ -180,7 +180,7 @@ public class OnlineLobby extends BasePhase implements ChatHandler, DDTable.Table
         profile_ = PlayerProfileOptions.getDefaultProfile();
         me_ = new OnlinePlayerInfo();
         me_.setName(profile_.getName());
-        me_.setPublicUseKey(engine.getPublicUseKey());
+        me_.setPlayerId(engine.getPlayerId());
         chat_ = new ChatLobbyPanel(context_, main_.getChatServer(), profile_, "ChatLobby", "BrushedMetal");
 
         // player list
@@ -444,7 +444,7 @@ public class OnlineLobby extends BasePhase implements ChatHandler, DDTable.Table
     public void addMenuItems(DDTable table, DDPopupMenu menu)
     {
         OnlinePlayerInfo pi = getSelectedPlayer(table);
-        PokerPlayer p = new PokerPlayer(pi.getPublicUseKey(), 0, pi.getName(), true);
+        PokerPlayer p = new PokerPlayer(pi.getPlayerId(), 0, pi.getName(), true);
 
         // player info
         menu.add(new PlayerInfoMenu(pi));

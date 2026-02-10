@@ -112,33 +112,10 @@ public class Demo extends BasePhase
 
         if (button.getName().equals("playgame"))
         {
-            boolean bOkay = false;
-
-            EnginePrefs prefs = engine_.getPrefsNode();
-            if (!prefs.getBoolean(PREF_DEMO_LICENSE_DISPLAYED, false))
-            {
-                engine_.setBDemo(false); // temp
-                License lic = (License) context_.processPhaseNow("License", null);
-                engine_.setBDemo(true);
-
-                GameButton result = (GameButton) lic.getResult();
-                if (result.getName().startsWith("yes"))
-                {
-                    prefs.putBoolean(PREF_DEMO_LICENSE_DISPLAYED, true);
-                    bOkay = true;
-                }
-            }
-            else
-            {
-                bOkay = true;
-            }
-
-
-            if (bOkay)
-            {
-                engine_.setDemoMsgDisplayed();
-                context_.processTODO();
-            }
+            // License display removed in open source version (GPL-3.0)
+            // User can proceed directly to game
+            engine_.setDemoMsgDisplayed();
+            context_.processTODO();
         }
 
         if (button.getName().startsWith("order"))

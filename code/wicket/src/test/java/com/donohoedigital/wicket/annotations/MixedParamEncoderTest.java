@@ -34,14 +34,14 @@ package com.donohoedigital.wicket.annotations;
 
 import org.apache.wicket.request.Url;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.*;
 
-public class MixedParamEncoderTest {
+class MixedParamEncoderTest {
 
     @Test
-    public void testEncodeDecode() {
+    void should_EncodeAndDecodeParameters_When_UsingMixedParamEncoder() {
         MixedParamEncoder encoder = new MixedParamEncoder(new String[] {"x", "y", "a", "b", "c", "d", "e"});
         PageParameters params = new PageParameters();
         params.add("y", "-");
@@ -51,23 +51,23 @@ public class MixedParamEncoderTest {
         params.add("d", "slash/and\\backslash");
         params.add("e", "a:colon");
         Url encoded = encoder.encodePageParameters(params);
-        assertEquals("-/:-/:d/:d:d/space%20between/slash:sand:bbackslash/a::colon", encoded.toString());
+        assertThat(encoded.toString()).isEqualTo("-/:-/:d/:d:d/space%20between/slash:sand:bbackslash/a::colon");
         PageParameters decoded = encoder.decodePageParameters(encoded);
-        assertEquals(params, decoded);
+        assertThat(decoded).isEqualTo(params);
 
         params = new PageParameters();
         params.add("x", "shorter");
         params.add("y", "path");
         encoded = encoder.encodePageParameters(params);
-        assertEquals("shorter/path", encoded.toString());
+        assertThat(encoded.toString()).isEqualTo("shorter/path");
         decoded = encoder.decodePageParameters(encoded);
-        assertEquals(params, decoded);
+        assertThat(decoded).isEqualTo(params);
 
         params.add("e", "gaps");
         encoded = encoder.encodePageParameters(params);
-        assertEquals("shorter/path/-/-/-/-/gaps", encoded.toString());
+        assertThat(encoded.toString()).isEqualTo("shorter/path/-/-/-/-/gaps");
         decoded = encoder.decodePageParameters(encoded);
-        assertEquals(params, decoded);
+        assertThat(decoded).isEqualTo(params);
     }
 
 }

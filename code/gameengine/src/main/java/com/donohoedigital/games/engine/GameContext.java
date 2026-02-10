@@ -443,7 +443,7 @@ public class GameContext
      */
     private Phase _processPhase(String sPhaseName, TypedHashMap params, boolean bHistory)
     {
-        if ((engine_.isBDemo() || engine_.isActivationNeeded()) && TODOphase_ != null)
+        if (engine_.isBDemo() && TODOphase_ != null)
         {
             logger.warn("Skipping " + sPhaseName + " because TODO phase is not null: " + TODOphase_);
             return null;
@@ -458,25 +458,6 @@ public class GameContext
                 sPhaseName = "StartMenu";
                 params = new TypedHashMap();
                 params.setBoolean(StartMenu.PARAM_EXPIRED, Boolean.TRUE);
-            }
-            else if (engine_.isActivationNeeded())
-            {
-                // if registration was void, to-do phase should be the start menu
-                if (engine_.isActivationVoided())
-                {
-                    TODOphase_ = "StartMenu";
-                    TODOparams_ = null;
-                    TODOhistory_ = true;
-                }
-                else
-                {
-                    TODOphase_ = sPhaseName;
-                    TODOparams_ = params;
-                    TODOhistory_ = bHistory;
-                }
-                sPhaseName = "Activate";
-                params = null;
-                bHistory = false;
             }
             else if (engine_.isBDemo())
             {
@@ -950,20 +931,10 @@ public class GameContext
                     sClass = "com.donohoedigital.games.engine.StartMenu";
                     cClass = StartMenu.class;
                 }
-                else if (engine_.isActivationNeeded())
-                {
-                    sClass = "com.donohoedigital.games.engine.Activate";
-                    cClass = Activate.class;
-                }
                 else if (engine_.isBDemo())
                 {
                     sClass = "com.donohoedigital.games.engine.Demo";
                     cClass = Demo.class;
-                }
-                else if (sName.equals("License")) // BUG 198 - ensure license class used
-                {
-                    sClass = "com.donohoedigital.games.engine.License";
-                    cClass = License.class;
                 }
 
                 if (cClass == null)

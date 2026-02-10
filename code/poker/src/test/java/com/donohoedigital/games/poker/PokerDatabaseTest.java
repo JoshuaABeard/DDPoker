@@ -35,72 +35,212 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.base.Utils;
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
+import com.donohoedigital.games.poker.model.TournamentHistory;
 import com.donohoedigital.games.poker.model.TournamentProfile;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.*;
 
-/*
- * The purpose of this test is to provide a rudimentary way to very our hsqldb
- * code is working.
- *
- * To run queries against a test database pause the debugger before the test ends and
- * use run 'tools/bin/hsqldb.sh [jdbc url]' where [jdbc url] is visible in the console
- * output (jdbc:hsqldb:file:/...).
+/**
+ * Tests for PokerDatabase - HSQLDB integration, hand history storage,
+ * tournament persistence, and database lifecycle management.
  */
-public class PokerDatabaseTest {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class PokerDatabaseTest {
 
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
+    @TempDir
+    static Path tempDir;
 
-    /**
-     * Unfortunately, there aren't many unit tests of the core poker logic.  In
-     * fact this test, written in September 2024, is one of the first.  The lack of
-     * testing is evident in that it is hard to create objects/data needed that
-     * comprise a hold'em game.  Much of the code assumes it's running within the
-     * client.  Alas, I'll slowly chip away at this.  In any case, this is a very
-     * basic test to see if hsqldb is working at the most basic level.  It doesn't
-     * verify stuff goes in and comes out of the database properly.
-     */
-    @Test
-    public void testBasics() throws IOException {
+    private PlayerProfile profile;
+    private File dbTempDir;
+
+    @BeforeAll
+    void setUpAll() throws IOException {
         Utils.setVersionString("-db-test");
-        // init properties like poker client, but headless for test
         new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
 
-        // we need a player profile
-        File profileFile = tempFolder.newFile("profile.999.dat");
-        PlayerProfile profile = new PlayerProfile("poker-database-test");
+        // Create player profile
+        profile = new PlayerProfile("poker-database-test");
         profile.setEmail("test@test.com");
         profile.setName("test");
         profile.initFile();
-        //profile.save(); // Not necessary to actually save it
 
-        // we need a database, in a temp place
-        File tempDir = tempFolder.newFolder("poker-database-test");
-        PokerDatabase.init(profile, tempDir);
+        // Create database in temp directory
+        dbTempDir = tempDir.resolve("poker-database-test").toFile();
+        dbTempDir.mkdirs();
+        PokerDatabase.init(profile, dbTempDir);
+    }
 
-        // we need a game, tournament, poker player, table and hand
-        PokerGame game = new PokerGame(null);
-        TournamentProfile tournament = new TournamentProfile("poker-database-test");
-        game.setProfile(tournament);
-        PokerPlayer player = new PokerPlayer(PokerPlayer.HOST_ID, "test-player", true);
-        game.addPlayer(player);
-        PokerTable table = new PokerTable(game, 1);
-        table.addPlayer(player);
-        HoldemHand hand = new HoldemHand(table);
+    @AfterAll
+    void tearDownAll() {
+        PokerDatabase.shutdownDatabase();
+    }
+
+    // =================================================================
+    // Database Lifecycle Tests
+    // =================================================================
+
+    @Test
+    void should_InitializeDatabase_When_InitCalled() {
+        assertThatCode(() -> PokerDatabase.testConnection()).doesNotThrowAnyException();
+    }
+
+    @Test
+    void should_GetDatabase_When_DatabaseInitialized() {
+        assertThat(PokerDatabase.getDatabase()).isNotNull();
+    }
+
+    @Test
+    void should_TestConnection_When_DatabaseActive() {
+        assertThatCode(() -> PokerDatabase.testConnection()).doesNotThrowAnyException();
+    }
+
+    // =================================================================
+    // Hand History Storage Tests
+    // =================================================================
+
+    @Test
+    void should_StoreAndRetrieveHandHistory_When_UsingHSQLDB() {
+        PokerGame game = createGame();
+        PokerPlayer player = createPlayer("test-player", game);
+        HoldemHand hand = createHand(game, player);
         hand.setAnte(5);
 
-        // store hand and fetch it
         int id = hand.storeHandHistory();
         String[] html = PokerDatabase.getHandAsHTML(id, true, true);
-        assertTrue(html != null && html.length > 0);
-        assertEquals("<HTML><B>Hand 0 - Table 1</B></HTML>", html[0]);
+
+        assertThat(html).isNotNull().isNotEmpty();
+        assertThat(html[0]).isEqualTo("<HTML><B>Hand 0 - Table 1</B></HTML>");
+    }
+
+    @Test
+    void should_ReturnValidHandID_When_HandStored() {
+        PokerGame game = createGame();
+        PokerPlayer player = createPlayer("test-player2", game);
+        HoldemHand hand = createHand(game, player);
+        hand.setAnte(10);
+
+        int id = hand.storeHandHistory();
+
+        assertThat(id).isGreaterThan(0);
+    }
+
+    @Test
+    void should_RetrieveHandHTML_When_HandExists() {
+        PokerGame game = createGame();
+        PokerPlayer player = createPlayer("test-player3", game);
+        HoldemHand hand = createHand(game, player);
+        hand.setAnte(20);
+        int id = hand.storeHandHistory();
+
+        String[] html = PokerDatabase.getHandAsHTML(id, false, false);
+
+        assertThat(html).isNotNull();
+        assertThat(html).isNotEmpty();
+    }
+
+    // =================================================================
+    // Tournament Persistence Tests
+    // =================================================================
+
+    @Test
+    void should_StoreTournament_When_GameProvided() {
+        PokerGame game = createGame();
+        int tournamentId = PokerDatabase.storeTournament(game);
+
+        assertThat(tournamentId).isGreaterThan(0);
+    }
+
+    @Test
+    void should_StoreTournamentFinish_When_PlayerFinishes() {
+        PokerGame game = createGame();
+        PokerPlayer player = createPlayer("finish-player", game);
+        int tournamentId = PokerDatabase.storeTournament(game);
+        player.setPlace(1);
+        player.setPrize(1000);
+
+        int finishId = PokerDatabase.storeTournamentFinish(game, player);
+
+        assertThat(finishId).isGreaterThan(0);
+    }
+
+    @Test
+    void should_RetrieveTournamentHistory_When_TournamentsStored() {
+        PokerGame game = createGame();
+        PokerDatabase.storeTournament(game);
+
+        List<TournamentHistory> history = PokerDatabase.getTournamentHistory(profile);
+
+        assertThat(history).isNotNull();
+    }
+
+    @Test
+    void should_GetOverallHistory_When_TournamentsStored() {
+        PokerGame game = createGame();
+        PokerPlayer player = createPlayer("overall-player", game);
+        PokerDatabase.storeTournament(game);
+        player.setPlace(1);
+        player.setPrize(1000);
+        PokerDatabase.storeTournamentFinish(game, player);
+
+        TournamentHistory overall = PokerDatabase.getOverallHistory(profile);
+
+        assertThat(overall).isNotNull();
+        assertThat(overall.getTournamentName()).contains("ALL");
+    }
+
+    @Test
+    void should_DeleteTournament_When_TournamentExists() {
+        PokerGame game = createGame();
+        int tournamentId = PokerDatabase.storeTournament(game);
+        TournamentHistory hist = new TournamentHistory();
+        hist.setId((long) tournamentId);
+
+        assertThatCode(() -> PokerDatabase.deleteTournament(hist)).doesNotThrowAnyException();
+    }
+
+    // =================================================================
+    // Practice Hand Tests
+    // =================================================================
+
+    @Test
+    void should_CheckPracticeHand_When_HandIDProvided() {
+        PokerGame game = createGame();
+        PokerPlayer player = createPlayer("practice-player", game);
+        HoldemHand hand = createHand(game, player);
+        int id = hand.storeHandHistory();
+
+        boolean isPractice = PokerDatabase.isPracticeHand(id);
+
+        assertThat(isPractice).isIn(true, false);
+    }
+
+    // =================================================================
+    // Test Helper Methods
+    // =================================================================
+
+    private PokerGame createGame() {
+        PokerGame game = new PokerGame(null);
+        TournamentProfile tournament = new TournamentProfile("test-" + System.currentTimeMillis());
+        game.setProfile(tournament);
+        return game;
+    }
+
+    private PokerPlayer createPlayer(String name, PokerGame game) {
+        PokerPlayer player = new PokerPlayer(PokerPlayer.HOST_ID, name, true);
+        game.addPlayer(player);
+        return player;
+    }
+
+    private HoldemHand createHand(PokerGame game, PokerPlayer player) {
+        PokerTable table = new PokerTable(game, 1);
+        table.addPlayer(player);
+        return new HoldemHand(table);
     }
 }

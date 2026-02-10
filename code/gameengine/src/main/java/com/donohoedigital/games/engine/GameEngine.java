@@ -79,18 +79,12 @@ public abstract class GameEngine extends BaseApp
     // shared by GameContext
     GameboardConfig gameconfig_;
     boolean bExpired_ = false;
-    boolean activationNeeded = false;
-    private boolean activationVoided = false;
     private boolean bDemo_ = false;
 
     // other private stuff
-    private String sOverrideKey_ = null;
-    private String sHeadlessKey_;
-    private String sLastReal_ = null;
-    private String sLastGen_ = null;
+    private String playerId_;
     private EnginePrefs prefNode_;
     private String sPrefNode_;
-    private String sKeyNode_;
     private boolean bSkipSplashChoice_ = false;
     private String guid_;
     private boolean bReady_ = false;
@@ -152,62 +146,22 @@ public abstract class GameEngine extends BaseApp
         // set locale in version
         v.setLocale(getLocale());
 
-        // figure out prefs key for license information
-        String sVers = "" + v.getMajor();
-        if (v.isAlpha()) sVers += "a" + v.getAlphaBetaVersion();
-        if (v.isBeta()) sVers += "b" + v.getAlphaBetaVersion();
-        sKeyNode_ = "key/" + sAppName + "-" + sVers;
+        // Initialize player ID (replaces legacy license key system)
+        // Player ID is auto-generated UUID v4, used for player identification
+        String playerId = getPlayerId();
+        logger.info("Player ID initialized: " + playerId);
 
-        // BUG 199 - added to specify a different key during testing
-        if (TESTING(EngineConstants.TESTING_OVERRIDE_KEY))
-        {
-            sOverrideKey_ = getCommandLineOptions().getString("key", null);
-            if (sOverrideKey_ != null)
-            {
-                logger.debug("Activation key set to " + sOverrideKey_);
-            }
-        }
+        // For online games, UUID comes from the online profile (set during login/validation)
+        // For offline/local games, the auto-generated player ID is sufficient
+        // Online profile login will override with profile-specific UUID
+        DDMessage.setDefaultRealKey(null); // Will be set during profile validation
+        DDMessage.setDefaultKey(null); // Will be set during profile validation
 
-        // get activation key
-        String sKey = null;
-        if (!bDemo_) sKey = getRealLicenseKey();
-
-        // validate key
+        // Handle headless mode
         boolean bAlphaBeta = v.isBeta() || v.isAlpha();
         if (bHeadless_)
         {
             setHeadless();
-        }
-        else if (!bDemo_)
-        {
-            if (sKey == null ||
-                !Activation.validate(getKeyStart(), sKey, getLocale()) ||
-                isBannedLicenseKey(sKey))
-            {
-                // TODO: remove debug once bug figured out
-                logger.debug("Activation needed, sKey=" + sKey +
-                             " validate: " + !Activation.validate(getKeyStart(), sKey, getLocale()) +
-                             " (keystart = " + getKeyStart() + " locale= " + getLocale() + ")" +
-                             " isBanned?: " + isBannedLicenseKey(sKey));
-
-                activationNeeded = true;
-            }
-            else
-            {
-                DDMessage.setDefaultRealKey(sKey);
-                DDMessage.setDefaultKey(getPublicUseKey());
-            }
-        }
-
-        // For online games, UUID comes from the online profile (set during login/validation)
-        // For offline/local games, no UUID is needed
-        // Don't set any default key here - it will be set when user validates with their profile
-        if (activationNeeded || DDMessage.getDefaultRealKey() == null)
-        {
-            // Leave key null - online profile login will set it
-            DDMessage.setDefaultRealKey(null);
-            DDMessage.setDefaultKey(null);
-            logger.info("No activation key - user must login with online profile for online games");
         }
 
         // expired?
@@ -347,11 +301,6 @@ public abstract class GameEngine extends BaseApp
     public abstract Version getVersion();
 
     /**
-     * Get start of activation key
-     */
-    protected abstract int getKeyStart();
-
-    /**
      * Use by subclass to prevent startup
      * if any pre-reqs not met
      */
@@ -418,11 +367,7 @@ public abstract class GameEngine extends BaseApp
      */
     public void setDemoMode()
     {
-        sKeyNode_ += "d";
         getVersion().setDemo(true);
-        setActivationNeeded(false);
-        DDMessage.setDefaultRealKey(getDemoLicenseKey());
-        DDMessage.setDefaultKey(getPublicUseKey());
         GamePlayer.setDemo();
         setTitle();
         defaultContext_.processPhaseNow("Demo", null);
@@ -434,10 +379,7 @@ public abstract class GameEngine extends BaseApp
      */
     private void setHeadless()
     {
-        sKeyNode_ += "h";
-        setActivationNeeded(false);
-        DDMessage.setDefaultRealKey(getDemoLicenseKey());
-        DDMessage.setDefaultKey(getPublicUseKey());
+        // Headless mode initialization (no activation needed in open source)
     }
 
     /**
@@ -456,12 +398,6 @@ public abstract class GameEngine extends BaseApp
     public void setDemoMsgDisplayed()
     {
         bDemo_ = false;
-    }
-
-
-    public boolean isActivationVoided()
-    {
-        return activationVoided;
     }
 
     public boolean isBDemo()
@@ -484,267 +420,43 @@ public abstract class GameEngine extends BaseApp
     }
 
     /**
-     * Get license key
+     * Get player UUID identifier.
+     * Replaces legacy license key system with UUID v4 for player identification.
+     *
+     * @return Player UUID
      */
-    public String getRealLicenseKey()
+    public String getPlayerId()
     {
-        if (TESTING(EngineConstants.TESTING_OVERRIDE_KEY) && sOverrideKey_ != null)
+        if (playerId_ == null)
         {
-            return sOverrideKey_;
+            playerId_ = PlayerIdentity.loadOrCreate();
+            logger.debug("Player ID loaded: " + playerId_);
         }
-        Preferences node = Prefs.getUserPrefs(sKeyNode_);
-        String key = node.get(Activation.REGKEY, null);
-        if (key == null && isAutoGenLicenseKey())
-        {
-            key = Activation.createKeyFromGuid(getKeyStart(), getGUID(), getLocale());
-            logger.debug("KEY: " + key);
-            node.put(Activation.REGKEY, key);
-        }
-        return key;
+        return playerId_;
     }
 
-    protected abstract boolean isAutoGenLicenseKey();
-
     /**
-     * Demo license key - just DEMO + the GUID used when
-     * first run.  Stored in prefs for subsequent runs so
-     * key is same (for online games).
+     * Set player UUID identifier.
+     * Saves to disk for persistence across sessions.
+     *
+     * @param id Player UUID
      */
-    public String getDemoLicenseKey()
+    public void setPlayerId(String id)
     {
-        Preferences node = Prefs.getUserPrefs(sKeyNode_);
-        String sKey = node.get(Activation.DEMOKEY, null);
-        if (sKey == null)
-        {
-            sKey = "DEMO-" + getGUID();
-            node.put(Activation.DEMOKEY, sKey);
-        }
-        //logger.debug("Demo key is: "+ sKey);
-        return sKey;
+        this.playerId_ = id;
+        PlayerIdentity.save(id);
+        logger.debug("Player ID saved: " + id);
     }
 
     /**
-     * Headless license key - just like DEMO, but unique each time run
-     */
-    public String getHeadlessLicenseKey()
-    {
-        if (sHeadlessKey_ == null)
-        {
-            sHeadlessKey_ = "HEADLESS-" + getGUID();
-        }
-        return sHeadlessKey_;
-    }
-
-    /**
-     * Get license key
-     */
-    public String getPublicUseKey()
-    {
-        // For online games, use the profile UUID if available (set by ValidateProfile)
-        String defaultKey = DDMessage.getDefaultKey();
-        if (defaultKey != null && !defaultKey.isEmpty())
-        {
-            return defaultKey;
-        }
-
-        String sReal;
-
-        // get key upon which public key is based
-        if (isDemo())
-        {
-            sReal = getDemoLicenseKey();
-        }
-        else if (isHeadless())
-        {
-            sReal = getHeadlessLicenseKey();
-        }
-        else
-        {
-            sReal = getRealLicenseKey();
-        }
-
-        // generate public key if needed
-        if (sLastGen_ == null || sLastReal_ == null || sReal == null || !sLastReal_.equals(sReal))
-        {
-            if (sReal != null && sReal.length() > 0)
-            {
-                sLastReal_ = sReal;
-                if (isDemo())
-                {
-                    sLastGen_ = "D-" + Activation.getPublicKey("demo", sLastReal_);
-                }
-                else if (isHeadless())
-                {
-                    sLastGen_ = "H-" + Activation.getPublicKey("headless", sLastReal_);
-                }
-                else
-                {
-                    sLastGen_ = "P-" + Activation.getPublicKey("public", sLastReal_);
-                }
-
-                //logger.debug("GEN: " + sLastGen_);
-            }
-            else
-            {
-                sLastReal_ = null;
-                sLastGen_ = null;
-                //logger.debug("GEN cleared");
-            }
-        }
-        return sLastGen_;
-    }
-
-    /**
-     * Reset the license key, set activationNeeded flag
-     */
-    public void resetLicenseKey()
-    {
-        //noinspection ThrowableInstanceNeverThrown
-        logger.debug("Reset license key called from ", new Throwable());
-
-        clearAllPrefs();
-        Preferences node = Prefs.getUserPrefs(sKeyNode_);
-        node.put(Activation.REGKEY, "");
-        activationNeeded = true;
-        activationVoided = true;
-    }
-
-    /**
-     * Ban the current key, reset it
-     */
-    public void banLicenseKey()
-    {
-        addBannedLicenseKey(getRealLicenseKey());
-        resetLicenseKey();
-    }
-
-    /**
-     * Is activation needed
-     */
-    public boolean isActivationNeeded()
-    {
-        return activationNeeded;
-    }
-
-    /**
-     * Set activation needed
-     */
-    void setActivationNeeded(boolean b)
-    {
-        activationNeeded = b;
-    }
-
-    /**
-     * Set the license key (assumes key is valid, turns off activationNeeded flag)
-     */
-    public void setLicenseKey(String sKey)
-    {
-        Preferences node = Prefs.getUserPrefs(sKeyNode_);
-        node.put(Activation.REGKEY, sKey);
-        DDMessage.setDefaultRealKey(sKey);
-        DDMessage.setDefaultKey(getPublicUseKey());
-        activationNeeded = false;
-        activationVoided = false;
-    }
-
-    /**
-     * Key validated - cleanup
-     */
-    public void keyValidated(boolean bPatch)
-    {
-        if (!bPatch)
-        {
-            String sKey = getRealLicenseKey(); // fetch key before...
-            clearAllPrefs(); // ...start fresh each time a new registration happens
-            setLicenseKey(sKey); // restore key
-        }
-        Preferences node = Prefs.getUserPrefs(sKeyNode_);
-        node.remove(Activation.OLDKEY);
-    }
-
-    /**
-     * Get banned license key
-     */
-    public boolean isBannedLicenseKey(String sKey)
-    {
-        if (sKey == null || sKey.length() == 0) return false;
-
-        // permanent ban - hackers
-        if (sKey.equals("1101-8603-2629-7418")) return true; // war 1.0
-        if (sKey.equals("2102-7935-2928-3201")) return true; // poker 1.0
-        if (sKey.equals("2202-3006-0455-2248")) return true; // poker 2.0
-
-        // get banned key list from prefs (previous attempts)
-        Preferences node = Prefs.getUserPrefs(sKeyNode_);
-        String sBanned = node.get(Activation.BANKEY, null);
-        if (sBanned == null) return false;
-
-        // loop through all
-        String s;
-        StringTokenizer st = new StringTokenizer(sBanned, ".");
-        while (st.hasMoreTokens())
-        {
-            s = st.nextToken();
-            if (sKey.equals(s)) return true;
-        }
-        return false;
-    }
-
-    /**
-     * add license key to list
-     */
-    public void addBannedLicenseKey(String sKey)
-    {
-        if (sKey == null || sKey.length() == 0) return;
-        if (isBannedLicenseKey(sKey)) return;
-
-        Preferences node = Prefs.getUserPrefs(sKeyNode_);
-        String sBanned = node.get(Activation.BANKEY, null);
-
-        if (sBanned == null) setBannedLicenseKeys(sKey);
-        else setBannedLicenseKeys(sBanned + "." + sKey);
-    }
-
-    /**
-     * Clear all prefs, keeping banned key
+     * Clear all preferences.
+     * Simplified version without banned key tracking (no longer needed in open source).
      */
     public void clearAllPrefs()
     {
         prefNode_ = null;
-        Preferences node = Prefs.getUserPrefs(sKeyNode_);
-        String sBanned = node.get(Activation.BANKEY, null);
         Prefs.clearAll();
-        setBannedLicenseKeys(sBanned);
         setAudioPrefs();
-    }
-
-    /**
-     * Set the banned license key (so user can't use it again)
-     */
-    private void setBannedLicenseKeys(String sKey)
-    {
-        if (sKey == null) return;
-        Preferences node = Prefs.getUserPrefs(sKeyNode_);
-        node.put(Activation.BANKEY, sKey);
-    }
-
-    /**
-     * Stores last valid key entered (used for patch re-activation)
-     */
-    public void setLastLicenseKey(String sKey)
-    {
-        if (sKey == null) return;
-        Preferences node = Prefs.getUserPrefs(sKeyNode_);
-        node.put(Activation.OLDKEY, sKey);
-    }
-
-    /**
-     * Return last valid key entered (used for patch re-activation)
-     */
-    public String getLastLicenseKey()
-    {
-        Preferences node = Prefs.getUserPrefs(sKeyNode_);
-        return node.get(Activation.OLDKEY, null);
     }
 
     /**

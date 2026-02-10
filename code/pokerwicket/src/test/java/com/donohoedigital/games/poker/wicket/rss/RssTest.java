@@ -37,23 +37,25 @@ import com.rometools.rome.feed.rss.Channel;
 import com.rometools.rome.feed.rss.Description;
 import com.rometools.rome.feed.rss.Item;
 import com.rometools.rome.feed.rss.Source;
-import com.rometools.rome.io.FeedException;
 import com.rometools.rome.io.WireFeedOutput;
-import junit.framework.*;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
+import static org.assertj.core.api.Assertions.*;
+
 /**
+ * Tests for RSS feed generation using Rome library.
+ * Verifies that RSS dependencies are working correctly.
+ *
  * @author Doug Donohoe
  */
-public class RssTest extends TestCase
+class RssTest
 {
     //private static final Logger logger = LogManager.getLogger(RssTest.class);
 
-    /**
-     * This test basically verifies dependencies for rome (rss) are working
-     */
-    public void testRSS()
+    @Test
+    void should_GenerateRSSFeed_When_ChannelCreated()
     {
         Channel channel = new Channel("rss_2.0");
         channel.setTtl(30);
@@ -86,16 +88,12 @@ public class RssTest extends TestCase
         channel.setItems(items);
 
         WireFeedOutput out = new WireFeedOutput();
-        try
-        {
-            assertNotNull(out);
-            assertNotNull(out.outputString(channel));
-            //logger.debug("Feed: \n" + out.outputString(channel));
-        }
-        catch (FeedException e)
-        {
-            fail(e.getMessage());
-        }
+        assertThat(out).isNotNull();
+        assertThatCode(() -> {
+            String output = out.outputString(channel);
+            assertThat(output).isNotNull();
+            //logger.debug("Feed: \n" + output);
+        }).doesNotThrowAnyException();
     }
 
 }

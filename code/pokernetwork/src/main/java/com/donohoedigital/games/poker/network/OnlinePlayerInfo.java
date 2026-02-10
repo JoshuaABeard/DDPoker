@@ -104,7 +104,7 @@ public class OnlinePlayerInfo implements Comparable<OnlinePlayerInfo>
     /**
      * get name
      */
-    public String getPublicUseKey()
+    public String getPlayerId()
     {
         return data_.getString(ONLINE_KEY);
     }
@@ -112,9 +112,18 @@ public class OnlinePlayerInfo implements Comparable<OnlinePlayerInfo>
     /**
      * Set name
      */
-    public void setPublicUseKey(String s)
+    public void setPlayerId(String s)
     {
         data_.setString(ONLINE_KEY, s);
+    }
+
+    /**
+     * @deprecated Use setPlayerId() instead
+     */
+    @Deprecated
+    public void setPublicUseKey(String s)
+    {
+        setPlayerId(s);
     }
 
     /**
@@ -154,7 +163,7 @@ public class OnlinePlayerInfo implements Comparable<OnlinePlayerInfo>
         for (Object aRaw : raw)
         {
             info = new OnlinePlayerInfo((DMTypedHashMap) aRaw);
-            info.setPublicUseKey(getPublicUseKey());
+            info.setPlayerId(getPlayerId());
             list.add(info);
         }
         return list;
@@ -177,7 +186,7 @@ public class OnlinePlayerInfo implements Comparable<OnlinePlayerInfo>
         if (o instanceof OnlinePlayerInfo)
         {
             OnlinePlayerInfo info = (OnlinePlayerInfo) o;
-            return getNameLower().equals(info.getNameLower()) && getPublicUseKey().equals(info.getPublicUseKey());
+            return getNameLower().equals(info.getNameLower()) && getPlayerId().equals(info.getPlayerId());
         }
         return false;
     }
@@ -188,7 +197,7 @@ public class OnlinePlayerInfo implements Comparable<OnlinePlayerInfo>
     @Override
     public int hashCode()
     {
-        return 31 * getNameLower().hashCode() + getPublicUseKey().hashCode();
+        return 31 * getNameLower().hashCode() + getPlayerId().hashCode();
     }
 
     /**

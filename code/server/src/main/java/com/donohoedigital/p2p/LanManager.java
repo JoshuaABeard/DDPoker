@@ -82,7 +82,7 @@ public class LanManager implements DDMessageListener
 
         // get guid and key
         guid_ = controller.getGUID();
-        key_ = controller.getPublicUseKey();
+        key_ = controller.getPlayerId();
 
         // our host
         try

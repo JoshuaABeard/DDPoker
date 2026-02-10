@@ -223,7 +223,7 @@ public class PokerUDPServer extends UDPServer implements PokerConnectionServer, 
             chatLink_.connect();
             omsg = new OnlineMessage(OnlineMessage.CAT_CHAT_HELLO);
             OnlineProfile auth = new OnlineProfile(profile.getName());
-            auth.setLicenseKey(main_.getRealLicenseKey());
+            auth.setUuid(main_.getPlayerId());  // Use player ID for authentication
             auth.setPassword(profile.getPassword());
             omsg.setWanAuth(auth.getData());
             pudp = new PokerUDPTransporter(omsg.getData());

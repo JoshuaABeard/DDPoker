@@ -424,7 +424,7 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
             game.setOnlinePassword(url.getPassword());
 
             // temp player with connect URL provided by user
-            PokerPlayer ptemp = new PokerPlayer(engine_.getPublicUseKey(), PokerConstants.PLAYER_ID_TEMP, profile_, true);
+            PokerPlayer ptemp = new PokerPlayer(engine_.getPlayerId(), PokerConstants.PLAYER_ID_TEMP, profile_, true);
             ptemp.setConnectURL(url);
             if (bJoin)
             {

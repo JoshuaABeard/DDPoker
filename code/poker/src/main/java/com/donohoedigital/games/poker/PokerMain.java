@@ -256,23 +256,14 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
     }
 
     /**
-     * What do the license keys start with?
-     */
-    @Override
-    protected int getKeyStart()
-    {
-        return PokerConstants.getKeyStart();
-    }
-
-    /**
      * See if we can load the default profile.  If not, another
      * copy of the game is already in use
      */
     @Override
     protected boolean checkPreReq()
     {
-        // skip on init if no key
-        if (bHeadless_ || getRealLicenseKey() == null || isActivationNeeded()) return true;
+        // skip check in headless mode
+        if (bHeadless_) return true;
 
         // in dev, allow one failure, then wait 3 seconds in case
         // we just killed and restarted right away
@@ -350,19 +341,6 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
         return "DD Poker";
     }
 
-    @Override
-    protected boolean isAutoGenLicenseKey()
-    {
-        // Don't auto-generate license keys - for online games, UUID comes from profile
-        return false;
-    }
-
-    @Override
-    public boolean isActivationNeeded()
-    {
-        return false;
-    }
-
     /**
      * Create a context - create our PokerContext
      */
@@ -415,10 +393,9 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
     {
         // Server config check moved to PokerStartMenu (after license, before profile)
 
-        // start p2p server if we are validated (have a valid key)
-        // see processTODO() below for case startup after activation
-        // start after main window initialized required (so engine is ready)
-        if (getRealLicenseKey() != null && !isActivationNeeded())
+        // start p2p server after main window initialized (so engine is ready)
+        // player ID is auto-generated, so always available in open source version
+        if (getPlayerId() != null)
         {
             initP2P();
         }

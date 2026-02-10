@@ -36,7 +36,6 @@ import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
@@ -383,14 +382,6 @@ class PokerGameTest {
     // =================================================================
 
     @Test
-    @Disabled("Integration test - requires PokerMain.getPokerMain() for computer player setup")
-    void should_InitTournament_When_ProfileProvided() {
-        TournamentProfile profile = createTestProfile();
-
-        assertThatCode(() -> game.initTournament(profile)).doesNotThrowAnyException();
-    }
-
-    @Test
     void should_GetPrizePool_When_ProfileSet() {
         TournamentProfile profile = createTestProfile();
         game.setProfile(profile);
@@ -537,16 +528,6 @@ class PokerGameTest {
         var clock = game.getGameClock();
 
         assertThat(clock).isNotNull();
-    }
-
-    @Test
-    @Disabled("Integration test - requires GameEngine for clock management")
-    void should_AdvanceClock_When_ClockModeActive() {
-        game.setClockMode(true);
-        TournamentProfile profile = createTestProfile();
-        game.setProfile(profile);
-
-        assertThatCode(() -> game.advanceClock()).doesNotThrowAnyException();
     }
 
     @Test

@@ -72,6 +72,7 @@ public class HibernateTest extends TestCase
 
         OnlineProfile profile = new OnlineProfile();
         profile.setName("Hibernate Test");
+        profile.setUuid(java.util.UUID.randomUUID().toString());
         profile.setEmail("hibernate@example.com");
         profile.setLicenseKey("0000-0000-0000-0000");
         profile.setActivated(false);

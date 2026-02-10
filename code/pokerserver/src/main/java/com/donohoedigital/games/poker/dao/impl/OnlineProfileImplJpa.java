@@ -120,15 +120,14 @@ public class OnlineProfileImplJpa extends JpaBaseDao<OnlineProfile, Long> implem
 
     public int getMatchingCount(String nameSearch, String emailSearch, String keySearch, boolean includeRetired)
     {
+        // Note: keySearch parameter ignored - license keys removed in open source version
         Query countQuery = entityManager.createQuery(
                 "select count(o) from OnlineProfile o " +
-                "where o.licenseKey like :key " +
-                "  AND o.name like :name " +
+                "where o.name like :name " +
                 "  AND o.email like :email " +
                 (!includeRetired ? " AND o.retired = false " : ""));
         countQuery.setParameter("name", DBUtils.sqlWildcard(nameSearch));
         countQuery.setParameter("email", DBUtils.sqlWildcard(emailSearch));
-        countQuery.setParameter("key", DBUtils.sqlWildcard(keySearch));
 
         Long rowCount = (Long) countQuery.getSingleResult();
         return rowCount.intValue();
@@ -138,6 +137,7 @@ public class OnlineProfileImplJpa extends JpaBaseDao<OnlineProfile, Long> implem
     public PagedList<OnlineProfile> getMatching(Integer count, int offset, int pagesize,
                                                 String nameSearch, String emailSearch, String keySearch, boolean includeRetired)
     {
+        // Note: keySearch parameter ignored - license keys removed in open source version
         if (count == null)
         {
             count = getMatchingCount(nameSearch, emailSearch, keySearch, includeRetired);
@@ -145,14 +145,12 @@ public class OnlineProfileImplJpa extends JpaBaseDao<OnlineProfile, Long> implem
 
         Query query = entityManager.createQuery(
                 "select o from OnlineProfile o " +
-                "where o.licenseKey like :key " +
-                "  AND o.name like :name " +
+                "where o.name like :name " +
                 "  AND o.email like :email " +
                 (!includeRetired ? "  AND o.retired = false " : "") +
                 "order by o.name");
         query.setParameter("name", DBUtils.sqlWildcard(nameSearch));
         query.setParameter("email", DBUtils.sqlWildcard(emailSearch));
-        query.setParameter("key", DBUtils.sqlWildcard(keySearch));
         query.setFirstResult(offset);
         query.setMaxResults(pagesize);
 

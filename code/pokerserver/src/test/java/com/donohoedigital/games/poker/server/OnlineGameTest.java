@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -43,32 +43,25 @@ import com.donohoedigital.games.poker.model.OnlineGame;
 import com.donohoedigital.games.poker.model.util.OnlineGameList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 
 /**
- * Created by IntelliJ IDEA.
- * User: donohoe
- * Date: Mar 13, 2008
- * Time: 2:44:16 PM
- * To change this template use File | Settings | File Templates.
+ * Tests for OnlineGame persistence and DAO operations.
  */
-@RunWith(SpringJUnit4ClassRunner.class)
+@SpringJUnitConfig(locations = {"/app-context-pokerservertests.xml"})
 @Transactional
-@ContextConfiguration(locations = {"/app-context-pokerservertests.xml"})
-public class OnlineGameTest
+class OnlineGameTest
 {
     private final Logger logger = LogManager.getLogger(OnlineGameTest.class);
 
@@ -80,62 +73,63 @@ public class OnlineGameTest
 
     @Test
     @Rollback
-    public void shouldPersist()
+    void should_PersistAndUpdate_When_GameSaved()
     {
         OnlineGame newGame = PokerTestData.createOnlineGame("shouldPersist", 1, "XXX-333");
         dao.save(newGame);
 
-        assertNotNull(newGame.getId());
+        assertThat(newGame.getId()).isNotNull();
 
         OnlineGame fetch = dao.get(newGame.getId());
-        assertEquals("license key should match", newGame.getLicenseKey(), fetch.getLicenseKey());
+        assertThat(fetch.getLicenseKey()).isEqualTo(newGame.getLicenseKey());
 
         String key = "1111-1111-1111-1111";
         newGame.setLicenseKey(key);
         dao.update(newGame);
 
         OnlineGame updated = dao.get(newGame.getId());
-        assertEquals("key should match", key, updated.getLicenseKey());
+        assertThat(updated.getLicenseKey()).isEqualTo(key);
     }
 
     @Test
     @Rollback
-    public void testGetByKeyAndUrl()
+    void should_FindGame_When_SearchingByKeyAndUrl()
     {
         OnlineGame newGame = PokerTestData.createOnlineGame("shouldPersist", 1, "XXX-333");
         dao.save(newGame);
 
         OnlineGame fetch = dao.getByKeyAndUrl(newGame.getLicenseKey(), newGame.getUrl());
 
-        assertTrue(fetch != null && fetch.getId().equals(newGame.getId()));
+        assertThat(fetch).isNotNull();
+        assertThat(fetch.getId()).isEqualTo(newGame.getId());
 
         fetch = dao.getByKeyAndUrl(newGame.getLicenseKey(), newGame.getUrl() + "/EXTRA");
-        assertNull(fetch);
+        assertThat(fetch).isNull();
     }
 
     @Test
     @Rollback
-    public void saveBeforeDelete()
+    void should_DeleteGame_When_DeleteCalled()
     {
         OnlineGame game = PokerTestData.createOnlineGame("saveBeforeDelete", 2, "YYY-444");
         dao.save(game);
-        assertNotNull(game.getId());
+        assertThat(game.getId()).isNotNull();
         logger.info(game.getHostPlayer() + " saved with id " + game.getId());
 
         dao.delete(game); // test delete of unattached entity
         logger.info("Should have deleted profile with id " + game.getId());
 
-        OnlineGame delete = dao.get(game.getId());
-        assertNull(delete);
+        OnlineGame deleted = dao.get(game.getId());
+        assertThat(deleted).isNull();
     }
 
     @Test
     @Rollback
-    public void testPaging()
+    void should_PageCorrectly_When_FetchingGamesByMode()
     {
         new ConfigManager("poker", ApplicationType.COMMAND_LINE);
         final int gameCount = 12;
-        assertEquals(gameCount % 4, 0); // must be divisible by 4
+        assertThat(gameCount % 4).isEqualTo(0); // must be divisible by 4
         long now = System.currentTimeMillis();
         int reverse;
         int day = 1000 * 60 * 24;
@@ -167,8 +161,8 @@ public class OnlineGameTest
             OnlineGameList fetch = dao.getByMode(count, fetched, pagesize, modes, null, null, null, true);
             fetched += fetch.size();
 
-            assertEquals("total rows should match", expectedCount, fetch.getTotalSize());
-            assertTrue("rows returned should be <= pagesize", fetch.size() <= pagesize);
+            assertThat(fetch.getTotalSize()).isEqualTo(expectedCount);
+            assertThat(fetch.size()).isLessThanOrEqualTo(pagesize);
             if (fetch.isEmpty()) break;
 
             // sorting by mode first, verify that first half are REG
@@ -176,26 +170,26 @@ public class OnlineGameTest
             {
                 if (index < (gameCount / 4))
                 {
-                    assertEquals(OnlineGame.MODE_REG, og.getMode());
+                    assertThat(og.getMode()).isEqualTo(OnlineGame.MODE_REG);
                 }
                 else if (index < (gameCount / 2))
                 {
-                    assertEquals(OnlineGame.MODE_PLAY, og.getMode());
+                    assertThat(og.getMode()).isEqualTo(OnlineGame.MODE_PLAY);
                 }
                 else if (index < (gameCount * 3 / 4))
                 {
-                    assertEquals(OnlineGame.MODE_STOP, og.getMode());
+                    assertThat(og.getMode()).isEqualTo(OnlineGame.MODE_STOP);
                 }
                 else
                 {
-                    assertEquals(OnlineGame.MODE_END, og.getMode());
+                    assertThat(og.getMode()).isEqualTo(OnlineGame.MODE_END);
                 }
 
                 index++;
             }
         }
 
-        assertEquals("total fetched should equal all games", gameCount, fetched);
+        assertThat(fetched).isEqualTo(gameCount);
 
         // test fetch of just end/stop and sort normally
         pagesize = 4;
@@ -211,27 +205,27 @@ public class OnlineGameTest
             OnlineGameList fetch = dao.getByMode(count, fetched, pagesize, modes2, null, null, null, false);
             fetched += fetch.size();
 
-            assertEquals("total rows should match", expectedCount, fetch.getTotalSize());
-            assertTrue("rows returned should be <= pagesize", fetch.size() <= pagesize);
+            assertThat(fetch.getTotalSize()).isEqualTo(expectedCount);
+            assertThat(fetch.size()).isLessThanOrEqualTo(pagesize);
             if (fetch.isEmpty()) break;
 
             // sorting by mode first, verify that first half are REG
             for (OnlineGame og : fetch)
             {
-                assertTrue(modes2x.contains(og.getMode()));
+                assertThat(modes2x).contains(og.getMode());
 
                 int name = Integer.parseInt(og.getHostPlayer());
                 long date = og.getEndDate().getTime();
 
-                assertTrue(date + " <= " + lastDate, date <= lastDate);
-                if (date == lastDate) assertTrue(name + " > " + lastName, name > lastName);
+                assertThat(date).isLessThanOrEqualTo(lastDate);
+                if (date == lastDate) assertThat(name).isGreaterThan(lastName);
 
                 lastName = name;
                 lastDate = date;
             }
         }
 
-        assertEquals("total fetched should equal half of games", fetched, expectedCount);
+        assertThat(fetched).isEqualTo(expectedCount);
 
         // test fetch of just each type
         for (int i = OnlineGame.MODE_REG; i <= OnlineGame.MODE_END; i++)
@@ -248,14 +242,14 @@ public class OnlineGameTest
                 OnlineGameList fetch = dao.getByMode(count, fetched, pagesize, modes3, null, null, null, false);
                 fetched += fetch.size();
 
-                assertEquals("total rows should match", expectedCount, fetch.getTotalSize());
-                assertTrue("rows returned should be <= pagesize", fetch.size() <= pagesize);
+                assertThat(fetch.getTotalSize()).isEqualTo(expectedCount);
+                assertThat(fetch.size()).isLessThanOrEqualTo(pagesize);
                 if (fetch.isEmpty()) break;
 
                 // verify ordering correct
                 for (OnlineGame og : fetch)
                 {
-                    assertTrue(modes3x.contains(og.getMode()));
+                    assertThat(modes3x).contains(og.getMode());
 
                     long date;
 
@@ -275,19 +269,19 @@ public class OnlineGameTest
                             date = og.getCreateDate().getTime();
                     }
 
-                    assertTrue(modes3[0] + " " + date + " <= " + lastDate, date <= lastDate);
+                    assertThat(date).isLessThanOrEqualTo(lastDate);
 
                     lastDate = date;
                 }
             }
 
-            assertEquals("total fetched should equal half of games", fetched, expectedCount);
+            assertThat(fetched).isEqualTo(expectedCount);
         }
     }
 
     @Test
     @Rollback
-    public void testHostSummary()
+    void should_GenerateHostSummary_When_MultipleGamesHosted()
     {
         Date now = new Date(System.currentTimeMillis() - 1000);
         Date later = new Date(System.currentTimeMillis() + 30000);
@@ -302,19 +296,19 @@ public class OnlineGameTest
         profileDao.save(PokerTestData.createOnlineProfile("Zorro"));
 
         int count = dao.getHostSummaryCount(null, now, later);
-        assertEquals(2, count);
+        assertThat(count).isEqualTo(2);
 
         PagedList<HostSummary> list = dao.getHostSummary(count, 0, games, null, now, later);
-        assertEquals(count, list.size());
+        assertThat(list).hasSize(count);
 
         HostSummary one = list.get(0);
         HostSummary two = list.get(1);
 
-        assertEquals(one.getHostName(), "Zorro");
-        assertEquals(one.getGamesHosted(), 15);
+        assertThat(one.getHostName()).isEqualTo("Zorro");
+        assertThat(one.getGamesHosted()).isEqualTo(15);
 
-        assertEquals(two.getHostName(), "Dexter");
-        assertEquals(two.getGamesHosted(), 5);
+        assertThat(two.getHostName()).isEqualTo("Dexter");
+        assertThat(two.getGamesHosted()).isEqualTo(5);
     }
 
 }

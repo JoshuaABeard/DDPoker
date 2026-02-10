@@ -273,7 +273,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
 
                 // create player for host
                 PlayerProfile profile = PlayerProfileOptions.getDefaultProfile();
-                PokerPlayer player = new PokerPlayer(engine_.getPublicUseKey(), game.getNextPlayerID(), profile, true);
+                PokerPlayer player = new PokerPlayer(engine_.getPlayerId(), game.getNextPlayerID(), profile, true);
                 player.setPlayerType(PlayerType.getAdvisor());
                 game.addPlayer(player);
 
@@ -327,7 +327,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
 
         // setup human player (computer players added in TournamentOptions)
         PlayerProfile profile = PlayerProfileOptions.getDefaultProfile();
-        PokerPlayer player = new PokerPlayer(engine.getPublicUseKey(), game.getNextPlayerID(), profile, true);
+        PokerPlayer player = new PokerPlayer(engine.getPlayerId(), game.getNextPlayerID(), profile, true);
         player.setPlayerType(PlayerType.getAdvisor());
         game.addPlayer(player);
         return game;

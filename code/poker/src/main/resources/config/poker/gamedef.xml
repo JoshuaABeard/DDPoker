@@ -66,6 +66,19 @@
     <param name="confirm" boolvalue="false"/>
   </phase>
 
+  <!-- First-Time User Experience Wizard -->
+  <phase name="FirstTimeWizard" class="com.donohoedigital.games.poker.FirstTimeWizard" cache="false" transient="true">
+    <param name="style" strvalue="PokerStandardDialog"/>
+    <param name="dialog-modal" boolvalue="true"/>
+    <param name="dialog-windowtitle-prop" strvalue="msg.ftue.title"/>
+    <param name="dialog-windowtitle-image" strvalue="pokerbannerwintitle"/>
+    <param name="dialog-width" intvalue="600"/>
+    <param name="dialog-height" intvalue="450"/>
+    <param name="dialog-style" strvalue="PokerStandardDialog"/>
+    <param name="dialog-background-image" strvalue="pokerdialog"/>
+    <param name="dialog-help-name" strvalue="welcome"/>
+  </phase>
+
   <phase name="ChainPhase" class="com.donohoedigital.games.engine.ChainPhase$Empty" transient="true"/>
   <phase name="PreviousPhase" class="com.donohoedigital.games.engine.PreviousPhase" transient="true"/>
   <phase name="PreviousLoopPhase" class="com.donohoedigital.games.engine.PreviousLoopPhase" transient="true"/>

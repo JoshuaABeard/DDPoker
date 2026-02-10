@@ -95,7 +95,7 @@ public class Support extends OptionMenu
         StringBuilder data = new StringBuilder();
 
         data.append("------------------------------------------------------------------------------------\n");
-        data.append("Activation Number: ").append(engine_.isDemo() ? "demo" : engine_.getRealLicenseKey()).append("\n");
+        data.append("Player ID:         ").append(engine_.isDemo() ? "demo" : engine_.getPlayerId()).append("\n");
         data.append("Version:           ").append(engine_.getVersion()).append("\n");
         data.append("Build Number:      ").append(PropertyConfig.getBuildNumber()).append("\n");
         data.append("Java Version:      ").append(props.getProperty("java.runtime.version")).append("\n");

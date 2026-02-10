@@ -16,6 +16,18 @@ This release includes two major architectural improvements:
 **2. File-Based JSON Configuration** - Replaced Java Preferences API with portable, human-readable JSON configuration files.
 
 ### Added
+- **First-Time User Experience (FTUE) Wizard**
+  - Guided setup wizard for new users on first launch
+  - Streamlined onboarding flow based on play mode preference
+  - Three paths: Offline Practice, Online New Account, Link Existing Account
+  - Server configuration now appears BEFORE profile creation for online play (fixes critical UX issue)
+  - Progressive disclosure - only shows relevant steps based on user choice
+  - Real-time validation with clear error messages
+  - "Skip wizard" option creates sensible defaults
+  - "Don't show again" preference for returning users
+  - Comprehensive test coverage: 139 tests (29 unit + 19 integration + 91 edge case)
+  - See `docs/FIRST-TIME-WIZARD.md` for user guide
+
 - **UUID-based Player Identity System**
   - Unique player IDs generated using UUID v4
   - Stored locally in platform-specific config directory
@@ -223,8 +235,10 @@ Starting with 3.2.0, DD Poker uses semantic versioning with a "-community" suffi
 
 ## Links
 
+- [First-Time Wizard User Guide](docs/FIRST-TIME-WIZARD.md)
 - [License Removal Technical Documentation](docs/LICENSE-REMOVAL-TECHNICAL.md)
 - [File-Based Configuration Documentation](docs/FILE-BASED-CONFIGURATION.md)
+- [Public IP Detection Technical Documentation](docs/PUBLIC-IP-DETECTION-TECHNICAL.md)
 - [Source Repository](https://github.com/donohoedigital/DDPoker)
 - [Issue Tracker](https://github.com/donohoedigital/DDPoker/issues)
 - [License (GPL-3.0)](LICENSE.txt)

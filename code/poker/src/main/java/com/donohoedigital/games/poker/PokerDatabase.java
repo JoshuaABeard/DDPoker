@@ -2514,7 +2514,7 @@ public class PokerDatabase
     private static String getActualDatabaseName(PlayerProfile profile)
     {
         GameEngine gameEngine = GameEngine.getGameEngine();
-        String uniqueKey = (gameEngine == null) ? "no-engine" : gameEngine.getPublicUseKey();
+        String uniqueKey = (gameEngine == null) ? "no-engine" : gameEngine.getPlayerId();
 
         return CLIENT_DATABASE_NAME +
                ((profile == null) ? "" : ("-" + profile.getFileNum())) +
