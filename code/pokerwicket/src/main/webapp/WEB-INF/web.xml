@@ -80,12 +80,25 @@
     </init-param>
   </filter>
 
+  <!-- Map Wicket filter to all paths -->
   <filter-mapping>
     <filter-name>wicket.wicket</filter-name>
     <url-pattern>/*</url-pattern>
     <dispatcher>REQUEST</dispatcher>
     <dispatcher>ERROR</dispatcher>
   </filter-mapping>
+
+  <!-- Large file download servlet (handles files >40MB) -->
+  <servlet>
+    <servlet-name>downloads</servlet-name>
+    <servlet-class>com.donohoedigital.games.poker.wicket.LargeFileDownloadServlet</servlet-class>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>downloads</servlet-name>
+    <url-pattern>/downloads/*</url-pattern>
+  </servlet-mapping>
 
   <error-page>
     <error-code>404</error-code>

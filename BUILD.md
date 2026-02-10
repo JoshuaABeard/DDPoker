@@ -64,6 +64,89 @@ cd C:\Repos\DDPoker\code
 mvn install -DskipTests=true
 ```
 
+### Build Windows Installer
+
+Creates a self-contained Windows installer with bundled Java runtime (no Java installation required for end users).
+
+#### Prerequisites
+- Windows 10/11
+- Java 25 JDK (not JRE)
+- Maven 3.6+
+- **WiX Toolset v3.14+** (required for creating EXE/MSI installers)
+
+#### Installing WiX Toolset
+
+WiX is required for jpackage to create Windows installers. Install using one of these methods:
+
+**Option 1: Using winget (Recommended)**
+```powershell
+# Run PowerShell as Administrator
+winget install WiXToolset.WiXToolset
+```
+
+**Option 2: Manual Download**
+1. Visit: https://wixtoolset.org/releases/
+2. Download WiX Toolset 3.14.1 (or latest v3.x)
+3. Run installer as Administrator
+4. Restart terminal for PATH changes to take effect
+
+**Verify Installation**:
+```powershell
+# Should display WiX version
+candle.exe -?
+light.exe -?
+```
+
+#### Build Steps
+
+```shell
+cd C:\Repos\DDPoker\code\poker
+mvn clean package assembly:single jpackage:jpackage
+```
+
+**Note**: WiX tools must be in your PATH. If you get a "Can not find WiX tools" error, restart your terminal after installing WiX.
+
+#### Output
+
+- **File**: `target/dist/DDPokerCommunityEdition-3.3.0.msi`
+- **Size**: ~98MB (includes Java runtime)
+- **Installation**: Double-click to install, creates Start Menu shortcut
+
+**Branding**: The installer is branded as "DDPoker Community Edition" to clearly distinguish it from the original DD Poker releases.
+
+#### Testing the Installer
+
+1. **Locate the installer**:
+   ```
+   C:\Repos\DDPoker\code\poker\target\dist\DDPoker-3.3.0-community.msi
+   ```
+
+2. **Install**:
+   - Double-click the .msi file
+   - Windows SmartScreen will warn (unsigned installer - this is expected)
+   - Click "More info" → "Run anyway"
+   - Follow installer wizard
+   - Choose installation directory (default: `C:\Program Files\DDPoker`)
+
+3. **Launch**:
+   - Start Menu → All Apps → DD Poker → DDPoker
+   - Or use desktop shortcut
+
+4. **Verify**:
+   - Application launches without Java installation
+   - Database created at: `%APPDATA%\ddpoker\poker.mv.db`
+   - Config created at: `%APPDATA%\ddpoker\config.json`
+
+#### Note on SmartScreen Warning
+
+The installer is unsigned, so Windows will show a security warning. This is expected and safe to bypass for development/personal use. To remove the warning for production distribution, a code signing certificate is needed (estimated cost: $75-300/year).
+
+#### Uninstall
+
+Windows Settings → Apps → DDPoker → Uninstall
+
+**Note**: User data (database, config) is preserved in `%APPDATA%\ddpoker\` after uninstall.
+
 ## Running Components (Windows)
 
 For Windows development, use the PowerShell scripts in `tools/scripts/`:

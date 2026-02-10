@@ -31,6 +31,59 @@ docker compose -f docker/docker-compose.yml up -d
 
 Docker Compose will automatically pull the image from Docker Hub if not available locally, or build it from source if you've cloned the repository.
 
+## Client Downloads
+
+The Docker container serves client downloads at `http://localhost:8080/downloads/`:
+
+### Available Files
+
+1. **DDPokerCommunityEdition-3.3.0.jar** (~21 MB)
+   - Universal JAR file (works on all platforms)
+   - Requires Java 25 to be installed separately
+   - Run with: `java -jar DDPokerCommunityEdition-3.3.0.jar`
+   - Built automatically inside Docker container
+
+2. **DDPokerCommunityEdition-3.3.0.msi** (~98 MB)
+   - Windows installer with bundled Java runtime
+   - No Java installation required
+   - Built separately on Windows machine
+   - **Required before building Docker image** - must be placed in `docker/downloads/`
+
+### Building the Windows Installer
+
+The Windows installer must be built on a Windows machine with WiX Toolset installed:
+
+**Prerequisites:**
+- Windows 10/11
+- Java 25 JDK
+- Maven 3.6+
+- WiX Toolset v3.14+ (`winget install WiXToolset.WiXToolset`)
+
+**Build Steps:**
+```bash
+# 1. Build the installer (from repository root)
+cd code/poker
+mvn clean package assembly:single jpackage:jpackage -DskipTests
+
+# 2. Copy to Docker downloads folder
+cp target/dist/DDPokerCommunityEdition-3.3.0.msi ../../docker/downloads/
+
+# 3. Rebuild Docker image (from repository root)
+cd ../..
+docker compose -f docker/docker-compose.yml build
+
+# 4. Restart container
+docker compose -f docker/docker-compose.yml up -d
+```
+
+**Accessing Downloads:**
+- **Web Browser**: http://localhost:8080/downloads/
+- **Direct URLs**:
+  - JAR: http://localhost:8080/downloads/DDPokerCommunityEdition-3.3.0.jar
+  - MSI: http://localhost:8080/downloads/DDPokerCommunityEdition-3.3.0.msi
+
+**Important**: The MSI file **must** be present in `docker/downloads/` before building the Docker image. The Docker build will fail if the MSI is missing. Follow the build steps above to create the MSI first.
+
 ## Files
 
 - **docker-compose.yml** - Docker Compose configuration with service definitions, ports, volumes, and environment variables

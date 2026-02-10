@@ -45,9 +45,8 @@ COPY code/tools/target/classes/ /app/classes/
 COPY code/gameserver/target/classes/ /app/classes/
 COPY code/pokerserver/target/classes/ /app/classes/
 
-# Copy pokerweb classes (both main and test)
+# Copy pokerweb classes
 COPY code/pokerwicket/target/classes/ /app/classes/
-COPY code/pokerwicket/target/test-classes/ /app/classes/
 
 # Copy the webapp directory
 COPY code/pokerwicket/src/main/webapp/ /app/webapp/
@@ -98,11 +97,27 @@ RUN cd /tmp/client-build && \
 # Build universal FAT JAR (no server configuration)
 RUN cd /tmp/client-build && \
     printf "Manifest-Version: 1.0\nMain-Class: com.donohoedigital.games.poker.PokerMain\n" > MANIFEST.MF && \
-    "${JAVA_HOME}/bin/jar" cfm /app/downloads/DDPoker.jar MANIFEST.MF -C . . && \
-    echo "✓ Universal JAR built: $(du -h /app/downloads/DDPoker.jar | cut -f1)"
+    "${JAVA_HOME}/bin/jar" cfm /app/downloads/DDPokerCommunityEdition-3.3.0.jar MANIFEST.MF -C . . && \
+    echo "✓ Universal JAR built: $(du -h /app/downloads/DDPokerCommunityEdition-3.3.0.jar | cut -f1)"
 
 # Cleanup temp files
 RUN rm -rf /tmp/client-build /tmp/client-libs
+
+# ============================================================
+# COPY WINDOWS INSTALLER (REQUIRED)
+# ============================================================
+# The MSI must be built on Windows using jpackage before building this Docker image.
+# This is a REQUIRED step - the Docker build will fail if the MSI is missing.
+#
+# Build command (run on Windows):
+#   cd code/poker
+#   mvn clean package assembly:single jpackage:jpackage -DskipTests
+#   cp "target/dist/DDPokerCommunityEdition-3.3.0.msi" ../../docker/downloads/
+#
+# Then build Docker image (from repository root):
+#   docker compose -f docker/docker-compose.yml build
+
+COPY docker/downloads/*.msi /app/downloads/
 
 # ============================================================
 # ENTRYPOINT

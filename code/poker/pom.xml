@@ -120,6 +120,8 @@
           <descriptorRefs>
             <descriptorRef>jar-with-dependencies</descriptorRef>
           </descriptorRefs>
+          <finalName>poker-${project.version}</finalName>
+          <appendAssemblyId>false</appendAssemblyId>
         </configuration>
       </plugin>
       <plugin>
@@ -132,6 +134,103 @@
             <goals>
               <goal>copy-dependencies</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- jpackage plugin for creating Windows installer -->
+      <plugin>
+        <groupId>org.panteleyev</groupId>
+        <artifactId>jpackage-maven-plugin</artifactId>
+        <version>1.6.5</version>
+        <configuration>
+          <!-- Basic Application Info -->
+          <name>DDPokerCommunityEdition</name>
+          <appVersion>3.3.0</appVersion>
+          <vendor>DD Poker Community</vendor>
+          <description>DD Poker Community Edition - Texas Hold'em Tournament Poker</description>
+          <copyright>Copyright 2003-2026 Doug Donohoe</copyright>
+
+          <!-- Input/Output -->
+          <input>target</input>
+          <destination>target/dist</destination>
+          <mainJar>poker-${project.version}.jar</mainJar>
+          <mainClass>com.donohoedigital.games.poker.PokerMain</mainClass>
+
+          <!-- Windows-Specific Settings -->
+          <!-- Note: Requires WiX Toolset v3.14+ installed (winget install WiXToolset.WiXToolset) -->
+          <type>MSI</type>
+          <winMenu>true</winMenu>
+          <winDirChooser>true</winDirChooser>
+          <winShortcut>true</winShortcut>
+          <winMenuGroup>DD Poker Community Edition</winMenuGroup>
+
+          <!-- Application Icon -->
+          <icon>src/main/resources/config/poker/images/pokericon32.ico</icon>
+
+          <!-- JVM Options -->
+          <javaOptions>
+            <option>-Dfile.encoding=UTF-8</option>
+            <option>-Xmx512m</option>
+          </javaOptions>
+        </configuration>
+      </plugin>
+
+      <!-- Jacoco Coverage Enforcement -->
+      <!-- Overrides parent POM's 65% threshold with package-specific rules -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>jacoco-check</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <!-- Main poker package - baseline 15%, target 40% -->
+                <!-- Current: 19% - Increase minimum as coverage improves -->
+                <rule>
+                  <element>PACKAGE</element>
+                  <limits>
+                    <limit>
+                      <counter>INSTRUCTION</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.15</minimum>
+                    </limit>
+                  </limits>
+                  <includes>
+                    <include>com.donohoedigital.games.poker</include>
+                  </includes>
+                  <excludes>
+                    <!-- Exclude UI packages from enforcement -->
+                    <exclude>com.donohoedigital.games.poker.dashboard</exclude>
+                    <exclude>com.donohoedigital.games.poker.ai.gui</exclude>
+                    <!-- Exclude third-party layout code -->
+                    <exclude>com.zookitec.layout</exclude>
+                  </excludes>
+                </rule>
+
+                <!-- AI package - 50% minimum -->
+                <rule>
+                  <element>PACKAGE</element>
+                  <limits>
+                    <limit>
+                      <counter>INSTRUCTION</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.50</minimum>
+                    </limit>
+                  </limits>
+                  <includes>
+                    <include>com.donohoedigital.games.poker.ai</include>
+                  </includes>
+                  <excludes>
+                    <!-- Exclude AI GUI from enforcement -->
+                    <exclude>com.donohoedigital.games.poker.ai.gui</exclude>
+                  </excludes>
+                </rule>
+              </rules>
+            </configuration>
           </execution>
         </executions>
       </plugin>
