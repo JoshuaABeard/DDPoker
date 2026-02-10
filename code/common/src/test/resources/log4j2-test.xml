@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Optimized logging configuration for tests - reduces output verbosity for faster builds
+-->
+<Configuration status="WARN">
+  <Appenders>
+    <Console name="Console" target="SYSTEM_ERR">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} [%-5level] %logger{1} - %msg%n"/>
+    </Console>
+  </Appenders>
+
+  <Loggers>
+    <!-- Default to WARN for faster test execution -->
+    <Root level="WARN">
+      <AppenderRef ref="Console"/>
+    </Root>
+
+    <!-- Silence noisy frameworks -->
+    <Logger name="org.hibernate" level="ERROR"/>
+    <Logger name="org.apache.wicket" level="ERROR"/>
+    <Logger name="org.springframework" level="WARN"/>
+
+    <!-- Application logging - only show important messages during tests -->
+    <Logger name="com.donohoedigital" level="WARN"/>
+
+    <!-- Uncomment to enable debug logging for specific packages -->
+    <!-- <Logger name="com.donohoedigital.games.poker" level="DEBUG"/> -->
+  </Loggers>
+</Configuration>

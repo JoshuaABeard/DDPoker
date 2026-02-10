@@ -142,8 +142,11 @@
           <!-- Fork once per module (memory efficient) -->
           <forkCount>1</forkCount>
           <reuseForks>true</reuseForks>
-          <!-- Memory settings -->
-          <argLine>-Xmx512m -XX:+UseParallelGC @{argLine}</argLine>
+          <!-- Memory settings (increased for better performance) -->
+          <argLine>-Xmx1024m -XX:+UseParallelGC -XX:TieredStopAtLevel=1 @{argLine}</argLine>
+          <!-- Optimize test execution -->
+          <runOrder>hourly</runOrder>
+          <trimStackTrace>false</trimStackTrace>
         </configuration>
       </plugin>
 
@@ -257,6 +260,8 @@
       <properties>
         <jacoco.skip>true</jacoco.skip>
         <skipITs>true</skipITs>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+        <maven.source.skip>true</maven.source.skip>
       </properties>
       <build>
         <plugins>
@@ -265,6 +270,34 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
               <excludedGroups>integration</excludedGroups>
+              <!-- Use more aggressive parallelism in fast mode -->
+              <threadCount>4</threadCount>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- Dev profile - unit tests only, maximum speed -->
+    <profile>
+      <id>dev</id>
+      <properties>
+        <jacoco.skip>true</jacoco.skip>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+        <maven.source.skip>true</maven.source.skip>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <!-- Skip slow and integration tests -->
+              <excludedGroups>slow,integration</excludedGroups>
+              <!-- Maximum parallelism for dev builds -->
+              <threadCount>4</threadCount>
+              <!-- Fail fast -->
+              <skipAfterFailureCount>1</skipAfterFailureCount>
             </configuration>
           </plugin>
         </plugins>
