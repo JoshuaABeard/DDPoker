@@ -15,6 +15,49 @@ The DD Poker website (served via Apache Wicket) was originally built for the com
 
 ---
 
+## Progress Summary
+
+**Last Updated:** 2026-02-10
+
+### ✅ COMPLETED (~80% of plan)
+
+#### Core Infrastructure
+- ✅ **styles.css** - Complete rewrite with modern CSS (custom properties, flexbox, modern reset)
+- ✅ **nav.css** - Complete rewrite with modern navigation styles
+- ✅ **navData.js** - Removed forums and store entries from navigation
+
+#### Major Pages
+- ✅ **CopyrightFooter.html/.java** - New text-only footer with Community Edition branding and Doug Donohoe credit
+- ✅ **HomeHome.html** - Complete rewrite with Community Edition content, features, and download CTA
+- ✅ **AboutHome.html** - Complete rewrite with Origins, Special Thanks, and Community Edition sections
+- ✅ **DownloadHome.html** - Updated with Windows installer, JAR downloads, self-hosting info
+- ✅ **SupportHome.html** - Updated with community resources, GitHub links
+
+#### Removed Pages
+- ✅ **Forums pages** - Fully deleted (exceeded plan scope - complete removal vs redirect)
+- ✅ **Store/Donate pages** - Fully deleted (exceeded plan scope - complete removal vs redirect)
+
+#### Page Titles
+- ✅ Updated to include "Community Edition" on all completed pages
+
+### ⏸️ REMAINING (Lower Priority - Section 3)
+
+#### About Sub-Pages
+These were marked as "Lower Priority" in the original plan:
+- ⏸️ **AboutPractice.html** - Needs content rewrite
+- ⏸️ **AboutOnline.html** - Needs content rewrite
+- ⏸️ **AboutAnalysis.html** - Needs content rewrite
+- ⏸️ **AboutPokerClock.html** - Needs content rewrite
+- ⏸️ **AboutScreenshots.html** - Needs review
+- ⏸️ **AboutFaq.html** - Needs content rewrite
+
+#### Verification (Section 10)
+- ⏸️ Build verification
+- ⏸️ Visual parity testing (desktop/mobile)
+- ⏸️ Link checking
+
+---
+
 ## 1. Navigation Restructure
 
 **File:** `code/pokerwicket/src/main/webapp/navData.js`
