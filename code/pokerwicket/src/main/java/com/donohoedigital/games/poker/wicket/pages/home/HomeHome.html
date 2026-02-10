@@ -34,7 +34,7 @@
 <html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:wicket="http://wicket.apache.org">
 
 <wicket:head>
-    <title>DD Poker - Texas Hold'em - Official Site</title>
+    <title>DD Poker Community Edition - Free Texas Hold'em Simulator</title>
 </wicket:head>
 
 <body>
@@ -42,72 +42,54 @@
 <wicket:extend>
     <div id="homepage">
 
-        <div class="media">
-            <img class="float-right" src="images/websitemenu-mirror.png" alt="DD Poker Screenshot">
+        <div class="title">DD Poker Community Edition</div>
 
+        <div class="media">
             <div class="extra-top-padding">
                 <div class="description">
-                    DD Poker is a full-featured
-                    <a href="https://github.com/dougdonohoe/ddpoker">open source</a>
-                    Texas Hold'em (no-limit, pot-limit, limit) simulator, allowing
-                    you to play against AI and human opponents.
+                    DD Poker Community Edition is a free, open-source Texas Hold'em simulator featuring no-limit,
+                    pot-limit, and limit variants. Practice against advanced AI opponents, host online games with
+                    friends, and master tournament play with comprehensive analysis tools.
                 </div>
+
                 <div class="description">
+                    <strong>Core Features</strong>
                     <ul>
-                        <li><span class="mild">Free</span> and <span class="mild">fully functional</span> poker
-                            entertainment software.
-                        </li>
-                        <li>Play online with your friends in private games.</li>
-                        <li>Practice your no-limit, pot-limit and limit skills against advanced
-                            computer opponents.
-                        </li>
-                        <li>Design and run your own tournaments.</li>
-                        <li>
-                            <wicket:link><a href="../about/AboutHome.html">Full details...</a></wicket:link>
-                        </li>
+                        <li>Advanced AI opponents with configurable difficulty levels</li>
+                        <li>Online multiplayer support for private games</li>
+                        <li>Hand analysis calculator with odds computation</li>
+                        <li>Tournament clock for managing live home games</li>
+                        <li>Custom tournament designer with flexible blind structures</li>
+                        <li>Comprehensive player statistics and hand history</li>
+                        <li><wicket:link><a href="../about/AboutHome.html">Learn more about features</a></wicket:link></li>
                     </ul>
                 </div>
 
                 <div class="description">
-                    DD Poker also has a poker clock for running your own
-                    home tournaments and a sophisticated calculator tool for
-                    exploring the strength of various hands
-                    and the odds of winning.
+                    <strong>What's New in Community Edition</strong>
+                    <ul>
+                        <li>License-free operation - no registration required</li>
+                        <li>File-based configuration for easy customization</li>
+                        <li>First-time user experience wizard for streamlined setup</li>
+                        <li>Docker deployment support for self-hosted online portals (<a href="support">setup guide</a>)</li>
+                        <li>Modern Java 25+ compatibility with ongoing updates</li>
+                    </ul>
                 </div>
 
                 <div class="description">
-                    You can play against other human opponents by setting up an online game and sharing
-                    the game URL (unless everyone is running on the LAN,
-                    this requires opening a port to allow inbound connections to your computer).
-                </div>
-                <div class="description">
-                    There used to be an <span class="mild">Online Portal</span> that facilitated
-                    finding games posted by
-                    other users, tracked player profiles, and maintained tournament histories.  We
-                    no longer run this server, but you can run your own using the
-                    <a href="https://github.com/dougdonohoe/ddpoker">DD Poker source code</a>.
-                </div>
-
-                <div class="description">
-                    <a href="../download ">Download</a> the DD Poker client installer.
+                    Originally created by <a href="https://www.ddpoker.com">Doug Donohoe</a> and released as open source in 2024,
+                    DD Poker has been maintained and enhanced by the community.
                 </div>
 
             </div>
         </div>
 
         <div class="action-buttons">
-            <a href="../download"><img class="action-button" src="images/download-button.jpg"
-                                       alt="Want DD Poker 3? Download"></a>
-            <a href="donate"><img class="action-button" src="images/donate.jpg" alt="Like DD Poker 3? Donate"></a>
-        </div>
-
-        <div class="donate-note">
-            Although DD Poker is free software, we still
-            incur real expenses for ongoing
-            development. If you
-            enjoy DD Poker, please consider
-            <wicket:link><a href="../store/Donate.html">donating</a></wicket:link>
-            to help defray these costs.
+            <wicket:link><a href="../download/DownloadHome.html">
+                <button style="font-size: 1.2em; padding: 12px 24px; background: #336600; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                    Download DD Poker Community Edition
+                </button>
+            </a></wicket:link>
         </div>
 
     </div>

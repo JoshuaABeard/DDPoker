@@ -47,7 +47,6 @@ const navData = {
             {title: 'Online', link: '/about/online'},
             {title: 'Analysis', link: '/about/analysis'},
             {title: 'Poker Clock', link: '/about/pokerclock'},
-            {title: 'Competition', link: '/about/competition', skipInDocMode: true},
             {title: 'Screenshots', link: '/about/screenshots'},
             {title: 'FAQ', link: '/about/faq'}
         ]
@@ -57,29 +56,16 @@ const navData = {
         link: '/download',
         subPages: null
     },
-    store: {
-        title: 'Donate',
-        link: '/donate',
-    },
-    forums: {
-        skipInDocMode: true,
-        title: 'Forums',
-        link: '/forums',
-        subPages: null,
-    },
     support: {
-        skipInDocMode: true,
         title: 'Support',
         link: '/support',
         subPages: [
             {title: 'Overview', link: '/support'},
             {title: 'Self Help', link: '/support/selfhelp'},
-            {title: 'Password Help', link: '/support/passwords', skipInDocMode: true},
-            {title: 'Online Supplement', link: '/support/onlinesupplement'},
+            {title: 'Password Help', link: '/support/passwords'},
         ]
     },
     online: {
-        skipInDocMode: true,
         title: 'Online',
         link: '/online',
         subPages: [
@@ -94,7 +80,6 @@ const navData = {
         ]
     },
     admin: {
-        skipInDocMode: true,
         admin: true,
         title: 'Admin',
         link: '/admin',

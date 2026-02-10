@@ -50,7 +50,7 @@ function getActiveClass(i, subPage) {
 }
 
 function getActiveSubpages(pageData) {
-    return pageData.subPages.filter(subPage => !docMode || !subPage.skipInDocMode);
+    return pageData.subPages;
 }
 
 function generateNavigation(rootPage) {
@@ -60,9 +60,6 @@ function generateNavigation(rootPage) {
 
     // Loop through each page in navData
     for (const [slug, pageData] of Object.entries(navData)) {
-        if (docMode && pageData.skipInDocMode) {
-            continue;
-        }
         if (!adminOn && pageData.admin) {
             continue;
         }
@@ -180,7 +177,6 @@ function addMenuEventHandlers() {
 const mountPath = document.getElementById('header').dataset.mount;
 const rootPage = document.getElementById('header').dataset.root;
 const adminOn = document.getElementById('header').dataset.admin === 'true';
-const docMode = document.getElementById('header').dataset.docmode === 'true';
 
 // generate nav
 generateNavigation(rootPage);

@@ -2,20 +2,28 @@
 <Container version="2">
   <!-- Metadata -->
   <Name>DDPoker</Name>
-  <Repository>joshuaabeard/ddpoker:3.2.1-community</Repository>
+  <Repository>joshuaabeard/ddpoker:3.3.0-community</Repository>
   <Registry>https://hub.docker.com/r/joshuaabeard/ddpoker</Registry>
   <Network>bridge</Network>
   <Privileged>false</Privileged>
   <Support>https://github.com/JoshuaABeard/DDPoker/issues</Support>
   <Project>https://github.com/JoshuaABeard/DDPoker</Project>
-  <Overview>DD Poker Community Edition - Community-maintained fork with Docker deployment. Full-featured Texas Hold'em tournament software with online multiplayer, AI opponents, poker clock, and hand calculator. Version 3.2.1-community includes pre-built Docker images and universal client JAR.</Overview>
+  <Overview>DD Poker Community Edition - Community-maintained fork with Docker deployment. Full-featured Texas Hold'em tournament software with online multiplayer, AI opponents, poker clock, and hand calculator. Version 3.3.0-community includes file-based configuration, configurable admin panel, and comprehensive test coverage.</Overview>
   <Category>GameServers:</Category>
   <WebUI>http://[IP]:[PORT:8080]</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/JoshuaABeard/DDPoker/main/unraid/DDPoker.xml</TemplateURL>
   <Icon>https://raw.githubusercontent.com/JoshuaABeard/DDPoker/main/unraid/icons/ddpoker.png</Icon>
   <Banner>https://raw.githubusercontent.com/JoshuaABeard/DDPoker/main/unraid/icons/banner/ddpoker.png</Banner>
-  <Date>2026-02-09</Date>
+  <Date>2026-02-10</Date>
   <Changes>
+    [b]3.3.0-community (2026-02-10)[/b]
+    - Configurable admin panel via ADMIN_USERNAME/ADMIN_PASSWORD
+    - File-based JSON configuration (no Windows Registry)
+    - Automatic admin profile creation on startup
+    - Auto-generated passwords with console logging
+    - 116 comprehensive tests (0 failures)
+    - Complete admin panel documentation
+
     [b]3.2.1-community (2026-02-09)[/b]
     - Fixed missing DDPoker.jar download issue
     - Removed problematic /app/downloads volume mapping
@@ -48,6 +56,13 @@
 
   <!-- Note: Database configuration is automatic using embedded H2 database -->
   <!-- No manual database configuration required -->
+
+  <!-- Admin Panel Configuration (Optional) -->
+  <Config Name="Admin Username" Target="ADMIN_USERNAME" Default=""
+          Description="Admin panel username for /admin access (leave empty to disable admin features)" Type="Variable" Display="always" Required="false" />
+
+  <Config Name="Admin Password" Target="ADMIN_PASSWORD" Default=""
+          Description="Admin panel password (leave empty to auto-generate - check container logs)" Type="Variable" Display="always" Required="false" Mask="true" />
 
   <!-- Environment Variables - SMTP (Optional) -->
   <Config Name="SMTP Host" Target="SMTP_HOST" Default="smtp.gmail.com"

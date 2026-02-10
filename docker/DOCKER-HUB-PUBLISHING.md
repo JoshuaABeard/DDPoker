@@ -10,11 +10,11 @@ This guide covers publishing DD Poker Docker images to Docker Hub.
 
 ## Tagging Strategy
 
-We use semantic versioning with the `-community` suffix:
+We use semantic versioning with the `-CommunityEdition` suffix:
 
-- **Full version**: `3.2.0-community` (specific release)
-- **Minor version**: `3.2` (latest patch in 3.2.x)
-- **Variant**: `community` (latest community version)
+- **Full version**: `3.3.0-CommunityEdition` (specific release)
+- **Minor version**: `3.3` (latest patch in 3.3.x)
+- **Variant**: `CommunityEdition` (latest CommunityEdition version)
 - **Latest**: `latest` (latest stable release)
 
 ## Publishing Process
@@ -31,25 +31,25 @@ docker compose -f docker/docker-compose.yml build
 
 ```bash
 # Tag with full version
-docker tag joshuaabeard/ddpoker:3.2.0-community joshuaabeard/ddpoker:3.2.0-community
+docker tag joshuaabeard/ddpoker:3.3.0-CommunityEdition joshuaabeard/ddpoker:3.3.0-CommunityEdition
 
 # Tag with minor version
-docker tag joshuaabeard/ddpoker:3.2.0-community joshuaabeard/ddpoker:3.2
+docker tag joshuaabeard/ddpoker:3.3.0-CommunityEdition joshuaabeard/ddpoker:3.3
 
 # Tag as community variant
-docker tag joshuaabeard/ddpoker:3.2.0-community joshuaabeard/ddpoker:community
+docker tag joshuaabeard/ddpoker:3.3.0-CommunityEdition joshuaabeard/ddpoker:CommunityEdition
 
 # Tag as latest
-docker tag joshuaabeard/ddpoker:3.2.0-community joshuaabeard/ddpoker:latest
+docker tag joshuaabeard/ddpoker:3.3.0-CommunityEdition joshuaabeard/ddpoker:latest
 ```
 
 ### 3. Push to Docker Hub
 
 ```bash
 # Push all tags
-docker push joshuaabeard/ddpoker:3.2.0-community
-docker push joshuaabeard/ddpoker:3.2
-docker push joshuaabeard/ddpoker:community
+docker push joshuaabeard/ddpoker:3.3.0-CommunityEdition
+docker push joshuaabeard/ddpoker:3.3
+docker push joshuaabeard/ddpoker:CommunityEdition
 docker push joshuaabeard/ddpoker:latest
 ```
 
@@ -60,12 +60,12 @@ docker push joshuaabeard/ddpoker:latest
 cd DDPoker && \
 mvn clean package -DskipTests -f code/pom.xml && \
 docker compose -f docker/docker-compose.yml build && \
-docker tag joshuaabeard/ddpoker:3.2.0-community joshuaabeard/ddpoker:3.2 && \
-docker tag joshuaabeard/ddpoker:3.2.0-community joshuaabeard/ddpoker:community && \
-docker tag joshuaabeard/ddpoker:3.2.0-community joshuaabeard/ddpoker:latest && \
-docker push joshuaabeard/ddpoker:3.2.0-community && \
-docker push joshuaabeard/ddpoker:3.2 && \
-docker push joshuaabeard/ddpoker:community && \
+docker tag joshuaabeard/ddpoker:3.3.0-CommunityEdition joshuaabeard/ddpoker:3.3 && \
+docker tag joshuaabeard/ddpoker:3.3.0-CommunityEdition joshuaabeard/ddpoker:CommunityEdition && \
+docker tag joshuaabeard/ddpoker:3.3.0-CommunityEdition joshuaabeard/ddpoker:latest && \
+docker push joshuaabeard/ddpoker:3.3.0-CommunityEdition && \
+docker push joshuaabeard/ddpoker:3.3 && \
+docker push joshuaabeard/ddpoker:CommunityEdition && \
 docker push joshuaabeard/ddpoker:latest
 ```
 
@@ -75,13 +75,13 @@ Check Docker Hub: https://hub.docker.com/r/joshuaabeard/ddpoker/tags
 
 Test pulling:
 ```bash
-docker pull joshuaabeard/ddpoker:3.2.0-community
+docker pull joshuaabeard/ddpoker:3.3.0-CommunityEdition
 docker pull joshuaabeard/ddpoker:latest
 ```
 
 ## Version Bumping Workflow
 
-When releasing a new version (e.g., 3.3.0-community):
+When releasing a new version (e.g., 3.3.0-CommunityEdition):
 
 1. Update version in all POMs and PokerConstants.java
 2. Update docker-compose.yml image tag
@@ -98,4 +98,4 @@ When releasing a new version (e.g., 3.3.0-community):
 **Overview/README:** Link to https://github.com/JoshuaABeard/DDPoker
 
 **Deprecated Tags:**
-- `v3.0` - Original version, use `3.2.0-community` or later
+- `v3.0` - Original version, use `3.3.0-CommunityEdition` or later

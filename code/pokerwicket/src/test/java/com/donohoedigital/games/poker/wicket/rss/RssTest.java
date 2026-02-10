@@ -61,7 +61,7 @@ class RssTest
         channel.setTtl(30);
         channel.setTitle("TEST");
         channel.setDescription("Test channel description");
-        channel.setLink("http://www.ddpoker.com/");
+        channel.setLink("http://www.example.com/");
         channel.setLastBuildDate(new Date());
         channel.setLanguage("en");
         channel.setCopyright("Copyright (c) 1215-2531.  Donohoe Digital LLC.");
@@ -76,10 +76,10 @@ class RssTest
         desc.setType("hmmm");
         desc.setValue("what goes here?");
         item.setDescription(desc);
-        item.setLink("http://www.ddpoker.com/foo");
+        item.setLink("http://www.example.com/foo");
         item.setCategories(cats);
         Source source = new Source();
-        source.setUrl("http://www.ddpoker.com/rss/games/available");
+        source.setUrl("http://www.example.com/rss/games/available");
         source.setValue("Available Games");
         item.setSource(source);
 

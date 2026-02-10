@@ -2,7 +2,7 @@
 
 > **Community-maintained fork** of DD Poker with enhanced Docker deployment and modern build tooling.
 >
-> **Version:** 3.3.0-community
+> **Version:** 3.3.0-CommunityEdition
 > **Original Work:** [DD Poker by Doug Donohoe](https://github.com/dougdonohoe/ddpoker) (2003-2017)
 
 ![dd-poker-3.jpg](images/dd-poker-3.jpg)
@@ -18,13 +18,14 @@ This is a **community-maintained fork** of DD Poker, created to provide:
 
 **This fork is not affiliated with or endorsed by Doug Donohoe or Donohoe Digital LLC.** All original code, trademarks, and creative assets remain the property of their respective owners. See [Copyright and Licenses](#copyright-and-licenses) for details.
 
-### What's New in 3.3.0-community
+### What's New in 3.3.0-CommunityEdition
 
 - 📁 **File-based JSON configuration** - Replaced Java Preferences with portable JSON config files
 - 🔄 **Easy backup/restore** - Configuration now in human-readable format at platform-specific locations
 - 🐳 **Container-friendly settings** - No Windows Registry dependencies, perfect for Docker deployments
 - 💾 **Automatic backup & recovery** - Config files automatically backed up before changes with corruption recovery
-- 🧪 **Rock-solid reliability** - 98 comprehensive tests ensuring configuration system stability
+- 🔐 **Configurable admin panel** - Environment variable-based admin access for user management and moderation
+- 🧪 **Rock-solid reliability** - 116 comprehensive tests ensuring configuration system stability
 - 📖 **Complete documentation** - Detailed guides for configuration management and troubleshooting
 
 **Configuration file locations:**
@@ -34,7 +35,7 @@ This is a **community-maintained fork** of DD Poker, created to provide:
 
 See [docs/FILE-BASED-CONFIGURATION.md](docs/FILE-BASED-CONFIGURATION.md) for complete documentation.
 
-### What's New in 3.2.0-community
+### What's New in 3.3.0 Community Edition
 
 - Docker deployment with pre-built images on Docker Hub
 - Maven dependency plugin for reliable builds
@@ -78,7 +79,7 @@ docker run -d \
   -p 11886:11886/udp \
   -p 11889:11889/udp \
   -v ddpoker_data:/data \
-  joshuaabeard/ddpoker:3.2.1-community
+  joshuaabeard/ddpoker:3.3.0-CommunityEdition
 ```
 
 **Or with Docker Compose:**
@@ -112,10 +113,24 @@ docker compose up -d
 4. Run with: `java -jar DDPokerCommunityEdition-3.3.0.jar`
 5. Connect to your server at `localhost:8877`
 
+**Admin Panel Access (Optional):**
+
+To enable server administration features (user management, ban controls), configure admin credentials:
+
+```yaml
+environment:
+  - ADMIN_USERNAME=admin
+  - ADMIN_PASSWORD=your-secure-password
+```
+
+Then access the admin panel at http://localhost:8080/admin
+
+For complete admin setup and usage guide, see [docs/ADMIN-PANEL.md](docs/ADMIN-PANEL.md).
+
 For complete Docker documentation, configuration options, and troubleshooting, see [docker/DEPLOYMENT.md](docker/DEPLOYMENT.md).
 
 **Unraid Users:**
-DD Poker is available as an Unraid Community Application. See [unraid/README.md](unraid/README.md) for installation instructions.
+DD Poker is available as an Unraid Community Application with built-in admin configuration. See [unraid/README.md](unraid/README.md) for installation instructions and the template at [unraid/DDPoker.xml](unraid/DDPoker.xml).
 
 ### For Developers
 
@@ -208,7 +223,7 @@ doug [at] donohoe [dot] info.
 
 ### Community Fork Modifications
 
-Modifications made in this community fork (version 3.2.1-community and later) are:
+Modifications made in this community fork (version 3.3.0-CommunityEdition and later) are:
 
 **Copyright (c) 2026 Joshua Beard and contributors**
 

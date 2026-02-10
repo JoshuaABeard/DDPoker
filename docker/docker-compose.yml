@@ -1,6 +1,6 @@
 services:
   ddpoker:
-    image: joshuaabeard/ddpoker:3.2.1-community
+    image: joshuaabeard/ddpoker:3.3.0-CommunityEdition
     build:
       context: ..
       dockerfile: docker/Dockerfile
@@ -46,6 +46,11 @@ services:
       # - SMTP_AUTH=true
       # - SMTP_STARTTLS_ENABLE=true
       # - SMTP_FROM=your-email@outlook.com
+
+      # Admin user configuration (required for admin panel access)
+      # Set these to enable access to /admin pages for managing users and bans
+      # - ADMIN_USERNAME=admin
+      # - ADMIN_PASSWORD=your-secure-password
     restart: unless-stopped
 
 volumes:

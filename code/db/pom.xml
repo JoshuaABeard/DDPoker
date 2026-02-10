@@ -39,20 +39,20 @@
   <parent>
     <groupId>com.donohoedigital</groupId>
     <artifactId>all</artifactId>
-    <version>3.3.0-community</version>
+    <version>3.3.0-CommunityEdition</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>db</artifactId>
   <packaging>jar</packaging>
-  <version>3.3.0-community</version>
+  <version>3.3.0-CommunityEdition</version>
   <name>db</name>
 
   <dependencies>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>common</artifactId>
-      <version>3.3.0-community</version>
+      <version>3.3.0-CommunityEdition</version>
     </dependency>
     <dependency>
       <groupId>jakarta.persistence</groupId>

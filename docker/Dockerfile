@@ -152,6 +152,11 @@ ENV SMTP_AUTH=false
 ENV SMTP_STARTTLS_ENABLE=true
 ENV SMTP_FROM=noreply@ddpoker.local
 
+# Admin configuration (optional - set to enable admin panel access at /admin)
+# If ADMIN_PASSWORD is not set, a random password will be generated and logged
+ENV ADMIN_USERNAME=
+ENV ADMIN_PASSWORD=
+
 # Expose ports
 EXPOSE 8877 8080 11886/udp 11889/udp
 

@@ -78,7 +78,13 @@ public class GamesListFeed extends Channel
 
         // image
         Image image = new Image();
-        image.setUrl("https://www.ddpoker.com/images/pokericon32.jpg");
+        // Extract base URL from the feed URL (e.g., "http://host:port" from "http://host:port/path")
+        String imageUrl = url;
+        int pathStart = url.indexOf('/', url.indexOf("://") + 3);
+        if (pathStart > 0) {
+            imageUrl = url.substring(0, pathStart);
+        }
+        image.setUrl(imageUrl + "/images/pokericon32.jpg");
         image.setHeight(32);
         image.setWidth(32);
         image.setLink(url);

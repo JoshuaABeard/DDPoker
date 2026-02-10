@@ -142,7 +142,7 @@ public class PokerWicketApplication extends BaseWicketApplication
     @Override
     public RuntimeConfigurationType getConfigurationType()
     {
-        if (hostName != null && (hostName.contains("donohoedigital.com") || hostName.contains("ddpoker.com")))
+        if (hostName != null && hostName.contains("donohoedigital.com"))
             return RuntimeConfigurationType.DEPLOYMENT;
 
         return super.getConfigurationType();

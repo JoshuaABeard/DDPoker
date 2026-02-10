@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker.wicket;
 
+import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
@@ -141,7 +142,8 @@ public class PokerUser implements Serializable
 
     public boolean isAdmin()
     {
-        return name.equals("Doug Donohoe") || name.equals("Greg King") || name.equals("DDPoker Support");
+        String adminUser = PropertyConfig.getStringProperty("settings.admin.user", null, false);
+        return adminUser != null && name.equals(adminUser);
     }
 
     @Override

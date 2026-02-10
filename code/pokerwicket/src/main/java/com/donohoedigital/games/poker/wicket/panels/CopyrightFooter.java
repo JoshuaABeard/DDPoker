@@ -50,10 +50,5 @@ public class CopyrightFooter extends VoidPanel
     public CopyrightFooter(String id)
     {
         super(id);
-        add(new StringLabel("year", Utils.getDateYear()).setRenderBodyOnly(true));
-
-        // Example of how we might programatically add the logo
-        //ContextImage logo = new ContextImage("logo", new Model("images/logosmall.gif"));
-        //add(logo);        
     }
 }

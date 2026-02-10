@@ -2,40 +2,50 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-/**
- * YUI reset
- */
-body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, form, fieldset, input, textarea, p, blockquote, th, td {
+
+/* ========================================================================
+   1. Modern CSS Reset
+   ======================================================================== */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+* {
     margin: 0;
     padding: 0;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
 }
 
 table {
@@ -47,7 +57,7 @@ fieldset, img {
     border: 0;
 }
 
-address, caption, cite, code, dfn, em, strong, th, var {
+address, caption, cite, code, dfn, th, var {
     font-style: normal;
     font-weight: normal;
 }
@@ -64,31 +74,67 @@ tr {
     vertical-align: top;
 }
 
-h1, h2, h3, h4, h5, h6 {
-    font-size: 100%;
-    font-weight: normal;
-}
-
-q:before, q:after {
-    content: '';
-}
-
-abbr, acronym {
-    border: 0;
-}
-
 a {
     text-decoration: none;
 }
 
-/**
-* global settings
-*/
+/* ========================================================================
+   2. CSS Custom Properties
+   ======================================================================== */
+
+:root {
+    /* Colors */
+    --color-primary-green: #336600;
+    --color-dark-green: #006600;
+    --color-forest-green: forestgreen;
+    --color-blue: blue;
+    --color-orange: #FF9900;
+    --color-cyan: #00FFFF;
+    --color-yellow: yellow;
+    --color-red: red;
+    --color-white: #FFFFFF;
+    --color-black: #000000;
+
+    /* Grays */
+    --color-gray-light: #DDDDDD;
+    --color-gray-medium: #BBBBBB;
+    --color-gray-dark: #999999;
+    --color-gray-darker: #333333;
+
+    /* Backgrounds */
+    --bg-white: white;
+    --bg-pale-goldenrod: palegoldenrod;
+    --bg-khaki: khaki;
+    --bg-light-yellow: #FFFFCC;
+    --bg-light-gray: #EEEEEE;
+
+    /* Borders */
+    --border-blue: #9AAFE5;
+    --border-blue-dark: #2E6AB1;
+    --border-gray: #AAAAAA;
+
+    /* Typography */
+    --font-family-base: Arial, Helvetica, sans-serif;
+    --font-family-mono: courier, monospace;
+    --font-size-base: 1.2rem;
+
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 2rem;
+    --spacing-xl: 3rem;
+}
+
+/* ========================================================================
+   3. Global Typography & Base Styles
+   ======================================================================== */
+
 body {
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 1.2rem;
-    background: white;
-    color: black;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+    background: var(--bg-white);
+    color: var(--color-black);
 }
 
 em {
@@ -99,10 +145,14 @@ strong {
     font-weight: bold;
 }
 
+/* ========================================================================
+   4. Utility Classes
+   ======================================================================== */
+
 .spicy {
     font-style: italic;
     font-weight: bold;
-    color: red;
+    color: var(--color-red);
 }
 
 .mild {
@@ -124,98 +174,28 @@ strong {
     font-weight: bold;
 }
 
-input[type="submit" i] {
-    padding-left: 3px;
-    padding-right: 3px;
+.tiny {
+    font-size: 75%;
 }
 
-/**
- * Wicket feedback panel
- */
-
-li.feedbackPanelERROR {
-    color: red;
-    list-style-type: disc;
-    margin-left: 20px;
+.small {
+    font-size: 85%;
 }
 
-/**
- * Grid
- */
-
-/* contain the float so following content doesn't slide up */
-.media {
-    display: flow-root;
+.large {
+    font-size: 1.2em;
 }
 
-/* float the image to the right, add space on its left/bottom */
-.float-right, .float-right img {
-    float: right;
-    margin: 0 0 1rem 1rem; /* top right bottom left */
-    max-width: 500px;
-    height: auto;
-}
-
-/* responsive: drop the float on narrow screens */
-@media (max-width: 768px) {
-    .float-right, .float-right img {
-        float: none;
-        display: block;            /* make it a block */
-        margin: 0 auto 0;       /* centers horizontally */
-        max-width: 300px;
-    }
-}
-
-/* float the image to the left, add space on its left/bottom */
-.float-left, .float-left img {
-    float: left;
-    margin: 0 1rem 0 1rem; /* top right bottom left */
-    max-width: 300px;
-    height: auto;
-}
-
-@media (max-width: 768px) {
-    .float-left, .float-left img {
-        max-width: 300px;
-    }
-}
-
-.center-image {
-    padding-bottom: 1rem;
-}
-
-@media (max-width: 768px) {
-    .center-image {
-        max-width: 300px;
-    }
-}
-
-/* optional spacing for the next block */
-.next {
-    margin-top: 1rem;
-}
-
-.action-buttons {
+.centered {
     text-align: center;
-    padding-top: 1em;
-    padding-bottom: 1em;
 }
 
-.action-button {
-    padding-left: 1rem;
-    padding-right: 1rem;
-}
-
-@media (max-width: 768px) {
-    .action-button {
-        padding-left: .5rem;
-        padding-right: .5rem;
-        max-height: 55px;
-    }
+.next {
+    margin-top: var(--spacing-md);
 }
 
 .extra-top-padding {
-    padding-top: 1rem;
+    padding-top: var(--spacing-md);
 }
 
 @media (max-width: 768px) {
@@ -234,29 +214,189 @@ li.feedbackPanelERROR {
 }
 
 .ej-icon {
-    display: inline-block;      /* ensure it's inline-level */
-    vertical-align: middle;     /* center against text line */
-    height: 1em;                /* size to text height (optional) */
+    display: inline-block;
+    vertical-align: middle;
+    height: 1em;
     padding-right: 4px;
-    /* tweak if it still looks a hair low/high: */
-    /* vertical-align: -0.125em;  // nudge up*/
-    /* vertical-align: 0.125em;   // nudge down */
 }
 
-/**
- * common
- */
+input[type="submit"] {
+    padding-left: 3px;
+    padding-right: 3px;
+}
 
-.tiny {
+/* ========================================================================
+   5. Layout
+   ======================================================================== */
+
+.media {
+    display: flow-root;
+}
+
+.float-right, .float-right img {
+    float: right;
+    margin: 0 0 var(--spacing-md) var(--spacing-md);
+    max-width: 500px;
+    height: auto;
+}
+
+@media (max-width: 768px) {
+    .float-right, .float-right img {
+        float: none;
+        display: block;
+        margin: 0 auto;
+        max-width: 300px;
+    }
+}
+
+.float-left, .float-left img {
+    float: left;
+    margin: 0 var(--spacing-md) 0 var(--spacing-md);
+    max-width: 300px;
+    height: auto;
+}
+
+@media (max-width: 768px) {
+    .float-left, .float-left img {
+        max-width: 300px;
+    }
+}
+
+.center-image {
+    padding-bottom: var(--spacing-md);
+}
+
+@media (max-width: 768px) {
+    .center-image {
+        max-width: 300px;
+    }
+}
+
+.float-right-doug-greg {
+    float: right;
+    margin-top: var(--spacing-md);
+    margin-bottom: 25px;
+    margin-right: 20px;
+    margin-left: 20px;
+    text-align: center;
+}
+
+/* ========================================================================
+   6. Content Area
+   ======================================================================== */
+
+#content {
+    margin-left: auto;
+    margin-right: auto;
+    border-top-width: 0;
+    padding: var(--spacing-md) var(--spacing-xl);
+}
+
+@media (max-width: 768px) {
+    #content {
+        padding-left: var(--spacing-md);
+        padding-right: var(--spacing-md);
+    }
+}
+
+/* ========================================================================
+   7. Links
+   ======================================================================== */
+
+a:link {
+    color: var(--color-blue);
+}
+
+a:visited {
+    color: var(--color-blue);
+}
+
+a:hover {
+    color: var(--color-orange);
+}
+
+a:active {
+    color: var(--color-cyan);
+}
+
+a.nav:link,
+a.nav:visited {
+    color: var(--color-white);
+}
+
+a.nav:hover {
+    color: var(--color-orange);
+}
+
+a.nav:active {
+    color: var(--color-cyan);
+}
+
+a.box {
+    padding: 0.05em 0.3em;
+    border: 1px solid var(--border-blue);
+    background: var(--color-white);
+    color: var(--color-black);
+    font-weight: bold;
+    font-size: 95%;
+    vertical-align: 0.05em;
+}
+
+a.box:hover {
+    border-color: var(--border-blue-dark);
+    background: #FFFFD0;
+}
+
+a.name:link,
+a.name:visited,
+a.name:hover,
+a.name:active {
+    color: inherit;
+}
+
+/* ========================================================================
+   8. Typography & Titles
+   ======================================================================== */
+
+.title {
+    text-align: center;
+    padding-bottom: 10px;
+    color: var(--color-primary-green);
+    font-weight: bold;
+    font-size: 140%;
+}
+
+.sub-title {
     font-size: 75%;
+    font-weight: normal;
 }
 
-.small {
-    font-size: 85%;
+.title-smaller {
+    text-align: center;
+    padding-bottom: var(--spacing-md);
+    padding-top: var(--spacing-sm);
+    color: var(--color-black);
+    font-weight: bold;
+    font-size: 115%;
+    font-style: italic;
 }
 
-.large {
+.title-banner {
+    text-align: center;
+    padding: 10px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    border: 1px solid var(--color-black);
+    background: #CCCCCC;
+    color: var(--color-black);
+    font-weight: bold;
+    font-size: 120%;
+}
+
+p.titlelink {
+    padding-bottom: 10px;
     font-size: 1.2em;
+    text-align: center;
 }
 
 div.table-caption {
@@ -270,117 +410,203 @@ div.footnote {
     padding-top: 10px;
 }
 
-input[type=text], input[type=password] {
-    border: 1px solid #336600;
-    color: blue;
+/* ========================================================================
+   9. Description Sections
+   ======================================================================== */
+
+.description {
+    padding-bottom: 10px;
+}
+
+.description ul {
+    padding-top: 1em;
+    padding-bottom: 0.5em;
+}
+
+.description li {
+    margin-left: 0;
+    padding-bottom: 0.5em;
+}
+
+.description p {
+    padding-bottom: 1em;
+}
+
+.description strong {
+    color: var(--color-dark-green);
+    font-weight: normal;
+}
+
+.description-column p {
+    padding-bottom: 1em;
+    overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    .description-column p {
+        padding-top: var(--spacing-md);
+        padding-bottom: 0.75em;
+        overflow: initial;
+    }
+}
+
+.description-column-wrap p {
+    padding-bottom: 1em;
+}
+
+/* ========================================================================
+   10. Callouts
+   ======================================================================== */
+
+p.callout {
+    padding: 10px;
+    border: 1px solid var(--color-black);
+    margin-bottom: 1em;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: var(--bg-pale-goldenrod);
+    font-size: 105%;
+}
+
+/* ========================================================================
+   11. Forms
+   ======================================================================== */
+
+input[type=text],
+input[type=password] {
+    border: 1px solid var(--color-primary-green);
+    color: var(--color-blue);
     font-size: 115%;
     padding-left: 5px;
 }
 
 select {
-    border: 1px solid #336600;
-    color: blue;
+    border: 1px solid var(--color-primary-green);
+    color: var(--color-blue);
     font-size: 108%;
 }
 
+div.form-panel {
+    padding-top: 0;
+    padding-bottom: 10px;
+}
+
+div.form {
+    border: 2px solid var(--color-black);
+    width: 330px;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: var(--color-gray-dark);
+}
+
+div.form-title {
+    padding-top: 5px;
+    padding-bottom: 5px;
+    text-align: center;
+    color: var(--color-white);
+}
+
+div.form td {
+    padding: 5px;
+    vertical-align: middle;
+}
+
+div.form td.label {
+    color: var(--color-yellow);
+    text-align: right;
+    vertical-align: top;
+}
+
+div.form td.sample {
+    color: var(--color-white);
+    text-align: left;
+    font-family: var(--font-family-mono);
+}
+
+div.form label {
+    color: var(--color-white);
+}
+
+li.form-style1-ERROR {
+    background-color: var(--color-red);
+    color: var(--color-white);
+    text-align: left;
+    padding: 5px;
+}
+
+li.form-style2-ERROR {
+    color: var(--color-red);
+    text-align: center;
+}
+
+li.form-style2-INFO {
+    color: green;
+    text-align: center;
+}
+
+li.form-style3-ERROR {
+    list-style: disc;
+    color: var(--color-red);
+    text-align: left;
+}
+
+li.form-style3-INFO {
+    padding-top: 4px;
+    color: green;
+    text-align: center;
+    font-size: 120%;
+}
+
+li.form-style4-ERROR {
+    color: var(--color-red);
+    text-align: center;
+    font-size: 120%;
+}
+
+li.form-style4-INFO {
+    padding-bottom: 15px;
+    color: green;
+    text-align: center;
+    font-size: 140%;
+}
+
+/* ========================================================================
+   12. Wicket Feedback
+   ======================================================================== */
+
+li.feedbackPanelERROR {
+    color: var(--color-red);
+    list-style-type: disc;
+    margin-left: 20px;
+}
+
 .exception {
-    font-family: courier, monospace;
+    font-family: var(--font-family-mono);
     font-size: 11px;
     padding-left: 40px;
     padding-top: 10px;
 }
 
-/**
- * currency
- */
+/* ========================================================================
+   13. Currency / Numbers
+   ======================================================================== */
 
 .poker-number-negative {
-    color: red;
+    color: var(--color-red);
 }
 
 .poker-number-positive {
-    color: black;
+    color: var(--color-black);
 }
 
-/**
- * links (default and nav bar)
- */
+/* ========================================================================
+   14. Current Profile
+   ======================================================================== */
 
-a:link {
-    color: blue
-}
-
-a:visited {
-    color: blue
-}
-
-a:hover {
-    color: #FF9900
-}
-
-a:active {
-    color: #00FFFF
-}
-
-a.nav:link {
-    color: #FFFFFF
-}
-
-a.nav:visited {
-    color: #FFFFFF
-}
-
-a.nav:hover {
-    color: #FF9900
-}
-
-a.nav:active {
-    color: #00FFFF
-}
-
-a.box {
-    padding: 0.05em 0.3em 0.05em 0.3em;
-    outline-color: invert;
-    outline-style: none;
-    outline-width: medium;
-    border: 1px solid #9AAFE5;
-    background: #FFFFFF;
-    color: #000000;
-    font-weight: bold;
-    font-size: 95%;
-    vertical-align: .05em;
-}
-
-a.box:hover {
-    border-color: #2E6AB1;
-    background: #FFFFD0;
-}
-
-a.name:link {
-    color: inherit;
-}
-
-a.name:visited {
-    color: inherit;
-}
-
-a.name:hover {
-    color: inherit;
-}
-
-a.name:active {
-    color: inherit;
-}
-
-/**
-* current-profile
-*/
 div.current-profile {
-
     padding-right: 6px;
     padding-top: 6px;
     padding-bottom: 0;
-
     text-align: right;
     font-size: 80%;
 }
@@ -390,135 +616,34 @@ div.current-profile span.name {
 }
 
 div.current-profile em {
-    color: red;
+    color: var(--color-red);
 }
 
-/**
- * content box
- */
-#content {
-    margin-left: auto;
-    margin-right: auto;
+/* ========================================================================
+   15. Copyright Footer
+   ======================================================================== */
 
-    border-top-width: 0;
-    border-collapse: collapse;
-
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-    padding-left: 3rem;
-    padding-right: 3rem;
-}
-
-@media (max-width: 768px) {
-    #content  {
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-}
-
-.centered {
-    text-align: center;
-}
-
-.description {
+div.copyright {
+    padding-top: 5px;
     padding-bottom: 10px;
 }
 
-.description ul {
-    padding-top: 1em;
-    padding-bottom: .5em;
-}
-
-.description li {
-    margin-left: 0;
-    padding-bottom: .5em;
-}
-
-.description p {
-    padding-bottom: 1em;
-}
-
-.description-column {
-}
-
-.description-column p {
-    padding-bottom: 1em;
-    overflow: hidden;      /* in desktop, don't wrap around images */
+p.copyright {
+    font-size: 65%;
+    vertical-align: middle;
+    text-align: center;
 }
 
 @media (max-width: 768px) {
-    .description-column p {
-        padding-top: 1rem;
-    }
-
-    .description-column p {
-        padding-bottom: .75em;
-        overflow: initial;
+    p.copyright {
+        font-size: 50%;
     }
 }
 
-.description-column-wrap p {
-    padding-bottom: 1em;
-}
+/* ========================================================================
+   16. Site Map Table
+   ======================================================================== */
 
-
-.title {
-    text-align: center;
-    padding-bottom: 10px;
-
-    color: #336600;
-    font-weight: bold;
-    font-size: 140%;
-}
-
-.sub-title {
-    font-size: 75%;
-    font-weight: normal;
-}
-
-.title-smaller {
-    text-align: center;
-    padding-bottom: 1rem;
-    padding-top: .5rem;
-
-    color: black;
-    font-weight: bold;
-    font-size: 115%;
-    font-style: italic;
-}
-
-.title-banner {
-    text-align: center;
-    padding: 10px;
-    margin-top: 15px;
-    margin-bottom: 15px;
-    border: 1px solid black;
-
-    background: #CCCCCC;
-
-    color: black;
-    font-weight: bold;
-    font-size: 120%;
-}
-
-.description strong {
-    color: #006600;
-    font-weight: normal;
-}
-
-p.callout {
-    padding: 10px;
-    border: 1px solid black;
-    margin-bottom: 1em;
-    margin-left: auto;
-    margin-right: auto;
-    background-color: palegoldenrod;
-    font-size: 105%;
-}
-
-/**
- * site map table
- */
 #site-map {
     margin-left: auto;
     margin-right: auto;
@@ -533,7 +658,7 @@ p.callout {
 #site-map td.col1 {
     width: 150px;
     text-align: right;
-    padding-right: 0px;
+    padding-right: 0;
 }
 
 #site-map td.col1x {
@@ -546,118 +671,10 @@ p.callout {
     width: 430px;
 }
 
-/**
- * copyright settings
- */
-div.copyright {
-    padding-top: 5px;
-    padding-bottom: 10px;
-}
+/* ========================================================================
+   17. Aliases
+   ======================================================================== */
 
-p.copyright {
-    font-size: 65%;
-    vertical-align: middle;
-    text-align: center;
-}
-
-@media (max-width: 768px) {
-    p.copyright {
-        font-size: 50%
-    }
-
-}
-
-/**
- * form settings
- */
-
-div.form-panel {
-    padding-top: 0;
-    padding-bottom: 10px;
-}
-
-div.form {
-    border: 2px solid black;
-    width: 330px;
-    margin-left: auto;
-    margin-right: auto;
-    background-color: #999999;
-}
-
-div.form-title {
-    padding-top: 5px;
-    padding-bottom: 5px;
-    text-align: center;
-    color: white;
-}
-
-div.form td {
-    padding: 5px;
-    vertical-align: middle;
-}
-
-div.form td.label {
-    color: yellow;
-    text-align: right;
-    vertical-align: top;
-}
-
-div.form td.sample {
-    color: white;
-    text-align: left;
-    font-family: courier, monospace;
-}
-
-div.form label {
-    color: white;
-}
-
-li.form-style1-ERROR {
-    background-color: red;
-    color: white;
-    text-align: left;
-    padding: 5px;
-}
-
-li.form-style2-ERROR {
-    color: red;
-    text-align: center;
-}
-
-li.form-style2-INFO {
-    color: green;
-    text-align: center;
-}
-
-li.form-style3-ERROR {
-    list-style: disc;
-    color: red;
-    text-align: left;
-}
-
-li.form-style3-INFO {
-    padding-top: 4px;
-    color: green;
-    text-align: center;
-    font-size: 120%;
-}
-
-li.form-style4-ERROR {
-    color: red;
-    text-align: center;
-    font-size: 120%;
-}
-
-li.form-style4-INFO {
-    padding-bottom: 15px;
-    color: green;
-    text-align: center;
-    font-size: 140%;
-}
-
-/**
- * aliases settings
- */
 table.aliases {
     margin-left: auto;
     margin-right: auto;
@@ -677,12 +694,12 @@ table.aliases td.names {
 }
 
 .alias-names {
-    margin-right: .75em;
+    margin-right: 0.75em;
 }
 
-/**
- * general tournament-info table/CSS
- */
+/* ========================================================================
+   18. Tournament Info Tables
+   ======================================================================== */
 
 div.tournament-info-navigator {
     margin-left: auto;
@@ -693,34 +710,34 @@ table.tournament-info {
     margin-left: auto;
     margin-right: auto;
     width: 100%;
-    border: 2px solid #333333;
+    border: 2px solid var(--color-gray-darker);
 }
 
 table.tournament-info th {
-    background-color: #333333;
+    background-color: var(--color-gray-darker);
     text-align: center;
-    color: yellow;
+    color: var(--color-yellow);
     padding: 2px;
-    border: 1px solid white;
+    border: 1px solid var(--color-white);
     font-weight: normal;
 }
 
 table.tournament-info tr.even {
-    background-color: #BBBBBB;
+    background-color: var(--color-gray-medium);
 }
 
 table.tournament-info tr.odd {
-    background-color: #DDDDDD;
+    background-color: var(--color-gray-light);
 }
 
 table.tournament-info tr.highlight {
-    background-color: khaki;
+    background-color: var(--bg-khaki);
 }
 
 table.tournament-info td {
     padding: 2px 4px;
-    border: 1px solid white;
-    color: black;
+    border: 1px solid var(--color-white);
+    color: var(--color-black);
     vertical-align: middle;
     text-align: right;
 }
@@ -745,7 +762,7 @@ table.tournament-info td.left-small {
 
 table.tournament-info td.left-highlight {
     text-align: left;
-    color: blue;
+    color: var(--color-blue);
 }
 
 table.tournament-info td.center {
@@ -754,18 +771,17 @@ table.tournament-info td.center {
 
 table.tournament-info td.number {
     text-align: right;
-    padding: 2px 2px;
-    padding-left: 4px;
-    font-family: courier, monospace;
+    padding: 2px 2px 2px 4px;
+    font-family: var(--font-family-mono);
 }
 
 table.tournament-info span.addpadding {
-    padding-right: .4em;
+    padding-right: 0.4em;
 }
 
-/**
- * paging
- */
+/* ========================================================================
+   19. Pagination
+   ======================================================================== */
 
 .pagenav {
     padding-bottom: 10px;
@@ -781,49 +797,48 @@ table.tournament-info span.addpadding {
     vertical-align: middle;
 }
 
-/* defaults for all links (disabled) */
-.pages a.link, .pages span.link, .current-page-link, .active-page-link, .anchor-disabled-page-link {
-    background: #EEEEEE;
+.pages a.link,
+.pages span.link,
+.current-page-link,
+.active-page-link,
+.anchor-disabled-page-link {
+    background: var(--bg-light-gray);
     color: #888888;
-    border: 1px solid #AAAAAA;
+    border: 1px solid var(--border-gray);
     display: block;
     float: left;
     margin-right: 3px;
-    padding: 0.2em 0.5em 0.2em 0.5em;
-    outline-color: invert;
-    outline-style: none;
-    outline-width: medium;
+    padding: 0.2em 0.5em;
     font-weight: bold;
 }
 
-/* current page */
 .current-page-link {
-    background: #2E6AB1;
-    border: 1px solid #2E6AB1;
-    color: #FFFFFF;
+    background: var(--border-blue-dark);
+    border: 1px solid var(--border-blue-dark);
+    color: var(--color-white);
     font-weight: bold;
 }
 
-/* active link to another page */
 .active-page-link {
-    border: 1px solid #9AAFE5 !important;
-    background: #FFFFFF !important;
-    color: #000000 !important;
+    border: 1px solid var(--border-blue) !important;
+    background: var(--color-white) !important;
+    color: var(--color-black) !important;
     font-weight: bold !important;
 }
 
 .active-page-link:hover {
-    color: #000000;
-    border-color: #2E6AB1;
+    color: var(--color-black);
+    border-color: var(--border-blue-dark);
     background: #FFFFD0;
 }
 
-.active-page-link:link, .active-page-link:visited {
-    color: #000000;
+.active-page-link:link,
+.active-page-link:visited {
+    color: var(--color-black);
 }
 
 .pages span.dots {
-    color: #000000;
+    color: var(--color-black);
     display: block;
     float: left;
     padding-left: 0.45em;
@@ -831,9 +846,9 @@ table.tournament-info span.addpadding {
     margin-right: 3px;
 }
 
-/**
- * game url panel
- */
+/* ========================================================================
+   20. Game URL Panel
+   ======================================================================== */
 
 div.url {
     text-align: center;
@@ -841,13 +856,13 @@ div.url {
 
 div.url a.join {
     font-size: 125%;
-    padding-right: .75em;
-    padding-left: .75em;
+    padding-right: 0.75em;
+    padding-left: 0.75em;
 }
 
-/**
-* games list
-*/
+/* ========================================================================
+   21. Games List
+   ======================================================================== */
 
 div.games-list {
     margin-left: auto;
@@ -868,9 +883,9 @@ div.games-list table.tournament-info td {
     vertical-align: top;
 }
 
-/**
- * leaderboard
- */
+/* ========================================================================
+   22. Leaderboard
+   ======================================================================== */
 
 div.leaderboard {
     margin-left: auto;
@@ -883,7 +898,7 @@ div.leaderboard-form-gap {
 }
 
 div.leaderboard .ai {
-    color: forestgreen;
+    color: var(--color-forest-green);
     font-style: italic;
 }
 
@@ -891,9 +906,9 @@ div.leaderboard .current {
     font-weight: bold;
 }
 
-/**
- * tournament history
- */
+/* ========================================================================
+   23. Tournament History
+   ======================================================================== */
 
 div.tournament-history {
     margin-left: auto;
@@ -901,21 +916,21 @@ div.tournament-history {
 }
 
 .retired {
-    color: red;
+    color: var(--color-red);
 }
 
-/**
- * tournament detail
- */
+/* ========================================================================
+   24. Tournament Detail
+   ======================================================================== */
 
 div.tournament-detail-url {
     margin-bottom: 20px;
     width: 300px;
     margin-left: auto;
     margin-right: auto;
-    border: 1px solid black;
+    border: 1px solid var(--color-black);
     padding: 5px 4px;
-    background-color: #DDDDDD;
+    background-color: var(--color-gray-light);
 }
 
 div.tournament-finish {
@@ -941,8 +956,8 @@ div.tournament-createdate {
 }
 
 div.tournament-details table.tournament-info td.header {
-    background-color: #333333;
-    color: yellow;
+    background-color: var(--color-gray-darker);
+    color: var(--color-yellow);
     text-align: right;
     vertical-align: top;
 }
@@ -952,12 +967,7 @@ div.tournament-details table.tournament-info table.sub-table {
     margin-right: auto;
     margin-top: 8px;
     margin-bottom: 6px;
-    border: 2px solid #333333;
-}
-
-/* override tournament-info defaults */
-
-div.tournament-details table.tournament-info {
+    border: 2px solid var(--color-gray-darker);
 }
 
 div.tournament-details table.tournament-info td {
@@ -970,9 +980,9 @@ div.tournament-details table.tournament-info th {
     padding-right: 8px;
 }
 
-/**
- * search
- */
+/* ========================================================================
+   25. Search
+   ======================================================================== */
 
 div.search-player {
     margin-left: auto;
@@ -984,7 +994,6 @@ div.search-form {
     margin-left: auto;
     margin-right: auto;
     margin-bottom: 15px;
-
     text-align: center;
 }
 
@@ -1032,8 +1041,7 @@ div.no-results span {
 
 div.search-player table.profile-info td.profile-info {
     text-align: left;
-    padding: 0;
-    padding-left: 10px;
+    padding: 0 0 0 10px;
     vertical-align: top;
 }
 
@@ -1045,12 +1053,12 @@ div.search-player table.profile-info td {
 }
 
 span.password {
-    color: red;
+    color: var(--color-red);
 }
 
-/**
- * host search
- */
+/* ========================================================================
+   26. Host Search
+   ======================================================================== */
 
 div.host-list {
     margin-left: auto;
@@ -1066,25 +1074,63 @@ div.host-search span.gap {
     margin-right: 20px;
 }
 
-/**
- * Home page
- */
-
+/* ========================================================================
+   27. Home Page
+   ======================================================================== */
 
 #homepage ul {
-    padding-left: 2rem;
+    padding-left: var(--spacing-lg);
 }
 
+/* Replace image-based bullet with Unicode spade */
 li {
-    background-image: url( images/spade.jpg );
-    background-repeat: no-repeat;
-    background-position: 0 0;
     padding-bottom: 3px;
     padding-left: 25px;
+    position: relative;
 }
 
-li ul li {
-    background-image: none;
+li::before {
+    content: '♠';
+    position: absolute;
+    left: 0;
+    color: var(--color-black);
+    font-size: 1.1em;
+}
+
+li ul li::before {
+    content: none;
+}
+
+/* Remove spades from navigation lists */
+.main-nav li::before,
+.secondary-nav-list li::before,
+.main-nav-item::before {
+    content: none;
+}
+
+.main-nav li,
+.secondary-nav-list li,
+.main-nav-item {
+    padding-left: 0;
+}
+
+.action-buttons {
+    text-align: center;
+    padding-top: 1em;
+    padding-bottom: 1em;
+}
+
+.action-button {
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+}
+
+@media (max-width: 768px) {
+    .action-button {
+        padding-left: var(--spacing-sm);
+        padding-right: var(--spacing-sm);
+        max-height: 55px;
+    }
 }
 
 .donate-form {
@@ -1096,19 +1142,19 @@ li ul li {
 }
 
 .donate-element {
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
 }
 
 .donate-form input[type=image] {
     padding-left: 0;
-    display: inline-block;      /* ensure it's inline-level */
-    vertical-align: middle;     /* center against text line */
+    display: inline-block;
+    vertical-align: middle;
 }
 
 @media (max-width: 768px) {
     .donate-form input[type=image] {
-        padding-top: 1rem;
+        padding-top: var(--spacing-md);
     }
 }
 
@@ -1119,64 +1165,46 @@ li ul li {
     padding-right: 20px;
 }
 
-/**
- * download
- */
+/* ========================================================================
+   28. Download Page
+   ======================================================================== */
+
 div.download {
     padding-top: 20px;
     margin-left: auto;
     margin-right: auto;
 }
 
-/**
- * about/details pages
- */
-
-.float-right-doug-greg {
-    float: right;
-    margin-top: 1rem;
-    margin-bottom: 25px;
-    margin-right: 20px;
-    margin-left: 20px;
-    text-align: center;
-}
-
-p.titlelink {
-    padding-bottom: 10px;
-    font-size: 1.2em;
-    text-align: center;
-}
-
-/**
- * wrapper div to reduce cut/paste work as much as possible
- */
+/* ========================================================================
+   29. About / Details Pages
+   ======================================================================== */
 
 div.legacy-details {
-    padding-top: 1rem;
+    padding-top: var(--spacing-md);
 }
 
 div.legacy-details ol li {
     list-style: decimal;
     list-style-position: outside;
-    padding-bottom: .25em;
+    padding-bottom: 0.25em;
     margin-left: 0;
 }
 
 div.legacy-details li {
     list-style-position: outside;
-    padding-bottom: .25em;
+    padding-bottom: 0.25em;
     margin-left: 0;
 }
 
 div.legacy-details li ul {
-    padding-top: .25em;
+    padding-top: 0.25em;
 }
 
 div.legacy-details li ul li {
     list-style-position: outside;
     list-style: circle;
-    margin-left: 2rem;
-    padding-left: .5rem;
+    margin-left: var(--spacing-lg);
+    padding-left: var(--spacing-sm);
 }
 
 div.legacy-details li strong {
@@ -1190,7 +1218,7 @@ div.legacy-details p strong {
 }
 
 div.legacy-details p {
-    padding-bottom: 1rem;
+    padding-bottom: var(--spacing-md);
 }
 
 div.legacy-details tt {
@@ -1198,9 +1226,9 @@ div.legacy-details tt {
     font-size: 1.1rem;
 }
 
-/**
- * support
- */
+/* ========================================================================
+   30. Support Page
+   ======================================================================== */
 
 table.issue-list {
     border: 1px solid green;
@@ -1218,7 +1246,7 @@ table.issue-list td {
 }
 
 tr.issue-header {
-    background-color: #FFFFCC;
+    background-color: var(--bg-light-yellow);
 }
 
 .help-menu {
@@ -1262,9 +1290,9 @@ div.faq-question {
     font-weight: bold;
 }
 
-/**
- * my profile
- */
+/* ========================================================================
+   31. My Profile
+   ======================================================================== */
 
 div.myprofile {
     padding-top: 20px;
@@ -1279,13 +1307,12 @@ table.myprofile {
 
 td.myprofile {
     padding: 5px 30px;
-
 }
 
 .myprofile-desc {
     padding-left: 10px;
     padding-right: 10px;
-    padding-bottom: 0px;
+    padding-bottom: 0;
 }
 
 .myprofile-desc p {
@@ -1309,8 +1336,8 @@ div.pw-form {
 }
 
 div.pw-form table {
-    border: 2px solid black;
-    background-color: #DDDDDD;
+    border: 2px solid var(--color-black);
+    background-color: var(--color-gray-light);
     margin-left: auto;
     margin-right: auto;
 }
@@ -1318,8 +1345,7 @@ div.pw-form table {
 div.pw-form td {
     vertical-align: middle;
     text-align: right;
-    padding: 2px;
-    padding-left: 10px;
+    padding: 2px 2px 2px 10px;
     color: green;
 }
 
@@ -1339,9 +1365,9 @@ div.pw-form .button {
     text-align: center;
 }
 
-/**
- * store
- */
+/* ========================================================================
+   32. Store
+   ======================================================================== */
 
 .store-items {
     margin-left: auto;
@@ -1357,7 +1383,7 @@ div.pw-form .button {
 }
 
 .store-items img {
-    padding-bottom: .5em;
+    padding-bottom: 0.5em;
 }
 
 .store-item {

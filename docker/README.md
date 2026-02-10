@@ -14,7 +14,7 @@ docker run -d \
   -p 11886:11886/udp \
   -p 11889:11889/udp \
   -v ddpoker_data:/data \
-  joshuaabeard/ddpoker:3.2.0-community
+  joshuaabeard/ddpoker:3.3.0-CommunityEdition
 ```
 
 **Or with Docker Compose:**

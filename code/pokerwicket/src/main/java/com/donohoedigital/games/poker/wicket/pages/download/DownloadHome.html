@@ -34,18 +34,17 @@
 <html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:wicket="http://wicket.apache.org">
 
 <wicket:head>
-    <title>DD Poker Download</title>
+    <title>Download - DD Poker Community Edition</title>
 </wicket:head>
 
 <body>
 
 <wicket:extend>
 
-    <div class="title">Download DD Poker 3</div>
+    <div class="title">Download DD Poker Community Edition</div>
 
     <div class="centered">
-        Current Version: <strong wicket:id="version">3.0</strong> -
-        <a href="https://static.ddpoker.com/gamehelp/help/whatsnew.html">What's New?</a><BR>
+        Current Version: <strong wicket:id="version">3.0</strong><BR>
     </div>
 
     <div class="download">
@@ -56,7 +55,7 @@
             <h4 style="margin-top: 0; color: #2e7d32;">🪟 Windows Installer (Recommended)</h4>
             <p style="margin: 10px 0;">
                 <strong>
-                    <a href="/downloads/DDPokerCommunityEdition-3.3.0.msi" style="font-size: 16px; color: #2e7d32;">⬇️ Download Windows Installer</a>
+                    <a href="/downloads/DDPokerCommunityEdition-3.3.0.msi" style="font-size: 16px;">⬇️ Download Windows Installer</a>
                 </strong> (~98 MB)
                 <br/>
                 <span style="font-size: 13px; color: #444;">
@@ -93,17 +92,21 @@
             </p>
             <p style="margin: 10px 0; font-size: 12px;">
                 Don't have Java? Download from
-                <a href="https://adoptium.net/temurin/releases/?version=25" target="_blank">Adoptium</a>
+                <a href="https://jdk.java.net/25/" target="_blank">Oracle OpenJDK</a>
             </p>
         </div>
 
         <h3 style="margin-top: 30px;">First-Time Setup</h3>
         <p style="margin-left: 20px;">
-            When you first launch DD Poker, a welcome dialog will appear to configure your server connection.
-            Enter this server's address: <strong><code wicket:id="serverAddress" style="background-color: #f0f0f0; padding: 2px 6px; border-radius: 3px;">localhost:8877</code></strong>
+            When you first launch DD Poker, a setup wizard will guide you through the initial configuration.
+            If you want to play online games, you can connect to this server or configure your own server later in the options menu.
         </p>
+
+        <h3 style="margin-top: 30px;">Run Your Own Server</h3>
         <p style="margin-left: 20px;">
-            You can also configure the server later via <strong>Options → Online tab</strong>.
+            Want to host your own online game portal for your poker group? DD Poker Community Edition can be
+            self-hosted, allowing you to run private tournaments and track player statistics.
+            For setup instructions and configuration help, visit the <a href="support">support page</a>.
         </p>
     </div>
 

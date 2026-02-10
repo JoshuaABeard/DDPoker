@@ -42,7 +42,10 @@
       "Bash(ls:*)",
       "Bash(test:*)",
       "Bash(xargs git show:*)",
-      "WebFetch(domain:www.ddpoker.com)"
+      "WebFetch(domain:www.ddpoker.com)",
+      "Bash(xargs:*)",
+      "Bash(for dir in \"C:\\\\Repos\\\\DDPoker\\\\code\"/*)",
+      "Bash(do if [ -d \"$dir/src/test/java\" ])"
     ]
   }
 }

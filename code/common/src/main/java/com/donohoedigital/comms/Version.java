@@ -348,7 +348,7 @@ public class Version implements DataMarshal
     public String toString()
     {
         return nMajor_ + "." + nMinor_ + (bAlpha_ | bBeta_ ? (bAlpha_ ? "a" : "b") + nAlphaBetaVersion_ : "") +
-               (nPatch_ > 0 ? "." + nPatch_ : "") +
+               "." + nPatch_ +
                (bDemo_ ? "d" : "") +
                (sLocale_ != null ? "_" + sLocale_ : "") +
                (sSuffix_ != null ? sSuffix_ : "");

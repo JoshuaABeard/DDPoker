@@ -442,7 +442,48 @@ environment:
 
   # Runtime directory (default: /data/work)
   WORK: /data/work
+
+  # Admin panel access (optional)
+  ADMIN_USERNAME: admin
+  ADMIN_PASSWORD: your-secure-password
+
+  # Email configuration (optional)
+  SMTP_HOST: smtp.gmail.com
+  SMTP_PORT: 587
+  SMTP_USER: your-email@gmail.com
+  SMTP_PASSWORD: your-app-password
+  SMTP_AUTH: "true"
+  SMTP_STARTTLS_ENABLE: "true"
+  SMTP_FROM: your-email@gmail.com
 ```
+
+### Admin Panel Configuration
+
+To enable server administration features (user search, ban management), configure admin credentials via environment variables:
+
+```yaml
+environment:
+  - ADMIN_USERNAME=admin
+  - ADMIN_PASSWORD=your-secure-password
+```
+
+**Features Available:**
+- User search and profile management at `/admin/search`
+- Ban list management at `/admin/banned`
+- Server monitoring and moderation tools
+
+**Password Management:**
+- If `ADMIN_PASSWORD` is not set, a random password will be auto-generated and logged to console
+- Check logs with: `docker logs ddpoker | grep "generated random password"`
+- The admin user profile is automatically created/updated on server startup
+
+**Security Best Practices:**
+- Use strong passwords (12+ characters, mixed case, numbers, symbols)
+- Change the default admin username to something unique
+- For public servers, use a reverse proxy with HTTPS
+- Consider IP whitelisting for admin access
+
+For complete admin panel documentation and usage guide, see [../docs/ADMIN-PANEL.md](../docs/ADMIN-PANEL.md).
 
 ### Custom Ports
 

@@ -39,30 +39,30 @@
   <parent>
     <groupId>com.donohoedigital</groupId>
     <artifactId>all</artifactId>
-    <version>3.3.0-community</version>
+    <version>3.3.0-CommunityEdition</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>gameengine</artifactId>
   <packaging>jar</packaging>
-  <version>3.3.0-community</version>
+  <version>3.3.0-CommunityEdition</version>
   <name>gameengine</name>
 
   <dependencies>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>gui</artifactId>
-      <version>3.3.0-community</version>
+      <version>3.3.0-CommunityEdition</version>
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>gamecommon</artifactId>
-      <version>3.3.0-community</version>
+      <version>3.3.0-CommunityEdition</version>
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>udp</artifactId>
-      <version>3.3.0-community</version>
+      <version>3.3.0-CommunityEdition</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

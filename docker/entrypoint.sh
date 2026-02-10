@@ -57,12 +57,21 @@ if [ -n "$SMTP_FROM" ]; then
   JAVA_OPTS="$JAVA_OPTS -Dsettings.server.profilefrom=$SMTP_FROM"
 fi
 
+# Admin user configuration (if provided via environment variables)
+if [ -n "$ADMIN_USERNAME" ]; then
+  JAVA_OPTS="$JAVA_OPTS -Dsettings.admin.user=$ADMIN_USERNAME"
+fi
+if [ -n "$ADMIN_PASSWORD" ]; then
+  JAVA_OPTS="$JAVA_OPTS -Dsettings.admin.password=$ADMIN_PASSWORD"
+fi
+
 echo "============================================"
 echo "  DD Poker Server Starting"
 echo "============================================"
 echo "  Data directory: $DATA_DIR"
 echo "  DB Driver: ${DB_DRIVER:-org.h2.Driver}"
 echo "  SMTP Host: ${SMTP_HOST:-127.0.0.1}:${SMTP_PORT:-587}"
+echo "  Admin User: ${ADMIN_USERNAME:-not configured}"
 echo "============================================"
 
 # Start pokerserver (background)
