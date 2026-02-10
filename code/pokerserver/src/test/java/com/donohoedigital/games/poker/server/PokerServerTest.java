@@ -19,9 +19,13 @@
  */
 package com.donohoedigital.games.poker.server;
 
+import com.donohoedigital.config.ApplicationType;
+import com.donohoedigital.config.ConfigManager;
+import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 import com.donohoedigital.games.poker.service.OnlineProfileService;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +47,16 @@ class PokerServerTest
     private OnlineProfileService profileService;
 
     private PokerServer pokerServer;
+
+    @BeforeEach
+    void setUp()
+    {
+        // Initialize ConfigManager for tests (only once)
+        if (!PropertyConfig.isInitialized())
+        {
+            new ConfigManager("poker", ApplicationType.SERVER);
+        }
+    }
 
     @AfterEach
     void cleanup()
@@ -162,13 +176,11 @@ class PokerServerTest
 
     @Test
     @Rollback
-    void should_SkipInitialization_When_AdminUsernameNotSet()
+    void should_CreateDefaultAdmin_When_AdminUsernameNotSet()
     {
-        // Ensure no admin user is set
+        // Ensure no admin user is set (should default to "admin")
         System.clearProperty("settings.admin.user");
-
-        // Count profiles before
-        int countBefore = profileService.getMatchingOnlineProfilesCount(null, null, null, true);
+        System.clearProperty("settings.admin.password");
 
         // Create PokerServer instance for testing
         pokerServer = createPokerServerForTest();
@@ -176,8 +188,48 @@ class PokerServerTest
         // Call initialization
         pokerServer.initializeAdminProfile();
 
-        // Verify no profile was created
-        int countAfter = profileService.getMatchingOnlineProfilesCount(null, null, null, true);
-        assertThat(countAfter).isEqualTo(countBefore);
+        // Verify default "admin" profile was created with generated password
+        OnlineProfile profile = profileService.getOnlineProfileByName("admin");
+        assertThat(profile).isNotNull();
+        assertThat(profile.getName()).isEqualTo("admin");
+        assertThat(profile.isActivated()).isTrue();
+        assertThat(profile.isRetired()).isFalse();
+        assertThat(profile.getPassword()).isNotNull();
+        assertThat(profile.getPassword()).isNotEmpty();
+    }
+
+    @Test
+    @Rollback
+    void should_KeepExistingPassword_When_ProfileExistsAndPasswordNotProvided()
+    {
+        // Create an existing admin profile with generated password
+        OnlineProfile existing = PokerTestData.createOnlineProfile("keepadmin");
+        existing.setPassword("existingpass123");
+        existing.setActivated(true);
+        existing.setRetired(false);
+        profileService.saveOnlineProfile(existing);
+
+        // Set only admin username, no password (should keep existing password)
+        System.setProperty("settings.admin.user", "keepadmin");
+        System.clearProperty("settings.admin.password");
+
+        // Create PokerServer instance for testing
+        pokerServer = createPokerServerForTest();
+
+        // Call initialization
+        pokerServer.initializeAdminProfile();
+
+        // Verify profile still exists with original password
+        OnlineProfile profile = profileService.getOnlineProfileByName("keepadmin");
+        assertThat(profile).isNotNull();
+        assertThat(profile.getName()).isEqualTo("keepadmin");
+        assertThat(profile.isActivated()).isTrue();
+        assertThat(profile.isRetired()).isFalse();
+
+        // Verify original password still works
+        OnlineProfile authProfile = new OnlineProfile();
+        authProfile.setName("keepadmin");
+        authProfile.setPassword("existingpass123");
+        assertThat(profileService.authenticateOnlineProfile(authProfile)).isNotNull();
     }
 }

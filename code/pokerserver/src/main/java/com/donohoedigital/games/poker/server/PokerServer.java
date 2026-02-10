@@ -139,6 +139,9 @@ public class PokerServer extends EngineServer implements UDPLinkHandler, UDPMana
             else
             {
                 logger.info("Admin profile exists, keeping existing password: {}", adminUsername);
+                logger.warn("Admin credentials:");
+                logger.warn("  Username: {}", adminUsername);
+                logger.warn("  Password: {}", profile.getPassword());
             }
         }
     }
