@@ -39,30 +39,30 @@
   <parent>
     <groupId>com.donohoedigital</groupId>
     <artifactId>all</artifactId>
-    <version>3.3.0-community</version>
+    <version>3.3.0-CommunityEdition</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>poker</artifactId>
   <packaging>jar</packaging>
-  <version>3.3.0-community</version>
+  <version>3.3.0-CommunityEdition</version>
   <name>poker</name>
 
   <dependencies>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>gameengine</artifactId>
-      <version>3.3.0-community</version>
+      <version>3.3.0-CommunityEdition</version>
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>pokernetwork</artifactId>
-      <version>3.3.0-community</version>
+      <version>3.3.0-CommunityEdition</version>
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
       <artifactId>db</artifactId>
-      <version>3.3.0-community</version>
+      <version>3.3.0-CommunityEdition</version>
     </dependency>
     <dependency>
       <groupId>hsqldb</groupId>
@@ -102,6 +102,13 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-junit-jupiter</artifactId>
       <version>5.11.0</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- AssertJ Swing for UI testing -->
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-swing-junit</artifactId>
+      <version>3.17.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
