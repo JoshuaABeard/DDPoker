@@ -1,0 +1,334 @@
+# Code Review & Backlog
+
+## Context
+
+Comprehensive code review of DDPoker's server-side and shared infrastructure modules. Covers code quality, security, performance, concurrency, resource management, and technical debt.
+
+**Scope:** `code/common/`, `code/db/`, `code/mail/`, `code/udp/`, `code/server/`, `code/gameserver/`, `code/pokerserver/`, `code/poker/`
+**Excludes:** Password plaintext/hashing issues (covered in `BCRYPT-PASSWORD-HASHING.md`)
+**Review Date:** February 2026
+
+---
+
+## P0: Critical — Security & Stability
+
+### SEC-2: Add Input Validation
+**Files:** `EngineServlet.java`, `PokerServlet.java`
+**Issue:** No validation of email format, parameter bounds, string lengths.
+**Locations:**
+- `joinOnlineGame()` — `EngineServlet.java` line 1015 (email validation missing)
+- `addOnlineProfile()` — no bounds checking
+- `addWanGame()` — no parameter validation
+
+**Fix:** Add email format validation, string length limits, and validate all user inputs before processing.
+
+---
+
+### SEC-3: Implement Rate Limiting
+**Files:** `PokerServlet.java`, `ChatServer.java`
+**Issue:** No rate limiting on profile operations or chat messages. DoS vulnerability.
+**Fix:** Add rate limiting for profile creation/updates and chat message frequency per user.
+
+---
+
+### LEAK-1: Fix ApplicationContext Resource Leak
+**Files:**
+- `OnlineGamePurger.java` (line 128)
+- `Ban.java` (line 111)
+
+**Issue:** `ApplicationContext` created but never closed.
+**Fix:** Use try-with-resources or explicit `close()`.
+
+---
+
+### DEAD-1: Remove Dead Code — `if (false)` Block
+**File:** `EngineServlet.java` (lines 405-416)
+**Issue:** License validation disabled with `if (false)` — dead code that confuses maintainers.
+**Fix:** Delete entire block.
+
+---
+
+## P1: Quick Fixes — Concurrency (small effort, high value)
+
+### QF-1: Add `volatile` to cross-thread boolean flags
+
+**Issue:** Multiple classes use `boolean bDone_` flags to signal thread shutdown. Without `volatile`, the JVM may cache the value in a CPU register, so one thread's write is never visible to another. Threads may never terminate on shutdown.
+
+**Files:**
+- `code/server/.../GameServer.java` line 67: `private boolean bDone_`
+- `code/mail/.../DDPostalServiceImpl.java` line 68: `private boolean bDone_`, line 74: `private boolean bSleeping_`
+- `code/udp/.../UDPServer.java` line 103: `private boolean bDone_`
+- `code/udp/.../UDPManager.java` line 64: `boolean bDone_`
+- `code/udp/.../UDPLink.java` lines 91-95: `bHelloReceived_`, `bHelloSent_`, `bGoodbyeInProgress_`, `bDone_`
+
+**Fix:** Add `volatile` keyword to each field.
+**Verify:** `mvn test -pl server,mail,udp`
+
+---
+
+### QF-2: Add `volatile` to `EngineServlet` double-checked locking fields
+**File:** `EngineServlet.java` (lines 1285-1289)
+**Issue:** Double-checked locking without volatile:
+```java
+private long lastUpdate = 0;     // Should be volatile
+private String ddMessage = null;  // Should be volatile
+```
+**Fix:** Add `volatile` keyword.
+
+---
+
+### QF-3: Use `ConcurrentHashMap` for shared static maps
+
+**Issue:** Unsynchronized `HashMap` used for static fields accessed from multiple threads. Can cause infinite loops, lost entries, or `ConcurrentModificationException`.
+
+**Files:**
+- `code/db/.../DatabaseManager.java` line 65: `private static Map<String, Database> hmDatabases_ = new HashMap<>()`
+- `code/common/.../DDHttpClient.java` line 87: `DNSCACHE` — synchronized but unbounded, no eviction
+
+**Fix for DatabaseManager:** Replace `HashMap` with `ConcurrentHashMap`.
+**Fix for DDHttpClient DNSCACHE:** Add a size cap (~256 entries) using `LinkedHashMap.removeEldestEntry()` wrapped in `Collections.synchronizedMap()`.
+**Verify:** `mvn test -pl db,common`
+
+---
+
+### QF-4: Fix `PropertyConfig.formats_` thread safety
+**File:** `code/common/.../PropertyConfig.java` line 384
+**Issue:** `HashMap<String, MessageFormat>` used inside a `synchronized` block. Works, but `ConcurrentHashMap` with `computeIfAbsent()` is cleaner and more performant.
+**Fix:** Replace with `ConcurrentHashMap`, use `computeIfAbsent()`, remove the synchronized block.
+**Verify:** `mvn test -pl common`
+
+---
+
+### QF-5: Remove unnecessary nested `synchronized` on `GameServer.getRegisterQueue()`
+**File:** `code/server/.../GameServer.java` line 747
+**Issue:** `private synchronized List<Qentry> getRegisterQueue()` acquires the instance lock, then `synchronized(registerQ_)` inside. Outer lock is unnecessary — deadlock risk if future code acquires locks in the opposite order.
+**Fix:** Remove `synchronized` from the method signature. Inner `synchronized(registerQ_)` is sufficient.
+**Verify:** `mvn test -pl server`
+
+---
+
+### QF-6: Replace Static SEQ Counter with AtomicInteger
+**File:** `EngineServlet.java` (line 162)
+**Issue:** Synchronized int counter for sequence numbers: `synchronized (SEQOBJ) { SEQ++; return SEQ; }`
+**Fix:** Use `AtomicInteger.incrementAndGet()`.
+
+---
+
+### QF-7: Make Mutable Static Fields Final
+**File:** `LanManager.java` (lines 55-59)
+**Issue:** `private static int ALIVE_SECONDS = 5;` and `ALIVE_REFRESH_CNT = 10` are mutable statics that should be final.
+**Fix:** Add `final` modifier.
+
+---
+
+## P1: Quick Fixes — Resource Leaks
+
+### QF-8: Fix resource leaks in `ConfigUtils.copyFile()`
+**File:** `code/common/.../ConfigUtils.java` lines 459-473
+**Issue:** Creates `FileInputStream`/`FileOutputStream`, gets channels, transfers data, closes only the channels. The underlying streams are never closed, leaking file descriptors.
+**Fix:** Use try-with-resources wrapping both streams and channels.
+**Verify:** `mvn test -pl common`
+
+---
+
+## P1: Quick Fixes — Code Clarity
+
+### QF-9: Fix `DDPostalServiceImpl` misleading mail send loop
+**File:** `code/mail/.../DDPostalServiceImpl.java` lines 337-345
+**Issue:** Loop iterates `nNum - 1` down to `0`, but each iteration calls `list.get(0)` / `list.remove(0)`. Works correctly but the loop variable `i` is unused and misleading.
+**Fix:** Replace with `while (!list.isEmpty())`.
+**Verify:** `mvn test -pl mail`
+
+---
+
+## P2: Medium Fixes (moderate effort)
+
+### MF-1: Fix resource leaks in `DatabaseQuery`
+**File:** `code/db/.../DatabaseQuery.java`
+**Issue:** Class-level `@SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")` at line 46. `close()` method (line 588) closes `PreparedStatement` and `Connection` but not `ResultSet`. Relies on implicit close which isn't guaranteed by all JDBC drivers.
+**Fix:** Track `ResultSet` as instance field, close explicitly in `close()` before closing the statement.
+**Verify:** `mvn test -pl db`
+
+---
+
+### MF-2: Fix resource leaks in `PokerDatabase`
+**File:** `code/poker/.../PokerDatabase.java`
+**Issue:** Multiple methods close `ResultSet` and `PreparedStatement` in the try block body (not in `finally`). If an exception occurs between creating the resource and the close call, the resource leaks.
+**Fix:** Convert to try-with-resources for `Connection`, `PreparedStatement`, and `ResultSet`.
+**Verify:** `mvn test -pl poker`
+
+---
+
+### MF-3: Replace custom `Base64` with `java.util.Base64`
+**File:** `code/common/.../Base64.java`
+**Issue:** Custom third-party implementation (iharder.net) with exception-swallowing (empty catch blocks, `e.printStackTrace()` then return null). Java has included `java.util.Base64` since Java 8.
+**Fix:** Find all usages of `com.donohoedigital.base.Base64`, replace with `java.util.Base64.getEncoder()` / `getDecoder()`. API differs, so each call site needs attention.
+**Verify:** `mvn test` (full build)
+
+---
+
+### MF-4: Reduce Lock Duration in EngineServlet
+**File:** `EngineServlet.java` (lines 500-558)
+**Issue:** Game lock held during serialization. Poor scalability with concurrent games.
+**Fix:** Serialize response outside synchronized block. Already partially implemented with `retdata` pattern — complete the optimization.
+
+---
+
+## P2: Technical Debt
+
+### DEBT-1: Replace System.out/err with Logging
+**Files:** `Ban.java`, `RegAnalyzer.java`, `OnlineGamePurger.java`, `OnlineProfilePurger.java`
+**Issue:** Direct `System.out/err` in command-line tools instead of log4j2.
+**Fix:** Use logging framework.
+
+---
+
+### DEBT-2: Externalize Hardcoded Values
+**Files:** `EngineServlet.java` (lines 1121-1125), `LanManager.java` (lines 55-59)
+**Issue:** Timing constants and poll settings hardcoded.
+**Fix:** Move to properties files.
+
+---
+
+### DEBT-3: Remove or Undeprecate Registration Class
+**File:** `Registration.java` (lines 16-25)
+**Issue:** Class marked `@Deprecated` but still used throughout codebase — causes compiler warnings.
+**Fix:** Either remove entirely or undeprecate with documentation.
+
+---
+
+### DEBT-4: Add Query Result Caching
+**File:** `RegistrationServiceImpl.java` (lines 128-155)
+**Issue:** Fetches ALL banned keys into memory each time.
+**Fix:** Add pagination or cache banned key list with TTL.
+
+---
+
+### DEBT-5: Optimize Database Queries
+**File:** `RegistrationImplJpa.java` (line 235)
+**Issue:** Complex GROUP BY + HAVING queries.
+**Fix:** Add query optimization, consider indexed views.
+
+---
+
+## P2: TODO Items (from code comments)
+
+### TODO-1: Implement Load Balancing
+**File:** `EngineServlet.java` (line 1112)
+**TODO:** `// TODO: should we need to do load balancing, new server URLs`
+**Priority:** Low unless scaling needed.
+
+---
+
+### TODO-2: Implement FileLock for Multi-JVM
+**File:** `ServerSideGame.java` (line 219)
+**TODO:** `// TODO: if we move to multiple JVM instances, we can synchronize`
+**Fix:** Use `java.nio.channels.FileLock` or distributed locking if multi-JVM is needed.
+
+---
+
+### TODO-3: Implement Email Bounce Handling
+**File:** `ServerSideGame.java` (line 860)
+**TODO:** `// TODO: send from server w/ bounce handling?`
+
+---
+
+### TODO-4: Add Player Statistics
+**File:** `ChatServer.java` (line 228)
+**TODO:** `// TODO: stats?`
+
+---
+
+### TODO-5: Add Configuration File Loading
+**File:** `ServletDebug.java` (lines 49, 174)
+**Issue:** Configuration file reading marked as TODO.
+
+---
+
+## Big Effort Items (need separate plans)
+
+### BE-1: EngineServlet Monster Method Refactor
+**File:** `EngineServlet.java`
+**Issue:** `_processMessage()` is 476 lines (lines 254-730). `processExistingGameMessageLocked()` is 167 lines.
+**Fix:** Extract each message category into separate handler classes using a `MessageHandler` interface.
+**Why separate plan:** 5-8 hours per handler class, many handler classes needed, requires comprehensive regression testing.
+
+---
+
+### BE-2: Chat Message Handling Refactor
+**File:** `ChatServer.java` (lines 144-269)
+**Issue:** 125-line switch statement in `processMessage()`.
+**Fix:** Strategy or command pattern with per-message-type handlers.
+
+---
+
+### BE-3: Authentication System Redesign
+**File:** `PokerServlet.java` (line 359)
+**Issue:** Design note in code: "Our auth logic is kind of a pain and needs a redesign. We should always be sending down the current player."
+**Fix:** Implement consistent player identity validation, document auth flow, add integration tests.
+
+---
+
+### BE-4: UDP Networking Concurrency Overhaul
+**Scope:** `code/udp/` — `UDPLink.java`, `UDPServer.java`, `UDPManager.java`, `Peer2PeerMulticast.java`
+
+**Issues:**
+- `LinkedList sendQueue_` in `UDPLink` (line 80) with inconsistent synchronization
+- Message ID rollover at `UDPLink` line 560 with no handling (just a log warning)
+- Race conditions between `isHelloReceived()` check and subsequent operations
+- Mixed synchronization patterns across the module
+
+**Why separate plan:** Deeply intertwined concurrency issues. Fixing volatile (QF-1) addresses visibility but not atomicity. Proper fix requires `java.util.concurrent` primitives and concurrent testing.
+
+**Note:** If UDP is being replaced with TCP (per `UDP-TO-TCP-CONVERSION.md`), this effort may not be worthwhile.
+
+---
+
+### BE-5: Database Resource Management Modernization
+**Scope:** `code/db/`, `code/poker/` — `DatabaseQuery.java`, `PokerDatabase.java`, and all DAO classes
+
+**Issues:**
+- Widespread manual resource management instead of try-with-resources
+- `DatabaseQuery` suppresses JDBC resource warnings at class level
+- `PokerDatabase` has 10+ methods with potential leak paths
+- No consistent Connection lifecycle pattern
+
+**Why separate plan:** Database layer is used extensively. Requires touching many methods with careful attention to C3P0 connection pooling behavior. MF-1 and MF-2 are the highest-priority individual fixes from this category.
+
+---
+
+## P3: Enhancements (nice-to-have)
+
+### ENHANCE-1: Add Metrics/Monitoring
+Server health endpoints, JVM metrics, message processing times, active game/player counts.
+
+### ENHANCE-2: Improve Error Messages
+Add request IDs, diagnostic info, error code taxonomy.
+
+### ENHANCE-3: Add OpenAPI/Swagger Documentation
+Document all servlet endpoints with request/response examples.
+
+### ENHANCE-4: Implement Graceful Shutdown
+ServletContextListener, flush queues, close resources, save in-progress games.
+
+---
+
+## Summary
+
+| Priority | Category | Count |
+|----------|----------|-------|
+| P0 | Critical (security, leaks, dead code) | 4 |
+| P1 | Quick fixes (concurrency, resources, clarity) | 9 |
+| P2 | Medium fixes | 4 |
+| P2 | Technical debt | 5 |
+| P2 | TODO items | 5 |
+| BE | Big effort (separate plans) | 5 |
+| P3 | Enhancements | 4 |
+| | **Total** | **36** |
+
+## Verification
+
+After all P0, P1, and P2 fixes:
+1. `mvn test` — full test suite passes
+2. `mvn package` — build succeeds with zero new warnings
+3. Manual: start Docker container, verify server + web start cleanly, create profile, login
