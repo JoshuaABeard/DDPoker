@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <!-- Metadata -->
+  <Name>DDPoker-Local</Name>
+  <Repository>joshuaabeard/ddpoker:local-dev</Repository>
+  <Registry>https://hub.docker.com/r/joshuaabeard/ddpoker</Registry>
+  <Network>bridge</Network>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/JoshuaABeard/DDPoker/issues</Support>
+  <Project>https://github.com/JoshuaABeard/DDPoker</Project>
+  <Overview>[LOCAL DEVELOPMENT BUILD] DD Poker Community Edition - This is a local development container for testing builds before deploying to production. Uses the local-dev tag instead of versioned releases. Full-featured Texas Hold'em tournament software with online multiplayer, AI opponents, poker clock, and hand calculator.</Overview>
+  <Category>GameServers:</Category>
+  <WebUI>http://[IP]:[PORT:8080]</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/JoshuaABeard/DDPoker/main/unraid/DDPoker-Local.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/JoshuaABeard/DDPoker/main/unraid/icons/ddpoker.png</Icon>
+  <Banner>https://raw.githubusercontent.com/JoshuaABeard/DDPoker/main/unraid/icons/banner/ddpoker.png</Banner>
+  <Date>2026-02-11</Date>
+  <Changes>
+    [b]local-dev (Latest Development Build)[/b]
+    - Built from local source code
+    - For development and testing only
+    - May contain unreleased features
+    - Use production DDPoker container for stable deployments
+  </Changes>
+
+  <!-- Port Mappings -->
+  <Config Name="Web UI Port" Target="8080" Default="8080" Mode="tcp"
+          Description="Web interface - Access at http://[IP]:8080" Type="Port" Display="always" Required="true" />
+
+  <Config Name="Game Server Port" Target="8877" Default="8877" Mode="tcp"
+          Description="Game server - Desktop clients connect here" Type="Port" Display="always" Required="true" />
+
+  <Config Name="Chat Port" Target="11886" Default="11886" Mode="udp"
+          Description="UDP chat server - In-game lobby chat" Type="Port" Display="advanced" Required="false" />
+
+  <Config Name="Connection Test Port" Target="11889" Default="11889" Mode="udp"
+          Description="UDP connection verification" Type="Port" Display="advanced" Required="false" />
+
+  <!-- Volume Mappings -->
+  <Config Name="Data" Target="/data" Default="/mnt/user/appdata/ddpoker/data" Mode="rw"
+          Description="Database and runtime files" Type="Path" Display="always" Required="true" />
+
+  <!-- Admin Panel Configuration (Optional) -->
+  <Config Name="Admin Username" Target="ADMIN_USERNAME" Default=""
+          Description="Admin panel username for /admin access (leave empty to disable admin features)" Type="Variable" Display="always" Required="false" />
+
+  <Config Name="Admin Password" Target="ADMIN_PASSWORD" Default=""
+          Description="Admin panel password (leave empty to auto-generate - check container logs)" Type="Variable" Display="always" Required="false" Mask="true" />
+
+  <!-- Environment Variables - SMTP (Optional) -->
+  <Config Name="SMTP Host" Target="SMTP_HOST" Default="smtp.gmail.com"
+          Description="SMTP server hostname (Gmail: smtp.gmail.com, Outlook: smtp.office365.com)" Type="Variable" Display="advanced" Required="false" />
+
+  <Config Name="SMTP Port" Target="SMTP_PORT" Default="587"
+          Description="SMTP server port (usually 587 for TLS)" Type="Variable" Display="advanced" Required="false" />
+
+  <Config Name="SMTP User" Target="SMTP_USER" Default=""
+          Description="SMTP username (usually your email address)" Type="Variable" Display="advanced" Required="false" />
+
+  <Config Name="SMTP Password" Target="SMTP_PASSWORD" Default=""
+          Description="SMTP password (for Gmail use App Password)" Type="Variable" Display="advanced" Required="false" Mask="true" />
+
+  <Config Name="SMTP Auth" Target="SMTP_AUTH" Default="true"
+          Description="Enable SMTP authentication (true/false)" Type="Variable" Display="advanced" Required="false" />
+
+  <Config Name="SMTP STARTTLS" Target="SMTP_STARTTLS_ENABLE" Default="true"
+          Description="Enable STARTTLS encryption (true/false)" Type="Variable" Display="advanced" Required="false" />
+
+  <Config Name="SMTP From Address" Target="SMTP_FROM" Default="noreply@ddpoker.local"
+          Description="Email sender address (from field)" Type="Variable" Display="advanced" Required="false" />
+
+  <!-- Server Configuration -->
+  <Config Name="Server Host" Target="SERVER_HOST" Default="localhost"
+          Description="Server hostname for external access (use your domain or public IP)" Type="Variable" Display="advanced" Required="false" />
+
+  <Config Name="Server Port" Target="SERVER_PORT" Default="8877"
+          Description="Game server port (should match Game Server Port above)" Type="Variable" Display="advanced" Required="false" />
+
+  <Config Name="Chat Port" Target="CHAT_PORT" Default="11886"
+          Description="UDP chat port (should match Chat Port above)" Type="Variable" Display="advanced" Required="false" />
+
+  <Config Name="Connection Test Port" Target="CONNECTION_TEST_PORT" Default="11889"
+          Description="UDP connection test port (should match Connection Test Port above)" Type="Variable" Display="advanced" Required="false" />
+
+  <Config Name="Web Port" Target="WEB_PORT" Default="8080"
+          Description="Web interface port (should match Web UI Port above)" Type="Variable" Display="advanced" Required="false" />
+
+  <!-- Timezone -->
+  <Config Name="Timezone" Target="TZ" Default="America/Chicago"
+          Description="Container timezone (America/Chicago, America/New_York, Europe/London, etc.)" Type="Variable" Display="always" Required="true" />
+</Container>
