@@ -92,17 +92,14 @@ Repeat for next behavior
 - ❌ **Proof-of-concept** - Show feasibility first, then rewrite with tests
 
 ### Test Types to Consider
-- **Property tests** (FSCheck) - Find edge cases via randomization
-- **Example tests** (Theory + InlineData) - Document specific behaviors
-- **Component tests** (bUnit) - UI formatting/rendering logic
-- **Integration tests** - Real MCP servers, Azure OpenAI
-- **E2E tests** (Playwright) - Critical user flows only
+- **Property tests** - Find edge cases via randomization
+- **Example tests** - Document specific behaviors
+- **Component tests** - UI formatting/rendering logic
+- **E2E tests** - Critical user flows only
 
 ### Verification
 After implementing:
 - ✅ All new tests pass
 - ✅ All existing tests still pass
 - ✅ Code coverage meets thresholds (65% minimum)
-- ✅ `dotnet build` completes with zero warnings
-
-See [TESTING.md](TESTING.md) for comprehensive TDD best practices.
+- ✅ build completes with zero warnings

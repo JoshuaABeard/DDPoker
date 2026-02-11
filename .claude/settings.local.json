@@ -45,7 +45,10 @@
       "WebFetch(domain:www.ddpoker.com)",
       "Bash(xargs:*)",
       "Bash(for dir in \"C:\\\\Repos\\\\DDPoker\\\\code\"/*)",
-      "Bash(do if [ -d \"$dir/src/test/java\" ])"
+      "Bash(do if [ -d \"$dir/src/test/java\" ])",
+      "WebFetch(domain:github.panteleyev.org)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:akman.github.io)"
     ]
   }
 }
