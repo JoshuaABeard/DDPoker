@@ -105,7 +105,7 @@ param(
     [string]$ImageTag = "latest",
 
     [Parameter(Mandatory=$false)]
-    [string]$ContainerName = "DDPoker",
+    [string]$ContainerName = "DDPoker-Local",
 
     [Parameter(Mandatory=$false)]
     [switch]$SkipBuild,
@@ -148,14 +148,14 @@ function Invoke-SSHWithRetry {
         catch {
             if ($attempt -lt $MaxAttempts) {
                 Write-Host ""
-                Write-Host "  ⚠ Operation failed: $_" -ForegroundColor Yellow
+                Write-Host "  WARNING Operation failed: $_" -ForegroundColor Yellow
                 Write-Host "  Press ENTER to retry or Ctrl+C to abort..." -ForegroundColor Yellow
                 Read-Host
                 Write-Host ""
             }
             else {
                 Write-Host ""
-                Write-Host "  ❌ $Description failed after $MaxAttempts attempts" -ForegroundColor Red
+                Write-Host "  ERROR $Description failed after $MaxAttempts attempts" -ForegroundColor Red
                 throw $_
             }
         }
@@ -189,16 +189,16 @@ $validationErrors = @()
 
 # Validate UnraidHost format (IP or hostname)
 if ([string]::IsNullOrWhiteSpace($UnraidHost)) {
-    $validationErrors += "❌ UnraidHost is required but was not provided"
+    $validationErrors += "ERROR UnraidHost is required but was not provided"
 }
 elseif ($UnraidHost -notmatch '^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|[a-zA-Z0-9][a-zA-Z0-9\-\.]+)$') {
-    $validationErrors += "❌ UnraidHost '$UnraidHost' is not a valid IP address or hostname"
+    $validationErrors += "ERROR UnraidHost '$UnraidHost' is not a valid IP address or hostname"
 }
 
 # Validate Docker is installed and running (needed for local build)
 $dockerCmd = Get-Command docker -ErrorAction SilentlyContinue
 if (-not $dockerCmd) {
-    $validationErrors += "❌ Docker is not installed or not in PATH"
+    $validationErrors += "ERROR Docker is not installed or not in PATH"
     $validationErrors += "   Docker is required locally to build the image before deploying to Unraid"
     $validationErrors += "   Install Docker Desktop, Podman Desktop, or Docker in WSL2"
 }
@@ -207,12 +207,12 @@ else {
     try {
         $null = docker ps 2>&1
         if ($LASTEXITCODE -ne 0) {
-            $validationErrors += "❌ Docker is installed but not running locally"
+            $validationErrors += "ERROR Docker is installed but not running locally"
             $validationErrors += "   Please start your Docker engine (needed to build image before deploying to Unraid)"
         }
     }
     catch {
-        $validationErrors += "❌ Docker is installed but not running locally"
+        $validationErrors += "ERROR Docker is installed but not running locally"
         $validationErrors += "   Please start your Docker engine (needed to build image before deploying to Unraid)"
     }
 }
@@ -220,7 +220,7 @@ else {
 # Validate SSH is available
 $sshCmd = Get-Command ssh -ErrorAction SilentlyContinue
 if (-not $sshCmd) {
-    $validationErrors += "❌ SSH client is not installed or not in PATH"
+    $validationErrors += "ERROR SSH client is not installed or not in PATH"
     $validationErrors += "   SSH should be built into Windows 10+. Try: Add-WindowsCapability -Online -Name OpenSSH.Client"
 }
 
@@ -228,7 +228,7 @@ if (-not $sshCmd) {
 $scpCmd = Get-Command scp -ErrorAction SilentlyContinue
 $pscpCmd = Get-Command pscp -ErrorAction SilentlyContinue
 if (-not $scpCmd -and -not $pscpCmd) {
-    $validationErrors += "❌ Neither scp nor pscp is available"
+    $validationErrors += "ERROR Neither scp nor pscp is available"
     $validationErrors += "   SCP should be built into Windows 10+, or install PuTTY: winget install PuTTY.PuTTY"
 }
 
@@ -236,13 +236,13 @@ if (-not $scpCmd -and -not $pscpCmd) {
 if (-not $SkipBuild -and -not $SkipMaven) {
     $mvnCmd = Get-Command mvn -ErrorAction SilentlyContinue
     if (-not $mvnCmd) {
-        $validationErrors += "❌ Maven (mvn) is not installed or not in PATH"
+        $validationErrors += "ERROR Maven (mvn) is not installed or not in PATH"
         $validationErrors += "   Either install Maven, or use -SkipBuild to skip the Maven build step"
     }
 
     $javaCmd = Get-Command java -ErrorAction SilentlyContinue
     if (-not $javaCmd) {
-        $validationErrors += "❌ Java is not installed or not in PATH"
+        $validationErrors += "ERROR Java is not installed or not in PATH"
         $validationErrors += "   Either install Java JDK, or use -SkipBuild to skip the Maven build step"
     }
 }
@@ -251,7 +251,7 @@ if (-not $SkipBuild -and -not $SkipMaven) {
 if ($SkipBuild) {
     $imageExists = docker images -q "$ImageName`:$ImageTag" 2>$null
     if ([string]::IsNullOrWhiteSpace($imageExists)) {
-        $validationErrors += "❌ Docker image '$ImageName`:$ImageTag' not found locally"
+        $validationErrors += "ERROR Docker image '$ImageName`:$ImageTag' not found locally"
         $validationErrors += "   Cannot use -SkipBuild without an existing image. Either:"
         $validationErrors += "   - Remove -SkipBuild to build the image"
         $validationErrors += "   - Build the image first, then use -SkipBuild"
@@ -275,7 +275,7 @@ if ($validationErrors.Count -gt 0) {
     exit 1
 }
 
-Write-Host "✓ All prerequisites validated successfully" -ForegroundColor Green
+Write-Host "OK All prerequisites validated successfully" -ForegroundColor Green
 Write-Host ""
 
 Write-Host "Configuration:" -ForegroundColor Yellow
@@ -303,7 +303,7 @@ if (-not $SkipBuild -and -not $SkipMaven) {
     finally {
         Pop-Location
     }
-    Write-Host "✓ Maven build complete" -ForegroundColor Green
+    Write-Host "OK Maven build complete" -ForegroundColor Green
     Write-Host ""
 } else {
     Write-Host "[1/6] Skipping Maven build" -ForegroundColor Yellow
@@ -329,11 +329,17 @@ if (-not $SkipBuild) {
         if ($LASTEXITCODE -ne 0) {
             throw "Docker tag failed"
         }
+
+        # Tag for local development (used by Unraid)
+        & docker tag "$ImageName`:$ImageTag" "joshuaabeard/ddpoker:local-dev"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "  Warning: Failed to tag as local-dev" -ForegroundColor Yellow
+        }
     }
     finally {
         Pop-Location
     }
-    Write-Host "✓ Docker image built: $ImageName`:$ImageTag" -ForegroundColor Green
+    Write-Host "OK Docker image built: $ImageName`:$ImageTag" -ForegroundColor Green
     Write-Host ""
 } else {
     Write-Host "[2/6] Skipping Docker build" -ForegroundColor Yellow
@@ -355,10 +361,10 @@ if (Test-Path $LOCAL_TAR_PATH) {
 # Save with progress indicator
 Write-Host "  Saving image (progress indicator will appear below)..." -ForegroundColor Gray
 $saveJob = Start-Job -ScriptBlock {
-    param($ImageName, $ImageTag, $TarPath)
-    & docker save -o $TarPath "$ImageName`:$ImageTag"
+    param($TarPath)
+    & docker save -o $TarPath "joshuaabeard/ddpoker:local-dev"
     return $LASTEXITCODE
-} -ArgumentList $ImageName, $ImageTag, $LOCAL_TAR_PATH
+} -ArgumentList $LOCAL_TAR_PATH
 
 # Show progress dots while saving
 $dotCount = 0
@@ -381,7 +387,7 @@ if ($exitCode -ne 0) {
 }
 
 $tarSize = (Get-Item $LOCAL_TAR_PATH).Length / 1MB
-Write-Host "✓ Image saved: $LOCAL_TAR_PATH ($([math]::Round($tarSize, 2)) MB)" -ForegroundColor Green
+Write-Host "OK Image saved: $LOCAL_TAR_PATH ($([math]::Round($tarSize, 2)) MB)" -ForegroundColor Green
 Write-Host ""
 
 # ============================================================
@@ -392,7 +398,7 @@ Write-Host "[4/6] Creating target directory on Unraid..." -ForegroundColor Green
 Invoke-SSHWithRetry -Description "Create directory on Unraid" -Command {
     ssh "$UnraidUser@$UnraidHost" "mkdir -p /mnt/user/appdata/ddpoker"
 }
-Write-Host "✓ Target directory ready" -ForegroundColor Green
+Write-Host "OK Target directory ready" -ForegroundColor Green
 Write-Host ""
 
 # ============================================================
@@ -408,21 +414,13 @@ Write-Host ""
 # Check if pscp (PuTTY SCP) is available for better progress
 $usePscp = Get-Command pscp -ErrorAction SilentlyContinue
 
-if ($usePscp) {
-    Write-Host "  Using pscp for transfer with progress..." -ForegroundColor Gray
-    Invoke-SSHWithRetry -Description "Transfer file to Unraid" -Command {
-        pscp -batch $LOCAL_TAR_PATH "$UnraidUser@$UnraidHost`:$UNRAID_TAR_PATH"
-    }
-} else {
-    Write-Host "  Using scp for transfer..." -ForegroundColor Gray
-    Write-Host "  (install PuTTY pscp for progress indicator: winget install PuTTY.PuTTY)" -ForegroundColor DarkGray
-    Invoke-SSHWithRetry -Description "Transfer file to Unraid" -Command {
-        scp $LOCAL_TAR_PATH "$UnraidUser@$UnraidHost`:$UNRAID_TAR_PATH"
-    }
+Write-Host "  Using scp for transfer..." -ForegroundColor Gray
+Invoke-SSHWithRetry -Description "Transfer file to Unraid" -Command {
+    scp $LOCAL_TAR_PATH "$UnraidUser@$UnraidHost`:$UNRAID_TAR_PATH"
 }
 
 Write-Host ""
-Write-Host "✓ Transfer complete" -ForegroundColor Green
+Write-Host "OK Transfer complete" -ForegroundColor Green
 Write-Host ""
 
 # ============================================================
@@ -432,33 +430,136 @@ Write-Host ""
 Write-Host "[6/6] Deploying container on Unraid..." -ForegroundColor Green
 
 # Create deployment script to run on Unraid
-$deployScript = @"
+$deployScript = @'
 #!/bin/bash
 set -e
 
 echo ""
 echo "Loading Docker image..."
-docker load -i $UNRAID_TAR_PATH
+docker load -i UNRAID_TAR_PATH_PLACEHOLDER
 
 echo ""
-echo "Stopping existing container (if running)..."
-docker stop $ContainerName 2>/dev/null || echo "  (container not running)"
+echo "Checking for existing containers to copy settings..."
+
+# Determine source container for settings
+SOURCE_CONTAINER=""
+if docker inspect CONTAINER_NAME_PLACEHOLDER &>/dev/null; then
+    echo "  Found CONTAINER_NAME_PLACEHOLDER - will preserve its settings"
+    SOURCE_CONTAINER="CONTAINER_NAME_PLACEHOLDER"
+elif docker inspect DDPoker &>/dev/null; then
+    echo "  Found DDPoker - will migrate settings to CONTAINER_NAME_PLACEHOLDER"
+    SOURCE_CONTAINER="DDPoker"
+fi
+
+# Capture settings if source exists
+if [[ -n "$SOURCE_CONTAINER" ]]; then
+    echo "  Capturing settings from $SOURCE_CONTAINER..."
+
+    # Environment variables
+    EXISTING_ENV=$(docker inspect $SOURCE_CONTAINER --format '{{range .Config.Env}}-e "{{.}}" {{end}}')
+    if [[ $? -ne 0 ]]; then
+        echo "ERROR: Failed to capture environment from $SOURCE_CONTAINER"
+        exit 1
+    fi
+
+    # Port mappings - use jq for reliable parsing
+    EXISTING_PORTS=$(docker inspect $SOURCE_CONTAINER --format '{{json .HostConfig.PortBindings}}' | jq -r 'to_entries | map(.key as $container | .value[] | "-p \(.HostPort):\($container)") | join(" ")' 2>/dev/null)
+    if [[ $? -ne 0 ]]; then
+        echo "ERROR: Failed to capture ports from $SOURCE_CONTAINER"
+        exit 1
+    fi
+    # If ports are empty, use defaults
+    if [[ -z "$EXISTING_PORTS" ]]; then
+        echo "  No ports configured in $SOURCE_CONTAINER, using defaults"
+        EXISTING_PORTS="-p 8080:8080 -p 8877:8877 -p 11886:11886/udp -p 11889:11889/udp"
+    else
+        echo "  Captured ports: $EXISTING_PORTS"
+    fi
+
+    # Volume mounts
+    EXISTING_VOLUMES=$(docker inspect $SOURCE_CONTAINER --format '{{range .Mounts}}-v {{if eq .Type "volume"}}{{.Name}}{{else}}{{.Source}}{{end}}:{{.Destination}}{{if not .RW}}:ro{{end}} {{end}}')
+    if [[ $? -ne 0 ]]; then
+        echo "ERROR: Failed to capture volumes from $SOURCE_CONTAINER"
+        exit 1
+    fi
+
+    # Network
+    EXISTING_NETWORK=$(docker inspect $SOURCE_CONTAINER --format '{{.HostConfig.NetworkMode}}')
+    if [[ $? -ne 0 ]]; then
+        echo "ERROR: Failed to capture network from $SOURCE_CONTAINER"
+        exit 1
+    fi
+
+    # Static IP address (if set)
+    EXISTING_IP=$(docker inspect $SOURCE_CONTAINER --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')
+    if [[ -n "$EXISTING_IP" ]]; then
+        EXISTING_IP_FLAG="--ip $EXISTING_IP"
+        echo "  Captured static IP: $EXISTING_IP"
+    else
+        EXISTING_IP_FLAG=""
+    fi
+
+    # MAC address (if set)
+    EXISTING_MAC=$(docker inspect $SOURCE_CONTAINER --format '{{.NetworkSettings.MacAddress}}')
+    if [[ -n "$EXISTING_MAC" ]]; then
+        EXISTING_MAC_FLAG="--mac-address $EXISTING_MAC"
+        echo "  Captured MAC address: $EXISTING_MAC"
+    else
+        EXISTING_MAC_FLAG=""
+    fi
+
+    # Restart policy
+    EXISTING_RESTART=$(docker inspect $SOURCE_CONTAINER --format '{{.HostConfig.RestartPolicy.Name}}')
+    if [[ $? -ne 0 ]]; then
+        echo "ERROR: Failed to capture restart policy from $SOURCE_CONTAINER"
+        exit 1
+    fi
+
+    echo "  OK Settings captured successfully"
+else
+    echo "  No existing container found - using defaults"
+    EXISTING_ENV=""
+    EXISTING_PORTS="-p 8080:8080 -p 8877:8877 -p 11886:11886/udp -p 11889:11889/udp"
+    EXISTING_VOLUMES="-v ddpoker_data:/data"
+    EXISTING_NETWORK="bridge"
+    EXISTING_RESTART="unless-stopped"
+    EXISTING_IP_FLAG=""
+    EXISTING_MAC_FLAG=""
+fi
 
 echo ""
-echo "Removing existing container (if exists)..."
-docker rm $ContainerName 2>/dev/null || echo "  (container does not exist)"
+echo "Stopping and removing existing containers..."
+
+# Stop and remove DDPoker-Local if it exists
+if docker inspect CONTAINER_NAME_PLACEHOLDER &>/dev/null; then
+    echo "  Stopping CONTAINER_NAME_PLACEHOLDER..."
+    docker stop CONTAINER_NAME_PLACEHOLDER 2>/dev/null || echo "    (already stopped)"
+    echo "  Removing CONTAINER_NAME_PLACEHOLDER..."
+    docker rm CONTAINER_NAME_PLACEHOLDER
+fi
+
+# Stop production DDPoker (avoid port conflicts, keep it stopped)
+if docker inspect DDPoker &>/dev/null; then
+    echo "  Stopping production DDPoker container..."
+    docker stop DDPoker 2>/dev/null || echo "    (already stopped)"
+    echo "    Production container will remain stopped"
+fi
 
 echo ""
-echo "Starting new container..."
+echo "Starting CONTAINER_NAME_PLACEHOLDER container..."
 docker run -d \
-  --name $ContainerName \
-  -p 8080:8080 \
-  -p 8877:8877 \
-  -p 11886:11886/udp \
-  -p 11889:11889/udp \
-  -v ddpoker_data:/data \
-  --restart unless-stopped \
-  $ImageName`:$ImageTag
+  --name CONTAINER_NAME_PLACEHOLDER \
+  --net=$EXISTING_NETWORK \
+  $EXISTING_IP_FLAG \
+  $EXISTING_MAC_FLAG \
+  $EXISTING_ENV \
+  $EXISTING_PORTS \
+  $EXISTING_VOLUMES \
+  --restart=$EXISTING_RESTART \
+  --label net.unraid.docker.managed=dockerman \
+  --label net.unraid.docker.icon="https://raw.githubusercontent.com/JoshuaABeard/DDPoker/main/unraid/icons/ddpoker.png" \
+  --label net.unraid.docker.webui="http://[IP]:[PORT:8080]" \
+  joshuaabeard/ddpoker:local-dev
 
 echo ""
 echo "Waiting for container to start..."
@@ -466,23 +567,35 @@ sleep 3
 
 echo ""
 echo "Container status:"
-docker ps --filter name=$ContainerName --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+docker ps --filter name=CONTAINER_NAME_PLACEHOLDER --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+echo ""
+echo "Production container status:"
+docker ps -a --filter name=DDPoker --format "table {{.Names}}\t{{.Status}}"
 
 echo ""
 echo "Recent logs:"
-docker logs --tail=20 $ContainerName
+docker logs --tail=20 CONTAINER_NAME_PLACEHOLDER
 
 echo ""
-echo "✓ Deployment complete!"
+echo "OK Deployment complete!"
+echo ""
+echo "  CONTAINER_NAME_PLACEHOLDER: Running with joshuaabeard/ddpoker:local-dev"
+echo "  DDPoker: Stopped (production container)"
 echo ""
 echo "Access the server at:"
-echo "  Web UI:     http://$UnraidHost:8080/online"
-echo "  Game Server: $UnraidHost:8877"
+echo "  Web UI:     http://UNRAID_HOST_PLACEHOLDER:8080/online"
+echo "  Game Server: UNRAID_HOST_PLACEHOLDER:8877"
 echo ""
 echo "To view live logs:"
-echo "  docker logs -f $ContainerName"
+echo "  docker logs -f CONTAINER_NAME_PLACEHOLDER"
 echo ""
-"@
+'@
+
+# Substitute PowerShell variables into bash script
+$deployScript = $deployScript -replace 'CONTAINER_NAME_PLACEHOLDER', $ContainerName
+$deployScript = $deployScript -replace 'UNRAID_TAR_PATH_PLACEHOLDER', $UNRAID_TAR_PATH
+$deployScript = $deployScript -replace 'UNRAID_HOST_PLACEHOLDER', $UnraidHost
 
 # Execute deployment script on Unraid
 $deployScript | & ssh "$UnraidUser@$UnraidHost" "bash -s"
@@ -495,14 +608,18 @@ Write-Host "============================================================" -Foreg
 Write-Host "Deployment Complete!" -ForegroundColor Green
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Your DDPoker server is now running on Unraid at:" -ForegroundColor Yellow
-Write-Host "  Web Interface: http://$UnraidHost:8080/online" -ForegroundColor White
-Write-Host "  Game Server:   $UnraidHost:8877" -ForegroundColor White
+Write-Host "Your DDPoker LOCAL DEV server is now running on Unraid:" -ForegroundColor Yellow
+Write-Host "  Container:     $ContainerName" -ForegroundColor White
+Write-Host "  Image:         joshuaabeard/ddpoker:local-dev" -ForegroundColor White
+Write-Host "  Web Interface: http://${UnraidHost}:8080/online" -ForegroundColor White
+Write-Host "  Game Server:   ${UnraidHost}:8877" -ForegroundColor White
+Write-Host ""
+Write-Host "Production container (DDPoker) is STOPPED" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Yellow
-Write-Host "  1. Configure your client to connect to $UnraidHost:8877" -ForegroundColor White
-Write-Host "  2. View live logs: ssh $UnraidUser@$UnraidHost 'docker logs -f $ContainerName'" -ForegroundColor White
-Write-Host "  3. Monitor status: ssh $UnraidUser@$UnraidHost 'docker ps'" -ForegroundColor White
+Write-Host "  1. Configure your client to connect to ${UnraidHost}:8877" -ForegroundColor White
+Write-Host "  2. View live logs: ssh $UnraidUser@${UnraidHost} 'docker logs -f $ContainerName'" -ForegroundColor White
+Write-Host "  3. Monitor status: ssh $UnraidUser@${UnraidHost} 'docker ps'" -ForegroundColor White
 Write-Host ""
 
 # ============================================================
@@ -512,7 +629,7 @@ Write-Host ""
 if (-not $KeepTar) {
     Write-Host "Cleaning up local tar file..." -ForegroundColor Gray
     Remove-Item $LOCAL_TAR_PATH -Force
-    Write-Host "✓ Local cleanup complete" -ForegroundColor Green
+    Write-Host "OK Local cleanup complete" -ForegroundColor Green
     Write-Host ""
     Write-Host "Note: Tar file kept on Unraid at: $UNRAID_TAR_PATH" -ForegroundColor Gray
     Write-Host "      (delete manually if needed)" -ForegroundColor Gray
