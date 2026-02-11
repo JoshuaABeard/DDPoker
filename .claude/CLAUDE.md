@@ -103,3 +103,56 @@ After implementing:
 - ✅ All existing tests still pass
 - ✅ Code coverage meets thresholds (65% minimum)
 - ✅ build completes with zero warnings
+
+## 6. Private Information Check Before Committing
+
+**ALWAYS review files for private information before committing to the public repository.**
+
+### What to Check For:
+Before committing any file, scan for:
+- ❌ **Private IP addresses** (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+- ❌ **Specific domain names** (personal domains, company domains)
+- ❌ **Server hostnames** (actual server names)
+- ❌ **Credentials** (passwords, API keys, tokens, SSH keys)
+- ❌ **Email addresses** (personal emails)
+- ❌ **File paths with usernames** (C:\Users\John\...)
+- ❌ **Database connection strings** (with real hosts/passwords)
+- ❌ **Network details** (MAC addresses, specific network configs)
+
+### Safe Alternatives:
+Use placeholders and generic examples:
+- ✅ `YOUR_IP_HERE`, `YOUR_DOMAIN`, `example.com`
+- ✅ Container names: `DDPoker`, `swag`, `database`
+- ✅ Environment variables: `${DATABASE_URL}`, `${API_KEY}`
+- ✅ Generic paths: `/data`, `/config`, relative paths
+- ✅ Localhost references: `localhost`, `127.0.0.1`
+- ✅ Documentation IPs: `192.0.2.x` (RFC 5737), `example.com`
+
+### Workflow:
+When asked to commit files:
+1. **List files** being committed
+2. **Review each file** for private information
+3. **Present findings** to user clearly:
+   - ✅ "File X is SAFE - no private info"
+   - ❌ "File Y contains: IP 192.168.1.50 on line 23"
+4. **Wait for approval** if any issues found
+5. **Proceed with commit** only after user confirms
+
+### Common File Types to Review Carefully:
+- Configuration files (`.conf`, `.env`, `.yaml`, `.json`)
+- Scripts (`.sh`, `.ps1`, `.bat`)
+- Docker files (`Dockerfile`, `docker-compose.yml`)
+- Templates (Unraid `.xml`, Kubernetes manifests)
+- Documentation with examples (`README.md`, setup guides)
+
+### Example Review:
+```
+## Privacy Check for: swag/ddpoker.conf
+
+✅ SAFE - Uses container name `DDPoker` instead of IP
+✅ SAFE - Uses wildcard domain `ddpoker.*`
+✅ SAFE - No credentials found
+✅ SAFE - Standard port 8080 (generic)
+
+Ready to commit.
+```
