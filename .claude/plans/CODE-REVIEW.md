@@ -297,6 +297,36 @@ private String ddMessage = null;  // Should be volatile
 
 ---
 
+## P3: Minor Cleanup
+
+### CLEANUP-1: Replace Unprofessional Comment
+**File:** `Utils.java` (line 89)
+**Issue:** Comment says "GAH! this code is crap".
+**Fix:** Replace with a specific issue description or delete.
+
+---
+
+### CLEANUP-2: CSV Parser Error Handling
+**File:** `CSVParser.java` (line 110)
+**Issue:** TODO says "ERROR CONDITION - what to do?"
+**Fix:** Implement proper error handling (throw exception or log).
+
+---
+
+### CLEANUP-3: FileChooserDialog "Pick File" Mode
+**File:** `FileChooserDialog.java` (line 52)
+**Issue:** Designed primarily for "save as" — "pick file" mode needs work. Workaround exists in DeckProfile.
+**Fix:** Implement proper "pick file" mode or document the workaround.
+
+---
+
+### CLEANUP-4: Tab Focus in Help Table
+**File:** `Help.java` (line 153)
+**Issue:** Tab key doesn't change focus between UI elements in help table. Minor accessibility issue.
+**Fix:** Implement proper focus traversal.
+
+---
+
 ## P3: Enhancements (nice-to-have)
 
 ### ENHANCE-1: Add Metrics/Monitoring
@@ -313,6 +343,18 @@ ServletContextListener, flush queues, close resources, save in-progress games.
 
 ---
 
+## Design Notes (keep in code, do not remove)
+
+These TODO comments document design decisions and should remain in the codebase:
+
+1. **Bet Validation Context** (`PlayerAction.java:63`) — explains complexity of bet validation logic
+2. **Window Resize Timing** (`GameContext.java:322`) — documents timing constraint in UI initialization
+3. **Online Player Limit** (`TournamentProfile.java:76`) — documents capacity planning decision (`MAX_ONLINE_PLAYERS = 30`)
+4. **ZIP Precision Loss** (`ZipUtil.java:85,101,123`) — documents limitation in timestamp handling
+5. **XML Escaping** (`XMLWriter.java:248,273`) — notes potential issue with special characters
+
+---
+
 ## Summary
 
 | Priority | Category | Count |
@@ -323,8 +365,9 @@ ServletContextListener, flush queues, close resources, save in-progress games.
 | P2 | Technical debt | 5 |
 | P2 | TODO items | 5 |
 | BE | Big effort (separate plans) | 5 |
+| P3 | Minor cleanup | 4 |
 | P3 | Enhancements | 4 |
-| | **Total** | **36** |
+| | **Total** | **40** |
 
 ## Verification
 
