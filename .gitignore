@@ -25,6 +25,10 @@ installer/builds
 # Docker local overrides (contains secrets)
 docker-compose.override.yml
 
+# Docker deployment artifacts
+docker/*.tar
+*.tar
+
 # Temporary test files
 DDPoker-latest.jar
 test-client*.bat
