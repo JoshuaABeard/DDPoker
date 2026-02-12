@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -38,17 +38,13 @@ import jakarta.persistence.*;
 import java.util.Date;
 
 /**
- * Created by IntelliJ IDEA.
- * User: donohoe
- * Date: Mar 15, 2008
- * Time: 4:43:04 PM
+ * Created by IntelliJ IDEA. User: donohoe Date: Mar 15, 2008 Time: 4:43:04 PM
  * <p/>
  * An upgraded key
  */
 @Entity
 @Table(name = "upgraded_key")
-public class UpgradedKey implements BaseModel<Long>
-{
+public class UpgradedKey implements BaseModel<Long> {
     @Id()
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "upg_id", nullable = false)
@@ -68,53 +64,43 @@ public class UpgradedKey implements BaseModel<Long>
     @Temporal(TemporalType.TIMESTAMP)
     private Date modifyDate;
 
-    public Long getId()
-    {
+    public Long getId() {
         return id;
     }
 
-    public void setId(Long id)
-    {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public String getLicenseKey()
-    {
+    public String getLicenseKey() {
         return licenseKey;
     }
 
-    public void setLicenseKey(String licenseKey)
-    {
+    public void setLicenseKey(String licenseKey) {
         this.licenseKey = licenseKey;
     }
 
-    public int getCount()
-    {
+    public int getCount() {
         return count;
     }
 
-    public void setCount(int count)
-    {
+    public void setCount(int count) {
         this.count = count;
     }
 
-    public Date getCreateDate()
-    {
+    public Date getCreateDate() {
         return createDate;
     }
 
-    public void setCreateDate(Date createDate)
-    {
+    public void setCreateDate(Date createDate) {
         this.createDate = createDate;
     }
 
-    public Date getModifyDate()
-    {
+    public Date getModifyDate() {
         return modifyDate;
     }
 
-    public void setModifyDate(Date modifyDate)
-    {
+    public void setModifyDate(Date modifyDate) {
         this.modifyDate = modifyDate;
     }
 
@@ -122,8 +108,7 @@ public class UpgradedKey implements BaseModel<Long>
      * Auto set create/modify date on insert
      */
     @PrePersist
-    private void onInsert()
-    {
+    private void onInsert() {
         setCreateDate(new Date());
         setModifyDate(new Date());
     }
@@ -132,8 +117,7 @@ public class UpgradedKey implements BaseModel<Long>
      * Auto set modify date on update
      */
     @PreUpdate
-    private void onUpdate()
-    {
+    private void onUpdate() {
         setModifyDate(new Date());
     }
 
@@ -141,10 +125,11 @@ public class UpgradedKey implements BaseModel<Long>
      * override equals - uses license key for equality
      */
     @Override
-    public boolean equals(Object o)
-    {
-        if (this == o) return true;
-        if (!(o instanceof UpgradedKey)) return false;
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (!(o instanceof UpgradedKey))
+            return false;
         final UpgradedKey other = (UpgradedKey) o;
         return this.getLicenseKey().equals(other.getLicenseKey());
     }
@@ -153,8 +138,7 @@ public class UpgradedKey implements BaseModel<Long>
      * override hashcode
      */
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         String sKey = getLicenseKey();
         return sKey == null ? super.hashCode() : sKey.hashCode();
     }

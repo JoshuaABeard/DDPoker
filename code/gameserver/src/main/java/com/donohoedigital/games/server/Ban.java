@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -52,8 +52,7 @@ import java.util.*;
 /**
  * @author Doug Donohoe
  */
-public class Ban
-{
+public class Ban {
     // logging
     private static Logger logger = LogManager.getLogger(Ban.class);
 
@@ -67,10 +66,8 @@ public class Ban
     /**
      * Implements command line application interface.
      */
-    private static class BanApp extends BaseCommandLineApp
-    {
-        private BanApp(String sConfigName, String[] args)
-        {
+    private static class BanApp extends BaseCommandLineApp {
+        private BanApp(String sConfigName, String[] args) {
             // init app (this parses the args)
             super(sConfigName, args);
         }
@@ -79,8 +76,7 @@ public class Ban
          * our specific options
          */
         @Override
-        protected void setupApplicationCommandLineOptions()
-        {
+        protected void setupApplicationCommandLineOptions() {
             CommandLine.addStringOption(OPTION_KEY, null);
             CommandLine.setDescription(OPTION_KEY, "item to ban", "key or email or profile name");
             CommandLine.setRequired(OPTION_KEY);
@@ -96,29 +92,23 @@ public class Ban
     /**
      * Run analyzer
      */
-    public static void main(String[] args)
-    {
-        try
-        {
+    public static void main(String[] args) {
+        try {
             // Create app to parse command line options
             BanApp info = new BanApp("servertools", args);
 
             logger.info("Ban initializing, params: " + Utils.toString(args, " "));
 
             // create application context
-            try (ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("app-context-gameserver.xml"))
-            {
+            try (ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext(
+                    "app-context-gameserver.xml")) {
                 // get the analyzer bean and run it
                 Ban app = (Ban) ctx.getBean("banApp");
                 app.initAndRun(info.getCommandLineOptions());
             }
-        }
-        catch (ApplicationError ae)
-        {
+        } catch (ApplicationError ae) {
             logger.error("Ban ending due to ApplicationError: " + ae.toString(), ae);
-        }
-        catch (Throwable t)
-        {
+        } catch (Throwable t) {
             logger.error("Ban ending due to unexpected error", t);
         }
 
@@ -128,28 +118,22 @@ public class Ban
     /**
      * Initialize options and then run the analyzer
      */
-    public void initAndRun(TypedHashMap htOptions)
-    {
+    public void initAndRun(TypedHashMap htOptions) {
         // get params
         String key = htOptions.getString(OPTION_KEY);
         String comment = htOptions.getString(OPTION_COMMENT);
         String date = htOptions.getString(OPTION_UNTIL);
         Date realDate = null;
-        try
-        {
-            if (date != null)
-            {
+        try {
+            if (date != null) {
                 realDate = new SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(date);
             }
-        }
-        catch (ParseException e)
-        {
+        } catch (ParseException e) {
             CommandLine.exitWithError(e.getMessage());
         }
 
         // make sure not banned
-        if (bannedService.isBanned(key))
-        {
+        if (bannedService.isBanned(key)) {
             logger.info("Key already banned: " + key);
             System.exit(0);
         }
@@ -157,22 +141,20 @@ public class Ban
         BannedKey banthis = new BannedKey();
         banthis.setKey(key);
         banthis.setComment(comment);
-        if (realDate != null) banthis.setUntil(realDate);
+        if (realDate != null)
+            banthis.setUntil(realDate);
         bannedService.saveBannedKey(banthis);
 
         logger.info(key + " banned, id=" + banthis.getId() + ", comment=" + comment + ", date=" + realDate);
     }
 
-    public BannedKeyService getBannedService()
-    {
+    public BannedKeyService getBannedService() {
         return bannedService;
     }
 
     @Autowired
-    public void setBannedService(BannedKeyService bannedService)
-    {
+    public void setBannedService(BannedKeyService bannedService) {
         this.bannedService = bannedService;
     }
-
 
 }
