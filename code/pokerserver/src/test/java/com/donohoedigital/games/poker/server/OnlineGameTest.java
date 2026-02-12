@@ -80,28 +80,28 @@ class OnlineGameTest {
         assertThat(newGame.getId()).isNotNull();
 
         OnlineGame fetch = dao.get(newGame.getId());
-        assertThat(fetch.getLicenseKey()).isEqualTo(newGame.getLicenseKey());
+        assertThat(fetch.getUrl()).isEqualTo(newGame.getUrl());
 
-        String key = "1111-1111-1111-1111";
-        newGame.setLicenseKey(key);
+        String url = "poker://192.1.1.100:11885/n-999/password";
+        newGame.setUrl(url);
         dao.update(newGame);
 
         OnlineGame updated = dao.get(newGame.getId());
-        assertThat(updated.getLicenseKey()).isEqualTo(key);
+        assertThat(updated.getUrl()).isEqualTo(url);
     }
 
     @Test
     @Rollback
-    void should_FindGame_When_SearchingByKeyAndUrl() {
+    void should_FindGame_When_SearchingByUrl() {
         OnlineGame newGame = PokerTestData.createOnlineGame("shouldPersist", 1, "XXX-333");
         dao.save(newGame);
 
-        OnlineGame fetch = dao.getByKeyAndUrl(newGame.getLicenseKey(), newGame.getUrl());
+        OnlineGame fetch = dao.getByUrl(newGame.getUrl());
 
         assertThat(fetch).isNotNull();
         assertThat(fetch.getId()).isEqualTo(newGame.getId());
 
-        fetch = dao.getByKeyAndUrl(newGame.getLicenseKey(), newGame.getUrl() + "/EXTRA");
+        fetch = dao.getByUrl(newGame.getUrl() + "/EXTRA");
         assertThat(fetch).isNull();
     }
 

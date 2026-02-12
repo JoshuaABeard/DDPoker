@@ -189,7 +189,7 @@ public class PokerServlet extends EngineServlet {
     public static String banCheck(BannedKeyService banService, OnlineProfile profile) {
         if (profile == null)
             return null;
-        BannedKey ban = banService.getIfBanned(profile.getLicenseKey(), profile.getEmail(), profile.getName());
+        BannedKey ban = banService.getIfBanned(profile.getEmail(), profile.getName());
         if (ban != null) {
             return getAndLogBanMessage(ban, profile);
         }
@@ -476,10 +476,6 @@ public class PokerServlet extends EngineServlet {
             resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
             resMsg.setApplicationErrorMessage(PropertyConfig
                     .getStringProperty(before3 ? "msg.wanprofile.missing" : "msg.wanprofile.authfailed3"));
-        } else if (!profile.isActivated()) {
-            // Profile is not activated, so report an error.
-            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
-            resMsg.setApplicationErrorMessage(PropertyConfig.getStringProperty("msg.wanprofile.notactivated"));
         } else {
             onlineGameService.saveOnlineGame(game);
 
@@ -678,7 +674,6 @@ public class PokerServlet extends EngineServlet {
         // ban check - ignore name
         OnlineProfile banCheck = new OnlineProfile();
         banCheck.setEmail(profile.getEmail());
-        banCheck.setLicenseKey(profile.getLicenseKey());
         resMsg = banCheck(banCheck);
         if (resMsg != null)
             return resMsg.getData();
@@ -697,9 +692,7 @@ public class PokerServlet extends EngineServlet {
                 // Generate a password and UUID and set values.
                 String generatedPassword = onlineProfileService.generatePassword();
                 onlineProfileService.hashAndSetPassword(profile, generatedPassword);
-                profile.setLicenseKey(ddreceived.getKey());
                 profile.setUuid(UUID.randomUUID().toString());
-                profile.setActivated(false);
 
                 // Insert the database record - returns false if it is a duplicate
                 if (onlineProfileService.saveOnlineProfile(profile)) {
@@ -755,8 +748,8 @@ public class PokerServlet extends EngineServlet {
         // XXX case (change email for new profile)
         if (profileToUpdate == null && profile.getPassword() == null) {
             profileToUpdate = onlineProfileService.getOnlineProfileByName(profile.getName());
-            // ignore already activated (suspicious!) or retired profiles
-            if (profileToUpdate != null && (profileToUpdate.isActivated() || profileToUpdate.isRetired())) {
+            // ignore retired profiles
+            if (profileToUpdate != null && profileToUpdate.isRetired()) {
                 profileToUpdate = null;
             }
         }
@@ -776,7 +769,6 @@ public class PokerServlet extends EngineServlet {
                 String generatedPassword = onlineProfileService.generatePassword();
                 profileToUpdate.setEmail(profile.getEmail());
                 onlineProfileService.hashAndSetPassword(profileToUpdate, generatedPassword);
-                profileToUpdate.setActivated(false);
 
                 // save changes
                 onlineProfileService.updateOnlineProfile(profileToUpdate);
@@ -842,12 +834,6 @@ public class PokerServlet extends EngineServlet {
         // Authenticate
         OnlineProfile profileToUpdate = onlineProfileService.authenticateOnlineProfile(profile);
         if (profileToUpdate != null) {
-            // set activated
-            profileToUpdate.setActivated(true);
-
-            // save changes
-            onlineProfileService.updateOnlineProfile(profileToUpdate);
-
             // Login information is valid, so report success.
             resMsg = new OnlineMessage(ddreceived.getCategory());
             resMsg.setApplicationStatusMessage(PropertyConfig.getStringProperty("msg.wanprofile.activate"));

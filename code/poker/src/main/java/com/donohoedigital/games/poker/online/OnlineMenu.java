@@ -78,7 +78,7 @@ public class OnlineMenu extends MenuPhase {
         label.setText(profileText);
         profilepanel.add(label);
 
-        label = new DDLabel((profile_.isActivated() ? "onlinemenu.enabled" : "onlinemenu.disabled"), "StartMenuSmall");
+        label = new DDLabel("onlinemenu.enabled", "StartMenuSmall");
         profilepanel.add(label);
     }
 

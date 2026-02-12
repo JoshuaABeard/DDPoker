@@ -1188,7 +1188,7 @@ public class OnlineManager implements ChatManager {
         msg.setReconnect(bReconnect);
         msg.setPlayerName(local.getName());
         msg.setPlayerDemo(false); // Demo mode removed
-        msg.setOnlineActivated(local.getProfile().isActivated());
+        msg.setOnlineActivated(true);
         msg.setPlayerProfilePath(local.getProfilePath());
         msg.setObserve(bObserve);
 

@@ -77,8 +77,6 @@ public class OnlineProfile implements BaseModel<Long> {
     public static final String PROFILE_CREATE_DATE = "profilecreatedate";
     public static final String PROFILE_MODIFY_DATE = "profilemodifydate";
     public static final String PROFILE_RETIRED = "profileretired";
-    public static final String PROFILE_ACTIVATED = "profileactivated";
-    public static final String PROFILE_LICENSE_KEY = "profilelicensekey";
 
     /**
      * Creates an uninitialized instance of OnlineProfile
@@ -247,51 +245,4 @@ public class OnlineProfile implements BaseModel<Long> {
     // License key and activation stubs (removed in Community Edition)
     // ===================================================================
 
-    /**
-     * Returns the license key. Always returns null in Community Edition - license
-     * keys are not used.
-     *
-     * @deprecated License functionality removed in Community Edition
-     */
-    @Deprecated
-    @Column(name = "wpr_license_key", nullable = true, length = 19)
-    public String getLicenseKey() {
-        // Always return null - license keys not used in Community Edition
-        return null;
-    }
-
-    /**
-     * Sets the license key (no-op in Community Edition). This method exists only
-     * for backward compatibility and does nothing.
-     *
-     * @deprecated License functionality removed in Community Edition
-     */
-    @Deprecated
-    public void setLicenseKey(String key) {
-        // No-op - don't store license keys in Community Edition
-    }
-
-    /**
-     * Returns whether this profile is activated. Always returns true in Community
-     * Edition - all profiles are activated.
-     *
-     * @deprecated Activation functionality removed in Community Edition
-     */
-    @Deprecated
-    @Column(name = "wpr_is_activated", nullable = false)
-    public boolean isActivated() {
-        // Always return true - all profiles activated in Community Edition
-        return true;
-    }
-
-    /**
-     * Sets whether this profile is activated (no-op in Community Edition). This
-     * method exists only for backward compatibility and does nothing.
-     *
-     * @deprecated Activation functionality removed in Community Edition
-     */
-    @Deprecated
-    public void setActivated(boolean activated) {
-        // No-op - all profiles always activated in Community Edition
-    }
 }

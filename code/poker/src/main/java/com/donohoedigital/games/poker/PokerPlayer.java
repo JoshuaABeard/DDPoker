@@ -195,7 +195,7 @@ public class PokerPlayer extends GamePlayer {
         if (profile_ != profile) {
             profile_ = profile;
             if (profile_ != null) {
-                setOnlineActivated(profile_.isActivated());
+                setOnlineActivated(true);
                 setName(profile.getName());
 
                 File file = profile_.getFile();

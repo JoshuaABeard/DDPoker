@@ -94,7 +94,7 @@ public class History extends OnlinePokerPage {
     @SpringBean
     private TournamentHistoryService histService;
 
-    private static final PokerUser error = new PokerUser(-1L, "error", null, "error@error.err", false);
+    private static final PokerUser error = new PokerUser(-1L, "error", "error@error.err", false);
 
     /**
      * Default page - use logged in user

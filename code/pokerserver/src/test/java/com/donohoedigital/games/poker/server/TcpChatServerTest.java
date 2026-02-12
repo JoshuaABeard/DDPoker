@@ -701,15 +701,12 @@ class TcpChatServerTest {
     private void setupValidProfile(String name, String key) {
         OnlineProfile profile = new OnlineProfile();
         profile.setName(name);
-        profile.setLicenseKey(key);
         profile.setPassword("hashed-password-" + name);
-        profile.setActivated(true);
         profile.setCreateDate(new Date());
         profile.setEmail(name.toLowerCase() + "@example.com");
 
         when(mockProfileService.getOnlineProfileByName(name)).thenReturn(profile);
         when(mockProfileService.getAllOnlineProfilesForEmail(anyString(), anyString())).thenReturn(new ArrayList<>());
-        when(mockBannedKeyService.isBanned(key)).thenReturn(false);
     }
 
     /**
@@ -721,14 +718,14 @@ class TcpChatServerTest {
         // Create auth data
         DMTypedHashMap authData = new DMTypedHashMap();
         authData.setString(OnlineProfile.PROFILE_NAME, profileName);
-        authData.setString(OnlineProfile.PROFILE_LICENSE_KEY, licenseKey);
+        // Note: PROFILE_LICENSE_KEY removed - no longer used for authentication
         authData.setString(OnlineProfile.PROFILE_PASSWORD, "hashed-password-" + profileName);
         hello.setWanAuth(authData);
 
         // Create player info
         OnlinePlayerInfo playerInfo = new OnlinePlayerInfo();
         playerInfo.setName(profileName);
-        playerInfo.setPlayerId("public-" + licenseKey);
+        playerInfo.setPlayerId("public-" + profileName);
         hello.setPlayerInfo(playerInfo);
 
         // Set version

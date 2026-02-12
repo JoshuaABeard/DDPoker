@@ -470,7 +470,7 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
      */
     private boolean validateProfile() {
         // no need to do anything if not already online activated
-        if (!profile_.isActivated()) {
+        if (false) {
             return true;
         }
 
@@ -520,7 +520,6 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
 
     protected void resetProfile() {
         profile_.setPassword(null);
-        profile_.setActivated(false);
         profile_.save();
     }
 }

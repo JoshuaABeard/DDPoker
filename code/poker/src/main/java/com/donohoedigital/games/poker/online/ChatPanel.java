@@ -317,11 +317,6 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
     }
 
     private void addLobbyButton(DDPanel buttonbase) {
-        // don't add button if not online-activated
-        PlayerProfile profile = PlayerProfileOptions.getDefaultProfile();
-        if (!profile.isActivated())
-            return;
-
         GlassButton lobby = new GlassButton("chat.lobby", "Glass");
         lobby.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {

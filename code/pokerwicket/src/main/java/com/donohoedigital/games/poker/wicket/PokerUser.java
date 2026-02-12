@@ -47,18 +47,16 @@ public class PokerUser implements Serializable {
 
     private Long id;
     private String name;
-    private String licenseKey;
     private String email;
     private boolean retired;
     private boolean authenticated;
 
     public PokerUser(OnlineProfile profile) {
-        this(profile.getId(), profile.getName(), profile.getLicenseKey(), profile.getEmail(), profile.isRetired());
+        this(profile.getId(), profile.getName(), profile.getEmail(), profile.isRetired());
     }
 
-    public PokerUser(Long id, String name, String licenseKey, String email, boolean retired) {
+    public PokerUser(Long id, String name, String email, boolean retired) {
         this.id = id;
-        this.licenseKey = licenseKey;
         this.name = name;
         this.email = email;
         this.retired = retired;
@@ -70,14 +68,6 @@ public class PokerUser implements Serializable {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public String getLicenseKey() {
-        return licenseKey;
-    }
-
-    public void setLicenseKey(String licenseKey) {
-        this.licenseKey = licenseKey;
     }
 
     public String getName() {

@@ -66,8 +66,7 @@ public class OnlineGameList extends PagedList<OnlineGame> implements SimpleXMLEn
 
         for (int i = 0; i < size(); ++i) {
             msg = get(i);
-            sb.append("Entry #").append(i).append(" (").append(msg.getLicenseKey()).append(msg.getUrl()).append("): ")
-                    .append(msg).append('\n');
+            sb.append("Entry #").append(i).append(" (").append(msg.getUrl()).append("): ").append(msg).append('\n');
         }
         return sb.toString();
     }

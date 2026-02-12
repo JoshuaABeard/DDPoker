@@ -352,7 +352,7 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener {
         if (pp != null) {
             // set current selected profile and update stats label
             selected_ = pp;
-            String statusMsg = (pp.isActivated() ? "msg.onlinestatus.enabled" : "msg.onlinestatus.disabled");
+            String statusMsg = "msg.onlinestatus.enabled";
             statusLabel_.setText(PropertyConfig.getMessage(statusMsg));
             statusBorder_.setText(PropertyConfig.getMessage("labelborder.onlinestatus.label2", selected_.getName()));
             statusBorder_.repaint();

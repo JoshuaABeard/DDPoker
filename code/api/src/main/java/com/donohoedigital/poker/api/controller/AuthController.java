@@ -85,14 +85,14 @@ public class AuthController {
         // Lookup profile
         OnlineProfile profile = profileService.getOnlineProfileByName(username);
 
-        // Check if profile exists, is activated, and not retired
-        if (profile == null || !profile.isActivated() || profile.isRetired()) {
+        // Check if profile exists and not retired
+        if (profile == null || profile.isRetired()) {
             logger.info("Login failed for {}: profile not found or not accessible", username);
             return ResponseEntity.ok(new AuthResponse(false, "Invalid username or password"));
         }
 
         // Check if banned
-        BannedKey ban = bannedKeyService.getIfBanned(profile.getLicenseKey(), profile.getEmail(), profile.getName());
+        BannedKey ban = bannedKeyService.getIfBanned(profile.getEmail(), profile.getName());
         if (ban != null) {
             logger.info("Login failed for {}: user is banned until {}", username, ban.getUntil());
             return ResponseEntity.ok(new AuthResponse(false, "This account has been banned"));

@@ -36,7 +36,6 @@ import com.donohoedigital.db.DBUtils;
 import com.donohoedigital.db.PagedList;
 import com.donohoedigital.db.dao.impl.JpaBaseDao;
 import com.donohoedigital.games.poker.dao.OnlineProfileDao;
-import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 import com.donohoedigital.games.poker.model.OnlineProfilePurgeSummary;
 import com.donohoedigital.games.poker.model.OnlineProfileSummary;
@@ -147,12 +146,10 @@ public class OnlineProfileImplJpa extends JpaBaseDao<OnlineProfile, Long> implem
         OnlineProfile profile = getByName(dummy.getName());
         if (profile == null) {
             profile = new OnlineProfile(dummy.getName());
-            profile.setLicenseKey(PokerConstants.DUMMY_PROFILE_KEY_START + dummy.ordinal());
             profile.setUuid(java.util.UUID.randomUUID().toString());
             profile.setPassword("!!DUMMY!!");
             profile.setPasswordHash(BCrypt.hashpw("!!DUMMY!!", BCrypt.gensalt()));
             profile.setEmail("dummy-profile-" + dummy.ordinal() + "@example.com");
-            profile.setActivated(true);
 
             save(profile);
         }
@@ -170,10 +167,10 @@ public class OnlineProfileImplJpa extends JpaBaseDao<OnlineProfile, Long> implem
 
         // get profile info along with count of histories for that profile
         // using native since JPA queries are fraking impossible to write
-        Query query = entityManager.createNativeQuery(
-                "select wpr_id, wpr_license_key, wpr_name, wpr_modify_date, count(whi_profile_id) AS num "
+        Query query = entityManager
+                .createNativeQuery("select wpr_id, wpr_name, wpr_modify_date, count(whi_profile_id) AS num "
                         + "        from wan_profile left outer join wan_history on (wpr_id = whi_profile_id)"
-                        + "        group by (wpr_id)" + "        order by wpr_license_key, num desc");
+                        + "        group by (wpr_id)" + "        order by wpr_name, num desc");
         query.setFirstResult(offset);
         query.setMaxResults(pagesize);
 
@@ -189,11 +186,10 @@ public class OnlineProfileImplJpa extends JpaBaseDao<OnlineProfile, Long> implem
             OnlineProfile p = new OnlineProfile();
 
             p.setId((long) ((Integer) a[0]));
-            p.setLicenseKey((String) a[1]);
-            p.setName((String) a[2]);
-            p.setModifyDate((Date) a[3]);
+            p.setName((String) a[1]);
+            p.setModifyDate((Date) a[2]);
             sum.setOnlineProfile(p);
-            sum.setHistoryCount(((Number) a[4]).intValue());
+            sum.setHistoryCount(((Number) a[3]).intValue());
             list.add(sum);
         }
 

@@ -61,16 +61,13 @@ class OnlineGameServiceTest {
 
     @Test
     @Rollback
-    void should_ReplaceExistingGame_When_SavingDuplicateKeyAndUrl() {
-        String key = "1234-1234-1234-1234";
+    void should_ReplaceExistingGame_When_SavingDuplicateUrl() {
         OnlineGame newGame = PokerTestData.createOnlineGame("newGame", 1, "XXX-333");
-        newGame.setLicenseKey(key);
         service.saveOnlineGame(newGame);
         assertThat(newGame.getId()).isNotNull();
 
-        // create dup with same key/url, but different name
+        // create dup with same url, but different name
         OnlineGame dupGame = PokerTestData.createOnlineGame("dupGame", 1, "XXX-333");
-        dupGame.setLicenseKey(key);
         service.saveOnlineGame(dupGame);
         assertThat(dupGame.getId()).isNotEqualTo(newGame.getId());
 
@@ -80,16 +77,13 @@ class OnlineGameServiceTest {
 
     @Test
     @Rollback
-    void should_UpdateExistingGame_When_KeyAndUrlMatch() {
-        String key = "1234-1234-1234-1234";
+    void should_UpdateExistingGame_When_UrlMatches() {
         OnlineGame newGame = PokerTestData.createOnlineGame("newGame", 1, "XXX-333");
-        newGame.setLicenseKey(key);
         service.saveOnlineGame(newGame);
         assertThat(newGame.getId()).isNotNull();
 
-        // create dup with same key/url, but different name
+        // create dup with same url, but different name
         OnlineGame dupGame = PokerTestData.createOnlineGame("dupGame", 1, "XXX-333");
-        dupGame.setLicenseKey(key);
         dupGame = service.updateOnlineGame(dupGame);
         assertThat(dupGame.getId()).isEqualTo(newGame.getId());
 
@@ -101,25 +95,20 @@ class OnlineGameServiceTest {
     @Test
     @Rollback
     void should_ReturnNull_When_UpdatingNonExistentGame() {
-        String key = "1234-1234-1234-1234";
         OnlineGame newGame = PokerTestData.createOnlineGame("newGame", 1, "XXX-333");
-        newGame.setLicenseKey(key);
         newGame = service.updateOnlineGame(newGame);
         assertThat(newGame).isNull();
     }
 
     @Test
     @Rollback
-    void should_DeleteGame_When_KeyAndUrlMatch() {
-        String key = "1234-1234-1234-1234";
+    void should_DeleteGame_When_UrlMatches() {
         OnlineGame newGame = PokerTestData.createOnlineGame("newGame", 1, "XXX-333");
-        newGame.setLicenseKey(key);
         service.saveOnlineGame(newGame);
         assertThat(newGame.getId()).isNotNull();
 
-        // create dup with same key/url, but different name
+        // create dup with same url, but different name
         OnlineGame dupGame = PokerTestData.createOnlineGame("dupGame", 1, "XXX-333");
-        dupGame.setLicenseKey(key);
         service.deleteOnlineGame(dupGame);
 
         // first game should be deleted

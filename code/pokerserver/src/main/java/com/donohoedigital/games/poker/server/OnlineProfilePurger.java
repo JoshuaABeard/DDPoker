@@ -114,19 +114,19 @@ public class OnlineProfilePurger extends BaseCommandLineApp {
     private Date days_90;
     private Date days_14;
 
-    // purge list is ordered by key and history count
+    // purge list is ordered by name and history count
     private void doPurge(OnlineProfilePurgeSummary sum) {
         OnlineProfile p = sum.getOnlineProfile();
 
-        // don't process dummy profiles
-        if (sum.getOnlineProfile().getLicenseKey().startsWith(PokerConstants.DUMMY_PROFILE_KEY_START)) {
+        // don't process dummy profiles (check by name prefix)
+        if (sum.getOnlineProfile().getName().startsWith("DD Poker AI")) {
             return;
         }
 
         if (sum.getHistoryCount() == 0) {
             boolean delete = false;
-            // if last profile we saw was same key, eliminate if not used in 14 days
-            if (lastSameKey(sum)) {
+            // if last profile we saw was same email, eliminate if not used in 14 days
+            if (lastSameEmail(sum)) {
                 if (p.getModifyDate().getTime() < days_14.getTime()) {
                     logger.debug("oooo Deleting " + p.getName()
                             + " since this person has other profiles and this one not used in 14 days");
@@ -152,7 +152,7 @@ public class OnlineProfilePurger extends BaseCommandLineApp {
         }
     }
 
-    private boolean lastSameKey(OnlineProfilePurgeSummary sum) {
-        return (last != null && last.getOnlineProfile().getLicenseKey().equals(sum.getOnlineProfile().getLicenseKey()));
+    private boolean lastSameEmail(OnlineProfilePurgeSummary sum) {
+        return (last != null && last.getOnlineProfile().getEmail().equals(sum.getOnlineProfile().getEmail()));
     }
 }

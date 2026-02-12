@@ -48,7 +48,7 @@ class PokerUserTest {
         System.setProperty("settings.admin.user", "testadmin");
 
         // Create user with matching name
-        PokerUser user = new PokerUser(1L, "testadmin", "key123", "admin@test.com", false);
+        PokerUser user = new PokerUser(1L, "testadmin", "admin@test.com", false);
 
         assertThat(user.isAdmin()).isTrue();
     }
@@ -59,7 +59,7 @@ class PokerUserTest {
         System.setProperty("settings.admin.user", "testadmin");
 
         // Create user with different name
-        PokerUser user = new PokerUser(1L, "regularuser", "key123", "user@test.com", false);
+        PokerUser user = new PokerUser(1L, "regularuser", "user@test.com", false);
 
         assertThat(user.isAdmin()).isFalse();
     }
@@ -70,7 +70,7 @@ class PokerUserTest {
         System.clearProperty("settings.admin.user");
 
         // Create user
-        PokerUser user = new PokerUser(1L, "someuser", "key123", "user@test.com", false);
+        PokerUser user = new PokerUser(1L, "someuser", "user@test.com", false);
 
         assertThat(user.isAdmin()).isFalse();
     }
@@ -81,7 +81,7 @@ class PokerUserTest {
         System.setProperty("settings.admin.user", "TestAdmin");
 
         // Create user with different case
-        PokerUser user = new PokerUser(1L, "testadmin", "key123", "admin@test.com", false);
+        PokerUser user = new PokerUser(1L, "testadmin", "admin@test.com", false);
 
         assertThat(user.isAdmin()).isFalse();
     }

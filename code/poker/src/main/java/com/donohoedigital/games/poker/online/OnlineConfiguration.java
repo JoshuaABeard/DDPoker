@@ -240,7 +240,7 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
         label.setText(profileText);
         profilepanel.add(label);
 
-        label = new DDLabel((profile_.isActivated() ? "publiclist.enabled" : "publiclist.disabled"), "StartMenuSmall");
+        label = new DDLabel("publiclist.enabled", "StartMenuSmall");
         profilepanel.add(label);
 
         // add game checkbox
@@ -513,11 +513,7 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
         boolean bPub = configurePublic_.isSelected();
 
         // must be a valid online profile to list a game
-        if (profile_.isActivated()) {
-            listPublic_.setEnabled(bPub);
-        } else {
-            listPublic_.setEnabled(false);
-        }
+        listPublic_.setEnabled(bPub);
 
         pubCopy_.setEnabled(bPub);
         pubLabel_.setEnabled(bPub);

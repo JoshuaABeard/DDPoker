@@ -44,7 +44,7 @@ import java.util.*;
  * To change this template use File | Settings | File Templates.
  */
 public interface OnlineGameDao extends BaseDao<OnlineGame, Long> {
-    OnlineGame getByKeyAndUrl(String sKey, String sUrl);
+    OnlineGame getByUrl(String sUrl);
 
     OnlineGame getByTournamentHistoryId(Long id);
 
