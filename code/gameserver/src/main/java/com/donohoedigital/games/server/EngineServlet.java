@@ -464,6 +464,7 @@ public abstract class EngineServlet extends BaseServlet
                                                      EngineMessage received) throws IOException
     {
         DDByteArrayOutputStream retdata;
+        EngineMessage ret; // okay to return null message (client can handle it)
 
         // get an object unique to the game to prevent multiple requests accessing
         // game at the same time.
@@ -473,8 +474,6 @@ public abstract class EngineServlet extends BaseServlet
         {
             synchronized (lock)
             {
-                EngineMessage ret; // okay to return null message (client can handle it)\
-
                 // load game
                 try
                 {
@@ -504,12 +503,6 @@ public abstract class EngineServlet extends BaseServlet
                     }
                     else throw ae;
                 }
-
-                // Patch 2 - get message contents (then release lock, then write)
-                // need to write out message now (while game is locked)
-                // so we can return the data when game is not locked
-                retdata = new DDByteArrayOutputStream();
-                ret.write(retdata);
             }
         }
         // in finally block so this is always done
@@ -517,6 +510,11 @@ public abstract class EngineServlet extends BaseServlet
         {
             GameConfigUtils.removeGameLockingObject(lock);
         }
+
+        // Patch 3 - serialize message outside lock to improve concurrency
+        // message data is immutable once created, so safe to serialize after lock release
+        retdata = new DDByteArrayOutputStream();
+        ret.write(retdata);
 
         // we process the message here using retdata
         if (response != null)
