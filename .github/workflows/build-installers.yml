@@ -95,7 +95,7 @@ jobs:
           name: installer-${{ matrix.platform }}
           path: |
             code/poker/target/dist/${{ matrix.installer-pattern }}
-            code/poker/target/*.jar
+            code/poker/target/DDPokerCE-*.jar
           retention-days: 30
 
       # Linux only: Upload RPM as separate artifact
