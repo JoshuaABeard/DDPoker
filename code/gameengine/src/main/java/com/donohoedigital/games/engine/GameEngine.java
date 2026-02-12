@@ -79,7 +79,6 @@ public abstract class GameEngine extends BaseApp
     // shared by GameContext
     GameboardConfig gameconfig_;
     boolean bExpired_ = false;
-    private boolean bDemo_ = false;
 
     // other private stuff
     private String playerId_;
@@ -134,14 +133,6 @@ public abstract class GameEngine extends BaseApp
         // set version
         Version v = getVersion();
         DDMessage.setDefaultVersion(v);
-
-        // before DD Poker 2.0, demo was separate installer,
-        // where compiled version was set to demo.  This is
-        // no longer used with the integrated full/demo
-        // version.  Thus isDemo() should never be true at
-        // this point, but we'll leave the logic in here in
-        // case we want to build a demo-only installer again.
-        bDemo_ = v.isDemo();
 
         // set locale in version
         v.setLocale(getLocale());
@@ -363,51 +354,11 @@ public abstract class GameEngine extends BaseApp
     }
 
     /**
-     * start demo mode - cannot be un-done
-     */
-    public void setDemoMode()
-    {
-        getVersion().setDemo(true);
-        GamePlayer.setDemo();
-        setTitle();
-        defaultContext_.processPhaseNow("Demo", null);
-        bDemo_ = true;
-    }
-
-    /**
      * start headless mode - cannot be un-done
      */
     private void setHeadless()
     {
         // Headless mode initialization (no activation needed in open source)
-    }
-
-    /**
-     * for DEMO versions
-     */
-    public boolean isDemo()
-    {
-        // NOTE: not using bDemo_ flag - that is for
-        // controlling when phases can move on
-        return getVersion().isDemo();
-    }
-
-    /**
-     * demo message has been displayed
-     */
-    public void setDemoMsgDisplayed()
-    {
-        bDemo_ = false;
-    }
-
-    public boolean isBDemo()
-    {
-        return bDemo_;
-    }
-
-    public void setBDemo(boolean bDemo)
-    {
-        this.bDemo_ = bDemo;
     }
 
     /**
@@ -601,18 +552,11 @@ public abstract class GameEngine extends BaseApp
     }
 
     /**
-     * called before the TO DO phase is processed (for any subclass specific needs)
-     */
-    protected void processingTODO(GameContext context)
-    {
-    }
-
-    /**
      * set title
      */
     private void setTitle()
     {
-        frame_.setTitle(PropertyConfig.getRequiredStringProperty(isDemo() ? "msg.application.name.demo" : "msg.application.name"));
+        frame_.setTitle(PropertyConfig.getRequiredStringProperty("msg.application.name"));
         if (DebugConfig.isTestingOn())
         {
             String sTitle = frame_.getTitle() + " - Java " + System.getProperties().get("java.runtime.version");
@@ -676,9 +620,6 @@ public abstract class GameEngine extends BaseApp
     @Override
     public boolean okayToClose()
     {
-        // if registering, just go ahead and quit
-        if (defaultContext_.hasTODO()) return true;
-
         // this prompts users
         defaultContext_.processPhase("Exit"); // TODO: active context?
         return false;

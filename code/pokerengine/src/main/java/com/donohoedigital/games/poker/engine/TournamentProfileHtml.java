@@ -405,7 +405,6 @@ public class TournamentProfileHtml
         return PropertyConfig.getMessage("msg.tournamentonline",
                                          PropertyConfig.getYesNo(profile.isAllowDash()),
                                          PropertyConfig.getYesNo(profile.isFillComputer()),
-                                         PropertyConfig.getYesNo(profile.isAllowDemo()),
                                          profile.getMaxObservers(),
                                          profile.getTimeoutSeconds(),
                                          profile.getThinkBankSeconds(),

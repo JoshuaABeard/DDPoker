@@ -44,10 +44,6 @@
   <!-- PHASES  -->
   <!--         -->
 
-  <phase name="Order" class="com.donohoedigital.games.engine.Order" transient="true">
-    <param name="url" strvalue="http://www.ddpoker.com/order.html?demo"/>
-  </phase>
-
   <phase name="LaunchOnlineWebsite" class="com.donohoedigital.games.poker.LaunchOnlineWebsite" transient="true">
     <param name="url" strvalue="http://www.ddpoker.com/online"/>
     <param name="key" strvalue="msg.launchonline.confirm"/>
@@ -225,9 +221,6 @@
   </phase>
 
   <phase name="Activate" extends="StartMenu">
-  </phase>
-
-  <phase name="Demo" extends="StartMenu">
   </phase>
 
   <phase name="OnlineMenu" class="com.donohoedigital.games.poker.online.OnlineMenu" extends="Menu">

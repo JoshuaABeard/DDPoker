@@ -58,7 +58,6 @@ public class PokerNight extends BasePhase implements GameClockListener
 {
     static Logger logger = LogManager.getLogger(PokerNight.class);
 
-    public static int DEMO_MAX = 3;
     private PokerGame game_;
 
     public void start()
@@ -96,11 +95,6 @@ public class PokerNight extends BasePhase implements GameClockListener
      */
     void startClock()
     {
-        if (engine_.isDemo() && game_.getLevel() > DEMO_MAX)
-        {
-            return;
-        }
-
         game_.getGameClock().start();
     }
 
@@ -164,8 +158,6 @@ public class PokerNight extends BasePhase implements GameClockListener
                 int nMinBefore = game_.getMinChip();
                 game_.nextLevel();
 
-                boolean bDemoOver = engine_.isDemo() && game_.getLevel() >= DEMO_MAX;
-
                 if (PokerUtils.isOptionOn(PokerConstants.OPTION_CLOCK_COLOUP) &&
                     game_.getMinChip() > nMinBefore)
                 {
@@ -175,18 +167,14 @@ public class PokerNight extends BasePhase implements GameClockListener
                     if (bRebuy || bAddon) sChipRace = "<BR><BR>" + sChipRace;
                 }
 
-                if (bRebuy || bAddon || sChipRace != null || bDemoOver)
+                if (bRebuy || bAddon || sChipRace != null)
                 {
                     if (sChipRace == null) sChipRace = "";
                     stopClock();
 
                     final String sMsg;
 
-                    if (bDemoOver)
-                    {
-                        sMsg = PropertyConfig.getMessage("msg.pokernight.demo");
-                    }
-                    else if (bRebuy && bAddon)
+                    if (bRebuy && bAddon)
                     {
                         sMsg = PropertyConfig.getMessage("msg.finish.both", nLevel, sChipRace);
                     }

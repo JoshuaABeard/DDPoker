@@ -149,7 +149,7 @@ public class HoldemHand implements DataMarshal
         // Default to production mode (seed=0 uses SecureRandom)
         long seed = 0;
         GameEngine engine = GameEngine.getGameEngine();
-        if (engine != null && engine.isDemo())
+        if (engine != null && false)
         {
             // Demo mode uses deterministic seed for reproducible hands
             // game could be null from calctool

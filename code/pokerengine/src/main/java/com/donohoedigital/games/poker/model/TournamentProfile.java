@@ -111,7 +111,6 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public static final String PARAM_MINUTES = "minutes";
     public static final String PARAM_BUYIN = "buyin";
     public static final String PARAM_BUYINCHIPS = "buyinchips";
-    public static final String PARAM_DEMO = "demo";
     public static final String PARAM_SMALL = "small";
     public static final String PARAM_BIG = "big";
     public static final String PARAM_ANTE = "ante";
@@ -144,7 +143,6 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public static final String PARAM_FILL_COMPUTER = "fillai";
     public static final String PARAM_ALLOW_DASH = "allowdash";
     public static final String PARAM_ALLOW_ADVISOR = "allowadvisor";
-    public static final String PARAM_ALLOW_DEMO = "allowdemo";
     public static final String PARAM_ONLINE_ACTIVATED_ONLY = "onlineactonly";
     public static final String PARAM_THINKBANK = "thinkbank";
     public static final String PARAM_MAX_OBSERVERS = "maxobservers";
@@ -266,22 +264,6 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public long getUpdateDate()
     {
         return map_.getLong(PARAM_UPDATE, getCreateDate());
-    }
-
-    /**
-     * Set demo
-     */
-    public void setDemo(boolean b)
-    {
-        map_.setBoolean(PARAM_DEMO, b ? Boolean.TRUE : Boolean.FALSE);
-    }
-
-    /**
-     * is demo?
-     */
-    boolean isDemo()
-    {
-        return map_.getBoolean(PARAM_DEMO, false);
     }
 
     /**
@@ -618,9 +600,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
         {
             nAmount = getDefaultMinutesPerLevel();
         }
-        int nMax = MAX_MINUTES;
-        if (isDemo()) nMax = TESTING(EngineConstants.TESTING_DEMO) ? 1 : 5;
-        if (nAmount > nMax) nAmount = nMax;
+        if (nAmount > MAX_MINUTES) nAmount = MAX_MINUTES;
         return nAmount;
     }
 
@@ -1375,14 +1355,6 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public boolean isFillComputer()
     {
         return map_.getBoolean(PARAM_FILL_COMPUTER, true);
-    }
-
-    /**
-     * Get whether an online game allows demo players
-     */
-    public boolean isAllowDemo()
-    {
-        return map_.getBoolean(PARAM_ALLOW_DEMO, true);
     }
 
     /**

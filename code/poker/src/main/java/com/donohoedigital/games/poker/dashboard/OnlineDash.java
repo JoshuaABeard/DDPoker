@@ -111,12 +111,6 @@ public class OnlineDash extends DashboardItem
             {
                 public void actionPerformed(ActionEvent e)
                 {
-                    if (PokerUtils.isDemoOver(context_, player_, true) && !sitout_.isSelected())
-                    {
-                        EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.onlinedone.demo"));
-                        sitout_.setSelected(true);
-                        return;
-                    }
 
                     player_.setSittingOut(sitout_.isSelected());
                     getTD().playerUpdate(player_, player_.getOnlineSettings());
@@ -248,12 +242,6 @@ public class OnlineDash extends DashboardItem
         if (muckwin_ != null && muckwin_.isSelected() != !player_.isAskShowWinning())
         {
             muckwin_.setSelected(!player_.isAskShowWinning());
-        }
-
-        if (sitout_ != null && PokerUtils.isDemoOver(context_, player_, true))
-        {
-            sitout_.setSelected(true);
-            sitout_.setText(PropertyConfig.getMessage("checkbox.sitoutdemo.label"));
         }
     }
 }

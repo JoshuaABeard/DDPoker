@@ -58,7 +58,6 @@ public class PokerStatsPanel extends DDTabPanel
     private Hand pocket_;
     private Hand community_;
     private int mode_;
-    private boolean bDemo_;
 
     DDHtmlArea htmlArea_;
     DDHtmlArea header_;
@@ -73,7 +72,6 @@ public class PokerStatsPanel extends DDTabPanel
         super();
 
         mode_ = mode;
-        bDemo_ = GameEngine.getGameEngine().isDemo();
 
         if (player != null)
         {
@@ -177,7 +175,7 @@ public class PokerStatsPanel extends DDTabPanel
     private boolean checkRequiredCards()
     {
         String sText = null;
-        if (pocket_.size() != 2 && !(bDemo_ && (mode_ == TURN || mode_ == RIVER)))
+        if (pocket_.size() != 2)
         {
             sText = PropertyConfig.getMessage("msg.sim.needboth");
         }
@@ -190,13 +188,11 @@ public class PokerStatsPanel extends DDTabPanel
                     if (com >= 3) sText = PropertyConfig.getMessage("msg.sim.seenflop");
                     break;
                 case TURN:
-                    if (bDemo_) sText = PropertyConfig.getMessage("msg.sim.demo");
-                    else if (com <= 2) sText = PropertyConfig.getMessage("msg.sim.needflop.1");
+                    if (com <= 2) sText = PropertyConfig.getMessage("msg.sim.needflop.1");
                     else if (com == 4 || com == 5) sText = PropertyConfig.getMessage("msg.sim.seenturn");
                     break;
                 case RIVER:
-                    if (bDemo_) sText = PropertyConfig.getMessage("msg.sim.demo");
-                    else if (com <= 2) sText = PropertyConfig.getMessage("msg.sim.needflop.2");
+                    if (com <= 2) sText = PropertyConfig.getMessage("msg.sim.needflop.2");
                     else if (com == 5) sText = PropertyConfig.getMessage("msg.sim.seenriver");
                     break;
                 case LADDER:

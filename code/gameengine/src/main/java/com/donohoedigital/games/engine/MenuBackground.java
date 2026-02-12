@@ -103,18 +103,6 @@ public class MenuBackground extends DDScrollPane
         String sImageName = gamephase_.getString("menubox-background-image");
         if (sImageName != null && !"NONE".equalsIgnoreCase(sImageName))
         {
-            if (GameEngine.getGameEngine().isDemo())
-            {
-                // clear cache of old image since we won't be using it
-                // anymore
-                ImageDef id = ImageConfig.getImageDef(sImageName);
-                if (id != null)
-                {
-                    id.clearCache();
-                }
-
-                sImageName += "-demo";
-            }
             ImageComponent ic = new ImageComponent(sImageName, 1.0);
             ic.setCentered(false);
 

@@ -1234,7 +1234,7 @@ public class PokerGame extends Game implements PlayerActionListener
 
         // num seats to fill
         int nOpen = table.getNumOpenSeats();
-        boolean bDemo = GameEngine.getGameEngine().isDemo();
+        boolean bDemo = false;
 
         // randomly assign player
         PokerPlayer player;

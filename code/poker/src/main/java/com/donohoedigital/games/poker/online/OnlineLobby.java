@@ -94,7 +94,7 @@ public class OnlineLobby extends BasePhase implements ChatHandler, DDTable.Table
      */
     public static boolean showLobby(GameEngine engine, GameContext context, PlayerProfile profile)
     {
-        if (engine.isDemo())
+        if (false)
         {
             EngineUtils.displayInformationDialog(context, PropertyConfig.getMessage("msg.onlinelobby.demo"));
             return false;

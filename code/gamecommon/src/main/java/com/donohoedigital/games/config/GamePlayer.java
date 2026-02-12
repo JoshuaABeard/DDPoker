@@ -57,15 +57,6 @@ public class GamePlayer implements ObjectID
     
     /** by convention, host is 1st player added (id 0) */
     public static final int HOST_ID = 0;
-    private  static boolean DEMO = false;
-
-    /**
-     * Set in demo mode
-     */
-    public static void setDemo()
-    {
-        DEMO = true;
-    }
 
     // members
     protected int id_;
@@ -75,7 +66,6 @@ public class GamePlayer implements ObjectID
     private GameAI ai_;
     private boolean bCurrent_ = false; // used to indicate whether player is currently active
     boolean bObserver_;
-    boolean bDemo_;
 
     // transient - not saved
     private long lastOnline_ = 0; // used to indicate last time player polled server in online game
@@ -84,7 +74,6 @@ public class GamePlayer implements ObjectID
      * Empty constructor needed for demarshalling
      */
     public GamePlayer() {
-        bDemo_ = DEMO;
     }
     
     /** 
@@ -279,25 +268,6 @@ public class GamePlayer implements ObjectID
         bObserver_ = bObserver;
     }
 
-    /**
-     * Is player from a demo copy?
-     */
-    public boolean isDemo()
-    {
-        return bDemo_;
-    }
-
-    /**
-     * Set whether player is demo copy.  Only
-     * really used when creating player for online,
-     * where the remote player may or may not be
-     * a demo user.
-     */
-    public void setDemo(boolean b)
-    {
-        bDemo_ = b;
-    }
-
     ////
     //// Game save logic
     ////
@@ -324,7 +294,6 @@ public class GamePlayer implements ObjectID
         entry.addToken(bEliminated_);
         entry.addToken(bCurrent_);
         entry.addToken(bObserver_);
-        entry.addToken(bDemo_);
         entry.addToken(bDirty_);
         
         addExtraToGameStateEntry(state, entry);
@@ -361,7 +330,6 @@ public class GamePlayer implements ObjectID
         bEliminated_ = entry.removeBooleanToken();
         bCurrent_ = entry.removeBooleanToken();
         bObserver_ = entry.removeBooleanToken();
-        bDemo_ = entry.removeBooleanToken();
         boolean bDirty = entry.removeBooleanToken();
         
         // ignore bDirty flag on dirty load

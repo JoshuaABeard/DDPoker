@@ -93,11 +93,6 @@ public class MockPokerMain {
                 public List<String> getNames() {
                     return new ArrayList<>(AI_NAMES);
                 }
-
-                @Override
-                public boolean isDemo() {
-                    return false; // Tests run in full mode
-                }
             };
 
             // Use reflection to set the private static engine_ field in GameEngine

@@ -127,7 +127,6 @@
   <image name="led-yellow" location="led-yellow.png"/>
 
   <image name="pokermenu" location="pokermenu.png"/>
-  <image name="pokermenu-demo" location="pokermenu-demo.png"/>
   <image name="pokerdialog" location="pokerdialog.png"/>
   <image name="pokerbannerwintitle" location="poker-banner-wintitle.png"/>
   <image name="serverconnect" location="serverconnect.png"/>

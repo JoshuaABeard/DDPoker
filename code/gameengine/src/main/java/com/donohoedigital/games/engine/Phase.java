@@ -65,9 +65,7 @@ public interface Phase {
     public Object getResult();
     
     public Object getOnlineResult();
-    
+
     public GameStateEntry addGameStateEntry(GameState state);
-    
-    public boolean isUsedInDemo();
-    
+
 }

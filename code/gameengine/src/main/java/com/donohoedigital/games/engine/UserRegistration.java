@@ -264,18 +264,7 @@ public class UserRegistration extends BasePhase implements PropertyChangeListene
             }
             return true;
         }
-        else
-        {
-            // if other button press, process TO-DO phase if that is defined
-            // (from activation) and return false to prevent normal processing
-            if (context_.hasTODO())
-            {
-                context_.processTODO();
-                return false;
-            }
 
-        }
-        
         return true;
     }
     

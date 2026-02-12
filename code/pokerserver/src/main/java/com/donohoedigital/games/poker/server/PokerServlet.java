@@ -301,17 +301,12 @@ public class PokerServlet extends EngineServlet
     }
 
     /**
-     * allow demo users to test internet connection
+     * Demo mode removed - always validate
      */
     @Override
     protected boolean isCategoryValidated(EngineMessage received)
     {
-        if (received.getCategory() == OnlineMessage.CAT_TEST &&
-            received.getVersion().isDemo())
-        {
-            return false;
-        }
-
+        // Demo mode removed - always validate all categories
         return super.isCategoryValidated(received);
     }
 

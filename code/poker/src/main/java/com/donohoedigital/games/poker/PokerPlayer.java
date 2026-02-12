@@ -115,7 +115,6 @@ public class PokerPlayer extends GamePlayer
     private long nThinkTankAccessed_ = 0;
     private int nTimeoutMsgSent_ = 0;
     private int nPendingWin_ = 0;
-    private boolean bDemoLimit_ = false;
 
     // online transient info
     private volatile WorkerThread worker_;
@@ -183,16 +182,11 @@ public class PokerPlayer extends GamePlayer
 
         if (isHost())
         {
-            return PropertyConfig.getMessage(isDemo() ? "msg.playername.host.demo"+sExtra:
-                                             "msg.playername.host"+sExtra, getName());
+            return PropertyConfig.getMessage("msg.playername.host"+sExtra, getName());
         }
         else if (isComputer())
         {
             return PropertyConfig.getMessage("msg.playername.ai", getName());
-        }
-        else if (isDemo())
-        {
-            return PropertyConfig.getMessage("msg.playername.demo"+sExtra   , getName());
         }
         else
         {
@@ -763,22 +757,6 @@ public class PokerPlayer extends GamePlayer
     public void addChips(int n)
     {
         nChips_ += n;
-    }
-
-    /**
-     * demo limit
-     */
-    public void setDemoLimit()
-    {
-        bDemoLimit_ = true;
-    }
-
-    /**
-     * is demo limit reached?
-     */
-    public boolean isDemoLimit()
-    {
-        return bDemoLimit_;
     }
 
     // Store timeout and thinkbank in same int (so we don't have

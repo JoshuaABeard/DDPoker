@@ -66,7 +66,6 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     private boolean bStopRequested_ = false;
     private boolean bIterWayBig_;
     private GlassButton run_, stop_;
-    private boolean bDemo_;
 
     /**
      * Create showdown panel
@@ -154,21 +153,13 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
         allcombo_.addActionListener(comboListener);
 
         int nMax = 10000000;
-        bDemo_ = GameEngine.getGameEngine().isDemo();
-        numSims_ = new OptionInteger(null, "hands", STYLE, dummy, bDemo_ ? 10000 : null,
-                                     bDemo_ ? 1000 : 25000,
-                                     bDemo_ ? 10000 : nMax, -1, true);
-        numSims_.getSpinner().setValue(bDemo_ ? 10000 : nMax);
-        if (!bDemo_)
-        {
-            numSims_.getSpinner().setUseBigStep(true);
-            numSims_.getSpinner().resetPreferredSize();
-            numSims_.resetToDefault();
-        }
-        else
-        {
-            numSims_.getSpinner().setStep(1000);
-        }
+        numSims_ = new OptionInteger(null, "hands", STYLE, dummy, null,
+                                     25000,
+                                     nMax, -1, true);
+        numSims_.getSpinner().setValue(nMax);
+        numSims_.getSpinner().setUseBigStep(true);
+        numSims_.getSpinner().resetPreferredSize();
+        numSims_.resetToDefault();
         numSims_.setEnabled(true);
         numSims_.addChangeListener(this);
         simbase.add(numSims_, BorderLayout.CENTER);
@@ -196,10 +187,6 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
                 stop_.setEnabled(true);
                 if (simcombo_.isSelected())
                 {
-                    if (bDemo_)
-                    {
-                        EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.showdown.demo"));
-                    }
                     runSimulator();
                 }
                 else

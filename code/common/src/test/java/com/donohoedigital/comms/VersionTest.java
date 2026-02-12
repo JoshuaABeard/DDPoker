@@ -98,16 +98,6 @@ class VersionTest {
     }
 
     @Test
-    void should_ParseDemoFlag_When_DemoSuffixProvided() {
-        Version version = new Version("3.1.2d");
-
-        assertThat(version.getMajor()).isEqualTo(3);
-        assertThat(version.getMinor()).isEqualTo(1);
-        assertThat(version.getPatch()).isEqualTo(2);
-        assertThat(version.isDemo()).isTrue();
-    }
-
-    @Test
     void should_ParseLocale_When_LocaleSuffixProvided() {
         Version version = new Version("3.1.2_en");
 
@@ -115,19 +105,6 @@ class VersionTest {
         assertThat(version.getMinor()).isEqualTo(1);
         assertThat(version.getPatch()).isEqualTo(2);
         assertThat(version.getLocale()).isEqualTo("en");
-    }
-
-    @Test
-    void should_ParseComplexVersion_When_AllPartsProvided() {
-        Version version = new Version("3.1a5.2d_fr");
-
-        assertThat(version.getMajor()).isEqualTo(3);
-        assertThat(version.getMinor()).isEqualTo(1);
-        assertThat(version.isAlpha()).isTrue();
-        assertThat(version.getAlphaBetaVersion()).isEqualTo(5);
-        assertThat(version.getPatch()).isEqualTo(2);
-        assertThat(version.isDemo()).isTrue();
-        assertThat(version.getLocale()).isEqualTo("fr");
     }
 
     // =================================================================
@@ -200,21 +177,6 @@ class VersionTest {
         Version version = new Version("3.1b10");
 
         assertThat(version.toString()).isEqualTo("3.1b10");
-    }
-
-    @Test
-    void should_FormatComplexVersion_When_ToStringCalled() {
-        Version version = new Version("3.1a5.2d_fr");
-
-        assertThat(version.toString()).isEqualTo("3.1a5.2d_fr");
-    }
-
-    @Test
-    void should_RoundTripCorrectly_When_ParsingAndFormatting() {
-        String original = "3.1a5.2d_en";
-        Version version = new Version(original);
-
-        assertThat(version.toString()).isEqualTo(original);
     }
 
     @Test
@@ -412,14 +374,6 @@ class VersionTest {
         Version version = new Version("3.1");
 
         assertThat(version.getMajorAsString()).isEqualTo("3");
-    }
-
-    @Test
-    void should_SetDemo_When_SetDemoCalled() {
-        Version version = new Version("3.1");
-        version.setDemo(true);
-
-        assertThat(version.isDemo()).isTrue();
     }
 
     @Test

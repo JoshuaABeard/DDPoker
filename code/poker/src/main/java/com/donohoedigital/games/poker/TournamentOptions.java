@@ -223,7 +223,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
                 // create game, set home mode
                 game = new PokerGame(context_);
                 game.setClockMode(true);
-                selected_.setDemo(engine_.isDemo()); // used to limit rounds time limit
+                // Demo mode removed - no longer limits rounds
                 context_.setGame(game);
             }
             // online game

@@ -297,20 +297,4 @@ class PokerPlayerTest {
     void should_HaveNullPlayerId_When_CreatedWithoutKey() {
         assertThat(player.getPlayerId()).isNull();
     }
-
-    // =================================================================
-    // Demo Limit Tests
-    // =================================================================
-
-    @Test
-    void should_SetDemoLimit_When_DemoLimitSet() {
-        player.setDemoLimit();
-
-        assertThat(player.isDemoLimit()).isTrue();
-    }
-
-    @Test
-    void should_NotHaveDemoLimit_When_NewPlayerCreated() {
-        assertThat(player.isDemoLimit()).isFalse();
-    }
 }

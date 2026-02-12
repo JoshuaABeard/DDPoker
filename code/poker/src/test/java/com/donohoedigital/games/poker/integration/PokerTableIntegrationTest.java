@@ -35,7 +35,6 @@ import static org.assertj.core.api.Assertions.*;
  *
  * <p>These tests validate table functionality that depends on:</p>
  * <ul>
- *   <li>GameEngine.isDemo() - for button calculation and validation</li>
  *   <li>GameEngine event system - for observer registration</li>
  * </ul>
  *
@@ -91,7 +90,6 @@ class PokerTableIntegrationTest extends IntegrationTestBase {
         table.setPlayer(player2, 1);
 
         // setButton() with no args calculates button position
-        // This requires GameEngine.isDemo() for button calculation
         table.setButton();
 
         assertThat(table.getButton()).isGreaterThanOrEqualTo(0);

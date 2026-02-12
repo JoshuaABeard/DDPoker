@@ -104,7 +104,16 @@ After implementing:
 - ✅ Code coverage meets thresholds (65% minimum)
 - ✅ build completes with zero warnings
 
-## 6. Private Information Check Before Committing
+## 6. Plan Backlog Process
+
+**Plans live in `.claude/plans/`. Update them as you go.**
+
+- Plans are stored in `.claude/plans/` as Markdown files.
+- When working a plan, update it as progress is made — check off completed steps, note decisions, and record any deviations from the original approach.
+- Upon completion, document a summary of changes made in the plan.
+- After user approval, move the plan to `.claude/plans/completed/` right before the final commit of the feature.
+
+## 7. Private Information Check Before Committing
 
 **ALWAYS review files for private information before committing to the public repository.**
 

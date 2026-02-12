@@ -670,7 +670,7 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
             {
                 sKey = player.isHost() ? "msg.chat.reply":"msg.chat.private";
             }
-            else if (player.isDemo())
+            else if (false)
             {
                 sKey = player.isObserver() ? "msg.chat.demo.obs" : "msg.chat.demo";
             }

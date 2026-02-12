@@ -262,7 +262,7 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
         {
             public void actionPerformed(ActionEvent e)
             {
-                if (listPublic_.isSelected() && engine_.isDemo())
+                if (listPublic_.isSelected() && false)
                 {
                     EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.playerprofile.demo"));
                     listPublic_.setSelected(false);

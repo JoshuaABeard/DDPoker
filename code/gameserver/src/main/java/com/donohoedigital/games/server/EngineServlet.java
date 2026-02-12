@@ -388,16 +388,7 @@ public abstract class EngineServlet extends BaseServlet
             return ret;
         }
 
-        // demo version just in case
-        if (version.isDemo() && bCategoryValidated)
-        {
-            ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED,
-                                    EngineMessage.PLAYER_SERVER,
-                                    EngineMessage.CAT_APPL_ERROR);
-
-            ret.setApplicationErrorMessage(PropertyConfig.getLocalizedMessage("msg.nodemo", locale, version));
-            return ret;
-        }
+        // Demo mode removed
 
         // License key validation removed in open source version - always valid in Community Edition
         String sKey = received.getKey();
@@ -442,14 +433,12 @@ public abstract class EngineServlet extends BaseServlet
 
     /**
      * return true if message with given category should be
-     * checked for a valid key.  Default is true except
-     * for CAT_PUBLIC_IP, which is false if demo.
+     * checked for a valid key.  Demo mode removed - always validate.
      */
     protected boolean isCategoryValidated(EngineMessage received)
     {
-        return !(received.getCategory() == EngineMessage.CAT_PUBLIC_IP &&
-                 received.getVersion().isDemo());
-
+        // Demo mode removed - always validate all categories
+        return true;
     }
 
     /**

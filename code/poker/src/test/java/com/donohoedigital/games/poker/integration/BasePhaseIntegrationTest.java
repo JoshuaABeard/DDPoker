@@ -265,26 +265,6 @@ class BasePhaseIntegrationTest extends IntegrationTestBase {
     }
 
     // =================================================================
-    // Demo Mode Tests
-    // =================================================================
-
-    @Test
-    void should_ReturnTrue_When_IsUsedInDemoCalled() {
-        boolean result = phase.isUsedInDemo();
-
-        assertThat(result).isTrue();
-    }
-
-    @Test
-    void should_ReturnTrueByDefault_When_IsUsedInDemoCalledWithoutInit() {
-        TestableBasePhase newPhase = new TestableBasePhase();
-
-        boolean result = newPhase.isUsedInDemo();
-
-        assertThat(result).isTrue();
-    }
-
-    // =================================================================
     // Getter Tests
     // =================================================================
 

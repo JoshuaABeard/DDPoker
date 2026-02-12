@@ -53,7 +53,6 @@ public class Version implements DataMarshal
     private boolean bBeta_;
     private boolean bAlpha_;
     private int nAlphaBetaVersion_;
-    private boolean bDemo_;
     private String sLocale_;
     private String sSuffix_; // version suffix (e.g., "-community")
     private boolean bVerify_; // only used on client - don't send down
@@ -113,13 +112,6 @@ public class Version implements DataMarshal
         }
 
         if (endIndex == length) return;
-        bDemo_ = (c == 'd');
-        if (bDemo_)
-        {
-            if (++endIndex < length) c = s.charAt(endIndex);
-        }
-
-        if (endIndex == length) return;
         if (c == '_')
         {
             beginIndex = endIndex + 1;
@@ -164,8 +156,6 @@ public class Version implements DataMarshal
         bAlpha_ = nType == TYPE_ALPHA;
         nAlphaBetaVersion_ = nAlphaBetaVersion;
         sSuffix_ = sSuffix;
-        if (bDemo_ && (bBeta_ || bAlpha_)) throw new ApplicationError(ErrorCodes.ERROR_CODE_ERROR,
-                                                                      "Can't be demo and alpha/beta at same time", "fix code");
     }
 
     public boolean isVerify()
@@ -211,16 +201,6 @@ public class Version implements DataMarshal
     public int getAlphaBetaVersion()
     {
         return nAlphaBetaVersion_;
-    }
-
-    public void setDemo(boolean b)
-    {
-        bDemo_ = b;
-    }
-
-    public boolean isDemo()
-    {
-        return bDemo_;
     }
 
     public String getLocale()
@@ -314,7 +294,6 @@ public class Version implements DataMarshal
         nMinor_ = list.removeIntToken();
         bBeta_ = list.removeBooleanToken();
         nAlphaBetaVersion_ = list.removeIntToken();
-        bDemo_ = list.removeBooleanToken();
         nPatch_ = list.removeIntToken();
 
         // Locale (added for French, 3/3/2004)
@@ -337,7 +316,6 @@ public class Version implements DataMarshal
         list.addToken(nMinor_);
         list.addToken(bBeta_);
         list.addToken(nAlphaBetaVersion_);
-        list.addToken(bDemo_);
         list.addToken(nPatch_);
         list.addToken(sLocale_);
         list.addToken(bAlpha_);
@@ -348,8 +326,7 @@ public class Version implements DataMarshal
     public String toString()
     {
         return nMajor_ + "." + nMinor_ + (bAlpha_ | bBeta_ ? (bAlpha_ ? "a" : "b") + nAlphaBetaVersion_ : "") +
-               "." + nPatch_ +
-               (bDemo_ ? "d" : "") +
+               (nPatch_ != 0 ? "." + nPatch_ : "") +
                (sLocale_ != null ? "_" + sLocale_ : "") +
                (sSuffix_ != null ? sSuffix_ : "");
     }

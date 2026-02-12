@@ -93,7 +93,7 @@ public class JoinGame extends ListGames
         {
             public void actionPerformed(ActionEvent e)
             {
-                if (engine_.isDemo())
+                if (false)
                 {
                     EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.playerprofile.demo2"));
                 }

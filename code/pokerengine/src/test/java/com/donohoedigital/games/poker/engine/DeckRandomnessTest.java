@@ -34,12 +34,12 @@ import static org.junit.Assert.*;
 public class DeckRandomnessTest {
 
     /**
-     * Test that production mode (seed=0) produces non-deterministic shuffles
+     * Test that unseeded mode (seed=0) produces non-deterministic shuffles
      * using SecureRandom without setSeed()
      */
     @Test
-    public void testProductionModeUsesSecureRandom() {
-        // Create two decks with seed=0 (production mode)
+    public void testUnseededModeUsesSecureRandom() {
+        // Create two decks with seed=0 (unseeded mode)
         Deck deck1 = new Deck(true, 0);
         Deck deck2 = new Deck(true, 0);
 
@@ -57,11 +57,11 @@ public class DeckRandomnessTest {
     }
 
     /**
-     * Test that demo mode (seed>0) produces deterministic shuffles
+     * Test that seeded mode (seed>0) produces deterministic shuffles
      */
     @Test
-    public void testDemoModeIsDeterministic() {
-        long testSeed = 9183349L; // Demo mode seed
+    public void testSeededModeIsDeterministic() {
+        long testSeed = 9183349L; // Test seed for deterministic shuffling
 
         // Create two decks with the same seed
         Deck deck1 = new Deck(true, testSeed);
@@ -75,7 +75,7 @@ public class DeckRandomnessTest {
     }
 
     /**
-     * Test that different seeds produce different shuffles in demo mode
+     * Test that different seeds produce different shuffles in seeded mode
      */
     @Test
     public void testDifferentSeedsProduceDifferentShuffles() {
@@ -109,7 +109,7 @@ public class DeckRandomnessTest {
         for (int i = 0; i < numThreads; i++) {
             new Thread(() -> {
                 try {
-                    // Each thread creates a deck with seed=0 (production mode)
+                    // Each thread creates a deck with seed=0 (unseeded mode)
                     Deck deck = new Deck(true, 0);
                     synchronized (deckResults) {
                         deckResults.add(deck);
@@ -227,16 +227,16 @@ public class DeckRandomnessTest {
 
         // With SecureRandom, we expect at least half to have different first cards
         // (extremely conservative - actual probability is much higher)
-        assertTrue("Production mode should produce varied shuffles, got " +
+        assertTrue("Unseeded mode should produce varied shuffles, got " +
                 uniqueFirstCards + " unique first cards out of " + numDecks,
                 uniqueFirstCards >= numDecks / 2);
     }
 
     /**
-     * Test that demo mode seed 0 is treated as production mode
+     * Test that seed 0 is treated as unseeded (random) mode
      */
     @Test
-    public void testSeedZeroIsProductionMode() {
+    public void testSeedZeroIsUnseededMode() {
         Deck deck1 = new Deck(true, 0);
         Deck deck2 = new Deck(true, 0);
 
@@ -248,7 +248,7 @@ public class DeckRandomnessTest {
                 break;
             }
         }
-        assertTrue("Seed 0 should trigger production mode (SecureRandom)",
+        assertTrue("Seed 0 should trigger unseeded mode (SecureRandom)",
                 foundDifference);
     }
 }

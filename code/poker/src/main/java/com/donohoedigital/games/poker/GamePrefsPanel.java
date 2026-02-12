@@ -253,7 +253,7 @@ public class GamePrefsPanel extends DDPanel implements ActionListener
             OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_RIGHT_CLICK_ONLY, OSTYLE, map_, true), generalbasetop);
             OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_DISABLE_SHORTCUTS, OSTYLE, map_, true), generalbasetop);
 
-            if (!engine_.isDemo()) // no auto update in the demo
+            if (!false) // no auto update in the demo
             {
                 OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_AUTO_CHECK_UPDATE, OSTYLE, map_, true), generalbasetop);
             }

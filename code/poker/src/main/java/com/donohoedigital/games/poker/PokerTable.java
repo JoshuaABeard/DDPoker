@@ -980,13 +980,9 @@ public class PokerTable implements ObjectID
      */
     private void setButtonHighCard()
     {
-        // get deck, with set seed if demo
+        // get deck with random seed
         long seed = 0;
-        if (GameEngine.getGameEngine().isDemo())
-        {
-            seed = 149399;//with current seeds, causes button to be placed such that human gets AA on 1st deal
-        }
-        Deck deck = new Deck(true, seed);
+        Deck deck = new Deck(true, 0);
         
         // init
         PokerPlayer player;
@@ -1178,12 +1174,7 @@ public class PokerTable implements ObjectID
             Hand hand;
             Card card;
 
-            long seed = 0;
-            if (GameEngine.getGameEngine().isDemo())
-            {
-                seed = 94876564;
-            }
-            Deck deck = new Deck(true, seed);
+            Deck deck = new Deck(true, 0);
 
             // assign each player a card for each odd chip
             for (int i = 0; i < PokerConstants.SEATS; i++)

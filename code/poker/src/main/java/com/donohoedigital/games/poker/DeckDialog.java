@@ -83,7 +83,7 @@ public class DeckDialog extends DialogPhase implements PropertyChangeListener
         
         // Poker 1.2 - allow choosing deck regardless if user registered
         bRegistered_ = true; // UserRegistration.isRegistered();
-        if (!engine_.isDemo() && bRegistered_)
+        if (!false && bRegistered_)
         {
             DDLabel name = new DDLabel("deckimage", STYLE);
             name.setHorizontalAlignment(SwingConstants.CENTER);
@@ -105,7 +105,7 @@ public class DeckDialog extends DialogPhase implements PropertyChangeListener
         }
         else
         {
-            DDLabel name = new DDLabel(engine_.isDemo() ? "deckimagedemo" : "deckimagereg", "DisplayMessage");
+            DDLabel name = new DDLabel(false ? "deckimagedemo" : "deckimagereg", "DisplayMessage");
             base.add(name, BorderLayout.NORTH);
         }
         
@@ -127,7 +127,7 @@ public class DeckDialog extends DialogPhase implements PropertyChangeListener
     {   
         Boolean bResult = Boolean.FALSE;
         
-        if (!engine_.isDemo() && bRegistered_ && button.getName().equals(okayButton_.getName()))
+        if (!false && bRegistered_ && button.getName().equals(okayButton_.getName()))
         {
             // okay
             // copy file to save dir

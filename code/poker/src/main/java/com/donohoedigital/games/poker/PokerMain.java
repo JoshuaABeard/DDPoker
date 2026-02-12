@@ -365,14 +365,11 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
     }
 
     /**
-     * for case where we just activated, need to start P2P before we
-     * do to-do phase
+     * Initialize P2P on startup
      */
-    @Override
-    protected void processingTODO(GameContext context)
+    protected void initP2POnStartup()
     {
         initP2P();
-        super.processingTODO(context);
     }
 
     /**
@@ -403,7 +400,7 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
         /*
          * handle load
          */
-        if (!isDemo() && sFileParam_ != null)
+        if (sFileParam_ != null)
         {
             Logger log = LogManager.getLogger(PokerMain.class);
             if (sFileParam_.endsWith(GameListPanel.SAVE_EXT))

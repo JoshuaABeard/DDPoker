@@ -404,51 +404,11 @@ public class GameContext
         return _processPhase(sPhaseName, params, false);
     }
 
-    // stores phase that should be done after registation is complete
-    private String TODOphase_;
-    private TypedHashMap TODOparams_;
-    private boolean TODOhistory_;
-
-    /**
-     * Process the TO-DO stored phase
-     */
-    public void processTODO()
-    {
-        if (TODOphase_ != null)
-        {
-            String ph = TODOphase_;
-            TODOphase_ = null;
-            TypedHashMap pa = TODOparams_;
-            TODOparams_ = null;
-            boolean b = TODOhistory_;
-            TODOhistory_ = false;
-
-            // process phase that we were going to do before registering
-            // and notify engine we are doing so
-            engine_.processingTODO(this);
-            processPhase(ph, pa, b);
-        }
-    }
-
-    /**
-     * Return true if has TO-DO to process
-     */
-    public boolean hasTODO()
-    {
-        return TODOphase_ != null;
-    }
-
     /**
      * process phase actual logic
      */
     private Phase _processPhase(String sPhaseName, TypedHashMap params, boolean bHistory)
     {
-        if (engine_.isBDemo() && TODOphase_ != null)
-        {
-            logger.warn("Skipping " + sPhaseName + " because TODO phase is not null: " + TODOphase_);
-            return null;
-        }
-
         try
         {
             // force startmenu params to load (class is hardcoded below to prevent
@@ -458,15 +418,6 @@ public class GameContext
                 sPhaseName = "StartMenu";
                 params = new TypedHashMap();
                 params.setBoolean(StartMenu.PARAM_EXPIRED, Boolean.TRUE);
-            }
-            else if (engine_.isBDemo())
-            {
-                TODOphase_ = sPhaseName;
-                TODOparams_ = params;
-                TODOhistory_ = bHistory;
-                sPhaseName = "Demo";
-                params = null;
-                bHistory = false;
             }
 
             GamePhase phase = engine_.getGamedefconfig().getGamePhases().get(sPhaseName);
@@ -594,13 +545,6 @@ public class GameContext
 
         // get instance of phase
         Phase phase = getInstance(gamephase);
-
-        // bug 212 - demo mode - if asking for a phase that is in demo,
-        // which generally should not happen, then show start menu
-        if (engine_.isDemo() && !phase.isUsedInDemo())
-        {
-            return _processPhase("StartMenu", null, true);
-        }
 
         // store in history if the phase says too, and the
         // calling function wants it stored.  Note:  bHistory
@@ -930,11 +874,6 @@ public class GameContext
                 {
                     sClass = "com.donohoedigital.games.engine.StartMenu";
                     cClass = StartMenu.class;
-                }
-                else if (engine_.isBDemo())
-                {
-                    sClass = "com.donohoedigital.games.engine.Demo";
-                    cClass = Demo.class;
                 }
 
                 if (cClass == null)

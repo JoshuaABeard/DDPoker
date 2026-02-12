@@ -31,7 +31,6 @@ import java.lang.reflect.Field;
  * <p>This mock allows integration tests to:</p>
  * <ul>
  *   <li>Call GameEngine.getGameEngine() without NPE</li>
- *   <li>Check demo mode status (always returns false)</li>
  *   <li>Run tests in headless mode without GUI components</li>
  * </ul>
  *
@@ -65,11 +64,6 @@ public class MockGameEngine {
                 @Override
                 public com.donohoedigital.comms.Version getVersion() {
                     return new com.donohoedigital.comms.Version("1.0.0-test");
-                }
-
-                @Override
-                public boolean isDemo() {
-                    return false; // Tests run in full mode, not demo
                 }
             };
 

@@ -85,8 +85,7 @@ public class GameListPanel extends DDPanel implements ListSelectionListener,
     private boolean bOnlineSave_ = false;
     public boolean bOnlineLoad_ = false;
     private String sBegin_;
-    private boolean bDemo_;
-    
+
     // save game info
     private static final int[] COLUMN_WIDTHS_LOAD = new int[] {
         240, 293, 166
@@ -131,23 +130,12 @@ public class GameListPanel extends DDPanel implements ListSelectionListener,
         COLUMN_NAMES = names;
         dialog_ = dialog;
         okayButton_ = okay;
-        bDemo_ = engine_.isDemo();
-        
+
         Game game = context_.getGame();
         bSaveMode_ = gamephase_.getBoolean("savemode", true);
-        
+
         // base
         DDPanel base = this;
-        
-        if (bDemo_)
-        {
-            DDLabel demo = new DDLabel("demosave", STYLE);
-            demo.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
-            base.setLayout(new CenterLayout());
-            base.add(demo);
-            okayButton_.setEnabled(false);
-            return;
-        }
 
         if (bSaveMode_)
         {
