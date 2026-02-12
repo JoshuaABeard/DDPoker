@@ -10,14 +10,21 @@ Spring Boot REST API for DD Poker online features.
 - **Example:** `JWT_SECRET=your-secure-random-secret-key-here-at-least-32-characters`
 - **Generation:** Use a cryptographically secure random string generator
 
-### CORS_ALLOWED_ORIGINS (Required for Production)
+### SERVER_HOST (Auto-configured in Docker)
+- **Purpose:** The hostname/domain where the application is accessible
+- **Default:** `localhost` (from docker-compose.yml)
+- **Automatically used for:** CORS allowed origins
+- **Examples:** `poker.example.com`, `192.168.1.100`, `mydomain.com`
+- **Note:** This is the same variable used by the existing pokerserver
+
+### CORS_ALLOWED_ORIGINS (Optional Override)
 - **Purpose:** Comma-separated list of allowed origins for CORS
-- **Default:** `http://localhost:3000` (development only)
-- **Production Examples:**
-  - Single domain: `CORS_ALLOWED_ORIGINS=https://poker.example.com`
-  - Multiple origins: `CORS_ALLOWED_ORIGINS=https://poker.example.com,http://poker.example.com`
-  - IP-based: `CORS_ALLOWED_ORIGINS=http://192.168.1.100:3000`
-- **Important:** Set this to match where your Next.js frontend is hosted
+- **Default:** Auto-generated from `SERVER_HOST`:
+  - `http://${SERVER_HOST}:3000` (Next.js dev)
+  - `http://${SERVER_HOST}:8080` (production web)
+  - `https://${SERVER_HOST}` (reverse proxy)
+- **Override Example:** `CORS_ALLOWED_ORIGINS=https://poker.example.com,https://www.poker.example.com`
+- **When to override:** Multiple domains, custom ports, or complex setups
 
 ## Configuration Files
 
@@ -26,10 +33,20 @@ Spring Boot REST API for DD Poker online features.
 
 ## Running
 
+### In Docker (Recommended)
+CORS is automatically configured using `SERVER_HOST` from docker-compose.yml:
+
+```bash
+# Set in docker-compose.yml or .env file
+SERVER_HOST=poker.example.com
+JWT_SECRET=your-secure-random-secret-key-here-at-least-32-characters
+```
+
+### Standalone (Development)
 ```bash
 # Set required environment variables
 export JWT_SECRET="your-secure-random-secret-key-here-at-least-32-characters"
-export CORS_ALLOWED_ORIGINS="https://your-domain.com"
+export SERVER_HOST="localhost"
 
 # Run the API
 cd code/api
