@@ -88,11 +88,12 @@ public class RegistrationImplJpa extends JpaBaseDao<Registration, Long> implemen
         else
             keyStart += "%";
         Query query = entityManager.createNativeQuery(
-                "SELECT COUNT(distinct reg_license_key), DAYOFYEAR(reg_server_time), YEAR(reg_server_time)\n"
-                        + "FROM registration\n" + "where reg_is_duplicate = false\n"
-                        + "and reg_license_key not in (select ban_key from banned_key)\n"
-                        + "and reg_license_key like :key\n"
-                        + "GROUP BY DAYOFYEAR(reg_server_time), YEAR(reg_server_time)\n" + "ORDER BY reg_server_time;");
+                "SELECT COUNT(DISTINCT r.reg_license_key), DAYOFYEAR(r.reg_server_time), YEAR(r.reg_server_time)\n"
+                        + "FROM registration r\n" + "LEFT JOIN banned_key b ON r.reg_license_key = b.ban_key\n"
+                        + "WHERE r.reg_is_duplicate = false\n" + "  AND b.ban_key IS NULL\n"
+                        + "  AND r.reg_license_key LIKE :key\n"
+                        + "GROUP BY DAYOFYEAR(r.reg_server_time), YEAR(r.reg_server_time)\n"
+                        + "ORDER BY r.reg_server_time;");
         query.setParameter("key", keyStart);
         List<Object[]> results = query.getResultList();
         List<RegDayOfYearCount> list = new ArrayList<RegDayOfYearCount>(results.size());
@@ -115,10 +116,11 @@ public class RegistrationImplJpa extends JpaBaseDao<Registration, Long> implemen
             keyStart = "%";
         else
             keyStart += "%";
-        Query query = entityManager.createNativeQuery("SELECT COUNT(distinct reg_license_key), HOUR(reg_server_time)\n"
-                + "FROM registration\n" + "where reg_is_duplicate = false\n"
-                + "and reg_license_key not in (select ban_key from banned_key)\n" + "and reg_license_key like :key\n"
-                + "GROUP BY HOUR(reg_server_time)");
+        Query query = entityManager
+                .createNativeQuery("SELECT COUNT(DISTINCT r.reg_license_key), HOUR(r.reg_server_time)\n"
+                        + "FROM registration r\n" + "LEFT JOIN banned_key b ON r.reg_license_key = b.ban_key\n"
+                        + "WHERE r.reg_is_duplicate = false\n" + "  AND b.ban_key IS NULL\n"
+                        + "  AND r.reg_license_key LIKE :key\n" + "GROUP BY HOUR(r.reg_server_time)");
         query.setParameter("key", keyStart);
         List<Object[]> results = query.getResultList();
         List<RegHourCount> list = new ArrayList<RegHourCount>(results.size());
