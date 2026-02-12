@@ -45,9 +45,8 @@ public class ServletDebug {
 
     public static boolean bVerbose_ = true; // extra output
     public static boolean bDebug_ = true; // print URL
-    // TODO: get from config file
-    private static String sFile_ = null;
-    private static boolean bAppend_ = true;
+    // Debug output is directed to log4j2 logger (file output configured via
+    // log4j2.xml)
     private static final String THIS_REQUEST_HANDLED = "_trh_";
 
     public static void setVerbose(boolean b) {
