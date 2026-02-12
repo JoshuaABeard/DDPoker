@@ -6,10 +6,18 @@
 # Ensure we don't fail on any unexpected error
 set +e
 
-# Read input with timeout to prevent hanging
-INPUT=$(timeout 1s cat 2>/dev/null || true)
+# Try to read input with built-in timeout (more portable than timeout command)
+# Read first line only to avoid hanging on large/infinite input
+INPUT=""
+if read -r -t 1 INPUT 2>/dev/null; then
+    # Read succeeded, INPUT contains first line
+    :
+else
+    # Read failed or timed out, exit silently
+    exit 0
+fi
 
-# Exit silently if no input available
+# Exit silently if no input
 if [ -z "$INPUT" ]; then
     exit 0
 fi
