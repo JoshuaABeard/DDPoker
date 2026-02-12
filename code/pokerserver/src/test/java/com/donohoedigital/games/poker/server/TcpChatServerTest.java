@@ -19,8 +19,6 @@
  */
 package com.donohoedigital.games.poker.server;
 
-import com.donohoedigital.comms.DDMessage;
-import com.donohoedigital.comms.DMArrayList;
 import com.donohoedigital.comms.DMTypedHashMap;
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.PropertyConfig;
@@ -44,23 +42,21 @@ import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
- * TDD tests for TcpChatServer - TCP-based chat server for lobby.
- * Tests written before implementation per TDD approach.
+ * TDD tests for TcpChatServer - TCP-based chat server for lobby. Tests written
+ * before implementation per TDD approach.
  *
- * NOTE: Disabled due to Mockito incompatibility with Java 25.
- * ByteBuddy (used by Mockito) officially supports up to Java 24.
- * Tests will be re-enabled when Mockito/ByteBuddy add Java 25 support.
+ * NOTE: Disabled due to Mockito incompatibility with Java 25. ByteBuddy (used
+ * by Mockito) officially supports up to Java 24. Tests will be re-enabled when
+ * Mockito/ByteBuddy add Java 25 support.
  */
 @Disabled("Java 25 incompatibility with Mockito/ByteBuddy")
 @Timeout(value = 10, unit = TimeUnit.SECONDS)
@@ -74,7 +70,8 @@ class TcpChatServerTest {
 
     @BeforeAll
     static void setupPropertyConfig() {
-        // Initialize PropertyConfig with testapp module (matches Peer2PeerMessageTest pattern)
+        // Initialize PropertyConfig with testapp module (matches Peer2PeerMessageTest
+        // pattern)
         String[] modules = {"testapp"};
         new PropertyConfig("testapp", modules, ApplicationType.COMMAND_LINE, null, false);
     }
@@ -711,8 +708,7 @@ class TcpChatServerTest {
         profile.setEmail(name.toLowerCase() + "@example.com");
 
         when(mockProfileService.getOnlineProfileByName(name)).thenReturn(profile);
-        when(mockProfileService.getAllOnlineProfilesForEmail(anyString(), anyString()))
-                .thenReturn(new ArrayList<>());
+        when(mockProfileService.getAllOnlineProfilesForEmail(anyString(), anyString())).thenReturn(new ArrayList<>());
         when(mockBannedKeyService.isBanned(key)).thenReturn(false);
     }
 
