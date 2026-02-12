@@ -65,6 +65,7 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
     private UDPServer udp_;
     private int nPort_;
     private final List<LinkInfo> links_ = Collections.synchronizedList(new ArrayList<LinkInfo>());
+    private final RateLimiter chatRateLimiter = new RateLimiter();
 
     /**
      * Constructor
@@ -426,7 +427,17 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
         PokerUDPTransporter msg = new PokerUDPTransporter(data);
         OnlineMessage om = new OnlineMessage(msg.getMessage());
         String chat = om.getChat();
-        logger.debug(om.getPlayerName() + " said \"" + chat + '\"');
+        String playerName = om.getPlayerName();
+
+        logger.debug(playerName + " said \"" + chat + '\"');
+
+        // Rate limiting (SEC-3): 30 messages per minute per user
+        if (!chatRateLimiter.allowRequest(playerName, 30, 60000))
+        {
+            sendError(from, "Too many chat messages. Please slow down.");
+            return true; // handled
+        }
+
         if (chat.startsWith("./stats"))
         {
             sendMessage(from, udp_.manager().getStatusHTML(null));
