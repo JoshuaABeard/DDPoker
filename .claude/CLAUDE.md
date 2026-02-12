@@ -137,6 +137,19 @@ git worktree add -b feature-name ../DDPoker-feature-<description>
 - ✅ **Clean up after merge** - `git worktree remove` + `git branch -d`
 - ✅ **Plans/backlog** - Can be managed in main
 
+### Exceptions - When Main is OK
+Small, non-code changes can be made directly in main:
+- ✅ Updating `.claude/CLAUDE.md` or meta-documentation
+- ✅ Creating/organizing plans in `.claude/plans/`
+- ✅ Quick README typo fixes
+- ✅ Non-code administrative changes
+
+**Use worktrees for:**
+- ✅ All feature development
+- ✅ All bug fixes
+- ✅ All refactoring
+- ✅ Anything touching application code or tests
+
 ## 8. Private Information Check Before Committing
 
 **ALWAYS review files for private information before committing to the public repository.**
