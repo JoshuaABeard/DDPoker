@@ -10,6 +10,8 @@ import { Pagination } from '@/components/data/Pagination'
 import { FilterForm } from '@/components/filters/FilterForm'
 import { HighlightText } from '@/components/online/HighlightText'
 import { PlayerLink } from '@/components/online/PlayerLink'
+import { searchApi } from '@/lib/api'
+import { toBackendPage, buildPaginationResult } from '@/lib/pagination'
 
 export const metadata: Metadata = {
   title: 'Player Search - DD Poker',
@@ -31,12 +33,30 @@ async function searchPlayers(
   totalPages: number
   totalItems: number
 }> {
-  // TODO: Replace with actual API call
-  // For now, return empty data
-  return {
-    results: [],
-    totalPages: 0,
-    totalItems: 0,
+  try {
+    const backendPage = toBackendPage(page)
+    const data = await searchApi.searchPlayers(name, backendPage, 50)
+    const mapped = data.map((p: any) => ({
+      playerName: p.playerName || p.name || 'Unknown',
+      gamesPlayed: p.gamesPlayed || 0,
+      lastPlayed: p.lastPlayed || p.lastSeen || new Date().toISOString(),
+      rank: p.rank,
+    }))
+    // LIMITATION: Uses mapped.length as total (backend search API doesn't return total count)
+    // This means pagination will show at most 1 page. Backend should return { results, total }.
+    const result = buildPaginationResult(mapped, mapped.length, page, 50)
+    return {
+      results: result.data,
+      totalPages: result.totalPages,
+      totalItems: result.totalItems,
+    }
+  } catch (error) {
+    console.error('Failed to search players:', error)
+    return {
+      results: [],
+      totalPages: 0,
+      totalItems: 0,
+    }
   }
 }
 
@@ -47,7 +67,7 @@ export default async function SearchPage({
 }) {
   const params = await searchParams
   const searchTerm = params.name || ''
-  const currentPage = parseInt(params.page || '1')
+  const currentPage = parseInt(params.page || '1', 10) || 1
 
   const { results, totalPages, totalItems } = searchTerm
     ? await searchPlayers(searchTerm, currentPage)
@@ -75,7 +95,10 @@ export default async function SearchPage({
     {
       key: 'lastPlayed',
       header: 'Last Played',
-      render: (player: PlayerSearchResult) => new Date(player.lastPlayed).toLocaleDateString(),
+      render: (player: PlayerSearchResult) => {
+        const date = new Date(player.lastPlayed)
+        return isNaN(date.getTime()) ? 'Unknown' : date.toLocaleDateString()
+      },
     },
     {
       key: 'rank',
@@ -111,7 +134,7 @@ export default async function SearchPage({
             <Pagination
               currentPage={currentPage}
               totalItems={totalItems}
-              itemsPerPage={20}
+              itemsPerPage={50}
             />
           )}
         </>

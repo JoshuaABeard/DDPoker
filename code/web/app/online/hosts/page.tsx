@@ -9,6 +9,8 @@ import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
 import { FilterForm } from '@/components/filters/FilterForm'
 import { PlayerLink } from '@/components/online/PlayerLink'
+import { hostApi } from '@/lib/api'
+import { toBackendPage, buildPaginationResult } from '@/lib/pagination'
 
 export const metadata: Metadata = {
   title: 'Game Hosts - DD Poker',
@@ -19,7 +21,6 @@ interface HostInfo {
   name: string
   lastHosted: string
   totalGamesHosted: number
-  ipAddress: string
 }
 
 async function getHosts(
@@ -30,12 +31,33 @@ async function getHosts(
   totalPages: number
   totalItems: number
 }> {
-  // TODO: Replace with actual API call
-  // For now, return empty data
-  return {
-    hosts: [],
-    totalPages: 0,
-    totalItems: 0,
+  try {
+    const backendPage = toBackendPage(page)
+    const { hosts, total } = await hostApi.getHosts(
+      filters.name,
+      filters.begin,
+      filters.end,
+      backendPage,
+      50
+    )
+    const mapped = hosts.map((h) => ({
+      name: h.playerName,
+      lastHosted: h.lastHosted || 'Unknown',
+      totalGamesHosted: h.gamesHosted,
+    }))
+    const result = buildPaginationResult(mapped, total, page, 50)
+    return {
+      hosts: result.data,
+      totalPages: result.totalPages,
+      totalItems: result.totalItems,
+    }
+  } catch (error) {
+    console.error('Failed to fetch hosts:', error)
+    return {
+      hosts: [],
+      totalPages: 0,
+      totalItems: 0,
+    }
   }
 }
 
@@ -45,7 +67,7 @@ export default async function HostsPage({
   searchParams: Promise<{ page?: string; name?: string; begin?: string; end?: string }>
 }) {
   const params = await searchParams
-  const currentPage = parseInt(params.page || '1')
+  const currentPage = parseInt(params.page || '1', 10) || 1
   const filters = {
     name: params.name,
     begin: params.begin,
@@ -63,18 +85,16 @@ export default async function HostsPage({
     {
       key: 'lastHosted',
       header: 'Last Hosted',
-      render: (host: HostInfo) => new Date(host.lastHosted).toLocaleDateString(),
+      render: (host: HostInfo) =>
+        host.lastHosted === 'Unknown' || !host.lastHosted
+          ? 'Unknown'
+          : new Date(host.lastHosted).toLocaleDateString(),
     },
     {
       key: 'totalGamesHosted',
       header: 'Total Games Hosted',
       render: (host: HostInfo) => host.totalGamesHosted.toLocaleString(),
       align: 'right' as const,
-    },
-    {
-      key: 'ipAddress',
-      header: 'IP Address',
-      render: (host: HostInfo) => host.ipAddress,
     },
   ]
 
@@ -99,7 +119,7 @@ export default async function HostsPage({
         <Pagination
           currentPage={currentPage}
           totalItems={totalItems}
-          itemsPerPage={20}
+          itemsPerPage={50}
         />
       )}
     </div>

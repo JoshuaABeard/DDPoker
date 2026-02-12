@@ -9,6 +9,9 @@ import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
 import { PlayerLink } from '@/components/online/PlayerLink'
 import { PlayerList } from '@/components/online/PlayerList'
+import { gamesApi } from '@/lib/api'
+import { mapCurrentGame } from '@/lib/mappers'
+import { toBackendPage, buildPaginationResult } from '@/lib/pagination'
 
 export const metadata: Metadata = {
   title: 'Current Games - DD Poker',
@@ -30,12 +33,23 @@ async function getCurrentGames(page: number): Promise<{
   totalPages: number
   totalItems: number
 }> {
-  // TODO: Replace with actual API call
-  // For now, return empty data
-  return {
-    games: [],
-    totalPages: 0,
-    totalItems: 0,
+  try {
+    const backendPage = toBackendPage(page)
+    const { games, total } = await gamesApi.getRunning(backendPage, 20)
+    const mapped = games.map(mapCurrentGame)
+    const result = buildPaginationResult(mapped, total, page, 20)
+    return {
+      games: result.data,
+      totalPages: result.totalPages,
+      totalItems: result.totalItems,
+    }
+  } catch (error) {
+    console.error('Failed to fetch current games:', error)
+    return {
+      games: [],
+      totalPages: 0,
+      totalItems: 0,
+    }
   }
 }
 
@@ -45,7 +59,7 @@ export default async function CurrentGamesPage({
   searchParams: Promise<{ page?: string }>
 }) {
   const params = await searchParams
-  const currentPage = parseInt(params.page || '1')
+  const currentPage = parseInt(params.page || '1', 10) || 1
   const { games, totalPages, totalItems } = await getCurrentGames(currentPage)
 
   const columns = [
@@ -78,7 +92,10 @@ export default async function CurrentGamesPage({
     {
       key: 'started',
       header: 'Started',
-      render: (game: CurrentGame) => new Date(game.started).toLocaleString(),
+      render: (game: CurrentGame) => {
+        const date = new Date(game.started)
+        return isNaN(date.getTime()) ? 'Unknown' : date.toLocaleString()
+      },
     },
   ]
 
