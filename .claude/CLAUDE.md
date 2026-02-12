@@ -6,7 +6,7 @@
 
 **DD Poker** is a Texas Hold'em poker simulator with a Java Swing desktop client and online multiplayer via a Wicket web portal. Community-maintained fork of DD Poker by Doug Donohoe (2003-2017).
 
-See `DDPOKER-OVERVIEW.md` for full tech stack, module structure, and configuration details.
+See `DDPOKER-OVERVIEW.md` for full tech stack, module structure, and configuration details. Check `.claude/learnings.md` for known gotchas before starting non-trivial work.
 
 ### Quick Reference
 
@@ -64,7 +64,7 @@ Priorities (highest to lowest):
 - If you write 200 lines and it could be 50, rewrite it.
 - Don't "improve" adjacent code, comments, or formatting.
 - Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
+- Match existing style, even if you'd do it differently. Spotless auto-formats Java code on compile — don't manually format.
 - If you notice unrelated dead code, mention it — don't delete it.
 
 When your changes create orphans:
@@ -85,7 +85,13 @@ After implementing, verify:
 
 See `.claude/guides/testing-guide.md` for test-first practices, test types, and when tests can wait.
 
-## 5. Plans
+## 5. Decisions
+
+**Architecture Decision Records live in `.claude/decisions/`. Check relevant ADRs before working in related areas.**
+
+Create an ADR when choosing between multiple valid approaches or making a non-obvious technical decision. See `.claude/decisions/README.md` for format.
+
+## 6. Plans
 
 **Plans live in `.claude/plans/`. Always create a plan for features, significant refactoring, or anything spanning > 3 files or > 200 lines.**
 
@@ -93,7 +99,7 @@ Skip plans for trivial fixes, docs-only changes, config tweaks, dependency updat
 
 See `.claude/guides/plan-protocol.md` for plan lifecycle and management.
 
-## 6. Git Workflow
+## 7. Git Workflow
 
 **NEVER work directly on main. All development happens in worktrees.**
 
@@ -126,7 +132,7 @@ Co-Authored-By: Claude Opus 4.6
 - Body: Context, reasoning, or tradeoffs (omit if self-explanatory)
 - Last line: `Co-Authored-By: <model name>` (e.g., "Claude Sonnet 4.5" or "Claude Opus 4.6")
 
-## 7. Code Reviews
+## 8. Code Reviews
 
 **Reviews fully automated: dev agent spawns review agent (Opus).**
 
@@ -134,7 +140,7 @@ When work is complete, create a review handoff at `.claude/reviews/BRANCH-NAME.m
 
 See `.claude/guides/review-protocol.md` for the full review process.
 
-## 8. Privacy & Security
+## 9. Privacy & Security
 
 **ALWAYS review files for private information before committing to the public repository.**
 
