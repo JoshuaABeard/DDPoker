@@ -952,7 +952,7 @@ public class PokerDatabase
 
         try
         {
-            PreparedStatement pstmt = conn.prepareStatement(
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "SELECT\n" +
                     "TRN_ID,\n" +
                     "TRN_TYPE,\n" +
@@ -969,15 +969,11 @@ public class PokerDatabase
                     "TRF_PLAYERS_REMAINING\n" +
                     "FROM TOURNAMENT, TOURNAMENT_FINISH\n" +
                     "WHERE TRN_ID=TRF_TOURNAMENT_ID\n" +
-                    "AND TRF_PROFILE_CREATE_DATE=? ORDER BY TRF_END_DATE DESC");
-
-            try
+                    "AND TRF_PROFILE_CREATE_DATE=? ORDER BY TRF_END_DATE DESC"))
             {
                 pstmt.setTimestamp(1, new Timestamp(profile.getCreateDate()));
 
-                ResultSet rs = pstmt.executeQuery();
-
-                try
+                try (ResultSet rs = pstmt.executeQuery())
                 {
                     while (rs.next())
                     {
@@ -1000,14 +996,6 @@ public class PokerDatabase
                         hist.add(h);
                     }
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
 
         }
@@ -1041,7 +1029,7 @@ public class PokerDatabase
 
         try
         {
-            PreparedStatement pstmt = conn.prepareStatement(
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "SELECT\n" +
                     "COUNT(*),\n" +
                     "SUM(TRF_BUY_IN),\n" +
@@ -1050,15 +1038,11 @@ public class PokerDatabase
                     "SUM(TRF_PRIZE)\n" +
                     "FROM TOURNAMENT, TOURNAMENT_FINISH\n" +
                     "WHERE TRN_ID=TRF_TOURNAMENT_ID\n" +
-                    "AND TRF_PROFILE_CREATE_DATE=?");
-
-            try
+                    "AND TRF_PROFILE_CREATE_DATE=?"))
             {
                 pstmt.setTimestamp(1, new Timestamp(profile.getCreateDate()));
 
-                ResultSet rs = pstmt.executeQuery();
-
-                try
+                try (ResultSet rs = pstmt.executeQuery())
                 {
                     if (rs.next())
                     {
@@ -1085,14 +1069,6 @@ public class PokerDatabase
                         return null;
                     }
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
 
         }
@@ -1123,32 +1099,20 @@ public class PokerDatabase
 
             // insert tournament info
 
-            PreparedStatement pstmt = conn.prepareStatement(
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "SELECT TRN_ID FROM TOURNAMENT\n" +
                     "WHERE TRN_START_DATE=?"
-            );
-
-            try
+            ))
             {
                 pstmt.setTimestamp(1, new Timestamp(game.getStartDate()));
 
-                ResultSet rs = pstmt.executeQuery();
-
-                try
+                try (ResultSet rs = pstmt.executeQuery())
                 {
                     if (rs.next())
                     {
                         tournamentID = rs.getInt(1);
                     }
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
 
             if (tournamentID == -1) return;
@@ -1157,51 +1121,33 @@ public class PokerDatabase
 
             // insert tournament info
 
-            pstmt = conn.prepareStatement(
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "SELECT TPL_ID FROM TOURNAMENT_PLAYER\n" +
-                    "WHERE TPL_TOURNAMENT_ID=? AND TPL_SEQUENCE=?");
-
-            try
+                    "WHERE TPL_TOURNAMENT_ID=? AND TPL_SEQUENCE=?"))
             {
                 pstmt.setInt(1, tournamentID);
                 pstmt.setInt(2, player.getID());
 
-                ResultSet rs = pstmt.executeQuery();
-
-                try
+                try (ResultSet rs = pstmt.executeQuery())
                 {
                     if (rs.next())
                     {
                         playerID = rs.getInt(1);
                     }
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
 
             if (playerID != -1)
             {
-                pstmt = conn.prepareStatement(
+                try (PreparedStatement pstmt = conn.prepareStatement(
                         "UPDATE TOURNAMENT_PLAYER\n" +
                         "SET TPL_NAME=?\n" +
-                        "WHERE TPL_ID=?");
-
-                try
+                        "WHERE TPL_ID=?"))
                 {
                     pstmt.setString(1, player.getName());
                     pstmt.setInt(2, playerID);
 
                     pstmt.executeUpdate();
-                }
-                finally
-                {
-                    pstmt.close();
                 }
             }
         }
@@ -1229,45 +1175,31 @@ public class PokerDatabase
 
         // insert tournament info
 
-        PreparedStatement pstmt = conn.prepareStatement(
+        try (PreparedStatement pstmt = conn.prepareStatement(
                 "SELECT TPL_ID FROM TOURNAMENT_PLAYER\n" +
-                "WHERE TPL_TOURNAMENT_ID=? AND TPL_SEQUENCE=?");
-
-        try
+                "WHERE TPL_TOURNAMENT_ID=? AND TPL_SEQUENCE=?"))
         {
             pstmt.setInt(1, tournamentID);
             pstmt.setInt(2, player.getID());
 
-            ResultSet rs = pstmt.executeQuery();
-
-            try
+            try (ResultSet rs = pstmt.executeQuery())
             {
                 if (rs.next())
                 {
                     playerID = rs.getInt(1);
                 }
             }
-            finally
-            {
-                rs.close();
-            }
-        }
-        finally
-        {
-            pstmt.close();
         }
 
         if (playerID == -1)
         {
-            pstmt = conn.prepareStatement(
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "INSERT INTO TOURNAMENT_PLAYER (\n" +
                     "TPL_TOURNAMENT_ID,\n" +
                     "TPL_SEQUENCE,\n" +
                     "TPL_NAME,\n" +
                     "TPL_PROFILE_CREATE_DATE\n" +
-                    ") VALUES (?,?,?,?)");
-
-            try
+                    ") VALUES (?,?,?,?)"))
             {
                 pstmt.setInt(1, tournamentID);
                 pstmt.setInt(2, player.getID());
@@ -1283,10 +1215,6 @@ public class PokerDatabase
                 }
 
                 pstmt.executeUpdate();
-            }
-            finally
-            {
-                pstmt.close();
             }
 
             playerID = identity(conn);
@@ -1310,18 +1238,12 @@ public class PokerDatabase
 
         try
         {
-            PreparedStatement pstmt;
-
-            pstmt = conn.prepareStatement("SELECT TRN_TYPE FROM TOURNAMENT, HAND\n" +
-                                          "WHERE HND_TOURNAMENT_ID=TRN_ID AND HND_ID = ?");
-
-            try
+            try (PreparedStatement pstmt = conn.prepareStatement("SELECT TRN_TYPE FROM TOURNAMENT, HAND\n" +
+                                          "WHERE HND_TOURNAMENT_ID=TRN_ID AND HND_ID = ?"))
             {
                 pstmt.setInt(1, handID);
 
-                ResultSet rs = pstmt.executeQuery();
-
-                try
+                try (ResultSet rs = pstmt.executeQuery())
                 {
                     if (rs.next())
                     {
@@ -1332,14 +1254,6 @@ public class PokerDatabase
                         return false;
                     }
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
         }
         catch (SQLException e)
@@ -1365,10 +1279,8 @@ public class PokerDatabase
 
         try
         {
-            PreparedStatement pstmt = conn.prepareStatement
-                    ("SELECT COUNT(*) FROM HAND WHERE " + where);
-
-            try
+            try (PreparedStatement pstmt = conn.prepareStatement
+                    ("SELECT COUNT(*) FROM HAND WHERE " + where))
             {
                 int bindValueCount = (bindArray != null) ? bindArray.size() : 0;
 
@@ -1377,23 +1289,13 @@ public class PokerDatabase
                     pstmt.setObject(i + 1, bindArray.getValue(i));
                 }
 
-                ResultSet rs = DatabaseManager.executeQuery(pstmt);
-
-                try
+                try (ResultSet rs = DatabaseManager.executeQuery(pstmt))
                 {
                     rs.next();
 
                     return rs.getInt(1);
 
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
         }
         catch (SQLException e)
@@ -1443,10 +1345,8 @@ public class PokerDatabase
 
         try
         {
-            PreparedStatement pstmt = conn.prepareStatement
-                    ("SELECT HND_ID FROM HAND WHERE " + where);
-
-            try
+            try (PreparedStatement pstmt = conn.prepareStatement
+                    ("SELECT HND_ID FROM HAND WHERE " + where))
             {
                 int bindValueCount = (bindArray != null) ? bindArray.size() : 0;
 
@@ -1455,9 +1355,7 @@ public class PokerDatabase
                     pstmt.setObject(i + 1, bindArray.getValue(i));
                 }
 
-                ResultSet rs = DatabaseManager.executeQuery(pstmt);
-
-                try
+                try (ResultSet rs = DatabaseManager.executeQuery(pstmt))
                 {
                     rs.setFetchSize(page);
 
@@ -1474,14 +1372,6 @@ public class PokerDatabase
 
                     return hands;
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
         }
         catch (SQLException e)
@@ -1509,10 +1399,8 @@ public class PokerDatabase
 
         try
         {
-            PreparedStatement pstmt = conn.prepareStatement
-                    ("SELECT COUNT(DISTINCT HND_TOURNAMENT_ID) FROM HAND WHERE " + where);
-
-            try
+            try (PreparedStatement pstmt = conn.prepareStatement
+                    ("SELECT COUNT(DISTINCT HND_TOURNAMENT_ID) FROM HAND WHERE " + where))
             {
                 int bindValueCount = (bindArray != null) ? bindArray.size() : 0;
 
@@ -1521,9 +1409,7 @@ public class PokerDatabase
                     pstmt.setObject(i + 1, bindArray.getValue(i));
                 }
 
-                ResultSet rs = DatabaseManager.executeQuery(pstmt);
-
-                try
+                try (ResultSet rs = DatabaseManager.executeQuery(pstmt))
                 {
                     if (rs.next())
                     {
@@ -1534,14 +1420,6 @@ public class PokerDatabase
                         return 0;
                     }
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
         }
         catch (SQLException e)
@@ -1569,37 +1447,23 @@ public class PokerDatabase
 
         try
         {
-            PreparedStatement pstmt;
-
             int tournamentID = storeTournament(conn, game);
 
-            pstmt = conn.prepareStatement(
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "SELECT MAX(HND_ID) FROM HAND\n" +
                     "WHERE HND_TOURNAMENT_ID = ? AND HND_ID < ?"
-            );
-
-            try
+            ))
             {
                 pstmt.setInt(1, tournamentID);
                 pstmt.setInt(2, handID);
 
-                ResultSet rs = pstmt.executeQuery();
-
-                try
+                try (ResultSet rs = pstmt.executeQuery())
                 {
                     if (rs.next())
                     {
                         foundID = rs.getInt(1);
                     }
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
         }
         catch (SQLException e)
@@ -1630,37 +1494,23 @@ public class PokerDatabase
 
         try
         {
-            PreparedStatement pstmt;
-
             int tournamentID = storeTournament(conn, game);
 
-            pstmt = conn.prepareStatement(
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "SELECT MIN(HND_ID) FROM HAND\n" +
                     "WHERE HND_TOURNAMENT_ID = ? AND HND_ID > ?"
-            );
-
-            try
+            ))
             {
                 pstmt.setInt(1, tournamentID);
                 pstmt.setInt(2, handID);
 
-                ResultSet rs = pstmt.executeQuery();
-
-                try
+                try (ResultSet rs = pstmt.executeQuery())
                 {
                     if (rs.next())
                     {
                         foundID = rs.getInt(1);
                     }
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
         }
         catch (SQLException e)
@@ -1699,8 +1549,6 @@ public class PokerDatabase
 
         try
         {
-            PreparedStatement pstmt;
-
             Hand community = new Hand();
             int tournamentID;
             String hndTable;
@@ -1713,7 +1561,7 @@ public class PokerDatabase
             int smBlind;
             int bigBlind;
 
-            pstmt = conn.prepareStatement(
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "SELECT\n" +
                     "HND_TABLE,\n" +
                     "HND_NUMBER,\n" +
@@ -1732,15 +1580,11 @@ public class PokerDatabase
                     "HND_COMMUNITY_CARD_4,\n" +
                     "HND_COMMUNITY_CARD_5\n" +
                     "FROM HAND\n" +
-                    "WHERE HND_ID=?");
-
-            try
+                    "WHERE HND_ID=?"))
             {
                 pstmt.setInt(1, handID);
 
-                ResultSet rs = DatabaseManager.executeQuery(pstmt);
-
-                try
+                try (ResultSet rs = DatabaseManager.executeQuery(pstmt))
                 {
                     if (rs.next())
                     {
@@ -1774,14 +1618,6 @@ public class PokerDatabase
                         return null;
                     }
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
 
             PokerPlayer players[] = new PokerPlayer[PokerConstants.SEATS];
@@ -1790,7 +1626,7 @@ public class PokerDatabase
             int start[] = new int[PokerConstants.SEATS];
             int end[] = new int[PokerConstants.SEATS];
 
-            pstmt = conn.prepareStatement(
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "SELECT DISTINCT\n" +
                     "PLH_SEAT_NUMBER,\n" +
                     "PLH_START_CHIPS,\n" +
@@ -1809,16 +1645,12 @@ public class PokerDatabase
                     "FROM TOURNAMENT_PLAYER, PLAYER_HAND\n" +
                     "WHERE PLH_PLAYER_ID = TPL_ID AND TPL_TOURNAMENT_ID=? AND PLH_HAND_ID = ?\n" +
                     "ORDER BY PLH_SEAT_NUMBER"
-            );
-
-            try
+            ))
             {
                 pstmt.setInt(1, tournamentID);
                 pstmt.setInt(2, handID);
 
-                ResultSet rs = DatabaseManager.executeQuery(pstmt);
-
-                try
+                try (ResultSet rs = DatabaseManager.executeQuery(pstmt))
                 {
                     while (rs.next())
                     {
@@ -1844,19 +1676,13 @@ public class PokerDatabase
                         players[seat].setName(rs.getString(13));
                     }
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
 
             ArrayList hist = new ArrayList();
 
-            pstmt = conn.prepareStatement(
+            boolean bAnte = false;
+
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "SELECT\n" +
                     "ACT_ROUND,\n" +
                     "PLH_SEAT_NUMBER,\n" +
@@ -1868,17 +1694,11 @@ public class PokerDatabase
                     "FROM PLAYER_HAND, PLAYER_ACTION\n" +
                     "WHERE PLH_PLAYER_ID = ACT_PLAYER_ID AND PLH_HAND_ID=ACT_HAND_ID AND PLH_HAND_ID = ?\n" +
                     "ORDER BY ACT_SEQUENCE"
-            );
-
-            boolean bAnte = false;
-
-            try
+            ))
             {
                 pstmt.setInt(1, handID);
 
-                ResultSet rs = DatabaseManager.executeQuery(pstmt);
-
-                try
+                try (ResultSet rs = DatabaseManager.executeQuery(pstmt))
                 {
                     while (rs.next())
                     {
@@ -1908,14 +1728,6 @@ public class PokerDatabase
                         }
                     }
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
 
             title = PropertyConfig.getMessage("msg.handhist.title", new Object[]{hndTable, hndNumber});
@@ -2003,9 +1815,7 @@ public class PokerDatabase
 
         try
         {
-            PreparedStatement pstmt;
-
-            pstmt = conn.prepareStatement(
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "SELECT\n" +
                     "HND_TABLE,\n" +
                     "HND_NUMBER,\n" +
@@ -2024,15 +1834,11 @@ public class PokerDatabase
                     "HND_COMMUNITY_CARD_4,\n" +
                     "HND_COMMUNITY_CARD_5\n" +
                     "FROM HAND\n" +
-                    "WHERE HND_ID=?");
-
-            try
+                    "WHERE HND_ID=?"))
             {
                 pstmt.setInt(1, ieHand.handID);
 
-                ResultSet rs = DatabaseManager.executeQuery(pstmt);
-
-                try
+                try (ResultSet rs = DatabaseManager.executeQuery(pstmt))
                 {
                     if (rs.next())
                     {
@@ -2066,50 +1872,30 @@ public class PokerDatabase
                         return null;
                     }
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
 
-            pstmt = conn.prepareStatement(
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "SELECT\n" +
                     "TRN_NAME,\n" +
                     "TRN_START_DATE\n" +
                     "FROM TOURNAMENT\n" +
-                    "WHERE TRN_ID=?");
-
-            try
+                    "WHERE TRN_ID=?"))
             {
                 pstmt.setInt(1, ieHand.tournamentID);
 
-                ResultSet rs = DatabaseManager.executeQuery(pstmt);
-
-                try
+                try (ResultSet rs = DatabaseManager.executeQuery(pstmt))
                 {
                     rs.next();
 
                     ieHand.tournamentName = rs.getString(1);
                     ieHand.tournamentStartDate.setTime(new Date(rs.getTimestamp(2).getTime()));
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
 
 
             int players = 0;
 
-            pstmt = conn.prepareStatement(
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "SELECT DISTINCT\n" +
                     "PLH_SEAT_NUMBER,\n" +
                     "PLH_START_CHIPS,\n" +
@@ -2129,16 +1915,12 @@ public class PokerDatabase
                     "FROM TOURNAMENT_PLAYER, PLAYER_HAND\n" +
                     "WHERE PLH_PLAYER_ID = TPL_ID AND TPL_TOURNAMENT_ID=? AND PLH_HAND_ID = ?\n" +
                     "ORDER BY PLH_SEAT_NUMBER"
-            );
-
-            try
+            ))
             {
                 pstmt.setInt(1, ieHand.tournamentID);
                 pstmt.setInt(2, ieHand.handID);
 
-                ResultSet rs = DatabaseManager.executeQuery(pstmt);
-
-                try
+                try (ResultSet rs = DatabaseManager.executeQuery(pstmt))
                 {
                     while (rs.next())
                     {
@@ -2174,17 +1956,11 @@ public class PokerDatabase
                         ++players;
                     }
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
 
-            pstmt = conn.prepareStatement(
+            int firstBlindSeat = -1;
+
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "SELECT\n" +
                     "ACT_ROUND,\n" +
                     "PLH_SEAT_NUMBER,\n" +
@@ -2196,17 +1972,11 @@ public class PokerDatabase
                     "FROM PLAYER_HAND, PLAYER_ACTION\n" +
                     "WHERE PLH_PLAYER_ID = ACT_PLAYER_ID AND PLH_HAND_ID=ACT_HAND_ID AND PLH_HAND_ID = ?\n" +
                     "ORDER BY ACT_SEQUENCE"
-            );
-
-            int firstBlindSeat = -1;
-
-            try
+            ))
             {
                 pstmt.setInt(1, ieHand.handID);
 
-                ResultSet rs = DatabaseManager.executeQuery(pstmt);
-
-                try
+                try (ResultSet rs = DatabaseManager.executeQuery(pstmt))
                 {
                     while (rs.next())
                     {
@@ -2244,14 +2014,6 @@ public class PokerDatabase
                         }
                     }
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
 
             if (players == 2)
@@ -2488,27 +2250,21 @@ public class PokerDatabase
 
         try
         {
-            PreparedStatement pstmt;
+            String holeCards[] = new String[2];
 
             // select player's hand (separate in case current player was an observer)
-            pstmt = conn.prepareStatement(
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "SELECT " +
                     "PLH_CARD_1,\n" +
                     "PLH_CARD_2\n" +
                     "FROM PLAYER_HAND, TOURNAMENT_PLAYER\n" +
                     "WHERE PLH_HAND_ID=?\n" +
-                    "  AND PLH_PLAYER_ID=TPL_ID AND TPL_PROFILE_CREATE_DATE=?");
-
-            String holeCards[] = new String[2];
-
-            try
+                    "  AND PLH_PLAYER_ID=TPL_ID AND TPL_PROFILE_CREATE_DATE=?"))
             {
                 pstmt.setInt(1, handID);
                 pstmt.setTimestamp(2, playerCreateDate);
 
-                ResultSet rs = DatabaseManager.executeQuery(pstmt);
-
-                try
+                try (ResultSet rs = DatabaseManager.executeQuery(pstmt))
                 {
                     if (rs.next())
                     {
@@ -2516,18 +2272,10 @@ public class PokerDatabase
                         holeCards[1] = rs.getString(2);
                     }
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
 
             // select community cards
-            pstmt = conn.prepareStatement(
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "SELECT " +
                     "HND_COMMUNITY_CARDS_DEALT,\n" +
                     "HND_COMMUNITY_CARD_1,\n" +
@@ -2536,15 +2284,11 @@ public class PokerDatabase
                     "HND_COMMUNITY_CARD_4,\n" +
                     "HND_COMMUNITY_CARD_5\n" +
                     "FROM HAND\n" +
-                    "WHERE HND_ID=?");
-
-            try
+                    "WHERE HND_ID=?"))
             {
                 pstmt.setInt(1, handID);
 
-                ResultSet rs = DatabaseManager.executeQuery(pstmt);
-
-                try
+                try (ResultSet rs = DatabaseManager.executeQuery(pstmt))
                 {
                     if (rs.next())
                     {
@@ -2570,14 +2314,6 @@ public class PokerDatabase
                         return buf.toString();
                     }
                 }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                pstmt.close();
             }
         }
         catch (SQLException e)
