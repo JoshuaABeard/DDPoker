@@ -19,7 +19,10 @@
  */
 package com.donohoedigital.games.poker.wicket;
 
+import com.donohoedigital.config.ApplicationType;
+import com.donohoedigital.config.ConfigManager;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
@@ -28,6 +31,11 @@ import static org.assertj.core.api.Assertions.*;
  * Tests for PokerUser admin functionality using PropertyConfig.
  */
 class PokerUserTest {
+    @BeforeEach
+    void setUp() {
+        new ConfigManager("test", ApplicationType.WEBAPP);
+    }
+
     @AfterEach
     void cleanup() {
         // Clear any system properties set during tests
