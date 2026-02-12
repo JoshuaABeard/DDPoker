@@ -32,15 +32,8 @@ async function apiFetch<T>(
     'Content-Type': 'application/json',
   }
 
-  // Add authorization header if token exists
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('ddpoker_token')
-    if (token) {
-      defaultHeaders['Authorization'] = `Bearer ${token}`
-    }
-  }
-
   const fetchOptions: RequestInit = {
+    credentials: 'include', // Always send cookies (JWT in HttpOnly cookie)
     ...options,
     headers: {
       ...defaultHeaders,
@@ -98,11 +91,10 @@ export const authApi = {
   /**
    * Log out the current user
    */
-  logout: (): void => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('ddpoker_token')
-      localStorage.removeItem('ddpoker_player')
-    }
+  logout: async (): Promise<void> => {
+    await apiFetch<void>('/api/auth/logout', {
+      method: 'POST',
+    })
   },
 
   /**

@@ -114,6 +114,14 @@ export interface TournamentHistoryEntry {
 export interface LoginRequest {
   username: string
   password: string
+  rememberMe: boolean
+}
+
+export interface AuthResponse {
+  success: boolean
+  message: string
+  username?: string
+  admin?: boolean
 }
 
 export interface LoginResponse {

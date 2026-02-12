@@ -1,10 +1,11 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
- * DD Poker - Online Portal Page (Placeholder)
+ * DD Poker - Online Portal Home Page
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
 import { Metadata } from 'next'
+import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Online Games Portal - DD Poker Community Edition',
@@ -12,30 +13,76 @@ export const metadata: Metadata = {
 }
 
 export default function OnlinePortal() {
+  const sections = [
+    {
+      title: 'Rankings & Stats',
+      links: [
+        { href: '/online/leaderboard', label: 'Leaderboard', rss: '/api/rss/leaderboard' },
+        { href: '/online/search', label: 'Player Search' },
+      ],
+    },
+    {
+      title: 'Games',
+      links: [
+        { href: '/online/available', label: 'Available Games', rss: '/api/rss/available' },
+        { href: '/online/current', label: 'Current Games', rss: '/api/rss/current' },
+        { href: '/online/completed', label: 'Completed Games', rss: '/api/rss/completed' },
+      ],
+    },
+    {
+      title: 'Information',
+      links: [
+        { href: '/online/hosts', label: 'Host List' },
+      ],
+    },
+  ]
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-4">Online Games Portal</h1>
+      <h1 className="text-3xl font-bold mb-6">Online Games Portal</h1>
 
-      <div className="p-8 bg-blue-50 border-2 border-blue-500 rounded-lg text-center">
-        <h2 className="text-2xl font-bold mb-4 text-blue-800">Coming Soon in Phase 3</h2>
-        <p className="leading-relaxed">
-          The Online Games Portal will provide access to leaderboards, current games, completed games,
-          tournament history, and player profiles. This feature requires authentication and will be
-          implemented in Phase 3 of the website modernization project.
-        </p>
-      </div>
+      <div className="space-y-6">
+        {sections.map((section) => (
+          <div key={section.title} className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-2xl font-bold mb-4">{section.title}</h2>
+            <ul className="space-y-2">
+              {section.links.map((link) => (
+                <li key={link.href} className="flex items-center justify-between">
+                  <Link
+                    href={link.href}
+                    className="text-blue-600 hover:underline text-lg"
+                  >
+                    {link.label}
+                  </Link>
+                  {link.rss && (
+                    <a
+                      href={link.rss}
+                      className="text-orange-600 hover:underline text-sm"
+                      title="RSS Feed"
+                    >
+                      RSS
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
 
-      <div className="mt-8 space-y-4">
-        <h2 className="text-2xl font-bold mb-4">Planned Features:</h2>
-        <ul className="list-disc list-inside space-y-2 ml-4">
-          <li>Leaderboard - View top players and rankings</li>
-          <li>Current Games - See games currently in progress</li>
-          <li>Completed Games - Browse recently finished tournaments</li>
-          <li>Tournament History - Review past tournament results</li>
-          <li>Search - Find specific players or games</li>
-          <li>Host Information - View game host details</li>
-          <li>My Profile - Manage your player profile and settings</li>
-        </ul>
+        <div className="bg-gray-100 rounded-lg p-6">
+          <h2 className="text-xl font-bold mb-3">Need Help?</h2>
+          <p className="text-gray-700">
+            Visit our{' '}
+            <Link href="/support" className="text-blue-600 hover:underline">
+              Support
+            </Link>{' '}
+            page for assistance with online games, or check out the{' '}
+            <Link href="/support/selfhelp" className="text-blue-600 hover:underline">
+              Self-Help Guide
+            </Link>
+            .
+          </p>
+        </div>
       </div>
     </div>
   )

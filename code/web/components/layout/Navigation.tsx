@@ -13,9 +13,12 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { navData } from '@/lib/navData'
+import { useAuth } from '@/lib/auth/useAuth'
+import { CurrentProfile } from '@/components/auth/CurrentProfile'
 
 export default function Navigation() {
   const pathname = usePathname()
+  const { user, isAuthenticated } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const dropdownRefs = useRef<Record<string, HTMLLIElement | null>>({})
@@ -53,10 +56,8 @@ export default function Navigation() {
   const renderNavItem = (key: string, mobile = false) => {
     const item = navData[key]
 
-    // Skip admin menu if not admin (Phase 3 will add auth check)
-    if (item.admin) {
-      // TODO Phase 3: Check if user is admin
-      // For now, hide admin menu
+    // Skip admin menu if not admin
+    if (item.admin && !user?.isAdmin) {
       return null
     }
 
@@ -143,6 +144,15 @@ export default function Navigation() {
             <ul className="main-nav">
               {Object.keys(navData).map((key) => renderNavItem(key, false))}
             </ul>
+            <div className="auth-section">
+              {isAuthenticated ? (
+                <CurrentProfile />
+              ) : (
+                <Link href="/login" className="login-link">
+                  Log In
+                </Link>
+              )}
+            </div>
           </nav>
 
           {/* Mobile Menu Toggle */}
@@ -194,7 +204,9 @@ export default function Navigation() {
         }
 
         .desktop-nav {
-          display: block;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
         }
 
         .main-nav {
@@ -203,6 +215,29 @@ export default function Navigation() {
           list-style: none;
           margin: 0;
           padding: 0;
+        }
+
+        .auth-section {
+          margin-left: auto;
+          padding: 0 1.25rem;
+        }
+
+        .login-link {
+          display: block;
+          padding: 0.5rem 1rem;
+          color: white;
+          text-decoration: none;
+          font-family: "Delius", cursive;
+          font-variant: small-caps;
+          font-size: 1.1rem;
+          font-weight: 500;
+          background-color: rgba(255, 255, 255, 0.1);
+          border-radius: 4px;
+          transition: background-color 0.2s;
+        }
+
+        .login-link:hover {
+          background-color: rgba(255, 255, 255, 0.2);
         }
 
         .nav-item {

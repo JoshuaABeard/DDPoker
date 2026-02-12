@@ -8,6 +8,7 @@
 import type { Metadata } from 'next'
 import Navigation from '@/components/layout/Navigation'
 import Footer from '@/components/layout/Footer'
+import { AuthProvider } from '@/lib/auth/AuthContext'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -41,9 +42,11 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <Navigation />
-        <main id="content">{children}</main>
-        <Footer />
+        <AuthProvider>
+          <Navigation />
+          <main id="content">{children}</main>
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   )

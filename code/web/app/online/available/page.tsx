@@ -1,6 +1,6 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
- * DD Poker - Current Games Page
+ * DD Poker - Available Games Page
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
@@ -8,25 +8,25 @@ import { Metadata } from 'next'
 import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
 import { PlayerLink } from '@/components/online/PlayerLink'
-import { PlayerList } from '@/components/online/PlayerList'
 
 export const metadata: Metadata = {
-  title: 'Current Games - DD Poker',
-  description: 'View games currently in progress',
+  title: 'Available Games - DD Poker',
+  description: 'View available games waiting for players',
 }
 
-interface CurrentGame {
+interface AvailableGame {
   id: number
   name: string
   host: string
   mode: string
-  players: string[]
-  blindLevel: number
-  started: string
+  buyIn: number
+  players: number
+  maxPlayers: number
+  created: string
 }
 
-async function getCurrentGames(page: number): Promise<{
-  games: CurrentGame[]
+async function getAvailableGames(page: number): Promise<{
+  games: AvailableGame[]
   totalPages: number
   totalItems: number
 }> {
@@ -39,60 +39,61 @@ async function getCurrentGames(page: number): Promise<{
   }
 }
 
-export default async function CurrentGamesPage({
+export default async function AvailableGamesPage({
   searchParams,
 }: {
   searchParams: { page?: string }
 }) {
   const currentPage = parseInt(searchParams.page || '1')
-  const { games, totalPages, totalItems } = await getCurrentGames(currentPage)
+  const { games, totalPages, totalItems } = await getAvailableGames(currentPage)
 
   const columns = [
     {
       key: 'name',
       header: 'Game Name',
-      render: (game: CurrentGame) => game.name,
+      render: (game: AvailableGame) => game.name,
     },
     {
       key: 'host',
       header: 'Host',
-      render: (game: CurrentGame) => <PlayerLink playerName={game.host} />,
+      render: (game: AvailableGame) => <PlayerLink playerName={game.host} />,
     },
     {
       key: 'mode',
       header: 'Mode',
-      render: (game: CurrentGame) => game.mode,
+      render: (game: AvailableGame) => game.mode,
+    },
+    {
+      key: 'buyIn',
+      header: 'Buy-In',
+      render: (game: AvailableGame) => `$${game.buyIn.toLocaleString()}`,
+      align: 'right' as const,
     },
     {
       key: 'players',
       header: 'Players',
-      render: (game: CurrentGame) => <PlayerList players={game.players} />,
-    },
-    {
-      key: 'blindLevel',
-      header: 'Blind Level',
-      render: (game: CurrentGame) => game.blindLevel,
+      render: (game: AvailableGame) => `${game.players}/${game.maxPlayers}`,
       align: 'center' as const,
     },
     {
-      key: 'started',
-      header: 'Started',
-      render: (game: CurrentGame) => new Date(game.started).toLocaleString(),
+      key: 'created',
+      header: 'Created',
+      render: (game: AvailableGame) => new Date(game.created).toLocaleDateString(),
     },
   ]
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Current Games</h1>
+      <h1 className="text-3xl font-bold mb-6">Available Games</h1>
 
       <p className="mb-6 text-gray-700">
-        Games currently in progress. Click on player names to view their tournament history.
+        Games waiting for players to join. Click on a host name to view their tournament history.
       </p>
 
       <DataTable
         data={games}
         columns={columns}
-        emptyMessage="No games currently in progress"
+        emptyMessage="No available games at this time"
       />
 
       {totalPages > 1 && (

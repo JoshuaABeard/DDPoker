@@ -1,32 +1,124 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
- * DD Poker - Search Page (Placeholder)
+ * DD Poker - Player Search Page
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
-import Link from 'next/link'
 import { Metadata } from 'next'
+import { DataTable } from '@/components/data/DataTable'
+import { Pagination } from '@/components/data/Pagination'
+import { FilterForm } from '@/components/filters/FilterForm'
+import { HighlightText } from '@/components/online/HighlightText'
+import { PlayerLink } from '@/components/online/PlayerLink'
 
 export const metadata: Metadata = {
-  title: 'Search - DD Poker Community Edition',
-  description: 'Search for players and games',
+  title: 'Player Search - DD Poker',
+  description: 'Search for players and view their profiles',
 }
 
-export default function Search() {
-  return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-4">Search</h1>
+interface PlayerSearchResult {
+  playerName: string
+  gamesPlayed: number
+  lastPlayed: string
+  rank?: number
+}
 
-      <div className="p-8 bg-blue-50 border-2 border-blue-500 rounded-lg text-center">
-        <h2 className="text-2xl font-bold mb-4 text-blue-800">Coming Soon in Phase 3</h2>
-        <p className="leading-relaxed mb-4">
-          This page will allow you to search for players, games, and tournaments.
-          Authentication is required to access this feature.
-        </p>
-        <Link href="/online" className="text-[var(--color-poker-green)] hover:underline font-bold">
-          ← Back to Online Portal
-        </Link>
-      </div>
+async function searchPlayers(
+  name: string,
+  page: number
+): Promise<{
+  results: PlayerSearchResult[]
+  totalPages: number
+  totalItems: number
+}> {
+  // TODO: Replace with actual API call
+  // For now, return empty data
+  return {
+    results: [],
+    totalPages: 0,
+    totalItems: 0,
+  }
+}
+
+export default async function SearchPage({
+  searchParams,
+}: {
+  searchParams: { name?: string; page?: string }
+}) {
+  const searchTerm = searchParams.name || ''
+  const currentPage = parseInt(searchParams.page || '1')
+
+  const { results, totalPages, totalItems } = searchTerm
+    ? await searchPlayers(searchTerm, currentPage)
+    : { results: [], totalPages: 0, totalItems: 0 }
+
+  const columns = [
+    {
+      key: 'playerName',
+      header: 'Player Name',
+      render: (player: PlayerSearchResult) => (
+        <span>
+          <HighlightText text={player.playerName} searchTerm={searchTerm} />
+          {' ('}
+          <PlayerLink playerName={player.playerName} />
+          {')'}
+        </span>
+      ),
+    },
+    {
+      key: 'gamesPlayed',
+      header: 'Games Played',
+      render: (player: PlayerSearchResult) => player.gamesPlayed.toLocaleString(),
+      align: 'right' as const,
+    },
+    {
+      key: 'lastPlayed',
+      header: 'Last Played',
+      render: (player: PlayerSearchResult) => new Date(player.lastPlayed).toLocaleDateString(),
+    },
+    {
+      key: 'rank',
+      header: 'Rank',
+      render: (player: PlayerSearchResult) => player.rank || '-',
+      align: 'center' as const,
+    },
+  ]
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">Player Search</h1>
+
+      <p className="mb-6 text-gray-700">
+        Search for players by name. Use the = prefix for exact matches (e.g., =JohnDoe).
+      </p>
+
+      <FilterForm showNameSearch />
+
+      {searchTerm ? (
+        <>
+          <div className="mb-4 text-sm text-gray-600">
+            Search results for: <strong>{searchTerm}</strong>
+          </div>
+
+          <DataTable
+            data={results}
+            columns={columns}
+            emptyMessage={`No players found matching "${searchTerm}"`}
+          />
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalItems={totalItems}
+              itemsPerPage={20}
+            />
+          )}
+        </>
+      ) : (
+        <div className="p-6 bg-gray-50 border border-gray-300 rounded-lg text-center">
+          <p className="text-gray-700">Enter a player name to search</p>
+        </div>
+      )}
     </div>
   )
 }
