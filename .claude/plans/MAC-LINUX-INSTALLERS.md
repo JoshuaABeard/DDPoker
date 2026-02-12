@@ -1,7 +1,8 @@
 # Plan: macOS and Linux Installers via jpackage
 
-**Status:** Planned
+**Status:** In Progress
 **Date:** 2026-02-11
+**Branch:** feature-mac-linux-installers
 
 ## Context
 
@@ -161,3 +162,83 @@ Add "Multi-Platform Installers" section documenting:
 - **RPM naming:** jpackage generates RPM filenames automatically; exact name may differ slightly from table above.
 - **GitHub Actions cost:** macOS runners are 10x cost of Linux for private repos. For a public repo, all are free.
 - **macOS arch:** `macos-latest` is Apple Silicon (arm64). Intel Mac users would need a separate x86_64 build or use the universal JAR. This can be addressed later if needed.
+
+---
+
+## Implementation Progress
+
+### Completed Steps (2026-02-11)
+
+#### ✅ Step 1: macOS Icon (Simplified)
+- **Decision**: Skipped manual .icns creation - jpackage accepts PNG files directly on macOS and converts automatically
+- Using existing `pokericon128.png` for all platforms except Windows (which uses `.ico`)
+
+#### ✅ Step 2: Updated pom.xml
+- Added shared installer properties:
+  - `installer.name`: DDPokerCE
+  - `installer.version`: 3.3.0
+  - `installer.vendor`, `installer.description`, `installer.copyright`
+- Removed hardcoded jpackage plugin configuration
+- Added 4 Maven profiles:
+  - **installer-windows**: Auto-activated on Windows, builds MSI
+  - **installer-mac**: Auto-activated on macOS, builds DMG
+  - **installer-linux-deb**: Auto-activated on Linux, builds DEB
+  - **installer-linux-rpm**: Manual activation (`-Pinstaller-linux-rpm`), builds RPM
+- All profiles share common config via properties for consistency
+
+#### ✅ Step 3: GitHub Actions Workflow
+- Created `.github/workflows/build-installers.yml`
+- Matrix build strategy: windows-latest, macos-latest, ubuntu-latest
+- Prerequisites installed per platform:
+  - Windows: WiX Toolset via choco
+  - Linux: fakeroot + rpm packages
+  - macOS: No additional prereqs needed
+- Linux job builds both DEB and RPM
+- Automatic GitHub Release creation on version tags with all installers attached
+- Manual trigger via workflow_dispatch for testing
+
+#### ✅ Step 4: Updated Dockerfile
+- Changed `COPY docker/downloads/*.msi` to `COPY docker/downloads/` to include all installer types
+- Updated comments with build instructions for all 3 platforms
+- Added alternative option to download pre-built installers from GitHub Releases
+
+#### ✅ Step 5: Updated Download Page
+- Added 3 new platform sections to `DownloadHome.html`:
+  - **macOS DMG**: Blue theme, drag-to-Applications instructions, Gatekeeper bypass note
+  - **Linux DEB**: Orange theme, dpkg install command
+  - **Linux RPM**: Pink theme, dnf/rpm install commands
+- Each section includes file size (~98 MB), platform requirements, and installation steps
+- Preserved existing Windows MSI and Cross-Platform JAR sections
+
+#### ✅ Step 6: Updated BUILD.md
+- Replaced "Build Windows Installer" section with comprehensive "Multi-Platform Installers" section
+- Documented unified build command that works on all platforms
+- Added platform-specific subsections:
+  - Windows: WiX Toolset installation and verification
+  - macOS: Gatekeeper bypass instructions
+  - Linux DEB: fakeroot prerequisite
+  - Linux RPM: Explicit profile activation required
+- Added CI/CD section documenting GitHub Actions automated builds
+- Added note on code signing costs and unsigned installer workarounds
+
+### Next Steps
+
+1. **Verification**:
+   - Test pom.xml syntax: `mvn help:effective-pom` ✅ (Already validated)
+   - Local build test on Windows: `mvn clean package assembly:single jpackage:jpackage -DskipTests`
+   - Commit changes to worktree
+   - Test GitHub Actions workflow (push to feature branch or use workflow_dispatch)
+
+2. **Regression Testing**:
+   - Verify Windows MSI still builds identically with new profile system
+   - Check that profile auto-activation works correctly
+   - Ensure installer naming is consistent (DDPokerCE vs old DDPokerCommunityEdition)
+
+3. **Code Review**:
+   - Request review per CLAUDE.md Section 9
+   - Create `.claude/reviews/feature-mac-linux-installers.md` handoff file
+
+4. **Completion**:
+   - After approval: squash merge to main
+   - Move plan to `.claude/plans/completed/`
+   - Clean up worktree

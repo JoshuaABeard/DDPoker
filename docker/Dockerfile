@@ -97,27 +97,49 @@ RUN cd /tmp/client-build && \
 # Build universal FAT JAR (no server configuration)
 RUN cd /tmp/client-build && \
     printf "Manifest-Version: 1.0\nMain-Class: com.donohoedigital.games.poker.PokerMain\n" > MANIFEST.MF && \
-    "${JAVA_HOME}/bin/jar" cfm /app/downloads/DDPokerCommunityEdition-3.3.0.jar MANIFEST.MF -C . . && \
-    echo "✓ Universal JAR built: $(du -h /app/downloads/DDPokerCommunityEdition-3.3.0.jar | cut -f1)"
+    "${JAVA_HOME}/bin/jar" cfm /app/downloads/DDPokerCE-3.3.0.jar MANIFEST.MF -C . . && \
+    echo "✓ Universal JAR built: $(du -h /app/downloads/DDPokerCE-3.3.0.jar | cut -f1)"
 
 # Cleanup temp files
 RUN rm -rf /tmp/client-build /tmp/client-libs
 
 # ============================================================
-# COPY WINDOWS INSTALLER (REQUIRED)
+# COPY PRE-BUILT INSTALLERS (REQUIRED)
 # ============================================================
-# The MSI must be built on Windows using jpackage before building this Docker image.
-# This is a REQUIRED step - the Docker build will fail if the MSI is missing.
+# Platform-specific installers must be built on their native OS BEFORE
+# building the Docker image. The Dockerfile packages pre-built installers.
 #
-# Build command (run on Windows):
-#   cd code/poker
-#   mvn clean package assembly:single jpackage:jpackage -DskipTests
-#   cp "target/dist/DDPokerCommunityEdition-3.3.0.msi" ../../docker/downloads/
+# Why pre-build? jpackage requires:
+# - Windows: WiX Toolset (Windows-only, can't run in Linux container)
+# - macOS: Code signing tools (macOS-only)
+# - Linux: Native tools for DEB/RPM creation
+# - Native platform: jpackage must run on the target OS
+#
+# Build commands (run on each platform):
+#
+#   Windows (MSI):
+#     cd code/poker
+#     mvn clean package assembly:single jpackage:jpackage -DskipTests
+#     cp target/dist/DDPokerCE-3.3.0.msi ../../docker/downloads/
+#
+#   macOS (DMG):
+#     cd code/poker
+#     mvn clean package assembly:single jpackage:jpackage -DskipTests
+#     cp target/dist/DDPokerCE-3.3.0.dmg ../../docker/downloads/
+#
+#   Linux (DEB + RPM):
+#     cd code/poker
+#     mvn clean package assembly:single jpackage:jpackage -DskipTests
+#     mvn jpackage:jpackage -Pinstaller-linux-rpm -DskipTests
+#     cp target/dist/*.deb target/dist/*.rpm ../../docker/downloads/
+#
+# Alternatively, download pre-built installers from GitHub Releases:
+#   gh release download v3.3.0 -D docker/downloads/
 #
 # Then build Docker image (from repository root):
 #   docker compose -f docker/docker-compose.yml build
 
-COPY docker/downloads/*.msi /app/downloads/
+COPY docker/downloads/ /app/downloads/
 
 # ============================================================
 # ENTRYPOINT

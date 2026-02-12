@@ -101,16 +101,16 @@ docker compose up -d
 
 **Option 1: Windows Installer (Recommended for Windows Users)**
 1. Visit http://localhost:8080/downloads/
-2. Download `DDPokerCommunityEdition-3.3.0.msi` (~98MB)
+2. Download `DDPokerCE-3.3.0.msi` (~98MB)
 3. Double-click to install (Windows SmartScreen may warn - click "More info" → "Run anyway")
-4. Launch from Start Menu → DD Poker Community Edition → DDPokerCommunityEdition
+4. Launch from Start Menu → DD Poker Community Edition → DDPokerCE
 5. **No Java installation required!** JRE is bundled with the installer.
 
 **Option 2: Universal JAR (Cross-Platform, Advanced Users)**
 1. Visit http://localhost:8080/downloads/
-2. Download `DDPokerCommunityEdition-3.3.0.jar` (21MB universal JAR)
+2. Download `DDPokerCE-3.3.0.jar` (21MB universal JAR)
 3. Requires Java 25 to be installed separately
-4. Run with: `java -jar DDPokerCommunityEdition-3.3.0.jar`
+4. Run with: `java -jar DDPokerCE-3.3.0.jar`
 5. Connect to your server at `localhost:8877`
 
 **Admin Panel Access (Optional):**

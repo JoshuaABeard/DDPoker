@@ -37,13 +37,13 @@ The Docker container serves client downloads at `http://localhost:8080/downloads
 
 ### Available Files
 
-1. **DDPokerCommunityEdition-3.3.0.jar** (~21 MB)
+1. **DDPokerCE-3.3.0.jar** (~21 MB)
    - Universal JAR file (works on all platforms)
    - Requires Java 25 to be installed separately
-   - Run with: `java -jar DDPokerCommunityEdition-3.3.0.jar`
+   - Run with: `java -jar DDPokerCE-3.3.0.jar`
    - Built automatically inside Docker container
 
-2. **DDPokerCommunityEdition-3.3.0.msi** (~98 MB)
+2. **DDPokerCE-3.3.0.msi** (~98 MB)
    - Windows installer with bundled Java runtime
    - No Java installation required
    - Built separately on Windows machine
@@ -66,7 +66,7 @@ cd code/poker
 mvn clean package assembly:single jpackage:jpackage -DskipTests
 
 # 2. Copy to Docker downloads folder
-cp target/dist/DDPokerCommunityEdition-3.3.0.msi ../../docker/downloads/
+cp target/dist/DDPokerCE-3.3.0.msi ../../docker/downloads/
 
 # 3. Rebuild Docker image (from repository root)
 cd ../..
@@ -79,8 +79,8 @@ docker compose -f docker/docker-compose.yml up -d
 **Accessing Downloads:**
 - **Web Browser**: http://localhost:8080/downloads/
 - **Direct URLs**:
-  - JAR: http://localhost:8080/downloads/DDPokerCommunityEdition-3.3.0.jar
-  - MSI: http://localhost:8080/downloads/DDPokerCommunityEdition-3.3.0.msi
+  - JAR: http://localhost:8080/downloads/DDPokerCE-3.3.0.jar
+  - MSI: http://localhost:8080/downloads/DDPokerCE-3.3.0.msi
 
 **Important**: The MSI file **must** be present in `docker/downloads/` before building the Docker image. The Docker build will fail if the MSI is missing. Follow the build steps above to create the MSI first.
 

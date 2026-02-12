@@ -1,0 +1,165 @@
+name: Build Multi-Platform Installers
+
+# Trigger on version tags (e.g., v3.3.0) or manual workflow dispatch
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g., 3.3.0)'
+        required: true
+        default: '3.3.0'
+
+permissions:
+  contents: write  # Required for creating GitHub Releases
+
+jobs:
+  build-installers:
+    name: Build ${{ matrix.platform }} Installer
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            platform: Windows
+            installer-pattern: '*.msi'
+          - os: macos-latest
+            platform: macOS
+            installer-pattern: '*.dmg'
+          - os: ubuntu-latest
+            platform: Linux
+            installer-pattern: '*.deb'
+
+    steps:
+      # ===================================================================
+      # 1. Checkout Repository
+      # ===================================================================
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ===================================================================
+      # 2. Setup Java 25 (Eclipse Temurin)
+      # ===================================================================
+      - name: Setup JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          cache: 'maven'
+
+      # ===================================================================
+      # 3. Platform-Specific Prerequisites
+      # ===================================================================
+
+      # Windows: Install WiX Toolset for MSI creation
+      - name: Install WiX Toolset (Windows)
+        if: matrix.os == 'windows-latest'
+        run: choco install wixtoolset
+
+      # Linux: Install required packaging tools
+      - name: Install Packaging Tools (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fakeroot rpm
+
+      # ===================================================================
+      # 4. Build Installers
+      # ===================================================================
+
+      # Build universal JAR and platform-specific installer
+      - name: Build ${{ matrix.platform }} Installer
+        working-directory: code/poker
+        run: mvn clean package assembly:single jpackage:jpackage -DskipTests
+
+      # Linux only: Also build RPM installer
+      - name: Build RPM Installer (Linux only)
+        if: matrix.os == 'ubuntu-latest'
+        working-directory: code/poker
+        run: mvn jpackage:jpackage -Pinstaller-linux-rpm -DskipTests
+
+      # ===================================================================
+      # 5. Upload Build Artifacts
+      # ===================================================================
+
+      - name: Upload ${{ matrix.platform }} Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.platform }}
+          path: |
+            code/poker/target/dist/${{ matrix.installer-pattern }}
+            code/poker/target/*.jar
+          retention-days: 30
+
+      # Linux only: Upload RPM as separate artifact
+      - name: Upload RPM Installer (Linux only)
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-Linux-RPM
+          path: code/poker/target/dist/*.rpm
+          retention-days: 30
+
+  # =====================================================================
+  # Create GitHub Release with All Installers
+  # =====================================================================
+  create-release:
+    name: Create GitHub Release
+    needs: build-installers
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: installers
+
+      - name: Display downloaded files
+        run: ls -R installers/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            installers/**/*.msi
+            installers/**/*.dmg
+            installers/**/*.deb
+            installers/**/*.rpm
+            installers/**/*.jar
+          body: |
+            # DD Poker Community Edition ${{ github.ref_name }}
+
+            ## Downloads
+
+            ### Windows
+            - **MSI Installer** (recommended): `DDPokerCE-3.3.0.msi`
+            - Requires: Windows 10 or later
+            - Installation: Double-click and follow the wizard
+
+            ### macOS
+            - **DMG Installer** (recommended): `DDPokerCE-3.3.0.dmg`
+            - Requires: macOS 11.0 (Big Sur) or later
+            - Installation: Open DMG, drag to Applications folder
+            - **Note**: Right-click > Open to bypass Gatekeeper (unsigned app)
+
+            ### Linux
+            - **DEB Package** (Debian/Ubuntu): `ddpoker-ce_3.3.0-1_amd64.deb`
+              - Install: `sudo dpkg -i ddpoker-ce_3.3.0-1_amd64.deb`
+            - **RPM Package** (Fedora/RHEL): `ddpoker-ce-3.3.0-1.x86_64.rpm`
+              - Install: `sudo dnf install ddpoker-ce-3.3.0-1.x86_64.rpm`
+
+            ### Universal JAR
+            - **All Platforms** (requires Java 25+): `DDPokerCE-3.3.0.jar`
+            - Run: `java -jar DDPokerCE-3.3.0.jar`
+
+            ## What's New
+
+            See [CHANGELOG.md](CHANGELOG.md) for details.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

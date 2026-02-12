@@ -48,6 +48,15 @@
   <version>3.3.0-CommunityEdition</version>
   <name>poker</name>
 
+  <properties>
+    <!-- Installer Configuration (shared across all platforms) -->
+    <installer.name>DDPokerCE</installer.name>
+    <installer.version>3.3.0</installer.version>
+    <installer.vendor>DD Poker Community</installer.vendor>
+    <installer.description>DD Poker Community Edition - Texas Hold'em Tournament Poker</installer.description>
+    <installer.copyright>Copyright 2003-2026 Doug Donohoe</installer.copyright>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.donohoedigital</groupId>
@@ -127,7 +136,7 @@
           <descriptorRefs>
             <descriptorRef>jar-with-dependencies</descriptorRef>
           </descriptorRefs>
-          <finalName>poker-${project.version}</finalName>
+          <finalName>${installer.name}-${installer.version}</finalName>
           <appendAssemblyId>false</appendAssemblyId>
         </configuration>
       </plugin>
@@ -144,43 +153,9 @@
           </execution>
         </executions>
       </plugin>
-      <!-- jpackage plugin for creating Windows installer -->
-      <plugin>
-        <groupId>org.panteleyev</groupId>
-        <artifactId>jpackage-maven-plugin</artifactId>
-        <version>1.6.5</version>
-        <configuration>
-          <!-- Basic Application Info -->
-          <name>DDPokerCommunityEdition</name>
-          <appVersion>3.3.0</appVersion>
-          <vendor>DD Poker Community</vendor>
-          <description>DD Poker Community Edition - Texas Hold'em Tournament Poker</description>
-          <copyright>Copyright 2003-2026 Doug Donohoe</copyright>
 
-          <!-- Input/Output -->
-          <input>target</input>
-          <destination>target/dist</destination>
-          <mainJar>poker-${project.version}.jar</mainJar>
-          <mainClass>com.donohoedigital.games.poker.PokerMain</mainClass>
-
-          <!-- Windows-Specific Settings -->
-          <!-- Note: Requires WiX Toolset v3.14+ installed (winget install WiXToolset.WiXToolset) -->
-          <type>MSI</type>
-          <winMenu>true</winMenu>
-          <winDirChooser>true</winDirChooser>
-          <winShortcut>true</winShortcut>
-          <winMenuGroup>DD Poker Community Edition</winMenuGroup>
-
-          <!-- Application Icon -->
-          <icon>src/main/resources/config/poker/images/pokericon32.ico</icon>
-
-          <!-- JVM Options -->
-          <javaOptions>
-            <option>-Dfile.encoding=UTF-8</option>
-            <option>-Xmx512m</option>
-          </javaOptions>
-        </configuration>
-      </plugin>
+      <!-- jpackage plugin configuration moved to OS-specific profiles below -->
+      <!-- See profiles: installer-windows, installer-mac, installer-linux-deb, installer-linux-rpm -->
 
       <!-- Jacoco Coverage Enforcement -->
       <!-- Overrides parent POM's 65% threshold with package-specific rules -->
@@ -243,4 +218,202 @@
       </plugin>
     </plugins>
   </build>
+
+  <!-- ===================================================================== -->
+  <!-- Platform-Specific Installer Profiles                                 -->
+  <!-- ===================================================================== -->
+  <profiles>
+    <!-- ================================================================= -->
+    <!-- Windows Installer (MSI) - Auto-activated on Windows              -->
+    <!-- ================================================================= -->
+    <profile>
+      <id>installer-windows</id>
+      <activation>
+        <os>
+          <family>windows</family>
+        </os>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.panteleyev</groupId>
+            <artifactId>jpackage-maven-plugin</artifactId>
+            <version>1.6.5</version>
+            <configuration>
+              <!-- Basic Application Info -->
+              <name>${installer.name}</name>
+              <appVersion>${installer.version}</appVersion>
+              <vendor>${installer.vendor}</vendor>
+              <description>${installer.description}</description>
+              <copyright>${installer.copyright}</copyright>
+
+              <!-- Input/Output -->
+              <input>target</input>
+              <destination>target/dist</destination>
+              <mainJar>${installer.name}-${installer.version}.jar</mainJar>
+              <mainClass>com.donohoedigital.games.poker.PokerMain</mainClass>
+
+              <!-- Windows-Specific Settings -->
+              <!-- Note: Requires WiX Toolset v3.14+ (winget install WiXToolset.WiXToolset) -->
+              <type>MSI</type>
+              <winMenu>true</winMenu>
+              <winDirChooser>true</winDirChooser>
+              <winShortcut>true</winShortcut>
+              <winMenuGroup>DD Poker Community Edition</winMenuGroup>
+              <icon>src/main/resources/config/poker/images/pokericon32.ico</icon>
+
+              <!-- JVM Options -->
+              <javaOptions>
+                <option>-Dfile.encoding=UTF-8</option>
+                <option>-Xmx512m</option>
+              </javaOptions>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- ================================================================= -->
+    <!-- macOS Installer (DMG) - Auto-activated on macOS                  -->
+    <!-- ================================================================= -->
+    <profile>
+      <id>installer-mac</id>
+      <activation>
+        <os>
+          <family>mac</family>
+        </os>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.panteleyev</groupId>
+            <artifactId>jpackage-maven-plugin</artifactId>
+            <version>1.6.5</version>
+            <configuration>
+              <!-- Basic Application Info -->
+              <name>${installer.name}</name>
+              <appVersion>${installer.version}</appVersion>
+              <vendor>${installer.vendor}</vendor>
+              <description>${installer.description}</description>
+              <copyright>${installer.copyright}</copyright>
+
+              <!-- Input/Output -->
+              <input>target</input>
+              <destination>target/dist</destination>
+              <mainJar>${installer.name}-${installer.version}.jar</mainJar>
+              <mainClass>com.donohoedigital.games.poker.PokerMain</mainClass>
+
+              <!-- macOS-Specific Settings -->
+              <type>DMG</type>
+              <macPackageName>DD Poker CE</macPackageName>
+              <macPackageIdentifier>com.donohoedigital.games.poker</macPackageIdentifier>
+              <icon>src/main/resources/config/poker/images/pokericon128.png</icon>
+
+              <!-- JVM Options -->
+              <javaOptions>
+                <option>-Dfile.encoding=UTF-8</option>
+                <option>-Xmx512m</option>
+              </javaOptions>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- ================================================================= -->
+    <!-- Linux DEB Installer - Auto-activated on Linux                    -->
+    <!-- ================================================================= -->
+    <profile>
+      <id>installer-linux-deb</id>
+      <activation>
+        <os>
+          <family>unix</family>
+          <name>Linux</name>
+        </os>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.panteleyev</groupId>
+            <artifactId>jpackage-maven-plugin</artifactId>
+            <version>1.6.5</version>
+            <configuration>
+              <!-- Basic Application Info -->
+              <name>${installer.name}</name>
+              <appVersion>${installer.version}</appVersion>
+              <vendor>${installer.vendor}</vendor>
+              <description>${installer.description}</description>
+              <copyright>${installer.copyright}</copyright>
+
+              <!-- Input/Output -->
+              <input>target</input>
+              <destination>target/dist</destination>
+              <mainJar>${installer.name}-${installer.version}.jar</mainJar>
+              <mainClass>com.donohoedigital.games.poker.PokerMain</mainClass>
+
+              <!-- Linux DEB-Specific Settings -->
+              <type>DEB</type>
+              <linuxShortcut>true</linuxShortcut>
+              <linuxMenuGroup>Games</linuxMenuGroup>
+              <linuxAppCategory>Game</linuxAppCategory>
+              <linuxPackageName>ddpoker-ce</linuxPackageName>
+              <icon>src/main/resources/config/poker/images/pokericon128.png</icon>
+
+              <!-- JVM Options -->
+              <javaOptions>
+                <option>-Dfile.encoding=UTF-8</option>
+                <option>-Xmx512m</option>
+              </javaOptions>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- ================================================================= -->
+    <!-- Linux RPM Installer - Manually activated (-Pinstaller-linux-rpm) -->
+    <!-- ================================================================= -->
+    <profile>
+      <id>installer-linux-rpm</id>
+      <!-- Not auto-activated because DEB profile already activates on Linux -->
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.panteleyev</groupId>
+            <artifactId>jpackage-maven-plugin</artifactId>
+            <version>1.6.5</version>
+            <configuration>
+              <!-- Basic Application Info -->
+              <name>${installer.name}</name>
+              <appVersion>${installer.version}</appVersion>
+              <vendor>${installer.vendor}</vendor>
+              <description>${installer.description}</description>
+              <copyright>${installer.copyright}</copyright>
+
+              <!-- Input/Output -->
+              <input>target</input>
+              <destination>target/dist</destination>
+              <mainJar>${installer.name}-${installer.version}.jar</mainJar>
+              <mainClass>com.donohoedigital.games.poker.PokerMain</mainClass>
+
+              <!-- Linux RPM-Specific Settings -->
+              <type>RPM</type>
+              <linuxShortcut>true</linuxShortcut>
+              <linuxMenuGroup>Games</linuxMenuGroup>
+              <linuxAppCategory>Game</linuxAppCategory>
+              <linuxPackageName>ddpoker-ce</linuxPackageName>
+              <linuxRpmLicenseType>GPLv3</linuxRpmLicenseType>
+              <icon>src/main/resources/config/poker/images/pokericon128.png</icon>
+
+              <!-- JVM Options -->
+              <javaOptions>
+                <option>-Dfile.encoding=UTF-8</option>
+                <option>-Xmx512m</option>
+              </javaOptions>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
