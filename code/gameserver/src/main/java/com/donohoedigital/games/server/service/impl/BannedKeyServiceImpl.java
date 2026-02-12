@@ -48,10 +48,16 @@ import java.util.*;
 @Service("bannedKeyService")
 public class BannedKeyServiceImpl implements BannedKeyService {
     private BannedKeyDao dao;
+    private RegistrationService registrationService;
 
     @Autowired
     public void setBannedKeyDao(BannedKeyDao dao) {
         this.dao = dao;
+    }
+
+    @Autowired
+    public void setRegistrationService(RegistrationService registrationService) {
+        this.registrationService = registrationService;
     }
 
     @Transactional(readOnly = true)
@@ -90,6 +96,8 @@ public class BannedKeyServiceImpl implements BannedKeyService {
     @Transactional
     public void saveBannedKey(BannedKey key) {
         dao.save(key);
+        // Clear cache since banned keys were modified
+        registrationService.clearBannedKeysCache();
     }
 
     @Transactional
@@ -102,5 +110,8 @@ public class BannedKeyServiceImpl implements BannedKeyService {
             if (key != null) {
                 dao.delete(key);
             }
+
+        // Clear cache since banned keys were modified
+        registrationService.clearBannedKeysCache();
     }
 }

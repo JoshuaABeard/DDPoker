@@ -219,8 +219,8 @@ public class Registration implements BaseModel<Long> {
     }
 
     /**
-     * Utility method for generifying hostname.
-     * Currently returns hostname unchanged - can be enhanced for privacy.
+     * Utility method for generifying hostname. Currently returns hostname unchanged
+     * - can be enhanced for privacy.
      */
     public static String generifyHostName(String hostname) {
         return hostname;
