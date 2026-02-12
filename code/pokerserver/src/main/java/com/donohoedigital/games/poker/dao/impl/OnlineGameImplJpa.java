@@ -60,10 +60,8 @@ public class OnlineGameImplJpa extends JpaBaseDao<OnlineGame, Long> implements O
     private static final Date BEGINNING_OF_TIME = new Date(0);
 
     @SuppressWarnings({"unchecked"})
-    public OnlineGame getByKeyAndUrl(String sKey, String sUrl) {
-        Query query = entityManager
-                .createQuery("select o from OnlineGame o " + "where o.licenseKey = :key and o.url = :url");
-        query.setParameter("key", sKey);
+    public OnlineGame getByUrl(String sUrl) {
+        Query query = entityManager.createQuery("select o from OnlineGame o " + "where o.url = :url");
         query.setParameter("url", sUrl);
 
         List<OnlineGame> list = (List<OnlineGame>) query.getResultList();

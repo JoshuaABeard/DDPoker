@@ -74,14 +74,6 @@ public class FindGames extends ListGames {
     @Override
     public void init(GameEngine engine, GameContext context, GamePhase gamephase) {
         super.init(engine, context, gamephase);
-
-        // need online activated profile for public games
-        if (!profile_.isActivated()) {
-            connectLabel_.setEnabled(false);
-            connectText_.setText(PropertyConfig.getMessage("msg.onlinerequired", profile_.getName()));
-            connectText_.setEnabled(false);
-            pubPaste_.setEnabled(false);
-        }
     }
 
     /**
@@ -108,7 +100,7 @@ public class FindGames extends ListGames {
             return;
 
         // get current values
-        boolean updateText = profile_.isActivated();
+        boolean updateText = true;
         String sCurrentText = connectText_.getText().trim();
         String sOldWanConnect = (selected_ != null) ? selected_.getUrl() : null;
         String sNewWanConnect = (newSelection != null) ? newSelection.getUrl() : null;
@@ -178,13 +170,7 @@ public class FindGames extends ListGames {
      */
     @Override
     protected void checkButtons() {
-        if (profile_.isActivated()) {
-            super.checkButtons();
-        } else {
-            // no join or observe if not an activated online profile
-            start_.setEnabled(false);
-            obs_.setEnabled(false);
-        }
+        super.checkButtons();
     }
 
     /**
@@ -333,7 +319,7 @@ public class FindGames extends ListGames {
         label.setText(profileText);
         profilepanel.add(label);
 
-        label = new DDLabel((profile_.isActivated() ? "publicjoin.enabled" : "publicjoin.disabled"), "StartMenuSmall");
+        label = new DDLabel("publicjoin.enabled", "StartMenuSmall");
         profilepanel.add(label);
 
         // add spacer
@@ -411,15 +397,11 @@ public class FindGames extends ListGames {
         if (faceless) {
             hmParams.setBoolean(SendMessageDialog.PARAM_FACELESS, Boolean.TRUE);
         } else {
-            // If the current profile is an activated online profile, then attempt to
-            // authenticate
-            // it on the server the first time the list is retrieved.
-            if (profile_.isActivated()) {
-                auth = new OnlineProfile(profile_.getName());
-                auth.setPassword(profile_.getPassword());
+            // Authenticate the profile on the server the first time the list is retrieved.
+            auth = new OnlineProfile(profile_.getName());
+            auth.setPassword(profile_.getPassword());
 
-                hmParams.setObject(GetWanList.PARAM_AUTH, auth);
-            }
+            hmParams.setObject(GetWanList.PARAM_AUTH, auth);
 
             hmParams.setBoolean(SendMessageDialog.PARAM_FACELESS, Boolean.FALSE);
         }

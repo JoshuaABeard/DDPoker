@@ -124,7 +124,7 @@ public class OnlineGameServiceImpl implements OnlineGameService {
     @Transactional
     public void saveOnlineGame(OnlineGame game) {
         // if a game exists that matches, delete it first
-        OnlineGame exist = gameDao.getByKeyAndUrl(game.getLicenseKey(), game.getUrl());
+        OnlineGame exist = gameDao.getByUrl(game.getUrl());
         if (exist != null) {
             gameDao.delete(exist);
             gameDao.flush(); // flush otherwise we'll get a db constraint violation
@@ -137,7 +137,7 @@ public class OnlineGameServiceImpl implements OnlineGameService {
         // if nothing exists to update, return null. This can happen due
         // to an existing bug in 2.5p3 and below where non-hosts send updates
         // when other players quit (OnlineManager.processQuit() bug)
-        OnlineGame exist = gameDao.getByKeyAndUrl(game.getLicenseKey(), game.getUrl());
+        OnlineGame exist = gameDao.getByUrl(game.getUrl());
         if (exist == null) {
             return null;
         } else {
@@ -161,7 +161,7 @@ public class OnlineGameServiceImpl implements OnlineGameService {
     @Transactional
     public void deleteOnlineGame(OnlineGame game) {
         // only delete if a game exists that matches
-        OnlineGame exist = gameDao.getByKeyAndUrl(game.getLicenseKey(), game.getUrl());
+        OnlineGame exist = gameDao.getByUrl(game.getUrl());
         if (exist != null) {
             gameDao.delete(exist);
         }

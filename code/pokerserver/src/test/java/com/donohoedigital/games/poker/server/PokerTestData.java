@@ -45,7 +45,6 @@ public class PokerTestData {
     public static OnlineGame createOnlineGame(String host, int urlGameid, String urlPassword) {
         TournamentProfile tp = new TournamentProfile("Test Tournament");
         OnlineGame game = new OnlineGame();
-        game.setLicenseKey("0000-0000-0000-0000");
         game.setHostPlayer(host);
         game.setMode(OnlineGame.MODE_PLAY);
         game.setUrl("poker://192.1.1.100:11885/n-" + urlGameid + '/' + urlPassword);
@@ -60,8 +59,6 @@ public class PokerTestData {
         profile.setName(sName);
         profile.setUuid(UUID.randomUUID().toString());
         profile.setEmail("hibernate@example.com");
-        profile.setLicenseKey("0000-0000-0000-0000");
-        profile.setActivated(false);
         // Set both transient password (for authentication tests) and hashed password
         // (for storage)
         profile.setPassword("password");

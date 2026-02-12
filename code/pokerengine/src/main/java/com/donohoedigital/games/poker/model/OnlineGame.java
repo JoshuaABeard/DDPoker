@@ -53,7 +53,6 @@ public class OnlineGame implements BaseModel<Long>, SimpleXMLEncodable {
     private DMTypedHashMap data_;
 
     public static final String WAN_ID = "id";
-    public static final String WAN_LICENSE_KEY = "licensekey";
     public static final String WAN_URL = "url";
     public static final String WAN_HOST_PLAYER = "hostplayer";
     public static final String WAN_MODE = "mode";
@@ -126,15 +125,6 @@ public class OnlineGame implements BaseModel<Long>, SimpleXMLEncodable {
 
     public void setId(Long id) {
         data_.setLong(WAN_ID, id);
-    }
-
-    @Column(name = "wgm_license_key", nullable = false)
-    public String getLicenseKey() {
-        return data_.getString(WAN_LICENSE_KEY);
-    }
-
-    public void setLicenseKey(String s) {
-        data_.setString(WAN_LICENSE_KEY, s);
     }
 
     @Column(name = "wgm_url", nullable = false)
@@ -262,7 +252,7 @@ public class OnlineGame implements BaseModel<Long>, SimpleXMLEncodable {
     }
 
     /**
-     * override equals - uses URL and license key for equality
+     * override equals - uses URL for equality
      */
     @Override
     public boolean equals(Object o) {
@@ -273,7 +263,7 @@ public class OnlineGame implements BaseModel<Long>, SimpleXMLEncodable {
         final OnlineGame other = (OnlineGame) o;
 
         // FIX: handle null
-        return getLicenseKey().equals(other.getLicenseKey()) && getUrl().equals(other.getUrl());
+        return getUrl().equals(other.getUrl());
     }
 
     /**
@@ -281,15 +271,11 @@ public class OnlineGame implements BaseModel<Long>, SimpleXMLEncodable {
      */
     @Override
     public int hashCode() {
-        String sKey = getLicenseKey();
         String sURL = getUrl();
-        if (sKey == null || sURL == null)
+        if (sURL == null)
             return super.hashCode();
 
-        int hash = 31 * super.hashCode() + sKey.hashCode();
-        hash = 31 * hash + sURL.hashCode();
-
-        return hash;
+        return 31 * super.hashCode() + sURL.hashCode();
     }
 
     /**

@@ -71,8 +71,6 @@ public class HibernateTest extends TestCase {
         profile.setName("Hibernate Test");
         profile.setUuid(java.util.UUID.randomUUID().toString());
         profile.setEmail("hibernate@example.com");
-        profile.setLicenseKey("0000-0000-0000-0000");
-        profile.setActivated(false);
         profile.setPasswordHash(org.mindrot.jbcrypt.BCrypt.hashpw("password", org.mindrot.jbcrypt.BCrypt.gensalt()));
 
         insEm.persist(profile);
@@ -80,7 +78,6 @@ public class HibernateTest extends TestCase {
 
         // sleep and update date
         Utils.sleepSeconds(1);
-        profile.setActivated(true);
 
         // call not needed since all updates are automatically tracked
         // the above change is committed to DB when commit() is called.

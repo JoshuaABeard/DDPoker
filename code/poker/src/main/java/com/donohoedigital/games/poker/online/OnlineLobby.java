@@ -93,14 +93,6 @@ public class OnlineLobby extends BasePhase implements ChatHandler, DDTable.Table
             return false;
         }
 
-        if (!profile.isActivated()) {
-            // dialog
-            EngineUtils.displayInformationDialog(context,
-                    PropertyConfig.getMessage("msg.lobby.profilereq", Utils.encodeHTML(profile.getName())));
-
-            return false;
-        }
-
         // Automatically validate profile to load UUID if needed
         // Only validate if: (1) no UUID loaded, or (2) profile has changed since last
         // validation
@@ -227,16 +219,9 @@ public class OnlineLobby extends BasePhase implements ChatHandler, DDTable.Table
         // place the whole thing in the Engine's base panel
         context_.setMainUIComponent(this, base_, true, chat_.getFocusWidget());
 
-        // double check profile is ok
-        if (!profile_.isActivated()) {
-            // dialog
-            EngineUtils.displayInformationDialog(context_,
-                    PropertyConfig.getMessage("msg.lobby.profilereq", Utils.encodeHTML(profile_.getName())));
-            context_.close();
-        } else {
-            Thread t = new Thread(this, "OnlineLobbyInit");
-            t.start();
-        }
+        // start lobby initialization thread
+        Thread t = new Thread(this, "OnlineLobbyInit");
+        t.start();
     }
 
     /**

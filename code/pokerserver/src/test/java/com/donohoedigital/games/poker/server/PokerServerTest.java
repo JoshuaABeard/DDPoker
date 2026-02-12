@@ -96,7 +96,6 @@ class PokerServerTest {
         OnlineProfile profile = profileService.getOnlineProfileByName("newadmin");
         assertThat(profile).isNotNull();
         assertThat(profile.getName()).isEqualTo("newadmin");
-        assertThat(profile.isActivated()).isTrue();
         assertThat(profile.isRetired()).isFalse();
         assertThat(profile.getEmail()).isEqualTo("admin@localhost");
 
@@ -112,7 +111,6 @@ class PokerServerTest {
     void should_UpdateAdminProfile_When_ItAlreadyExists() {
         // Create an existing admin profile
         OnlineProfile existing = PokerTestData.createOnlineProfile("existingadmin");
-        existing.setActivated(false);
         existing.setRetired(true);
         profileService.saveOnlineProfile(existing);
 
@@ -129,7 +127,6 @@ class PokerServerTest {
         // Verify profile was updated
         OnlineProfile profile = profileService.getOnlineProfileByName("existingadmin");
         assertThat(profile).isNotNull();
-        assertThat(profile.isActivated()).isTrue();
         assertThat(profile.isRetired()).isFalse();
 
         // Verify new password works
@@ -159,7 +156,6 @@ class PokerServerTest {
         OnlineProfile profile = profileService.getOnlineProfileByName("autogenadmin");
         assertThat(profile).isNotNull();
         assertThat(profile.getName()).isEqualTo("autogenadmin");
-        assertThat(profile.isActivated()).isTrue();
         assertThat(profile.getPasswordHash()).isNotNull();
         assertThat(profile.getPasswordHash()).startsWith("$2a$");
     }
@@ -181,7 +177,6 @@ class PokerServerTest {
         OnlineProfile profile = profileService.getOnlineProfileByName("admin");
         assertThat(profile).isNotNull();
         assertThat(profile.getName()).isEqualTo("admin");
-        assertThat(profile.isActivated()).isTrue();
         assertThat(profile.isRetired()).isFalse();
         assertThat(profile.getPasswordHash()).isNotNull();
         assertThat(profile.getPasswordHash()).startsWith("$2a$");
@@ -193,7 +188,6 @@ class PokerServerTest {
         // Create an existing admin profile with a specific hashed password
         OnlineProfile existing = PokerTestData.createOnlineProfile("keepadmin");
         profileService.hashAndSetPassword(existing, "existingpass123");
-        existing.setActivated(true);
         existing.setRetired(false);
         profileService.saveOnlineProfile(existing);
 
@@ -224,7 +218,6 @@ class PokerServerTest {
         OnlineProfile profile = profileService.getOnlineProfileByName("keepadmin");
         assertThat(profile).isNotNull();
         assertThat(profile.getName()).isEqualTo("keepadmin");
-        assertThat(profile.isActivated()).isTrue();
         assertThat(profile.isRetired()).isFalse();
 
         // Verify original password still works

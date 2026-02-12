@@ -121,9 +121,6 @@ public class PokerConstants {
             return 23; // POKER (2nd game), Version 3
     }
 
-    // used with dummy profiles in wan_profile table
-    public static final String DUMMY_PROFILE_KEY_START = "0000-0000-0000-000";
-
     // change start id for new objects
     // because poker can have 1000's of players (up to 5600+),
     // territories start at 6000 (see gameboard.xml),

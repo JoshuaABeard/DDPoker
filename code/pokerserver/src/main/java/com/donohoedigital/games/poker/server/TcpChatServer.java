@@ -26,7 +26,6 @@ import com.donohoedigital.base.Utils;
 import com.donohoedigital.comms.DMArrayList;
 import com.donohoedigital.comms.DMTypedHashMap;
 import com.donohoedigital.config.PropertyConfig;
-import com.donohoedigital.games.comms.EngineMessage;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 import com.donohoedigital.games.poker.network.OnlineMessage;
@@ -393,30 +392,7 @@ public class TcpChatServer extends GameServer {
             }
 
             OnlineProfile auth = new OnlineProfile(authData);
-            String licenseKey = auth.getLicenseKey();
             String profileName = auth.getName();
-            String remoteIP = Utils.getIPAddress(channel);
-
-            // Validate license key
-            EngineMessage validateThis = new EngineMessage("ChatServer", EngineMessage.PLAYER_SERVER,
-                    EngineMessage.CAT_VERIFY_KEY);
-            validateThis.setKey(licenseKey);
-            validateThis.setVersion(msg.getData().getVersion());
-
-            EngineMessage validate = PokerServlet.validateKeyAndVersion(validateThis, remoteIP,
-                    chatServer_.bannedKeyService, PokerConstants.VERSION,
-                    PokerConstants.getKeyStart(validateThis.getVersion()), true, true, false);
-
-            if (validate != null) {
-                sendError(channel, validate.getApplicationErrorMessage());
-                return;
-            }
-
-            // Check for ban (using getIfBanned instead of isBannedKey)
-            if (chatServer_.bannedKeyService.isBanned(licenseKey)) {
-                sendError(channel, PropertyConfig.getMessage("msg.ban.key"));
-                return;
-            }
 
             // Get profile from database
             OnlineProfile user = chatServer_.onlineProfileService.getOnlineProfileByName(profileName);
@@ -429,7 +405,7 @@ public class TcpChatServer extends GameServer {
             }
 
             // Verify profile exists and credentials match
-            if (user == null || !user.getPassword().equals(auth.getPassword()) || !user.isActivated()) {
+            if (user == null || !user.getPassword().equals(auth.getPassword())) {
                 sendError(channel, PropertyConfig.getMessage("msg.wanprofile.unavailable"));
                 return;
             }
@@ -455,20 +431,13 @@ public class TcpChatServer extends GameServer {
             }
 
             // Check for duplicates
+            String remoteIP = Utils.getIPAddress(channel);
             synchronized (chatServer_.connections) {
                 for (ChatConnection existing : chatServer_.connections) {
-                    // Same license key from different connection
-                    if (existing.licenseKey.equals(licenseKey) && existing.channel != channel) {
-                        logger.info("Duplicate key rejected: " + licenseKey + " for " + profileName);
-                        sendError(channel, PropertyConfig.getMessage("msg.chat.dupkey", Utils.encodeHTML(profileName),
-                                licenseKey));
-                        return;
-                    }
-
                     // Same profile name from different connection
                     if (existing.playerInfo.getNameLower().equals(playerInfo.getNameLower())
                             && existing.channel != channel) {
-                        logger.info("Duplicate profile rejected: " + licenseKey + " for " + profileName);
+                        logger.info("Duplicate profile rejected for " + profileName);
                         sendError(channel, PropertyConfig.getMessage("msg.chat.dupprofile",
                                 Utils.encodeHTML(profileName), remoteIP));
                         return;
@@ -482,7 +451,7 @@ public class TcpChatServer extends GameServer {
                 }
 
                 // Add new connection
-                ChatConnection newConn = new ChatConnection(channel, licenseKey, playerInfo);
+                ChatConnection newConn = new ChatConnection(channel, playerInfo);
                 chatServer_.connections.add(newConn);
 
                 logger.info(playerInfo.getName() + " HELLO (" + channel.socket().getInetAddress().getHostAddress() + ":"
@@ -585,13 +554,11 @@ public class TcpChatServer extends GameServer {
      */
     private static class ChatConnection {
         final SocketChannel channel;
-        final String licenseKey;
         final OnlinePlayerInfo playerInfo;
         final LinkedBlockingQueue<Peer2PeerMessage> writeQueue;
 
-        ChatConnection(SocketChannel channel, String licenseKey, OnlinePlayerInfo playerInfo) {
+        ChatConnection(SocketChannel channel, OnlinePlayerInfo playerInfo) {
             this.channel = channel;
-            this.licenseKey = licenseKey;
             this.playerInfo = playerInfo;
             this.writeQueue = new LinkedBlockingQueue<>();
         }

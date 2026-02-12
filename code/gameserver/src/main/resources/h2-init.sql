@@ -7,11 +7,9 @@
 CREATE TABLE IF NOT EXISTS wan_profile (
     wpr_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     wpr_name VARCHAR(32) NOT NULL,
-    wpr_license_key VARCHAR(55) NULL DEFAULT '',
     wpr_email VARCHAR(255) NOT NULL,
     wpr_password VARCHAR(255) NOT NULL,
     wpr_uuid VARCHAR(36) NOT NULL,
-    wpr_is_activated BOOLEAN NOT NULL DEFAULT TRUE,
     wpr_is_retired BOOLEAN NOT NULL,
     wpr_create_date DATETIME NOT NULL,
     wpr_modify_date DATETIME NOT NULL
@@ -20,14 +18,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS wpr_name ON wan_profile(wpr_name);
 CREATE INDEX IF NOT EXISTS wpr_email ON wan_profile(wpr_email);
 CREATE UNIQUE INDEX IF NOT EXISTS wpr_uuid ON wan_profile(wpr_uuid);
 
--- Migration for existing databases: Allow NULL for deprecated license fields
-ALTER TABLE IF EXISTS wan_profile ALTER COLUMN wpr_license_key SET DEFAULT '';
-ALTER TABLE IF EXISTS wan_profile ALTER COLUMN wpr_license_key SET NULL;
-ALTER TABLE IF EXISTS wan_profile ALTER COLUMN wpr_is_activated SET DEFAULT TRUE;
+-- Migration: Remove deprecated license columns from existing databases
+ALTER TABLE IF EXISTS wan_profile DROP COLUMN IF EXISTS wpr_license_key;
+ALTER TABLE IF EXISTS wan_profile DROP COLUMN IF EXISTS wpr_is_activated;
 
 CREATE TABLE IF NOT EXISTS wan_game (
     wgm_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    wgm_license_key VARCHAR(55) NOT NULL,
     wgm_url VARCHAR(64) NOT NULL,
     wgm_host_player VARCHAR(64) NOT NULL,
     wgm_start_date DATETIME NULL,
@@ -37,7 +33,10 @@ CREATE TABLE IF NOT EXISTS wan_game (
     wgm_mode TINYINT NOT NULL,
     wgm_tournament_data TEXT NOT NULL
 );
-CREATE UNIQUE INDEX IF NOT EXISTS wgm_license_key ON wan_game(wgm_license_key, wgm_url);
+CREATE UNIQUE INDEX IF NOT EXISTS wgm_url ON wan_game(wgm_url);
+
+-- Migration: Remove deprecated license column from existing databases
+ALTER TABLE IF EXISTS wan_game DROP COLUMN IF EXISTS wgm_license_key;
 CREATE INDEX IF NOT EXISTS wgm_host_player ON wan_game(wgm_host_player);
 CREATE INDEX IF NOT EXISTS wgm_modify_date ON wan_game(wgm_modify_date);
 CREATE INDEX IF NOT EXISTS wgm_end_date ON wan_game(wgm_end_date);

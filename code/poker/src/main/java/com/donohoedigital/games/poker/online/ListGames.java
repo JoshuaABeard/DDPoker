@@ -469,11 +469,6 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
      * pasting. So what.
      */
     private boolean validateProfile() {
-        // no need to do anything if not already online activated
-        if (!profile_.isActivated()) {
-            return true;
-        }
-
         // if profile was manually changed, the password won't decrypt
         try {
             profile_.getPassword();
@@ -520,7 +515,6 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
 
     protected void resetProfile() {
         profile_.setPassword(null);
-        profile_.setActivated(false);
         profile_.save();
     }
 }

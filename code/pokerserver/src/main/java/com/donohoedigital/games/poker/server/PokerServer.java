@@ -115,9 +115,7 @@ public class PokerServer extends EngineServer {
             profile.setName(adminUsername);
             profile.setEmail("admin@localhost");
             profile.setUuid(UUID.randomUUID().toString());
-            profile.setActivated(true);
             profile.setRetired(false);
-            profile.setLicenseKey("0000-0000-0000-0000");
             onlineProfileService.hashAndSetPassword(profile, adminPassword);
 
             if (onlineProfileService.saveOnlineProfile(profile)) {
@@ -130,7 +128,6 @@ public class PokerServer extends EngineServer {
             // Update existing admin profile only if password was explicitly set
             if (passwordExplicitlySet) {
                 onlineProfileService.hashAndSetPassword(profile, adminPassword);
-                profile.setActivated(true);
                 profile.setRetired(false);
 
                 onlineProfileService.updateOnlineProfile(profile);

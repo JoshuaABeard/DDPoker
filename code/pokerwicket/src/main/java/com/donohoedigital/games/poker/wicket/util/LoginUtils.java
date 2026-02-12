@@ -110,8 +110,8 @@ public class LoginUtils {
         // get IP for logging
         String ip = WicketUtils.getHttpServletRequest().getRemoteAddr();
 
-        // profile should be there and activated
-        if (profile == null || !profile.isActivated() || profile.isRetired()) {
+        // profile should be there and not retired
+        if (profile == null || profile.isRetired()) {
             if (profile == null) {
                 if (type == PAGE)
                     page.error(PropertyConfig.getMessage("msg.web.poker.invalidprofile")); // FIX: use wicket properties
@@ -124,19 +124,13 @@ public class LoginUtils {
                                                                                                             // properties
                                                                                                             // files
                 logger.info("{}: {} {} login failed (retired).", type, ip, name);
-            } else // !profile.isActivated()
-            {
-                if (type == PAGE)
-                    page.error(PropertyConfig.getMessage("msg.web.poker.invalidprofile")); // FIX: use wicket properties
-                                                                                            // files
-                logger.info("{}: {} {} login failed (not activated).", type, ip, name);
             }
 
             return false;
         }
 
         // ban check
-        BannedKey ban = banService.getIfBanned(profile.getLicenseKey(), profile.getEmail(), profile.getName());
+        BannedKey ban = banService.getIfBanned(profile.getEmail(), profile.getName());
         if (ban != null) {
             if (type == PAGE) {
                 DateFormat sf = new SimpleDateFormat("MM/dd/yyyy", Locale.US);

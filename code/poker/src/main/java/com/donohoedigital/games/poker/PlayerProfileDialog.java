@@ -147,12 +147,8 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
             nameLabel.setEnabled(false);
             nameText.setEnabled(false);
 
-            if (profile_.isActivated()) {
-                addEmail();
-                emailWidgets_.setEnabled(false);
-            } else {
-                addPassword();
-            }
+            addEmail();
+            emailWidgets_.setEnabled(false);
 
             onlinePanel_.addButtons();
         } else {
@@ -467,11 +463,9 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
 
         if (emailButton_ == source) {
             // change email
-            if (profile_.isActivated()) {
-                String sMsg = PropertyConfig.getMessage("msg.profileemail");
-                if (!EngineUtils.displayConfirmationDialog(context_, sMsg, "profileemail")) {
-                    return;
-                }
+            String sMsg = PropertyConfig.getMessage("msg.profileemail");
+            if (!EngineUtils.displayConfirmationDialog(context_, sMsg, "profileemail")) {
+                return;
             }
 
             bEmailMode_ = true;
@@ -542,7 +536,6 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
 
             // reset the local profile
             profile_.setPassword(null);
-            profile_.setActivated(false);
 
             // close the dialog
             bPasswordMode_ = true;
@@ -607,17 +600,12 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
             emailButton_ = new GlassButton("profileemail", "Glass");
             buttonPanel.add(emailButton_);
 
-            if (profile_.isActivated()) {
-                passwordButton_ = new GlassButton("profilepassword", "Glass");
-                buttonPanel.add(passwordButton_);
-                resetButton_ = new GlassButton("profilereset", "Glass");
-                buttonPanel.add(resetButton_);
-                syncButton_ = new GlassButton("profilesync", "Glass");
-                buttonPanel.add(syncButton_);
-            } else {
-                sendButton_ = new GlassButton("profilesend", "Glass");
-                buttonPanel.add(sendButton_);
-            }
+            passwordButton_ = new GlassButton("profilepassword", "Glass");
+            buttonPanel.add(passwordButton_);
+            resetButton_ = new GlassButton("profilereset", "Glass");
+            buttonPanel.add(resetButton_);
+            syncButton_ = new GlassButton("profilesync", "Glass");
+            buttonPanel.add(syncButton_);
 
             DDPanel align = new DDPanel();
             align.setLayout(new CenterLayout());

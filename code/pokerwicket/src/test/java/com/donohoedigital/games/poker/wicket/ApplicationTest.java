@@ -72,8 +72,6 @@ class ApplicationTest {
         OnlineProfile profile = new OnlineProfile();
         profile.setName("Tahoe+Zorro");
         profile.setEmail("hibernate@example.com");
-        profile.setLicenseKey("0000-0000-0000-0000");
-        profile.setActivated(false);
         profile.setPassword("password");
 
         List<OnlineProfile> array = new ArrayList<>(1);

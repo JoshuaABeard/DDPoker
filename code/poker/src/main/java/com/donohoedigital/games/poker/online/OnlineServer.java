@@ -248,10 +248,8 @@ public class OnlineServer {
      * Create a new online game based on the given context.
      */
     private OnlineGame createOnlineGame(GameContext context) {
-        PokerMain main = (PokerMain) GameEngine.getGameEngine();
         OnlineGame game = new OnlineGame();
 
-        game.setLicenseKey(main.getPlayerId());
         game.setUrl(((PokerGame) context.getGame()).getPublicConnectURL());
 
         return game;

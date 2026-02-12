@@ -48,6 +48,7 @@ import com.donohoedigital.wicket.common.PageableServiceProvider;
 import com.donohoedigital.wicket.components.CountDataView;
 import com.donohoedigital.wicket.labels.BasicPluralLabelProvider;
 import com.donohoedigital.wicket.labels.HighlightLabel;
+import org.apache.wicket.markup.html.basic.Label;
 import com.donohoedigital.wicket.labels.StringLabel;
 import com.donohoedigital.wicket.models.StringModel;
 import com.donohoedigital.wicket.panels.BoxPagingNavigator;
@@ -202,7 +203,6 @@ public class OnlineProfileSearch extends AdminPokerPage {
         protected void populateItem(Item<OnlineProfile> row) {
             OnlineProfile profile = row.getModelObject();
             final String email = profile.getEmail();
-            final String key = profile.getLicenseKey();
 
             // CSS class
             row.add(new AttributeModifier("class", new StringModel(row.getIndex() % 2 == 0 ? "odd" : "even")));
@@ -228,18 +228,11 @@ public class OnlineProfileSearch extends AdminPokerPage {
             emailLink.add(new HighlightLabel("email", getSearchData().getEmail(),
                     PokerWicketApplication.SEARCH_HIGHLIGHT, true));
 
-            // key
-            Link<?> keyLink = new Link("keyLink") {
-                private static final long serialVersionUID = 42L;
-
-                @Override
-                public void onClick() {
-                    setResponsePage(new RegistrationSearch(DBUtils.sqlExactMatch(key), null));
-                }
-            };
+            // key - removed (license keys no longer used)
+            WebMarkupContainer keyLink = new WebMarkupContainer("keyLink");
+            keyLink.setEnabled(false);
             row.add(keyLink);
-            keyLink.add(new HighlightLabel("licenseKey", getSearchData().getKey(),
-                    PokerWicketApplication.SEARCH_HIGHLIGHT, true));
+            keyLink.add(new Label("licenseKey", "N/A"));
 
             // reset password link
             Link<?> resetPasswordLink = new Link("resetPasswordLink") {
