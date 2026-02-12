@@ -15,13 +15,15 @@ export function toBackendPage(frontendPage: number): number {
  * Convert backend 0-based page number to frontend 1-based page number
  */
 export function toFrontendPage(backendPage: number): number {
-  return backendPage + 1
+  return Math.max(1, backendPage + 1)
 }
 
 /**
  * Calculate total pages from total items and page size
  */
 export function calculateTotalPages(totalItems: number, pageSize: number): number {
+  if (pageSize <= 0) return 0
+  if (totalItems <= 0) return 0
   return Math.ceil(totalItems / pageSize)
 }
 

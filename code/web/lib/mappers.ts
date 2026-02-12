@@ -60,14 +60,14 @@ export function mapCompletedGame(game: any) {
  * Calculates DDR1 or ROI based on mode
  */
 export function mapLeaderboardEntry(backend: any, mode: 'ddr1' | 'roi') {
-  const score = mode === 'ddr1' ? backend.ddr1 : calculateROI(backend)
+  const score = mode === 'ddr1' ? (backend.ddr1 || 0) : calculateROI(backend)
   return {
-    rank: backend.rank,
-    playerName: backend.playerName,
+    rank: backend.rank || 0,
+    playerName: backend.playerName || 'Unknown',
     score,
-    gamesPlayed: backend.gamesPlayed,
+    gamesPlayed: backend.gamesPlayed || 0,
     wins: backend.wins || 0,
-    winRate: backend.gamesPlayed > 0 ? (backend.wins / backend.gamesPlayed) * 100 : 0,
+    winRate: backend.gamesPlayed > 0 ? ((backend.wins || 0) / backend.gamesPlayed) * 100 : 0,
   }
 }
 
@@ -75,13 +75,20 @@ export function mapLeaderboardEntry(backend: any, mode: 'ddr1' | 'roi') {
  * Calculate ROI percentage from backend stats
  */
 function calculateROI(entry: any): number {
-  const totalInvested = entry.totalBuyin + entry.totalAddon + entry.totalRebuys
+  const totalBuyin = entry.totalBuyin || entry.totalBuyins || 0
+  const totalAddon = entry.totalAddon || entry.totalAddons || 0
+  const totalRebuys = entry.totalRebuys || entry.totalRebuy || 0
+  const totalPrizes = entry.totalPrizes || entry.totalPrize || 0
+
+  const totalInvested = totalBuyin + totalAddon + totalRebuys
   if (totalInvested === 0) return 0
-  return ((entry.totalPrizes - totalInvested) / totalInvested) * 100
+  return ((totalPrizes - totalInvested) / totalInvested) * 100
 }
 
 /**
  * Calculate aggregate statistics from tournament history entries
+ * NOTE: This calculates stats from the provided entries array.
+ * For accurate full-history stats, ensure all entries are provided (not just paginated subset).
  */
 export function calculateTournamentStats(entries: any[]) {
   if (entries.length === 0) {
@@ -94,9 +101,10 @@ export function calculateTournamentStats(entries: any[]) {
     }
   }
 
-  const totalWins = entries.filter((e) => e.placement === 1).length
-  const totalPrize = entries.reduce((sum, e) => sum + (e.prize || 0), 0)
-  const avgPlacement = entries.reduce((sum, e) => sum + e.placement, 0) / entries.length
+  const totalWins = entries.filter((e) => (e.placement || e.place) === 1).length
+  const totalPrize = entries.reduce((sum, e) => sum + (e.prize || e.prizeWon || 0), 0)
+  const avgPlacement =
+    entries.reduce((sum, e) => sum + (e.placement || e.place || 0), 0) / entries.length
 
   return {
     totalGames: entries.length,

@@ -177,9 +177,12 @@ export const gamesApi = {
    * Get available games (mode 0 - waiting for players)
    */
   getAvailable: async (page = 0, pageSize = 20): Promise<GameListResponse> => {
-    const response = await apiFetch<GameListResponse>(
-      `/api/games?modes=0&page=${page}&pageSize=${pageSize}`
-    )
+    const params = new URLSearchParams({
+      modes: '0',
+      page: page.toString(),
+      pageSize: pageSize.toString(),
+    })
+    const response = await apiFetch<GameListResponse>(`/api/games?${params}`)
     return response.data
   },
 
@@ -187,9 +190,12 @@ export const gamesApi = {
    * Get running games (mode 1 - in progress)
    */
   getRunning: async (page = 0, pageSize = 20): Promise<GameListResponse> => {
-    const response = await apiFetch<GameListResponse>(
-      `/api/games?modes=1&page=${page}&pageSize=${pageSize}`
-    )
+    const params = new URLSearchParams({
+      modes: '1',
+      page: page.toString(),
+      pageSize: pageSize.toString(),
+    })
+    const response = await apiFetch<GameListResponse>(`/api/games?${params}`)
     return response.data
   },
 
@@ -306,9 +312,12 @@ export const searchApi = {
    * Search for players by name
    */
   searchPlayers: async (name: string, page = 0, pageSize = 50): Promise<any[]> => {
-    const response = await apiFetch<any[]>(
-      `/api/search?name=${encodeURIComponent(name)}&page=${page}&pageSize=${pageSize}`
-    )
+    const params = new URLSearchParams({
+      name,
+      page: page.toString(),
+      pageSize: pageSize.toString(),
+    })
+    const response = await apiFetch<any[]>(`/api/search?${params}`)
     return response.data
   },
 }

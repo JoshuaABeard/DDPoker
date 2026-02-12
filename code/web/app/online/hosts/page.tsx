@@ -87,7 +87,10 @@ export default async function HostsPage({
     {
       key: 'lastHosted',
       header: 'Last Hosted',
-      render: (host: HostInfo) => new Date(host.lastHosted).toLocaleDateString(),
+      render: (host: HostInfo) =>
+        host.lastHosted === 'Unknown' || !host.lastHosted
+          ? 'Unknown'
+          : new Date(host.lastHosted).toLocaleDateString(),
     },
     {
       key: 'totalGamesHosted',
