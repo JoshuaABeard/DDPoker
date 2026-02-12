@@ -53,6 +53,24 @@ public class RegistrationServiceImpl implements RegistrationService {
     private RegistrationDao dao;
     private BannedKeyDao bannedDao;
 
+    // Cache for banned keys query (expensive operation)
+    private static class BannedKeysCache {
+        final List<RegInfo> data;
+        final long timestamp;
+
+        BannedKeysCache(List<RegInfo> data) {
+            this.data = data;
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        boolean isExpired(long ttlMillis) {
+            return (System.currentTimeMillis() - timestamp) > ttlMillis;
+        }
+    }
+
+    private volatile BannedKeysCache bannedKeysCache = null;
+    private static final long CACHE_TTL_MILLIS = 10 * 60 * 1000; // 10 minutes
+
     @Autowired
     public void setRegistrationDao(RegistrationDao dao) {
         this.dao = dao;
@@ -61,6 +79,13 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Autowired
     public void setBannedKeyDao(BannedKeyDao bannedDao) {
         this.bannedDao = bannedDao;
+    }
+
+    /**
+     * Clear the banned keys cache. Called when banned keys are modified.
+     */
+    public void clearBannedKeysCache() {
+        bannedKeysCache = null;
     }
 
     @Transactional(readOnly = true)
@@ -112,14 +137,38 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Transactional(readOnly = true)
     public List<RegInfo> getBannedKeys(String keyStart) {
+        // Check cache first (cache stores all keys, we filter by keyStart below)
+        BannedKeysCache cache = bannedKeysCache;
+        if (cache == null || cache.isExpired(CACHE_TTL_MILLIS)) {
+            // Cache miss or expired - fetch fresh data
+            cache = fetchBannedKeysData();
+            bannedKeysCache = cache;
+        }
+
+        // Filter cached results by keyStart if needed
+        if (keyStart == null) {
+            return cache.data;
+        }
+
+        List<RegInfo> filtered = new ArrayList<RegInfo>();
+        for (RegInfo info : cache.data) {
+            if (info.getKey().startsWith(keyStart)) {
+                filtered.add(info);
+            }
+        }
+        return filtered;
+    }
+
+    /**
+     * Fetch all banned keys data (called when cache is invalid). This is an
+     * expensive operation that queries all banned keys and registrations.
+     */
+    private BannedKeysCache fetchBannedKeysData() {
         Map<String, RegInfo> regInfoMap = new HashMap<String, RegInfo>();
 
         // get banned keys and create RegInfo for each
         List<BannedKey> banned = bannedDao.getAll();
         for (BannedKey bkey : banned) {
-            if (keyStart != null && !bkey.getKey().startsWith(keyStart))
-                continue;
-
             RegInfo info = new RegInfo(bkey.getKey(), true, bkey.getComment());
             regInfoMap.put(bkey.getKey(), info);
         }
@@ -127,16 +176,16 @@ public class RegistrationServiceImpl implements RegistrationService {
         // get registrations using banned keys and add to RegInfo
         List<Registration> bannedRegs = getBannedRegistrations();
         for (Registration reg : bannedRegs) {
-            if (keyStart != null && !reg.getLicenseKey().startsWith(keyStart))
-                continue;
-
-            regInfoMap.get(reg.getLicenseKey()).addRegistration(reg, true);
+            RegInfo regInfo = regInfoMap.get(reg.getLicenseKey());
+            if (regInfo != null) {
+                regInfo.addRegistration(reg, true);
+            }
         }
 
-        // return sorted array
+        // return sorted array in cache object
         List<RegInfo> all = new ArrayList<RegInfo>(regInfoMap.values());
         Collections.sort(all);
-        return all;
+        return new BannedKeysCache(all);
     }
 
     @Transactional(readOnly = true)

@@ -84,4 +84,9 @@ public interface RegistrationService {
 
     @Transactional
     void deleteRegistration(Registration registration);
+
+    /**
+     * Clear the banned keys cache. Should be called when banned keys are modified.
+     */
+    void clearBannedKeysCache();
 }
