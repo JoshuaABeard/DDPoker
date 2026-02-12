@@ -401,7 +401,6 @@ public class DataMarshaller {
     //// For use during installer build time
     ////
 
-    @SuppressWarnings({"UseOfSystemOutOrSystemErr"})
     public static void main(String[] args) {
         for (Class<?> clazz : coderToType_.keySet()) {
             String name = clazz.getName();

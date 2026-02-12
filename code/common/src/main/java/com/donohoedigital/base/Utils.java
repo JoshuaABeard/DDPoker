@@ -43,7 +43,6 @@ import java.util.*;
 import java.util.List;
 import java.util.regex.*;
 
-@SuppressWarnings({"UseOfSystemOutOrSystemErr"})
 public class Utils {
     public static final boolean ISMAC;
     public static final boolean ISLINUX;

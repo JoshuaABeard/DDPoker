@@ -41,7 +41,6 @@ import java.net.*;
 import java.nio.channels.*;
 import java.util.*;
 
-@SuppressWarnings({"UseOfSystemOutOrSystemErr"})
 public abstract class GameServer extends Thread {
     protected static Logger logger = LogManager.getLogger(GameServer.class);
 

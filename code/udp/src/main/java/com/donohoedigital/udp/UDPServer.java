@@ -47,7 +47,7 @@ import java.util.prefs.*;
  * Created by IntelliJ IDEA. User: donohoe Date: May 1, 2006 Time: 8:24:58 AM To
  * change this template use File | Settings | File Templates.
  */
-@SuppressWarnings({"UseOfSystemOutOrSystemErr", "PublicField"})
+@SuppressWarnings({"PublicField"})
 public class UDPServer extends Thread {
     static Logger logger = LogManager.getLogger(UDPServer.class);
 
