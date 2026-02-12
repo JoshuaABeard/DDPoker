@@ -19,6 +19,7 @@
  */
 package com.donohoedigital.games.poker.model;
 
+import com.donohoedigital.games.poker.engine.PokerConstants;
 import org.junit.Test;
 
 import java.io.*;
@@ -142,5 +143,93 @@ public class TournamentProfileTest {
         assertEquals("Level 1 big blind should match", original.getBigBlind(1), imported.getBigBlind(1));
         assertEquals("Level 1 small blind should match", original.getSmallBlind(1), imported.getSmallBlind(1));
         assertEquals("Starting depth should match", original.getStartingDepthBBs(), imported.getStartingDepthBBs());
+    }
+
+    // ========== Late Registration Tests ==========
+
+    @Test
+    public void should_DefaultToLateRegDisabled() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertFalse("Late registration should be disabled by default", profile.isLateRegEnabled());
+    }
+
+    @Test
+    public void should_DefaultToLevel1Cutoff() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertEquals("Default cutoff should be level 1", 1, profile.getLateRegUntilLevel());
+    }
+
+    @Test
+    public void should_DefaultToStartingChipsMode() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertEquals("Default chip mode should be starting chips", PokerConstants.LATE_REG_CHIPS_STARTING,
+                profile.getLateRegChips());
+    }
+
+    @Test
+    public void should_EnableAndDisableLateReg() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setLateRegEnabled(true);
+        assertTrue("Late registration should be enabled", profile.isLateRegEnabled());
+
+        profile.setLateRegEnabled(false);
+        assertFalse("Late registration should be disabled", profile.isLateRegEnabled());
+    }
+
+    @Test
+    public void should_SetLateRegCutoffLevel() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setLateRegUntilLevel(5);
+        assertEquals("Cutoff should be level 5", 5, profile.getLateRegUntilLevel());
+    }
+
+    @Test
+    public void should_EnforceLateRegCutoffMinimum() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setLateRegUntilLevel(0);
+        assertEquals("Cutoff should be clamped to minimum 1", 1, profile.getLateRegUntilLevel());
+    }
+
+    @Test
+    public void should_EnforceLateRegCutoffMaximum() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setLateRegUntilLevel(50); // Exceeds MAX_LEVELS (40)
+        assertEquals("Cutoff should be clamped to MAX_LEVELS", TournamentProfile.MAX_LEVELS,
+                profile.getLateRegUntilLevel());
+    }
+
+    @Test
+    public void should_SetLateRegChipsToStarting() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setLateRegChips(PokerConstants.LATE_REG_CHIPS_STARTING);
+        assertEquals("Chip mode should be starting", PokerConstants.LATE_REG_CHIPS_STARTING, profile.getLateRegChips());
+    }
+
+    @Test
+    public void should_SetLateRegChipsToAverage() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setLateRegChips(PokerConstants.LATE_REG_CHIPS_AVERAGE);
+        assertEquals("Chip mode should be average", PokerConstants.LATE_REG_CHIPS_AVERAGE, profile.getLateRegChips());
+    }
+
+    @Test
+    public void should_RoundTripLateRegSettings() throws IOException {
+        // Given: a profile with late registration enabled
+        TournamentProfile original = new TournamentProfile("Late Reg Test");
+        original.setLateRegEnabled(true);
+        original.setLateRegUntilLevel(3);
+        original.setLateRegChips(PokerConstants.LATE_REG_CHIPS_AVERAGE);
+
+        // When: write to string and read back
+        StringWriter sw = new StringWriter();
+        original.write(sw);
+
+        TournamentProfile imported = new TournamentProfile();
+        imported.read(new StringReader(sw.toString()), false);
+
+        // Then: late reg settings should match
+        assertTrue("Late reg should be enabled", imported.isLateRegEnabled());
+        assertEquals("Cutoff level should match", 3, imported.getLateRegUntilLevel());
+        assertEquals("Chip mode should match", PokerConstants.LATE_REG_CHIPS_AVERAGE, imported.getLateRegChips());
     }
 }

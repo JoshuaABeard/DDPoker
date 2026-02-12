@@ -157,6 +157,9 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public static final String PARAM_GAMETYPE_DEFAULT = "gametypedefault";
     public static final String DATA_ELEMENT_GAMETYPE = "gameType";
     public static final String PARAM_UPDATE = "update";
+    public static final String PARAM_LATE_REG = "latereg";
+    public static final String PARAM_LATE_REG_UNTIL = "latereguntil";
+    public static final String PARAM_LATE_REG_CHIPS = "lateregchips";
 
     /**
      * Empty constructor for loading from data
@@ -1282,6 +1285,48 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      */
     public int getBootDisconnectCount() {
         return map_.getInteger(PARAM_BOOT_DISCONNECT_COUNT, 10, MIN_BOOT_HANDS, MAX_BOOT_HANDS);
+    }
+
+    /**
+     * Get whether late registration is enabled
+     */
+    public boolean isLateRegEnabled() {
+        return map_.getBoolean(PARAM_LATE_REG, false);
+    }
+
+    /**
+     * Set whether late registration is enabled
+     */
+    public void setLateRegEnabled(boolean enabled) {
+        map_.setBoolean(PARAM_LATE_REG, enabled);
+    }
+
+    /**
+     * Get late registration cutoff level
+     */
+    public int getLateRegUntilLevel() {
+        return map_.getInteger(PARAM_LATE_REG_UNTIL, 1, 1, MAX_LEVELS);
+    }
+
+    /**
+     * Set late registration cutoff level
+     */
+    public void setLateRegUntilLevel(int level) {
+        map_.setInteger(PARAM_LATE_REG_UNTIL, level);
+    }
+
+    /**
+     * Get late registration chip mode (starting or average)
+     */
+    public int getLateRegChips() {
+        return map_.getInteger(PARAM_LATE_REG_CHIPS, PokerConstants.LATE_REG_CHIPS_STARTING);
+    }
+
+    /**
+     * Set late registration chip mode
+     */
+    public void setLateRegChips(int mode) {
+        map_.setInteger(PARAM_LATE_REG_CHIPS, mode);
     }
 
     /**

@@ -297,4 +297,128 @@ class PokerPlayerTest {
     void should_HaveNullPlayerId_When_CreatedWithoutKey() {
         assertThat(player.getPlayerId()).isNull();
     }
+
+    // =================================================================
+    // Average Chips Calculation Tests (for Late Registration)
+    // =================================================================
+
+    @Test
+    void should_CalculateAverageChips_WithMultiplePlayers() {
+        PokerGame game = new PokerGame(null);
+
+        // Create players with different chip counts
+        PokerPlayer p1 = new PokerPlayer(1, "Player1", true);
+        p1.setChipCount(1000);
+        game.addPlayer(p1);
+
+        PokerPlayer p2 = new PokerPlayer(2, "Player2", true);
+        p2.setChipCount(2000);
+        game.addPlayer(p2);
+
+        PokerPlayer p3 = new PokerPlayer(3, "Player3", true);
+        p3.setChipCount(3000);
+        game.addPlayer(p3);
+
+        // Average should be (1000 + 2000 + 3000) / 3 = 2000
+        int average = PokerPlayer.calculateAverageChips(game);
+        assertThat(average).isEqualTo(2000);
+    }
+
+    @Test
+    void should_ReturnZero_WhenNoPlayersInGame() {
+        PokerGame game = new PokerGame(null);
+
+        int average = PokerPlayer.calculateAverageChips(game);
+        assertThat(average).isEqualTo(0);
+    }
+
+    @Test
+    void should_ReturnPlayerChips_WhenOnlyOnePlayer() {
+        PokerGame game = new PokerGame(null);
+
+        PokerPlayer p1 = new PokerPlayer(1, "Player1", true);
+        p1.setChipCount(5000);
+        game.addPlayer(p1);
+
+        int average = PokerPlayer.calculateAverageChips(game);
+        assertThat(average).isEqualTo(5000);
+    }
+
+    @Test
+    void should_HandleIntegerDivision_WhenAverageIsNotWhole() {
+        PokerGame game = new PokerGame(null);
+
+        PokerPlayer p1 = new PokerPlayer(1, "Player1", true);
+        p1.setChipCount(1000);
+        game.addPlayer(p1);
+
+        PokerPlayer p2 = new PokerPlayer(2, "Player2", true);
+        p2.setChipCount(1500);
+        game.addPlayer(p2);
+
+        // Average is 1250 (2500 / 2)
+        int average = PokerPlayer.calculateAverageChips(game);
+        assertThat(average).isEqualTo(1250);
+    }
+
+    @Test
+    void should_TruncateDecimal_WhenAverageHasFraction() {
+        PokerGame game = new PokerGame(null);
+
+        PokerPlayer p1 = new PokerPlayer(1, "Player1", true);
+        p1.setChipCount(1000);
+        game.addPlayer(p1);
+
+        PokerPlayer p2 = new PokerPlayer(2, "Player2", true);
+        p2.setChipCount(1000);
+        game.addPlayer(p2);
+
+        PokerPlayer p3 = new PokerPlayer(3, "Player3", true);
+        p3.setChipCount(1001);
+        game.addPlayer(p3);
+
+        // Average is 1000.333... which truncates to 1000
+        int average = PokerPlayer.calculateAverageChips(game);
+        assertThat(average).isEqualTo(1000);
+    }
+
+    @Test
+    void should_ExcludeEliminatedPlayers_WhenCalculatingAverage() {
+        PokerGame game = new PokerGame(null);
+
+        PokerPlayer p1 = new PokerPlayer(1, "Player1", true);
+        p1.setChipCount(2000);
+        game.addPlayer(p1);
+
+        PokerPlayer p2 = new PokerPlayer(2, "Player2", true);
+        p2.setChipCount(3000);
+        game.addPlayer(p2);
+
+        PokerPlayer p3 = new PokerPlayer(3, "Player3-Eliminated", true);
+        p3.setChipCount(0);
+        p3.setEliminated(true);
+        game.addPlayer(p3);
+
+        // Average should be (2000 + 3000) / 2 = 2500, NOT (2000 + 3000 + 0) / 3 = 1666
+        int average = PokerPlayer.calculateAverageChips(game);
+        assertThat(average).isEqualTo(2500);
+    }
+
+    @Test
+    void should_ReturnZero_WhenAllPlayersEliminated() {
+        PokerGame game = new PokerGame(null);
+
+        PokerPlayer p1 = new PokerPlayer(1, "Player1", true);
+        p1.setChipCount(0);
+        p1.setEliminated(true);
+        game.addPlayer(p1);
+
+        PokerPlayer p2 = new PokerPlayer(2, "Player2", true);
+        p2.setChipCount(0);
+        p2.setEliminated(true);
+        game.addPlayer(p2);
+
+        int average = PokerPlayer.calculateAverageChips(game);
+        assertThat(average).isEqualTo(0);
+    }
 }

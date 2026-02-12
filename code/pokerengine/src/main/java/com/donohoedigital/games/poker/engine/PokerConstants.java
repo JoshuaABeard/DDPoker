@@ -241,6 +241,10 @@ public class PokerConstants {
     public static final int REBUY_LT = 1;
     public static final int REBUY_LTE = 2;
 
+    // late registration chip modes
+    public static final int LATE_REG_CHIPS_STARTING = 1;
+    public static final int LATE_REG_CHIPS_AVERAGE = 2;
+
     // game types
     public static final int TYPE_NO_LIMIT_HOLDEM = 1;
     public static final int TYPE_POT_LIMIT_HOLDEM = 2;

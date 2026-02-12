@@ -592,6 +592,8 @@ public class PokerServlet extends EngineServlet {
         Integer[] modes;
 
         // in 2.5, if we see combo mode, treat accordingly
+        // NOTE: Including MODE_PLAY ensures games with late registration enabled remain
+        // visible
         if (nMode == OnlineGame.FETCH_MODE_REG_PLAY) {
             modes = new Integer[]{OnlineGame.MODE_REG, OnlineGame.MODE_PLAY};
         }

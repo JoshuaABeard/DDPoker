@@ -333,6 +333,41 @@ public class TournamentProfileDialog extends OptionMenuDialog
 
             DDLabelBorder bootbase = createBootControls(STYLE, dummy_, null);
             left.add(bootbase);
+
+            ///
+            /// late registration
+            ///
+
+            DDLabelBorder latereg = new DDLabelBorder("latereg", STYLE);
+            latereg.setLayout(new GridLayout(0, 1, 0, -4));
+            left.add(latereg);
+
+            // Cutoff level spinner
+            OptionInteger lateRegUntil = new OptionInteger(null, TournamentProfile.PARAM_LATE_REG_UNTIL, STYLE, dummy_,
+                    null, 1, TournamentProfile.MAX_LEVELS, 60);
+            lateRegUntil.setEditable(true);
+
+            // Chip mode radio buttons
+            ButtonGroup chipModeGroup = new ButtonGroup();
+            DDPanel chipModePanel = new DDPanel();
+            chipModePanel.setLayout(new GridLayout(2, 1, 0, -4));
+            chipModePanel.setBorder(BorderFactory.createEmptyBorder(2, 20, 3, 0));
+
+            OptionRadio startingChips = new OptionRadio(null, TournamentProfile.PARAM_LATE_REG_CHIPS, STYLE, dummy_,
+                    "latereg.chips.starting", chipModeGroup, PokerConstants.LATE_REG_CHIPS_STARTING);
+            OptionMenu.add(startingChips, chipModePanel);
+
+            OptionRadio averageChips = new OptionRadio(null, TournamentProfile.PARAM_LATE_REG_CHIPS, STYLE, dummy_,
+                    "latereg.chips.average", chipModeGroup, PokerConstants.LATE_REG_CHIPS_AVERAGE);
+            OptionMenu.add(averageChips, chipModePanel);
+
+            // Add checkbox with nested controls
+            OptionDummy lateregDummy = new OptionDummy(lateRegUntil, chipModePanel);
+            lateregDummy.setBorder(BorderFactory.createEmptyBorder(2, 5, 3, 0));
+            lateregDummy.setBorderLayoutGap(0, 5);
+
+            OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_LATE_REG, STYLE, dummy_, true, lateregDummy),
+                    latereg);
         }
     }
 

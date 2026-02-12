@@ -173,7 +173,13 @@ public class JoinGame extends ListGames {
                     break;
 
                 case PokerGame.MODE_PLAY :
-                    sDetails = PropertyConfig.getMessage("msg.closedgame", selected_.getPlayerName());
+                    profile = getProfile(selected_);
+                    if (profile != null && profile.isLateRegEnabled()) {
+                        sDetails = PropertyConfig.getMessage("msg.latereg.playing", selected_.getPlayerName(),
+                                profile.getLateRegUntilLevel());
+                    } else {
+                        sDetails = PropertyConfig.getMessage("msg.closedgame", selected_.getPlayerName());
+                    }
                     break;
 
                 case PokerGame.MODE_NONE :

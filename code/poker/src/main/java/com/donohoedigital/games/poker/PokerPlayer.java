@@ -1431,6 +1431,32 @@ public class PokerPlayer extends GamePlayer {
     }
 
     /**
+     * Calculate average chip count across all active players in the game. Used for
+     * late registration to determine starting chips. Excludes eliminated players.
+     *
+     * @param game
+     *            the poker game
+     * @return average chip count, or 0 if no active players
+     */
+    public static int calculateAverageChips(PokerGame game) {
+        List<PokerPlayer> allPlayers = game.getPokerPlayersCopy();
+        if (allPlayers.isEmpty()) {
+            return 0;
+        }
+
+        int totalChips = 0;
+        int activeCount = 0;
+        for (PokerPlayer p : allPlayers) {
+            if (!p.isEliminated()) {
+                totalChips += p.getChipCount();
+                activeCount++;
+            }
+        }
+
+        return activeCount > 0 ? totalChips / activeCount : 0;
+    }
+
+    /**
      * Set position of this player (from HoldemHand.setPlayerOrder()). Value ranges
      * from 1 to # players
      */

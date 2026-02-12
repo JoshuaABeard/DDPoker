@@ -581,10 +581,12 @@ public class OnlineManager implements ChatManager {
                 ////
 
                 // if no existing player in PLAY mode, then don't allow new join (already
-                // playing)
+                // playing) unless late registration is still open
                 if (nMode == PokerGame.MODE_PLAY) {
-                    throw new OnlineError(
-                            getAppErrorReply(p2p_, omsg, PropertyConfig.getMessage("msg.nojoin.started"), false));
+                    if (!isLateRegOpen()) {
+                        String msgKey = profile.isLateRegEnabled() ? "msg.nojoin.latereg.closed" : "msg.nojoin.started";
+                        throw new OnlineError(getAppErrorReply(p2p_, omsg, PropertyConfig.getMessage(msgKey), false));
+                    }
                 }
 
                 // check max players
@@ -597,7 +599,25 @@ public class OnlineManager implements ChatManager {
                 player = new PokerPlayer(sKey, game_.getNextPlayerID(), sPlayerName, true);
                 // Demo mode removed
                 player.setOnlineActivated(omsg.isOnlineActivated());
+
+                // Late registration: calculate chips BEFORE adding player to avoid diluting
+                // average
+                if (nMode == PokerGame.MODE_PLAY) {
+                    int chips;
+                    if (profile.getLateRegChips() == PokerConstants.LATE_REG_CHIPS_STARTING) {
+                        chips = profile.getBuyinChips();
+                    } else {
+                        chips = PokerPlayer.calculateAverageChips(game_);
+                    }
+                    player.setChipCount(chips);
+                }
+
                 game_.addPlayer(player);
+
+                // Late registration: update prize pool with new player count
+                if (nMode == PokerGame.MODE_PLAY) {
+                    profile.updateNumPlayers(game_.getNumPlayers());
+                }
 
                 // Send a message requesting that the game be updated
                 if (game_.isPublic()) {
@@ -742,6 +762,22 @@ public class OnlineManager implements ChatManager {
         TournamentProfile profile = game_.getProfile();
         int nMax = profile.getMaxObservers();
         return (game_.getNumObserversNonPlayers() < nMax);
+    }
+
+    /**
+     * Check if late registration is still open based on current level. Registration
+     * is open until the END of the cutoff level (inclusive).
+     */
+    private boolean isLateRegOpen() {
+        TournamentProfile profile = game_.getProfile();
+        if (!profile.isLateRegEnabled()) {
+            return false;
+        }
+
+        int currentLevel = game_.getLevel();
+        int cutoffLevel = profile.getLateRegUntilLevel();
+
+        return currentLevel <= cutoffLevel;
     }
 
     /**
