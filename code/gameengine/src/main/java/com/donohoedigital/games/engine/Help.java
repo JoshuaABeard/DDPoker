@@ -140,9 +140,15 @@ public class Help extends BasePhase implements ListSelectionListener, HyperlinkL
         table_.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table_.setColumnSelectionAllowed(false);
         table_.getSelectionModel().addListSelectionListener(this);
-        // TODO: fix table so tab causes focus change
-        // table_.setFocusable(true);
-        // table_.setFocusTraversalKeysEnabled(true);
+
+        // Enable Tab key for focus traversal instead of cell navigation
+        table_.setFocusable(true);
+        table_.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS,
+                KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                        .getDefaultFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS));
+        table_.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS,
+                KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                        .getDefaultFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS));
     }
 
     private class HelpHtml extends DDHtmlArea implements FocusListener, MouseListener {
