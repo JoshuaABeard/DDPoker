@@ -56,7 +56,7 @@ import java.util.*;
  *
  * @author  Doug Donohoe
  */
-@SuppressWarnings({"UseOfSystemOutOrSystemErr", "JDBCExecuteWithNonConstantString"})
+@SuppressWarnings({"JDBCExecuteWithNonConstantString"})
 public class RegAnalyzer
 {
     // logging
@@ -158,16 +158,15 @@ public class RegAnalyzer
         }
         catch (ApplicationError ae)
         {
-            System.err.println("RegAnalyzer ending due to ApplicationError: " + ae.toString());
-        }  
+            logger.error("RegAnalyzer ending due to ApplicationError: " + ae.toString(), ae);
+        }
         catch (java.lang.OutOfMemoryError nomem)
         {
-            System.err.println("Out of memory: " + nomem);
-            System.err.println(Utils.formatExceptionText(nomem));
+            logger.error("Out of memory", nomem);
         }
         catch (Throwable t)
         {
-            System.err.println(Utils.formatExceptionText(t));
+            logger.error("RegAnalyzer ending due to unexpected error", t);
         }
         
         System.exit(0);

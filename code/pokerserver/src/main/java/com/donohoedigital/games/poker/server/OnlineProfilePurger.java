@@ -47,7 +47,6 @@ import java.util.*;
 /**
  * Command line tool to clean up old WAN games.
  */
-@SuppressWarnings({"UseOfSystemOutOrSystemErr"})
 public class OnlineProfilePurger extends BaseCommandLineApp
 {
     private static Logger logger = LogManager.getLogger(OnlineProfilePurger.class);
@@ -64,11 +63,11 @@ public class OnlineProfilePurger extends BaseCommandLineApp
         }
         catch (ApplicationError ae)
         {
-            System.err.println("OnlineProfilePurger ending due to ApplicationError: " + ae.toString());
+            logger.error("OnlineProfilePurger ending due to ApplicationError: " + ae.toString(), ae);
         }
         catch (Throwable t)
         {
-            System.err.println(Utils.formatExceptionText(t));
+            logger.error("OnlineProfilePurger ending due to unexpected error", t);
         }
 
         System.exit(0);

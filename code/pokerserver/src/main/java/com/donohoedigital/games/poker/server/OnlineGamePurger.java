@@ -45,7 +45,6 @@ import java.util.*;
 /**
  * Command line tool to clean up old WAN games.
  */
-@SuppressWarnings({"UseOfSystemOutOrSystemErr"})
 public class OnlineGamePurger extends BaseCommandLineApp
 {
     private static Logger logger = LogManager.getLogger(OnlineGamePurger.class);
@@ -66,11 +65,11 @@ public class OnlineGamePurger extends BaseCommandLineApp
         }
         catch (ApplicationError ae)
         {
-            System.err.println("OnlineGamePurger ending due to ApplicationError: " + ae.toString());
+            logger.error("OnlineGamePurger ending due to ApplicationError: " + ae.toString(), ae);
         }
         catch (Throwable t)
         {
-            System.err.println(Utils.formatExceptionText(t));
+            logger.error("OnlineGamePurger ending due to unexpected error", t);
         }
 
         System.exit(0);
@@ -156,6 +155,6 @@ public class OnlineGamePurger extends BaseCommandLineApp
     private void doPurge()
     {
         int count = service.purgeGames(date_, mode_);
-        System.out.println("Purged count: " + count);
+        logger.info("Purged count: " + count);
     }
 }
