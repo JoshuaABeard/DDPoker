@@ -365,7 +365,14 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
      */
     public void updatePrefs()
     {
+        for (ChatListPanel chatList : chatList_) {
+            if (chatList != null) chatList.resetStyleProto();
+        }
+        // Force rebuild to apply font size changes to existing messages
+        int savedDisplayOpt = nDisplayOpt_;
+        nDisplayOpt_ = -1; // Force createDisplay to rebuild
         createDisplay(true);
+        nDisplayOpt_ = savedDisplayOpt; // Restore for next check
     }
 
     /**

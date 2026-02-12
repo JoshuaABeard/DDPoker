@@ -167,6 +167,10 @@ public class PokerConstants
     public static final String OPTION_CHAT_TIMEOUT = "chattimeout";
     public static final String OPTION_CHAT_DEALER = "chatdealer";
     public static final String OPTION_CHAT_DISPLAY = "chatdisplay";
+    public static final String OPTION_CHAT_FONT_SIZE = "chatfontsize";
+    public static final int DEFAULT_CHAT_FONT_SIZE = 12;
+    public static final int MIN_CHAT_FONT_SIZE = 8;
+    public static final int MAX_CHAT_FONT_SIZE = 24;
 
     public static final String OPTION_CHEAT_POPUP = "popups";
     public static final String OPTION_CHEAT_SHOWWINNINGHAND = "showdown";

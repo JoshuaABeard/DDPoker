@@ -44,6 +44,7 @@ import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.engine.Phase;
 import com.donohoedigital.games.poker.PokerGame;
+import com.donohoedigital.games.poker.PokerUtils;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.LogManager;
@@ -129,6 +130,10 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
         }
 
         SwingUtilities.invokeLater(new SelectIndex(last));
+    }
+
+    void resetStyleProto() {
+        styleproto_ = null;
     }
 
     /**
@@ -589,7 +594,18 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
             html_.addMouseListener(panel);
             html_.addMouseMotionListener(panel);
 
-            if (panel.styleproto_ == null) panel.styleproto_ = html_;
+            // Apply user-configured chat font size to prototype only
+            // (subsequent items inherit the font size via shared stylesheet)
+            if (panel.styleproto_ == null) {
+                int fontSize = PokerUtils.getIntPref(PokerConstants.OPTION_CHAT_FONT_SIZE,
+                                                      PokerConstants.DEFAULT_CHAT_FONT_SIZE);
+                Font currentFont = html_.getFont();
+                if (currentFont.getSize() != fontSize) {
+                    html_.setFont(currentFont.deriveFont((float) fontSize));
+                    html_.refreshStyles(); // Re-bake CSS with new font size
+                }
+                panel.styleproto_ = html_;
+            }
 
             add(html_, BorderLayout.CENTER);
             setBorderLayoutGap(0, 5);
