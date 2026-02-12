@@ -6,14 +6,38 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
-import { Metadata } from 'next'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRequireAuth } from '@/lib/auth/useRequireAuth'
 import { PasswordChangeForm } from '@/components/profile/PasswordChangeForm'
 import { AliasManagement } from '@/components/profile/AliasManagement'
+import { profileApi } from '@/lib/api'
 
 export default function MyProfilePage() {
   const { user, isLoading } = useRequireAuth()
+  const [aliases, setAliases] = useState<
+    Array<{ name: string; createdDate: string; retiredDate?: string }>
+  >([])
+
+  useEffect(() => {
+    async function fetchAliases() {
+      if (user) {
+        try {
+          const data = await profileApi.getAliases()
+          setAliases(
+            data.map((a) => ({
+              name: a.name,
+              createdDate: a.createdDate,
+              retiredDate: a.retiredDate,
+            }))
+          )
+        } catch (error) {
+          console.error('Failed to fetch aliases:', error)
+        }
+      }
+    }
+    fetchAliases()
+  }, [user])
 
   if (isLoading) {
     return (
@@ -26,12 +50,6 @@ export default function MyProfilePage() {
   if (!user) {
     return null // useRequireAuth will redirect to login
   }
-
-  // TODO: Fetch user profile data and aliases from API
-  const aliases: Array<{ name: string; createdDate: string; retiredDate?: string }> = [
-    // Example data - replace with actual API call
-    // { name: 'OldName', createdDate: '2023-01-01', retiredDate: '2024-01-01' },
-  ]
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">

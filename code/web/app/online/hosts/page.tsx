@@ -9,6 +9,8 @@ import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
 import { FilterForm } from '@/components/filters/FilterForm'
 import { PlayerLink } from '@/components/online/PlayerLink'
+import { hostApi } from '@/lib/api'
+import { toBackendPage, buildPaginationResult } from '@/lib/pagination'
 
 export const metadata: Metadata = {
   title: 'Game Hosts - DD Poker',
@@ -30,12 +32,34 @@ async function getHosts(
   totalPages: number
   totalItems: number
 }> {
-  // TODO: Replace with actual API call
-  // For now, return empty data
-  return {
-    hosts: [],
-    totalPages: 0,
-    totalItems: 0,
+  try {
+    const backendPage = toBackendPage(page)
+    const { hosts, total } = await hostApi.getHosts(
+      filters.name,
+      filters.begin,
+      filters.end,
+      backendPage,
+      50
+    )
+    const mapped = hosts.map((h) => ({
+      name: h.playerName,
+      lastHosted: h.lastHosted || 'Unknown',
+      totalGamesHosted: h.gamesHosted,
+      ipAddress: 'N/A',
+    }))
+    const result = buildPaginationResult(mapped, total, page, 50)
+    return {
+      hosts: result.data,
+      totalPages: result.totalPages,
+      totalItems: result.totalItems,
+    }
+  } catch (error) {
+    console.error('Failed to fetch hosts:', error)
+    return {
+      hosts: [],
+      totalPages: 0,
+      totalItems: 0,
+    }
   }
 }
 
@@ -99,7 +123,7 @@ export default async function HostsPage({
         <Pagination
           currentPage={currentPage}
           totalItems={totalItems}
-          itemsPerPage={20}
+          itemsPerPage={50}
         />
       )}
     </div>

@@ -10,6 +10,9 @@ import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
 import { FilterForm } from '@/components/filters/FilterForm'
 import { PlayerLink } from '@/components/online/PlayerLink'
+import { gamesApi } from '@/lib/api'
+import { mapCompletedGame } from '@/lib/mappers'
+import { toBackendPage, buildPaginationResult } from '@/lib/pagination'
 
 export const metadata: Metadata = {
   title: 'Completed Games - DD Poker',
@@ -35,12 +38,28 @@ async function getCompletedGames(
   totalPages: number
   totalItems: number
 }> {
-  // TODO: Replace with actual API call
-  // For now, return empty data
-  return {
-    games: [],
-    totalPages: 0,
-    totalItems: 0,
+  try {
+    const backendPage = toBackendPage(page)
+    const { games, total } = await gamesApi.getCompleted(
+      backendPage,
+      20,
+      filters.begin,
+      filters.end
+    )
+    const mapped = games.map(mapCompletedGame)
+    const result = buildPaginationResult(mapped, total, page, 20)
+    return {
+      games: result.data,
+      totalPages: result.totalPages,
+      totalItems: result.totalItems,
+    }
+  } catch (error) {
+    console.error('Failed to fetch completed games:', error)
+    return {
+      games: [],
+      totalPages: 0,
+      totalItems: 0,
+    }
   }
 }
 

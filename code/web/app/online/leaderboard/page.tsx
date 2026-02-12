@@ -9,6 +9,9 @@ import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
 import { PlayerLink } from '@/components/online/PlayerLink'
 import { LeaderboardFilter } from './LeaderboardFilter'
+import { leaderboardApi } from '@/lib/api'
+import { mapLeaderboardEntry } from '@/lib/mappers'
+import { toBackendPage, buildPaginationResult } from '@/lib/pagination'
 
 export const metadata: Metadata = {
   title: 'Leaderboard - DD Poker',
@@ -33,12 +36,30 @@ async function getLeaderboard(
   totalPages: number
   totalItems: number
 }> {
-  // TODO: Replace with actual API call
-  // For now, return empty data
-  return {
-    entries: [],
-    totalPages: 0,
-    totalItems: 0,
+  try {
+    const mode = (type === 'roi' ? 'roi' : 'ddr1') as 'ddr1' | 'roi'
+    const backendPage = toBackendPage(page)
+    const apiFilters = {
+      name: filters.name,
+      from: filters.begin,
+      to: filters.end,
+      games: filters.games ? parseInt(filters.games) : undefined,
+    }
+    const { entries, total } = await leaderboardApi.getLeaderboard(mode, backendPage, 50, apiFilters)
+    const mapped = entries.map((e) => mapLeaderboardEntry(e, mode))
+    const result = buildPaginationResult(mapped, total, page, 50)
+    return {
+      entries: result.data,
+      totalPages: result.totalPages,
+      totalItems: result.totalItems,
+    }
+  } catch (error) {
+    console.error('Failed to fetch leaderboard:', error)
+    return {
+      entries: [],
+      totalPages: 0,
+      totalItems: 0,
+    }
   }
 }
 
@@ -133,7 +154,7 @@ export default async function LeaderboardPage({
         <Pagination
           currentPage={currentPage}
           totalItems={totalItems}
-          itemsPerPage={20}
+          itemsPerPage={50}
         />
       )}
     </div>

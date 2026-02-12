@@ -149,3 +149,40 @@ export interface ApiError {
   code?: string
   details?: Record<string, unknown>
 }
+
+/**
+ * Host summary for game hosts
+ */
+export interface HostSummary {
+  playerName: string
+  gamesHosted: number
+  lastHosted?: string
+}
+
+/**
+ * Player alias information
+ */
+export interface ProfileAlias {
+  name: string
+  createdDate: string
+  retiredDate?: string
+}
+
+/**
+ * Tournament statistics
+ */
+export interface TournamentStats {
+  totalGames: number
+  totalWins: number
+  totalPrize: number
+  avgPlacement: number
+  winRate: number
+}
+
+/**
+ * Game list response from backend
+ */
+export interface GameListResponse {
+  games: any[]
+  total: number
+}

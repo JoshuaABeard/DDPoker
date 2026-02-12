@@ -11,10 +11,13 @@ import type {
   AuthResponse,
   Game,
   GameDetails,
+  GameListResponse,
+  HostSummary,
   LeaderboardEntry,
   LoginRequest,
   PaginatedResponse,
   PlayerProfile,
+  ProfileAlias,
   RegisterRequest,
   TournamentHistoryEntry,
 } from './types'
@@ -154,32 +157,59 @@ export const playerApi = {
 }
 
 /**
+ * Profile API
+ */
+export const profileApi = {
+  /**
+   * Get player aliases
+   */
+  getAliases: async (): Promise<ProfileAlias[]> => {
+    const response = await apiFetch<ProfileAlias[]>('/api/profile/aliases')
+    return response.data
+  },
+}
+
+/**
  * Games API
  */
 export const gamesApi = {
   /**
-   * Get all games
+   * Get available games (mode 0 - waiting for players)
    */
-  getAll: async (status?: 'waiting' | 'in_progress' | 'completed'): Promise<Game[]> => {
-    const query = status ? `?status=${status}` : ''
-    const response = await apiFetch<Game[]>(`/api/games${query}`)
+  getAvailable: async (page = 0, pageSize = 20): Promise<GameListResponse> => {
+    const response = await apiFetch<GameListResponse>(
+      `/api/games?modes=0&page=${page}&pageSize=${pageSize}`
+    )
     return response.data
   },
 
   /**
-   * Get current games (in progress)
+   * Get running games (mode 1 - in progress)
    */
-  getCurrent: async (): Promise<Game[]> => {
-    return gamesApi.getAll('in_progress')
+  getRunning: async (page = 0, pageSize = 20): Promise<GameListResponse> => {
+    const response = await apiFetch<GameListResponse>(
+      `/api/games?modes=1&page=${page}&pageSize=${pageSize}`
+    )
+    return response.data
   },
 
   /**
-   * Get completed games
+   * Get completed games (mode 2 - finished)
    */
-  getCompleted: async (page = 0, pageSize = 20): Promise<PaginatedResponse<Game>> => {
-    const response = await apiFetch<PaginatedResponse<Game>>(
-      `/api/games/completed?page=${page}&pageSize=${pageSize}`
-    )
+  getCompleted: async (
+    page = 0,
+    pageSize = 20,
+    from?: string,
+    to?: string
+  ): Promise<GameListResponse> => {
+    const params = new URLSearchParams({
+      modes: '2',
+      page: page.toString(),
+      pageSize: pageSize.toString(),
+    })
+    if (from) params.append('from', from)
+    if (to) params.append('to', to)
+    const response = await apiFetch<GameListResponse>(`/api/games?${params}`)
     return response.data
   },
 
@@ -188,14 +218,6 @@ export const gamesApi = {
    */
   getDetails: async (gameId: number): Promise<GameDetails> => {
     const response = await apiFetch<GameDetails>(`/api/games/${gameId}`)
-    return response.data
-  },
-
-  /**
-   * Search games
-   */
-  search: async (query: string): Promise<Game[]> => {
-    const response = await apiFetch<Game[]>(`/api/games/search?q=${encodeURIComponent(query)}`)
     return response.data
   },
 }
@@ -207,8 +229,29 @@ export const leaderboardApi = {
   /**
    * Get the leaderboard
    */
-  getLeaderboard: async (limit = 100): Promise<LeaderboardEntry[]> => {
-    const response = await apiFetch<LeaderboardEntry[]>(`/api/leaderboard?limit=${limit}`)
+  getLeaderboard: async (
+    mode: 'ddr1' | 'roi',
+    page = 0,
+    pageSize = 50,
+    filters?: {
+      name?: string
+      from?: string
+      to?: string
+      games?: number
+    }
+  ): Promise<{ entries: any[]; total: number }> => {
+    const params = new URLSearchParams({
+      mode,
+      page: page.toString(),
+      pageSize: pageSize.toString(),
+    })
+    if (filters?.name) params.append('name', filters.name)
+    if (filters?.from) params.append('from', filters.from)
+    if (filters?.to) params.append('to', filters.to)
+    if (filters?.games) params.append('gamesLimit', filters.games.toString())
+    const response = await apiFetch<{ entries: any[]; total: number }>(
+      `/api/leaderboard?${params}`
+    )
     return response.data
   },
 
@@ -231,11 +274,18 @@ export const tournamentApi = {
   getHistory: async (
     playerName: string,
     page = 0,
-    pageSize = 20
-  ): Promise<PaginatedResponse<TournamentHistoryEntry>> => {
-    const response = await apiFetch<PaginatedResponse<TournamentHistoryEntry>>(
-      `/api/tournaments/player/${playerName}?page=${page}&pageSize=${pageSize}`
-    )
+    pageSize = 50,
+    from?: string,
+    to?: string
+  ): Promise<{ history: any[]; total: number }> => {
+    const params = new URLSearchParams({
+      name: playerName,
+      page: page.toString(),
+      pageSize: pageSize.toString(),
+    })
+    if (from) params.append('from', from)
+    if (to) params.append('to', to)
+    const response = await apiFetch<{ history: any[]; total: number }>(`/api/history?${params}`)
     return response.data
   },
 
@@ -244,6 +294,46 @@ export const tournamentApi = {
    */
   getDetails: async (tournamentId: number): Promise<TournamentHistoryEntry> => {
     const response = await apiFetch<TournamentHistoryEntry>(`/api/tournaments/${tournamentId}`)
+    return response.data
+  },
+}
+
+/**
+ * Search API
+ */
+export const searchApi = {
+  /**
+   * Search for players by name
+   */
+  searchPlayers: async (name: string, page = 0, pageSize = 50): Promise<any[]> => {
+    const response = await apiFetch<any[]>(
+      `/api/search?name=${encodeURIComponent(name)}&page=${page}&pageSize=${pageSize}`
+    )
+    return response.data
+  },
+}
+
+/**
+ * Host API
+ */
+export const hostApi = {
+  /**
+   * Get host statistics
+   */
+  getHosts: async (
+    search?: string,
+    from?: string,
+    to?: string,
+    page = 0,
+    pageSize = 50
+  ): Promise<{ hosts: HostSummary[]; total: number }> => {
+    const params = new URLSearchParams({ page: page.toString(), pageSize: pageSize.toString() })
+    if (search) params.append('search', search)
+    if (from) params.append('from', from)
+    if (to) params.append('to', to)
+    const response = await apiFetch<{ hosts: HostSummary[]; total: number }>(
+      `/api/games/hosts?${params}`
+    )
     return response.data
   },
 }

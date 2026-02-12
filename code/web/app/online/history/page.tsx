@@ -9,6 +9,9 @@ import Link from 'next/link'
 import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
 import { FilterForm } from '@/components/filters/FilterForm'
+import { tournamentApi } from '@/lib/api'
+import { mapTournamentEntry, calculateTournamentStats } from '@/lib/mappers'
+import { toBackendPage, buildPaginationResult } from '@/lib/pagination'
 
 export const metadata: Metadata = {
   title: 'Tournament History - DD Poker',
@@ -44,19 +47,38 @@ async function getTournamentHistory(
   totalPages: number
   totalItems: number
 }> {
-  // TODO: Replace with actual API call
-  // For now, return empty data
-  return {
-    entries: [],
-    stats: {
-      totalGames: 0,
-      totalWins: 0,
-      totalPrize: 0,
-      avgPlacement: 0,
-      winRate: 0,
-    },
-    totalPages: 0,
-    totalItems: 0,
+  try {
+    const backendPage = toBackendPage(page)
+    const { history, total } = await tournamentApi.getHistory(
+      playerName,
+      backendPage,
+      50,
+      filters.begin,
+      filters.end
+    )
+    const mapped = history.map(mapTournamentEntry)
+    const stats = calculateTournamentStats(mapped)
+    const result = buildPaginationResult(mapped, total, page, 50)
+    return {
+      entries: result.data,
+      stats,
+      totalPages: result.totalPages,
+      totalItems: result.totalItems,
+    }
+  } catch (error) {
+    console.error('Failed to fetch tournament history:', error)
+    return {
+      entries: [],
+      stats: {
+        totalGames: 0,
+        totalWins: 0,
+        totalPrize: 0,
+        avgPlacement: 0,
+        winRate: 0,
+      },
+      totalPages: 0,
+      totalItems: 0,
+    }
   }
 }
 
@@ -185,7 +207,7 @@ export default async function TournamentHistoryPage({
         <Pagination
           currentPage={currentPage}
           totalItems={totalItems}
-          itemsPerPage={20}
+          itemsPerPage={50}
         />
       )}
     </div>

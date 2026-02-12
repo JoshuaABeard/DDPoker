@@ -8,6 +8,9 @@ import { Metadata } from 'next'
 import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
 import { PlayerLink } from '@/components/online/PlayerLink'
+import { gamesApi } from '@/lib/api'
+import { mapAvailableGame } from '@/lib/mappers'
+import { toBackendPage, buildPaginationResult } from '@/lib/pagination'
 
 export const metadata: Metadata = {
   title: 'Available Games - DD Poker',
@@ -30,12 +33,23 @@ async function getAvailableGames(page: number): Promise<{
   totalPages: number
   totalItems: number
 }> {
-  // TODO: Replace with actual API call
-  // For now, return empty data
-  return {
-    games: [],
-    totalPages: 0,
-    totalItems: 0,
+  try {
+    const backendPage = toBackendPage(page)
+    const { games, total } = await gamesApi.getAvailable(backendPage, 20)
+    const mapped = games.map(mapAvailableGame)
+    const result = buildPaginationResult(mapped, total, page, 20)
+    return {
+      games: result.data,
+      totalPages: result.totalPages,
+      totalItems: result.totalItems,
+    }
+  } catch (error) {
+    console.error('Failed to fetch available games:', error)
+    return {
+      games: [],
+      totalPages: 0,
+      totalItems: 0,
+    }
   }
 }
 
