@@ -69,10 +69,15 @@ jobs:
       # 4. Build Installers
       # ===================================================================
 
+      # Build all modules first to install dependencies
+      - name: Build all modules
+        working-directory: code
+        run: mvn clean install -DskipTests
+
       # Build universal JAR and platform-specific installer
       - name: Build ${{ matrix.platform }} Installer
         working-directory: code/poker
-        run: mvn clean package assembly:single jpackage:jpackage -DskipTests
+        run: mvn package assembly:single jpackage:jpackage -DskipTests
 
       # Linux only: Also build RPM installer
       - name: Build RPM Installer (Linux only)
