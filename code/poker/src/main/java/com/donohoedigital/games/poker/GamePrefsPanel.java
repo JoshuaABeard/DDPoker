@@ -573,6 +573,9 @@ public class GamePrefsPanel extends DDPanel implements ActionListener
             OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_CHAT_PLAYERS, OSTYLE, map_, true), detailbase);
             OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_CHAT_OBSERVERS, OSTYLE, map_, true), detailbase);
             OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_CHAT_TIMEOUT, OSTYLE, map_, true), detailbase);
+            OptionMenu.add(new OptionInteger(NODE, PokerConstants.OPTION_CHAT_FONT_SIZE,
+                OSTYLE, map_, null, PokerConstants.MIN_CHAT_FONT_SIZE,
+                PokerConstants.MAX_CHAT_FONT_SIZE, 55), detailbase);
 
             // put right side together
             DDPanel rightbase = new DDPanel();

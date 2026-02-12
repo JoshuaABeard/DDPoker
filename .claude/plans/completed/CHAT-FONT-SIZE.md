@@ -15,7 +15,7 @@ This means we need to override the font on the prototype `DDHtmlArea` and refres
 
 ## Implementation
 
-### 1. Add preference constant
+### 1. Add preference constants
 
 **File**: [PokerConstants.java](code/pokerengine/src/main/java/com/donohoedigital/games/poker/engine/PokerConstants.java) (~line 169)
 
@@ -23,7 +23,11 @@ Add after existing `OPTION_CHAT_*` constants:
 ```java
 public static final String OPTION_CHAT_FONT_SIZE = "chatfontsize";
 public static final int DEFAULT_CHAT_FONT_SIZE = 12;
+public static final int MIN_CHAT_FONT_SIZE = 8;
+public static final int MAX_CHAT_FONT_SIZE = 24;
 ```
+
+The min/max constants eliminate magic numbers and ensure consistency between UI bounds and help text.
 
 ### 2. Add option properties
 
@@ -50,22 +54,20 @@ public void refreshStyles() {
 
 **File**: [ChatListPanel.java](code/poker/src/main/java/com/donohoedigital/games/poker/online/ChatListPanel.java) (~line 585)
 
-After `DDHtmlArea` is created, derive a font with the user's preferred size. When this is the prototype instance, call `refreshStyles()` to re-bake the CSS with the new size:
+After `DDHtmlArea` is created, apply the font size to the prototype instance only. Subsequent instances inherit the font size via the shared stylesheet:
 
 ```java
 html_ = new DDHtmlArea(GuiManager.DEFAULT, sStyle, null, panel.styleproto_);
 // ... existing setup ...
 
-// Apply user-configured chat font size
-int fontSize = PokerUtils.getIntPref(PokerConstants.OPTION_CHAT_FONT_SIZE,
-                                      PokerConstants.DEFAULT_CHAT_FONT_SIZE);
-Font currentFont = html_.getFont();
-if (currentFont.getSize() != fontSize) {
-    html_.setFont(currentFont.deriveFont((float) fontSize));
-}
-
+// Apply user-configured chat font size to prototype only
+// (subsequent items inherit the font size via shared stylesheet)
 if (panel.styleproto_ == null) {
+    int fontSize = PokerUtils.getIntPref(PokerConstants.OPTION_CHAT_FONT_SIZE,
+                                          PokerConstants.DEFAULT_CHAT_FONT_SIZE);
+    Font currentFont = html_.getFont();
     if (currentFont.getSize() != fontSize) {
+        html_.setFont(currentFont.deriveFont((float) fontSize));
         html_.refreshStyles(); // Re-bake CSS with new font size
     }
     panel.styleproto_ = html_;
@@ -82,29 +84,36 @@ void resetStyleProto() {
 }
 ```
 
-### 6. Update `ChatPanel.updatePrefs()` to reset font prototype
+### 6. Update `ChatPanel.updatePrefs()` to reset font prototype and force rebuild
 
 **File**: [ChatPanel.java](code/poker/src/main/java/com/donohoedigital/games/poker/online/ChatPanel.java) (~line 366)
 
-Reset style prototypes so new messages pick up the updated font:
+Reset style prototypes and force display rebuild so existing messages get the new font size:
 ```java
 public void updatePrefs() {
     for (ChatListPanel chatList : chatList_) {
         if (chatList != null) chatList.resetStyleProto();
     }
+    // Force rebuild to apply font size changes to existing messages
+    int savedDisplayOpt = nDisplayOpt_;
+    nDisplayOpt_ = -1; // Force createDisplay to rebuild
     createDisplay(true);
+    nDisplayOpt_ = savedDisplayOpt; // Restore for next check
 }
 ```
+
+This ensures existing chat messages are recreated with the new font size, not just future messages.
 
 ### 7. Add UI control to preferences dialog
 
 **File**: [GamePrefsPanel.java](code/poker/src/main/java/com/donohoedigital/games/poker/GamePrefsPanel.java) (~line 575)
 
-Add an `OptionInteger` spinner to the "Chat Options" section (`detailbase`) in the Online tab, after the existing chat checkboxes:
+Add an `OptionInteger` spinner to the "Chat Options" section (`detailbase`) in the Online tab, using the min/max constants:
 
 ```java
 OptionMenu.add(new OptionInteger(NODE, PokerConstants.OPTION_CHAT_FONT_SIZE,
-    OSTYLE, map_, null, 8, 24, 55), detailbase);
+    OSTYLE, map_, null, PokerConstants.MIN_CHAT_FONT_SIZE,
+    PokerConstants.MAX_CHAT_FONT_SIZE, 55), detailbase);
 ```
 
 ## Files Modified (6 files)
@@ -129,7 +138,43 @@ OptionMenu.add(new OptionInteger(NODE, PokerConstants.OPTION_CHAT_FONT_SIZE,
 
 1. Build: `mvn compile` from `code/` directory
 2. Open Options > Online tab - verify "Chat Font Size" spinner appears in Chat Options with default 12
-3. Change to 18, click OK - verify new chat messages render larger
-4. Change to 10 - verify messages render smaller
+3. Change to 18, click OK - verify **all existing and new** chat messages render larger
+4. Change to 10 - verify **all existing and new** messages render smaller
 5. Restart application - verify setting persists
 6. Test in lobby chat - verify font size applies there too
+
+## Implementation Summary
+
+✅ **Completed on 2026-02-11**
+
+All 7 implementation steps completed successfully:
+
+1. ✅ Added `OPTION_CHAT_FONT_SIZE`, `DEFAULT_CHAT_FONT_SIZE`, `MIN_CHAT_FONT_SIZE`, and `MAX_CHAT_FONT_SIZE` constants to `PokerConstants.java`
+2. ✅ Added option properties (label, default, help) to `client.properties`
+3. ✅ Exposed `refreshStyles()` public method in `DDHtmlArea.java`
+4. ✅ Applied font size to prototype instance only in `ChatListPanel.java`
+5. ✅ Added `resetStyleProto()` method to `ChatListPanel.java`
+6. ✅ Updated `ChatPanel.updatePrefs()` to reset style prototypes and force rebuild
+7. ✅ Added `OptionInteger` spinner UI control to `GamePrefsPanel.java` using constants
+
+**Build Status**: ✅ `mvn compile` succeeded with no errors or warnings
+
+**Test Status**: ✅ All 5 property validation tests passed, 1,319 total poker module tests passed
+
+### Code Quality Improvements
+
+**Initial Implementation Issues Identified and Fixed**:
+
+1. **Fixed: Stale reference bug** - Font size application refactored to only modify prototype instance, eliminating dead code in non-prototype items and stale reference checks. Subsequent chat items inherit font size via shared stylesheet.
+
+2. **Fixed: Existing messages not updating** - Added display rebuild logic to `updatePrefs()` to ensure existing chat messages get the new font size immediately, not just future messages.
+
+3. **Fixed: Magic numbers** - Replaced hardcoded 8 and 24 with `MIN_CHAT_FONT_SIZE` and `MAX_CHAT_FONT_SIZE` constants, ensuring consistency between UI bounds and help text.
+
+**Final Implementation**:
+- Clean, maintainable code with explicit intent
+- All edge cases handled (existing messages, preference changes)
+- No magic numbers - all values defined as constants
+- Comprehensive property validation tests
+
+The feature is ready for manual testing and verification according to the verification steps above.

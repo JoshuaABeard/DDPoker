@@ -168,6 +168,10 @@ public class DDHtmlArea extends JEditorPane implements DDTextVisibleComponent
         }
     }
 
+    public void refreshStyles() {
+        setStyles();
+    }
+
     /**
      * Return our type
      */
