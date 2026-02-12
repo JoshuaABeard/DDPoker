@@ -74,7 +74,7 @@ public abstract class WorkerThread extends Thread {
                 // sleep and release object lock
                 wait();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                logger.debug(getName() + " interrupted while waiting", e);
                 // clear interrupt status
                 Thread.interrupted();
             }
