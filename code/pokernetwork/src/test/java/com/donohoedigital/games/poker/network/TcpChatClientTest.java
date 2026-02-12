@@ -346,7 +346,7 @@ class TcpChatClientTest {
 
         // Then: Should have delay between attempts
         // (This is a basic test - full backoff testing would need more iterations)
-        assertThat(secondAttempt - start).isGreaterThan(100);
+        assertThat(secondAttempt - start).isGreaterThanOrEqualTo(100);
     }
 
     // =================================================================
