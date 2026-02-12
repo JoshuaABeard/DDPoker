@@ -5,8 +5,10 @@ This guide covers publishing DD Poker Docker images to Docker Hub.
 ## Prerequisites
 
 1. Docker Hub account: https://hub.docker.com/
-2. Docker CLI logged in: `docker login`
-3. Repository created: `joshuaabeard/ddpoker`
+2. Repository created: `joshuaabeard/ddpoker`
+3. GitHub repository secrets configured (for automated publishing):
+   - `DOCKERHUB_USERNAME`: Your Docker Hub username
+   - `DOCKERHUB_TOKEN`: Docker Hub access token (create at https://hub.docker.com/settings/security)
 
 ## Tagging Strategy
 
@@ -17,17 +19,58 @@ We use semantic versioning with the `-CommunityEdition` suffix:
 - **Variant**: `CommunityEdition` (latest CommunityEdition version)
 - **Latest**: `latest` (latest stable release)
 
-## Publishing Process
+## Publishing Methods
 
-### 1. Build the Image Locally
+### Method 1: Automated GitHub Actions (Recommended)
+
+**Best for:** Official releases with all platform installers
+
+1. **Create a GitHub Release** with installers:
+   - Trigger the `Build Multi-Platform Installers` workflow (or push a version tag)
+   - This creates a GitHub Release with all installers (MSI, DMG, DEB, RPM)
+
+2. **Trigger Docker publishing**:
+   - Go to: **Actions → Build and Publish Docker Image → Run workflow**
+   - Enter the release version tag (e.g., `v3.3.0`)
+   - Check "Push to Docker Hub" (uncheck for testing)
+   - Click "Run workflow"
+
+3. **The workflow will**:
+   - Download installers from the GitHub Release
+   - Build the Maven project
+   - Build the Docker image with all installers
+   - Push to Docker Hub with all tags
+
+**Advantages:**
+- Fully automated
+- Includes all platform installers
+- Consistent with GitHub Releases
+- No need for local multi-platform builds
+
+### Method 2: Local Manual Publishing
+
+**Best for:** Testing or when GitHub Actions isn't available
+
+#### 1. Build the Image Locally
+
+Use the automated build script:
 
 ```bash
-cd DDPoker
+# From repository root
+./docker/build-with-installers.sh
+
+# Or manually if installers are already in docker/downloads/
 mvn clean package -DskipTests -f code/pom.xml
 docker compose -f docker/docker-compose.yml build
 ```
 
-### 2. Tag the Image
+#### 2. Login to Docker Hub
+
+```bash
+docker login
+```
+
+#### 3. Tag the Image
 
 ```bash
 # Tag with full version
@@ -43,7 +86,7 @@ docker tag joshuaabeard/ddpoker:3.3.0-CommunityEdition joshuaabeard/ddpoker:Comm
 docker tag joshuaabeard/ddpoker:3.3.0-CommunityEdition joshuaabeard/ddpoker:latest
 ```
 
-### 3. Push to Docker Hub
+#### 4. Push to Docker Hub
 
 ```bash
 # Push all tags
@@ -53,13 +96,11 @@ docker push joshuaabeard/ddpoker:CommunityEdition
 docker push joshuaabeard/ddpoker:latest
 ```
 
-## One-Liner Script
+#### One-Liner Script
 
 ```bash
-# Build, tag, and push all versions
-cd DDPoker && \
-mvn clean package -DskipTests -f code/pom.xml && \
-docker compose -f docker/docker-compose.yml build && \
+# Build, tag, and push all versions (from repository root)
+./docker/build-with-installers.sh && \
 docker tag joshuaabeard/ddpoker:3.3.0-CommunityEdition joshuaabeard/ddpoker:3.3 && \
 docker tag joshuaabeard/ddpoker:3.3.0-CommunityEdition joshuaabeard/ddpoker:CommunityEdition && \
 docker tag joshuaabeard/ddpoker:3.3.0-CommunityEdition joshuaabeard/ddpoker:latest && \
@@ -68,6 +109,8 @@ docker push joshuaabeard/ddpoker:3.3 && \
 docker push joshuaabeard/ddpoker:CommunityEdition && \
 docker push joshuaabeard/ddpoker:latest
 ```
+
+---
 
 ## Verifying the Push
 

@@ -1,0 +1,197 @@
+name: Build and Publish Docker Image
+
+# Manual trigger only - run this after creating a GitHub Release with installers
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version tag (e.g., v3.3.0)'
+        required: true
+        type: string
+      push_to_dockerhub:
+        description: 'Push to Docker Hub (uncheck for testing)'
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read  # Read repository contents and releases
+
+jobs:
+  build-and-publish:
+    name: Build and Publish Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      # ===================================================================
+      # 1. Checkout Repository
+      # ===================================================================
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ===================================================================
+      # 2. Download Installers from GitHub Release
+      # ===================================================================
+      - name: Create downloads directory
+        run: mkdir -p docker/downloads
+
+      - name: Download installers from release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Downloading installers from release ${{ inputs.version }}"
+          cd docker/downloads
+
+          # Download all installer files
+          gh release download ${{ inputs.version }} \
+            --pattern "*.msi" \
+            --pattern "*.dmg" \
+            --pattern "*.deb" \
+            --pattern "*.rpm"
+
+          echo ""
+          echo "Downloaded files:"
+          ls -lh
+
+          # Verify required files exist
+          required_files=(
+            "DDPokerCE-3.3.0.msi"
+            "DDPokerCE-3.3.0.dmg"
+            "ddpoker-ce_3.3.0-1_amd64.deb"
+            "ddpoker-ce-3.3.0-1.x86_64.rpm"
+          )
+
+          missing_files=()
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              missing_files+=("$file")
+            fi
+          done
+
+          if [ ${#missing_files[@]} -ne 0 ]; then
+            echo "ERROR: Missing required files:"
+            printf '%s\n' "${missing_files[@]}"
+            exit 1
+          fi
+
+          echo ""
+          echo "✓ All required installers downloaded"
+
+      # ===================================================================
+      # 3. Build Maven Project
+      # ===================================================================
+      - name: Setup JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+          cache: 'maven'
+
+      - name: Build Java project
+        working-directory: code
+        run: mvn clean package -DskipTests -q
+
+      # ===================================================================
+      # 4. Setup Docker Buildx
+      # ===================================================================
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ===================================================================
+      # 5. Login to Docker Hub (if pushing)
+      # ===================================================================
+      - name: Login to Docker Hub
+        if: inputs.push_to_dockerhub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # ===================================================================
+      # 6. Extract version for tagging
+      # ===================================================================
+      - name: Extract version numbers
+        id: version
+        run: |
+          # Remove 'v' prefix if present (e.g., v3.3.0 -> 3.3.0)
+          FULL_VERSION="${{ inputs.version }}"
+          FULL_VERSION="${FULL_VERSION#v}"
+
+          # Extract major.minor (e.g., 3.3.0 -> 3.3)
+          MINOR_VERSION="${FULL_VERSION%.*}"
+
+          # Detect if this is a prerelease
+          IS_PRERELEASE="false"
+          if [[ "$FULL_VERSION" == *"alpha"* ]] || [[ "$FULL_VERSION" == *"beta"* ]] || [[ "$FULL_VERSION" == *"rc"* ]] || [[ "$FULL_VERSION" == *"pre"* ]]; then
+            IS_PRERELEASE="true"
+          fi
+
+          echo "full_version=${FULL_VERSION}" >> $GITHUB_OUTPUT
+          echo "minor_version=${MINOR_VERSION}" >> $GITHUB_OUTPUT
+          echo "is_prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
+
+          echo "Full version: ${FULL_VERSION}"
+          echo "Minor version: ${MINOR_VERSION}"
+          echo "Is prerelease: ${IS_PRERELEASE}"
+
+      # ===================================================================
+      # 7. Build and Push Docker Image
+      # ===================================================================
+      - name: Build and push Docker image (stable release)
+        if: steps.version.outputs.is_prerelease == 'false'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: ${{ inputs.push_to_dockerhub }}
+          tags: |
+            joshuaabeard/ddpoker:${{ steps.version.outputs.full_version }}-CommunityEdition
+            joshuaabeard/ddpoker:${{ steps.version.outputs.minor_version }}
+            joshuaabeard/ddpoker:CommunityEdition
+            joshuaabeard/ddpoker:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Docker image (prerelease)
+        if: steps.version.outputs.is_prerelease == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: ${{ inputs.push_to_dockerhub }}
+          tags: |
+            joshuaabeard/ddpoker:${{ steps.version.outputs.full_version }}-CommunityEdition
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ===================================================================
+      # 8. Summary
+      # ===================================================================
+      - name: Build summary
+        run: |
+          echo "## Docker Build Complete ✓" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ inputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ inputs.push_to_dockerhub }}" = "true" ]; then
+            echo "**Published to Docker Hub:**" >> $GITHUB_STEP_SUMMARY
+            echo "- \`joshuaabeard/ddpoker:${{ steps.version.outputs.full_version }}-CommunityEdition\`" >> $GITHUB_STEP_SUMMARY
+            echo "- \`joshuaabeard/ddpoker:${{ steps.version.outputs.minor_version }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- \`joshuaabeard/ddpoker:CommunityEdition\`" >> $GITHUB_STEP_SUMMARY
+            echo "- \`joshuaabeard/ddpoker:latest\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Pull command:**" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+            echo "docker pull joshuaabeard/ddpoker:${{ steps.version.outputs.full_version }}-CommunityEdition" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Test build only** - not pushed to Docker Hub" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Included installers:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Windows MSI" >> $GITHUB_STEP_SUMMARY
+          echo "- macOS DMG" >> $GITHUB_STEP_SUMMARY
+          echo "- Linux DEB" >> $GITHUB_STEP_SUMMARY
+          echo "- Linux RPM" >> $GITHUB_STEP_SUMMARY

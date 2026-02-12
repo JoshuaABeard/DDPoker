@@ -49,40 +49,65 @@ The Docker container serves client downloads at `http://localhost:8080/downloads
    - Built separately on Windows machine
    - **Required before building Docker image** - must be placed in `docker/downloads/`
 
-### Building the Windows Installer
+## Building Locally with Installers
 
-The Windows installer must be built on a Windows machine with WiX Toolset installed:
+The Docker image includes platform-specific installers (Windows MSI, macOS DMG, Linux DEB/RPM) that users can download from the web interface. Use the build script to handle installer management automatically.
+
+### Quick Build (Automated)
+
+```bash
+# From repository root
+./docker/build-with-installers.sh
+```
+
+**What it does:**
+1. Checks if installers exist in `docker/downloads/`
+2. Downloads missing installers from the latest GitHub Release
+3. Builds the Maven project
+4. Builds the Docker image
 
 **Prerequisites:**
-- Windows 10/11
-- Java 25 JDK
-- Maven 3.6+
-- WiX Toolset v3.14+ (`winget install WiXToolset.WiXToolset`)
+- GitHub CLI (`gh`) installed and authenticated
+- Docker and Docker Compose installed
 
-**Build Steps:**
+### Manual Build
+
+If you want to build installers locally before building the Docker image:
+
+**On each platform:**
 ```bash
-# 1. Build the installer (from repository root)
+# Windows (MSI):
 cd code/poker
 mvn clean package assembly:single jpackage:jpackage -DskipTests
-
-# 2. Copy to Docker downloads folder
 cp target/dist/DDPokerCE-3.3.0.msi ../../docker/downloads/
 
-# 3. Rebuild Docker image (from repository root)
-cd ../..
-docker compose -f docker/docker-compose.yml build
+# macOS (DMG):
+cd code/poker
+mvn clean package assembly:single jpackage:jpackage -DskipTests
+cp target/dist/DDPokerCE-3.3.0.dmg ../../docker/downloads/
 
-# 4. Restart container
-docker compose -f docker/docker-compose.yml up -d
+# Linux (DEB + RPM):
+cd code/poker
+mvn clean package assembly:single jpackage:jpackage -DskipTests
+mvn jpackage:jpackage -Pinstaller-linux-rpm -DskipTests
+cp target/dist/*.deb target/dist/*.rpm ../../docker/downloads/
+```
+
+**Then build Docker image:**
+```bash
+# From repository root
+docker compose -f docker/docker-compose.yml build
 ```
 
 **Accessing Downloads:**
+Once the container is running, access installers at:
 - **Web Browser**: http://localhost:8080/downloads/
 - **Direct URLs**:
   - JAR: http://localhost:8080/downloads/DDPokerCE-3.3.0.jar
   - MSI: http://localhost:8080/downloads/DDPokerCE-3.3.0.msi
-
-**Important**: The MSI file **must** be present in `docker/downloads/` before building the Docker image. The Docker build will fail if the MSI is missing. Follow the build steps above to create the MSI first.
+  - DMG: http://localhost:8080/downloads/DDPokerCE-3.3.0.dmg
+  - DEB: http://localhost:8080/downloads/ddpoker-ce_3.3.0-1_amd64.deb
+  - RPM: http://localhost:8080/downloads/ddpoker-ce-3.3.0-1.x86_64.rpm
 
 ## Files
 
