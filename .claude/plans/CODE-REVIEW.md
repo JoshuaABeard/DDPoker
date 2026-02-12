@@ -12,7 +12,7 @@ Comprehensive code review of DDPoker's server-side and shared infrastructure mod
 
 ## P0: Critical — Security & Stability
 
-### SEC-2: Add Input Validation
+### ✅ SEC-2: Add Input Validation (COMPLETED)
 **Files:** `EngineServlet.java`, `PokerServlet.java`
 **Issue:** No validation of email format, parameter bounds, string lengths.
 **Locations:**
@@ -21,30 +21,34 @@ Comprehensive code review of DDPoker's server-side and shared infrastructure mod
 - `addWanGame()` — no parameter validation
 
 **Fix:** Add email format validation, string length limits, and validate all user inputs before processing.
+**Completed:** Feb 12, 2026 (commit 3eca2de) - Created InputValidator utility class
 
 ---
 
-### SEC-3: Implement Rate Limiting
+### ✅ SEC-3: Implement Rate Limiting (COMPLETED)
 **Files:** `PokerServlet.java`, `ChatServer.java`
 **Issue:** No rate limiting on profile operations or chat messages. DoS vulnerability.
 **Fix:** Add rate limiting for profile creation/updates and chat message frequency per user.
+**Completed:** Feb 12, 2026 (commit 3eca2de) - Created RateLimiter utility class
 
 ---
 
-### LEAK-1: Fix ApplicationContext Resource Leak
+### ✅ LEAK-1: Fix ApplicationContext Resource Leak (COMPLETED)
 **Files:**
 - `OnlineGamePurger.java` (line 128)
 - `Ban.java` (line 111)
 
 **Issue:** `ApplicationContext` created but never closed.
 **Fix:** Use try-with-resources or explicit `close()`.
+**Completed:** Feb 11, 2026 - Wrapped in try-with-resources
 
 ---
 
-### DEAD-1: Remove Dead Code — `if (false)` Block
+### ✅ DEAD-1: Remove Dead Code — `if (false)` Block (COMPLETED)
 **File:** `EngineServlet.java` (lines 405-416)
 **Issue:** License validation disabled with `if (false)` — dead code that confuses maintainers.
 **Fix:** Delete entire block.
+**Completed:** Feb 9, 2026 (commit 3e2ac3c)
 
 ---
 
