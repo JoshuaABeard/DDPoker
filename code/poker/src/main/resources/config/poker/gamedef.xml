@@ -296,22 +296,6 @@
     </paramlist>
   </phase>
 
-  <phase name="UDPStatus" class="com.donohoedigital.games.engine.UDPStatus" history="true" window="udpstatus"
-         cache="true">
-    <param name="window-title" strvalue="msg.windowtitle.udpstatus"/>
-    <param name="window-width" intvalue="800"/>
-    <param name="window-height" intvalue="350"/>
-    <param name="window-multi" boolvalue="false"/>
-    <param name="window-resize" boolvalue="true"/>
-    <param name="window-background" strvalue="engine.basepanel"/>
-    <param name="style" strvalue="ChatLobby"/>
-    <param name="bevel-style" strvalue="BrushedMetal"/>
-    <param name="dialog-windowtitle-image" strvalue="pokerbannerwintitle"/>
-    <param name="dialog-help-name" strvalue="empty"/>
-    <param name="dialog-background-image" strvalue="pokerdialog"/>
-    <param name="dialog-style" strvalue="PokerStandardDialog"/>
-  </phase>
-
   <phase name="PlayerProfileOptions" class="com.donohoedigital.games.poker.PlayerProfileOptions" history="true"
          extends="Menu">
     <param name="style" strvalue="PokerStandard"/>
@@ -763,12 +747,6 @@
 
   <!-- PokerP2PDialog extends SendMessageDialog (TCP version) -->
   <phase name="ConnectGameTCP" class="com.donohoedigital.games.poker.online.PokerP2PDialog"
-         extends="UserRegistrationSend">
-    <param name="dialog-windowtitle-prop" strvalue="msg.windowtitle.connectGame"/>
-  </phase>
-
-  <!-- PokerUDPDialog extends SendMessageDialog (UDP version) -->
-  <phase name="ConnectGameUDP" class="com.donohoedigital.games.poker.online.PokerUDPDialog"
          extends="UserRegistrationSend">
     <param name="dialog-windowtitle-prop" strvalue="msg.windowtitle.connectGame"/>
   </phase>

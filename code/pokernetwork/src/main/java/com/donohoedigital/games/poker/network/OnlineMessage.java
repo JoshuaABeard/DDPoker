@@ -41,7 +41,6 @@ package com.donohoedigital.games.poker.network;
 import com.donohoedigital.base.*;
 import com.donohoedigital.comms.*;
 import com.donohoedigital.games.poker.engine.*;
-import com.donohoedigital.udp.*;
 
 import java.util.*;
 
@@ -189,7 +188,6 @@ public class OnlineMessage {
     public static final String ON_MSG_ID = "msgid";
     public static final String ON_IN_REPLY_TO = "replyto";
     public static final String ON_CONNECTION_URL = "url";
-    public static final String ON_UDPID = "udpid";
     public static final String ON_PLAYER_NAME = "playername";
     public static final String ON_PLAYER_PROFILE_PATH = "profile";
     public static final String ON_GAME_ID = "gameid";
@@ -447,17 +445,6 @@ public class OnlineMessage {
         if (url == null)
             return;
         data_.setString(ON_CONNECTION_URL, url.toString());
-    }
-
-    public UDPID getUPDID() {
-        String id = data_.getString(ON_UDPID);
-        return (id == null) ? null : new UDPID(id);
-    }
-
-    public void setUPDID(UDPID id) {
-        if (id == null)
-            return;
-        data_.setString(ON_UDPID, id.toString());
     }
 
     public int getMessageID() {

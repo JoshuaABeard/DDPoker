@@ -61,7 +61,6 @@ public class EngineConstants {
     public static final String TESTING_DEBUG_REPAINT_DETAILS = "settings.debug.repaint.details";
     public static final String TESTING_AI_DEBUG = "settings.debug.debug.ai";
     public static final String TESTING_P2P = "settings.debug.p2p";
-    public static final String TESTING_UDP_APP = "settings.debug.udp.app";
     public static final String TESTING_NO_EXTERNAL = "settings.debug.no.external";
 
     // game options node and defines

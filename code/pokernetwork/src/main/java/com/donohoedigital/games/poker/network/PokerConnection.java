@@ -33,7 +33,6 @@
 package com.donohoedigital.games.poker.network;
 
 import com.donohoedigital.base.*;
-import com.donohoedigital.udp.*;
 
 import java.nio.channels.*;
 
@@ -42,12 +41,7 @@ import java.nio.channels.*;
  * To change this template use File | Settings | File Templates.
  */
 public class PokerConnection {
-    private UDPID udpConn;
     private SocketChannel tcpConn;
-
-    public PokerConnection(UDPID id) {
-        udpConn = id;
-    }
 
     public PokerConnection(SocketChannel socket) {
         tcpConn = socket;
@@ -57,25 +51,13 @@ public class PokerConnection {
         return tcpConn;
     }
 
-    public UDPID getUDPID() {
-        return udpConn;
-    }
-
     public boolean isTCP() {
         return tcpConn != null;
     }
 
-    public boolean isUDP() {
-        return udpConn != null;
-    }
-
     @Override
     public String toString() {
-        if (isTCP()) {
-            return Utils.getIPAddress(tcpConn);
-        } else {
-            return udpConn.toString();
-        }
+        return Utils.getIPAddress(tcpConn);
     }
 
     @Override
@@ -87,24 +69,14 @@ public class PokerConnection {
             return false;
         PokerConnection c = (PokerConnection) o;
 
-        if (isTCP() && !c.isTCP())
-            return false;
-        if (isUDP() && !c.isUDP())
+        if (!c.isTCP())
             return false;
 
-        if (isTCP()) {
-            return tcpConn.equals(c.tcpConn);
-        } else {
-            return udpConn.equals(c.udpConn);
-        }
+        return tcpConn.equals(c.tcpConn);
     }
 
     @Override
     public int hashCode() {
-        if (isTCP())
-            return tcpConn.hashCode();
-        if (isUDP())
-            return udpConn.hashCode();
-        return super.hashCode();
+        return tcpConn.hashCode();
     }
 }

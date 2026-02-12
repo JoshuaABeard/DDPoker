@@ -48,7 +48,6 @@ import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.network.*;
 import com.donohoedigital.gui.*;
-import com.donohoedigital.udp.*;
 import org.apache.logging.log4j.*;
 
 import javax.swing.*;
@@ -373,8 +372,6 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
      * test connection
      */
     private void testConnection() {
-        if (TESTING(UDPServer.TESTING_UDP))
-            logger.debug("Starting test public connect --------------------------------");
         DMTypedHashMap params = new DMTypedHashMap();
         params.setObject(TestPublicConnect.PARAM_URL, new PokerURL(game_.getPublicConnectURL()));
         SendMessageDialog dialog = (SendMessageDialog) context_.processPhaseNow("TestPublicConnect", params);

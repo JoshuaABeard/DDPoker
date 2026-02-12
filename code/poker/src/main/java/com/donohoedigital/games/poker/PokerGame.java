@@ -1510,13 +1510,6 @@ public class PokerGame extends Game implements PlayerActionListener {
     }
 
     /**
-     * Return if this is a UDP connection
-     */
-    public boolean isUDP() {
-        return PokerURL.isUDP(getOnlineGameID());
-    }
-
-    /**
      * Get regular expression for connect URL for this game. Essentially, it is a
      * regexp which valiates a proper IP address
      */

@@ -100,9 +100,6 @@ public class PokerContext extends GameContext {
             GuiUtils.addKeyAction((JComponent) getContentPane(), JComponent.WHEN_IN_FOCUSED_WINDOW, "onlinelobby",
                     new LobbyAction(), KeyEvent.VK_L, Utils.ISMAC ? KeyEvent.META_DOWN_MASK : KeyEvent.CTRL_DOWN_MASK);
 
-            GuiUtils.addKeyAction((JComponent) getContentPane(), JComponent.WHEN_IN_FOCUSED_WINDOW, "udpstatus",
-                    new UDPAction(), KeyEvent.VK_U, Utils.ISMAC ? KeyEvent.META_DOWN_MASK : KeyEvent.CTRL_DOWN_MASK);
-
             GuiUtils.addKeyAction((JComponent) getContentPane(), JComponent.WHEN_IN_FOCUSED_WINDOW, "calctool",
                     new CalcAction(), KeyEvent.VK_T, Utils.ISMAC ? KeyEvent.META_DOWN_MASK : KeyEvent.CTRL_DOWN_MASK);
 
@@ -126,15 +123,6 @@ public class PokerContext extends GameContext {
                     PlayerProfileOptions.getDefaultProfile())) {
                 processPhase("OnlineLobby");
             }
-        }
-    }
-
-    /**
-     * UDPStatus action
-     */
-    private class UDPAction extends AbstractAction {
-        public void actionPerformed(ActionEvent e) {
-            processPhase("UDPStatus");
         }
     }
 

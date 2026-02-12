@@ -66,7 +66,6 @@ import com.donohoedigital.jsp.JspEmail;
 import com.donohoedigital.mail.DDPostalService;
 import com.donohoedigital.p2p.Peer2PeerClient;
 import com.donohoedigital.p2p.Peer2PeerMessage;
-import com.donohoedigital.udp.UDPServer;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -347,9 +346,6 @@ public class PokerServlet extends EngineServlet {
      * Test connection to the provided connect URL
      */
     private DDMessage testP2pConnect(HttpServletRequest request, DDMessage ddreceived) {
-        if (TESTING(UDPServer.TESTING_UDP))
-            logger.debug("Starting test public connect --------------------------------");
-
         // enclose sent message in an OnlineMessage
         OnlineMessage omsg = new OnlineMessage(ddreceived);
 
