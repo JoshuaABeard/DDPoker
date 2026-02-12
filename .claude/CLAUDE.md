@@ -2,7 +2,64 @@
 
 **IMPORTANT: Do not modify EXAMPLES.md or CLAUDE.md without explicit user consent.**
 
-## 1. Think Before Coding
+## 1. Project Overview
+
+**DD Poker** is a Texas Hold'em poker simulator with a Java Swing desktop client and online multiplayer via a Wicket web portal. Community-maintained fork of DD Poker by Doug Donohoe (2003-2017).
+
+### Tech Stack
+
+| Component | Technology |
+|-----------|-----------|
+| Language | Java 25 |
+| Build | Maven 3.9.12 |
+| Web | Apache Wicket 10.8, Jetty 12.1 |
+| Database | H2 (embedded), Hibernate 6.6 |
+| DI | Spring 6.2 |
+| Tests | JUnit 4/5, Mockito, AssertJ |
+| UI Tests | AssertJ Swing, Playwright |
+| Coverage | JaCoCo 0.8.13 (65% minimum) |
+
+### Build & Test Commands
+
+```bash
+# All commands run from code/
+mvn test                       # Build + run all tests
+mvn test -P dev                # Fast: unit tests only, skip slow/integration, 4 threads
+mvn test -P fast               # Skip coverage, integration, javadoc
+mvn verify -P coverage         # Full coverage aggregation
+mvn clean package -DskipTests  # Build only
+
+# Playwright E2E (from code/pokerwicket/)
+npm test                       # Run all E2E tests (server must be running)
+```
+
+### Project Structure
+
+```
+code/                    # 21 Maven modules (parent POM here)
+  pokerengine/           # Core game logic (hand evaluation, rules)
+  poker/                 # Desktop client (Swing UI, main app)
+  pokerserver/           # Game API server
+  pokernetwork/          # Networking layer
+  pokerwicket/           # Web UI (Wicket) + Playwright tests
+  common/                # Shared utilities
+  db/                    # Database layer
+  gameengine/            # Generic game engine
+  gui/                   # GUI utilities
+  server/                # Server base
+  udp/                   # UDP chat server
+docker/                  # Docker deployment
+tools/scripts/           # PowerShell dev scripts
+.claude/plans/           # Task plans
+```
+
+### Key Entry Points
+
+- Desktop: `com.donohoedigital.games.poker.PokerMain`
+- Server: `com.donohoedigital.games.poker.server.PokerServerMain`
+- Web: `com.donohoedigital.poker.web.PokerJetty`
+
+## 2. Think Before Coding
 
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
 
@@ -15,15 +72,15 @@ Before implementing:
 ### When Principles Conflict
 
 Priorities (highest to lowest):
-1. **Privacy (Section 9)** - Never commit private data
+1. **Privacy (Section 10)** - Never commit private data
 2. **Correctness** - Code must work and be tested
-3. **Simplicity (Section 2)** - Prefer simple over complex
-4. **Surgical (Section 3)** - Touch only what's needed
+3. **Simplicity (Section 3)** - Prefer simple over complex
+4. **Surgical (Section 4)** - Touch only what's needed
 5. **Speed** - Fast delivery matters, but not at expense of above
 
 **If genuinely stuck:** Stop and ask. Don't guess.
 
-## 2. Simplicity First
+## 3. Simplicity First
 
 **Minimum code that solves the problem. Nothing speculative.**
 
@@ -33,11 +90,9 @@ Priorities (highest to lowest):
 - No error handling for impossible scenarios.
 - If you write 200 lines and it could be 50, rewrite it.
 
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+**Note:** Comprehensive testing (Section 6) is NOT over-engineering. Write minimal production code, but test it thoroughly.
 
-**Note:** Comprehensive testing (Section 5) is NOT over-engineering. Write minimal production code, but test it thoroughly.
-
-## 3. Surgical Changes
+## 4. Surgical Changes
 
 **Touch only what you must. Clean up only your own mess.**
 
@@ -51,16 +106,14 @@ When your changes create orphans:
 - Remove imports/variables/functions that YOUR changes made unused.
 - Don't remove pre-existing dead code unless asked.
 
-The test: Every changed line should trace directly to the user's request.
-
-## 4. Goal-Driven Execution
+## 5. Goal-Driven Execution
 
 **Define success criteria. Loop until verified.**
 
-Transform tasks into verifiable goals:
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
+Transform tasks into verifiable goals with explicit checks:
+- "Add feature X" → Define expected behavior, write tests, implement, verify tests pass
+- "Fix bug Y" → Reproduce with a test, fix, verify test passes
+- "Refactor Z" → Verify all tests pass before AND after
 
 For multi-step tasks, state a brief plan:
 ```
@@ -71,51 +124,51 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
-## 5. Testing
+## 6. Testing
 
 **Write tests BEFORE implementation whenever possible. Thorough testing is NOT over-engineering.**
 
 ### When to Write Tests First
-- ✅ **New features** - Design the interface via tests
-- ✅ **Bug fixes** - Reproduce bug with test, then fix
-- ✅ **Refactoring** - Ensure behavior doesn't change
-- ✅ **Complex logic** - Tests help you think through edge cases
+- **New features** - Design the interface via tests
+- **Bug fixes** - Reproduce bug with test, then fix
+- **Refactoring** - Ensure behavior doesn't change
+- **Complex logic** - Tests help you think through edge cases
 
 ### When Tests Can Wait
-- ❌ **Spiking/exploring** - Throwaway code to learn (delete after)
-- ❌ **Trivial code** - Simple DTOs, getters/setters
-- ❌ **Proof-of-concept** - Show feasibility first, then rewrite with tests
+- **Spiking/exploring** - Throwaway code to learn (delete after)
+- **Trivial code** - Simple DTOs, getters/setters
+- **Proof-of-concept** - Show feasibility first, then rewrite with tests
 
 ### Test Types to Consider
 - **Property tests** - Find edge cases via randomization
 - **Example tests** - Document specific behaviors
 - **Component tests** - UI formatting/rendering logic
-- **E2E tests** - Critical user flows only
+- **E2E tests** - Critical user flows only (Playwright for web UI)
 
 ### Verification
 After implementing:
-- ✅ All new tests pass
-- ✅ All existing tests still pass
-- ✅ Code coverage meets thresholds (65% minimum)
-- ✅ Build completes with zero warnings
+- All new tests pass
+- All existing tests still pass
+- Code coverage meets thresholds (65% minimum)
+- Build completes with zero warnings
 
-## 6. Plan Backlog Process
+## 7. Plan Backlog Process
 
 **Plans live in `.claude/plans/`. Update them as you go.**
 
 ### When to Create a Plan
 
 **Always create a plan for:**
-- ✅ New features (multi-file changes)
-- ✅ Significant refactoring
-- ✅ Complex bug fixes requiring investigation
-- ✅ Anything spanning > 3 files or > 200 lines
+- New features (multi-file changes)
+- Significant refactoring
+- Complex bug fixes requiring investigation
+- Anything spanning > 3 files or > 200 lines
 
 **Skip plans for:**
-- ❌ Trivial bug fixes (one-liners)
-- ❌ Documentation-only changes
-- ❌ Configuration tweaks
-- ❌ Dependency updates only
+- Trivial bug fixes (one-liners)
+- Documentation-only changes
+- Configuration tweaks
+- Dependency updates only
 
 **If unsure:** Propose a plan. User can say "just do it" if too simple.
 
@@ -126,67 +179,54 @@ After implementing:
 - Upon completion, document a summary of changes made in the plan.
 - After user approval, move the plan to `.claude/plans/completed/` right before the final commit of the feature.
 
-## 7. Git Worktree Workflow
+## 8. Git Worktree Workflow
 
 **NEVER work directly on main. All development happens in worktrees.**
 
 ### Creating Worktrees
 ```bash
-# From main worktree: C:\Repos\DDPoker
+# From the main worktree root
 git worktree add -b feature-name ../DDPoker-feature-<description>
 ```
 
 **Naming:** `DDPoker-feature-*`, `DDPoker-fix-*`, `DDPoker-refactor-*`
 
 ### Workflow
-1. Create worktree and work there
-2. Commit and test normally
-3. When complete, STOP and request code review (no PRs)
-4. After approval: merge to main, push, remove worktree
+1. Pull main from remote
+2. Create worktree from main and work there
+3. Commit and test normally
+4. When complete, STOP and request code review (no PRs)
+5. After approval: squash merge to main, push, clean up
+   - `git checkout main && git merge --squash <branch> && git commit`
+   - `git worktree remove <path>` + `git branch -d <branch>`
 
-### Rules
-- ❌ **Never work directly on main** - Main only receives merges
-- ✅ **One worktree per feature** - Sibling directories
-- ✅ **Clean up after merge** - `git worktree remove` + `git branch -d`
-- ✅ **Plans/backlog** - Can be managed in main
+### What Goes Where
 
-### Exceptions - When Main is OK
-Small, non-code changes (< 10 lines) can be made directly in main:
-- ✅ Updating `.claude/CLAUDE.md` or meta-documentation
-- ✅ Creating/organizing plans in `.claude/plans/`
-- ✅ Single-line README typo fixes
-- ✅ .gitignore or .gitattributes updates
-- ✅ Non-code administrative changes
+**Use a worktree** for anything touching code or tests.
 
-**If you're unsure, use a worktree.** Better safe than cluttering main.
+**Main is OK** for small (< 10 lines) non-code changes: `.claude/` files, plans, .gitignore, README typos.
 
-**Use worktrees for:**
-- ✅ All feature development
-- ✅ All bug fixes
-- ✅ All refactoring
-- ✅ Anything touching application code or tests
+**If unsure, use a worktree.**
 
 ### Commit Message Format
 
-**Required format:**
-```
-<type>: <brief summary (50 chars max)>
-
-Co-Authored-By: <model name> <noreply@anthropic.com>
-```
-
 **Types:** `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
 
-Use the actual model name in the co-author line (e.g., `Claude Opus 4.6`, `Claude Sonnet 4.5`).
-
-**Example:**
 ```
-feat: Add user authentication via JWT
+feat: Add player hand evaluation logic
+Plan: .claude/plans/hand-evaluation.md
 
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+Chose lookup-table approach over brute-force for performance.
+
+Co-Authored-By: <Claude Opus 4.6>
 ```
 
-## 8. Code Review Process
+- First line: `<type>: <summary>` (50 chars max)
+- Second line: `Plan: <path>` (if a plan was used, omit otherwise)
+- Body: Context, reasoning, or tradeoffs (omit if self-explanatory)
+- Last line: `Co-Authored-By: <model>` (use actual model name)
+
+## 9. Code Review Process
 
 **Reviews fully automated: dev agent spawns review agent (Opus).**
 
@@ -196,13 +236,15 @@ When work is complete:
 
 1. **Create review handoff:** `.claude/reviews/BRANCH-NAME.md`
    - Summary: 2-3 sentences of what changed and why
+   - Plan: Path to plan file (if applicable, e.g., `.claude/plans/feature.md`)
    - Files changed: List with privacy check status
    - Verification: Test results, coverage %, build status
    - Context: Important decisions or tradeoffs
+   - Worktree path: Absolute path to the worktree
 
 2. **Spawn review agent:**
    - Use Task tool with `subagent_type: "general-purpose"`, `model: "opus"`
-   - Task: "Review code using `.claude/reviews/BRANCH-NAME.md`"
+   - Task prompt **must** include: "Read `.claude/CLAUDE.md` Section 9 for the review checklist, then read the handoff file at `.claude/reviews/BRANCH-NAME.md` and perform the review."
 
 3. **Present results:** Show user review findings from updated handoff file
 
@@ -210,70 +252,46 @@ When work is complete:
 
 When spawned:
 
-1. **Read handoff:** `.claude/reviews/BRANCH-NAME.md`
-2. **Navigate to worktree:** Change to worktree path from handoff
-3. **Run verification:** Execute tests, check coverage, run build
-4. **Verify against CLAUDE.md:**
-   - ✅ Tests pass, coverage ≥ 65%, build clean (zero warnings)
-   - ✅ No scope creep (Section 3)
-   - ✅ No over-engineering (Section 2)
-   - ✅ No private info (Section 9)
-   - ✅ No security vulnerabilities
-5. **Update handoff file** with findings:
-   - Status: ✅ Approved | ⚠️ Notes | ❌ Changes Required
+1. **Read** `.claude/CLAUDE.md` Section 9 and the handoff file
+2. **Read the plan** (if referenced in the handoff) to understand intended scope and approach
+3. **Navigate to worktree** using the path from the handoff file
+4. **Run verification:** Execute tests (`mvn test`), check coverage, run build
+5. **Verify against CLAUDE.md:**
+   - Tests pass, coverage >= 65%, build clean (zero warnings)
+   - No scope creep (Section 4)
+   - No over-engineering (Section 3)
+   - No private info (Section 10)
+   - No security vulnerabilities
+   - Implementation matches plan: correct approach, all steps completed, deviations documented
+6. **Update handoff file** with findings:
+   - Status: APPROVED | NOTES | CHANGES REQUIRED
    - Findings: Specific issues with file:line references
    - Blockers: Required changes (if any)
-6. **Return to dev agent:** Summary of review status
+7. **Return to dev agent:** Summary of review status
 
-## 9. Private Information Check Before Committing
+## 10. Private Information Check Before Committing
 
 **ALWAYS review files for private information before committing to the public repository.**
 
-### What to Check For:
+### What to Check For
 Before committing any file, scan for:
-- ❌ **Private IP addresses** (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
-- ❌ **Specific domain names** (personal domains, company domains)
-- ❌ **Server hostnames** (actual server names)
-- ❌ **Credentials** (passwords, API keys, tokens, SSH keys)
-- ❌ **Email addresses** (personal emails)
-- ❌ **File paths with usernames** (C:\Users\John\...)
-- ❌ **Database connection strings** (with real hosts/passwords)
-- ❌ **Network details** (MAC addresses, specific network configs)
+- **Private IP addresses** (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+- **Specific domain names** (personal domains, company domains)
+- **Server hostnames** (actual server names)
+- **Credentials** (passwords, API keys, tokens, SSH keys)
+- **Email addresses** (personal emails)
+- **File paths with usernames** (C:\Users\John\...)
+- **Database connection strings** (with real hosts/passwords)
+- **Network details** (MAC addresses, specific network configs)
 
-### Safe Alternatives:
-Use placeholders and generic examples:
-- ✅ `YOUR_IP_HERE`, `YOUR_DOMAIN`, `example.com`
-- ✅ Container names: `DDPoker`, `swag`, `database`
-- ✅ Environment variables: `${DATABASE_URL}`, `${API_KEY}`
-- ✅ Generic paths: `/data`, `/config`, relative paths
-- ✅ Localhost references: `localhost`, `127.0.0.1`
-- ✅ Documentation IPs: `192.0.2.x` (RFC 5737), `example.com`
+Replace any found with placeholders (`YOUR_IP_HERE`, `example.com`, `${API_KEY}`, etc.) or environment variables.
 
-### Workflow:
+### Workflow
 When asked to commit files:
 1. **List files** being committed
 2. **Review each file** for private information
 3. **Present findings** to user clearly:
-   - ✅ "File X is SAFE - no private info"
-   - ❌ "File Y contains: IP 192.168.1.50 on line 23"
+   - "File X is SAFE - no private info"
+   - "File Y contains: IP 192.168.1.50 on line 23"
 4. **Wait for approval** if any issues found
 5. **Proceed with commit** only after user confirms
-
-### Common File Types to Review Carefully:
-- Configuration files (`.conf`, `.env`, `.yaml`, `.json`)
-- Scripts (`.sh`, `.ps1`, `.bat`)
-- Docker files (`Dockerfile`, `docker-compose.yml`)
-- Templates (Unraid `.xml`, Kubernetes manifests)
-- Documentation with examples (`README.md`, setup guides)
-
-### Example Review:
-```
-## Privacy Check for: swag/ddpoker.conf
-
-✅ SAFE - Uses container name `DDPoker` instead of IP
-✅ SAFE - Uses wildcard domain `ddpoker.*`
-✅ SAFE - No credentials found
-✅ SAFE - Standard port 8080 (generic)
-
-Ready to commit.
-```
