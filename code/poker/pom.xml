@@ -307,7 +307,8 @@
               <type>DMG</type>
               <macPackageName>DD Poker CE</macPackageName>
               <macPackageIdentifier>com.donohoedigital.games.poker</macPackageIdentifier>
-              <icon>src/main/resources/config/poker/images/pokericon128.png</icon>
+              <!-- Note: macOS icon removed - requires ICNS format, not PNG -->
+              <!-- TODO: Convert pokericon128.png to ICNS format for custom icon -->
 
               <!-- JVM Options -->
               <javaOptions>
