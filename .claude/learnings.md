@@ -32,3 +32,4 @@ Persistent knowledge discovered during development sessions. Read this at the st
 
 - [worktree] Always create worktrees from the main worktree root, not from inside another worktree (2026-02-12)
 - [ci] CI runs on push to main and on PRs to main (2026-02-12)
+- [hooks] Post-commit hook reminds to update learnings.md after every commit (2026-02-12)
