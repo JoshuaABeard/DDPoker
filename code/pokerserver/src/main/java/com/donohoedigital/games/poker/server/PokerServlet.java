@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- *
+ * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+ * 
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * 
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- *
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
+ * 
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials)
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
+ * limited to written documentation, website content, and marketing materials) 
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- *
- * For inquiries regarding commercial licensing of this source code or
- * the use of names, logos, images, text, or other assets, please contact
+ * 
+ * For inquiries regarding commercial licensing of this source code or 
+ * the use of names, logos, images, text, or other assets, please contact 
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -37,6 +37,7 @@
  */
 
 package com.donohoedigital.games.poker.server;
+
 
 import com.donohoedigital.base.ApplicationError;
 import com.donohoedigital.base.ErrorCodes;
@@ -87,7 +88,8 @@ import static com.donohoedigital.games.poker.service.OnlineGameService.OrderByTy
 /**
  * @author donohoe
  */
-public class PokerServlet extends EngineServlet {
+public class PokerServlet extends EngineServlet
+{
     @Autowired
     private OnlineGameService onlineGameService;
     @Autowired
@@ -100,7 +102,8 @@ public class PokerServlet extends EngineServlet {
      * init from gameserver
      */
     @Override
-    public void afterConfigInit() {
+    public void afterConfigInit()
+    {
         super.afterConfigInit();
     }
 
@@ -108,7 +111,8 @@ public class PokerServlet extends EngineServlet {
      * Return action handler
      */
     @Override
-    public final ActionHandler getActionHandler() {
+    public final ActionHandler getActionHandler()
+    {
         return null;
     }
 
@@ -116,7 +120,8 @@ public class PokerServlet extends EngineServlet {
      * Get version
      */
     @Override
-    public final Version getLatestVersion() {
+    public final Version getLatestVersion()
+    {
         return PokerConstants.VERSION;
     }
 
@@ -126,13 +131,11 @@ public class PokerServlet extends EngineServlet {
      * @return
      */
     @Override
-    public Version getLatestClientVersion(String os) {
-        if (Utils.isMacOS(os))
-            return PokerConstants.LATEST_MAC;
-        if (Utils.isLinux(os))
-            return PokerConstants.LATEST_LINUX;
-        if (Utils.isWindows(os))
-            return PokerConstants.LATEST_WINDOWS;
+    public Version getLatestClientVersion(String os)
+    {
+        if (Utils.isMacOS(os)) return PokerConstants.LATEST_MAC;
+        if (Utils.isLinux(os)) return PokerConstants.LATEST_LINUX;
+        if (Utils.isWindows(os)) return PokerConstants.LATEST_WINDOWS;
         throw new ApplicationError("Unknown os: " + os);
     }
 
@@ -140,7 +143,8 @@ public class PokerServlet extends EngineServlet {
      * Get keystart
      */
     @Override
-    public final int getKeyStart(Version received) {
+    public final int getKeyStart(Version received)
+    {
         return PokerConstants.getKeyStart(received);
     }
 
@@ -148,19 +152,22 @@ public class PokerServlet extends EngineServlet {
      * Return action which indicates an online game is missing
      */
     @Override
-    protected ActionItem getMissingGameAction() {
-        throw new ApplicationError(ErrorCodes.ERROR_UNSUPPORTED, "getMissingGameAction() not used in PokerServlet",
-                null);
+    protected ActionItem getMissingGameAction()
+    {
+        throw new ApplicationError(ErrorCodes.ERROR_UNSUPPORTED, "getMissingGameAction() not used in PokerServlet", null);
     }
 
     /**
      * test for banned key
      */
-    private EngineMessage banCheck(DDMessage received) {
+    private EngineMessage banCheck(DDMessage received)
+    {
         BannedKey ban = bannedKeyService.getIfBanned(received.getKey());
-        if (ban != null) {
-            EngineMessage ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED, EngineMessage.PLAYER_SERVER,
-                    EngineMessage.CAT_APPL_ERROR);
+        if (ban != null)
+        {
+            EngineMessage ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED,
+                                                  EngineMessage.PLAYER_SERVER,
+                                                  EngineMessage.CAT_APPL_ERROR);
 
             ret.setApplicationErrorMessage(getAndLogBanMessage(ban, received));
             return ret;
@@ -172,12 +179,14 @@ public class PokerServlet extends EngineServlet {
     /**
      * test for banned key
      */
-    public OnlineMessage banCheck(OnlineProfile profile) {
+    public OnlineMessage banCheck(OnlineProfile profile)
+    {
         OnlineMessage resMsg = null;
         String banMsg = banCheck(bannedKeyService, profile);
-        if (banMsg != null) {
+        if (banMsg != null)
+        {
             // Profile already exists, so report an error also set flag so client can
-            // deal. Using PARAM_ELIMINATED cuz I'm lazy.
+            // deal.  Using PARAM_ELIMINATED cuz I'm lazy.
             resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
             resMsg.getData().setBoolean(EngineMessage.PARAM_ELIMINATED, true);
             resMsg.setApplicationErrorMessage(banMsg);
@@ -188,11 +197,12 @@ public class PokerServlet extends EngineServlet {
     /**
      * test for banned key
      */
-    public static String banCheck(BannedKeyService banService, OnlineProfile profile) {
-        if (profile == null)
-            return null;
+    public static String banCheck(BannedKeyService banService, OnlineProfile profile)
+    {
+        if (profile == null) return null;
         BannedKey ban = banService.getIfBanned(profile.getLicenseKey(), profile.getEmail(), profile.getName());
-        if (ban != null) {
+        if (ban != null)
+        {
             return getAndLogBanMessage(ban, profile);
         }
 
@@ -203,26 +213,28 @@ public class PokerServlet extends EngineServlet {
      * ask if can process given category
      */
     @Override
-    protected boolean isSubclassHandling(int nCategory) {
-        switch (nCategory) {
-            case OnlineMessage.CAT_TEST :
-            case OnlineMessage.CAT_WAN_GAME_ADD :
-            case OnlineMessage.CAT_WAN_GAME_UPDATE :
-            case OnlineMessage.CAT_WAN_GAME_REMOVE :
-            case OnlineMessage.CAT_WAN_GAME_LIST :
-            case OnlineMessage.CAT_WAN_GAME_START :
-            case OnlineMessage.CAT_WAN_GAME_STOP :
-            case OnlineMessage.CAT_WAN_GAME_END :
-            case OnlineMessage.CAT_WAN_PROFILE_ADD :
-            case OnlineMessage.CAT_WAN_PROFILE_RESET :
-            case OnlineMessage.CAT_WAN_PROFILE_LINK :
-            case OnlineMessage.CAT_WAN_PROFILE_ACTIVATE :
-            case OnlineMessage.CAT_WAN_PROFILE_VALIDATE :
-            case OnlineMessage.CAT_WAN_PROFILE_SEND_PASSWORD :
-            case OnlineMessage.CAT_WAN_PROFILE_CHANGE_PASSWORD :
-            case OnlineMessage.CAT_WAN_PROFILE_SYNC_PASSWORD :
+    protected boolean isSubclassHandling(int nCategory)
+    {
+        switch (nCategory)
+        {
+            case OnlineMessage.CAT_TEST:
+            case OnlineMessage.CAT_WAN_GAME_ADD:
+            case OnlineMessage.CAT_WAN_GAME_UPDATE:
+            case OnlineMessage.CAT_WAN_GAME_REMOVE:
+            case OnlineMessage.CAT_WAN_GAME_LIST:
+            case OnlineMessage.CAT_WAN_GAME_START:
+            case OnlineMessage.CAT_WAN_GAME_STOP:
+            case OnlineMessage.CAT_WAN_GAME_END:
+            case OnlineMessage.CAT_WAN_PROFILE_ADD:
+            case OnlineMessage.CAT_WAN_PROFILE_RESET:
+            case OnlineMessage.CAT_WAN_PROFILE_LINK:
+            case OnlineMessage.CAT_WAN_PROFILE_ACTIVATE:
+            case OnlineMessage.CAT_WAN_PROFILE_VALIDATE:
+            case OnlineMessage.CAT_WAN_PROFILE_SEND_PASSWORD:
+            case OnlineMessage.CAT_WAN_PROFILE_CHANGE_PASSWORD:
+            case OnlineMessage.CAT_WAN_PROFILE_SYNC_PASSWORD:
                 return true;
-            default :
+            default:
                 return false;
         }
     }
@@ -231,65 +243,65 @@ public class PokerServlet extends EngineServlet {
      * is isSubclassHandling returned true, then this is called
      */
     @Override
-    protected DDMessage subclassProcessMessage(HttpServletRequest request, HttpServletResponse response,
-            DDMessage ddreceived) {
+    protected DDMessage subclassProcessMessage(HttpServletRequest request, HttpServletResponse response, DDMessage ddreceived)
+    {
         // disallow all actions if on public game ban list
         EngineMessage ban = banCheck(ddreceived);
-        if (ban != null)
-            return ban;
+        if (ban != null) return ban;
 
-        switch (ddreceived.getCategory()) {
-            case OnlineMessage.CAT_TEST :
+        switch (ddreceived.getCategory())
+        {
+            case OnlineMessage.CAT_TEST:
                 return testP2pConnect(request, ddreceived);
 
-            case OnlineMessage.CAT_WAN_GAME_ADD :
+            case OnlineMessage.CAT_WAN_GAME_ADD:
                 return addWanGame(request, ddreceived);
 
-            case OnlineMessage.CAT_WAN_GAME_UPDATE :
+            case OnlineMessage.CAT_WAN_GAME_UPDATE:
                 return updateWanGame(ddreceived, false);
 
-            case OnlineMessage.CAT_WAN_GAME_REMOVE :
+            case OnlineMessage.CAT_WAN_GAME_REMOVE:
                 return deleteWanGame(ddreceived);
 
-            case OnlineMessage.CAT_WAN_GAME_LIST :
+            case OnlineMessage.CAT_WAN_GAME_LIST:
                 return getWanGames(ddreceived);
 
-            case OnlineMessage.CAT_WAN_GAME_START :
+            case OnlineMessage.CAT_WAN_GAME_START:
                 return updateWanGame(ddreceived, true);
 
-            case OnlineMessage.CAT_WAN_GAME_STOP :
+            case OnlineMessage.CAT_WAN_GAME_STOP:
                 return endWanGame(ddreceived);
 
-            case OnlineMessage.CAT_WAN_GAME_END :
+            case OnlineMessage.CAT_WAN_GAME_END:
                 return endWanGame(ddreceived);
 
-            case OnlineMessage.CAT_WAN_PROFILE_ADD :
+            case OnlineMessage.CAT_WAN_PROFILE_ADD:
                 return addOnlineProfile(request, ddreceived);
 
-            case OnlineMessage.CAT_WAN_PROFILE_RESET :
+            case OnlineMessage.CAT_WAN_PROFILE_RESET:
                 return resetOnlineProfile(ddreceived);
 
-            case OnlineMessage.CAT_WAN_PROFILE_LINK :
+            case OnlineMessage.CAT_WAN_PROFILE_LINK:
                 return linkOnlineProfile(ddreceived);
 
-            case OnlineMessage.CAT_WAN_PROFILE_ACTIVATE :
+            case OnlineMessage.CAT_WAN_PROFILE_ACTIVATE:
                 return activateOnlineProfile(ddreceived);
 
-            case OnlineMessage.CAT_WAN_PROFILE_VALIDATE :
+            case OnlineMessage.CAT_WAN_PROFILE_VALIDATE:
                 return validateProfile(ddreceived);
 
-            case OnlineMessage.CAT_WAN_PROFILE_SEND_PASSWORD :
+            case OnlineMessage.CAT_WAN_PROFILE_SEND_PASSWORD:
                 return sendOnlineProfilePassword(ddreceived);
 
-            case OnlineMessage.CAT_WAN_PROFILE_CHANGE_PASSWORD :
+            case OnlineMessage.CAT_WAN_PROFILE_CHANGE_PASSWORD:
                 return changeOnlineProfilePassword(ddreceived);
 
-            case OnlineMessage.CAT_WAN_PROFILE_SYNC_PASSWORD :
+            case OnlineMessage.CAT_WAN_PROFILE_SYNC_PASSWORD:
                 return syncOnlineProfilePassword(ddreceived);
 
-            default :
-                throw new ApplicationError(ErrorCodes.ERROR_UNSUPPORTED,
-                        "PokerServlet does not handle this category: " + ddreceived.getCategory(), null);
+            default:
+                throw new ApplicationError(ErrorCodes.ERROR_UNSUPPORTED, "PokerServlet does not handle this category: " +
+                                                                         ddreceived.getCategory(), null);
         }
     }
 
@@ -297,7 +309,8 @@ public class PokerServlet extends EngineServlet {
      * Demo mode removed - always validate
      */
     @Override
-    protected boolean isCategoryValidated(EngineMessage received) {
+    protected boolean isCategoryValidated(EngineMessage received)
+    {
         // Demo mode removed - always validate all categories
         return super.isCategoryValidated(received);
     }
@@ -306,25 +319,27 @@ public class PokerServlet extends EngineServlet {
      * Is database access required for category?
      */
     @Override
-    protected boolean subclassIsDatabaseRequired(int nCategory) {
-        switch (nCategory) {
-            case OnlineMessage.CAT_WAN_GAME_ADD :
-            case OnlineMessage.CAT_WAN_GAME_UPDATE :
-            case OnlineMessage.CAT_WAN_GAME_REMOVE :
-            case OnlineMessage.CAT_WAN_GAME_LIST :
-            case OnlineMessage.CAT_WAN_GAME_START :
-            case OnlineMessage.CAT_WAN_GAME_STOP :
-            case OnlineMessage.CAT_WAN_GAME_END :
-            case OnlineMessage.CAT_WAN_PROFILE_ADD :
-            case OnlineMessage.CAT_WAN_PROFILE_RESET :
-            case OnlineMessage.CAT_WAN_PROFILE_LINK :
-            case OnlineMessage.CAT_WAN_PROFILE_ACTIVATE :
-            case OnlineMessage.CAT_WAN_PROFILE_VALIDATE :
-            case OnlineMessage.CAT_WAN_PROFILE_SEND_PASSWORD :
-            case OnlineMessage.CAT_WAN_PROFILE_CHANGE_PASSWORD :
-            case OnlineMessage.CAT_WAN_PROFILE_SYNC_PASSWORD :
+    protected boolean subclassIsDatabaseRequired(int nCategory)
+    {
+        switch (nCategory)
+        {
+            case OnlineMessage.CAT_WAN_GAME_ADD:
+            case OnlineMessage.CAT_WAN_GAME_UPDATE:
+            case OnlineMessage.CAT_WAN_GAME_REMOVE:
+            case OnlineMessage.CAT_WAN_GAME_LIST:
+            case OnlineMessage.CAT_WAN_GAME_START:
+            case OnlineMessage.CAT_WAN_GAME_STOP:
+            case OnlineMessage.CAT_WAN_GAME_END:
+            case OnlineMessage.CAT_WAN_PROFILE_ADD:
+            case OnlineMessage.CAT_WAN_PROFILE_RESET:
+            case OnlineMessage.CAT_WAN_PROFILE_LINK:
+            case OnlineMessage.CAT_WAN_PROFILE_ACTIVATE:
+            case OnlineMessage.CAT_WAN_PROFILE_VALIDATE:
+            case OnlineMessage.CAT_WAN_PROFILE_SEND_PASSWORD:
+            case OnlineMessage.CAT_WAN_PROFILE_CHANGE_PASSWORD:
+            case OnlineMessage.CAT_WAN_PROFILE_SYNC_PASSWORD:
                 return true;
-            default :
+            default:
                 return false;
         }
     }
@@ -333,21 +348,22 @@ public class PokerServlet extends EngineServlet {
      * As of 3.0, we don't send back the flag to disable the game
      */
     @Override
-    protected boolean isResetClientOnBadKey() {
+    protected boolean isResetClientOnBadKey()
+    {
         return false;
     }
 
     /**
-     * DESIGN NOTE: I thought about validating this for DD Poker 3, but decided not
-     * to bother. Our auth logic is kind of a pain and needs a redesign. We should
-     * always be sending down the current player (like we do with version/key). FIX:
-     * make this better in 3.0++
+     * DESIGN NOTE:  I thought about validating this for DD Poker 3, but decided not to bother.  Our auth
+     * logic is kind of a pain and needs a redesign.  We should always be sending down the current player
+     * (like we do with version/key).  FIX:  make this better in 3.0++
      */
 
     /**
      * Test connection to the provided connect URL
      */
-    private DDMessage testP2pConnect(HttpServletRequest request, DDMessage ddreceived) {
+    private DDMessage testP2pConnect(HttpServletRequest request, DDMessage ddreceived)
+    {
         if (TESTING(UDPServer.TESTING_UDP))
             logger.debug("Starting test public connect --------------------------------");
 
@@ -365,30 +381,25 @@ public class PokerServlet extends EngineServlet {
         PokerURL url = omsg.getConnectURL();
         ApplicationError.assertNotNull(url, "Missing connect URL");
 
-        // test it
-        try {
-            OnlineMessage oreply;
-            if (url.isUDP()) {
-                PokerConnect conn = new PokerConnect(((PokerServer) getServer()).getUDPServer(), url, omsg.getUPDID(),
-                        null);
-                conn.connect(omsg);
-                conn.close();
-                oreply = conn.getReply();
-            } else {
-                Peer2PeerMessage p2p = new Peer2PeerMessage(Peer2PeerMessage.P2P_MSG, omsg.getData());
-                Peer2PeerClient p2pClient = new Peer2PeerClient(url, null, null);
-                p2pClient.connect();
-                Peer2PeerMessage reply = p2pClient.sendGetReply(p2p);
-                p2pClient.close();
+        // test it (TCP only - all game P2P now uses TCP)
+        try
+        {
+            Peer2PeerMessage p2p = new Peer2PeerMessage(Peer2PeerMessage.P2P_MSG, omsg.getData());
+            Peer2PeerClient p2pClient = new Peer2PeerClient(url, null, null);
+            p2pClient.connect();
+            Peer2PeerMessage reply = p2pClient.sendGetReply(p2p);
+            p2pClient.close();
 
-                oreply = new OnlineMessage(reply.getMessage());
-            }
+            OnlineMessage oreply = new OnlineMessage(reply.getMessage());
 
-            if (oreply.getCategory() == DDMessage.CAT_APPL_ERROR) {
+            if (oreply.getCategory() == DDMessage.CAT_APPL_ERROR)
+            {
                 sErrorMsg = oreply.getApplicationErrorMessage();
                 if (sErrorMsg == null && oreply.getData().getStatus() == DDMessageListener.STATUS_TIMEOUT)
                     sErrorKey = "msg.p2p.timeout";
-            } else {
+            }
+            else
+            {
                 String guid1 = omsg.getGUID();
                 String guid2 = oreply.getGUID();
                 ApplicationError.assertNotNull(guid1, "No GUID in original test request.", omsg);
@@ -396,55 +407,71 @@ public class PokerServlet extends EngineServlet {
 
                 // if guid's don't match, then user attempted to connect to
                 // another dd poker computer
-                if (!guid1.equals(guid2)) {
+                if (!guid1.equals(guid2))
+                {
                     sErrorKey = "msg.p2p.guid.mismatch";
                 }
             }
-        } catch (Throwable t) {
-            // noinspection ChainOfInstanceofChecks
-            if (t instanceof ConnectException) {
+        }
+        catch (Throwable t)
+        {
+            //noinspection ChainOfInstanceofChecks
+            if (t instanceof ConnectException)
+            {
                 sErrorKey = "msg.p2p.refused";
-            } else if (t instanceof SocketException) {
+            }
+            else if (t instanceof SocketException)
+            {
                 sErrorKey = "msg.p2p.refused";
-            } else if (t instanceof SocketTimeoutException || t instanceof EOFException) {
+            }
+            else if (t instanceof SocketTimeoutException ||
+                     t instanceof EOFException)
+            {
                 sErrorKey = "msg.p2p.timeout";
-            } else {
+            }
+            else
+            {
                 throw new ApplicationError(t);
             }
         }
 
-        if (sErrorKey != null || sErrorMsg != null) {
-            logger.info("P2P connect test failed from " + ddreceived.getKey() + " [" + request.getRemoteAddr() + "] to "
-                    + url + ": " + sErrorKey);
+        if (sErrorKey != null || sErrorMsg != null)
+        {
+            logger.info("P2P connect test failed from " + ddreceived.getKey() + " [" +
+                        request.getRemoteAddr() + "] to " + url + ": " + sErrorKey);
             ret.setCategory(EngineMessage.CAT_APPL_ERROR);
             if (sErrorMsg != null)
                 ret.setApplicationErrorMessage(sErrorMsg);
             else
                 ret.setApplicationErrorMessage(PropertyConfig.getMessage(sErrorKey));
-        } else {
-            logger.info("P2P connect test succeeded from " + ddreceived.getKey() + " [" + request.getRemoteAddr()
-                    + "] to " + url);
+        }
+        else
+        {
+            logger.info("P2P connect test succeeded from " + ddreceived.getKey() + " [" +
+                        request.getRemoteAddr() + "] to " + url);
         }
 
         return ret;
     }
 
+
     /***
      * DESIGN NOTE TO FUTURE FORGETFUL DOUG:
      *
-     * Added host post auth in DD Poker 3. It is slightly different than what
-     * happens in getWanGames. In this case, we just refuse to post and return a
-     * message. In getWanGames, we return the list and then actually disable the
-     * client profile (in FindGames.getWanList()), forcing them to re-enter a
-     * password.
+     * Added host post auth in DD Poker 3.  It is slightly different than what happens in
+     * getWanGames.  In this case, we just refuse to post and return a message.  In getWanGames,
+     * we return the list and then actually disable the client profile (in FindGames.getWanList()),
+     * forcing them to re-enter a password.
      */
 
+
     /**
-     * Add a WAN game to the list. If one already exists for the given key/URL
-     * combination, then it is replaced with the given game. This request should
-     * only be received from the host player.
+     * Add a WAN game to the list.  If one already exists for the given key/URL combination,
+     * then it is replaced with the given game.  This request should only be received from
+     * the host player.
      */
-    private DDMessage addWanGame(HttpServletRequest request, DDMessage ddreceived) {
+    private DDMessage addWanGame(HttpServletRequest request, DDMessage ddreceived)
+    {
         // Wrap everything in useable interfaces.
         Version version = ddreceived.getVersion();
         OnlineMessage reqMsg = new OnlineMessage(ddreceived);
@@ -453,7 +480,8 @@ public class PokerServlet extends EngineServlet {
         OnlineProfile profile = null;
 
         // Validate input (SEC-2)
-        if (game.getHostPlayer() != null && !InputValidator.isValidProfileName(game.getHostPlayer())) {
+        if (game.getHostPlayer() != null && !InputValidator.isValidProfileName(game.getHostPlayer()))
+        {
             resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
             resMsg.setApplicationErrorMessage("Invalid host player name");
             return resMsg.getData();
@@ -461,7 +489,8 @@ public class PokerServlet extends EngineServlet {
 
         // Rate limiting (SEC-3): 10 requests per minute per IP
         String clientIp = request.getRemoteAddr();
-        if (!profileRateLimiter.allowRequest(clientIp, 10, 60000)) {
+        if (!profileRateLimiter.allowRequest(clientIp, 10, 60000))
+        {
             resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
             resMsg.setApplicationErrorMessage("Too many game creation requests. Please try again later.");
             return resMsg.getData();
@@ -469,32 +498,39 @@ public class PokerServlet extends EngineServlet {
 
         // ban check
         resMsg = banCheck(profile);
-        if (resMsg != null)
-            return resMsg.getData();
+        if (resMsg != null) return resMsg.getData();
 
         // Prior to version 3, we didn't send down auth credentials, so just get the
         // profile (we make sure it is activated below)
         boolean before3 = version.isBefore(PokerConstants.VERSION_HOST_CHECK_ADDED);
-        if (before3) {
+        if (before3)
+        {
             profile = onlineProfileService.getOnlineProfileByName(game.getHostPlayer());
         }
         /// Version 3 and later, we validate user/password
-        else {
+        else
+        {
             OnlineProfile auth = new OnlineProfile(reqMsg.getWanAuth());
             profile = onlineProfileService.authenticateOnlineProfile(auth);
         }
 
         // if no profile - error (either missing or could not auth)
-        if (profile == null) {
+        if (profile == null)
+        {
             // Profile does not exist, so report an error.
             resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
-            resMsg.setApplicationErrorMessage(PropertyConfig
-                    .getStringProperty(before3 ? "msg.wanprofile.missing" : "msg.wanprofile.authfailed3"));
-        } else if (!profile.isActivated()) {
+            resMsg.setApplicationErrorMessage(PropertyConfig.getStringProperty(before3 ?
+                                                                               "msg.wanprofile.missing" :
+                                                                               "msg.wanprofile.authfailed3"));
+        }
+        else if (!profile.isActivated())
+        {
             // Profile is not activated, so report an error.
             resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
             resMsg.setApplicationErrorMessage(PropertyConfig.getStringProperty("msg.wanprofile.notactivated"));
-        } else {
+        }
+        else
+        {
             onlineGameService.saveOnlineGame(game);
 
             // Send an empty response.
@@ -507,20 +543,21 @@ public class PokerServlet extends EngineServlet {
     /**
      * Update the given WAN game.
      */
-    private DDMessage updateWanGame(DDMessage ddreceived, boolean setStartDate) {
+    private DDMessage updateWanGame(DDMessage ddreceived, boolean setStartDate)
+    {
         // Wrap everything in useable interfaces.
         OnlineGame game = new OnlineGame(new OnlineMessage(ddreceived).getWanGame());
 
         // don't rely on client date
-        if (setStartDate)
-            game.setStartDate(new Date());
+        if (setStartDate) game.setStartDate(new Date());
 
         // Update in the database.
         game = onlineGameService.updateOnlineGame(game);
 
         // game could be null because of bug in OnlineManager.processQuit()
-        if (game == null) {
-            // logger.info("Did not update: " + ddreceived);
+        if (game == null)
+        {
+            //logger.info("Did not update: " + ddreceived);
         }
 
         // Send an empty response.
@@ -529,11 +566,11 @@ public class PokerServlet extends EngineServlet {
     }
 
     /**
-     * End the given WAN game. This request should only be received from the game
-     * host player.
+     * End the given WAN game.  This request should only be received from the game host player.
      */
     @SuppressWarnings({"unchecked"})
-    private DDMessage endWanGame(DDMessage ddreceived) {
+    private DDMessage endWanGame(DDMessage ddreceived)
+    {
         // Wrap everything in useable interfaces.
         OnlineMessage reqMsg = new OnlineMessage(ddreceived);
         OnlineGame game = new OnlineGame(reqMsg.getWanGame());
@@ -545,13 +582,11 @@ public class PokerServlet extends EngineServlet {
         List<TournamentHistory> histories = (List<TournamentHistory>) reqMsg.getWanHistories();
         game = onlineGameService.updateOnlineGame(game, new TournamentHistoryList(histories));
 
-        // if game is null, then we didn't save, log an error so we know how often this
-        // happens
-        // FIX: make this end-game stuff more robust. Should send down everything from
-        // the client so we can deal with this
-        if (game == null) {
-            logger.error("Unable to save ended game because it didn't exist in database: " + game + ";   histories:  "
-                    + histories);
+        // if game is null, then we didn't save, log an error so we know how often this happens
+        // FIX: make this end-game stuff more robust.  Should send down everything from the client so we can deal with this
+        if (game == null)
+        {
+            logger.error("Unable to save ended game because it didn't exist in database: " + game + ";   histories:  " + histories);
         }
 
         // Send an empty response.
@@ -560,10 +595,10 @@ public class PokerServlet extends EngineServlet {
     }
 
     /**
-     * Delete a WAN game from the list. This request should only be received from
-     * the host player.
+     * Delete a WAN game from the list.  This request should only be received from the host player.
      */
-    private DDMessage deleteWanGame(DDMessage ddreceived) {
+    private DDMessage deleteWanGame(DDMessage ddreceived)
+    {
         // Wrap everything in useable interfaces.
         OnlineGame game = new OnlineGame(new OnlineMessage(ddreceived).getWanGame());
 
@@ -578,25 +613,29 @@ public class PokerServlet extends EngineServlet {
     /**
      * Get a list of available WAN games.
      */
-    private DDMessage getWanGames(DDMessage ddreceived) {
+    private DDMessage getWanGames(DDMessage ddreceived)
+    {
         // Optionally authenticate the profile making the request.
         OnlineMessage reqMsg = new OnlineMessage(ddreceived);
         OnlineMessage resMsg = new OnlineMessage(ddreceived.getCategory());
         DMTypedHashMap authProfile = reqMsg.getWanAuth();
 
-        if (authProfile != null) {
+        if (authProfile != null)
+        {
             OnlineProfile auth = new OnlineProfile(authProfile);
 
             // ban check
             OnlineMessage banMsg = banCheck(auth);
-            if (banMsg != null)
-                return banMsg.getData();
+            if (banMsg != null) return banMsg.getData();
 
-            if (onlineProfileService.authenticateOnlineProfile(auth) != null) {
+            if (onlineProfileService.authenticateOnlineProfile(auth) != null)
+            {
                 // If the profile was authenticated, return the same value without the password.
                 auth.setPassword(null);
                 resMsg.setWanAuth(auth.getData());
-            } else {
+            }
+            else
+            {
                 // missing - handled in FindGames.getWanList()
             }
         }
@@ -606,17 +645,19 @@ public class PokerServlet extends EngineServlet {
         Integer[] modes;
 
         // in 2.5, if we see combo mode, treat accordingly
-        if (nMode == OnlineGame.FETCH_MODE_REG_PLAY) {
+        if (nMode == OnlineGame.FETCH_MODE_REG_PLAY)
+        {
             modes = new Integer[]{OnlineGame.MODE_REG, OnlineGame.MODE_PLAY};
         }
         // pre 2.5 - passed down a single mode
-        else {
+        else
+        {
             modes = new Integer[]{nMode};
         }
 
         // get games
-        OnlineGameList clients = onlineGameService.getOnlineGames(null, reqMsg.getOffset(), reqMsg.getCount(), modes,
-                null, null, null, mode);
+        OnlineGameList clients = onlineGameService.getOnlineGames(null, reqMsg.getOffset(), reqMsg.getCount(),
+                                                                  modes, null, null, null, mode);
         DMArrayList<DMTypedHashMap> games = clients.getAsDMList();
 
         // Return the list
@@ -629,7 +670,8 @@ public class PokerServlet extends EngineServlet {
     /**
      * Validate profile
      */
-    private DDMessage validateProfile(DDMessage ddreceived) {
+    private DDMessage validateProfile(DDMessage ddreceived)
+    {
         // Optionally authenticate the profile making the request.
         OnlineMessage reqMsg = new OnlineMessage(ddreceived);
         OnlineMessage resMsg = new OnlineMessage(ddreceived.getCategory());
@@ -639,18 +681,19 @@ public class PokerServlet extends EngineServlet {
 
         // ban check
         OnlineMessage banMsg = banCheck(auth);
-        if (banMsg != null)
-            return banMsg.getData();
+        if (banMsg != null) return banMsg.getData();
 
         // Authenticate and get the full profile from database (includes UUID)
         OnlineProfile authenticatedProfile = onlineProfileService.authenticateOnlineProfile(auth);
 
-        if (authenticatedProfile != null) {
-            // Return the authenticated profile from database (has UUID), not the request
-            // profile
+        if (authenticatedProfile != null)
+        {
+            // Return the authenticated profile from database (has UUID), not the request profile
             authenticatedProfile.setPassword(null);
             resMsg.setWanAuth(authenticatedProfile.getData());
-        } else {
+        }
+        else
+        {
             // missing - handled in FindGames.validateProfile()
         }
 
@@ -658,22 +701,24 @@ public class PokerServlet extends EngineServlet {
     }
 
     /**
-     * Add a WAN profile. If one already exists for the given name, an error
-     * indicator is returned.
+     * Add a WAN profile.  If one already exists for the given name, an error indicator is returned.
      */
-    private DDMessage addOnlineProfile(HttpServletRequest request, DDMessage ddreceived) {
+    private DDMessage addOnlineProfile(HttpServletRequest request, DDMessage ddreceived)
+    {
         // Wrap everything in useable interfaces.
         OnlineMessage reqMsg = new OnlineMessage(ddreceived);
         OnlineProfile profile = new OnlineProfile(reqMsg.getOnlineProfileData()); // sets name
         OnlineMessage resMsg = null;
 
         // Validate input (SEC-2)
-        if (!InputValidator.isValidProfileName(profile.getName())) {
+        if (!InputValidator.isValidProfileName(profile.getName()))
+        {
             resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
             resMsg.setApplicationErrorMessage("Profile name must be 1-50 characters");
             return resMsg.getData();
         }
-        if (!InputValidator.isValidEmail(profile.getEmail())) {
+        if (!InputValidator.isValidEmail(profile.getEmail()))
+        {
             resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
             resMsg.setApplicationErrorMessage("Invalid email format");
             return resMsg.getData();
@@ -681,7 +726,8 @@ public class PokerServlet extends EngineServlet {
 
         // Rate limiting (SEC-3): 5 requests per minute per IP
         String clientIp = request.getRemoteAddr();
-        if (!profileRateLimiter.allowRequest(clientIp, 5, 60000)) {
+        if (!profileRateLimiter.allowRequest(clientIp, 5, 60000))
+        {
             resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
             resMsg.setApplicationErrorMessage("Too many profile creation requests. Please try again later.");
             return resMsg.getData();
@@ -692,20 +738,23 @@ public class PokerServlet extends EngineServlet {
         banCheck.setEmail(profile.getEmail());
         banCheck.setLicenseKey(profile.getLicenseKey());
         resMsg = banCheck(banCheck);
-        if (resMsg != null)
-            return resMsg.getData();
+        if (resMsg != null) return resMsg.getData();
 
         // Determine if the profile name is valid.
-        if (onlineProfileService.isNameValid(profile.getName())) {
+        if (onlineProfileService.isNameValid(profile.getName()))
+        {
             // count existing profiles for email
-            int count = onlineProfileService.getMatchingOnlineProfilesCount(null,
-                    DBUtils.sqlExactMatch(profile.getEmail()), null, false);
-            if (count >= PokerConstants.MAX_PROFILES_PER_EMAIL && !(profile.getEmail().endsWith("donohoe.info"))) {
+            int count = onlineProfileService.getMatchingOnlineProfilesCount(null, DBUtils.sqlExactMatch(profile.getEmail()), null, false);
+            if (count >= PokerConstants.MAX_PROFILES_PER_EMAIL && !(profile.getEmail().endsWith("donohoe.info")))
+            {
                 // at max profiles
                 resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
                 resMsg.setApplicationErrorMessage(PropertyConfig.getMessage("msg.wanprofile.maxemail",
-                        profile.getEmail(), count, PokerConstants.MAX_PROFILES_PER_EMAIL));
-            } else {
+                                                                            profile.getEmail(),
+                                                                            count, PokerConstants.MAX_PROFILES_PER_EMAIL));
+            }
+            else
+            {
                 // Generate a password and UUID and set values.
                 String generatedPassword = onlineProfileService.generatePassword();
                 onlineProfileService.hashAndSetPassword(profile, generatedPassword);
@@ -714,22 +763,25 @@ public class PokerServlet extends EngineServlet {
                 profile.setActivated(false);
 
                 // Insert the database record - returns false if it is a duplicate
-                if (onlineProfileService.saveOnlineProfile(profile)) {
+                if (onlineProfileService.saveOnlineProfile(profile))
+                {
                     // Email the password.
-                    sendProfileEmail(postalService, "profile", profile.getEmail(), profile.getName(), generatedPassword,
-                            null);
+                    sendProfileEmail(postalService, "profile", profile.getEmail(), profile.getName(), generatedPassword, null);
 
                     // Profile was inserted, so report success.
                     resMsg = new OnlineMessage(ddreceived.getCategory());
                     resMsg.setApplicationStatusMessage(PropertyConfig.getStringProperty("msg.wanprofile.add"));
-                } else {
+                }
+                else
+                {
                     // Profile already exists, so report an error.
                     resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
-                    resMsg.setApplicationErrorMessage(
-                            PropertyConfig.getMessage("msg.wanprofile.duplicate", profile.getName()));
+                    resMsg.setApplicationErrorMessage(PropertyConfig.getMessage("msg.wanprofile.duplicate", profile.getName()));
                 }
             }
-        } else {
+        }
+        else
+        {
             // Name is invalid, so report an error.
             resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
             resMsg.setApplicationErrorMessage(PropertyConfig.getMessage("msg.wanprofile.invalid", profile.getName()));
@@ -741,49 +793,54 @@ public class PokerServlet extends EngineServlet {
     /**
      * ANOTHER DESIGN NOTE:
      *
-     * In DD Poker 2.x one could change email before a profile was activated (i.e.,
-     * in the case of emails not getting through due to spam filters). We want to
-     * replicate that functionality and keep backwards compatibility. However, we
-     * will be a bit more restrictive. If no password is included we do the logic
-     * below (XXX).
+     * In DD Poker 2.x one could change email before a profile was activated (i.e., in the case
+     * of emails not getting through due to spam filters).  We want to replicate that functionality
+     * and keep backwards compatibility.  However, we will be a bit more restrictive.  If no password
+     * is included we do the logic below (XXX).
      */
 
     /**
      * Update a WAN profile email address, mark inactivated and send a new password
      */
-    private DDMessage resetOnlineProfile(DDMessage ddreceived) {
+    private DDMessage resetOnlineProfile(DDMessage ddreceived)
+    {
         // Wrap everything in useable interfaces.
         OnlineProfile profile = new OnlineProfile(new OnlineMessage(ddreceived).getOnlineProfileData());
         OnlineMessage resMsg = null;
 
         // ban check
         resMsg = banCheck(profile);
-        if (resMsg != null)
-            return resMsg.getData();
+        if (resMsg != null) return resMsg.getData();
 
         // Authenticate
         OnlineProfile profileToUpdate = onlineProfileService.authenticateOnlineProfile(profile);
 
         // XXX case (change email for new profile)
-        if (profileToUpdate == null && profile.getPassword() == null) {
+        if (profileToUpdate == null && profile.getPassword() == null)
+        {
             profileToUpdate = onlineProfileService.getOnlineProfileByName(profile.getName());
             // ignore already activated (suspicious!) or retired profiles
-            if (profileToUpdate != null && (profileToUpdate.isActivated() || profileToUpdate.isRetired())) {
+            if (profileToUpdate != null && (profileToUpdate.isActivated() || profileToUpdate.isRetired()))
+            {
                 profileToUpdate = null;
             }
         }
 
         // if we have a profile...
-        if (profileToUpdate != null) {
+        if (profileToUpdate != null)
+        {
             // make sure we are exceeding profiles for email
-            int count = onlineProfileService.getMatchingOnlineProfilesCount(null,
-                    DBUtils.sqlExactMatch(profile.getEmail()), null, false);
-            if (count >= PokerConstants.MAX_PROFILES_PER_EMAIL && !(profile.getEmail().endsWith("donohoe.info"))) {
+            int count = onlineProfileService.getMatchingOnlineProfilesCount(null, DBUtils.sqlExactMatch(profile.getEmail()), null, false);
+            if (count >= PokerConstants.MAX_PROFILES_PER_EMAIL && !(profile.getEmail().endsWith("donohoe.info")))
+            {
                 // at max profiles
                 resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
                 resMsg.setApplicationErrorMessage(PropertyConfig.getMessage("msg.wanprofile.maxemail",
-                        profile.getEmail(), count, PokerConstants.MAX_PROFILES_PER_EMAIL));
-            } else {
+                                                                            profile.getEmail(),
+                                                                            count, PokerConstants.MAX_PROFILES_PER_EMAIL));
+            }
+            else
+            {
                 // generate password and set values
                 String generatedPassword = onlineProfileService.generatePassword();
                 profileToUpdate.setEmail(profile.getEmail());
@@ -794,14 +851,15 @@ public class PokerServlet extends EngineServlet {
                 onlineProfileService.updateOnlineProfile(profileToUpdate);
 
                 // Email the password.
-                sendProfileEmail(postalService, "profile", profile.getEmail(), profile.getName(), generatedPassword,
-                        null);
+                sendProfileEmail(postalService, "profile", profile.getEmail(), profile.getName(), generatedPassword, null);
 
                 // Profile was updated, so report success.
                 resMsg = new OnlineMessage(ddreceived.getCategory());
                 resMsg.setApplicationStatusMessage(PropertyConfig.getStringProperty("msg.wanprofile.update"));
             }
-        } else {
+        }
+        else
+        {
             // User does not exist, so report an error.
             resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
             resMsg.setApplicationErrorMessage(PropertyConfig.getStringProperty("msg.wanprofile.missing"));
@@ -813,23 +871,26 @@ public class PokerServlet extends EngineServlet {
     /**
      * Link to existsing WAN profile.
      */
-    private DDMessage linkOnlineProfile(DDMessage ddreceived) {
+    private DDMessage linkOnlineProfile(DDMessage ddreceived)
+    {
         // Wrap everything in useable interfaces.
         OnlineProfile profile = new OnlineProfile(new OnlineMessage(ddreceived).getOnlineProfileData());
         OnlineMessage resMsg = null;
 
         // ban check
         resMsg = banCheck(profile);
-        if (resMsg != null)
-            return resMsg.getData();
+        if (resMsg != null) return resMsg.getData();
 
         // Get the database record.
         OnlineProfile resProfile = onlineProfileService.authenticateOnlineProfile(profile);
-        if (resProfile != null) {
+        if (resProfile != null)
+        {
             // Profile was found, so return it.
             resMsg = new OnlineMessage(ddreceived.getCategory());
             resMsg.setOnlineProfileData(resProfile.getData());
-        } else {
+        }
+        else
+        {
             // Profile does not exist, so report an error.
             resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
             resMsg.setApplicationErrorMessage(PropertyConfig.getStringProperty("msg.wanprofile.unavailable"));
@@ -841,19 +902,20 @@ public class PokerServlet extends EngineServlet {
     /**
      * Activate a WAN profile.
      */
-    private DDMessage activateOnlineProfile(DDMessage ddreceived) {
+    private DDMessage activateOnlineProfile(DDMessage ddreceived)
+    {
         // Wrap everything in useable interfaces.
         OnlineProfile profile = new OnlineProfile(new OnlineMessage(ddreceived).getOnlineProfileData());
         OnlineMessage resMsg = null;
 
         // ban check
         resMsg = banCheck(profile);
-        if (resMsg != null)
-            return resMsg.getData();
+        if (resMsg != null) return resMsg.getData();
 
         // Authenticate
         OnlineProfile profileToUpdate = onlineProfileService.authenticateOnlineProfile(profile);
-        if (profileToUpdate != null) {
+        if (profileToUpdate != null)
+        {
             // set activated
             profileToUpdate.setActivated(true);
 
@@ -863,7 +925,9 @@ public class PokerServlet extends EngineServlet {
             // Login information is valid, so report success.
             resMsg = new OnlineMessage(ddreceived.getCategory());
             resMsg.setApplicationStatusMessage(PropertyConfig.getStringProperty("msg.wanprofile.activate"));
-        } else {
+        }
+        else
+        {
             // Login information is invalid, so report an error.
             resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
             resMsg.setApplicationErrorMessage(PropertyConfig.getStringProperty("msg.wanprofile.authfailed"));
@@ -875,23 +939,26 @@ public class PokerServlet extends EngineServlet {
     /**
      * Sync a WAN profile password
      */
-    private DDMessage syncOnlineProfilePassword(DDMessage ddreceived) {
+    private DDMessage syncOnlineProfilePassword(DDMessage ddreceived)
+    {
         // Wrap everything in useable interfaces.
         OnlineProfile profile = new OnlineProfile(new OnlineMessage(ddreceived).getOnlineProfileData());
         OnlineMessage resMsg = null;
 
         // ban check
         resMsg = banCheck(profile);
-        if (resMsg != null)
-            return resMsg.getData();
+        if (resMsg != null) return resMsg.getData();
 
         // Authenticate
         OnlineProfile profileToUpdate = onlineProfileService.authenticateOnlineProfile(profile);
-        if (profileToUpdate != null) {
+        if (profileToUpdate != null)
+        {
             // Login information is valid, so report success.
             resMsg = new OnlineMessage(ddreceived.getCategory());
             resMsg.setApplicationStatusMessage(PropertyConfig.getStringProperty("msg.wanprofile.sync"));
-        } else {
+        }
+        else
+        {
             // Login information is invalid, so report an error.
             resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
             resMsg.setApplicationErrorMessage(PropertyConfig.getStringProperty("msg.wanprofile.authfailed2"));
@@ -903,7 +970,8 @@ public class PokerServlet extends EngineServlet {
     /**
      * Assign a WAN profile password.
      */
-    private DDMessage changeOnlineProfilePassword(DDMessage ddreceived) {
+    private DDMessage changeOnlineProfilePassword(DDMessage ddreceived)
+    {
         // Wrap everything in useable interfaces.
         OnlineMessage reqMsg = new OnlineMessage(ddreceived);
         OnlineProfile newpassword = new OnlineProfile(reqMsg.getOnlineProfileData());
@@ -912,12 +980,12 @@ public class PokerServlet extends EngineServlet {
 
         // ban check
         resMsg = banCheck(oldpassword);
-        if (resMsg != null)
-            return resMsg.getData();
+        if (resMsg != null) return resMsg.getData();
 
         // Authenticate based on old password (auth profile)
         OnlineProfile profileToUpdate = onlineProfileService.authenticateOnlineProfile(oldpassword);
-        if (profileToUpdate != null) {
+        if (profileToUpdate != null)
+        {
             // save new password
             onlineProfileService.hashAndSetPassword(profileToUpdate, newpassword.getPassword());
 
@@ -927,7 +995,9 @@ public class PokerServlet extends EngineServlet {
             // Profile was updated, so report success.
             resMsg = new OnlineMessage(ddreceived.getCategory());
             resMsg.setApplicationStatusMessage(PropertyConfig.getStringProperty("msg.wanprofile.assign"));
-        } else {
+        }
+        else
+        {
             // User does not exist, so report an error.
             resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
             resMsg.setApplicationErrorMessage(PropertyConfig.getStringProperty("msg.wanprofile.authfailed2"));
@@ -937,12 +1007,12 @@ public class PokerServlet extends EngineServlet {
     }
 
     /**
-     * Reset and send a WAN profile password (at user request, from client). Since
-     * passwords are hashed with bcrypt, we cannot retrieve the original password.
-     * Instead, we generate a new password, hash it, update the profile, and email
-     * the new password.
+     * Reset and send a WAN profile password (at user request, from client).
+     * Since passwords are hashed with bcrypt, we cannot retrieve the original password.
+     * Instead, we generate a new password, hash it, update the profile, and email the new password.
      */
-    private DDMessage sendOnlineProfilePassword(DDMessage ddreceived) {
+    private DDMessage sendOnlineProfilePassword(DDMessage ddreceived)
+    {
         // Wrap everything in useable interfaces.
         OnlineMessage reqMsg = new OnlineMessage(ddreceived);
         DMTypedHashMap onlineProfileData = reqMsg.getOnlineProfileData();
@@ -951,7 +1021,8 @@ public class PokerServlet extends EngineServlet {
 
         // Retrieve the full profile information.
         profile = onlineProfileService.getOnlineProfileByName(profile.getName());
-        if (profile != null) {
+        if (profile != null)
+        {
             // Generate new password, hash it, and update the profile
             String newPassword = onlineProfileService.generatePassword();
             onlineProfileService.hashAndSetPassword(profile, newPassword);
@@ -963,7 +1034,9 @@ public class PokerServlet extends EngineServlet {
             // Profile information is valid, so report success.
             resMsg = new OnlineMessage(ddreceived.getCategory());
             resMsg.setApplicationStatusMessage(PropertyConfig.getStringProperty("msg.wanprofile.send"));
-        } else {
+        }
+        else
+        {
             // Login information is invalid, so report an error.
             resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
             resMsg.setApplicationErrorMessage(PropertyConfig.getStringProperty("msg.wanprofile.missing"));
@@ -975,21 +1048,21 @@ public class PokerServlet extends EngineServlet {
     /**
      * Send profile email to users.
      */
-    public static void sendProfileEmail(DDPostalService service, String emailId, String sTo, String sName,
-            String sPassword, String sLocale) {
-        if (TESTING(TESTING_SKIP_EMAIL)) {
+    public static void sendProfileEmail(DDPostalService service, String emailId, String sTo, String sName, String sPassword, String sLocale)
+    {
+        if (TESTING(TESTING_SKIP_EMAIL))
+        {
             logger.info("Skipping profile email to " + sTo + "; name=" + sName + ", password=" + sPassword);
             return;
         }
         // if flag is on, send all emails to override address
-        if (TESTING(TESTING_PROFILE_OVERRIDE_EMAIL)) {
+        if (TESTING(TESTING_PROFILE_OVERRIDE_EMAIL))
+        {
             String overrideEmail = PropertyConfig.getStringProperty(TESTING_PROFILE_OVERRIDE_EMAIL_TO, null, true);
-            logger.info("Sending profile email to " + overrideEmail + " for " + sTo + "; name=" + sName + ", password="
-                    + sPassword);
+            logger.info("Sending profile email to " + overrideEmail + " for " + sTo + "; name=" + sName + ", password=" + sPassword);
             sTo = overrideEmail;
         }
-        if (sTo == null)
-            return; // null for key verification so skip email
+        if (sTo == null) return; // null for key verification so skip email
 
         // create and run jsp
         JspEmail email = new JspEmail(emailId, sLocale, null);
@@ -997,14 +1070,15 @@ public class PokerServlet extends EngineServlet {
         email.getSession().setAttribute(OnlineProfile.PROFILE_PASSWORD, sPassword);
         email.executeJSP();
 
-        // only send the html message to Hotmail users since the multipart message gets
-        // mangled
+        // only send the html message to Hotmail users since the multipart message gets mangled
         boolean isHotmail = sTo.toLowerCase().endsWith("@hotmail.com");
         String sPlainText = (isHotmail) ? null : email.getPlain();
         String sHtmlText = email.getHtml();
 
         // get results and send email
-        service.sendMail(sTo, PropertyConfig.getRequiredStringProperty("settings.server.profilefrom"), null,
-                email.getSubject(), sPlainText, sHtmlText, null, null);
+        service.sendMail(sTo, PropertyConfig.getRequiredStringProperty("settings.server.profilefrom"),
+                         null, email.getSubject(),
+                         sPlainText, sHtmlText,
+                         null, null);
     }
 }

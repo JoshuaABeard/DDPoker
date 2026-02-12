@@ -56,18 +56,11 @@
     <property name="servlet" ref="servlet"/>
     <property name="configLoadRequired" value="false"/>
     <!-- use of configManager means configLoad not needed -->
-    <property name="chatServer" ref="chat"/>
-    <property name="UDPServer" ref="udp"/>
+    <property name="tcpChatServer" ref="tcpChatServer"/>
   </bean>
 
-  <bean id="udp" class="com.donohoedigital.udp.UDPServer" init-method="init" depends-on="configManager">
-    <constructor-arg ref="server"/>
-    <constructor-arg value="true"/>
-  </bean>
+  <bean id="tcpChatServer" class="com.donohoedigital.games.poker.server.TcpChatServer" depends-on="configManager"/>
 
-  <bean id="chat" class="com.donohoedigital.games.poker.server.ChatServer" depends-on="configManager">
-    <constructor-arg ref="udp"/>
-  </bean>
 
   <bean id="email" class="com.donohoedigital.mail.DDPostalServiceImpl" depends-on="configManager">
     <constructor-arg value="false"/>

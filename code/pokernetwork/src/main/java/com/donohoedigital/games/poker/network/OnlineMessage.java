@@ -89,6 +89,12 @@ public class OnlineMessage {
     public static final int CAT_CHAT_ADMIN = 20031;
     public static final int CAT_WAN_PROFILE_SYNC_PASSWORD = 20032;
 
+    // Chat admin types (from PokerConstants for convenience)
+    public static final int CHAT_ADMIN_JOIN = 1;
+    public static final int CHAT_ADMIN_JOINED = 1; // Alias for JOIN
+    public static final int CHAT_ADMIN_LEFT = 2; // Alias for LEAVE
+    public static final int CHAT_ADMIN_ERROR = 4;
+
     // server to client messages
     public static final int CAT_CLIENT_JOIN = 21001;
     public static final int CAT_PROCESS_PHASE = 21002;

@@ -137,7 +137,8 @@ public class PokerUDPServer extends UDPServer implements PokerConnectionServer, 
 
         // can't do anything if not bound
         if (!isBound()) {
-            main_.notifyTimeout();
+            // Note: Chat is now TCP-based, this UDP path is obsolete
+            logger.warn("UDP chat path called but chat is now TCP-based");
             return;
         }
 
