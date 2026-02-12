@@ -17,8 +17,8 @@
 
 ## Files Changed
 
-- [ ] file/path.ts - [description]
-- [ ] file/path2.ts - [description]
+- [ ] file/path.java - [description]
+- [ ] file/path2.java - [description]
 
 **Privacy Check:**
 - ✅ SAFE - No private information found

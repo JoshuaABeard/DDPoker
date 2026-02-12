@@ -111,7 +111,6 @@ ddpoker/
 
 ## Known Quirks
 
-- **Password handling** - Server stores reversibly-encrypted passwords and can email them in plaintext (legacy design).
-- **HSQLDB** - Pinned at 1.8.0.10 (latest is 2.7.4) to avoid database migration.
+- **Password handling** - Server uses bcrypt hashing (migrated from legacy DES encryption). Forgot-password generates a new password and emails it.
 - **Test coverage** - Acknowledged as lacking, especially in core poker logic.
 - **Embedded H2 database** - No passwords needed, automatic setup.
