@@ -15,7 +15,7 @@ Before implementing:
 ### When Principles Conflict
 
 Priorities (highest to lowest):
-1. **Privacy (Section 10)** - Never commit private data
+1. **Privacy (Section 9)** - Never commit private data
 2. **Correctness** - Code must work and be tested
 3. **Simplicity (Section 2)** - Prefer simple over complex
 4. **Surgical (Section 3)** - Touch only what's needed
@@ -71,27 +71,9 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
-## 5. Test-Driven Development
+## 5. Testing
 
-**Write tests BEFORE implementation whenever possible.**
-
-### The Red-Green-Refactor Cycle
-```
-RED:    Write a failing test for the new behavior
-  ↓
-GREEN:  Write minimal code to make it pass
-  ↓
-REFACTOR: Clean up while keeping tests green
-  ↓
-Repeat for next behavior
-```
-
-### TDD Workflow for New Features
-1. **Understand the requirement** - What should this do? What are edge cases?
-2. **Write the test** - It will fail (no implementation yet)
-3. **Implement minimally** - Just enough to pass the test
-4. **Refactor if needed** - Simplify while tests stay green
-5. **Repeat** - Next requirement, back to step 1
+**Write tests BEFORE implementation whenever possible. Thorough testing is NOT over-engineering.**
 
 ### When to Write Tests First
 - ✅ **New features** - Design the interface via tests
@@ -115,7 +97,7 @@ After implementing:
 - ✅ All new tests pass
 - ✅ All existing tests still pass
 - ✅ Code coverage meets thresholds (65% minimum)
-- ✅ build completes with zero warnings
+- ✅ Build completes with zero warnings
 
 ## 6. Plan Backlog Process
 
@@ -190,16 +172,18 @@ Small, non-code changes (< 10 lines) can be made directly in main:
 ```
 <type>: <brief summary (50 chars max)>
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+Co-Authored-By: <model name> <noreply@anthropic.com>
 ```
 
 **Types:** `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
+
+Use the actual model name in the co-author line (e.g., `Claude Opus 4.6`, `Claude Sonnet 4.5`).
 
 **Example:**
 ```
 feat: Add user authentication via JWT
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 ```
 
 ## 8. Code Review Process
@@ -233,7 +217,7 @@ When spawned:
    - ✅ Tests pass, coverage ≥ 65%, build clean (zero warnings)
    - ✅ No scope creep (Section 3)
    - ✅ No over-engineering (Section 2)
-   - ✅ No private info (Section 10)
+   - ✅ No private info (Section 9)
    - ✅ No security vulnerabilities
 5. **Update handoff file** with findings:
    - Status: ✅ Approved | ⚠️ Notes | ❌ Changes Required
@@ -241,48 +225,7 @@ When spawned:
    - Blockers: Required changes (if any)
 6. **Return to dev agent:** Summary of review status
 
-## 9. Change Types & Anti-Patterns
-
-### Change Type Guidelines
-
-**Use worktrees for:**
-- ✅ Application code (src/, lib/, components/)
-- ✅ Tests (test/, spec/, __tests__/)
-- ✅ Database migrations
-- ✅ Dependency updates (test for regressions)
-- ✅ CI/CD, Docker, deployment configs
-
-**Main is OK for:**
-- ✅ Meta-documentation (.claude/CLAUDE.md)
-- ✅ Plans management (.claude/plans/)
-- ✅ Git configs (.gitignore, .gitattributes)
-- ✅ Small README/doc fixes (< 10 lines)
-
-**Case-by-case:**
-- Environment configs (.env) → Main if generic, worktree if feature-specific
-- IDE configs (.vscode/) → Main (developer experience)
-- Linter configs → Main if team-wide, worktree if experimental
-
-**When in doubt:** Use a worktree.
-
-### Anti-Patterns to Avoid
-
-**❌ Over-Engineering (Section 2):**
-Don't create abstractions, factories, or "flexible" solutions for single use cases.
-
-**❌ Scope Creep (Section 3):**
-Task: "Fix login bug" → Don't also refactor the entire auth system.
-
-**❌ Skipping Tests (Section 5):**
-"I manually tested it" is not sufficient. Write automated tests.
-
-**❌ Working in Main (Section 7):**
-Never work directly in main for code changes. Always use worktrees.
-
-**❌ Privacy Leaks (Section 10):**
-Never commit IPs, credentials, or personal domains. Use placeholders.
-
-## 10. Private Information Check Before Committing
+## 9. Private Information Check Before Committing
 
 **ALWAYS review files for private information before committing to the public repository.**
 
