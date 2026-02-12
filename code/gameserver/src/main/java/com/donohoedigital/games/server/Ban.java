@@ -52,7 +52,6 @@ import java.util.*;
 /**
  * @author Doug Donohoe
  */
-@SuppressWarnings({"UseOfSystemOutOrSystemErr"})
 public class Ban
 {
     // logging
@@ -116,11 +115,11 @@ public class Ban
         }
         catch (ApplicationError ae)
         {
-            System.err.println("Ban ending due to ApplicationError: " + ae.toString());
+            logger.error("Ban ending due to ApplicationError: " + ae.toString(), ae);
         }
         catch (Throwable t)
         {
-            System.err.println(Utils.formatExceptionText(t));
+            logger.error("Ban ending due to unexpected error", t);
         }
 
         System.exit(0);
