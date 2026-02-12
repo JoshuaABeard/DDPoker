@@ -178,10 +178,11 @@ Comprehensive code review of DDPoker's server-side and shared infrastructure mod
 
 ---
 
-### MF-4: Reduce Lock Duration in EngineServlet
+### ✅ MF-4: Reduce Lock Duration in EngineServlet (COMPLETED)
 **File:** `EngineServlet.java` (lines 500-558)
 **Issue:** Game lock held during serialization. Poor scalability with concurrent games.
 **Fix:** Serialize response outside synchronized block. Already partially implemented with `retdata` pattern — complete the optimization.
+**Completed:** Feb 12, 2026 (commit b19044e) - Moved serialization outside synchronized block to reduce lock contention
 
 ---
 
