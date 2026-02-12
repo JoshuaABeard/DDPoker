@@ -43,7 +43,6 @@ import java.util.*;
 /**
  * Performs database queries using the given metadata.
  */
-@SuppressWarnings({"JDBCResourceOpenedButNotSafelyClosed"})
 public class DatabaseQuery
 {
     private static Logger logger = LogManager.getLogger(DatabaseQuery.class);

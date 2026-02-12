@@ -73,7 +73,18 @@ public class ResultMap extends DMTypedHashMap
      */
     public void close()
     {
-        query_.close();
+        try
+        {
+            if (rs_ != null) rs_.close();
+        }
+        catch (SQLException e)
+        {
+            // Ignore exceptions during cleanup to avoid hiding primary exceptions
+        }
+        finally
+        {
+            query_.close();
+        }
     }
 }
 
