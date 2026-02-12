@@ -56,15 +56,13 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 
-
 /**
  * Tests for OnlineGame persistence and DAO operations.
  */
 @Tag("slow")
 @SpringJUnitConfig(locations = {"/app-context-pokerservertests.xml"})
 @Transactional
-class OnlineGameTest
-{
+class OnlineGameTest {
     private final Logger logger = LogManager.getLogger(OnlineGameTest.class);
 
     @Autowired
@@ -75,8 +73,7 @@ class OnlineGameTest
 
     @Test
     @Rollback
-    void should_PersistAndUpdate_When_GameSaved()
-    {
+    void should_PersistAndUpdate_When_GameSaved() {
         OnlineGame newGame = PokerTestData.createOnlineGame("shouldPersist", 1, "XXX-333");
         dao.save(newGame);
 
@@ -95,8 +92,7 @@ class OnlineGameTest
 
     @Test
     @Rollback
-    void should_FindGame_When_SearchingByKeyAndUrl()
-    {
+    void should_FindGame_When_SearchingByKeyAndUrl() {
         OnlineGame newGame = PokerTestData.createOnlineGame("shouldPersist", 1, "XXX-333");
         dao.save(newGame);
 
@@ -111,8 +107,7 @@ class OnlineGameTest
 
     @Test
     @Rollback
-    void should_DeleteGame_When_DeleteCalled()
-    {
+    void should_DeleteGame_When_DeleteCalled() {
         OnlineGame game = PokerTestData.createOnlineGame("saveBeforeDelete", 2, "YYY-444");
         dao.save(game);
         assertThat(game.getId()).isNotNull();
@@ -127,8 +122,7 @@ class OnlineGameTest
 
     @Test
     @Rollback
-    void should_PageCorrectly_When_FetchingGamesByMode()
-    {
+    void should_PageCorrectly_When_FetchingGamesByMode() {
         new ConfigManager("poker", ApplicationType.COMMAND_LINE);
         final int gameCount = 12;
         assertThat(gameCount % 4).isEqualTo(0); // must be divisible by 4
@@ -137,8 +131,7 @@ class OnlineGameTest
         int day = 1000 * 60 * 24;
 
         // create some games
-        for (int i = 1; i <= gameCount; i++)
-        {
+        for (int i = 1; i <= gameCount; i++) {
             reverse = gameCount - i + 1;
             // create so host name is a number which sort in reverse of order created
             OnlineGame og = PokerTestData.createOnlineGame("" + (reverse + 100), i, "XXX-" + (100 + i));
@@ -158,32 +151,24 @@ class OnlineGameTest
         int expectedCount = gameCount;
         Integer[] modes = {OnlineGame.MODE_REG, OnlineGame.MODE_PLAY, OnlineGame.MODE_STOP, OnlineGame.MODE_END};
         int count = dao.getByModeCount(modes, null, null, null);
-        while (fetched < gameCount)
-        {
+        while (fetched < gameCount) {
             OnlineGameList fetch = dao.getByMode(count, fetched, pagesize, modes, null, null, null, true);
             fetched += fetch.size();
 
             assertThat(fetch.getTotalSize()).isEqualTo(expectedCount);
             assertThat(fetch.size()).isLessThanOrEqualTo(pagesize);
-            if (fetch.isEmpty()) break;
+            if (fetch.isEmpty())
+                break;
 
             // sorting by mode first, verify that first half are REG
-            for (OnlineGame og : fetch)
-            {
-                if (index < (gameCount / 4))
-                {
+            for (OnlineGame og : fetch) {
+                if (index < (gameCount / 4)) {
                     assertThat(og.getMode()).isEqualTo(OnlineGame.MODE_REG);
-                }
-                else if (index < (gameCount / 2))
-                {
+                } else if (index < (gameCount / 2)) {
                     assertThat(og.getMode()).isEqualTo(OnlineGame.MODE_PLAY);
-                }
-                else if (index < (gameCount * 3 / 4))
-                {
+                } else if (index < (gameCount * 3 / 4)) {
                     assertThat(og.getMode()).isEqualTo(OnlineGame.MODE_STOP);
-                }
-                else
-                {
+                } else {
                     assertThat(og.getMode()).isEqualTo(OnlineGame.MODE_END);
                 }
 
@@ -202,25 +187,25 @@ class OnlineGameTest
         long lastDate = Long.MAX_VALUE;
         expectedCount = gameCount / 2;
         count = dao.getByModeCount(modes2, null, null, null);
-        while (fetched < expectedCount)
-        {
+        while (fetched < expectedCount) {
             OnlineGameList fetch = dao.getByMode(count, fetched, pagesize, modes2, null, null, null, false);
             fetched += fetch.size();
 
             assertThat(fetch.getTotalSize()).isEqualTo(expectedCount);
             assertThat(fetch.size()).isLessThanOrEqualTo(pagesize);
-            if (fetch.isEmpty()) break;
+            if (fetch.isEmpty())
+                break;
 
             // sorting by mode first, verify that first half are REG
-            for (OnlineGame og : fetch)
-            {
+            for (OnlineGame og : fetch) {
                 assertThat(modes2x).contains(og.getMode());
 
                 int name = Integer.parseInt(og.getHostPlayer());
                 long date = og.getEndDate().getTime();
 
                 assertThat(date).isLessThanOrEqualTo(lastDate);
-                if (date == lastDate) assertThat(name).isGreaterThan(lastName);
+                if (date == lastDate)
+                    assertThat(name).isGreaterThan(lastName);
 
                 lastName = name;
                 lastDate = date;
@@ -230,8 +215,7 @@ class OnlineGameTest
         assertThat(fetched).isEqualTo(expectedCount);
 
         // test fetch of just each type
-        for (int i = OnlineGame.MODE_REG; i <= OnlineGame.MODE_END; i++)
-        {
+        for (int i = OnlineGame.MODE_REG; i <= OnlineGame.MODE_END; i++) {
             pagesize = 3;
             fetched = 0;
             Integer[] modes3 = {i};
@@ -239,35 +223,33 @@ class OnlineGameTest
             lastDate = Long.MAX_VALUE;
             expectedCount = gameCount / 4;
             count = dao.getByModeCount(modes3, null, null, null);
-            while (fetched < expectedCount)
-            {
+            while (fetched < expectedCount) {
                 OnlineGameList fetch = dao.getByMode(count, fetched, pagesize, modes3, null, null, null, false);
                 fetched += fetch.size();
 
                 assertThat(fetch.getTotalSize()).isEqualTo(expectedCount);
                 assertThat(fetch.size()).isLessThanOrEqualTo(pagesize);
-                if (fetch.isEmpty()) break;
+                if (fetch.isEmpty())
+                    break;
 
                 // verify ordering correct
-                for (OnlineGame og : fetch)
-                {
+                for (OnlineGame og : fetch) {
                     assertThat(modes3x).contains(og.getMode());
 
                     long date;
 
-                    switch (modes3[0])
-                    {
-                        case OnlineGame.MODE_PLAY:
+                    switch (modes3[0]) {
+                        case OnlineGame.MODE_PLAY :
                             date = og.getStartDate().getTime();
                             break;
 
-                        case OnlineGame.MODE_END:
-                        case OnlineGame.MODE_STOP:
+                        case OnlineGame.MODE_END :
+                        case OnlineGame.MODE_STOP :
                             date = og.getEndDate().getTime();
                             break;
 
-                        case OnlineGame.MODE_REG:
-                        default:
+                        case OnlineGame.MODE_REG :
+                        default :
                             date = og.getCreateDate().getTime();
                     }
 
@@ -283,13 +265,11 @@ class OnlineGameTest
 
     @Test
     @Rollback
-    void should_GenerateHostSummary_When_MultipleGamesHosted()
-    {
+    void should_GenerateHostSummary_When_MultipleGamesHosted() {
         Date now = new Date(System.currentTimeMillis() - 1000);
         Date later = new Date(System.currentTimeMillis() + 30000);
         int games = 20;
-        for (int i = 0; i < games; i++)
-        {
+        for (int i = 0; i < games; i++) {
             OnlineGame sample = PokerTestData.createOnlineGame(i % 4 == 0 ? "Dexter" : "Zorro", i, "blah");
             dao.save(sample);
         }

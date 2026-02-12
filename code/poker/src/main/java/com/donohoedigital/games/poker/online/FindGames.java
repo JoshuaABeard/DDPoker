@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -52,34 +52,31 @@ import java.util.List;
 /**
  * @author zak
  */
-public class FindGames extends ListGames
-{
+public class FindGames extends ListGames {
 
     private OnlineGame selected_;
-
 
     /**
      * Creates a new instance of TournamentOptions
      */
-    public FindGames()
-    {
+    public FindGames() {
     }
 
     /**
      * Disable fields if not an online profile.
      *
-     * @param engine    engine
+     * @param engine
+     *            engine
      * @param context
-     * @param gamephase game phase
+     * @param gamephase
+     *            game phase
      */
     @Override
-    public void init(GameEngine engine, GameContext context, GamePhase gamephase)
-    {
+    public void init(GameEngine engine, GameContext context, GamePhase gamephase) {
         super.init(engine, context, gamephase);
 
         // need online activated profile for public games
-        if (!profile_.isActivated())
-        {
+        if (!profile_.isActivated()) {
             connectLabel_.setEnabled(false);
             connectText_.setText(PropertyConfig.getMessage("msg.onlinerequired", profile_.getName()));
             connectText_.setEnabled(false);
@@ -90,24 +87,25 @@ public class FindGames extends ListGames
     /**
      * Called whenever the value of the selection changes.
      *
-     * @param e the event that characterizes the change.
+     * @param e
+     *            the event that characterizes the change.
      */
-    public void valueChanged(ListSelectionEvent e)
-    {
-        if (e.getValueIsAdjusting()) return;
+    public void valueChanged(ListSelectionEvent e) {
+        if (e.getValueIsAdjusting())
+            return;
 
         ListSelectionModel lsm = table_.getSelectionModel();
         int index = lsm.getMinSelectionIndex();
 
         OnlineGame newSelection = null;
 
-        if (index >= 0)
-        {
+        if (index >= 0) {
             newSelection = ((WanGameModel) model_).getGameInfo(index);
         }
 
         // don't update if not new
-        if (newSelection == selected_) return;
+        if (newSelection == selected_)
+            return;
 
         // get current values
         boolean updateText = profile_.isActivated();
@@ -120,31 +118,27 @@ public class FindGames extends ListGames
         // remember new selection
         selected_ = newSelection;
 
-        // update details        
-        if (selected_ != null)
-        {
+        // update details
+        if (selected_ != null) {
             profile = newSelection.getTournament();
 
-            if (updateText)
-            {
+            if (updateText) {
                 sConnect = sNewWanConnect == null ? "" : sNewWanConnect;
             }
-        }
-        else
-        {
+        } else {
             // if no current selection and the text in the connect field matches
             // the previous selection, clear it out
-            if (updateText && sOldWanConnect != null && sCurrentText.equals(sOldWanConnect))
-            {
+            if (updateText && sOldWanConnect != null && sCurrentText.equals(sOldWanConnect)) {
                 sConnect = "";
             }
         }
 
-        if (profile != null) sum_.updateProfile(profile);
-        else sum_.updateEmptyProfile("");
+        if (profile != null)
+            sum_.updateProfile(profile);
+        else
+            sum_.updateEmptyProfile("");
 
-        if (sConnect != null && !sConnect.equals(sCurrentText))
-        {
+        if (sConnect != null && !sConnect.equals(sCurrentText)) {
             bIgnoreTextChange_ = true;
             connectText_.setText(sConnect);
             bIgnoreTextChange_ = false;
@@ -154,31 +148,27 @@ public class FindGames extends ListGames
     /**
      * When text field changes
      */
-    public void propertyChange(PropertyChangeEvent evt)
-    {
+    public void propertyChange(PropertyChangeEvent evt) {
         checkButtons();
-        if (bIgnoreTextChange_) return;
+        if (bIgnoreTextChange_)
+            return;
 
         // see if we match something in the table, if so, highlight it
         String sConnect = connectText_.getText().trim();
 
-
         ListSelectionModel selmodel = table_.getSelectionModel();
         int nNum = model_.getRowCount();
-        for (int i = 0; sConnect != null && i < nNum; i++)
-        {
+        for (int i = 0; sConnect != null && i < nNum; i++) {
             OnlineGame game = ((WanGameModel) model_).getGameInfo(i);
 
-            if (sConnect.equals(game.getUrl()))
-            {
+            if (sConnect.equals(game.getUrl())) {
                 selmodel.setSelectionInterval(i, i);
                 table_.scrollRectToVisible(table_.getCellRect(i, 0, true));
                 return;
             }
         }
 
-        if (!selmodel.isSelectionEmpty())
-        {
+        if (!selmodel.isSelectionEmpty()) {
             selmodel.clearSelection();
         }
     }
@@ -187,14 +177,10 @@ public class FindGames extends ListGames
      * set buttons enabled/disabled based on selection
      */
     @Override
-    protected void checkButtons()
-    {
-        if (profile_.isActivated())
-        {
+    protected void checkButtons() {
+        if (profile_.isActivated()) {
             super.checkButtons();
-        }
-        else
-        {
+        } else {
             // no join or observe if not an activated online profile
             start_.setEnabled(false);
             obs_.setEnabled(false);
@@ -205,115 +191,89 @@ public class FindGames extends ListGames
      * double click - press start button by default
      */
     @Override
-    protected void doubleClick()
-    {
+    protected void doubleClick() {
         OnlineGame info = ((WanGameModel) model_).getGameInfo(table_.getSelectedRow());
-        if (info.getMode() == OnlineGame.MODE_REG)
-        {
+        if (info.getMode() == OnlineGame.MODE_REG) {
             start_.doClick();
-        }
-        else
-        {
+        } else {
             obs_.doClick();
         }
     }
 
     // client table info
-    private static final int[] COLUMN_WIDTHS = new int[]{
-            150, 100, 60
-    };
-    private static final String[] COLUMN_NAMES = new String[]{
-            OnlineGame.WAN_TOURNAMENT_NAME, OnlineGame.WAN_HOST_PLAYER, OnlineGame.WAN_MODE
-    };
+    private static final int[] COLUMN_WIDTHS = new int[]{150, 100, 60};
+    private static final String[] COLUMN_NAMES = new String[]{OnlineGame.WAN_TOURNAMENT_NAME,
+            OnlineGame.WAN_HOST_PLAYER, OnlineGame.WAN_MODE};
 
     private static final int ROW_COUNT = 10;
 
     /**
      * Used by table to display games on wan
      */
-    private class WanGameModel extends DDPagingTableModel
-    {
+    private class WanGameModel extends DDPagingTableModel {
         private OnlineGameList list;
 
-        public WanGameModel(OnlineGameList list)
-        {
+        public WanGameModel(OnlineGameList list) {
             this.list = list;
         }
 
-        public void cleanup()
-        {
+        public void cleanup() {
         }
 
-        public OnlineGame getGameInfo(int r)
-        {
+        public OnlineGame getGameInfo(int r) {
             return list.get(r);
         }
 
         @Override
-        public String getColumnName(int c)
-        {
+        public String getColumnName(int c) {
             return COLUMN_NAMES[c];
         }
 
         @Override
-        public int getColumnCount()
-        {
+        public int getColumnCount() {
             return COLUMN_WIDTHS.length;
         }
 
         @Override
-        public boolean isCellEditable(int r, int c)
-        {
+        public boolean isCellEditable(int r, int c) {
             return false;
         }
 
         @Override
-        public int getRowCount()
-        {
-            if (list == null)
-            {
+        public int getRowCount() {
+            if (list == null) {
                 return 0;
             }
             return list.size();
         }
 
         @Override
-        public Object getValueAt(int rowIndex, int colIndex)
-        {
+        public Object getValueAt(int rowIndex, int colIndex) {
             String sName = COLUMN_NAMES[colIndex];
             OnlineGame game = getGameInfo(rowIndex);
 
             String sValue;
-            if (sName.equals(OnlineGame.WAN_TOURNAMENT_NAME))
-            {
+            if (sName.equals(OnlineGame.WAN_TOURNAMENT_NAME)) {
                 sValue = game.getTournament().getName();
-            }
-            else if (sName.equals(OnlineGame.WAN_MODE))
-            {
+            } else if (sName.equals(OnlineGame.WAN_MODE)) {
                 int nMode = game.getMode();
-                switch (nMode)
-                {
-                    case OnlineGame.MODE_REG:
-                        if (game.getTournament().isInviteOnly())
-                        {
+                switch (nMode) {
+                    case OnlineGame.MODE_REG :
+                        if (game.getTournament().isInviteOnly()) {
                             sValue = JoinGame.GAME_INVITE;
-                        }
-                        else
-                        {
+                        } else {
                             sValue = JoinGame.GAME_REG;
                         }
                         break;
 
-                    case OnlineGame.MODE_PLAY:
+                    case OnlineGame.MODE_PLAY :
                         sValue = JoinGame.GAME_PLAYING;
                         break;
 
-                    default:
+                    default :
                         sValue = "";
                 }
-            }
-            else
-            {
+            } else {
                 // FIX: don't use getData() to fetch information from OnlineGame
                 sValue = (String) game.getData().getObject(sName);
             }
@@ -324,8 +284,7 @@ public class FindGames extends ListGames
          * Get the total number of records.
          */
         @Override
-        public int getTotalCount()
-        {
+        public int getTotalCount() {
             return list.getTotalSize();
         }
 
@@ -333,8 +292,7 @@ public class FindGames extends ListGames
          * Refresh the table contents using the given offset and row count.
          */
         @Override
-        public void refresh(int offset, int rowCount)
-        {
+        public void refresh(int offset, int rowCount) {
             list = getWanList(offset, rowCount, true);
             fireTableDataChanged();
         }
@@ -344,8 +302,7 @@ public class FindGames extends ListGames
      * Info panel displaying profile information
      */
     @Override
-    public Component getListInfo()
-    {
+    public Component getListInfo() {
         GridBagLayout layout = new GridBagLayout();
         GridBagConstraints constraints = new GridBagConstraints();
         DDPanel gbox = new DDPanel();
@@ -357,7 +314,8 @@ public class FindGames extends ListGames
         constraints.gridwidth = 1;
         constraints.fill = GridBagConstraints.BOTH;
 
-        EngineButtonListener listener = new EngineButtonListener(context_, this, gamephase_.getButtonNameFromParam("profile"));
+        EngineButtonListener listener = new EngineButtonListener(context_, this,
+                gamephase_.getButtonNameFromParam("profile"));
         DDImageButton button = new DDImageButton(listener.getGameButton().getName());
         button.addActionListener(listener);
         layout.setConstraints(button, constraints);
@@ -371,8 +329,7 @@ public class FindGames extends ListGames
         gbox.add(profilepanel);
 
         DDLabel label = new DDLabel(GuiManager.DEFAULT, "StartMenuSmall");
-        String profileText = PropertyConfig.getMessage("msg.publicjoin.profile",
-                                                       Utils.encodeHTML(profile_.getName()));
+        String profileText = PropertyConfig.getMessage("msg.publicjoin.profile", Utils.encodeHTML(profile_.getName()));
         label.setText(profileText);
         profilepanel.add(label);
 
@@ -395,8 +352,7 @@ public class FindGames extends ListGames
      * Get the list display name
      */
     @Override
-    public String getListName()
-    {
+    public String getListName() {
         return "publicjoin";
     }
 
@@ -404,8 +360,7 @@ public class FindGames extends ListGames
      * Get the list column names
      */
     @Override
-    public String[] getListColumnNames()
-    {
+    public String[] getListColumnNames() {
         return COLUMN_NAMES;
     }
 
@@ -413,8 +368,7 @@ public class FindGames extends ListGames
      * Get the list column widths
      */
     @Override
-    public int[] getListColumnWidths()
-    {
+    public int[] getListColumnWidths() {
         return COLUMN_WIDTHS;
     }
 
@@ -422,8 +376,7 @@ public class FindGames extends ListGames
      * Returns a value to enable paging.
      */
     @Override
-    public int getListRowCount()
-    {
+    public int getListRowCount() {
         return ROW_COUNT;
     }
 
@@ -431,8 +384,7 @@ public class FindGames extends ListGames
      * Get the model backing the list table
      */
     @Override
-    public DDPagingTableModel createListTableModel()
-    {
+    public DDPagingTableModel createListTableModel() {
         OnlineGameList list = getWanList(0, getListRowCount(), false);
         return new WanGameModel(list);
     }
@@ -441,16 +393,14 @@ public class FindGames extends ListGames
      * Don't show use last button
      */
     @Override
-    public boolean isDisplayUseLastButton()
-    {
+    public boolean isDisplayUseLastButton() {
         return false;
     }
 
     /**
      * Get the current WAN list from the server.
      */
-    private OnlineGameList getWanList(int offset, int count, boolean faceless)
-    {
+    private OnlineGameList getWanList(int offset, int count, boolean faceless) {
         // Send a message requesting that the game be added
         OnlineProfile auth = null;
         TypedHashMap hmParams = new TypedHashMap();
@@ -458,16 +408,13 @@ public class FindGames extends ListGames
         hmParams.setInteger(GetWanList.PARAM_COUNT, count);
         hmParams.setInteger(GetWanList.PARAM_MODE, OnlineGame.FETCH_MODE_REG_PLAY);
 
-        if (faceless)
-        {
+        if (faceless) {
             hmParams.setBoolean(SendMessageDialog.PARAM_FACELESS, Boolean.TRUE);
-        }
-        else
-        {
-            // If the current profile is an activated online profile, then attempt to authenticate
+        } else {
+            // If the current profile is an activated online profile, then attempt to
+            // authenticate
             // it on the server the first time the list is retrieved.
-            if (profile_.isActivated())
-            {
+            if (profile_.isActivated()) {
                 auth = new OnlineProfile(profile_.getName());
                 auth.setPassword(profile_.getPassword());
 
@@ -481,19 +428,16 @@ public class FindGames extends ListGames
 
         OnlineGameList clients = new OnlineGameList();
 
-        if (dialog.getStatus() == DDMessageListener.STATUS_OK)
-        {
+        if (dialog.getStatus() == DDMessageListener.STATUS_OK) {
             EngineMessage resEngineMsg = dialog.getReturnMessage();
             OnlineMessage resOnlineMsg = new OnlineMessage(resEngineMsg);
 
             // Return a local copy of the list
             List<DMTypedHashMap> games = resOnlineMsg.getWanGames();
 
-            if (auth != null)
-            {
+            if (auth != null) {
                 // see PokerServlet.getWanGames()
-                if (resOnlineMsg.getWanAuth() == null)
-                {
+                if (resOnlineMsg.getWanAuth() == null) {
                     // Authentication failed, so reset the local profile.
                     resetProfile();
                 }
@@ -501,21 +445,16 @@ public class FindGames extends ListGames
 
             clients.setTotalSize(resOnlineMsg.getCount());
 
-            if (games != null)
-            {
-                for (DMTypedHashMap game : games)
-                {
+            if (games != null) {
+                for (DMTypedHashMap game : games) {
                     clients.add(new OnlineGame(game));
                 }
             }
-        }
-        else
-        {
+        } else {
             // if error returned and this flag set (reusing old War-AOI flag),
             // then also reset profile
             EngineMessage regEngineMsg = dialog.getReturnMessage();
-            if (regEngineMsg != null && regEngineMsg.getBoolean(EngineMessage.PARAM_ELIMINATED, false))
-            {
+            if (regEngineMsg != null && regEngineMsg.getBoolean(EngineMessage.PARAM_ELIMINATED, false)) {
                 resetProfile();
             }
         }

@@ -253,8 +253,7 @@ class FilePrefsStressTest {
         // Verify final state
         for (int i = 0; i < 10; i++) {
             boolean expected = (499 - (9 - i)) % 2 == 0; // Last write for each key
-            assertThat(prefs.getBoolean("ui.setting" + i, !expected))
-                    .as("Setting %d should match last write", i)
+            assertThat(prefs.getBoolean("ui.setting" + i, !expected)).as("Setting %d should match last write", i)
                     .isNotNull();
         }
     }

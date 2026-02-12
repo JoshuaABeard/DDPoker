@@ -29,22 +29,19 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Integration tests for tournament setup and configuration.
- * Tests tournament logic without launching the UI.
+ * Integration tests for tournament setup and configuration. Tests tournament
+ * logic without launching the UI.
  */
 @Tag("integration")
-public class TournamentSetupIntegrationTest
-{
+public class TournamentSetupIntegrationTest {
     @BeforeEach
-    void setUp() throws Exception
-    {
+    void setUp() throws Exception {
         // Initialize config for headless testing
         new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
     }
 
     @Test
-    void should_CreateTournament_When_ValidProfileProvided()
-    {
+    void should_CreateTournament_When_ValidProfileProvided() {
         // Create a tournament profile
         TournamentProfile tournament = new TournamentProfile("TestTournament");
 
@@ -54,8 +51,7 @@ public class TournamentSetupIntegrationTest
     }
 
     @Test
-    void should_SetDefaultValues_When_TournamentCreated()
-    {
+    void should_SetDefaultValues_When_TournamentCreated() {
         // Create a tournament
         TournamentProfile tournament = new TournamentProfile("DefaultTest");
 
@@ -65,8 +61,7 @@ public class TournamentSetupIntegrationTest
     }
 
     @Test
-    void should_AllowModification_When_TournamentCreated()
-    {
+    void should_AllowModification_When_TournamentCreated() {
         // Create a tournament
         TournamentProfile tournament = new TournamentProfile("ModifiableTest");
 
@@ -80,8 +75,7 @@ public class TournamentSetupIntegrationTest
     }
 
     @Test
-    void should_SaveAndLoad_When_TournamentPersisted()
-    {
+    void should_SaveAndLoad_When_TournamentPersisted() {
         // Create and configure tournament
         TournamentProfile original = new TournamentProfile("PersistTest");
         original.setNumPlayers(6);
@@ -103,8 +97,7 @@ public class TournamentSetupIntegrationTest
     }
 
     @Test
-    void should_ValidateSettings_When_CreatingTournament()
-    {
+    void should_ValidateSettings_When_CreatingTournament() {
         // Create tournament
         TournamentProfile tournament = new TournamentProfile("ValidationTest");
 
@@ -117,8 +110,7 @@ public class TournamentSetupIntegrationTest
     }
 
     @Test
-    void should_SupportMultipleBlindLevels_When_Configured()
-    {
+    void should_SupportMultipleBlindLevels_When_Configured() {
         // Create tournament
         TournamentProfile tournament = new TournamentProfile("BlindLevelsTest");
 
@@ -127,8 +119,7 @@ public class TournamentSetupIntegrationTest
     }
 
     @Test
-    void should_CalculatePayouts_When_TournamentConfigured()
-    {
+    void should_CalculatePayouts_When_TournamentConfigured() {
         // Create tournament with specific settings
         TournamentProfile tournament = new TournamentProfile("PayoutTest");
         tournament.setNumPlayers(9);

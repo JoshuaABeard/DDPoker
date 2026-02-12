@@ -32,15 +32,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * File-based JSON configuration manager.
- * Replaces Java Preferences API with portable JSON configuration file.
+ * File-based JSON configuration manager. Replaces Java Preferences API with
+ * portable JSON configuration file.
  *
- * Features:
- * - Platform-specific config directories (Windows: %APPDATA%, macOS: ~/Library/Application Support, Linux: ~/.ddpoker)
- * - Simple backup strategy (config.json.bak before each write)
- * - Automatic corruption recovery from backup
- * - Thread-safe operations
- * - Immediate flush on every change
+ * Features: - Platform-specific config directories (Windows: %APPDATA%, macOS:
+ * ~/Library/Application Support, Linux: ~/.ddpoker) - Simple backup strategy
+ * (config.json.bak before each write) - Automatic corruption recovery from
+ * backup - Thread-safe operations - Immediate flush on every change
  */
 public class FilePrefs {
     private static final Logger logger = LogManager.getLogger(FilePrefs.class);
@@ -49,7 +47,7 @@ public class FilePrefs {
     private static final String BACKUP_FILE = "config.json.bak";
 
     private static FilePrefs instance;
-    private static String testConfigDir = null;  // For testing only
+    private static String testConfigDir = null; // For testing only
 
     private final String configDir;
     private final ObjectMapper objectMapper;
@@ -76,7 +74,7 @@ public class FilePrefs {
      */
     static void setTestConfigDir(String dir) {
         testConfigDir = dir;
-        instance = null;  // Reset instance to use new directory
+        instance = null; // Reset instance to use new directory
     }
 
     /**
@@ -90,18 +88,17 @@ public class FilePrefs {
     }
 
     /**
-     * Get platform-specific config directory.
-     * Windows: %APPDATA%\ddpoker (no dot prefix)
-     * macOS: ~/Library/Application Support/ddpoker
-     * Linux: ~/.ddpoker (with dot prefix)
+     * Get platform-specific config directory. Windows: %APPDATA%\ddpoker (no dot
+     * prefix) macOS: ~/Library/Application Support/ddpoker Linux: ~/.ddpoker (with
+     * dot prefix)
      */
     public static String getConfigDirectory() {
         return getConfigDirectory(System.getProperty("os.name"));
     }
 
     /**
-     * Get platform-specific config directory for given OS name.
-     * Package-visible for testing.
+     * Get platform-specific config directory for given OS name. Package-visible for
+     * testing.
      */
     static String getConfigDirectory(String osName) {
         String os = osName.toLowerCase();
@@ -223,9 +220,8 @@ public class FilePrefs {
     }
 
     /**
-     * Flush configuration to disk with backup.
-     * Creates backup of existing config before writing new one.
-     * Thread-safe.
+     * Flush configuration to disk with backup. Creates backup of existing config
+     * before writing new one. Thread-safe.
      */
     public synchronized void flush() {
         try {
@@ -253,9 +249,8 @@ public class FilePrefs {
     }
 
     /**
-     * Load configuration from disk.
-     * Attempts to recover from backup if main config is corrupted.
-     * Thread-safe.
+     * Load configuration from disk. Attempts to recover from backup if main config
+     * is corrupted. Thread-safe.
      */
     public synchronized void load() {
         File configDirectory = new File(configDir);
@@ -265,7 +260,8 @@ public class FilePrefs {
         // Try to load main config
         if (configFile.exists()) {
             try {
-                config = objectMapper.readValue(configFile, new TypeReference<Map<String, Object>>() {});
+                config = objectMapper.readValue(configFile, new TypeReference<Map<String, Object>>() {
+                });
                 logger.info("Loaded configuration from: {}", configFile.getAbsolutePath());
                 return;
             } catch (IOException e) {
@@ -276,7 +272,8 @@ public class FilePrefs {
         // Try backup if main failed or doesn't exist
         if (backupFile.exists()) {
             try {
-                config = objectMapper.readValue(backupFile, new TypeReference<Map<String, Object>>() {});
+                config = objectMapper.readValue(backupFile, new TypeReference<Map<String, Object>>() {
+                });
                 logger.info("Recovered configuration from backup: {}", backupFile.getAbsolutePath());
                 // Restore from backup
                 flush();

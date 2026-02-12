@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -50,8 +50,7 @@ import java.util.*;
 /**
  * @author donohoe
  */
-public class PlayerProfile extends BaseProfile
-{
+public class PlayerProfile extends BaseProfile {
     private static Logger logger = LogManager.getLogger(PlayerProfile.class);
 
     // defines
@@ -62,7 +61,7 @@ public class PlayerProfile extends BaseProfile
     private String sEmail_;
     private String sPassword_;
 
-    // stats on hands seen and other stuff.  package private for quicker access
+    // stats on hands seen and other stuff. package private for quicker access
     int nWins_;
     int nActionCnt_;
     int[] rounds_;
@@ -76,21 +75,17 @@ public class PlayerProfile extends BaseProfile
     /**
      * debug
      */
-    public void debugPrint()
-    {
+    public void debugPrint() {
         logger.debug("");
         logger.debug("************ PROFILE for " + getName());
         logger.debug("Wins: " + nWins_);
 
         // number of times each round is seen
-        for (int i = 0; i < rounds_.length; i++)
-        {
+        for (int i = 0; i < rounds_.length; i++) {
             logger.debug("Round " + HoldemHand.getRoundName(i) + ": " + rounds_[i]);
             // flops seen - which position
-            if (i == HoldemHand.ROUND_FLOP)
-            {
-                for (int j = 0; j < flops_.length; j++)
-                {
+            if (i == HoldemHand.ROUND_FLOP) {
+                for (int j = 0; j < flops_.length; j++) {
                     logger.debug("   Flops called from " + PokerPlayer.getPositionName(j) + ": " + flops_[j]);
                 }
             }
@@ -98,18 +93,16 @@ public class PlayerProfile extends BaseProfile
 
         // actions
         logger.debug("Total Actions: " + nActionCnt_);
-        for (int i = 0; i < actions_.length; i++)
-        {
+        for (int i = 0; i < actions_.length; i++) {
             logger.debug("   Action " + HandAction.getActionName(i) + ": " + actions_[i]);
         }
 
         // actions per round
-        for (int i = 0; i < roundactions_.length; i++)
-        {
+        for (int i = 0; i < roundactions_.length; i++) {
             logger.debug("Total Actions it round " + HoldemHand.getRoundName(i) + ": " + nRoundActionCnt_[i]);
-            for (int j = 0; j < roundactions_[0].length; j++)
-            {
-                logger.debug("   Round " + HoldemHand.getRoundName(i) + ", Action " + HandAction.getActionName(j) + ": " + roundactions_[i][j]);
+            for (int j = 0; j < roundactions_[0].length; j++) {
+                logger.debug("   Round " + HoldemHand.getRoundName(i) + ", Action " + HandAction.getActionName(j) + ": "
+                        + roundactions_[i][j]);
             }
         }
     }
@@ -117,24 +110,21 @@ public class PlayerProfile extends BaseProfile
     /**
      * Load profile from file
      */
-    public PlayerProfile(File file, boolean bFull)
-    {
+    public PlayerProfile(File file, boolean bFull) {
         super(file, bFull);
     }
 
     /**
      * New profile with given name
      */
-    public PlayerProfile(String sName)
-    {
+    public PlayerProfile(String sName) {
         super(sName);
     }
 
     /**
      * New profile copied from given profile, using new name
      */
-    public PlayerProfile(PlayerProfile tp, String sName)
-    {
+    public PlayerProfile(PlayerProfile tp, String sName) {
         super(sName);
 
         // use same objects - when copying since they
@@ -155,10 +145,8 @@ public class PlayerProfile extends BaseProfile
     /**
      * check if init'd (for lazily eval)
      */
-    public void initCheck()
-    {
-        if (rounds_ == null)
-        {
+    public void initCheck() {
+        if (rounds_ == null) {
             init();
         }
     }
@@ -166,8 +154,7 @@ public class PlayerProfile extends BaseProfile
     /**
      * init arrays
      */
-    public void init()
-    {
+    public void init() {
         nWins_ = 0;
         nActionCnt_ = 0;
         rounds_ = new int[HoldemHand.ROUND_SHOWDOWN + 1];
@@ -210,66 +197,60 @@ public class PlayerProfile extends BaseProfile
     /**
      * Is this an online profile
      */
-    public boolean isOnline()
-    {
+    public boolean isOnline() {
         return (getEmail() != null);
     }
 
     /**
      * Is this an activated online profile (always true in open source version)
      */
-    public boolean isActivated()
-    {
-        return true;  // Always activated in open source version
+    public boolean isActivated() {
+        return true; // Always activated in open source version
     }
 
     /**
      * Set activated flag (no-op in open source version)
      */
-    public void setActivated(boolean bActivated)
-    {
+    public void setActivated(boolean bActivated) {
         // No-op: activation not needed in open source version
-        bActivated_ = bActivated;  // Keep for serialization compatibility
+        bActivated_ = bActivated; // Keep for serialization compatibility
     }
 
     /**
      * Get player email
      */
-    public String getEmail()
-    {
+    public String getEmail() {
         return sEmail_;
     }
 
     /**
      * Set player email
      */
-    public void setEmail(String sEmail)
-    {
+    public void setEmail(String sEmail) {
         sEmail_ = sEmail;
     }
 
     /**
      * Get player password
      */
-    public String getPassword()
-    {
+    public String getPassword() {
         return (sPassword_ != null) ? Utils.decode(SecurityUtils.decrypt(sPassword_, k())) : null;
     }
 
     /**
      * Set player password
      */
-    public void setPassword(String sPassword)
-    {
-        if (sPassword != null) sPassword_ = SecurityUtils.encrypt(Utils.encode(sPassword), k());
+    public void setPassword(String sPassword) {
+        if (sPassword != null)
+            sPassword_ = SecurityUtils.encrypt(Utils.encode(sPassword), k());
     }
 
     /**
      * Check matching password
      */
-    public boolean isMatchingPassword(String s)
-    {
-        if ((s == null) || (sPassword_ == null)) return false;
+    public boolean isMatchingPassword(String s) {
+        if ((s == null) || (sPassword_ == null))
+            return false;
         s = SecurityUtils.encrypt(Utils.encode(s), k());
         return s.equals(sPassword_);
     }
@@ -277,16 +258,14 @@ public class PlayerProfile extends BaseProfile
     /**
      * Get stats map
      */
-    public DMTypedHashMap getStatsMap()
-    {
+    public DMTypedHashMap getStatsMap() {
         return map;
     }
 
     /**
      * Create an Online Profile for the given local profile
      */
-    public OnlineProfile toOnlineProfile()
-    {
+    public OnlineProfile toOnlineProfile() {
         OnlineProfile profile = new OnlineProfile(getName());
         profile.setPassword(getPassword());
         // Activation removed in open source version
@@ -298,62 +277,53 @@ public class PlayerProfile extends BaseProfile
     /**
      * Get how often action happens in round (0-100%)
      */
-    public int getFrequency(int nRound, int nAction)
-    {
+    public int getFrequency(int nRound, int nAction) {
         return (int) ((100.0f * roundactions_[nRound][nAction]) / (float) nRoundActionCnt_[nRound]);
     }
 
     /**
      * Add history and save if possible
      */
-    public void addTournamentHistory(PokerGame game, PokerPlayer player)
-    {
+    public void addTournamentHistory(PokerGame game, PokerPlayer player) {
         PokerDatabase.storeTournamentFinish(game, player);
     }
 
     /**
      * Get list of history
      */
-    public List<TournamentHistory> getHistory()
-    {
+    public List<TournamentHistory> getHistory() {
         return PokerDatabase.getTournamentHistory(this);
     }
 
     /**
      * Get overall history
      */
-    public TournamentHistory getOverallHistory()
-    {
+    public TournamentHistory getOverallHistory() {
         return PokerDatabase.getOverallHistory(this);
     }
 
     /**
      * test database (using during startup)
      */
-    public void testDB()
-    {
+    public void testDB() {
         PokerDatabase.testConnection();
     }
 
     /**
      * get total prize money earned
      */
-    public int getTotalPrizeMoneyEarned()
-    {
+    public int getTotalPrizeMoneyEarned() {
         int nTotalPrize = 0;
 
         List<TournamentHistory> history = getHistory();
         TournamentHistory hist;
-        if (history.size() == 0)
-        {
+        if (history.size() == 0) {
             return 0;
-        }
-        else
-        {
-            for (int i = history.size() - 1; i >= 0; i--)
-            {
+        } else {
+            for (int i = history.size() - 1; i >= 0; i--) {
                 hist = history.get(i);
-                if (hist.getPlace() == 0) continue;
+                if (hist.getPlace() == 0)
+                    continue;
                 nTotalPrize += hist.getPrize();
             }
         }
@@ -364,22 +334,18 @@ public class PlayerProfile extends BaseProfile
     /**
      * get total prize money earned
      */
-    public int getTotalMoneySpent()
-    {
+    public int getTotalMoneySpent() {
         int nTotalSpent = 0;
 
         List<TournamentHistory> history = getHistory();
         TournamentHistory hist;
-        if (history.size() == 0)
-        {
+        if (history.size() == 0) {
             return 0;
-        }
-        else
-        {
-            for (int i = history.size() - 1; i >= 0; i--)
-            {
+        } else {
+            for (int i = history.size() - 1; i >= 0; i--) {
                 hist = history.get(i);
-                if (hist.getPlace() == 0) continue;
+                if (hist.getPlace() == 0)
+                    continue;
                 nTotalSpent += hist.getTotalSpent();
             }
         }
@@ -390,24 +356,21 @@ public class PlayerProfile extends BaseProfile
     /**
      * Get begin part of profile name
      */
-    protected String getBegin()
-    {
+    protected String getBegin() {
         return PROFILE_BEGIN;
     }
 
     /**
      * Get name of directory to store profiles in
      */
-    protected String getProfileDirName()
-    {
+    protected String getProfileDirName() {
         return PROFILE_DIR;
     }
 
     /**
      * subclass implements to load its contents from the given reader
      */
-    public void read(Reader reader, boolean bFull) throws IOException
-    {
+    public void read(Reader reader, boolean bFull) throws IOException {
         BufferedReader buf = new BufferedReader(reader);
         super.read(buf, bFull);
 
@@ -425,34 +388,26 @@ public class PlayerProfile extends BaseProfile
         TokenizedList stats = new TokenizedList();
         stats.demarshal(null, buf.readLine());
 
-        for (int i = 0; i < rounds_.length; i++)
-        {
+        for (int i = 0; i < rounds_.length; i++) {
             rounds_[i] = stats.removeIntToken();
         }
-        for (int i = 0; i < flops_.length; i++)
-        {
+        for (int i = 0; i < flops_.length; i++) {
             flops_[i] = stats.removeIntToken();
         }
         nWins_ = stats.removeIntToken();
         nActionCnt_ = stats.removeIntToken();
-        for (int i = 0; i < actions_.length; i++)
-        {
+        for (int i = 0; i < actions_.length; i++) {
             actions_[i] = stats.removeIntToken();
         }
-        for (int i = 0; i < roundactions_.length; i++)
-        {
+        for (int i = 0; i < roundactions_.length; i++) {
             nRoundActionCnt_[i] = stats.removeIntToken();
-            for (int j = 0; j < roundactions_[0].length; j++)
-            {
+            for (int j = 0; j < roundactions_[0].length; j++) {
                 roundactions_[i][j] = stats.removeIntToken();
             }
         }
-        if (stats.hasMoreTokens() && (stats.peekToken() instanceof DMTypedHashMap))
-        {
+        if (stats.hasMoreTokens() && (stats.peekToken() instanceof DMTypedHashMap)) {
             map = (DMTypedHashMap) stats.removeToken();
-        }
-        else
-        {
+        } else {
             map = new DMTypedHashMap();
         }
     }
@@ -460,8 +415,7 @@ public class PlayerProfile extends BaseProfile
     /**
      * subclass implements to save its contents to the given writer
      */
-    public void write(Writer writer) throws IOException
-    {
+    public void write(Writer writer) throws IOException {
         super.write(writer);
 
         // online info
@@ -474,25 +428,20 @@ public class PlayerProfile extends BaseProfile
 
         // stats
         TokenizedList stats = new TokenizedList();
-        for (int aRounds_ : rounds_)
-        {
+        for (int aRounds_ : rounds_) {
             stats.addToken(aRounds_);
         }
-        for (int aFlops_ : flops_)
-        {
+        for (int aFlops_ : flops_) {
             stats.addToken(aFlops_);
         }
         stats.addToken(nWins_);
         stats.addToken(nActionCnt_);
-        for (int anActions_ : actions_)
-        {
+        for (int anActions_ : actions_) {
             stats.addToken(anActions_);
         }
-        for (int i = 0; i < roundactions_.length; i++)
-        {
+        for (int i = 0; i < roundactions_.length; i++) {
             stats.addToken(nRoundActionCnt_[i]);
-            for (int j = 0; j < roundactions_[0].length; j++)
-            {
+            for (int j = 0; j < roundactions_[0].length; j++) {
                 stats.addToken(roundactions_[i][j]);
             }
         }
@@ -504,36 +453,31 @@ public class PlayerProfile extends BaseProfile
     /**
      * Get profile list
      */
-    protected List<BaseProfile> getProfileFileList()
-    {
+    protected List<BaseProfile> getProfileFileList() {
         return getProfileList();
     }
 
     /**
      * Get list of save files in save directory
      */
-    public static List<BaseProfile> getProfileList()
-    {
-        return BaseProfile.getProfileList
-                (PROFILE_DIR, Utils.getFilenameFilter(SaveFile.DELIM + PROFILE_EXT, PROFILE_BEGIN), PlayerProfile.class, false);
+    public static List<BaseProfile> getProfileList() {
+        return BaseProfile.getProfileList(PROFILE_DIR,
+                Utils.getFilenameFilter(SaveFile.DELIM + PROFILE_EXT, PROFILE_BEGIN), PlayerProfile.class, false);
     }
 
     /**
      * return File for given profile name
      */
-    public static File getProfileFile(String sFileName)
-    {
+    public static File getProfileFile(String sFileName) {
         return new File(PlayerProfile.getProfileDir(PlayerProfile.PROFILE_DIR), sFileName);
     }
 
-    private byte[] k()
-    {
+    private byte[] k() {
         String s = "48349ad7a22d3b47445d309921323379";
         byte[] k = new byte[s.length() / 2];
         int n = 0;
 
-        for (int i = 0; i < k.length; ++i)
-        {
+        for (int i = 0; i < k.length; ++i) {
             n = i * 2;
             k[i] = (byte) Integer.parseInt(s.substring(n, n + 2), 16);
         }

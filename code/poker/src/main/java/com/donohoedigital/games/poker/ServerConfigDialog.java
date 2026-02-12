@@ -32,10 +32,8 @@ import java.awt.*;
 /**
  * First-run server configuration dialog
  */
-public class ServerConfigDialog extends DialogPhase
-{
-    private static final String ONLINE_SERVER_REGEXP =
-        "^(?:localhost|(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,}|(?:\\d{1,3}\\.){3}\\d{1,3}):\\d{1,5}$";
+public class ServerConfigDialog extends DialogPhase {
+    private static final String ONLINE_SERVER_REGEXP = "^(?:localhost|(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,}|(?:\\d{1,3}\\.){3}\\d{1,3}):\\d{1,5}$";
 
     private DDTextField serverField;
     private DDTextField chatField;
@@ -44,8 +42,7 @@ public class ServerConfigDialog extends DialogPhase
      * Create dialog contents
      */
     @Override
-    public JComponent createDialogContents()
-    {
+    public JComponent createDialogContents() {
         DDPanel base = new DDPanel();
         base.setLayout(new GridBagLayout());
         base.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -110,20 +107,17 @@ public class ServerConfigDialog extends DialogPhase
     /**
      * Validate and save the configuration
      */
-    public boolean processButton(GameButton button)
-    {
+    public boolean processButton(GameButton button) {
         // Only validate on okay button
-        if (button.getName().equals("okay"))
-        {
+        if (button.getName().equals("okay")) {
             String server = serverField.getText().trim();
             String chat = chatField.getText().trim();
 
             // Validate
-            if (!server.isEmpty() && !chat.isEmpty() &&
-                server.matches(ONLINE_SERVER_REGEXP) &&
-                chat.matches(ONLINE_SERVER_REGEXP))
-            {
-                // Save to preferences (use options/ prefix to match where OptionText loads from)
+            if (!server.isEmpty() && !chat.isEmpty() && server.matches(ONLINE_SERVER_REGEXP)
+                    && chat.matches(ONLINE_SERVER_REGEXP)) {
+                // Save to preferences (use options/ prefix to match where OptionText loads
+                // from)
                 String node = Prefs.NODE_OPTIONS + PokerMain.getPokerMain().getPrefsNodeName();
                 Prefs.getUserPrefs(node).put(EngineConstants.OPTION_ONLINE_SERVER, server);
                 Prefs.getUserPrefs(node).put(PokerConstants.OPTION_ONLINE_CHAT, chat);
@@ -138,13 +132,10 @@ public class ServerConfigDialog extends DialogPhase
 
                 // Close dialog
                 return super.processButton(button);
-            }
-            else
-            {
+            } else {
                 // Show error and keep dialog open
-                EngineUtils.displayInformationDialog(context_,
-                    PropertyConfig.getMessage("msg.serverconfiginvalid"),
-                    PropertyConfig.getMessage("msg.serverconfiginvalid.title"));
+                EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.serverconfiginvalid"),
+                        PropertyConfig.getMessage("msg.serverconfiginvalid.title"));
                 return false;
             }
         }
@@ -157,8 +148,7 @@ public class ServerConfigDialog extends DialogPhase
      * Get focus component
      */
     @Override
-    protected Component getFocusComponent()
-    {
+    protected Component getFocusComponent() {
         return serverField;
     }
 }

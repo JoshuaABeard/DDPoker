@@ -27,46 +27,47 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Minimal PokerMain mock for integration tests.
- * Provides computer player names without requiring full application initialization.
+ * Minimal PokerMain mock for integration tests. Provides computer player names
+ * without requiring full application initialization.
  *
- * <p>This mock allows integration tests to:</p>
+ * <p>
+ * This mock allows integration tests to:
+ * </p>
  * <ul>
- *   <li>Call PokerMain.getPokerMain() without NPE</li>
- *   <li>Get AI player names for tournament setup</li>
- *   <li>Initialize tournaments with computer players</li>
+ * <li>Call PokerMain.getPokerMain() without NPE</li>
+ * <li>Get AI player names for tournament setup</li>
+ * <li>Initialize tournaments with computer players</li>
  * </ul>
  *
- * <p><strong>Important:</strong> This mock extends GameEngine via PokerMain.
- * You should initialize {@link MockGameEngine} BEFORE initializing this mock.</p>
+ * <p>
+ * <strong>Important:</strong> This mock extends GameEngine via PokerMain. You
+ * should initialize {@link MockGameEngine} BEFORE initializing this mock.
+ * </p>
  *
- * <p>Use {@link IntegrationTestBase} to automatically set up and tear down mocks.</p>
+ * <p>
+ * Use {@link IntegrationTestBase} to automatically set up and tear down mocks.
+ * </p>
  */
 public class MockPokerMain {
 
     private static PokerMain mockInstance;
 
     // Default AI player names for testing
-    private static final List<String> AI_NAMES = List.of(
-            "Computer Alice",
-            "Computer Bob",
-            "Computer Charlie",
-            "Computer Diana",
-            "Computer Eve",
-            "Computer Frank",
-            "Computer Grace",
-            "Computer Henry",
-            "Computer Ivy",
-            "Computer Jack"
-    );
+    private static final List<String> AI_NAMES = List.of("Computer Alice", "Computer Bob", "Computer Charlie",
+            "Computer Diana", "Computer Eve", "Computer Frank", "Computer Grace", "Computer Henry", "Computer Ivy",
+            "Computer Jack");
 
     /**
-     * Initialize mock PokerMain for testing.
-     * Sets the PokerMain singleton (via GameEngine) to a minimal mock instance.
+     * Initialize mock PokerMain for testing. Sets the PokerMain singleton (via
+     * GameEngine) to a minimal mock instance.
      *
-     * <p><strong>Prerequisite:</strong> {@link MockGameEngine} must be initialized first.</p>
+     * <p>
+     * <strong>Prerequisite:</strong> {@link MockGameEngine} must be initialized
+     * first.
+     * </p>
      *
-     * @throws RuntimeException if MockGameEngine not initialized or reflection fails
+     * @throws RuntimeException
+     *             if MockGameEngine not initialized or reflection fails
      */
     public static void initializeForTesting() {
         if (mockInstance != null) {
@@ -74,15 +75,14 @@ public class MockPokerMain {
         }
 
         if (!MockGameEngine.isInitialized()) {
-            throw new IllegalStateException(
-                    "MockGameEngine must be initialized before MockPokerMain. " +
-                    "Call MockGameEngine.initializeForTesting() first."
-            );
+            throw new IllegalStateException("MockGameEngine must be initialized before MockPokerMain. "
+                    + "Call MockGameEngine.initializeForTesting() first.");
         }
 
         try {
             // Create a minimal PokerMain subclass
-            // Constructor signature: PokerMain(configName, mainModule, args, headless, loadNames)
+            // Constructor signature: PokerMain(configName, mainModule, args, headless,
+            // loadNames)
             mockInstance = new PokerMain("poker", "poker", new String[0], true, false) {
                 @Override
                 public com.donohoedigital.comms.Version getVersion() {
@@ -107,12 +107,15 @@ public class MockPokerMain {
     }
 
     /**
-     * Reset mock PokerMain after testing.
-     * Clears the singleton to prevent test pollution.
+     * Reset mock PokerMain after testing. Clears the singleton to prevent test
+     * pollution.
      *
-     * <p><strong>Note:</strong> This also clears the GameEngine singleton.</p>
+     * <p>
+     * <strong>Note:</strong> This also clears the GameEngine singleton.
+     * </p>
      *
-     * @throws RuntimeException if reflection fails
+     * @throws RuntimeException
+     *             if reflection fails
      */
     public static void resetForTesting() {
         try {
@@ -126,8 +129,8 @@ public class MockPokerMain {
     }
 
     /**
-     * Get the mock PokerMain instance.
-     * Useful for verifying the mock is initialized correctly.
+     * Get the mock PokerMain instance. Useful for verifying the mock is initialized
+     * correctly.
      *
      * @return the mock PokerMain instance, or null if not initialized
      */
@@ -145,8 +148,7 @@ public class MockPokerMain {
     }
 
     /**
-     * Get the AI names used by the mock.
-     * Useful for test assertions.
+     * Get the AI names used by the mock. Useful for test assertions.
      *
      * @return list of AI player names
      */

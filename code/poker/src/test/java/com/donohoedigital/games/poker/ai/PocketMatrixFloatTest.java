@@ -27,15 +27,14 @@ import static com.donohoedigital.games.poker.engine.Card.*;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for PocketMatrixFloat storage of float values for all possible poker pockets.
+ * Tests for PocketMatrixFloat storage of float values for all possible poker
+ * pockets.
  */
-class PocketMatrixFloatTest
-{
+class PocketMatrixFloatTest {
     private PocketMatrixFloat matrix;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         matrix = new PocketMatrixFloat();
     }
 
@@ -44,16 +43,14 @@ class PocketMatrixFloatTest
     // ========================================
 
     @Test
-    void should_InitializeWithZeros_When_DefaultConstructor()
-    {
+    void should_InitializeWithZeros_When_DefaultConstructor() {
         assertThat(matrix.get(0, 1)).isZero();
         assertThat(matrix.get(10, 20)).isZero();
         assertThat(matrix.get(50, 51)).isZero();
     }
 
     @Test
-    void should_InitializeWithValue_When_ValueConstructor()
-    {
+    void should_InitializeWithValue_When_ValueConstructor() {
         PocketMatrixFloat matrixWith0_5 = new PocketMatrixFloat(0.5f);
 
         assertThat(matrixWith0_5.get(0, 1)).isEqualTo(0.5f);
@@ -62,8 +59,7 @@ class PocketMatrixFloatTest
     }
 
     @Test
-    void should_CopyAllValues_When_CopyConstructor()
-    {
+    void should_CopyAllValues_When_CopyConstructor() {
         PocketMatrixFloat original = new PocketMatrixFloat();
         original.set(5, 10, 0.123f);
         original.set(20, 30, 0.456f);
@@ -75,8 +71,7 @@ class PocketMatrixFloatTest
     }
 
     @Test
-    void should_BeIndependent_When_CopyConstructorUsed()
-    {
+    void should_BeIndependent_When_CopyConstructorUsed() {
         PocketMatrixFloat original = new PocketMatrixFloat();
         original.set(5, 10, 0.5f);
 
@@ -92,16 +87,14 @@ class PocketMatrixFloatTest
     // ========================================
 
     @Test
-    void should_StoreAndRetrieveValue_When_SettingByCardIndices()
-    {
+    void should_StoreAndRetrieveValue_When_SettingByCardIndices() {
         matrix.set(5, 10, 0.75f);
 
         assertThat(matrix.get(5, 10)).isEqualTo(0.75f);
     }
 
     @Test
-    void should_ReturnSameValue_When_IndicesReversed()
-    {
+    void should_ReturnSameValue_When_IndicesReversed() {
         matrix.set(5, 10, 0.333f);
 
         assertThat(matrix.get(10, 5)).isEqualTo(0.333f);
@@ -109,8 +102,7 @@ class PocketMatrixFloatTest
     }
 
     @Test
-    void should_OverwritePreviousValue_When_SettingSameIndicesTwice()
-    {
+    void should_OverwritePreviousValue_When_SettingSameIndicesTwice() {
         matrix.set(7, 14, 0.25f);
         matrix.set(7, 14, 0.99f);
 
@@ -122,16 +114,14 @@ class PocketMatrixFloatTest
     // ========================================
 
     @Test
-    void should_StoreAndRetrieveValue_When_SettingByCardObjects()
-    {
+    void should_StoreAndRetrieveValue_When_SettingByCardObjects() {
         matrix.set(SPADES_A, HEARTS_K, 0.875f);
 
         assertThat(matrix.get(SPADES_A, HEARTS_K)).isEqualTo(0.875f);
     }
 
     @Test
-    void should_ReturnSameValue_When_CardObjectsReversed()
-    {
+    void should_ReturnSameValue_When_CardObjectsReversed() {
         matrix.set(CLUBS_2, DIAMONDS_3, 0.111f);
 
         assertThat(matrix.get(DIAMONDS_3, CLUBS_2)).isEqualTo(0.111f);
@@ -143,8 +133,7 @@ class PocketMatrixFloatTest
     // ========================================
 
     @Test
-    void should_StoreAndRetrieveValue_When_SettingByHandObject()
-    {
+    void should_StoreAndRetrieveValue_When_SettingByHandObject() {
         Hand pocket = new Hand(SPADES_A, HEARTS_A);
 
         matrix.set(pocket, 0.999f);
@@ -153,8 +142,7 @@ class PocketMatrixFloatTest
     }
 
     @Test
-    void should_ReturnSameValue_When_AccessedViaHandOrIndividualCards()
-    {
+    void should_ReturnSameValue_When_AccessedViaHandOrIndividualCards() {
         Hand pocket = new Hand(CLUBS_J, SPADES_T);
 
         matrix.set(pocket, 0.625f);
@@ -168,8 +156,7 @@ class PocketMatrixFloatTest
     // ========================================
 
     @Test
-    void should_SetAllValuesToZero_When_ClearWithZero()
-    {
+    void should_SetAllValuesToZero_When_ClearWithZero() {
         matrix.set(5, 10, 0.5f);
         matrix.set(20, 30, 0.8f);
 
@@ -180,8 +167,7 @@ class PocketMatrixFloatTest
     }
 
     @Test
-    void should_SetAllValuesToSpecified_When_ClearWithValue()
-    {
+    void should_SetAllValuesToSpecified_When_ClearWithValue() {
         matrix.set(5, 10, 0.5f);
         matrix.set(20, 30, 0.8f);
 
@@ -197,48 +183,42 @@ class PocketMatrixFloatTest
     // ========================================
 
     @Test
-    void should_HandleVerySmallFloats_When_SettingNearZero()
-    {
+    void should_HandleVerySmallFloats_When_SettingNearZero() {
         matrix.set(10, 20, 0.0001f);
 
         assertThat(matrix.get(10, 20)).isEqualTo(0.0001f);
     }
 
     @Test
-    void should_HandleNegativeFloats_When_SettingAndGetting()
-    {
+    void should_HandleNegativeFloats_When_SettingAndGetting() {
         matrix.set(10, 20, -0.5f);
 
         assertThat(matrix.get(10, 20)).isEqualTo(-0.5f);
     }
 
     @Test
-    void should_HandleVeryLargeFloats_When_SettingAndGetting()
-    {
+    void should_HandleVeryLargeFloats_When_SettingAndGetting() {
         matrix.set(15, 25, 999999.999f);
 
         assertThat(matrix.get(15, 25)).isEqualTo(999999.999f);
     }
 
     @Test
-    void should_HandleFloatMaxValue_When_SettingAndGetting()
-    {
+    void should_HandleFloatMaxValue_When_SettingAndGetting() {
         matrix.set(15, 25, Float.MAX_VALUE);
 
         assertThat(matrix.get(15, 25)).isEqualTo(Float.MAX_VALUE);
     }
 
     @Test
-    void should_HandleFloatMinValue_When_SettingAndGetting()
-    {
+    void should_HandleFloatMinValue_When_SettingAndGetting() {
         matrix.set(15, 25, Float.MIN_VALUE);
 
         assertThat(matrix.get(15, 25)).isEqualTo(Float.MIN_VALUE);
     }
 
     @Test
-    void should_HandlePrecisionFloats_When_SettingDecimalValues()
-    {
+    void should_HandlePrecisionFloats_When_SettingDecimalValues() {
         matrix.set(10, 20, 0.123456789f);
 
         // Float precision is about 7 decimal digits
@@ -250,8 +230,7 @@ class PocketMatrixFloatTest
     // ========================================
 
     @Test
-    void should_ReturnZero_When_NegativeIndexProvided()
-    {
+    void should_ReturnZero_When_NegativeIndexProvided() {
         // Based on the implementation, negative indices return 0
         assertThat(matrix.get(-1, 5)).isZero();
     }
@@ -261,8 +240,7 @@ class PocketMatrixFloatTest
     // ========================================
 
     @Test
-    void should_HandleBoundaryCardIndices_When_SettingAndGetting()
-    {
+    void should_HandleBoundaryCardIndices_When_SettingAndGetting() {
         // 0 and 51 are valid card indices (52 cards total)
         matrix.set(0, 51, 0.0051f);
 
@@ -271,8 +249,7 @@ class PocketMatrixFloatTest
     }
 
     @Test
-    void should_HandleAllSuitedPairs_When_SettingDifferentValues()
-    {
+    void should_HandleAllSuitedPairs_When_SettingDifferentValues() {
         // Aces of different suits
         matrix.set(SPADES_A, HEARTS_A, 0.1f);
         matrix.set(SPADES_A, DIAMONDS_A, 0.2f);
@@ -282,8 +259,7 @@ class PocketMatrixFloatTest
     }
 
     @Test
-    void should_HandleSequentialIndices_When_TestingAdjacentCards()
-    {
+    void should_HandleSequentialIndices_When_TestingAdjacentCards() {
         // Test adjacent card indices
         matrix.set(0, 1, 0.01f);
         matrix.set(1, 2, 0.12f);
@@ -295,8 +271,7 @@ class PocketMatrixFloatTest
     }
 
     @Test
-    void should_HandleCommonProbabilityValues_When_SettingTypicalRanges()
-    {
+    void should_HandleCommonProbabilityValues_When_SettingTypicalRanges() {
         // Test common probability values (0.0 to 1.0)
         matrix.set(SPADES_A, HEARTS_K, 1.0f);
         matrix.set(CLUBS_K, DIAMONDS_Q, 0.8f);

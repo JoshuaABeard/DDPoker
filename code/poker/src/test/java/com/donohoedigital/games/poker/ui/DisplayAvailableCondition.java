@@ -26,41 +26,31 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.awt.*;
 
 /**
- * JUnit 5 extension that checks if a graphical display is available.
- * Used by {@link EnabledIfDisplay} annotation to skip UI tests in headless environments.
+ * JUnit 5 extension that checks if a graphical display is available. Used by
+ * {@link EnabledIfDisplay} annotation to skip UI tests in headless
+ * environments.
  */
-public class DisplayAvailableCondition implements ExecutionCondition
-{
+public class DisplayAvailableCondition implements ExecutionCondition {
     @Override
-    public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context)
-    {
+    public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
         // Check if display is available
         boolean hasDisplay = hasGraphicsEnvironment();
 
-        if (hasDisplay)
-        {
+        if (hasDisplay) {
             return ConditionEvaluationResult.enabled("Display is available");
-        }
-        else
-        {
-            return ConditionEvaluationResult.disabled(
-                "Test disabled: No display available (headless environment). " +
-                "UI tests require a graphics environment. " +
-                "See README-UI-TESTS.md for details."
-            );
+        } else {
+            return ConditionEvaluationResult.disabled("Test disabled: No display available (headless environment). "
+                    + "UI tests require a graphics environment. " + "See README-UI-TESTS.md for details.");
         }
     }
 
     /**
      * Check if a graphics environment is available.
      */
-    private boolean hasGraphicsEnvironment()
-    {
-        try
-        {
+    private boolean hasGraphicsEnvironment() {
+        try {
             // Check for headless mode
-            if (GraphicsEnvironment.isHeadless())
-            {
+            if (GraphicsEnvironment.isHeadless()) {
                 return false;
             }
 
@@ -70,13 +60,9 @@ public class DisplayAvailableCondition implements ExecutionCondition
 
             // Must have at least one screen device
             return devices != null && devices.length > 0;
-        }
-        catch (HeadlessException e)
-        {
+        } catch (HeadlessException e) {
             return false;
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             // If we can't determine, assume no display
             System.err.println("Warning: Could not determine if display is available: " + e.getMessage());
             return false;

@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -55,8 +55,7 @@ import java.util.*;
  * @author donohoe
  */
 @SuppressWarnings({"RawUseOfParameterizedType"})
-public class EmbeddedServletContext implements ServletContext
-{
+public class EmbeddedServletContext implements ServletContext {
     static Logger logger = LogManager.getLogger(EmbeddedServletContext.class);
 
     private String jspResourceDir;
@@ -65,47 +64,40 @@ public class EmbeddedServletContext implements ServletContext
     /**
      * Creates a new instance of GameServletContext
      */
-    public EmbeddedServletContext(String jspResourceDir)
-    {
+    public EmbeddedServletContext(String jspResourceDir) {
         this.jspResourceDir = jspResourceDir;
     }
 
-    public Object getAttribute(String str)
-    {
+    public Object getAttribute(String str) {
         // okay to ignore - we may want to respond
         // someday to requests so that we can configure jsp engine
 
-        //logger.warn("getAttribute called: " + str);
+        // logger.warn("getAttribute called: " + str);
         return attributes.get(str);
     }
 
-    public Enumeration getAttributeNames()
-    {
+    public Enumeration getAttributeNames() {
         logger.warn("getAttributeNames called");
         Vector<String> vector = new Vector<>(attributes.keySet());
         return vector.elements();
     }
 
-    public String getContextPath()
-    {
+    public String getContextPath() {
         logger.warn("getContextPath called");
         return null;
     }
 
-    public jakarta.servlet.ServletContext getContext(String str)
-    {
+    public jakarta.servlet.ServletContext getContext(String str) {
         logger.warn("getContext called: " + str);
         return null;
     }
 
-    public String getInitParameter(String str)
-    {
-        //logger.warn("getInitParameter called: " + str);
+    public String getInitParameter(String str) {
+        // logger.warn("getInitParameter called: " + str);
         return null;
     }
 
-    public Enumeration<String> getInitParameterNames()
-    {
+    public Enumeration<String> getInitParameterNames() {
         logger.warn("getInitParameterNames called");
         return null;
     }
@@ -113,13 +105,11 @@ public class EmbeddedServletContext implements ServletContext
     /**
      * Not really important what we return
      */
-    public int getMajorVersion()
-    {
+    public int getMajorVersion() {
         return 1;
     }
 
-    public String getMimeType(String str)
-    {
+    public String getMimeType(String str) {
         logger.warn("getMimeType called: " + str);
         return null;
     }
@@ -127,13 +117,11 @@ public class EmbeddedServletContext implements ServletContext
     /**
      * Not really important what we return
      */
-    public int getMinorVersion()
-    {
+    public int getMinorVersion() {
         return 0;
     }
 
-    public jakarta.servlet.RequestDispatcher getNamedDispatcher(String str)
-    {
+    public jakarta.servlet.RequestDispatcher getNamedDispatcher(String str) {
         logger.warn("getNamedDispatcher called: " + str);
         return null;
     }
@@ -141,13 +129,11 @@ public class EmbeddedServletContext implements ServletContext
     /**
      * Return location of file in filesystem
      */
-    public String getRealPath(String str)
-    {
+    public String getRealPath(String str) {
         return jspResourceDir + str;
     }
 
-    public RequestDispatcher getRequestDispatcher(String str)
-    {
+    public RequestDispatcher getRequestDispatcher(String str) {
         logger.warn("getRequestDispatcher called: " + str);
         return null;
     }
@@ -155,59 +141,49 @@ public class EmbeddedServletContext implements ServletContext
     /**
      * Return jsp page as a resource from the classpath.
      */
-    public URL getResource(String str) throws java.net.MalformedURLException
-    {
+    public URL getResource(String str) throws java.net.MalformedURLException {
         return ClassLoader.getSystemResource(jspResourceDir + str);
     }
 
     /**
      * Return the jsp file as an input stream
      */
-    public InputStream getResourceAsStream(String str)
-    {
-        try
-        {
+    public InputStream getResourceAsStream(String str) {
+        try {
             URL url = getResource(str);
-            if (url != null) return url.openStream();
+            if (url != null)
+                return url.openStream();
             return null;
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             throw new ApplicationError(e);
         }
     }
 
-    public Set getResourcePaths(String str)
-    {
+    public Set getResourcePaths(String str) {
         logger.warn("getResourcePaths called: " + str);
         return new java.util.HashSet();
     }
 
-    public String getServerInfo()
-    {
+    public String getServerInfo() {
         return "Donohoe Digital Game Server";
     }
 
-    public jakarta.servlet.Servlet getServlet(String str) throws jakarta.servlet.ServletException
-    {
+    public jakarta.servlet.Servlet getServlet(String str) throws jakarta.servlet.ServletException {
         logger.warn("getServlet called: " + str);
         return null;
     }
 
-    public String getServletContextName()
-    {
+    public String getServletContextName() {
         logger.warn("getServletContextName called");
         return null;
     }
 
-    public Enumeration getServletNames()
-    {
+    public Enumeration getServletNames() {
         logger.warn("getServletNames called");
         return null;
     }
 
-    public Enumeration getServlets()
-    {
+    public Enumeration getServlets() {
         logger.warn("getServlets called");
         return null;
     }
@@ -215,36 +191,31 @@ public class EmbeddedServletContext implements ServletContext
     /**
      * Log info through to our logger
      */
-    public void log(String str)
-    {
+    public void log(String str) {
         logger.info(str);
     }
 
     /**
      * Log info through to our logger
      */
-    public void log(Exception exception, String str)
-    {
+    public void log(Exception exception, String str) {
         logger.warn(str + " exception: " + Utils.formatExceptionText(exception));
     }
 
     /**
      * Log info through to our logger
      */
-    public void log(String str, Throwable throwable)
-    {
+    public void log(String str, Throwable throwable) {
         logger.warn(str + " exception: " + Utils.formatExceptionText(throwable));
     }
 
-    public void removeAttribute(String str)
-    {
+    public void removeAttribute(String str) {
         logger.warn("removeAttribute called: " + str);
         attributes.remove(str);
     }
 
-    public void setAttribute(String str, Object obj)
-    {
-        //logger.info("setAttribute called: " + str + " to " + obj);
+    public void setAttribute(String str, Object obj) {
+        // logger.info("setAttribute called: " + str + " to " + obj);
         attributes.put(str, obj);
     }
 

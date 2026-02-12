@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -47,13 +47,12 @@ import java.net.*;
 import java.util.*;
 
 /**
- * Loads audio.xml files in the module directories defined by
- * the appconfig.xml file.
+ * Loads audio.xml files in the module directories defined by the appconfig.xml
+ * file.
  *
  * @author donohoe
  */
-public class AudioConfig extends XMLConfigFileLoader
-{
+public class AudioConfig extends XMLConfigFileLoader {
     private static Logger aLogger = LogManager.getLogger(AudioConfig.class);
 
     private static final String AUDIO_CONFIG = "audio.xml";
@@ -77,8 +76,7 @@ public class AudioConfig extends XMLConfigFileLoader
      * Creates a new instance of AudioConfig from the Appconfig file
      */
     @SuppressWarnings({"AssignmentToStaticFieldFromInstanceMethod", "ThisEscapedInObjectConstruction"})
-    public AudioConfig(String[] modules) throws ApplicationError
-    {
+    public AudioConfig(String[] modules) throws ApplicationError {
         ApplicationError.warnNotNull(audioConfig, "AudioConfig is already initialized");
         audioConfig = this;
         init(modules);
@@ -87,28 +85,21 @@ public class AudioConfig extends XMLConfigFileLoader
     /**
      * set mute for fx
      */
-    public static void setMuteFX(boolean b)
-    {
+    public static void setMuteFX(boolean b) {
         bMuteFX_ = b;
     }
 
     /**
      * set mute for music
      */
-    public static void setMuteMusic(boolean b)
-    {
+    public static void setMuteMusic(boolean b) {
         bMuteMusic_ = b;
-        if (b)
-        {
-            if (lastMusic_ != null && lastMusic_.isPlaying())
-            {
+        if (b) {
+            if (lastMusic_ != null && lastMusic_.isPlaying()) {
                 lastMusic_.stop();
             }
-        }
-        else
-        {
-            if (lastMusic_ != null)
-            {
+        } else {
+            if (lastMusic_ != null) {
                 lastMusic_.play();
             }
         }
@@ -117,16 +108,12 @@ public class AudioConfig extends XMLConfigFileLoader
     /**
      * set mute for music
      */
-    public static void setMuteBGMusic(boolean b)
-    {
-        //logger.debug("Set mute BG music: " + b);
+    public static void setMuteBGMusic(boolean b) {
+        // logger.debug("Set mute BG music: " + b);
         bMuteBGMusic_ = b;
-        if (b)
-        {
+        if (b) {
             stopBackgroundMusic(false);
-        }
-        else
-        {
+        } else {
             restartBackgroundMusic(false);
         }
     }
@@ -134,51 +121,48 @@ public class AudioConfig extends XMLConfigFileLoader
     /**
      * Set fx gain (1 - 100)
      */
-    public static void setFXGain(int f)
-    {
+    public static void setFXGain(int f) {
         fFXGain_ = f / 100.0f;
     }
 
     /**
      * Set music gain (1-100)
      */
-    public static void setMusicGain(int f)
-    {
+    public static void setMusicGain(int f) {
         fMusicGain_ = f / 100.0f;
-        if (lastMusic_ != null) lastMusic_.setGain(fMusicGain_);
+        if (lastMusic_ != null)
+            lastMusic_.setGain(fMusicGain_);
     }
 
     /**
      * Set background music gain (1-100)
      */
-    public static void setBGMusicGain(int f)
-    {
+    public static void setBGMusicGain(int f) {
         fBGMusicGain_ = f / 100.0f;
-        if (bgMusic_ != null) bgMusic_.setGain(fBGMusicGain_);
+        if (bgMusic_ != null)
+            bgMusic_.setGain(fBGMusicGain_);
     }
 
     /**
      * Play a sound FX
      */
-    public static AudioPlayer playFX(String sName)
-    {
+    public static AudioPlayer playFX(String sName) {
         return playFX(sName, 0, false);
     }
 
     /**
      * Play a sound FX, with delay before playing
      */
-    public static AudioPlayer playFX(String sName, double sleepSecs)
-    {
+    public static AudioPlayer playFX(String sName, double sleepSecs) {
         return playFX(sName, sleepSecs, false);
     }
 
     /**
      * Play a sound FX, with delay before playing
      */
-    public static AudioPlayer playFX(String sName, double sleepSecs, boolean bLoop)
-    {
-        if (bMuteFX_) return null;
+    public static AudioPlayer playFX(String sName, double sleepSecs, boolean bLoop) {
+        if (bMuteFX_)
+            return null;
         AudioPlayer play = play(sName, fFXGain_, sleepSecs, bLoop, true, true);
         Utils.sleepMillis(75); // sleep calling thread so sound can play
         return play;
@@ -187,63 +171,60 @@ public class AudioConfig extends XMLConfigFileLoader
     /**
      * Play music
      */
-    public static AudioPlayer playMusic(String sName)
-    {
+    public static AudioPlayer playMusic(String sName) {
         return playMusic(sName, 0, false, false);
     }
 
     /**
      * Play music, with delay before playing
      */
-    public static AudioPlayer playMusic(String sName, double sleepSecs)
-    {
+    public static AudioPlayer playMusic(String sName, double sleepSecs) {
         return playMusic(sName, sleepSecs, false, false);
     }
 
     /**
      * Play music, with delay before playing
      */
-    public static AudioPlayer playMusic(String sName, double sleepSecs, boolean bLoop, boolean bRemember)
-    {
+    public static AudioPlayer playMusic(String sName, double sleepSecs, boolean bLoop, boolean bRemember) {
         AudioPlayer player = play(sName, fMusicGain_, sleepSecs, bLoop, true, false);
-        if (!bMuteMusic_) player.play();
-        if (bRemember) lastMusic_ = player;
+        if (!bMuteMusic_)
+            player.play();
+        if (bRemember)
+            lastMusic_ = player;
         return player;
     }
 
     /**
-     * Play sound request audio.  If bReportMissing is true, log message
-     * if audio not found.  Returns AudioDef which is playing the sound
+     * Play sound request audio. If bReportMissing is true, log message if audio not
+     * found. Returns AudioDef which is playing the sound
      */
-    private static AudioPlayer play(String sName, float fGain, double sleepSecs,
-                                    boolean bLoop, boolean bReportMissing, boolean bPlay)
-    {
+    private static AudioPlayer play(String sName, float fGain, double sleepSecs, boolean bLoop, boolean bReportMissing,
+            boolean bPlay) {
         AudioDef audio = getAudioDef(sName, bReportMissing);
-        if (audio == null)
-        {
+        if (audio == null) {
             aLogger.warn("Unable to play " + sName + " (not defined)");
             return null;
         }
         AudioPlayer player = new AudioPlayer(audio, fGain, sleepSecs, bLoop);
-        if (bPlay) player.play();
+        if (bPlay)
+            player.play();
         return player;
     }
 
     /**
      * Play first sound, then loop on the second
      */
-    public static AudioPlayer playMusicLoop(String sStart, String sLoop)
-    {
+    public static AudioPlayer playMusicLoop(String sStart, String sLoop) {
         AudioPlayer player = getMusicLoop(sStart, sLoop, fMusicGain_);
-        if (!bMuteMusic_) player.play();
+        if (!bMuteMusic_)
+            player.play();
         return player;
     }
 
     /**
      * Return player for looping, but not started
      */
-    private static AudioPlayer getMusicLoop(String sStart, String sLoop, float fGain)
-    {
+    private static AudioPlayer getMusicLoop(String sStart, String sLoop, float fGain) {
         AudioDef start = getAudioDef(sStart, false);
         ApplicationError.assertNotNull(start, "No audio found for " + sStart);
         AudioDef loop = getAudioDef(sLoop, false);
@@ -255,11 +236,10 @@ public class AudioConfig extends XMLConfigFileLoader
     /**
      * Stop last music returned if still playing and forgets it
      */
-    public static void stopLastMusic()
-    {
-        if (lastMusic_ != null)
-        {
-            if (lastMusic_.isPlaying()) lastMusic_.stop();
+    public static void stopLastMusic() {
+        if (lastMusic_ != null) {
+            if (lastMusic_.isPlaying())
+                lastMusic_.stop();
             lastMusic_ = null;
         }
     }
@@ -274,27 +254,20 @@ public class AudioConfig extends XMLConfigFileLoader
     /**
      * Start background music - play sStart followed by endless sLoop
      */
-    public static void startBackgroundMusic(String sStart, String sLoop, boolean bPlayStart)
-    {
-        //logger.debug("Start: " + sStart + " loop: " + sLoop + " bPlayStart: " + bPlayStart);
-        if (bgMusic_ != null)
-        {
-            //logger.debug("non null bgMusic_: " + bgMusic_);
-            if (!bPlayStart &&
-                ((sStart.equals(bgMusic_.getStartName()) &&
-                  sLoop.equals(bgMusic_.getLoopName())) ||
-                 // if didn't play start, then the music name
-                 // equals the loop
-                 (sLoop.equals(bgMusic_.getStartName()) &&
-                  bgMusic_.getLoopName() == null)))
-            {
-                //logger.debug("Already defined....");
+    public static void startBackgroundMusic(String sStart, String sLoop, boolean bPlayStart) {
+        // logger.debug("Start: " + sStart + " loop: " + sLoop + " bPlayStart: " +
+        // bPlayStart);
+        if (bgMusic_ != null) {
+            // logger.debug("non null bgMusic_: " + bgMusic_);
+            if (!bPlayStart && ((sStart.equals(bgMusic_.getStartName()) && sLoop.equals(bgMusic_.getLoopName())) ||
+            // if didn't play start, then the music name
+            // equals the loop
+                    (sLoop.equals(bgMusic_.getStartName()) && bgMusic_.getLoopName() == null))) {
+                // logger.debug("Already defined....");
                 resumeBackgroundMusic();
                 return; // bg music defined, just resume
-            }
-            else
-            {
-                //logger.debug("Stop....");
+            } else {
+                // logger.debug("Stop....");
                 bgMusic_.stop();
                 bgMusic_ = null;
             }
@@ -303,15 +276,11 @@ public class AudioConfig extends XMLConfigFileLoader
         sLoop_ = sLoop;
         bgMusic_ = getMusicLoop(sStart, sLoop, fBGMusicGain_);
 
-        if (!bMuteBGMusic_)
-        {
-            if (bPlayStart)
-            {
-                //logger.debug("Play...."+bgMusic_);
+        if (!bMuteBGMusic_) {
+            if (bPlayStart) {
+                // logger.debug("Play...."+bgMusic_);
                 bgMusic_.play();
-            }
-            else
-            {
+            } else {
                 restartBackgroundMusic(true);
             }
         }
@@ -320,45 +289,46 @@ public class AudioConfig extends XMLConfigFileLoader
     /**
      * Restart background music using sLoop_;
      */
-    public static void restartBackgroundMusic(boolean bRestartIfNull)
-    {
-        //logger.debug("restartBackground music, bgMusic_ = " + bgMusic_ + " bMuteBGMusic_=" + bMuteBGMusic_
-        //                            + "  sLoop_=" + sLoop_);
-        if (bgMusic_ == null && !bRestartIfNull) return;
-        if (bMuteBGMusic_) return;
-        if (bgMusic_ != null && (bgMusic_.isPlaying() || bgMusic_.isPaused())) return;
-        if (sLoop_ == null) return;
+    public static void restartBackgroundMusic(boolean bRestartIfNull) {
+        // logger.debug("restartBackground music, bgMusic_ = " + bgMusic_ + "
+        // bMuteBGMusic_=" + bMuteBGMusic_
+        // + " sLoop_=" + sLoop_);
+        if (bgMusic_ == null && !bRestartIfNull)
+            return;
+        if (bMuteBGMusic_)
+            return;
+        if (bgMusic_ != null && (bgMusic_.isPlaying() || bgMusic_.isPaused()))
+            return;
+        if (sLoop_ == null)
+            return;
         bgMusic_ = play(sLoop_, fBGMusicGain_, 0, true, true, true);
     }
 
     /**
      * Stop background music from playing
      */
-    public static void stopBackgroundMusic()
-    {
+    public static void stopBackgroundMusic() {
         stopBackgroundMusic(true);
     }
 
     /**
      * stop background music, set to null if true
      */
-    private static void stopBackgroundMusic(boolean bNull)
-    {
-        //logger.debug("Stopping background music, bgMusic_ = " + bgMusic_ + " null? " + bNull);
-        if (bgMusic_ != null)
-        {
+    private static void stopBackgroundMusic(boolean bNull) {
+        // logger.debug("Stopping background music, bgMusic_ = " + bgMusic_ + " null? "
+        // + bNull);
+        if (bgMusic_ != null) {
             bgMusic_.stop();
-            if (bNull) bgMusic_ = null;
+            if (bNull)
+                bgMusic_ = null;
         }
     }
 
     /**
      * Pause background music
      */
-    public static void pauseBackgroundMusic()
-    {
-        if (bgMusic_ != null)
-        {
+    public static void pauseBackgroundMusic() {
+        if (bgMusic_ != null) {
             bgMusic_.pause();
         }
     }
@@ -366,19 +336,15 @@ public class AudioConfig extends XMLConfigFileLoader
     /**
      * Resume background music
      */
-    public static void resumeBackgroundMusic()
-    {
-        if (bgMusic_ != null)
-        {
+    public static void resumeBackgroundMusic() {
+        if (bgMusic_ != null) {
             // if now off, stop it
-            if (bMuteBGMusic_)
-            {
+            if (bMuteBGMusic_) {
                 bgMusic_.stop();
-            }
-            else
-            {
+            } else {
                 bgMusic_.resume();
-                if (!bgMusic_.isPlaying()) bgMusic_.play();
+                if (!bgMusic_.isPlaying())
+                    bgMusic_.play();
             }
         }
     }
@@ -390,13 +356,10 @@ public class AudioConfig extends XMLConfigFileLoader
     /**
      * Get audio def of given name
      */
-    public static AudioDef getAudioDef(String sName, boolean bReportMissing)
-    {
+    public static AudioDef getAudioDef(String sName, boolean bReportMissing) {
         AudioDef audio = audioConfig.audios_.get(sName);
-        if (audio == null)
-        {
-            if (bReportMissing)
-            {
+        if (audio == null) {
+            if (bReportMissing) {
                 aLogger.warn("No audio found for " + sName);
             }
             return null;
@@ -407,31 +370,24 @@ public class AudioConfig extends XMLConfigFileLoader
     /**
      * Load audios from modules
      */
-    private void init(String[] modules) throws ApplicationError
-    {
+    private void init(String[] modules) throws ApplicationError {
         ApplicationError.assertNotNull(modules, "Modules list is null");
 
         // on mac, this prevents multiple threads from being left around on Mac platform
-        // very weird bug.  FIX: is this a 1.5 issue?
-        if (Utils.ISMAC)
-        {
-            try
-            {
+        // very weird bug. FIX: is this a 1.5 issue?
+        if (Utils.ISMAC) {
+            try {
                 MidiSystem.getSequencer();
-            }
-            catch (MidiUnavailableException e)
-            {
+            } catch (MidiUnavailableException e) {
                 // ignore
             }
         }
 
         Document doc;
-        for (String module : modules)
-        {
+        for (String module : modules) {
             // if audio file is missing, no big deal
             URL url = new MatchingResources("classpath*:config/" + module + "/" + AUDIO_CONFIG).getSingleResourceURL();
-            if (url != null)
-            {
+            if (url != null) {
                 doc = this.loadXMLUrl(url, "audio.xsd");
                 init(doc, module);
             }
@@ -441,8 +397,7 @@ public class AudioConfig extends XMLConfigFileLoader
     /**
      * Initialize from JDOM doc
      */
-    private void init(Document doc, String module) throws ApplicationError
-    {
+    private void init(Document doc, String module) throws ApplicationError {
         Element root = doc.getRootElement();
 
         // audiodir name
@@ -450,11 +405,11 @@ public class AudioConfig extends XMLConfigFileLoader
 
         // get list of audios
         List<Element> audios = getChildren(root, "audio", ns_, false, AUDIO_CONFIG);
-        if (audios == null) return;
+        if (audios == null)
+            return;
 
         // create audiodef for each one
-        for (Element audio : audios)
-        {
+        for (Element audio : audios) {
             initAudio(audio, module, audiodir);
         }
     }
@@ -462,15 +417,13 @@ public class AudioConfig extends XMLConfigFileLoader
     /**
      * Read audio info
      */
-    private void initAudio(Element audio, String module, String audiodir) throws ApplicationError
-    {
+    private void initAudio(Element audio, String module, String audiodir) throws ApplicationError {
         String sName = getStringAttributeValue(audio, "name", true, AUDIO_CONFIG);
         String sLocation = getStringAttributeValue(audio, "location", true, AUDIO_CONFIG);
 
         String location = module + "/" + audiodir + "/" + sLocation;
         URL url = new MatchingResources("classpath*:config/" + location).getSingleResourceURL();
-        if (url == null)
-        {
+        if (url == null) {
             aLogger.warn("Audio " + sName + " not found at " + location + ".  Skipping");
             return;
         }
@@ -480,10 +433,12 @@ public class AudioConfig extends XMLConfigFileLoader
 
     /**
      * Reset AudioConfig for testing.
-     * <p><strong>WARNING:</strong> Only call this from test code, never from production code.</p>
+     * <p>
+     * <strong>WARNING:</strong> Only call this from test code, never from
+     * production code.
+     * </p>
      */
-    public static void resetForTesting()
-    {
+    public static void resetForTesting() {
         audioConfig = null;
     }
 }

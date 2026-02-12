@@ -62,7 +62,7 @@ public class PokerJetty {
             } else {
                 logger.info(">>> PRESS ANY KEY TO STOP");
                 while (System.in.available() == 0) {
-                    //noinspection BusyWait
+                    // noinspection BusyWait
                     Thread.sleep(500);
                 }
                 server.stop();
@@ -81,8 +81,8 @@ public class PokerJetty {
 
         // Configure HTTP settings for large file downloads (MSI files are ~100MB)
         HttpConfiguration httpConfig = new HttpConfiguration();
-        httpConfig.setOutputBufferSize(32768);      // 32KB buffer for chunking
-        httpConfig.setOutputAggregationSize(8192);  // Aggregate up to 8KB before flushing
+        httpConfig.setOutputBufferSize(32768); // 32KB buffer for chunking
+        httpConfig.setOutputAggregationSize(8192); // Aggregate up to 8KB before flushing
         httpConfig.setRequestHeaderSize(8192);
         httpConfig.setResponseHeaderSize(8192);
         httpConfig.setSendServerVersion(false);
@@ -93,7 +93,7 @@ public class PokerJetty {
         Server server = new Server();
         ServerConnector connector = new ServerConnector(server, new HttpConnectionFactory(httpConfig));
         connector.setPort(port);
-        connector.setIdleTimeout(300000);  // 5 minute timeout for large downloads
+        connector.setIdleTimeout(300000); // 5 minute timeout for large downloads
         server.addConnector(connector);
 
         // Setup webapp context
@@ -105,7 +105,7 @@ public class PokerJetty {
         String warPath = System.getProperty("pokerweb.war.path", "code/pokerwicket/src/main/webapp");
         webAppContext.setWar(warPath);
         // Allow large file uploads (MSI files are ~100MB)
-        webAppContext.setMaxFormContentSize(150 * 1024 * 1024);  // 150MB
+        webAppContext.setMaxFormContentSize(150 * 1024 * 1024); // 150MB
         webAppContext.setMaxFormKeys(10000);
 
         server.setHandler(webAppContext);

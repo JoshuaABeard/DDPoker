@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -46,9 +46,8 @@ import java.util.prefs.*;
 /**
  * @author donohoe
  */
-public class DDFileChooser extends JFileChooser implements DDTextVisibleComponent, PropertyChangeListener
-{
-    //static Logger logger = LogManager.getLogger(DDFileChooser.class);
+public class DDFileChooser extends JFileChooser implements DDTextVisibleComponent, PropertyChangeListener {
+    // static Logger logger = LogManager.getLogger(DDFileChooser.class);
 
     private Preferences prefs_;
     private String sPrefName_;
@@ -57,8 +56,7 @@ public class DDFileChooser extends JFileChooser implements DDTextVisibleComponen
      * Creates a new instance of DDFileChooser
      */
     @SuppressWarnings({"ThisEscapedInObjectConstruction"})
-    public DDFileChooser(String sName, String sStyle, Preferences prefs)
-    {
+    public DDFileChooser(String sName, String sStyle, Preferences prefs) {
         super();
         prefs_ = prefs;
         sPrefName_ = getType() + "-" + sName;
@@ -72,11 +70,9 @@ public class DDFileChooser extends JFileChooser implements DDTextVisibleComponen
         GuiManager.init(this, sName, sStyle);
         // init current dir from prefs
         String sCurrent = prefs_.get(sPrefName_, null);
-        if (sCurrent != null)
-        {
+        if (sCurrent != null) {
             File dir = new File(sCurrent);
-            if (dir.exists() && dir.isDirectory())
-            {
+            if (dir.exists() && dir.isDirectory()) {
                 setCurrentDirectory(dir);
             }
         }
@@ -87,19 +83,16 @@ public class DDFileChooser extends JFileChooser implements DDTextVisibleComponen
     /**
      * styles name
      */
-    public String getType()
-    {
+    public String getType() {
         return "filechooser";
     }
 
     /**
      * Property change
      */
-    public void propertyChange(PropertyChangeEvent evt)
-    {
+    public void propertyChange(PropertyChangeEvent evt) {
         String sName = evt.getPropertyName();
-        if (sName.equals(JFileChooser.DIRECTORY_CHANGED_PROPERTY))
-        {
+        if (sName.equals(JFileChooser.DIRECTORY_CHANGED_PROPERTY)) {
             // save in prefs
             prefs_.put(sPrefName_, getCurrentDirectory().getAbsolutePath());
         }

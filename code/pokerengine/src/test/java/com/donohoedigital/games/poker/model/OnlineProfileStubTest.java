@@ -28,8 +28,8 @@ import java.util.Date;
 import static org.junit.Assert.*;
 
 /**
- * Tests for OnlineProfile license/activation stub methods.
- * Verifies that removed license functionality is properly stubbed for backward compatibility.
+ * Tests for OnlineProfile license/activation stub methods. Verifies that
+ * removed license functionality is properly stubbed for backward compatibility.
  */
 public class OnlineProfileStubTest {
 
@@ -232,4 +232,3 @@ public class OnlineProfileStubTest {
         assertNull("Empty profile license key should remain null", emptyProfile.getLicenseKey());
     }
 }
-

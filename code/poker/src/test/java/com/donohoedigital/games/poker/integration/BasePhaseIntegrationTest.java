@@ -19,7 +19,6 @@
  */
 package com.donohoedigital.games.poker.integration;
 
-import com.donohoedigital.base.ApplicationError;
 import com.donohoedigital.base.TypedHashMap;
 import com.donohoedigital.games.config.GameButton;
 import com.donohoedigital.games.config.GameState;
@@ -36,7 +35,9 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Integration tests for BasePhase using real GameEngine infrastructure.
  *
- * <p>Tests BasePhase business logic and state management with minimal mocking.</p>
+ * <p>
+ * Tests BasePhase business logic and state management with minimal mocking.
+ * </p>
  */
 @Tag("slow")
 class BasePhaseIntegrationTest extends IntegrationTestBase {
@@ -205,7 +206,7 @@ class BasePhaseIntegrationTest extends IntegrationTestBase {
         phase.setResult(complexResult);
 
         assertThat(phase.getResult()).isEqualTo(complexResult);
-        assertThat(((TypedHashMap)phase.getResult()).getString("key")).isEqualTo("value");
+        assertThat(((TypedHashMap) phase.getResult()).getString("key")).isEqualTo("value");
     }
 
     @Test

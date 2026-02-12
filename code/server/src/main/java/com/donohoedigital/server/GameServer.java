@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -42,8 +42,7 @@ import java.nio.channels.*;
 import java.util.*;
 
 @SuppressWarnings({"UseOfSystemOutOrSystemErr"})
-public abstract class GameServer extends Thread
-{
+public abstract class GameServer extends Thread {
     protected static Logger logger = LogManager.getLogger(GameServer.class);
 
     static boolean DEBUG_ONLINE = false;
@@ -84,21 +83,18 @@ public abstract class GameServer extends Thread
     /**
      * default constructor
      */
-    public GameServer()
-    {
+    public GameServer() {
         setName("GameServer");
     }
 
     /**
      * Return app name
      */
-    public final String getAppName()
-    {
+    public final String getAppName() {
         return appName;
     }
 
-    public final void setAppName(String appName)
-    {
+    public final void setAppName(String appName) {
         setName(appName); // set thread name too
         this.appName = appName;
     }
@@ -111,10 +107,9 @@ public abstract class GameServer extends Thread
     }
 
     /**
-     * Set the servlet.  Calls setServer(this) on the given servlet
+     * Set the servlet. Calls setServer(this) on the given servlet
      */
-    public final void setServlet(BaseServlet servlet)
-    {
+    public final void setServlet(BaseServlet servlet) {
         servlet_ = servlet;
         servlet_.setServer(this);
     }
@@ -122,89 +117,76 @@ public abstract class GameServer extends Thread
     /**
      * Get the servlet
      */
-    public final BaseServlet getServlet()
-    {
+    public final BaseServlet getServlet() {
         return servlet_;
     }
 
     /**
-     * Is ConfigManager init required?
-     * Default is true.  Returning false allows this
+     * Is ConfigManager init required? Default is true. Returning false allows this
      * framework to be used in client applications
      */
-    public final boolean isConfigLoadRequired()
-    {
+    public final boolean isConfigLoadRequired() {
         return configLoadRequired;
     }
 
     /**
      * Set whether config file loading is required (do so prior to init())
      */
-    public final void setConfigLoadRequired(boolean b)
-    {
+    public final void setConfigLoadRequired(boolean b) {
         configLoadRequired = b;
     }
 
     /**
-     * Should the loopback address (127.0.0.1) be bound?  Default is false
+     * Should the loopback address (127.0.0.1) be bound? Default is false
      */
-    public final boolean isBindLoopback()
-    {
+    public final boolean isBindLoopback() {
         return bindLoopback;
     }
 
     /**
      * Set whether to bind loopback address
      */
-    public final void setBindLoopback(boolean bindLoopback)
-    {
+    public final void setBindLoopback(boolean bindLoopback) {
         this.bindLoopback = bindLoopback;
     }
 
     /**
-     * Should an exception should be thrown if no ports are bound.  Default is true.
+     * Should an exception should be thrown if no ports are bound. Default is true.
      */
-    public final boolean isExceptionOnNoPortsBound()
-    {
+    public final boolean isExceptionOnNoPortsBound() {
         return exceptionOnNoPortsBound;
     }
 
     /**
      * Set whether an exception should be thrown if no ports are bound.
      */
-    public final void setExceptionOnNoPortsBound(boolean exceptionOnNoPortsBound)
-    {
+    public final void setExceptionOnNoPortsBound(boolean exceptionOnNoPortsBound) {
         this.exceptionOnNoPortsBound = exceptionOnNoPortsBound;
     }
 
     /**
-     * Should log status messages?  Default is true.
+     * Should log status messages? Default is true.
      */
-    public boolean isLogStatus()
-    {
+    public boolean isLogStatus() {
         return logStatus;
     }
 
     /**
-     * Set whether to log status messages.  Default is true.
+     * Set whether to log status messages. Default is true.
      */
-    public void setLogStatus(boolean logStatus)
-    {
+    public void setLogStatus(boolean logStatus) {
         this.logStatus = logStatus;
     }
 
     /**
-     * Must call this after constructor (to do binding and other init) before calling
-     * start() - to start in its own thread or run() - to run in current thread
+     * Must call this after constructor (to do binding and other init) before
+     * calling start() - to start in its own thread or run() - to run in current
+     * thread
      */
-    public void init()
-    {
-        try
-        {
+    public void init() {
+        try {
             _init();
-        }
-        catch (Throwable t)
-        {
+        } catch (Throwable t) {
             System.err.println("GameServer error: " + Utils.formatExceptionText(t));
             throw new ApplicationError(t);
         }
@@ -213,20 +195,16 @@ public abstract class GameServer extends Thread
     /**
      * standard init of ConfigFiles, logger, DDMailQueue
      */
-    protected void initConfig()
-    {
+    protected void initConfig() {
         // Use the server security provider.
         // Not used with change to Hibernate - commenting out as of DD Poker 3
-        //SecurityUtils.setSecurityProvider(new ServerSecurityProvider());
+        // SecurityUtils.setSecurityProvider(new ServerSecurityProvider());
 
         // init config stuff
-        if (isConfigLoadRequired())
-        {
+        if (isConfigLoadRequired()) {
             ApplicationError.assertNotNull(getAppName(), "Application name must be set");
             new ConfigManager(getAppName(), ApplicationType.SERVER);
-        }
-        else
-        {
+        } else {
             setAppName(ConfigManager.getAppName());
         }
 
@@ -238,8 +216,7 @@ public abstract class GameServer extends Thread
      * Start up server
      */
     @SuppressWarnings({"AssignmentToStaticFieldFromInstanceMethod"})
-    private void _init() throws IOException
-    {
+    private void _init() throws IOException {
         // add destroy hook
         shutdown_ = new Shutdown();
         Runtime.getRuntime().addShutdownHook(shutdown_);
@@ -264,7 +241,8 @@ public abstract class GameServer extends Thread
         bindLoopback = PropertyConfig.getBooleanProperty("settings.server.bind.loopback", false, false);
         bBindFailover_ = PropertyConfig.getBooleanProperty("settings.server.failover", false, false);
         nFailoverAttempts_ = PropertyConfig.getIntegerProperty("settings.server.failover.attempts", 2);
-        String sSocketThreadClass = PropertyConfig.getStringProperty("settings.server.thread.class", SocketThread.class.getName(), false);
+        String sSocketThreadClass = PropertyConfig.getStringProperty("settings.server.thread.class",
+                SocketThread.class.getName(), false);
 
         // display info
         logger.info("Listening on port(s) " + sPort_ + ";  threads: " + nThreads);
@@ -289,29 +267,25 @@ public abstract class GameServer extends Thread
         List<InetAddress> activeIPs = new ArrayList<>();
 
         // config file IPs (may be empty)
-        while (ips != null && ips.hasMoreTokens())
-        {
+        while (ips != null && ips.hasMoreTokens()) {
             configIPs.add(ips.nextToken());
         }
 
         // loop over all IPs
         Enumeration<NetworkInterface> enu = NetworkInterface.getNetworkInterfaces();
-        while (enu.hasMoreElements())
-        {
+        while (enu.hasMoreElements()) {
             NetworkInterface ni = enu.nextElement();
             Enumeration<InetAddress> ias = ni.getInetAddresses();
-            while (ias.hasMoreElements())
-            {
+            while (ias.hasMoreElements()) {
                 // if an IP4 (non loopback), add it to list
                 InetAddress i = ias.nextElement();
-                if (i instanceof Inet4Address)
-                {
-                    if (!bindLoopback && i.isLoopbackAddress()) continue;
+                if (i instanceof Inet4Address) {
+                    if (!bindLoopback && i.isLoopbackAddress())
+                        continue;
 
                     actualIPs.add(i);
 
-                    if (configIPs.contains(i.getHostAddress()))
-                    {
+                    if (configIPs.contains(i.getHostAddress())) {
                         activeIPs.add(i);
                         configIPs.remove(i.getHostAddress());
                         logger.info("Using specific address: " + i.getHostAddress());
@@ -322,37 +296,30 @@ public abstract class GameServer extends Thread
         }
 
         // if activeIPs is empty, use all IPs
-        if (activeIPs.isEmpty())
-        {
+        if (activeIPs.isEmpty()) {
             logger.info("Using all addresses (TCP)");
             activeIPs = actualIPs;
         }
 
         // loop over all ports
-        while (ports.hasMoreTokens())
-        {
-            try
-            {
+        while (ports.hasMoreTokens()) {
+            try {
                 port = ports.nextToken();
                 nPort = Integer.parseInt(port);
 
                 // set the port the server channel will listen to
                 logger.info("Processing port " + nPort + "...");
 
-                for (InetAddress i : activeIPs)
-                {
+                for (InetAddress i : activeIPs) {
                     // allocate an unbound server socket channel
                     channel = ServerSocketChannel.open();
                     socket = channel.socket();
 
                     logger.info("Binding: " + i.getHostAddress() + ":" + nPort);
 
-                    try
-                    {
+                    try {
                         bind(socket, i, nPort);
-                    }
-                    catch (SocketException be)
-                    {
+                    } catch (SocketException be) {
                         logger.error("Unable to bind: " + Utils.getExceptionMessage(be));
                         continue;
                     }
@@ -361,8 +328,7 @@ public abstract class GameServer extends Thread
                     channels_.add(channel);
 
                     // default channel - first non loopback
-                    if (defaultChannel_ == null || defaultChannel_.socket().getInetAddress().isLoopbackAddress())
-                    {
+                    if (defaultChannel_ == null || defaultChannel_.socket().getInetAddress().isLoopbackAddress()) {
                         defaultChannel_ = channel;
                     }
 
@@ -372,24 +338,20 @@ public abstract class GameServer extends Thread
                     // register with selector
                     channel.register(selector_, SelectionKey.OP_ACCEPT);
                 }
-            }
-            catch (NumberFormatException nfe)
-            {
+            } catch (NumberFormatException nfe) {
                 logger.error("Unable to parse: " + port);
             }
         }
 
         // make sure we have one valid port
-        if (channels_.isEmpty() && exceptionOnNoPortsBound)
-        {
-            throw new ApplicationError(ErrorCodes.ERROR_SERVER_NO_PORTS,
-                                       "No ports were bound", sPort_, null);
+        if (channels_.isEmpty() && exceptionOnNoPortsBound) {
+            throw new ApplicationError(ErrorCodes.ERROR_SERVER_NO_PORTS, "No ports were bound", sPort_, null);
         }
 
         // store first port as preferred
-        if (!channels_.isEmpty())
-        {
-            logger.info("Preferred TCP (online server) address set to " + Utils.getLocalAddressPort(getDefaultChannel()));
+        if (!channels_.isEmpty()) {
+            logger.info(
+                    "Preferred TCP (online server) address set to " + Utils.getLocalAddressPort(getDefaultChannel()));
         }
 
         // create pool
@@ -399,20 +361,16 @@ public abstract class GameServer extends Thread
     /**
      * Attempt bind, failover to next port if desired
      */
-    private void bind(ServerSocket socket, InetAddress ia, int nPort) throws IOException
-    {
+    private void bind(ServerSocket socket, InetAddress ia, int nPort) throws IOException {
         int nAttempts = nFailoverAttempts_;
         IOException e = null;
-        for (int i = 0; i < nAttempts; i++)
-        {
-            try
-            {
+        for (int i = 0; i < nAttempts; i++) {
+            try {
                 socket.bind(new InetSocketAddress(ia, nPort));
                 return;
-            }
-            catch (IOException e2)
-            {
-                if (!bBindFailover_) throw e2;
+            } catch (IOException e2) {
+                if (!bBindFailover_)
+                    throw e2;
                 logger.info("Failed binding to " + ia.getHostAddress() + ":" + nPort + ", trying port " + (nPort + 1));
                 nPort++;
                 e = e2;
@@ -426,66 +384,60 @@ public abstract class GameServer extends Thread
     /**
      * return preferred port
      */
-    public int getPreferredPort()
-    {
-        if (defaultChannel_ != null) return defaultChannel_.socket().getLocalPort();
+    public int getPreferredPort() {
+        if (defaultChannel_ != null)
+            return defaultChannel_.socket().getLocalPort();
         return -1;
     }
 
     /**
      * return preferred ip
      */
-    public String getPreferredIP()
-    {
-        if (defaultChannel_ != null) return defaultChannel_.socket().getInetAddress().getHostAddress();
+    public String getPreferredIP() {
+        if (defaultChannel_ != null)
+            return defaultChannel_.socket().getInetAddress().getHostAddress();
         return "127.0.0.1";
     }
 
     /**
      * return if bound
      */
-    public boolean isBound()
-    {
+    public boolean isBound() {
         return defaultChannel_ != null;
     }
 
     /**
      * Return port(s) specified in config file
      */
-    public String getConfigPort()
-    {
+    public String getConfigPort() {
         return sPort_;
     }
 
     /**
      * return default DatagramChannel
      */
-    public ServerSocketChannel getDefaultChannel()
-    {
+    public ServerSocketChannel getDefaultChannel() {
         return defaultChannel_;
     }
 
     /**
      * Get number of workers in the pool
      */
-    public int getNumWorkerThreads()
-    {
+    public int getNumWorkerThreads() {
         return pool_.size();
     }
 
     /**
      * Increase pool size by given number
      */
-    public void addWorkers(int nWorkers)
-    {
+    public void addWorkers(int nWorkers) {
         pool_.addWorkers(nWorkers);
     }
 
     /**
      * run method
      */
-    public void run()
-    {
+    public void run() {
         // our thread
         mainThread_ = Thread.currentThread();
 
@@ -494,54 +446,40 @@ public abstract class GameServer extends Thread
         int n;
 
         // MAIN: loop forever, processing requests
-        while (!bDone_)
-        {
+        while (!bDone_) {
             // this may block for a long time, upon return the
             // selected set contains keys of the ready channels
-            try
-            {
+            try {
                 n = selector_.select();
-            }
-            catch (Throwable t)
-            {
+            } catch (Throwable t) {
                 // don't print to log if interrupted system call - happens on shutdown,
                 // in particular on Linux
-                if (!bDone_ && !Utils.getExceptionMessage(t).contains("Interrupted system call"))
-                {
+                if (!bDone_ && !Utils.getExceptionMessage(t).contains("Interrupted system call")) {
                     logger.error("selector.select() error: " + Utils.formatExceptionText(t));
                 }
                 continue;
             }
 
-            try
-            {
+            try {
                 // process selection
-                if (n > 0)
-                {
+                if (n > 0) {
                     processSelection();
                 }
 
                 // register any new sockets
                 q = getRegisterQueue();
-                if (q != null)
-                {
+                if (q != null) {
                     selector_.selectNow(); // clear cancelled keys
-                    for (Qentry entry : q)
-                    {
-                        try
-                        {
+                    for (Qentry entry : q) {
+                        try {
                             registerChannel(entry.channel, entry.ops);
-                        }
-                        catch (IOException ioe)
-                        {
+                        } catch (IOException ioe) {
                             logger.error("registerChannel error: " + Utils.formatExceptionText(ioe));
                         }
 
                     }
                 }
-            }
-            catch (Throwable t)
-            {
+            } catch (Throwable t) {
                 logger.error("processing error: " + Utils.formatExceptionText(t));
             }
         }
@@ -554,15 +492,12 @@ public abstract class GameServer extends Thread
     /**
      * Shutdown thread for cleanup
      */
-    private class Shutdown extends Thread
-    {
-        public Shutdown()
-        {
+    private class Shutdown extends Thread {
+        public Shutdown() {
             setName("GameServer-Shutdown");
         }
 
-        public void run()
-        {
+        public void run() {
             logger.debug("GameServer shutting down...");
             shutdown(false);
         }
@@ -571,42 +506,36 @@ public abstract class GameServer extends Thread
     /**
      * Stop the game server
      */
-    public void shutdown()
-    {
+    public void shutdown() {
         shutdown(true);
     }
 
     /**
      * stop the game server, remove shutdown hook if directed to do so
      */
-    protected void shutdown(boolean bRemoveHook)
-    {
+    protected void shutdown(boolean bRemoveHook) {
         // set done flag, remove shutdown hook
         bDone_ = true;
-        if (bRemoveHook) Runtime.getRuntime().removeShutdownHook(shutdown_);
+        if (bRemoveHook)
+            Runtime.getRuntime().removeShutdownHook(shutdown_);
 
         // close selector
-        try
-        {
+        try {
             selector_.wakeup();
             selector_.close();
-        }
-        catch (Throwable ignore)
-        {
-            //logger.debug("Caught exception shutting down selector: " + Utils.formatExceptionText(ignore));
+        } catch (Throwable ignore) {
+            // logger.debug("Caught exception shutting down selector: " +
+            // Utils.formatExceptionText(ignore));
         }
 
         // close all sockets to release ports
-        for (ServerSocketChannel channel : channels_)
-        {
-            try
-            {
+        for (ServerSocketChannel channel : channels_) {
+            try {
                 logger.info("GameServer closing " + Utils.getLocalAddressPort(channel));
                 channel.socket().close();
-            }
-            catch (Throwable ignore)
-            {
-                //logger.debug("Caught exception shutting down socket: " + Utils.formatExceptionText(ignore));
+            } catch (Throwable ignore) {
+                // logger.debug("Caught exception shutting down socket: " +
+                // Utils.formatExceptionText(ignore));
             }
         }
 
@@ -619,59 +548,56 @@ public abstract class GameServer extends Thread
     /**
      * Logic to process selected keys
      */
-    private void processSelection()
-    {
+    private void processSelection() {
         // get an iterator over the set of selected keys
         Iterator<SelectionKey> iter = selector_.selectedKeys().iterator();
 
         // look at each key in the selected set
-        while (iter.hasNext())
-        {
+        while (iter.hasNext()) {
             nNum_++;
 
             SelectionKey key = iter.next();
 
-            try
-            {
+            try {
                 // Is a new connection coming in?
-                if (key.isAcceptable())
-                {
-                    if (DEBUG_ONLINE) logger.debug("[" + nNum_ + "] ACCEPTING NEW CONNECTION");
+                if (key.isAcceptable()) {
+                    if (DEBUG_ONLINE)
+                        logger.debug("[" + nNum_ + "] ACCEPTING NEW CONNECTION");
 
                     ServerSocketChannel server = (ServerSocketChannel) key.channel();
                     SocketChannel channel = server.accept();
 
                     // socket options
-                    if (Utils.TCPNODELAY) channel.socket().setTcpNoDelay(true);
+                    if (Utils.TCPNODELAY)
+                        channel.socket().setTcpNoDelay(true);
                     channel.socket().setSoLinger(false, 0);
                     channel.socket().setSendBufferSize(64 * 1024);
                     channel.socket().setReceiveBufferSize(64 * 1024);
 
-                    if (DEBUG_ONLINE) logger.debug("[" + nNum_ + "] ACCEPTED " + Utils.getIPAddress(channel));
+                    if (DEBUG_ONLINE)
+                        logger.debug("[" + nNum_ + "] ACCEPTED " + Utils.getIPAddress(channel));
 
                     // register for read; no need to wake since this in
                     // same thread that select() is called
                     registerChannel(channel, SelectionKey.OP_READ);
 
-                    if (DEBUG_ONLINE) logger.debug("[" + nNum_ + "] REGISTERED " + Utils.getIPAddress(channel));
+                    if (DEBUG_ONLINE)
+                        logger.debug("[" + nNum_ + "] REGISTERED " + Utils.getIPAddress(channel));
                 }
                 // is there data to read on this channel?
-                else if (key.isReadable())
-                {
+                else if (key.isReadable()) {
                     processChannel(key, nNum_);
                 }
                 // write (testing)
-                //else if (key.isWritable())
-                //{
-                //    logger.debug("[" + nNum_ + "] WRITEABLE " + ((SocketChannel)key.channel()).socket().getInetAddress().getHostAddress());
-                //}
-                else
-                {
+                // else if (key.isWritable())
+                // {
+                // logger.debug("[" + nNum_ + "] WRITEABLE " +
+                // ((SocketChannel)key.channel()).socket().getInetAddress().getHostAddress());
+                // }
+                else {
                     logger.debug("[" + nNum_ + "] NOTHING TO DO: key ready ops are " + key.readyOps());
                 }
-            }
-            catch (IOException ioe)
-            {
+            } catch (IOException ioe) {
                 logger.error("processSelection error: " + Utils.formatExceptionText(ioe));
             }
 
@@ -682,8 +608,7 @@ public abstract class GameServer extends Thread
         // log status if enough time has passed (if we are waiting without
         // requests, we never get here, so we don't log when nothing happens)
         long nNow = System.currentTimeMillis();
-        if ((nNow - nLastLogTime_) > LOG_STATUS)
-        {
+        if ((nNow - nLastLogTime_) > LOG_STATUS) {
             nLastLogTime_ = nNow;
             logStatus();
         }
@@ -692,38 +617,31 @@ public abstract class GameServer extends Thread
     /**
      * Log status about state of server
      */
-    private void logStatus()
-    {
-        if (!isLogStatus()) return;
+    private void logStatus() {
+        if (!isLogStatus())
+            return;
 
-        logger.info("STATUS:  available workers: " + pool_.getNumIdleWorkers() +
-                    ",  hits: " + nHits_ +
-                    ",  misses: " + nRunningNoWorkerCnt_);
+        logger.info("STATUS:  available workers: " + pool_.getNumIdleWorkers() + ",  hits: " + nHits_ + ",  misses: "
+                + nRunningNoWorkerCnt_);
         nRunningNoWorkerCnt_ = 0;
         nHits_ = 0;
     }
 
     /**
-     * Register the given channel with the given selector for
-     * the given operations of interest.  Queues the request
-     * if from some other thread than the main GameServer thread.
+     * Register the given channel with the given selector for the given operations
+     * of interest. Queues the request if from some other thread than the main
+     * GameServer thread.
      */
-    public void registerChannel(SocketChannel channel, int ops)
-            throws IOException
-    {
-        if (channel == null)
-        {
-            return;        // could happen
+    public void registerChannel(SocketChannel channel, int ops) throws IOException {
+        if (channel == null) {
+            return; // could happen
         }
 
         // queue if different thread
-        if (Thread.currentThread() != mainThread_)
-        {
+        if (Thread.currentThread() != mainThread_) {
             addToQueue(channel, ops);
             selector_.wakeup();
-        }
-        else
-        {
+        } else {
             // set the new channel non-blocking
             channel.configureBlocking(false);
             channel.register(selector_, ops);
@@ -733,10 +651,8 @@ public abstract class GameServer extends Thread
     /*
      * Add a message to the Queue
      */
-    private void addToQueue(SocketChannel channel, int ops)
-    {
-        synchronized (registerQ_)
-        {
+    private void addToQueue(SocketChannel channel, int ops) {
+        synchronized (registerQ_) {
             registerQ_.add(new Qentry(channel, ops));
         }
     }
@@ -744,11 +660,10 @@ public abstract class GameServer extends Thread
     /**
      * Get current contents of queue and start new list
      */
-    private List<Qentry> getRegisterQueue()
-    {
-        synchronized (registerQ_)
-        {
-            if (registerQ_.isEmpty()) return null; // avoid new object if empty
+    private List<Qentry> getRegisterQueue() {
+        synchronized (registerQ_) {
+            if (registerQ_.isEmpty())
+                return null; // avoid new object if empty
 
             List<Qentry> list = new ArrayList<>(registerQ_.size());
             list.addAll(registerQ_);
@@ -760,13 +675,11 @@ public abstract class GameServer extends Thread
     /**
      * q entry
      */
-    private static class Qentry
-    {
+    private static class Qentry {
         SocketChannel channel;
         int ops;
 
-        Qentry(SocketChannel channel, int ops)
-        {
+        Qentry(SocketChannel channel, int ops) {
             this.channel = channel;
             this.ops = ops;
         }
@@ -775,17 +688,14 @@ public abstract class GameServer extends Thread
     /**
      * close channel, first calling socketClosing()
      */
-    public void closeChannel(SocketChannel channel)
-    {
-        if (channel == null) return;
+    public void closeChannel(SocketChannel channel) {
+        if (channel == null)
+            return;
 
         // notify
-        try
-        {
+        try {
             socketClosing(channel);
-        }
-        catch (Throwable notUsed)
-        {
+        } catch (Throwable notUsed) {
             logger.warn("Ignored exception: " + Utils.formatExceptionText(notUsed));
         }
 
@@ -793,45 +703,35 @@ public abstract class GameServer extends Thread
         // (just calling close doesn't cut it apparently)
         // we don't shutdownInput() because that causes errors
         // on this side; and isn't necessary
-        try
-        {
+        try {
             channel.socket().shutdownOutput();
-        }
-        catch (Throwable ignored)
-        {
+        } catch (Throwable ignored) {
         }
 
-        try
-        {
+        try {
             channel.socket().close();
-        }
-        catch (Throwable ignored)
-        {
+        } catch (Throwable ignored) {
         }
     }
 
     /**
-     * Called to notify subclass of imminent closure of
-     * this thread's current socket channel - called before
-     * socket().close() so IP address is still valid
+     * Called to notify subclass of imminent closure of this thread's current socket
+     * channel - called before socket().close() so IP address is still valid
      */
-    protected void socketClosing(SocketChannel channel)
-    {
+    protected void socketClosing(SocketChannel channel) {
     }
 
     /**
      * Get worker from pool to handle socket connection
      */
-    private void processChannel(SelectionKey key, long nNum)
-    {
+    private void processChannel(SelectionKey key, long nNum) {
         // get channel
         SocketChannel channel = (SocketChannel) key.channel();
 
         // get worker
         SocketThread worker = pool_.getWorker();
 
-        if (worker == null)
-        {
+        if (worker == null) {
             nRunningNoWorkerCnt_++;
 
             // No threads available, do nothing, the selection
@@ -840,10 +740,9 @@ public abstract class GameServer extends Thread
 
             // warn if worker is null and sleep
             // to allow time for another thread to finish
-            if (nElapsedNoWorkerTime_ >= LOG_UNAVAIL)
-            {
-                logger.warn("*** NO worker thread available for " + nElapsedNoWorkerTime_ + " millis " +
-                            "(sleep is " + SLEEP_UNAVAIL + "), current ip=" + Utils.getIPAddress(channel));
+            if (nElapsedNoWorkerTime_ >= LOG_UNAVAIL) {
+                logger.warn("*** NO worker thread available for " + nElapsedNoWorkerTime_ + " millis " + "(sleep is "
+                        + SLEEP_UNAVAIL + "), current ip=" + Utils.getIPAddress(channel));
                 nElapsedNoWorkerTime_ = 0;
             }
 
@@ -852,9 +751,7 @@ public abstract class GameServer extends Thread
             nElapsedNoWorkerTime_ += SLEEP_UNAVAIL;
 
             return;
-        }
-        else
-        {
+        } else {
             nElapsedNoWorkerTime_ = 0;
         }
 
@@ -862,7 +759,8 @@ public abstract class GameServer extends Thread
         nHits_++;
 
         // we have a worker, so process it
-        if (DEBUG_ONLINE) logger.debug("[" + nNum + "] READING " + Utils.getIPAddress(channel));
+        if (DEBUG_ONLINE)
+            logger.debug("[" + nNum + "] READING " + Utils.getIPAddress(channel));
 
         // need to cancel key otherwise can't change blocking for replies
         key.cancel();

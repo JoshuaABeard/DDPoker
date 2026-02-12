@@ -26,31 +26,27 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for PlayStyle name wrapper class.
  */
-class PlayStyleTest
-{
+class PlayStyleTest {
     // ========================================
     // Constructor Tests
     // ========================================
 
     @Test
-    void should_StoreNameCorrectly_When_ConstructorCalled()
-    {
+    void should_StoreNameCorrectly_When_ConstructorCalled() {
         PlayStyle style = new PlayStyle("Aggressive");
 
         assertThat(style.getName()).isEqualTo("Aggressive");
     }
 
     @Test
-    void should_AcceptNullName_When_ConstructorCalled()
-    {
+    void should_AcceptNullName_When_ConstructorCalled() {
         PlayStyle style = new PlayStyle(null);
 
         assertThat(style.getName()).isNull();
     }
 
     @Test
-    void should_AcceptEmptyString_When_ConstructorCalled()
-    {
+    void should_AcceptEmptyString_When_ConstructorCalled() {
         PlayStyle style = new PlayStyle("");
 
         assertThat(style.getName()).isEmpty();
@@ -61,16 +57,14 @@ class PlayStyleTest
     // ========================================
 
     @Test
-    void should_ReturnCorrectName_When_GetNameCalled()
-    {
+    void should_ReturnCorrectName_When_GetNameCalled() {
         PlayStyle style = new PlayStyle("Tight-Passive");
 
         assertThat(style.getName()).isEqualTo("Tight-Passive");
     }
 
     @Test
-    void should_UpdateName_When_SetNameCalled()
-    {
+    void should_UpdateName_When_SetNameCalled() {
         PlayStyle style = new PlayStyle("Conservative");
 
         style.setName("Aggressive");
@@ -79,8 +73,7 @@ class PlayStyleTest
     }
 
     @Test
-    void should_AllowNullName_When_SetNameCalled()
-    {
+    void should_AllowNullName_When_SetNameCalled() {
         PlayStyle style = new PlayStyle("Initial");
 
         style.setName(null);
@@ -89,8 +82,7 @@ class PlayStyleTest
     }
 
     @Test
-    void should_AllowEmptyString_When_SetNameCalled()
-    {
+    void should_AllowEmptyString_When_SetNameCalled() {
         PlayStyle style = new PlayStyle("Initial");
 
         style.setName("");
@@ -103,8 +95,7 @@ class PlayStyleTest
     // ========================================
 
     @Test
-    void should_StoreCommonPlayStyles_When_TypicalNamesProvided()
-    {
+    void should_StoreCommonPlayStyles_When_TypicalNamesProvided() {
         // Test common poker play style names
         PlayStyle tight = new PlayStyle("Tight");
         PlayStyle loose = new PlayStyle("Loose");
@@ -126,8 +117,7 @@ class PlayStyleTest
     // ========================================
 
     @Test
-    void should_RetainLatestName_When_NameChangedMultipleTimes()
-    {
+    void should_RetainLatestName_When_NameChangedMultipleTimes() {
         PlayStyle style = new PlayStyle("First");
 
         style.setName("Second");
@@ -145,8 +135,7 @@ class PlayStyleTest
     // ========================================
 
     @Test
-    void should_HandleVeryLongName_When_SetNameCalled()
-    {
+    void should_HandleVeryLongName_When_SetNameCalled() {
         String longName = "Very-Long-Play-Style-Name-With-Many-Hyphens-And-Words-That-Describes-Complex-Playing-Strategy";
         PlayStyle style = new PlayStyle(longName);
 
@@ -154,16 +143,14 @@ class PlayStyleTest
     }
 
     @Test
-    void should_HandleSpecialCharacters_When_SetNameCalled()
-    {
+    void should_HandleSpecialCharacters_When_SetNameCalled() {
         PlayStyle style = new PlayStyle("Aggressive (Post-Flop)");
 
         assertThat(style.getName()).isEqualTo("Aggressive (Post-Flop)");
     }
 
     @Test
-    void should_PreserveWhitespace_When_NameContainsSpaces()
-    {
+    void should_PreserveWhitespace_When_NameContainsSpaces() {
         PlayStyle style = new PlayStyle("  Tight  Aggressive  ");
 
         assertThat(style.getName()).isEqualTo("  Tight  Aggressive  ");

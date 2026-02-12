@@ -30,20 +30,18 @@ import java.lang.reflect.Field;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for PokerGame chip pool tracking methods.
- * Critical money-tracking operations - total chips must equal sum of all player chips.
- * Extends IntegrationTestBase for game infrastructure.
+ * Tests for PokerGame chip pool tracking methods. Critical money-tracking
+ * operations - total chips must equal sum of all player chips. Extends
+ * IntegrationTestBase for game infrastructure.
  */
 @Tag("integration")
-class PokerGameChipPoolTest extends IntegrationTestBase
-{
+class PokerGameChipPoolTest extends IntegrationTestBase {
     private PokerGame game;
     private TournamentProfile profile;
     private PokerPlayer[] players;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         // Create game with tournament profile
         game = new PokerGame(null);
         profile = new TournamentProfile("test");
@@ -54,8 +52,7 @@ class PokerGameChipPoolTest extends IntegrationTestBase
 
         // Create 3 players
         players = new PokerPlayer[3];
-        for (int i = 0; i < 3; i++)
-        {
+        for (int i = 0; i < 3; i++) {
             players[i] = new PokerPlayer(i + 1, "Player" + i, true);
             players[i].setChipCount(1500); // Starting chips
             game.addPlayer(players[i]);
@@ -67,8 +64,7 @@ class PokerGameChipPoolTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_CalculateTotalChips_When_OnlyBuyins()
-    {
+    void should_CalculateTotalChips_When_OnlyBuyins() {
         game.computeTotalChipsInPlay();
 
         // 3 players * 1500 buyin = 4500 total
@@ -76,8 +72,7 @@ class PokerGameChipPoolTest extends IntegrationTestBase
     }
 
     @Test
-    void should_IncludeRebuys_When_PlayersRebuy()
-    {
+    void should_IncludeRebuys_When_PlayersRebuy() {
         // Player 0 rebuys once (1500 chips)
         setNumRebuys(players[0], 1);
 
@@ -88,8 +83,7 @@ class PokerGameChipPoolTest extends IntegrationTestBase
     }
 
     @Test
-    void should_IncludeAddons_When_PlayersTakeAddon()
-    {
+    void should_IncludeAddons_When_PlayersTakeAddon() {
         // Player 1 takes addon (2000 chips)
         setAddon(players[1], 1);
 
@@ -100,8 +94,7 @@ class PokerGameChipPoolTest extends IntegrationTestBase
     }
 
     @Test
-    void should_CalculateCorrectly_When_MultipleRebuysAndAddons()
-    {
+    void should_CalculateCorrectly_When_MultipleRebuysAndAddons() {
         // Player 0: 2 rebuys
         setNumRebuys(players[0], 2);
         // Player 1: 1 rebuy + addon
@@ -120,8 +113,7 @@ class PokerGameChipPoolTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_IncrementTotal_When_ChipsBought()
-    {
+    void should_IncrementTotal_When_ChipsBought() {
         game.computeTotalChipsInPlay();
         int initial = game.getTotalChipsInPlay();
 
@@ -132,8 +124,7 @@ class PokerGameChipPoolTest extends IntegrationTestBase
     }
 
     @Test
-    void should_AllowMultiplePurchases_When_CalledRepeatedly()
-    {
+    void should_AllowMultiplePurchases_When_CalledRepeatedly() {
         game.computeTotalChipsInPlay();
         int initial = game.getTotalChipsInPlay();
 
@@ -151,15 +142,13 @@ class PokerGameChipPoolTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_ReturnZero_When_NotYetComputed()
-    {
+    void should_ReturnZero_When_NotYetComputed() {
         // Before computeTotalChipsInPlay() is called, should be 0
         assertThat(game.getTotalChipsInPlay()).isEqualTo(0);
     }
 
     @Test
-    void should_ReturnCorrectValue_When_AfterCompute()
-    {
+    void should_ReturnCorrectValue_When_AfterCompute() {
         game.computeTotalChipsInPlay();
 
         // Should reflect computed value
@@ -172,8 +161,7 @@ class PokerGameChipPoolTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_MaintainAccuracy_When_CombiningComputeAndBought()
-    {
+    void should_MaintainAccuracy_When_CombiningComputeAndBought() {
         // Start with computed total
         game.computeTotalChipsInPlay();
         assertThat(game.getTotalChipsInPlay()).isEqualTo(4500);
@@ -189,8 +177,7 @@ class PokerGameChipPoolTest extends IntegrationTestBase
     }
 
     @Test
-    void should_NotCreateChips_When_NoOperations()
-    {
+    void should_NotCreateChips_When_NoOperations() {
         int initial = game.getTotalChipsInPlay();
 
         // No operations - should remain unchanged
@@ -203,59 +190,46 @@ class PokerGameChipPoolTest extends IntegrationTestBase
     // ========================================
 
     /**
-     * Set the number of rebuys for a player using reflection.
-     * The nNumRebuy_ field is private and has no public setter.
+     * Set the number of rebuys for a player using reflection. The nNumRebuy_ field
+     * is private and has no public setter.
      */
-    private void setNumRebuys(PokerPlayer player, int count)
-    {
-        try
-        {
+    private void setNumRebuys(PokerPlayer player, int count) {
+        try {
             Field field = PokerPlayer.class.getDeclaredField("nNumRebuy_");
             field.setAccessible(true);
             field.set(player, count);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new RuntimeException("Failed to set rebuy count", e);
         }
     }
 
     /**
-     * Set the addon flag for a player using reflection.
-     * The nAddon_ field is private and has no public setter.
+     * Set the addon flag for a player using reflection. The nAddon_ field is
+     * private and has no public setter.
      */
-    private void setAddon(PokerPlayer player, int value)
-    {
-        try
-        {
+    private void setAddon(PokerPlayer player, int value) {
+        try {
             Field field = PokerPlayer.class.getDeclaredField("nAddon_");
             field.setAccessible(true);
             field.set(player, value);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new RuntimeException("Failed to set addon", e);
         }
     }
 
     /**
-     * Set a profile integer value using reflection.
-     * TournamentProfile stores values in a private DMTypedHashMap.
+     * Set a profile integer value using reflection. TournamentProfile stores values
+     * in a private DMTypedHashMap.
      */
-    private void setProfileInteger(String key, int value)
-    {
-        try
-        {
+    private void setProfileInteger(String key, int value) {
+        try {
             Field mapField = TournamentProfile.class.getDeclaredField("map_");
             mapField.setAccessible(true);
             Object map = mapField.get(profile);
 
             // DMTypedHashMap has setInteger method
-            map.getClass().getMethod("setInteger", String.class, Integer.class)
-               .invoke(map, key, value);
-        }
-        catch (Exception e)
-        {
+            map.getClass().getMethod("setInteger", String.class, Integer.class).invoke(map, key, value);
+        } catch (Exception e) {
             throw new RuntimeException("Failed to set profile integer", e);
         }
     }

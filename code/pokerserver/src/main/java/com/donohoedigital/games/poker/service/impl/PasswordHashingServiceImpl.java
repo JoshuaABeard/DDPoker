@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 /**
  * Implementation of PasswordHashingService using jBCrypt library.
  *
- * Uses BCrypt.hashpw() for hashing with auto-generated salts.
- * Uses BCrypt.checkpw() for password verification.
+ * Uses BCrypt.hashpw() for hashing with auto-generated salts. Uses
+ * BCrypt.checkpw() for password verification.
  */
 @Service
 public class PasswordHashingServiceImpl implements PasswordHashingService {

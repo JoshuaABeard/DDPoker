@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -45,8 +45,7 @@ import java.text.MessageFormat;
  * @author zak
  * @see DatabaseManager
  */
-public class Database
-{
+public class Database {
     private String name_ = null;
     private String driverClassName_ = null;
     private String driverConnectURL_ = null;
@@ -57,10 +56,10 @@ public class Database
     /**
      * Create an uninitialized database.
      *
-     * @param name database name
+     * @param name
+     *            database name
      */
-    public Database(String name)
-    {
+    public Database(String name) {
         name_ = name;
     }
 
@@ -69,29 +68,26 @@ public class Database
      *
      * @return the database name
      */
-    public String getName()
-    {
+    public String getName() {
         return name_;
     }
-
 
     /**
      * Get the driver class name.
      *
      * @return the driver class name
      */
-    public String getDriverClassName()
-    {
+    public String getDriverClassName() {
         return driverClassName_;
     }
 
     /**
      * Set the driver class name.
      *
-     * @param driverClassName driver class name
+     * @param driverClassName
+     *            driver class name
      */
-    public void setDriverClassName(String driverClassName)
-    {
+    public void setDriverClassName(String driverClassName) {
         driverClassName_ = driverClassName;
     }
 
@@ -100,19 +96,17 @@ public class Database
      *
      * @return the driver connect URL
      */
-    public String getDriverConnectURL()
-    {
+    public String getDriverConnectURL() {
         return driverConnectURL_;
     }
-
 
     /**
      * Set the driver URL used to create database connections.
      *
-     * @param driverConnectURL driver connect URL
+     * @param driverConnectURL
+     *            driver connect URL
      */
-    public void setDriverConnectURL(String driverConnectURL)
-    {
+    public void setDriverConnectURL(String driverConnectURL) {
         driverConnectURL_ = driverConnectURL;
     }
 
@@ -121,18 +115,17 @@ public class Database
      *
      * @return the username
      */
-    public String getUsername()
-    {
+    public String getUsername() {
         return username_;
     }
 
     /**
      * Set the username used to make connections.
      *
-     * @param username username
+     * @param username
+     *            username
      */
-    public void setUsername(String username)
-    {
+    public void setUsername(String username) {
         username_ = username;
     }
 
@@ -141,52 +134,44 @@ public class Database
      *
      * @return the password
      */
-    public String getPassword()
-    {
+    public String getPassword() {
         return password_;
     }
 
     /**
      * Set the password used to make connections.
      *
-     * @param password password
+     * @param password
+     *            password
      */
-    public void setPassword(String password)
-    {
+    public void setPassword(String password) {
         password_ = password;
     }
 
     /**
-     * Get a connection to the database.  Implementation is driver/data source specific.
+     * Get a connection to the database. Implementation is driver/data source
+     * specific.
      *
      * @return the database connection
-     * @throws ApplicationError if an error occurs retrieving the connection
+     * @throws ApplicationError
+     *             if an error occurs retrieving the connection
      */
-    public Connection getConnection() throws ApplicationError
-    {
+    public Connection getConnection() throws ApplicationError {
         Connection conn = null;
 
-        try
-        {
+        try {
             String connectURL = driverFormattedURL_;
             String username = getUsername();
             String password = getPassword();
 
-            if ((username != null) && (password != null))
-            {
+            if ((username != null) && (password != null)) {
                 conn = DriverManager.getConnection(connectURL);
-            }
-            else
-            {
+            } else {
                 conn = DriverManager.getConnection(connectURL, username, password);
             }
-        }
-        catch (SQLException e)
-        {
+        } catch (SQLException e) {
             throw new ApplicationError(e);
-        }
-        catch (Throwable e)
-        {
+        } catch (Throwable e) {
             throw new ApplicationError(e);
         }
 
@@ -198,13 +183,12 @@ public class Database
      *
      * @return a string representation of the object
      */
-    public String toString()
-    {
+    public String toString() {
         StringBuilder buffer = new StringBuilder();
         buffer.append("name=");
         buffer.append(getName());
-        //buffer.append(", driver=");
-        //buffer.append(getDriverClassName());
+        // buffer.append(", driver=");
+        // buffer.append(getDriverClassName());
         buffer.append(", url=");
         buffer.append(getDriverConnectURL());
 
@@ -214,22 +198,17 @@ public class Database
     /**
      * Execute database-specific startup logic.
      */
-    protected void startup()
-    {
+    protected void startup() {
     }
 
     /**
      * Initialize according to the current database settings.
      */
-    void init()
-    {
+    void init() {
         // Force the driver to load.
-        try
-        {
+        try {
             Class.forName(getDriverClassName()).getDeclaredConstructor().newInstance();
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new ApplicationError(e);
         }
 

@@ -122,7 +122,7 @@ class FilePrefsAdapterTest {
         FilePrefsAdapter adapter = new FilePrefsAdapter();
 
         adapter.put("test.key", "value");
-        adapter.flush();  // Should not throw exception
+        adapter.flush(); // Should not throw exception
 
         // Value should still be accessible
         assertThat(adapter.get("test.key", "default")).isEqualTo("value");
@@ -133,7 +133,7 @@ class FilePrefsAdapterTest {
         FilePrefsAdapter adapter = new FilePrefsAdapter();
 
         adapter.put("test.key", "value");
-        adapter.sync();  // Should not throw exception
+        adapter.sync(); // Should not throw exception
 
         // Value should still be accessible
         assertThat(adapter.get("test.key", "default")).isEqualTo("value");

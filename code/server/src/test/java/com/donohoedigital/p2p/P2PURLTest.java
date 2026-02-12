@@ -25,8 +25,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for P2PURL - Custom P2P URL parsing.
- * Format: protocol://host:port/uri
+ * Tests for P2PURL - Custom P2P URL parsing. Format: protocol://host:port/uri
  * Example: poker://192.211.1.110:11885/n-2/WXZ-741
  */
 class P2PURLTest {
@@ -238,24 +237,21 @@ class P2PURLTest {
     void should_ThrowException_When_MissingProtocolDelimiter() {
         String invalidUrl = "poker:192.211.1.110:11885/path"; // Missing ://
 
-        assertThatThrownBy(() -> new P2PURL(invalidUrl))
-                .isInstanceOf(ApplicationError.class);
+        assertThatThrownBy(() -> new P2PURL(invalidUrl)).isInstanceOf(ApplicationError.class);
     }
 
     @Test
     void should_ThrowException_When_MissingPortDelimiter() {
         String invalidUrl = "poker://192.211.1.110/11885/path"; // Missing : before port
 
-        assertThatThrownBy(() -> new P2PURL(invalidUrl))
-                .isInstanceOf(ApplicationError.class);
+        assertThatThrownBy(() -> new P2PURL(invalidUrl)).isInstanceOf(ApplicationError.class);
     }
 
     @Test
     void should_ThrowException_When_MissingURIDelimiter() {
         String invalidUrl = "poker://192.211.1.110:11885"; // Missing / before URI
 
-        assertThatThrownBy(() -> new P2PURL(invalidUrl))
-                .isInstanceOf(ApplicationError.class);
+        assertThatThrownBy(() -> new P2PURL(invalidUrl)).isInstanceOf(ApplicationError.class);
     }
 
     @Test
@@ -276,32 +272,28 @@ class P2PURLTest {
     void should_ThrowException_When_PortNotNumeric() {
         String invalidUrl = "poker://host:abc/path";
 
-        assertThatThrownBy(() -> new P2PURL(invalidUrl))
-                .isInstanceOf(ApplicationError.class);
+        assertThatThrownBy(() -> new P2PURL(invalidUrl)).isInstanceOf(ApplicationError.class);
     }
 
     @Test
     void should_ThrowException_When_PortEmpty() {
         String invalidUrl = "poker://host:/path";
 
-        assertThatThrownBy(() -> new P2PURL(invalidUrl))
-                .isInstanceOf(ApplicationError.class);
+        assertThatThrownBy(() -> new P2PURL(invalidUrl)).isInstanceOf(ApplicationError.class);
     }
 
     @Test
     void should_ThrowException_When_PortHasSpaces() {
         String invalidUrl = "poker://host:12 34/path";
 
-        assertThatThrownBy(() -> new P2PURL(invalidUrl))
-                .isInstanceOf(ApplicationError.class);
+        assertThatThrownBy(() -> new P2PURL(invalidUrl)).isInstanceOf(ApplicationError.class);
     }
 
     @Test
     void should_ThrowException_When_PortMixedAlphanumeric() {
         String invalidUrl = "poker://host:123abc/path";
 
-        assertThatThrownBy(() -> new P2PURL(invalidUrl))
-                .isInstanceOf(ApplicationError.class);
+        assertThatThrownBy(() -> new P2PURL(invalidUrl)).isInstanceOf(ApplicationError.class);
     }
 
     // =================================================================
@@ -310,16 +302,14 @@ class P2PURLTest {
 
     @Test
     void should_ThrowException_When_EmptyString() {
-        assertThatThrownBy(() -> new P2PURL(""))
-                .isInstanceOf(ApplicationError.class);
+        assertThatThrownBy(() -> new P2PURL("")).isInstanceOf(ApplicationError.class);
     }
 
     @Test
     void should_ThrowException_When_OnlyProtocol() {
         String invalidUrl = "poker://";
 
-        assertThatThrownBy(() -> new P2PURL(invalidUrl))
-                .isInstanceOf(ApplicationError.class);
+        assertThatThrownBy(() -> new P2PURL(invalidUrl)).isInstanceOf(ApplicationError.class);
     }
 
     @Test

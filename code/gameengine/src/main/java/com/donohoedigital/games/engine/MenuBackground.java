@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -51,9 +51,8 @@ import java.awt.*;
 /**
  * @author Doug Donohoe
  */
-public class MenuBackground extends DDScrollPane
-{
-    //static Logger logger = LogManager.getLogger(MenuBackground.class);
+public class MenuBackground extends DDScrollPane {
+    // static Logger logger = LogManager.getLogger(MenuBackground.class);
 
     public static final String PARAM_MENUBOX_HELP_NAME = "menubox-help-name";
 
@@ -64,13 +63,9 @@ public class MenuBackground extends DDScrollPane
     /**
      * Creates a new instance of BasicBackground
      */
-    public MenuBackground(GamePhase gamephase_)
-    {
-        super(null,
-              gamephase_.getString("menubox-background-style", "default"),
-              null,
-              JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-              JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+    public MenuBackground(GamePhase gamephase_) {
+        super(null, gamephase_.getString("menubox-background-style", "default"), null,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         setOpaque(false);
         setViewportBorder(BorderFactory.createEmptyBorder());
 
@@ -95,14 +90,12 @@ public class MenuBackground extends DDScrollPane
         Dimension size = version.getPreferredSize();
         int nShift = Utils.ISMAC ? 15 : 3; // 15 to move over for mac grow box
         XYConstraints xy = new XYConstraints(pref.width - size.width - nShift - nBorderAdjust,
-                                             pref.height - size.height - 3 - nBorderAdjust,
-                                             size.width, size.height);
+                pref.height - size.height - 3 - nBorderAdjust, size.width, size.height);
         base.add(version, xy);
 
         // first place image
         String sImageName = gamephase_.getString("menubox-background-image");
-        if (sImageName != null && !"NONE".equalsIgnoreCase(sImageName))
-        {
+        if (sImageName != null && !"NONE".equalsIgnoreCase(sImageName)) {
             ImageComponent ic = new ImageComponent(sImageName, 1.0);
             ic.setCentered(false);
 
@@ -126,8 +119,7 @@ public class MenuBackground extends DDScrollPane
         menubox_.setOpaque(true);
         xy = new XYConstraints(x - nBorderAdjust, y - nBorderAdjust, width, height);
 
-        if (bTitle)
-        {
+        if (bTitle) {
             DDPanel titlebase = new PillPanel(sBoxStyle);
             menuboxbase.setBorderLayoutGap(5, 0);
             JLabel titlelabel = new DDLabel();
@@ -135,27 +127,31 @@ public class MenuBackground extends DDScrollPane
             titlelabel.setFont(StylesConfig.getFont(sBoxStyle + ".title", titlelabel.getFont()));
             titlelabel.setForeground(StylesConfig.getColor(sBoxStyle + ".title.fg", titlelabel.getForeground()));
             titlelabel.setText(PropertyConfig.getStringProperty(
-                    gamephase_.getString("menubox-title-prop", "menubox-title-prop"),
-                    "This Space For Rent")); // no title found so leave funny title)
+                    gamephase_.getString("menubox-title-prop", "menubox-title-prop"), "This Space For Rent")); // no
+                                                                                                                // title
+                                                                                                                // found
+                                                                                                                // so
+                                                                                                                // leave
+                                                                                                                // funny
+                                                                                                                // title)
             Dimension pref2 = titlelabel.getPreferredSize();
             pref2.width += 4; // on mac, doesn't layout right with some fonts
             titlelabel.setPreferredSize(pref2);
             titlebase.add(titlelabel, BorderLayout.CENTER);
             menuboxbase.add(GuiUtils.CENTER(titlebase), BorderLayout.NORTH);
 
-            if (bBorder)
-            {
+            if (bBorder) {
                 Border outside = new DDBevelBorder(sBevelStyle, BevelBorder.RAISED);
                 Border inside = BorderFactory.createEmptyBorder(2, 2, 2, 2);
 
                 menubox_.setBorder(BorderFactory.createCompoundBorder(outside, inside));
             }
         }
-//        else
-//        {
-//            // testing
-//            menubox_.setBorder(GuiUtils.BLACKBORDER);
-//        }
+        // else
+        // {
+        // // testing
+        // menubox_.setBorder(GuiUtils.BLACKBORDER);
+        // }
 
         base.add(menuboxbase, xy, 0);
     }
@@ -163,16 +159,14 @@ public class MenuBackground extends DDScrollPane
     /**
      * Return base menubox panel
      */
-    public DDPanel getMenuBox()
-    {
+    public DDPanel getMenuBox() {
         return menubox_;
     }
 
     /**
      * get name for DDPanels for help text
      */
-    public String getHelpName()
-    {
+    public String getHelpName() {
         return sHelpName_;
     }
 }

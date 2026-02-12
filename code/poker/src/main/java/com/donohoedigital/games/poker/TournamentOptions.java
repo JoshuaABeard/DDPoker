@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -60,8 +60,7 @@ import java.util.List;
 /**
  * @author Doug Donohoe
  */
-public class TournamentOptions extends BasePhase implements ChangeListener, AncestorListener
-{
+public class TournamentOptions extends BasePhase implements ChangeListener, AncestorListener {
     static Logger logger = LogManager.getLogger(TournamentOptions.class);
 
     private DDHtmlArea text_;
@@ -76,8 +75,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
     private boolean bOnlineMode_ = false;
 
     @Override
-    public void init(GameEngine engine, GameContext context, GamePhase gamephase)
-    {
+    public void init(GameEngine engine, GameContext context, GamePhase gamephase) {
         super.init(engine, context, gamephase);
 
         // name of style used for all widgets in data area
@@ -129,7 +127,8 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
         DDLabelBorder pborder = new DDLabelBorder("tournaments", STYLE);
         pborder.setPreferredSize(new Dimension(250, 448));
         left.add(pborder, BorderLayout.CENTER);
-        profileList_ = new TournamentProfileList(engine_, profiles, "Profile", "tournament", sHelpName, "pokericon16png", true);
+        profileList_ = new TournamentProfileList(engine_, profiles, "Profile", "tournament", sHelpName,
+                "pokericon16png", true);
         profileList_.addChangeListener(this);
         pborder.add(profileList_, BorderLayout.CENTER);
 
@@ -137,27 +136,22 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
         statsBorder_ = new DDLabelBorder("settings", STYLE);
         statsBorder_.setPreferredSize(new Dimension(500, 0));
         top.add(statsBorder_, BorderLayout.CENTER);
-        summary_ = new TournamentSummaryPanel(context_, "TournamentSummaryBig", "BrushedMetal", "BrushedMetal", sHelpName, 1.0d, true, false);
+        summary_ = new TournamentSummaryPanel(context_, "TournamentSummaryBig", "BrushedMetal", "BrushedMetal",
+                sHelpName, 1.0d, true, false);
         statsBorder_.add(summary_, BorderLayout.CENTER);
     }
 
     /**
      * Our list editor
      */
-    private class TournamentProfileList extends ProfileList
-    {
+    private class TournamentProfileList extends ProfileList {
         private static final String DDPROFILE_EXT = "ddprofile";
 
         private GlassButton buttonExport_;
         private GlassButton buttonImport_;
 
-        private TournamentProfileList(GameEngine engine, List<BaseProfile> profiles,
-                                      String sStyle,
-                                      String sMsgName,
-                                      String sPanelName,
-                                      String sIconName,
-                                      boolean bUseCopyButton)
-        {
+        private TournamentProfileList(GameEngine engine, List<BaseProfile> profiles, String sStyle, String sMsgName,
+                String sPanelName, String sIconName, boolean bUseCopyButton) {
             super(engine, context_, profiles, sStyle, sMsgName, sPanelName, sIconName, bUseCopyButton);
 
             // add export/import buttons
@@ -179,8 +173,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
          * Create empty profile
          */
         @Override
-        protected BaseProfile createEmptyProfile()
-        {
+        protected BaseProfile createEmptyProfile() {
             TournamentProfile t = new TournamentProfile();
             t.setPlayerTypePercent(PlayerType.getDefaultProfile().getUniqueKey(), 100);
             return t;
@@ -190,8 +183,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
          * Copy profile
          */
         @Override
-        protected BaseProfile copyProfile(BaseProfile profile, boolean bForEdit)
-        {
+        protected BaseProfile copyProfile(BaseProfile profile, boolean bForEdit) {
             TournamentProfile tp = (TournamentProfile) profile;
             String sName = bForEdit ? tp.getName() : PropertyConfig.getMessage("msg.copy", tp.getName());
             return new TournamentProfile(tp, sName);
@@ -200,31 +192,28 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
         /**
          * Export selected profile to a .ddprofile file
          */
-        private void exportProfile()
-        {
+        private void exportProfile() {
             BaseProfile selected = getSelectedProfile();
-            if (selected == null) return;
+            if (selected == null)
+                return;
 
             JFileChooser chooser = new JFileChooser();
             chooser.setDialogTitle(PropertyConfig.getMessage("msg.export.filechooser.title"));
-            chooser.setFileFilter(new FileNameExtensionFilter(
-                    PropertyConfig.getMessage("msg.filechooser.ddprofile"), DDPROFILE_EXT));
+            chooser.setFileFilter(
+                    new FileNameExtensionFilter(PropertyConfig.getMessage("msg.filechooser.ddprofile"), DDPROFILE_EXT));
             chooser.setSelectedFile(new File(selected.getName() + "." + DDPROFILE_EXT));
 
-            if (chooser.showSaveDialog(TournamentProfileList.this) != JFileChooser.APPROVE_OPTION) return;
+            if (chooser.showSaveDialog(TournamentProfileList.this) != JFileChooser.APPROVE_OPTION)
+                return;
 
             File file = chooser.getSelectedFile();
-            if (!file.getName().endsWith("." + DDPROFILE_EXT))
-            {
+            if (!file.getName().endsWith("." + DDPROFILE_EXT)) {
                 file = new File(file.getAbsolutePath() + "." + DDPROFILE_EXT);
             }
 
-            try (Writer writer = new FileWriter(file))
-            {
+            try (Writer writer = new FileWriter(file)) {
                 selected.write(writer);
-            }
-            catch (IOException ex)
-            {
+            } catch (IOException ex) {
                 EngineUtils.displayInformationDialog(context_,
                         PropertyConfig.getMessage("msg.export.error", ex.getMessage()));
             }
@@ -233,28 +222,25 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
         /**
          * Import a profile from a .ddprofile file
          */
-        private void importProfile()
-        {
+        private void importProfile() {
             JFileChooser chooser = new JFileChooser();
             chooser.setDialogTitle(PropertyConfig.getMessage("msg.import.filechooser.title"));
-            chooser.setFileFilter(new FileNameExtensionFilter(
-                    PropertyConfig.getMessage("msg.filechooser.ddprofile"), DDPROFILE_EXT));
+            chooser.setFileFilter(
+                    new FileNameExtensionFilter(PropertyConfig.getMessage("msg.filechooser.ddprofile"), DDPROFILE_EXT));
 
-            if (chooser.showOpenDialog(TournamentProfileList.this) != JFileChooser.APPROVE_OPTION) return;
+            if (chooser.showOpenDialog(TournamentProfileList.this) != JFileChooser.APPROVE_OPTION)
+                return;
 
             File file = chooser.getSelectedFile();
 
-            try (Reader reader = new FileReader(file))
-            {
+            try (Reader reader = new FileReader(file)) {
                 TournamentProfile imported = new TournamentProfile();
                 imported.read(reader, false);
 
                 // handle duplicate names
                 String name = imported.getName();
-                for (BaseProfile existing : getProfiles())
-                {
-                    if (existing.getName().equals(name))
-                    {
+                for (BaseProfile existing : getProfiles()) {
+                    if (existing.getName().equals(name)) {
                         name = name + " (imported)";
                         break;
                     }
@@ -262,9 +248,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
                 imported.setName(name);
 
                 addProfile(imported);
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 EngineUtils.displayInformationDialog(context_,
                         PropertyConfig.getMessage("msg.import.error", ex.getMessage()));
             }
@@ -275,8 +259,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
      * Start of phase
      */
     @Override
-    public void start()
-    {
+    public void start() {
         // set help text
         context_.getWindow().setHelpTextWidget(text_);
         context_.getWindow().showHelp(menu_.getMenuBox()); // init help
@@ -292,24 +275,19 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
      * Returns true
      */
     @Override
-    public boolean processButton(GameButton button)
-    {
-        if (button.getName().equals(start_.getName()))
-        {
+    public boolean processButton(GameButton button) {
+        if (button.getName().equals(start_.getName())) {
             // get game
             final PokerGame game;
 
             // home mode - create new game
-            if (bHomeMode_)
-            {
+            if (bHomeMode_) {
                 // show warning for fixed alloc home tournaments
-                if (selected_.isAllocFixed())
-                {
-                    String sMsg = PropertyConfig.getMessage("msg.home.fixed",
-                                                            selected_.getName(),
-                                                            selected_.getNumPlayers());
-                    if (!EngineUtils.displayConfirmationDialog(context_, Utils.fixHtmlTextFor15(sMsg), "homeallocfixed"))
-                    {
+                if (selected_.isAllocFixed()) {
+                    String sMsg = PropertyConfig.getMessage("msg.home.fixed", selected_.getName(),
+                            selected_.getNumPlayers());
+                    if (!EngineUtils.displayConfirmationDialog(context_, Utils.fixHtmlTextFor15(sMsg),
+                            "homeallocfixed")) {
                         return false;
                     }
                 }
@@ -321,19 +299,15 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
                 context_.setGame(game);
             }
             // online game
-            else if (bOnlineMode_)
-            {
+            else if (bOnlineMode_) {
                 PokerMain main = PokerMain.getPokerMain();
 
                 // show warning for tournaments with default players greater than max
-                if (selected_.getNumPlayers() > selected_.getMaxOnlinePlayers())
-                {
-                    String sMsg = PropertyConfig.getMessage("msg.online.max",
-                                                            selected_.getName(),
-                                                            selected_.getNumPlayers(),
-                                                            selected_.getMaxOnlinePlayers());
-                    if (!EngineUtils.displayConfirmationDialog(context_, Utils.fixHtmlTextFor15(sMsg), "onlinemaxplayers"))
-                    {
+                if (selected_.getNumPlayers() > selected_.getMaxOnlinePlayers()) {
+                    String sMsg = PropertyConfig.getMessage("msg.online.max", selected_.getName(),
+                            selected_.getNumPlayers(), selected_.getMaxOnlinePlayers());
+                    if (!EngineUtils.displayConfirmationDialog(context_, Utils.fixHtmlTextFor15(sMsg),
+                            "onlinemaxplayers")) {
                         return false;
                     }
 
@@ -353,8 +327,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
                 game.setOnlineGameID(id);
 
                 // need to create p2p server to get ip/port, so attempt that
-                if (!canHost(main, game))
-                {
+                if (!canHost(main, game)) {
                     return false;
                 }
 
@@ -375,8 +348,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
                 context_.setGame(game);
             }
             // regular tournament
-            else
-            {
+            else {
                 game = setupPracticeGame(engine_, context_);
             }
 
@@ -391,17 +363,14 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
         return true;
     }
 
-
     /**
      * test if can host by creating p2p server
      */
-    private boolean canHost(PokerMain main, PokerGame game)
-    {
+    private boolean canHost(PokerMain main, PokerGame game) {
         PokerConnectionServer p2p = main.getPokerConnectionServer(false); // Always use TCP
-        if (p2p != null && !p2p.isBound())
-        {
-            EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.canthost",
-                                                                                     p2p.getConfigPort()));
+        if (p2p != null && !p2p.isBound()) {
+            EngineUtils.displayInformationDialog(context_,
+                    PropertyConfig.getMessage("msg.canthost", p2p.getConfigPort()));
             main.shutdownPokerConnectionServer(p2p);
             return false;
         }
@@ -411,8 +380,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
     /**
      * practice game setup
      */
-    public static PokerGame setupPracticeGame(GameEngine engine, GameContext context)
-    {
+    public static PokerGame setupPracticeGame(GameEngine engine, GameContext context) {
         PokerGame game;
         // create game
         game = new PokerGame(context);
@@ -429,29 +397,24 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
     /**
      * Get online password
      */
-    private String generatePassword()
-    {
-        // password format:  id-AAA-123
+    private String generatePassword() {
+        // password format: id-AAA-123
         MersenneTwisterFast random = new MersenneTwisterFast();
         StringBuilder sbPass = new StringBuilder();
         int num;
 
         // do letters, skipping letter O (to avoid confusing with number 0)
-        for (int i = 0; i < 3; i++)
-        {
-            do
-            {
+        for (int i = 0; i < 3; i++) {
+            do {
                 num = random.nextInt(26);
-            }
-            while (num == 14); // no letter 0
+            } while (num == 14); // no letter 0
             sbPass.append((char) (65 + num));
         }
 
         sbPass.append('-');
 
         // do numbers, skipping number 0
-        for (int i = 0; i < 3; i++)
-        {
+        for (int i = 0; i < 3; i++) {
             num = random.nextInt(9) + 1; // no zeroes
             sbPass.append(num);
         }
@@ -462,8 +425,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
     /**
      * set buttons enabled/disabled based on selection
      */
-    private void checkButtons()
-    {
+    private void checkButtons() {
         boolean bValid = selected_ != null;
         start_.setEnabled(bValid);
     }
@@ -471,23 +433,17 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
     /**
      * Called when a spinner or tournament list changes
      */
-    public void stateChanged(ChangeEvent e)
-    {
-        if (e.getSource() == profileList_)
-        {
+    public void stateChanged(ChangeEvent e) {
+        if (e.getSource() == profileList_) {
             TournamentProfile pp = (TournamentProfile) profileList_.getSelectedProfile();
 
-            if (pp != null)
-            {
+            if (pp != null) {
                 // set current selected profile and update stats label
                 selected_ = pp;
                 summary_.updateProfile(selected_);
-                statsBorder_.setText(PropertyConfig.getMessage("labelborder.settings.label2",
-                                                               selected_.getName()));
+                statsBorder_.setText(PropertyConfig.getMessage("labelborder.settings.label2", selected_.getName()));
                 statsBorder_.repaint();
-            }
-            else
-            {
+            } else {
                 selected_ = null;
                 summary_.updateProfile(selected_);
                 statsBorder_.setText(PropertyConfig.getMessage("labelborder.settings.label"));
@@ -499,15 +455,13 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
     }
 
     /**
-     * Called when the source or one of its ancestors is made visible
-     * either by setVisible(true) being called or by its being
-     * added to the component hierarchy.  The method is only called
-     * if the source has actually become visible.  For this to be true
-     * all its parents must be visible and it must be in a hierarchy
-     * rooted at a Window
+     * Called when the source or one of its ancestors is made visible either by
+     * setVisible(true) being called or by its being added to the component
+     * hierarchy. The method is only called if the source has actually become
+     * visible. For this to be true all its parents must be visible and it must be
+     * in a hierarchy rooted at a Window
      */
-    public void ancestorAdded(AncestorEvent event)
-    {
+    public void ancestorAdded(AncestorEvent event) {
         // select 1st row
         profileList_.selectInit();
 
@@ -516,20 +470,17 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
     /**
      * Called when either the source or one of its ancestors is moved.
      */
-    public void ancestorMoved(AncestorEvent event)
-    {
+    public void ancestorMoved(AncestorEvent event) {
     }
 
     /**
-     * Called when the source or one of its ancestors is made invisible
-     * either by setVisible(false) being called or by its being
-     * remove from the component hierarchy.  The method is only called
-     * if the source has actually become invisible.  For this to be true
-     * at least one of its parents must by invisible or it is not in
-     * a hierarchy rooted at a Window
+     * Called when the source or one of its ancestors is made invisible either by
+     * setVisible(false) being called or by its being remove from the component
+     * hierarchy. The method is only called if the source has actually become
+     * invisible. For this to be true at least one of its parents must by invisible
+     * or it is not in a hierarchy rooted at a Window
      */
-    public void ancestorRemoved(AncestorEvent event)
-    {
+    public void ancestorRemoved(AncestorEvent event) {
     }
 
 }

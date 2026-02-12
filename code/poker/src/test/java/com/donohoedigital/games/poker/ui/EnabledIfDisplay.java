@@ -27,22 +27,23 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * JUnit 5 annotation to enable tests only when a display is available.
- * UI tests using AssertJ Swing require a graphics environment.
+ * JUnit 5 annotation to enable tests only when a display is available. UI tests
+ * using AssertJ Swing require a graphics environment.
  *
  * Usage:
+ *
  * <pre>
- * {@code
- * @EnabledIfDisplay
- * class MyUITest {
- *     // tests will be skipped if no display available
- * }
+ * {
+ * 	&#64;code
+ * 	&#64;EnabledIfDisplay
+ * 	class MyUITest {
+ * 		// tests will be skipped if no display available
+ * 	}
  * }
  * </pre>
  */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @ExtendWith(DisplayAvailableCondition.class)
-public @interface EnabledIfDisplay
-{
+public @interface EnabledIfDisplay {
 }

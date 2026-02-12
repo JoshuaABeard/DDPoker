@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -48,14 +48,10 @@ import org.springframework.beans.factory.annotation.*;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
- * User: donohoe
- * Date: May 16, 2006
- * Time: 11:58:01 AM
+ * Created by IntelliJ IDEA. User: donohoe Date: May 16, 2006 Time: 11:58:01 AM
  * To change this template use File | Settings | File Templates.
  */
-public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMonitor
-{
+public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMonitor {
     private static Logger logger = LogManager.getLogger(ChatServer.class);
 
     private OnlineProfileService onlineProfileService;
@@ -70,8 +66,7 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
     /**
      * Constructor
      */
-    ChatServer(UDPServer udp)
-    {
+    ChatServer(UDPServer udp) {
         udp_ = udp;
         nPort_ = PropertyConfig.getRequiredIntegerProperty("settings.udp.chat.port");
     }
@@ -79,8 +74,7 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
     /**
      * Get online profile service
      */
-    public OnlineProfileService getOnlineProfileService()
-    {
+    public OnlineProfileService getOnlineProfileService() {
         return onlineProfileService;
     }
 
@@ -88,16 +82,14 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
      * Set online game service
      */
     @Autowired
-    public void setOnlineProfileService(OnlineProfileService onlineProfileService)
-    {
+    public void setOnlineProfileService(OnlineProfileService onlineProfileService) {
         this.onlineProfileService = onlineProfileService;
     }
 
     /**
      * Get banned key service
      */
-    public BannedKeyService getBannedKeyService()
-    {
+    public BannedKeyService getBannedKeyService() {
         return bannedKeyService;
     }
 
@@ -105,16 +97,14 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
      * Set banned key service
      */
     @Autowired
-    public void setBannedKeyService(BannedKeyService bannedKeyService)
-    {
+    public void setBannedKeyService(BannedKeyService bannedKeyService) {
         this.bannedKeyService = bannedKeyService;
     }
 
     /**
      * is this a chat link?
      */
-    public boolean isChat(UDPLink link)
-    {
+    public boolean isChat(UDPLink link) {
         return (link.getLocalIP().getPort() == nPort_);
     }
 
@@ -122,34 +112,28 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
     //// UDPLinkMonitor (UDP)
     ////
 
-    public void monitorEvent(UDPLinkEvent event)
-    {
+    public void monitorEvent(UDPLinkEvent event) {
         UDPLink link = event.getLink();
         UDPData data = event.getData();
 
-        switch (event.getType())
-        {
-            case RECEIVED:
+        switch (event.getType()) {
+            case RECEIVED :
                 // process message
-                if (data.getType() == UDPData.Type.MESSAGE)
-                {
-                    switch (data.getUserType())
-                    {
-                        case PokerConstants.USERTYPE_HELLO:
+                if (data.getType() == UDPData.Type.MESSAGE) {
+                    switch (data.getUserType()) {
+                        case PokerConstants.USERTYPE_HELLO :
                             addUser(link, data);
                             break;
 
-                        case PokerConstants.USERTYPE_CHAT:
-                            if (!logChat(link, data))
-                            {
-                                synchronized (links_)
-                                {
-                                    for (LinkInfo fwd : links_)
-                                    {
-                                        if (fwd.link != link)
-                                        {
-                                            // creates new UDPData (needed to track send status per link), but shares bytes
-                                            fwd.link.queue(data.getData(), data.getOffset(), data.getLength(), data.getUserType());
+                        case PokerConstants.USERTYPE_CHAT :
+                            if (!logChat(link, data)) {
+                                synchronized (links_) {
+                                    for (LinkInfo fwd : links_) {
+                                        if (fwd.link != link) {
+                                            // creates new UDPData (needed to track send status per link), but shares
+                                            // bytes
+                                            fwd.link.queue(data.getData(), data.getOffset(), data.getLength(),
+                                                    data.getUserType());
 
                                             // queue for sending
                                             udp_.manager().addLinkToSend(fwd.link);
@@ -167,8 +151,7 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
     /**
      * add user to list
      */
-    private void addUser(UDPLink link, UDPData data)
-    {
+    private void addUser(UDPLink link, UDPData data) {
         PokerUDPTransporter msg = new PokerUDPTransporter(data);
         OnlineMessage om = new OnlineMessage(msg.getMessage());
         DMTypedHashMap authData = om.getWanAuth();
@@ -176,16 +159,14 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
         String sRealKey = auth.getLicenseKey();
 
         // validate license key
-        EngineMessage validateThis = new EngineMessage("ChatServer", EngineMessage.PLAYER_SERVER, EngineMessage.CAT_VERIFY_KEY);
+        EngineMessage validateThis = new EngineMessage("ChatServer", EngineMessage.PLAYER_SERVER,
+                EngineMessage.CAT_VERIFY_KEY);
         validateThis.setKey(sRealKey);
         validateThis.setVersion(om.getData().getVersion());
         EngineMessage validate = PokerServlet.validateKeyAndVersion(validateThis, Utils.getAddress(link.getRemoteIP()),
-                                                                    bannedKeyService,
-                                                                    PokerConstants.VERSION,
-                                                                    PokerConstants.getKeyStart(validateThis.getVersion()),
-                                                                    true, true, false);
-        if (validate != null)
-        {
+                bannedKeyService, PokerConstants.VERSION, PokerConstants.getKeyStart(validateThis.getVersion()), true,
+                true, false);
+        if (validate != null) {
             sendError(link, validate.getApplicationErrorMessage());
             return;
         }
@@ -195,14 +176,12 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
 
         // check for temp ban (handles null user)
         String banCheck = PokerServlet.banCheck(bannedKeyService, user);
-        if (banCheck != null)
-        {
+        if (banCheck != null) {
             sendError(link, banCheck);
             return;
         }
         // if no user or bad auth or not activated, return message
-        if (user == null || !user.getPassword().equals(auth.getPassword()) || !user.isActivated())
-        {
+        if (user == null || !user.getPassword().equals(auth.getPassword()) || !user.isActivated()) {
             sendError(link, PropertyConfig.getMessage("msg.wanprofile.unavailable"));
             return;
         }
@@ -215,13 +194,12 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
         LinkInfo info = new LinkInfo(link, sRealKey, oinfo); // store key that is being used
 
         // get aliases of original profile (using original key, not current key)
-        List<OnlineProfile> aliases = onlineProfileService.getAllOnlineProfilesForEmail(user.getEmail(), user.getName());
-        if (!aliases.isEmpty())
-        {
+        List<OnlineProfile> aliases = onlineProfileService.getAllOnlineProfilesForEmail(user.getEmail(),
+                user.getName());
+        if (!aliases.isEmpty()) {
             OnlinePlayerInfo oalias;
             DMArrayList<DMTypedHashMap> oaliases = new DMArrayList<DMTypedHashMap>(aliases.size());
-            for (OnlineProfile alias : aliases)
-            {
+            for (OnlineProfile alias : aliases) {
                 oalias = new OnlinePlayerInfo();
                 oalias.setName(alias.getName());
                 oalias.setCreateDate(alias.getCreateDate());
@@ -234,35 +212,31 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
         }
 
         // add link (look for duplicate)
-        synchronized (links_)
-        {
+        synchronized (links_) {
             LinkInfo loop;
             Iterator<LinkInfo> iter = links_.iterator();
-            while (iter.hasNext())
-            {
+            while (iter.hasNext()) {
                 loop = iter.next();
 
                 // same link
-                if (loop.equals(info))
-                {
-                    // already there, probably reconnecting due to perceived time-out, remove and re-add player info below
+                if (loop.equals(info)) {
+                    // already there, probably reconnecting due to perceived time-out, remove and
+                    // re-add player info below
                     iter.remove();
                     break;
                 }
                 // same key different link - close existing
-                else if (loop.sRealKey.equals(sRealKey))
-                {
+                else if (loop.sRealKey.equals(sRealKey)) {
                     logger.info("Duplicate key rejected: " + sRealKey + " for " + info.player.getName());
-                    sendError(loop.link, PropertyConfig.getMessage("msg.chat.dupkey", Utils.encodeHTML(info.player.getName()),
-                                                                   sRealKey));
+                    sendError(loop.link, PropertyConfig.getMessage("msg.chat.dupkey",
+                            Utils.encodeHTML(info.player.getName()), sRealKey));
                     break;
                 }
                 // same profile different link - close existing
-                else if (loop.player.getNameLower().equals(info.player.getNameLower()))
-                {
+                else if (loop.player.getNameLower().equals(info.player.getNameLower())) {
                     logger.info("Duplicate profile rejected: " + sRealKey + " for " + info.player.getName());
-                    sendError(loop.link, PropertyConfig.getMessage("msg.chat.dupprofile", Utils.encodeHTML(info.player.getName()),
-                                                                   Utils.getAddress(link.getRemoteIP())));
+                    sendError(loop.link, PropertyConfig.getMessage("msg.chat.dupprofile",
+                            Utils.encodeHTML(info.player.getName()), Utils.getAddress(link.getRemoteIP())));
                     break;
                 }
             }
@@ -284,13 +258,10 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
         logPlayers();
     }
 
-    private void logPlayers()
-    {
-        synchronized (links_)
-        {
+    private void logPlayers() {
+        synchronized (links_) {
             logger.debug(links_.size() + " players in lobby:");
-            for (LinkInfo i : links_)
-            {
+            for (LinkInfo i : links_) {
                 logger.debug("  ==> " + i);
 
             }
@@ -300,20 +271,17 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
     /**
      * remove user from the list
      */
-    private void removeUser(UDPLink link)
-    {
+    private void removeUser(UDPLink link) {
         LinkInfo search = null;
-        synchronized (links_)
-        {
-            for (LinkInfo info : links_)
-            {
-                if (info.link == link)
-                {
+        synchronized (links_) {
+            for (LinkInfo info : links_) {
+                if (info.link == link) {
                     search = info;
                 }
             }
 
-            if (search == null) return;
+            if (search == null)
+                return;
 
             links_.remove(search);
         }
@@ -328,19 +296,18 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
     /**
      * send chat to all from admin
      */
-    private void sendJoinLeaveAll(LinkInfo who, boolean bJoin, UDPLink skip)
-    {
+    private void sendJoinLeaveAll(LinkInfo who, boolean bJoin, UDPLink skip) {
         OnlineMessage omsg = new OnlineMessage(OnlineMessage.CAT_CHAT_ADMIN);
-        omsg.setChat(PropertyConfig.getMessage(bJoin ? "msg.chat.hello" : "msg.chat.goodbye", Utils.encodeHTML(who.player.getName())));
+        omsg.setChat(PropertyConfig.getMessage(bJoin ? "msg.chat.hello" : "msg.chat.goodbye",
+                Utils.encodeHTML(who.player.getName())));
         omsg.setChatType(bJoin ? PokerConstants.CHAT_ADMIN_JOIN : PokerConstants.CHAT_ADMIN_LEAVE);
         omsg.setPlayerInfo(who.player);
         PokerUDPTransporter pudp = new PokerUDPTransporter(omsg.getData());
 
-        synchronized (links_)
-        {
-            for (LinkInfo info : links_)
-            {
-                if (info.link == skip) continue;
+        synchronized (links_) {
+            for (LinkInfo info : links_) {
+                if (info.link == skip)
+                    continue;
 
                 // creates new UDPData (needed to track send status per link), but shares bytes
                 info.link.queue(pudp.getData(), PokerConstants.USERTYPE_CHAT);
@@ -354,8 +321,7 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
     /**
      * send chat to all from admin
      */
-    private void sendWelcome(UDPLink link, String sMessage)
-    {
+    private void sendWelcome(UDPLink link, String sMessage) {
         OnlineMessage omsg = new OnlineMessage(OnlineMessage.CAT_CHAT_ADMIN);
         omsg.setChat(sMessage);
         omsg.setChatType(PokerConstants.CHAT_ADMIN_WELCOME);
@@ -372,8 +338,7 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
     /**
      * send chat to all from admin
      */
-    private void sendMessage(UDPLink link, String sMessage)
-    {
+    private void sendMessage(UDPLink link, String sMessage) {
         OnlineMessage omsg = new OnlineMessage(OnlineMessage.CAT_CHAT_ADMIN);
         omsg.setChat(sMessage);
         PokerUDPTransporter pudp = new PokerUDPTransporter(omsg.getData());
@@ -388,8 +353,7 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
     /**
      * send chat to all from admin
      */
-    private void sendError(UDPLink link, String sMessage)
-    {
+    private void sendError(UDPLink link, String sMessage) {
         OnlineMessage omsg = new OnlineMessage(OnlineMessage.CAT_CHAT_ADMIN);
         omsg.setChat(sMessage);
         omsg.setChatType(PokerConstants.CHAT_ADMIN_ERROR);
@@ -406,13 +370,10 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
     /**
      * Get arraylist of playerinfo
      */
-    private DMArrayList<DMTypedHashMap> getPlayerList()
-    {
-        synchronized (links_)
-        {
+    private DMArrayList<DMTypedHashMap> getPlayerList() {
+        synchronized (links_) {
             DMArrayList<DMTypedHashMap> list = new DMArrayList<DMTypedHashMap>(links_.size());
-            for (LinkInfo info : links_)
-            {
+            for (LinkInfo info : links_) {
                 list.add(info.player.getData());
             }
             return list;
@@ -422,8 +383,7 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
     /**
      * debug
      */
-    private boolean logChat(UDPLink from, UDPData data)
-    {
+    private boolean logChat(UDPLink from, UDPData data) {
         PokerUDPTransporter msg = new PokerUDPTransporter(data);
         OnlineMessage om = new OnlineMessage(msg.getMessage());
         String chat = om.getChat();
@@ -432,19 +392,15 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
         logger.debug(playerName + " said \"" + chat + '\"');
 
         // Rate limiting (SEC-3): 30 messages per minute per user
-        if (!chatRateLimiter.allowRequest(playerName, 30, 60000))
-        {
+        if (!chatRateLimiter.allowRequest(playerName, 30, 60000)) {
             sendError(from, "Too many chat messages. Please slow down.");
             return true; // handled
         }
 
-        if (chat.startsWith("./stats"))
-        {
+        if (chat.startsWith("./stats")) {
             sendMessage(from, udp_.manager().getStatusHTML(null));
             return true;
-        }
-        else if (chat.startsWith("./dump"))
-        {
+        } else if (chat.startsWith("./dump")) {
             sendMessage(from, "<PRE>" + Utils.getAllStacktraces() + "</PRE>");
             return true;
         }
@@ -455,47 +411,41 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
     /**
      * list of links
      */
-    private class LinkInfo implements Comparable<LinkInfo>
-    {
+    private class LinkInfo implements Comparable<LinkInfo> {
         UDPLink link;
         String sRealKey;
         OnlinePlayerInfo player;
 
-        private LinkInfo(UDPLink link, String sRealKey, OnlinePlayerInfo player)
-        {
+        private LinkInfo(UDPLink link, String sRealKey, OnlinePlayerInfo player) {
             this.link = link;
             this.sRealKey = sRealKey;
             this.player = player;
         }
 
         @Override
-        public boolean equals(Object o)
-        {
-            if (!(o instanceof LinkInfo)) return false;
+        public boolean equals(Object o) {
+            if (!(o instanceof LinkInfo))
+                return false;
 
             LinkInfo l = (LinkInfo) o;
             return link.getID().equals(l.link.getID());
         }
 
         @Override
-        public int hashCode()
-        {
+        public int hashCode() {
             return link.getID().hashCode();
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             return player.getName() + " {" + getTimeConnected() + ' ' + link.getStats() + '}';
         }
 
-        public String getTimeConnected()
-        {
+        public String getTimeConnected() {
             return Utils.getTimeString(link.getTimeConnected(), false);
         }
 
-        public int compareTo(LinkInfo l)
-        {
+        public int compareTo(LinkInfo l) {
             return player.compareTo(l.player);
         }
     }
@@ -504,20 +454,20 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
     //// UDPManagerMonitor
     ////
 
-    public void monitorEvent(UDPManagerEvent event)
-    {
+    public void monitorEvent(UDPManagerEvent event) {
         UDPLink link = event.getLink();
 
-        switch (event.getType())
-        {
-            case CREATED:
-                //if (TESTING(UDPServer.TESTING_UDP)) logger.debug("Created: "+ Utils.getAddressPort(link.getRemoteIP()));
+        switch (event.getType()) {
+            case CREATED :
+                // if (TESTING(UDPServer.TESTING_UDP)) logger.debug("Created: "+
+                // Utils.getAddressPort(link.getRemoteIP()));
                 link.addMonitor(this);
-                //createUser(link) called when HELLO message receved
+                // createUser(link) called when HELLO message receved
                 break;
 
-            case DESTROYED:
-                //if (TESTING(UDPServer.TESTING_UDP)) logger.debug("Destroyed: "+ Utils.getAddressPort(link.getRemoteIP()));
+            case DESTROYED :
+                // if (TESTING(UDPServer.TESTING_UDP)) logger.debug("Destroyed: "+
+                // Utils.getAddressPort(link.getRemoteIP()));
                 link.removeMonitor(this);
                 removeUser(link);
                 break;
@@ -528,18 +478,15 @@ public class ChatServer implements UDPLinkHandler, UDPManagerMonitor, UDPLinkMon
     //// UDPLinkHandler interface
     ////
 
-    public int getTimeout(UDPLink link)
-    {
+    public int getTimeout(UDPLink link) {
         return UDPLink.DEFAULT_TIMEOUT;
     }
 
-    public int getPossibleTimeoutNotificationInterval(UDPLink link)
-    {
+    public int getPossibleTimeoutNotificationInterval(UDPLink link) {
         return getTimeout(link);
     }
 
-    public int getPossibleTimeoutNotificationStart(UDPLink link)
-    {
+    public int getPossibleTimeoutNotificationStart(UDPLink link) {
         return getTimeout(link);
     }
 }

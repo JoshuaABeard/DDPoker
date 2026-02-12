@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -56,8 +56,7 @@ import static com.donohoedigital.config.DebugConfig.*;
  * @author donohoe
  */
 @DataCoder('X')
-public class TournamentProfile extends BaseProfile implements DataMarshal, SimpleXMLEncodable
-{
+public class TournamentProfile extends BaseProfile implements DataMarshal, SimpleXMLEncodable {
     static Logger logger = LogManager.getLogger(TournamentProfile.class);
 
     // defines
@@ -162,32 +161,28 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Empty constructor for loading from data
      */
-    public TournamentProfile()
-    {
+    public TournamentProfile() {
         this("");
     }
 
     /**
      * Load profile from string file
      */
-    public TournamentProfile(String sFile, boolean bFull)
-    {
+    public TournamentProfile(String sFile, boolean bFull) {
         super(sFile, bFull);
     }
 
     /**
      * Load profile from file
      */
-    public TournamentProfile(File file, boolean bFull)
-    {
+    public TournamentProfile(File file, boolean bFull) {
         super(file, bFull);
     }
 
     /**
      * New profile with given name
      */
-    public TournamentProfile(String sName)
-    {
+    public TournamentProfile(String sName) {
         super(sName);
         map_ = new DMTypedHashMap();
 
@@ -201,15 +196,14 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
         setAddons(false);
         setPayout(PokerConstants.PAYOUT_SPOTS);
         setPayoutSpots(3);
-        setOnlineActivatedPlayersOnly(true); // default to true for new tournaments        
+        setOnlineActivatedPlayersOnly(true); // default to true for new tournaments
         fixAll();
     }
 
     /**
      * New profile copied from given profile, using new name
      */
-    public TournamentProfile(TournamentProfile tp, String sName)
-    {
+    public TournamentProfile(TournamentProfile tp, String sName) {
         super(sName);
         map_ = new DMTypedHashMap();
         map_.putAll(tp.map_);
@@ -219,8 +213,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Get begin part of profile name
      */
     @Override
-    protected String getBegin()
-    {
+    protected String getBegin() {
         return PROFILE_BEGIN;
     }
 
@@ -228,8 +221,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Get name of directory to store profiles in
      */
     @Override
-    protected String getProfileDirName()
-    {
+    protected String getProfileDirName() {
         return TOURNAMENT_DIR;
     }
 
@@ -237,50 +229,45 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Get profile list
      */
     @Override
-    protected List<BaseProfile> getProfileFileList()
-    {
+    protected List<BaseProfile> getProfileFileList() {
         return getProfileList();
     }
 
     /**
      * Get map
      */
-    public DMTypedHashMap getMap()
-    {
+    public DMTypedHashMap getMap() {
         return map_;
     }
 
     /**
      * Set update date as now
      */
-    public void setUpdateDate()
-    {
+    public void setUpdateDate() {
         map_.setLong(PARAM_UPDATE, System.currentTimeMillis());
     }
 
     /**
      * Get create date
      */
-    public long getUpdateDate()
-    {
+    public long getUpdateDate() {
         return map_.getLong(PARAM_UPDATE, getCreateDate());
     }
 
     /**
      * Get description
      */
-    public String getDescription()
-    {
+    public String getDescription() {
         return map_.getString(PARAM_DESC, "");
     }
 
     /**
      * Get greeting, replacing variable $name with given sName.
      */
-    public String getGreeting(String sName)
-    {
+    public String getGreeting(String sName) {
         String sGreeting = map_.getString(PARAM_GREETING, "").trim();
-        if (sGreeting.length() == 0) return null;
+        if (sGreeting.length() == 0)
+            return null;
         sGreeting = Utils.replace(sGreeting, "\\$name", sName);
         return sGreeting;
     }
@@ -288,45 +275,37 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Get num players
      */
-    public int getNumPlayers()
-    {
+    public int getNumPlayers() {
         return map_.getInteger(PARAM_NUM_PLAYERS, 0, 2, MAX_PLAYERS);
     }
 
     /**
      * Set num players
      */
-    public void setNumPlayers(int n)
-    {
+    public void setNumPlayers(int n) {
         map_.setInteger(PARAM_NUM_PLAYERS, n);
     }
 
     /**
      * Get num online players - minimum of getNumPlayers() and MAX_ONLINE_PLAYERS
      */
-    public int getMaxOnlinePlayers()
-    {
+    public int getMaxOnlinePlayers() {
         return Math.min(getNumPlayers(), MAX_ONLINE_PLAYERS);
     }
 
     /**
      * Set player list
      */
-    public void setPlayers(List<String> players)
-    {
+    public void setPlayers(List<String> players) {
         DMArrayList<String> list = (DMArrayList<String>) map_.getList(PARAM_PLAYERS);
-        if (list == null)
-        {
+        if (list == null) {
             list = new DMArrayList<String>();
             map_.setList(PARAM_PLAYERS, list);
-        }
-        else
-        {
+        } else {
             list.clear();
         }
 
-        for (String name : players)
-        {
+        for (String name : players) {
             list.add(name);
         }
 
@@ -337,91 +316,80 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Get player list
      */
-    public List<String> getPlayers()
-    {
+    public List<String> getPlayers() {
         DMArrayList<String> players = (DMArrayList<String>) map_.getList(PARAM_PLAYERS);
-        if (players == null) players = new DMArrayList<String>();
+        if (players == null)
+            players = new DMArrayList<String>();
         return players;
     }
 
     /**
      * is invite only?
      */
-    public boolean isInviteOnly()
-    {
+    public boolean isInviteOnly() {
         return map_.getBoolean(PARAM_INVITE_ONLY, false);
     }
 
     /**
      * Set invite only
      */
-    public void setInviteOnly(boolean b)
-    {
+    public void setInviteOnly(boolean b) {
         map_.setBoolean(PARAM_INVITE_ONLY, b ? Boolean.TRUE : Boolean.FALSE);
     }
 
     /**
      * is invite only?
      */
-    public boolean isInviteObserversPublic()
-    {
+    public boolean isInviteObserversPublic() {
         return map_.getBoolean(PARAM_INVITE_OBS, false);
     }
 
     /**
      * Set public observers
      */
-    public void setInviteObserversPublic(boolean b)
-    {
+    public void setInviteObserversPublic(boolean b) {
         map_.setBoolean(PARAM_INVITE_OBS, b ? Boolean.TRUE : Boolean.FALSE);
     }
 
     /**
      * Get invitee player list
      */
-    public AbstractPlayerList getInvitees()
-    {
+    public AbstractPlayerList getInvitees() {
         return new InviteePlayerList(this);
     }
 
     /**
      * PlayerList which stores data in TournamentProfile
      */
-    private static class InviteePlayerList extends AbstractPlayerList
-    {
+    private static class InviteePlayerList extends AbstractPlayerList {
         TournamentProfile profile;
 
-        private InviteePlayerList(TournamentProfile profile)
-        {
+        private InviteePlayerList(TournamentProfile profile) {
             this.profile = profile;
             fetch();
         }
 
         @Override
-        public String getName()
-        {
+        public String getName() {
             return "invited";
         }
 
         @Override
-        protected void saveNames(String sNames)
-        {
+        protected void saveNames(String sNames) {
             profile.map_.setString(PARAM_INVITEES, sNames);
         }
 
         @Override
-        protected String fetchNames()
-        {
+        protected String fetchNames() {
             return profile.map_.getString(PARAM_INVITEES, null);
         }
 
         @Override
-        protected void saveKeys(String sKeys)
-        { /* no keys */ }
+        protected void saveKeys(String sKeys) {
+            /* no keys */ }
 
         @Override
-        protected String fetchKeys()
-        {
+        protected String fetchKeys() {
             return null;
         }
     }
@@ -429,92 +397,82 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Get max players at a table
      */
-    public int getSeats()
-    {
+    public int getSeats() {
         return map_.getInteger(PARAM_TABLE_SEATS, PokerConstants.SEATS, 2, PokerConstants.SEATS);
     }
 
     /**
      * Get buyin
      */
-    public int getBuyinCost()
-    {
+    public int getBuyinCost() {
         return map_.getInteger(PARAM_BUYIN, 0, 1, MAX_BUY);
     }
 
     /**
      * set buyin
      */
-    public void setBuyin(int n)
-    {
+    public void setBuyin(int n) {
         map_.setInteger(PARAM_BUYIN, n);
     }
 
     /**
      * Get buyin chips
      */
-    public int getBuyinChips()
-    {
+    public int getBuyinChips() {
         return map_.getInteger(PARAM_BUYINCHIPS, 0, 1, MAX_CHIPS);
     }
 
     /**
      * set buyin chips
      */
-    public void setBuyinChips(int n)
-    {
+    public void setBuyinChips(int n) {
         map_.setInteger(PARAM_BUYINCHIPS, n);
     }
 
     /**
-     * Get starting depth in big blinds (buyin chips / level 1 big blind).
-     * Returns -1 if big blind at level 1 is zero or no levels are defined.
+     * Get starting depth in big blinds (buyin chips / level 1 big blind). Returns
+     * -1 if big blind at level 1 is zero or no levels are defined.
      */
-    public int getStartingDepthBBs()
-    {
+    public int getStartingDepthBBs() {
         int bigBlind = getBigBlind(1);
-        if (bigBlind <= 0) return -1;
+        if (bigBlind <= 0)
+            return -1;
         return getBuyinChips() / bigBlind;
     }
 
     /**
      * Get rebuy chip cnt
      */
-    public int getRebuyChipCount()
-    {
+    public int getRebuyChipCount() {
         return map_.getInteger(PARAM_REBUYCHIPCNT, getBuyinChips(), 0, MAX_REBUY_CHIPS);
     }
 
     /**
      * set rebuy chip count
      */
-    public void setRebuyChipCount(int n)
-    {
+    public void setRebuyChipCount(int n) {
         map_.setInteger(PARAM_REBUYCHIPCNT, n);
     }
 
     /**
      * Get rebuy expression
      */
-    public int getRebuyExpressionType()
-    {
-        return map_.getInteger(PARAM_REBUYEXPR, PokerConstants.REBUY_LTE,
-                               PokerConstants.REBUY_LT, PokerConstants.REBUY_LTE);
+    public int getRebuyExpressionType() {
+        return map_.getInteger(PARAM_REBUYEXPR, PokerConstants.REBUY_LTE, PokerConstants.REBUY_LT,
+                PokerConstants.REBUY_LTE);
     }
 
     /**
      * Get rebuy expression
      */
-    public void setRebuyExpression(int n)
-    {
+    public void setRebuyExpression(int n) {
         map_.setInteger(PARAM_REBUYEXPR, n);
     }
 
     /**
      * remove entries for level
      */
-    public void clearLevel(int nLevel)
-    {
+    public void clearLevel(int nLevel) {
         map_.remove(PARAM_ANTE + nLevel);
         map_.remove(PARAM_SMALL + nLevel);
         map_.remove(PARAM_BIG + nLevel);
@@ -525,61 +483,52 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Get small blind
      */
-    public int getSmallBlind(int nLevel)
-    {
+    public int getSmallBlind(int nLevel) {
         return getAmount(PARAM_SMALL, nLevel);
     }
 
     /**
      * Get big blind
      */
-    public int getBigBlind(int nLevel)
-    {
+    public int getBigBlind(int nLevel) {
         return getAmount(PARAM_BIG, nLevel);
     }
 
     /**
      * Get ante
      */
-    public int getAnte(int nLevel)
-    {
+    public int getAnte(int nLevel) {
         return getAmount(PARAM_ANTE, nLevel);
     }
 
     /**
-     * Get last small blind - if current level is a break, returns
-     * first prior non-break level
+     * Get last small blind - if current level is a break, returns first prior
+     * non-break level
      */
-    public int getLastSmallBlind(int nLevel)
-    {
-        while (isBreak(nLevel) && nLevel > 0)
-        {
+    public int getLastSmallBlind(int nLevel) {
+        while (isBreak(nLevel) && nLevel > 0) {
             nLevel--;
         }
         return getSmallBlind(nLevel);
     }
 
     /**
-     * Get last big blind - if current level is a break, returns
-     * first prior non-break level
+     * Get last big blind - if current level is a break, returns first prior
+     * non-break level
      */
-    public int getLastBigBlind(int nLevel)
-    {
-        while (isBreak(nLevel) && nLevel > 0)
-        {
+    public int getLastBigBlind(int nLevel) {
+        while (isBreak(nLevel) && nLevel > 0) {
             nLevel--;
         }
         return getBigBlind(nLevel);
     }
 
     /**
-     * Get last ante - if current level is a break, returns
-     * first prior non-break level
+     * Get last ante - if current level is a break, returns first prior non-break
+     * level
      */
-    public int getLastAnte(int nLevel)
-    {
-        while (isBreak(nLevel) && nLevel > 0)
-        {
+    public int getLastAnte(int nLevel) {
+        while (isBreak(nLevel) && nLevel > 0) {
             nLevel--;
         }
         return getAnte(nLevel);
@@ -588,49 +537,43 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Get default time limit
      */
-    public int getDefaultMinutesPerLevel()
-    {
+    public int getDefaultMinutesPerLevel() {
         return map_.getInteger(PARAM_MINPERLEVEL_DEFAULT, 0, 1, MAX_MINUTES);
     }
 
     /**
      * Set default level minutes
      */
-    public void setMinutesPerLevel(int n)
-    {
+    public void setMinutesPerLevel(int n) {
         map_.setInteger(PARAM_MINPERLEVEL_DEFAULT, n);
     }
 
     /**
      * Get minutes in level
      */
-    public int getMinutes(int nLevel)
-    {
+    public int getMinutes(int nLevel) {
         int nAmount = getAmountFromString(PARAM_MINUTES + nLevel, false);
-        if (nAmount == 0)
-        {
+        if (nAmount == 0) {
             nAmount = getDefaultMinutesPerLevel();
         }
-        if (nAmount > MAX_MINUTES) nAmount = MAX_MINUTES;
+        if (nAmount > MAX_MINUTES)
+            nAmount = MAX_MINUTES;
         return nAmount;
     }
 
     /**
      * Get default game type
      */
-    public String getDefaultGameTypeString()
-    {
+    public String getDefaultGameTypeString() {
         return map_.getString(PARAM_GAMETYPE_DEFAULT, PokerConstants.DE_NO_LIMIT_HOLDEM);
     }
 
     /**
      * Get string version of game type
      */
-    public String getGameTypeString(int nLevel)
-    {
+    public String getGameTypeString(int nLevel) {
         String sType = map_.getString(PARAM_GAMETYPE + nLevel);
-        if (sType == null || sType.length() == 0)
-        {
+        if (sType == null || sType.length() == 0) {
             sType = getDefaultGameTypeString();
         }
         return sType;
@@ -639,15 +582,11 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Get game type display for level, returns blank if type equals default.
      */
-    public String getGameTypeDisplay(int i)
-    {
+    public String getGameTypeDisplay(int i) {
         String sGame = getGameTypeString(i);
-        if (sGame.equals(getDefaultGameTypeString()))
-        {
+        if (sGame.equals(getDefaultGameTypeString())) {
             return "";
-        }
-        else
-        {
+        } else {
             return DataElement.getDisplayValue(DATA_ELEMENT_GAMETYPE, sGame);
         }
     }
@@ -655,20 +594,15 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Get game type for level, returning an int (see PokerContants)
      */
-    public int getGameType(int nLevel)
-    {
+    public int getGameType(int nLevel) {
         String sType = getGameTypeString(nLevel);
 
-        if (sType.equals(PokerConstants.DE_NO_LIMIT_HOLDEM))
-        {
+        if (sType.equals(PokerConstants.DE_NO_LIMIT_HOLDEM)) {
             return PokerConstants.TYPE_NO_LIMIT_HOLDEM;
-        }
-        else if (sType.equals(PokerConstants.DE_POT_LIMIT_HOLDEM))
-        {
+        } else if (sType.equals(PokerConstants.DE_POT_LIMIT_HOLDEM)) {
             return PokerConstants.TYPE_POT_LIMIT_HOLDEM;
         }
-        if (sType.equals(PokerConstants.DE_LIMIT_HOLDEM))
-        {
+        if (sType.equals(PokerConstants.DE_LIMIT_HOLDEM)) {
             return PokerConstants.TYPE_LIMIT_HOLDEM;
         }
 
@@ -678,16 +612,14 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * is given level a break?
      */
-    public boolean isBreak(int nLevel)
-    {
+    public boolean isBreak(int nLevel) {
         return getAmountFromString(PARAM_ANTE + nLevel, true) == BREAK_ANTE_VALUE;
     }
 
     /**
      * Set given level as a break
      */
-    public void setBreak(int nLevel, int nMinutes)
-    {
+    public void setBreak(int nLevel, int nMinutes) {
         map_.setString(PARAM_ANTE + nLevel, Integer.toString(BREAK_ANTE_VALUE));
         map_.setString(PARAM_MINUTES + nLevel, Integer.toString(nMinutes));
         map_.remove(PARAM_SMALL + nLevel);
@@ -698,12 +630,11 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Get max raises
      */
-    public int getMaxRaises(int nNumWithCards, boolean isComputer)
-    {
-        if (nNumWithCards <= 2 && isRaiseCapIgnoredHeadsUp())
-        {
+    public int getMaxRaises(int nNumWithCards, boolean isComputer) {
+        if (nNumWithCards <= 2 && isRaiseCapIgnoredHeadsUp()) {
             // cap ai players at 4 so they don't raise each other indefinitely
-            if (isComputer) return MAX_AI_RAISES;
+            if (isComputer)
+                return MAX_AI_RAISES;
             return Integer.MAX_VALUE;
         }
 
@@ -714,39 +645,32 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Observe max raises when heads-up?
      */
-    public boolean isRaiseCapIgnoredHeadsUp()
-    {
+    public boolean isRaiseCapIgnoredHeadsUp() {
         return map_.getBoolean(PARAM_MAXRAISES_NONE_HEADSUP, true);
     }
 
     /**
      * Get level amount
      */
-    private int getAmount(String sName, int nLevel)
-    {
+    private int getAmount(String sName, int nLevel) {
         ApplicationError.assertTrue(!isBreak(nLevel), "Attempting to get value for a break level", sName);
         int nAmount;
         int nLast = getLastLevel();
-        if (nLevel > nLast)
-        {
-            while (isBreak(nLast) && nLast > 0)
-            {
+        if (nLevel > nLast) {
+            while (isBreak(nLast) && nLast > 0) {
                 nLast--;
                 nLevel--;
             }
             nAmount = getAmountFromString(sName + nLast, false);
-            if (isDoubleAfterLastLevel())
-            {
-                //old clever way before we had to check for max int
-                //nAmount *= Math.pow(2, (nLevel - nLast));
+            if (isDoubleAfterLastLevel()) {
+                // old clever way before we had to check for max int
+                // nAmount *= Math.pow(2, (nLevel - nLast));
 
                 // double until we go over MAX int
                 long l = nAmount;
-                for (int i = 0; i < (nLevel - nLast); i++)
-                {
+                for (int i = 0; i < (nLevel - nLast); i++) {
                     l *= 2;
-                    if (l >= MAX_BLINDANTE)
-                    {
+                    if (l >= MAX_BLINDANTE) {
                         l /= 2;
                         break;
                     }
@@ -755,9 +679,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
 
             }
             return round(nAmount);
-        }
-        else
-        {
+        } else {
             return getAmountFromString(sName + nLevel, false);
         }
     }
@@ -765,81 +687,68 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * set payout type
      */
-    public void setPayout(int nType)
-    {
+    public void setPayout(int nType) {
         map_.setInteger(PARAM_PAYOUT, nType);
     }
 
     /**
      * Get payout type
      */
-    public int getPayoutType()
-    {
-        return map_.getInteger(PARAM_PAYOUT, PokerConstants.PAYOUT_PERC,
-                               PokerConstants.PAYOUT_SPOTS, PokerConstants.PAYOUT_SATELLITE);
+    public int getPayoutType() {
+        return map_.getInteger(PARAM_PAYOUT, PokerConstants.PAYOUT_PERC, PokerConstants.PAYOUT_SPOTS,
+                PokerConstants.PAYOUT_SATELLITE);
     }
 
     /**
      * Set payout spots
      */
-    public void setPayoutSpots(int n)
-    {
+    public void setPayoutSpots(int n) {
         map_.setInteger(PARAM_PAYOUTNUM, n);
     }
 
     /**
      * Set payout spots
      */
-    public void setPayoutPercent(int n)
-    {
+    public void setPayoutPercent(int n) {
         map_.setInteger(PARAM_PAYOUTPERC, n);
     }
 
     /**
      * Get spots to payout
      */
-    private int getPayoutSpots()
-    {
+    private int getPayoutSpots() {
         return map_.getInteger(PARAM_PAYOUTNUM, 3, 1, MAX_SPOTS);
     }
 
     /**
      * get percent of spots to payout
      */
-    public int getPayoutPercent()
-    {
+    public int getPayoutPercent() {
         return map_.getInteger(PARAM_PAYOUTPERC, 5, 1, MAX_PERC);
     }
 
     /**
      * Update num players, adjust payout if necessary
      */
-    public void updateNumPlayers(int nNumPlayers)
-    {
+    public void updateNumPlayers(int nNumPlayers) {
         boolean bChange = false;
 
         int nType = getPayoutType();
-        if (nType == PokerConstants.PAYOUT_PERC)
-        {
+        if (nType == PokerConstants.PAYOUT_PERC) {
             int spot = getPayoutPercent();
             int max = getMaxPayoutPercent(nNumPlayers);
-            if (spot > max)
-            {
+            if (spot > max) {
                 bChange = true;
                 setPayoutPercent(max);
             }
-        }
-        else if (nType == PokerConstants.PAYOUT_SPOTS)
-        {
+        } else if (nType == PokerConstants.PAYOUT_SPOTS) {
             int spot = getPayoutSpots();
             int max = getMaxPayoutSpots(nNumPlayers);
-            if (spot > max)
-            {
+            if (spot > max) {
                 bChange = true;
                 setPayoutSpots(max);
             }
-        }
-        else // PokerConstants.PAYOUT_SATELLITE
+        } else // PokerConstants.PAYOUT_SATELLITE
         {
             // no need to update if num players change
         }
@@ -848,17 +757,14 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
         setNumPlayers(nNumPlayers);
 
         // if a change in payout spots occurred, update
-        if (bChange)
-        {
-            if (isAllocFixed() || isAllocPercent())
-            {
+        if (bChange) {
+            if (isAllocFixed() || isAllocPercent()) {
                 setAlloc(PokerConstants.ALLOC_AUTO);
             }
         }
 
         // if auto alloc, update spots
-        if (isAllocAuto())
-        {
+        if (isAllocAuto()) {
             setAutoSpots();
         }
 
@@ -869,106 +775,87 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Return number of payout spots
      */
-    public int getNumSpots()
-    {
+    public int getNumSpots() {
         int nRet;
         int nType = getPayoutType();
-        if (nType == PokerConstants.PAYOUT_PERC)
-        {
+        if (nType == PokerConstants.PAYOUT_PERC) {
             int spot = getPayoutPercent();
             nRet = (int) Math.ceil((((double) spot) / 100d) * (double) getNumPlayers());
-        }
-        else if (nType == PokerConstants.PAYOUT_SPOTS)
-        {
+        } else if (nType == PokerConstants.PAYOUT_SPOTS) {
             nRet = getPayoutSpots();
-        }
-        else // PokerConstants.PAYOUT_SATELLITE
+        } else // PokerConstants.PAYOUT_SATELLITE
         {
             int nPrize = getPrizePool();
             int nAmount = getSatellitePayout();
-            if (nAmount == 0)
-            {
+            if (nAmount == 0) {
                 nRet = 1;
-            }
-            else
-            {
+            } else {
                 nRet = nPrize / nAmount;
                 int nExtra = nPrize % nAmount;
-                if (nExtra > 0) nRet++;
+                if (nExtra > 0)
+                    nRet++;
             }
         }
 
         // always ensure 1 spot paid out
-        if (nRet == 0) nRet = 1;
+        if (nRet == 0)
+            nRet = 1;
 
         return nRet;
     }
 
     /**
-     * In isAllocSatellite() case, this returns
-     * the amount each spot gets
+     * In isAllocSatellite() case, this returns the amount each spot gets
      */
-    public int getSatellitePayout()
-    {
+    public int getSatellitePayout() {
         return (int) getSpot(1);
     }
 
     /**
      * Set alloc type
      */
-    public void setAlloc(int nType)
-    {
+    public void setAlloc(int nType) {
         map_.setInteger(PARAM_ALLOC, nType);
     }
 
     /**
      * Return if pool is auto allocated
      */
-    public boolean isAllocAuto()
-    {
-        return !isAllocSatellite() && map_.getInteger(PARAM_ALLOC, PokerConstants.ALLOC_AUTO,
-                                                      PokerConstants.ALLOC_AUTO,
-                                                      PokerConstants.ALLOC_AMOUNT) == PokerConstants.ALLOC_AUTO;
+    public boolean isAllocAuto() {
+        return !isAllocSatellite() && map_.getInteger(PARAM_ALLOC, PokerConstants.ALLOC_AUTO, PokerConstants.ALLOC_AUTO,
+                PokerConstants.ALLOC_AMOUNT) == PokerConstants.ALLOC_AUTO;
     }
 
     /**
      * Return if pool is perc allocated
      */
-    public boolean isAllocPercent()
-    {
-        return !isAllocSatellite() && map_.getInteger(PARAM_ALLOC, PokerConstants.ALLOC_AUTO,
-                                                      PokerConstants.ALLOC_AUTO,
-                                                      PokerConstants.ALLOC_AMOUNT) == PokerConstants.ALLOC_PERC;
+    public boolean isAllocPercent() {
+        return !isAllocSatellite() && map_.getInteger(PARAM_ALLOC, PokerConstants.ALLOC_AUTO, PokerConstants.ALLOC_AUTO,
+                PokerConstants.ALLOC_AMOUNT) == PokerConstants.ALLOC_PERC;
     }
 
     /**
      * Return if pool is fixed amount allocated
      */
-    public boolean isAllocFixed()
-    {
-        return !isAllocSatellite() && map_.getInteger(PARAM_ALLOC,
-                                                      PokerConstants.ALLOC_AUTO,
-                                                      PokerConstants.ALLOC_AUTO,
-                                                      PokerConstants.ALLOC_AMOUNT) == PokerConstants.ALLOC_AMOUNT;
+    public boolean isAllocFixed() {
+        return !isAllocSatellite() && map_.getInteger(PARAM_ALLOC, PokerConstants.ALLOC_AUTO, PokerConstants.ALLOC_AUTO,
+                PokerConstants.ALLOC_AMOUNT) == PokerConstants.ALLOC_AMOUNT;
     }
 
     /**
      * Return if pool is satellite allocated
      */
-    public boolean isAllocSatellite()
-    {
+    public boolean isAllocSatellite() {
         return getPayoutType() == PokerConstants.PAYOUT_SATELLITE;
     }
 
     /**
      * Get prize pool amount
      */
-    public int getPrizePool()
-    {
+    public int getPrizePool() {
         // pool - get amount set during a tournament,
         int nPool = map_.getInteger(PARAM_PRIZEPOOL, -1);
-        if (nPool != -1)
-        {
+        if (nPool != -1) {
             return nPool;
         }
 
@@ -980,25 +867,22 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Set actual prize pool (updates spots if auto-allocated).
      */
-    public void setPrizePool(int nPool, boolean bAdjustForHouseTake)
-    {
-        if (bAdjustForHouseTake) nPool = getPoolAfterHouseTake(nPool);
+    public void setPrizePool(int nPool, boolean bAdjustForHouseTake) {
+        if (bAdjustForHouseTake)
+            nPool = getPoolAfterHouseTake(nPool);
         map_.setInteger(PARAM_PRIZEPOOL, nPool);
-        if (isAllocAuto()) setAutoSpots();
+        if (isAllocAuto())
+            setAutoSpots();
     }
 
     /**
      * Get house take
      */
-    public int getPoolAfterHouseTake(int nPool)
-    {
+    public int getPoolAfterHouseTake(int nPool) {
         int nNumPlayers = getNumPlayers();
-        if (getHouseCutType() == PokerConstants.HOUSE_PERC)
-        {
+        if (getHouseCutType() == PokerConstants.HOUSE_PERC) {
             nPool -= (((double) getHousePercent()) / 100d) * (double) nPool;
-        }
-        else
-        {
+        } else {
             nPool -= getHouseAmount() * nNumPlayers;
         }
 
@@ -1008,37 +892,33 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * return type of house cut
      */
-    public int getHouseCutType()
-    {
-        return map_.getInteger(PARAM_HOUSE, PokerConstants.HOUSE_PERC, PokerConstants.HOUSE_AMOUNT, PokerConstants.HOUSE_PERC);
+    public int getHouseCutType() {
+        return map_.getInteger(PARAM_HOUSE, PokerConstants.HOUSE_PERC, PokerConstants.HOUSE_AMOUNT,
+                PokerConstants.HOUSE_PERC);
     }
 
     /**
      * get house percent integer (0-100)
      */
-    public int getHousePercent()
-    {
+    public int getHousePercent() {
         return map_.getInteger(PARAM_HOUSEPERC, 0, 0, MAX_HOUSE_PERC);
     }
 
     /**
      * Get house cut amount
      */
-    public int getHouseAmount()
-    {
+    public int getHouseAmount() {
         return map_.getInteger(PARAM_HOUSEAMOUNT, 0, 0, MAX_HOUSE_AMOUNT);
     }
 
     /**
-     * Get true buyin (less house cost) - this is used to figure out the multiple
-     * to use for minimum payouts
+     * Get true buyin (less house cost) - this is used to figure out the multiple to
+     * use for minimum payouts
      */
-    public int getTrueBuyin()
-    {
+    public int getTrueBuyin() {
         int nType = getHouseCutType();
         int buy = getBuyinCost();
-        if (nType == PokerConstants.HOUSE_AMOUNT)
-        {
+        if (nType == PokerConstants.HOUSE_AMOUNT) {
             buy -= getHouseAmount();
         }
         return buy;
@@ -1047,12 +927,13 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Get max number of spots for given number of players
      */
-    public int getMaxPayoutSpots(int nNumPlayers)
-    {
+    public int getMaxPayoutSpots(int nNumPlayers) {
         int nMax = (int) (nNumPlayers * MAX_SPOTS_PERCENT);
         nMax = Math.min(nMax, MAX_SPOTS);
-        if (nMax < MIN_SPOTS) nMax = MIN_SPOTS;
-        if (nMax > nNumPlayers) nMax = nNumPlayers;
+        if (nMax < MIN_SPOTS)
+            nMax = MIN_SPOTS;
+        if (nMax > nNumPlayers)
+            nMax = nNumPlayers;
 
         return nMax;
     }
@@ -1060,11 +941,9 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Get max percetage of spots
      */
-    public int getMaxPayoutPercent(int nNumPlayers)
-    {
+    public int getMaxPayoutPercent(int nNumPlayers) {
         int nMax = 0;
-        if (nNumPlayers > 0)
-        {
+        if (nNumPlayers > 0) {
             nMax = (Math.min(MAX_SPOTS, getMaxPayoutSpots(nNumPlayers))) * 100 / nNumPlayers;
         }
 
@@ -1074,8 +953,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Set automatic spot percentages
      */
-    public void setAutoSpots()
-    {
+    public void setAutoSpots() {
         int nFinalSpots = 10; // top ten finishers use fibbo math
 
         int nPool = getPrizePool();
@@ -1087,8 +965,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
         // add a rebuy to min in actual tournament calculation
         // as suggested by "Tex" - we do this if the
         // pool has had enough rebuys to cover each spot
-        if (nPool >= (getPoolAfterHouseTake(getBuyinCost() * getNumPlayers()) + (nNumSpots * getRebuyCost())))
-        {
+        if (nPool >= (getPoolAfterHouseTake(getBuyinCost() * getNumPlayers()) + (nNumSpots * getRebuyCost()))) {
             nMin += getRebuyCost();
         }
 
@@ -1097,17 +974,22 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
         int nAlloc;
 
         int nRound;
-        if (nMin < 100) nRound = 1;
-        else if (nMin < 500) nRound = 10;
-        else if (nMin <= 1000) nRound = 100;
-        else if (nMin <= 5000) nRound = 500;
-        else if (nMin <= 10000) nRound = 1000;
-        else nRound = 5000;
+        if (nMin < 100)
+            nRound = 1;
+        else if (nMin < 500)
+            nRound = 10;
+        else if (nMin <= 1000)
+            nRound = 100;
+        else if (nMin <= 5000)
+            nRound = 500;
+        else if (nMin <= 10000)
+            nRound = 1000;
+        else
+            nRound = 5000;
 
         double inc = .5d;
         double mult;
-        if (nNonFinal > 0)
-        {
+        if (nNonFinal > 0) {
             // estimate total pool - if non-final payouts are too
             // high, lower increment paid until total is in desired
             // range
@@ -1115,37 +997,36 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
             // we won't be in here unless at 30+ players
             double dLow = .01d;
             double dHigh = .33d;
-            // range for non-final portion of the pool is 1% at 30 players to 33% at max players
-            double dRange = dLow + ((dHigh - dLow) * (getNumPlayers() - nMinBottom) / (double) (MAX_PLAYERS - nMinBottom));
+            // range for non-final portion of the pool is 1% at 30 players to 33% at max
+            // players
+            double dRange = dLow
+                    + ((dHigh - dLow) * (getNumPlayers() - nMinBottom) / (double) (MAX_PLAYERS - nMinBottom));
             double dMinRange = ((nMin * nNonFinal) / (double) nPool);
-            if (dRange < dMinRange) dRange = dMinRange;
+            if (dRange < dMinRange)
+                dRange = dMinRange;
 
-            //logger.debug("Range: " + (dRange* 100));
-            while (true)
-            {
+            // logger.debug("Range: " + (dRange* 100));
+            while (true) {
                 int nFull = nNonFinal / PokerConstants.SEATS;
                 int nExtra = nNonFinal % PokerConstants.SEATS;
                 int nInc = (int) (nMin * inc);
-                if (nInc == 0) nInc = 1;
+                if (nInc == 0)
+                    nInc = 1;
                 // this formula:
                 //
                 // #seats (10) * num full tables * min payout (buyin) +
                 // #seats (10) * sum (1 .. full) * incremental payout
-                double nEst = (PokerConstants.SEATS * nFull * nMin) +
-                              (PokerConstants.SEATS * ((nFull * (nFull + 1)) / 2) * nInc);
+                double nEst = (PokerConstants.SEATS * nFull * nMin)
+                        + (PokerConstants.SEATS * ((nFull * (nFull + 1)) / 2) * nInc);
                 int nFinalInc = (int) (nMin * (inc * (nFull + 1)));
 
                 // add payout to extra players
                 nEst += nExtra * (nMin + nFinalInc);
-                if (nEst / nPool <= dRange)
-                {
+                if (nEst / nPool <= dRange) {
                     break;
-                }
-                else
-                {
+                } else {
                     inc -= .05d;
-                    if (inc <= 0)
-                    {
+                    if (inc <= 0) {
                         inc = 0;
                         break;
                     }
@@ -1154,11 +1035,9 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
 
             mult = 1.0d + inc;
 
-            while (nNonFinal > 0)
-            {
+            while (nNonFinal > 0) {
                 nAlloc = (int) (nMin * mult);
-                if ((nAlloc % nRound) > 0)
-                {
+                if ((nAlloc % nRound) > 0) {
                     nAlloc = nAlloc - (nAlloc % nRound) + nRound;
                 }
                 amount[nIndex] = nAlloc;
@@ -1166,14 +1045,11 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
                 nIndex++;
                 nNonFinal--;
 
-                if (nIndex % PokerConstants.SEATS == 0 && nNonFinal > 0)
-                {
+                if (nIndex % PokerConstants.SEATS == 0 && nNonFinal > 0) {
                     mult += inc;
                 }
             }
-        }
-        else
-        {
+        } else {
             mult = 1.0d;
         }
         int nLeft = nNumSpots - nIndex;
@@ -1184,8 +1060,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
         fibo[0] = 2;
         fibo[1] = 3;
         sum = fibo[0] + fibo[1];
-        for (int i = 2; i < nLeft; i++)
-        {
+        for (int i = 2; i < nLeft; i++) {
             fibo[i] = fibo[i - 1] + fibo[i - 2];
             sum += fibo[i];
         }
@@ -1194,32 +1069,29 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
         int nPoolLeft = nPool - nAllocdPool;
         nMin *= mult;
         int nSplit = nPoolLeft / nLeft;
-        if (nMin >= (nSplit * .8)) nMin = 0;
-        if (nMin == 0) nRound = 1;
+        if (nMin >= (nSplit * .8))
+            nMin = 0;
+        if (nMin == 0)
+            nRound = 1;
 
-        //logger.debug("min: " + nMin + " round: " + nRound + " nSplit: " + nSplit + " nPoolLeft: " + nPoolLeft + " nLeft: " + nLeft + " mult: " + mult);
+        // logger.debug("min: " + nMin + " round: " + nRound + " nSplit: " + nSplit + "
+        // nPoolLeft: " + nPoolLeft + " nLeft: " + nLeft + " mult: " + mult);
 
-        if ((nMin % nRound) > 0)
-        {
+        if ((nMin % nRound) > 0) {
             nMin = nMin - (nMin % nRound) + nRound;
         }
 
-        //logger.debug("min: "+ nMin);
+        // logger.debug("min: "+ nMin);
 
         double perc;
-        for (int i = 0; i < nLeft - 1; i++)
-        {
+        for (int i = 0; i < nLeft - 1; i++) {
             perc = (double) fibo[i] / (double) sum;
             nAlloc = (int) (nPoolLeft * perc);
 
-            if (nAlloc < nMin)
-            {
+            if (nAlloc < nMin) {
                 nAlloc = nMin;
-            }
-            else
-            {
-                if ((nAlloc % nRound) > 0)
-                {
+            } else {
+                if ((nAlloc % nRound) > 0) {
                     nAlloc = nAlloc - (nAlloc % nRound) + nRound;
                 }
             }
@@ -1232,8 +1104,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
         amount[nNumSpots - 1] = nPool - nAllocdPool;
 
         // odd case where #1 is less than #2 - swap
-        if (nNumSpots > 1 && amount[nNumSpots - 1] < amount[nNumSpots - 2])
-        {
+        if (nNumSpots > 1 && amount[nNumSpots - 1] < amount[nNumSpots - 2]) {
             int swap = amount[nNumSpots - 1];
             amount[nNumSpots - 1] = amount[nNumSpots - 2];
             amount[nNumSpots - 2] = swap;
@@ -1241,14 +1112,10 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
 
         // set values
         String text;
-        for (int i = 0; i < MAX_SPOTS; i++)
-        {
-            if (i >= nNumSpots)
-            {
+        for (int i = 0; i < MAX_SPOTS; i++) {
+            if (i >= nNumSpots) {
                 map_.removeString(PARAM_SPOTAMOUNT + (i + 1));
-            }
-            else
-            {
+            } else {
                 text = FORMAT_AMOUNT.format(new Object[]{amount[amount.length - i - 1]});
                 map_.setString(PARAM_SPOTAMOUNT + (i + 1), text);
             }
@@ -1258,121 +1125,112 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Get value of payout spot
      */
-    public double getSpot(int nNum)
-    {
+    public double getSpot(int nNum) {
         return getSpotFromString(PARAM_SPOTAMOUNT + nNum);
     }
 
     /**
      * Get value of payout spot as string
      */
-    public String getSpotAsString(int nNum)
-    {
+    public String getSpotAsString(int nNum) {
         return map_.getString(PARAM_SPOTAMOUNT + nNum, "");
     }
 
     /**
      * Get payout based on spot
      */
-    public int getPayout(int nNum)
-    {
+    public int getPayout(int nNum) {
         // safety check
         int nNumSpots = getNumSpots();
-        if (nNum < 0 || nNum > nNumSpots) return 0; // BUG 315
+        if (nNum < 0 || nNum > nNumSpots)
+            return 0; // BUG 315
 
         // prize pool
         int nPrizePool = getPrizePool();
 
         // satellite alloc
-        if (isAllocSatellite())
-        {
+        if (isAllocSatellite()) {
             int nSatSpot = getSatellitePayout();
 
             // last spot gets any remaining amount
             int nExtra = nPrizePool % nSatSpot;
-            if (nNum == nNumSpots && nExtra != 0)
-            {
+            if (nNum == nNumSpots && nExtra != 0) {
                 return nExtra;
             }
 
-            if (nPrizePool < nSatSpot)
-            {
+            if (nPrizePool < nSatSpot) {
                 nSatSpot = nPrizePool;
             }
 
-            // TODO: possible minor bug: left over amounts if rebuy period continues after payouts started
+            // TODO: possible minor bug: left over amounts if rebuy period continues after
+            // payouts started
             return nSatSpot;
-        }
-        else
-        {
+        } else {
             double spot = getSpot(nNum);
-            if (isAllocPercent())
-            {
+            if (isAllocPercent()) {
                 // top spot gets prize pool less amount paid to other
                 // spots to account for rounding/fractional error
-                if (nNum == 1)
-                {
+                if (nNum == 1) {
                     int nTotal = 0;
-                    for (int i = 2; i <= nNumSpots; i++)
-                    {
+                    for (int i = 2; i <= nNumSpots; i++) {
                         nTotal += getPayout(i);
                     }
 
-                    // TODO: possible minor bug: incorrect amounts if rebuy period continues after payout started
+                    // TODO: possible minor bug: incorrect amounts if rebuy period continues after
+                    // payout started
                     return nPrizePool - nTotal;
                 }
                 return (int) (nPrizePool * spot / 100);
-            }
-            else
-            {
+            } else {
                 return (int) spot;
             }
         }
     }
 
     /**
-     * Get integer from string, throws exception if not there,
-     * used for items stored as strings
+     * Get integer from string, throws exception if not there, used for items stored
+     * as strings
      */
-    private int getAmountFromString(String sName, boolean allowNegative)
-    {
+    private int getAmountFromString(String sName, boolean allowNegative) {
         String s = map_.getString(sName);
-        if (s == null || s.length() == 0) return 0;
+        if (s == null || s.length() == 0)
+            return 0;
 
         int n = Integer.parseInt(s);
-        if (!allowNegative && n < 0) n = 0;
-        if (n > MAX_BLINDANTE) n = MAX_BLINDANTE;
+        if (!allowNegative && n < 0)
+            n = 0;
+        if (n > MAX_BLINDANTE)
+            n = MAX_BLINDANTE;
 
         return n;
     }
 
     /**
-     * Get double from string, throws exception if not there,
-     * used for items stored as strings
+     * Get double from string, throws exception if not there, used for items stored
+     * as strings
      */
-    private double getSpotFromString(String sName)
-    {
+    private double getSpotFromString(String sName) {
         String s = map_.getString(sName);
         double ret = Utils.parseStringToDouble(s, ROUND_MULT);
 
-        if (ret < 0) ret = 0;
-        if (ret > MAX_BLINDANTE) ret = MAX_BLINDANTE;
+        if (ret < 0)
+            ret = 0;
+        if (ret > MAX_BLINDANTE)
+            ret = MAX_BLINDANTE;
         return ret;
     }
 
     /**
      * Get whether an online game is filled with ai players
      */
-    public boolean isFillComputer()
-    {
+    public boolean isFillComputer() {
         return map_.getBoolean(PARAM_FILL_COMPUTER, true);
     }
 
     /**
      * Get whether an online game only allows online activated players
      */
-    public boolean isOnlineActivatedPlayersOnly()
-    {
+    public boolean isOnlineActivatedPlayersOnly() {
         // Added 3.0p3 - defaults to false since new option
         return map_.getBoolean(PARAM_ONLINE_ACTIVATED_ONLY, false);
     }
@@ -1380,186 +1238,161 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * set online activated
      */
-    public void setOnlineActivatedPlayersOnly(boolean onlineActivatedPlayersOnly)
-    {
+    public void setOnlineActivatedPlayersOnly(boolean onlineActivatedPlayersOnly) {
         map_.setBoolean(PARAM_ONLINE_ACTIVATED_ONLY, onlineActivatedPlayersOnly);
     }
 
     /**
      * Get whether an online game allows dashboard usage
      */
-    public boolean isAllowDash()
-    {
+    public boolean isAllowDash() {
         return map_.getBoolean(PARAM_ALLOW_DASH, false);
     }
 
     /**
      * Get whether an online game allows advisor usage
      */
-    public boolean isAllowAdvisor()
-    {
+    public boolean isAllowAdvisor() {
         return map_.getBoolean(PARAM_ALLOW_ADVISOR, false);
     }
 
     /**
      * Get whether an online game boots sitout players
      */
-    public boolean isBootSitout()
-    {
+    public boolean isBootSitout() {
         return map_.getBoolean(PARAM_BOOT_SITOUT, false);
     }
 
     /**
      * Get whether an online game boots disconnected players
      */
-    public boolean isBootDisconnect()
-    {
+    public boolean isBootDisconnect() {
         return map_.getBoolean(PARAM_BOOT_DISCONNECT, true);
     }
 
     /**
      * get boot sitout count
      */
-    public int getBootSitoutCount()
-    {
+    public int getBootSitoutCount() {
         return map_.getInteger(PARAM_BOOT_SITOUT_COUNT, 25, MIN_BOOT_HANDS, MAX_BOOT_HANDS);
     }
 
     /**
      * get boot disconnect count
      */
-    public int getBootDisconnectCount()
-    {
+    public int getBootDisconnectCount() {
         return map_.getInteger(PARAM_BOOT_DISCONNECT_COUNT, 10, MIN_BOOT_HANDS, MAX_BOOT_HANDS);
     }
 
     /**
      * Get whether the blinds double after last level
      */
-    public boolean isDoubleAfterLastLevel()
-    {
+    public boolean isDoubleAfterLastLevel() {
         return map_.getBoolean(PARAM_DOUBLE, true);
     }
 
     /**
      * Get whether there are rebuys
      */
-    public boolean isRebuys()
-    {
+    public boolean isRebuys() {
         return map_.getBoolean(PARAM_REBUYS, false);
     }
 
     /**
      * set whether there are rebuys
      */
-    public void setRebuys(boolean b)
-    {
+    public void setRebuys(boolean b) {
         map_.setBoolean(PARAM_REBUYS, b ? Boolean.TRUE : Boolean.FALSE);
     }
 
     /**
      * Get rebuy cost
      */
-    public int getRebuyCost()
-    {
+    public int getRebuyCost() {
         return map_.getInteger(PARAM_REBUYCOST, 0, 1, MAX_BUY);
     }
 
     /**
      * Get rebuy chips
      */
-    public int getRebuyChips()
-    {
+    public int getRebuyChips() {
         return map_.getInteger(PARAM_REBUYCHIPS, 0, 1, MAX_CHIPS);
     }
 
     /**
      * Get last rebuy level
      */
-    public int getLastRebuyLevel()
-    {
+    public int getLastRebuyLevel() {
         return map_.getInteger(PARAM_REBUY_UNTIL, 0, 1, MAX_LEVELS);
     }
 
     /**
      * Get max rebuys
      */
-    public int getMaxRebuys()
-    {
+    public int getMaxRebuys() {
         return map_.getInteger(PARAM_MAXREBUYS, 0, 0, MAX_REBUYS);
     }
 
     /**
      * Get whether there are addons
      */
-    public boolean isAddons()
-    {
+    public boolean isAddons() {
         return map_.getBoolean(PARAM_ADDONS, false);
     }
 
     /**
      * set whether there are addons
      */
-    public void setAddons(boolean b)
-    {
+    public void setAddons(boolean b) {
         map_.setBoolean(PARAM_ADDONS, b ? Boolean.TRUE : Boolean.FALSE);
     }
 
     /**
      * Get addon cost
      */
-    public int getAddonCost()
-    {
+    public int getAddonCost() {
         return map_.getInteger(PARAM_ADDONCOST, 0, 1, MAX_BUY);
     }
 
     /**
      * Get rebuy chips
      */
-    public int getAddonChips()
-    {
+    public int getAddonChips() {
         return map_.getInteger(PARAM_ADDONCHIPS, 0, 1, MAX_CHIPS);
     }
 
     /**
      * Get add on level
      */
-    public int getAddonLevel()
-    {
+    public int getAddonLevel() {
         return map_.getInteger(PARAM_ADDONLEVEL, 0, 1, MAX_LEVELS);
     }
 
     /**
      * get online player timeout for acting
      */
-    public int getTimeoutSeconds()
-    {
+    public int getTimeoutSeconds() {
         return map_.getInteger(PARAM_TIMEOUT, 30, MIN_TIMEOUT, MAX_TIMEOUT);
     }
 
     /**
      * get player thinkbank for acting
      */
-    public int getThinkBankSeconds()
-    {
+    public int getThinkBankSeconds() {
         return map_.getInteger(PARAM_THINKBANK, 15, 0, MAX_THINKBANK);
     }
 
     /**
      * get maximum number of observers
      */
-    public int getMaxObservers()
-    {
+    public int getMaxObservers() {
         return map_.getInteger(PARAM_MAX_OBSERVERS, 5, 0, MAX_OBSERVERS);
     }
 
-
     /**
-     * Fix levels, eliminating missing rows, filling in missing
-     * blinds
+     * Fix levels, eliminating missing rows, filling in missing blinds
      */
-    public void fixLevels()
-    {
+    public void fixLevels() {
         int nLevel = 0;
         int nNonBreakLevel = 0;
         int nAnte, nSmall, nBig, nMinutes;
@@ -1569,8 +1402,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
         boolean bUpdate;
         boolean bBreak;
 
-        for (int i = 1; i <= MAX_LEVELS; i++)
-        {
+        for (int i = 1; i <= MAX_LEVELS; i++) {
             bUpdate = false;
             a = PARAM_ANTE + i;
             s = PARAM_SMALL + i;
@@ -1584,95 +1416,76 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
             sType = map_.getString(g, "");
             bBreak = false;
 
-            try
-            {
+            try {
                 nAnte = Integer.parseInt(sAnte);
-                if (nAnte == 0)
-                {
+                if (nAnte == 0) {
                     sAnte = "";
                     map_.setString(a, "");
                 }
-                if (nAnte == BREAK_ANTE_VALUE) bBreak = true;
-            }
-            catch (NumberFormatException ignored)
-            {
+                if (nAnte == BREAK_ANTE_VALUE)
+                    bBreak = true;
+            } catch (NumberFormatException ignored) {
                 sAnte = "";
                 map_.setString(a, "");
             }
-            try
-            {
+            try {
                 nSmall = Integer.parseInt(sSmall);
-                if (nSmall == 0)
-                {
+                if (nSmall == 0) {
                     sSmall = "";
                     map_.setString(s, "");
                 }
-            }
-            catch (NumberFormatException ignored)
-            {
+            } catch (NumberFormatException ignored) {
                 sSmall = "";
                 map_.setString(s, "");
             }
-            try
-            {
+            try {
                 nBig = Integer.parseInt(sBig);
-                if (nBig == 0)
-                {
+                if (nBig == 0) {
                     sBig = "";
                     map_.setString(b, "");
                 }
-            }
-            catch (NumberFormatException ignored)
-            {
+            } catch (NumberFormatException ignored) {
                 sBig = "";
                 map_.setString(b, "");
             }
-            try
-            {
+            try {
                 nMinutes = Integer.parseInt(sMinutes);
-                if (nMinutes == 0)
-                {
+                if (nMinutes == 0) {
                     sMinutes = "";
                     map_.setString(m, "");
                 }
-            }
-            catch (NumberFormatException ignored)
-            {
+            } catch (NumberFormatException ignored) {
                 sMinutes = "";
                 map_.setString(m, "");
             }
 
-            if (sAnte.length() == 0 && sSmall.length() == 0 && sBig.length() == 0) continue;
+            if (sAnte.length() == 0 && sSmall.length() == 0 && sBig.length() == 0)
+                continue;
 
             // increment level (we have a valid level)
             nLevel++;
-            if (!bBreak) nNonBreakLevel++;
+            if (!bBreak)
+                nNonBreakLevel++;
 
-            if (sBig.length() == 0 && sBigL != null && !bBreak)
-            {
+            if (sBig.length() == 0 && sBigL != null && !bBreak) {
                 sBig = sBigL;
                 bUpdate = true;
             }
 
-            if (sSmall.length() == 0 && sSmallL != null && !bBreak)
-            {
+            if (sSmall.length() == 0 && sSmallL != null && !bBreak) {
                 sSmall = sSmallL;
                 bUpdate = true;
             }
 
-            if (nLevel != i)
-            {
+            if (nLevel != i) {
                 map_.setString(PARAM_ANTE + nLevel, sAnte);
                 map_.setString(PARAM_MINUTES + nLevel, sMinutes);
 
-                if (bBreak)
-                {
+                if (bBreak) {
                     map_.remove(PARAM_SMALL + nLevel);
                     map_.remove(PARAM_BIG + nLevel);
                     map_.remove(PARAM_GAMETYPE + nLevel);
-                }
-                else
-                {
+                } else {
                     map_.setString(PARAM_SMALL + nLevel, sSmall);
                     map_.setString(PARAM_BIG + nLevel, sBig);
                     map_.setString(PARAM_GAMETYPE + nLevel, sType);
@@ -1682,23 +1495,19 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
                 map_.setString(b, "");
                 map_.setString(m, "");
                 map_.setString(g, "");
-            }
-            else if (bUpdate)
-            {
+            } else if (bUpdate) {
                 map_.setString(s, sSmall);
                 map_.setString(b, sBig);
             }
 
-            if (!bBreak)
-            {
+            if (!bBreak) {
                 sSmallL = sSmall;
                 sBigL = sBig;
             }
         }
 
         // if user defined no levels, set level 1
-        if (nNonBreakLevel == 0)
-        {
+        if (nNonBreakLevel == 0) {
             nLevel++;
             map_.setString(PARAM_SMALL + (nLevel), "1");
             map_.setString(PARAM_BIG + (nLevel), "2");
@@ -1707,15 +1516,13 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
         // record (needed in getAnte() et al)
         map_.setInteger(PARAM_LASTLEVEL, nLevel);
 
-        // now verify amounts and cleanup      
+        // now verify amounts and cleanup
         int nAnteP = 0, nSmallP = 0, nBigP = 0;
         int nFrac;
         int minutesPerLevel = getDefaultMinutesPerLevel();
         String sGameTypeDefault = getDefaultGameTypeString();
-        for (int i = 1; i <= nLevel; i++)
-        {
-            if (isBreak(i))
-            {
+        for (int i = 1; i <= nLevel; i++) {
+            if (isBreak(i)) {
                 // always leave minutes for break
                 // leave ante value as is
                 continue;
@@ -1726,41 +1533,47 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
             nBig = getBigBlind(i);
             sType = getGameTypeString(i);
             nMinutes = getMinutes(i);
-            if (nMinutes == minutesPerLevel) nMinutes = 0; // equals default, so don't save
-            if (sType.equals(sGameTypeDefault)) sType = null; // equals default, so don't save
+            if (nMinutes == minutesPerLevel)
+                nMinutes = 0; // equals default, so don't save
+            if (sType.equals(sGameTypeDefault))
+                sType = null; // equals default, so don't save
 
-            if (i == 1)
-            {
-                if (nSmall == 0)
-                {
-                    if (nBig > 2) nSmall = nBig / 2;
-                    else nSmall = 1;
+            if (i == 1) {
+                if (nSmall == 0) {
+                    if (nBig > 2)
+                        nSmall = nBig / 2;
+                    else
+                        nSmall = 1;
                 }
-                if (nBig == 0) nBig = nSmall * 2;
+                if (nBig == 0)
+                    nBig = nSmall * 2;
             }
 
             // adjust if non-zero
-            if (nAnte != 0 || nSmall != 0 || nBig != 0)
-            {
+            if (nAnte != 0 || nSmall != 0 || nBig != 0) {
                 // big should be bigger than small
-                if (nBig < nSmall) nBig = nSmall;
+                if (nBig < nSmall)
+                    nBig = nSmall;
 
                 // validate it is >= last round
                 // (except ante, which can go back to 0)
-                if (i > 1)
-                {
-                    if (nAnte < nAnteP && nAnte != 0) nAnte = nAnteP;
-                    if (nSmall < nSmallP) nSmall = nSmallP;
-                    if (nBig < nBigP) nBig = nBigP;
+                if (i > 1) {
+                    if (nAnte < nAnteP && nAnte != 0)
+                        nAnte = nAnteP;
+                    if (nSmall < nSmallP)
+                        nSmall = nSmallP;
+                    if (nBig < nBigP)
+                        nBig = nBigP;
                 }
 
                 // ante should be at least 5% of small blind
                 // but not bigger than the small blind
                 nFrac = (int) (nSmall * .05f);
-                if (nAnte != 0)
-                {
-                    if (nAnte < nFrac) nAnte = nFrac;
-                    if (nAnte > nSmall) nAnte = nSmall;
+                if (nAnte != 0) {
+                    if (nAnte < nFrac)
+                        nAnte = nFrac;
+                    if (nAnte > nSmall)
+                        nAnte = nSmall;
                 }
 
                 // round
@@ -1769,19 +1582,30 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
                 nBig = round(nBig);
             }
 
-            if (nMinutes > MAX_MINUTES) nMinutes = MAX_MINUTES;
+            if (nMinutes > MAX_MINUTES)
+                nMinutes = MAX_MINUTES;
 
             // update - set new value or remove completely if 0
-            if (nAnte > 0) map_.setString(PARAM_ANTE + i, "" + nAnte);
-            else map_.removeString(PARAM_ANTE + i);
-            if (nSmall > 0) map_.setString(PARAM_SMALL + i, "" + nSmall);
-            else map_.removeString(PARAM_SMALL + i);
-            if (nBig > 0) map_.setString(PARAM_BIG + i, "" + nBig);
-            else map_.removeString(PARAM_BIG + i);
-            if (nMinutes > 0) map_.setString(PARAM_MINUTES + i, "" + nMinutes);
-            else map_.removeString(PARAM_MINUTES + i);
-            if (sType != null) map_.setString(PARAM_GAMETYPE + i, sType);
-            else map_.removeString(PARAM_GAMETYPE + i);
+            if (nAnte > 0)
+                map_.setString(PARAM_ANTE + i, "" + nAnte);
+            else
+                map_.removeString(PARAM_ANTE + i);
+            if (nSmall > 0)
+                map_.setString(PARAM_SMALL + i, "" + nSmall);
+            else
+                map_.removeString(PARAM_SMALL + i);
+            if (nBig > 0)
+                map_.setString(PARAM_BIG + i, "" + nBig);
+            else
+                map_.removeString(PARAM_BIG + i);
+            if (nMinutes > 0)
+                map_.setString(PARAM_MINUTES + i, "" + nMinutes);
+            else
+                map_.removeString(PARAM_MINUTES + i);
+            if (sType != null)
+                map_.setString(PARAM_GAMETYPE + i, sType);
+            else
+                map_.removeString(PARAM_GAMETYPE + i);
 
             nAnteP = (nAnte == 0 ? nAnteP : nAnte); // don't store ante if its set to 0 (keep at last value)
             nSmallP = nSmall;
@@ -1789,8 +1613,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
         }
 
         // cleanup remaining levels
-        for (int i = nLevel + 1; i <= MAX_LEVELS; i++)
-        {
+        for (int i = nLevel + 1; i <= MAX_LEVELS; i++) {
             map_.removeString(PARAM_ANTE + i);
             map_.removeString(PARAM_SMALL + i);
             map_.removeString(PARAM_BIG + i);
@@ -1802,20 +1625,27 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * round ante/blind
      */
-    private int round(int n)
-    {
+    private int round(int n) {
         int nRound;
-        if (n <= 100) nRound = 1;
-        else if (n <= 500) nRound = 5;
-        else if (n <= 1000) nRound = 25;
-        else if (n <= 10000) nRound = 100;
-        else if (n <= 100000) nRound = 1000;
-        else if (n <= 1000000) nRound = 10000;
-        else nRound = 100000;
+        if (n <= 100)
+            nRound = 1;
+        else if (n <= 500)
+            nRound = 5;
+        else if (n <= 1000)
+            nRound = 25;
+        else if (n <= 10000)
+            nRound = 100;
+        else if (n <= 100000)
+            nRound = 1000;
+        else if (n <= 1000000)
+            nRound = 10000;
+        else
+            nRound = 100000;
 
         int nRemain = n % nRound;
         n -= nRemain;
-        if (nRound > 1 && nRemain >= (nRound / 2)) n += nRound;
+        if (nRound > 1 && nRemain >= (nRound / 2))
+            n += nRound;
 
         return n;
     }
@@ -1823,29 +1653,24 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Clean up alloc entries
      */
-    private void fixAllocs()
-    {
+    private void fixAllocs() {
         int nNumSpots = getNumSpots();
-        if (isAllocSatellite()) nNumSpots = 1; // only need 1 entry for satellite
+        if (isAllocSatellite())
+            nNumSpots = 1; // only need 1 entry for satellite
         double d;
         String s;
-        for (int i = 1; i <= nNumSpots; i++)
-        {
+        for (int i = 1; i <= nNumSpots; i++) {
             d = getSpot(i);
-            if (isAllocPercent())
-            {
+            if (isAllocPercent()) {
                 s = FORMAT_PERC.format(new Object[]{d});
-            }
-            else
-            {
+            } else {
                 s = FORMAT_AMOUNT.format(new Object[]{(int) d});
             }
             map_.setString(PARAM_SPOTAMOUNT + i, s);
         }
 
         // BUG 315 - clear out other spots
-        for (int i = nNumSpots + 1; i <= MAX_SPOTS; i++)
-        {
+        for (int i = nNumSpots + 1; i <= MAX_SPOTS; i++) {
             map_.removeString(PARAM_SPOTAMOUNT + i);
         }
     }
@@ -1853,24 +1678,20 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Return last defined level (assumes fixLevels called)
      */
-    public int getLastLevel()
-    {
+    public int getLastLevel() {
         return map_.getInteger(PARAM_LASTLEVEL, 0);
     }
 
     /**
      * set percent for given player type
      */
-    public void setPlayerTypePercent(String sPlayerTypeUniqueId, int pct)
-    {
-        if (sPlayerTypeUniqueId == null) return;
+    public void setPlayerTypePercent(String sPlayerTypeUniqueId, int pct) {
+        if (sPlayerTypeUniqueId == null)
+            return;
 
-        if (pct <= 0)
-        {
+        if (pct <= 0) {
             map_.remove(PARAM_MIX + sPlayerTypeUniqueId);
-        }
-        else
-        {
+        } else {
             map_.setInteger(PARAM_MIX + sPlayerTypeUniqueId, pct);
         }
     }
@@ -1878,16 +1699,12 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * get percent for given player type
      */
-    public int getPlayerTypePercent(String sPlayerTypeUniqueId)
-    {
+    public int getPlayerTypePercent(String sPlayerTypeUniqueId) {
         Integer pct = map_.getInteger(PARAM_MIX + sPlayerTypeUniqueId);
 
-        if (pct == null)
-        {
+        if (pct == null) {
             return 0;
-        }
-        else
-        {
+        } else {
             return pct;
         }
     }
@@ -1895,13 +1712,13 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Does game have any limit levels?
      */
-    public boolean hasLimitLevels()
-    {
-        if (getDefaultGameTypeString().equals(PokerConstants.DE_LIMIT_HOLDEM)) return true;
+    public boolean hasLimitLevels() {
+        if (getDefaultGameTypeString().equals(PokerConstants.DE_LIMIT_HOLDEM))
+            return true;
 
-        for (int i = getLastLevel(); i > 0; i--)
-        {
-            if (getGameTypeString(i).equals(PokerConstants.DE_LIMIT_HOLDEM)) return true;
+        for (int i = getLastLevel(); i > 0; i--) {
+            if (getGameTypeString(i).equals(PokerConstants.DE_LIMIT_HOLDEM))
+                return true;
         }
 
         return false;
@@ -1911,8 +1728,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * to string for logging
      */
     @Override
-    public String toString()
-    {
+    public String toString() {
         return getName();
     }
 
@@ -1924,8 +1740,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * allow editing of all tournaments, even pre-shipped ones
      */
     @Override
-    public boolean canEdit()
-    {
+    public boolean canEdit() {
         return true;
     }
 
@@ -1933,8 +1748,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * save - override to consolidate levels first
      */
     @Override
-    public void save()
-    {
+    public void save() {
         fixAll();
         super.save();
     }
@@ -1942,15 +1756,12 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * fixstuff
      */
-    public void fixAll()
-    {
+    public void fixAll() {
         fixLevels();
         fixAllocs();
 
         // rebuys if < 0, change to <=
-        if (getRebuyExpressionType() == PokerConstants.REBUY_LT &&
-            getRebuyChipCount() == 0)
-        {
+        if (getRebuyExpressionType() == PokerConstants.REBUY_LT && getRebuyChipCount() == 0) {
             setRebuyExpression(PokerConstants.REBUY_LTE);
         }
     }
@@ -1959,8 +1770,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * subclass implements to load its contents from the given reader
      */
     @Override
-    public void read(Reader reader, boolean bFull) throws IOException
-    {
+    public void read(Reader reader, boolean bFull) throws IOException {
         BufferedReader buf = new BufferedReader(reader);
         super.read(buf, bFull);
 
@@ -1972,50 +1782,39 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * subclass implements to save its contents to the given writer
      */
     @Override
-    public void write(Writer writer) throws IOException
-    {
+    public void write(Writer writer) throws IOException {
         super.write(writer);
 
         writer.write(map_.marshal(null));
         writeEndEntry(writer);
     }
 
-
     /**
      * Get list of save files in save directory
      */
-    public static List<BaseProfile> getProfileList()
-    {
-        return BaseProfile.getProfileList
-                (TOURNAMENT_DIR, Utils.getFilenameFilter(SaveFile.DELIM + PROFILE_EXT, PROFILE_BEGIN), TournamentProfile.class, false);
+    public static List<BaseProfile> getProfileList() {
+        return BaseProfile.getProfileList(TOURNAMENT_DIR,
+                Utils.getFilenameFilter(SaveFile.DELIM + PROFILE_EXT, PROFILE_BEGIN), TournamentProfile.class, false);
     }
 
     ////
-    //// DataMarshal 
+    //// DataMarshal
     ////
 
-    public void demarshal(MsgState state, String sData)
-    {
+    public void demarshal(MsgState state, String sData) {
         StringReader reader = new StringReader(sData);
-        try
-        {
+        try {
             read(reader, true);
-        }
-        catch (IOException io)
-        {
+        } catch (IOException io) {
             throw new ApplicationError(io);
         }
     }
 
-    public String marshal(MsgState state)
-    {
+    public String marshal(MsgState state) {
         StringWriter writer = new StringWriter();
-        try
-        {
+        try {
             write(writer);
-        }
-        catch (IOException io)
-        {
+        } catch (IOException io) {
             throw new ApplicationError(io);
         }
         return writer.toString();
@@ -2025,26 +1824,22 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     //// XML Encoding
     ////
 
-    public void encodeXML(SimpleXMLEncoder encoder)
-    {
+    public void encodeXML(SimpleXMLEncoder encoder) {
         encoder.setCurrentObject(this, "tournamentFormat");
-        encoder.addAllTagsExcept("map", "fileNum", "file", "dir", "fileName", "lastModified", "createDate", "updateDate", "invitees", "players");
+        encoder.addAllTagsExcept("map", "fileNum", "file", "dir", "fileName", "lastModified", "createDate",
+                "updateDate", "invitees", "players");
 
         // levels
         encoder.setCurrentObject("levels");
-        for (int i = 1; i <= getLastLevel(); i++)
-        {
+        for (int i = 1; i <= getLastLevel(); i++) {
             encoder.setCurrentObject("level");
 
             encoder.addTag("number", i);
             encoder.addTag("minutes", getMinutes(i));
 
-            if (isBreak(i))
-            {
+            if (isBreak(i)) {
                 encoder.addTag("break", true);
-            }
-            else
-            {
+            } else {
                 encoder.addTag("gameType", getGameTypeString(i));
                 encoder.addTag("ante", getAnte(i));
                 encoder.addTag("small", getBigBlind(i));
@@ -2057,8 +1852,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
 
         // payouts
         encoder.setCurrentObject("prizes");
-        for (int i = 1; i <= getNumSpots(); i++)
-        {
+        for (int i = 1; i <= getNumSpots(); i++) {
             encoder.setCurrentObject("prize");
 
             encoder.addTag("place", i);
@@ -2070,16 +1864,14 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
 
         // invitees
         encoder.setCurrentObject("invitees");
-        for (AbstractPlayerList.PlayerInfo player : getInvitees())
-        {
+        for (AbstractPlayerList.PlayerInfo player : getInvitees()) {
             encoder.addTag("player", player.getName());
         }
         encoder.finishCurrentObject(); // invitees
 
         // players
         encoder.setCurrentObject("players");
-        for (String player : getPlayers())
-        {
+        for (String player : getPlayers()) {
             encoder.addTag("player", player);
         }
         encoder.finishCurrentObject(); // players

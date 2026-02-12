@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -53,14 +53,10 @@ import java.awt.event.*;
 import java.beans.*;
 
 /**
- * Created by IntelliJ IDEA.
- * User: zak
- * Date: Mar 3, 2005
- * Time: 1:49:42 PM
- * To change this template use File | Settings | File Templates.
+ * Created by IntelliJ IDEA. User: zak Date: Mar 3, 2005 Time: 1:49:42 PM To
+ * change this template use File | Settings | File Templates.
  */
-public abstract class ListGames extends BasePhase implements PropertyChangeListener, ListSelectionListener
-{
+public abstract class ListGames extends BasePhase implements PropertyChangeListener, ListSelectionListener {
     static Logger logger = LogManager.getLogger(ListGames.class);
 
     protected PlayerProfile profile_;
@@ -88,8 +84,7 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
     protected static final String OKAY_JOIN = "okayjoin";
 
     @Override
-    public void init(GameEngine engine, GameContext context, GamePhase gamephase)
-    {
+    public void init(GameEngine engine, GameContext context, GamePhase gamephase) {
         super.init(engine, context, gamephase);
 
         // make profile available during initialization
@@ -100,7 +95,7 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
 
         // Create base panel which holds everything
         menu_ = new MenuBackground(gamephase);
-        //menu_.addAncestorListener(this);
+        // menu_.addAncestorListener(this);
         menubox_ = menu_.getMenuBox();
         String sHelpName = menu_.getHelpName();
 
@@ -120,7 +115,7 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
         DDPanel iptop = new DDPanel();
         data.add(iptop, BorderLayout.NORTH);
 
-        //**// Game URL
+        // **// Game URL
         DDLabelBorder ipborder = new DDLabelBorder("join." + getListName(), STYLE);
         iptop.add(ipborder, BorderLayout.NORTH);
         DDPanel ippanel = new DDPanel();
@@ -132,24 +127,17 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
         connectText_.addPropertyChangeListener("value", this);
         connectLabel_ = w.label;
         pubPaste_ = w.button;
-        pubPaste_.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent e)
-            {
+        pubPaste_.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
                 Clipboard clip = Toolkit.getDefaultToolkit().getSystemClipboard();
                 Transferable value = clip.getContents(null);
-                if (value.isDataFlavorSupported(DataFlavor.stringFlavor))
-                {
-                    try
-                    {
+                if (value.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+                    try {
                         String s = (String) value.getTransferData(DataFlavor.stringFlavor);
-                        if (s != null)
-                        {
+                        if (s != null) {
                             connectText_.setText(s);
                         }
-                    }
-                    catch (Throwable ignored)
-                    {
+                    } catch (Throwable ignored) {
                     }
                 }
             }
@@ -173,13 +161,8 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
 
         String[] columnNames = getListColumnNames();
         int[] columnWidths = getListColumnWidths();
-        DDPagingTable listTable = new DDPagingTable(GuiManager.DEFAULT,
-                                                    "GameList",
-                                                    "gamelist",
-                                                    columnNames,
-                                                    columnWidths,
-                                                    0,
-                                                    getListRowCount());
+        DDPagingTable listTable = new DDPagingTable(GuiManager.DEFAULT, "GameList", "gamelist", columnNames,
+                columnWidths, 0, getListRowCount());
         DDScrollTable listScroll = listTable.getDDScrollTable();
         listScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
@@ -193,29 +176,25 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
         table_.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table_.getSelectionModel().addListSelectionListener(this);
         table_.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        table_.addMouseListener(new MouseAdapter()
-        {
+        table_.addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseClicked(MouseEvent e)
-            {
-                if (e.getClickCount() == 2)
-                {
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
                     doubleClick();
                 }
             }
         });
 
         // game details
-        sum_ = new TournamentSummaryPanel(context_, "TournamentSummarySmall", "BrushedMetal",
-                                          "BrushedMetal", sHelpName, .75d, false, true);
+        sum_ = new TournamentSummaryPanel(context_, "TournamentSummarySmall", "BrushedMetal", "BrushedMetal", sHelpName,
+                .75d, false, true);
         sum_.setPreferredSize(new Dimension(200, 150));
         listpanel.add(sum_, BorderLayout.CENTER);
 
         // optional list info
         Component listinfo = getListInfo();
 
-        if (listinfo != null)
-        {
+        if (listinfo != null) {
             listborder.add(listinfo, BorderLayout.CENTER);
         }
 
@@ -228,8 +207,7 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
 
         // opt component
         JComponent opt = getExtra();
-        if (opt != null)
-        {
+        if (opt != null) {
             bottom.add(opt, BorderLayout.NORTH);
             middle.setBorderLayoutGap(10, 10);
         }
@@ -242,17 +220,14 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
 
         // default
         String sDefault = gamephase_.getString(PARAM_URL);
-        if (sDefault != null)
-        {
+        if (sDefault != null) {
             boolean bDefaultIsObs = false;
-            if (sDefault.endsWith(PokerConstants.JOIN_OBSERVER_QUERY))
-            {
+            if (sDefault.endsWith(PokerConstants.JOIN_OBSERVER_QUERY)) {
                 sDefault = sDefault.substring(0, sDefault.length() - PokerConstants.JOIN_OBSERVER_QUERY.length());
                 bDefaultIsObs = true;
             }
             connectText_.setText(sDefault);
-            if (connectText_.isValidData())
-            {
+            if (connectText_.isValidData()) {
                 DDButton button = bDefaultIsObs ? obs_ : start_;
                 button.setEnabled(false);
                 new Thread(new AutoJoin(button), "AutoJoin").start();
@@ -263,30 +238,24 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
     /**
      * double click - press start button by default
      */
-    protected void doubleClick()
-    {
+    protected void doubleClick() {
         start_.doClick();
     }
 
     /**
      * Auto join - sleep to let ui show then click start
      */
-    private class AutoJoin implements Runnable
-    {
+    private class AutoJoin implements Runnable {
         DDButton button;
 
-        private AutoJoin(DDButton button)
-        {
+        private AutoJoin(DDButton button) {
             this.button = button;
         }
 
-        public void run()
-        {
+        public void run() {
             Utils.sleepMillis(500);
-            SwingUtilities.invokeLater(new Runnable()
-            {
-                public void run()
-                {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
                     button.setEnabled(true);
                     button.doClick();
                 }
@@ -297,16 +266,14 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
     /**
      * Extra component for bottom
      */
-    protected JComponent getExtra()
-    {
+    protected JComponent getExtra() {
         return null;
     }
 
     /**
      * conveinence method to add ip label/txt
      */
-    private Widgets addIPText(String sName, JComponent parent, Object layout, boolean bUseLastButton)
-    {
+    private Widgets addIPText(String sName, JComponent parent, Object layout, boolean bUseLastButton) {
         Widgets w = new Widgets();
         DDPanel panel = new DDPanel();
         parent.add(panel, layout);
@@ -324,36 +291,28 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
 
         DDButton paste = new GlassButton("pasteurl", "Glass");
         buttons.add(paste, BorderLayout.CENTER);
-        paste.addActionListener(new ActionListener()
-        {
+        paste.addActionListener(new ActionListener() {
             DDTextField _text = text;
 
-            public void actionPerformed(ActionEvent e)
-            {
+            public void actionPerformed(ActionEvent e) {
                 GuiUtils.copyToClipboard(text.getText());
             }
         });
 
-        if (bUseLastButton)
-        {
+        if (bUseLastButton) {
             final String sLast = engine_.getPrefsNode().getString(PokerConstants.PREF_LAST_JOIN, null);
             DDButton uselast = new GlassButton("uselast", "Glass");
             buttons.add(uselast, BorderLayout.EAST);
-            if (sLast != null && sLast.length() > 0)
-            {
-                uselast.addActionListener(new ActionListener()
-                {
+            if (sLast != null && sLast.length() > 0) {
+                uselast.addActionListener(new ActionListener() {
                     DDTextField _text = text;
                     String _sLast = sLast;
 
-                    public void actionPerformed(ActionEvent e)
-                    {
+                    public void actionPerformed(ActionEvent e) {
                         text.setText(sLast);
                     }
                 });
-            }
-            else
-            {
+            } else {
                 uselast.setEnabled(false);
             }
         }
@@ -369,8 +328,7 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
      * Start of phase
      */
     @Override
-    public void start()
-    {
+    public void start() {
         // set help text
         context_.getWindow().setHelpTextWidget(text_);
         context_.getWindow().showHelp(menu_.getMenuBox()); // init help
@@ -386,8 +344,7 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
      * Finish
      */
     @Override
-    public void finish()
-    {
+    public void finish() {
     }
 
     boolean bProcessing_ = false;
@@ -396,20 +353,17 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
      * Returns true
      */
     @Override
-    public boolean processButton(GameButton button)
-    {
+    public boolean processButton(GameButton button) {
         String sName = button.getName();
         boolean bJoin = sName.equals(OKAY_JOIN);
         boolean bObs = sName.equals(OKAY_OBSERVE);
-        if ((bJoin || bObs) && !bProcessing_)
-        {
+        if ((bJoin || bObs) && !bProcessing_) {
             bProcessing_ = true; // prevent multiple join attempts
 
             // validate profile first
-            if (!validateProfile())
-            {
-                EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.playerprofile.cantvalidate",
-                                                                                         Utils.encodeHTML(profile_.getName())));
+            if (!validateProfile()) {
+                EngineUtils.displayInformationDialog(context_, PropertyConfig
+                        .getMessage("msg.playerprofile.cantvalidate", Utils.encodeHTML(profile_.getName())));
                 bProcessing_ = false;
                 return false;
             }
@@ -426,12 +380,9 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
             // temp player with connect URL provided by user
             PokerPlayer ptemp = new PokerPlayer(engine_.getPlayerId(), PokerConstants.PLAYER_ID_TEMP, profile_, true);
             ptemp.setConnectURL(url);
-            if (bJoin)
-            {
+            if (bJoin) {
                 game.addPlayer(ptemp);
-            }
-            else
-            {
+            } else {
                 game.addObserver(ptemp);
             }
 
@@ -446,8 +397,7 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
             // if successful (in which case it places the game into
             // the engine and invokes the phase returned)
             Object o = game.getOnlineManager().joinGame(bObs, false, false);
-            if (o != Boolean.TRUE)
-            {
+            if (o != Boolean.TRUE) {
                 context_.setGame(null);
                 bProcessing_ = false;
                 return false;
@@ -461,8 +411,7 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
     /**
      * set buttons enabled/disabled based on selection
      */
-    protected void checkButtons()
-    {
+    protected void checkButtons() {
         boolean bValid = connectText_.isValidData();
         start_.setEnabled(bValid);
         obs_.setEnabled(bValid);
@@ -471,8 +420,7 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
     /**
      * Return widgets created by above method
      */
-    private class Widgets
-    {
+    private class Widgets {
         DDLabel label;
         DDTextField text;
         DDButton button;
@@ -481,8 +429,7 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
     /**
      * Get an optional info panel (placed below list)
      */
-    public Component getListInfo()
-    {
+    public Component getListInfo() {
         return null;
     }
 
@@ -502,8 +449,8 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
     public abstract int[] getListColumnWidths();
 
     /**
-     * Get the number of rows to show within the table.  Return a number less that zero
-     * to disable paging.
+     * Get the number of rows to show within the table. Return a number less that
+     * zero to disable paging.
      */
     public abstract int getListRowCount();
 
@@ -517,25 +464,20 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
      */
     public abstract boolean isDisplayUseLastButton();
 
-
     /**
-     * Validate profile with server.  Return true if valid.  I know I'm copy and pasting.  So what.
+     * Validate profile with server. Return true if valid. I know I'm copy and
+     * pasting. So what.
      */
-    private boolean validateProfile()
-    {
+    private boolean validateProfile() {
         // no need to do anything if not already online activated
-        if (!profile_.isActivated())
-        {
+        if (!profile_.isActivated()) {
             return true;
         }
 
         // if profile was manually changed, the password won't decrypt
-        try
-        {
+        try {
             profile_.getPassword();
-        }
-        catch (Throwable e)
-        {
+        } catch (Throwable e) {
             logger.info("Unable to get password for profile: " + profile_.getName());
             resetProfile();
             return false;
@@ -552,26 +494,21 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
 
         SendMessageDialog dialog = (SendMessageDialog) context_.processPhaseNow("ValidateProfile", hmParams);
 
-        if (dialog.getStatus() == DDMessageListener.STATUS_OK)
-        {
+        if (dialog.getStatus() == DDMessageListener.STATUS_OK) {
             EngineMessage resEngineMsg = dialog.getReturnMessage();
             OnlineMessage resOnlineMsg = new OnlineMessage(resEngineMsg);
 
             // see PokerServlet.validateProfile()
-            if (resOnlineMsg.getWanAuth() == null)
-            {
+            if (resOnlineMsg.getWanAuth() == null) {
                 // Authentication failed, so reset the local profile.
                 resetProfile();
                 return false;
             }
-        }
-        else
-        {
+        } else {
             // if error returned and this flag set (reusing old War-AOI flag),
             // then also reset profile
             EngineMessage regEngineMsg = dialog.getReturnMessage();
-            if (regEngineMsg != null && regEngineMsg.getBoolean(EngineMessage.PARAM_ELIMINATED, false))
-            {
+            if (regEngineMsg != null && regEngineMsg.getBoolean(EngineMessage.PARAM_ELIMINATED, false)) {
                 resetProfile();
                 return false;
             }
@@ -581,8 +518,7 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
 
     }
 
-    protected void resetProfile()
-    {
+    protected void resetProfile() {
         profile_.setPassword(null);
         profile_.setActivated(false);
         profile_.save();

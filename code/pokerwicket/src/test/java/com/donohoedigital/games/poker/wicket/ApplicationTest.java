@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -52,11 +52,10 @@ import java.util.List;
 import static org.easymock.EasyMock.*;
 
 /**
- * Tests for PokerWicketApplication using WicketTester and EasyMock.
- * Verifies that Wicket pages render correctly with mocked services.
+ * Tests for PokerWicketApplication using WicketTester and EasyMock. Verifies
+ * that Wicket pages render correctly with mocked services.
  */
-class ApplicationTest
-{
+class ApplicationTest {
     Logger logger = LogManager.getLogger(ApplicationTest.class);
 
     private WicketTester tester;
@@ -66,8 +65,7 @@ class ApplicationTest
     private final String searchString = "+";
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         new ConfigManager("test", ApplicationType.WEBAPP);
 
         // test profile and aliases
@@ -90,12 +88,15 @@ class ApplicationTest
         // mock expected calls
         expect(onlineProfileService.getMatchingOnlineProfilesCount("doug", null, null, true)).andStubReturn(1);
         expect(onlineProfileService.getMatchingOnlineProfilesCount(searchString, null, null, true)).andStubReturn(1);
-        //expectLastCall().atLeastOnce();
-        expect(onlineProfileService.getMatchingOnlineProfiles(array.size(), 0, array.size(), "doug", null, null, true)).andStubReturn(array);
-        expect(onlineProfileService.getMatchingOnlineProfiles(array.size(), 0, array.size(), "+", null, null, true)).andStubReturn(array);
-        //expectLastCall().atLeastOnce();
-        expect(onlineProfileService.getAllOnlineProfilesForEmail(profile.getEmail(), profile.getName())).andStubReturn(aliases);
-        //expectLastCall().atLeastOnce();
+        // expectLastCall().atLeastOnce();
+        expect(onlineProfileService.getMatchingOnlineProfiles(array.size(), 0, array.size(), "doug", null, null, true))
+                .andStubReturn(array);
+        expect(onlineProfileService.getMatchingOnlineProfiles(array.size(), 0, array.size(), "+", null, null, true))
+                .andStubReturn(array);
+        // expectLastCall().atLeastOnce();
+        expect(onlineProfileService.getAllOnlineProfilesForEmail(profile.getEmail(), profile.getName()))
+                .andStubReturn(aliases);
+        // expectLastCall().atLeastOnce();
         replay(onlineProfileService);
 
         // mock spring
@@ -113,8 +114,7 @@ class ApplicationTest
     }
 
     @Test
-    void should_RenderSearchPage_When_FormSubmitted()
-    {
+    void should_RenderSearchPage_When_FormSubmitted() {
         // start and render the test page
         tester.startPage(Search.class);
 
@@ -125,7 +125,8 @@ class ApplicationTest
         tester.submitForm("form");
 
         // to get actual HTML
-        if (verbose) tester.dumpPage();
+        if (verbose)
+            tester.dumpPage();
 
         // set search criteria
         tester.getLastRenderedPage().getPageParameters().set("form:name", searchString);
@@ -133,6 +134,7 @@ class ApplicationTest
 
         // Dump page again
         logger.debug("Request URL: {}", tester.getRequest().getRequestURL());
-        if (verbose) tester.dumpPage();
+        if (verbose)
+            tester.dumpPage();
     }
 }

@@ -24,8 +24,8 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for CSVParser - CSV line parsing with quote and escape handling.
- * CSV format uses double-quote (") as both quote and escape character.
+ * Tests for CSVParser - CSV line parsing with quote and escape handling. CSV
+ * format uses double-quote (") as both quote and escape character.
  */
 class CSVParserTest {
 
@@ -135,24 +135,14 @@ class CSVParserTest {
         // From JavaDoc: "foo bar","he said ""hi there"" to me, Joe",doh
         String[] result = CSVParser.parseLine("\"foo bar\",\"he said \"\"hi there\"\" to me, Joe\",doh");
 
-        assertThat(result).containsExactly(
-                "foo bar",
-                "he said \"hi there\" to me, Joe",
-                "doh"
-        );
+        assertThat(result).containsExactly("foo bar", "he said \"hi there\" to me, Joe", "doh");
     }
 
     @Test
     void should_HandleComplexLine_When_MultipleFeaturesPresent() {
         String[] result = CSVParser.parseLine("simple,\"with space\",\"with,comma\",\"with\"\"quote\"\"\",last");
 
-        assertThat(result).containsExactly(
-                "simple",
-                "with space",
-                "with,comma",
-                "with\"quote\"",
-                "last"
-        );
+        assertThat(result).containsExactly("simple", "with space", "with,comma", "with\"quote\"", "last");
     }
 
     // =================================================================
@@ -280,11 +270,7 @@ class CSVParserTest {
     void should_ParseAddress_When_AddressLineProvided() {
         String[] result = CSVParser.parseLine("\"Smith, John\",\"123 Main St, Apt 4\",\"City, State 12345\"");
 
-        assertThat(result).containsExactly(
-                "Smith, John",
-                "123 Main St, Apt 4",
-                "City, State 12345"
-        );
+        assertThat(result).containsExactly("Smith, John", "123 Main St, Apt 4", "City, State 12345");
     }
 
     @Test

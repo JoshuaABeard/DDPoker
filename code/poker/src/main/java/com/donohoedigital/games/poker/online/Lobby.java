@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -59,12 +59,11 @@ import java.beans.*;
 
 /**
  *
- * @author  donohoe
+ * @author donohoe
  */
-public class Lobby extends BasePhase implements ChangeListener, PropertyChangeListener, DDTable.TableMenuItems
-{
+public class Lobby extends BasePhase implements ChangeListener, PropertyChangeListener, DDTable.TableMenuItems {
     static Logger logger = LogManager.getLogger(Lobby.class);
-    
+
     private DDHtmlArea text_;
     private ButtonBox buttonbox_;
     private MenuBackground menu_;
@@ -97,13 +96,12 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
     private Thread threadAlive_ = null;
 
     /**
-     * Creates a new instance of Lobby 
+     * Creates a new instance of Lobby
      */
     public Lobby() {
     }
 
-    public void init(GameEngine engine, GameContext context, GamePhase gamephase)
-    {
+    public void init(GameEngine engine, GameContext context, GamePhase gamephase) {
         super.init(engine, context, gamephase);
 
         // saving
@@ -116,9 +114,8 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
 
         // online manager
         mgr_ = game_.getOnlineManager();
-        if (mgr_ == null)
-        {
-            // if no online manager, create it.  This is null
+        if (mgr_ == null) {
+            // if no online manager, create it. This is null
             // when loading game from save file.
             mgr_ = game_.initOnlineManager(null);
         }
@@ -128,8 +125,7 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
         bHost_ = gamephase_.getBoolean("host", false);
 
         // shutdown hook to remove public game
-        if (bHost_ && game_.isPublic())
-        {
+        if (bHost_ && game_.isPublic()) {
             shutdown_ = new Shutdown();
             Runtime.getRuntime().addShutdownHook(shutdown_);
         }
@@ -138,7 +134,7 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
         menu_ = new MenuBackground(gamephase);
         menubox_ = menu_.getMenuBox();
         String sHelpName = menu_.getHelpName();
-        
+
         // put buttons in the menubox_
         buttonbox_ = new ButtonBox(context_, gamephase_, this, "empty", false, false);
         menubox_.add(buttonbox_, BorderLayout.SOUTH);
@@ -146,11 +142,10 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
         cancel_ = buttonbox_.getButtonStartsWith("cancel");
         edit_ = buttonbox_.getButtonStartsWith("edit");
 
-
         // holds data we are gathering
         DDPanel data = new DDPanel(sHelpName);
         data.setBorderLayoutGap(10, 10);
-        data.setBorder(BorderFactory.createEmptyBorder(2,10,5,10));
+        data.setBorder(BorderFactory.createEmptyBorder(2, 10, 5, 10));
         menubox_.add(data, BorderLayout.CENTER);
 
         // help text
@@ -158,7 +153,7 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
         text_.setDisplayOnly(true);
         text_.setBorder(EngineUtils.getStandardMenuLowerTextBorder());
         data.add(text_, BorderLayout.CENTER);
-        
+
         // formatting
         DDPanel middle = new DDPanel();
         middle.setBorderLayoutGap(0, 10);
@@ -175,10 +170,11 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
         west.add(playerborder_, BorderLayout.CENTER);
         DDPanel playerbase = new DDPanel();
         playerbase.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 3));
-        playerbase.setBorderLayoutGap(2,0);
+        playerbase.setBorderLayoutGap(2, 0);
         playerborder_.add(playerbase, BorderLayout.NORTH);
-        
-        playerScroll_ = new DDScrollTable(GuiManager.DEFAULT, "PokerPrefsPlayerList", "BrushedMetal", COLUMN_NAMES, COLUMN_WIDTHS);
+
+        playerScroll_ = new DDScrollTable(GuiManager.DEFAULT, "PokerPrefsPlayerList", "BrushedMetal", COLUMN_NAMES,
+                COLUMN_WIDTHS);
         playerScroll_.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         playerScroll_.setPreferredSize(new Dimension(playerScroll_.getPreferredWidth(), bHost_ ? 220 : 227));
         playerbase.add(playerScroll_, BorderLayout.CENTER);
@@ -192,20 +188,15 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
         table_.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table_.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
-        if (bHost_)
-        {
+        if (bHost_) {
             obFill_ = OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_FILL_COMPUTER,
-                                                                        "PokerPrefsPlayerList", new TypedHashMap(), true),
-                                                                        playerbase, BorderLayout.SOUTH);
+                    "PokerPrefsPlayerList", new TypedHashMap(), true), playerbase, BorderLayout.SOUTH);
             obFill_.setMap(game_.getProfile().getMap());
             obFill_.addChangeListener(this);
-        }
-        else
-        {
+        } else {
             lFill_ = new DDLabel(GuiManager.DEFAULT, "PokerPrefsPlayerList");
             playerbase.add(lFill_, BorderLayout.SOUTH);
         }
-
 
         ///
         /// observer list
@@ -216,7 +207,8 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
         observerbase.setBorder(BorderFactory.createEmptyBorder(0, 20, 5, 3));
         observerborder_.add(observerbase, BorderLayout.NORTH);
 
-        observerScroll_ = new DDScrollTable(GuiManager.DEFAULT, "PokerPrefsPlayerList", "BrushedMetal", OCOLUMN_NAMES, COLUMN_WIDTHS);
+        observerScroll_ = new DDScrollTable(GuiManager.DEFAULT, "PokerPrefsPlayerList", "BrushedMetal", OCOLUMN_NAMES,
+                COLUMN_WIDTHS);
         observerScroll_.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         observerScroll_.setPreferredSize(new Dimension(observerScroll_.getPreferredWidth(), 100));
         observerbase.add(observerScroll_, BorderLayout.WEST);
@@ -234,16 +226,13 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
         DDPanel rightbase = new DDPanel();
         rightbase.setBorderLayoutGap(10, 0);
         middle.add(rightbase, BorderLayout.CENTER);
-        
+
         ///
         /// URLs
         ///
-        if (bHost_)
-        {
+        if (bHost_) {
             rightbase.add(createURLPanel(game_, STYLE, "LobbyURL", "BrushedMetal", 20), BorderLayout.NORTH);
-        }
-        else
-        {
+        } else {
             rightbase.add(createStatusPanel(STYLE, "LobbyURL"), BorderLayout.NORTH);
         }
 
@@ -255,7 +244,7 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
         DDPanel chatbase = new DDPanel();
         chatbase.setBorder(BorderFactory.createEmptyBorder(0, 20, 5, 5));
         chatbase.setBorderLayoutGap(0, 10);
-        chatborder.add(chatbase, BorderLayout.CENTER);       
+        chatborder.add(chatbase, BorderLayout.CENTER);
         chat_ = new ChatPanel(game_, context_, mgr_, "ChatInGame", "BrushedMetal", false);
         chatbase.add(chat_, BorderLayout.CENTER);
 
@@ -266,32 +255,26 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
     /**
      * set playerborder
      */
-    private void updateProfileData()
-    {
+    private void updateProfileData() {
         TournamentProfile profile = game_.getProfile();
-        if (obFill_ != null)
-        {
+        if (obFill_ != null) {
             obFill_.setMap(profile.getMap());
             obFill_.resetToMap();
         }
-        if (lFill_ != null)
-        {
-            lFill_.setText(PropertyConfig.getMessage(profile.isFillComputer() ?
-                                                     "msg.lobby.fill.on" : "msg.lobby.fill.off"));
+        if (lFill_ != null) {
+            lFill_.setText(
+                    PropertyConfig.getMessage(profile.isFillComputer() ? "msg.lobby.fill.on" : "msg.lobby.fill.off"));
         }
-        playerborder_.setText(PropertyConfig.getMessage("msg.lobby.player",
-                                                        profile.getMaxOnlinePlayers()));
-        observerborder_.setText(PropertyConfig.getMessage("msg.lobby.observer",
-                                                          profile.getMaxObservers()));
+        playerborder_.setText(PropertyConfig.getMessage("msg.lobby.player", profile.getMaxOnlinePlayers()));
+        observerborder_.setText(PropertyConfig.getMessage("msg.lobby.observer", profile.getMaxObservers()));
         playerborder_.repaint();
         observerborder_.repaint();
     }
 
-   /**
+    /**
      * Create panel to display URLs
      */
-    public DDLabelBorder createStatusPanel(String STYLE, String CONTENTS_STYLE)
-    {
+    public DDLabelBorder createStatusPanel(String STYLE, String CONTENTS_STYLE) {
         DDLabelBorder statusborder = new DDLabelBorder("hoststatus", STYLE);
         status_ = new HostStatus(game_, CONTENTS_STYLE, false);
         status_.setBorder(BorderFactory.createEmptyBorder(0, 20, 5, 5));
@@ -302,25 +285,23 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
     /**
      * Create panel to display URLs
      */
-    public static DDLabelBorder createURLPanel(PokerGame game, String STYLE,
-                                               String URLSTYLE, String BEVELSTYLE, int nLeftBorder)
-    {
+    public static DDLabelBorder createURLPanel(PokerGame game, String STYLE, String URLSTYLE, String BEVELSTYLE,
+            int nLeftBorder) {
         DDLabelBorder urlborder = new DDLabelBorder("urls", STYLE);
 
         DDPanel urlbase = new DDPanel();
         urlbase.setBorder(BorderFactory.createEmptyBorder(0, nLeftBorder, 5, 5));
-        urlbase.setBorderLayoutGap(3,0);
+        urlbase.setBorderLayoutGap(3, 0);
         urlborder.add(urlbase, BorderLayout.CENTER);
 
-        OnlineConfiguration.Widgets w1,w2;
+        OnlineConfiguration.Widgets w1, w2;
 
         String sLan = game.getLanConnectURL();
         String sPub = game.getPublicConnectURL();
 
-
         w1 = OnlineConfiguration.addIPText("connect.lan2", urlbase, BorderLayout.NORTH, URLSTYLE, BEVELSTYLE, null);
         w1.text.setText(sLan);
-        w1.button.setBorderGap(2,5,2,6);
+        w1.button.setBorderGap(2, 5, 2, 6);
 
         w2 = OnlineConfiguration.addIPText("connect.pub2", urlbase, BorderLayout.CENTER, URLSTYLE, BEVELSTYLE, null);
         if (sPub == null) {
@@ -328,7 +309,7 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
             w2.button.setEnabled(false);
         }
         w2.text.setText(sPub);
-        w2.button.setBorderGap(2,5,2,6);
+        w2.button.setBorderGap(2, 5, 2, 6);
 
         // size labels the same
         Dimension l1 = w1.label.getPreferredSize();
@@ -344,12 +325,11 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
     /**
      * Start of phase
      */
-    public void start()
-    {
+    public void start() {
         // set help text
         context_.getWindow().setHelpTextWidget(text_);
         context_.getWindow().showHelp(menu_.getMenuBox()); // init help
-        
+
         // place the whole thing in the Engine's base panel
         context_.setMainUIComponent(this, menu_, false, chat_.getFocusWidget());
 
@@ -358,15 +338,14 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
 
         // if host, wakeup alive thread so new msg sent indicating
         // we are ready
-        if (bHost_)
-        {
+        if (bHost_) {
             // lanmanager could be null if starting lobby from save file
-            LanManager lanManager = ((PokerMain)engine_).getLanManager();
-            if (lanManager != null) lanManager.wakeAliveThread();
+            LanManager lanManager = ((PokerMain) engine_).getLanManager();
+            if (lanManager != null)
+                lanManager.wakeAliveThread();
         }
         // client listen for game loads
-        else
-        {
+        else {
             game_.addPropertyChangeListener(PokerGame.PROP_GAME_LOADED, this);
         }
 
@@ -374,29 +353,24 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
         threadAlive_ = new LobbyAlive();
         threadAlive_.start();
     }
-    
+
     /**
      * clear special save phase
      */
-    public boolean processButton(GameButton button) 
-    {
-        if (button.getName().startsWith("cancel"))
-        {
+    public boolean processButton(GameButton button) {
+        if (button.getName().startsWith("cancel")) {
             String sMsg;
 
             // if client and we have tables, we are in countdown - show diff message
-            if (!bHost_ && game_.getNumTables() > 0)
-            {
+            if (!bHost_ && game_.getNumTables() > 0) {
                 // copied from ExitPoker
-                String sDetails = PropertyConfig.getMessage("msg.confirm.client", PropertyConfig.getMessage("msg.confirm.leave"));
+                String sDetails = PropertyConfig.getMessage("msg.confirm.client",
+                        PropertyConfig.getMessage("msg.confirm.leave"));
                 sMsg = PropertyConfig.getMessage("msg.quitgame.confirm", sDetails);
+            } else {
+                sMsg = PropertyConfig.getMessage(bHost_ ? "msg.confirm.lobby.host" : "msg.confirm.lobby.client");
             }
-            else
-            {
-                sMsg = PropertyConfig.getMessage(bHost_ ? "msg.confirm.lobby.host": "msg.confirm.lobby.client");
-            }
-            if (!EngineUtils.displayConfirmationDialog(context_, sMsg))
-            {
+            if (!EngineUtils.displayConfirmationDialog(context_, sMsg)) {
                 return false;
             }
 
@@ -404,30 +378,24 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
             finishStatus();
 
             // host - cancel game, restart game engine
-            if (bHost_)
-            {
+            if (bHost_) {
                 // quit game - manager will handle host/client quitting
                 mgr_.cancelGame();
                 removeOnlineGame();
                 context_.restart();
             }
             // client - leave game and go back to previous menu
-            else
-            {
+            else {
                 mgr_.quitGame();
                 context_.setGame(null);
             }
-        }
-        else if (start_ != null && button.getName().equals(start_.getName()))
-        {
-            if (game_.getNumPlayers() < 2 &&
-                    (!(TESTING(PokerConstants.TESTING_ALLOW_SINGLE_PLAYER_ONLINE) && game_.getProfile().isFillComputer())))
-            {
+        } else if (start_ != null && button.getName().equals(start_.getName())) {
+            if (game_.getNumPlayers() < 2 && (!(TESTING(PokerConstants.TESTING_ALLOW_SINGLE_PLAYER_ONLINE)
+                    && game_.getProfile().isFillComputer()))) {
                 GameButton bSwitch = EngineUtils.displayConfirmationDialogCustom(context_, "OnlineSwitchPractice",
-                                     PropertyConfig.getMessage("msg.confirm.switch"), null,null,null);
+                        PropertyConfig.getMessage("msg.confirm.switch"), null, null, null);
 
-                if (bSwitch != null && bSwitch.getName().startsWith("yesPractice"))
-                {
+                if (bSwitch != null && bSwitch.getName().startsWith("yesPractice")) {
                     mgr_.cancelGame();
                     removeOnlineGame();
                     // restart tournament starts current profile as a new game
@@ -439,8 +407,7 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
             }
 
             String sMsg = PropertyConfig.getMessage("msg.lobby.start.confirm");
-            if (!EngineUtils.displayConfirmationDialog(context_, sMsg, "lobby.start"))
-            {
+            if (!EngineUtils.displayConfirmationDialog(context_, sMsg, "lobby.start")) {
                 return false;
             }
 
@@ -458,17 +425,11 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
 
             // no switching/banning
             bStarting_ = true;
-        }
-        else if (button.getName().startsWith("help"))
-        {
+        } else if (button.getName().startsWith("help")) {
             return true;
-        }
-        else if (button.getName().startsWith("options"))
-        {
+        } else if (button.getName().startsWith("options")) {
             return true;
-        }
-        else if (button.getName().startsWith("edit"))
-        {
+        } else if (button.getName().startsWith("edit")) {
             edit();
             return true;
         }
@@ -481,8 +442,7 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
     /**
      * Edit button
      */
-    private void edit()
-    {
+    private void edit() {
         TournamentProfile old = game_.getProfile();
 
         // show profile
@@ -493,8 +453,7 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
         Boolean changed = (Boolean) phase.getResult();
 
         // if something changed, update
-        if (changed)
-        {
+        if (changed) {
             copy.setCreateDate(old);
             copy.fixAll();
             game_.setProfile(copy);
@@ -509,21 +468,18 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
     /**
      * fill changed
      */
-    public void stateChanged(ChangeEvent e)
-    {
-        if (bEditing_) return;
+    public void stateChanged(ChangeEvent e) {
+        if (bEditing_)
+            return;
         sendUpdateMessage(false);
     }
 
     /**
      * game loaded - updated props
      */
-    public void propertyChange(PropertyChangeEvent evt)
-    {
-        SwingUtilities.invokeLater(new Runnable()
-        {
-            public void run()
-            {
+    public void propertyChange(PropertyChangeEvent evt) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
                 updateProfileData();
             }
         });
@@ -532,22 +488,22 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
     /**
      * notify of edit
      */
-    private void sendUpdateMessage(boolean bChat)
-    {
+    private void sendUpdateMessage(boolean bChat) {
         // change update date so it updates in LAN clients
         game_.getProfile().setUpdateDate();
 
         // update all players and send chat
         mgr_.sendDirtyPlayerUpdateToAll(false, true);
-        if (bChat) mgr_.sendDirectorChat(PropertyConfig.getMessage("msg.chat.host.edit"), null);
+        if (bChat)
+            mgr_.sendDirectorChat(PropertyConfig.getMessage("msg.chat.host.edit"), null);
 
         // update lan data
-        LanManager lanManager = ((PokerMain)engine_).getLanManager();
-        if (lanManager != null) lanManager.wakeAliveThread();
+        LanManager lanManager = ((PokerMain) engine_).getLanManager();
+        if (lanManager != null)
+            lanManager.wakeAliveThread();
 
         // update server
-        if (game_.isPublic())
-        {
+        if (game_.isPublic()) {
             OnlineServer manager = OnlineServer.getWanManager();
             manager.updateGameProfile(game_);
         }
@@ -556,10 +512,10 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
     /**
      * Finish
      */
-    public void finish()
-    {
+    public void finish() {
         // remove listener
-        if (!bHost_) game_.removePropertyChangeListener(PokerGame.PROP_GAME_LOADED, this);
+        if (!bHost_)
+            game_.removePropertyChangeListener(PokerGame.PROP_GAME_LOADED, this);
 
         // cancel status panel (just to make sure)
         finishStatus();
@@ -570,13 +526,13 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
         omodel_.cleanup();
 
         // remove shutdown hook
-        if (shutdown_ != null) Runtime.getRuntime().removeShutdownHook(shutdown_);
+        if (shutdown_ != null)
+            Runtime.getRuntime().removeShutdownHook(shutdown_);
 
         // finish alive thread
         bDone_ = true;
         try {
-            if (threadAlive_ != null)
-            {
+            if (threadAlive_ != null) {
                 threadAlive_.interrupt();
                 threadAlive_.join();
             }
@@ -591,10 +547,8 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
     /**
      * cleanup host status panel
      */
-    private void finishStatus()
-    {
-        if (status_ != null)
-        {
+    private void finishStatus() {
+        if (status_ != null) {
             status_.finish();
             status_ = null;
         }
@@ -603,11 +557,9 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
     /**
      * Remove the game from the public list
      */
-    private void removeOnlineGame()
-    {
+    private void removeOnlineGame() {
         // no server processing if not the host or not a public game
-        if (!bHost_ || !game_.isPublic())
-        {
+        if (!bHost_ || !game_.isPublic()) {
             return;
         }
 
@@ -617,34 +569,35 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
     /*
      * get selected player
      */
-    private PokerPlayer getSelectedPlayer(DDTable table)
-    {
+    private PokerPlayer getSelectedPlayer(DDTable table) {
         int n = table.getSelectedRow();
-        if (n < 0) return null;
-        if (table == table_) return model_.getPokerPlayer(n);
-        else return omodel_.getPokerObserverAt(n);
+        if (n < 0)
+            return null;
+        if (table == table_)
+            return model_.getPokerPlayer(n);
+        else
+            return omodel_.getPokerObserverAt(n);
     }
 
     /**
      * handle click - show menu
+     *
      * @param table
      */
-    public boolean isItemsToBeAdded(DDTable table)
-    {
+    public boolean isItemsToBeAdded(DDTable table) {
         return getSelectedPlayer(table) != null;
     }
 
-    public void addMenuItems(DDTable table, DDPopupMenu menu)
-    {
+    public void addMenuItems(DDTable table, DDPopupMenu menu) {
         PokerPlayer p = getSelectedPlayer(table);
-        if (!p.isLocallyControlled() && p.isHuman())
-        {
-            menu.add(new ShowTournamentTable.MutePlayer("PokerTable", p, muted_.containsPlayer(p.getName(), p.getPlayerId()), mgr_, true));
-            menu.add(new ShowTournamentTable.BanPlayer(context_, "PokerTable", p, banned_.containsPlayer(p.getName(), p.getPlayerId()), mgr_, mgr_, true, bHost_ && !bStarting_));
+        if (!p.isLocallyControlled() && p.isHuman()) {
+            menu.add(new ShowTournamentTable.MutePlayer("PokerTable", p,
+                    muted_.containsPlayer(p.getName(), p.getPlayerId()), mgr_, true));
+            menu.add(new ShowTournamentTable.BanPlayer(context_, "PokerTable", p,
+                    banned_.containsPlayer(p.getName(), p.getPlayerId()), mgr_, mgr_, true, bHost_ && !bStarting_));
         }
 
-        if (bHost_ && p.isHuman() && !bStarting_)
-        {
+        if (bHost_ && p.isHuman() && !bStarting_) {
             menu.add(new SwitchPlayer(context_, "PokerTable", p, mgr_));
         }
     }
@@ -654,32 +607,30 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
     /**
      * mute menu item
      */
-    private static class SwitchPlayer extends DDMenuItem implements ActionListener
-    {
+    private static class SwitchPlayer extends DDMenuItem implements ActionListener {
         GameContext context;
         OnlineManager mgr;
         PokerPlayer player;
 
-        public SwitchPlayer(GameContext context, String sStyle, PokerPlayer p, OnlineManager mgr)
-        {
+        public SwitchPlayer(GameContext context, String sStyle, PokerPlayer p, OnlineManager mgr) {
             super(GuiManager.DEFAULT, sStyle);
             this.context = context;
             this.player = p;
             this.mgr = mgr;
             setDisplayMode(DDMenuItem.MODE_NORMAL);
-            setText(PropertyConfig.getMessage(p.isObserver() ? "menuitem.switch.toplayer":"menuitem.switch.toobserver", p.getName()));
+            setText(PropertyConfig.getMessage(
+                    p.isObserver() ? "menuitem.switch.toplayer" : "menuitem.switch.toobserver", p.getName()));
             setIcon(switchIcon_);
             addActionListener(this);
         }
 
-        public void actionPerformed(ActionEvent e)
-        {
+        public void actionPerformed(ActionEvent e) {
             // check to see if room for another player
-            // no need to check observer quantity since adding an extra observer doesn't affect gameplay
-            if (player.isObserver() && !mgr.isSpaceForPlayer())
-            {
-                EngineUtils.displayInformationDialog(context, PropertyConfig.getMessage("msg.switch.noroom",
-                                                                                Utils.encodeHTML(player.getName())));
+            // no need to check observer quantity since adding an extra observer doesn't
+            // affect gameplay
+            if (player.isObserver() && !mgr.isSpaceForPlayer()) {
+                EngineUtils.displayInformationDialog(context,
+                        PropertyConfig.getMessage("msg.switch.noroom", Utils.encodeHTML(player.getName())));
                 return;
             }
 
@@ -689,16 +640,14 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
     }
 
     /**
-     * Shutdown hook to make as complete an attempt as possible to keep the back end in sync.
+     * Shutdown hook to make as complete an attempt as possible to keep the back end
+     * in sync.
      */
-    private class Shutdown extends Thread
-    {
-        public Shutdown()
-        {
+    private class Shutdown extends Thread {
+        public Shutdown() {
             setName("Lobby-Shutdown");
         }
-        public void run()
-        {
+        public void run() {
             logger.debug("Shutting down...");
             removeOnlineGame();
         }
@@ -707,26 +656,20 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
     /**
      * alive thread
      */
-    private class LobbyAlive extends Thread
-    {
-        LobbyAlive()
-        {
+    private class LobbyAlive extends Thread {
+        LobbyAlive() {
             super("LobbyAlive");
         }
 
-        public void run()
-        {
-            while (!bDone_)
-            {
+        public void run() {
+            while (!bDone_) {
                 try {
                     Utils.sleepMillis(OnlineManager.ALIVE_SLEEP_MILLIS);
 
                     if (!bDone_) {
                         mgr_.alive(false);
                     }
-                }
-                catch (Throwable t)
-                {
+                } catch (Throwable t) {
                     logger.error("LobbyAlive caught an unexcepted exception: " + Utils.formatExceptionText(t));
                 }
             }
@@ -734,36 +677,27 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
     }
 
     // client table info
-    private static final int[] COLUMN_WIDTHS = new int[] {
-        25, 175
-    };
-    private static final String[] COLUMN_NAMES = new String[] {
-        "playernum", LanClientInfo.LAN_PLAYER_NAME
-    };
-    private static final String[] OCOLUMN_NAMES = new String[] {
-        "playernum", "observer"
-    };
+    private static final int[] COLUMN_WIDTHS = new int[]{25, 175};
+    private static final String[] COLUMN_NAMES = new String[]{"playernum", LanClientInfo.LAN_PLAYER_NAME};
+    private static final String[] OCOLUMN_NAMES = new String[]{"playernum", "observer"};
 
     /**
      * Used by table to display players in game
      */
-    private class PlayerModel extends DefaultTableModel implements PropertyChangeListener
-    {
+    private class PlayerModel extends DefaultTableModel implements PropertyChangeListener {
         private PokerGame game;
 
-        public PlayerModel(PokerGame game) 
-        {
-            this.game = game;            
+        public PlayerModel(PokerGame game) {
+            this.game = game;
             game.addPropertyChangeListener(Game.PROP_PLAYERS, this);
             game.addPropertyChangeListener(Game.PROP_PLAYERS_LIST, this);
         }
 
-        public void cleanup()
-        {
+        public void cleanup() {
             game.removePropertyChangeListener(Game.PROP_PLAYERS, this);
             game.removePropertyChangeListener(Game.PROP_PLAYERS_LIST, this);
         }
-        
+
         public PokerPlayer getPokerPlayer(int r) {
             return game.getPokerPlayerAt(r);
         }
@@ -787,40 +721,32 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
             return game.getNumPlayers();
         }
 
-        public Object getValueAt(int rowIndex, int colIndex) 
-        {
+        public Object getValueAt(int rowIndex, int colIndex) {
             PokerPlayer player = getPokerPlayer(rowIndex);
-            
-            if (COLUMN_NAMES[colIndex].equals("playernum"))
-            {
+
+            if (COLUMN_NAMES[colIndex].equals("playernum")) {
                 return "" + (rowIndex + 1);
-            }
-            else if (COLUMN_NAMES[colIndex].equals(LanClientInfo.LAN_PLAYER_NAME))
-            {
+            } else if (COLUMN_NAMES[colIndex].equals(LanClientInfo.LAN_PLAYER_NAME)) {
                 return player.getDisplayName(true);
             }
             return "[bad column]";
         }
-        
+
         private int nIgnoreNext_ = 0;
         /**
          * Update when player list changes (need to invoke from SwingThread)
          */
-        public void propertyChange(PropertyChangeEvent evt)
-        {
+        public void propertyChange(PropertyChangeEvent evt) {
             // if updating whole list, ignore (new count) - 1 add messages
-            // to avoid mutliple updates as the list is rebuilt.  Refresh
+            // to avoid mutliple updates as the list is rebuilt. Refresh
             // occurs on last add (thus the decrement by one)
-            if (evt.getPropertyName().equals(Game.PROP_PLAYERS_LIST))
-            {
+            if (evt.getPropertyName().equals(Game.PROP_PLAYERS_LIST)) {
                 int nNew = (Integer) evt.getNewValue();
-                if (nNew > 0) nIgnoreNext_ = nNew - 1;
+                if (nNew > 0)
+                    nIgnoreNext_ = nNew - 1;
                 return;
-            }
-            else
-            {
-                if (nIgnoreNext_ > 0)
-                {
+            } else {
+                if (nIgnoreNext_ > 0) {
                     nIgnoreNext_--;
                     return;
                 }
@@ -828,28 +754,28 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
                 boolean bLan = false;
 
                 // added
-                if (evt.getNewValue() != null && ((PokerPlayer)evt.getNewValue()).isHuman())
-                {
+                if (evt.getNewValue() != null && ((PokerPlayer) evt.getNewValue()).isHuman()) {
                     AudioConfig.playFX("playerjoin");
-                    if (bHost_) bLan = true;
+                    if (bHost_)
+                        bLan = true;
                 }
 
                 // removed
-                if (evt.getOldValue() != null && ((PokerPlayer)evt.getOldValue()).isHuman())
-                {
+                if (evt.getOldValue() != null && ((PokerPlayer) evt.getOldValue()).isHuman()) {
                     // don't send removed updates for host (only case where host removed is
                     // switch player - we'll send lan update on the cooresonding add)
                     // we do this check to prevent a small NPE on lan guests monitoring this
                     // game in join window ... due to need for a host in the code for
                     // PokerGame.isAcceptingRegistrations()
-                    if (bHost_ && !((GamePlayer) evt.getOldValue()).isHost()) bLan = true;
+                    if (bHost_ && !((GamePlayer) evt.getOldValue()).isHost())
+                        bLan = true;
                 }
 
                 // update lan with new data
-                if (bLan)
-                {
-                    LanManager lanManager = ((PokerMain)engine_).getLanManager();
-                    if (lanManager != null) lanManager.wakeAliveThread();
+                if (bLan) {
+                    LanManager lanManager = ((PokerMain) engine_).getLanManager();
+                    if (lanManager != null)
+                        lanManager.wakeAliveThread();
                 }
 
                 // table changed
@@ -865,19 +791,16 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
     /**
      * Used by table to display observers of game
      */
-    private class ObserverModel extends DefaultTableModel implements PropertyChangeListener
-    {
+    private class ObserverModel extends DefaultTableModel implements PropertyChangeListener {
         private PokerGame game;
 
-        public ObserverModel(PokerGame game)
-        {
+        public ObserverModel(PokerGame game) {
             this.game = game;
             game.addPropertyChangeListener(Game.PROP_OBSERVERS, this);
             game.addPropertyChangeListener(Game.PROP_OBSERVERS_LIST, this);
         }
 
-        public void cleanup()
-        {
+        public void cleanup() {
             game.removePropertyChangeListener(Game.PROP_OBSERVERS, this);
             game.removePropertyChangeListener(Game.PROP_OBSERVERS_LIST, this);
         }
@@ -905,16 +828,12 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
             return game.getNumObservers();
         }
 
-        public Object getValueAt(int rowIndex, int colIndex)
-        {
+        public Object getValueAt(int rowIndex, int colIndex) {
             PokerPlayer player = getPokerObserverAt(rowIndex);
 
-            if (OCOLUMN_NAMES[colIndex].equals("playernum"))
-            {
+            if (OCOLUMN_NAMES[colIndex].equals("playernum")) {
                 return "" + (rowIndex + 1);
-            }
-            else if (OCOLUMN_NAMES[colIndex].equals("observer"))
-            {
+            } else if (OCOLUMN_NAMES[colIndex].equals("observer")) {
                 return player.getDisplayName(true);
             }
             return "[bad column]";
@@ -924,27 +843,22 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
         /**
          * Update when observer list changes (need to invoke from SwingThread)
          */
-        public void propertyChange(PropertyChangeEvent evt)
-        {
+        public void propertyChange(PropertyChangeEvent evt) {
             // if updating whole list, ignore (new count) - 1 add messages
-            // to avoid mutliple updates as the list is rebuilt.  Refresh
+            // to avoid mutliple updates as the list is rebuilt. Refresh
             // occurs on last add (thus the decrement by one)
-            if (evt.getPropertyName().equals(Game.PROP_OBSERVERS_LIST))
-            {
+            if (evt.getPropertyName().equals(Game.PROP_OBSERVERS_LIST)) {
                 int nNew = (Integer) evt.getNewValue();
-                if (nNew > 0) nIgnoreNext_ = nNew - 1;
+                if (nNew > 0)
+                    nIgnoreNext_ = nNew - 1;
                 return;
-            }
-            else
-            {
-                if (nIgnoreNext_ > 0)
-                {
+            } else {
+                if (nIgnoreNext_ > 0) {
                     nIgnoreNext_--;
                     return;
                 }
 
-                if (evt.getNewValue() != null && ((PokerPlayer)evt.getNewValue()).isHuman())
-                {
+                if (evt.getNewValue() != null && ((PokerPlayer) evt.getNewValue()).isHuman()) {
                     AudioConfig.playFX("observerjoin");
                 }
                 GuiUtils.invoke(new Runnable() {

@@ -30,13 +30,11 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for RateLimiter utility class
  */
-class RateLimiterTest
-{
+class RateLimiterTest {
     private RateLimiter rateLimiter;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         rateLimiter = new RateLimiter();
     }
 
@@ -45,8 +43,7 @@ class RateLimiterTest
     // ========================================
 
     @Test
-    void allowRequest_WithinLimit_ShouldAllow()
-    {
+    void allowRequest_WithinLimit_ShouldAllow() {
         // Allow 5 requests per 1000ms window
         assertThat(rateLimiter.allowRequest("user1", 5, 1000)).isTrue();
         assertThat(rateLimiter.allowRequest("user1", 5, 1000)).isTrue();
@@ -56,8 +53,7 @@ class RateLimiterTest
     }
 
     @Test
-    void allowRequest_ExceedsLimit_ShouldDeny()
-    {
+    void allowRequest_ExceedsLimit_ShouldDeny() {
         // Allow 3 requests per 1000ms window
         assertThat(rateLimiter.allowRequest("user1", 3, 1000)).isTrue();
         assertThat(rateLimiter.allowRequest("user1", 3, 1000)).isTrue();
@@ -67,21 +63,19 @@ class RateLimiterTest
     }
 
     @Test
-    void allowRequest_DifferentKeys_ShouldBeIndependent()
-    {
+    void allowRequest_DifferentKeys_ShouldBeIndependent() {
         // Each key should have independent limits
         assertThat(rateLimiter.allowRequest("user1", 2, 1000)).isTrue();
         assertThat(rateLimiter.allowRequest("user1", 2, 1000)).isTrue();
         assertThat(rateLimiter.allowRequest("user1", 2, 1000)).isFalse(); // user1 limit reached
 
-        assertThat(rateLimiter.allowRequest("user2", 2, 1000)).isTrue();  // user2 still allowed
+        assertThat(rateLimiter.allowRequest("user2", 2, 1000)).isTrue(); // user2 still allowed
         assertThat(rateLimiter.allowRequest("user2", 2, 1000)).isTrue();
         assertThat(rateLimiter.allowRequest("user2", 2, 1000)).isFalse(); // user2 limit reached
     }
 
     @Test
-    void allowRequest_AfterWindowExpires_ShouldReset() throws InterruptedException
-    {
+    void allowRequest_AfterWindowExpires_ShouldReset() throws InterruptedException {
         // Allow 2 requests per 100ms window
         assertThat(rateLimiter.allowRequest("user1", 2, 100)).isTrue();
         assertThat(rateLimiter.allowRequest("user1", 2, 100)).isTrue();
@@ -100,30 +94,25 @@ class RateLimiterTest
     // ========================================
 
     @Test
-    void allowRequest_NullKey_ShouldNotThrow()
-    {
+    void allowRequest_NullKey_ShouldNotThrow() {
         // Should handle null key gracefully
-        assertThatCode(() -> rateLimiter.allowRequest(null, 5, 1000))
-            .doesNotThrowAnyException();
+        assertThatCode(() -> rateLimiter.allowRequest(null, 5, 1000)).doesNotThrowAnyException();
     }
 
     @Test
-    void allowRequest_EmptyKey_ShouldWork()
-    {
+    void allowRequest_EmptyKey_ShouldWork() {
         assertThat(rateLimiter.allowRequest("", 2, 1000)).isTrue();
         assertThat(rateLimiter.allowRequest("", 2, 1000)).isTrue();
         assertThat(rateLimiter.allowRequest("", 2, 1000)).isFalse();
     }
 
     @Test
-    void allowRequest_ZeroMaxRequests_ShouldDenyAll()
-    {
+    void allowRequest_ZeroMaxRequests_ShouldDenyAll() {
         assertThat(rateLimiter.allowRequest("user1", 0, 1000)).isFalse();
     }
 
     @Test
-    void allowRequest_NegativeMaxRequests_ShouldDenyAll()
-    {
+    void allowRequest_NegativeMaxRequests_ShouldDenyAll() {
         assertThat(rateLimiter.allowRequest("user1", -1, 1000)).isFalse();
     }
 
@@ -132,8 +121,7 @@ class RateLimiterTest
     // ========================================
 
     @Test
-    void allowRequest_ConcurrentRequests_ShouldBeThreadSafe() throws InterruptedException
-    {
+    void allowRequest_ConcurrentRequests_ShouldBeThreadSafe() throws InterruptedException {
         int threadCount = 10;
         int requestsPerThread = 5;
         int maxAllowed = 20; // Less than threadCount * requestsPerThread
@@ -144,30 +132,20 @@ class RateLimiterTest
         AtomicInteger deniedCount = new AtomicInteger(0);
 
         // Start threads
-        for (int i = 0; i < threadCount; i++)
-        {
+        for (int i = 0; i < threadCount; i++) {
             new Thread(() -> {
-                try
-                {
+                try {
                     startLatch.await(); // Wait for all threads to be ready
-                    for (int j = 0; j < requestsPerThread; j++)
-                    {
-                        if (rateLimiter.allowRequest("concurrent-test", maxAllowed, 1000))
-                        {
+                    for (int j = 0; j < requestsPerThread; j++) {
+                        if (rateLimiter.allowRequest("concurrent-test", maxAllowed, 1000)) {
                             allowedCount.incrementAndGet();
-                        }
-                        else
-                        {
+                        } else {
                             deniedCount.incrementAndGet();
                         }
                     }
-                }
-                catch (InterruptedException e)
-                {
+                } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                }
-                finally
-                {
+                } finally {
                     doneLatch.countDown();
                 }
             }).start();
@@ -187,8 +165,7 @@ class RateLimiterTest
     // ========================================
 
     @Test
-    void cleanup_ShouldRemoveExpiredEntries() throws InterruptedException
-    {
+    void cleanup_ShouldRemoveExpiredEntries() throws InterruptedException {
         // Make requests
         rateLimiter.allowRequest("user1", 2, 50);
         rateLimiter.allowRequest("user1", 2, 50);
@@ -198,7 +175,8 @@ class RateLimiterTest
         assertThat(rateLimiter.allowRequest("user1", 2, 50)).isFalse(); // count=3, max=2, denied
 
         // Wait for entries to be older than cleanup threshold (60 seconds)
-        // Since that's too long for a unit test, just verify cleanup doesn't break anything
+        // Since that's too long for a unit test, just verify cleanup doesn't break
+        // anything
         rateLimiter.cleanup();
 
         // Entry still exists (not old enough to clean), so still rate limited
@@ -210,8 +188,7 @@ class RateLimiterTest
     }
 
     @Test
-    void reset_ShouldClearAllEntries()
-    {
+    void reset_ShouldClearAllEntries() {
         rateLimiter.allowRequest("user1", 2, 1000);
         rateLimiter.allowRequest("user1", 2, 1000);
         assertThat(rateLimiter.allowRequest("user1", 2, 1000)).isFalse();

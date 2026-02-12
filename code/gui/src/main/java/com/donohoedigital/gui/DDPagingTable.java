@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -39,8 +39,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-public class DDPagingTable extends DDPanel implements ActionListener
-{
+public class DDPagingTable extends DDPanel implements ActionListener {
     private static final String DEFAULT_COMPONENT_STYLE = "PagingTable";
     private static final String DEFAULT_PAGING_MESSAGE = "resultlist";
 
@@ -58,14 +57,8 @@ public class DDPagingTable extends DDPanel implements ActionListener
     /**
      * Creates a new instance of DDPagingTable using the given parameters.
      */
-    public DDPagingTable(String name,
-                         String componentStyle,
-                         String pagingMessage,
-                         String[] columnNames,
-                         int[] columnTypes,
-                         int offset,
-                         int rowCount)
-    {
+    public DDPagingTable(String name, String componentStyle, String pagingMessage, String[] columnNames,
+            int[] columnTypes, int offset, int rowCount) {
         offset_ = offset;
         rowCount_ = rowCount;
 
@@ -109,20 +102,16 @@ public class DDPagingTable extends DDPanel implements ActionListener
         buttonPanel.add(nextButton_);
     }
 
-    public void actionPerformed(ActionEvent event)
-    {
+    public void actionPerformed(ActionEvent event) {
         String text = PropertyConfig.getMessage("msg." + pagingMsg_ + ".fetching");
         label_.setText(text);
 
         // Move the offset.
         Object source = event.getSource();
 
-        if (prevButton_ == source)
-        {
+        if (prevButton_ == source) {
             offset_ -= rowCount_;
-        }
-        else if (nextButton_ == source)
-        {
+        } else if (nextButton_ == source) {
             offset_ += rowCount_;
         }
 
@@ -132,11 +121,9 @@ public class DDPagingTable extends DDPanel implements ActionListener
         refreshButton_.setEnabled(false);
 
         // invoke later to allow label to repaint and buttons to disable
-        SwingUtilities.invokeLater(new Runnable()
-        {
-            public void run()
-            {
-                 // Update the model and panel with the new offset.
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                // Update the model and panel with the new offset.
                 DDPagingTableModel model = (DDPagingTableModel) table_.getDDTable().getModel();
                 model.refresh(offset_, rowCount_);
                 refreshPagingPanel();
@@ -144,10 +131,8 @@ public class DDPagingTable extends DDPanel implements ActionListener
         });
     }
 
-    private void refreshPagingPanel()
-    {
-        if (pagingPanel_ == null)
-        {
+    private void refreshPagingPanel() {
+        if (pagingPanel_ == null) {
             return;
         }
 
@@ -157,8 +142,7 @@ public class DDPagingTable extends DDPanel implements ActionListener
 
         if (totalCount > 0) {
             // Check if the offset moved past the end of the result set.
-            if (offset_ >= totalCount)
-            {
+            if (offset_ >= totalCount) {
                 // Assumes the model moved back to the beginning of the result set.
                 offset_ = 0;
             }
@@ -172,9 +156,7 @@ public class DDPagingTable extends DDPanel implements ActionListener
 
             prevButton_.setEnabled((offset_ + 1) > rowCount_);
             nextButton_.setEnabled((offset_ + rowCount_) < totalCount);
-        }
-        else
-        {
+        } else {
             // Reset everything if no results.
             offset_ = 0;
             String text = PropertyConfig.getMessage("msg." + pagingMsg_ + ".none");
@@ -188,8 +170,7 @@ public class DDPagingTable extends DDPanel implements ActionListener
     /**
      * Set the table model.
      */
-    public void setModel(DDPagingTableModel model)
-    {
+    public void setModel(DDPagingTableModel model) {
         table_.getDDTable().setModel(model);
         refreshPagingPanel();
     }
@@ -197,8 +178,7 @@ public class DDPagingTable extends DDPanel implements ActionListener
     /**
      * Get the scroll table containing the contents.
      */
-    public DDScrollTable getDDScrollTable()
-    {
+    public DDScrollTable getDDScrollTable() {
         return table_;
     }
 }

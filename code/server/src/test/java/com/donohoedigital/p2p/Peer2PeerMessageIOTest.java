@@ -53,9 +53,12 @@ class Peer2PeerMessageIOTest {
 
     @AfterEach
     void cleanup() throws IOException {
-        if (clientChannel != null && clientChannel.isOpen()) clientChannel.close();
-        if (acceptedChannel != null && acceptedChannel.isOpen()) acceptedChannel.close();
-        if (serverChannel != null && serverChannel.isOpen()) serverChannel.close();
+        if (clientChannel != null && clientChannel.isOpen())
+            clientChannel.close();
+        if (acceptedChannel != null && acceptedChannel.isOpen())
+            acceptedChannel.close();
+        if (serverChannel != null && serverChannel.isOpen())
+            serverChannel.close();
     }
 
     @Test

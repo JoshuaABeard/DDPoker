@@ -40,8 +40,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Edge case and stress tests for PlayerIdentity.
- * Tests unusual scenarios, error conditions, and concurrent access patterns.
+ * Edge case and stress tests for PlayerIdentity. Tests unusual scenarios, error
+ * conditions, and concurrent access patterns.
  */
 class PlayerIdentityEdgeCasesTest {
 
@@ -158,9 +158,8 @@ class PlayerIdentityEdgeCasesTest {
             PlayerIdentity.setConfigDirectoryForTesting(configDir.toString());
 
             // Should throw since directory is read-only and save fails
-            assertThatThrownBy(PlayerIdentity::loadOrCreate)
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Failed to save player ID");
+            assertThatThrownBy(PlayerIdentity::loadOrCreate).isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Failed to save player ID");
         } finally {
             // Restore permissions for cleanup
             perms.add(PosixFilePermission.OWNER_WRITE);
@@ -182,9 +181,7 @@ class PlayerIdentityEdgeCasesTest {
         // Should generate new ID when file is empty
         String playerId = PlayerIdentity.loadOrCreate();
 
-        assertThat(playerId)
-            .isNotNull()
-            .matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
+        assertThat(playerId).isNotNull().matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
     }
 
     @Test
@@ -201,9 +198,7 @@ class PlayerIdentityEdgeCasesTest {
         // Should generate new valid ID
         String playerId = PlayerIdentity.loadOrCreate();
 
-        assertThat(playerId)
-            .isNotNull()
-            .matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
+        assertThat(playerId).isNotNull().matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
     }
 
     @Test
@@ -220,9 +215,7 @@ class PlayerIdentityEdgeCasesTest {
         // Should recover by generating new ID
         String playerId = PlayerIdentity.loadOrCreate();
 
-        assertThat(playerId)
-            .isNotNull()
-            .matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
+        assertThat(playerId).isNotNull().matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
     }
 
     // ========== UUID Format Edge Cases ==========
@@ -242,9 +235,7 @@ class PlayerIdentityEdgeCasesTest {
         // Should accept and normalize to lowercase, or generate new one
         String playerId = PlayerIdentity.loadOrCreate();
 
-        assertThat(playerId)
-            .isNotNull()
-            .matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
+        assertThat(playerId).isNotNull().matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
     }
 
     @Test
@@ -262,9 +253,7 @@ class PlayerIdentityEdgeCasesTest {
         // Should reject and generate new valid v4 UUID
         String playerId = PlayerIdentity.loadOrCreate();
 
-        assertThat(playerId)
-            .isNotNull()
-            .matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
+        assertThat(playerId).isNotNull().matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
     }
 
     @Test
@@ -281,9 +270,7 @@ class PlayerIdentityEdgeCasesTest {
         // Should reject and generate new valid UUID
         String playerId = PlayerIdentity.loadOrCreate();
 
-        assertThat(playerId)
-            .isNotNull()
-            .matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
+        assertThat(playerId).isNotNull().matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
     }
 
     @Test
@@ -293,16 +280,15 @@ class PlayerIdentityEdgeCasesTest {
         Path playerIdFile = configDir.resolve("player.id");
 
         // Write UUID with extra characters
-        Files.writeString(playerIdFile, "{\"playerId\":\"12345678-1234-4123-8123-123456789012-extra\",\"createdAt\":1234567890}");
+        Files.writeString(playerIdFile,
+                "{\"playerId\":\"12345678-1234-4123-8123-123456789012-extra\",\"createdAt\":1234567890}");
 
         PlayerIdentity.setConfigDirectoryForTesting(configDir.toString());
 
         // Should reject and generate new valid UUID
         String playerId = PlayerIdentity.loadOrCreate();
 
-        assertThat(playerId)
-            .isNotNull()
-            .matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
+        assertThat(playerId).isNotNull().matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
     }
 
     // ========== Path and Directory Edge Cases ==========
@@ -335,9 +321,7 @@ class PlayerIdentityEdgeCasesTest {
         // Should handle spaces in path correctly
         String playerId = PlayerIdentity.loadOrCreate();
 
-        assertThat(playerId)
-            .isNotNull()
-            .matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
+        assertThat(playerId).isNotNull().matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
     }
 
     // ========== Recovery Scenarios ==========
@@ -356,9 +340,7 @@ class PlayerIdentityEdgeCasesTest {
         // Should detect corruption and generate new ID
         String playerId = PlayerIdentity.loadOrCreate();
 
-        assertThat(playerId)
-            .isNotNull()
-            .matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
+        assertThat(playerId).isNotNull().matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
 
         // Verify new ID is persisted correctly
         String reloadedId = PlayerIdentity.loadOrCreate();

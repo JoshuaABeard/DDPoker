@@ -29,14 +29,13 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for V2Player Harrington M/Q/Zone calculations.
- * Tests the "M" (chip stack relative to blinds) and "Q" (chip stack relative to average)
- * metrics from Dan Harrington's poker strategy books.
- * Extends IntegrationTestBase for full game infrastructure.
+ * Tests for V2Player Harrington M/Q/Zone calculations. Tests the "M" (chip
+ * stack relative to blinds) and "Q" (chip stack relative to average) metrics
+ * from Dan Harrington's poker strategy books. Extends IntegrationTestBase for
+ * full game infrastructure.
  */
 @Tag("integration")
-class V2PlayerHarringtonTest extends IntegrationTestBase
-{
+class V2PlayerHarringtonTest extends IntegrationTestBase {
     private PokerGame game;
     private PokerTable table;
     private HoldemHand hand;
@@ -44,8 +43,7 @@ class V2PlayerHarringtonTest extends IntegrationTestBase
     private V2Player ai;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         // Create game infrastructure
         game = new PokerGame(null);
         TournamentProfile profile = new TournamentProfile("test");
@@ -100,8 +98,7 @@ class V2PlayerHarringtonTest extends IntegrationTestBase
     /**
      * Helper to set chip count and reinitialize hand (captures chips at start)
      */
-    private void setPlayerChips(PokerPlayer p, int chips)
-    {
+    private void setPlayerChips(PokerPlayer p, int chips) {
         p.setChipCount(chips);
         p.newHand('p'); // Recapture chip count at start
     }
@@ -111,8 +108,7 @@ class V2PlayerHarringtonTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_ReturnHighM_When_PlayerHasBigStack()
-    {
+    void should_ReturnHighM_When_PlayerHasBigStack() {
         // Set player to have 3000 chips (150 big blinds)
         setPlayerChips(player, 3000);
         game.computeTotalChipsInPlay();
@@ -127,8 +123,7 @@ class V2PlayerHarringtonTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnMediumM_When_PlayerHasAverageStack()
-    {
+    void should_ReturnMediumM_When_PlayerHasAverageStack() {
         // Set player to have 600 chips (30 big blinds)
         setPlayerChips(player, 600);
         game.computeTotalChipsInPlay();
@@ -142,8 +137,7 @@ class V2PlayerHarringtonTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnLowM_When_PlayerHasShortStack()
-    {
+    void should_ReturnLowM_When_PlayerHasShortStack() {
         // Set player to have 150 chips (7.5 big blinds)
         setPlayerChips(player, 150);
         game.computeTotalChipsInPlay();
@@ -157,8 +151,7 @@ class V2PlayerHarringtonTest extends IntegrationTestBase
     }
 
     @Test
-    void should_CalculateTableAverageM_When_MultiplePlayers()
-    {
+    void should_CalculateTableAverageM_When_MultiplePlayers() {
         // Set all players to 1000 chips
         setPlayerChips(player, 1000);
         setPlayerChips(table.getPlayer(1), 1000);
@@ -179,8 +172,7 @@ class V2PlayerHarringtonTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_ReturnQAbove1_When_PlayerAboveAverage()
-    {
+    void should_ReturnQAbove1_When_PlayerAboveAverage() {
         // Set player to 2000, others to 500
         // Average stack is based on buyin (1500), not actual chips
         // Total chips in play = 3 * 1500 buyin = 4500, average = 1500
@@ -197,8 +189,7 @@ class V2PlayerHarringtonTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnQBelow1_When_PlayerBelowAverage()
-    {
+    void should_ReturnQBelow1_When_PlayerBelowAverage() {
         // Set player to 500, others to 2000 (average = 1500)
         setPlayerChips(player, 500);
         setPlayerChips(table.getPlayer(1), 2000);
@@ -217,8 +208,7 @@ class V2PlayerHarringtonTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_ReturnDeadZone_When_MLessThan1()
-    {
+    void should_ReturnDeadZone_When_MLessThan1() {
         // M <= 1 is Dead zone
         // Need chips < 30 * (1 / 0.741) = 40 chips
         setPlayerChips(player, 20);
@@ -232,8 +222,7 @@ class V2PlayerHarringtonTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnRedZone_When_MBetween1And5()
-    {
+    void should_ReturnRedZone_When_MBetween1And5() {
         // 1 < M <= 5 is Red zone
         // Need chips between 40 and 200 (approx)
         setPlayerChips(player, 100);
@@ -247,8 +236,7 @@ class V2PlayerHarringtonTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnOrangeZone_When_MBetween5And10()
-    {
+    void should_ReturnOrangeZone_When_MBetween5And10() {
         // 5 < M <= 10 is Orange zone
         // Need chips between 200 and 400 (approx)
         setPlayerChips(player, 250);
@@ -262,8 +250,7 @@ class V2PlayerHarringtonTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnYellowZone_When_MBetween10And20()
-    {
+    void should_ReturnYellowZone_When_MBetween10And20() {
         // 10 < M <= 20 is Yellow zone
         // Need chips between 400 and 800 (approx)
         setPlayerChips(player, 500);
@@ -277,8 +264,7 @@ class V2PlayerHarringtonTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnGreenZone_When_MGreaterThan20()
-    {
+    void should_ReturnGreenZone_When_MGreaterThan20() {
         // M > 20 is Green zone
         // Need chips > 800 (approx)
         setPlayerChips(player, 1000);

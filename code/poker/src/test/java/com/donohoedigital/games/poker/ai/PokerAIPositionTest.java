@@ -20,7 +20,6 @@
 package com.donohoedigital.games.poker.ai;
 
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.integration.IntegrationTestBase;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,12 +30,11 @@ import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Tests for PokerAI position query methods.
- * Extends IntegrationTestBase for GameEngine infrastructure.
+ * Tests for PokerAI position query methods. Extends IntegrationTestBase for
+ * GameEngine infrastructure.
  */
 @Tag("integration")
-class PokerAIPositionTest extends IntegrationTestBase
-{
+class PokerAIPositionTest extends IntegrationTestBase {
     private PokerGame game;
     private PokerTable table;
     private HoldemHand hand;
@@ -44,8 +42,7 @@ class PokerAIPositionTest extends IntegrationTestBase
     private V2Player ai;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         // Create game infrastructure
         game = new PokerGame(null);
         TournamentProfile profile = new TournamentProfile("test");
@@ -56,8 +53,7 @@ class PokerAIPositionTest extends IntegrationTestBase
 
         // Create 9 players for full table
         players = new PokerPlayer[9];
-        for (int i = 0; i < 9; i++)
-        {
+        for (int i = 0; i < 9; i++) {
             players[i] = new PokerPlayer(i + 1, "Player" + i, true);
             players[i].setChipCount(1000);
             game.addPlayer(players[i]);
@@ -69,8 +65,7 @@ class PokerAIPositionTest extends IntegrationTestBase
         table.setButton(0); // Button at seat 0 BEFORE creating hand
 
         // Give players pocket cards for proper hand initialization
-        for (int i = 0; i < 9; i++)
-        {
+        for (int i = 0; i < 9; i++) {
             players[i].newHand('p');
         }
 
@@ -90,8 +85,7 @@ class PokerAIPositionTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_ReturnTrue_When_PlayerIsButton()
-    {
+    void should_ReturnTrue_When_PlayerIsButton() {
         // Move AI to button position
         ai.setPokerPlayer(players[0]);
 
@@ -99,25 +93,20 @@ class PokerAIPositionTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnFalse_When_PlayerIsNotButton()
-    {
+    void should_ReturnFalse_When_PlayerIsNotButton() {
         // AI is at seat 3, button is at seat 0
         assertThat(ai.isButton()).isFalse();
     }
 
     @Test
-    void should_ReturnTrue_When_PlayerIsSmallBlind()
-    {
+    void should_ReturnTrue_When_PlayerIsSmallBlind() {
         // Note: Blind seats require full hand state to be properly initialized
         // For this test, we verify the method works correctly
         int smallBlindSeat = hand.getSmallBlindSeat();
-        if (smallBlindSeat >= 0)
-        {
+        if (smallBlindSeat >= 0) {
             ai.setPokerPlayer(players[smallBlindSeat]);
             assertThat(ai.isSmallBlind()).isTrue();
-        }
-        else
-        {
+        } else {
             // Blind seats not initialized - this is acceptable for unit test
             // Just verify method doesn't crash
             assertThat(ai.isSmallBlind()).isFalse();
@@ -125,16 +114,12 @@ class PokerAIPositionTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnFalse_When_PlayerIsNotSmallBlind()
-    {
+    void should_ReturnFalse_When_PlayerIsNotSmallBlind() {
         // AI is at seat 3 - as long as it's not small blind, test passes
         int smallBlindSeat = hand.getSmallBlindSeat();
-        if (smallBlindSeat >= 0 && players[3].getSeat() != smallBlindSeat)
-        {
+        if (smallBlindSeat >= 0 && players[3].getSeat() != smallBlindSeat) {
             assertThat(ai.isSmallBlind()).isFalse();
-        }
-        else
-        {
+        } else {
             // Either blinds not set or seat 3 is small blind - skip detailed test
             // Just verify method works
             boolean result = ai.isSmallBlind();
@@ -143,33 +128,25 @@ class PokerAIPositionTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnTrue_When_PlayerIsBigBlind()
-    {
+    void should_ReturnTrue_When_PlayerIsBigBlind() {
         // Note: Blind seats require full hand state to be properly initialized
         int bigBlindSeat = hand.getBigBlindSeat();
-        if (bigBlindSeat >= 0)
-        {
+        if (bigBlindSeat >= 0) {
             ai.setPokerPlayer(players[bigBlindSeat]);
             assertThat(ai.isBigBlind()).isTrue();
-        }
-        else
-        {
+        } else {
             // Blind seats not initialized - just verify method doesn't crash
             assertThat(ai.isBigBlind()).isFalse();
         }
     }
 
     @Test
-    void should_ReturnFalse_When_PlayerIsNotBigBlind()
-    {
+    void should_ReturnFalse_When_PlayerIsNotBigBlind() {
         // AI is at seat 3 - as long as it's not big blind, test passes
         int bigBlindSeat = hand.getBigBlindSeat();
-        if (bigBlindSeat >= 0 && players[3].getSeat() != bigBlindSeat)
-        {
+        if (bigBlindSeat >= 0 && players[3].getSeat() != bigBlindSeat) {
             assertThat(ai.isBigBlind()).isFalse();
-        }
-        else
-        {
+        } else {
             // Either blinds not set or seat 3 is big blind - skip detailed test
             // Just verify method works
             boolean result = ai.isBigBlind();
@@ -178,20 +155,16 @@ class PokerAIPositionTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnTrue_When_PlayerIsEarlyPosition()
-    {
+    void should_ReturnTrue_When_PlayerIsEarlyPosition() {
         // Seat 3 (first after blinds) should be early position in 9-player game
         assertThat(ai.isEarlyPosition()).isTrue();
     }
 
     @Test
-    void should_ReturnTrue_When_PlayerIsMiddlePosition()
-    {
+    void should_ReturnTrue_When_PlayerIsMiddlePosition() {
         // Find a player in middle position
-        for (int i = 0; i < 9; i++)
-        {
-            if (players[i].isMiddle())
-            {
+        for (int i = 0; i < 9; i++) {
+            if (players[i].isMiddle()) {
                 ai.setPokerPlayer(players[i]);
                 assertThat(ai.isMiddlePosition()).isTrue();
                 return;
@@ -201,13 +174,10 @@ class PokerAIPositionTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnTrue_When_PlayerIsLatePosition()
-    {
+    void should_ReturnTrue_When_PlayerIsLatePosition() {
         // Find a player in late position (but not button)
-        for (int i = 0; i < 9; i++)
-        {
-            if (players[i].isLate() && players[i].getSeat() != table.getButton())
-            {
+        for (int i = 0; i < 9; i++) {
+            if (players[i].isLate() && players[i].getSeat() != table.getButton()) {
                 ai.setPokerPlayer(players[i]);
                 assertThat(ai.isLatePosition()).isTrue();
                 return;
@@ -217,12 +187,12 @@ class PokerAIPositionTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnFalse_When_PlayerIsButtonButMethodChecksLatePosition()
-    {
+    void should_ReturnFalse_When_PlayerIsButtonButMethodChecksLatePosition() {
         // Move AI to button
         ai.setPokerPlayer(players[0]);
 
-        // isLatePosition() should return false for button (it explicitly excludes button)
+        // isLatePosition() should return false for button (it explicitly excludes
+        // button)
         assertThat(ai.isLatePosition()).isFalse();
 
         // But isButton() should return true
@@ -234,8 +204,7 @@ class PokerAIPositionTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_ReturnTrue_When_PotIsRaised()
-    {
+    void should_ReturnTrue_When_PotIsRaised() {
         // Set current player and simulate a raise to set pot status to RAISED_POT
         hand.setCurrentPlayerIndex(4);
         hand.bet(players[4], 40, "raise");
@@ -247,8 +216,7 @@ class PokerAIPositionTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnTrue_When_PotIsReraised()
-    {
+    void should_ReturnTrue_When_PotIsReraised() {
         // Simulate bet then raise to set pot status to RERAISED_POT
         hand.setCurrentPlayerIndex(4);
         hand.bet(players[4], 40, "first raise");
@@ -262,8 +230,7 @@ class PokerAIPositionTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnTrue_When_PotIsCalled()
-    {
+    void should_ReturnTrue_When_PotIsCalled() {
         // Simulate a call to set pot status to CALLED_POT
         hand.setCurrentPlayerIndex(4);
         hand.call(players[4], 20, "call");
@@ -275,8 +242,7 @@ class PokerAIPositionTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnTrue_When_NoPotAction()
-    {
+    void should_ReturnTrue_When_NoPotAction() {
         // New hand starts with NO_POT_ACTION status
         assertThat(ai.isNoPotAction()).isTrue();
         assertThat(ai.isPotRaised()).isFalse();

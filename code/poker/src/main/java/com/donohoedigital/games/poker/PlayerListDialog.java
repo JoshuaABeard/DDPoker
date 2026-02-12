@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -53,10 +53,9 @@ import java.beans.*;
 
 /**
  *
- * @author  donohoe
+ * @author donohoe
  */
-public class PlayerListDialog extends DialogPhase implements PropertyChangeListener, ListSelectionListener
-{
+public class PlayerListDialog extends DialogPhase implements PropertyChangeListener, ListSelectionListener {
     static Logger logger = LogManager.getLogger(PlayerListDialog.class);
 
     public static final String PARAM_PLAYER_LIST = "playerlist";
@@ -78,18 +77,16 @@ public class PlayerListDialog extends DialogPhase implements PropertyChangeListe
     private String selected_ = null;
 
     /**
-     * Creates a new instance of PlayerListDialog 
+     * Creates a new instance of PlayerListDialog
      */
     public PlayerListDialog() {
     }
 
-
-    public JComponent createDialogContents()
-    {
+    public JComponent createDialogContents() {
         // holds data we are gathering
         DDPanel data = new DDPanel();
-        data.setBorder(BorderFactory.createEmptyBorder(10,10,5,10));
-        data.setBorderLayoutGap(10,0);
+        data.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
+        data.setBorderLayoutGap(10, 0);
 
         ///
         /// entry field and buttons
@@ -112,8 +109,7 @@ public class PlayerListDialog extends DialogPhase implements PropertyChangeListe
         add_ = new GlassButton("add", "Glass");
         text_.setDefaultOverride(add_);
         add_.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e)
-            {
+            public void actionPerformed(ActionEvent e) {
                 list_.add(getName(true), null, false);
                 model_.fireTableDataChanged();
                 propertyChange(null); // force selection of new row
@@ -121,19 +117,19 @@ public class PlayerListDialog extends DialogPhase implements PropertyChangeListe
                 text_.selectAll(); // allow quick adds
             }
         });
-        add_.setBorderGap(2,5,2,6);
+        add_.setBorderGap(2, 5, 2, 6);
 
         delete_ = new GlassButton("delete", "Glass");
         delete_.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e)
-            {
+            public void actionPerformed(ActionEvent e) {
                 list_.remove(getName(true), false);
                 model_.fireTableDataChanged();
-                if (model_.getRowCount() > 0) table_.getSelectionModel().setSelectionInterval(0,0); // allow quick deletes
+                if (model_.getRowCount() > 0)
+                    table_.getSelectionModel().setSelectionInterval(0, 0); // allow quick deletes
                 updateTextFromList();
             }
         });
-        delete_.setBorderGap(2,5,2,6);
+        delete_.setBorderGap(2, 5, 2, 6);
 
         DDPanel buttonbase = new DDPanel();
         buttonbase.setLayout(new GridLayout(1, 0, 5, 0));
@@ -146,7 +142,7 @@ public class PlayerListDialog extends DialogPhase implements PropertyChangeListe
         ///
 
         tabs_ = new DDTabbedPane(STYLE, null, JTabbedPane.TOP);
-        //tabs_.setOpaque(false);
+        // tabs_.setOpaque(false);
         tabs_.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
 
         ImageComponent ic = new ImageComponent("ddlogo20", 1.0d);
@@ -156,8 +152,7 @@ public class PlayerListDialog extends DialogPhase implements PropertyChangeListe
 
         // player list
         list_ = (AbstractPlayerList) gamephase_.getObject(PARAM_PLAYER_LIST);
-        if (list_ == null)
-        {
+        if (list_ == null) {
             list_ = PokerPrefsPlayerList.getUniqueList(gamephase_.getString("listname", "UNDEFINED"));
             bShared_ = true;
         }
@@ -172,15 +167,12 @@ public class PlayerListDialog extends DialogPhase implements PropertyChangeListe
     /**
      * Base class for tabs
      */
-    private abstract class ListTab extends DDTabPanel
-    {
-        ListTab()
-        {
-            setPreferredSize(new Dimension(320,200));
+    private abstract class ListTab extends DDTabPanel {
+        ListTab() {
+            setPreferredSize(new Dimension(320, 200));
         }
 
-        public void createUI()
-        {
+        public void createUI() {
             createUILocal();
         }
 
@@ -190,11 +182,10 @@ public class PlayerListDialog extends DialogPhase implements PropertyChangeListe
     /**
      * Table edit
      */
-    private class TableTab extends ListTab
-    {
-        protected void createUILocal()
-        {
-            DDScrollTable playerScroll = new DDScrollTable(GuiManager.DEFAULT, "PokerPrefsPlayerList", "BrushedMetal", COLUMN_NAMES, COLUMN_WIDTHS);
+    private class TableTab extends ListTab {
+        protected void createUILocal() {
+            DDScrollTable playerScroll = new DDScrollTable(GuiManager.DEFAULT, "PokerPrefsPlayerList", "BrushedMetal",
+                    COLUMN_NAMES, COLUMN_WIDTHS);
             playerScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
             playerScroll.setPreferredSize(new Dimension(playerScroll.getPreferredWidth(), 220));
 
@@ -209,28 +200,23 @@ public class PlayerListDialog extends DialogPhase implements PropertyChangeListe
             add(playerScroll, BorderLayout.CENTER);
         }
 
-        public void initUI()
-        {
+        public void initUI() {
             super.initUI();
             updateListFromText();
             text_.requestFocus();
         }
     }
 
-    private void updateListFromText()
-    {
-        if (area_ != null)
-        {
+    private void updateListFromText() {
+        if (area_ != null) {
             list_.fromCSV(area_.getText(), false);
             model_.fireTableDataChanged();
             propertyChange(null); // force selection of new row
         }
     }
 
-    private void updateTextFromList()
-    {
-        if (area_ != null)
-        {
+    private void updateTextFromList() {
+        if (area_ != null) {
             area_.setText(list_.toCSV());
         }
     }
@@ -238,21 +224,17 @@ public class PlayerListDialog extends DialogPhase implements PropertyChangeListe
     /**
      * Text edit
      */
-    private class TextTab extends ListTab
-    {
-        protected void createUILocal()
-        {
+    private class TextTab extends ListTab {
+        protected void createUILocal() {
             area_ = new DDTextArea(GuiManager.DEFAULT, STYLE);
             area_.setLineWrap(true);
             area_.setWrapStyleWord(true);
-            DDScrollPane scroll = new DDScrollPane(area_, STYLE, null,
-                                               JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                                                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            DDScrollPane scroll = new DDScrollPane(area_, STYLE, null, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                    JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
             add(scroll, BorderLayout.CENTER);
         }
 
-        public void initUI()
-        {
+        public void initUI() {
             super.initUI();
             updateTextFromList();
         }
@@ -261,16 +243,14 @@ public class PlayerListDialog extends DialogPhase implements PropertyChangeListe
     /**
      * clear special save phase
      */
-    public boolean processButton(GameButton button) 
-    {
-        if (button.getName().startsWith("ok"))
-        {
-            if (tabs_.getSelectedComponent() instanceof TextTab)
-            {
+    public boolean processButton(GameButton button) {
+        if (button.getName().startsWith("ok")) {
+            if (tabs_.getSelectedComponent() instanceof TextTab) {
                 updateListFromText();
             }
             list_.save();
-            if (bShared_) PokerPrefsPlayerList.getSharedList(list_.getName()).fetch(); // update shared list
+            if (bShared_)
+                PokerPrefsPlayerList.getSharedList(list_.getName()).fetch(); // update shared list
         }
 
         return super.processButton(button);
@@ -279,28 +259,25 @@ public class PlayerListDialog extends DialogPhase implements PropertyChangeListe
     /**
      * Finish
      */
-    public void finish()
-    {
+    public void finish() {
         super.finish();
     }
 
     /**
      * Table row selected
      */
-    public void valueChanged(ListSelectionEvent e)
-    {
-        if (e != null && e.getValueIsAdjusting()) return;
+    public void valueChanged(ListSelectionEvent e) {
+        if (e != null && e.getValueIsAdjusting())
+            return;
 
         ListSelectionModel lsm = table_.getSelectionModel();
         int index = lsm.getMinSelectionIndex();
-        if (index >= 0 )
-        {
+        if (index >= 0) {
             selected_ = model_.getPlayerName(index);
             bIgnoreTextChange_ = true;
             text_.setText(selected_);
-            bIgnoreTextChange_ = false;        }
-        else
-        {
+            bIgnoreTextChange_ = false;
+        } else {
             selected_ = null;
         }
 
@@ -312,27 +289,25 @@ public class PlayerListDialog extends DialogPhase implements PropertyChangeListe
      */
     public void propertyChange(PropertyChangeEvent evt) {
 
-        if (bIgnoreTextChange_) return;
+        if (bIgnoreTextChange_)
+            return;
         checkButtons();
 
         // see if we match something in the table, if so, highlight it
         String sName = getName(false);
-        //logger.debug("Text change: <"+sName+">");
+        // logger.debug("Text change: <"+sName+">");
 
         ListSelectionModel selmodel = table_.getSelectionModel();
         int nNum = model_.getRowCount();
-        for (int i = 0; sName != null && i < nNum; i++)
-        {
-            if (sName.equals(model_.getPlayerName(i)))
-            {
+        for (int i = 0; sName != null && i < nNum; i++) {
+            if (sName.equals(model_.getPlayerName(i))) {
                 selmodel.setSelectionInterval(i, i);
                 table_.scrollRectToVisible(table_.getCellRect(i, 0, true));
                 return;
             }
         }
 
-        if (!selmodel.isSelectionEmpty())
-        {
+        if (!selmodel.isSelectionEmpty()) {
             selmodel.clearSelection();
         }
     }
@@ -340,8 +315,7 @@ public class PlayerListDialog extends DialogPhase implements PropertyChangeListe
     /**
      * Turn buttons on / off
      */
-    private void checkButtons()
-    {
+    private void checkButtons() {
         delete_.setEnabled(selected_ != null);
         add_.setEnabled(selected_ == null && text_.isValidData());
     }
@@ -349,35 +323,28 @@ public class PlayerListDialog extends DialogPhase implements PropertyChangeListe
     /**
      * get value in name field
      */
-    private String getName(boolean bTrim)
-    {
+    private String getName(boolean bTrim) {
         String sName = text_.getText();
-        if (bTrim && sName != null) sName = sName.trim();
+        if (bTrim && sName != null)
+            sName = sName.trim();
         return sName;
     }
 
     // client table info
-    private static final int[] COLUMN_WIDTHS = new int[] {
-        282
-    };
-    private static final String[] COLUMN_NAMES = new String[] {
-        LanClientInfo.LAN_PLAYER_NAME
-    };
+    private static final int[] COLUMN_WIDTHS = new int[]{282};
+    private static final String[] COLUMN_NAMES = new String[]{LanClientInfo.LAN_PLAYER_NAME};
 
     /**
      * Used by table to display players in game
      */
-    private class PlayerModel extends DefaultTableModel
-    {
+    private class PlayerModel extends DefaultTableModel {
         private AbstractPlayerList list;
 
-        public PlayerModel(AbstractPlayerList list)
-        {
+        public PlayerModel(AbstractPlayerList list) {
             this.list = list;
         }
 
-        public String getPlayerName(int rowIndex)
-        {
+        public String getPlayerName(int rowIndex) {
             return list.get(rowIndex).getName();
         }
 
@@ -400,10 +367,8 @@ public class PlayerListDialog extends DialogPhase implements PropertyChangeListe
             return list.size();
         }
 
-        public Object getValueAt(int rowIndex, int colIndex) 
-        {
-            if (COLUMN_NAMES[colIndex].equals(LanClientInfo.LAN_PLAYER_NAME))
-            {
+        public Object getValueAt(int rowIndex, int colIndex) {
+            if (COLUMN_NAMES[colIndex].equals(LanClientInfo.LAN_PLAYER_NAME)) {
                 return getPlayerName(rowIndex);
             }
             return "[bad column]";

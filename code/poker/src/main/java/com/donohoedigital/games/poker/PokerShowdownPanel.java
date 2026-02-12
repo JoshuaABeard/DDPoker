@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -49,8 +49,7 @@ import java.math.*;
 import java.util.*;
 import java.util.List;
 
-public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback, ChangeListener
-{
+public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback, ChangeListener {
     static Logger logger = LogManager.getLogger(PokerShowdownPanel.class);
 
     private static Dimension resultsSize = new Dimension(90, 50);
@@ -70,8 +69,7 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     /**
      * Create showdown panel
      */
-    public PokerShowdownPanel(GameContext context, SimulatorDialog sim, PokerTable table, String sStyle)
-    {
+    public PokerShowdownPanel(GameContext context, SimulatorDialog sim, PokerTable table, String sStyle) {
         super();
         context_ = context;
         setBorder(BorderFactory.createEmptyBorder(10, 10, 2, 10));
@@ -85,8 +83,7 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
      * create UI upon demand
      */
     @Override
-    protected void createUI()
-    {
+    protected void createUI() {
         setBorderLayoutGap(5, 0);
 
         // top
@@ -107,18 +104,14 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
         // control parts
         DDPanel controlbase = new DDPanel();
         toptop.add(controlbase, BorderLayout.CENTER);
-        controlbase.setLayout(new HorizontalFlowLayout(HorizontalFlowLayout.LEFT, 5, 0,
-                                                       HorizontalFlowLayout.CENTER));
+        controlbase.setLayout(new HorizontalFlowLayout(HorizontalFlowLayout.LEFT, 5, 0, HorizontalFlowLayout.CENTER));
 
         TypedHashMap dummy = new TypedHashMap();
         numOpponents_ = new OptionInteger(null, "numopp", STYLE, dummy, null, 1, 9, -1, true);
         numOpponents_.addChangeListener(this);
-        numOpponents_.addChangeListener(new ChangeListener()
-        {
-            public void stateChanged(ChangeEvent e)
-            {
-                if (numOpponents_.getSpinner().isValidData())
-                {
+        numOpponents_.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                if (numOpponents_.getSpinner().isValidData()) {
                     updateNumOpponents();
                 }
             }
@@ -137,10 +130,8 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
         group.add(simcombo_);
         simbase.add(simcombo_, BorderLayout.WEST);
         // listener to control # sims
-        ActionListener comboListener = new ActionListener()
-        {
-            public void actionPerformed(ActionEvent e)
-            {
+        ActionListener comboListener = new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
                 numSims_.setEnabled(simcombo_.isSelected());
             }
         };
@@ -153,9 +144,7 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
         allcombo_.addActionListener(comboListener);
 
         int nMax = 10000000;
-        numSims_ = new OptionInteger(null, "hands", STYLE, dummy, null,
-                                     25000,
-                                     nMax, -1, true);
+        numSims_ = new OptionInteger(null, "hands", STYLE, dummy, null, 25000, nMax, -1, true);
         numSims_.getSpinner().setValue(nMax);
         numSims_.getSpinner().setUseBigStep(true);
         numSims_.getSpinner().resetPreferredSize();
@@ -172,10 +161,8 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
         pb.setBorderLayoutGap(0, 5);
 
         run_ = new GlassButton("run", "Glass");
-        run_.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent e)
-            {
+        run_.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
                 sim_.bSimRunning_ = true;
                 bStopRequested_ = false;
                 clearResults();
@@ -185,22 +172,17 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
                 allcombo_.setEnabled(false);
                 simcombo_.setEnabled(false);
                 stop_.setEnabled(true);
-                if (simcombo_.isSelected())
-                {
+                if (simcombo_.isSelected()) {
                     runSimulator();
-                }
-                else
-                {
+                } else {
                     runIterator();
                 }
             }
         });
         stop_ = new GlassButton("stop", "Glass");
         stop_.setEnabled(false);
-        stop_.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent e)
-            {
+        stop_.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
                 setStopRequested();
             }
         });
@@ -217,8 +199,7 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
         opponents.setLayout(new GridLayout(2, 5, 10, 10));
         SimulatorDialog.SimHandPanel cards;
 
-        for (int i = 0; i < PokerConstants.SEATS; i++)
-        {
+        for (int i = 0; i < PokerConstants.SEATS; i++) {
             cards = new SimulatorDialog.SimHandPanel(sim_, table_, table_.getPlayer(i).getHand());
             DDLabelBorder boardcards = new ShowBorder(i == 0 ? "myhand" : "opponent", cards, i);
             opponents.add(boardcards);
@@ -232,29 +213,25 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     /**
      * num opponents or num sims changed
      */
-    public void stateChanged(ChangeEvent e)
-    {
-        if (!stop_.isEnabled())
-        {
-            run_.setEnabled(numSims_.getSpinner().isValidData() &&
-                            numOpponents_.getSpinner().isValidData());
+    public void stateChanged(ChangeEvent e) {
+        if (!stop_.isEnabled()) {
+            run_.setEnabled(numSims_.getSpinner().isValidData() && numOpponents_.getSpinner().isValidData());
         }
     }
 
     /**
      * labelborder for each hand
      */
-    private class ShowBorder extends DDLabelBorder
-    {
+    private class ShowBorder extends DDLabelBorder {
         SimulatorDialog.SimHandPanel cards;
         DDHtmlArea results;
 
-        ShowBorder(String sName, SimulatorDialog.SimHandPanel cards, int i)
-        {
+        ShowBorder(String sName, SimulatorDialog.SimHandPanel cards, int i) {
             super(sName, STYLE);
             this.cards = cards;
             setBorderLayoutGap(5, 0);
-            if (i > 0) setText(PropertyConfig.formatMessage(getText(), i));
+            if (i > 0)
+                setText(PropertyConfig.formatMessage(getText(), i));
             add(GuiUtils.CENTER(cards), BorderLayout.NORTH);
 
             results = new DDHtmlArea(GuiManager.DEFAULT, "PokerStats");
@@ -264,14 +241,12 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
         }
 
         @Override
-        public void setEnabled(boolean b)
-        {
+        public void setEnabled(boolean b) {
             super.setEnabled(b);
             cards.setEnabled(b);
         }
 
-        public void setResults(String s)
-        {
+        public void setResults(String s) {
             results.setText(s);
         }
     }
@@ -279,20 +254,17 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     /**
      * set num players
      */
-    public void setNumOpponents(int nNum)
-    {
+    public void setNumOpponents(int nNum) {
         numOpponents_.getSpinner().setValue(nNum);
     }
 
     /**
      * update number of opponents by enabling cards
      */
-    private void updateNumOpponents()
-    {
+    private void updateNumOpponents() {
         int nNum = numOpponents_.getSpinner().getValue();
         ShowBorder show;
-        for (int i = 0; i < PokerConstants.SEATS; i++)
-        {
+        for (int i = 0; i < PokerConstants.SEATS; i++) {
             show = (ShowBorder) opponents_.get(i);
             show.setEnabled(i <= nNum);
         }
@@ -302,14 +274,12 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     /**
      * update display - number of combos and results clearing if requested
      */
-    public void updateDisplay(boolean bClearResults)
-    {
+    public void updateDisplay(boolean bClearResults) {
         HoldemHand hhand = sim_.hhand_;
         PokerTable table = sim_.table_;
 
         Hand[] hands = new Hand[numOpponents_.getSpinner().getValue() + 1];
-        for (int i = 0; i < hands.length; i++)
-        {
+        for (int i = 0; i < hands.length; i++) {
             hands[i] = table.getPlayer(i).getHand();
         }
 
@@ -318,30 +288,27 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
         String sValue = num.toString();
         bIterWayBig_ = (sValue.length() > 7);
         long nNum = Long.MAX_VALUE;
-        if (!bIterWayBig_)
-        {
+        if (!bIterWayBig_) {
             nNum = num.longValue();
         }
         StringBuilder commas = new StringBuilder();
         int nCnt = 0;
-        for (int i = sValue.length() - 1; i >= 0; i--)
-        {
-            if (nCnt > 0 && nCnt % 3 == 0) commas.append(",");
+        for (int i = sValue.length() - 1; i >= 0; i--) {
+            if (nCnt > 0 && nCnt % 3 == 0)
+                commas.append(",");
             commas.append(sValue.charAt(i));
             nCnt++;
         }
         commas = commas.reverse();
 
-        if (bClearResults) clearResults();
+        if (bClearResults)
+            clearResults();
         allcombo_.setText(PropertyConfig.getMessage("msg.allcombos", commas));
 
         // auto select all combo if it is 2,000,000 or less
-        if (nNum <= 2000000)
-        {
+        if (nNum <= 2000000) {
             allcombo_.setSelected(true);
-        }
-        else
-        {
+        } else {
             simcombo_.setSelected(true);
         }
         numSims_.setEnabled(simcombo_.isSelected());
@@ -350,11 +317,9 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     /**
      * clear results in all hands
      */
-    private void clearResults()
-    {
+    private void clearResults() {
         progress_.setPercentDone(0);
-        for (int i = 0; i < PokerConstants.SEATS; i++)
-        {
+        for (int i = 0; i < PokerConstants.SEATS; i++) {
             setResults(i, "");
         }
     }
@@ -362,8 +327,7 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     /**
      * set results for hand i
      */
-    private void setResults(int i, String s)
-    {
+    private void setResults(int i, String s) {
         ShowBorder show = (ShowBorder) opponents_.get(i);
         show.setResults(s);
     }
@@ -371,19 +335,16 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     /**
      * run simulator
      */
-    private void runSimulator()
-    {
+    private void runSimulator() {
         new UpdateThread(true).start();
     }
 
     /**
      * run iter, warn if too many results
      */
-    private void runIterator()
-    {
-        if (bIterWayBig_ &&
-            !EngineUtils.displayConfirmationDialog(context_, PropertyConfig.getMessage("msg.bigiter"), "bigiter"))
-        {
+    private void runIterator() {
+        if (bIterWayBig_ && !EngineUtils.displayConfirmationDialog(context_, PropertyConfig.getMessage("msg.bigiter"),
+                "bigiter")) {
             setFinalResult(null);
             return;
         }
@@ -393,38 +354,33 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     /**
      * stop requested on simulator panel
      */
-    public boolean isStopRequested()
-    {
+    public boolean isStopRequested() {
         return bStopRequested_;
     }
 
     /**
      * set stop requested
      */
-    void setStopRequested()
-    {
+    void setStopRequested() {
         bStopRequested_ = true;
     }
 
     /**
      * progres bar handles this
      */
-    public void setMessage(String sMessage)
-    {
+    public void setMessage(String sMessage) {
     }
 
     /**
      * progress bar handles this
      */
-    public void setPercentDone(int n)
-    {
+    public void setPercentDone(int n) {
     }
 
     /**
      * progress bar passes this onto us when done
      */
-    public void setFinalResult(Object oResult)
-    {
+    public void setFinalResult(Object oResult) {
         sim_.bSimRunning_ = false;
         stop_.setEnabled(false);
         run_.setEnabled(true);
@@ -439,21 +395,19 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     /**
      * set results for what we have so far
      */
-    public void setIntermediateResult(Object oResult)
-    {
-        if (oResult == null) return;
+    public void setIntermediateResult(Object oResult) {
+        if (oResult == null)
+            return;
 
         final StatResult[] stats = (StatResult[]) oResult;
 
-        SwingUtilities.invokeLater(new Runnable()
-        {
-            public void run()
-            {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
                 StatResult stat;
-                for (int i = 0; i < stats.length; i++)
-                {
+                for (int i = 0; i < stats.length; i++) {
                     stat = stats[i];
-                    if (stat == null) continue;
+                    if (stat == null)
+                        continue;
                     setResults(i, stat.toHTML("msg.showdown.results"));
                 }
             }
@@ -463,60 +417,56 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     /**
      * thread to run simulator
      */
-    private class UpdateThread extends Thread
-    {
+    private class UpdateThread extends Thread {
         private boolean bSimulate;
 
-        public UpdateThread(boolean bSim)
-        {
+        public UpdateThread(boolean bSim) {
             super("UpdateThread");
             bSimulate = bSim;
         }
 
         @Override
-        public void run()
-        {
-            if (false && TESTING(EngineConstants.TESTING_PERFORMANCE)) Perf.start();
+        public void run() {
+            if (false && TESTING(EngineConstants.TESTING_PERFORMANCE))
+                Perf.start();
 
             HoldemHand hhand = sim_.hhand_;
             PokerTable table = sim_.table_;
 
             Hand[] hands = new Hand[numOpponents_.getSpinner().getValue() + 1];
-            for (int i = 0; i < hands.length; i++)
-            {
+            for (int i = 0; i < hands.length; i++) {
                 hands[i] = new Hand(table.getPlayer(i).getHand());
-                if (bSimulate) hands[i].removeBlank();
-                else replaceBlank(hands[i]);
+                if (bSimulate)
+                    hands[i].removeBlank();
+                else
+                    replaceBlank(hands[i]);
             }
 
             Hand community = new Hand(hhand.getCommunity());
-            if (bSimulate) community.removeBlank();
-            else replaceBlank(community);
-
             if (bSimulate)
-            {
-                HoldemSimulator.simulate(hands, community, numSims_.getSpinner().getValue(), progress_);
-            }
+                community.removeBlank();
             else
-            {
+                replaceBlank(community);
+
+            if (bSimulate) {
+                HoldemSimulator.simulate(hands, community, numSims_.getSpinner().getValue(), progress_);
+            } else {
                 HoldemSimulator.iterate(hands, community, progress_);
             }
 
-            if (false && TESTING(EngineConstants.TESTING_PERFORMANCE)) Perf.stop();
+            if (false && TESTING(EngineConstants.TESTING_PERFORMANCE))
+                Perf.stop();
         }
     }
 
     /**
-     * replace any blank cards with new blank cards so they
-     * can be modified w/out changing display
+     * replace any blank cards with new blank cards so they can be modified w/out
+     * changing display
      */
-    private void replaceBlank(Hand hand)
-    {
+    private void replaceBlank(Hand hand) {
         Card c;
-        for (int i = hand.size() - 1; i >= 0; i--)
-        {
-            if (hand.getCard(i).isBlank())
-            {
+        for (int i = hand.size() - 1; i >= 0; i--) {
+            if (hand.getCard(i).isBlank()) {
                 c = new Card();
                 c.setValue(Card.BLANK);
                 hand.setCard(i, c);

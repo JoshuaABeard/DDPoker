@@ -26,11 +26,13 @@ import java.util.prefs.AbstractPreferences;
 import java.util.prefs.BackingStoreException;
 
 /**
- * Adapter that implements java.util.prefs.Preferences interface and delegates to FilePrefs backend.
- * Enables zero-change compatibility with existing DDOption classes.
+ * Adapter that implements java.util.prefs.Preferences interface and delegates
+ * to FilePrefs backend. Enables zero-change compatibility with existing
+ * DDOption classes.
  *
- * <p>Node paths like "options/poker" are converted to dot-notation keys like "options.poker"
- * for storage in the flat FilePrefs structure.
+ * <p>
+ * Node paths like "options/poker" are converted to dot-notation keys like
+ * "options.poker" for storage in the flat FilePrefs structure.
  */
 public class FilePrefsAdapter extends AbstractPreferences {
     private static final Logger logger = LogManager.getLogger(FilePrefsAdapter.class);
@@ -65,8 +67,8 @@ public class FilePrefsAdapter extends AbstractPreferences {
     }
 
     /**
-     * Convert node path and key to FilePrefs key.
-     * Example: nodePath="options/poker", key="player.name" -> "options.poker.player.name"
+     * Convert node path and key to FilePrefs key. Example:
+     * nodePath="options/poker", key="player.name" -> "options.poker.player.name"
      */
     private String toFilePrefsKey(String key) {
         if (nodePath.isEmpty()) {

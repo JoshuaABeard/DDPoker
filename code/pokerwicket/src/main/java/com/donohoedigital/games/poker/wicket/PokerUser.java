@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -39,14 +39,10 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import java.io.Serializable;
 
 /**
- * Created by IntelliJ IDEA.
- * User: donohoe
- * Date: Apr 21, 2008
- * Time: 10:49:18 AM
+ * Created by IntelliJ IDEA. User: donohoe Date: Apr 21, 2008 Time: 10:49:18 AM
  * To change this template use File | Settings | File Templates.
  */
-public class PokerUser implements Serializable
-{
+public class PokerUser implements Serializable {
     private static final long serialVersionUID = 42L;
 
     private Long id;
@@ -56,14 +52,11 @@ public class PokerUser implements Serializable
     private boolean retired;
     private boolean authenticated;
 
-
-    public PokerUser(OnlineProfile profile)
-    {
+    public PokerUser(OnlineProfile profile) {
         this(profile.getId(), profile.getName(), profile.getLicenseKey(), profile.getEmail(), profile.isRetired());
     }
 
-    public PokerUser(Long id, String name, String licenseKey, String email, boolean retired)
-    {
+    public PokerUser(Long id, String name, String licenseKey, String email, boolean retired) {
         this.id = id;
         this.licenseKey = licenseKey;
         this.name = name;
@@ -71,84 +64,68 @@ public class PokerUser implements Serializable
         this.retired = retired;
     }
 
-    public Long getId()
-    {
+    public Long getId() {
         return id;
     }
 
-    public void setId(Long id)
-    {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public String getLicenseKey()
-    {
+    public String getLicenseKey() {
         return licenseKey;
     }
 
-    public void setLicenseKey(String licenseKey)
-    {
+    public void setLicenseKey(String licenseKey) {
         this.licenseKey = licenseKey;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
-    public void setName(String name)
-    {
+    public void setName(String name) {
         this.name = name;
     }
 
-    public String getEmail()
-    {
+    public String getEmail() {
         return email;
     }
 
-    public void setEmail(String email)
-    {
+    public void setEmail(String email) {
         this.email = email;
     }
 
-    public boolean isRetired()
-    {
+    public boolean isRetired() {
         return retired;
     }
 
-    public void setRetired(boolean retired)
-    {
+    public void setRetired(boolean retired) {
         this.retired = retired;
     }
 
-    public boolean isAuthenticated()
-    {
+    public boolean isAuthenticated() {
         return authenticated;
     }
 
-    public void setAuthenticated(boolean authenticated)
-    {
+    public void setAuthenticated(boolean authenticated) {
         this.authenticated = authenticated;
     }
 
-    public String getDisplayName()
-    {
-        if (name.equals(OnlineProfile.Dummy.AI_BEST.getName()))
-        {
+    public String getDisplayName() {
+        if (name.equals(OnlineProfile.Dummy.AI_BEST.getName())) {
             return "DD Poker AI - Best Place Finishes"; // FIX: put in properties
         }
         return name;
     }
 
-    public boolean isAdmin()
-    {
+    public boolean isAdmin() {
         String adminUser = PropertyConfig.getStringProperty("settings.admin.user", null, false);
         return adminUser != null && name.equals(adminUser);
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return ToStringBuilder.reflectionToString(this);
     }
 }

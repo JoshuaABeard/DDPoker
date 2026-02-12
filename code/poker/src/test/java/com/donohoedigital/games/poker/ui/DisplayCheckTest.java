@@ -8,16 +8,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Quick test to verify display detection logic.
  */
-public class DisplayCheckTest
-{
+public class DisplayCheckTest {
     @Test
-    void should_DetectDisplay()
-    {
+    void should_DetectDisplay() {
         boolean headless = GraphicsEnvironment.isHeadless();
         System.out.println("Headless mode: " + headless);
 
-        if (!headless)
-        {
+        if (!headless) {
             try {
                 GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
                 GraphicsDevice[] devices = ge.getScreenDevices();
@@ -29,9 +26,7 @@ public class DisplayCheckTest
                 System.err.println("Error getting graphics environment: " + e.getMessage());
                 throw e;
             }
-        }
-        else
-        {
+        } else {
             System.out.println("Running in headless mode - UI tests would be skipped");
         }
     }

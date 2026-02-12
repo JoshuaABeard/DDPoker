@@ -34,20 +34,19 @@ package com.donohoedigital.wicket.annotations;
 
 import java.lang.annotation.*;
 
-@Target({ ElementType.TYPE })
+@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface MountPath
-{
+public @interface MountPath {
     /**
      * @return primary mount path. If no value (or an empty string) is provided, the
-     *         AnnotatedMountScanner class will resolve a value based on the page class (by default,
-     *         <code>pageClass.getSimpleName()</code>).
+     *         AnnotatedMountScanner class will resolve a value based on the page
+     *         class (by default, <code>pageClass.getSimpleName()</code>).
      */
     String value() default "";
 
     /**
      * @return alternate mount paths
      */
-    String[] alt() default { };
+    String[] alt() default {};
 }

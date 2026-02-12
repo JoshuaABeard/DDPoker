@@ -19,7 +19,6 @@
  */
 package com.donohoedigital.games.poker.integration;
 
-import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
 import com.donohoedigital.config.ConfigTestHelper;
 import com.donohoedigital.games.poker.mock.MockGameEngine;
@@ -32,36 +31,47 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestInstance;
 
 /**
- * Base class for integration tests requiring GameEngine/PokerMain infrastructure.
+ * Base class for integration tests requiring GameEngine/PokerMain
+ * infrastructure.
  *
- * <p>This class provides:</p>
+ * <p>
+ * This class provides:
+ * </p>
  * <ul>
- *   <li>Mock GameEngine initialization (for GameEngine.getGameEngine())</li>
- *   <li>Mock PokerMain initialization (for PokerMain.getPokerMain())</li>
- *   <li>ConfigManager setup for headless testing</li>
- *   <li>Automatic cleanup after all tests complete</li>
+ * <li>Mock GameEngine initialization (for GameEngine.getGameEngine())</li>
+ * <li>Mock PokerMain initialization (for PokerMain.getPokerMain())</li>
+ * <li>ConfigManager setup for headless testing</li>
+ * <li>Automatic cleanup after all tests complete</li>
  * </ul>
  *
  * <h2>Usage</h2>
+ *
  * <pre>
  * &#64;Tag("integration")
  * class MyIntegrationTest extends IntegrationTestBase {
  *
- *     &#64;Test
- *     void should_DoSomething_When_ConditionMet() {
- *         // GameEngine.getGameEngine() and PokerMain.getPokerMain() now work
- *         // ... test code ...
- *     }
+ * 	&#64;Test
+ * 	void should_DoSomething_When_ConditionMet() {
+ * 		// GameEngine.getGameEngine() and PokerMain.getPokerMain() now work
+ * 		// ... test code ...
+ * 	}
  * }
  * </pre>
  *
  * <h2>Test Instance Lifecycle</h2>
- * <p>This class uses {@code TestInstance.Lifecycle.PER_CLASS} to ensure setup/teardown
- * runs once for all tests in the class, not per test. This is more efficient for
- * integration tests that need expensive infrastructure setup.</p>
+ * <p>
+ * This class uses {@code TestInstance.Lifecycle.PER_CLASS} to ensure
+ * setup/teardown runs once for all tests in the class, not per test. This is
+ * more efficient for integration tests that need expensive infrastructure
+ * setup.
+ * </p>
  *
  * <h2>Running Integration Tests</h2>
- * <p>Integration tests are tagged with {@code @Tag("integration")} and can be run separately:</p>
+ * <p>
+ * Integration tests are tagged with {@code @Tag("integration")} and can be run
+ * separately:
+ * </p>
+ *
  * <pre>
  * # Run only unit tests (default)
  * mvn test
@@ -74,15 +84,19 @@ import org.junit.jupiter.api.TestInstance;
  * </pre>
  *
  * <h2>Limitations</h2>
- * <p>The mock infrastructure provides minimal functionality:</p>
+ * <p>
+ * The mock infrastructure provides minimal functionality:
+ * </p>
  * <ul>
- *   <li>No actual GUI components or windows</li>
- *   <li>No actual event processing</li>
- *   <li>No phase management</li>
- *   <li>Limited GameEngine methods stubbed</li>
+ * <li>No actual GUI components or windows</li>
+ * <li>No actual event processing</li>
+ * <li>No phase management</li>
+ * <li>Limited GameEngine methods stubbed</li>
  * </ul>
  *
- * <p>Tests should focus on business logic, not UI or event system behavior.</p>
+ * <p>
+ * Tests should focus on business logic, not UI or event system behavior.
+ * </p>
  */
 @Tag("slow")
 @Tag("integration")
@@ -94,14 +108,17 @@ public abstract class IntegrationTestBase {
     /**
      * Set up test infrastructure before all tests in the class.
      *
-     * <p>Initializes:</p>
+     * <p>
+     * Initializes:
+     * </p>
      * <ul>
-     *   <li>ConfigManager for headless testing</li>
-     *   <li>MockGameEngine singleton</li>
-     *   <li>MockPokerMain singleton</li>
+     * <li>ConfigManager for headless testing</li>
+     * <li>MockGameEngine singleton</li>
+     * <li>MockPokerMain singleton</li>
      * </ul>
      *
-     * @throws RuntimeException if infrastructure initialization fails
+     * @throws RuntimeException
+     *             if infrastructure initialization fails
      */
     @BeforeAll
     void setupIntegrationInfrastructure() {
@@ -131,14 +148,19 @@ public abstract class IntegrationTestBase {
     /**
      * Tear down test infrastructure after all tests in the class.
      *
-     * <p>Cleans up:</p>
+     * <p>
+     * Cleans up:
+     * </p>
      * <ul>
-     *   <li>MockPokerMain singleton</li>
-     *   <li>MockGameEngine singleton</li>
-     *   <li>ConfigManager and all config singletons</li>
+     * <li>MockPokerMain singleton</li>
+     * <li>MockGameEngine singleton</li>
+     * <li>ConfigManager and all config singletons</li>
      * </ul>
      *
-     * <p>This prevents test pollution between test classes and enables parallel test execution.</p>
+     * <p>
+     * This prevents test pollution between test classes and enables parallel test
+     * execution.
+     * </p>
      */
     @AfterAll
     void teardownIntegrationInfrastructure() {

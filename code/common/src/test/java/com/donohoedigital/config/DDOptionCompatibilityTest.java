@@ -29,7 +29,8 @@ import java.util.prefs.Preferences;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests that verify FilePrefs works with exact patterns used by DDOption classes
+ * Tests that verify FilePrefs works with exact patterns used by DDOption
+ * classes
  */
 class DDOptionCompatibilityTest {
 
@@ -53,7 +54,8 @@ class DDOptionCompatibilityTest {
         String sName = "general.largeCards";
         boolean bDefault = false;
 
-        // This is exactly how DDOption.getOptionPrefs() works (line 111 of DDOption.java)
+        // This is exactly how DDOption.getOptionPrefs() works (line 111 of
+        // DDOption.java)
         Preferences prefs = Prefs.getUserPrefs(Prefs.NODE_OPTIONS + sPrefNode);
 
         // First read - should return default
@@ -288,7 +290,8 @@ class DDOptionCompatibilityTest {
     }
 
     /**
-     * Tests that preference changes are immediately visible (no explicit flush needed)
+     * Tests that preference changes are immediately visible (no explicit flush
+     * needed)
      */
     @Test
     void should_ImmediatelyPersistChanges(@TempDir Path tempDir) {

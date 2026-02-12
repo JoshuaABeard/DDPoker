@@ -30,9 +30,12 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Integration tests for PreviousPhase and PreviousLoopPhase using real GameEngine infrastructure.
+ * Integration tests for PreviousPhase and PreviousLoopPhase using real
+ * GameEngine infrastructure.
  *
- * <p>Tests phase navigation classes with minimal mocking.</p>
+ * <p>
+ * Tests phase navigation classes with minimal mocking.
+ * </p>
  */
 @Tag("slow")
 class PreviousPhaseIntegrationTest extends IntegrationTestBase {

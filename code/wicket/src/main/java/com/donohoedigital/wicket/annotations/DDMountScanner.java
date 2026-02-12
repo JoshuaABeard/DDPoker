@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -43,12 +43,13 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * This code was originally contributed (by me) to wicketstuff as the 'annotation'
- * library.  When 1.5 was released, its functionality was significantly
- * reduced, removing strategies that DD Poker relied on.  When I upgraded
- * to 1.5, I had to pull this in so we could restore the mount strategies
- * we previously used.  Wicket has moved on and there isn't much incentive
- * to re-introduce this functionality as a library, so keeping it internal.
+ * This code was originally contributed (by me) to wicketstuff as the
+ * 'annotation' library. When 1.5 was released, its functionality was
+ * significantly reduced, removing strategies that DD Poker relied on. When I
+ * upgraded to 1.5, I had to pull this in so we could restore the mount
+ * strategies we previously used. Wicket has moved on and there isn't much
+ * incentive to re-introduce this functionality as a library, so keeping it
+ * internal.
  *
  * @author Doug Donohoe
  */
@@ -58,7 +59,8 @@ public class DDMountScanner {
      * Get the Spring search pattern given a package name or part of a package name.
      */
     public String getPatternForPackage(String packageName) {
-        if (packageName == null) packageName = "";
+        if (packageName == null)
+            packageName = "";
         packageName = packageName.replace('.', '/');
         if (!packageName.endsWith("/")) {
             packageName += '/';
@@ -68,23 +70,23 @@ public class DDMountScanner {
     }
 
     /**
-     * Scan given a package name or part of a package name and return list of classes with MountPath
-     * annotation.
+     * Scan given a package name or part of a package name and return list of
+     * classes with MountPath annotation.
      */
     public List<Class<?>> getPackageMatches(String pattern) {
         return getPatternMatches(getPatternForPackage(pattern));
     }
 
     /**
-     * Scan given a Spring search pattern and return list of classes with MountPath annotation.
+     * Scan given a Spring search pattern and return list of classes with MountPath
+     * annotation.
      */
     public List<Class<?>> getPatternMatches(String pattern) {
         MatchingResources resources = new MatchingResources(pattern);
         Set<Class<?>> mounts = resources.getAnnotatedMatches(MountPath.class);
         for (Class<?> mount : mounts) {
             if (!(Page.class.isAssignableFrom(mount))) {
-                throw new RuntimeException("@MountPath annotated class should subclass Page: " +
-                        mount);
+                throw new RuntimeException("@MountPath annotated class should subclass Page: " + mount);
             }
         }
         return new ArrayList<>(mounts);
@@ -140,21 +142,19 @@ public class DDMountScanner {
     /**
      * Returns the default mapper given a mount path and class.
      */
-    public IRequestMapper getRequestMapper(String mountPath,
-                                           Class<? extends IRequestablePage> pageClass,
-                                           String[] parameterNames) {
+    public IRequestMapper getRequestMapper(String mountPath, Class<? extends IRequestablePage> pageClass,
+            String[] parameterNames) {
         if (parameterNames == null || parameterNames.length == 0) {
             return new MountedMapper(mountPath, pageClass);
         } else {
-            return new MountedMapper(mountPath, pageClass,
-                    new MixedParamEncoder(parameterNames));
+            return new MountedMapper(mountPath, pageClass, new MixedParamEncoder(parameterNames));
         }
     }
 
     /**
-     * Returns the default mount path for a given class (used if the path has not been specified in
-     * the <code>@MountPath</code> annotation). By default, this method returns the
-     * pageClass.getSimpleName().
+     * Returns the default mount path for a given class (used if the path has not
+     * been specified in the <code>@MountPath</code> annotation). By default, this
+     * method returns the pageClass.getSimpleName().
      */
     public String getDefaultMountPath(Class<? extends IRequestablePage> pageClass) {
         return pageClass.getSimpleName();

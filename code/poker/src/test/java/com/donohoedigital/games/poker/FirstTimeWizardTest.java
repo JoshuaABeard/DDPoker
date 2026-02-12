@@ -25,7 +25,6 @@ import com.donohoedigital.config.ConfigManager;
 import com.donohoedigital.config.Prefs;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.GameEngine;
-import com.donohoedigital.games.engine.ProfileList;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,8 +36,8 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for FirstTimeWizard - First-Time User Experience wizard dialog.
  *
- * TDD RED Phase: These tests are written BEFORE implementation.
- * All tests should FAIL initially, then pass once FirstTimeWizard is implemented.
+ * TDD RED Phase: These tests are written BEFORE implementation. All tests
+ * should FAIL initially, then pass once FirstTimeWizard is implemented.
  */
 class FirstTimeWizardTest {
 

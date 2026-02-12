@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -69,21 +69,17 @@ import java.util.Date;
 import java.util.Iterator;
 
 /**
- * Created by IntelliJ IDEA.
- * User: donohoe
- * Date: Apr 18, 2008
- * Time: 12:19:02 PM
+ * Created by IntelliJ IDEA. User: donohoe Date: Apr 18, 2008 Time: 12:19:02 PM
  * To change this template use File | Settings | File Templates.
  */
 @SuppressWarnings("unused")
 @MountPath("history")
-@MountMixedParam(parameterNames = {History.PARAM_NAME, History.PARAM_BEGIN, History.PARAM_END,
-        History.PARAM_GAME_NAME, History.PARAM_PAGE, History.PARAM_SIZE})
-public class History extends OnlinePokerPage
-{
+@MountMixedParam(parameterNames = {History.PARAM_NAME, History.PARAM_BEGIN, History.PARAM_END, History.PARAM_GAME_NAME,
+        History.PARAM_PAGE, History.PARAM_SIZE})
+public class History extends OnlinePokerPage {
     private static final long serialVersionUID = 42L;
 
-    //private static Logger logger = LogManager.getLogger(History.class);
+    // private static Logger logger = LogManager.getLogger(History.class);
 
     public static final String PARAM_NAME = "name";
     public static final String PARAM_BEGIN = "b";
@@ -103,17 +99,15 @@ public class History extends OnlinePokerPage
     /**
      * Default page - use logged in user
      */
-    public History()
-    {
+    public History() {
         this(new PageParameters());
     }
 
     /**
-     * Create page using user from id or name params (in that order).
-     * Defaults to logged-in user if neither of those is valid.
+     * Create page using user from id or name params (in that order). Defaults to
+     * logged-in user if neither of those is valid.
      */
-    public History(PageParameters params)
-    {
+    public History(PageParameters params) {
         super(params);
         init(params);
     }
@@ -121,32 +115,29 @@ public class History extends OnlinePokerPage
     /**
      * Init based on user
      */
-    private void init(PageParameters params)
-    {
+    private void init(PageParameters params) {
         PokerUser user = getUser(params);
-        if (user == error) return;
+        if (user == error)
+            return;
         boolean hasUser = user != null;
 
         // title
-        add(new StringLabel("titleName", hasUser ? user.getDisplayName() : null).setVisible(hasUser).setRenderBodyOnly(true));
+        add(new StringLabel("titleName", hasUser ? user.getDisplayName() : null).setVisible(hasUser)
+                .setRenderBodyOnly(true));
         add(new StringLabel("name", hasUser ? user.getDisplayName() : null).setVisible(hasUser));
         add(new WebMarkupContainer("retired").setVisible(hasUser && user.isRetired()));
 
         // description and history
-        if (hasUser)
-        {
+        if (hasUser) {
             final HistoryData data = new HistoryData(user);
 
             // search form (create now so data search terms are set)
             NameRangeSearchForm searchForm = new NameRangeSearchForm("form", params, this.getClass(), data,
-                                                                     PARAM_GAME_NAME, PARAM_BEGIN, PARAM_END,
-                                                                     "Tournament")
-            {
+                    PARAM_GAME_NAME, PARAM_BEGIN, PARAM_END, "Tournament") {
                 private static final long serialVersionUID = 42L;
 
                 @Override
-                protected void addCustomPageParameters(PageParameters p)
-                {
+                protected void addCustomPageParameters(PageParameters p) {
                     p.set(PARAM_NAME, data.getUser().getName());
                 }
             };
@@ -160,9 +151,7 @@ public class History extends OnlinePokerPage
             // description and table
             add(new Fragment("description", "loggedIn", this));
             add(new HistoryTable("history", searchForm, data, params));
-        }
-        else
-        {
+        } else {
             // no aliases
             add(new HiddenComponent("aliases"));
 
@@ -179,37 +168,30 @@ public class History extends OnlinePokerPage
     /**
      * Get user based on page params
      */
-    private PokerUser getUser(PageParameters params)
-    {
+    private PokerUser getUser(PageParameters params) {
         PokerUser user = null;
         String name = params.get(PARAM_NAME).toString();
 
-        if (name != null)
-        {
+        if (name != null) {
             OnlineProfile profile = profileService.getOnlineProfileByName(name);
-            if (profile != null)
-            {
+            if (profile != null) {
                 user = new PokerUser(profile);
-            }
-            else
-            {
-                setResponsePage(new ErrorPage('\'' + name + "' is not a known Online Profile (it could be a local player " +
-                                              "who joined a public game via a direct invitation of the host).")); // FIX: property?
+            } else {
+                setResponsePage(
+                        new ErrorPage('\'' + name + "' is not a known Online Profile (it could be a local player "
+                                + "who joined a public game via a direct invitation of the host).")); // FIX: property?
                 return error;
             }
         }
 
-        if (user == null)
-        {
+        if (user == null) {
             user = PokerSession.get().getLoggedInUser();
         }
 
-        if (user != null)
-        {
+        if (user != null) {
             // ignore AI Rest or Human
-            if (user.getName().equals(OnlineProfile.Dummy.AI_REST.getName()) ||
-                user.getName().equals(OnlineProfile.Dummy.HUMAN.getName()))
-            {
+            if (user.getName().equals(OnlineProfile.Dummy.AI_REST.getName())
+                    || user.getName().equals(OnlineProfile.Dummy.HUMAN.getName())) {
                 user = null;
             }
         }
@@ -221,12 +203,10 @@ public class History extends OnlinePokerPage
     //// List
     ////
 
-    private class HistoryTable extends Fragment
-    {
+    private class HistoryTable extends Fragment {
         private static final long serialVersionUID = 42L;
 
-        private HistoryTable(String id, NameRangeSearchForm form, HistoryData data, PageParameters params)
-        {
+        private HistoryTable(String id, NameRangeSearchForm form, HistoryData data, PageParameters params) {
             super(id, "table", History.this);
 
             add(form);
@@ -235,7 +215,7 @@ public class History extends OnlinePokerPage
             HistoryTableView dataView = new HistoryTableView("row", data);
             add(dataView);
             add(new BookmarkablePagingNavigator("navigator", dataView, new BasicPluralLabelProvider("game", "games"),
-                                                History.class, params, PARAM_PAGE));
+                    History.class, params, PARAM_PAGE));
 
             // no results found
             add(new StringLabel("player", data.getUser().getName()).setVisible(data.isEmpty()));
@@ -245,8 +225,7 @@ public class History extends OnlinePokerPage
         }
     }
 
-    private class HistoryData extends PageableServiceProvider<TournamentHistory> implements NameRangeSearch
-    {
+    private class HistoryData extends PageableServiceProvider<TournamentHistory> implements NameRangeSearch {
         private static final long serialVersionUID = 42L;
 
         private final PokerUser user;
@@ -256,84 +235,70 @@ public class History extends OnlinePokerPage
         private final Date beginDefault = PokerWicketApplication.START_OF_TIME;
         private final Date endDefault = Utils.getDateEndOfDay(new Date());
 
-        private HistoryData(PokerUser user)
-        {
+        private HistoryData(PokerUser user) {
             this.user = user;
         }
 
         @Override
-        public Iterator<TournamentHistory> iterator(long first, long pagesize)
-        {
+        public Iterator<TournamentHistory> iterator(long first, long pagesize) {
             DateRange dr = new DateRange(this);
-            return histService.getAllTournamentHistoriesForProfile((int) size(), (int) first, (int) pagesize, user.getId(), name, dr.getBegin(), dr.getEnd()).iterator();
+            return histService.getAllTournamentHistoriesForProfile((int) size(), (int) first, (int) pagesize,
+                    user.getId(), name, dr.getBegin(), dr.getEnd()).iterator();
         }
 
         @Override
-        public int calculateSize()
-        {
+        public int calculateSize() {
             DateRange dr = new DateRange(this);
             return histService.getAllTournamentHistoriesForProfileCount(user.getId(), name, dr.getBegin(), dr.getEnd());
         }
 
-        public PokerUser getUser()
-        {
+        public PokerUser getUser() {
             return user;
         }
 
-        public Date getBegin()
-        {
+        public Date getBegin() {
             return begin;
         }
 
-        public void setBegin(Date begin)
-        {
+        public void setBegin(Date begin) {
             this.begin = begin;
         }
 
-        public Date getEnd()
-        {
+        public Date getEnd() {
             return end;
         }
 
-        public void setEnd(Date end)
-        {
+        public void setEnd(Date end) {
             this.end = Utils.getDateEndOfDay(end);
         }
 
-        public String getName()
-        {
+        public String getName() {
             return name;
         }
 
-        public void setName(String name)
-        {
+        public void setName(String name) {
             this.name = name;
         }
 
-        public Date getBeginDefault()
-        {
+        public Date getBeginDefault() {
             return beginDefault;
         }
 
-        public Date getEndDefault()
-        {
+        public Date getEndDefault() {
             return endDefault;
         }
     }
 
-    private class HistoryTableView extends CountDataView<TournamentHistory>
-    {
+    private class HistoryTableView extends CountDataView<TournamentHistory> {
         private static final long serialVersionUID = 42L;
         private static final int ITEMS_PER_PAGE = 20;
 
-        private HistoryTableView(String id, HistoryData data)
-        {
+        private HistoryTableView(String id, HistoryData data) {
             super(id, data, ITEMS_PER_PAGE);
         }
 
         @Override
-        protected void populateItem(Item<TournamentHistory> row)
-        {
+        protected void populateItem(Item<TournamentHistory> row) {
             TournamentHistory history = row.getModelObject();
 
             // CSS class
@@ -358,20 +323,15 @@ public class History extends OnlinePokerPage
             row.add(new PokerCurrencyLabel("addon"));
             row.add(new PokerCurrencyLabel("totalSpent"));
 
-            // final columns in table (unique columns or col-spanned depending on game state)
+            // final columns in table (unique columns or col-spanned depending on game
+            // state)
             WebMarkupContainer finalColumns;
-            if (history.isEnded())
-            {
+            if (history.isEnded()) {
                 finalColumns = new Finished();
-            }
-            else
-            {
-                if (history.isAlive())
-                {
+            } else {
+                if (history.isAlive()) {
                     finalColumns = new StoppedChips();
-                }
-                else
-                {
+                } else {
                     finalColumns = new StoppedBusted();
                 }
 
@@ -384,24 +344,20 @@ public class History extends OnlinePokerPage
     //// Fragments
     ////
 
-    private class FinishFragment extends Fragment
-    {
+    private class FinishFragment extends Fragment {
         private static final long serialVersionUID = 42L;
 
-        private FinishFragment(String frag)
-        {
+        private FinishFragment(String frag) {
             super("finalColumns", frag, History.this);
 
             add(new GroupingIntegerLabel("numPlayers"));
         }
     }
 
-    private class StoppedBusted extends FinishFragment
-    {
+    private class StoppedBusted extends FinishFragment {
         private static final long serialVersionUID = 42L;
 
-        private StoppedBusted()
-        {
+        private StoppedBusted() {
             super("stopped-busted");
 
             add(new PokerCurrencyLabel("prize"));
@@ -409,12 +365,10 @@ public class History extends OnlinePokerPage
         }
     }
 
-    private class StoppedChips extends FinishFragment
-    {
+    private class StoppedChips extends FinishFragment {
         private static final long serialVersionUID = 42L;
 
-        private StoppedChips()
-        {
+        private StoppedChips() {
             super("stopped-chips");
 
             add(new PlaceLabel("rank"));
@@ -422,12 +376,10 @@ public class History extends OnlinePokerPage
         }
     }
 
-    private class Finished extends FinishFragment
-    {
+    private class Finished extends FinishFragment {
         private static final long serialVersionUID = 42L;
 
-        private Finished()
-        {
+        private Finished() {
             super("finished");
 
             add(new PokerCurrencyLabel("prize"));
@@ -441,15 +393,13 @@ public class History extends OnlinePokerPage
     //// Links
     ////
 
-    public static BookmarkablePageLink<History> getHistoryLink(String id, String userName)
-    {
+    public static BookmarkablePageLink<History> getHistoryLink(String id, String userName) {
         BookmarkablePageLink<History> link = new BookmarkablePageLink<>(id, History.class);
         link.getPageParameters().set(PARAM_NAME, userName);
         return link;
     }
 
-    public static BookmarkablePageLink<History> getHistoryLink(String id, String userName, Date begin, Date end)
-    {
+    public static BookmarkablePageLink<History> getHistoryLink(String id, String userName, Date begin, Date end) {
         BookmarkablePageLink<History> link = new BookmarkablePageLink<>(id, History.class);
         ParamDateConverter conv = new ParamDateConverter();
         link.getPageParameters().set(PARAM_NAME, userName);

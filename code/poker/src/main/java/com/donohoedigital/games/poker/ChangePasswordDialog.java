@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -53,8 +53,7 @@ import java.beans.*;
 /**
  * @author Doug Donohoe
  */
-public class ChangePasswordDialog extends DialogPhase implements PropertyChangeListener
-{
+public class ChangePasswordDialog extends DialogPhase implements PropertyChangeListener {
     static Logger logger = LogManager.getLogger(ChangePasswordDialog.class);
 
     private PlayerProfile profile_;
@@ -66,8 +65,7 @@ public class ChangePasswordDialog extends DialogPhase implements PropertyChangeL
      * create chat ui
      */
     @Override
-    public JComponent createDialogContents()
-    {
+    public JComponent createDialogContents() {
         // Use original profile information to determine how to update values.
         profile_ = (PlayerProfile) gamephase_.getObject(ProfileList.PARAM_PROFILE);
         ApplicationError.assertNotNull(profile_, "No 'profile' in params");
@@ -95,8 +93,7 @@ public class ChangePasswordDialog extends DialogPhase implements PropertyChangeL
      * Focus to text field
      */
     @Override
-    protected Component getFocusComponent()
-    {
+    protected Component getFocusComponent() {
         return currentText_.text_;
     }
 
@@ -104,33 +101,28 @@ public class ChangePasswordDialog extends DialogPhase implements PropertyChangeL
      * Closes the dialog unless an error occurs saving the profile information
      */
     @Override
-    public boolean processButton(GameButton button)
-    {
+    public boolean processButton(GameButton button) {
         boolean bResult = false;
         boolean bSuccess = true;
 
-        if (button.getName().equals(okayButton_.getName()))
-        {
+        if (button.getName().equals(okayButton_.getName())) {
             // okay
             OnlineProfile profile = profile_.toOnlineProfile();
             OnlineProfile auth = profile_.toOnlineProfile();
             profile.setPassword(newText_.getText());
             bResult = true;
-            bSuccess = SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_CHANGE_PASSWORD, profile, auth);
+            bSuccess = SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_CHANGE_PASSWORD, profile,
+                    auth);
 
-            if (bSuccess)
-            {
+            if (bSuccess) {
                 // update local profile values
                 profile_.setPassword(newText_.getText());
-            }
-            else
-            {
+            } else {
                 bResult = false;
             }
         }
 
-        if (bSuccess)
-        {
+        if (bSuccess) {
             removeDialog();
         }
 
@@ -142,22 +134,19 @@ public class ChangePasswordDialog extends DialogPhase implements PropertyChangeL
     /**
      * msg text change
      */
-    public void propertyChange(PropertyChangeEvent evt)
-    {
+    public void propertyChange(PropertyChangeEvent evt) {
         checkButtons();
     }
 
     /**
      * Enable buttons
      */
-    private void checkButtons()
-    {
+    private void checkButtons() {
         boolean bEnabled = false;
 
         bEnabled = profile_.isMatchingPassword(currentText_.getText());
 
-        if (bEnabled)
-        {
+        if (bEnabled) {
             bEnabled = newText_.getText().length() > 0;
         }
 

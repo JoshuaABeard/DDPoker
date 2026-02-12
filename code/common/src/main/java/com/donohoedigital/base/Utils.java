@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -44,8 +44,7 @@ import java.util.List;
 import java.util.regex.*;
 
 @SuppressWarnings({"UseOfSystemOutOrSystemErr"})
-public class Utils
-{
+public class Utils {
     public static final boolean ISMAC;
     public static final boolean ISLINUX;
     public static final boolean IS141;
@@ -85,11 +84,10 @@ public class Utils
     public static final Charset CHARSET = Charset.forName(CHARSET_NAME);
 
     /**
-     * Figure out if this a mac/windows/linux
-     * Note: Platform detection using system properties and version checking
+     * Figure out if this a mac/windows/linux Note: Platform detection using system
+     * properties and version checking
      */
-    static
-    {
+    static {
         boolean ismac = false;
         boolean islinux = false;
         boolean is141 = false;
@@ -110,75 +108,66 @@ public class Utils
         // props.setProperty("java.net.preferIPv4Stack", "true");
 
         // debug print keys
-//        if (false)
-//        {
-//            String sKey;
-//            Enumeration enu = props.keys();
-//            while (enu.hasMoreElements())
-//            {
-//                sKey = (String) enu.nextElement();
-//                System.out.println(sKey+"="+props.getProperty(sKey));
-//            }
-//        }
+        // if (false)
+        // {
+        // String sKey;
+        // Enumeration enu = props.keys();
+        // while (enu.hasMoreElements())
+        // {
+        // sKey = (String) enu.nextElement();
+        // System.out.println(sKey+"="+props.getProperty(sKey));
+        // }
+        // }
 
         // java/os version info
         String sVersion = (String) props.get("java.runtime.version");
         String osVersion = (String) props.get("os.version");
         String os = (String) props.get("os.name");
-        if (os == null) os = "";
+        if (os == null)
+            os = "";
         OS = os + " " + osVersion;
         os = os.toLowerCase();
 
-        //System.out.println("OS: " + os + " version: " + sVersion);
+        // System.out.println("OS: " + os + " version: " + sVersion);
 
-        if (sVersion.startsWith("1.4"))
-        {
+        if (sVersion.startsWith("1.4")) {
             is14 = true;
         }
 
-        if (sVersion.startsWith("1.4.1"))
-        {
+        if (sVersion.startsWith("1.4.1")) {
             is141 = true;
         }
 
-        if (sVersion.startsWith("1.4.2"))
-        {
+        if (sVersion.startsWith("1.4.2")) {
             is142 = true;
         }
 
-        if (sVersion.startsWith("1.5"))
-        {
+        if (sVersion.startsWith("1.5")) {
             is15 = true;
         }
 
-        if (sVersion.startsWith("1.6"))
-        {
+        if (sVersion.startsWith("1.6")) {
             is16 = true;
         }
 
         // mac
-        if (isMacOS(os))
-        {
+        if (isMacOS(os)) {
             ismac = true;
-            if (osVersion.startsWith("10.4")) ismac_10_4 = true;
+            if (osVersion.startsWith("10.4"))
+                ismac_10_4 = true;
         }
         // linux
-        else if (isLinux(os))
-        {
+        else if (isLinux(os)) {
             islinux = true;
             // BUG 360 - use dns for host lookup
             props.setProperty("sun.net.spi.nameservice.provider.1", "dns,sun");
         }
         // windows
-        else if (isWindows(os))
-        {
+        else if (isWindows(os)) {
             iswindows = true;
-            if (os.contains("9") || os.contains("Me"))
-            {
+            if (os.contains("9") || os.contains("Me")) {
                 iswin9x = true;
-            }
-            else
-            {
+            } else {
                 iswinnt = true;
             }
         }
@@ -196,18 +185,15 @@ public class Utils
         ISMAC_10_4 = ismac_10_4;
     }
 
-    public static boolean isWindows(String os)
-    {
+    public static boolean isWindows(String os) {
         return os.toLowerCase().startsWith("windows");
     }
 
-    public static boolean isLinux(String os)
-    {
+    public static boolean isLinux(String os) {
         return os.toLowerCase().startsWith("linux");
     }
 
-    public static boolean isMacOS(String os)
-    {
+    public static boolean isMacOS(String os) {
         return os.toLowerCase().startsWith("mac os x");
     }
 
@@ -217,41 +203,33 @@ public class Utils
     /**
      * Set version string for use in UserHome path
      */
-    public static void setVersionString(String s)
-    {
+    public static void setVersionString(String s) {
         VERSION = s;
     }
 
     /**
      * Get version string
      */
-    public static String getVersionString()
-    {
+    public static String getVersionString() {
         return VERSION;
     }
 
     /**
-     * Fixes slashes to be correct for file system.  Removes trailing
-     * slash
+     * Fixes slashes to be correct for file system. Removes trailing slash
      */
-    public static String fixFilePath(String sPath)
-    {
-        if (sPath == null) return null;
+    public static String fixFilePath(String sPath) {
+        if (sPath == null)
+            return null;
         StringBuilder sb = new StringBuilder(sPath);
         int nSize = sb.length();
         char c;
-        for (int i = 0; i < nSize; i++)
-        {
+        for (int i = 0; i < nSize; i++) {
             c = sb.charAt(i);
             // look for sep char
-            if (c == '\\' || c == '/')
-            {
-                if (i == (nSize - 1))
-                {
+            if (c == '\\' || c == '/') {
+                if (i == (nSize - 1)) {
                     sb.setLength(nSize - 1); // if sep char at end, remove it
-                }
-                else
-                {
+                } else {
                     sb.setCharAt(i, File.separatorChar); // replace with file system correct
                 }
             }
@@ -262,16 +240,12 @@ public class Utils
     /**
      * Creates a File object from the given directory and file
      */
-    public static File getFile(String sDir, String sFile)
-    {
+    public static File getFile(String sDir, String sFile) {
         sDir = fixFilePath(sDir);
         File f = new File(sDir, sFile);
-        try
-        {
+        try {
             return f.getCanonicalFile();
-        }
-        catch (Exception ignore)
-        {
+        } catch (Exception ignore) {
         }
         // if canonical fails for some reason, return f
         return f;
@@ -280,23 +254,18 @@ public class Utils
     /**
      * Create a File object from given directory or file
      */
-    public static File getFile(String sDir)
-    {
+    public static File getFile(String sDir) {
         sDir = fixFilePath(sDir);
         File f = new File(sDir);
-        try
-        {
+        try {
             return f.getCanonicalFile();
-        }
-        catch (Exception ignore)
-        {
+        } catch (Exception ignore) {
         }
         // if canonical fails for some reason, return f
         return f;
     }
 
-    public static String getAllStacktraces()
-    {
+    public static String getAllStacktraces() {
         StringBuilder sb = new StringBuilder();
         Map<Thread, StackTraceElement[]> map = Thread.getAllStackTraces();
 
@@ -306,14 +275,13 @@ public class Utils
         Iterator<Thread> iter = smap.keySet().iterator();
         Thread t;
         Object stackitems[];
-        while (iter.hasNext())
-        {
+        while (iter.hasNext()) {
             t = iter.next();
-            //if (!t.getName().startsWith("Thread")) continue; // (testing)
+            // if (!t.getName().startsWith("Thread")) continue; // (testing)
             stackitems = smap.get(t);
-            sb.append("Thread: ").append(t.getName()).append(" [").append(t.getClass().getName()).append("] daemon: ").append(t.isDaemon()).append('\n');
-            for (Object stackitem : stackitems)
-            {
+            sb.append("Thread: ").append(t.getName()).append(" [").append(t.getClass().getName()).append("] daemon: ")
+                    .append(t.isDaemon()).append('\n');
+            for (Object stackitem : stackitems) {
                 sb.append("   at ").append(stackitem).append('\n');
             }
             sb.append('\n');
@@ -324,34 +292,32 @@ public class Utils
 
     private static ThreadComparator TC = new ThreadComparator();
 
-    private static class ThreadComparator implements Comparator<Thread>
-    {
-        public int compare(Thread t1, Thread t2)
-        {
+    private static class ThreadComparator implements Comparator<Thread> {
+        public int compare(Thread t1, Thread t2) {
             return t1.getName().compareTo(t2.getName());
         }
     }
 
     /**
-     * Return string showing exception message and stack trace
-     * for output to regular text
+     * Return string showing exception message and stack trace for output to regular
+     * text
      */
-    public static String formatExceptionText(Throwable e)
-    {
-        if (e == null) return "null";
+    public static String formatExceptionText(Throwable e) {
+        if (e == null)
+            return "null";
         ByteArrayOutputStream ostr = new ByteArrayOutputStream();
         e.printStackTrace(new PrintStream(ostr));
-        //return "Exception: " + e.toString() + "\n" + ostr.toString();
+        // return "Exception: " + e.toString() + "\n" + ostr.toString();
         return ostr.toString(); // this includes the message
     }
 
     /**
      * Return exception message, or if that is null, exception class name
      */
-    public static String getExceptionMessage(Throwable e)
-    {
+    public static String getExceptionMessage(Throwable e) {
         String msg = e.getMessage();
-        if (msg == null) msg = e.getClass().getName();
+        if (msg == null)
+            msg = e.getClass().getName();
 
         return msg;
     }
@@ -359,25 +325,21 @@ public class Utils
     /**
      * Print given message and exception to system.err
      */
-    public static void printException(String sMsg, Throwable e)
-    {
+    public static void printException(String sMsg, Throwable e) {
         System.err.println(sMsg + ':' + formatExceptionText(e));
     }
 
     /**
-     * Return string showing exception message and stack trace
-     * for output in HTML
+     * Return string showing exception message and stack trace for output in HTML
      */
-    public static String formatExceptionHTML(Throwable e)
-    {
+    public static String formatExceptionHTML(Throwable e) {
         return "<PRE>" + formatExceptionText(e) + "</PRE>";
     }
 
     /**
      * Get #FF00FF style hex string representation of this color
      */
-    public static String getHtmlColor(Color c)
-    {
+    public static String getHtmlColor(Color c) {
         StringBuilder sb = new StringBuilder(7);
         sb.append('#');
         appendColorPart(c.getRed(), sb);
@@ -389,21 +351,17 @@ public class Utils
     /**
      * get color from #FF00FF style hex string, with alpha value
      */
-    public static Color getHtmlColorAlpha(String s)
-    {
-        if (s == null) return null;
-        return new Color(Integer.parseInt(s.substring(1, 3), 16),
-                         Integer.parseInt(s.substring(3, 5), 16),
-                         Integer.parseInt(s.substring(5, 7), 16),
-                         Integer.parseInt(s.substring(7, 9), 16));
+    public static Color getHtmlColorAlpha(String s) {
+        if (s == null)
+            return null;
+        return new Color(Integer.parseInt(s.substring(1, 3), 16), Integer.parseInt(s.substring(3, 5), 16),
+                Integer.parseInt(s.substring(5, 7), 16), Integer.parseInt(s.substring(7, 9), 16));
     }
 
     /**
-     * Get #FF00FF style hex string representation of this color,
-     * but with alpha too
+     * Get #FF00FF style hex string representation of this color, but with alpha too
      */
-    public static String getHtmlColorAlpha(Color c)
-    {
+    public static String getHtmlColorAlpha(Color c) {
         StringBuilder sb = new StringBuilder(7);
         sb.append('#');
         appendColorPart(c.getRed(), sb);
@@ -416,23 +374,20 @@ public class Utils
     /**
      * get color from #FF00FF style hex string
      */
-    public static Color getHtmlColor(String s)
-    {
-        if (s == null) return null;
-        return new Color(Integer.parseInt(s.substring(1, 3), 16),
-                         Integer.parseInt(s.substring(3, 5), 16),
-                         Integer.parseInt(s.substring(5, 7), 16));
+    public static Color getHtmlColor(String s) {
+        if (s == null)
+            return null;
+        return new Color(Integer.parseInt(s.substring(1, 3), 16), Integer.parseInt(s.substring(3, 5), 16),
+                Integer.parseInt(s.substring(5, 7), 16));
     }
 
     /**
-     * used by getHtmlColor - appends a 2 digit hex value
-     * representation of c to the given string buffer
+     * used by getHtmlColor - appends a 2 digit hex value representation of c to the
+     * given string buffer
      */
-    private static void appendColorPart(int c, StringBuilder sb)
-    {
+    private static void appendColorPart(int c, StringBuilder sb) {
         String s = Integer.toHexString(c);
-        if (s.length() == 1)
-        {
+        if (s.length() == 1) {
             sb.append('0');
         }
         sb.append(s);
@@ -441,19 +396,18 @@ public class Utils
     /**
      * Encode string for csv output
      */
-    public static String encodeCSV(String s)
-    {
-        if (isHTMLString(s))
-        {
+    public static String encodeCSV(String s) {
+        if (isHTMLString(s)) {
             s = replace(s, "<[^>]*>", "");
             s = replace(s, "&nbsp;", " ");
         }
         int nComma = s.indexOf(',');
         int nQuote = s.indexOf('\"');
-        if (nComma == -1 &&
-            nQuote == -1) return s;
+        if (nComma == -1 && nQuote == -1)
+            return s;
 
-        if (nQuote == -1) return '"' + s + '"';
+        if (nQuote == -1)
+            return '"' + s + '"';
 
         return replace(s, "\"", "\"\"");
     }
@@ -461,61 +415,56 @@ public class Utils
     /**
      * Encode string for output in HTML
      */
-    public static String encodeHTML(String original)
-    {
+    public static String encodeHTML(String original) {
         return encodeHTML(original, true);
     }
 
     /**
      * Encode string for output in HTML, encoding white spaces and slashes
      */
-    public static String encodeHTMLWhitespace(String original)
-    {
+    public static String encodeHTMLWhitespace(String original) {
         return encodeHTML(original, true, true);
     }
 
     /**
-     * Encode string for output in HTML (if bSlash is set,
-     * also encode / (so it is ignored when / escape sequence is decoded)
+     * Encode string for output in HTML (if bSlash is set, also encode / (so it is
+     * ignored when / escape sequence is decoded)
      */
-    public static String encodeHTML(String original, boolean bSlash)
-    {
+    public static String encodeHTML(String original, boolean bSlash) {
         return encodeHTML(original, bSlash, false);
     }
 
     /**
-     * Encode string for output in HTML (if bSlash is set,
-     * also encode / (so it is ignored when / escape sequence is decoded).
-     * If bWhiteSpace is set, also encode spaces and tabs
+     * Encode string for output in HTML (if bSlash is set, also encode / (so it is
+     * ignored when / escape sequence is decoded). If bWhiteSpace is set, also
+     * encode spaces and tabs
      */
-    public static String encodeHTML(String original, boolean bSlash, boolean bWhiteSpace)
-    {
+    public static String encodeHTML(String original, boolean bSlash, boolean bWhiteSpace) {
         return encodeML(original, bSlash, bWhiteSpace, true, false, false);
     }
 
     /**
      * Encode string for output in XML attribute or plain-text
      */
-    public static String encodeXML(String original)
-    {
+    public static String encodeXML(String original) {
         return encodeML(original, false, false, false, true, false);
     }
 
     /**
-     * Encode string for output in javascript attribute or plain-text
-     * NOTE: does not deal with return
+     * Encode string for output in javascript attribute or plain-text NOTE: does not
+     * deal with return
      */
-    public static String encodeJavascript(String original)
-    {
+    public static String encodeJavascript(String original) {
         return encodeML(original, false, false, false, true, true);
     }
 
     /**
      * Encode for XML or HTML
      */
-    private static String encodeML(String original, boolean bSlash, boolean bWhiteSpace, boolean bReturn, boolean bDoubleQuote, boolean bSingleQuote)
-    {
-        if (original == null) return null;
+    private static String encodeML(String original, boolean bSlash, boolean bWhiteSpace, boolean bReturn,
+            boolean bDoubleQuote, boolean bSingleQuote) {
+        if (original == null)
+            return null;
 
         StringBuilder sb = new StringBuilder();
         char c;
@@ -547,48 +496,28 @@ public class Utils
         char squote = '\'';
         String squoteReplacement = "&acute;";
 
-        for (int i = 0; i < original.length(); i++)
-        {
+        for (int i = 0; i < original.length(); i++) {
             c = original.charAt(i);
 
-            if (c == ampersand)
-            {
+            if (c == ampersand) {
                 sb.append(ampReplacement);
-            }
-            else if (c == lessthan)
-            {
+            } else if (c == lessthan) {
                 sb.append(lessReplacement);
-            }
-            else if (c == greaterthan)
-            {
+            } else if (c == greaterthan) {
                 sb.append(greatReplacement);
-            }
-            else if (c == ret && bReturn)
-            {
+            } else if (c == ret && bReturn) {
                 sb.append(retReplacement);
-            }
-            else if (c == slash && bSlash)
-            {
+            } else if (c == slash && bSlash) {
                 sb.append(slashReplacement);
-            }
-            else if (c == space && bWhiteSpace)
-            {
+            } else if (c == space && bWhiteSpace) {
                 sb.append(spaceReplacement);
-            }
-            else if (c == tab && bWhiteSpace)
-            {
+            } else if (c == tab && bWhiteSpace) {
                 sb.append(tabReplacement);
-            }
-            else if (c == quote && bDoubleQuote)
-            {
+            } else if (c == quote && bDoubleQuote) {
                 sb.append(quoteReplacement);
-            }
-            else if (c == squote && bSingleQuote)
-            {
+            } else if (c == squote && bSingleQuote) {
                 sb.append(squoteReplacement);
-            }
-            else
-            {
+            } else {
                 sb.append(c);
             }
         }
@@ -599,21 +528,20 @@ public class Utils
     /**
      * Convert String[] to a comma separated list (delim = ", ")
      */
-    public static String toString(String[] list)
-    {
+    public static String toString(String[] list) {
         return toString(list, ", ");
     }
 
     /**
      * Convert String[] to a [given delim] separated list
      */
-    public static String toString(String[] list, String sDelim)
-    {
-        if (list == null) return "";
+    public static String toString(String[] list, String sDelim) {
+        if (list == null)
+            return "";
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < list.length; i++)
-        {
-            if (i > 0) sb.append(sDelim);
+        for (int i = 0; i < list.length; i++) {
+            if (i > 0)
+                sb.append(sDelim);
             sb.append(list[i]);
         }
         return sb.toString();
@@ -622,23 +550,22 @@ public class Utils
     /**
      * Convert ArrayList to a comma separated list
      */
-    public static String toString(List<?> list)
-    {
+    public static String toString(List<?> list) {
         return toString(list, 0);
     }
 
     /**
      * Convert ArrayList to a comma separated list, starting at given index
      */
-    public static String toString(List<?> list, int nStartIndex)
-    {
-        if (list == null) return "";
+    public static String toString(List<?> list, int nStartIndex) {
+        if (list == null)
+            return "";
         StringBuilder sb = new StringBuilder();
         int nNum = list.size();
-        for (int i = nStartIndex; i < nNum; i++)
-        {
+        for (int i = nStartIndex; i < nNum; i++) {
             sb.append(list.get(i).toString());
-            if (i < (nNum - 1)) sb.append(", ");
+            if (i < (nNum - 1))
+                sb.append(", ");
         }
         return sb.toString();
     }
@@ -663,71 +590,57 @@ public class Utils
     /**
      * Convert byte to a hex string of the form 0xXX
      */
-    public static String toHexString(byte b)
-    {
+    public static String toHexString(byte b) {
         return "0x" + Integer.toHexString((b & 0xFF) | 0x100).substring(1, 3);
     }
 
     /**
      * Is the string considered to have no data (null or zero length)
      */
-    public static boolean isEmpty(final CharSequence string)
-    {
+    public static boolean isEmpty(final CharSequence string) {
         return string == null || string.length() == 0 || string.toString().trim().length() == 0;
     }
 
     /**
      * Convienence function for sleeping - any exceptions are caught/ignored
      */
-    public static void sleepMillis(long millis)
-    {
-        try
-        {
+    public static void sleepMillis(long millis) {
+        try {
             Thread.sleep(millis);
-        }
-        catch (InterruptedException ignored)
-        {
+        } catch (InterruptedException ignored) {
             Thread.interrupted();
         }
     }
 
     /**
      * Convienence function for sleeping - any exceptions are caught/ignored.
-     * Argument 'seconds' is a double to allow passing of fractional seconds like ".5"
+     * Argument 'seconds' is a double to allow passing of fractional seconds like
+     * ".5"
      */
-    public static void sleepSeconds(double seconds)
-    {
+    public static void sleepSeconds(double seconds) {
         sleepMillis((long) (seconds * 1000));
     }
 
     /**
-     * Wait until notified or timeout.   While loop is used due to
-     * comments in javadoc for Object.wait().
+     * Wait until notified or timeout. While loop is used due to comments in javadoc
+     * for Object.wait().
      */
-    public static void wait(WaitBoolean wait, long timeoutMillis)
-    {
-        synchronized (wait.obj)
-        {
+    public static void wait(WaitBoolean wait, long timeoutMillis) {
+        synchronized (wait.obj) {
             long start = System.currentTimeMillis();
             long elapsed = 0;
-            while (!wait.isDone())
-            {
-                try
-                {
+            while (!wait.isDone()) {
+                try {
                     wait.object().wait(timeoutMillis - elapsed);
-                }
-                catch (InterruptedException ignore)
-                {
+                } catch (InterruptedException ignore) {
 
                 }
                 // if here but not done, see if we sleep long enough
                 // if we did exit, otherwise loop back around and sleep
                 // what's left.
-                if (!wait.isDone())
-                {
+                if (!wait.isDone()) {
                     elapsed = System.currentTimeMillis() - start;
-                    if (elapsed >= timeoutMillis)
-                    {
+                    if (elapsed >= timeoutMillis) {
                         wait.done();
                     }
                 }
@@ -736,35 +649,28 @@ public class Utils
     }
 
     /**
-     * Used with wait.  When wait condition is done, call done on this object.
+     * Used with wait. When wait condition is done, call done on this object.
      */
     @SuppressWarnings({"PublicInnerClass"})
-    public static class WaitBoolean
-    {
+    public static class WaitBoolean {
         final Object obj;
         boolean done = false;
 
-        public WaitBoolean(Object obj)
-        {
+        public WaitBoolean(Object obj) {
             this.obj = obj;
         }
 
-        public Object object()
-        {
+        public Object object() {
             return obj;
         }
 
-        public boolean isDone()
-        {
+        public boolean isDone() {
             return done;
         }
 
-        public void done()
-        {
-            synchronized (obj)
-            {
-                if (!done)
-                {
+        public void done() {
+            synchronized (obj) {
+                if (!done) {
                     done = true;
                     obj.notifyAll();
                 }
@@ -775,8 +681,7 @@ public class Utils
     /**
      * Return given byte buffer as a string, up to limit chars
      */
-    public static String getBufferAsString(ByteBuffer buffer, int limit)
-    {
+    public static String getBufferAsString(ByteBuffer buffer, int limit) {
         String input = decodeBasic(buffer.array(), buffer.arrayOffset(), buffer.arrayOffset() + buffer.position());
         return getPrintableString(input, limit);
     }
@@ -784,25 +689,26 @@ public class Utils
     /**
      * return printable version of string - removing any non-ascii
      */
-    public static String getPrintableString(String input, int limit)
-    {
+    public static String getPrintableString(String input, int limit) {
         // avoid printing non-ascii to log
         char c;
         int n;
         StringBuilder request = new StringBuilder();
-        for (int i = 0; i < input.length() && i < limit; i++)
-        {
+        for (int i = 0; i < input.length() && i < limit; i++) {
             c = input.charAt(i);
             n = (int) c;
             // if non-ascii, change to a tilde
-            if (n == 127 || n < 32 || n > 168) c = '~';
+            if (n == 127 || n < 32 || n > 168)
+                c = '~';
             // change carriage return/line feeds
-            if (n == '\r') request.append("[Cr]");
-            else if (n == '\n') request.append("[Lf]");
-            else request.append(c);
+            if (n == '\r')
+                request.append("[Cr]");
+            else if (n == '\n')
+                request.append("[Lf]");
+            else
+                request.append(c);
         }
-        if (input.length() > limit)
-        {
+        if (input.length() > limit) {
             request.append(" ... [truncated]");
         }
 
@@ -810,84 +716,87 @@ public class Utils
     }
 
     /**
-     * convert string to boolean.  returns null if not a valid value (-/0/false/no, +/1/true/yes)
+     * convert string to boolean. returns null if not a valid value (-/0/false/no,
+     * +/1/true/yes)
      */
-    public static Boolean parseBoolean(String sValue)
-    {
-        if (sValue == null) return null;
+    public static Boolean parseBoolean(String sValue) {
+        if (sValue == null)
+            return null;
 
         Boolean value = null;
-        if (sValue.length() == 1)
-        {
-            if (sValue.charAt(0) == '0') value = Boolean.FALSE;
-            if (sValue.charAt(0) == '-') value = Boolean.FALSE;
-            if (sValue.charAt(0) == '1') value = Boolean.TRUE;
-            if (sValue.charAt(0) == '+') value = Boolean.TRUE;
-        }
-        else
-        {
-            if (sValue.equalsIgnoreCase("false")) value = Boolean.FALSE;
-            if (sValue.equalsIgnoreCase("true")) value = Boolean.TRUE;
-            if (sValue.equalsIgnoreCase("no")) value = Boolean.FALSE;
-            if (sValue.equalsIgnoreCase("yes")) value = Boolean.TRUE;
+        if (sValue.length() == 1) {
+            if (sValue.charAt(0) == '0')
+                value = Boolean.FALSE;
+            if (sValue.charAt(0) == '-')
+                value = Boolean.FALSE;
+            if (sValue.charAt(0) == '1')
+                value = Boolean.TRUE;
+            if (sValue.charAt(0) == '+')
+                value = Boolean.TRUE;
+        } else {
+            if (sValue.equalsIgnoreCase("false"))
+                value = Boolean.FALSE;
+            if (sValue.equalsIgnoreCase("true"))
+                value = Boolean.TRUE;
+            if (sValue.equalsIgnoreCase("no"))
+                value = Boolean.FALSE;
+            if (sValue.equalsIgnoreCase("yes"))
+                value = Boolean.TRUE;
         }
 
         return value;
     }
 
     /**
-     * convert string to boolean, returns bDefault if not a valid value or sValue is null
+     * convert string to boolean, returns bDefault if not a valid value or sValue is
+     * null
      */
-    public static boolean parseBoolean(String sValue, boolean bDefault)
-    {
+    public static boolean parseBoolean(String sValue, boolean bDefault) {
         Boolean b = parseBoolean(sValue);
-        if (b == null) return bDefault;
+        if (b == null)
+            return bDefault;
 
         return b;
     }
 
     /**
-     * Return sorted array of Files with given extension in the given dir
-     * Pass in the "." if desired (this method doesn't add it)
+     * Return sorted array of Files with given extension in the given dir Pass in
+     * the "." if desired (this method doesn't add it)
      */
-    public static File[] getFileList(File fDir, String sExt, String sBeginsWith)
-    {
+    public static File[] getFileList(File fDir, String sExt, String sBeginsWith) {
         UtilFileFilter filter = new UtilFileFilter(sExt, sBeginsWith);
         File list[] = fDir.listFiles(filter);
         Arrays.sort(list);
         return list;
     }
 
-    public static FilenameFilter getFilenameFilter(String sExt, String sBeginsWith)
-    {
+    public static FilenameFilter getFilenameFilter(String sExt, String sBeginsWith) {
         return new UtilFileFilter(sExt, sBeginsWith);
     }
 
     /**
-     * parse a string to double, using the multiplier to get desired
-     * decimal points (i.e., pass in 1000 to get 3 decimal points).
+     * parse a string to double, using the multiplier to get desired decimal points
+     * (i.e., pass in 1000 to get 3 decimal points).
      */
-    public static double parseStringToDouble(String s, int multiplier)
-    {
-        if (multiplier <= 0) multiplier = 1;
+    public static double parseStringToDouble(String s, int multiplier) {
+        if (multiplier <= 0)
+            multiplier = 1;
         long d;
 
-        if (s == null || s.length() == 0) return 0;
+        if (s == null || s.length() == 0)
+            return 0;
 
-        try
-        {
+        try {
             StringBuilder sb = new StringBuilder();
             char c;
-            for (int j = 0; j < s.length(); j++)
-            {
+            for (int j = 0; j < s.length(); j++) {
                 c = s.charAt(j);
-                if (c >= '0' && c <= '9' || c == '-' || c == '.') sb.append(c);
+                if (c >= '0' && c <= '9' || c == '-' || c == '.')
+                    sb.append(c);
             }
             s = sb.toString();
             d = (long) (Double.parseDouble(s) * multiplier);
-        }
-        catch (NumberFormatException ignored)
-        {
+        } catch (NumberFormatException ignored) {
             d = 0;
         }
 
@@ -897,10 +806,11 @@ public class Utils
     /**
      * JDK1.5 has different HTML spacing than 1.4, so correct it
      */
-    public static String fixHtmlTextFor15(String s)
-    {
-        if (IS14) return s;
-        if (!isHTMLString(s)) return s;
+    public static String fixHtmlTextFor15(String s) {
+        if (IS14)
+            return s;
+        if (!isHTMLString(s))
+            return s;
 
         s = replace(s, "<BR>\\s*<TABLE", "<BR><BR><TABLE");
         s = replace(s, "<BR>\\s*<CENTER", "<BR><BR><CENTER");
@@ -913,17 +823,11 @@ public class Utils
     /**
      * is this an html string?
      */
-    public static boolean isHTMLString(String s)
-    {
-        if (s != null)
-        {
-            if ((s.length() >= 6) && (s.charAt(0) == '<') && (s.charAt(5) == '>'))
-            {
-                if ((s.charAt(1) == 'h' || s.charAt(1) == 'H') &&
-                    (s.charAt(2) == 't' || s.charAt(2) == 'T') &&
-                    (s.charAt(3) == 'm' || s.charAt(3) == 'M') &&
-                    (s.charAt(4) == 'l' || s.charAt(4) == 'L'))
-                {
+    public static boolean isHTMLString(String s) {
+        if (s != null) {
+            if ((s.length() >= 6) && (s.charAt(0) == '<') && (s.charAt(5) == '>')) {
+                if ((s.charAt(1) == 'h' || s.charAt(1) == 'H') && (s.charAt(2) == 't' || s.charAt(2) == 'T')
+                        && (s.charAt(3) == 'm' || s.charAt(3) == 'M') && (s.charAt(4) == 'l' || s.charAt(4) == 'L')) {
                     return true;
                 }
             }
@@ -934,30 +838,27 @@ public class Utils
     /**
      * Filter by extension
      */
-    private static class UtilFileFilter implements FilenameFilter
-    {
+    private static class UtilFileFilter implements FilenameFilter {
         String sExt;
         String sBeginsWith = null;
 
-        private UtilFileFilter(String sExt, String sBeginsWith)
-        {
-            if (sExt != null) this.sExt = sExt.toLowerCase();
-            if (sBeginsWith != null) this.sBeginsWith = sBeginsWith.toLowerCase();
+        private UtilFileFilter(String sExt, String sBeginsWith) {
+            if (sExt != null)
+                this.sExt = sExt.toLowerCase();
+            if (sBeginsWith != null)
+                this.sBeginsWith = sBeginsWith.toLowerCase();
         }
 
-        public boolean accept(File dir, String name)
-        {
+        public boolean accept(File dir, String name) {
             String sName = name.toLowerCase();
 
             boolean bExt = true;
-            if (sExt != null)
-            {
+            if (sExt != null) {
                 bExt = sName.endsWith(sExt);
             }
 
             boolean bBegins = true;
-            if (sBeginsWith != null)
-            {
+            if (sBeginsWith != null) {
                 bBegins = sName.startsWith(sBeginsWith);
             }
             return bExt && bBegins;
@@ -973,36 +874,32 @@ public class Utils
     /**
      * Store current time in (millis * 1000) + a sequence number 000-999
      */
-    public static long getCurrentTimeStamp()
-    {
+    public static long getCurrentTimeStamp() {
         return (System.currentTimeMillis() * 1000) + getSequenceNum();
     }
 
     /**
-     * Used to return a looping num from 0-999 to prevent
-     * the rare case that multiple messages created
-     * during same millisecond and have the same id
+     * Used to return a looping num from 0-999 to prevent the rare case that
+     * multiple messages created during same millisecond and have the same id
      */
-    private static synchronized long getSequenceNum()
-    {
+    private static synchronized long getSequenceNum() {
         nSeq_++;
-        if (nSeq_ > 999) nSeq_ = 0;
+        if (nSeq_ > 999)
+            nSeq_ = 0;
         return nSeq_;
     }
 
     /**
      * Return time in millis from time stamp (basically / 1000)
      */
-    public static long getMillisFromTimeStamp(long l)
-    {
+    public static long getMillisFromTimeStamp(long l) {
         return (l / 1000);
     }
 
     /**
      * Get Date object from time stamp
      */
-    public static Date getDateFromTimeStamp(long l)
-    {
+    public static Date getDateFromTimeStamp(long l) {
         return new Date(getMillisFromTimeStamp(l));
     }
 
@@ -1013,8 +910,7 @@ public class Utils
     /**
      * Get string representing time elapsed as Xd 00:00:00.000
      */
-    public static String getTimeString(long millis, boolean bPrintMillis)
-    {
+    public static String getTimeString(long millis, boolean bPrintMillis) {
         long SECOND = 1000;
         long MINUTE = SECOND * 60;
         long HOUR = MINUTE * 60;
@@ -1030,60 +926,49 @@ public class Utils
         millis %= SECOND;
 
         StringBuilder sb = new StringBuilder();
-        if (nDays > 0) sb.append(nDays).append("d ");
+        if (nDays > 0)
+            sb.append(nDays).append("d ");
         sb.append(fNum2_.form(nHours)).append(':').append(fNum2_.form(nMinutes)).append(':')
                 .append(fNum2_.form(nSeconds));
-        if (bPrintMillis) sb.append('.').append(fNum3_.form(millis));
+        if (bPrintMillis)
+            sb.append('.').append(fNum3_.form(millis));
         return sb.toString();
     }
 
     /**
      * get bytes as a string
      */
-    public static String formatSizeBytes(long bytes)
-    {
+    public static String formatSizeBytes(long bytes) {
         NumberFormat format = NumberFormat.getInstance();
 
         format.setMinimumIntegerDigits(1);
         format.setGroupingUsed(true);
 
-        if (bytes < 1024L)
-        {
+        if (bytes < 1024L) {
             format.setMinimumFractionDigits(0);
             format.setMaximumFractionDigits(0);
             return format.format(bytes) + " B";
-        }
-        else if (bytes < 1024L * 10L)
-        {
+        } else if (bytes < 1024L * 10L) {
             format.setMinimumFractionDigits(1);
             format.setMaximumFractionDigits(1);
             return format.format(bytes / 1024.0) + " KB";
-        }
-        else if (bytes < 1024L * 1024L)
-        {
+        } else if (bytes < 1024L * 1024L) {
             format.setMinimumFractionDigits(0);
             format.setMaximumFractionDigits(0);
             return format.format(bytes / 1024L) + " KB";
-        }
-        else if (bytes < 1024L * 1024L * 10L)
-        {
+        } else if (bytes < 1024L * 1024L * 10L) {
             format.setMinimumFractionDigits(1);
             format.setMaximumFractionDigits(1);
             return format.format((bytes / 1024.0) / 1024.0) + " MB";
-        }
-        else if (bytes < 1024L * 1024L * 1024L)
-        {
+        } else if (bytes < 1024L * 1024L * 1024L) {
             format.setMinimumFractionDigits(0);
             format.setMaximumFractionDigits(0);
             return format.format(bytes / (1024L * 1024L)) + " MB";
-        }
-        else if (bytes < 1024L * 1024L * 1024L * 10L)
-        {
+        } else if (bytes < 1024L * 1024L * 1024L * 10L) {
             format.setMinimumFractionDigits(1);
             format.setMaximumFractionDigits(1);
             return format.format(((bytes / 1024.0) / 1024.0) / 1024.0) + " GB";
-        }
-        else // GB if (bytes < 1024L * 1024L * 1024L * 1024L)
+        } else // GB if (bytes < 1024L * 1024L * 1024L * 1024L)
         {
             format.setMinimumFractionDigits(0);
             format.setMaximumFractionDigits(0);
@@ -1094,8 +979,7 @@ public class Utils
     /**
      * replace given string
      */
-    public static String replace(String sSrc, String sPattern, String sReplace)
-    {
+    public static String replace(String sSrc, String sPattern, String sReplace) {
         Pattern pattern = Pattern.compile(sPattern);
         Matcher matcher = pattern.matcher(sSrc);
         return matcher.replaceAll(sReplace);
@@ -1104,19 +988,17 @@ public class Utils
     /**
      * Return new encoder for our charset
      */
-    public static CharsetEncoder newEncoder()
-    {
+    public static CharsetEncoder newEncoder() {
         CharsetEncoder encoder = CHARSET.newEncoder();
         encoder.onMalformedInput(CodingErrorAction.REPLACE);
-        encoder.onUnmappableCharacter(CodingErrorAction.REPORT);//REPLACE
+        encoder.onUnmappableCharacter(CodingErrorAction.REPORT);// REPLACE
         return encoder;
     }
 
     /**
      * Return new decoder for our charset
      */
-    public static CharsetDecoder newDecoder()
-    {
+    public static CharsetDecoder newDecoder() {
         CharsetDecoder decoder = CHARSET.newDecoder();
         decoder.onMalformedInput(CodingErrorAction.REPLACE);
         decoder.onUnmappableCharacter(CodingErrorAction.REPLACE);
@@ -1126,8 +1008,7 @@ public class Utils
     /**
      * Encode string in our charset
      */
-    public static byte[] encode(String str)
-    {
+    public static byte[] encode(String str) {
         ByteBuffer bb = CHARSET.encode(str);
         byte[] bytes = new byte[bb.remaining()];
         System.arraycopy(bb.array(), bb.position(), bytes, 0, bb.remaining());
@@ -1137,17 +1018,16 @@ public class Utils
     /**
      * Decode bytes back to string
      */
-    public static String decode(byte[] bytes)
-    {
+    public static String decode(byte[] bytes) {
         return decode(bytes, 0, bytes.length);
     }
 
     /**
      * Decode bytes back to string
      */
-    public static String decode(byte[] bytes, int offset, int length)
-    {
-        if (bytes == null || length == 0) return "";
+    public static String decode(byte[] bytes, int offset, int length) {
+        if (bytes == null || length == 0)
+            return "";
         ByteBuffer bb = ByteBuffer.wrap(bytes, offset, length);
         CharBuffer cb = CHARSET.decode(bb);
         return cb.toString();
@@ -1156,8 +1036,7 @@ public class Utils
     /**
      * Encode string in our charset
      */
-    public static byte[] encodeBasic(String str)
-    {
+    public static byte[] encodeBasic(String str) {
         ByteBuffer bb = CHARSET_BASIC.encode(str);
         byte[] bytes = new byte[bb.remaining()];
         System.arraycopy(bb.array(), bb.position(), bytes, 0, bb.remaining());
@@ -1167,17 +1046,16 @@ public class Utils
     /**
      * Decode bytes back to string
      */
-    public static String decodeBasic(byte[] bytes)
-    {
+    public static String decodeBasic(byte[] bytes) {
         return decode(bytes, 0, bytes.length);
     }
 
     /**
      * Decode bytes back to string
      */
-    public static String decodeBasic(byte[] bytes, int offset, int length)
-    {
-        if (bytes == null || length == 0) return "";
+    public static String decodeBasic(byte[] bytes, int offset, int length) {
+        if (bytes == null || length == 0)
+            return "";
         ByteBuffer bb = ByteBuffer.wrap(bytes, offset, length);
         CharBuffer cb = CHARSET_BASIC.decode(bb);
         return cb.toString();
@@ -1187,81 +1065,58 @@ public class Utils
      * open a url in an external browser
      */
     @SuppressWarnings({"CallToRuntimeExecWithNonConstantString"})
-    public static void openURL(String sURL)
-    {
-        try
-        {
-            if (ISMAC)
-            {
+    public static void openURL(String sURL) {
+        try {
+            if (ISMAC) {
                 Runtime.getRuntime().exec("/usr/bin/open " + sURL);
-            }
-            else if (ISWIN9X || ISWINNT)
-            {
+            } else if (ISWIN9X || ISWINNT) {
                 String sCmd = (ISWIN9X ? "command.com" : "cmd.exe");
 
-                Runtime.getRuntime().exec(new String[]
-                        {
-                                sCmd,
-                                "/c",
-                                "start",
-                                "\"\"",
-                                '"' + sURL + '"'
-                        });
+                Runtime.getRuntime().exec(new String[]{sCmd, "/c", "start", "\"\"", '"' + sURL + '"'});
 
-            }
-            else if (ISLINUX)
-            {
+            } else if (ISLINUX) {
                 Runtime.getRuntime().exec("/usr/bin/gnome-open " + sURL);
             }
-        }
-        catch (Exception ie)
-        {
+        } catch (Exception ie) {
             System.err.println("openURL error: " + formatExceptionText(ie));
         }
     }
-//    
-//    public static void main(String args[])
-//    {
-//        openURL(args[0]);
-//    }
+    //
+    // public static void main(String args[])
+    // {
+    // openURL(args[0]);
+    // }
 
     /**
-     * Do a reverse DNS lookup.  If unable to determine a host name, null is returned.
+     * Do a reverse DNS lookup. If unable to determine a host name, null is
+     * returned.
      */
-    public static String getHostForIP(String IP)
-    {
+    public static String getHostForIP(String IP) {
         String name = null;
 
-        if (ip2host_ != null)
-        {
+        if (ip2host_ != null) {
             name = (String) ip2host_.get(IP);
-        }
-        else
-        {
+        } else {
             ip2host_ = new Properties();
         }
 
-        if (name == null)
-        {
-            try
-            {
+        if (name == null) {
+            try {
                 InetAddress inet = InetAddress.getByName(IP);
                 name = inet.getCanonicalHostName();
-            }
-            catch (UnknownHostException ignored)
-            {
+            } catch (UnknownHostException ignored) {
                 name = IP;
             }
         }
 
-        if (ip2host_ != null)
-        {
+        if (ip2host_ != null) {
             ip2host_.put(IP, name);
             bUpdated_ = true;
         }
 
         // if host is same as IP, return null indicating no name was found
-        if (name.equals(IP)) return null;
+        if (name.equals(IP))
+            return null;
         return name;
     }
 
@@ -1276,19 +1131,16 @@ public class Utils
     /**
      * Load cache
      */
-    public static void loadIPCache(File file)
-    {
+    public static void loadIPCache(File file) {
         ip2host_ = new Properties();
-        if (!file.exists()) return;
-        try
-        {
+        if (!file.exists())
+            return;
+        try {
             FileInputStream fis = new FileInputStream(file);
             ip2host_.load(fis);
             fis.close();
             bUpdated_ = false;
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new ApplicationError(e);
         }
     }
@@ -1296,19 +1148,16 @@ public class Utils
     /**
      * save cache
      */
-    public static void saveIPCache(File file)
-    {
-        if (ip2host_ == null || !bUpdated_) return;
+    public static void saveIPCache(File file) {
+        if (ip2host_ == null || !bUpdated_)
+            return;
 
-        try
-        {
+        try {
             FileOutputStream fos = new FileOutputStream(file);
             ip2host_.store(fos, " Cached IP to hostname from Utils");
             fos.close();
             bUpdated_ = false;
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new ApplicationError(e);
         }
     }
@@ -1316,105 +1165,94 @@ public class Utils
     /**
      * debug
      */
-    public static String getIPAddress(SocketChannel channel)
-    {
+    public static String getIPAddress(SocketChannel channel) {
         return (channel == null || channel.socket() == null || channel.socket().getInetAddress() == null)
-               ? "[unknown]" : channel.socket().getInetAddress().getHostAddress();
+                ? "[unknown]"
+                : channel.socket().getInetAddress().getHostAddress();
     }
 
     /**
      * debug
      */
-    public static String getLocalAddress(DatagramChannel channel)
-    {
+    public static String getLocalAddress(DatagramChannel channel) {
         return (channel == null || channel.socket() == null || channel.socket().getLocalAddress() == null)
-               ? "[unknown]" : channel.socket().getLocalAddress().getHostAddress();
+                ? "[unknown]"
+                : channel.socket().getLocalAddress().getHostAddress();
     }
 
     /**
      * debug
      */
-    public static String getLocalPort(DatagramChannel channel)
-    {
-        return (channel == null || channel.socket() == null)
-               ? "[unknown]" : "" + channel.socket().getLocalPort();
+    public static String getLocalPort(DatagramChannel channel) {
+        return (channel == null || channel.socket() == null) ? "[unknown]" : "" + channel.socket().getLocalPort();
     }
 
     /**
      * debug
      */
-    public static String getLocalAddressPort(DatagramChannel channel)
-    {
+    public static String getLocalAddressPort(DatagramChannel channel) {
         return getLocalAddress(channel) + ':' + getLocalPort(channel);
     }
 
     /**
      * debug
      */
-    public static String getLocalAddress(ServerSocketChannel channel)
-    {
+    public static String getLocalAddress(ServerSocketChannel channel) {
         return (channel == null || channel.socket() == null || channel.socket().getInetAddress() == null)
-               ? "[unknown]" : channel.socket().getInetAddress().getHostAddress();
+                ? "[unknown]"
+                : channel.socket().getInetAddress().getHostAddress();
     }
 
     /**
      * debug
      */
-    public static String getLocalPort(ServerSocketChannel channel)
-    {
-        return (channel == null || channel.socket() == null)
-               ? "[unknown]" : "" + channel.socket().getLocalPort();
+    public static String getLocalPort(ServerSocketChannel channel) {
+        return (channel == null || channel.socket() == null) ? "[unknown]" : "" + channel.socket().getLocalPort();
     }
 
     /**
      * debug
      */
-    public static String getLocalAddressPort(ServerSocketChannel channel)
-    {
+    public static String getLocalAddressPort(ServerSocketChannel channel) {
         return getLocalAddress(channel) + ':' + getLocalPort(channel);
     }
 
     /**
      * debug
      */
-    public static String getAddress(InetSocketAddress socket)
-    {
-        return (socket == null || socket.getAddress() == null)
-               ? "[unknown]" : socket.getAddress().getHostAddress();
+    public static String getAddress(InetSocketAddress socket) {
+        return (socket == null || socket.getAddress() == null) ? "[unknown]" : socket.getAddress().getHostAddress();
     }
 
     /**
      * debug
      */
-    public static String getPort(InetSocketAddress socket)
-    {
-        return (socket == null)
-               ? "[unknown]" : "" + socket.getPort();
+    public static String getPort(InetSocketAddress socket) {
+        return (socket == null) ? "[unknown]" : "" + socket.getPort();
     }
 
     /**
      * debug
      */
-    public static String getAddressPort(InetSocketAddress socket)
-    {
+    public static String getAddressPort(InetSocketAddress socket) {
         return getAddress(socket) + ':' + getPort(socket);
     }
 
     /**
      * Get current year
      */
-    public static String getDateYear()
-    {
+    public static String getDateYear() {
         Calendar now = Calendar.getInstance();
         return Integer.toString(now.get(Calendar.YEAR));
     }
 
     /**
-     * Change hours/minutes/seconds to 23:59:59 so this date represents the end of the day
+     * Change hours/minutes/seconds to 23:59:59 so this date represents the end of
+     * the day
      */
-    public static Date getDateEndOfDay(Date end)
-    {
-        if (end == null) return null;
+    public static Date getDateEndOfDay(Date end) {
+        if (end == null)
+            return null;
 
         // adjust time to end of day
         GregorianCalendar c = new GregorianCalendar();
@@ -1433,16 +1271,14 @@ public class Utils
     /**
      * Get Date with +/- delta from today (in days)
      */
-    public static Date getDateDays(int nDays)
-    {
+    public static Date getDateDays(int nDays) {
         return getDateDays(new Date(), nDays);
     }
 
     /**
      * Get Date with +/- delta from given date (in days)
      */
-    public static Date getDateDays(Date date, int nDays)
-    {
+    public static Date getDateDays(Date date, int nDays) {
         Calendar c = Calendar.getInstance();
         c.setTime(date);
         c.add(Calendar.DAY_OF_MONTH, nDays);
@@ -1452,8 +1288,7 @@ public class Utils
     /**
      * Zero out time to 0:00:00
      */
-    public static Date getDateZeroTime(Date date)
-    {
+    public static Date getDateZeroTime(Date date) {
         GregorianCalendar c = new GregorianCalendar();
         c.setTime(date);
         c.set(Calendar.HOUR_OF_DAY, 0);
@@ -1466,23 +1301,18 @@ public class Utils
     /**
      * return true if both Dates are the dame day (ignore hours/mins/secs)
      */
-    public static boolean isSameDay(Date one, Date two)
-    {
+    public static boolean isSameDay(Date one, Date two) {
         Calendar c1 = Calendar.getInstance();
         Calendar c2 = Calendar.getInstance();
 
         c1.setTime(one);
         c2.setTime(two);
 
-        return (
-                c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR) &&
-                c1.get(Calendar.MONTH) == c2.get(Calendar.MONTH) &&
-                c1.get(Calendar.DAY_OF_MONTH) == c2.get(Calendar.DAY_OF_MONTH)
-        );
+        return (c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR) && c1.get(Calendar.MONTH) == c2.get(Calendar.MONTH)
+                && c1.get(Calendar.DAY_OF_MONTH) == c2.get(Calendar.DAY_OF_MONTH));
     }
 
-    public static SimpleDateFormat getRFC822()
-    {
+    public static SimpleDateFormat getRFC822() {
         return new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US);
     }
 }

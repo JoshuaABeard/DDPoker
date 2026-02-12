@@ -139,11 +139,8 @@ public class TournamentProfileTest {
         imported.read(new StringReader(sw.toString()), false);
 
         // Then: blind structure should match
-        assertEquals("Level 1 big blind should match",
-                original.getBigBlind(1), imported.getBigBlind(1));
-        assertEquals("Level 1 small blind should match",
-                original.getSmallBlind(1), imported.getSmallBlind(1));
-        assertEquals("Starting depth should match",
-                original.getStartingDepthBBs(), imported.getStartingDepthBBs());
+        assertEquals("Level 1 big blind should match", original.getBigBlind(1), imported.getBigBlind(1));
+        assertEquals("Level 1 small blind should match", original.getSmallBlind(1), imported.getSmallBlind(1));
+        assertEquals("Starting depth should match", original.getStartingDepthBBs(), imported.getStartingDepthBBs());
     }
 }

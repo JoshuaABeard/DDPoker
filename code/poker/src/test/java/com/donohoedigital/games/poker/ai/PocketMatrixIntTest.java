@@ -27,15 +27,14 @@ import static com.donohoedigital.games.poker.engine.Card.*;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for PocketMatrixInt storage of int values for all possible poker pockets.
+ * Tests for PocketMatrixInt storage of int values for all possible poker
+ * pockets.
  */
-class PocketMatrixIntTest
-{
+class PocketMatrixIntTest {
     private PocketMatrixInt matrix;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         matrix = new PocketMatrixInt();
     }
 
@@ -44,16 +43,14 @@ class PocketMatrixIntTest
     // ========================================
 
     @Test
-    void should_InitializeWithZeros_When_DefaultConstructor()
-    {
+    void should_InitializeWithZeros_When_DefaultConstructor() {
         assertThat(matrix.get(0, 1)).isZero();
         assertThat(matrix.get(10, 20)).isZero();
         assertThat(matrix.get(50, 51)).isZero();
     }
 
     @Test
-    void should_InitializeWithValue_When_ValueConstructor()
-    {
+    void should_InitializeWithValue_When_ValueConstructor() {
         PocketMatrixInt matrixWith42 = new PocketMatrixInt(42);
 
         assertThat(matrixWith42.get(0, 1)).isEqualTo(42);
@@ -66,16 +63,14 @@ class PocketMatrixIntTest
     // ========================================
 
     @Test
-    void should_StoreAndRetrieveValue_When_SettingByCardIndices()
-    {
+    void should_StoreAndRetrieveValue_When_SettingByCardIndices() {
         matrix.set(5, 10, 100);
 
         assertThat(matrix.get(5, 10)).isEqualTo(100);
     }
 
     @Test
-    void should_ReturnSameValue_When_IndicesReversed()
-    {
+    void should_ReturnSameValue_When_IndicesReversed() {
         matrix.set(5, 10, 100);
 
         assertThat(matrix.get(10, 5)).isEqualTo(100);
@@ -83,8 +78,7 @@ class PocketMatrixIntTest
     }
 
     @Test
-    void should_OverwritePreviousValue_When_SettingSameIndicesTwice()
-    {
+    void should_OverwritePreviousValue_When_SettingSameIndicesTwice() {
         matrix.set(7, 14, 50);
         matrix.set(7, 14, 75);
 
@@ -96,16 +90,14 @@ class PocketMatrixIntTest
     // ========================================
 
     @Test
-    void should_StoreAndRetrieveValue_When_SettingByCardObjects()
-    {
+    void should_StoreAndRetrieveValue_When_SettingByCardObjects() {
         matrix.set(SPADES_A, HEARTS_K, 200);
 
         assertThat(matrix.get(SPADES_A, HEARTS_K)).isEqualTo(200);
     }
 
     @Test
-    void should_ReturnSameValue_When_CardObjectsReversed()
-    {
+    void should_ReturnSameValue_When_CardObjectsReversed() {
         matrix.set(CLUBS_2, DIAMONDS_3, 150);
 
         assertThat(matrix.get(DIAMONDS_3, CLUBS_2)).isEqualTo(150);
@@ -117,8 +109,7 @@ class PocketMatrixIntTest
     // ========================================
 
     @Test
-    void should_StoreAndRetrieveValue_When_SettingByHandObject()
-    {
+    void should_StoreAndRetrieveValue_When_SettingByHandObject() {
         Hand pocket = new Hand(SPADES_A, HEARTS_A);
 
         matrix.set(pocket, 300);
@@ -127,8 +118,7 @@ class PocketMatrixIntTest
     }
 
     @Test
-    void should_ReturnSameValue_When_AccessedViaHandOrIndividualCards()
-    {
+    void should_ReturnSameValue_When_AccessedViaHandOrIndividualCards() {
         Hand pocket = new Hand(CLUBS_J, SPADES_T);
 
         matrix.set(pocket, 250);
@@ -142,8 +132,7 @@ class PocketMatrixIntTest
     // ========================================
 
     @Test
-    void should_SetAllValuesToZero_When_ClearWithZero()
-    {
+    void should_SetAllValuesToZero_When_ClearWithZero() {
         matrix.set(5, 10, 100);
         matrix.set(20, 30, 200);
 
@@ -154,8 +143,7 @@ class PocketMatrixIntTest
     }
 
     @Test
-    void should_SetAllValuesToSpecified_When_ClearWithValue()
-    {
+    void should_SetAllValuesToSpecified_When_ClearWithValue() {
         matrix.set(5, 10, 100);
         matrix.set(20, 30, 200);
 
@@ -171,32 +159,28 @@ class PocketMatrixIntTest
     // ========================================
 
     @Test
-    void should_HandleNegativeValues_When_SettingAndGetting()
-    {
+    void should_HandleNegativeValues_When_SettingAndGetting() {
         matrix.set(10, 20, -500);
 
         assertThat(matrix.get(10, 20)).isEqualTo(-500);
     }
 
     @Test
-    void should_HandleMaxIntValue_When_SettingAndGetting()
-    {
+    void should_HandleMaxIntValue_When_SettingAndGetting() {
         matrix.set(15, 25, Integer.MAX_VALUE);
 
         assertThat(matrix.get(15, 25)).isEqualTo(Integer.MAX_VALUE);
     }
 
     @Test
-    void should_HandleMinIntValue_When_SettingAndGetting()
-    {
+    void should_HandleMinIntValue_When_SettingAndGetting() {
         matrix.set(15, 25, Integer.MIN_VALUE);
 
         assertThat(matrix.get(15, 25)).isEqualTo(Integer.MIN_VALUE);
     }
 
     @Test
-    void should_HandleBoundaryCardIndices_When_SettingAndGetting()
-    {
+    void should_HandleBoundaryCardIndices_When_SettingAndGetting() {
         // 0 and 51 are valid card indices (52 cards total)
         matrix.set(0, 51, 777);
 
@@ -205,8 +189,7 @@ class PocketMatrixIntTest
     }
 
     @Test
-    void should_HandleAllSuitedPairs_When_SettingDifferentValues()
-    {
+    void should_HandleAllSuitedPairs_When_SettingDifferentValues() {
         // Aces of different suits
         matrix.set(SPADES_A, HEARTS_A, 100);
         matrix.set(SPADES_A, DIAMONDS_A, 200);
@@ -220,8 +203,7 @@ class PocketMatrixIntTest
     // ========================================
 
     @Test
-    void should_HandleZeroIndex_When_UsingLowestCardIndices()
-    {
+    void should_HandleZeroIndex_When_UsingLowestCardIndices() {
         // Test with index 0 (lowest valid index)
         matrix.set(0, 1, 999);
 
@@ -230,8 +212,7 @@ class PocketMatrixIntTest
     }
 
     @Test
-    void should_StoreAllPocketPairs_When_SettingSequentially()
-    {
+    void should_StoreAllPocketPairs_When_SettingSequentially() {
         // Test all pocket pairs systematically
         matrix.set(SPADES_A, HEARTS_A, 1400);
         matrix.set(SPADES_K, HEARTS_K, 1300);
@@ -245,8 +226,7 @@ class PocketMatrixIntTest
     }
 
     @Test
-    void should_KeepPairsDistinct_When_SameRankDifferentSuits()
-    {
+    void should_KeepPairsDistinct_When_SameRankDifferentSuits() {
         // Multiple kings with different suits
         matrix.set(SPADES_K, HEARTS_K, 10);
         matrix.set(SPADES_K, DIAMONDS_K, 20);
@@ -260,8 +240,7 @@ class PocketMatrixIntTest
     }
 
     @Test
-    void should_HandleMaximumIndexCombinations_When_Using51()
-    {
+    void should_HandleMaximumIndexCombinations_When_Using51() {
         // Index 51 is the highest valid card index
         matrix.set(50, 51, 5051);
         matrix.set(49, 51, 4951);
@@ -272,8 +251,7 @@ class PocketMatrixIntTest
     }
 
     @Test
-    void should_PreserveOtherValues_When_ClearingAndResetting()
-    {
+    void should_PreserveOtherValues_When_ClearingAndResetting() {
         // Set some values
         matrix.set(SPADES_A, HEARTS_K, 100);
         matrix.set(CLUBS_Q, DIAMONDS_J, 200);
@@ -293,8 +271,7 @@ class PocketMatrixIntTest
     }
 
     @Test
-    void should_HandleAllCombinations_When_SettingMultipleCardPairs()
-    {
+    void should_HandleAllCombinations_When_SettingMultipleCardPairs() {
         // Test multiple different combinations
         matrix.set(SPADES_A, CLUBS_2, 1402);
         matrix.set(HEARTS_K, DIAMONDS_3, 1303);
@@ -310,8 +287,7 @@ class PocketMatrixIntTest
     }
 
     @Test
-    void should_HandleSequentialIndices_When_TestingAdjacentCards()
-    {
+    void should_HandleSequentialIndices_When_TestingAdjacentCards() {
         // Test adjacent card indices
         matrix.set(0, 1, 100);
         matrix.set(1, 2, 200);

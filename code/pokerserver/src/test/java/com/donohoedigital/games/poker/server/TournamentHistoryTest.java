@@ -53,15 +53,13 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 
-
 /**
  * Tests for TournamentHistory DAO operations.
  */
 @Tag("slow")
 @SpringJUnitConfig(locations = {"/app-context-pokerservertests.xml"})
 @Transactional
-class TournamentHistoryTest
-{
+class TournamentHistoryTest {
     private final Logger logger = LogManager.getLogger(TournamentHistoryTest.class);
 
     @Autowired
@@ -75,8 +73,7 @@ class TournamentHistoryTest
 
     @Test
     @Rollback
-    void should_PersistAndUpdate_When_HistorySaved()
-    {
+    void should_PersistAndUpdate_When_HistorySaved() {
         TournamentHistory newHistory = PokerTestData.createTournamentHistory("TEST shouldPersist", 5, "AAA-999");
         gameDao.save(newHistory.getGame());
         profileDao.save(newHistory.getProfile());
@@ -97,8 +94,7 @@ class TournamentHistoryTest
 
     @Test
     @Rollback
-    void should_CascadeDeleteHistory_When_GameDeleted()
-    {
+    void should_CascadeDeleteHistory_When_GameDeleted() {
         TournamentHistory history = PokerTestData.createTournamentHistory("saveBeforeDelete", 10, "BBB-888");
         gameDao.save(history.getGame());
         profileDao.save(history.getProfile());
@@ -123,14 +119,13 @@ class TournamentHistoryTest
 
     @Test
     @Rollback
-    void should_DeleteHistoryButNotProfile_When_GameDeleted()
-    {
+    void should_DeleteHistoryButNotProfile_When_GameDeleted() {
         TournamentHistory newHistory = PokerTestData.createTournamentHistory("TEST shouldPersist", 5, "AAA-999");
         gameDao.save(newHistory.getGame());
         profileDao.save(newHistory.getProfile());
         histDao.save(newHistory);
         assertThat(newHistory.getId()).isNotNull();
-        logger.info("Saved history id="+newHistory.getId());
+        logger.info("Saved history id=" + newHistory.getId());
 
         // refresh needed due to new histories saved after game saved
         OnlineGame gameFetch = newHistory.getGame();
@@ -138,10 +133,9 @@ class TournamentHistoryTest
 
         // get histories
         List<TournamentHistory> histories = gameFetch.getHistories();
-        logger.info("****** # Histories: "+ histories.size());
-        for (TournamentHistory hh : histories)
-        {
-            logger.info("History: "+ hh);
+        logger.info("****** # Histories: " + histories.size());
+        for (TournamentHistory hh : histories) {
+            logger.info("History: " + hh);
         }
         assertThat(histories).contains(newHistory);
 
@@ -159,22 +153,19 @@ class TournamentHistoryTest
 
     @Test
     @Rollback
-    void should_PurgeOldGames_When_PurgeCalled()
-    {
+    void should_PurgeOldGames_When_PurgeCalled() {
         int gameCount = 10;
         int histCount = 0;
-        for (int i = 1; i <= gameCount; i++)
-        {
-            OnlineProfile profile = PokerTestData.createOnlineProfile("Dexter"+i);
-            OnlineGame game = PokerTestData.createOnlineGame(profile.getName(), i, "XXX-"+(100+i));
+        for (int i = 1; i <= gameCount; i++) {
+            OnlineProfile profile = PokerTestData.createOnlineProfile("Dexter" + i);
+            OnlineGame game = PokerTestData.createOnlineGame(profile.getName(), i, "XXX-" + (100 + i));
             game.setMode(i % 2 == 0 ? OnlineGame.MODE_REG : OnlineGame.MODE_PLAY);
 
             gameDao.save(game);
             profileDao.save(profile);
 
-            for (int j = 1; j <= 8; j++)
-            {
-                TournamentHistory hist = PokerTestData.createTournamentHistory(game, profile, "Zorro"+j);
+            for (int j = 1; j <= 8; j++) {
+                TournamentHistory hist = PokerTestData.createTournamentHistory(game, profile, "Zorro" + j);
                 histDao.save(hist);
                 histCount++;
             }
@@ -196,8 +187,7 @@ class TournamentHistoryTest
         assertThat(games).hasSize(gameCount / 2);
 
         // verify no MODE_REG left
-        for (OnlineGame game : games)
-        {
+        for (OnlineGame game : games) {
             assertThat(game.getMode()).isNotEqualTo(OnlineGame.MODE_REG);
         }
 
@@ -209,8 +199,7 @@ class TournamentHistoryTest
 
     @Test
     @Rollback
-    void should_FindGame_When_SearchingByHistoryId()
-    {
+    void should_FindGame_When_SearchingByHistoryId() {
         TournamentHistory newHistory = PokerTestData.createTournamentHistory("TEST shouldPersist", 5, "AAA-999");
         gameDao.save(newHistory.getGame());
         profileDao.save(newHistory.getProfile());
@@ -225,26 +214,25 @@ class TournamentHistoryTest
 
     @Test
     @Rollback
-    void should_DeleteOnlySpecificGameHistories_When_DeleteAllForGameCalled()
-    {
+    void should_DeleteOnlySpecificGameHistories_When_DeleteAllForGameCalled() {
         int gameCount = 2;
         int histCount = 0;
         OnlineGame game1 = null;
         OnlineGame game2 = null;
-        for (int i = 1; i <= gameCount; i++)
-        {
-            OnlineProfile profile = PokerTestData.createOnlineProfile("Dexter"+i);
-            OnlineGame game = PokerTestData.createOnlineGame(profile.getName(), i, "XXX-"+(100+i));
+        for (int i = 1; i <= gameCount; i++) {
+            OnlineProfile profile = PokerTestData.createOnlineProfile("Dexter" + i);
+            OnlineGame game = PokerTestData.createOnlineGame(profile.getName(), i, "XXX-" + (100 + i));
             game.setMode(i % 2 == 0 ? OnlineGame.MODE_REG : OnlineGame.MODE_PLAY);
-            if (game1 == null) game1 = game;
-            else game2 = game;
+            if (game1 == null)
+                game1 = game;
+            else
+                game2 = game;
 
             gameDao.save(game);
             profileDao.save(profile);
 
-            for (int j = 1; j <= 8; j++)
-            {
-                TournamentHistory hist = PokerTestData.createTournamentHistory(game, profile, "Zorro"+j);
+            for (int j = 1; j <= 8; j++) {
+                TournamentHistory hist = PokerTestData.createTournamentHistory(game, profile, "Zorro" + j);
                 histDao.save(hist);
                 histCount++;
             }
@@ -266,16 +254,14 @@ class TournamentHistoryTest
         assertThat(hists).hasSize(histCount / 2);
 
         // no remaining history should match game 1
-        for (TournamentHistory hist : hists)
-        {
+        for (TournamentHistory hist : hists) {
             assertThat(hist.getGame().getId()).isNotEqualTo(game1.getId());
         }
     }
 
     @Test
     @Rollback
-    void should_FilterHistories_When_QueryingByProfileOrGame()
-    {
+    void should_FilterHistories_When_QueryingByProfileOrGame() {
         int gameCount = 2;
         int histCount = 0;
         OnlineProfile one = PokerTestData.createOnlineProfile("Dexter");
@@ -284,18 +270,18 @@ class TournamentHistoryTest
         profileDao.save(two);
         OnlineGame game1 = null;
         OnlineGame game2 = null;
-        for (int i = 1; i <= gameCount; i++)
-        {
+        for (int i = 1; i <= gameCount; i++) {
             OnlineProfile profile = (i % 2 == 0) ? one : two;
-            OnlineGame game = PokerTestData.createOnlineGame(profile.getName(), i, "XXX-"+(100+i));
+            OnlineGame game = PokerTestData.createOnlineGame(profile.getName(), i, "XXX-" + (100 + i));
             game.setMode(OnlineGame.MODE_END);
-            if (game1 == null) game1 = game;
-            else game2 = game;
+            if (game1 == null)
+                game1 = game;
+            else
+                game2 = game;
 
             gameDao.save(game);
 
-            for (int j = 1; j <= 8; j++)
-            {
+            for (int j = 1; j <= 8; j++) {
                 TournamentHistory hist = PokerTestData.createTournamentHistory(game, profile, profile.getName());
                 histDao.save(hist);
                 histCount++;
@@ -306,15 +292,13 @@ class TournamentHistoryTest
         int count = histDao.getAllForProfileCount(one.getId(), null, null, null);
         list = histDao.getAllForProfile(count, 0, histCount, one.getId(), null, null, null);
         assertThat(list).hasSize(histCount / 2);
-        for (TournamentHistory hist : list)
-        {
+        for (TournamentHistory hist : list) {
             assertThat(hist.getPlayerName()).isEqualTo(one.getName());
         }
 
         list = histDao.getAllForGame(null, 0, histCount, game1.getId());
         assertThat(list).hasSize(histCount / 2);
-        for (TournamentHistory hist : list)
-        {
+        for (TournamentHistory hist : list) {
             assertThat(hist.getGame().getId()).isEqualTo(game1.getId());
         }
 
@@ -322,16 +306,14 @@ class TournamentHistoryTest
         list = histDao.getAllForGame(null, 0, histCount, game2.getId());
         assertThat(histDao.getAllForGameCount(game2.getId())).isEqualTo(histCount / 2);
         assertThat(list).hasSize(histCount / 2);
-        for (TournamentHistory hist : list)
-        {
+        for (TournamentHistory hist : list) {
             assertThat(hist.getGame().getId()).isEqualTo(game2.getId());
         }
     }
 
     @Test
     @Rollback
-    void should_ExecuteLeaderboardQuery_When_Called()
-    {
+    void should_ExecuteLeaderboardQuery_When_Called() {
         // just verify the query still works - kind of hard to verify data
         int games_limit = 5;
         Date begin = new Date(0);

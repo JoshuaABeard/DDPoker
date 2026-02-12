@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -47,8 +47,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.List;
 
-public class HandHistoryPanel extends DDPanel
-{
+public class HandHistoryPanel extends DDPanel {
 
     private String where_;
     private BindArray bindArray_;
@@ -78,8 +77,8 @@ public class HandHistoryPanel extends DDPanel
     private DDButton exportButton_;
     private ImageIcon icon_ = ImageConfig.getImageIcon("ddlogo20");
 
-    public HandHistoryPanel(GameContext context, String sStyle, String where, BindArray bindArray, HoldemHand currentHand, int pageSize)
-    {
+    public HandHistoryPanel(GameContext context, String sStyle, String where, BindArray bindArray,
+            HoldemHand currentHand, int pageSize) {
         context_ = context;
         pageSize_ = pageSize;
 
@@ -88,22 +87,19 @@ public class HandHistoryPanel extends DDPanel
         currentHand_ = currentHand;
 
         /*
-        if (true)
-        {
-            where_ += " AND 0.5 < (SELECT MAX(ABS(PLH_END_CHIPS - PLH_START_CHIPS) / PLH_START_CHIPS) FROM PLAYER_HAND WHERE PLH_HAND_ID=HND_ID)";
-        }
-        */
+         * if (true) { where_ +=
+         * " AND 0.5 < (SELECT MAX(ABS(PLH_END_CHIPS - PLH_START_CHIPS) / PLH_START_CHIPS) FROM PLAYER_HAND WHERE PLH_HAND_ID=HND_ID)"
+         * ; }
+         */
 
-        if (currentHand_ != null)
-        {
+        if (currentHand_ != null) {
             where_ += " AND HND_START_DATE < ?";
             bindArray_.addValue(Types.TIMESTAMP, new Timestamp(currentHand_.getStartDate()));
         }
 
         handCount_ = PokerDatabase.getHandCount(where_, bindArray_);
 
-        if (currentHand_ != null)
-        {
+        if (currentHand_ != null) {
             ++handCount_;
         }
 
@@ -117,10 +113,8 @@ public class HandHistoryPanel extends DDPanel
         summaryHtmlArea_.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
         handsList_ = new ListPanel(HandListItemPanel.class, sStyle);
-        handsList_.addListSelectionListener(new ListSelectionListener()
-        {
-            public void valueChanged(ListSelectionEvent e)
-            {
+        handsList_.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
                 setHandIndex(handsList_.getSelectedIndex());
             }
         });
@@ -148,38 +142,26 @@ public class HandHistoryPanel extends DDPanel
         pagingLabel_ = new DDLabel(GuiManager.DEFAULT, sStyle);
         pagingLabel_.setBorder(BorderFactory.createEmptyBorder(1, 0, 1, 0));
         pageDownButton_ = new GlassButton("pagedown", "Glass");
-        pageDownButton_.addActionListener(
-                new ActionListener()
-                {
-                    public void actionPerformed(ActionEvent e)
-                    {
-                        handFirst_ -= pageSize_;
-                        setHands();
-                    }
-                }
-        );
+        pageDownButton_.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                handFirst_ -= pageSize_;
+                setHands();
+            }
+        });
         pageUpButton_ = new GlassButton("pageup", "Glass");
-        pageUpButton_.addActionListener(
-                new ActionListener()
-                {
-                    public void actionPerformed(ActionEvent e)
-                    {
-                        handFirst_ += pageSize_;
-                        setHands();
-                    }
-                }
-        );
+        pageUpButton_.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                handFirst_ += pageSize_;
+                setHands();
+            }
+        });
 
         exportButton_ = new GlassButton("export", "Glass");
-        exportButton_.addActionListener(
-                new ActionListener()
-                {
-                    public void actionPerformed(ActionEvent e)
-                    {
-                        export();
-                    }
-                }
-        );
+        exportButton_.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                export();
+            }
+        });
 
         pagingButtonPanel.setLayout(new GridLayout(1, 3, 8, 0));
         pagingButtonPanel.add(pageUpButton_);
@@ -197,13 +179,15 @@ public class HandHistoryPanel extends DDPanel
 
         // description
         // scroll (use NORTH for correct sizing)
-        JScrollPane detailsScroll = new DDScrollPane(detailsHtmlArea_, sStyle, null, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        JScrollPane detailsScroll = new DDScrollPane(detailsHtmlArea_, sStyle, null,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         detailsScroll.setOpaque(false);
         detailsScroll.setPreferredSize(new Dimension(450, 400));
         detailsScroll.setViewportBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
         detailsScroll.setBorder(BorderFactory.createEmptyBorder(3, 0, 3, 0));
 
-        summaryScroll_ = new DDScrollPane(summaryHtmlArea_, sStyle, null, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        summaryScroll_ = new DDScrollPane(summaryHtmlArea_, sStyle, null, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         summaryScroll_.setOpaque(false);
         summaryScroll_.setPreferredSize(new Dimension(450, 400));
         summaryScroll_.setViewportBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
@@ -213,7 +197,7 @@ public class HandHistoryPanel extends DDPanel
 
         DDPanel optionPanel = new DDPanel(GuiManager.DEFAULT, sStyle);
         optionPanel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(),
-                                                                 BorderFactory.createEmptyBorder(4, 4, 4, 4)));
+                BorderFactory.createEmptyBorder(4, 4, 4, 4)));
 
         showAllCheckbox_ = new DDCheckBox("handhistaifaceup", sStyle);
         showAllCheckbox_.setEnabled(false);
@@ -232,18 +216,14 @@ public class HandHistoryPanel extends DDPanel
 
         showAllCheckbox_.setSelected(PokerUtils.isCheatOn(context_, PokerConstants.OPTION_CHEAT_AIFACEUP));
 
-        showAllCheckbox_.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent e)
-            {
+        showAllCheckbox_.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
                 showReasonCheckbox_.setEnabled(showAllCheckbox_.isSelected());
                 setHistoryText();
             }
         });
-        showReasonCheckbox_.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent e)
-            {
+        showReasonCheckbox_.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
                 setHistoryText();
             }
         });
@@ -267,31 +247,26 @@ public class HandHistoryPanel extends DDPanel
         setHands();
     }
 
-    private void checkButtons()
-    {
+    private void checkButtons() {
         pageDownButton_.setEnabled(handFirst_ > 0);
         pageUpButton_.setEnabled(handFirst_ < handCount_ - pageSize_);
         exportButton_.setEnabled(handID_ >= 0 && handCount_ > 0);
     }
 
-    private void setHands()
-    {
+    private void setHands() {
         List<Integer> hands = PokerDatabase.getHandIDs(where_, bindArray_, handFirst_, pageSize_);
         hands_ = new ArrayList<Object>(hands.size());
-        for (int i = hands.size() - 1; i >= 0; --i)
-        {
+        for (int i = hands.size() - 1; i >= 0; --i) {
             hands_.add(hands.get(i));
         }
 
-        if ((currentHand_ != null) && (handFirst_ + pageSize_ >= handCount_))
-        {
+        if ((currentHand_ != null) && (handFirst_ + pageSize_ >= handCount_)) {
             hands_.add(0, currentHand_);
         }
 
         handsList_.setItems(hands_);
 
-        if (hands_.size() == 0)
-        {
+        if (hands_.size() == 0) {
             titleLabel_.setText(PropertyConfig.getMessage("msg.nohistory"));
             pagingLabel_.setText("");
             detailsHtmlArea_.setText("");
@@ -299,32 +274,23 @@ public class HandHistoryPanel extends DDPanel
             pageUpButton_.setEnabled(false);
             pageDownButton_.setEnabled(false);
             exportButton_.setEnabled(false);
-        }
-        else
-        {
+        } else {
             handsList_.setSelectedIndex(0);
-            pagingLabel_.setText(PropertyConfig.getMessage
-                    ("msg.histpage", Math.max(handFirst_, 0) + 1,
-                     Math.min(handFirst_ + pageSize_, handCount_),
-                     handCount_));
+            pagingLabel_.setText(PropertyConfig.getMessage("msg.histpage", Math.max(handFirst_, 0) + 1,
+                    Math.min(handFirst_ + pageSize_, handCount_), handCount_));
             setHandIndex(handsList_.getSelectedIndex());
         }
     }
 
-    private void setHistoryText()
-    {
-        if (handID_ < 0)
-        {
+    private void setHistoryText() {
+        if (handID_ < 0) {
             titleLabel_.setText(PropertyConfig.getMessage("msg.currenthand"));
             detailsHtmlArea_.setText(getCurrentHistoryText());
 
-            if (tabs_.getTabCount() > 1)
-            {
+            if (tabs_.getTabCount() > 1) {
                 tabs_.removeTabAt(1);
             }
-        }
-        else
-        {
+        } else {
             String[] handHTML = PokerDatabase.getHandAsHTML(handID_, showAll(), showReason());
             titleLabel_.setText(handHTML[0]);
             summaryHtmlArea_.setText(handHTML[1]);
@@ -332,8 +298,7 @@ public class HandHistoryPanel extends DDPanel
 
             summaryHtmlArea_.setCaretPosition(0); // scroll to top
 
-            if (tabs_.getTabCount() < 2)
-            {
+            if (tabs_.getTabCount() < 2) {
                 tabs_.addTab(PropertyConfig.getMessage("msg.histsummary"), icon_, summaryScroll_);
             }
         }
@@ -343,13 +308,11 @@ public class HandHistoryPanel extends DDPanel
         detailsHtmlArea_.repaint();
     }
 
-    private String getCurrentHistoryText()
-    {
+    private String getCurrentHistoryText() {
         List<HandAction> hist = hhand_.getHistoryCopy();
         StringBuilder sb = new StringBuilder();
 
-        if (hhand_.getAnte() > 0)
-        {
+        if (hhand_.getAnte() > 0) {
             sb.append(getHist(hist, HoldemHand.ROUND_PRE_FLOP, hhand_, true));
         }
         sb.append(getHist(hist, HoldemHand.ROUND_PRE_FLOP, hhand_, false));
@@ -360,16 +323,14 @@ public class HandHistoryPanel extends DDPanel
         // I don't believe this will ever happen as it is now, but perhaps in the future
         // when not every hand is stored in the database, or more precisely when you can
         // view history for hands that aren't stored, for whatever reason.
-        if (hhand_.getRound() == HoldemHand.ROUND_SHOWDOWN)
-        {
+        if (hhand_.getRound() == HoldemHand.ROUND_SHOWDOWN) {
             PokerDatabase.appendShowdown(sb, hhand_.getHistoryCopy(), hhand_.getCommunity(), showAll());
         }
 
         return sb.toString();
     }
 
-    private String getHist(List<HandAction> hist, int nRound, HoldemHand hhand, boolean bAnte)
-    {
+    private String getHist(List<HandAction> hist, int nRound, HoldemHand hhand, boolean bAnte) {
         StringBuilder sb = new StringBuilder();
         PokerPlayer p;
         int nNum = 0;
@@ -379,26 +340,23 @@ public class HandHistoryPanel extends DDPanel
 
         Hand community = hhand.getCommunity();
 
-        if (nRound == HoldemHand.ROUND_PRE_FLOP)
-        {
+        if (nRound == HoldemHand.ROUND_PRE_FLOP) {
             community = new Hand();
-        }
-        else if ((nRound == HoldemHand.ROUND_FLOP) && (community.size() > 3))
-        {
+        } else if ((nRound == HoldemHand.ROUND_FLOP) && (community.size() > 3)) {
             community = new Hand(community.getCard(0), community.getCard(1), community.getCard(2));
-        }
-        else if ((nRound == HoldemHand.ROUND_TURN) && (community.size() > 4))
-        {
-            community = new Hand(community.getCard(0), community.getCard(1), community.getCard(2), community.getCard(3));
+        } else if ((nRound == HoldemHand.ROUND_TURN) && (community.size() > 4)) {
+            community = new Hand(community.getCard(0), community.getCard(1), community.getCard(2),
+                    community.getCard(3));
         }
 
-        for (HandAction action : hist)
-        {
+        for (HandAction action : hist) {
             p = action.getPlayer();
 
             // must be from this round
-            if (action.getRound() != nRound || (!bAnte && action.getAction() == HandAction.ACTION_ANTE)) continue;
-            if (bAnte && action.getAction() != HandAction.ACTION_ANTE) continue;
+            if (action.getRound() != nRound || (!bAnte && action.getAction() == HandAction.ACTION_ANTE))
+                continue;
+            if (bAnte && action.getAction() != HandAction.ACTION_ANTE)
+                continue;
 
             Hand hand = p.getHand();
 
@@ -406,29 +364,26 @@ public class HandHistoryPanel extends DDPanel
             String handShown = "";
             String sReason = showReason() ? PokerDatabase.decodeReason(action.getDebug()) : null;
 
-            if (sReason == null) sReason = "";
-            else sReason = " " + PropertyConfig.getMessage("msg.hist.reason", sReason);
+            if (sReason == null)
+                sReason = "";
+            else
+                sReason = " " + PropertyConfig.getMessage("msg.hist.reason", sReason);
 
-            if (p.isCardsExposed() || (p.isHuman() && p.isLocallyControlled()) || showAll())
-            {
+            if (p.isCardsExposed() || (p.isHuman() && p.isLocallyControlled()) || showAll()) {
                 handHTML = hand.toHTML();
 
-                if (community.size() > 0)
-                {
+                if (community.size() > 0) {
                     info.getScore(hand, community);
                     handShown = "&nbsp;-&nbsp;" + info.toString(", ", false);
                 }
-            }
-            else
-            {
+            } else {
                 handHTML = "<DDCARD FACEUP=\"false\"><DDCARD FACEUP=\"false\">";
             }
 
             String sSnippet = action.getHTMLSnippet("msg.handhist", nPrior, null);
 
             // get right raise icon
-            if (action.getAction() == HandAction.ACTION_RAISE)
-            {
+            if (action.getAction() == HandAction.ACTION_RAISE) {
                 nPrior++;
             }
 
@@ -436,36 +391,35 @@ public class HandHistoryPanel extends DDPanel
             nNum++;
 
             // append message
-            sb.append(PropertyConfig.getMessage("msg.hist.x", Utils.encodeHTML(p.getName()), sSnippet,
-                                                handHTML, handShown, sReason));
+            sb.append(PropertyConfig.getMessage("msg.hist.x", Utils.encodeHTML(p.getName()), sSnippet, handHTML,
+                    handShown, sReason));
             sb.append("\n");
         }
 
-        if (nNum == 0) return "";
+        if (nNum == 0)
+            return "";
 
         // if doing antes, change round (match client.properties)
-        if (bAnte) nRound = 9;
+        if (bAnte)
+            nRound = 9;
 
-        return PropertyConfig.getMessage("msg.hand.history",
-                                         PropertyConfig.getMessage("msg.round." + nRound),
-                                         sb.toString(), community.toHTML());
+        return PropertyConfig.getMessage("msg.hand.history", PropertyConfig.getMessage("msg.round." + nRound),
+                sb.toString(), community.toHTML());
     }
 
-    private void setHandIndex(int index)
-    {
+    private void setHandIndex(int index) {
 
         Object o = hands_.get(index);
 
-        if (o instanceof Integer)
-        {
-            if (handID_ == (Integer) o) return;
+        if (o instanceof Integer) {
+            if (handID_ == (Integer) o)
+                return;
             handID_ = (Integer) o;
             hhand_ = null;
             showAllCheckbox_.setEnabled(PokerDatabase.isPracticeHand(handID_));
-        }
-        else
-        {
-            if (hhand_ == o) return;
+        } else {
+            if (hhand_ == o)
+                return;
             handID_ = -1;
             hhand_ = (HoldemHand) o;
             showAllCheckbox_.setEnabled(!hhand_.getTable().getGame().isOnlineGame());
@@ -478,23 +432,19 @@ public class HandHistoryPanel extends DDPanel
         setHistoryText();
     }
 
-    private boolean showAll()
-    {
+    private boolean showAll() {
         return showAllCheckbox_.isEnabled() && showAllCheckbox_.isSelected();
     }
 
-    private boolean showReason()
-    {
+    private boolean showReason() {
         return showAll() && showReasonCheckbox_.isEnabled() && showReasonCheckbox_.isSelected();
     }
 
     @SuppressWarnings({"PublicInnerClass"})
-    public static class HandListItemPanel extends ListItemPanel
-    {
+    public static class HandListItemPanel extends ListItemPanel {
         private DDHtmlArea display_;
 
-        public HandListItemPanel(ListPanel panel, Object item, String sStyle)
-        {
+        public HandListItemPanel(ListPanel panel, Object item, String sStyle) {
             super(panel, item, sStyle);
 
             display_ = new DDHtmlArea(GuiManager.DEFAULT, sStyle);
@@ -504,23 +454,19 @@ public class HandHistoryPanel extends DDPanel
         }
 
         @Override
-        public void update()
-        {
+        public void update() {
             Object o = getItem();
 
-            if (o instanceof Integer)
-            {
-                display_.setText("<html><body>" + PokerDatabase.getHandListHTML((Integer) getItem()) + "</body></html>");
-            }
-            else
-            {
+            if (o instanceof Integer) {
+                display_.setText(
+                        "<html><body>" + PokerDatabase.getHandListHTML((Integer) getItem()) + "</body></html>");
+            } else {
                 display_.setText("<html><body>" + ((HoldemHand) o).getHandListHTML() + "</body></html>");
             }
         }
     }
 
-    private void export()
-    {
+    private void export() {
         TypedHashMap params = new TypedHashMap();
         params.setObject(HistoryExportDialog.PARAM_HAND_ID, handID_);
         context_.processPhaseNow("HistoryExportDialog", params);

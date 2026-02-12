@@ -59,31 +59,26 @@ public class MixedParamEncoder implements IPageParametersEncoder {
         // Find index of last specified parameter
         boolean foundParameter = false;
         int lastSpecifiedParameter = parameterNames.length;
-        while (lastSpecifiedParameter != 0 && !foundParameter)
-        {
+        while (lastSpecifiedParameter != 0 && !foundParameter) {
             String param = getString(parameters, parameterNames[--lastSpecifiedParameter]);
             foundParameter = param != null && !param.isEmpty();
         }
 
         // append parameters we found
-        if (foundParameter)
-        {
-            for (int i = 0; i <= lastSpecifiedParameter; i++)
-            {
-                // NOTE: adding to url segments will UrlEncode the value (which we need to reverse below)
+        if (foundParameter) {
+            for (int i = 0; i <= lastSpecifiedParameter; i++) {
+                // NOTE: adding to url segments will UrlEncode the value (which we need to
+                // reverse below)
                 url.getSegments().add(urlEncodePathComponent(getString(parameters, parameterNames[i])));
                 parameterNamesToAdd.remove(parameterNames[i]);
             }
         }
 
         // add remaining as query string
-        if (!parameterNamesToAdd.isEmpty())
-        {
-            for (String parameterName : parameterNamesToAdd)
-            {
+        if (!parameterNamesToAdd.isEmpty()) {
+            for (String parameterName : parameterNamesToAdd) {
                 String param = getString(parameters, parameterName);
-                if (param != null && !param.isEmpty())
-                {
+                if (param != null && !param.isEmpty()) {
                     url.getQueryParameters().add(new Url.QueryParameter(parameterName, param));
                 }
             }
@@ -91,29 +86,20 @@ public class MixedParamEncoder implements IPageParametersEncoder {
         return url;
     }
 
-    private String getString(final PageParameters parameters, final String key)
-    {
+    private String getString(final PageParameters parameters, final String key) {
         final Object o = parameters.get(key);
-        if (o == null)
-        {
+        if (o == null) {
             return null;
-        }
-        else if (o.getClass().isArray() && Array.getLength(o) > 0)
-        {
+        } else if (o.getClass().isArray() && Array.getLength(o) > 0) {
             // if it is an array just get the first value
             final Object arrayValue = Array.get(o, 0);
-            if (arrayValue == null)
-            {
+            if (arrayValue == null) {
                 return null;
-            }
-            else
-            {
+            } else {
                 return arrayValue.toString();
             }
 
-        }
-        else
-        {
+        } else {
             return o.toString();
         }
     }
@@ -124,31 +110,25 @@ public class MixedParamEncoder implements IPageParametersEncoder {
 
         // add all url query parameters
         List<Url.QueryParameter> queryParameters = url.getQueryParameters();
-        queryParameters.forEach(qp ->
-                params.set(qp.getName(), qp.getValue()));
+        queryParameters.forEach(qp -> params.set(qp.getName(), qp.getValue()));
 
         // add path components
         String urlPath = url.getPath();
-        if (urlPath.startsWith("/"))
-        {
+        if (urlPath.startsWith("/")) {
             urlPath = urlPath.substring(1);
         }
 
-        if (!urlPath.isEmpty())
-        {
+        if (!urlPath.isEmpty()) {
             String[] pathParts = urlPath.split("/");
-            //noinspection StatementWithEmptyBody
-            if (pathParts.length > parameterNames.length)
-            {
-                //logger.warn("Too many path parts: " + WicketUtils.getWebRequest().getURL());
+            // noinspection StatementWithEmptyBody
+            if (pathParts.length > parameterNames.length) {
+                // logger.warn("Too many path parts: " + WicketUtils.getWebRequest().getURL());
             }
 
-            for (int i = 0; i < pathParts.length && i < parameterNames.length; i++)
-            {
+            for (int i = 0; i < pathParts.length && i < parameterNames.length; i++) {
                 // only set parameter if it didn't come down in another form (e.g., query
                 // string or posted form values).
-                if (params.get(parameterNames[i]) != null)
-                {
+                if (params.get(parameterNames[i]) != null) {
                     params.set(parameterNames[i], urlDecodePathComponent(pathParts[i]));
                 }
             }
@@ -158,7 +138,7 @@ public class MixedParamEncoder implements IPageParametersEncoder {
     }
 
     ////
-    //// code below to allow any character in the path.  We deal with:
+    //// code below to allow any character in the path. We deal with:
     ////
     //// . and .. which are interpreted by the servlet container
     //// / and \ which are also path components
@@ -179,48 +159,30 @@ public class MixedParamEncoder implements IPageParametersEncoder {
     private static final char SLASH_ALIAS = 's';
     private static final char BACKSLASH_ALIAS = 'b';
 
-    private String urlEncodePathComponent(String value)
-    {
+    private String urlEncodePathComponent(String value) {
         String enc;
-        if (value == null || value.isEmpty())
-        {
+        if (value == null || value.isEmpty()) {
             enc = NULL_CHAR_STRING;
-        }
-        else if (value.equals(NULL_CHAR_STRING))
-        {
+        } else if (value.equals(NULL_CHAR_STRING)) {
             enc = NULL_CHAR_ALIAS;
-        }
-        else if (value.equals("."))
-        {
+        } else if (value.equals(".")) {
             enc = DOT_ALIAS;
-        }
-        else if (value.equals(".."))
-        {
+        } else if (value.equals("..")) {
             enc = DOTDOT_ALIAS;
-        }
-        else
-        {
+        } else {
             enc = encodeSpecial(value);
         }
         return enc;
     }
 
-    private String urlDecodePathComponent(String value)
-    {
-        if (value == null || value.isEmpty() || value.equals(NULL_CHAR_STRING))
-        {
+    private String urlDecodePathComponent(String value) {
+        if (value == null || value.isEmpty() || value.equals(NULL_CHAR_STRING)) {
             return null;
-        }
-        else if (value.equals(NULL_CHAR_ALIAS))
-        {
+        } else if (value.equals(NULL_CHAR_ALIAS)) {
             return NULL_CHAR_STRING;
-        }
-        else if (value.equals(DOT_ALIAS))
-        {
+        } else if (value.equals(DOT_ALIAS)) {
             return ".";
-        }
-        else if (value.equals(DOTDOT_ALIAS))
-        {
+        } else if (value.equals(DOTDOT_ALIAS)) {
             return "..";
         }
 
@@ -231,32 +193,23 @@ public class MixedParamEncoder implements IPageParametersEncoder {
     /**
      * Encode string to handle . / \
      */
-    private String encodeSpecial(String value)
-    {
+    private String encodeSpecial(String value) {
         StringBuilder sb = new StringBuilder(value.length() + 2);
         char c;
 
-        for (int i = 0; i < value.length(); i++)
-        {
+        for (int i = 0; i < value.length(); i++) {
             c = value.charAt(i);
 
-            if (c == '/')
-            {
+            if (c == '/') {
                 sb.append(ESCAPE_CHAR);
                 sb.append(SLASH_ALIAS);
-            }
-            else if (c == '\\')
-            {
+            } else if (c == '\\') {
                 sb.append(ESCAPE_CHAR);
                 sb.append(BACKSLASH_ALIAS);
-            }
-            else if (c == ESCAPE_CHAR)
-            {
+            } else if (c == ESCAPE_CHAR) {
                 sb.append(ESCAPE_CHAR);
                 sb.append(ESCAPE_CHAR);
-            }
-            else
-            {
+            } else {
                 sb.append(c);
             }
         }
@@ -267,40 +220,34 @@ public class MixedParamEncoder implements IPageParametersEncoder {
     /**
      * Decode
      */
-    private String decodeSpecial(String value)
-    {
+    private String decodeSpecial(String value) {
         StringBuilder sb = new StringBuilder(value.length());
         char c;
 
         boolean decode = false;
 
-        for (int i = 0; i < value.length(); i++)
-        {
+        for (int i = 0; i < value.length(); i++) {
             c = value.charAt(i);
 
-            if (decode)
-            {
+            if (decode) {
                 decode = false;
 
-                switch (c)
-                {
-                    case SLASH_ALIAS:
+                switch (c) {
+                    case SLASH_ALIAS :
                         c = '/';
                         break;
 
-                    case BACKSLASH_ALIAS:
+                    case BACKSLASH_ALIAS :
                         c = '\\';
                         break;
 
-                    case ESCAPE_CHAR:
+                    case ESCAPE_CHAR :
                         break;
 
-                    default:
+                    default :
                         break; // just ignore unknown decode
                 }
-            }
-            else if (c == ESCAPE_CHAR)
-            {
+            } else if (c == ESCAPE_CHAR) {
                 decode = true;
                 continue;
             }

@@ -24,7 +24,6 @@ import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.PokerTable;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -33,12 +32,17 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Integration tests for PokerTable requiring GameEngine infrastructure.
  *
- * <p>These tests validate table functionality that depends on:</p>
+ * <p>
+ * These tests validate table functionality that depends on:
+ * </p>
  * <ul>
- *   <li>GameEngine event system - for observer registration</li>
+ * <li>GameEngine event system - for observer registration</li>
  * </ul>
  *
- * <p>Run these tests separately from unit tests:</p>
+ * <p>
+ * Run these tests separately from unit tests:
+ * </p>
+ *
  * <pre>
  * mvn test -Dgroups=integration
  * </pre>

@@ -22,13 +22,11 @@ package com.donohoedigital.games.poker.ui;
 import com.donohoedigital.config.ConfigTestHelper;
 import com.donohoedigital.games.poker.PokerMain;
 import com.donohoedigital.games.poker.ui.matchers.PokerMatchers;
-import com.donohoedigital.gui.InternalDialog;
 import org.assertj.swing.core.GenericTypeMatcher;
 import org.assertj.swing.core.Robot;
 import org.assertj.swing.edt.FailOnThreadViolationRepaintManager;
 import org.assertj.swing.fixture.FrameFixture;
 import org.assertj.swing.testing.AssertJSwingTestCaseTemplate;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -37,22 +35,20 @@ import java.awt.*;
 import java.util.function.BooleanSupplier;
 
 /**
- * Base class for UI tests using AssertJ Swing.
- * Provides common setup/teardown and utilities for testing the DD Poker Swing application.
- * Adapted for JUnit 5.
+ * Base class for UI tests using AssertJ Swing. Provides common setup/teardown
+ * and utilities for testing the DD Poker Swing application. Adapted for JUnit
+ * 5.
  *
- * IMPORTANT: UI tests are automatically disabled in headless environments.
- * They will only run on systems with a graphical display available.
+ * IMPORTANT: UI tests are automatically disabled in headless environments. They
+ * will only run on systems with a graphical display available.
  */
 @EnabledIfDisplay
-public abstract class PokerUITestBase extends AssertJSwingTestCaseTemplate
-{
+public abstract class PokerUITestBase extends AssertJSwingTestCaseTemplate {
     protected FrameFixture window;
     protected PokerMain pokerMain;
 
     @BeforeAll
-    public static void setUpOnce()
-    {
+    public static void setUpOnce() {
         // Configure headless mode for CI/CD environments
         // This allows GUI tests to run without a display
         System.setProperty("java.awt.headless", "false"); // Must be false for Swing components
@@ -65,8 +61,7 @@ public abstract class PokerUITestBase extends AssertJSwingTestCaseTemplate
      * Set up the robot and launch the application.
      */
     @BeforeEach
-    protected final void setUp()
-    {
+    protected final void setUp() {
         setUpRobot();
 
         // Initialize config for poker with GUI support
@@ -112,8 +107,7 @@ public abstract class PokerUITestBase extends AssertJSwingTestCaseTemplate
         }
     }
 
-    protected void onTearDown()
-    {
+    protected void onTearDown() {
         if (window != null) {
             window.cleanUp();
         }
@@ -126,16 +120,14 @@ public abstract class PokerUITestBase extends AssertJSwingTestCaseTemplate
     }
 
     /**
-     * Find the main DD Poker frame with timeout.
-     * Uses a matcher to find the frame by title or type.
+     * Find the main DD Poker frame with timeout. Uses a matcher to find the frame
+     * by title or type.
      */
-    private JFrame findMainFrameWithTimeout(Robot robot, long timeoutMs)
-    {
+    private JFrame findMainFrameWithTimeout(Robot robot, long timeoutMs) {
         long startTime = System.currentTimeMillis();
         Exception lastException = null;
 
-        while (System.currentTimeMillis() - startTime < timeoutMs)
-        {
+        while (System.currentTimeMillis() - startTime < timeoutMs) {
             try {
                 return robot.finder().find(new GenericTypeMatcher<JFrame>(JFrame.class) {
                     @Override
@@ -163,11 +155,10 @@ public abstract class PokerUITestBase extends AssertJSwingTestCaseTemplate
     }
 
     /**
-     * Utility method to take a screenshot (useful for debugging).
-     * Screenshots are saved to target/screenshots/
+     * Utility method to take a screenshot (useful for debugging). Screenshots are
+     * saved to target/screenshots/
      */
-    protected void takeScreenshot(String name)
-    {
+    protected void takeScreenshot(String name) {
         try {
             java.io.File dir = new java.io.File("target/screenshots");
             dir.mkdirs();
@@ -175,27 +166,19 @@ public abstract class PokerUITestBase extends AssertJSwingTestCaseTemplate
             Component component = window.target();
             Rectangle bounds = component.getBounds();
             java.awt.image.BufferedImage screenshot = new java.awt.Robot()
-                .createScreenCapture(new Rectangle(
-                    component.getLocationOnScreen(),
-                    bounds.getSize()
-                ));
+                    .createScreenCapture(new Rectangle(component.getLocationOnScreen(), bounds.getSize()));
 
-            javax.imageio.ImageIO.write(
-                screenshot,
-                "PNG",
-                new java.io.File(dir, name + ".png")
-            );
+            javax.imageio.ImageIO.write(screenshot, "PNG", new java.io.File(dir, name + ".png"));
         } catch (Exception e) {
             System.err.println("Failed to take screenshot: " + e.getMessage());
         }
     }
 
     /**
-     * Wait for a specific amount of milliseconds.
-     * Useful for debugging or waiting for animations.
+     * Wait for a specific amount of milliseconds. Useful for debugging or waiting
+     * for animations.
      */
-    protected void waitFor(int milliseconds)
-    {
+    protected void waitFor(int milliseconds) {
         robot().waitForIdle();
         try {
             Thread.sleep(milliseconds);
@@ -205,39 +188,41 @@ public abstract class PokerUITestBase extends AssertJSwingTestCaseTemplate
     }
 
     /**
-     * Find an InternalDialog (JInternalFrame) by title.
-     * DD Poker uses InternalDialog instead of JDialog, so this matcher is essential for dialog tests.
+     * Find an InternalDialog (JInternalFrame) by title. DD Poker uses
+     * InternalDialog instead of JDialog, so this matcher is essential for dialog
+     * tests.
      *
-     * @param titleContains Text that the dialog title should contain
+     * @param titleContains
+     *            Text that the dialog title should contain
      * @return The found JInternalFrame (which is an InternalDialog)
-     * @throws org.assertj.swing.exception.ComponentLookupException if dialog not found
+     * @throws org.assertj.swing.exception.ComponentLookupException
+     *             if dialog not found
      */
-    protected JInternalFrame findInternalDialog(String titleContains)
-    {
+    protected JInternalFrame findInternalDialog(String titleContains) {
         robot().waitForIdle();
         return robot().finder().find(PokerMatchers.internalDialogWithTitle(titleContains));
     }
 
     /**
-     * Wait for a condition to become true, polling at regular intervals.
-     * Useful for waiting on asynchronous UI updates.
+     * Wait for a condition to become true, polling at regular intervals. Useful for
+     * waiting on asynchronous UI updates.
      *
-     * @param condition The condition to wait for
-     * @param timeoutMs Maximum time to wait in milliseconds
-     * @param description Description of what we're waiting for (used in error messages)
+     * @param condition
+     *            The condition to wait for
+     * @param timeoutMs
+     *            Maximum time to wait in milliseconds
+     * @param description
+     *            Description of what we're waiting for (used in error messages)
      * @return true if condition was met, false if timeout occurred
      */
-    protected boolean waitForCondition(BooleanSupplier condition, long timeoutMs, String description)
-    {
+    protected boolean waitForCondition(BooleanSupplier condition, long timeoutMs, String description) {
         long startTime = System.currentTimeMillis();
         long pollInterval = 100; // Poll every 100ms
 
-        while (System.currentTimeMillis() - startTime < timeoutMs)
-        {
+        while (System.currentTimeMillis() - startTime < timeoutMs) {
             robot().waitForIdle();
 
-            if (condition.getAsBoolean())
-            {
+            if (condition.getAsBoolean()) {
                 return true;
             }
 
@@ -254,12 +239,11 @@ public abstract class PokerUITestBase extends AssertJSwingTestCaseTemplate
     }
 
     /**
-     * Print the component hierarchy for debugging purposes.
-     * Dumps the entire Swing component tree to System.out, showing component types and names.
-     * Useful for understanding the UI structure when writing tests.
+     * Print the component hierarchy for debugging purposes. Dumps the entire Swing
+     * component tree to System.out, showing component types and names. Useful for
+     * understanding the UI structure when writing tests.
      */
-    protected void printComponentHierarchy()
-    {
+    protected void printComponentHierarchy() {
         System.out.println("\n=== Component Hierarchy ===");
         printComponentTree(window.target(), 0);
         System.out.println("=========================\n");
@@ -268,14 +252,14 @@ public abstract class PokerUITestBase extends AssertJSwingTestCaseTemplate
     /**
      * Recursive helper to print component tree.
      *
-     * @param component The component to print
-     * @param level Indentation level
+     * @param component
+     *            The component to print
+     * @param level
+     *            Indentation level
      */
-    private void printComponentTree(Component component, int level)
-    {
+    private void printComponentTree(Component component, int level) {
         StringBuilder indent = new StringBuilder();
-        for (int i = 0; i < level; i++)
-        {
+        for (int i = 0; i < level; i++) {
             indent.append("  ");
         }
 
@@ -285,11 +269,9 @@ public abstract class PokerUITestBase extends AssertJSwingTestCaseTemplate
 
         System.out.println(indent + component.getClass().getSimpleName() + nameInfo + visibleInfo);
 
-        if (component instanceof Container)
-        {
+        if (component instanceof Container) {
             Container container = (Container) component;
-            for (Component child : container.getComponents())
-            {
+            for (Component child : container.getComponents()) {
                 printComponentTree(child, level + 1);
             }
         }

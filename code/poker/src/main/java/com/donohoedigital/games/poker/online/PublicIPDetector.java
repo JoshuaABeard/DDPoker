@@ -47,7 +47,8 @@ public class PublicIPDetector {
         /**
          * Fetch content from URL.
          *
-         * @param url URL to fetch
+         * @param url
+         *            URL to fetch
          * @return Response content, or null if fetch fails
          */
         String fetch(String url);
@@ -65,9 +66,7 @@ public class PublicIPDetector {
     private final HttpFetcher httpFetcher;
 
     // IPv4 pattern (basic validation)
-    private static final Pattern IPV4_PATTERN = Pattern.compile(
-            "^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$"
-    );
+    private static final Pattern IPV4_PATTERN = Pattern.compile("^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})$");
 
     // Default cache TTL: 5 minutes (configurable)
     private static final long DEFAULT_CACHE_TTL = 300000L;
@@ -75,7 +74,8 @@ public class PublicIPDetector {
     /**
      * Constructor for testing with custom HTTP fetcher.
      *
-     * @param httpFetcher HTTP fetcher for mocking in tests
+     * @param httpFetcher
+     *            HTTP fetcher for mocking in tests
      */
     PublicIPDetector(HttpFetcher httpFetcher) {
         this(httpFetcher, DEFAULT_CACHE_TTL);
@@ -84,54 +84,42 @@ public class PublicIPDetector {
     /**
      * Constructor for testing with custom HTTP fetcher and TTL.
      *
-     * @param httpFetcher    HTTP fetcher for mocking in tests
-     * @param cacheTTLMillis Cache time-to-live in milliseconds
+     * @param httpFetcher
+     *            HTTP fetcher for mocking in tests
+     * @param cacheTTLMillis
+     *            Cache time-to-live in milliseconds
      */
     PublicIPDetector(HttpFetcher httpFetcher, long cacheTTLMillis) {
         this.httpFetcher = httpFetcher;
         this.cacheTTLMillis = cacheTTLMillis;
-        this.ipServices = new String[]{
-                "https://api.ipify.org",
-                "https://icanhazip.com",
-                "https://checkip.amazonaws.com"
-        };
+        this.ipServices = new String[]{"https://api.ipify.org", "https://icanhazip.com",
+                "https://checkip.amazonaws.com"};
     }
 
     /**
      * Default constructor using real HTTP client.
      */
     public PublicIPDetector() {
-        this.cacheTTLMillis = PropertyConfig.getIntegerProperty(
-                "settings.publicip.cache.ttl",
-                (int) DEFAULT_CACHE_TTL
-        );
+        this.cacheTTLMillis = PropertyConfig.getIntegerProperty("settings.publicip.cache.ttl", (int) DEFAULT_CACHE_TTL);
 
-        String primaryUrl = PropertyConfig.getStringProperty(
-                "settings.publicip.service.url",
-                "https://api.ipify.org",
-                false
-        );
+        String primaryUrl = PropertyConfig.getStringProperty("settings.publicip.service.url", "https://api.ipify.org",
+                false);
 
-        this.ipServices = new String[]{
-                primaryUrl,
-                "https://icanhazip.com",
-                "https://checkip.amazonaws.com"
-        };
+        this.ipServices = new String[]{primaryUrl, "https://icanhazip.com", "https://checkip.amazonaws.com"};
 
         this.httpFetcher = this::fetchFromHttpService;
     }
 
     /**
-     * Fetch public IP from external service with caching.
-     * Tries multiple services with fallback if the primary service fails.
-     * Thread-safe for concurrent access.
+     * Fetch public IP from external service with caching. Tries multiple services
+     * with fallback if the primary service fails. Thread-safe for concurrent
+     * access.
      *
      * @return Public IP address, or null if all services fail or return invalid IPs
      */
     public synchronized String fetchPublicIP() {
         // Check cache first
-        if (cachedPublicIP != null &&
-                (System.currentTimeMillis() - cachedPublicIPTimestamp) < cacheTTLMillis) {
+        if (cachedPublicIP != null && (System.currentTimeMillis() - cachedPublicIPTimestamp) < cacheTTLMillis) {
             logger.debug("Returning cached public IP: {}", cachedPublicIP);
             return cachedPublicIP;
         }
@@ -166,10 +154,11 @@ public class PublicIPDetector {
     }
 
     /**
-     * Fetch IP address from HTTP service using DDHttpClient.
-     * This is the real implementation (not used in tests).
+     * Fetch IP address from HTTP service using DDHttpClient. This is the real
+     * implementation (not used in tests).
      *
-     * @param url URL of the IP detection service
+     * @param url
+     *            URL of the IP detection service
      * @return IP address as string, or null if fetch fails
      */
     private String fetchFromHttpService(String url) {
@@ -213,11 +202,10 @@ public class PublicIPDetector {
     }
 
     /**
-     * Validate that IP is:
-     * 1. Valid IPv4 format
-     * 2. Not a private/local IP address
+     * Validate that IP is: 1. Valid IPv4 format 2. Not a private/local IP address
      *
-     * @param ip IP address to validate
+     * @param ip
+     *            IP address to validate
      * @return true if valid public IP, false otherwise
      */
     private boolean isValidPublicIP(String ip) {
@@ -244,10 +232,11 @@ public class PublicIPDetector {
     }
 
     /**
-     * Check if IP is a private/local/special address.
-     * Includes RFC 1918 private ranges and special-use addresses.
+     * Check if IP is a private/local/special address. Includes RFC 1918 private
+     * ranges and special-use addresses.
      *
-     * @param ip IP address to check
+     * @param ip
+     *            IP address to check
      * @return true if private/local/special IP, false otherwise
      */
     private boolean isPrivateIP(String ip) {
@@ -296,8 +285,8 @@ public class PublicIPDetector {
     }
 
     /**
-     * Clear the cached IP (useful for testing or forcing refresh).
-     * Thread-safe for concurrent access.
+     * Clear the cached IP (useful for testing or forcing refresh). Thread-safe for
+     * concurrent access.
      */
     synchronized void clearCache() {
         cachedPublicIP = null;

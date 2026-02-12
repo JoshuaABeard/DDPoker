@@ -30,13 +30,11 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for HandProbabilityMatrix probability storage and management.
  */
-class HandProbabilityMatrixTest
-{
+class HandProbabilityMatrixTest {
     private HandProbabilityMatrix matrix;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         matrix = new HandProbabilityMatrix();
     }
 
@@ -45,8 +43,7 @@ class HandProbabilityMatrixTest
     // ========================================
 
     @Test
-    void should_InitializeWithDefaultProbability_When_DefaultConstructor()
-    {
+    void should_InitializeWithDefaultProbability_When_DefaultConstructor() {
         // Default constructor calls init(1.0f), so all probabilities should be 1.0
         assertThat(matrix.getProbability(SPADES_A, HEARTS_K)).isEqualTo(1.0f);
         assertThat(matrix.getProbability(CLUBS_2, DIAMONDS_3)).isEqualTo(1.0f);
@@ -58,8 +55,7 @@ class HandProbabilityMatrixTest
     // ========================================
 
     @Test
-    void should_SetAllProbabilities_When_InitCalledWithValue()
-    {
+    void should_SetAllProbabilities_When_InitCalledWithValue() {
         matrix.init(0.5f);
 
         assertThat(matrix.getProbability(SPADES_A, HEARTS_K)).isEqualTo(0.5f);
@@ -68,8 +64,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_ResetAllProbabilities_When_InitCalledMultipleTimes()
-    {
+    void should_ResetAllProbabilities_When_InitCalledMultipleTimes() {
         matrix.init(0.25f);
         assertThat(matrix.getProbability(SPADES_A, HEARTS_K)).isEqualTo(0.25f);
 
@@ -78,8 +73,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_AcceptZeroProbability_When_InitCalledWithZero()
-    {
+    void should_AcceptZeroProbability_When_InitCalledWithZero() {
         matrix.init(0.0f);
 
         assertThat(matrix.getProbability(SPADES_A, HEARTS_K)).isZero();
@@ -87,8 +81,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_AcceptFullProbability_When_InitCalledWithOne()
-    {
+    void should_AcceptFullProbability_When_InitCalledWithOne() {
         matrix.init(1.0f);
 
         assertThat(matrix.getProbability(SPADES_A, HEARTS_K)).isEqualTo(1.0f);
@@ -100,8 +93,7 @@ class HandProbabilityMatrixTest
     // ========================================
 
     @Test
-    void should_ReturnSameProbability_When_CardsReversed()
-    {
+    void should_ReturnSameProbability_When_CardsReversed() {
         matrix.init(0.8f);
 
         float prob1 = matrix.getProbability(SPADES_A, HEARTS_K);
@@ -112,8 +104,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_ReturnCorrectProbability_When_DifferentCardCombinations()
-    {
+    void should_ReturnCorrectProbability_When_DifferentCardCombinations() {
         matrix.init(0.6f);
 
         assertThat(matrix.getProbability(SPADES_A, CLUBS_A)).isEqualTo(0.6f);
@@ -122,8 +113,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleAllCardRanks_When_GettingProbability()
-    {
+    void should_HandleAllCardRanks_When_GettingProbability() {
         matrix.init(0.9f);
 
         // Test different ranks
@@ -136,8 +126,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleAllSuits_When_GettingProbability()
-    {
+    void should_HandleAllSuits_When_GettingProbability() {
         matrix.init(0.7f);
 
         // Test different suits
@@ -152,16 +141,14 @@ class HandProbabilityMatrixTest
     // ========================================
 
     @Test
-    void should_HandleSmallProbabilities_When_InitCalledWithSmallValues()
-    {
+    void should_HandleSmallProbabilities_When_InitCalledWithSmallValues() {
         matrix.init(0.001f);
 
         assertThat(matrix.getProbability(SPADES_A, HEARTS_K)).isEqualTo(0.001f);
     }
 
     @Test
-    void should_HandleNegativeProbabilities_When_InitCalledWithNegative()
-    {
+    void should_HandleNegativeProbabilities_When_InitCalledWithNegative() {
         // Though unusual, the code doesn't prevent negative probabilities
         matrix.init(-0.5f);
 
@@ -169,8 +156,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleLargeProbabilities_When_InitCalledWithLargeValues()
-    {
+    void should_HandleLargeProbabilities_When_InitCalledWithLargeValues() {
         // Though unusual (probabilities should be 0-1), the code doesn't prevent this
         matrix.init(2.0f);
 
@@ -182,8 +168,7 @@ class HandProbabilityMatrixTest
     // ========================================
 
     @Test
-    void should_HandleSameCardPair_When_GettingProbability()
-    {
+    void should_HandleSameCardPair_When_GettingProbability() {
         matrix.init(0.5f);
 
         // Same rank, different suits (pocket pair)
@@ -192,8 +177,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleBoundaryCards_When_LowestAndHighestRanks()
-    {
+    void should_HandleBoundaryCards_When_LowestAndHighestRanks() {
         matrix.init(0.3f);
 
         // Lowest rank (2) and highest rank (A)
@@ -203,8 +187,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleSuitedCards_When_SameSuitDifferentRanks()
-    {
+    void should_HandleSuitedCards_When_SameSuitDifferentRanks() {
         matrix.init(0.4f);
 
         // Same suit, different ranks
@@ -213,8 +196,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleOffsuitCards_When_DifferentSuitsDifferentRanks()
-    {
+    void should_HandleOffsuitCards_When_DifferentSuitsDifferentRanks() {
         matrix.init(0.35f);
 
         // Different suits, different ranks
@@ -223,8 +205,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_MaintainProbabilities_When_MultipleReadsWithoutInit()
-    {
+    void should_MaintainProbabilities_When_MultipleReadsWithoutInit() {
         matrix.init(0.55f);
 
         // Multiple reads should return consistent values
@@ -238,8 +219,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleFloatPrecision_When_GettingProbabilities()
-    {
+    void should_HandleFloatPrecision_When_GettingProbabilities() {
         matrix.init(0.123456789f);
 
         float prob = matrix.getProbability(SPADES_A, HEARTS_K);
@@ -253,8 +233,7 @@ class HandProbabilityMatrixTest
     // ========================================
 
     @Test
-    void should_HandleAllThirteenPocketPairs_When_GettingProbabilities()
-    {
+    void should_HandleAllThirteenPocketPairs_When_GettingProbabilities() {
         matrix.init(0.42f);
 
         // Test all 13 pocket pairs (AA through 22)
@@ -274,8 +253,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleAllSuitCombinations_When_PocketAces()
-    {
+    void should_HandleAllSuitCombinations_When_PocketAces() {
         matrix.init(0.88f);
 
         // All 6 possible combinations of pocket aces
@@ -288,8 +266,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleSuitedConnectors_When_GettingProbabilities()
-    {
+    void should_HandleSuitedConnectors_When_GettingProbabilities() {
         matrix.init(0.65f);
 
         // Suited connectors of different suits
@@ -300,8 +277,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleOffsuitBroadways_When_GettingProbabilities()
-    {
+    void should_HandleOffsuitBroadways_When_GettingProbabilities() {
         matrix.init(0.72f);
 
         // Offsuit broadway cards (T-A)
@@ -311,8 +287,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleGapHands_When_GettingProbabilities()
-    {
+    void should_HandleGapHands_When_GettingProbabilities() {
         matrix.init(0.33f);
 
         // Gap hands (one or more ranks between cards)
@@ -322,8 +297,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleLowCards_When_GettingProbabilities()
-    {
+    void should_HandleLowCards_When_GettingProbabilities() {
         matrix.init(0.15f);
 
         // Low card combinations (2-7)
@@ -338,31 +312,23 @@ class HandProbabilityMatrixTest
     // ========================================
 
     @Test
-    void should_MaintainSymmetry_When_AllCardPairsReversed()
-    {
+    void should_MaintainSymmetry_When_AllCardPairsReversed() {
         matrix.init(0.5f);
 
         // Test symmetry across multiple card combinations
-        assertThat(matrix.getProbability(SPADES_A, HEARTS_K))
-            .isEqualTo(matrix.getProbability(HEARTS_K, SPADES_A));
-        assertThat(matrix.getProbability(CLUBS_Q, DIAMONDS_J))
-            .isEqualTo(matrix.getProbability(DIAMONDS_J, CLUBS_Q));
-        assertThat(matrix.getProbability(SPADES_9, HEARTS_2))
-            .isEqualTo(matrix.getProbability(HEARTS_2, SPADES_9));
-        assertThat(matrix.getProbability(CLUBS_7, DIAMONDS_3))
-            .isEqualTo(matrix.getProbability(DIAMONDS_3, CLUBS_7));
+        assertThat(matrix.getProbability(SPADES_A, HEARTS_K)).isEqualTo(matrix.getProbability(HEARTS_K, SPADES_A));
+        assertThat(matrix.getProbability(CLUBS_Q, DIAMONDS_J)).isEqualTo(matrix.getProbability(DIAMONDS_J, CLUBS_Q));
+        assertThat(matrix.getProbability(SPADES_9, HEARTS_2)).isEqualTo(matrix.getProbability(HEARTS_2, SPADES_9));
+        assertThat(matrix.getProbability(CLUBS_7, DIAMONDS_3)).isEqualTo(matrix.getProbability(DIAMONDS_3, CLUBS_7));
     }
 
     @Test
-    void should_MaintainSymmetry_When_SameSuitDifferentOrder()
-    {
+    void should_MaintainSymmetry_When_SameSuitDifferentOrder() {
         matrix.init(0.66f);
 
         // Suited cards reversed
-        assertThat(matrix.getProbability(SPADES_A, SPADES_K))
-            .isEqualTo(matrix.getProbability(SPADES_K, SPADES_A));
-        assertThat(matrix.getProbability(HEARTS_Q, HEARTS_J))
-            .isEqualTo(matrix.getProbability(HEARTS_J, HEARTS_Q));
+        assertThat(matrix.getProbability(SPADES_A, SPADES_K)).isEqualTo(matrix.getProbability(SPADES_K, SPADES_A));
+        assertThat(matrix.getProbability(HEARTS_Q, HEARTS_J)).isEqualTo(matrix.getProbability(HEARTS_J, HEARTS_Q));
     }
 
     // ========================================
@@ -370,8 +336,7 @@ class HandProbabilityMatrixTest
     // ========================================
 
     @Test
-    void should_UpdateAllProbabilities_When_InitCalledRepeatedly()
-    {
+    void should_UpdateAllProbabilities_When_InitCalledRepeatedly() {
         matrix.init(0.1f);
         assertThat(matrix.getProbability(SPADES_A, HEARTS_K)).isEqualTo(0.1f);
 
@@ -386,8 +351,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_AffectAllCards_When_InitCalledAfterMultipleReads()
-    {
+    void should_AffectAllCards_When_InitCalledAfterMultipleReads() {
         matrix.init(0.5f);
 
         // Read multiple times
@@ -405,8 +369,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_ResetCompletely_When_InitCalledFromZeroToOne()
-    {
+    void should_ResetCompletely_When_InitCalledFromZeroToOne() {
         matrix.init(0.0f);
         assertThat(matrix.getProbability(SPADES_A, HEARTS_K)).isZero();
 
@@ -422,8 +385,7 @@ class HandProbabilityMatrixTest
     // ========================================
 
     @Test
-    void should_HandleDifferentMatrixRegions_When_GettingProbabilities()
-    {
+    void should_HandleDifferentMatrixRegions_When_GettingProbabilities() {
         matrix.init(0.77f);
 
         // Test corners of the matrix
@@ -434,8 +396,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleMiddleRanks_When_GettingProbabilities()
-    {
+    void should_HandleMiddleRanks_When_GettingProbabilities() {
         matrix.init(0.44f);
 
         // Middle ranks (7-9)
@@ -445,8 +406,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleDiagonalPattern_When_PocketPairsOfEachRank()
-    {
+    void should_HandleDiagonalPattern_When_PocketPairsOfEachRank() {
         matrix.init(0.81f);
 
         // Diagonal elements (pocket pairs)
@@ -462,34 +422,29 @@ class HandProbabilityMatrixTest
     // ========================================
 
     @Test
-    void should_HandleCommonProbabilityValues_When_InitCalled()
-    {
+    void should_HandleCommonProbabilityValues_When_InitCalled() {
         // Test common probability values in poker (quarters)
         float[] probabilities = {0.0f, 0.25f, 0.5f, 0.75f, 1.0f};
 
-        for (float prob : probabilities)
-        {
+        for (float prob : probabilities) {
             matrix.init(prob);
             assertThat(matrix.getProbability(SPADES_A, HEARTS_K)).isEqualTo(prob);
         }
     }
 
     @Test
-    void should_HandleDecimalProbabilities_When_InitCalled()
-    {
+    void should_HandleDecimalProbabilities_When_InitCalled() {
         // Test various decimal probabilities
         float[] probabilities = {0.1f, 0.2f, 0.3f, 0.4f, 0.6f, 0.7f, 0.8f, 0.9f};
 
-        for (float prob : probabilities)
-        {
+        for (float prob : probabilities) {
             matrix.init(prob);
             assertThat(matrix.getProbability(SPADES_A, HEARTS_K)).isEqualTo(prob);
         }
     }
 
     @Test
-    void should_HandleVerySmallProbabilities_When_InitCalled()
-    {
+    void should_HandleVerySmallProbabilities_When_InitCalled() {
         matrix.init(0.0001f);
         assertThat(matrix.getProbability(SPADES_A, HEARTS_K)).isEqualTo(0.0001f);
 
@@ -498,8 +453,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleProbabilitiesNearOne_When_InitCalled()
-    {
+    void should_HandleProbabilitiesNearOne_When_InitCalled() {
         matrix.init(0.999f);
         assertThat(matrix.getProbability(SPADES_A, HEARTS_K)).isEqualTo(0.999f);
 
@@ -512,8 +466,7 @@ class HandProbabilityMatrixTest
     // ========================================
 
     @Test
-    void should_HandlePremiumPocketPairs_When_GettingProbabilities()
-    {
+    void should_HandlePremiumPocketPairs_When_GettingProbabilities() {
         matrix.init(0.95f);
 
         // Premium pairs (AA, KK, QQ)
@@ -523,8 +476,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleBigSlick_When_AceKingCombinations()
-    {
+    void should_HandleBigSlick_When_AceKingCombinations() {
         matrix.init(0.82f);
 
         // AK suited
@@ -537,8 +489,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleRagCards_When_WeakHands()
-    {
+    void should_HandleRagCards_When_WeakHands() {
         matrix.init(0.05f);
 
         // Rag hands (27o, 32o, etc.)
@@ -552,26 +503,22 @@ class HandProbabilityMatrixTest
     // ========================================
 
     @Test
-    void should_ReturnConsistentValues_When_SameCardPairReadMultipleTimes()
-    {
+    void should_ReturnConsistentValues_When_SameCardPairReadMultipleTimes() {
         matrix.init(0.632f);
 
         float[] readings = new float[10];
-        for (int i = 0; i < 10; i++)
-        {
+        for (int i = 0; i < 10; i++) {
             readings[i] = matrix.getProbability(SPADES_A, HEARTS_K);
         }
 
         // All readings should be identical
-        for (float reading : readings)
-        {
+        for (float reading : readings) {
             assertThat(reading).isEqualTo(0.632f);
         }
     }
 
     @Test
-    void should_ReturnDifferentValues_When_DifferentProbabilities()
-    {
+    void should_ReturnDifferentValues_When_DifferentProbabilities() {
         matrix.init(0.1f);
         float prob1 = matrix.getProbability(SPADES_A, HEARTS_K);
 
@@ -588,8 +535,7 @@ class HandProbabilityMatrixTest
     // ========================================
 
     @Test
-    void should_SetProbabilityToZero_When_HoleCardsContainCard()
-    {
+    void should_SetProbabilityToZero_When_HoleCardsContainCard() {
         matrix.init(1.0f);
 
         Hand hole = new Hand(SPADES_A, HEARTS_K);
@@ -606,8 +552,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_PreserveNonConflictingProbabilities_When_AdjustWeightsPreFlop()
-    {
+    void should_PreserveNonConflictingProbabilities_When_AdjustWeightsPreFlop() {
         matrix.init(1.0f);
 
         Hand hole = new Hand(SPADES_A, HEARTS_K);
@@ -623,8 +568,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_SetProbabilitiesToZero_When_HolePocketPair()
-    {
+    void should_SetProbabilitiesToZero_When_HolePocketPair() {
         matrix.init(1.0f);
 
         Hand hole = new Hand(SPADES_A, HEARTS_A);
@@ -645,8 +589,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_SkipAlreadyZeroProbabilities_When_AdjustWeightsPreFlop()
-    {
+    void should_SkipAlreadyZeroProbabilities_When_AdjustWeightsPreFlop() {
         matrix.init(1.0f);
 
         // Set some probabilities to zero manually
@@ -664,8 +607,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleLowPocketPair_When_AdjustWeightsPreFlop()
-    {
+    void should_HandleLowPocketPair_When_AdjustWeightsPreFlop() {
         matrix.init(1.0f);
 
         Hand hole = new Hand(CLUBS_2, DIAMONDS_2);
@@ -686,8 +628,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleSuitedHole_When_AdjustWeightsPreFlop()
-    {
+    void should_HandleSuitedHole_When_AdjustWeightsPreFlop() {
         matrix.init(1.0f);
 
         Hand hole = new Hand(SPADES_A, SPADES_K);
@@ -706,8 +647,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleConnectors_When_AdjustWeightsPreFlop()
-    {
+    void should_HandleConnectors_When_AdjustWeightsPreFlop() {
         matrix.init(1.0f);
 
         Hand hole = new Hand(CLUBS_J, DIAMONDS_T);
@@ -726,8 +666,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleMultipleAdjustments_When_CalledSequentially()
-    {
+    void should_HandleMultipleAdjustments_When_CalledSequentially() {
         matrix.init(1.0f);
 
         PokerPlayer player = new PokerPlayer(1, "TestPlayer", true);
@@ -752,20 +691,14 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleDifferentSchemes_When_AdjustWeightsPreFlop()
-    {
+    void should_HandleDifferentSchemes_When_AdjustWeightsPreFlop() {
         PokerPlayer player = new PokerPlayer(1, "TestPlayer", true);
         Hand hole = new Hand(SPADES_A, HEARTS_K);
 
         // Test with different schemes
-        HandSelectionScheme[] schemes = {
-            null,
-            null,
-            null
-        };
+        HandSelectionScheme[] schemes = {null, null, null};
 
-        for (HandSelectionScheme scheme : schemes)
-        {
+        for (HandSelectionScheme scheme : schemes) {
             matrix.init(1.0f);
             matrix.adjustWeightsPreFlop(scheme, player, 0, hole);
 
@@ -776,15 +709,13 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleDifferentActions_When_AdjustWeightsPreFlop()
-    {
+    void should_HandleDifferentActions_When_AdjustWeightsPreFlop() {
         PokerPlayer player = new PokerPlayer(1, "TestPlayer", true);
         Hand hole = new Hand(SPADES_K, HEARTS_Q);
         HandSelectionScheme scheme = null;
 
         // Test with different actions (0, 1, 2, etc.)
-        for (int action = 0; action < 5; action++)
-        {
+        for (int action = 0; action < 5; action++) {
             matrix.init(1.0f);
             matrix.adjustWeightsPreFlop(scheme, player, action, hole);
 
@@ -795,8 +726,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_PreserveInitialZeros_When_AdjustWeightsPreFlop()
-    {
+    void should_PreserveInitialZeros_When_AdjustWeightsPreFlop() {
         // Initialize with some zero probabilities
         matrix.init(0.0f);
 
@@ -813,8 +743,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandlePartialProbabilities_When_AdjustWeightsPreFlop()
-    {
+    void should_HandlePartialProbabilities_When_AdjustWeightsPreFlop() {
         matrix.init(0.5f);
 
         Hand hole = new Hand(CLUBS_9, DIAMONDS_8);
@@ -833,8 +762,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleAllFourSuits_When_AdjustWeightsPreFlop()
-    {
+    void should_HandleAllFourSuits_When_AdjustWeightsPreFlop() {
         matrix.init(1.0f);
 
         // Use one card from each suit
@@ -854,8 +782,7 @@ class HandProbabilityMatrixTest
     }
 
     @Test
-    void should_HandleGapHoleCards_When_AdjustWeightsPreFlop()
-    {
+    void should_HandleGapHoleCards_When_AdjustWeightsPreFlop() {
         matrix.init(1.0f);
 
         // Gap hand (A-9, 4 ranks between)

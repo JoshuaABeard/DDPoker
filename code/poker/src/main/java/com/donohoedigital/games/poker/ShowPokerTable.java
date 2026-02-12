@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -54,12 +54,16 @@ import java.awt.event.*;
 /**
  * @author Doug Donohoe
  */
-public abstract class ShowPokerTable extends ChainPhase implements
-                                                        Gameboard.AIDebug, AWTEventListener,
-                                                        ChangeListener, InternalDialog.ModalBlockerListener,
-                                                        MouseListener, PokerTableInput,
-                                                        ActionListener, PokerGameboardDelegate
-{
+public abstract class ShowPokerTable extends ChainPhase
+        implements
+            Gameboard.AIDebug,
+            AWTEventListener,
+            ChangeListener,
+            InternalDialog.ModalBlockerListener,
+            MouseListener,
+            PokerTableInput,
+            ActionListener,
+            PokerGameboardDelegate {
     static Logger logger = LogManager.getLogger(ShowPokerTable.class);
 
     // UI Components
@@ -90,8 +94,7 @@ public abstract class ShowPokerTable extends ChainPhase implements
     private int nInputMode_ = MODE_INIT;
     public static final int LEFT_PANEL_WIDTH = 200;
 
-    public void init(GameEngine engine, GameContext context, GamePhase gamephase)
-    {
+    public void init(GameEngine engine, GameContext context, GamePhase gamephase) {
         super.init(engine, context, gamephase);
 
         // init territory nums
@@ -103,8 +106,7 @@ public abstract class ShowPokerTable extends ChainPhase implements
 
         // if full screen, change smallest width/height to the screen size
         frame_ = context.getFrame();
-        if (frame_.isFullScreen())
-        {
+        if (frame_.isFullScreen()) {
             DisplayMode mode = frame_.getDisplayMode();
             SMALLEST_WIDTH = mode.getWidth();
             SMALLEST_HEIGHT = mode.getHeight();
@@ -134,8 +136,7 @@ public abstract class ShowPokerTable extends ChainPhase implements
         InternalDialog.setModalBlockerListener(this);
     }
 
-    protected void createPanels()
-    {
+    protected void createPanels() {
         // panels
         DDPanel center = createCenterPanel();
         rightbase_ = createLeftPanel();
@@ -151,12 +152,11 @@ public abstract class ShowPokerTable extends ChainPhase implements
 
         // name (in title area above table)
         labelName_ = new DisplayLabel(600 / 2.6f, 35 / 2.2f, 300f / 1200f, 10f / 900f, 600f / 1200f,
-                                      SwingConstants.CENTER, SwingConstants.TOP, "tname");
+                SwingConstants.CENTER, SwingConstants.TOP, "tname");
 
     }
 
-    protected DDPanel createCenterPanel()
-    {
+    protected DDPanel createCenterPanel() {
         // another panel to hold gameboard and message area
         panelbase_ = new DDPanel();
         panelbase_.setName("panelbase");
@@ -164,15 +164,13 @@ public abstract class ShowPokerTable extends ChainPhase implements
         panelbase_.setMinimumSize(new Dimension(SMALLEST_WIDTH, SMALLEST_HEIGHT));
 
         // resize control
-        if (createResize())
-        {
+        if (createResize()) {
             resize_ = new Resize();
             panelbase_.add(resize_, new ScaleConstraintsFixed(SwingConstants.BOTTOM, SwingConstants.LEFT));
         }
 
         // camera control
-        if (createCamera())
-        {
+        if (createCamera()) {
             camera_ = new Camera();
             panelbase_.add(camera_, new ScaleConstraintsFixed(SwingConstants.TOP, SwingConstants.RIGHT));
         }
@@ -189,33 +187,29 @@ public abstract class ShowPokerTable extends ChainPhase implements
     }
 
     /**
-     * Should resize control be created on gameboard?  Default is false.
+     * Should resize control be created on gameboard? Default is false.
      */
-    protected boolean createResize()
-    {
+    protected boolean createResize() {
         return false;
     }
 
     /**
-     * Should camera control be created on gameboard?  Default is false.
+     * Should camera control be created on gameboard? Default is false.
      */
-    protected boolean createCamera()
-    {
+    protected boolean createCamera() {
         return false;
     }
 
     /**
      * resize control UI and logic
      */
-    private class Resize extends DDLabel implements MouseMotionListener, MouseListener
-    {
+    private class Resize extends DDLabel implements MouseMotionListener, MouseListener {
         boolean bMoving;
         DDLabel resizeDisplay;
         int xStart;
         int yStart;
 
-        public Resize()
-        {
+        public Resize() {
             setPreferredSize(new Dimension(16, 20));
 
             ImageIcon icon = ImageConfig.getImageIcon("resize");
@@ -234,46 +228,40 @@ public abstract class ShowPokerTable extends ChainPhase implements
             resizeDisplay.setCursor(Cursors.MOVE);
         }
 
-        public void mouseDragged(MouseEvent e)
-        {
+        public void mouseDragged(MouseEvent e) {
             Point p = SwingUtilities.convertPoint(this, e.getX() - 8, e.getY() - 4, frame_.getContentPane());
             resizeDisplay.setLocation(p);
         }
 
-        public void mouseMoved(MouseEvent e)
-        {
+        public void mouseMoved(MouseEvent e) {
         }
 
-        public void mouseClicked(MouseEvent e)
-        {
+        public void mouseClicked(MouseEvent e) {
         }
 
-        public void mousePressed(MouseEvent e)
-        {
+        public void mousePressed(MouseEvent e) {
             bMoving = true;
             xStart = e.getX();
             yStart = e.getY();
             Point p = SwingUtilities.convertPoint(this, xStart - 8, yStart - 4, frame_.getContentPane());
             resizeDisplay.setLocation(p);
             frame_.getLayeredPane().add(resizeDisplay, JLayeredPane.DRAG_LAYER);
-            if (e.getClickCount() == 2)
-            {
+            if (e.getClickCount() == 2) {
                 bMoving = false;
                 changeSize(-Integer.MAX_VALUE, -Integer.MAX_VALUE);
             }
         }
 
-        public void mouseReleased(MouseEvent e)
-        {
-            if (bMoving) changeSize((e.getX() - xStart), -(e.getY() - yStart));
+        public void mouseReleased(MouseEvent e) {
+            if (bMoving)
+                changeSize((e.getX() - xStart), -(e.getY() - yStart));
         }
 
-        private void changeSize(int wDelta, int hDelta)
-        {
+        private void changeSize(int wDelta, int hDelta) {
             frame_.getLayeredPane().remove(resizeDisplay);
-            if (wDelta == 0 && hDelta == 0) return;
-            if (rightbase_ != null && bottombase_ != null)
-            {
+            if (wDelta == 0 && hDelta == 0)
+                return;
+            if (rightbase_ != null && bottombase_ != null) {
                 Dimension size;
                 size = rightbase_.getPreferredSize();
                 size.width = Math.max(size.width + wDelta, rightbase_.getMinimumSize().width);
@@ -283,35 +271,30 @@ public abstract class ShowPokerTable extends ChainPhase implements
                 size.height = Math.max(size.height + hDelta, bottombase_.getMinimumSize().height);
                 bottombase_.setPreferredSize(size);
 
-                //logger.debug("revalidate/repaint, bottom size: " + size);
+                // logger.debug("revalidate/repaint, bottom size: " + size);
                 base_.revalidate();
             }
         }
 
-        public void mouseEntered(MouseEvent e)
-        {
+        public void mouseEntered(MouseEvent e) {
         }
 
-        public void mouseExited(MouseEvent e)
-        {
+        public void mouseExited(MouseEvent e) {
         }
     }
 
     /**
      * Camera button
      */
-    private class Camera extends DDImageButton implements ActionListener
-    {
-        private Camera()
-        {
+    private class Camera extends DDImageButton implements ActionListener {
+        private Camera() {
             super("camera");
             addActionListener(this);
             setToolTipText(PropertyConfig.getMessage("msg.tooltip.camera"));
             setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
         }
 
-        public void actionPerformed(ActionEvent e)
-        {
+        public void actionPerformed(ActionEvent e) {
             PokerUtils.doScreenShot(context_);
         }
     }
@@ -319,14 +302,9 @@ public abstract class ShowPokerTable extends ChainPhase implements
     /**
      * logic to create the poker gameboard
      */
-    protected PokerGameboard createGameboard()
-    {
-        PokerGameboard board = new PokerGameboard(engine_, context_, engine_.getGameboardConfig(),
-                                                  SMALLEST_WIDTH,
-                                                  SMALLEST_HEIGHT,
-                                                  frame_.getContentPane().getWidth(),
-                                                  frame_.getContentPane().getHeight(),
-                                                  this, base_);
+    protected PokerGameboard createGameboard() {
+        PokerGameboard board = new PokerGameboard(engine_, context_, engine_.getGameboardConfig(), SMALLEST_WIDTH,
+                SMALLEST_HEIGHT, frame_.getContentPane().getWidth(), frame_.getContentPane().getHeight(), this, base_);
         board.setAIDebug(this);
         PokerUtils.setPokerGameboard(board);
         return board;
@@ -335,16 +313,14 @@ public abstract class ShowPokerTable extends ChainPhase implements
     /**
      * logic to create the bottom panel, meant to be overriden
      */
-    protected DDPanel createBottomPanel()
-    {
+    protected DDPanel createBottomPanel() {
         return new DDPanel();
     }
 
     /**
      * create left panel (dashboard)
      */
-    protected DDPanel createLeftPanel()
-    {
+    protected DDPanel createLeftPanel() {
         // right base
         DDPanel rightbase = new DDPanel();
         rightbase.setBorderLayoutGap(5, 0);
@@ -366,8 +342,7 @@ public abstract class ShowPokerTable extends ChainPhase implements
     /**
      * Create button panel (quit,save,etc.)
      */
-    protected DDPanel createButtonPanel(boolean bHorizontal)
-    {
+    protected DDPanel createButtonPanel(boolean bHorizontal) {
         // create buttons
         buttonQuit_ = new PokerImageButton(this, getGameButton("quit"));
         buttonSave_ = new PokerImageButton(this, getGameButton("save"));
@@ -377,13 +352,10 @@ public abstract class ShowPokerTable extends ChainPhase implements
 
         // button layout - in north west corner of right panel
         DDPanel buttonpanel = new DDPanel();
-        if (bHorizontal)
-        {
+        if (bHorizontal) {
             buttonpanel.setLayout(new GridLayout(1, 5, 0, 0));
             buttonpanel.setPreferredSize(new Dimension(LEFT_PANEL_WIDTH, buttonQuit_.getHeight()));
-        }
-        else
-        {
+        } else {
             buttonpanel.setLayout(new GridLayout(5, 1, 0, 0));
         }
 
@@ -398,55 +370,46 @@ public abstract class ShowPokerTable extends ChainPhase implements
     }
 
     /**
-     * Add common items.  Subclass should call super.addDashboardItems()
+     * Add common items. Subclass should call super.addDashboardItems()
      */
-    protected void addDashboardItems(DashboardManager manager)
-    {
+    protected void addDashboardItems(DashboardManager manager) {
     }
 
     /**
      * subclass customizations
      */
-    protected void subclassInit(GameEngine engine, GamePhase gamephase)
-    {
+    protected void subclassInit(GameEngine engine, GamePhase gamephase) {
         return;
     }
 
     /**
      * EMPTY (used by subclasses) *
      */
-    public void stateChanged(ChangeEvent e)
-    {
+    public void stateChanged(ChangeEvent e) {
     }
 
     /**
      * Get button name in form of name:phase, if phase exists in phase params
      */
-    protected GameButton getGameButton(String sName)
-    {
+    protected GameButton getGameButton(String sName) {
         return new GameButton(gamephase_.getButtonNameFromParam(sName));
     }
 
     /**
      * label for display info
      */
-    protected class DisplayLabel extends DDLabel
-    {
-        public DisplayLabel(float nPrefW, float nPrefH,
-                            double x, double y, double scale, int nHAlign, int nVAlign)
-        {
+    protected class DisplayLabel extends DDLabel {
+        public DisplayLabel(float nPrefW, float nPrefH, double x, double y, double scale, int nHAlign, int nVAlign) {
             this(nPrefW, nPrefH, x, y, scale, nHAlign, nVAlign, GuiManager.DEFAULT);
         }
 
-        public DisplayLabel(float nPrefW, float nPrefH,
-                            double x, double y, double scale, int nHAlign, int nVAlign, String sName)
-        {
+        public DisplayLabel(float nPrefW, float nPrefH, double x, double y, double scale, int nHAlign, int nVAlign,
+                String sName) {
             this(nPrefW, nPrefH, x, y, scale, nHAlign, nVAlign, sName, "PokerTable");
         }
 
-        public DisplayLabel(float nPrefW, float nPrefH,
-                            double x, double y, double scale, int nHAlign, int nVAlign, String sName, String sStyle)
-        {
+        public DisplayLabel(float nPrefW, float nPrefH, double x, double y, double scale, int nHAlign, int nVAlign,
+                String sName, String sStyle) {
             super(sName, sStyle);
             setName("DisplayLabel-" + sName);
             setPreferredSize(new Dimension((int) nPrefW, (int) nPrefH));
@@ -454,26 +417,25 @@ public abstract class ShowPokerTable extends ChainPhase implements
             setVerticalAlignment(nVAlign);
             ScaleConstraints sc = new ScaleConstraints(x, y, scale, getFont());
             board_.add(this, sc);
-            if (sName.equals(GuiManager.DEFAULT)) setText("");
-            else setForeground(StylesConfig.getColor("poker.label", Color.black));
-            //setBorder(GuiUtils.REDBORDER); // TESTING
+            if (sName.equals(GuiManager.DEFAULT))
+                setText("");
+            else
+                setForeground(StylesConfig.getColor("poker.label", Color.black));
+            // setBorder(GuiUtils.REDBORDER); // TESTING
         }
     }
 
     /**
      * label for display info
      */
-    protected class DisplayPill extends PillLabel
-    {
-        public DisplayPill(float nPrefW, float nPrefH,
-                           double x, double y, double scale, int nHAlign, int nVAlign, String sName)
-        {
+    protected class DisplayPill extends PillLabel {
+        public DisplayPill(float nPrefW, float nPrefH, double x, double y, double scale, int nHAlign, int nVAlign,
+                String sName) {
             this(nPrefW, nPrefH, x, y, scale, nHAlign, nVAlign, sName, "PokerTablePill");
         }
 
-        public DisplayPill(float nPrefW, float nPrefH,
-                           double x, double y, double scale, int nHAlign, int nVAlign, String sName, String sStyle)
-        {
+        public DisplayPill(float nPrefW, float nPrefH, double x, double y, double scale, int nHAlign, int nVAlign,
+                String sName, String sStyle) {
             super(sName, sStyle);
             setName("PillLabel-" + sName);
             setPreferredSize(new Dimension((int) nPrefW, (int) nPrefH));
@@ -481,18 +443,16 @@ public abstract class ShowPokerTable extends ChainPhase implements
             setVerticalAlignment(nVAlign);
             ScaleConstraints sc = new ScaleConstraints(x, y, scale, getFont());
             board_.add(this, sc);
-            //setBorder(GuiUtils.REDBORDER); // TESTING
+            // setBorder(GuiUtils.REDBORDER); // TESTING
         }
     }
 
     /**
      * button for use on pokergameboard
      */
-    protected class PokerButton extends GlassButton
-    {
-        public PokerButton(GameButton gb, float nPrefW, float nPrefH,
-                           double x, double y, double scale, boolean bEnabled)
-        {
+    protected class PokerButton extends GlassButton {
+        public PokerButton(GameButton gb, float nPrefW, float nPrefH, double x, double y, double scale,
+                boolean bEnabled) {
             super(gb.getName(), "Glass");
 
             setPreferredSize(new Dimension((int) nPrefW, (int) nPrefH));
@@ -501,7 +461,7 @@ public abstract class ShowPokerTable extends ChainPhase implements
             setEnabled(bEnabled);
             setFocusable(false);
             setFocusTraversalKeysEnabled(false);
-            //setBorder(GuiUtils.GREENBORDER); // TESTING
+            // setBorder(GuiUtils.GREENBORDER); // TESTING
             EngineButtonListener listener = new EngineButtonListener(context_, ShowPokerTable.this, gb);
             addActionListener(listener);
             addActionListener(ShowPokerTable.this);
@@ -511,13 +471,11 @@ public abstract class ShowPokerTable extends ChainPhase implements
     /**
      * used for quit/save/etc.
      */
-    public class PokerImageButton extends DDImageButton
-    {
+    public class PokerImageButton extends DDImageButton {
         /**
          * Creates a new instance of GameImageButton
          */
-        public PokerImageButton(Phase phase, GameButton button) throws ApplicationError
-        {
+        public PokerImageButton(Phase phase, GameButton button) throws ApplicationError {
             super(button.getName());
             addActionListener(new EngineButtonListener(context_, phase, button));
         }
@@ -527,8 +485,7 @@ public abstract class ShowPokerTable extends ChainPhase implements
     /**
      * Called by superclass from start method
      */
-    public void process()
-    {
+    public void process() {
         // clear any help widgets from previous phases to release assoc memory
         context_.getWindow().setHelpTextWidget(null);
 
@@ -539,8 +496,7 @@ public abstract class ShowPokerTable extends ChainPhase implements
     /**
      * start
      */
-    public void start()
-    {
+    public void start() {
         // super class
         super.start();
 
@@ -548,28 +504,22 @@ public abstract class ShowPokerTable extends ChainPhase implements
         Toolkit.getDefaultToolkit().addAWTEventListener(this, AWTEvent.KEY_EVENT_MASK);
 
         // start bg music
-        SwingUtilities.invokeLater(
-                new Runnable()
-                {
-                    public void run()
-                    {
-                        EngineUtils.startBackgroundMusic(gamephase_);
-                    }
-                }
-        );
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                EngineUtils.startBackgroundMusic(gamephase_);
+            }
+        });
     }
 
     /**
      * cleanup
      */
-    public void finish()
-    {
+    public void finish() {
         // super
         super.finish();
 
         // clean dashboard items
-        if (dashboardPanel_ != null)
-        {
+        if (dashboardPanel_ != null) {
             dashboardPanel_.finish();
         }
 
@@ -594,40 +544,33 @@ public abstract class ShowPokerTable extends ChainPhase implements
     /**
      * Invoked when an event is dispatched in the AWT.
      */
-    public void eventDispatched(AWTEvent event)
-    {
+    public void eventDispatched(AWTEvent event) {
         // fast action keys
-        if (event instanceof KeyEvent)
-        {
+        if (event instanceof KeyEvent) {
             KeyEvent k = (KeyEvent) event;
 
             // ignore keys when modal
-            if (nModal_ > 0)
-            {
+            if (nModal_ > 0) {
                 return;
             }
 
             // ignore if not a key pressed event
-            if (k.getID() != KeyEvent.KEY_PRESSED)
-            {
+            if (k.getID() != KeyEvent.KEY_PRESSED) {
                 return;
             }
 
             // see if we should ignore this keystroke
-            if (filterKeystroke(k))
-            {
+            if (filterKeystroke(k)) {
                 return;
             }
 
             // see if we should ignore keystroke based on
             // if it was repeated recently (within XXX millis)
-            if (filterKeyStrokeDuplicates())
-            {
+            if (filterKeyStrokeDuplicates()) {
                 // look for duplicate
                 int key = k.getKeyCode();
-                if (key == lastkey_ && (k.getWhen() - lastwhen_) < 250)
-                {
-                    //logger.debug("Skipping dup: " + k.getKeyChar());
+                if (key == lastkey_ && (k.getWhen() - lastwhen_) < 250) {
+                    // logger.debug("Skipping dup: " + k.getKeyChar());
                     lastwhen_ = k.getWhen();
                     return;
                 }
@@ -646,28 +589,25 @@ public abstract class ShowPokerTable extends ChainPhase implements
     long lastkey_ = 0;
 
     /**
-     * Ignored duplicate keystrokes (those within 250 millis of each other).
-     * Default is false;
+     * Ignored duplicate keystrokes (those within 250 millis of each other). Default
+     * is false;
      */
-    protected boolean filterKeyStrokeDuplicates()
-    {
+    protected boolean filterKeyStrokeDuplicates() {
         return false;
     }
 
     /**
-     * Default filtering.  Ignore tabbed pane source, text components
+     * Default filtering. Ignore tabbed pane source, text components
      */
-    protected boolean filterKeystroke(KeyEvent k)
-    {
-        // ignore if source is a tabbed pane, because info dialog tabs can be changed with arrow keys
-        if (k.getSource() instanceof javax.swing.JTabbedPane)
-        {
+    protected boolean filterKeystroke(KeyEvent k) {
+        // ignore if source is a tabbed pane, because info dialog tabs can be changed
+        // with arrow keys
+        if (k.getSource() instanceof javax.swing.JTabbedPane) {
             return true;
         }
 
         // ignore if source is a text component other than spinner
-        if (k.getSource() instanceof javax.swing.text.JTextComponent)
-        {
+        if (k.getSource() instanceof javax.swing.text.JTextComponent) {
             return true;
         }
 
@@ -678,15 +618,12 @@ public abstract class ShowPokerTable extends ChainPhase implements
      * logic to handle a key press event, can be overriden but subclasses should
      * call this if they don't handle it.
      */
-    protected boolean handleKeyPressed(KeyEvent event)
-    {
+    protected boolean handleKeyPressed(KeyEvent event) {
         int key = event.getKeyCode();
 
-        switch (key)
-        {
-            case KeyEvent.VK_I:
-                if (buttonInfo_ != null && buttonInfo_.isEnabled())
-                {
+        switch (key) {
+            case KeyEvent.VK_I :
+                if (buttonInfo_ != null && buttonInfo_.isEnabled()) {
                     buttonInfo_.doClick(10);
                     return true;
                 }
@@ -705,47 +642,45 @@ public abstract class ShowPokerTable extends ChainPhase implements
     /**
      * Modal window started - allow us to process the panel
      */
-    public void blockerCreated(JPanel panel)
-    {
+    public void blockerCreated(JPanel panel) {
         nModal_++;
-        //logger.debug("Create: " + nModal_);
+        // logger.debug("Create: " + nModal_);
     }
 
     /**
      * modal window done - allow us to clean up
      */
-    public void blockerFinished(JPanel panel)
-    {
+    public void blockerFinished(JPanel panel) {
         nModal_--;
-        //logger.debug("Finish: " + nModal_);
+        // logger.debug("Finish: " + nModal_);
     }
 
     ////
     //// Debugging AI
     ////
 
-    public String getDebugDisplay(Territory t)
-    {
+    public String getDebugDisplay(Territory t) {
         return null;
     }
 
-    public double getScale()
-    {
+    public double getScale() {
         return 1.0d;
     }
 
-    public double getYAdjust(Territory t, TextUtil tuName, TextUtil tuDebug)
-    {
+    public double getYAdjust(Territory t, TextUtil tuName, TextUtil tuDebug) {
         int nSeat = PokerUtils.getDisplaySeatForTerritory(t);
-        if (nSeat == -1) return 0;
+        if (nSeat == -1)
+            return 0;
 
-        if (nSeat <= 0 || nSeat >= 9) return -(2.5 * tuDebug.lineHeight);
-        else if (nSeat <= 1 || nSeat >= 8) return -(4.0 * tuDebug.lineHeight);
-        else return tuName.totalHeight + tuDebug.lineHeight / 2 + 2;
+        if (nSeat <= 0 || nSeat >= 9)
+            return -(2.5 * tuDebug.lineHeight);
+        else if (nSeat <= 1 || nSeat >= 8)
+            return -(4.0 * tuDebug.lineHeight);
+        else
+            return tuName.totalHeight + tuDebug.lineHeight / 2 + 2;
     }
 
-    public Color getTextColor()
-    {
+    public Color getTextColor() {
         return Color.orange;
     }
 
@@ -756,45 +691,38 @@ public abstract class ShowPokerTable extends ChainPhase implements
     /**
      * EMPTY *
      */
-    public void mouseClicked(MouseEvent e)
-    {
+    public void mouseClicked(MouseEvent e) {
     }
 
     /**
      * EMPTY *
      */
-    public void mouseEntered(MouseEvent e)
-    {
+    public void mouseEntered(MouseEvent e) {
     }
 
     /**
      * EMPTY *
      */
-    public void mouseExited(MouseEvent e)
-    {
+    public void mouseExited(MouseEvent e) {
     }
 
     /**
      * EMPTY *
      */
-    public void mousePressed(MouseEvent e)
-    {
+    public void mousePressed(MouseEvent e) {
     }
 
     /**
      * EMPTY *
      */
-    public void mouseReleased(MouseEvent e)
-    {
+    public void mouseReleased(MouseEvent e) {
     }
 
     /**
      * Set name from profile
      */
-    private void updateName()
-    {
-        if (labelName_ != null)
-        {
+    private void updateName() {
+        if (labelName_ != null) {
             labelName_.setText(PropertyConfig.getMessage("msg.name", game_.getProfile().getName()));
         }
     }
@@ -802,39 +730,34 @@ public abstract class ShowPokerTable extends ChainPhase implements
     /**
      * Set input mode
      */
-    public void setInputMode(int nMode, HoldemHand hhand, PokerPlayer player)
-    {
+    public void setInputMode(int nMode, HoldemHand hhand, PokerPlayer player) {
         nInputMode_ = nMode;
     }
 
     /**
      * Get current input mode
      */
-    public int getInputMode()
-    {
+    public int getInputMode() {
         return nInputMode_;
     }
 
     /**
-     * Passes clicks on buttons with action codes to Game object for broadcast to listeners.
+     * Passes clicks on buttons with action codes to Game object for broadcast to
+     * listeners.
      *
      * @param e
      */
-    public void actionPerformed(ActionEvent e)
-    {
-        if (e.getSource() instanceof DDButton)
-        {
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() instanceof DDButton) {
             DDButton button = (DDButton) e.getSource();
 
             int action = button.getActionID();
 
-            if (action != 0)
-            {
+            if (action != 0) {
                 game_.playerActionPerformed(action, 0);
             }
         }
     }
-
 
     ////
     //// PokerGameboardDelegate interface
@@ -843,8 +766,7 @@ public abstract class ShowPokerTable extends ChainPhase implements
     /**
      * Default doesn't do anything with request focus, let
      */
-    public boolean processRequestFocus()
-    {
+    public boolean processRequestFocus() {
         return false;
     }
 
@@ -853,23 +775,20 @@ public abstract class ShowPokerTable extends ChainPhase implements
     private Rectangle resizeBounds_ = new Rectangle();
 
     /**
-     * Notify delegate that board is repainting, so resize control
-     * can repaint if overlapped
+     * Notify delegate that board is repainting, so resize control can repaint if
+     * overlapped
      */
-    public void repainting(Graphics2D g)
-    {
-        if (resize_ != null)
-        {
-            //resize_.paintImmediately(0,0,resize_.getWidth(),resize_.getHeight());
-            //resize_.paintComponent(g);
+    public void repainting(Graphics2D g) {
+        if (resize_ != null) {
+            // resize_.paintImmediately(0,0,resize_.getWidth(),resize_.getHeight());
+            // resize_.paintComponent(g);
             g.getClipBounds(bounds_);
             Rectangle parent = SwingUtilities.convertRectangle(board_, bounds_, panelbase_);
             resize_.getBounds(resizeBounds_);
-            //logger.debug("Repaint request: " + bounds_ + " in parent: " + parent);
+            // logger.debug("Repaint request: " + bounds_ + " in parent: " + parent);
 
-            if (parent.intersects(resizeBounds_))
-            {
-                //logger.debug("**** SHOULD REPAINT ***");
+            if (parent.intersects(resizeBounds_)) {
+                // logger.debug("**** SHOULD REPAINT ***");
                 Rectangle inboard = SwingUtilities.convertRectangle(panelbase_, resizeBounds_, board_);
                 g.translate(inboard.x, inboard.y);
                 resize_.paintComponent(g);
@@ -877,18 +796,16 @@ public abstract class ShowPokerTable extends ChainPhase implements
             }
         }
 
-        if (camera_ != null)
-        {
-            //resize_.paintImmediately(0,0,resize_.getWidth(),resize_.getHeight());
-            //resize_.paintComponent(g);
+        if (camera_ != null) {
+            // resize_.paintImmediately(0,0,resize_.getWidth(),resize_.getHeight());
+            // resize_.paintComponent(g);
             g.getClipBounds(bounds_);
             Rectangle parent = SwingUtilities.convertRectangle(board_, bounds_, panelbase_);
             camera_.getBounds(resizeBounds_);
-            //logger.debug("Repaint request: " + bounds_ + " in parent: " + parent);
+            // logger.debug("Repaint request: " + bounds_ + " in parent: " + parent);
 
-            if (parent.intersects(resizeBounds_))
-            {
-                //logger.debug("**** SHOULD REPAINT ***");
+            if (parent.intersects(resizeBounds_)) {
+                // logger.debug("**** SHOULD REPAINT ***");
                 Rectangle inboard = SwingUtilities.convertRectangle(panelbase_, resizeBounds_, board_);
                 g.translate(inboard.x, inboard.y);
                 camera_.paintComponent(g);

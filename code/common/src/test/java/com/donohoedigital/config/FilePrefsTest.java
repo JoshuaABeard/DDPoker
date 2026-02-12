@@ -42,7 +42,7 @@ class FilePrefsTest {
 
         String expectedPath = System.getenv("APPDATA") + File.separator + "ddpoker";
         assertThat(configDir).isEqualTo(expectedPath);
-        assertThat(configDir).doesNotContain(".");  // Windows: no dot prefix
+        assertThat(configDir).doesNotContain("."); // Windows: no dot prefix
     }
 
     // RED: Test 2 - Platform directory detection variations for Windows
@@ -75,7 +75,7 @@ class FilePrefsTest {
         String expectedPath = System.getProperty("user.home") + "/.ddpoker";
         assertThat(configDir).isEqualTo(expectedPath);
         assertThat(configDir).startsWith(System.getProperty("user.home"));
-        assertThat(configDir).contains("/.ddpoker");  // Linux: with dot prefix
+        assertThat(configDir).contains("/.ddpoker"); // Linux: with dot prefix
     }
 
     // RED: Test 5 - Config file creation with temp directory

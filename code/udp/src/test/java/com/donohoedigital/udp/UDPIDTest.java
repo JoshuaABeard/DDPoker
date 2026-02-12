@@ -50,22 +50,19 @@ class UDPIDTest {
     void should_ThrowException_When_StringTooShort() {
         String shortId = "12345678-1234-1234-1234-12345678901"; // 35 chars
 
-        assertThatThrownBy(() -> new UDPID(shortId))
-                .isInstanceOf(ApplicationError.class);
+        assertThatThrownBy(() -> new UDPID(shortId)).isInstanceOf(ApplicationError.class);
     }
 
     @Test
     void should_ThrowException_When_StringTooLong() {
         String longId = "12345678-1234-1234-1234-1234567890123"; // 37 chars
 
-        assertThatThrownBy(() -> new UDPID(longId))
-                .isInstanceOf(ApplicationError.class);
+        assertThatThrownBy(() -> new UDPID(longId)).isInstanceOf(ApplicationError.class);
     }
 
     @Test
     void should_ThrowException_When_StringEmpty() {
-        assertThatThrownBy(() -> new UDPID(""))
-                .isInstanceOf(ApplicationError.class);
+        assertThatThrownBy(() -> new UDPID("")).isInstanceOf(ApplicationError.class);
     }
 
     @Test

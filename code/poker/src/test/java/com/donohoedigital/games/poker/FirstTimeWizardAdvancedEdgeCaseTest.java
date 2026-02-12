@@ -34,8 +34,9 @@ import java.util.prefs.Preferences;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Advanced edge case tests for FirstTimeWizard - Tests complex state transitions,
- * error recovery, field interactions, and advanced validation scenarios.
+ * Advanced edge case tests for FirstTimeWizard - Tests complex state
+ * transitions, error recovery, field interactions, and advanced validation
+ * scenarios.
  */
 class FirstTimeWizardAdvancedEdgeCaseTest {
 

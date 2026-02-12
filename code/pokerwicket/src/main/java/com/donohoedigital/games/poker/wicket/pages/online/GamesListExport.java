@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -53,8 +53,7 @@ import java.util.Date;
  */
 @MountMixedParam(parameterNames = {GamesListExport.PARAM_DAYS_AGO, GamesListExport.PARAM_DATE,
         GamesListExport.PARAM_FILE_NAME})
-public abstract class GamesListExport extends WebPage
-{
+public abstract class GamesListExport extends WebPage {
     private static final long serialVersionUID = 42L;
 
     public static final String PARAM_DATE = "date";
@@ -65,27 +64,23 @@ public abstract class GamesListExport extends WebPage
     @SpringBean
     private OnlineGameService gameService;
 
-    public GamesListExport(PageParameters params)
-    {
+    public GamesListExport(PageParameters params) {
         ParamDateConverter CONVERTER = new ParamDateConverter();
         Date day;
         int daysago;
         String file;
 
-        if (params == null) params = new PageParameters();
+        if (params == null)
+            params = new PageParameters();
 
         // get params
         daysago = WicketUtils.getAsInt(params, PARAM_DAYS_AGO, -1);
         file = params.get(PARAM_FILE_NAME).toString();
-        if (daysago != -1)
-        {
+        if (daysago != -1) {
             day = Utils.getDateDays(-daysago);
-        }
-        else
-        {
+        } else {
             day = WicketUtils.getAsDate(params, PARAM_DATE, null, CONVERTER);
-            if (day == null)
-            {
+            if (day == null) {
                 day = new Date();
             }
         }
@@ -93,13 +88,10 @@ public abstract class GamesListExport extends WebPage
         Date begin;
         Date end;
 
-        if (getUseCalendarDayOnly())
-        {
+        if (getUseCalendarDayOnly()) {
             begin = Utils.getDateZeroTime(day);
             end = Utils.getDateEndOfDay(day);
-        }
-        else
-        {
+        } else {
             begin = Utils.getDateDays(day, -1);
             end = day;
         }
@@ -110,9 +102,8 @@ public abstract class GamesListExport extends WebPage
         // encode it
         SimpleXMLEncoder encoder = new SimpleXMLEncoder();
 
-        String comment = "Copyright (c) 2004-" + Utils.getDateYear() + ". Donohoe Digital LLC\n" +
-                "DD Poker " + getGameTypeForComment() +
-                " games export from " + begin + " to " + end;
+        String comment = "Copyright (c) 2004-" + Utils.getDateYear() + ". Donohoe Digital LLC\n" + "DD Poker "
+                + getGameTypeForComment() + " games export from " + begin + " to " + end;
 
         encoder.addComment(comment, true);
         encoder.setCurrentObject("ddpoker");
@@ -124,8 +115,7 @@ public abstract class GamesListExport extends WebPage
         ResourceStreamRequestHandler target = new ResourceStreamRequestHandler(resourceStream);
 
         // set file name if provided
-        if (file != null)
-        {
+        if (file != null) {
             target.setFileName(file);
         }
 
@@ -134,11 +124,11 @@ public abstract class GamesListExport extends WebPage
     }
 
     /**
-     * Subclass to return true if only should use current day only (from midnight to midnight).  Alternative is
-     * to use 24-hour period preceding date.  Default is false.
+     * Subclass to return true if only should use current day only (from midnight to
+     * midnight). Alternative is to use 24-hour period preceding date. Default is
+     * false.
      */
-    protected boolean getUseCalendarDayOnly()
-    {
+    protected boolean getUseCalendarDayOnly() {
         return false;
     }
 

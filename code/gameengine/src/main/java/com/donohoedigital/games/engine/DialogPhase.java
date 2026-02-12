@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -54,8 +54,10 @@ import java.util.prefs.*;
 /**
  * @author Doug Donohoe
  */
-public abstract class DialogPhase extends BasePhase implements InternalDialog.DialogOpened, InternalDialog.DialogClosed
-{
+public abstract class DialogPhase extends BasePhase
+        implements
+            InternalDialog.DialogOpened,
+            InternalDialog.DialogClosed {
     static Logger logger = LogManager.getLogger(DialogPhase.class);
 
     /**
@@ -116,23 +118,20 @@ public abstract class DialogPhase extends BasePhase implements InternalDialog.Di
     private String sNoShowCheckboxName_ = null;
 
     /**
-     * Init phase, storing engine and gamephase.  Called createUI()
+     * Init phase, storing engine and gamephase. Called createUI()
      */
-    public void init(GameEngine engine, GameContext context, GamePhase gamephase)
-    {
+    public void init(GameEngine engine, GameContext context, GamePhase gamephase) {
         super.init(engine, context, gamephase);
 
         bModal_ = gamephase_.getBoolean(PARAM_MODAL, false);
         bNoShowOption_ = gamephase_.getBoolean(PARAM_NO_SHOW_OPTION, false);
 
-        if (bNoShowOption_)
-        {
+        if (bNoShowOption_) {
             sNoShowCheckboxName_ = gamephase.getString(PARAM_NO_SHOW_NAME, "noshowdialog");
             sNoShowKey_ = gamephase.getString(PARAM_NO_SHOW_KEY, null);
             ApplicationError.assertNotNull(sNoShowKey_, "dialog-no-show-key not defined");
 
-            if (isNoShowSelected())
-            {
+            if (isNoShowSelected()) {
                 bDontShow_ = true;
             }
         }
@@ -140,36 +139,32 @@ public abstract class DialogPhase extends BasePhase implements InternalDialog.Di
         // style for this stuff
         STYLE = gamephase_.getString("style", "default");
 
-        if (!bDontShow_)
-        {
+        if (!bDontShow_) {
             createUI();
         }
     }
 
     /**
-     * Can be used by subclass to mimic behavoir of don't show
-     * functionality - basically, don't show the UI and activate
-     * the button associated with the enter key (the default button).
-     * Needs to be called before calling init method.
+     * Can be used by subclass to mimic behavoir of don't show functionality -
+     * basically, don't show the UI and activate the button associated with the
+     * enter key (the default button). Needs to be called before calling init
+     * method.
      */
-    protected void setDontShow(boolean bDontShow)
-    {
+    protected void setDontShow(boolean bDontShow) {
         bDontShow_ = bDontShow;
     }
 
     /**
      * Return value of dont show
      */
-    protected boolean isDontShow()
-    {
+    protected boolean isDontShow() {
         return bDontShow_;
     }
 
     /**
      * Display the dialog without a visible UI.
      */
-    protected boolean isFaceless()
-    {
+    protected boolean isFaceless() {
         return false;
     }
 
@@ -198,23 +193,18 @@ public abstract class DialogPhase extends BasePhase implements InternalDialog.Di
      */
     protected DialogListener myListener_;
 
-
     /**
      * Trigger the default button, as if the user pressed it
      */
-    public void triggerDefaultButton()
-    {
+    public void triggerDefaultButton() {
         GameButton button = null;
         String sEnterButton = gamephase_.getString(ButtonBox.PARAM_DEFAULT_BUTTON, null);
-        if (sEnterButton != null)
-        {
+        if (sEnterButton != null) {
             List buttons = gamephase_.getList("buttons");
             String sButtonDef;
-            for (int i = 0; i < buttons.size(); i++)
-            {
+            for (int i = 0; i < buttons.size(); i++) {
                 sButtonDef = (String) buttons.get(i);
-                if (GameButton.isMatch(sButtonDef, sEnterButton))
-                {
+                if (GameButton.isMatch(sButtonDef, sEnterButton)) {
                     button = new GameButton(sButtonDef);
                 }
             }
@@ -223,41 +213,35 @@ public abstract class DialogPhase extends BasePhase implements InternalDialog.Di
     }
 
     /**
-     * Displays dialog modal/not modal (dialog-modal) prop.
-     * Window close associated with default button (dialog-window-close-activates-button) prop
+     * Displays dialog modal/not modal (dialog-modal) prop. Window close associated
+     * with default button (dialog-window-close-activates-button) prop
      */
-    public void start()
-    {
+    public void start() {
         // if we don't show this, then get figure out the default button
         // (triggered by enter) and call processButton on that
-        if (bDontShow_)
-        {
+        if (bDontShow_) {
             triggerDefaultButton();
             return;
         }
 
         // for cached phases, if calling start on a dialog already visible,
         // just move it to the front and selected it
-        if (dialog_.isVisible())
-        {
+        if (dialog_.isVisible()) {
             dialog_.moveToFrontSelected();
             return;
         }
 
         // see if we create this but don't show - only check 1st time (creation)
-        if (!bCheckCreateNoShow_)
-        {
+        if (!bCheckCreateNoShow_) {
             bCheckCreateNoShow_ = true;
-            if (gamephase_.getBoolean(PARAM_CREATE_NO_SHOW, false)) return;
+            if (gamephase_.getBoolean(PARAM_CREATE_NO_SHOW, false))
+                return;
         }
 
         // "show", faceless or otherwise
-        if (isFaceless())
-        {
+        if (isFaceless()) {
             _showDialog(true);
-        }
-        else
-        {
+        } else {
             _showDialog(false);
         }
 
@@ -271,16 +255,14 @@ public abstract class DialogPhase extends BasePhase implements InternalDialog.Di
     /**
      * Show a dialog if not already visible (useful for faceless dialogs)
      */
-    protected void showDialog()
-    {
+    protected void showDialog() {
         _showDialog(false);
     }
 
     /**
      * show dialog logic
      */
-    private void _showDialog(boolean bFaceless)
-    {
+    private void _showDialog(boolean bFaceless) {
         int nLocation = getDialogPosition(dialog_);
         Component c = getFocusComponent();
         dialog_.showDialog(myListener_, nLocation, c, !bFaceless);
@@ -289,36 +271,32 @@ public abstract class DialogPhase extends BasePhase implements InternalDialog.Di
     /**
      * Hide a dialog if already visible
      */
-    protected void hideDialog()
-    {
+    protected void hideDialog() {
         dialog_.setVisible(false);
         BaseFrame frame = context_.getFrame();
         ((JComponent) frame.getContentPane()).paintImmediately(0, 0, frame.getWidth(), frame.getHeight());
     }
 
     /**
-     * Get location for dialog.  Can be overriden to position dialog elsewhere.
+     * Get location for dialog. Can be overriden to position dialog elsewhere.
      * Returns InternalDialog.POSITION_CENTER by default.
      */
-    protected int getDialogPosition(InternalDialog dialog)
-    {
+    protected int getDialogPosition(InternalDialog dialog) {
         return pos_;
     }
 
     /**
-     * Get focus component.  Can be overriden to specify starting focus component.
+     * Get focus component. Can be overriden to specify starting focus component.
      * Returns the dialog by default
      */
-    protected Component getFocusComponent()
-    {
-        return null; //  (okayButton_ == null ? (Component) dialog_ : (Component) okayButton_);
+    protected Component getFocusComponent() {
+        return null; // (okayButton_ == null ? (Component) dialog_ : (Component) okayButton_);
     }
 
     /**
      * Default processButton calls closes dialog on any button press
      */
-    public boolean processButton(GameButton button)
-    {
+    public boolean processButton(GameButton button) {
         setResult(button);
         removeDialog();
         return true;
@@ -327,18 +305,15 @@ public abstract class DialogPhase extends BasePhase implements InternalDialog.Di
     /**
      * Return dialog used by this phase
      */
-    public InternalDialog getDialog()
-    {
+    public InternalDialog getDialog() {
         return dialog_;
     }
 
     /**
      * Remove dialog from view
      */
-    public void removeDialog()
-    {
-        if (dialog_ != null)
-        {
+    public void removeDialog() {
+        if (dialog_ != null) {
             dialog_.removeDialog();
         }
     }
@@ -351,22 +326,23 @@ public abstract class DialogPhase extends BasePhase implements InternalDialog.Di
     /**
      * create UI to show dice rolls
      */
-    public void createUI()
-    {
+    public void createUI() {
         String sWindowTitle = PropertyConfig.getStringProperty(
-                gamephase_.getString(PARAM_WINDOW_TITLE_KEY, PARAM_WINDOW_TITLE_KEY),
-                "This Space For Rent"); // no title found so leave funny title
+                gamephase_.getString(PARAM_WINDOW_TITLE_KEY, PARAM_WINDOW_TITLE_KEY), "This Space For Rent"); // no
+                                                                                                                // title
+                                                                                                                // found
+                                                                                                                // so
+                                                                                                                // leave
+                                                                                                                // funny
+                                                                                                                // title
         dialog_ = new InternalDialog(sWindowTitle, sWindowTitle, bModal_);
         dialog_.setDialogOpened(this);
         dialog_.setDialogClosed(this);
         dialog_.getRootPane().setName(sWindowTitle);
 
-        if (isFaceless())
-        {
+        if (isFaceless()) {
             myListener_ = new DialogListener(this);
-        }
-        else
-        {
+        } else {
             myListener_ = new PhaseDialogListener(this);
         }
 
@@ -375,63 +351,54 @@ public abstract class DialogPhase extends BasePhase implements InternalDialog.Di
         ApplicationError.assertNotNull(frame, "BaseFrame is null");
         dialog_.setBaseFrame(frame);
 
-        ImageIcon winicon = ImageConfig.getImageIcon(gamephase_.getString("dialog-windowtitle-image", "dialog-windowtitle-image"));
+        ImageIcon winicon = ImageConfig
+                .getImageIcon(gamephase_.getString("dialog-windowtitle-image", "dialog-windowtitle-image"));
         dialog_.setFrameIcon(winicon);
         dialog_.setIconifiable(gamephase_.getBoolean("dialog-iconifiable", false));
         back_ = new DialogBackground(context_, gamephase_, this, bNoShowOption_, sNoShowCheckboxName_);
         dialog_.setContentPane(back_);
 
-        if (bNoShowOption_)
-        {
-            back_.getNoShowCheckBox().addActionListener(
-                    new ActionListener()
-                    {
-                        public void actionPerformed(ActionEvent e)
-                        {
-                            Preferences prefs = Prefs.getUserPrefs(EnginePrefs.NODE_DIALOG_PHASE);
-                            prefs.putBoolean(sNoShowKey_, back_.getNoShowCheckBox().isSelected());
-                        }
-                    });
+        if (bNoShowOption_) {
+            back_.getNoShowCheckBox().addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    Preferences prefs = Prefs.getUserPrefs(EnginePrefs.NODE_DIALOG_PHASE);
+                    prefs.putBoolean(sNoShowKey_, back_.getNoShowCheckBox().isSelected());
+                }
+            });
         }
 
         ///
         /// Handle Window close / delete events - typically cancel
         ///
         String sCloseButton = gamephase_.getString("dialog-window-close-activates-button", null);
-        if (sCloseButton != null && sCloseButton.length() > 0)
-        {
+        if (sCloseButton != null && sCloseButton.length() > 0) {
             cancelButton_ = getMatchingButton(sCloseButton);
-            if (cancelButton_ == null)
-            {
+            if (cancelButton_ == null) {
                 throw new ApplicationError(ErrorCodes.ERROR_NOT_FOUND,
-                                           "dialog-window-close-activates-button not found: " + sCloseButton,
-                                           "Make sure this button is defined");
+                        "dialog-window-close-activates-button not found: " + sCloseButton,
+                        "Make sure this button is defined");
             }
             myListener_.setButton(cancelButton_);
 
             GuiUtils.InvokeButton hk = new GuiUtils.InvokeButton(cancelButton_);
             // add key action so "delete/backspace" triggers close button
-// JDD - leave out for now cuz it prevents backspace in text fields
-//           GuiUtils.addKeyAction(back_, JComponent.WHEN_IN_FOCUSED_WINDOW,
-//                            "handlebackspace", hk, 
-//                            KeyEvent.VK_BACK_SPACE, 0);
-            GuiUtils.addKeyAction(back_, JComponent.WHEN_IN_FOCUSED_WINDOW,
-                                  "handledelete", hk,
-                                  KeyEvent.VK_DELETE, 0);
+            // JDD - leave out for now cuz it prevents backspace in text fields
+            // GuiUtils.addKeyAction(back_, JComponent.WHEN_IN_FOCUSED_WINDOW,
+            // "handlebackspace", hk,
+            // KeyEvent.VK_BACK_SPACE, 0);
+            GuiUtils.addKeyAction(back_, JComponent.WHEN_IN_FOCUSED_WINDOW, "handledelete", hk, KeyEvent.VK_DELETE, 0);
         }
 
         ///
         /// Handle ENTER key presses - typically okay
         ///
         String sEnterButton = gamephase_.getString(ButtonBox.PARAM_DEFAULT_BUTTON, null);
-        if (sEnterButton != null && sEnterButton.length() > 0)
-        {
+        if (sEnterButton != null && sEnterButton.length() > 0) {
             okayButton_ = getMatchingButton(sEnterButton);
-            if (okayButton_ == null)
-            {
+            if (okayButton_ == null) {
                 throw new ApplicationError(ErrorCodes.ERROR_NOT_FOUND,
-                                           ButtonBox.PARAM_DEFAULT_BUTTON + " not found: " + sEnterButton,
-                                           "Make sure this button is defined");
+                        ButtonBox.PARAM_DEFAULT_BUTTON + " not found: " + sEnterButton,
+                        "Make sure this button is defined");
             }
         }
 
@@ -447,8 +414,7 @@ public abstract class DialogPhase extends BasePhase implements InternalDialog.Di
     /**
      * Repaint the dialog
      */
-    protected void repaint()
-    {
+    protected void repaint() {
         dialog_.pack();
         dialog_.repaint();
     }
@@ -456,19 +422,16 @@ public abstract class DialogPhase extends BasePhase implements InternalDialog.Di
     /**
      * Get DDButton from dialog background's button box
      */
-    public DDButton getMatchingButton(String sButtonName)
-    {
+    public DDButton getMatchingButton(String sButtonName) {
         return back_.getButtonBox().getButton(sButtonName);
     }
 
     /**
      * Remove named button from dialog
      */
-    public void removeMatchingButton(String sButtonName)
-    {
+    public void removeMatchingButton(String sButtonName) {
         DDButton button = getMatchingButton(sButtonName);
-        if (button != null)
-        {
+        if (button != null) {
             back_.getButtonBox().removeButton(button);
         }
     }
@@ -476,18 +439,15 @@ public abstract class DialogPhase extends BasePhase implements InternalDialog.Di
     /**
      * should this dialog be displayed?
      */
-    private boolean isNoShowSelected()
-    {
+    private boolean isNoShowSelected() {
         return isDialogHidden(sNoShowKey_);
     }
 
     /**
-     * Return whether the "do not show" checkbox associated with
-     * the given key is selected (indicating the dialog won't
-     * be displayed)
+     * Return whether the "do not show" checkbox associated with the given key is
+     * selected (indicating the dialog won't be displayed)
      */
-    public static boolean isDialogHidden(String sKey)
-    {
+    public static boolean isDialogHidden(String sKey) {
         Preferences prefs = Prefs.getUserPrefs(EnginePrefs.NODE_DIALOG_PHASE);
         return prefs.getBoolean(sKey, false);
     }
@@ -495,28 +455,23 @@ public abstract class DialogPhase extends BasePhase implements InternalDialog.Di
     /**
      * Used to activate default button
      */
-    private class DialogListener extends InternalFrameAdapter
-    {
+    private class DialogListener extends InternalFrameAdapter {
         DialogPhase phase_;
         DDButton button_;
 
-        public DialogListener(DialogPhase phase)
-        {
+        public DialogListener(DialogPhase phase) {
             phase_ = phase;
         }
 
-        public void setButton(DDButton button)
-        {
+        public void setButton(DDButton button) {
             button_ = button;
         }
 
         /**
          * Detect when window close icon is pressed - activate associated button
          */
-        public void internalFrameClosing(InternalFrameEvent e)
-        {
-            if (button_ != null)
-            {
+        public void internalFrameClosing(InternalFrameEvent e) {
+            if (button_ != null) {
                 button_.doClick(120);
             }
         }
@@ -525,26 +480,22 @@ public abstract class DialogPhase extends BasePhase implements InternalDialog.Di
     /**
      * Used to start/finish the phase
      */
-    private class PhaseDialogListener extends DialogListener
-    {
-        public PhaseDialogListener(DialogPhase phase)
-        {
+    private class PhaseDialogListener extends DialogListener {
+        public PhaseDialogListener(DialogPhase phase) {
             super(phase);
         }
 
         /**
          * Catch actual closing so finish() can be called
          */
-        public void internalFrameClosed(InternalFrameEvent e)
-        {
+        public void internalFrameClosed(InternalFrameEvent e) {
             phase_.finish();
         }
 
         /**
          * When window displayed, call this
          */
-        public void internalFrameOpened(InternalFrameEvent e)
-        {
+        public void internalFrameOpened(InternalFrameEvent e) {
             phase_.opened();
         }
 
@@ -553,38 +504,31 @@ public abstract class DialogPhase extends BasePhase implements InternalDialog.Di
     /**
      * called when dialog is opened
      */
-    protected void opened()
-    {
+    protected void opened() {
     }
 
     /**
-     * Called when the dialog is added - does initialization
-     * for faceless dialogs
+     * Called when the dialog is added - does initialization for faceless dialogs
      */
-    public void dialogAdded(InternalDialog dialog)
-    {
-        if (isFaceless())
-        {
+    public void dialogAdded(InternalDialog dialog) {
+        if (isFaceless()) {
             opened();
         }
     }
 
     /**
-     * Called when the dialog is removed - does cleanup
-     * so subclass needs to call it if overriden
+     * Called when the dialog is removed - does cleanup so subclass needs to call it
+     * if overriden
      */
-    public void dialogRemoved(InternalDialog dialog)
-    {
+    public void dialogRemoved(InternalDialog dialog) {
         GuiUtils.requireSwingThread();
 
-        if (isFaceless())
-        {
+        if (isFaceless()) {
             finish();
         }
 
         // cleaning dialog because not cached
-        if (!gamephase_.isCached())
-        {
+        if (!gamephase_.isCached()) {
             dialog_.clean();
         }
     }

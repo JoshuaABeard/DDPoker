@@ -11,19 +11,18 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
- *  
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *  
+ *
  *  Bug fixes, suggestions and comments should be sent to: alex@zookitec.com
  */
- 
 
 package com.zookitec.layout;
 
@@ -31,36 +30,40 @@ import java.awt.*;
 import java.io.*;
 
 /**
- * This class represents a constant expression and is the superclass of all variable expressions used by ExplicitLayout.
- * Subclasses should override the computeValue method to provide a variable value for the expression.
+ * This class represents a constant expression and is the superclass of all
+ * variable expressions used by ExplicitLayout. Subclasses should override the
+ * computeValue method to provide a variable value for the expression.
  *
  */
 public class Expression implements Serializable {
 
-  /*  static {
-        a.go();
-    }*/
-
+    /*
+     * static { a.go(); }
+     */
 
     /**
-     * Rounding mode to assert that no rounding is performed on the value of this expression.
+     * Rounding mode to assert that no rounding is performed on the value of this
+     * expression.
      *
      */
     public static final byte ROUND_NONE = 1;
 
     /**
-     * Rounding mode to round the value of this expression towards the nearest integer neighbour unless both
-     * neighbours are equidistant, in which case round up.
+     * Rounding mode to round the value of this expression towards the nearest
+     * integer neighbour unless both neighbours are equidistant, in which case round
+     * up.
      */
     public static final byte ROUND_NEAREST = 2;
 
     /**
-     * Rounding mode to round the value of this expression towards positive infinity.
+     * Rounding mode to round the value of this expression towards positive
+     * infinity.
      */
     public static final byte ROUND_CEILING = 3;
 
     /**
-     * Rounding mode to round the value of this expression towards negative infinity.
+     * Rounding mode to round the value of this expression towards negative
+     * infinity.
      */
     public static final byte ROUND_FLOOR = 4;
 
@@ -73,30 +76,32 @@ public class Expression implements Serializable {
     private byte roundingMode = ROUND_NONE;
 
     /**
-     * Constructs an invalid expression. This constructor is intended for use by subclasses.
-     * The default rounding mode is ROUND_NONE.
+     * Constructs an invalid expression. This constructor is intended for use by
+     * subclasses. The default rounding mode is ROUND_NONE.
      */
     protected Expression() {
         valid = false;
     }
 
     /**
-     * Constructs a constant expression. This can be used when the value of a variable
-     * is known at design time.
-     * @param value the value of the expression.
+     * Constructs a constant expression. This can be used when the value of a
+     * variable is known at design time.
+     *
+     * @param value
+     *            the value of the expression.
      */
     public Expression(double value) {
         this.value = value;
         valid = true;
     }
 
-
     /**
-     * Gets the value of this expression. If the value is not already known,
-     * it is set by calling computeValue. The value may be rounded to an integer depending
+     * Gets the value of this expression. If the value is not already known, it is
+     * set by calling computeValue. The value may be rounded to an integer depending
      * on the rounding mode.
      *
-     * @param layout the ExplicitLayout manager
+     * @param layout
+     *            the ExplicitLayout manager
      *
      * @return the value of this expression
      */
@@ -106,13 +111,13 @@ public class Expression implements Serializable {
             switch (roundingMode) {
                 case ROUND_NEAREST :
                     value = Math.round(value);
-                break;
+                    break;
                 case ROUND_FLOOR :
                     value = Math.floor(value);
-                break;
+                    break;
                 case ROUND_CEILING :
                     value = Math.ceil(value);
-                break;
+                    break;
             }
             valid = true;
         }
@@ -122,7 +127,9 @@ public class Expression implements Serializable {
     /**
      * Sets the rounding mode for the value returned by <code>getValue</code>.
      *
-     * @param roundingMode the rounding mode: ROUND_NONE, ROUND_NEAREST, ROUND_FLOOR, ROUND_CEILING.
+     * @param roundingMode
+     *            the rounding mode: ROUND_NONE, ROUND_NEAREST, ROUND_FLOOR,
+     *            ROUND_CEILING.
      */
     public void setRoundingMode(byte roundingMode) {
         this.roundingMode = roundingMode;
@@ -132,38 +139,38 @@ public class Expression implements Serializable {
     /**
      * Gets the rounding mode for the value of this expression.
      *
-     * @return the rounding mode: ROUND_NONE, ROUND_NEAREST, ROUND_FLOOR, ROUND_CEILING.
+     * @return the rounding mode: ROUND_NONE, ROUND_NEAREST, ROUND_FLOOR,
+     *         ROUND_CEILING.
      */
     public byte getRoundingMode() {
         return roundingMode;
     }
 
     /**
-     * Forces the value of this expression to be recalculated by calling computeValue
-     * next time getValue is called. This only applies to subclasses as the value of
-     * this expression is constant.
+     * Forces the value of this expression to be recalculated by calling
+     * computeValue next time getValue is called. This only applies to subclasses as
+     * the value of this expression is constant.
      */
     public void invalidate() {
         if (getClass() != Expression.class) {
-            //set valid false for subclasses only - this is constant
+            // set valid false for subclasses only - this is constant
             valid = false;
         }
     }
 
-
-
     /**
-     * Computes the value of this expression. This implementation returns the default value 0.
-     * For variable expressions, this is typically overridden by a subclass.
+     * Computes the value of this expression. This implementation returns the
+     * default value 0. For variable expressions, this is typically overridden by a
+     * subclass.
      *
-     * @param layout the ExplicitLayout manager
+     * @param layout
+     *            the ExplicitLayout manager
      *
      * @return the value of this expression
      */
     protected double computeValue(ExplicitLayout layout) {
         return value;
     }
-
 
     /**
      * Equivalent to MathEF.add(this, other)
@@ -179,7 +186,6 @@ public class Expression implements Serializable {
         return MathEF.add(this, other);
     }
 
-
     /**
      * Equivalent to MathEF.subtract(this, other)
      */
@@ -194,8 +200,6 @@ public class Expression implements Serializable {
         return MathEF.subtract(this, other);
     }
 
-
-
     /**
      * Equivalent to MathEF.multiply(this, other)
      */
@@ -203,7 +207,7 @@ public class Expression implements Serializable {
         return MathEF.multiply(this, other);
     }
 
-   /**
+    /**
      * Equivalent to MathEF.multiply(this, other)
      */
     public Expression multiply(double other) {
@@ -224,18 +228,17 @@ public class Expression implements Serializable {
         return MathEF.divide(this, other);
     }
 
-
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         } else if (o != null && getClass() == Expression.class && getClass().equals(o.getClass())) {
-            return value == ((Expression)o).value;
+            return value == ((Expression) o).value;
         }
         return false;
     }
 
     public int hashCode() {
-        return (getClass() == Expression.class) ? (int)(value * 100) : super.hashCode();
+        return (getClass() == Expression.class) ? (int) (value * 100) : super.hashCode();
     }
 
 }

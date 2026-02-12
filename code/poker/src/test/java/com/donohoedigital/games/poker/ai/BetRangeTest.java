@@ -32,8 +32,7 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for BetRange AI bet sizing logic.
  */
-class BetRangeTest
-{
+class BetRangeTest {
     private PokerGame game;
     private PokerTable table;
     private HoldemHand hand;
@@ -41,11 +40,9 @@ class BetRangeTest
     private PokerPlayer player2;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         // Initialize ConfigManager for tests (only once)
-        if (!com.donohoedigital.config.PropertyConfig.isInitialized())
-        {
+        if (!com.donohoedigital.config.PropertyConfig.isInitialized()) {
             new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
         }
 
@@ -87,8 +84,7 @@ class BetRangeTest
     // ========================================
 
     @Test
-    void should_CreateAllInRange_When_AllInTypeProvided()
-    {
+    void should_CreateAllInRange_When_AllInTypeProvided() {
         BetRange range = new BetRange(BetRange.ALL_IN);
 
         assertThat(range.getType()).isEqualTo(BetRange.ALL_IN);
@@ -98,8 +94,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_CreatePotSizeRange_When_PotSizeTypeAndMinMaxProvided()
-    {
+    void should_CreatePotSizeRange_When_PotSizeTypeAndMinMaxProvided() {
         BetRange range = new BetRange(BetRange.POT_SIZE, 0.5f, 1.0f);
 
         assertThat(range.getType()).isEqualTo(BetRange.POT_SIZE);
@@ -109,8 +104,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_CreateBigBlindRange_When_BigBlindTypeAndMinMaxProvided()
-    {
+    void should_CreateBigBlindRange_When_BigBlindTypeAndMinMaxProvided() {
         BetRange range = new BetRange(BetRange.BIG_BLIND, 2.0f, 3.0f);
 
         assertThat(range.getType()).isEqualTo(BetRange.BIG_BLIND);
@@ -123,32 +117,25 @@ class BetRangeTest
     // ========================================
 
     @Test
-    void should_ThrowError_When_MinGreaterThanMax()
-    {
-        assertThatThrownBy(() -> new BetRange(BetRange.POT_SIZE, 1.5f, 0.5f))
-            .isInstanceOf(ApplicationError.class)
-            .hasMessageContaining("min greater than max");
+    void should_ThrowError_When_MinGreaterThanMax() {
+        assertThatThrownBy(() -> new BetRange(BetRange.POT_SIZE, 1.5f, 0.5f)).isInstanceOf(ApplicationError.class)
+                .hasMessageContaining("min greater than max");
     }
 
     @Test
-    void should_ThrowError_When_PotSizeWithZeroMinAndMax()
-    {
-        assertThatThrownBy(() -> new BetRange(BetRange.POT_SIZE, 0.0f, 0.0f))
-            .isInstanceOf(ApplicationError.class)
-            .hasMessageContaining("min/max both zero");
+    void should_ThrowError_When_PotSizeWithZeroMinAndMax() {
+        assertThatThrownBy(() -> new BetRange(BetRange.POT_SIZE, 0.0f, 0.0f)).isInstanceOf(ApplicationError.class)
+                .hasMessageContaining("min/max both zero");
     }
 
     @Test
-    void should_ThrowError_When_BigBlindWithZeroMinAndMax()
-    {
-        assertThatThrownBy(() -> new BetRange(BetRange.BIG_BLIND, 0.0f, 0.0f))
-            .isInstanceOf(ApplicationError.class)
-            .hasMessageContaining("min/max both zero");
+    void should_ThrowError_When_BigBlindWithZeroMinAndMax() {
+        assertThatThrownBy(() -> new BetRange(BetRange.BIG_BLIND, 0.0f, 0.0f)).isInstanceOf(ApplicationError.class)
+                .hasMessageContaining("min/max both zero");
     }
 
     @Test
-    void should_AllowEqualMinAndMax_When_NonZeroValues()
-    {
+    void should_AllowEqualMinAndMax_When_NonZeroValues() {
         BetRange range = new BetRange(BetRange.POT_SIZE, 0.75f, 0.75f);
 
         assertThat(range.getMin()).isEqualTo(0.75f);
@@ -160,8 +147,7 @@ class BetRangeTest
     // ========================================
 
     @Test
-    void should_ReturnCorrectType_When_GetTypeCall()
-    {
+    void should_ReturnCorrectType_When_GetTypeCall() {
         BetRange potRange = new BetRange(BetRange.POT_SIZE, 0.5f, 1.0f);
         BetRange bbRange = new BetRange(BetRange.BIG_BLIND, 2.0f, 3.0f);
         BetRange allInRange = new BetRange(BetRange.ALL_IN);
@@ -172,8 +158,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_ReturnCorrectMinMax_When_AccessorsCall()
-    {
+    void should_ReturnCorrectMinMax_When_AccessorsCall() {
         BetRange range = new BetRange(BetRange.POT_SIZE, 0.25f, 0.75f);
 
         assertThat(range.getMin()).isEqualTo(0.25f);
@@ -185,8 +170,7 @@ class BetRangeTest
     // ========================================
 
     @Test
-    void should_AcceptZeroMin_When_MaxIsNonZero()
-    {
+    void should_AcceptZeroMin_When_MaxIsNonZero() {
         BetRange range = new BetRange(BetRange.POT_SIZE, 0.0f, 1.0f);
 
         assertThat(range.getMin()).isZero();
@@ -194,8 +178,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_AcceptLargeMultipliers_When_BigBlindRange()
-    {
+    void should_AcceptLargeMultipliers_When_BigBlindRange() {
         BetRange range = new BetRange(BetRange.BIG_BLIND, 5.0f, 10.0f);
 
         assertThat(range.getMin()).isEqualTo(5.0f);
@@ -203,8 +186,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_AcceptFractionalMultipliers_When_PotSizeRange()
-    {
+    void should_AcceptFractionalMultipliers_When_PotSizeRange() {
         BetRange range = new BetRange(BetRange.POT_SIZE, 0.33f, 0.67f);
 
         assertThat(range.getMin()).isEqualTo(0.33f);
@@ -216,8 +198,7 @@ class BetRangeTest
     // ========================================
 
     @Test
-    void should_AcceptVerySmallRange_When_ValidMinMax()
-    {
+    void should_AcceptVerySmallRange_When_ValidMinMax() {
         BetRange range = new BetRange(BetRange.POT_SIZE, 0.01f, 0.02f);
 
         assertThat(range.getMin()).isEqualTo(0.01f);
@@ -225,8 +206,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_AcceptVeryLargeRange_When_ValidMinMax()
-    {
+    void should_AcceptVeryLargeRange_When_ValidMinMax() {
         BetRange range = new BetRange(BetRange.BIG_BLIND, 1.0f, 100.0f);
 
         assertThat(range.getMin()).isEqualTo(1.0f);
@@ -238,8 +218,7 @@ class BetRangeTest
     // ========================================
 
     @Test
-    void should_CreateStackRange_When_PlayerAndMinMaxProvided()
-    {
+    void should_CreateStackRange_When_PlayerAndMinMaxProvided() {
         PokerPlayer player = new PokerPlayer(1, "Test", true);
         player.setChipCount(500);
 
@@ -252,19 +231,15 @@ class BetRangeTest
     }
 
     @Test
-    void should_ThrowError_When_StackRangeWithNullPlayer()
-    {
-        assertThatThrownBy(() -> new BetRange(BetRange.STACK_SIZE, 0.5f, 1.0f))
-            .isInstanceOf(ApplicationError.class)
-            .hasMessageContaining("no player");
+    void should_ThrowError_When_StackRangeWithNullPlayer() {
+        assertThatThrownBy(() -> new BetRange(BetRange.STACK_SIZE, 0.5f, 1.0f)).isInstanceOf(ApplicationError.class)
+                .hasMessageContaining("no player");
     }
 
     @Test
-    void should_ThrowError_When_InvalidBetRangeType()
-    {
-        assertThatThrownBy(() -> new BetRange(99, 0.5f, 1.0f))
-            .isInstanceOf(ApplicationError.class)
-            .hasMessageContaining("Unrecognized BetRange type");
+    void should_ThrowError_When_InvalidBetRangeType() {
+        assertThatThrownBy(() -> new BetRange(99, 0.5f, 1.0f)).isInstanceOf(ApplicationError.class)
+                .hasMessageContaining("Unrecognized BetRange type");
     }
 
     // ========================================
@@ -272,8 +247,7 @@ class BetRangeTest
     // ========================================
 
     @Test
-    void should_ReturnPlayerChips_When_AllInRange()
-    {
+    void should_ReturnPlayerChips_When_AllInRange() {
         BetRange range = new BetRange(BetRange.ALL_IN);
 
         int bet = range.chooseBetAmount(player1);
@@ -282,8 +256,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_ReturnPlayerChips_When_GetMaxBetOnAllIn()
-    {
+    void should_ReturnPlayerChips_When_GetMaxBetOnAllIn() {
         BetRange range = new BetRange(BetRange.ALL_IN);
 
         int bet = range.getMaxBet(player1);
@@ -292,8 +265,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_ReturnPlayerChips_When_GetMinBetOnAllIn()
-    {
+    void should_ReturnPlayerChips_When_GetMinBetOnAllIn() {
         BetRange range = new BetRange(BetRange.ALL_IN);
 
         int bet = range.getMinBet(player1);
@@ -306,8 +278,7 @@ class BetRangeTest
     // ========================================
 
     @Test
-    void should_CalculatePotSizeBet_When_PotSizeRange()
-    {
+    void should_CalculatePotSizeBet_When_PotSizeRange() {
         // Create pot by having player2 bet
         hand.bet(player2, 50, "test bet");
 
@@ -320,8 +291,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_ReturnMinimumBet_When_PotSizeMinRequested()
-    {
+    void should_ReturnMinimumBet_When_PotSizeMinRequested() {
         // Create pot by having player2 bet
         hand.bet(player2, 50, "test bet");
 
@@ -338,8 +308,7 @@ class BetRangeTest
     // ========================================
 
     @Test
-    void should_CalculateBigBlindBet_When_BigBlindRange()
-    {
+    void should_CalculateBigBlindBet_When_BigBlindRange() {
         BetRange range = new BetRange(BetRange.BIG_BLIND, 3.0f, 3.0f);
 
         int bet = range.chooseBetAmount(player1);
@@ -350,8 +319,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_ScaleWithBigBlind_When_BigBlindRange()
-    {
+    void should_ScaleWithBigBlind_When_BigBlindRange() {
         BetRange range = new BetRange(BetRange.BIG_BLIND, 2.0f, 5.0f);
 
         int minBet = range.getMinBet(player1);
@@ -366,8 +334,7 @@ class BetRangeTest
     // ========================================
 
     @Test
-    void should_CalculateStackSizeBet_When_StackSizeRange()
-    {
+    void should_CalculateStackSizeBet_When_StackSizeRange() {
         PokerPlayer player = new PokerPlayer(3, "Player3", true);
         player.setChipCount(500);
         player.newHand('p');
@@ -384,8 +351,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_ScaleWithPlayerStack_When_StackSizeRange()
-    {
+    void should_ScaleWithPlayerStack_When_StackSizeRange() {
         PokerPlayer player = new PokerPlayer(3, "Player3", true);
         player.setChipCount(800);
         player.newHand('p');
@@ -406,16 +372,14 @@ class BetRangeTest
     // ========================================
 
     @Test
-    void should_ReturnBetWithinRange_When_RandomBetChosen()
-    {
+    void should_ReturnBetWithinRange_When_RandomBetChosen() {
         // Create pot by having player2 bet
         hand.bet(player2, 100, "test bet");
 
         BetRange range = new BetRange(BetRange.POT_SIZE, 0.25f, 0.75f);
 
         // Call multiple times to test randomness
-        for (int i = 0; i < 10; i++)
-        {
+        for (int i = 0; i < 10; i++) {
             int bet = range.chooseBetAmount(player1);
 
             int minExpected = range.getMinBet(player1);
@@ -430,8 +394,7 @@ class BetRangeTest
     // ========================================
 
     @Test
-    void should_FormatAllIn_When_BetEqualsPlayerStack()
-    {
+    void should_FormatAllIn_When_BetEqualsPlayerStack() {
         // Set player with low chips so all-in bet is chosen
         player1.setChipCount(50);
         BetRange range = new BetRange(BetRange.ALL_IN);
@@ -443,8 +406,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_FormatPotSizeFixed_When_MinEqualsMax()
-    {
+    void should_FormatPotSizeFixed_When_MinEqualsMax() {
         hand.bet(player2, 100, "test bet");
         BetRange range = new BetRange(BetRange.POT_SIZE, 0.5f, 0.5f);
 
@@ -456,8 +418,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_FormatPotSizeRange_When_MinNotEqualsMax()
-    {
+    void should_FormatPotSizeRange_When_MinNotEqualsMax() {
         hand.bet(player2, 100, "test bet");
         BetRange range = new BetRange(BetRange.POT_SIZE, 0.25f, 0.75f);
 
@@ -468,8 +429,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_FormatWithBreak_When_BreakParameterTrue()
-    {
+    void should_FormatWithBreak_When_BreakParameterTrue() {
         hand.bet(player2, 100, "test bet");
         BetRange range = new BetRange(BetRange.POT_SIZE, 0.5f, 0.5f);
 
@@ -480,8 +440,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_FormatBigBlindFixed_When_MinEqualsMax()
-    {
+    void should_FormatBigBlindFixed_When_MinEqualsMax() {
         BetRange range = new BetRange(BetRange.BIG_BLIND, 3.0f, 3.0f);
 
         String result = range.toString(player1, false);
@@ -491,8 +450,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_FormatBigBlindRange_When_MinNotEqualsMax()
-    {
+    void should_FormatBigBlindRange_When_MinNotEqualsMax() {
         BetRange range = new BetRange(BetRange.BIG_BLIND, 2.0f, 5.0f);
 
         String result = range.toString(player1, false);
@@ -502,8 +460,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_FormatStackSizeSamePlayer_When_PlayerMatches()
-    {
+    void should_FormatStackSizeSamePlayer_When_PlayerMatches() {
         BetRange range = new BetRange(player1, 0.5f, 0.5f);
 
         String result = range.toString(player1, false);
@@ -514,8 +471,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_FormatStackSizeDifferentPlayer_When_PlayerDoesNotMatch()
-    {
+    void should_FormatStackSizeDifferentPlayer_When_PlayerDoesNotMatch() {
         PokerPlayer player3 = new PokerPlayer(3, "Player3", true);
         player3.setChipCount(800);
         player3.newHand('p');
@@ -531,8 +487,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_ShowSingleAmount_When_MinBetEqualsMaxBet()
-    {
+    void should_ShowSingleAmount_When_MinBetEqualsMaxBet() {
         // Create a small pot to ensure min and max are same after rounding
         hand.bet(player2, 20, "test bet");
         BetRange range = new BetRange(BetRange.POT_SIZE, 0.5f, 0.5f);
@@ -547,8 +502,7 @@ class BetRangeTest
     }
 
     @Test
-    void should_ShowAllInNotation_When_MaxBetEqualsAllIn()
-    {
+    void should_ShowAllInNotation_When_MaxBetEqualsAllIn() {
         // Set player with enough chips so min bet won't be all-in
         player1.setChipCount(500);
         // Small pot so min bet is small

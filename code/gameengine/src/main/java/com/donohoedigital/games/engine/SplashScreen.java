@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -48,14 +48,13 @@ import java.awt.image.*;
 import java.net.*;
 
 /**
- * Splash screen.  Displayed from Game Engine as soon as possible, then later updated
- * when config files have been loaded.  Best not to use logger / PropertyConfig or other
- * config related APIs in constructor.
+ * Splash screen. Displayed from Game Engine as soon as possible, then later
+ * updated when config files have been loaded. Best not to use logger /
+ * PropertyConfig or other config related APIs in constructor.
  *
  * @author Doug Donohoe
  */
-public class SplashScreen extends JFrame implements ActionListener, MouseListener
-{
+public class SplashScreen extends JFrame implements ActionListener, MouseListener {
     private DDButton full_;
     private DDButton win_;
     private DDButton del_;
@@ -67,8 +66,7 @@ public class SplashScreen extends JFrame implements ActionListener, MouseListene
     /**
      * initial splash - shown as soon as possible
      */
-    public SplashScreen(URL bg, URL icon, String sTitle)
-    {
+    public SplashScreen(URL bg, URL icon, String sTitle) {
         super();
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setUndecorated(true);
@@ -94,8 +92,7 @@ public class SplashScreen extends JFrame implements ActionListener, MouseListene
     /**
      * Called by GameEngine after config files loaded
      */
-    public void changeUI(GameEngine engine, boolean bSkipSplashChoice, String sErrorMessage)
-    {
+    public void changeUI(GameEngine engine, boolean bSkipSplashChoice, String sErrorMessage) {
         engine_ = engine;
 
         int BUTTONSIZE = 15;
@@ -103,13 +100,13 @@ public class SplashScreen extends JFrame implements ActionListener, MouseListene
         setTitle(PropertyConfig.getMessage("msg.title.splash"));
 
         String sKey = bSkipSplashChoice ? "splash-nochoice" : "splash";
-        if (sErrorMessage != null) sKey = "splash-empty";
+        if (sErrorMessage != null)
+            sKey = "splash-empty";
 
         // localize
         sKey = PropertyConfig.localize(sKey, engine_.getLocale());
         ImageDef img = ImageConfig.getImageDef(sKey);
-        if (!img.getImageURL().equals(bgFile_))
-        {
+        if (!img.getImageURL().equals(bgFile_)) {
             ic_.changeName(sKey);
         }
 
@@ -123,8 +120,7 @@ public class SplashScreen extends JFrame implements ActionListener, MouseListene
         ic_.add(versionpanel, xy);
 
         // screen mode buttons
-        if (!bSkipSplashChoice)
-        {
+        if (!bSkipSplashChoice) {
             // fullscreen button
             full_ = new GlassButton("fullscreen", "Glass");
             full_.addActionListener(this);
@@ -155,18 +151,15 @@ public class SplashScreen extends JFrame implements ActionListener, MouseListene
             AudioConfig.playFX("bell");
         }
 
-        if (sErrorMessage != null)
-        {
+        if (sErrorMessage != null) {
             DDLabel wrong = new DDLabel(GuiManager.DEFAULT, "SplashWrong");
             wrong.setText(sErrorMessage);
             xy = new XYConstraints(25, 105, ic_.getWidth() - 20, wrong.getPreferredSize().height);
             ic_.add(wrong, xy);
 
-            MouseAdapter listener = new MouseAdapter()
-            {
+            MouseAdapter listener = new MouseAdapter() {
                 // exit if clicked
-                public void mouseReleased(MouseEvent e)
-                {
+                public void mouseReleased(MouseEvent e) {
                     engine_.exit(0);
                 }
             };
@@ -194,70 +187,53 @@ public class SplashScreen extends JFrame implements ActionListener, MouseListene
     /**
      * Invoked when an action occurs.
      */
-    public void actionPerformed(ActionEvent e)
-    {
+    public void actionPerformed(ActionEvent e) {
         action(e.getSource());
     }
 
     /**
      * button press
      */
-    private void action(Object source)
-    {
-        if (source == del_)
-        {
+    private void action(Object source) {
+        if (source == del_) {
             System.exit(0);
-        }
-        else if (source == full_ || source == bpfull_)
-        {
+        } else if (source == full_ || source == bpfull_) {
             engine_.setFull(true);
-        }
-        else if (source == win_ || source == bpwin_)
-        {
+        } else if (source == win_ || source == bpwin_) {
             engine_.setFull(false);
         }
 
-        SwingUtilities.invokeLater(
-                new Runnable()
-                {
-                    public void run()
-                    {
-                        engine_.showMainWindow();
-                    }
-                }
-        );
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                engine_.showMainWindow();
+            }
+        });
     }
 
     /**
      * mouse click
      */
-    public void mouseClicked(MouseEvent e)
-    {
+    public void mouseClicked(MouseEvent e) {
         action(e.getSource());
     }
 
-    public void mouseEntered(MouseEvent e)
-    {
+    public void mouseEntered(MouseEvent e) {
     }
 
-    public void mouseExited(MouseEvent e)
-    {
+    public void mouseExited(MouseEvent e) {
     }
 
-    public void mousePressed(MouseEvent e)
-    {
+    public void mousePressed(MouseEvent e) {
     }
 
-    public void mouseReleased(MouseEvent e)
-    {
+    public void mouseReleased(MouseEvent e) {
 
     }
 
     /**
      * center
      */
-    private void center()
-    {
+    private void center() {
         Dimension size = getSize();
         Point center = GraphicsEnvironment.getLocalGraphicsEnvironment().getCenterPoint();
         int nX = center.x - (size.width / 2);

@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -45,15 +45,11 @@ import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 
 /**
- * Created by IntelliJ IDEA.
- * User: donohoe
- * Date: Apr 18, 2008
- * Time: 12:19:02 PM
+ * Created by IntelliJ IDEA. User: donohoe Date: Apr 18, 2008 Time: 12:19:02 PM
  * To change this template use File | Settings | File Templates.
  */
 @MountPath("forgot")
-public class ForgotPassword extends OnlinePokerPage
-{
+public class ForgotPassword extends OnlinePokerPage {
     private static final long serialVersionUID = 42L;
 
     @SpringBean
@@ -67,28 +63,22 @@ public class ForgotPassword extends OnlinePokerPage
     /**
      * Use logged in user
      */
-    public ForgotPassword()
-    {
+    public ForgotPassword() {
         super(null);
 
         // form data
         CompoundPropertyModel<ForgotPassword> formData = new CompoundPropertyModel<>(this);
 
         // change password form
-        Form<ForgotPassword> pwform = new Form<ForgotPassword>("form", formData)
-        {
+        Form<ForgotPassword> pwform = new Form<ForgotPassword>("form", formData) {
             private static final long serialVersionUID = 42L;
 
             @Override
-            protected void onSubmit()
-            {
+            protected void onSubmit() {
                 OnlineProfile profile = profileService.getOnlineProfileByName(name);
-                if (profile == null)
-                {
+                if (profile == null) {
                     error("There is no profile named '" + name + "'");
-                }
-                else
-                {
+                } else {
                     // Generate new password and hash it (passwords are irreversible with bcrypt)
                     final String newPassword = profileService.generatePassword();
                     profileService.hashAndSetPassword(profile, newPassword);
@@ -96,13 +86,13 @@ public class ForgotPassword extends OnlinePokerPage
 
                     String sSubject = PropertyConfig.getMessage("msg.email.forgot.subject", name);
                     String sPlainText = PropertyConfig.getMessage("msg.email.forgot.plain", name, newPassword);
-                    String sHtmlText = PropertyConfig.getMessage("msg.email.forgot.html", Utils.encodeHTML(name), Utils.encodeHTML(newPassword));
+                    String sHtmlText = PropertyConfig.getMessage("msg.email.forgot.html", Utils.encodeHTML(name),
+                            Utils.encodeHTML(newPassword));
 
                     // get results and send email
-                    postalService.sendMail(profile.getEmail(), PropertyConfig.getRequiredStringProperty("settings.server.profilefrom"),
-                                           null, sSubject,
-                                           sPlainText, sHtmlText,
-                                           null, null);
+                    postalService.sendMail(profile.getEmail(),
+                            PropertyConfig.getRequiredStringProperty("settings.server.profilefrom"), null, sSubject,
+                            sPlainText, sHtmlText, null, null);
 
                     info("Your password has been reset and sent to the email linked to '" + name + "'");
                     name = null;
@@ -119,13 +109,11 @@ public class ForgotPassword extends OnlinePokerPage
         pwform.add(feedback);
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
-    public void setName(String name)
-    {
+    public void setName(String name) {
         this.name = name;
     }
 }

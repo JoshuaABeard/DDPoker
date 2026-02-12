@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -42,12 +42,12 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Provide metadata driven database access.  Associated parameters are stored in <code>server.properties</code>.
+ * Provide metadata driven database access. Associated parameters are stored in
+ * <code>server.properties</code>.
  *
  * @author zak
  */
-public class DatabaseManager
-{
+public class DatabaseManager {
     private static Logger logger = LogManager.getLogger(DatabaseManager.class);
 
     private static final String PROPERTY_PREFIX = "settings.database.";
@@ -68,60 +68,56 @@ public class DatabaseManager
     /**
      * Determine if the manager has been initialized.
      *
-     * @return <code>true</code> if database services are available, <code>false</code> otherwise
+     * @return <code>true</code> if database services are available,
+     *         <code>false</code> otherwise
      */
-    public static boolean isInitialized()
-    {
+    public static boolean isInitialized() {
         return initialized_;
     }
 
     /**
      * Retrieve an interface for the given database.
      *
-     * @param name database name as defined in the metadata
+     * @param name
+     *            database name as defined in the metadata
      *
-     * @return the database, or <code>null</code> if the given database is not defined
+     * @return the database, or <code>null</code> if the given database is not
+     *         defined
      */
-    public static Database getDatabase(String name)
-    {
+    public static Database getDatabase(String name) {
         return hmDatabases_.get(name);
     }
 
     /**
      * Add a logical database.
      *
-     * @param name database name
-     * @param htParams database parameters
+     * @param name
+     *            database name
+     * @param htParams
+     *            database parameters
      */
-    public static void addDatabase(String name, Map<String, String> htParams)
-    {
+    public static void addDatabase(String name, Map<String, String> htParams) {
         // Mark initialized if a database is explicitly added at runtime.
-        if (!initialized_)
-        {
+        if (!initialized_) {
             initialized_ = true;
         }
 
-        //logger.debug("Adding database: " + name);
+        // logger.debug("Adding database: " + name);
         // Create database and set associated values.
         Database database = null;
         String databaseClassName = getParamValue(name, PARAM_CLASS, htParams);
 
-        if (databaseClassName != null)
-        {
-            // Allow the database class to be overridden.  Useful for application-specific initialization, etc.
-            try
-            {
+        if (databaseClassName != null) {
+            // Allow the database class to be overridden. Useful for application-specific
+            // initialization, etc.
+            try {
                 Class<?> databaseClass = Class.forName(databaseClassName);
                 Constructor<?> databaseConstructor = databaseClass.getConstructor(String.class);
                 database = (Database) databaseConstructor.newInstance(name);
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 throw new ApplicationError(e);
             }
-        }
-        else
-        {
+        } else {
             // Use the default database class.
             database = new Database(name);
         }
@@ -143,20 +139,22 @@ public class DatabaseManager
     /**
      * Get a database initialization parameter value.
      *
-     * @param databaseName database name
-     * @param paramName parameter name
-     * @param htParams parameter values
+     * @param databaseName
+     *            database name
+     * @param paramName
+     *            parameter name
+     * @param htParams
+     *            parameter values
      *
      * @return the parameter value, or <code>null</code> if it could not be found
      */
-    private static String getParamValue(String databaseName, String paramName, Map<String, String> htParams)
-    {
-        // First look up the value using the database name (as in the property configuration).
+    private static String getParamValue(String databaseName, String paramName, Map<String, String> htParams) {
+        // First look up the value using the database name (as in the property
+        // configuration).
         String databaseParamName = PROPERTY_PREFIX + databaseName + "." + paramName;
         String paramValue = htParams.get(databaseParamName);
 
-        if (paramValue == null)
-        {
+        if (paramValue == null) {
             // Next try using the given parameter name (as in runtime configuration).
             paramValue = htParams.get(paramName);
         }
@@ -167,24 +165,20 @@ public class DatabaseManager
     /**
      * Execute the given query
      *
-     * @param pstmt The statement
+     * @param pstmt
+     *            The statement
      * @return the results
      * @throws SQLException
      */
-    public static ResultSet executeQuery(PreparedStatement pstmt) throws SQLException
-    {
-        if (TESTING("settings.debug.dbperf"))
-        {
+    public static ResultSet executeQuery(PreparedStatement pstmt) throws SQLException {
+        if (TESTING("settings.debug.dbperf")) {
             long before = System.currentTimeMillis();
-            try
-            {
+            try {
                 return pstmt.executeQuery();
-            }
-            finally
-            {
+            } finally {
                 long after = System.currentTimeMillis();
 
-                //noinspection ThrowableInstanceNeverThrown
+                // noinspection ThrowableInstanceNeverThrown
                 StackTraceElement stack[] = new Throwable().getStackTrace();
                 StringBuilder buf = new StringBuilder();
 
@@ -196,13 +190,14 @@ public class DatabaseManager
                 buf.append((after - before) % 1000);
                 buf.append(" seconds,");
 
-                for (StackTraceElement frame : stack)
-                {
+                for (StackTraceElement frame : stack) {
                     className = frame.getClassName();
-                    if (className.equals(DatabaseManager.class.getName())) continue;
-                    if (className.startsWith("com.donohoedigital.gui.")) break;
-                    if (!className.startsWith("com.donohoedigital.") &&
-                        !className.startsWith("com.ddpoker.")) break;
+                    if (className.equals(DatabaseManager.class.getName()))
+                        continue;
+                    if (className.startsWith("com.donohoedigital.gui."))
+                        break;
+                    if (!className.startsWith("com.donohoedigital.") && !className.startsWith("com.ddpoker."))
+                        break;
                     buf.append("\n    at ");
                     buf.append(className);
                     buf.append(".");
@@ -216,9 +211,7 @@ public class DatabaseManager
 
                 logger.info(buf.toString());
             }
-        }
-        else
-        {
+        } else {
             return pstmt.executeQuery();
         }
     }

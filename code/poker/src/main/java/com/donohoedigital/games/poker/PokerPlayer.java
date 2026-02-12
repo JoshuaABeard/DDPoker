@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -56,10 +56,9 @@ import java.util.*;
 
 /**
  *
- * @author  Doug Donohoe
+ * @author Doug Donohoe
  */
-public class PokerPlayer extends GamePlayer
-{
+public class PokerPlayer extends GamePlayer {
     // info about this player
     private boolean bHuman_;
     private PokerTable table_;
@@ -84,7 +83,8 @@ public class PokerPlayer extends GamePlayer
     private int nOddChips_ = 0;
     private boolean bWonChipRace_ = false;
     private boolean bBrokeChipRace_ = false;
-    private int nTimeMillis_; // store think bank in millis (first 6 digits ... up to 999 seconds), timeout next 4 (214.7 max)
+    private int nTimeMillis_; // store think bank in millis (first 6 digits ... up to 999 seconds), timeout
+                                // next 4 (214.7 max)
     private String playerId_;
     private PokerURL url_;
     private PlayerType playerType_ = null;
@@ -128,22 +128,21 @@ public class PokerPlayer extends GamePlayer
     /**
      * Empty constructor needed for demarshalling
      */
-    public PokerPlayer() {}
+    public PokerPlayer() {
+    }
 
     /**
      * Creates a new instance of PokerPlayer
      */
-    public PokerPlayer(int id, String sName, boolean bHuman)
-    {
+    public PokerPlayer(int id, String sName, boolean bHuman) {
         this(null, id, sName, bHuman);
     }
 
     /**
-     * Creates a new instance of PokerPlayer based on a name.  A PlayerProfile
-     * is created for the player (for use during game; not saved).
+     * Creates a new instance of PokerPlayer based on a name. A PlayerProfile is
+     * created for the player (for use during game; not saved).
      */
-    public PokerPlayer(String sKey, int id, String sName, boolean bHuman)
-    {
+    public PokerPlayer(String sKey, int id, String sName, boolean bHuman) {
         super(id, sName);
         bHuman_ = bHuman;
         playerId_ = sKey;
@@ -153,8 +152,7 @@ public class PokerPlayer extends GamePlayer
     /**
      * Creates a new instance of PokerPlayer
      */
-    public PokerPlayer(String sKey, int id, PlayerProfile profile, boolean bHuman)
-    {
+    public PokerPlayer(String sKey, int id, PlayerProfile profile, boolean bHuman) {
         super(id, profile.getName());
         bHuman_ = bHuman;
         playerId_ = sKey;
@@ -162,54 +160,46 @@ public class PokerPlayer extends GamePlayer
     }
 
     /**
-     * Get display name - in online game, adds (ai) to ai players and (demo) to demo players
-     * and (host) to the host.
+     * Get display name - in online game, adds (ai) to ai players and (demo) to demo
+     * players and (host) to the host.
      */
-    public String getDisplayName(boolean bOnline)
-    {
+    public String getDisplayName(boolean bOnline) {
         return getDisplayName(bOnline, true);
     }
 
     /**
-     * Get display name - in online game, adds (ai) to ai players and (demo) to demo players
-     * and (host) to the host. If bLong is false, (d) and (h) are appended instead.
+     * Get display name - in online game, adds (ai) to ai players and (demo) to demo
+     * players and (host) to the host. If bLong is false, (d) and (h) are appended
+     * instead.
      */
-    public String getDisplayName(boolean bOnline, boolean bLong)
-    {
-        if (!bOnline) return getName();
+    public String getDisplayName(boolean bOnline, boolean bLong) {
+        if (!bOnline)
+            return getName();
 
         String sExtra = bLong ? "" : ".s";
 
-        if (isHost())
-        {
-            return PropertyConfig.getMessage("msg.playername.host"+sExtra, getName());
-        }
-        else if (isComputer())
-        {
+        if (isHost()) {
+            return PropertyConfig.getMessage("msg.playername.host" + sExtra, getName());
+        } else if (isComputer()) {
             return PropertyConfig.getMessage("msg.playername.ai", getName());
-        }
-        else
-        {
+        } else {
             return getName();
         }
     }
 
     /**
-     * Set the associated profile.  Throws an error if the current profile has already been loaded.
+     * Set the associated profile. Throws an error if the current profile has
+     * already been loaded.
      */
-    public void setProfile(PlayerProfile profile)
-    {
-        if (profile_ != profile)
-        {
+    public void setProfile(PlayerProfile profile) {
+        if (profile_ != profile) {
             profile_ = profile;
-            if (profile_ != null)
-            {
+            if (profile_ != null) {
                 setOnlineActivated(profile_.isActivated());
                 setName(profile.getName());
 
                 File file = profile_.getFile();
-                if (file != null)
-                {
+                if (file != null) {
                     sProfileLocation_ = file.getAbsolutePath();
                 }
             }
@@ -219,75 +209,72 @@ public class PokerPlayer extends GamePlayer
     /**
      * Is player from an activate online profile
      */
-    public boolean isOnlineActivated()
-    {
+    public boolean isOnlineActivated() {
         return bOnlineActivated_;
     }
 
     /**
-     * Set whether player is registered online public server.  Only
-     * really used when creating player for online,
-     * where the remote player may or may not be
+     * Set whether player is registered online public server. Only really used when
+     * creating player for online, where the remote player may or may not be
      * registered oline
      */
-    public void setOnlineActivated(boolean b)
-    {
+    public void setOnlineActivated(boolean b) {
         bOnlineActivated_ = b;
     }
 
     /**
      * Set PokerAI type.
      */
-    public void setPlayerType(PlayerType playerType)
-    {
-        if (playerType != playerType_)
-        {
+    public void setPlayerType(PlayerType playerType) {
+        if (playerType != playerType_) {
             playerType_ = playerType;
             createPokerAI();
         }
     }
 
-   /**
-    *  Get player type
-    */
-    public PlayerType getPlayerType()
-    {
+    /**
+     * Get player type
+     */
+    public PlayerType getPlayerType() {
         return playerType_;
     }
 
     /**
      * create ai for the player
      */
-    public void createPokerAI()
-    {
+    public void createPokerAI() {
         // never create AI for players who are not seated
-        if (table_ == null) return;
+        if (table_ == null)
+            return;
 
         // no player type implies remote player - will be instantiated lazily
-        if (playerType_ == null) return;
+        if (playerType_ == null)
+            return;
 
         // don't create AI for computer-only tables that are not being observed
-        if (table_.isAllComputer() && !table_.isCurrent()) return;
+        if (table_.isAllComputer() && !table_.isCurrent())
+            return;
 
         // don't create AI if no ai in tournament and no advisors
-        if (!isAIUsed()) return;
+        if (!isAIUsed())
+            return;
 
         // get existing poker ai
         PokerAI ai = getPokerAI();
 
         // just set the player type if existing AI is the right class
-        if ((ai != null) && (ai.getPlayerType().getAIClassName().equals(playerType_.getAIClassName())))
-        {
-            if (ai.getPlayerType() != playerType_)
-            {
-                if (DebugConfig.isTestingOn()) logger.debug("Updating player type on existing AI. (" + playerType_.getName() + ") for player " + getName());
+        if ((ai != null) && (ai.getPlayerType().getAIClassName().equals(playerType_.getAIClassName()))) {
+            if (ai.getPlayerType() != playerType_) {
+                if (DebugConfig.isTestingOn())
+                    logger.debug("Updating player type on existing AI. (" + playerType_.getName() + ") for player "
+                            + getName());
                 ai.setPlayerType(playerType_);
             }
         }
         // instantiate a new AI
-        else
-        {
-            if (DebugConfig.isTestingOn()) logger.debug("Creating new AI. (" + playerType_.getName() + ") for player " + getName());
+        else {
+            if (DebugConfig.isTestingOn())
+                logger.debug("Creating new AI. (" + playerType_.getName() + ") for player " + getName());
             setPokerAI(PokerAI.createPokerAI(playerType_));
         }
     }
@@ -295,35 +282,30 @@ public class PokerPlayer extends GamePlayer
     /**
      * is ai used for this player in this game?
      */
-    private boolean isAIUsed()
-    {
+    private boolean isAIUsed() {
         PokerGame game = table_.getGame();
         TournamentProfile profile = game.getProfile();
-        return !(game.isOnlineGame() &&
-                 ((!profile.isFillComputer() && !profile.isAllowAdvisor()) ||
-                  (!table_.isCurrent() && !game.getHost().isLocallyControlled())));
+        return !(game.isOnlineGame() && ((!profile.isFillComputer() && !profile.isAllowAdvisor())
+                || (!table_.isCurrent() && !game.getHost().isLocallyControlled())));
 
     }
 
     /**
      * Convienence method which casts to PokerAI
      */
-    public PokerAI getPokerAI()
-    {
+    public PokerAI getPokerAI() {
         PokerAI ai = (PokerAI) getGameAI();
 
-        if ((ai == null) && (playerType_ == null) && isAIUsed())
-        {
+        if ((ai == null) && (playerType_ == null) && isAIUsed()) {
             // this is for online game guests
-            if (isLocallyControlled() && isHuman() && !isObserver())
-            {
+            if (isLocallyControlled() && isHuman() && !isObserver()) {
                 playerType_ = PlayerType.getAdvisor();
-                if (DebugConfig.isTestingOn()) logger.debug("Lazily creating advisor: " + playerType_.getName() + " for " + getName());
+                if (DebugConfig.isTestingOn())
+                    logger.debug("Lazily creating advisor: " + playerType_.getName() + " for " + getName());
                 setPokerAI(PokerAI.createPokerAI(playerType_));
-            }
-            else
-            {
-                if (DebugConfig.isTestingOn()) logger.debug("Lazily instantiating dummy ai for player " + getName());
+            } else {
+                if (DebugConfig.isTestingOn())
+                    logger.debug("Lazily instantiating dummy ai for player " + getName());
                 ai = new PokerAI();
                 ai.init();
                 setPokerAI(ai);
@@ -336,34 +318,27 @@ public class PokerPlayer extends GamePlayer
     /**
      * Set PokerAI - private because actual instantiation is cleverly managed.
      */
-    public void setPokerAI(PokerAI ai)
-    {
-        if (ai != null)
-        {
+    public void setPokerAI(PokerAI ai) {
+        if (ai != null) {
             PokerPlayer player = ai.getPokerPlayer();
 
-            if ((player != null) && (player != this))
-            {
+            if ((player != null) && (player != this)) {
                 throw new ApplicationError("PokerAI objects cannot be shared by multiple players.");
             }
         }
 
-        PokerAI old = (PokerAI)getGameAI(); // call getGameAI to avoid infinite recursion
+        PokerAI old = (PokerAI) getGameAI(); // call getGameAI to avoid infinite recursion
 
-        if (old != ai)
-        {
-            if (old != null)
-            {
+        if (old != ai) {
+            if (old != null) {
                 old.setPokerPlayer(null);
             }
 
-            if (ai != null)
-            {
+            if (ai != null) {
                 ai.setPokerPlayer(this);
             }
 
-            if (ai == null && DebugConfig.isTestingOn())
-            {
+            if (ai == null && DebugConfig.isTestingOn()) {
                 logger.debug("AI cleared for " + getName());
             }
 
@@ -371,24 +346,21 @@ public class PokerPlayer extends GamePlayer
         }
     }
 
-    public void setGameAI(GameAI ai)
-    {
+    public void setGameAI(GameAI ai) {
         throw new ApplicationError("Use PokerPlayer.setPokerAI(), which has critical side effects.");
     }
 
     /**
      * Get player ID
      */
-    public String getPlayerId()
-    {
+    public String getPlayerId() {
         return playerId_;
     }
 
     /**
      * Set player ID
      */
-    void setPlayerId(String playerId)
-    {
+    void setPlayerId(String playerId) {
         playerId_ = playerId;
         bLOCAL = null;
     }
@@ -398,10 +370,8 @@ public class PokerPlayer extends GamePlayer
     /**
      * Is locally controlled?
      */
-    public boolean isLocallyControlled()
-    {
-        if (bLOCAL == null)
-        {
+    public boolean isLocallyControlled() {
+        if (bLOCAL == null) {
             bLOCAL = getPublicUseKey().equals(playerId_) ? Boolean.TRUE : Boolean.FALSE;
         }
         return bLOCAL;
@@ -411,25 +381,23 @@ public class PokerPlayer extends GamePlayer
     /**
      * get player ID from engine (cache locally)
      */
-    private String getPublicUseKey()
-    {
-        if (sPubKey_ == null) sPubKey_ = GameEngine.getGameEngine().getPlayerId();
+    private String getPublicUseKey() {
+        if (sPubKey_ == null)
+            sPubKey_ = GameEngine.getGameEngine().getPlayerId();
         return sPubKey_;
     }
 
     /**
-	** is computer player?
-	*/
-    public boolean isComputer()
-    {
-		return !bHuman_;
+     ** is computer player?
+     */
+    public boolean isComputer() {
+        return !bHuman_;
     }
 
     /**
      * is human?
      */
-    public boolean isHuman()
-    {
+    public boolean isHuman() {
         return bHuman_;
     }
 
@@ -437,19 +405,18 @@ public class PokerPlayer extends GamePlayer
      * is human controlled?
      */
     public boolean isHumanControlled() {
-        return (!TESTING(PokerConstants.TESTING_AUTOPILOT) && (TESTING(PokerConstants.TESTING_DOUG_CONTROLS_AI) || isHuman()));
+        return (!TESTING(PokerConstants.TESTING_AUTOPILOT)
+                && (TESTING(PokerConstants.TESTING_DOUG_CONTROLS_AI) || isHuman()));
     }
 
-    //private static int CNT = 0;
+    // private static int CNT = 0;
     /**
      * Get player profile, lazily create empty profile if none exists.
      */
-    public PlayerProfile getProfile()
-    {
-        if (profile_ == null)
-        {
+    public PlayerProfile getProfile() {
+        if (profile_ == null) {
             profile_ = new PlayerProfile(sName_);
-            //logger.debug("Creating profile " + (CNT++) + " for " + sName_);
+            // logger.debug("Creating profile " + (CNT++) + " for " + sName_);
         }
         return profile_;
     }
@@ -457,104 +424,89 @@ public class PokerPlayer extends GamePlayer
     /**
      * Get player profile, init it if required
      */
-    public PlayerProfile getProfileInitCheck()
-    {
+    public PlayerProfile getProfileInitCheck() {
         PlayerProfile profile = getProfile();
         profile.initCheck();
         return profile;
     }
 
-     /**
-      * Return if profile is defined - useful since we
-      * lazily create the profile.
+    /**
+     * Return if profile is defined - useful since we lazily create the profile.
      */
-    public boolean isProfileDefined()
-    {
+    public boolean isProfileDefined() {
         return profile_ != null;
     }
 
     /**
      * Get player profile location
      */
-    public String getProfilePath()
-    {
+    public String getProfilePath() {
         return sProfileLocation_;
     }
 
     /**
      * Set player profile location (used in online games by host only)
      */
-    public void setProfilePath(String sPath)
-    {
+    public void setProfilePath(String sPath) {
         sProfileLocation_ = sPath;
     }
 
     /**
-     * Get url this player uses to connect to host
-     * in online games
+     * Get url this player uses to connect to host in online games
      */
-    public PokerURL getConnectURL()
-    {
+    public PokerURL getConnectURL() {
         return url_;
     }
 
     /**
-     * Set the url this player uses to connect to host
-     * in online games
+     * Set the url this player uses to connect to host in online games
      */
-    public void setConnectURL(PokerURL url)
-    {
+    public void setConnectURL(PokerURL url) {
         url_ = url;
     }
 
     /**
      * Get total spent
      */
-    public int getTotalSpent()
-    {
+    public int getTotalSpent() {
         return getBuyin() + getRebuy() + getAddon();
     }
 
     /**
      * set amount of buyin
      */
-    public void setBuyin(int n)
-    {
+    public void setBuyin(int n) {
         nBuyin_ = n;
     }
 
     /**
      * get amount of buyin
      */
-    public int getBuyin()
-    {
+    public int getBuyin() {
         return nBuyin_;
     }
-    
+
     /**
      * is player in hand?
      */
-    public boolean isInHand()
-    {
+    public boolean isInHand() {
         HoldemHand hhand = getHoldemHand();
-        if (hhand == null) return false;
-        if (isFolded()) return false;
+        if (hhand == null)
+            return false;
+        if (isFolded())
+            return false;
         return (hhand.getRound() != HoldemHand.ROUND_SHOWDOWN);
     }
 
     /**
      * Add a rebuy (increment total rebuy $ and count)
      */
-    public void addRebuy(int nAmount, int nChips, boolean bPending)
-    {
-        if (bPending)
-        {
+    public void addRebuy(int nAmount, int nChips, boolean bPending) {
+        if (bPending) {
             nPendingRebuyCnt_++;
             nPendingRebuyAmount_ += nAmount;
             nPendingRebuyChips_ += nChips;
-        }
-        else
-        {
+        } else {
             nNumRebuy_++;
             nRebuy_ += nAmount;
             nChips_ += nChips;
@@ -562,15 +514,15 @@ public class PokerPlayer extends GamePlayer
             getTable().getGame().chipsBought(nChips);
         }
 
-        if (table_ != null) table_.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REBUY,
-                                                        table_, this, nAmount, nChips, bPending));
+        if (table_ != null)
+            table_.firePokerTableEvent(
+                    new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REBUY, table_, this, nAmount, nChips, bPending));
     }
-    
+
     /**
      * Handle pending rebuys
      */
-    public void addPendingRebuys()
-    {
+    public void addPendingRebuys() {
         nNumRebuy_ += nPendingRebuyCnt_;
         nRebuy_ += nPendingRebuyAmount_;
         nChips_ += nPendingRebuyChips_;
@@ -585,177 +537,159 @@ public class PokerPlayer extends GamePlayer
     /**
      * Get number of rebuys
      */
-    public int getNumRebuys()
-    {
+    public int getNumRebuys() {
         return nNumRebuy_;
     }
-    
+
     /**
      * Get number of pending rebuys
      */
-    public int getNumRebuysPending()
-    {
+    public int getNumRebuysPending() {
         return nPendingRebuyCnt_;
     }
-    
+
     /**
      * Get number of pending rebuy chips
      */
-    public int getRebuysChipsPending()
-    {
+    public int getRebuysChipsPending() {
         return nPendingRebuyChips_;
     }
 
     /**
      * get amount of rebuy
      */
-    public int getRebuy()
-    {
+    public int getRebuy() {
         return nRebuy_;
     }
 
     /**
      * set amount of addon
      */
-    public void addAddon(int nAmount, int nChips)
-    {
-        if (nAddon_ > 0) return; // prevent duplicate add-on
-        
+    public void addAddon(int nAmount, int nChips) {
+        if (nAddon_ > 0)
+            return; // prevent duplicate add-on
+
         nAddon_ += nAmount;
         nChips_ += nChips;
 
         getTable().getGame().chipsBought(nChips);
 
-        if (table_ != null) table_.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ADDON,
-                                                        table_, this, nAmount, nChips, false));
+        if (table_ != null)
+            table_.firePokerTableEvent(
+                    new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ADDON, table_, this, nAmount, nChips, false));
     }
 
     /**
      * get amount of addon
      */
-    public int getAddon()
-    {
+    public int getAddon() {
         return nAddon_;
     }
 
     /**
      * set amount of prize won
      */
-    public void setPrize(int n)
-    {
+    public void setPrize(int n) {
         nPrize_ = n;
     }
 
     /**
      * get amount of prize
      */
-    public int getPrize()
-    {
+    public int getPrize() {
         return nPrize_;
     }
 
     /**
      * set place finished in tournament
      */
-    public void setPlace(int n)
-    {
+    public void setPlace(int n) {
         nPlace_ = n;
     }
 
     /**
      * get place finished in tournament
      */
-    public int getPlace()
-    {
+    public int getPlace() {
         return nPlace_;
     }
 
     /**
      * Get number of chips this player has
      */
-    public int getChipCount()
-    {
+    public int getChipCount() {
         return nChips_;
     }
 
     /**
      * Get number of odd chips
      */
-    public int getOddChips()
-    {
+    public int getOddChips() {
         return nOddChips_;
     }
 
     /**
      * Set number of odd chips
      */
-    public void setOddChips(int n)
-    {
+    public void setOddChips(int n) {
         nOddChips_ = n;
     }
 
     /**
      * Get whether a chip won in chip race
      */
-    public boolean isWonChipRace()
-    {
+    public boolean isWonChipRace() {
         return bWonChipRace_;
     }
 
     /**
      * Set whether a chip was won in chip race
      */
-    public void setWonChipRace(boolean b)
-    {
+    public void setWonChipRace(boolean b) {
         bWonChipRace_ = b;
     }
 
     /**
      * Get whether a chip won in chip race to keep from going broke
      */
-    public boolean isBrokeChipRace()
-    {
+    public boolean isBrokeChipRace() {
         return bBrokeChipRace_;
     }
 
     /**
      * Set whether a chip was won in chip race to keep from going broke
      */
-    public void setBrokeChipRace(boolean b)
-    {
+    public void setBrokeChipRace(boolean b) {
         bBrokeChipRace_ = b;
     }
 
     /**
-     * Get number of chips player had at start of last hand.  This
-     * is used in resolving ties for prizes.
+     * Get number of chips player had at start of last hand. This is used in
+     * resolving ties for prizes.
      */
-    public int getChipCountAtStart()
-    {
+    public int getChipCountAtStart() {
         return nChipsAtStart_;
     }
 
     /**
      * Set number of chips
      */
-    public void setChipCount(int n)
-    {
+    public void setChipCount(int n) {
         nChips_ = n;
     }
 
     /**
-     * Called when chip count is manipulated by cheat options, so that AI can properly adjust to new stack size. 
+     * Called when chip count is manipulated by cheat options, so that AI can
+     * properly adjust to new stack size.
      */
-    void adjustChipCountAtStart(int n)
-    {
+    void adjustChipCountAtStart(int n) {
         nChipsAtStart_ += n;
     }
 
     /**
      * add chips
      */
-    public void addChips(int n)
-    {
+    public void addChips(int n) {
         nChips_ += n;
     }
 
@@ -768,8 +702,7 @@ public class PokerPlayer extends GamePlayer
     /**
      * Set timeout millis (stored as tenths, so truncated)
      */
-    public void setTimeoutMillis(int n)
-    {
+    public void setTimeoutMillis(int n) {
         n /= 100; // convert to tenths
         nTimeMillis_ = (n * MILLION) + getThinkBankMillis();
     }
@@ -777,64 +710,56 @@ public class PokerPlayer extends GamePlayer
     /**
      * Get timeout millis
      */
-    public int getTimeoutMillis()
-    {
+    public int getTimeoutMillis() {
         return (nTimeMillis_ / MILLION) * 100;
     }
 
     /**
      * Set think bank millis
      */
-    public void setThinkBankMillis(int n)
-    {
+    public void setThinkBankMillis(int n) {
         nTimeMillis_ = (nTimeMillis_ - getThinkBankMillis()) + n;
     }
 
     /**
      * Get think bank millis (use int since limited to 10 minutes)
      */
-    public int getThinkBankMillis()
-    {
+    public int getThinkBankMillis() {
         return nTimeMillis_ % MILLION;
     }
 
     /**
      * set last time thinkbank seconds were changed (transient)
      */
-    public void setThinkBankAccessed(long n)
-    {
+    public void setThinkBankAccessed(long n) {
         nThinkTankAccessed_ = n;
     }
 
     /**
      * Get time thinkbank last accessed
      */
-    public long getThinkBankAccessed()
-    {
+    public long getThinkBankAccessed() {
         return nThinkTankAccessed_;
     }
 
     /**
      * set seconds left when timeout message was sent
      */
-    public void setTimeoutMessageSecondsLeft(int n)
-    {
+    public void setTimeoutMessageSecondsLeft(int n) {
         nTimeoutMsgSent_ = n;
     }
 
     /**
      * Get seconds left when last timeout message was sent
      */
-    public int getTimeoutMessageSecondsLeft()
-    {
+    public int getTimeoutMessageSecondsLeft() {
         return nTimeoutMsgSent_;
     }
 
     /**
      * Set the table we are at (done from PokerTable)
      */
-    void setTable(PokerTable table, int nSeat)
-    {
+    void setTable(PokerTable table, int nSeat) {
         if (table == null) {
             setPokerAI(null);
             table_ = null;
@@ -842,11 +767,10 @@ public class PokerPlayer extends GamePlayer
             return;
         }
 
-        if (table_ != null)
-        {
+        if (table_ != null) {
             throw new ApplicationError(ErrorCodes.ERROR_CODE_ERROR,
-                toString() + " already at table " + table_ + ", but trying to assign to another table: "+
-                table, null);
+                    toString() + " already at table " + table_ + ", but trying to assign to another table: " + table,
+                    null);
         }
         table_ = table;
         nSeat_ = nSeat;
@@ -856,52 +780,45 @@ public class PokerPlayer extends GamePlayer
     /**
      * Get the table we are at
      */
-    public PokerTable getTable()
-    {
+    public PokerTable getTable() {
         return table_;
     }
 
     /**
      * Get the seat we are at
      */
-    public int getSeat()
-    {
+    public int getSeat() {
         return nSeat_;
     }
 
     /**
      * Set the seat we are at (used only by PokerDatabase)
      */
-    public void setSeat(int nSeat)
-    {
+    public void setSeat(int nSeat) {
         nSeat_ = nSeat;
     }
 
     /**
      * Get the current hand
      */
-    public Hand getHand()
-    {
+    public Hand getHand() {
         return hand_;
     }
 
     /**
      * Get sorted hand (ascending) - for use in AI and other stats work
      */
-    public HandSorted getHandSorted()
-    {
-        if ((hand_ != null) && ((handSorted_ == null) || (handSorted_.fingerprint() != hand_.fingerprint())))
-        {
+    public HandSorted getHandSorted() {
+        if ((hand_ != null) && ((handSorted_ == null) || (handSorted_.fingerprint() != hand_.fingerprint()))) {
             handSorted_ = new HandSorted(hand_);
         }
         return handSorted_;
     }
 
     /**
-     *  Remove players hand
+     * Remove players hand
      */
-    public void removeHand()
-    {
+    public void removeHand() {
         hand_ = null;
         handSorted_ = null;
         handInfo_ = null;
@@ -910,18 +827,19 @@ public class PokerPlayer extends GamePlayer
     /*
      * Get new hand (old one discarded)
      */
-    public Hand newHand(char cType)
-    {
+    public Hand newHand(char cType) {
         removeHand();
         hand_ = new Hand(cType);
-        if (cType == Hand.TYPE_NORMAL) nHandsPlayed_ ++;
+        if (cType == Hand.TYPE_NORMAL)
+            nHandsPlayed_++;
         nLastCalcFingerprint_ = -1;
         nLastCalcPotRound_ = -1;
         nChipsAtStart_ = nChips_; // track for resolving ties when exiting tournament
         sAllInPerc_ = null;
         bFolded_ = false;
         bCardsExposed_ = false;
-        if (table_ != null) setThinkBankMillis(table_.getGame().getProfile().getThinkBankSeconds() * 1000);
+        if (table_ != null)
+            setThinkBankMillis(table_.getGame().getProfile().getThinkBankSeconds() * 1000);
         setShowWinning(false);
         setMuckLosing(true);
 
@@ -931,8 +849,7 @@ public class PokerPlayer extends GamePlayer
     /**
      * init for simulated hand, similar to newHand() init
      */
-    public void newSimulatedHand()
-    {
+    public void newSimulatedHand() {
         removeHand();
         bFolded_ = false;
         nSimulatedBet_ = 0;
@@ -942,73 +859,66 @@ public class PokerPlayer extends GamePlayer
     /**
      * end hand housekeeping (sit-out/disconnect count)
      */
-    public void endHand()
-    {
-        if (isDisconnected()) nHandsDisconnected_++;
-        else if (isSittingOut()) nHandsSitout_++;
+    public void endHand() {
+        if (isDisconnected())
+            nHandsDisconnected_++;
+        else if (isSittingOut())
+            nHandsSitout_++;
     }
 
     /**
      * Set all in percentage display
      */
-    public void setAllInPerc(String s)
-    {
+    public void setAllInPerc(String s) {
         sAllInPerc_ = s;
     }
 
     /**
      * Get all in percentage display
      */
-    public String getAllInPerc()
-    {
+    public String getAllInPerc() {
         return sAllInPerc_;
     }
 
     /**
      * increment all-in win
      */
-    public void addAllInWin()
-    {
+    public void addAllInWin() {
         nAllInWin_++;
     }
 
     /**
      * Get all-in win
      */
-    public int getAllInWin()
-    {
+    public int getAllInWin() {
         return nAllInWin_;
     }
 
     /**
      * Clear all-in win
      */
-    public void clearAllInWin()
-    {
+    public void clearAllInWin() {
         nAllInWin_ = 0;
     }
 
     /**
      * Set all-in score
      */
-    public void setAllInScore(int n)
-    {
+    public void setAllInScore(int n) {
         nAllInScore_ = n;
     }
 
     /**
      * Get all-in score
      */
-    public int getAllInScore()
-    {
+    public int getAllInScore() {
         return nAllInScore_;
     }
 
     /**
      * Fold
      */
-    public void fold(String sDebug, int nFoldType)
-    {
+    public void fold(String sDebug, int nFoldType) {
         setFolded(true); // set before notifying hand due to listeners that may query player
         getHoldemHand().fold(this, sDebug, nFoldType);
     }
@@ -1016,42 +926,36 @@ public class PokerPlayer extends GamePlayer
     /**
      * Set folded, without side effects on the hand.
      */
-    public void setFolded(boolean bFolded)
-    {
+    public void setFolded(boolean bFolded) {
         bFolded_ = bFolded;
     }
 
     /**
      * Is folded
      */
-    public boolean isFolded()
-    {
+    public boolean isFolded() {
         return bFolded_;
     }
 
     /**
      * Set whether player exposed cards
      */
-    public void setCardsExposed(boolean b)
-    {
+    public void setCardsExposed(boolean b) {
         bCardsExposed_ = b;
     }
 
     /**
      * Were cards exposed for current hand?
      */
-    public boolean isCardsExposed()
-    {
+    public boolean isCardsExposed() {
         return bCardsExposed_;
     }
 
     /**
      * Set whether player is sitting out
      */
-    public void setSittingOut(boolean b)
-    {
-        if (b != bSittingOut_)
-        {
+    public void setSittingOut(boolean b) {
+        if (b != bSittingOut_) {
             bSittingOut_ = b;
             fireSettingsChanged();
         }
@@ -1060,18 +964,15 @@ public class PokerPlayer extends GamePlayer
     /**
      * Is player sitting out?
      */
-    public boolean isSittingOut()
-    {
+    public boolean isSittingOut() {
         return bSittingOut_;
     }
 
     /**
      * Set whether player mucks losing hands
      */
-    public void setMuckLosing(boolean b)
-    {
-        if (b != bMuckLosing_)
-        {
+    public void setMuckLosing(boolean b) {
+        if (b != bMuckLosing_) {
             bMuckLosing_ = b;
             fireSettingsChanged();
         }
@@ -1080,18 +981,15 @@ public class PokerPlayer extends GamePlayer
     /**
      * Is player mucking losing hands?
      */
-    public boolean isMuckLosing()
-    {
+    public boolean isMuckLosing() {
         return bMuckLosing_;
     }
 
     /**
      * Set whether player shows winning hands (when uncontested)
      */
-    public void setShowWinning(boolean b)
-    {
-        if (b != bShowWinning_)
-        {
+    public void setShowWinning(boolean b) {
+        if (b != bShowWinning_) {
             bShowWinning_ = b;
             fireSettingsChanged();
         }
@@ -1100,18 +998,15 @@ public class PokerPlayer extends GamePlayer
     /**
      * Is player mucking showing winning hands (when uncontested)?
      */
-    public boolean isShowWinning()
-    {
+    public boolean isShowWinning() {
         return bShowWinning_;
     }
 
     /**
      * Set whether player should be asked to show losing hand
      */
-    public void setAskShowLosing(boolean b)
-    {
-        if (b != bAskShowLosing_)
-        {
+    public void setAskShowLosing(boolean b) {
+        if (b != bAskShowLosing_) {
             bAskShowLosing_ = b;
             fireSettingsChanged();
         }
@@ -1120,18 +1015,15 @@ public class PokerPlayer extends GamePlayer
     /**
      * Should player be asked to showing losing hands?
      */
-    public boolean isAskShowLosing()
-    {
+    public boolean isAskShowLosing() {
         return bAskShowLosing_;
     }
 
     /**
      * Set whether player should be asked to show winning hand
      */
-    public void setAskShowWinning(boolean b)
-    {
-        if (b != bAskShowWinning_)
-        {
+    public void setAskShowWinning(boolean b) {
+        if (b != bAskShowWinning_) {
             bAskShowWinning_ = b;
             fireSettingsChanged();
         }
@@ -1140,99 +1032,88 @@ public class PokerPlayer extends GamePlayer
     /**
      * Should player be asked to showing winning hands (when uncontested)?
      */
-    public boolean isAskShowWinning()
-    {
+    public boolean isAskShowWinning() {
         return bAskShowWinning_;
     }
 
     /**
      * Set whether player is disconnected
      */
-    public void setDisconnected(boolean b)
-    {
+    public void setDisconnected(boolean b) {
         bDisconnected_ = b;
     }
 
     /**
      * Is player disconnected?
      */
-    public boolean isDisconnected()
-    {
+    public boolean isDisconnected() {
         return bDisconnected_;
     }
 
     /**
      * Get number of hands played
      */
-    public int getHandsPlayed()
-    {
+    public int getHandsPlayed() {
         return nHandsPlayed_;
     }
 
     /**
-     * Get number of hands played when last moved -
-     * this is used to sort my most recently moved
+     * Get number of hands played when last moved - this is used to sort my most
+     * recently moved
      */
-    public int getHandsPlayedAtLastMove()
-    {
+    public int getHandsPlayedAtLastMove() {
         return nHandsPlayedLastMove_;
     }
 
     /**
      * get number of hands played while disconnected
      */
-    public int getHandsPlayedDisconnected()
-    {
+    public int getHandsPlayedDisconnected() {
         return nHandsDisconnected_;
     }
 
     /**
      * get number of hands played while disconnected
      */
-    public int getHandsPlayedSitout()
-    {
+    public int getHandsPlayedSitout() {
         return nHandsSitout_;
     }
 
     /**
      * return if this player was booted
      */
-    public boolean isBooted()
-    {
+    public boolean isBooted() {
         return bBooted_;
     }
 
     /**
      * set that this player is booted
      */
-    public void setBooted(boolean b)
-    {
+    public void setBooted(boolean b) {
         bBooted_ = b;
     }
 
     /**
      * return if this player is waiting to be seated
      */
-    public boolean isWaiting()
-    {
+    public boolean isWaiting() {
         return bOnWaitList_;
     }
 
     /**
      * set that this player is waiting for a seat
      */
-    public void setWaiting(boolean b)
-    {
+    public void setWaiting(boolean b) {
         bOnWaitList_ = b;
-        nWaitListTime_ =  bOnWaitList_ ? Utils.getCurrentTimeStamp() : 0;
-        if (bOnWaitList_) removeHand();
+        nWaitListTime_ = bOnWaitList_ ? Utils.getCurrentTimeStamp() : 0;
+        if (bOnWaitList_)
+            removeHand();
     }
 
     /**
      * Get timestamp when player was added to wait list
      */
-    public long getWaitListTimeStamp()
-    {
+    public long getWaitListTimeStamp() {
         return nWaitListTime_;
     }
 
@@ -1240,48 +1121,43 @@ public class PokerPlayer extends GamePlayer
      * return true if player bet something (other than ante), it is the showdown,
      * and the show folded option is true
      */
-    public boolean showFoldedHand()
-    {
-        boolean bShowFold = PokerUtils.isCheatOn(getTable().getGame().getGameContext(), PokerConstants.OPTION_CHEAT_SHOWFOLD);
+    public boolean showFoldedHand() {
+        boolean bShowFold = PokerUtils.isCheatOn(getTable().getGame().getGameContext(),
+                PokerConstants.OPTION_CHEAT_SHOWFOLD);
         HoldemHand hhand = getHoldemHand();
-        return
-            bShowFold &&
-            hhand != null &&
-            hhand.getRound() == HoldemHand.ROUND_SHOWDOWN &&
-            (isHuman() || (hhand.getTotalBet(this) - hhand.getAnteSmallBlind(this)) > 0);
+        return bShowFold && hhand != null && hhand.getRound() == HoldemHand.ROUND_SHOWDOWN
+                && (isHuman() || (hhand.getTotalBet(this) - hhand.getAnteSmallBlind(this)) > 0);
     }
 
-    public void processAction(HandAction action)
-    {
+    public void processAction(HandAction action) {
         // process it (we do it this way because we might want to get the
         // action w/out processing it - i.e., for help or hints)
-        switch (action.getAction())
-        {
-            case HandAction.ACTION_FOLD:
+        switch (action.getAction()) {
+            case HandAction.ACTION_FOLD :
                 fold(action.getDebug(), action.getSubAmount());
                 break;
 
-            case HandAction.ACTION_CHECK:
+            case HandAction.ACTION_CHECK :
                 check(action.getDebug());
                 break;
 
-            case HandAction.ACTION_CHECK_RAISE:
+            case HandAction.ACTION_CHECK_RAISE :
                 checkraise(action.getDebug());
                 break;
 
-            case HandAction.ACTION_BET:
+            case HandAction.ACTION_BET :
                 bet(action.getAmount(), action.getDebug());
                 break;
 
-           case HandAction.ACTION_CALL:
+            case HandAction.ACTION_CALL :
                 call(action.getDebug());
                 break;
 
-           case HandAction.ACTION_RAISE:
+            case HandAction.ACTION_RAISE :
                 raise(action.getAmount(), action.getDebug());
                 break;
 
-            default:
+            default :
                 ApplicationError.assertTrue(false, "Unknown HandAction action: " + action.getAction());
         }
     }
@@ -1289,9 +1165,9 @@ public class PokerPlayer extends GamePlayer
     /**
      * ante
      */
-    public void ante(int nAmount)
-    {
-        if (nAmount > nChips_) nAmount = nChips_;
+    public void ante(int nAmount) {
+        if (nAmount > nChips_)
+            nAmount = nChips_;
         HoldemHand hhand = getHoldemHand();
         nChips_ -= nAmount;
         hhand.ante(this, nAmount);
@@ -1300,53 +1176,55 @@ public class PokerPlayer extends GamePlayer
     /**
      * small blind
      */
-    public void smallblind(int nAmount)
-    {
-        if (nAmount > nChips_) nAmount = nChips_;
+    public void smallblind(int nAmount) {
+        if (nAmount > nChips_)
+            nAmount = nChips_;
         HoldemHand hhand = getHoldemHand();
         nChips_ -= nAmount;
         // only record blind if amount > 0 - this check
         // because player could have gone all-in on the
         // ante
-        if (nAmount > 0) hhand.smallblind(this, nAmount);
+        if (nAmount > 0)
+            hhand.smallblind(this, nAmount);
     }
 
     /**
      * bigblind
      */
-    public void bigblind(int nAmount)
-    {
-        if (nAmount > nChips_) nAmount = nChips_;
+    public void bigblind(int nAmount) {
+        if (nAmount > nChips_)
+            nAmount = nChips_;
         HoldemHand hhand = getHoldemHand();
         nChips_ -= nAmount;
         // only record blind if amount > 0 - this check
         // because player could have gone all-in on the
         // ante
-        if (nAmount > 0) hhand.bigblind(this, nAmount);
+        if (nAmount > 0)
+            hhand.bigblind(this, nAmount);
     }
 
     /**
      * Bet
      */
-    public void bet(int nAmount, String sDebug)
-    {
-        if (nAmount > nChips_) nAmount = nChips_;
+    public void bet(int nAmount, String sDebug) {
+        if (nAmount > nChips_)
+            nAmount = nChips_;
         HoldemHand hhand = getHoldemHand();
 
         // safety check:
         // if asking to bet, but we need to call, make
         // the right call instead
         int nCall = hhand.getCall(this);
-        if (nCall != 0)
-        {
+        if (nCall != 0) {
             hhand.debugPrint();
-            throw new ApplicationError(ErrorCodes.ERROR_INVALID, "Attempt to bet $"+nAmount+
-                                                                 "when a call of $"+nCall+" needs to be made", sDebug, null);
+            throw new ApplicationError(ErrorCodes.ERROR_INVALID,
+                    "Attempt to bet $" + nAmount + "when a call of $" + nCall + " needs to be made", sDebug, null);
         }
 
         // can't bet more than the max
         int nMaxBet = hhand.getMaxBet(this);
-        if (nAmount > nMaxBet) nAmount = nMaxBet;
+        if (nAmount > nMaxBet)
+            nAmount = nMaxBet;
 
         nChips_ -= nAmount;
         hhand.bet(this, nAmount, sDebug);
@@ -1355,9 +1233,9 @@ public class PokerPlayer extends GamePlayer
     /**
      * Bet for testing (less error checking)
      */
-    public void betTest(int nAmount)
-    {
-        if (nAmount > nChips_) nAmount = nChips_;
+    public void betTest(int nAmount) {
+        if (nAmount > nChips_)
+            nAmount = nChips_;
         HoldemHand hhand = getHoldemHand();
 
         nChips_ -= nAmount;
@@ -1367,48 +1245,45 @@ public class PokerPlayer extends GamePlayer
     /**
      * Raise amount (this is added to the amount we need to call)
      */
-    public void raise(int nAmount, String sDebug)
-    {
+    public void raise(int nAmount, String sDebug) {
         // get hand and call amount
         HoldemHand hhand = getHoldemHand();
         int nCall = hhand.getCall(this);
 
         // if only enough chips to call, then just call
-        if (nCall >= nChips_)
-        {
+        if (nCall >= nChips_) {
             call(sDebug);
             return;
         }
 
         // safety check:
         // if nothing to call and we haven't bet yet, make this a bet instead
-        if (nCall == 0 && hhand.getBet(this) == 0)
-        {
+        if (nCall == 0 && hhand.getBet(this) == 0) {
             bet(nAmount, sDebug);
             return;
         }
 
         // see what we will have left to raise after calling
         int nChipsAfterCall = nChips_ - nCall;
-        if (nAmount > nChipsAfterCall) nAmount = nChipsAfterCall;
+        if (nAmount > nChipsAfterCall)
+            nAmount = nChipsAfterCall;
 
         // can't raise more than the max less already bet
         int nMaxRaise = hhand.getMaxRaise(this);
-        if (nAmount > nMaxRaise) nAmount = nMaxRaise;
+        if (nAmount > nMaxRaise)
+            nAmount = nMaxRaise;
 
-        // make sure raise is at least min raise (taking into account chips left after call)
+        // make sure raise is at least min raise (taking into account chips left after
+        // call)
         int nMinRaise = hhand.getMinRaise();
-        if (nAmount < nMinRaise && nAmount < nChipsAfterCall && nAmount > 0 && nAmount < nMaxRaise)
-        {
+        if (nAmount < nMinRaise && nAmount < nChipsAfterCall && nAmount > 0 && nAmount < nMaxRaise) {
             hhand.debugPrint();
-            throw new ApplicationError(ErrorCodes.ERROR_INVALID, "Attempt to raise $"+nAmount+
-                                                                 " which is less than min raise of $"+nMinRaise,
-                                                                 sDebug, null);
+            throw new ApplicationError(ErrorCodes.ERROR_INVALID,
+                    "Attempt to raise $" + nAmount + " which is less than min raise of $" + nMinRaise, sDebug, null);
         }
 
         // if nothing to raise, just call (<= is a safety check)
-        if (nAmount <= 0)
-        {
+        if (nAmount <= 0) {
             call(sDebug);
             return;
         }
@@ -1420,19 +1295,18 @@ public class PokerPlayer extends GamePlayer
     /**
      * Call
      */
-    public void call(String sDebug)
-    {
+    public void call(String sDebug) {
         HoldemHand hhand = getHoldemHand();
         int nAmount = hhand.getCall(this);
 
         // if no call, this is a check
-        if (nAmount == 0)
-        {
+        if (nAmount == 0) {
             check(sDebug);
             return;
         }
 
-        if (nAmount > nChips_) nAmount = nChips_;
+        if (nAmount > nChips_)
+            nAmount = nChips_;
         nChips_ -= nAmount;
         hhand.call(this, nAmount, sDebug);
     }
@@ -1440,8 +1314,7 @@ public class PokerPlayer extends GamePlayer
     /**
      * check
      */
-    public void check(String sDebug)
-    {
+    public void check(String sDebug) {
         HoldemHand hhand = getHoldemHand();
         int nAmount = hhand.getCall(this);
         ApplicationError.assertTrue(nAmount == 0, "Checking with bet to call", sDebug);
@@ -1451,8 +1324,7 @@ public class PokerPlayer extends GamePlayer
     /**
      * checkraise
      */
-    public void checkraise(String sDebug)
-    {
+    public void checkraise(String sDebug) {
         HoldemHand hhand = getHoldemHand();
         hhand.checkraise(this, sDebug);
     }
@@ -1460,8 +1332,7 @@ public class PokerPlayer extends GamePlayer
     /**
      * Wins pot
      */
-    public void wins(int nAmount, int nPot)
-    {
+    public void wins(int nAmount, int nPot) {
         HoldemHand hhand = getHoldemHand();
         nChips_ += nAmount;
         hhand.wins(this, nAmount, nPot);
@@ -1470,8 +1341,7 @@ public class PokerPlayer extends GamePlayer
     /**
      * Overbet returned
      */
-    public void overbet(int nAmount, int nPot)
-    {
+    public void overbet(int nAmount, int nPot) {
         HoldemHand hhand = getHoldemHand();
         nChips_ += nAmount;
         hhand.overbet(this, nAmount, nPot);
@@ -1480,8 +1350,7 @@ public class PokerPlayer extends GamePlayer
     /**
      * Loses pot
      */
-    public void lose(int nPot)
-    {
+    public void lose(int nPot) {
         HoldemHand hhand = getHoldemHand();
         hhand.lose(this, nPot);
     }
@@ -1489,47 +1358,41 @@ public class PokerPlayer extends GamePlayer
     /**
      * transient - used during pot resolution
      */
-    void setPendingWin(int nAmount)
-    {
+    void setPendingWin(int nAmount) {
         nPendingWin_ = nAmount;
     }
 
     /**
      * transient - get pending win
      */
-    int getPendingWin()
-    {
+    int getPendingWin() {
         return nPendingWin_;
     }
 
     /**
      * is this player all in?
      */
-    public boolean isAllIn()
-    {
+    public boolean isAllIn() {
         return nChips_ == 0;
     }
 
     /**
      * Get holdem hadn
      */
-    public HoldemHand getHoldemHand()
-    {
-        if (table_ == null) return null;
+    public HoldemHand getHoldemHand() {
+        if (table_ == null)
+            return null;
         return table_.getHoldemHand();
     }
 
     /**
      * Get hand info (lazy creation)
      */
-    public HandInfo getHandInfo()
-    {
-        if (handInfo_ == null)
-        {
+    public HandInfo getHandInfo() {
+        if (handInfo_ == null) {
             HandSorted sorted = getHandSorted();
             HoldemHand hhand = getHoldemHand();
-            if (sorted != null && hhand != null)
-            {
+            if (sorted != null && hhand != null) {
                 handInfo_ = new HandInfo(this, sorted, hhand.getCommunitySorted());
             }
         }
@@ -1550,28 +1413,30 @@ public class PokerPlayer extends GamePlayer
     /**
      * Get name for debugging
      */
-    public static String getPositionName(int n)
-    {
-        switch (n)
-        {
-            case EARLY: return "early";
-            case MIDDLE: return "middle";
-            case LATE:     return "late";
-            case SMALL:    return "small";
-            case BIG: return "big";
-                default: return "none";
+    public static String getPositionName(int n) {
+        switch (n) {
+            case EARLY :
+                return "early";
+            case MIDDLE :
+                return "middle";
+            case LATE :
+                return "late";
+            case SMALL :
+                return "small";
+            case BIG :
+                return "big";
+            default :
+                return "none";
         }
     }
 
     /**
-     * Set position of this player (from HoldemHand.setPlayerOrder()).
-     * Value ranges from 1 to # players
+     * Set position of this player (from HoldemHand.setPlayerOrder()). Value ranges
+     * from 1 to # players
      */
-    void setPosition(int n, int nRound)
-    {
+    void setPosition(int n, int nRound) {
         nPosition_ = n;
-        if (nRound == HoldemHand.ROUND_PRE_FLOP)
-        {
+        if (nRound == HoldemHand.ROUND_PRE_FLOP) {
             nStartingPositionCat_ = getPositionCategory();
         }
     }
@@ -1579,34 +1444,37 @@ public class PokerPlayer extends GamePlayer
     /**
      * Get position at table
      */
-    int getPosition()
-    {
+    int getPosition() {
         return nPosition_;
     }
 
     /**
      * Get starting position category
      */
-    public int getStartingPositionCategory()
-    {
+    public int getStartingPositionCategory() {
         return nStartingPositionCat_;
     }
 
     /**
      * Get position debug style
      */
-    public String getPositionDebug()
-    {
+    public String getPositionDebug() {
         HoldemHand hand = getHoldemHand();
-        if (hand == null) return "?";
+        if (hand == null)
+            return "?";
 
         int nNumPlayers = hand.getNumPlayers();
 
-        if (isEarly()) return "E";
-        if (isMiddle()) return "M";
-        if (isLate()) return "L";
-        if (isSmallBlind()) return "S";
-        if (isBigBlind()) return "B";
+        if (isEarly())
+            return "E";
+        if (isMiddle())
+            return "M";
+        if (isLate())
+            return "L";
+        if (isSmallBlind())
+            return "S";
+        if (isBigBlind())
+            return "B";
 
         ApplicationError.assertTrue(false, "Bad position: " + nPosition_ + " numplayers: " + nNumPlayers);
         return null;
@@ -1615,20 +1483,25 @@ public class PokerPlayer extends GamePlayer
     /**
      * get early,middle,late,etc - pre-flop use only
      */
-    public int getPositionCategory()
-    {
+    public int getPositionCategory() {
         int nNumPlayers = getTable().getNumOccupiedSeats();
-        if (nNumPlayers - nPosition_ >= 7) return EARLY;
+        if (nNumPlayers - nPosition_ >= 7)
+            return EARLY;
 
-        if (nNumPlayers - nPosition_ >= 4) return MIDDLE;
+        if (nNumPlayers - nPosition_ >= 4)
+            return MIDDLE;
 
-        if (nNumPlayers - nPosition_ >= 2) return LATE;
+        if (nNumPlayers - nPosition_ >= 2)
+            return LATE;
 
-        if (nNumPlayers == 2) return LATE;
+        if (nNumPlayers == 2)
+            return LATE;
 
-        if (nPosition_ == (nNumPlayers - 1)) return SMALL;
+        if (nPosition_ == (nNumPlayers - 1))
+            return SMALL;
 
-        if (nPosition_ == nNumPlayers) return BIG;
+        if (nPosition_ == nNumPlayers)
+            return BIG;
 
         throw new ApplicationError(ErrorCodes.ERROR_CODE_ERROR, "No position", null);
     }
@@ -1636,71 +1509,61 @@ public class PokerPlayer extends GamePlayer
     /**
      * is this player in an early position?
      */
-    public boolean isEarly()
-    {
+    public boolean isEarly() {
         return getStartingPositionCategory() == EARLY;
     }
 
     /**
      * is this player in a middle position?
      */
-    public boolean isMiddle()
-    {
+    public boolean isMiddle() {
         return getStartingPositionCategory() == MIDDLE;
     }
 
     /**
      * is this player in a middle position?
      */
-    public boolean isLate()
-    {
+    public boolean isLate() {
         return getStartingPositionCategory() == LATE;
     }
 
     /**
      * is this player a blind?
      */
-    public boolean isBlind()
-    {
+    public boolean isBlind() {
         return isSmallBlind() || isBigBlind();
     }
 
     /**
      * Is this player the small blind?
      */
-    public boolean isSmallBlind()
-    {
+    public boolean isSmallBlind() {
         return getStartingPositionCategory() == SMALL;
     }
 
     /**
      * is this player the big blind?
      */
-    public boolean isBigBlind()
-    {
+    public boolean isBigBlind() {
         return getStartingPositionCategory() == BIG;
     }
 
     /**
-     * Return action AI would take.  This can be called for a human player
-     * to get a "hint" if desired.
+     * Return action AI would take. This can be called for a human player to get a
+     * "hint" if desired.
      */
-    public HandAction getAction(boolean bQuick)
-    {
-        try
-        {
-//            // TODO - TESTING - make first AI to act raise all in
-//            if (getHoldemHand().getRound() == HoldemHand.ROUND_PRE_FLOP &&
-//                getHoldemHand().getRaiser() == null)
-//            {
-//                return new HandAction(this, getHoldemHand().getRound(), HandAction.ACTION_RAISE, Integer.MAX_VALUE, "testing");
-//            }
+    public HandAction getAction(boolean bQuick) {
+        try {
+            // // TODO - TESTING - make first AI to act raise all in
+            // if (getHoldemHand().getRound() == HoldemHand.ROUND_PRE_FLOP &&
+            // getHoldemHand().getRaiser() == null)
+            // {
+            // return new HandAction(this, getHoldemHand().getRound(),
+            // HandAction.ACTION_RAISE, Integer.MAX_VALUE, "testing");
+            // }
             return getPokerAI().getHandAction(bQuick);
-        }
-        catch (Throwable e)
-        {
-            logger.error("AI exception caught. Return 'fold' to keep the game going:\n"+
-                         Utils.formatExceptionText(e));
+        } catch (Throwable e) {
+            logger.error("AI exception caught. Return 'fold' to keep the game going:\n" + Utils.formatExceptionText(e));
             return new HandAction(this, getHoldemHand().getRound(), HandAction.ACTION_FOLD, "aierror");
         }
     }
@@ -1708,9 +1571,9 @@ public class PokerPlayer extends GamePlayer
     /**
      * add to simulate bet, deduct from chips, return actual bet
      */
-    public int addSimulatedBet(int n)
-    {
-        if (n > nChips_) n = nChips_;
+    public int addSimulatedBet(int n) {
+        if (n > nChips_)
+            n = nChips_;
         nSimulatedBet_ += n;
         nChips_ -= n;
         return n;
@@ -1719,8 +1582,7 @@ public class PokerPlayer extends GamePlayer
     /**
      * Get simulated bet
      */
-    public int getSimulatedBet()
-    {
+    public int getSimulatedBet() {
         return nSimulatedBet_;
     }
 
@@ -1732,20 +1594,20 @@ public class PokerPlayer extends GamePlayer
     /**
      * Debugging - show player and hand and chips
      */
-    public String toString()
-    {
+    public String toString() {
         return toStringShort();
     }
 
     /**
      * long form, formatted
      */
-    public String toStringLong()
-    {
+    public String toStringLong() {
         StringBuilder sb = new StringBuilder();
         sb.append(fName.form(getName() != null ? getName() : "[null]"));
-        if (hand_ != null) sb.append(fName.form(hand_.toString()));
-        else sb.append("[no hand]");
+        if (hand_ != null)
+            sb.append(fName.form(hand_.toString()));
+        else
+            sb.append("[no hand]");
         sb.append(" $");
         sb.append(fChip.form(nChips_));
         sb.append(" <");
@@ -1757,12 +1619,13 @@ public class PokerPlayer extends GamePlayer
     /**
      * Debugging - show player and hand and chips
      */
-    public String toStringShort()
-    {
+    public String toStringShort() {
         StringBuilder sb = new StringBuilder();
         sb.append(getName()).append(" ");
-        if (hand_ != null) sb.append(hand_.toString());
-        else sb.append("[no hand]");
+        if (hand_ != null)
+            sb.append(hand_.toString());
+        else
+            sb.append("[no hand]");
         sb.append(" $").append(nChips_);
         return sb.toString();
     }
@@ -1774,8 +1637,7 @@ public class PokerPlayer extends GamePlayer
     /**
      * Add extra items to entry
      */
-    protected void addExtraToGameStateEntry(GameState state, GameStateEntry entry)
-    {
+    protected void addExtraToGameStateEntry(GameState state, GameStateEntry entry) {
         SaveDetails details = state.getSaveDetails();
         PokerSaveDetails pdetails = (PokerSaveDetails) details.getCustomInfo();
 
@@ -1788,30 +1650,22 @@ public class PokerPlayer extends GamePlayer
         // POKER 2.0 - handle case when have to hide cards of players other than the
         // specific one we are sending data to (online games)
         Hand hand = hand_;
-        if (hand_ != null &&
-            pdetails.isHideOthersCards() &&
-            pdetails.getPlayerID() != getID() &&
-            hand_.getType() == Hand.TYPE_NORMAL)
-        {
+        if (hand_ != null && pdetails.isHideOthersCards() && pdetails.getPlayerID() != getID()
+                && hand_.getType() == Hand.TYPE_NORMAL) {
             HoldemHand hhand = getHoldemHand();
 
             // hide cards if
-            //  + this hand isn't in an all-in-showown AND
-            //     + hand folded OR
-            //     + not showdown OR
-            //     + showdown and cards not exposed OR
+            // + this hand isn't in an all-in-showown AND
+            // + hand folded OR
+            // + not showdown OR
+            // + showdown and cards not exposed OR
             //
-            if (hhand != null && !(hhand.isAllInShowdown() && !isFolded()) &&
-                (isFolded() ||
-                  hhand.getRound() != HoldemHand.ROUND_SHOWDOWN ||
-                  (hhand.getRound() == HoldemHand.ROUND_SHOWDOWN && !isCardsExposed())
-                 )
-               )
-            {
+            if (hhand != null && !(hhand.isAllInShowdown() && !isFolded())
+                    && (isFolded() || hhand.getRound() != HoldemHand.ROUND_SHOWDOWN
+                            || (hhand.getRound() == HoldemHand.ROUND_SHOWDOWN && !isCardsExposed()))) {
                 hand = new Hand(hand_.getType());
                 int i = 0;
-                while (i < hand_.size())
-                {
+                while (i < hand_.size()) {
                     hand.addCard(Card.BLANK);
                     i++;
                 }
@@ -1847,12 +1701,9 @@ public class PokerPlayer extends GamePlayer
         // Poker 2.0
         entry.addToken(playerId_);
         entry.addToken(url_ == null ? null : url_.toString());
-        if (details.getSaveAI() == SaveDetails.SAVE_ALL)
-        {
+        if (details.getSaveAI() == SaveDetails.SAVE_ALL) {
             entry.addToken(playerType_ == null ? null : playerType_.getUniqueKey());
-        }
-        else
-        {
+        } else {
             entry.addToken((String) null);
         }
 
@@ -1877,8 +1728,7 @@ public class PokerPlayer extends GamePlayer
     /**
      * Get extra items from entry
      */
-    protected void loadExtraFromGameStateEntry(GameState state, GameStateEntry entry)
-    {
+    protected void loadExtraFromGameStateEntry(GameState state, GameStateEntry entry) {
         SaveDetails details = state.getSaveDetails();
         PokerSaveDetails pdetails = (PokerSaveDetails) state.getSaveDetails().getCustomInfo();
 
@@ -1919,8 +1769,7 @@ public class PokerPlayer extends GamePlayer
         playerId_ = entry.removeStringToken();
         url_ = ((url = entry.removeStringToken()) == null) ? null : new PokerURL(url);
         String sPlayerTypeKey = entry.removeStringToken();
-        if (details.getSaveAI() == SaveDetails.SAVE_ALL)
-        {
+        if (details.getSaveAI() == SaveDetails.SAVE_ALL) {
             playerType_ = sPlayerTypeKey == null ? null : PlayerType.getByUniqueKey(sPlayerTypeKey, pdetails);
         }
 
@@ -1932,15 +1781,13 @@ public class PokerPlayer extends GamePlayer
         bAskShowLosing_ = entry.removeBooleanToken();
 
         // Poker 2.0 Patch 2
-        if (entry.hasMoreTokens())
-        {
+        if (entry.hasMoreTokens()) {
             nHandsPlayedLastMove_ = entry.removeIntToken();
             bOnWaitList_ = entry.removeBooleanToken();
             nWaitListTime_ = entry.removeLongToken();
 
             // Poker 2.0 Patch 8
-            if (entry.hasMoreTokens())
-            {
+            if (entry.hasMoreTokens()) {
                 nHandsDisconnected_ = entry.removeIntToken();
                 nHandsSitout_ = entry.removeIntToken();
                 bBooted_ = entry.removeBooleanToken();
@@ -1956,9 +1803,9 @@ public class PokerPlayer extends GamePlayer
     /**
      * load player profile
      */
-    void loadProfile(GameState state)
-    {
-        if (!bLoadProfileNeeded_) return;
+    void loadProfile(GameState state) {
+        if (!bLoadProfileNeeded_)
+            return;
         bLoadProfileNeeded_ = false;
 
         String sKey = getPublicUseKey();
@@ -1967,37 +1814,31 @@ public class PokerPlayer extends GamePlayer
         // don't load profile if we already have one (online game performance
         // tweak since players get loaded many times and the profile won't
         // change during a game)
-        if (sProfileLocation_ != null && sKey.equals(playerId_) && profile_ == null)
-        {
+        if (sProfileLocation_ != null && sKey.equals(playerId_) && profile_ == null) {
             File file = new File(sProfileLocation_);
 
             // if no file, first look in regular save location
             // (in case it moved due to Patch 2)
-            if (!file.exists())
-            {
+            if (!file.exists()) {
                 int nLastSep = sProfileLocation_.lastIndexOf(File.separatorChar);
-                if (nLastSep != -1)
-                {
+                if (nLastSep != -1) {
                     String sName = sProfileLocation_.substring(nLastSep + 1);
                     File nfile = PlayerProfile.getProfileFile(sName);
                     String sNew = nfile.getAbsolutePath();
-                    if (!sNew.equals(sProfileLocation_))
-                    {
-                        logger.warn("Player profile missing: " + sProfileLocation_  +"; change to: " + sNew);
+                    if (!sNew.equals(sProfileLocation_)) {
+                        logger.warn("Player profile missing: " + sProfileLocation_ + "; change to: " + sNew);
                         sProfileLocation_ = sNew;
                         file = nfile;
                     }
                 }
             }
 
-            // if no file, it was deleted.  Use empty one.
-            if (!file.exists())
-            {
+            // if no file, it was deleted. Use empty one.
+            if (!file.exists()) {
                 logger.warn("Player profile missing: " + sProfileLocation_);
-            }
-            else
-            {
-                if (DebugConfig.isTestingOn()) logger.debug("Loading file: "+file.getAbsolutePath());
+            } else {
+                if (DebugConfig.isTestingOn())
+                    logger.debug("Loading file: " + file.getAbsolutePath());
                 profile_ = new PlayerProfile(file, true);
                 setName(profile_.getName()); // update name
             }
@@ -2008,16 +1849,13 @@ public class PokerPlayer extends GamePlayer
         // check to see if human's advisor needs to be updated.
         boolean bOnline = state.getFile() == null;
         GameAI gameAI = getGameAI();
-        if (gameAI != null && !bOnline)
-        {
-            if (isLocallyControlled() && isHuman())
-            {
+        if (gameAI != null && !bOnline) {
+            if (isLocallyControlled() && isHuman()) {
                 PokerAI pokerAI = getPokerAI();
                 PlayerType playerType = pokerAI.getPlayerType();
                 PlayerType preferredAdvisor = PlayerType.getAdvisor();
 
-                if (playerType.compareTo(preferredAdvisor) != 0)
-                {
+                if (playerType.compareTo(preferredAdvisor) != 0) {
                     setPlayerType(preferredAdvisor);
                 }
             }
@@ -2033,24 +1871,27 @@ public class PokerPlayer extends GamePlayer
     private long nLastCalcFingerprint_ = 0;
 
     /**
-     * hand strength - return -1 if this player is folded, or
-     * there is no hand, or if no community cards are out
+     * hand strength - return -1 if this player is folded, or there is no hand, or
+     * if no community cards are out
      */
-    public float getHandStrength()
-    {
+    public float getHandStrength() {
         HoldemHand hhand = getHoldemHand();
-        if (hhand == null) return -1;
+        if (hhand == null)
+            return -1;
 
         // if folded
-        if (isFolded()) return -1;
+        if (isFolded())
+            return -1;
 
         // if too early a round, indicate
         HandSorted comm = hhand.getCommunitySorted();
-        if (comm.size() < 3) return -1;
+        if (comm.size() < 3)
+            return -1;
 
         long fingerprint = comm.fingerprint() | getHand().fingerprint();
         // if already calc'd this round, return it
-        if (fingerprint == nLastCalcFingerprint_) return nStrength_;
+        if (fingerprint == nLastCalcFingerprint_)
+            return nStrength_;
 
         // new calc
         HandStrength hs = new HandStrength();
@@ -2062,11 +1903,10 @@ public class PokerPlayer extends GamePlayer
     }
 
     /**
-     * hand strength ancilliary - return number of straights made by
-     * opponents during last call to getHandStrength()
+     * hand strength ancilliary - return number of straights made by opponents
+     * during last call to getHandStrength()
      */
-    public int getOppNumStraights()
-    {
+    public int getOppNumStraights() {
         return nNumStraights_;
     }
 
@@ -2074,24 +1914,26 @@ public class PokerPlayer extends GamePlayer
     private int nLastCalcPotRound_ = -1;
 
     /**
-     * hand strength - return -1 if this player is folded, or
-     * there is no hand, or if no community cards are out
+     * hand strength - return -1 if this player is folded, or there is no hand, or
+     * if no community cards are out
      */
-    public float getHandPotential()
-    {
+    public float getHandPotential() {
         HoldemHand hhand = getHoldemHand();
-        if (hhand == null) return -1;
+        if (hhand == null)
+            return -1;
 
         // if folded
-        if (isFolded()) return -1;
+        if (isFolded())
+            return -1;
 
         // only do potential after flop & turn
         int nRound = hhand.getRound();
-        if (nRound != HoldemHand.ROUND_FLOP &&
-            nRound != HoldemHand.ROUND_TURN) return -1;
+        if (nRound != HoldemHand.ROUND_FLOP && nRound != HoldemHand.ROUND_TURN)
+            return -1;
 
         // if already calced this round, return it
-        if (nRound == nLastCalcPotRound_) return nPotential_;
+        if (nRound == nLastCalcPotRound_)
+            return nPotential_;
 
         // do calc
         nPotential_ = HandPotential.getPotential(getHandSorted(), hhand.getCommunitySorted());
@@ -2103,18 +1945,19 @@ public class PokerPlayer extends GamePlayer
     /**
      * Hand potential - debug (only returns if calc'd
      */
-    public float getHandPotentialDisplay()
-    {
+    public float getHandPotentialDisplay() {
         HoldemHand hhand = getHoldemHand();
-        if (hhand == null) return -1;
+        if (hhand == null)
+            return -1;
 
         // if folded
-        if (isFolded()) return -1;
+        if (isFolded())
+            return -1;
 
         // only do potential after flop & turn
         int nRound = hhand.getRound();
-        if (nRound != HoldemHand.ROUND_FLOP &&
-            nRound != HoldemHand.ROUND_TURN) return -1;
+        if (nRound != HoldemHand.ROUND_FLOP && nRound != HoldemHand.ROUND_TURN)
+            return -1;
 
         return nPotential_;
     }
@@ -2122,8 +1965,7 @@ public class PokerPlayer extends GamePlayer
     /**
      * Get effective hand strength
      */
-    public float getEffectiveHandStrength()
-    {
+    public float getEffectiveHandStrength() {
         float hs = getHandStrength();
         return hs + (1 - hs) * getHandPotential();
     }
@@ -2132,15 +1974,13 @@ public class PokerPlayer extends GamePlayer
     public static final Comparator<PokerPlayer> SORTBYNAME = new SortName();
 
     // sort players by chips they have at start of hand
-    private static class SortName implements Comparator<PokerPlayer>
-    {
+    private static class SortName implements Comparator<PokerPlayer> {
         /**
-         * Compares its two arguments for order.  Returns a negative integer,
-         * zero, or a positive integer as the first argument is less than, equal
-         * to, or greater than the second.
+         * Compares its two arguments for order. Returns a negative integer, zero, or a
+         * positive integer as the first argument is less than, equal to, or greater
+         * than the second.
          */
-        public int compare(PokerPlayer p1, PokerPlayer p2)
-        {
+        public int compare(PokerPlayer p1, PokerPlayer p2) {
             return p1.getName().compareTo(p2.getName());
         }
     }
@@ -2150,125 +1990,112 @@ public class PokerPlayer extends GamePlayer
     /////
 
     /**
-     * For online games, the host uses this to store the connection
-     * through which this player is connected.  For locally
-     * controlled players on the host, this is null.  For all
-     * players on remote clients, this is null
+     * For online games, the host uses this to store the connection through which
+     * this player is connected. For locally controlled players on the host, this is
+     * null. For all players on remote clients, this is null
      */
-    public PokerConnection getConnection()
-    {
+    public PokerConnection getConnection() {
         return connection_;
     }
 
     /**
      * Set socket used by this player
      */
-    public void setConnection(PokerConnection connection)
-    {
+    public void setConnection(PokerConnection connection) {
         clearMessageReceived(); // reset timestamp when socket changes
         connection_ = connection;
         setDisconnected(connection_ == null); // note connected status (which is marshalled; socket is not)
-        if (connection_ != null) nConnCnt_++; // track number of connections made (discos equal this less 1)
+        if (connection_ != null)
+            nConnCnt_++; // track number of connections made (discos equal this less 1)
     }
 
     /**
      * Add to number of disconnections
      */
-    public int addDisconnect()
-    {
+    public int addDisconnect() {
         return nConnCnt_++;
     }
 
     /**
      * Get number of disconnections
      */
-    public int getDisconnects()
-    {
-        if (isHost() && isLocallyControlled()) return 0;
+    public int getDisconnects() {
+        if (isHost() && isLocallyControlled())
+            return 0;
         return nConnCnt_ - 1;
     }
 
     /**
      * set rejoining flag - used to handle "re-integration" of player
      */
-    public void setRejoining(boolean b)
-    {
+    public void setRejoining(boolean b) {
         bRejoining_ = b;
     }
-    
+
     /**
      * Is rejoining?
      */
-    public boolean isRejoining()
-    {
+    public boolean isRejoining() {
         return bRejoining_;
     }
 
     /**
      * Get object to sync on for player sends
      */
-    public Object getSendSync()
-    {
-        if (sendSync_ == null) sendSync_ = new Object();
+    public Object getSendSync() {
+        if (sendSync_ == null)
+            sendSync_ = new Object();
         return sendSync_;
     }
 
     /**
      * get time last message received from this player
      */
-    public long getLastMessageReceivedMillis()
-    {
+    public long getLastMessageReceivedMillis() {
         return nLastMessageRcvd_;
     }
 
     /**
      * note time message received
      */
-    public void setMessageReceived()
-    {
+    public void setMessageReceived() {
         nLastMessageRcvd_ = System.currentTimeMillis();
     }
 
     /**
      * clear time message received
      */
-    public void clearMessageReceived()
-    {
+    public void clearMessageReceived() {
         nLastMessageRcvd_ = 0;
     }
 
     /**
      * Store version of DD this player is using
      */
-    public void setVersion(Version v)
-    {
+    public void setVersion(Version v) {
         version_ = v;
     }
 
     /**
      * Get version of DD this player is using
      */
-    public Version getVersion()
-    {
+    public Version getVersion() {
         return version_;
     }
-    
+
     /**
      * Set thread currently sending message to this player
      */
-    public void setSenderThread(WorkerThread worker)
-    {
-        worker_  = worker;
+    public void setSenderThread(WorkerThread worker) {
+        worker_ = worker;
     }
 
     /**
      * Get thread currently sending messages to this player
      */
-    public WorkerThread getSenderThread()
-    {
+    public WorkerThread getSenderThread() {
         return worker_;
     }
-
 
     ///
     /// Player prefs - we use separate marshal/unmarshal to
@@ -2280,8 +2107,7 @@ public class PokerPlayer extends GamePlayer
     /**
      * marshal player-settings to string
      */
-    public String getOnlineSettings()
-    {
+    public String getOnlineSettings() {
         TokenizedList list = new TokenizedList();
         list.addToken(bSittingOut_);
         list.addToken(bMuckLosing_);
@@ -2294,8 +2120,7 @@ public class PokerPlayer extends GamePlayer
     /**
      * unmarshal player-settings from string
      */
-    public void setOnlineSettings(String s)
-    {
+    public void setOnlineSettings(String s) {
         TokenizedList list = new TokenizedList();
         list.demarshal(null, s);
 
@@ -2312,23 +2137,20 @@ public class PokerPlayer extends GamePlayer
     /**
      * Fire settings changed
      */
-    public void fireSettingsChanged()
-    {
-        if (table_ != null)
-        {
-            table_.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_SETTINGS_CHANGED, table_, this, getSeat()));
+    public void fireSettingsChanged() {
+        if (table_ != null) {
+            table_.firePokerTableEvent(
+                    new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_SETTINGS_CHANGED, table_, this, getSeat()));
         }
     }
 
     /**
      * Game loaded - notify AI
      */
-    public void gameLoaded()
-    {
+    public void gameLoaded() {
         PokerAI ai = getPokerAI();
 
-        if (ai != null)
-        {
+        if (ai != null) {
             ai.gameLoaded();
         }
     }
@@ -2340,16 +2162,12 @@ public class PokerPlayer extends GamePlayer
     @SuppressWarnings({"PublicField"})
     public int nBadMsgs_;
 
-    public OpponentModel getOpponentModel()
-    {
+    public OpponentModel getOpponentModel() {
         PokerAI ai = getPokerAI();
 
-        if (ai != null)
-        {
+        if (ai != null) {
             return ai.getOpponentModel();
-        }
-        else
-        {
+        } else {
             return null;
         }
     }

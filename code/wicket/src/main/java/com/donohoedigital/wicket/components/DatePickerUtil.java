@@ -39,10 +39,8 @@ import org.apache.wicket.extensions.markup.html.form.DateTextField;
 public class DatePickerUtil {
 
     public static DateTextField create(String id) {
-        return new DatePicker(id,
-                "MM/dd/yyyy", // Java
-                new Options("dateFormat",
-                        Options.asString("mm/dd/yy") // JavaScript
+        return new DatePicker(id, "MM/dd/yyyy", // Java
+                new Options("dateFormat", Options.asString("mm/dd/yy") // JavaScript
                 ));
     }
 }

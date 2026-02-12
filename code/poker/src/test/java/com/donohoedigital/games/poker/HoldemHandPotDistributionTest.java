@@ -31,22 +31,20 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for HoldemHand pot distribution methods.
- * MOST CRITICAL TEST FILE - pot distribution must be 100% accurate.
- * Tests resolve(), wins(), lose() for various winner scenarios.
- * Extends IntegrationTestBase for game infrastructure.
+ * Tests for HoldemHand pot distribution methods. MOST CRITICAL TEST FILE - pot
+ * distribution must be 100% accurate. Tests resolve(), wins(), lose() for
+ * various winner scenarios. Extends IntegrationTestBase for game
+ * infrastructure.
  */
 @Tag("integration")
-class HoldemHandPotDistributionTest extends IntegrationTestBase
-{
+class HoldemHandPotDistributionTest extends IntegrationTestBase {
     private PokerGame game;
     private PokerTable table;
     private HoldemHand hand;
     private PokerPlayer[] players;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         // Create game infrastructure
         game = new PokerGame(null);
         TournamentProfile profile = new TournamentProfile("test");
@@ -58,8 +56,7 @@ class HoldemHandPotDistributionTest extends IntegrationTestBase
 
         // Create 3 players (enough for split pot and side pot scenarios)
         players = new PokerPlayer[3];
-        for (int i = 0; i < 3; i++)
-        {
+        for (int i = 0; i < 3; i++) {
             players[i] = new PokerPlayer(i + 1, "Player" + i, true);
             players[i].setChipCount(1000);
             game.addPlayer(players[i]);
@@ -68,8 +65,7 @@ class HoldemHandPotDistributionTest extends IntegrationTestBase
 
         // Initialize hand
         table.setButton(0);
-        for (PokerPlayer p : players)
-        {
+        for (PokerPlayer p : players) {
             p.newHand('p');
         }
 
@@ -87,8 +83,7 @@ class HoldemHandPotDistributionTest extends IntegrationTestBase
     /**
      * Deal specific pocket cards to a player
      */
-    private void dealPocketCards(PokerPlayer p, Card c1, Card c2)
-    {
+    private void dealPocketCards(PokerPlayer p, Card c1, Card c2) {
         Hand pocket = p.getHand();
         pocket.clear();
         pocket.addCard(c1);
@@ -98,12 +93,10 @@ class HoldemHandPotDistributionTest extends IntegrationTestBase
     /**
      * Deal community cards
      */
-    private void dealCommunity(Card... cards)
-    {
+    private void dealCommunity(Card... cards) {
         Hand community = hand.getCommunity();
         community.clear();
-        for (Card c : cards)
-        {
+        for (Card c : cards) {
             community.addCard(c);
         }
     }
@@ -111,8 +104,7 @@ class HoldemHandPotDistributionTest extends IntegrationTestBase
     /**
      * Create a simple betting scenario with a pot
      */
-    private void createSimplePot(int betAmount)
-    {
+    private void createSimplePot(int betAmount) {
         hand.setCurrentPlayerIndex(0);
         players[0].bet(betAmount, "bet");
 
@@ -125,25 +117,16 @@ class HoldemHandPotDistributionTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_AwardEntirePot_When_SingleWinner()
-    {
+    void should_AwardEntirePot_When_SingleWinner() {
         // Deal pocket aces to player 0, junk to player 1
-        dealPocketCards(players[0],
-            new Card(CardSuit.SPADES, Card.ACE),
-            new Card(CardSuit.HEARTS, Card.ACE));
+        dealPocketCards(players[0], new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.ACE));
 
-        dealPocketCards(players[1],
-            new Card(CardSuit.CLUBS, Card.TWO),
-            new Card(CardSuit.DIAMONDS, Card.THREE));
+        dealPocketCards(players[1], new Card(CardSuit.CLUBS, Card.TWO), new Card(CardSuit.DIAMONDS, Card.THREE));
 
         // Community cards
-        dealCommunity(
-            new Card(CardSuit.SPADES, Card.KING),
-            new Card(CardSuit.HEARTS, Card.QUEEN),
-            new Card(CardSuit.DIAMONDS, Card.JACK),
-            new Card(CardSuit.CLUBS, Card.TEN),
-            new Card(CardSuit.SPADES, Card.NINE)
-        );
+        dealCommunity(new Card(CardSuit.SPADES, Card.KING), new Card(CardSuit.HEARTS, Card.QUEEN),
+                new Card(CardSuit.DIAMONDS, Card.JACK), new Card(CardSuit.CLUBS, Card.TEN),
+                new Card(CardSuit.SPADES, Card.NINE));
 
         // Create pot
         createSimplePot(100);
@@ -158,24 +141,15 @@ class HoldemHandPotDistributionTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnChips_When_UncontestedPot()
-    {
+    void should_ReturnChips_When_UncontestedPot() {
         // Deal cards (needed for hand evaluation even with fold)
-        dealPocketCards(players[0],
-            new Card(CardSuit.SPADES, Card.ACE),
-            new Card(CardSuit.HEARTS, Card.KING));
+        dealPocketCards(players[0], new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.KING));
 
-        dealPocketCards(players[1],
-            new Card(CardSuit.CLUBS, Card.TWO),
-            new Card(CardSuit.DIAMONDS, Card.THREE));
+        dealPocketCards(players[1], new Card(CardSuit.CLUBS, Card.TWO), new Card(CardSuit.DIAMONDS, Card.THREE));
 
-        dealCommunity(
-            new Card(CardSuit.SPADES, Card.QUEEN),
-            new Card(CardSuit.HEARTS, Card.JACK),
-            new Card(CardSuit.DIAMONDS, Card.TEN),
-            new Card(CardSuit.CLUBS, Card.NINE),
-            new Card(CardSuit.SPADES, Card.EIGHT)
-        );
+        dealCommunity(new Card(CardSuit.SPADES, Card.QUEEN), new Card(CardSuit.HEARTS, Card.JACK),
+                new Card(CardSuit.DIAMONDS, Card.TEN), new Card(CardSuit.CLUBS, Card.NINE),
+                new Card(CardSuit.SPADES, Card.EIGHT));
 
         // Player 0 bets, player 1 folds
         hand.setCurrentPlayerIndex(0);
@@ -199,25 +173,16 @@ class HoldemHandPotDistributionTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_SplitPotEvenly_When_TwoWayTie()
-    {
+    void should_SplitPotEvenly_When_TwoWayTie() {
         // Deal same pocket cards to both players (both get pair of aces)
-        dealPocketCards(players[0],
-            new Card(CardSuit.SPADES, Card.ACE),
-            new Card(CardSuit.HEARTS, Card.KING));
+        dealPocketCards(players[0], new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.KING));
 
-        dealPocketCards(players[1],
-            new Card(CardSuit.CLUBS, Card.ACE),
-            new Card(CardSuit.DIAMONDS, Card.KING));
+        dealPocketCards(players[1], new Card(CardSuit.CLUBS, Card.ACE), new Card(CardSuit.DIAMONDS, Card.KING));
 
         // Community cards - board pairs
-        dealCommunity(
-            new Card(CardSuit.SPADES, Card.QUEEN),
-            new Card(CardSuit.HEARTS, Card.QUEEN),
-            new Card(CardSuit.DIAMONDS, Card.JACK),
-            new Card(CardSuit.CLUBS, Card.TEN),
-            new Card(CardSuit.SPADES, Card.NINE)
-        );
+        dealCommunity(new Card(CardSuit.SPADES, Card.QUEEN), new Card(CardSuit.HEARTS, Card.QUEEN),
+                new Card(CardSuit.DIAMONDS, Card.JACK), new Card(CardSuit.CLUBS, Card.TEN),
+                new Card(CardSuit.SPADES, Card.NINE));
 
         // Create pot of 200
         createSimplePot(100);
@@ -233,29 +198,18 @@ class HoldemHandPotDistributionTest extends IntegrationTestBase
     }
 
     @Test
-    void should_SplitPotEvenly_When_ThreeWayTie()
-    {
+    void should_SplitPotEvenly_When_ThreeWayTie() {
         // All three players get same cards (all play the board)
-        dealPocketCards(players[0],
-            new Card(CardSuit.SPADES, Card.TWO),
-            new Card(CardSuit.HEARTS, Card.THREE));
+        dealPocketCards(players[0], new Card(CardSuit.SPADES, Card.TWO), new Card(CardSuit.HEARTS, Card.THREE));
 
-        dealPocketCards(players[1],
-            new Card(CardSuit.CLUBS, Card.TWO),
-            new Card(CardSuit.DIAMONDS, Card.THREE));
+        dealPocketCards(players[1], new Card(CardSuit.CLUBS, Card.TWO), new Card(CardSuit.DIAMONDS, Card.THREE));
 
-        dealPocketCards(players[2],
-            new Card(CardSuit.SPADES, Card.FOUR),
-            new Card(CardSuit.HEARTS, Card.FIVE));
+        dealPocketCards(players[2], new Card(CardSuit.SPADES, Card.FOUR), new Card(CardSuit.HEARTS, Card.FIVE));
 
         // Community is a straight that all players share
-        dealCommunity(
-            new Card(CardSuit.SPADES, Card.ACE),
-            new Card(CardSuit.HEARTS, Card.KING),
-            new Card(CardSuit.DIAMONDS, Card.QUEEN),
-            new Card(CardSuit.CLUBS, Card.JACK),
-            new Card(CardSuit.SPADES, Card.TEN)
-        );
+        dealCommunity(new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.KING),
+                new Card(CardSuit.DIAMONDS, Card.QUEEN), new Card(CardSuit.CLUBS, Card.JACK),
+                new Card(CardSuit.SPADES, Card.TEN));
 
         // All three bet 100
         hand.setCurrentPlayerIndex(0);
@@ -283,24 +237,15 @@ class HoldemHandPotDistributionTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_AwardOddChip_When_TwoWayTieWithOddPot()
-    {
+    void should_AwardOddChip_When_TwoWayTieWithOddPot() {
         // Same as two-way tie but with odd amount (201)
-        dealPocketCards(players[0],
-            new Card(CardSuit.SPADES, Card.ACE),
-            new Card(CardSuit.HEARTS, Card.KING));
+        dealPocketCards(players[0], new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.KING));
 
-        dealPocketCards(players[1],
-            new Card(CardSuit.CLUBS, Card.ACE),
-            new Card(CardSuit.DIAMONDS, Card.KING));
+        dealPocketCards(players[1], new Card(CardSuit.CLUBS, Card.ACE), new Card(CardSuit.DIAMONDS, Card.KING));
 
-        dealCommunity(
-            new Card(CardSuit.SPADES, Card.QUEEN),
-            new Card(CardSuit.HEARTS, Card.QUEEN),
-            new Card(CardSuit.DIAMONDS, Card.JACK),
-            new Card(CardSuit.CLUBS, Card.TEN),
-            new Card(CardSuit.SPADES, Card.NINE)
-        );
+        dealCommunity(new Card(CardSuit.SPADES, Card.QUEEN), new Card(CardSuit.HEARTS, Card.QUEEN),
+                new Card(CardSuit.DIAMONDS, Card.JACK), new Card(CardSuit.CLUBS, Card.TEN),
+                new Card(CardSuit.SPADES, Card.NINE));
 
         // Create pot of 201 (odd) by having different bet amounts
         hand.setCurrentPlayerIndex(0);
@@ -316,8 +261,8 @@ class HoldemHandPotDistributionTest extends IntegrationTestBase
         hand.resolve();
 
         // Total distributed should equal pot (202)
-        int totalDistributed = (players[0].getChipCount() - player0ChipsBefore) +
-                               (players[1].getChipCount() - player1ChipsBefore);
+        int totalDistributed = (players[0].getChipCount() - player0ChipsBefore)
+                + (players[1].getChipCount() - player1ChipsBefore);
 
         assertThat(totalDistributed).isEqualTo(potBefore);
 
@@ -334,30 +279,20 @@ class HoldemHandPotDistributionTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_DistributeExactPotAmount_When_SingleWinner()
-    {
+    void should_DistributeExactPotAmount_When_SingleWinner() {
         // Deal clear winner
-        dealPocketCards(players[0],
-            new Card(CardSuit.SPADES, Card.ACE),
-            new Card(CardSuit.HEARTS, Card.ACE));
+        dealPocketCards(players[0], new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.ACE));
 
-        dealPocketCards(players[1],
-            new Card(CardSuit.CLUBS, Card.TWO),
-            new Card(CardSuit.DIAMONDS, Card.THREE));
+        dealPocketCards(players[1], new Card(CardSuit.CLUBS, Card.TWO), new Card(CardSuit.DIAMONDS, Card.THREE));
 
-        dealCommunity(
-            new Card(CardSuit.SPADES, Card.KING),
-            new Card(CardSuit.HEARTS, Card.QUEEN),
-            new Card(CardSuit.DIAMONDS, Card.JACK),
-            new Card(CardSuit.CLUBS, Card.TEN),
-            new Card(CardSuit.SPADES, Card.NINE)
-        );
+        dealCommunity(new Card(CardSuit.SPADES, Card.KING), new Card(CardSuit.HEARTS, Card.QUEEN),
+                new Card(CardSuit.DIAMONDS, Card.JACK), new Card(CardSuit.CLUBS, Card.TEN),
+                new Card(CardSuit.SPADES, Card.NINE));
 
         createSimplePot(150);
 
         int totalChipsBefore = 0;
-        for (PokerPlayer p : players)
-        {
+        for (PokerPlayer p : players) {
             totalChipsBefore += p.getChipCount();
         }
         totalChipsBefore += hand.getTotalPotChipCount();
@@ -368,8 +303,7 @@ class HoldemHandPotDistributionTest extends IntegrationTestBase
 
         // Total chips after should equal total before
         int totalChipsAfter = 0;
-        for (PokerPlayer p : players)
-        {
+        for (PokerPlayer p : players) {
             totalChipsAfter += p.getChipCount();
         }
 
@@ -377,30 +311,20 @@ class HoldemHandPotDistributionTest extends IntegrationTestBase
     }
 
     @Test
-    void should_DistributeExactPotAmount_When_SplitPot()
-    {
+    void should_DistributeExactPotAmount_When_SplitPot() {
         // Two-way tie
-        dealPocketCards(players[0],
-            new Card(CardSuit.SPADES, Card.ACE),
-            new Card(CardSuit.HEARTS, Card.KING));
+        dealPocketCards(players[0], new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.KING));
 
-        dealPocketCards(players[1],
-            new Card(CardSuit.CLUBS, Card.ACE),
-            new Card(CardSuit.DIAMONDS, Card.KING));
+        dealPocketCards(players[1], new Card(CardSuit.CLUBS, Card.ACE), new Card(CardSuit.DIAMONDS, Card.KING));
 
-        dealCommunity(
-            new Card(CardSuit.SPADES, Card.QUEEN),
-            new Card(CardSuit.HEARTS, Card.QUEEN),
-            new Card(CardSuit.DIAMONDS, Card.JACK),
-            new Card(CardSuit.CLUBS, Card.TEN),
-            new Card(CardSuit.SPADES, Card.NINE)
-        );
+        dealCommunity(new Card(CardSuit.SPADES, Card.QUEEN), new Card(CardSuit.HEARTS, Card.QUEEN),
+                new Card(CardSuit.DIAMONDS, Card.JACK), new Card(CardSuit.CLUBS, Card.TEN),
+                new Card(CardSuit.SPADES, Card.NINE));
 
         createSimplePot(200);
 
         int totalChipsBefore = 0;
-        for (PokerPlayer p : players)
-        {
+        for (PokerPlayer p : players) {
             totalChipsBefore += p.getChipCount();
         }
         totalChipsBefore += hand.getTotalPotChipCount();
@@ -411,8 +335,7 @@ class HoldemHandPotDistributionTest extends IntegrationTestBase
 
         // Total chips conserved
         int totalChipsAfter = 0;
-        for (PokerPlayer p : players)
-        {
+        for (PokerPlayer p : players) {
             totalChipsAfter += p.getChipCount();
         }
 
@@ -424,24 +347,15 @@ class HoldemHandPotDistributionTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_NotCreateMoney_When_PotResolved()
-    {
+    void should_NotCreateMoney_When_PotResolved() {
         // Any resolution scenario
-        dealPocketCards(players[0],
-            new Card(CardSuit.SPADES, Card.ACE),
-            new Card(CardSuit.HEARTS, Card.ACE));
+        dealPocketCards(players[0], new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.ACE));
 
-        dealPocketCards(players[1],
-            new Card(CardSuit.CLUBS, Card.KING),
-            new Card(CardSuit.DIAMONDS, Card.KING));
+        dealPocketCards(players[1], new Card(CardSuit.CLUBS, Card.KING), new Card(CardSuit.DIAMONDS, Card.KING));
 
-        dealCommunity(
-            new Card(CardSuit.SPADES, Card.QUEEN),
-            new Card(CardSuit.HEARTS, Card.JACK),
-            new Card(CardSuit.DIAMONDS, Card.TEN),
-            new Card(CardSuit.CLUBS, Card.NINE),
-            new Card(CardSuit.SPADES, Card.EIGHT)
-        );
+        dealCommunity(new Card(CardSuit.SPADES, Card.QUEEN), new Card(CardSuit.HEARTS, Card.JACK),
+                new Card(CardSuit.DIAMONDS, Card.TEN), new Card(CardSuit.CLUBS, Card.NINE),
+                new Card(CardSuit.SPADES, Card.EIGHT));
 
         createSimplePot(175);
 

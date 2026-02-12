@@ -27,85 +27,73 @@ import org.assertj.swing.core.GenericTypeMatcher;
 import javax.swing.*;
 
 /**
- * Custom AssertJ Swing matchers for DD Poker's custom Swing components.
- * These matchers help locate components in the UI during tests.
+ * Custom AssertJ Swing matchers for DD Poker's custom Swing components. These
+ * matchers help locate components in the UI during tests.
  */
-public class PokerMatchers
-{
+public class PokerMatchers {
     /**
-     * Matcher for DDImageButton by name.
-     * DDImageButton components use image icons instead of text, so matching by name is essential.
+     * Matcher for DDImageButton by name. DDImageButton components use image icons
+     * instead of text, so matching by name is essential.
      *
-     * @param name The button name to match (set via setName())
+     * @param name
+     *            The button name to match (set via setName())
      * @return A matcher that finds DDImageButton with the given name
      */
-    public static GenericTypeMatcher<DDImageButton> ddImageButtonNamed(String name)
-    {
-        return new GenericTypeMatcher<DDImageButton>(DDImageButton.class)
-        {
+    public static GenericTypeMatcher<DDImageButton> ddImageButtonNamed(String name) {
+        return new GenericTypeMatcher<DDImageButton>(DDImageButton.class) {
             @Override
-            protected boolean isMatching(DDImageButton button)
-            {
+            protected boolean isMatching(DDImageButton button) {
                 return name.equals(button.getName());
             }
 
             @Override
-            public String toString()
-            {
+            public String toString() {
                 return "DDImageButton with name '" + name + "'";
             }
         };
     }
 
     /**
-     * Matcher for InternalDialog (JInternalFrame) by title.
-     * DD Poker uses InternalDialog (backed by JInternalFrame) instead of JDialog.
+     * Matcher for InternalDialog (JInternalFrame) by title. DD Poker uses
+     * InternalDialog (backed by JInternalFrame) instead of JDialog.
      *
-     * @param titleContains Text that the dialog title should contain
+     * @param titleContains
+     *            Text that the dialog title should contain
      * @return A matcher that finds visible InternalDialog with matching title
      */
-    public static GenericTypeMatcher<JInternalFrame> internalDialogWithTitle(String titleContains)
-    {
-        return new GenericTypeMatcher<JInternalFrame>(JInternalFrame.class)
-        {
+    public static GenericTypeMatcher<JInternalFrame> internalDialogWithTitle(String titleContains) {
+        return new GenericTypeMatcher<JInternalFrame>(JInternalFrame.class) {
             @Override
-            protected boolean isMatching(JInternalFrame frame)
-            {
-                return frame instanceof InternalDialog &&
-                       frame.isVisible() &&
-                       frame.getTitle() != null &&
-                       frame.getTitle().contains(titleContains);
+            protected boolean isMatching(JInternalFrame frame) {
+                return frame instanceof InternalDialog && frame.isVisible() && frame.getTitle() != null
+                        && frame.getTitle().contains(titleContains);
             }
 
             @Override
-            public String toString()
-            {
+            public String toString() {
                 return "InternalDialog with title containing '" + titleContains + "'";
             }
         };
     }
 
     /**
-     * Matcher for DDLabel by text content.
-     * Useful for finding labels that display specific text.
+     * Matcher for DDLabel by text content. Useful for finding labels that display
+     * specific text.
      *
-     * @param textContains Text that the label should contain
+     * @param textContains
+     *            Text that the label should contain
      * @return A matcher that finds DDLabel with matching text
      */
-    public static GenericTypeMatcher<DDLabel> ddLabelWithText(String textContains)
-    {
-        return new GenericTypeMatcher<DDLabel>(DDLabel.class)
-        {
+    public static GenericTypeMatcher<DDLabel> ddLabelWithText(String textContains) {
+        return new GenericTypeMatcher<DDLabel>(DDLabel.class) {
             @Override
-            protected boolean isMatching(DDLabel label)
-            {
+            protected boolean isMatching(DDLabel label) {
                 String text = label.getText();
                 return text != null && text.contains(textContains);
             }
 
             @Override
-            public String toString()
-            {
+            public String toString() {
                 return "DDLabel with text containing '" + textContains + "'";
             }
         };

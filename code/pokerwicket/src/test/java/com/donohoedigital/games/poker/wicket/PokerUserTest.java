@@ -27,18 +27,15 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for PokerUser admin functionality using PropertyConfig.
  */
-class PokerUserTest
-{
+class PokerUserTest {
     @AfterEach
-    void cleanup()
-    {
+    void cleanup() {
         // Clear any system properties set during tests
         System.clearProperty("settings.admin.user");
     }
 
     @Test
-    void should_ReturnTrue_When_NameMatchesAdminUser()
-    {
+    void should_ReturnTrue_When_NameMatchesAdminUser() {
         // Set admin user via system property (simulates environment variable)
         System.setProperty("settings.admin.user", "testadmin");
 
@@ -49,8 +46,7 @@ class PokerUserTest
     }
 
     @Test
-    void should_ReturnFalse_When_NameDoesNotMatchAdminUser()
-    {
+    void should_ReturnFalse_When_NameDoesNotMatchAdminUser() {
         // Set admin user via system property
         System.setProperty("settings.admin.user", "testadmin");
 
@@ -61,8 +57,7 @@ class PokerUserTest
     }
 
     @Test
-    void should_ReturnFalse_When_AdminUserNotSet()
-    {
+    void should_ReturnFalse_When_AdminUserNotSet() {
         // Ensure no admin user is set
         System.clearProperty("settings.admin.user");
 
@@ -73,8 +68,7 @@ class PokerUserTest
     }
 
     @Test
-    void should_BeCaseSensitive_When_CheckingAdminUser()
-    {
+    void should_BeCaseSensitive_When_CheckingAdminUser() {
         // Set admin user via system property
         System.setProperty("settings.admin.user", "TestAdmin");
 

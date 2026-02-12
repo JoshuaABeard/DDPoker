@@ -26,15 +26,13 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for AIStrategyNode tree structure and hierarchy management.
  */
-class AIStrategyNodeTest
-{
+class AIStrategyNodeTest {
     // ========================================
     // Constructor Tests
     // ========================================
 
     @Test
-    void should_CreateNode_When_TwoParameterConstructor()
-    {
+    void should_CreateNode_When_TwoParameterConstructor() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "strategy1");
 
@@ -42,8 +40,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_CreateNode_When_ThreeParameterConstructor()
-    {
+    void should_CreateNode_When_ThreeParameterConstructor() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "strategy1", true);
 
@@ -51,8 +48,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_SetEnabledFalse_When_TwoParameterConstructor()
-    {
+    void should_SetEnabledFalse_When_TwoParameterConstructor() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "strategy1");
 
@@ -60,8 +56,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_SetEnabledTrue_When_ThreeParameterConstructorWithTrue()
-    {
+    void should_SetEnabledTrue_When_ThreeParameterConstructorWithTrue() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "strategy1", true);
 
@@ -69,8 +64,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_SetEnabledFalse_When_ThreeParameterConstructorWithFalse()
-    {
+    void should_SetEnabledFalse_When_ThreeParameterConstructorWithFalse() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "strategy1", false);
 
@@ -82,8 +76,7 @@ class AIStrategyNodeTest
     // ========================================
 
     @Test
-    void should_ReturnEnabled_When_CreatedWithEnabled()
-    {
+    void should_ReturnEnabled_When_CreatedWithEnabled() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "strategy1", true);
 
@@ -91,8 +84,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_ReturnNotEnabled_When_CreatedWithoutEnabled()
-    {
+    void should_ReturnNotEnabled_When_CreatedWithoutEnabled() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "strategy1", false);
 
@@ -100,8 +92,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_ReturnNotExpanded_When_NewlyCreated()
-    {
+    void should_ReturnNotExpanded_When_NewlyCreated() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "strategy1");
 
@@ -109,8 +100,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_SetExpanded_When_SetExpandedCalled()
-    {
+    void should_SetExpanded_When_SetExpandedCalled() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "strategy1");
 
@@ -120,8 +110,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_SetNotExpanded_When_SetExpandedCalledWithFalse()
-    {
+    void should_SetNotExpanded_When_SetExpandedCalledWithFalse() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "strategy1");
 
@@ -132,8 +121,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_ToggleExpanded_When_SetExpandedCalledMultipleTimes()
-    {
+    void should_ToggleExpanded_When_SetExpandedCalledMultipleTimes() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "strategy1");
 
@@ -152,8 +140,7 @@ class AIStrategyNodeTest
     // ========================================
 
     @Test
-    void should_HaveZeroIndent_When_RootNode()
-    {
+    void should_HaveZeroIndent_When_RootNode() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode root = new AIStrategyNode(playerType, "root");
 
@@ -161,8 +148,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_IncrementIndent_When_ChildAdded()
-    {
+    void should_IncrementIndent_When_ChildAdded() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode parent = new AIStrategyNode(playerType, "parent");
         AIStrategyNode child = new AIStrategyNode(playerType, "child");
@@ -173,8 +159,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_IncrementIndentByTwo_When_GrandchildAdded()
-    {
+    void should_IncrementIndentByTwo_When_GrandchildAdded() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode parent = new AIStrategyNode(playerType, "parent");
         AIStrategyNode child = new AIStrategyNode(playerType, "child");
@@ -187,8 +172,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_IncrementIndentByThree_When_GreatGrandchildAdded()
-    {
+    void should_IncrementIndentByThree_When_GreatGrandchildAdded() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode root = new AIStrategyNode(playerType, "root");
         AIStrategyNode level1 = new AIStrategyNode(playerType, "level1");
@@ -210,8 +194,7 @@ class AIStrategyNodeTest
     // ========================================
 
     @Test
-    void should_AddChild_When_AddChildCalled()
-    {
+    void should_AddChild_When_AddChildCalled() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode parent = new AIStrategyNode(playerType, "parent");
         AIStrategyNode child = new AIStrategyNode(playerType, "child");
@@ -223,8 +206,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_AddMultipleChildren_When_AddChildCalledMultipleTimes()
-    {
+    void should_AddMultipleChildren_When_AddChildCalledMultipleTimes() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode parent = new AIStrategyNode(playerType, "parent");
         AIStrategyNode child1 = new AIStrategyNode(playerType, "child1");
@@ -241,8 +223,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_BuildTree_When_MultipleNodesAdded()
-    {
+    void should_BuildTree_When_MultipleNodesAdded() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode root = new AIStrategyNode(playerType, "root");
 
@@ -269,13 +250,11 @@ class AIStrategyNodeTest
     // ========================================
 
     @Test
-    void should_HandleDeepTree_When_ManyLevels()
-    {
+    void should_HandleDeepTree_When_ManyLevels() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode current = new AIStrategyNode(playerType, "level0");
 
-        for (int i = 1; i <= 10; i++)
-        {
+        for (int i = 1; i <= 10; i++) {
             AIStrategyNode child = new AIStrategyNode(playerType, "level" + i);
             current.addChild(child);
             assertThat(child.getIndent()).isEqualTo(i);
@@ -284,13 +263,11 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_HandleWideTree_When_ManySiblings()
-    {
+    void should_HandleWideTree_When_ManySiblings() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode root = new AIStrategyNode(playerType, "root");
 
-        for (int i = 0; i < 10; i++)
-        {
+        for (int i = 0; i < 10; i++) {
             AIStrategyNode child = new AIStrategyNode(playerType, "child" + i);
             root.addChild(child);
             assertThat(child.getIndent()).isEqualTo(1);
@@ -302,8 +279,7 @@ class AIStrategyNodeTest
     // ========================================
 
     @Test
-    void should_PreserveEnabledState_When_AddedAsChild()
-    {
+    void should_PreserveEnabledState_When_AddedAsChild() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode parent = new AIStrategyNode(playerType, "parent", true);
         AIStrategyNode childEnabled = new AIStrategyNode(playerType, "childEnabled", true);
@@ -317,8 +293,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_MaintainIndentIndependently_When_MultipleTrees()
-    {
+    void should_MaintainIndentIndependently_When_MultipleTrees() {
         PlayerType playerType = new PlayerType("test");
 
         // First tree
@@ -338,8 +313,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_AllowSamePlayerTypeForAllNodes_When_Building()
-    {
+    void should_AllowSamePlayerTypeForAllNodes_When_Building() {
         PlayerType playerType = new PlayerType("test");
 
         AIStrategyNode node1 = new AIStrategyNode(playerType, "node1");
@@ -360,8 +334,7 @@ class AIStrategyNodeTest
     // ========================================
 
     @Test
-    void should_ReturnZeroChildCount_When_NoChildren()
-    {
+    void should_ReturnZeroChildCount_When_NoChildren() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "node");
 
@@ -369,8 +342,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_ReturnChildCount_When_ChildrenAdded()
-    {
+    void should_ReturnChildCount_When_ChildrenAdded() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode parent = new AIStrategyNode(playerType, "parent");
         parent.addChild(new AIStrategyNode(playerType, "child1"));
@@ -381,8 +353,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_ReturnChild_When_GetChildCalled()
-    {
+    void should_ReturnChild_When_GetChildCalled() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode parent = new AIStrategyNode(playerType, "parent");
         AIStrategyNode child1 = new AIStrategyNode(playerType, "child1");
@@ -396,8 +367,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_ReturnChildrenList_When_GetChildrenCalled()
-    {
+    void should_ReturnChildrenList_When_GetChildrenCalled() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode parent = new AIStrategyNode(playerType, "parent");
         parent.addChild(new AIStrategyNode(playerType, "child1"));
@@ -407,8 +377,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_ReturnParent_When_GetParentCalled()
-    {
+    void should_ReturnParent_When_GetParentCalled() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode parent = new AIStrategyNode(playerType, "parent");
         AIStrategyNode child = new AIStrategyNode(playerType, "child");
@@ -419,8 +388,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_ReturnNullParent_When_RootNode()
-    {
+    void should_ReturnNullParent_When_RootNode() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode root = new AIStrategyNode(playerType, "root");
 
@@ -432,25 +400,27 @@ class AIStrategyNodeTest
     // ========================================
 
     @Test
-    void should_ReturnStrategyName_When_NoPropertyMessageDefined()
-    {
+    void should_ReturnStrategyName_When_NoPropertyMessageDefined() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "undefined_strategy");
 
-        // When property not found and ApplicationError is thrown, returns the strategy name as fallback.
-        // When PropertyConfig is not initialized, getMessage returns null (no exception thrown).
+        // When property not found and ApplicationError is thrown, returns the strategy
+        // name as fallback.
+        // When PropertyConfig is not initialized, getMessage returns null (no exception
+        // thrown).
         String label = node.getLabel();
         assertThat(label).isIn("undefined_strategy", null);
     }
 
     @Test
-    void should_ReturnEmptyOrHtml_When_NoHelpMessageDefined()
-    {
+    void should_ReturnEmptyOrHtml_When_NoHelpMessageDefined() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "undefined_strategy");
 
-        // When PropertyConfig is initialized and throws ApplicationError, returns empty string.
-        // When PropertyConfig is not initialized, getMessage returns null which gets embedded in HTML.
+        // When PropertyConfig is initialized and throws ApplicationError, returns empty
+        // string.
+        // When PropertyConfig is not initialized, getMessage returns null which gets
+        // embedded in HTML.
         String helpText = node.getHelpText();
         assertThat(helpText).isNotNull();
     }
@@ -460,8 +430,7 @@ class AIStrategyNodeTest
     // ========================================
 
     @Test
-    void should_GetValue_When_ValueSet()
-    {
+    void should_GetValue_When_ValueSet() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "testvalue");
 
@@ -471,8 +440,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_UpdateValue_When_SetValueCalled()
-    {
+    void should_UpdateValue_When_SetValueCalled() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "testvalue");
 
@@ -488,8 +456,7 @@ class AIStrategyNodeTest
     // ========================================
 
     @Test
-    void should_PropagateValueUp_When_ChildValueChanged()
-    {
+    void should_PropagateValueUp_When_ChildValueChanged() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode parent = new AIStrategyNode(playerType, "parent");
         AIStrategyNode child1 = new AIStrategyNode(playerType, "child1");
@@ -508,8 +475,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_PropagateValueDown_When_ParentValueChanged()
-    {
+    void should_PropagateValueDown_When_ParentValueChanged() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode parent = new AIStrategyNode(playerType, "parent");
         AIStrategyNode child1 = new AIStrategyNode(playerType, "child1");
@@ -526,8 +492,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_PropagateRecursively_When_MultiLevelTree()
-    {
+    void should_PropagateRecursively_When_MultiLevelTree() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode root = new AIStrategyNode(playerType, "root");
         AIStrategyNode level1 = new AIStrategyNode(playerType, "level1");
@@ -544,8 +509,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_PropagateValueChange_When_Called()
-    {
+    void should_PropagateValueChange_When_Called() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode parent = new AIStrategyNode(playerType, "parent");
         AIStrategyNode child = new AIStrategyNode(playerType, "child");
@@ -567,8 +531,7 @@ class AIStrategyNodeTest
     // ========================================
 
     @Test
-    void should_SetDefaultValue_When_ValueMissing()
-    {
+    void should_SetDefaultValue_When_ValueMissing() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "newstrat");
 
@@ -578,8 +541,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_PreserveExistingValue_When_ValueAlreadySet()
-    {
+    void should_PreserveExistingValue_When_ValueAlreadySet() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "existingstrat");
 
@@ -590,8 +552,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_PropagateDefaultToChildren_When_SetMissingValues()
-    {
+    void should_PropagateDefaultToChildren_When_SetMissingValues() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode parent = new AIStrategyNode(playerType, "parent");
         AIStrategyNode child = new AIStrategyNode(playerType, "child");
@@ -607,8 +568,7 @@ class AIStrategyNodeTest
     // ========================================
 
     @Test
-    void should_ReturnFalse_When_NoChildren()
-    {
+    void should_ReturnFalse_When_NoChildren() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode node = new AIStrategyNode(playerType, "leaf");
 
@@ -616,8 +576,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_ReturnFalse_When_AllChildrenHaveSameValue()
-    {
+    void should_ReturnFalse_When_AllChildrenHaveSameValue() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode parent = new AIStrategyNode(playerType, "parent");
         AIStrategyNode child1 = new AIStrategyNode(playerType, "child1");
@@ -634,8 +593,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_ReturnTrue_When_ChildHasDifferentValue()
-    {
+    void should_ReturnTrue_When_ChildHasDifferentValue() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode parent = new AIStrategyNode(playerType, "parent");
         AIStrategyNode child1 = new AIStrategyNode(playerType, "child1");
@@ -652,8 +610,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_SetExpanded_When_SmartExpandReturnsTrue()
-    {
+    void should_SetExpanded_When_SmartExpandReturnsTrue() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode parent = new AIStrategyNode(playerType, "parent");
         AIStrategyNode child = new AIStrategyNode(playerType, "child");
@@ -669,8 +626,7 @@ class AIStrategyNodeTest
     }
 
     @Test
-    void should_PropagateExpansion_When_NestedDifference()
-    {
+    void should_PropagateExpansion_When_NestedDifference() {
         PlayerType playerType = new PlayerType("test");
         AIStrategyNode root = new AIStrategyNode(playerType, "root");
         AIStrategyNode level1 = new AIStrategyNode(playerType, "level1");

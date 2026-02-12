@@ -32,8 +32,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for HoldemHand - poker hand progression, betting rounds, player actions,
- * pot management, and game state tracking.
+ * Tests for HoldemHand - poker hand progression, betting rounds, player
+ * actions, pot management, and game state tracking.
  */
 class HoldemHandTest {
 

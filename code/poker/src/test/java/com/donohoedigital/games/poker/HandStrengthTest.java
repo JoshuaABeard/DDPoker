@@ -30,8 +30,8 @@ import static com.donohoedigital.games.poker.engine.Card.*;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for HandStrength - hand strength calculation, opponent modeling,
- * and probability estimation.
+ * Tests for HandStrength - hand strength calculation, opponent modeling, and
+ * probability estimation.
  */
 class HandStrengthTest {
 
@@ -162,7 +162,8 @@ class HandStrengthTest {
 
         handStrength.getStrength(hole, community);
 
-        // After calculation, straight count should be > 0 (opponents could have straights)
+        // After calculation, straight count should be > 0 (opponents could have
+        // straights)
         assertThat(handStrength.getNumStraights()).isGreaterThanOrEqualTo(0);
     }
 
@@ -180,7 +181,8 @@ class HandStrengthTest {
         handStrength.getStrength(hole, community);
         int afterCount = handStrength.getNumStraights();
 
-        // After calculation, count may have changed (depends on opponents making straights)
+        // After calculation, count may have changed (depends on opponents making
+        // straights)
         assertThat(afterCount).isGreaterThanOrEqualTo(beforeCount);
     }
 

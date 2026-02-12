@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -42,8 +42,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.*;
 
-public class HandGroupDialog extends OptionMenuDialog implements PropertyChangeListener
-{
+public class HandGroupDialog extends OptionMenuDialog implements PropertyChangeListener {
     private String STYLE;
 
     private HandGroup profile_;
@@ -58,8 +57,7 @@ public class HandGroupDialog extends OptionMenuDialog implements PropertyChangeL
     /**
      * Get component with options, also fill array with same options
      */
-    protected JComponent getOptions()
-    {
+    protected JComponent getOptions() {
         profile_ = (HandGroup) gamephase_.getObject(ProfileList.PARAM_PROFILE);
         ApplicationError.assertNotNull(profile_, "No 'profile' in params");
 
@@ -71,7 +69,7 @@ public class HandGroupDialog extends OptionMenuDialog implements PropertyChangeL
         gridPanel_.addPropertyChangeListener(this);
         gridPanel_.setHandGroup(profile_);
 
-        //profile_ = gridPanel_.getHandGroup();
+        // profile_ = gridPanel_.getHandGroup();
 
         DDPanel top = new DDPanel();
 
@@ -91,10 +89,8 @@ public class HandGroupDialog extends OptionMenuDialog implements PropertyChangeL
         desc_ = new GlassButton("description", "Glass");
         desc_.setPreferredSize(new Dimension(80, 24));
         desc_.setBorderGap(0, 0, 0, 0);
-        desc_.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent e)
-            {
+        desc_.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
                 setDescription();
             }
         });
@@ -106,21 +102,18 @@ public class HandGroupDialog extends OptionMenuDialog implements PropertyChangeL
         return base_;
     }
 
-    protected Component getFocusComponent()
-    {
+    protected Component getFocusComponent() {
         return name_;
     }
 
-    protected int getTextPreferredHeight()
-    {
+    protected int getTextPreferredHeight() {
         return 40;
     }
 
     /**
      * Default processButton calls closes dialog on any button press
      */
-    public boolean processButton(GameButton button)
-    {
+    public boolean processButton(GameButton button) {
         setResult(Boolean.FALSE);
         return super.processButton(button);
     }
@@ -128,13 +121,11 @@ public class HandGroupDialog extends OptionMenuDialog implements PropertyChangeL
     /**
      * Okay button press
      */
-    protected void okayButton()
-    {
+    protected void okayButton() {
         name_.removePropertyChangeListener(this);
         String sText = name_.getText();
         String sCurrent = profile_.getName();
-        if (!sCurrent.equals(sText))
-        {
+        if (!sCurrent.equals(sText)) {
             profile_.setName(sText);
         }
 
@@ -144,10 +135,8 @@ public class HandGroupDialog extends OptionMenuDialog implements PropertyChangeL
     /**
      * Override to ignore non-Boolean results
      */
-    public void setResult(Object o)
-    {
-        if (o instanceof Boolean)
-        {
+    public void setResult(Object o) {
+        if (o instanceof Boolean) {
             super.setResult(o);
         }
     }
@@ -155,27 +144,24 @@ public class HandGroupDialog extends OptionMenuDialog implements PropertyChangeL
     /**
      * Set description
      */
-    private void setDescription()
-    {
+    private void setDescription() {
         TypedHashMap params = new TypedHashMap();
         params.setString(DescriptionDialog.PARAM_DESC, profile_.getDescription());
         Phase phase = context_.processPhaseNow("HandGroupDescriptionDialog", params);
         String sDesc = (String) phase.getResult();
 
-        if (sDesc != null)
-        {
+        if (sDesc != null) {
             profile_.setDescription(sDesc);
         }
     }
 
-    protected boolean isValidCheck()
-    {
+    protected boolean isValidCheck() {
         return name_.isValidData() && (profile_.getClassCount() > 0);
     }
 
-    public void propertyChange(PropertyChangeEvent evt)
-    {
+    public void propertyChange(PropertyChangeEvent evt) {
         String propertyName = evt.getPropertyName();
-        if (propertyName.equals("value") || propertyName.equals("HANDS")) checkButtons();
+        if (propertyName.equals("value") || propertyName.equals("HANDS"))
+            checkButtons();
     }
 }

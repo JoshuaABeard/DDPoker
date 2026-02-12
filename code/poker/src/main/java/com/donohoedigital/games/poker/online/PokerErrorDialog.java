@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -47,14 +47,10 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Created by IntelliJ IDEA.
- * User: donohoe
- * Date: May 29, 2005
- * Time: 8:07:59 PM
+ * Created by IntelliJ IDEA. User: donohoe Date: May 29, 2005 Time: 8:07:59 PM
  * To change this template use File | Settings | File Templates.
  */
-public class PokerErrorDialog extends MessageErrorDialog
-{
+public class PokerErrorDialog extends MessageErrorDialog {
     public static final String PARAM_URL = "url";
     public static final String PARAM_ATTEMPT = "attempts";
 
@@ -64,8 +60,7 @@ public class PokerErrorDialog extends MessageErrorDialog
     /**
      * get url
      */
-    public void init(GameEngine engine, GameContext context, GamePhase gamephase)
-    {
+    public void init(GameEngine engine, GameContext context, GamePhase gamephase) {
         url_ = (PokerURL) gamephase.getObject(PARAM_URL);
         super.init(engine, context, gamephase);
     }
@@ -73,14 +68,13 @@ public class PokerErrorDialog extends MessageErrorDialog
     /**
      * Create UI
      */
-    public JComponent createDialogContents()
-    {
+    public JComponent createDialogContents() {
         JComponent comp = super.createDialogContents();
 
         // add our own label
         attempts_ = new DDLabel(GuiManager.DEFAULT, "Rejoin");
         bottom_.add(attempts_, BorderLayout.SOUTH);
-        attempts_.setBorder(BorderFactory.createEmptyBorder(0,25,5,0));
+        attempts_.setBorder(BorderFactory.createEmptyBorder(0, 25, 5, 0));
 
         return comp;
     }
@@ -88,17 +82,15 @@ public class PokerErrorDialog extends MessageErrorDialog
     /**
      * Overriden to just center so as to not obscure LED in lobby
      */
-    protected int getDialogPosition(InternalDialog dialog)
-    {
-        //dialog.setCenterAdjust(0, -(nHeightAdjust_/4));
+    protected int getDialogPosition(InternalDialog dialog) {
+        // dialog.setCenterAdjust(0, -(nHeightAdjust_/4));
         return InternalDialog.POSITION_CENTER_ADJUST;
     }
 
     /**
      * update reconnect attempts label before passing to super
      */
-    public void messageReceived(DDMessage message)
-    {
+    public void messageReceived(DDMessage message) {
         int n = gamephase_.getInteger(PARAM_ATTEMPT, 1);
         attempts_.setText(PropertyConfig.getMessage("msg.reconnect.attempts", n));
         super.messageReceived(message);
@@ -107,16 +99,14 @@ public class PokerErrorDialog extends MessageErrorDialog
     /**
      * Return message to display from gamephase params PARAM_DISPLAY
      */
-    protected String getMessageString()
-    {
+    protected String getMessageString() {
         return gamephase_.getString(PokerP2PDialog.PARAM_DISPLAY);
     }
 
     /**
      * Port part of URL for use in error message
      */
-    protected int getPort()
-    {
+    protected int getPort() {
         return url_.getPort();
     }
 }

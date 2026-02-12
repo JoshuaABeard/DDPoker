@@ -44,15 +44,11 @@ import java.util.*;
 import java.util.prefs.*;
 
 /**
- * Created by IntelliJ IDEA.
- * User: donohoe
- * Date: May 1, 2006
- * Time: 8:24:58 AM
- * To change this template use File | Settings | File Templates.
+ * Created by IntelliJ IDEA. User: donohoe Date: May 1, 2006 Time: 8:24:58 AM To
+ * change this template use File | Settings | File Templates.
  */
 @SuppressWarnings({"UseOfSystemOutOrSystemErr", "PublicField"})
-public class UDPServer extends Thread
-{
+public class UDPServer extends Thread {
     static Logger logger = LogManager.getLogger(UDPServer.class);
 
     // UDP debug control
@@ -73,8 +69,7 @@ public class UDPServer extends Thread
     public static final String TESTING_UDP = "testing.debug.udp";
 
     // set debug flags
-    public static void setDebugFlags()
-    {
+    public static void setDebugFlags() {
         boolean detail = DebugConfig.TESTING(TESTING_UDP);
         boolean on = true;
         boolean off = false;
@@ -121,20 +116,18 @@ public class UDPServer extends Thread
     private DatagramChannel defaultChannel_;
 
     /**
-     * New UDPServer.  Pass in a handler.  We'll use one for now - may need
-     * to expand in the future, but this is easier.
+     * New UDPServer. Pass in a handler. We'll use one for now - may need to expand
+     * in the future, but this is easier.
      */
-    public UDPServer(UDPLinkHandler handler, boolean bExceptionOnNoBind)
-    {
+    public UDPServer(UDPLinkHandler handler, boolean bExceptionOnNoBind) {
         this(handler, bExceptionOnNoBind, false, null);
     }
 
     /**
-     * New UDPServer.  Pass in a handler.  We'll use one for now - may need
-     * to expand in the future, but this is easier.
+     * New UDPServer. Pass in a handler. We'll use one for now - may need to expand
+     * in the future, but this is easier.
      */
-    public UDPServer(UDPLinkHandler handler, boolean bExceptionOnNoBind, boolean bBindLoopback, String sPort)
-    {
+    public UDPServer(UDPLinkHandler handler, boolean bExceptionOnNoBind, boolean bBindLoopback, String sPort) {
         setName("UDPServer");
         handler_ = handler;
         bExceptionOnNoBind_ = bExceptionOnNoBind;
@@ -143,17 +136,14 @@ public class UDPServer extends Thread
     }
 
     /**
-     * Must call this after constructor (to do binding and other init) before calling
-     * start() - to start in its own thread or run() - to run in current thread
+     * Must call this after constructor (to do binding and other init) before
+     * calling start() - to start in its own thread or run() - to run in current
+     * thread
      */
-    public void init()
-    {
-        try
-        {
+    public void init() {
+        try {
             _init();
-        }
-        catch (IOException ioe)
-        {
+        } catch (IOException ioe) {
             System.err.println("GameServer error: " + Utils.formatExceptionText(ioe));
         }
     }
@@ -161,8 +151,7 @@ public class UDPServer extends Thread
     /**
      * Initialize - bind to configured IPs
      */
-    private void _init() throws IOException
-    {
+    private void _init() throws IOException {
         // get debug flags
         setDebugFlags();
 
@@ -171,7 +160,8 @@ public class UDPServer extends Thread
         Runtime.getRuntime().addShutdownHook(shutdown_);
 
         // get startup settings
-        if (sPort_ == null) sPort_ = PropertyConfig.getRequiredStringProperty("settings.udp.port");
+        if (sPort_ == null)
+            sPort_ = PropertyConfig.getRequiredStringProperty("settings.udp.port");
         String sIP = PropertyConfig.getStringProperty("settings.udp.ip", null, false);
         bBindFailover_ = PropertyConfig.getBooleanProperty("settings.udp.failover", true, false);
         nFailoverAttempts_ = PropertyConfig.getIntegerProperty("settings.udp.failover.attempts", 3);
@@ -196,29 +186,25 @@ public class UDPServer extends Thread
         List<InetAddress> activeIPs = new ArrayList<>();
 
         // config file IPs (may be empty)
-        while (ips != null && ips.hasMoreTokens())
-        {
+        while (ips != null && ips.hasMoreTokens()) {
             configIPs.add(ips.nextToken());
         }
 
         // loop over all IPs
         Enumeration<NetworkInterface> enu = NetworkInterface.getNetworkInterfaces();
-        while (enu.hasMoreElements())
-        {
+        while (enu.hasMoreElements()) {
             NetworkInterface ni = enu.nextElement();
             Enumeration<InetAddress> ias = ni.getInetAddresses();
-            while (ias.hasMoreElements())
-            {
+            while (ias.hasMoreElements()) {
                 // if an IP4 (non loopback), add it to list
                 InetAddress i = ias.nextElement();
-                if (i instanceof Inet4Address)
-                {
-                    if (!bBindLoopback_ && i.isLoopbackAddress()) continue;
+                if (i instanceof Inet4Address) {
+                    if (!bBindLoopback_ && i.isLoopbackAddress())
+                        continue;
 
                     actualIPs.add(i);
 
-                    if (configIPs.contains(i.getHostAddress()))
-                    {
+                    if (configIPs.contains(i.getHostAddress())) {
                         activeIPs.add(i);
                         configIPs.remove(i.getHostAddress());
                         logger.info("Using specific address: " + i.getHostAddress());
@@ -228,42 +214,34 @@ public class UDPServer extends Thread
         }
 
         // if activeIPs is empty, use all IPs
-        if (activeIPs.isEmpty())
-        {
+        if (activeIPs.isEmpty()) {
             logger.info("Using all addresses (UDP)");
             activeIPs = actualIPs;
         }
 
         // loop over all ports
-        while (ports.hasMoreTokens())
-        {
-            try
-            {
+        while (ports.hasMoreTokens()) {
+            try {
                 port = ports.nextToken();
                 nPort = Integer.parseInt(port);
 
                 // set the port the server channel will listen to
                 logger.info("Processing port " + nPort + "...");
 
-                for (InetAddress i : activeIPs)
-                {
+                for (InetAddress i : activeIPs) {
                     // allocate an unbound server socket channel
                     channel = DatagramChannel.open();
                     socket = channel.socket();
                     socket.setReceiveBufferSize(32 * 1024);
                     socket.setSendBufferSize(32 * 1024);
 
-                    logger.info("Binding: " + i.getHostAddress() + ":" + nPort +
-                                " (send=" + socket.getSendBufferSize() +
-                                ", rcv=" + socket.getReceiveBufferSize() + ")");
+                    logger.info("Binding: " + i.getHostAddress() + ":" + nPort + " (send=" + socket.getSendBufferSize()
+                            + ", rcv=" + socket.getReceiveBufferSize() + ")");
 
                     InetSocketAddress ip;
-                    try
-                    {
+                    try {
                         ip = bind(socket, i, nPort);
-                    }
-                    catch (SocketException be)
-                    {
+                    } catch (SocketException be) {
                         logger.error("Unable to bind: " + Utils.getExceptionMessage(be));
                         continue;
                     }
@@ -275,8 +253,7 @@ public class UDPServer extends Thread
                     ipToID_.put(ip, getUDPID(ip.getPort()));
 
                     // default channel - first non loopback
-                    if (defaultChannel_ == null || defaultChannel_.socket().getLocalAddress().isLoopbackAddress())
-                    {
+                    if (defaultChannel_ == null || defaultChannel_.socket().getLocalAddress().isLoopbackAddress()) {
                         defaultChannel_ = channel;
                     }
 
@@ -286,23 +263,18 @@ public class UDPServer extends Thread
                     // register with selector
                     channel.register(selector_, SelectionKey.OP_READ);
                 }
-            }
-            catch (NumberFormatException nfe)
-            {
+            } catch (NumberFormatException nfe) {
                 logger.error("Unable to parse: " + port);
             }
         }
 
         // make sure we have one valid port
-        if (channels_.isEmpty() && bExceptionOnNoBind_)
-        {
-            throw new ApplicationError(ErrorCodes.ERROR_SERVER_NO_PORTS,
-                                       "No ports were bound", sPort_, null);
+        if (channels_.isEmpty() && bExceptionOnNoBind_) {
+            throw new ApplicationError(ErrorCodes.ERROR_SERVER_NO_PORTS, "No ports were bound", sPort_, null);
         }
 
         // store first port as preferred
-        if (!channels_.isEmpty())
-        {
+        if (!channels_.isEmpty()) {
             logger.info("Preferred UDP (chat) address set to " + Utils.getLocalAddressPort(getDefaultChannel()));
         }
 
@@ -319,20 +291,16 @@ public class UDPServer extends Thread
     /**
      * Get UPDID for port
      */
-    private UDPID getUDPID(int nPort)
-    {
+    private UDPID getUDPID(int nPort) {
         Preferences pref = Prefs.getUserPrefs(PREF_NODE);
         String sKey = PREF_UDP_GUID + ":" + nPort;
         String pGUID = pref.get(sKey, null);
-        if (pGUID == null)
-        {
+        if (pGUID == null) {
             RandomGUID guid = new RandomGUID(ConfigUtils.getLocalHost(true), true);
             pGUID = guid.toString();
             pref.put(sKey, pGUID);
             logger.info("Created new UDP GUID: " + pGUID + " (port " + nPort + ")");
-        }
-        else
-        {
+        } else {
             logger.info("Using existing UDP GUID: " + pGUID + " (port " + nPort + ")");
         }
         return new UDPID(pGUID);
@@ -341,21 +309,17 @@ public class UDPServer extends Thread
     /**
      * Attempt bind, failover to next port if desired, return addr actually bound
      */
-    private InetSocketAddress bind(DatagramSocket socket, InetAddress ia, int nPort) throws SocketException
-    {
+    private InetSocketAddress bind(DatagramSocket socket, InetAddress ia, int nPort) throws SocketException {
         int nAttempts = nFailoverAttempts_;
         SocketException e = null;
-        for (int i = 0; i < nAttempts; i++)
-        {
-            try
-            {
+        for (int i = 0; i < nAttempts; i++) {
+            try {
                 InetSocketAddress addr = new InetSocketAddress(ia, nPort);
                 socket.bind(addr);
                 return addr;
-            }
-            catch (SocketException e2)
-            {
-                if (!bBindFailover_) throw e2;
+            } catch (SocketException e2) {
+                if (!bBindFailover_)
+                    throw e2;
                 logger.info("Failed binding to " + ia.getHostAddress() + ":" + nPort + ", trying port " + (nPort - 1));
                 nPort--;
                 e = e2;
@@ -370,106 +334,95 @@ public class UDPServer extends Thread
     /**
      * Return UDP Manager
      */
-    public UDPManager manager()
-    {
+    public UDPManager manager() {
         return mgr_;
     }
 
     /**
      * Return dispatch queue
      */
-    DispatchQueue dispatch()
-    {
+    DispatchQueue dispatch() {
         return dispatchQueue_;
     }
 
     /**
      * Return outgoing queue
      */
-    OutgoingQueue outgoing()
-    {
+    OutgoingQueue outgoing() {
         return outgoingQueue_;
     }
 
     /**
      * Return handler
      */
-    public UDPLinkHandler handler()
-    {
+    public UDPLinkHandler handler() {
         return handler_;
     }
 
     /**
      * return preferred port
      */
-    public int getPreferredPort()
-    {
-        if (defaultChannel_ != null) return defaultChannel_.socket().getLocalPort();
+    public int getPreferredPort() {
+        if (defaultChannel_ != null)
+            return defaultChannel_.socket().getLocalPort();
         return -1;
     }
 
     /**
      * return preferred ip
      */
-    public String getPreferredIP()
-    {
-        if (defaultChannel_ != null) return defaultChannel_.socket().getLocalAddress().getHostAddress();
+    public String getPreferredIP() {
+        if (defaultChannel_ != null)
+            return defaultChannel_.socket().getLocalAddress().getHostAddress();
         return "127.0.0.1";
     }
 
     /**
      * return if bound
      */
-    public boolean isBound()
-    {
+    public boolean isBound() {
         return defaultChannel_ != null;
     }
 
     /**
      * Return port(s) specified in config file
      */
-    public String getConfigPort()
-    {
+    public String getConfigPort() {
         return sPort_;
     }
 
     /**
      * return default DatagramChannel
      */
-    public DatagramChannel getDefaultChannel()
-    {
+    public DatagramChannel getDefaultChannel() {
         return defaultChannel_;
     }
 
     /**
      * Get ip for channel
      */
-    public InetSocketAddress getIP(DatagramChannel channel)
-    {
+    public InetSocketAddress getIP(DatagramChannel channel) {
         return channelToIP_.get(channel);
     }
 
     /**
      * Get channel for ip
      */
-    public DatagramChannel getChannel(InetSocketAddress ip)
-    {
+    public DatagramChannel getChannel(InetSocketAddress ip) {
         return ipToChannel_.get(ip);
     }
 
     /**
      * Get id for ip
      */
-    public UDPID getID(InetSocketAddress ip)
-    {
+    public UDPID getID(InetSocketAddress ip) {
         return ipToID_.get(ip);
     }
 
     /**
      * process requests (called via Thread start())
      */
-    public void run()
-    {
+    public void run() {
         int n;
 
         // start the dispatch queue
@@ -482,35 +435,26 @@ public class UDPServer extends Thread
         mgr_.start();
 
         // MAIN: loop forever, processing requests
-        while (!bDone_)
-        {
+        while (!bDone_) {
             // this may block for a long time, upon return the
             // selected set contains keys of the ready channels
-            try
-            {
+            try {
                 n = selector_.select();
-            }
-            catch (Throwable t)
-            {
+            } catch (Throwable t) {
                 // don't print to log if interrupted system call - happens on shutdown,
                 // in particular on Linux
-                if (!bDone_ && !Utils.getExceptionMessage(t).contains("Interrupted system call"))
-                {
+                if (!bDone_ && !Utils.getExceptionMessage(t).contains("Interrupted system call")) {
                     logger.error("selector.select() error: " + Utils.formatExceptionText(t));
                 }
                 continue;
             }
 
-            try
-            {
+            try {
                 // process selection
-                if (n > 0)
-                {
+                if (n > 0) {
                     processSelection();
                 }
-            }
-            catch (Throwable t)
-            {
+            } catch (Throwable t) {
                 logger.error("UDPServer error: " + Utils.formatExceptionText(t));
             }
         }
@@ -519,15 +463,12 @@ public class UDPServer extends Thread
     /**
      * Shutdown thread for cleanup
      */
-    private class Shutdown extends Thread
-    {
-        public Shutdown()
-        {
+    private class Shutdown extends Thread {
+        public Shutdown() {
             setName("UDPServer-Shutdown");
         }
 
-        public void run()
-        {
+        public void run() {
             logger.info("UDPServer shutting down...");
             shutdown(false);
         }
@@ -536,31 +477,29 @@ public class UDPServer extends Thread
     /**
      * Stop the server
      */
-    public void shutdown()
-    {
+    public void shutdown() {
         shutdown(true);
     }
 
     /**
      * stop the game server, remove shutdown hook if directed to do so
      */
-    private void shutdown(boolean bRemoveHook)
-    {
+    private void shutdown(boolean bRemoveHook) {
         // set done flag, remove shutdown hook
-        if (bDone_) return; // don't run multiple times
+        if (bDone_)
+            return; // don't run multiple times
         bDone_ = true;
 
-        if (bRemoveHook) Runtime.getRuntime().removeShutdownHook(shutdown_);
+        if (bRemoveHook)
+            Runtime.getRuntime().removeShutdownHook(shutdown_);
 
         // close selector
-        try
-        {
+        try {
             selector_.wakeup();
             selector_.close();
-        }
-        catch (Throwable ignore)
-        {
-            //logger.debug("Caught exception shutting down selector: " + Utils.formatExceptionText(ignore));
+        } catch (Throwable ignore) {
+            // logger.debug("Caught exception shutting down selector: " +
+            // Utils.formatExceptionText(ignore));
         }
 
         // stop the dispatch queue
@@ -573,19 +512,15 @@ public class UDPServer extends Thread
         mgr_.finish();
 
         // close all sockets to release ports
-        for (DatagramChannel channel : channels_)
-        {
-            try
-            {
-                if (channel.socket() != null)
-                {
+        for (DatagramChannel channel : channels_) {
+            try {
+                if (channel.socket() != null) {
                     logger.info("UDPServer closing " + Utils.getLocalAddressPort(channel));
                     channel.socket().close();
                 }
-            }
-            catch (Throwable ignore)
-            {
-                //logger.debug("Caught exception shutting down socket: " + Utils.formatExceptionText(ignore));
+            } catch (Throwable ignore) {
+                // logger.debug("Caught exception shutting down socket: " +
+                // Utils.formatExceptionText(ignore));
             }
         }
 
@@ -595,43 +530,31 @@ public class UDPServer extends Thread
     /**
      * Logic to process selected keys
      */
-    private void processSelection()
-    {
+    private void processSelection() {
         // get an iterator over the set of selected keys
         Iterator<SelectionKey> iter;
         SelectionKey key;
 
-        try
-        {
+        try {
             iter = selector_.selectedKeys().iterator();
-        }
-        catch (ClosedSelectorException cse)
-        {
-            if (!bDone_)
-            {
+        } catch (ClosedSelectorException cse) {
+            if (!bDone_) {
                 logger.error("processSelection error: " + Utils.formatExceptionText(cse));
             }
             return;
         }
 
         // look at each key in the selected set
-        while (iter.hasNext())
-        {
+        while (iter.hasNext()) {
             key = iter.next();
 
-            try
-            {
-                if (key.isReadable())
-                {
+            try {
+                if (key.isReadable()) {
                     processChannel(key);
                 }
-            }
-            catch (IOException ioe)
-            {
+            } catch (IOException ioe) {
                 logger.error("processSelection error: " + Utils.formatExceptionText(ioe));
-            }
-            finally
-            {
+            } finally {
                 // remove key from selected set, as it has been handled
                 iter.remove();
             }
@@ -641,19 +564,17 @@ public class UDPServer extends Thread
     /**
      * Get worker from pool to handle socket connection
      */
-    private void processChannel(SelectionKey key) throws IOException
-    {
+    private void processChannel(SelectionKey key) throws IOException {
         // get channel
         DatagramChannel channel = (DatagramChannel) key.channel();
 
         // read packet
         bb_.clear();
         InetSocketAddress from = (InetSocketAddress) channel.receive(bb_);
-        if (from == null)
-        {
-            // this will seem to happen on windows if the other side dies.  Not
-            // sure why.  Maybe be related to ongoing outgoing messages.
-            //logger.warn("No data available on " + Utils.getLocalAddressPort(channel));
+        if (from == null) {
+            // this will seem to happen on windows if the other side dies. Not
+            // sure why. Maybe be related to ongoing outgoing messages.
+            // logger.warn("No data available on " + Utils.getLocalAddressPort(channel));
             return;
         }
         bb_.flip();

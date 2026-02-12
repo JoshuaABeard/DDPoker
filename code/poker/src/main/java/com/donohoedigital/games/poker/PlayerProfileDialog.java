@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -57,8 +57,7 @@ import java.beans.*;
 /**
  * @author Doug Donohoe
  */
-public class PlayerProfileDialog extends DialogPhase implements PropertyChangeListener
-{
+public class PlayerProfileDialog extends DialogPhase implements PropertyChangeListener {
     static Logger logger = LogManager.getLogger(PlayerProfileDialog.class);
 
     public static final int PLAYER_NAME_LIMIT = 15;
@@ -84,8 +83,7 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
      * create chat ui
      */
     @Override
-    public JComponent createDialogContents()
-    {
+    public JComponent createDialogContents() {
         // Use original profile information to determine how to update values.
         profile_ = (PlayerProfile) gamephase_.getObject(ProfileList.PARAM_PROFILE);
         ApplicationError.assertNotNull(profile_, "No 'profile' in params");
@@ -100,8 +98,7 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
         layout.setHgap(5);
         base.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-        if (bStartMenuMode)
-        {
+        if (bStartMenuMode) {
             DDPanel welpanel = new DDPanel();
             welpanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
             layout = (BorderLayout) welpanel.getLayout();
@@ -146,25 +143,19 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
         onlineBorder.add(onlinePanel_);
 
         // only email and password can be changed for an online profile
-        if (profile_.isOnline())
-        {
+        if (profile_.isOnline()) {
             nameLabel.setEnabled(false);
             nameText.setEnabled(false);
 
-            if (profile_.isActivated())
-            {
+            if (profile_.isActivated()) {
                 addEmail();
                 emailWidgets_.setEnabled(false);
-            }
-            else
-            {
+            } else {
                 addPassword();
             }
 
             onlinePanel_.addButtons();
-        }
-        else
-        {
+        } else {
             noRadio_ = onlinePanel_.addRadio("profilenoonline");
             newRadio_ = onlinePanel_.addRadio("profilenewonline");
             existRadio_ = onlinePanel_.addRadio("profileexistonline");
@@ -190,83 +181,61 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
         // add listeners
         nameText.addPropertyChangeListener(this);
 
-        if (profile_.isOnline())
-        {
-            emailButton_.addActionListener(new ActionListener()
-            {
-                public void actionPerformed(ActionEvent e)
-                {
+        if (profile_.isOnline()) {
+            emailButton_.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
                     doButton(e);
                 }
             });
 
-            if (passwordButton_ != null)
-            {
-                passwordButton_.addActionListener(new ActionListener()
-                {
-                    public void actionPerformed(ActionEvent e)
-                    {
+            if (passwordButton_ != null) {
+                passwordButton_.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
                         doButton(e);
                     }
                 });
             }
 
-            if (sendButton_ != null)
-            {
-                sendButton_.addActionListener(new ActionListener()
-                {
-                    public void actionPerformed(ActionEvent e)
-                    {
+            if (sendButton_ != null) {
+                sendButton_.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
                         doButton(e);
                     }
                 });
             }
 
-            if (resetButton_ != null)
-            {
-                resetButton_.addActionListener(new ActionListener()
-                {
-                    public void actionPerformed(ActionEvent e)
-                    {
+            if (resetButton_ != null) {
+                resetButton_.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
                         doButton(e);
                     }
                 });
             }
 
-            if (syncButton_ != null)
-            {
-                syncButton_.addActionListener(new ActionListener()
-                {
-                    public void actionPerformed(ActionEvent e)
-                    {
+            if (syncButton_ != null) {
+                syncButton_.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
                         doButton(e);
                     }
                 });
             }
         }
 
-        if (noRadio_ != null)
-        {
-            noRadio_.addActionListener(new ActionListener()
-            {
-                public void actionPerformed(ActionEvent e)
-                {
+        if (noRadio_ != null) {
+            noRadio_.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
                     doRadio();
                 }
             });
 
-            newRadio_.addActionListener(new ActionListener()
-            {
-                public void actionPerformed(ActionEvent e)
-                {
+            newRadio_.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
                     doRadio();
                 }
             });
 
-            existRadio_.addActionListener(new ActionListener()
-            {
-                public void actionPerformed(ActionEvent e)
-                {
+            existRadio_.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
                     doRadio();
                 }
             });
@@ -277,17 +246,10 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
         return base;
     }
 
-    private void addEmail()
-    {
-        if (emailWidgets_ == null)
-        {
-            emailWidgets_ = onlinePanel_.addTextField("profileemail",
-                                                      "profileemail",
-                                                      STYLE,
-                                                      256,
-                                                      profile_.getEmail(),
-                                                      PropertyConfig.getRequiredStringProperty("regexp.email"),
-                                                      new Insets(5, 0, 5, 0));
+    private void addEmail() {
+        if (emailWidgets_ == null) {
+            emailWidgets_ = onlinePanel_.addTextField("profileemail", "profileemail", STYLE, 256, profile_.getEmail(),
+                    PropertyConfig.getRequiredStringProperty("regexp.email"), new Insets(5, 0, 5, 0));
 
             emailWidgets_.text_.addPropertyChangeListener(this);
 
@@ -295,10 +257,8 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
         }
     }
 
-    private void removeEmail()
-    {
-        if (emailWidgets_ != null)
-        {
+    private void removeEmail() {
+        if (emailWidgets_ != null) {
             onlinePanel_.remove(emailWidgets_.label_);
             onlinePanel_.remove(emailWidgets_.text_);
             emailWidgets_ = null;
@@ -307,17 +267,10 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
         }
     }
 
-    private void addPassword()
-    {
-        if (passwordWidgets_ == null)
-        {
-            passwordWidgets_ = onlinePanel_.addTextField("profilepassword",
-                                                         "profilepassword",
-                                                         STYLE,
-                                                         16,
-                                                         null,
-                                                         PLAYER_NAME_REGEXP,
-                                                         new Insets(5, 0, 5, 0));
+    private void addPassword() {
+        if (passwordWidgets_ == null) {
+            passwordWidgets_ = onlinePanel_.addTextField("profilepassword", "profilepassword", STYLE, 16, null,
+                    PLAYER_NAME_REGEXP, new Insets(5, 0, 5, 0));
 
             passwordWidgets_.text_.addPropertyChangeListener(this);
 
@@ -325,10 +278,8 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
         }
     }
 
-    private void removePassword()
-    {
-        if (passwordWidgets_ != null)
-        {
+    private void removePassword() {
+        if (passwordWidgets_ != null) {
             onlinePanel_.remove(passwordWidgets_.label_);
             onlinePanel_.remove(passwordWidgets_.text_);
             passwordWidgets_ = null;
@@ -337,14 +288,10 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
         }
     }
 
-    private boolean isOnline()
-    {
-        if (noRadio_ != null)
-        {
+    private boolean isOnline() {
+        if (noRadio_ != null) {
             return newRadio_.isSelected() || existRadio_.isSelected();
-        }
-        else
-        {
+        } else {
             return profile_.isOnline();
         }
     }
@@ -353,29 +300,22 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
      * Focus to text field
      */
     @Override
-    protected Component getFocusComponent()
-    {
+    protected Component getFocusComponent() {
         // choose the most useful field
-        if (nameWidgets_.isEnabled())
-        {
+        if (nameWidgets_.isEnabled()) {
             return nameWidgets_.text_;
-        }
-        else if (noRadio_ != null)
-        {
-            if (noRadio_.isSelected()) return noRadio_;
-            else if (newRadio_.isSelected()) return newRadio_;
-            else return existRadio_;
-        }
-        else if (passwordWidgets_ != null)
-        {
+        } else if (noRadio_ != null) {
+            if (noRadio_.isSelected())
+                return noRadio_;
+            else if (newRadio_.isSelected())
+                return newRadio_;
+            else
+                return existRadio_;
+        } else if (passwordWidgets_ != null) {
             return passwordWidgets_.text_;
-        }
-        else if (emailWidgets_ != null)
-        {
+        } else if (emailWidgets_ != null) {
             return emailWidgets_.text_;
-        }
-        else
-        {
+        } else {
             return null;
         }
     }
@@ -384,57 +324,49 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
      * Closes the dialog unless an error occurs saving the profile information
      */
     @Override
-    public boolean processButton(GameButton button)
-    {
+    public boolean processButton(GameButton button) {
         boolean bResult = false;
         boolean bSuccess = true;
         boolean bOnline = false;
         boolean bNew = false;
 
-        if (button.getName().equals(okayButton_.getName()))
-        {
+        if (button.getName().equals(okayButton_.getName())) {
             // okay
             String sText = nameWidgets_.getText();
             String sCurrent = profile_.getName();
-            if (!sText.equals(sCurrent))
-            {
+            if (!sText.equals(sCurrent)) {
                 // name changed
                 profile_.setName(sText);
                 bResult = true;
             }
 
             bOnline = isOnline();
-            if (bOnline)
-            {
+            if (bOnline) {
                 // new online profile if previously a local profile
                 bNew = !profile_.isOnline();
                 bResult = bNew | bEmailMode_ | bPasswordMode_ | (passwordWidgets_ != null);
             }
         }
 
-        if (bResult && bOnline)
-        {
+        if (bResult && bOnline) {
             // if online profile, send it to the server
             OnlineProfile profile = profile_.toOnlineProfile();
 
-            if (bNew)
-            {
-                if (emailWidgets_ != null)
-                {
+            if (bNew) {
+                if (emailWidgets_ != null) {
                     // submit new profile
                     // Activation removed in open source
                     profile.setEmail(emailWidgets_.getText());
-                    bSuccess = SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_ADD, profile, null);
-                }
-                else
-                {
+                    bSuccess = SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_ADD, profile,
+                            null);
+                } else {
                     // retrieve profile
                     profile.setPassword(passwordWidgets_.getText());
-                    SendMessageDialog dialog = SendWanProfile.sendWanProfileDialog(context_, OnlineMessage.CAT_WAN_PROFILE_LINK, profile, null);
+                    SendMessageDialog dialog = SendWanProfile.sendWanProfileDialog(context_,
+                            OnlineMessage.CAT_WAN_PROFILE_LINK, profile, null);
                     bSuccess = dialog.getStatus() == DDMessageListener.STATUS_OK;
 
-                    if (bSuccess)
-                    {
+                    if (bSuccess) {
                         // update local values using the server profile
                         EngineMessage resEngineMsg = dialog.getReturnMessage();
                         OnlineMessage resOnlineMsg = new OnlineMessage(resEngineMsg);
@@ -444,51 +376,40 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
                         profile.setEmail(resProfile.getEmail());
                     }
                 }
-            }
-            else if (bEmailMode_)
-            {
+            } else if (bEmailMode_) {
                 // submit email change
                 // Activation removed in open source
                 profile.setEmail(emailWidgets_.getText());
                 bSuccess = SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_RESET, profile, null);
 
-                if (bSuccess)
-                {
+                if (bSuccess) {
                     // new password was sent so reset the local value
                     profile_.setPassword(null);
                 }
-            }
-            else if (bPasswordMode_)
-            {
+            } else if (bPasswordMode_) {
                 // close dialog after password change
                 bSuccess = true;
-            }
-            else
-            {
+            } else {
                 // submit profile activation
                 // Activation removed in open source
                 profile.setPassword(passwordWidgets_.getText());
-                bSuccess = SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_ACTIVATE, profile, null);
+                bSuccess = SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_ACTIVATE, profile,
+                        null);
             }
 
-            if (bSuccess)
-            {
+            if (bSuccess) {
                 // update local profile values
                 profile_.setEmail(profile.getEmail());
 
-                if (passwordWidgets_ != null)
-                {
+                if (passwordWidgets_ != null) {
                     profile_.setPassword(passwordWidgets_.getText());
                 }
-            }
-            else
-            {
+            } else {
                 bResult = false;
             }
         }
 
-        if (bSuccess)
-        {
+        if (bSuccess) {
             removeDialog();
         }
 
@@ -500,41 +421,33 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
     /**
      * msg text change
      */
-    public void propertyChange(PropertyChangeEvent evt)
-    {
+    public void propertyChange(PropertyChangeEvent evt) {
         checkButtons();
     }
 
     /**
      * Handle radio change
      */
-    private void doRadio()
-    {
-        if (isOnline() && false)
-        {
+    private void doRadio() {
+        if (isOnline() && false) {
             EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.playerprofile.demo"));
             noRadio_.setSelected(true);
             return;
         }
 
-        if (noRadio_.isSelected())
-        {
+        if (noRadio_.isSelected()) {
             removeEmail();
             removePassword();
 
             context_.getWindow().clearMessage();
-        }
-        else if (newRadio_.isSelected())
-        {
+        } else if (newRadio_.isSelected()) {
             removePassword();
             addEmail();
 
             getDialog().showHelp(emailWidgets_.text_);
             getDialog().ignoreNextHelp();
             emailWidgets_.text_.requestFocus();
-        }
-        else
-        {
+        } else {
             removeEmail();
             addPassword();
 
@@ -549,26 +462,21 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
     /**
      * Handle online button click
      */
-    private void doButton(ActionEvent e)
-    {
+    private void doButton(ActionEvent e) {
         Object source = e.getSource();
 
-        if (emailButton_ == source)
-        {
+        if (emailButton_ == source) {
             // change email
-            if (profile_.isActivated())
-            {
+            if (profile_.isActivated()) {
                 String sMsg = PropertyConfig.getMessage("msg.profileemail");
-                if (!EngineUtils.displayConfirmationDialog(context_, sMsg, "profileemail"))
-                {
+                if (!EngineUtils.displayConfirmationDialog(context_, sMsg, "profileemail")) {
                     return;
                 }
             }
 
             bEmailMode_ = true;
 
-            if (passwordWidgets_ != null)
-            {
+            if (passwordWidgets_ != null) {
                 removePassword();
                 addEmail();
             }
@@ -588,25 +496,21 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
             emailWidgets_.text_.requestFocus();
 
             repaint();
-        }
-        else if (passwordButton_ == source)
-        {
+        } else if (passwordButton_ == source) {
             // change password
             TypedHashMap hmParams = new TypedHashMap();
             hmParams.setObject(ProfileList.PARAM_PROFILE, profile_);
-            ChangePasswordDialog dialog = (ChangePasswordDialog) context_.processPhaseNow("ChangePasswordDialog", hmParams);
+            ChangePasswordDialog dialog = (ChangePasswordDialog) context_.processPhaseNow("ChangePasswordDialog",
+                    hmParams);
 
             // close the dialog if a new password was successfully submitted
             Boolean result = (Boolean) dialog.getResult();
 
-            if ((result != null) && (result))
-            {
+            if ((result != null) && (result)) {
                 bPasswordMode_ = true;
                 okayButton_.doClick();
             }
-        }
-        else if (syncButton_ == source)
-        {
+        } else if (syncButton_ == source) {
             // sync password
             TypedHashMap hmParams = new TypedHashMap();
             hmParams.setObject(ProfileList.PARAM_PROFILE, profile_);
@@ -615,31 +519,24 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
             // close the dialog if a new password was successfully submitted
             Boolean result = (Boolean) dialog.getResult();
 
-            if ((result != null) && (result))
-            {
+            if ((result != null) && (result)) {
                 bPasswordMode_ = true;
                 okayButton_.doClick();
             }
-        }
-        else if (sendButton_ == source)
-        {
+        } else if (sendButton_ == source) {
             // send password
             OnlineProfile profile = profile_.toOnlineProfile();
             SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_SEND_PASSWORD, profile, null);
-        }
-        else if (resetButton_ == source)
-        {
+        } else if (resetButton_ == source) {
             // reset password
             String sMsg = PropertyConfig.getMessage("msg.profilereset");
-            if (!EngineUtils.displayConfirmationDialog(context_, sMsg, "profilereset"))
-            {
+            if (!EngineUtils.displayConfirmationDialog(context_, sMsg, "profilereset")) {
                 return;
             }
 
             // do an update since it automatically resets the password
             OnlineProfile profile = profile_.toOnlineProfile();
-            if (!SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_RESET, profile, null))
-            {
+            if (!SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_RESET, profile, null)) {
                 return;
             }
 
@@ -656,23 +553,20 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
     /**
      * Enable buttons
      */
-    private void checkButtons()
-    {
+    private void checkButtons() {
         boolean bEnabled = (nameWidgets_.getText().length() > 0);
         boolean bOnline = isOnline();
 
-        if (bEnabled && bOnline)
-        {
-            if (emailWidgets_ != null)
-            {
+        if (bEnabled && bOnline) {
+            if (emailWidgets_ != null) {
                 bEnabled = (emailWidgets_.getText().length() > 0) && (emailWidgets_.text_.isValidData());
-            }
-            else if (passwordWidgets_ != null)
-            {
+            } else if (passwordWidgets_ != null) {
                 bEnabled = (passwordWidgets_.getText().length() > 0);
 
-                if (emailButton_ != null) emailButton_.setEnabled(!bEnabled);
-                if (sendButton_ != null) sendButton_.setEnabled(!bEnabled);
+                if (emailButton_ != null)
+                    emailButton_.setEnabled(!bEnabled);
+                if (sendButton_ != null)
+                    sendButton_.setEnabled(!bEnabled);
             }
         }
 
@@ -682,12 +576,10 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
     /**
      * Online panel
      */
-    private class OnlinePanel extends TablePanel
-    {
+    private class OnlinePanel extends TablePanel {
         private ButtonGroup radioGroup_ = new ButtonGroup();
 
-        public DDRadioButton addRadio(String name)
-        {
+        public DDRadioButton addRadio(String name) {
             // spacer - probably more going on here than necessary but it works
             DDRadioButton radio = new DDRadioButton(name);
             constraints_.weightx = 1.0;
@@ -700,8 +592,7 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
             return radio;
         }
 
-        public void addButtons()
-        {
+        public void addButtons() {
             buttonPanel_ = new DDPanel();
             constraints_.weightx = 0.0;
             constraints_.insets = new Insets(5, 5, 5, 5);
@@ -716,17 +607,14 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
             emailButton_ = new GlassButton("profileemail", "Glass");
             buttonPanel.add(emailButton_);
 
-            if (profile_.isActivated())
-            {
+            if (profile_.isActivated()) {
                 passwordButton_ = new GlassButton("profilepassword", "Glass");
                 buttonPanel.add(passwordButton_);
                 resetButton_ = new GlassButton("profilereset", "Glass");
                 buttonPanel.add(resetButton_);
                 syncButton_ = new GlassButton("profilesync", "Glass");
                 buttonPanel.add(syncButton_);
-            }
-            else
-            {
+            } else {
                 sendButton_ = new GlassButton("profilesend", "Glass");
                 buttonPanel.add(sendButton_);
             }

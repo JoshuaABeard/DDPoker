@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -50,50 +50,50 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author Doug Donohoe
  */
 @DataCoder('K')
-public class Deck extends DMArrayList<Card>
-{
+public class Deck extends DMArrayList<Card> {
     static Logger logger = LogManager.getLogger(Deck.class);
 
     /**
-     * Thread-local SecureRandom for production shuffles.
-     * Each thread gets its own instance to avoid cross-contamination between hands/tables.
-     * Uses OS entropy source - not seeded for maximum randomness.
+     * Thread-local SecureRandom for production shuffles. Each thread gets its own
+     * instance to avoid cross-contamination between hands/tables. Uses OS entropy
+     * source - not seeded for maximum randomness.
      *
-     * <p><b>Note on ThreadLocal usage:</b> ThreadLocal instances are never explicitly removed.
-     * This is acceptable for DD Poker's architecture (desktop app with long-lived threads).
-     * However, if this code is used in a thread-pooled or servlet environment, consider
-     * calling {@code secureRandom.remove()} after use to prevent memory leaks.</p>
+     * <p>
+     * <b>Note on ThreadLocal usage:</b> ThreadLocal instances are never explicitly
+     * removed. This is acceptable for DD Poker's architecture (desktop app with
+     * long-lived threads). However, if this code is used in a thread-pooled or
+     * servlet environment, consider calling {@code secureRandom.remove()} after use
+     * to prevent memory leaks.
+     * </p>
      */
-    private static final ThreadLocal<SecureRandom> secureRandom =
-            ThreadLocal.withInitial(SecureRandom::new);
+    private static final ThreadLocal<SecureRandom> secureRandom = ThreadLocal.withInitial(SecureRandom::new);
 
     /**
      * Empty deck for loading (please use the constructor with a boolean)
      */
-    public Deck()
-    {
+    public Deck() {
     }
 
     /**
      * Creates a new deck, shuffled if bShuffle is true
      */
-    public Deck(boolean bShuffle)
-    {
+    public Deck(boolean bShuffle) {
         this(bShuffle, 0);
     }
 
     /**
      * Creates a new deck, shuffled if bShuffle is true.
      * <p>
-     * Shuffle behavior:
-     * - seed = 0 (production): Uses SecureRandom with OS entropy for maximum randomness
-     * - seed > 0 (demo/test): Uses deterministic Random(seed) for reproducible shuffles
+     * Shuffle behavior: - seed = 0 (production): Uses SecureRandom with OS entropy
+     * for maximum randomness - seed > 0 (demo/test): Uses deterministic
+     * Random(seed) for reproducible shuffles
      *
-     * @param bShuffle whether to shuffle the deck
-     * @param seed random seed (0 for production, >0 for demo/test mode)
+     * @param bShuffle
+     *            whether to shuffle the deck
+     * @param seed
+     *            random seed (0 for production, >0 for demo/test mode)
      */
-    public Deck(boolean bShuffle, long seed)
-    {
+    public Deck(boolean bShuffle, long seed) {
         add(Card.SPADES_2);
         add(Card.SPADES_3);
         add(Card.SPADES_4);
@@ -150,16 +150,12 @@ public class Deck extends DMArrayList<Card>
         add(Card.CLUBS_K);
         add(Card.CLUBS_A);
 
-        if (bShuffle)
-        {
-            if (seed > 0)
-            {
+        if (bShuffle) {
+            if (seed > 0) {
                 // Deterministic shuffle for demo/test mode
                 Random seededRandom = new Random(seed);
                 Collections.shuffle(this, seededRandom);
-            }
-            else
-            {
+            } else {
                 // Production shuffle using OS entropy (no seed)
                 Collections.shuffle(this, secureRandom.get());
             }
@@ -171,29 +167,25 @@ public class Deck extends DMArrayList<Card>
     ////
 
     /**
-     * Shuffle the entire deck using ThreadLocalRandom.
-     * Fast, thread-safe shuffle for simulation/calculator use.
-     * For dealing cards to players, use constructor with seed=0 (SecureRandom).
+     * Shuffle the entire deck using ThreadLocalRandom. Fast, thread-safe shuffle
+     * for simulation/calculator use. For dealing cards to players, use constructor
+     * with seed=0 (SecureRandom).
      */
-    public void shuffle()
-    {
+    public void shuffle() {
         ThreadLocalRandom rng = ThreadLocalRandom.current();
-        for (int i = size(); i > 1; i--)
-        {
+        for (int i = size(); i > 1; i--) {
             set(i - 1, set(rng.nextInt(i), get(i - 1)));
         }
     }
 
     /**
-     * Quick shuffle - shuffles first 26 cards using ThreadLocalRandom.
-     * Used by addRandom() for performance. Note: only first half of deck is shuffled.
-     * Fast, thread-safe shuffle for simulation/calculator use.
+     * Quick shuffle - shuffles first 26 cards using ThreadLocalRandom. Used by
+     * addRandom() for performance. Note: only first half of deck is shuffled. Fast,
+     * thread-safe shuffle for simulation/calculator use.
      */
-    private void qshuffle()
-    {
+    private void qshuffle() {
         ThreadLocalRandom rng = ThreadLocalRandom.current();
-        for (int i = Math.min(26, size()); i > 1; i--)
-        {
+        for (int i = Math.min(26, size()); i > 1; i--) {
             set(i - 1, set(rng.nextInt(i), get(i - 1)));
         }
     }
@@ -201,18 +193,16 @@ public class Deck extends DMArrayList<Card>
     /**
      * Return next card from top of deck
      */
-    public Card nextCard()
-    {
-        //ApplicationError.assertTrue(size() > 0, "No cards left");
+    public Card nextCard() {
+        // ApplicationError.assertTrue(size() > 0, "No cards left");
         return remove(0);
     }
 
     /**
      * Inserts a card at a random location in the deck.
      */
-    public void addRandom(Card c)
-    {
-        //ApplicationError.assertTrue(!contains(c), "Card already in deck!");
+    public void addRandom(Card c) {
+        // ApplicationError.assertTrue(!contains(c), "Card already in deck!");
         add(c);
         qshuffle();
     }
@@ -220,13 +210,11 @@ public class Deck extends DMArrayList<Card>
     /**
      * Inserts a hand full of cards at random locations in the deck.
      */
-    public void addRandom(Hand h)
-    {
+    public void addRandom(Hand h) {
         Card c;
-        for (int i = h.size() - 1; i >= 0; --i)
-        {
+        for (int i = h.size() - 1; i >= 0; --i) {
             c = h.getCard(i);
-            //ApplicationError.assertTrue(!contains(c), "Card already in deck!");
+            // ApplicationError.assertTrue(!contains(c), "Card already in deck!");
             add(c);
         }
         qshuffle();
@@ -235,24 +223,21 @@ public class Deck extends DMArrayList<Card>
     /**
      * Get card at given index
      */
-    public Card getCard(int i)
-    {
+    public Card getCard(int i) {
         return get(i);
     }
 
     /**
      * Remove given card from the deck
      */
-    public void removeCard(Card c)
-    {
+    public void removeCard(Card c) {
         remove(c);
     }
 
     /**
      * Remove card from deck and replace it at top
      */
-    public void moveToTop(Card c)
-    {
+    public void moveToTop(Card c) {
         remove(c);
         add(0, c);
     }
@@ -260,12 +245,11 @@ public class Deck extends DMArrayList<Card>
     /**
      * Remove all cards in hand from this deck
      */
-    public void removeCards(Hand hand)
-    {
-        if (hand == null) return; // BUG 340
+    public void removeCards(Hand hand) {
+        if (hand == null)
+            return; // BUG 340
 
-        for (int i = 0; i < hand.size(); i++)
-        {
+        for (int i = 0; i < hand.size(); i++) {
             removeCard(hand.getCard(i));
         }
     }
@@ -273,16 +257,14 @@ public class Deck extends DMArrayList<Card>
     /**
      * Sort ascending (first card off deck is lowest)
      */
-    public void sortAscending()
-    {
+    public void sortAscending() {
         Collections.sort(this);
     }
 
     /**
      * sort descending (1st card off deck is highest)
      */
-    public void sortDescending()
-    {
+    public void sortDescending() {
         Collections.sort(this);
         Collections.reverse(this);
     }
@@ -291,11 +273,9 @@ public class Deck extends DMArrayList<Card>
      * Return string representation of the deck
      */
     @Override
-    public String toString()
-    {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
-        for (Card c : this)
-        {
+        for (Card c : this) {
             sb.append(c);
             sb.append(" ");
         }
@@ -306,8 +286,7 @@ public class Deck extends DMArrayList<Card>
 
     // stacked deck for BUG 280
 
-    public static Deck getDeckBUG280()
-    {
+    public static Deck getDeckBUG280() {
         Deck deck = new Deck(true);
 
         deck.moveToTop(Card.CLUBS_T); // turn
@@ -328,8 +307,7 @@ public class Deck extends DMArrayList<Card>
     }
 
     // stacked deck for BUG 284
-    public static Deck getDeckBUG284()
-    {
+    public static Deck getDeckBUG284() {
         Deck deck = new Deck(true);
 
         deck.moveToTop(Card.DIAMONDS_4); // river
@@ -353,8 +331,7 @@ public class Deck extends DMArrayList<Card>
     }
 
     // stacked deck for BUG 316
-    public static Deck getDeckBUG316()
-    {
+    public static Deck getDeckBUG316() {
         Deck deck = new Deck(true);
 
         deck.moveToTop(Card.DIAMONDS_4); // river

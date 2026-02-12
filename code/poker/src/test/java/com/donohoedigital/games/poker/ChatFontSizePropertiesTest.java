@@ -43,41 +43,32 @@ class ChatFontSizePropertiesTest {
 
     @Test
     void should_HaveLabelProperty() {
-        String label = PropertyConfig.getRequiredStringProperty(
-            "option." + PokerConstants.OPTION_CHAT_FONT_SIZE + ".label");
+        String label = PropertyConfig
+                .getRequiredStringProperty("option." + PokerConstants.OPTION_CHAT_FONT_SIZE + ".label");
 
-        assertThat(label)
-            .isNotNull()
-            .isNotEmpty()
-            .contains("Font Size");
+        assertThat(label).isNotNull().isNotEmpty().contains("Font Size");
     }
 
     @Test
     void should_HaveDefaultProperty() {
-        String defaultValue = PropertyConfig.getRequiredStringProperty(
-            "option." + PokerConstants.OPTION_CHAT_FONT_SIZE + ".default");
+        String defaultValue = PropertyConfig
+                .getRequiredStringProperty("option." + PokerConstants.OPTION_CHAT_FONT_SIZE + ".default");
 
-        assertThat(defaultValue)
-            .isNotNull()
-            .isEqualTo("12");
+        assertThat(defaultValue).isNotNull().isEqualTo("12");
     }
 
     @Test
     void should_HaveHelpProperty() {
-        String help = PropertyConfig.getRequiredStringProperty(
-            "option." + PokerConstants.OPTION_CHAT_FONT_SIZE + ".help");
+        String help = PropertyConfig
+                .getRequiredStringProperty("option." + PokerConstants.OPTION_CHAT_FONT_SIZE + ".help");
 
-        assertThat(help)
-            .isNotNull()
-            .isNotEmpty()
-            .containsIgnoringCase("font size")
-            .containsIgnoringCase("chat");
+        assertThat(help).isNotNull().isNotEmpty().containsIgnoringCase("font size").containsIgnoringCase("chat");
     }
 
     @Test
     void should_HaveDefaultValueMatchingConstant() {
-        String defaultValue = PropertyConfig.getRequiredStringProperty(
-            "option." + PokerConstants.OPTION_CHAT_FONT_SIZE + ".default");
+        String defaultValue = PropertyConfig
+                .getRequiredStringProperty("option." + PokerConstants.OPTION_CHAT_FONT_SIZE + ".default");
 
         int defaultInt = Integer.parseInt(defaultValue);
         assertThat(defaultInt).isEqualTo(PokerConstants.DEFAULT_CHAT_FONT_SIZE);
@@ -85,11 +76,10 @@ class ChatFontSizePropertiesTest {
 
     @Test
     void should_HaveHelpTextMentioningRange() {
-        String help = PropertyConfig.getRequiredStringProperty(
-            "option." + PokerConstants.OPTION_CHAT_FONT_SIZE + ".help");
+        String help = PropertyConfig
+                .getRequiredStringProperty("option." + PokerConstants.OPTION_CHAT_FONT_SIZE + ".help");
 
         // Help should mention the valid range (8-24)
-        assertThat(help)
-            .matches(".*\\b8-?24\\b.*");
+        assertThat(help).matches(".*\\b8-?24\\b.*");
     }
 }

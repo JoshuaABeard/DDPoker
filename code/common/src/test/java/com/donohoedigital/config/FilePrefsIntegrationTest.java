@@ -99,7 +99,8 @@ class FilePrefsIntegrationTest {
         prefs.put("test.key", "value1");
 
         assertThat(configFile).exists();
-        // Backup may or may not exist on first write (depends on whether file existed before)
+        // Backup may or may not exist on first write (depends on whether file existed
+        // before)
 
         // Second change - backup should definitely exist now
         prefs.put("test.key", "value2");
@@ -156,7 +157,8 @@ class FilePrefsIntegrationTest {
         Preferences prefs2 = Prefs.getUserPrefs(Prefs.NODE_OPTIONS + "poker");
         String recovered = prefs2.get("important.setting", "default");
 
-        // Should have recovered the value (either critical_value or another_value depending on backup timing)
+        // Should have recovered the value (either critical_value or another_value
+        // depending on backup timing)
         assertThat(recovered).isNotEqualTo("default");
     }
 

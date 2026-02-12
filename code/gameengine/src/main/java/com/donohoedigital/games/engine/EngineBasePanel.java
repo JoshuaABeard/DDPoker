@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -53,8 +53,7 @@ import java.awt.image.*;
 /**
  * @author Doug Donohoe
  */
-public class EngineBasePanel extends JPanel
-{
+public class EngineBasePanel extends JPanel {
     static Logger logger = LogManager.getLogger(EngineBasePanel.class);
 
     JComponent bottom_ = null;
@@ -68,19 +67,16 @@ public class EngineBasePanel extends JPanel
      * Creates a new instance of EngineBasePanel
      */
     @SuppressWarnings({"ThisEscapedInObjectConstruction"})
-    public EngineBasePanel(BaseFrame frame, GamePhase gamephase)
-    {
+    public EngineBasePanel(BaseFrame frame, GamePhase gamephase) {
         frame_ = frame;
 
         String sBackGroundImage = "engine.basepanel";
-        if (gamephase != null)
-        {
+        if (gamephase != null) {
             sBackGroundImage = gamephase.getString("window-background", sBackGroundImage);
         }
         BufferedImage bi = ImageConfig.getBufferedImage(sBackGroundImage, false);
 
-        if (bi != null)
-        {
+        if (bi != null) {
             ImageComponent ic;
             bottom_ = ic = new ImageComponent(sBackGroundImage, 1.0d);
             ic.setTile(true);
@@ -88,9 +84,7 @@ public class EngineBasePanel extends JPanel
             setOpaque(true);
             add(bottom_, BorderLayout.CENTER);
 
-        }
-        else
-        {
+        } else {
             bottom_ = this;
 
         }
@@ -98,24 +92,19 @@ public class EngineBasePanel extends JPanel
         setBackground(StylesConfig.getColor(sBackGroundImage, Color.black));
         setForeground(Color.white);
 
-        if (TESTING(EngineConstants.TESTING_PERFORMANCE))
-        {
-            GuiUtils.addKeyAction(this, JComponent.WHEN_IN_FOCUSED_WINDOW,
-                                  "perf", new DebugPerf(), KeyEvent.VK_P, 0);
-            GuiUtils.addKeyAction(this, JComponent.WHEN_IN_FOCUSED_WINDOW,
-                                  "gc", new DebugGC(), KeyEvent.VK_G, 0);
-            GuiUtils.addKeyAction(this, JComponent.WHEN_IN_FOCUSED_WINDOW,
-                                  "objcount", new DebugCount(), KeyEvent.VK_O, 0);
+        if (TESTING(EngineConstants.TESTING_PERFORMANCE)) {
+            GuiUtils.addKeyAction(this, JComponent.WHEN_IN_FOCUSED_WINDOW, "perf", new DebugPerf(), KeyEvent.VK_P, 0);
+            GuiUtils.addKeyAction(this, JComponent.WHEN_IN_FOCUSED_WINDOW, "gc", new DebugGC(), KeyEvent.VK_G, 0);
+            GuiUtils.addKeyAction(this, JComponent.WHEN_IN_FOCUSED_WINDOW, "objcount", new DebugCount(), KeyEvent.VK_O,
+                    0);
         }
     }
 
     /**
      * Sets the current visible component
      */
-    public void setCenterComponent(Component c, boolean bBorderLayout, Component cFocus)
-    {
-        if (center_ != null)
-        {
+    public void setCenterComponent(Component c, boolean bBorderLayout, Component cFocus) {
+        if (center_ != null) {
             bottom_.remove(center_);
         }
 
@@ -123,25 +112,20 @@ public class EngineBasePanel extends JPanel
         // BUG 26: leave focus null if null (prior, set to c)
 
         // debugging focus
-//        if (focus_ != null)
-//        {
-//            focus_.addFocusListener(new GuiUtils.FocusDebugger(focus_.getName()));
-//        }
+        // if (focus_ != null)
+        // {
+        // focus_.addFocusListener(new GuiUtils.FocusDebugger(focus_.getName()));
+        // }
 
         LayoutManager layout = bottom_.getLayout();
 
-        if (bBorderLayout)
-        {
-            if (layout != borderLayout_)
-            {
+        if (bBorderLayout) {
+            if (layout != borderLayout_) {
                 bottom_.setLayout(borderLayout_);
             }
             bottom_.add(c, BorderLayout.CENTER);
-        }
-        else
-        {
-            if (layout != centerLayout_)
-            {
+        } else {
+            if (layout != centerLayout_) {
                 bottom_.setLayout(centerLayout_);
             }
             bottom_.add(c);
@@ -153,28 +137,22 @@ public class EngineBasePanel extends JPanel
 
         // Upon change, change focus to this panel (old focus may have been
         // on widget in removed component)
-        SwingUtilities.invokeLater(
-                new Runnable()
-                {
-                    public void run()
-                    {
-                        requestFocus();
-                    }
-                }
-        );
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                requestFocus();
+            }
+        });
     }
 
     /**
      * Override request focus to give focus to the specified component
      */
     @Override
-    public void requestFocus()
-    {
-        //logger.debug("Requesting focus for " + focus_.getClass().getName());
+    public void requestFocus() {
+        // logger.debug("Requesting focus for " + focus_.getClass().getName());
         // BUG 26 - don't set focus if null (fixes problem where multiple
         // calls to this in a row not ordered)
-        if (focus_ != null)
-        {
+        if (focus_ != null) {
             focus_.requestFocus();
         }
     }
@@ -182,8 +160,7 @@ public class EngineBasePanel extends JPanel
     /**
      * Return base frame this is in
      */
-    public BaseFrame getBaseFrame()
-    {
+    public BaseFrame getBaseFrame() {
         return frame_;
     }
 
@@ -201,8 +178,7 @@ public class EngineBasePanel extends JPanel
      * Override to paint bottom corner on mac for grow box
      */
     @Override
-    public void paint(Graphics g1)
-    {
+    public void paint(Graphics g1) {
         Graphics2D g = (Graphics2D) g1;
         bPainting_ = true;
         super.paint(g);
@@ -213,30 +189,24 @@ public class EngineBasePanel extends JPanel
             int w = getWidth();
             int h = getHeight();
             int N = 5;
-            for (int i = 0; i < 4; i++)
-            {
+            for (int i = 0; i < 4; i++) {
                 g.drawLine(w - N, h - 3, w - 3, h - N);
                 g.drawLine(w - (N - 1), h - 3, w - 3, h - (N - 1));
                 N += 4;
             }
         }
-        //GuiUtils.printChildren(this, 0);
+        // GuiUtils.printChildren(this, 0);
         bPainting_ = false;
     }
 
     /**
      * Called when 'p' pressed - toggles Perf on/off
      */
-    private class DebugPerf extends AbstractAction
-    {
-        public void actionPerformed(ActionEvent e)
-        {
-            if (Perf.isStarted())
-            {
+    private class DebugPerf extends AbstractAction {
+        public void actionPerformed(ActionEvent e) {
+            if (Perf.isStarted()) {
                 Perf.stop();
-            }
-            else
-            {
+            } else {
                 Perf.start();
             }
         }
@@ -245,10 +215,8 @@ public class EngineBasePanel extends JPanel
     /**
      * Called when 'o' pressed - display object count
      */
-    private class DebugCount extends AbstractAction
-    {
-        public void actionPerformed(ActionEvent e)
-        {
+    private class DebugCount extends AbstractAction {
+        public void actionPerformed(ActionEvent e) {
             Perf.displayCurrentCount();
         }
     }
@@ -256,10 +224,8 @@ public class EngineBasePanel extends JPanel
     /**
      * Called when 'g' pressed - run GC
      */
-    private class DebugGC extends AbstractAction
-    {
-        public void actionPerformed(ActionEvent e)
-        {
+    private class DebugGC extends AbstractAction {
+        public void actionPerformed(ActionEvent e) {
             System.gc();
             logger.debug("Running GC....");
         }

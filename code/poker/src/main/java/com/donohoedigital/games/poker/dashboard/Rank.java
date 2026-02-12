@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -45,31 +45,21 @@ import javax.swing.*;
 import java.beans.*;
 
 /**
- * Created by IntelliJ IDEA.
- * User: donohoe
- * Date: Mar 18, 2005
- * Time: 4:40:33 PM
+ * Created by IntelliJ IDEA. User: donohoe Date: Mar 18, 2005 Time: 4:40:33 PM
  * To change this template use File | Settings | File Templates.
  */
-public class Rank extends DashboardItem
-{
+public class Rank extends DashboardItem {
     DDLabel labelInfo_;
 
-    public Rank(GameContext context)
-    {
+    public Rank(GameContext context) {
         super(context, "rank");
         setDynamicTitle(true);
-        //setTableEventsImmediate(); // we need them immediately so rank is correct
-        if (game_.isOnlineGame())
-        {
-            trackTableEvents(PokerTableEvent.TYPE_NEW_HAND |
-                             PokerTableEvent.TYPE_PLAYER_CHIPS_CHANGED |
-                             PokerTableEvent.TYPE_STATE_CHANGED);
-        }
-        else
-        {
-            trackTableEvents(PokerTableEvent.TYPE_NEW_HAND |
-                             PokerTableEvent.TYPE_PLAYER_CHIPS_CHANGED);
+        // setTableEventsImmediate(); // we need them immediately so rank is correct
+        if (game_.isOnlineGame()) {
+            trackTableEvents(PokerTableEvent.TYPE_NEW_HAND | PokerTableEvent.TYPE_PLAYER_CHIPS_CHANGED
+                    | PokerTableEvent.TYPE_STATE_CHANGED);
+        } else {
+            trackTableEvents(PokerTableEvent.TYPE_NEW_HAND | PokerTableEvent.TYPE_PLAYER_CHIPS_CHANGED);
         }
         game_.addPropertyChangeListener(PokerGame.PROP_GAME_LOADED, this);
         game_.addPropertyChangeListener(PokerGame.PROP_GAME_OVER, this);
@@ -77,16 +67,14 @@ public class Rank extends DashboardItem
     }
 
     @Override
-    protected JComponent createBody()
-    {
+    protected JComponent createBody() {
         labelInfo_ = new DDLabel(GuiManager.DEFAULT, STYLE);
         return labelInfo_;
 
     }
 
     @Override
-    protected Object getDynamicTitleParam()
-    {
+    protected Object getDynamicTitleParam() {
         return sRank_;
     }
 
@@ -94,15 +82,12 @@ public class Rank extends DashboardItem
      * update rank on new level change and new hand
      */
     @Override
-    public void tableEventOccurred(PokerTableEvent event)
-    {
+    public void tableEventOccurred(PokerTableEvent event) {
         boolean bUpdate = false;
-        switch (event.getType())
-        {
-            case PokerTableEvent.TYPE_STATE_CHANGED:
-                switch (event.getNew())
-                {
-                    case PokerTable.STATE_NEW_LEVEL_CHECK:
+        switch (event.getType()) {
+            case PokerTableEvent.TYPE_STATE_CHANGED :
+                switch (event.getNew()) {
+                    case PokerTable.STATE_NEW_LEVEL_CHECK :
                         // update for possible change in number player
                         // because this occurs after cleanup.
                         // do this only for online games because clients don't
@@ -113,41 +98,36 @@ public class Rank extends DashboardItem
                 }
                 break;
 
-            default:
+            default :
                 bUpdate = true;
         }
-        if (bUpdate) updateInfo();
+        if (bUpdate)
+            updateInfo();
     }
 
     /**
      * track when game loaded, might need to update rank (online games)
      */
     @Override
-    public void propertyChange(PropertyChangeEvent evt)
-    {
+    public void propertyChange(PropertyChangeEvent evt) {
         String name = evt.getPropertyName();
 
-        if (name.equals(PokerGame.PROP_GAME_LOADED))
-        {
+        if (name.equals(PokerGame.PROP_GAME_LOADED)) {
             // if are doing a game load where the table
             // is not the current table,
             // then update in case rank changed
             GameState state = (GameState) evt.getOldValue();
             PokerSaveDetails pdetails = (PokerSaveDetails) state.getSaveDetails().getCustomInfo();
-            if (pdetails.isOtherTableUpdate())
-            {
-                if (TournamentDirector.DEBUG_CLEANUP_TABLE) logger.debug("Update display on other table update");
+            if (pdetails.isOtherTableUpdate()) {
+                if (TournamentDirector.DEBUG_CLEANUP_TABLE)
+                    logger.debug("Update display on other table update");
                 updateInfo();
             }
-        }
-        else if (name.equals(PokerGame.PROP_GAME_OVER) ||
-                 name.equals(PokerGame.PROP_PLAYER_FINISHED))
-        {
+        } else if (name.equals(PokerGame.PROP_GAME_OVER) || name.equals(PokerGame.PROP_PLAYER_FINISHED)) {
             updateInfo();
         }
         super.propertyChange(evt);
     }
-
 
     ///
     /// display logic
@@ -157,9 +137,9 @@ public class Rank extends DashboardItem
      * update level
      */
     @Override
-    protected void updateInfo()
-    {
-        if (!isDisplayed()) return; // check since we override superclass
+    protected void updateInfo() {
+        if (!isDisplayed())
+            return; // check since we override superclass
 
         PokerTable table = game_.getCurrentTable();
         PokerPlayer human = game_.getHumanPlayer();
@@ -168,42 +148,33 @@ public class Rank extends DashboardItem
         int nWon = 0;
         int nHandNum = table.getHandNum();
         String sMsgKey;
-        if (game_.isGameOver())
-        {
+        if (game_.isGameOver()) {
             nRank = human.getPlace();
             nWon = human.getPrize();
             sMsgKey = nWon == 0 ? "msg.rank.over" : "msg.rank.over.win";
-        }
-        else if (nHandNum == 0)
-        {
+        } else if (nHandNum == 0) {
             sMsgKey = "msg.rank.start";
-        }
-        else if (human.getPlace() != 0)
-        {
+        } else if (human.getPlace() != 0) {
 
             nRank = human.getPlace();
             nWon = human.getPrize();
             sMsgKey = nWon == 0 ? "msg.rank.out" : "msg.rank.out.win";
-        }
-        else
-        {
+        } else {
             sMsgKey = human.isObserver() ? "msg.rank.obs" : "msg.rank";
-            if (!human.isObserver()) nRank = game_.getRank(human);
+            if (!human.isObserver())
+                nRank = game_.getRank(human);
         }
 
         sRank_ = null;
-        if (nRank != 0)
-        {
+        if (nRank != 0) {
             sRank_ = PropertyConfig.getPlace(nRank);
         }
         int nNumTables = game_.getNumTables();
-        sTextToUpdate_ = PropertyConfig.getMessage(sMsgKey,
-                                                   sRank_,
-                                                   game_.getNumPlayers() - game_.getNumPlayersOut(),
-                                                   nNumTables == 1 ? PropertyConfig.getMessage("msg.table") :
-                                                   PropertyConfig.getMessage("msg.tables", nNumTables),
-                                                   nWon > 0 ? nWon : null
-        );
+        sTextToUpdate_ = PropertyConfig.getMessage(sMsgKey, sRank_, game_.getNumPlayers() - game_.getNumPlayersOut(),
+                nNumTables == 1
+                        ? PropertyConfig.getMessage("msg.table")
+                        : PropertyConfig.getMessage("msg.tables", nNumTables),
+                nWon > 0 ? nWon : null);
         GuiUtils.invoke(setLabelRunner_);
     }
 
@@ -211,8 +182,7 @@ public class Rank extends DashboardItem
      * override since this isn't called in swing event loop
      */
     @Override
-    protected void updateTitle()
-    {
+    protected void updateTitle() {
         // done below
     }
 
@@ -221,10 +191,8 @@ public class Rank extends DashboardItem
     private String sRank_;
 
     // runnable for setting label text in swing thread
-    private Runnable setLabelRunner_ = new Runnable()
-    {
-        public void run()
-        {
+    private Runnable setLabelRunner_ = new Runnable() {
+        public void run() {
             labelInfo_.setText(sTextToUpdate_);
             setTitle(getTitle());
         }

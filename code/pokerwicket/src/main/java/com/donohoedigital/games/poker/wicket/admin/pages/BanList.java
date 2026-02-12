@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -64,23 +64,18 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Created by IntelliJ IDEA.
- * User: donohoe
- * Date: Jan 5, 2009
- * Time: 10:39:35 PM
+ * Created by IntelliJ IDEA. User: donohoe Date: Jan 5, 2009 Time: 10:39:35 PM
  * To change this template use File | Settings | File Templates.
  */
 @SuppressWarnings("unused")
 @MountPath("admin/ban-list")
-public class BanList extends AdminPokerPage
-{
+public class BanList extends AdminPokerPage {
     private static final long serialVersionUID = 42L;
 
     @SpringBean
     private BannedKeyService banService;
 
-    public BanList()
-    {
+    public BanList() {
         super(null);
 
         // search data
@@ -96,13 +91,11 @@ public class BanList extends AdminPokerPage
         CompoundPropertyModel<BanData> formData = new CompoundPropertyModel<>(data);
 
         // form
-        Form<BanData> form = new Form<BanData>("form", formData)
-        {
+        Form<BanData> form = new Form<BanData>("form", formData) {
             private static final long serialVersionUID = 42L;
 
             @Override
-            protected void onSubmit()
-            {
+            protected void onSubmit() {
                 BanData ban = getModelObject();
                 BannedKey key = new BannedKey();
                 key.setKey(ban.getBan());
@@ -142,17 +135,13 @@ public class BanList extends AdminPokerPage
     /**
      * Duplicate check
      */
-    private class CheckDup implements IValidator<String>
-    {
-        public void validate(IValidatable<String> iValidatable)
-        {
+    private class CheckDup implements IValidator<String> {
+        public void validate(IValidatable<String> iValidatable) {
             final String ban = iValidatable.getValue();
             BannedKey bannedKey = banService.getIfBanned(ban);
-            if (bannedKey != null)
-            {
+            if (bannedKey != null) {
                 // TODO: use wicket resources for this
-                iValidatable.error((IValidationError) messageSource ->
-                        "'" + ban + "' is already banned");
+                iValidatable.error((IValidationError) messageSource -> "'" + ban + "' is already banned");
             }
         }
     }
@@ -161,8 +150,7 @@ public class BanList extends AdminPokerPage
     //// List
     ////
 
-    private class BanData extends PageableServiceProvider<BannedKey>
-    {
+    private class BanData extends PageableServiceProvider<BannedKey> {
         private static final long serialVersionUID = 42L;
 
         private transient List<BannedKey> banned;
@@ -171,59 +159,48 @@ public class BanList extends AdminPokerPage
         private String comment;
 
         @Override
-        public Iterator<BannedKey> iterator(long first, long pagesize)
-        {
+        public Iterator<BannedKey> iterator(long first, long pagesize) {
             return getList().iterator();
         }
 
         @Override
-        public int calculateSize()
-        {
+        public int calculateSize() {
             return getList().size();
         }
 
-        private List<BannedKey> getList()
-        {
-            if (banned == null)
-            {
+        private List<BannedKey> getList() {
+            if (banned == null) {
                 banned = banService.getAllBannedKeys();
             }
             return banned;
         }
 
         @Override
-        public void detach()
-        {
+        public void detach() {
             banned = null;
         }
 
-        public String getBan()
-        {
+        public String getBan() {
             return ban;
         }
 
-        public void setBan(String ban)
-        {
+        public void setBan(String ban) {
             this.ban = ban;
         }
 
-        public Date getUntil()
-        {
+        public Date getUntil() {
             return until;
         }
 
-        public void setUntil(Date until)
-        {
+        public void setUntil(Date until) {
             this.until = until;
         }
 
-        public String getComment()
-        {
+        public String getComment() {
             return comment;
         }
 
-        public void setComment(String comment)
-        {
+        public void setComment(String comment) {
             this.comment = comment;
         }
     }
@@ -231,18 +208,15 @@ public class BanList extends AdminPokerPage
     /**
      * The leaderboard table
      */
-    private class BanListTableView extends CountDataView<BannedKey>
-    {
+    private class BanListTableView extends CountDataView<BannedKey> {
         private static final long serialVersionUID = 42L;
 
-        private BanListTableView(String id, BanData data)
-        {
+        private BanListTableView(String id, BanData data) {
             super(id, data, (int) data.size() + 1); // add one in case 0
         }
 
         @Override
-        protected void populateItem(Item<BannedKey> row)
-        {
+        protected void populateItem(Item<BannedKey> row) {
             BannedKey ban = row.getModelObject();
 
             // CSS class
@@ -256,11 +230,9 @@ public class BanList extends AdminPokerPage
             row.add(DateLabel.forDatePattern("createDate", PropertyConfig.getMessage("msg.format.date")));
 
             // unban
-            Form<String> form = new Form<String>("form", new StringModel(ban.getKey()))
-            {
+            Form<String> form = new Form<String>("form", new StringModel(ban.getKey())) {
                 @Override
-                protected void onSubmit()
-                {
+                protected void onSubmit() {
                     String key = getModelObject();
                     BannedKey banned = banService.getIfBanned(key);
                     banService.deleteBannedKey(key);
@@ -275,8 +247,7 @@ public class BanList extends AdminPokerPage
 
         }
 
-        protected BanData getBanData()
-        {
+        protected BanData getBanData() {
             return (BanData) getDataProvider();
         }
 

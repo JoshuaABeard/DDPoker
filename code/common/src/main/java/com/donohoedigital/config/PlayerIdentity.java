@@ -28,18 +28,21 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Manages player identity using UUID v4.
- * Replaces legacy license key system with modern UUID-based identification.
+ * Manages player identity using UUID v4. Replaces legacy license key system
+ * with modern UUID-based identification.
  *
- * <p>Player IDs are auto-generated on first run and stored in a JSON file
- * at platform-specific locations:
+ * <p>
+ * Player IDs are auto-generated on first run and stored in a JSON file at
+ * platform-specific locations:
  * <ul>
- *   <li>Windows: {@code %APPDATA%\ddpoker\player.json}</li>
- *   <li>macOS: {@code ~/Library/Application Support/ddpoker/player.json}</li>
- *   <li>Linux: {@code ~/.ddpoker/player.json}</li>
+ * <li>Windows: {@code %APPDATA%\ddpoker\player.json}</li>
+ * <li>macOS: {@code ~/Library/Application Support/ddpoker/player.json}</li>
+ * <li>Linux: {@code ~/.ddpoker/player.json}</li>
  * </ul>
  *
- * <p>Example player.json:
+ * <p>
+ * Example player.json:
+ *
  * <pre>
  * {
  *   "playerId": "550e8400-e29b-41d4-a716-446655440000",
@@ -98,11 +101,12 @@ public class PlayerIdentity {
     }
 
     /**
-     * Save player ID to disk.
-     * Creates parent directories if they don't exist.
+     * Save player ID to disk. Creates parent directories if they don't exist.
      *
-     * @param playerId The UUID to save
-     * @throws RuntimeException if save fails
+     * @param playerId
+     *            The UUID to save
+     * @throws RuntimeException
+     *             if save fails
      */
     public static void save(String playerId) {
         try {
@@ -122,8 +126,7 @@ public class PlayerIdentity {
             data.put("createdAt", System.currentTimeMillis());
 
             // Write to file with pretty printing
-            mapper.writerWithDefaultPrettyPrinter()
-                  .writeValue(playerFile, data);
+            mapper.writerWithDefaultPrettyPrinter().writeValue(playerFile, data);
 
         } catch (IOException e) {
             throw new RuntimeException("Failed to save player ID", e);
@@ -143,11 +146,12 @@ public class PlayerIdentity {
     /**
      * Get platform-specific config directory.
      *
-     * <p>Detects OS and returns appropriate path:
+     * <p>
+     * Detects OS and returns appropriate path:
      * <ul>
-     *   <li>Windows: {@code %APPDATA%\ddpoker}</li>
-     *   <li>macOS: {@code ~/Library/Application Support/ddpoker}</li>
-     *   <li>Linux: {@code ~/.ddpoker}</li>
+     * <li>Windows: {@code %APPDATA%\ddpoker}</li>
+     * <li>macOS: {@code ~/Library/Application Support/ddpoker}</li>
+     * <li>Linux: {@code ~/.ddpoker}</li>
      * </ul>
      *
      * @return Config directory path
@@ -173,7 +177,8 @@ public class PlayerIdentity {
                 return appdata + File.separator + "ddpoker";
             }
             // Fallback if APPDATA not set
-            return System.getProperty("user.home") + File.separator + "AppData" + File.separator + "Roaming" + File.separator + "ddpoker";
+            return System.getProperty("user.home") + File.separator + "AppData" + File.separator + "Roaming"
+                    + File.separator + "ddpoker";
         }
 
         // Linux and other Unix-like systems (hidden directory)
@@ -183,7 +188,8 @@ public class PlayerIdentity {
     /**
      * Validate UUID format.
      *
-     * @param uuid String to validate
+     * @param uuid
+     *            String to validate
      * @return true if valid UUID, false otherwise
      */
     private static boolean isValidUUID(String uuid) {
@@ -199,18 +205,17 @@ public class PlayerIdentity {
     }
 
     /**
-     * Override config directory for testing.
-     * Package-private for test access.
+     * Override config directory for testing. Package-private for test access.
      *
-     * @param directory Directory to use for testing, or null to reset
+     * @param directory
+     *            Directory to use for testing, or null to reset
      */
     static void setConfigDirectoryForTesting(String directory) {
         configDirectoryOverride = directory;
     }
 
     /**
-     * Reset config directory override for testing.
-     * Package-private for test access.
+     * Reset config directory override for testing. Package-private for test access.
      */
     static void resetConfigDirectoryForTesting() {
         configDirectoryOverride = null;

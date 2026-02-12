@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -41,8 +41,7 @@ import com.donohoedigital.games.poker.engine.*;
 import java.io.*;
 import java.util.*;
 
-public class HandSelectionScheme extends BaseProfile
-{
+public class HandSelectionScheme extends BaseProfile {
     List<HandGroup> handgroups_;
 
     public static final String PROFILE_BEGIN = "handselection";
@@ -50,18 +49,15 @@ public class HandSelectionScheme extends BaseProfile
 
     private DMTypedHashMap map_;
 
-    public HandSelectionScheme()
-    {
+    public HandSelectionScheme() {
         super("");
     }
 
-    public HandSelectionScheme(File file, boolean bFull)
-    {
+    public HandSelectionScheme(File file, boolean bFull) {
         super(file, bFull);
     }
 
-    public HandSelectionScheme(String sName)
-    {
+    public HandSelectionScheme(String sName) {
         super(sName);
         map_ = new DMTypedHashMap();
         handgroups_ = new ArrayList<HandGroup>();
@@ -70,15 +66,13 @@ public class HandSelectionScheme extends BaseProfile
     /**
      * New profile copied from given profile, using new name
      */
-    public HandSelectionScheme(HandSelectionScheme tp, String sName)
-    {
+    public HandSelectionScheme(HandSelectionScheme tp, String sName) {
         super(sName);
         map_ = new DMTypedHashMap();
         map_.putAll(tp.map_);
 
         // remove stuff we don't want to copy
-        if (!sName.equals(tp.getName()))
-        {
+        if (!sName.equals(tp.getName())) {
             map_.removeLong("id");
         }
 
@@ -88,46 +82,40 @@ public class HandSelectionScheme extends BaseProfile
     /**
      * Get map
      */
-    public DMTypedHashMap getMap()
-    {
+    public DMTypedHashMap getMap() {
         return map_;
     }
 
     /**
      * Get begin part of profile name
      */
-    protected String getBegin()
-    {
+    protected String getBegin() {
         return PROFILE_BEGIN;
     }
 
     /**
      * Get name of directory to store profiles in
      */
-    protected String getProfileDirName()
-    {
+    protected String getProfileDirName() {
         return HAND_SELECTION_DIR;
     }
 
     /**
-     *  Get profile list
+     * Get profile list
      */
-    protected List<BaseProfile> getProfileFileList()
-    {
+    protected List<BaseProfile> getProfileFileList() {
         return getProfileList();
     }
 
     /**
      * Get list of save files in save directory
      */
-    public static List<BaseProfile> getProfileList()
-    {
-        return BaseProfile.getProfileList
-                (HAND_SELECTION_DIR, Utils.getFilenameFilter(SaveFile.DELIM + PROFILE_EXT, PROFILE_BEGIN), HandSelectionScheme.class, false);
+    public static List<BaseProfile> getProfileList() {
+        return BaseProfile.getProfileList(HAND_SELECTION_DIR,
+                Utils.getFilenameFilter(SaveFile.DELIM + PROFILE_EXT, PROFILE_BEGIN), HandSelectionScheme.class, false);
     }
 
-    public void read(Reader reader, boolean bFull) throws IOException
-    {
+    public void read(Reader reader, boolean bFull) throws IOException {
         BufferedReader buf = new BufferedReader(reader);
         super.read(buf, bFull);
 
@@ -137,30 +125,24 @@ public class HandSelectionScheme extends BaseProfile
         parseHandGroups();
     }
 
-    private void parseHandGroups()
-    {
-        if (handgroups_ == null)
-        {
+    private void parseHandGroups() {
+        if (handgroups_ == null) {
             handgroups_ = new ArrayList<HandGroup>();
-        }
-        else
-        {
+        } else {
             handgroups_.clear();
         }
 
         int i = 0;
         String s;
 
-        while ((s = map_.getString("hands" + i)) != null)
-        {
+        while ((s = map_.getString("hands" + i)) != null) {
             i++;
             String v[] = s.split("\\|");
             handgroups_.add(HandGroup.parse(v[0], Integer.parseInt(v[1])));
         }
     }
 
-    public void write(Writer writer) throws IOException
-    {
+    public void write(Writer writer) throws IOException {
         super.write(writer);
 
         if (!map_.containsKey("id")) {
@@ -175,7 +157,8 @@ public class HandSelectionScheme extends BaseProfile
             HandGroup group = handgroups_.get(i);
 
             if (group.getClassCount() > 0) {
-                map_.setString("hands" + i, group.getSummary().replaceAll(" ", "") + "|" + Integer.toString(group.getStrength()));
+                map_.setString("hands" + i,
+                        group.getSummary().replaceAll(" ", "") + "|" + Integer.toString(group.getStrength()));
             }
         }
 
@@ -183,48 +166,41 @@ public class HandSelectionScheme extends BaseProfile
         writeEndEntry(writer);
     }
 
-    public void removeEmptyGroups()
-    {
-        for (int i = handgroups_.size()-1; i >= 0; --i)
-        {
-            if (handgroups_.get(i).getClassCount() == 0) handgroups_.remove(i);
+    public void removeEmptyGroups() {
+        for (int i = handgroups_.size() - 1; i >= 0; --i) {
+            if (handgroups_.get(i).getClassCount() == 0)
+                handgroups_.remove(i);
         }
     }
 
-    public void ensureEmptyGroup()
-    {
+    public void ensureEmptyGroup() {
         removeEmptyGroups();
 
         handgroups_.add(new HandGroup());
     }
 
-    public float getHandStrength(Hand holeCards)
-    {
+    public float getHandStrength(Hand holeCards) {
         return getHandStrength(holeCards.getCard(0), holeCards.getCard(1));
     }
 
-    public float getHandStrength (com.ddpoker.Card card1, com.ddpoker.Card card2)
-    {
+    public float getHandStrength(com.ddpoker.Card card1, com.ddpoker.Card card2) {
         int rank1 = card1.getRank();
         int rank2 = card2.getRank();
 
         boolean suited = card1.getSuit() == card2.getSuit();
 
-        for (int i = handgroups_.size() - 1; i >= 0; --i)
-        {
+        for (int i = handgroups_.size() - 1; i >= 0; --i) {
             HandGroup group = handgroups_.get(i);
 
-            if (group.contains(rank1, rank2, suited))
-            {
-                return ((float)group.getStrength()) / 10.0f;
+            if (group.contains(rank1, rank2, suited)) {
+                return ((float) group.getStrength()) / 10.0f;
             }
         }
 
         return 0.0f;
     }
 
-    public List<HandGroup> getHandGroups()
-    {
+    public List<HandGroup> getHandGroups() {
         return handgroups_;
     }
 
@@ -242,13 +218,11 @@ public class HandSelectionScheme extends BaseProfile
         map_.setString("desc", s);
     }
 
-    public String toHTML()
-    {
+    public String toHTML() {
         StringBuilder buf = new StringBuilder();
 
         String sDesc = getDescription();
-        if (sDesc != null)
-        {
+        if (sDesc != null) {
             buf.append(Utils.encodeHTML(sDesc).replaceAll("\n", "<BR>\n"));
             buf.append("<BR>");
         }
@@ -258,37 +232,29 @@ public class HandSelectionScheme extends BaseProfile
         buf.append("<TABLE>");
         String yadj = "0";
 
-        for (HandGroup group : handgroups_)
-        {
-            if (group.getClassCount() > 0)
-            {
+        for (HandGroup group : handgroups_) {
+            if (group.getClassCount() > 0) {
                 buf.append("<TR VALIGN=\"TOP\"><TD WIDTH=\"90\">");
 
                 int strength = group.getStrength();
 
-                for (int j = 2; j <= 10; j += 2)
-                {
+                for (int j = 2; j <= 10; j += 2) {
 
                     buf.append("<DDIMG YADJ=\"").append(yadj).append("\" WIDTH=\"16\" SRC=\"rating16_");
-                    if (strength >= j)
-                    {
+                    if (strength >= j) {
                         buf.append("full");
-                    }
-                    else if (strength + 1 == j)
-                    {
+                    } else if (strength + 1 == j) {
                         buf.append("half");
 
-                    }
-                    else
-                    {
+                    } else {
                         buf.append("empty");
                     }
                     buf.append("\"> ");
                 }
                 buf.append("</TD><TD>");
-                //buf.append("<FONT SIZE=\"-2\">");
+                // buf.append("<FONT SIZE=\"-2\">");
                 buf.append(group.getSummary());
-                //buf.append("</FONT>");
+                // buf.append("</FONT>");
                 buf.append("</TD></TR>");
             }
 
@@ -307,12 +273,10 @@ public class HandSelectionScheme extends BaseProfile
 
         List<BaseProfile> schemes = getProfileList();
 
-        for (BaseProfile scheme1 : schemes)
-        {
+        for (BaseProfile scheme1 : schemes) {
             HandSelectionScheme scheme = (HandSelectionScheme) scheme1;
 
-            if (sName.equals(scheme.getName()))
-            {
+            if (sName.equals(scheme.getName())) {
                 return scheme;
             }
         }
@@ -320,26 +284,22 @@ public class HandSelectionScheme extends BaseProfile
         return null;
     }
 
-    public Long getID()
-    {
+    public Long getID() {
         return map_.getLong("id");
     }
 
     public static HandSelectionScheme getByID(Long id) {
 
-        if (id == null)
-        {
+        if (id == null) {
             return null;
         }
 
         List<BaseProfile> schemes = getProfileList();
 
-        for (BaseProfile scheme1 : schemes)
-        {
+        for (BaseProfile scheme1 : schemes) {
             HandSelectionScheme scheme = (HandSelectionScheme) scheme1;
 
-            if (id.equals(scheme.getID()))
-            {
+            if (id.equals(scheme.getID())) {
                 return scheme;
             }
         }

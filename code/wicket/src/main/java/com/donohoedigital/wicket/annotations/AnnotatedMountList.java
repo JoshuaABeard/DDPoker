@@ -40,17 +40,15 @@ import java.util.ArrayList;
 /**
  * A list of {@link IRequestMapper}.
  */
-public class AnnotatedMountList extends ArrayList<IRequestMapper>
-{
+public class AnnotatedMountList extends ArrayList<IRequestMapper> {
     private static final long serialVersionUID = 1L;
 
     /**
-     * Iterate through list and call {@link WebApplication#mount(IRequestMapper)} for each item.
+     * Iterate through list and call {@link WebApplication#mount(IRequestMapper)}
+     * for each item.
      */
-    public void mount(WebApplication app)
-    {
-        for (IRequestMapper strategy : this)
-        {
+    public void mount(WebApplication app) {
+        for (IRequestMapper strategy : this) {
             app.mount(strategy);
         }
     }

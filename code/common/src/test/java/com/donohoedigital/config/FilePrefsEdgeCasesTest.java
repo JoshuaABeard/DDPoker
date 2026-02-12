@@ -28,9 +28,6 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -414,14 +411,20 @@ class FilePrefsEdgeCasesTest {
         Thread writer = new Thread(() -> {
             for (int i = 0; i < 50; i++) {
                 prefs.put("write.key", "value" + i);
-                try { Thread.sleep(1); } catch (InterruptedException e) { }
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException e) {
+                }
             }
         });
 
         Thread reader = new Thread(() -> {
             for (int i = 0; i < 50; i++) {
                 prefs.get("write.key", "default");
-                try { Thread.sleep(1); } catch (InterruptedException e) { }
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException e) {
+                }
             }
         });
 

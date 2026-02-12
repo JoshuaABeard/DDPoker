@@ -39,17 +39,15 @@ import org.apache.wicket.request.mapper.parameter.PageParameters;
 /**
  * @author Doug Donohoe
  */
-@MountPath(value="export/games/in-progress", alt = {"export/games/running"})
+@MountPath(value = "export/games/in-progress", alt = {"export/games/running"})
 @MountMixedParam(parameterNames = {GamesListExport.PARAM_FILE_NAME})
-public class ExportGamesRunning extends GamesListExport
-{
+public class ExportGamesRunning extends GamesListExport {
     private static final long serialVersionUID = 42L;
 
     /**
      * Construct
      */
-    public ExportGamesRunning(PageParameters params)
-    {
+    public ExportGamesRunning(PageParameters params) {
         super(params);
     }
 
@@ -57,14 +55,12 @@ public class ExportGamesRunning extends GamesListExport
      * Get mode of games to list
      */
     @Override
-    protected Integer[] getModes()
-    {
+    protected Integer[] getModes() {
         return GamesList.MODE_RUNNING;
     }
 
     @Override
-    protected String getGameTypeForComment()
-    {
+    protected String getGameTypeForComment() {
         return "in-progress";
     }
 }

@@ -29,43 +29,35 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for PocketRanks raw hand strength calculation - THE critical AI metric.
  */
-class PocketRanksTest
-{
+class PocketRanksTest {
     // ========================================
     // getInstance() Validation Tests
     // ========================================
 
     @Test
-    void should_ThrowError_When_CommunityIsNull()
-    {
-        assertThatThrownBy(() -> PocketRanks.getInstance(null))
-            .isInstanceOf(ApplicationError.class)
-            .hasMessageContaining("null community");
+    void should_ThrowError_When_CommunityIsNull() {
+        assertThatThrownBy(() -> PocketRanks.getInstance(null)).isInstanceOf(ApplicationError.class)
+                .hasMessageContaining("null community");
     }
 
     @Test
-    void should_ThrowError_When_CommunityIsEmpty()
-    {
+    void should_ThrowError_When_CommunityIsEmpty() {
         Hand empty = new Hand();
 
-        assertThatThrownBy(() -> PocketRanks.getInstance(empty))
-            .isInstanceOf(ApplicationError.class)
-            .hasMessageContaining("pre-flop");
+        assertThatThrownBy(() -> PocketRanks.getInstance(empty)).isInstanceOf(ApplicationError.class)
+                .hasMessageContaining("pre-flop");
     }
 
     @Test
-    void should_ThrowError_When_CommunityHasTwoCards()
-    {
+    void should_ThrowError_When_CommunityHasTwoCards() {
         Hand twoCards = new Hand(SPADES_A, HEARTS_K);
 
-        assertThatThrownBy(() -> PocketRanks.getInstance(twoCards))
-            .isInstanceOf(ApplicationError.class)
-            .hasMessageContaining("pre-flop");
+        assertThatThrownBy(() -> PocketRanks.getInstance(twoCards)).isInstanceOf(ApplicationError.class)
+                .hasMessageContaining("pre-flop");
     }
 
     @Test
-    void should_ReturnInstance_When_CommunityHasThreeCards()
-    {
+    void should_ReturnInstance_When_CommunityHasThreeCards() {
         // Flop: A♠ K♥ Q♦
         Hand flop = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
 
@@ -75,8 +67,7 @@ class PocketRanksTest
     }
 
     @Test
-    void should_ReturnInstance_When_CommunityHasFourCards()
-    {
+    void should_ReturnInstance_When_CommunityHasFourCards() {
         // Flop + Turn: A♠ K♥ Q♦ J♣
         Hand turn = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q, CLUBS_J);
 
@@ -86,8 +77,7 @@ class PocketRanksTest
     }
 
     @Test
-    void should_ReturnInstance_When_CommunityHasFiveCards()
-    {
+    void should_ReturnInstance_When_CommunityHasFiveCards() {
         // Full board: A♠ K♥ Q♦ J♣ T♠
         Hand river = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q, CLUBS_J, SPADES_T);
 
@@ -101,8 +91,7 @@ class PocketRanksTest
     // ========================================
 
     @Test
-    void should_ReturnSameInstance_When_SameCommunityRequested()
-    {
+    void should_ReturnSameInstance_When_SameCommunityRequested() {
         Hand flop = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
 
         PocketRanks ranks1 = PocketRanks.getInstance(flop);
@@ -112,8 +101,7 @@ class PocketRanksTest
     }
 
     @Test
-    void should_ReturnSameInstance_When_SameTurnRequested()
-    {
+    void should_ReturnSameInstance_When_SameTurnRequested() {
         Hand turn = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q, CLUBS_J);
 
         PocketRanks ranks1 = PocketRanks.getInstance(turn);
@@ -123,8 +111,7 @@ class PocketRanksTest
     }
 
     @Test
-    void should_CacheDifferentInstances_When_DifferentTurnsWithSameFlop()
-    {
+    void should_CacheDifferentInstances_When_DifferentTurnsWithSameFlop() {
         Hand flop = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         Hand turn1 = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q, CLUBS_J);
         Hand turn2 = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q, CLUBS_T);
@@ -144,8 +131,7 @@ class PocketRanksTest
     // ========================================
 
     @Test
-    void should_ReturnHighStrength_When_NutsOnBoard()
-    {
+    void should_ReturnHighStrength_When_NutsOnBoard() {
         // Board: K♠ Q♠ J♠ (flush draw + straight draw board)
         Hand flop = new Hand(SPADES_K, SPADES_Q, SPADES_J);
         PocketRanks ranks = PocketRanks.getInstance(flop);
@@ -159,8 +145,7 @@ class PocketRanksTest
     }
 
     @Test
-    void should_ReturnLowStrength_When_NothingOnDryBoard()
-    {
+    void should_ReturnLowStrength_When_NothingOnDryBoard() {
         // Board: A♠ K♥ 7♦ (rainbow, dry board)
         Hand flop = new Hand(SPADES_A, HEARTS_K, DIAMONDS_7);
         PocketRanks ranks = PocketRanks.getInstance(flop);
@@ -174,8 +159,7 @@ class PocketRanksTest
     }
 
     @Test
-    void should_ReturnMediumStrength_When_MiddlePair()
-    {
+    void should_ReturnMediumStrength_When_MiddlePair() {
         // Board: A♠ 7♥ 4♦
         Hand flop = new Hand(SPADES_A, HEARTS_7, DIAMONDS_4);
         PocketRanks ranks = PocketRanks.getInstance(flop);
@@ -193,8 +177,7 @@ class PocketRanksTest
     // ========================================
 
     @Test
-    void should_ReturnStrength_When_CalledWithCards()
-    {
+    void should_ReturnStrength_When_CalledWithCards() {
         Hand flop = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         PocketRanks ranks = PocketRanks.getInstance(flop);
 
@@ -205,8 +188,7 @@ class PocketRanksTest
     }
 
     @Test
-    void should_ReturnSameStrength_When_CardsReversed()
-    {
+    void should_ReturnSameStrength_When_CardsReversed() {
         Hand flop = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         PocketRanks ranks = PocketRanks.getInstance(flop);
 
@@ -221,8 +203,7 @@ class PocketRanksTest
     // ========================================
 
     @Test
-    void should_ReturnStrength_When_CalledWithIndices()
-    {
+    void should_ReturnStrength_When_CalledWithIndices() {
         Hand flop = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         PocketRanks ranks = PocketRanks.getInstance(flop);
 
@@ -237,8 +218,7 @@ class PocketRanksTest
     // ========================================
 
     @Test
-    void should_ReturnHighStrength_When_TopPairTopKicker()
-    {
+    void should_ReturnHighStrength_When_TopPairTopKicker() {
         // Board: A♠ 7♥ 4♦
         Hand flop = new Hand(SPADES_A, HEARTS_7, DIAMONDS_4);
         PocketRanks ranks = PocketRanks.getInstance(flop);
@@ -252,8 +232,7 @@ class PocketRanksTest
     }
 
     @Test
-    void should_ReturnVeryHighStrength_When_FloppedSet()
-    {
+    void should_ReturnVeryHighStrength_When_FloppedSet() {
         // Board: A♠ 7♥ 4♦
         Hand flop = new Hand(SPADES_A, HEARTS_7, DIAMONDS_4);
         PocketRanks ranks = PocketRanks.getInstance(flop);
@@ -267,8 +246,7 @@ class PocketRanksTest
     }
 
     @Test
-    void should_ReturnHighStrength_When_FloppedStraight()
-    {
+    void should_ReturnHighStrength_When_FloppedStraight() {
         // Board: T♠ 9♥ 8♦
         Hand flop = new Hand(SPADES_T, HEARTS_9, DIAMONDS_8);
         PocketRanks ranks = PocketRanks.getInstance(flop);
@@ -282,8 +260,7 @@ class PocketRanksTest
     }
 
     @Test
-    void should_ReturnHighStrength_When_FloppedFlush()
-    {
+    void should_ReturnHighStrength_When_FloppedFlush() {
         // Board: A♠ K♠ 7♠ (all spades)
         Hand flop = new Hand(SPADES_A, SPADES_K, SPADES_7);
         PocketRanks ranks = PocketRanks.getInstance(flop);
@@ -301,8 +278,7 @@ class PocketRanksTest
     // ========================================
 
     @Test
-    void should_HandlePairedBoard_When_Calculating()
-    {
+    void should_HandlePairedBoard_When_Calculating() {
         // Board: A♠ A♥ 7♦ (paired board)
         Hand flop = new Hand(SPADES_A, HEARTS_A, DIAMONDS_7);
         PocketRanks ranks = PocketRanks.getInstance(flop);
@@ -311,13 +287,13 @@ class PocketRanksTest
         Hand pocket = new Hand(CLUBS_K, DIAMONDS_K);
         float strength = ranks.getRawHandStrength(pocket);
 
-        // Pocket kings on AA7 is strong (beats all non-A hands, only loses to trips/quads)
+        // Pocket kings on AA7 is strong (beats all non-A hands, only loses to
+        // trips/quads)
         assertThat(strength).isBetween(0.85f, 0.95f);
     }
 
     @Test
-    void should_HandleMonotoneBoard_When_Calculating()
-    {
+    void should_HandleMonotoneBoard_When_Calculating() {
         // Board: K♠ 9♠ 3♠ (all spades - monotone)
         Hand flop = new Hand(SPADES_K, SPADES_9, SPADES_3);
         PocketRanks ranks = PocketRanks.getInstance(flop);
@@ -335,8 +311,7 @@ class PocketRanksTest
     }
 
     @Test
-    void should_HandleConnectedBoard_When_Calculating()
-    {
+    void should_HandleConnectedBoard_When_Calculating() {
         // Board: 9♠ 8♥ 7♦ (connected - many straight possibilities)
         Hand flop = new Hand(SPADES_9, HEARTS_8, DIAMONDS_7);
         PocketRanks ranks = PocketRanks.getInstance(flop);
@@ -354,26 +329,21 @@ class PocketRanksTest
     // ========================================
 
     @Test
-    void should_ReturnValueInRange_When_AnyValidInput()
-    {
+    void should_ReturnValueInRange_When_AnyValidInput() {
         Hand flop = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         PocketRanks ranks = PocketRanks.getInstance(flop);
 
         // Test multiple different pockets
-        Hand[] pockets = {
-            new Hand(SPADES_J, SPADES_T),  // Broadway straight
-            new Hand(CLUBS_2, CLUBS_3),     // Low cards
-            new Hand(HEARTS_A, DIAMONDS_A), // Pocket aces
-            new Hand(CLUBS_K, DIAMONDS_K),  // Pocket kings
-            new Hand(HEARTS_Q, CLUBS_Q)     // Pocket queens
+        Hand[] pockets = {new Hand(SPADES_J, SPADES_T), // Broadway straight
+                new Hand(CLUBS_2, CLUBS_3), // Low cards
+                new Hand(HEARTS_A, DIAMONDS_A), // Pocket aces
+                new Hand(CLUBS_K, DIAMONDS_K), // Pocket kings
+                new Hand(HEARTS_Q, CLUBS_Q) // Pocket queens
         };
 
-        for (Hand pocket : pockets)
-        {
+        for (Hand pocket : pockets) {
             float strength = ranks.getRawHandStrength(pocket);
-            assertThat(strength)
-                .as("Strength for %s", pocket)
-                .isBetween(0.0f, 1.0f);
+            assertThat(strength).as("Strength for %s", pocket).isBetween(0.0f, 1.0f);
         }
     }
 
@@ -382,8 +352,7 @@ class PocketRanksTest
     // ========================================
 
     @Test
-    void should_CalculateStrength_When_RiverCard()
-    {
+    void should_CalculateStrength_When_RiverCard() {
         // Full board: A♠ K♥ Q♦ J♣ T♠ (broadway straight on board)
         Hand river = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q, CLUBS_J, SPADES_T);
         PocketRanks ranks = PocketRanks.getInstance(river);
@@ -397,8 +366,7 @@ class PocketRanksTest
     }
 
     @Test
-    void should_CalculateStrength_When_PairedRiver()
-    {
+    void should_CalculateStrength_When_PairedRiver() {
         // Board: A♠ A♥ 7♦ 7♣ 3♠ (two pair on board)
         Hand river = new Hand(SPADES_A, HEARTS_A, DIAMONDS_7, CLUBS_7, SPADES_3);
         PocketRanks ranks = PocketRanks.getInstance(river);
@@ -416,8 +384,7 @@ class PocketRanksTest
     // ========================================
 
     @Test
-    void should_ReturnConsistentStrength_When_CalledMultipleTimes()
-    {
+    void should_ReturnConsistentStrength_When_CalledMultipleTimes() {
         Hand flop = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         PocketRanks ranks = PocketRanks.getInstance(flop);
         Hand pocket = new Hand(SPADES_J, SPADES_T);
@@ -430,8 +397,7 @@ class PocketRanksTest
     }
 
     @Test
-    void should_ReturnSameStrength_When_CalledWithDifferentMethods()
-    {
+    void should_ReturnSameStrength_When_CalledWithDifferentMethods() {
         Hand flop = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         PocketRanks ranks = PocketRanks.getInstance(flop);
 

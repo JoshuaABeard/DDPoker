@@ -28,27 +28,23 @@ import java.lang.reflect.Field;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for RuleEngine's OutcomeAdjustment inner class.
- * Uses reflection to access and test private inner class.
+ * Tests for RuleEngine's OutcomeAdjustment inner class. Uses reflection to
+ * access and test private inner class.
  */
-class RuleEngineOutcomeAdjustmentTest
-{
+class RuleEngineOutcomeAdjustmentTest {
     private Class<?> adjustmentClass;
     private Constructor<?> adjustmentConstructor;
     private RuleEngine ruleEngine;
 
     @BeforeEach
-    void setUp() throws Exception
-    {
+    void setUp() throws Exception {
         // Create a RuleEngine instance to use as outer class reference
         ruleEngine = new RuleEngine();
 
         // Get the OutcomeAdjustment inner class
         Class<?>[] innerClasses = RuleEngine.class.getDeclaredClasses();
-        for (Class<?> innerClass : innerClasses)
-        {
-            if (innerClass.getSimpleName().equals("OutcomeAdjustment"))
-            {
+        for (Class<?> innerClass : innerClasses) {
+            if (innerClass.getSimpleName().equals("OutcomeAdjustment")) {
                 adjustmentClass = innerClass;
                 break;
             }
@@ -57,27 +53,23 @@ class RuleEngineOutcomeAdjustmentTest
         assertThat(adjustmentClass).isNotNull();
 
         // Get the constructor
-        adjustmentConstructor = adjustmentClass.getDeclaredConstructor(
-            RuleEngine.class, int.class, int.class, int.class, boolean.class,
-            float.class, float.class, float.class, float.class);
+        adjustmentConstructor = adjustmentClass.getDeclaredConstructor(RuleEngine.class, int.class, int.class,
+                int.class, boolean.class, float.class, float.class, float.class, float.class);
         adjustmentConstructor.setAccessible(true);
     }
 
     /**
      * Helper to create an OutcomeAdjustment instance via reflection
      */
-    private Object createAdjustment(int outcome, int factor, int curve, boolean invert,
-                                   float weight, float min, float max, float value) throws Exception
-    {
-        return adjustmentConstructor.newInstance(ruleEngine, outcome, factor, curve, invert,
-                                                weight, min, max, value);
+    private Object createAdjustment(int outcome, int factor, int curve, boolean invert, float weight, float min,
+            float max, float value) throws Exception {
+        return adjustmentConstructor.newInstance(ruleEngine, outcome, factor, curve, invert, weight, min, max, value);
     }
 
     /**
      * Helper to get field value via reflection
      */
-    private float getFieldValue(Object obj, String fieldName) throws Exception
-    {
+    private float getFieldValue(Object obj, String fieldName) throws Exception {
         Field field = adjustmentClass.getDeclaredField(fieldName);
         field.setAccessible(true);
         return (float) field.get(obj);
@@ -88,8 +80,7 @@ class RuleEngineOutcomeAdjustmentTest
     // ========================================
 
     @Test
-    void should_ClampToMax_When_ValueExceedsMax() throws Exception
-    {
+    void should_ClampToMax_When_ValueExceedsMax() throws Exception {
         // Value 100 should be clamped to max 50
         Object adjustment = createAdjustment(0, 0, 1, false, 1.0f, 0.0f, 50.0f, 100.0f);
 
@@ -100,8 +91,7 @@ class RuleEngineOutcomeAdjustmentTest
     }
 
     @Test
-    void should_ClampToMin_When_ValueBelowMin() throws Exception
-    {
+    void should_ClampToMin_When_ValueBelowMin() throws Exception {
         // Value -10 should be clamped to min 0
         Object adjustment = createAdjustment(0, 0, 1, false, 1.0f, 0.0f, 100.0f, -10.0f);
 
@@ -112,8 +102,7 @@ class RuleEngineOutcomeAdjustmentTest
     }
 
     @Test
-    void should_NormalizeCorrectly_When_ValueInRange() throws Exception
-    {
+    void should_NormalizeCorrectly_When_ValueInRange() throws Exception {
         // Value 50 in range [0, 100] should normalize to 0.5
         Object adjustment = createAdjustment(0, 0, 1, false, 1.0f, 0.0f, 100.0f, 50.0f);
 
@@ -128,8 +117,7 @@ class RuleEngineOutcomeAdjustmentTest
     // ========================================
 
     @Test
-    void should_ReturnLinear_When_CurveIs1() throws Exception
-    {
+    void should_ReturnLinear_When_CurveIs1() throws Exception {
         // Curve 1 means f(x) = x^1 = x (linear)
         Object adjustment = createAdjustment(0, 0, 1, false, 1.0f, 0.0f, 100.0f, 50.0f);
 
@@ -142,8 +130,7 @@ class RuleEngineOutcomeAdjustmentTest
     }
 
     @Test
-    void should_ApplySquare_When_CurveIs2() throws Exception
-    {
+    void should_ApplySquare_When_CurveIs2() throws Exception {
         // Curve 2 means f(x) = x^2
         Object adjustment = createAdjustment(0, 0, 2, false, 1.0f, 0.0f, 100.0f, 50.0f);
 
@@ -156,8 +143,7 @@ class RuleEngineOutcomeAdjustmentTest
     }
 
     @Test
-    void should_ApplyCubic_When_CurveIs3() throws Exception
-    {
+    void should_ApplyCubic_When_CurveIs3() throws Exception {
         // Curve 3 means f(x) = x^3
         Object adjustment = createAdjustment(0, 0, 3, false, 1.0f, 0.0f, 100.0f, 50.0f);
 
@@ -174,8 +160,7 @@ class RuleEngineOutcomeAdjustmentTest
     // ========================================
 
     @Test
-    void should_InvertResult_When_InvertIsTrue() throws Exception
-    {
+    void should_InvertResult_When_InvertIsTrue() throws Exception {
         // With invert=true, fx = 1.0 - f(x)
         Object adjustment = createAdjustment(0, 0, 1, true, 1.0f, 0.0f, 100.0f, 50.0f);
 
@@ -188,8 +173,7 @@ class RuleEngineOutcomeAdjustmentTest
     }
 
     @Test
-    void should_NotInvertResult_When_InvertIsFalse() throws Exception
-    {
+    void should_NotInvertResult_When_InvertIsFalse() throws Exception {
         // With invert=false, fx = f(x)
         Object adjustment = createAdjustment(0, 0, 1, false, 1.0f, 0.0f, 100.0f, 75.0f);
 
@@ -206,8 +190,7 @@ class RuleEngineOutcomeAdjustmentTest
     // ========================================
 
     @Test
-    void should_ApplyAllTransformations_When_CombiningNormalizationCurveAndInversion() throws Exception
-    {
+    void should_ApplyAllTransformations_When_CombiningNormalizationCurveAndInversion() throws Exception {
         // Test comprehensive scenario: value=80 in [0,100], curve=2, inverted
         Object adjustment = createAdjustment(0, 0, 2, true, 1.0f, 0.0f, 100.0f, 80.0f);
 
@@ -223,8 +206,7 @@ class RuleEngineOutcomeAdjustmentTest
     }
 
     @Test
-    void should_HandleZeroRange_When_MinEqualsMax() throws Exception
-    {
+    void should_HandleZeroRange_When_MinEqualsMax() throws Exception {
         // When min == max, x = value (no normalization)
         Object adjustment = createAdjustment(0, 0, 1, false, 1.0f, 50.0f, 50.0f, 50.0f);
 

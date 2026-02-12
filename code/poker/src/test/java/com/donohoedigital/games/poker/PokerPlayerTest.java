@@ -27,8 +27,8 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for PokerPlayer - chip management, player state, money operations,
- * and hand operations.
+ * Tests for PokerPlayer - chip management, player state, money operations, and
+ * hand operations.
  */
 class PokerPlayerTest {
 

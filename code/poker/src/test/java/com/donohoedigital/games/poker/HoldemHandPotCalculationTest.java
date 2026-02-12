@@ -28,21 +28,19 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for HoldemHand pot calculation methods.
- * Critical money-tracking operations - pot totals must be accurate.
- * Extends IntegrationTestBase for game infrastructure.
+ * Tests for HoldemHand pot calculation methods. Critical money-tracking
+ * operations - pot totals must be accurate. Extends IntegrationTestBase for
+ * game infrastructure.
  */
 @Tag("integration")
-class HoldemHandPotCalculationTest extends IntegrationTestBase
-{
+class HoldemHandPotCalculationTest extends IntegrationTestBase {
     private PokerGame game;
     private PokerTable table;
     private HoldemHand hand;
     private PokerPlayer[] players;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         // Create game infrastructure
         game = new PokerGame(null);
         TournamentProfile profile = new TournamentProfile("test");
@@ -54,8 +52,7 @@ class HoldemHandPotCalculationTest extends IntegrationTestBase
 
         // Create 3 players (enough for side pot scenarios)
         players = new PokerPlayer[3];
-        for (int i = 0; i < 3; i++)
-        {
+        for (int i = 0; i < 3; i++) {
             players[i] = new PokerPlayer(i + 1, "Player" + i, true);
             players[i].setChipCount(1000);
             game.addPlayer(players[i]);
@@ -64,8 +61,7 @@ class HoldemHandPotCalculationTest extends IntegrationTestBase
 
         // Initialize hand
         table.setButton(0);
-        for (PokerPlayer p : players)
-        {
+        for (PokerPlayer p : players) {
             p.newHand('p');
         }
 
@@ -81,14 +77,12 @@ class HoldemHandPotCalculationTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_ReturnZero_When_NoBets()
-    {
+    void should_ReturnZero_When_NoBets() {
         assertThat(hand.getTotalPotChipCount()).isEqualTo(0);
     }
 
     @Test
-    void should_ReturnCorrectTotal_When_SimpleBets()
-    {
+    void should_ReturnCorrectTotal_When_SimpleBets() {
         // Player 0 bets 100
         hand.setCurrentPlayerIndex(0);
         players[0].bet(100, "bet");
@@ -102,8 +96,7 @@ class HoldemHandPotCalculationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_AccumulateChips_When_MultipleBets()
-    {
+    void should_AccumulateChips_When_MultipleBets() {
         // Player 0 bets 50
         hand.setCurrentPlayerIndex(0);
         players[0].bet(50, "bet");
@@ -126,8 +119,7 @@ class HoldemHandPotCalculationTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_ReturnOne_When_NoSidePots()
-    {
+    void should_ReturnOne_When_NoSidePots() {
         // Simple betting - no all-ins
         hand.setCurrentPlayerIndex(0);
         players[0].bet(50, "bet");
@@ -140,8 +132,7 @@ class HoldemHandPotCalculationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_CountAllPots_When_MultiplePots()
-    {
+    void should_CountAllPots_When_MultiplePots() {
         // This test verifies pot count increases when side pots are created
         // The actual side pot creation happens in calcPots() which is called
         // during betting rounds. For now, verify we start with 1 pot.
@@ -153,8 +144,7 @@ class HoldemHandPotCalculationTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_ReturnMainPot_When_NoSidePots()
-    {
+    void should_ReturnMainPot_When_NoSidePots() {
         Pot currentPot = hand.getCurrentPot();
 
         // Should have a pot (main pot)
@@ -163,8 +153,7 @@ class HoldemHandPotCalculationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnActivePot_When_ChipsAdded()
-    {
+    void should_ReturnActivePot_When_ChipsAdded() {
         // Add bets to pot
         hand.setCurrentPlayerIndex(0);
         players[0].bet(100, "bet");
@@ -181,8 +170,7 @@ class HoldemHandPotCalculationTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_CalculatePotOdds_When_SimpleCall()
-    {
+    void should_CalculatePotOdds_When_SimpleCall() {
         // Player 0 bets 100
         hand.setCurrentPlayerIndex(0);
         players[0].bet(100, "bet");
@@ -196,8 +184,7 @@ class HoldemHandPotCalculationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_CalculatePotOdds_When_LargerPot()
-    {
+    void should_CalculatePotOdds_When_LargerPot() {
         // Player 0 bets 100
         hand.setCurrentPlayerIndex(0);
         players[0].bet(100, "bet");
@@ -215,8 +202,7 @@ class HoldemHandPotCalculationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_AdjustPotOdds_When_AllInCall()
-    {
+    void should_AdjustPotOdds_When_AllInCall() {
         // Player 0 bets 100
         hand.setCurrentPlayerIndex(0);
         players[0].bet(100, "bet");
@@ -239,8 +225,7 @@ class HoldemHandPotCalculationTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_MaintainAccuracy_When_MultipleRounds()
-    {
+    void should_MaintainAccuracy_When_MultipleRounds() {
         // Pre-flop betting
         hand.setCurrentPlayerIndex(0);
         players[0].bet(50, "bet");
@@ -258,12 +243,10 @@ class HoldemHandPotCalculationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_NotLoseChips_When_BettingSequence()
-    {
+    void should_NotLoseChips_When_BettingSequence() {
         // Track total chips before betting
         int totalChipsBefore = 0;
-        for (PokerPlayer p : players)
-        {
+        for (PokerPlayer p : players) {
             totalChipsBefore += p.getChipCount();
         }
 
@@ -276,8 +259,7 @@ class HoldemHandPotCalculationTest extends IntegrationTestBase
 
         // Chips deducted from players + pot should equal original total
         int totalChipsAfter = 0;
-        for (PokerPlayer p : players)
-        {
+        for (PokerPlayer p : players) {
             totalChipsAfter += p.getChipCount();
         }
         totalChipsAfter += hand.getTotalPotChipCount();

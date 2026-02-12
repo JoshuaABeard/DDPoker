@@ -25,7 +25,8 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for FloatTracker - tracks float values with weighted average calculation.
+ * Tests for FloatTracker - tracks float values with weighted average
+ * calculation.
  */
 class FloatTrackerTest {
 
@@ -624,7 +625,8 @@ class FloatTrackerTest {
 
         float weighted = tracker.getWeightedAverage(0.0f);
 
-        // Weighted average should be > simple average (4.0) because recent value is high
+        // Weighted average should be > simple average (4.0) because recent value is
+        // high
         assertThat(weighted).isGreaterThan(4.0f);
     }
 

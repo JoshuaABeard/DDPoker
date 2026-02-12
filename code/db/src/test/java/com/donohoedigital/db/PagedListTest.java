@@ -63,8 +63,7 @@ class PagedListTest {
 
     @Test
     void should_ThrowException_When_NegativeCapacity() {
-        assertThatThrownBy(() -> new PagedList<String>(-1))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new PagedList<String>(-1)).isInstanceOf(IllegalArgumentException.class);
     }
 
     // =================================================================
@@ -106,7 +105,8 @@ class PagedListTest {
 
     @Test
     void should_AllowNegativeTotalSize_When_Set() {
-        // Note: No validation on totalSize - allows negative (though semantically invalid)
+        // Note: No validation on totalSize - allows negative (though semantically
+        // invalid)
         PagedList<String> list = new PagedList<>();
         list.setTotalSize(-1);
 

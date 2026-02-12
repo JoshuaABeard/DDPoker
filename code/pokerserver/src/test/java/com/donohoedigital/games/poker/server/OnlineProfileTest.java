@@ -50,15 +50,13 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 
-
 /**
  * Tests for OnlineProfile persistence and DAO operations.
  */
 @Tag("slow")
 @SpringJUnitConfig(locations = {"/app-context-pokerservertests.xml"})
 @Transactional
-class OnlineProfileTest
-{
+class OnlineProfileTest {
     private final Logger logger = LogManager.getLogger(OnlineProfileTest.class);
 
     @Autowired
@@ -66,8 +64,7 @@ class OnlineProfileTest
 
     @Test
     @Rollback
-    void should_PersistAndUpdate_When_ProfileSaved()
-    {
+    void should_PersistAndUpdate_When_ProfileSaved() {
         OnlineProfile newProfile = PokerTestData.createOnlineProfile("TEST shouldPersist");
         dao.save(newProfile);
 
@@ -89,8 +86,7 @@ class OnlineProfileTest
 
     @Test
     @Rollback
-    void should_DeleteProfile_When_DeleteCalled()
-    {
+    void should_DeleteProfile_When_DeleteCalled() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("TEST saveBeforeDelete");
         dao.save(profile);
         assertThat(profile.getId()).isNotNull();
@@ -106,8 +102,7 @@ class OnlineProfileTest
 
     @Test
     @Rollback
-    void should_FindProfile_When_SearchingByName()
-    {
+    void should_FindProfile_When_SearchingByName() {
         String name = "TEST getByName";
         OnlineProfile newProfile = PokerTestData.createOnlineProfile(name);
         dao.save(newProfile);
@@ -122,14 +117,12 @@ class OnlineProfileTest
 
     @Test
     @Rollback
-    void should_ReturnMatchingProfiles_When_SearchingByEmail()
-    {
+    void should_ReturnMatchingProfiles_When_SearchingByEmail() {
         String email1 = "dexter@example.com";
         String email2 = "zorro@example.com";
         String name = "Test all ";
         int total = 10;
-        for (int i = 1; i <= total; i++)
-        {
+        for (int i = 1; i <= total; i++) {
             OnlineProfile newProfile = PokerTestData.createOnlineProfile(name + i);
             newProfile.setEmail(i % 2 == 0 ? email1 : email2);
             dao.save(newProfile);
@@ -138,16 +131,14 @@ class OnlineProfileTest
         List<OnlineProfile> list1 = dao.getAllForEmail(email1, null);
         assertThat(list1).hasSize(total / 2);
 
-        for (OnlineProfile p : list1)
-        {
+        for (OnlineProfile p : list1) {
             assertThat(p.getEmail()).isEqualTo(email1);
         }
 
         List<OnlineProfile> list2 = dao.getAllForEmail(email2, null);
         assertThat(list2).hasSize(total / 2);
 
-        for (OnlineProfile p : list2)
-        {
+        for (OnlineProfile p : list2) {
             assertThat(p.getEmail()).isEqualTo(email2);
         }
 
@@ -156,8 +147,7 @@ class OnlineProfileTest
         List<OnlineProfile> list3 = dao.getAllForEmail(email2, nameFetch);
         assertThat(list3).hasSize((total / 2) - 1);
 
-        for (OnlineProfile p : list3)
-        {
+        for (OnlineProfile p : list3) {
             assertThat(p.getName()).isNotEqualTo(nameFetch);
         }
 
@@ -168,13 +158,11 @@ class OnlineProfileTest
 
     @Test
     @Rollback
-    void should_FindMatchingProfiles_When_SearchingWithWildcards()
-    {
+    void should_FindMatchingProfiles_When_SearchingWithWildcards() {
         String email = "dexter@example.com";
         String name = "Find Me Special_Chars 100% \\/";
         int total = 10;
-        for (int i = 1; i <= total; i++)
-        {
+        for (int i = 1; i <= total; i++) {
             OnlineProfile newProfile = PokerTestData.createOnlineProfile(name + i);
             newProfile.setEmail(email);
             dao.save(newProfile);
@@ -182,8 +170,7 @@ class OnlineProfileTest
 
         // add extra to test non-matching
         int nonmatchtotal = 5;
-        for (int i = 1; i <= nonmatchtotal; i++)
-        {
+        for (int i = 1; i <= nonmatchtotal; i++) {
             OnlineProfile newProfile = PokerTestData.createOnlineProfile("TOTALLY DIFFERENT NAME" + i);
             newProfile.setEmail("foo@blah.com");
             dao.save(newProfile);
@@ -213,8 +200,7 @@ class OnlineProfileTest
 
     @Test
     @Rollback
-    void should_HandleUTF8Characters_When_ProfileNameIsNonASCII()
-    {
+    void should_HandleUTF8Characters_When_ProfileNameIsNonASCII() {
         verifyFile("greek.utf8.txt");
         verifyFile("russian.utf8.txt");
         verifyFile("japanese.utf8.txt");
@@ -223,8 +209,7 @@ class OnlineProfileTest
         verifyFile("swedish.utf8.txt");
     }
 
-    private void verifyFile(String filename)
-    {
+    private void verifyFile(String filename) {
         URL url = new MatchingResources("classpath:" + filename).getSingleRequiredResourceURL();
         String utf8 = ConfigUtils.readURL(url).trim();
         logger.debug(filename + ": " + utf8);

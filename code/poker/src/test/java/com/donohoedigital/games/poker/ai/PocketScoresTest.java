@@ -22,7 +22,6 @@ package com.donohoedigital.games.poker.ai;
 import com.donohoedigital.base.ApplicationError;
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
-import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -33,11 +32,9 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for PocketScores hand scoring calculations.
  */
-class PocketScoresTest
-{
+class PocketScoresTest {
     @BeforeAll
-    static void initializeConfig()
-    {
+    static void initializeConfig() {
         // Initialize ConfigManager for HandInfoFaster
         ConfigManager configMgr = new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
         configMgr.loadGuiConfig(); // Required for StylesConfig
@@ -48,30 +45,24 @@ class PocketScoresTest
     // ========================================
 
     @Test
-    void should_ThrowError_When_CommunityIsNull()
-    {
-        assertThatThrownBy(() -> PocketScores.getInstance(null))
-                .isInstanceOf(ApplicationError.class)
+    void should_ThrowError_When_CommunityIsNull() {
+        assertThatThrownBy(() -> PocketScores.getInstance(null)).isInstanceOf(ApplicationError.class)
                 .hasMessageContaining("null community");
     }
 
     @Test
-    void should_ThrowError_When_CommunityIsEmpty()
-    {
+    void should_ThrowError_When_CommunityIsEmpty() {
         Hand community = new Hand();
 
-        assertThatThrownBy(() -> PocketScores.getInstance(community))
-                .isInstanceOf(ApplicationError.class)
+        assertThatThrownBy(() -> PocketScores.getInstance(community)).isInstanceOf(ApplicationError.class)
                 .hasMessageContaining("pre-flop");
     }
 
     @Test
-    void should_ThrowError_When_CommunityHasTwoCards()
-    {
+    void should_ThrowError_When_CommunityHasTwoCards() {
         Hand community = new Hand(SPADES_A, HEARTS_K);
 
-        assertThatThrownBy(() -> PocketScores.getInstance(community))
-                .isInstanceOf(ApplicationError.class)
+        assertThatThrownBy(() -> PocketScores.getInstance(community)).isInstanceOf(ApplicationError.class)
                 .hasMessageContaining("pre-flop");
     }
 
@@ -80,8 +71,7 @@ class PocketScoresTest
     // ========================================
 
     @Test
-    void should_ReturnSameInstance_When_SameCommunityRequested()
-    {
+    void should_ReturnSameInstance_When_SameCommunityRequested() {
         Hand community = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
 
         PocketScores scores1 = PocketScores.getInstance(community);
@@ -91,8 +81,7 @@ class PocketScoresTest
     }
 
     @Test
-    void should_ReturnDifferentInstance_When_DifferentCommunity()
-    {
+    void should_ReturnDifferentInstance_When_DifferentCommunity() {
         Hand community1 = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         Hand community2 = new Hand(SPADES_A, HEARTS_K, DIAMONDS_J);
 
@@ -103,8 +92,7 @@ class PocketScoresTest
     }
 
     @Test
-    void should_ClearCache_When_FlopChanges()
-    {
+    void should_ClearCache_When_FlopChanges() {
         Hand community1 = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
 
         PocketScores scores1 = PocketScores.getInstance(community1);
@@ -120,8 +108,7 @@ class PocketScoresTest
     }
 
     @Test
-    void should_CacheMultipleInstances_When_SameFlopDifferentTurn()
-    {
+    void should_CacheMultipleInstances_When_SameFlopDifferentTurn() {
         // Flop
         Hand flop = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         PocketScores scoresFlop = PocketScores.getInstance(flop);
@@ -144,8 +131,7 @@ class PocketScoresTest
     // ========================================
 
     @Test
-    void should_ReturnSameScore_When_CalledWithDifferentMethods()
-    {
+    void should_ReturnSameScore_When_CalledWithDifferentMethods() {
         Hand community = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         PocketScores scores = PocketScores.getInstance(community);
 
@@ -154,9 +140,7 @@ class PocketScoresTest
         int scoreCards = scores.getScore(CLUBS_J, SPADES_T);
         int scoreIndices = scores.getScore(CLUBS_J.getIndex(), SPADES_T.getIndex());
 
-        assertThat(scoreHand)
-                .isEqualTo(scoreCards)
-                .isEqualTo(scoreIndices);
+        assertThat(scoreHand).isEqualTo(scoreCards).isEqualTo(scoreIndices);
     }
 
     // ========================================
@@ -164,8 +148,7 @@ class PocketScoresTest
     // ========================================
 
     @Test
-    void should_ScoreRoyalFlush_When_BestPossibleHand()
-    {
+    void should_ScoreRoyalFlush_When_BestPossibleHand() {
         // Board: A♠ K♠ Q♠
         Hand community = new Hand(SPADES_A, SPADES_K, SPADES_Q);
         // Pocket: J♠ T♠ (royal flush)
@@ -179,8 +162,7 @@ class PocketScoresTest
     }
 
     @Test
-    void should_ScoreStraightFlush_When_FiveCardsInSequenceSameSuit()
-    {
+    void should_ScoreStraightFlush_When_FiveCardsInSequenceSameSuit() {
         // Board: 9♠ 8♠ 7♠
         Hand community = new Hand(SPADES_9, SPADES_8, SPADES_7);
         // Pocket: 6♠ 5♠ (straight flush 5-9)
@@ -193,8 +175,7 @@ class PocketScoresTest
     }
 
     @Test
-    void should_ScoreFourOfAKind_When_FourSameRank()
-    {
+    void should_ScoreFourOfAKind_When_FourSameRank() {
         // Board: K♠ K♥ K♦
         Hand community = new Hand(SPADES_K, HEARTS_K, DIAMONDS_K);
         // Pocket: K♣ 7♠ (four kings)
@@ -207,8 +188,7 @@ class PocketScoresTest
     }
 
     @Test
-    void should_ScoreFullHouse_When_ThreeOfKindPlusPair()
-    {
+    void should_ScoreFullHouse_When_ThreeOfKindPlusPair() {
         // Board: K♠ K♥ 7♦
         Hand community = new Hand(SPADES_K, HEARTS_K, DIAMONDS_7);
         // Pocket: K♦ 7♠ (full house - kings full of sevens)
@@ -221,8 +201,7 @@ class PocketScoresTest
     }
 
     @Test
-    void should_ScoreFlush_When_FiveSameSuit()
-    {
+    void should_ScoreFlush_When_FiveSameSuit() {
         // Board: A♠ K♠ 7♠
         Hand community = new Hand(SPADES_A, SPADES_K, SPADES_7);
         // Pocket: 5♠ 2♠ (flush)
@@ -235,8 +214,7 @@ class PocketScoresTest
     }
 
     @Test
-    void should_ScoreStraight_When_FiveCardsInSequence()
-    {
+    void should_ScoreStraight_When_FiveCardsInSequence() {
         // Board: K♠ Q♥ J♦
         Hand community = new Hand(SPADES_K, HEARTS_Q, DIAMONDS_J);
         // Pocket: T♠ 9♣ (straight K-9)
@@ -249,8 +227,7 @@ class PocketScoresTest
     }
 
     @Test
-    void should_ScoreThreeOfAKind_When_ThreeSameRank()
-    {
+    void should_ScoreThreeOfAKind_When_ThreeSameRank() {
         // Board: K♠ K♥ 7♦
         Hand community = new Hand(SPADES_K, HEARTS_K, DIAMONDS_7);
         // Pocket: K♦ 2♠ (trip kings)
@@ -263,8 +240,7 @@ class PocketScoresTest
     }
 
     @Test
-    void should_ScoreTwoPair_When_TwoDifferentPairs()
-    {
+    void should_ScoreTwoPair_When_TwoDifferentPairs() {
         // Board: K♠ K♥ 7♦
         Hand community = new Hand(SPADES_K, HEARTS_K, DIAMONDS_7);
         // Pocket: 7♠ 2♣ (two pair - kings and sevens)
@@ -277,8 +253,7 @@ class PocketScoresTest
     }
 
     @Test
-    void should_ScorePair_When_TwoSameRank()
-    {
+    void should_ScorePair_When_TwoSameRank() {
         // Board: K♠ Q♥ 7♦
         Hand community = new Hand(SPADES_K, HEARTS_Q, DIAMONDS_7);
         // Pocket: K♦ 2♠ (pair of kings)
@@ -291,8 +266,7 @@ class PocketScoresTest
     }
 
     @Test
-    void should_ScoreHighCard_When_NoMadeHand()
-    {
+    void should_ScoreHighCard_When_NoMadeHand() {
         // Board: K♠ Q♥ 7♦
         Hand community = new Hand(SPADES_K, HEARTS_Q, DIAMONDS_7);
         // Pocket: J♠ 9♣ (high card king)
@@ -309,8 +283,7 @@ class PocketScoresTest
     // ========================================
 
     @Test
-    void should_ScoreHigher_When_BetterHandType()
-    {
+    void should_ScoreHigher_When_BetterHandType() {
         // Board: K♠ Q♥ J♦
         Hand community = new Hand(SPADES_K, HEARTS_Q, DIAMONDS_J);
 
@@ -327,8 +300,7 @@ class PocketScoresTest
     }
 
     @Test
-    void should_ScoreHigher_When_BetterKicker()
-    {
+    void should_ScoreHigher_When_BetterKicker() {
         // Board: K♠ Q♥ 7♦
         Hand community = new Hand(SPADES_K, HEARTS_Q, DIAMONDS_7);
 
@@ -345,8 +317,7 @@ class PocketScoresTest
     }
 
     @Test
-    void should_ScoreHigher_When_PocketPairVsCommunityPair()
-    {
+    void should_ScoreHigher_When_PocketPairVsCommunityPair() {
         // Board: K♠ Q♥ 7♦
         Hand community = new Hand(SPADES_K, HEARTS_Q, DIAMONDS_7);
 
@@ -363,8 +334,7 @@ class PocketScoresTest
     }
 
     @Test
-    void should_ScoreConsistently_When_SameHandDifferentSuits()
-    {
+    void should_ScoreConsistently_When_SameHandDifferentSuits() {
         // Board: K♠ Q♥ 7♦
         Hand community = new Hand(SPADES_K, HEARTS_Q, DIAMONDS_7);
 
@@ -386,8 +356,7 @@ class PocketScoresTest
     // ========================================
 
     @Test
-    void should_HandleFlopScenario_When_ThreeCommunityCards()
-    {
+    void should_HandleFlopScenario_When_ThreeCommunityCards() {
         Hand flop = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         Hand pocket = new Hand(CLUBS_J, SPADES_T);
 
@@ -398,8 +367,7 @@ class PocketScoresTest
     }
 
     @Test
-    void should_HandleTurnScenario_When_FourCommunityCards()
-    {
+    void should_HandleTurnScenario_When_FourCommunityCards() {
         Hand turn = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q, CLUBS_J);
         Hand pocket = new Hand(SPADES_T, HEARTS_9);
 
@@ -410,8 +378,7 @@ class PocketScoresTest
     }
 
     @Test
-    void should_HandleRiverScenario_When_FiveCommunityCards()
-    {
+    void should_HandleRiverScenario_When_FiveCommunityCards() {
         Hand river = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q, CLUBS_J, SPADES_T);
         Hand pocket = new Hand(HEARTS_9, DIAMONDS_8);
 
@@ -422,8 +389,7 @@ class PocketScoresTest
     }
 
     @Test
-    void should_ProvideConsistentScores_When_CalledMultipleTimes()
-    {
+    void should_ProvideConsistentScores_When_CalledMultipleTimes() {
         Hand community = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         Hand pocket = new Hand(CLUBS_J, SPADES_T);
 

@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -102,11 +102,15 @@ public class PokerStats {
 
         for (int i = 0; i < nNum; i++) {
 
-            if ((i % 1000) == 0) logger.debug("Loop {}", i);
-            if (DEBUG) logger.debug("");
+            if ((i % 1000) == 0)
+                logger.debug("Loop {}", i);
+            if (DEBUG)
+                logger.debug("");
             bDoResults = deal();
-            if (DEBUG) logger.debug("HAND {} ---- {} -----------------------", i, hhand_.getCommunity().toString());
-            if (bDoResults) results();
+            if (DEBUG)
+                logger.debug("HAND {} ---- {} -----------------------", i, hhand_.getCommunity().toString());
+            if (bDoResults)
+                results();
 
             if (i > 0 && (i % nIter) == 0) {
                 printResults();
@@ -123,7 +127,7 @@ public class PokerStats {
                 bFold_ = true;
             }
 
-            //if (i > 0 && (i % 25000) == 0) printResults();
+            // if (i > 0 && (i % 25000) == 0) printResults();
         }
 
         printResults();
@@ -181,7 +185,8 @@ public class PokerStats {
                 stat = getMatchingStat(hand);
                 if (stat != null && !stat.isExpectationPositive()) {
                     player.fold(null, HandAction.FOLD_NORMAL);
-                    if (DEBUG) logger.debug("Folded: {}", hand.toStringSuited());
+                    if (DEBUG)
+                        logger.debug("Folded: {}", hand.toStringSuited());
                 }
             }
 
@@ -216,21 +221,21 @@ public class PokerStats {
         HandInfo info;
         for (int i = 0; i < hhand_.getNumPlayers(); i++) {
             player = hhand_.getPlayerAt(i);
-            if (player.isFolded()) continue;
+            if (player.isFolded())
+                continue;
 
             nAmount = hhand_.getWin(player);
 
             if (DEBUG) {
                 info = player.getHandInfo();
-                sResult = player.getName() + " " +
-                        fHole.form(player.getHand().toStringSuited()) + " " +
-                        fType.form(info.getHandTypeDesc()) + " " +
-                        fBest.form(info.getBest().toString());
+                sResult = player.getName() + " " + fHole.form(player.getHand().toStringSuited()) + " "
+                        + fType.form(info.getHandTypeDesc()) + " " + fBest.form(info.getBest().toString());
                 if (nAmount > 0) {
                     sResult += " WIN " + nAmount;
                 }
 
-                if (DEBUG) logger.debug(sResult);
+                if (DEBUG)
+                    logger.debug(sResult);
             }
 
             // subtract the bet
@@ -323,7 +328,7 @@ public class PokerStats {
         // init config
         new ConfigManager("poker", ApplicationType.CLIENT);
 
-        // run        
+        // run
         PokerStats stats = new PokerStats();
         stats.run(nNum, nIter);
     }

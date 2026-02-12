@@ -18,8 +18,8 @@ public class OnlineProfilePasswordTest {
         profile.setPasswordHash(testHash);
 
         // Then: should be able to retrieve it
-        assertEquals("getPasswordHash() should return the value set by setPasswordHash()",
-            testHash, profile.getPasswordHash());
+        assertEquals("getPasswordHash() should return the value set by setPasswordHash()", testHash,
+                profile.getPasswordHash());
     }
 
     @Test

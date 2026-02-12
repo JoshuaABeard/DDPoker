@@ -46,20 +46,19 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for OnlineProfileService business logic beyond simple DAO pass-through operations.
+ * Tests for OnlineProfileService business logic beyond simple DAO pass-through
+ * operations.
  */
 @Tag("slow")
 @SpringJUnitConfig(locations = {"/app-context-pokerservertests.xml"})
 @Transactional
-class OnlineProfileServiceTest
-{
+class OnlineProfileServiceTest {
     @Autowired
     private OnlineProfileService service;
 
     @Test
     @Rollback
-    void should_RejectDisallowedNames_When_ValidatingProfileName()
-    {
+    void should_RejectDisallowedNames_When_ValidatingProfileName() {
         // assumes disallowed.txt is read, should be false
         assertThat(service.isNameValid("ddpoker")).isFalse();
         assertThat(service.isNameValid("???")).isFalse();
@@ -67,8 +66,7 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_PreventDuplicates_When_SavingProfile()
-    {
+    void should_PreventDuplicates_When_SavingProfile() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("Dexter");
         assertThat(service.saveOnlineProfile(profile)).isTrue();
         assertThat(profile.getId()).isNotNull();
@@ -80,8 +78,7 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_AuthenticateProfile_When_CredentialsAreValid()
-    {
+    void should_AuthenticateProfile_When_CredentialsAreValid() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("Dexter");
         assertThat(service.saveOnlineProfile(profile)).isTrue();
         assertThat(profile.getId()).isNotNull();
@@ -104,15 +101,13 @@ class OnlineProfileServiceTest
     // ========================================
 
     @Test
-    void should_GenerateNonEmptyPassword_When_GeneratePasswordCalled()
-    {
+    void should_GenerateNonEmptyPassword_When_GeneratePasswordCalled() {
         String password = service.generatePassword();
         assertThat(password).isNotNull().isNotEmpty();
     }
 
     @Test
-    void should_GenerateDifferentPasswords_When_CalledMultipleTimes()
-    {
+    void should_GenerateDifferentPasswords_When_CalledMultipleTimes() {
         String password1 = service.generatePassword();
         String password2 = service.generatePassword();
         assertThat(password1).isNotEqualTo(password2);
@@ -124,8 +119,7 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_ReturnProfile_When_ValidIdProvided()
-    {
+    void should_ReturnProfile_When_ValidIdProvided() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("TestUser");
         service.saveOnlineProfile(profile);
 
@@ -136,8 +130,7 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_ReturnNull_When_InvalidIdProvided()
-    {
+    void should_ReturnNull_When_InvalidIdProvided() {
         OnlineProfile fetched = service.getOnlineProfileById(99999L);
         assertThat(fetched).isNull();
     }
@@ -148,8 +141,7 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_ReturnProfile_When_ValidNameProvided()
-    {
+    void should_ReturnProfile_When_ValidNameProvided() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("FindMe");
         service.saveOnlineProfile(profile);
 
@@ -160,8 +152,7 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_ReturnNull_When_ProfileNameNotFound()
-    {
+    void should_ReturnNull_When_ProfileNameNotFound() {
         OnlineProfile fetched = service.getOnlineProfileByName("NonExistent");
         assertThat(fetched).isNull();
     }
@@ -172,16 +163,14 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_ReturnZeroCount_When_NoMatchingProfiles()
-    {
+    void should_ReturnZeroCount_When_NoMatchingProfiles() {
         int count = service.getMatchingOnlineProfilesCount("NonExistent", null, null, false);
         assertThat(count).isZero();
     }
 
     @Test
     @Rollback
-    void should_ReturnCorrectCount_When_ProfilesMatch()
-    {
+    void should_ReturnCorrectCount_When_ProfilesMatch() {
         service.saveOnlineProfile(PokerTestData.createOnlineProfile("Alice"));
         service.saveOnlineProfile(PokerTestData.createOnlineProfile("Bob"));
         service.saveOnlineProfile(PokerTestData.createOnlineProfile("AliceInWonderland"));
@@ -196,16 +185,14 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_ReturnEmptyList_When_NoMatchingProfiles()
-    {
+    void should_ReturnEmptyList_When_NoMatchingProfiles() {
         List<OnlineProfile> profiles = service.getMatchingOnlineProfiles(null, 0, 10, "NonExistent", null, null, false);
         assertThat(profiles).isEmpty();
     }
 
     @Test
     @Rollback
-    void should_ReturnMatchingProfiles_When_NameSearchProvided()
-    {
+    void should_ReturnMatchingProfiles_When_NameSearchProvided() {
         service.saveOnlineProfile(PokerTestData.createOnlineProfile("Alice"));
         service.saveOnlineProfile(PokerTestData.createOnlineProfile("Bob"));
         service.saveOnlineProfile(PokerTestData.createOnlineProfile("AliceInWonderland"));
@@ -220,16 +207,14 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_ReturnEmptyList_When_NoProfilesForEmail()
-    {
+    void should_ReturnEmptyList_When_NoProfilesForEmail() {
         List<OnlineProfile> profiles = service.getAllOnlineProfilesForEmail("nobody@example.com", null);
         assertThat(profiles).isEmpty();
     }
 
     @Test
     @Rollback
-    void should_ReturnProfiles_When_EmailMatches()
-    {
+    void should_ReturnProfiles_When_EmailMatches() {
         OnlineProfile profile1 = PokerTestData.createOnlineProfile("User1");
         profile1.setEmail("shared@example.com");
         service.saveOnlineProfile(profile1);
@@ -244,8 +229,7 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_ExcludeProfile_When_ExcludeNameProvided()
-    {
+    void should_ExcludeProfile_When_ExcludeNameProvided() {
         OnlineProfile profile1 = PokerTestData.createOnlineProfile("User1");
         profile1.setEmail("shared@example.com");
         service.saveOnlineProfile(profile1);
@@ -265,8 +249,7 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_RetireProfile_When_RetireCalled()
-    {
+    void should_RetireProfile_When_RetireCalled() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("ToRetire");
         service.saveOnlineProfile(profile);
 
@@ -282,8 +265,7 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_UpdateProfile_When_ValidProfileProvided()
-    {
+    void should_UpdateProfile_When_ValidProfileProvided() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("Original");
         service.saveOnlineProfile(profile);
 
@@ -296,8 +278,7 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_CreateProfile_When_UpdatingNonExistentProfile()
-    {
+    void should_CreateProfile_When_UpdatingNonExistentProfile() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("NonExistent");
         OnlineProfile updated = service.updateOnlineProfile(profile);
         // Service creates the profile if it doesn't exist
@@ -311,8 +292,7 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_DeleteProfile_When_DeleteOnlineProfileCalled()
-    {
+    void should_DeleteProfile_When_DeleteOnlineProfileCalled() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("ToDelete");
         service.saveOnlineProfile(profile);
         assertThat(profile.getId()).isNotNull();
@@ -329,8 +309,7 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_DeleteMultipleProfiles_When_DeleteOnlineProfilesCalled()
-    {
+    void should_DeleteMultipleProfiles_When_DeleteOnlineProfilesCalled() {
         OnlineProfile profile1 = PokerTestData.createOnlineProfile("Delete1");
         OnlineProfile profile2 = PokerTestData.createOnlineProfile("Delete2");
         service.saveOnlineProfile(profile1);
@@ -352,24 +331,20 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_AcceptValidNames_When_ValidatingProfileName()
-    {
+    void should_AcceptValidNames_When_ValidatingProfileName() {
         assertThat(service.isNameValid("ValidUser123")).isTrue();
         assertThat(service.isNameValid("Player_One")).isTrue();
     }
 
     @Test
     @Rollback
-    void should_ThrowException_When_ValidatingNullName()
-    {
-        assertThatThrownBy(() -> service.isNameValid(null))
-                .isInstanceOf(NullPointerException.class);
+    void should_ThrowException_When_ValidatingNullName() {
+        assertThatThrownBy(() -> service.isNameValid(null)).isInstanceOf(NullPointerException.class);
     }
 
     @Test
     @Rollback
-    void should_RejectEmptyName_When_ValidatingProfileName()
-    {
+    void should_RejectEmptyName_When_ValidatingProfileName() {
         assertThat(service.isNameValid("")).isFalse();
     }
 
@@ -379,8 +354,7 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_ReturnNull_When_AuthenticatingWithWrongPassword()
-    {
+    void should_ReturnNull_When_AuthenticatingWithWrongPassword() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("Secure");
         service.saveOnlineProfile(profile);
 
@@ -391,8 +365,7 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_ReturnNull_When_AuthenticatingRetiredProfile()
-    {
+    void should_ReturnNull_When_AuthenticatingRetiredProfile() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("Retired");
         service.saveOnlineProfile(profile);
         service.retire("Retired");
@@ -407,16 +380,14 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_ReturnEmptyList_When_NoProfileSummariesForEmail()
-    {
+    void should_ReturnEmptyList_When_NoProfileSummariesForEmail() {
         var summaries = service.getOnlineProfileSummariesForEmail("nobody@example.com");
         assertThat(summaries).isEmpty();
     }
 
     @Test
     @Rollback
-    void should_ReturnSummaries_When_EmailHasProfiles()
-    {
+    void should_ReturnSummaries_When_EmailHasProfiles() {
         OnlineProfile profile1 = PokerTestData.createOnlineProfile("SummaryUser1");
         profile1.setEmail("summary@example.com");
         service.saveOnlineProfile(profile1);
@@ -435,16 +406,14 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_HandleNullEmail_When_QueryingSummariesForEmail()
-    {
+    void should_HandleNullEmail_When_QueryingSummariesForEmail() {
         var summaries = service.getOnlineProfileSummariesForEmail(null);
         assertThat(summaries).isEmpty();
     }
 
     @Test
     @Rollback
-    void should_ReturnProfile_When_UpdatingWithNewEmail()
-    {
+    void should_ReturnProfile_When_UpdatingWithNewEmail() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("UpdateEmail");
         service.saveOnlineProfile(profile);
 
@@ -466,11 +435,9 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_HandlePagination_When_GettingMatchingProfiles()
-    {
+    void should_HandlePagination_When_GettingMatchingProfiles() {
         // Create multiple profiles with similar names
-        for (int i = 0; i < 5; i++)
-        {
+        for (int i = 0; i < 5; i++) {
             service.saveOnlineProfile(PokerTestData.createOnlineProfile("PageUser" + i));
         }
 
@@ -485,8 +452,7 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_IncludeRetiredProfiles_When_FlagIsTrue()
-    {
+    void should_IncludeRetiredProfiles_When_FlagIsTrue() {
         OnlineProfile profile1 = PokerTestData.createOnlineProfile("RetireTest1");
         service.saveOnlineProfile(profile1);
         service.retire("RetireTest1");
@@ -505,8 +471,7 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_SearchByEmail_When_EmailSearchProvided()
-    {
+    void should_SearchByEmail_When_EmailSearchProvided() {
         OnlineProfile profile1 = PokerTestData.createOnlineProfile("EmailSearch1");
         profile1.setEmail("test@example.com");
         service.saveOnlineProfile(profile1);
@@ -521,11 +486,9 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_ReturnMultipleSummaries_When_EmailHasManyProfiles()
-    {
+    void should_ReturnMultipleSummaries_When_EmailHasManyProfiles() {
         String sharedEmail = "shared@example.com";
-        for (int i = 0; i < 4; i++)
-        {
+        for (int i = 0; i < 4; i++) {
             OnlineProfile profile = PokerTestData.createOnlineProfile("SharedEmail" + i);
             profile.setEmail(sharedEmail);
             service.saveOnlineProfile(profile);
@@ -537,11 +500,9 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_GenerateUniquePasswords_When_CalledMultipleTimes()
-    {
+    void should_GenerateUniquePasswords_When_CalledMultipleTimes() {
         java.util.Set<String> passwords = new java.util.HashSet<>();
-        for (int i = 0; i < 10; i++)
-        {
+        for (int i = 0; i < 10; i++) {
             passwords.add(service.generatePassword());
         }
 
@@ -551,8 +512,7 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_PreservePasswordHash_When_UpdatingProfile()
-    {
+    void should_PreservePasswordHash_When_UpdatingProfile() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("PasswordTest");
         String originalPassword = profile.getPassword();
         service.saveOnlineProfile(profile);
@@ -570,8 +530,7 @@ class OnlineProfileServiceTest
 
     @Test
     @Rollback
-    void should_DeleteAllProfiles_When_ListProvided()
-    {
+    void should_DeleteAllProfiles_When_ListProvided() {
         // Create multiple profiles
         OnlineProfile profile1 = PokerTestData.createOnlineProfile("BulkDelete1");
         OnlineProfile profile2 = PokerTestData.createOnlineProfile("BulkDelete2");

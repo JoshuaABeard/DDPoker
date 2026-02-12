@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -54,10 +54,9 @@ import java.awt.event.*;
 
 /**
  *
- * @author  Doug Donohoe
+ * @author Doug Donohoe
  */
-public class Bet extends ChainPhase implements PlayerActionListener, CancelablePhase
-{
+public class Bet extends ChainPhase implements PlayerActionListener, CancelablePhase {
     static Logger logger = LogManager.getLogger(Bet.class);
 
     private PokerPlayer player_;
@@ -71,8 +70,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
      * Override to skip nextPhase() (called explicitly)
      */
     @Override
-    public void start()
-    {
+    public void start() {
         process();
     }
 
@@ -80,8 +78,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
      * logic and stuff
      */
     @Override
-    public void process()
-    {
+    public void process() {
         // get player, table and current hand
         game_ = (PokerGame) context_.getGame();
         table_ = game_.getCurrentTable();
@@ -89,18 +86,18 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
         player_ = hhand_.getCurrentPlayer();
         nRound_ = hhand_.getRound();
 
-        //logger.debug("BET started for " + player_.getName() + " round: " + hhand_.getRoundName(hhand_.getRound()));
+        // logger.debug("BET started for " + player_.getName() + " round: " +
+        // hhand_.getRoundName(hhand_.getRound()));
 
-        // check for old phase.  Before we implemented online time outs,
+        // check for old phase. Before we implemented online time outs,
         // the setPlayerActionListener() would throw an exception if we
         // tried to set a listener with one already existing (which was good
-        // because it meant something not cleaned up properly).  However,
+        // because it meant something not cleaned up properly). However,
         // if a player's hand is auto-folded online due to a timeout, then
         // this Bet might not be cleaned up (if cancel request is lost),
         // so we'll do that here.
 
-        if (((PokerContext) context_).getCurrentBetPhase() != null)
-        {
+        if (((PokerContext) context_).getCurrentBetPhase() != null) {
             ((PokerContext) context_).getCurrentBetPhase().finish();
         }
 
@@ -110,73 +107,56 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
         game_.setPlayerActionListener(this);
 
         // debugging
-        if (TESTING(PokerConstants.TESTING_PAUSE_AI) || TESTING(PokerConstants.TESTING_FAST_SAVE))
-        {
+        if (TESTING(PokerConstants.TESTING_PAUSE_AI) || TESTING(PokerConstants.TESTING_FAST_SAVE)) {
             setupDebugger(this);
         }
 
         // TESTING - used to save at first betting round, for testing AI so
-        // the hand is saved before any AI decisions take place.  Also
+        // the hand is saved before any AI decisions take place. Also
         // allows saving via 'S' key at any time without having to go
         // into save menu
-        if (TESTING(PokerConstants.TESTING_FAST_SAVE))
-        {
-            if (hhand_.getRound() == HoldemHand.ROUND_PRE_FLOP)
-            {
-                if (!((PokerContext)context_).isFastSaveTest())
-                {
+        if (TESTING(PokerConstants.TESTING_FAST_SAVE)) {
+            if (hhand_.getRound() == HoldemHand.ROUND_PRE_FLOP) {
+                if (!((PokerContext) context_).isFastSaveTest()) {
                     fastSave();
-                    ((PokerContext)context_).setFastSaveTest(true);
+                    ((PokerContext) context_).setFastSaveTest(true);
                 }
             }
         }
 
         // human controlled player
-        if (player_.isHumanControlled())
-        {
+        if (player_.isHumanControlled()) {
             // perform advance action only for actual human
-            if (player_.isHuman())
-            {
+            if (player_.isHuman()) {
                 HandAction action = AdvanceAction.getAdvanceAction();
-                if (action != null)
-                {
-                    //logger.debug("Advance action: " + action);
+                if (action != null) {
+                    // logger.debug("Advance action: " + action);
                     handleAction(action);
                     return;
-                }
-                else
-                {
+                } else {
                     AdvanceAction.humanActing(true);
                 }
 
                 // if fold key hit, fold now
-                if (PokerUtils.isFoldKey())
-                {
+                if (PokerUtils.isFoldKey()) {
                     playerActionPerformed(PokerGame.ACTION_FOLD, 0);
                     return;
                 }
             }
 
             // online games - play sound if option is on
-            if (game_.isOnlineGame() && PokerUtils.isOptionOn(PokerConstants.OPTION_ONLINE_AUDIO))
-            {
+            if (game_.isOnlineGame() && PokerUtils.isOptionOn(PokerConstants.OPTION_ONLINE_AUDIO)) {
                 AudioConfig.playFX("onlineact");
             }
 
             // online games - move window to front if option is on
-            if (Utils.ISWINDOWS && game_.isOnlineGame() && PokerUtils.isOptionOn(PokerConstants.OPTION_ONLINE_FRONT))
-            {
+            if (Utils.ISWINDOWS && game_.isOnlineGame() && PokerUtils.isOptionOn(PokerConstants.OPTION_ONLINE_FRONT)) {
                 BaseFrame frame = context_.getFrame();
-                if (!frame.isFullScreen())
-                {
-                    if (frame.isMinimized())
-                    {
-                        if (frame.isMaximized())
-                        {
+                if (!frame.isFullScreen()) {
+                    if (frame.isMinimized()) {
+                        if (frame.isMaximized()) {
                             frame.setMaximized();
-                        }
-                        else
-                        {
+                        } else {
                             frame.setNormal();
                         }
                     }
@@ -190,72 +170,56 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
             int nToCall = hhand_.getCall(player_);
             int nBet = hhand_.getBet();
 
-            if (nToCall == 0)
-            {
-                if (nBet == 0)
-                {
+            if (nToCall == 0) {
+                if (nBet == 0) {
                     game_.setInputMode(PokerTableInput.MODE_CHECK_BET, hhand_, player_);
-                }
-                else
-                {
+                } else {
                     game_.setInputMode(PokerTableInput.MODE_CHECK_RAISE, hhand_, player_);
                 }
-            }
-            else
-            {
+            } else {
                 game_.setInputMode(PokerTableInput.MODE_CALL_RAISE, hhand_, player_);
             }
         }
         // Computer controlled player at active table
-        else
-        {
+        else {
             // no button actions
             game_.setInputMode(PokerTableInput.MODE_QUITSAVE);
 
             // if the fold key was pressed, zip along
-            if (PokerUtils.isFoldKey() && !table_.isZipMode())
-            {
+            if (PokerUtils.isFoldKey() && !table_.isZipMode()) {
                 boolean bZip = PokerUtils.isOptionOn(PokerConstants.OPTION_ZIP_MODE);
-                if (bZip && !TESTING(PokerConstants.TESTING_DOUG_CONTROLS_AI) && !game_.isOnlineGame())
-                {
+                if (bZip && !TESTING(PokerConstants.TESTING_DOUG_CONTROLS_AI) && !game_.isOnlineGame()) {
                     bSetZipModeAtEnd_ = true;
                 }
             }
 
             // do ai
-            if (!TESTING(PokerConstants.TESTING_PAUSE_AI) || table_.isZipMode())
-            {
-                int nWaitTenths = game_.isOnlineGame() ?
-                                  (TESTING(PokerConstants.TESTING_ONLINE_AI_NO_WAIT) ? 0 : TournamentDirector.AI_PAUSE_TENTHS) :
-                                  PokerUtils.getIntOption(PokerConstants.OPTION_DELAY);
+            if (!TESTING(PokerConstants.TESTING_PAUSE_AI) || table_.isZipMode()) {
+                int nWaitTenths = game_.isOnlineGame()
+                        ? (TESTING(PokerConstants.TESTING_ONLINE_AI_NO_WAIT) ? 0 : TournamentDirector.AI_PAUSE_TENTHS)
+                        : PokerUtils.getIntOption(PokerConstants.OPTION_DELAY);
 
                 // encore idea - have ai pause to increase drama after human has bet - to
                 // make it appear like ai is "thinking" ... even if no delay is set
                 // TODO: off for now - need to think more about this, maybe make an option
-                if (false && !table_.isZipMode() && !game_.isOnlineGame() && hhand_.getRound() == HoldemHand.ROUND_RIVER)
-                {
+                if (false && !table_.isZipMode() && !game_.isOnlineGame()
+                        && hhand_.getRound() == HoldemHand.ROUND_RIVER) {
                     PokerPlayer human = game_.getHumanPlayer();
                     int action = hhand_.getLastActionThisRound(human);
-                    if (action == HandAction.ACTION_BET ||
-                        action == HandAction.ACTION_RAISE)
-                    {
+                    if (action == HandAction.ACTION_BET || action == HandAction.ACTION_RAISE) {
                         // if human bet or raised, have ai wait 2 to 5 seconds
                         int nNewWait = DiceRoller.rollDieInt(30) + 20;
-                        if (nNewWait > nWaitTenths)
-                        {
+                        if (nNewWait > nWaitTenths) {
                             nWaitTenths = nNewWait;
                         }
                     }
                 }
 
                 // run ai
-                if (nWaitTenths > 0 && !table_.isZipMode())
-                {
+                if (nWaitTenths > 0 && !table_.isZipMode()) {
                     Thread t = new Thread(new AIWait(nWaitTenths), "AIWait");
                     t.start();
-                }
-                else
-                {
+                } else {
                     doAI();
                 }
             }
@@ -263,96 +227,83 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
     }
 
     /**
-     * New thread to wait for other tables to finish
-     * before calling process. This allows swing loop
-     * to handle redraws
+     * New thread to wait for other tables to finish before calling process. This
+     * allows swing loop to handle redraws
      */
-    private class AIWait implements Runnable
-    {
+    private class AIWait implements Runnable {
         int nWaitTenths;
-        public AIWait(int n)
-        {
+        public AIWait(int n) {
             nWaitTenths = n;
         }
 
-        public void run()
-        {
+        public void run() {
             // wait
             int nSleep = nWaitTenths * 100;
             Utils.sleepMillis(nSleep);
 
             // do processing
-            SwingUtilities.invokeLater(
-                new Runnable() {
-                    public void run() {
-                            doAI();
-                    }
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    doAI();
                 }
-            );
+            });
         }
     }
 
     /**
      * ai
      */
-    public void doAI()
-    {
+    public void doAI() {
         // if no AI, just fold (online, auto pilot case)
-        if (TESTING(PokerConstants.TESTING_AUTOPILOT) && player_.getPokerAI() == null)
-        {
+        if (TESTING(PokerConstants.TESTING_AUTOPILOT) && player_.getPokerAI() == null) {
             handleAction(fold());
         }
         // otherwise do player action
-        else
-        {
+        else {
             handleAction(player_.getAction(false));
         }
     }
-    
+
     /**
      * a button was pressed
      */
-    public void playerActionPerformed(int nAction, int nAmount)
-    {
+    public void playerActionPerformed(int nAction, int nAmount) {
         HandAction action = null;
-        
-        switch (nAction)
-        {
-            case PokerGame.ACTION_FOLD:
+
+        switch (nAction) {
+            case PokerGame.ACTION_FOLD :
                 action = fold();
                 break;
-            case PokerGame.ACTION_BET:
-            case PokerGame.ACTION_RAISE:
+            case PokerGame.ACTION_BET :
+            case PokerGame.ACTION_RAISE :
                 action = betRaise(nAmount);
                 break;
-            case PokerGame.ACTION_CHECK:
-            case PokerGame.ACTION_CALL:
+            case PokerGame.ACTION_CHECK :
+            case PokerGame.ACTION_CALL :
                 action = checkCall();
                 break;
-            case PokerGame.ACTION_ALL_IN:
+            case PokerGame.ACTION_ALL_IN :
                 action = allin();
                 break;
-            default:
+            default :
                 throw new ApplicationError(ErrorCodes.ERROR_CODE_ERROR, "Shouldn't be here", null);
         }
-        
-        if (action == null) return;
-        
+
+        if (action == null)
+            return;
+
         handleAction(action);
     }
 
     /**
      * Handle an action by player (AI and human)
      */
-    private void handleAction(HandAction action)
-    {
+    private void handleAction(HandAction action) {
         // check fold
         int nAction = action.getAction();
-        if (!table_.isZipMode())
-        {
-            switch (nAction)
-            {
-                case HandAction.ACTION_FOLD:
+        if (!table_.isZipMode()) {
+            switch (nAction) {
+                case HandAction.ACTION_FOLD :
                     foldHumanCheck();
                     break;
             }
@@ -365,8 +316,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
         // update dash item to show we folded, need to do
         // after td call since that actually marks player
         // folded
-        if (nAction == HandAction.ACTION_FOLD && player_.isHuman())
-        {
+        if (nAction == HandAction.ACTION_FOLD && player_.isHuman()) {
             MyHand.cardsChanged(table_);
         }
         nextPhase();
@@ -376,8 +326,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
      * Cleanup then go to next phase
      */
     @Override
-    public void nextPhase()
-    {
+    public void nextPhase() {
         finish();
         super.nextPhase();
     }
@@ -386,8 +335,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
      * finish
      */
     @Override
-    public void finish()
-    {
+    public void finish() {
         // cleanup
         ((PokerContext) context_).setCurrentBetPhase(null);
 
@@ -398,18 +346,17 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
         game_.setInputMode(PokerTableInput.MODE_QUITSAVE);
 
         // zip mode
-        if (bSetZipModeAtEnd_ || hhand_.getNumWithCards() == 1) table_.setZipMode(true);
+        if (bSetZipModeAtEnd_ || hhand_.getNumWithCards() == 1)
+            table_.setZipMode(true);
 
         // cleanup listeners
         game_.setPlayerActionListener(null);
-        if (TESTING(PokerConstants.TESTING_PAUSE_AI) || TESTING(PokerConstants.TESTING_FAST_SAVE))
-        {
+        if (TESTING(PokerConstants.TESTING_PAUSE_AI) || TESTING(PokerConstants.TESTING_FAST_SAVE)) {
             setupDebugger(null);
         }
 
         // notify AdvanceAction we are done with betting
-        if (player_.isHuman())
-        {
+        if (player_.isHuman()) {
             AdvanceAction.humanActing(false);
         }
     }
@@ -417,17 +364,14 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
     /**
      * forced cancel
      */
-    public void cancelPhase()
-    {
+    public void cancelPhase() {
         finish();
     }
-
 
     /**
      * fold (human)
      */
-    private HandAction fold()
-    {
+    private HandAction fold() {
         // fold and move on
         return new HandAction(player_, nRound_, HandAction.ACTION_FOLD, "foldbtn");
     }
@@ -435,11 +379,9 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
     /**
      * do zip processing when human folds
      */
-    private void foldHumanCheck()
-    {
+    private void foldHumanCheck() {
         boolean bZip = PokerUtils.isOptionOn(PokerConstants.OPTION_ZIP_MODE);
-        if (player_.isHuman() && bZip && !TESTING(PokerConstants.TESTING_DOUG_CONTROLS_AI) && !game_.isOnlineGame())
-        {
+        if (player_.isHuman() && bZip && !TESTING(PokerConstants.TESTING_DOUG_CONTROLS_AI) && !game_.isOnlineGame()) {
             bSetZipModeAtEnd_ = true;
         }
     }
@@ -447,8 +389,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
     /**
      * All in
      */
-    private HandAction allin()
-    {
+    private HandAction allin() {
         // allin with max - reduced to correct value in raise()
         return new HandAction(player_, nRound_, HandAction.ACTION_RAISE, Integer.MAX_VALUE, "allinbtn");
     }
@@ -456,38 +397,27 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
     /**
      * bet raise
      */
-    private HandAction betRaise(int nAmount)
-    {
+    private HandAction betRaise(int nAmount) {
         // bet/raise by appropriate amount (in case user typed in value not
         // a multiple of min chip)
         int nNewAmount = PokerUtils.roundAmountMinChip(table_, nAmount);
-        if (nNewAmount != nAmount)
-        {
-            String sMsg = PropertyConfig.getMessage("msg.betodd", table_.getMinChip(),
-                                                    nAmount, nNewAmount);
-            if (EngineUtils.displayConfirmationDialog(context_, sMsg, "msg.windowtitle.betodd", "betodd", "betodd"))
-            {
+        if (nNewAmount != nAmount) {
+            String sMsg = PropertyConfig.getMessage("msg.betodd", table_.getMinChip(), nAmount, nNewAmount);
+            if (EngineUtils.displayConfirmationDialog(context_, sMsg, "msg.windowtitle.betodd", "betodd", "betodd")) {
                 nAmount = nNewAmount;
-            }
-            else
-            {
-                 SwingUtilities.invokeLater(
-                            new Runnable() {
-                                public void run() {
-                                    game_.setInputMode(PokerTableInput.MODE_RECHECK, hhand_, player_);
-                                }
-                            }
-                            );
+            } else {
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        game_.setInputMode(PokerTableInput.MODE_RECHECK, hhand_, player_);
+                    }
+                });
                 return null;
             }
         }
-        
-        if (game_.getInputMode() == PokerTableInput.MODE_CHECK_BET)
-        {
+
+        if (game_.getInputMode() == PokerTableInput.MODE_CHECK_BET) {
             return new HandAction(player_, nRound_, HandAction.ACTION_BET, nAmount, "betbtn");
-        }
-        else
-        {
+        } else {
             return new HandAction(player_, nRound_, HandAction.ACTION_RAISE, nAmount, "raisebtn");
         }
     }
@@ -495,20 +425,15 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
     /**
      * check/call
      */
-    private HandAction checkCall()
-    {
+    private HandAction checkCall() {
         // check or call
-        if ((game_.getInputMode() == PokerTableInput.MODE_CHECK_BET ||
-                game_.getInputMode() == PokerTableInput.MODE_CHECK_RAISE))
-        {
+        if ((game_.getInputMode() == PokerTableInput.MODE_CHECK_BET
+                || game_.getInputMode() == PokerTableInput.MODE_CHECK_RAISE)) {
             return new HandAction(player_, nRound_, HandAction.ACTION_CHECK, "checkbtn");
-        }
-        else
-        {
+        } else {
             return new HandAction(player_, nRound_, HandAction.ACTION_CALL, "callbtn");
         }
     }
-
 
     /////
     ///// Debugging
@@ -519,10 +444,8 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
     /**
      * setup debugger
      */
-    private static void setupDebugger(Bet bet)
-    {
-        if (betDebugger == null)
-        {
+    private static void setupDebugger(Bet bet) {
+        if (betDebugger == null) {
             betDebugger = new BetDebug();
         }
 
@@ -532,19 +455,16 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
     /**
      * class to respond to AWT events during debugging
      */
-    private static class BetDebug implements AWTEventListener
-    {
+    private static class BetDebug implements AWTEventListener {
         Bet bet;
 
-        public void setBet(Bet bet)
-        {
+        public void setBet(Bet bet) {
             this.bet = bet;
 
             // remove in either case, just to be safe (in case called twice in a row)
             Toolkit.getDefaultToolkit().removeAWTEventListener(this);
 
-            if (bet != null)
-            {
+            if (bet != null) {
                 Toolkit.getDefaultToolkit().addAWTEventListener(this, AWTEvent.KEY_EVENT_MASK);
             }
         }
@@ -552,28 +472,28 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
         /**
          * TESTING(PokerInit.TESTING_PAUSE_AI)
          */
-        public void eventDispatched(AWTEvent event)
-        {
-            if (bet == null) return;
+        public void eventDispatched(AWTEvent event) {
+            if (bet == null)
+                return;
 
-            if (event instanceof KeyEvent)
-            {
+            if (event instanceof KeyEvent) {
                 KeyEvent k = (KeyEvent) event;
 
-                 // if not pressed or source is a text component, ignore (unless
+                // if not pressed or source is a text component, ignore (unless
                 // the text source is the amount spinner)
-                if (k.getID() != KeyEvent.KEY_PRESSED ||
-                    (k.getSource() instanceof javax.swing.text.JTextComponent &&
-                     !(k.getSource() instanceof DDNumberSpinner.SpinText)) ||
-                     k.getSource() instanceof javax.swing.JTabbedPane) return;
+                if (k.getID() != KeyEvent.KEY_PRESSED
+                        || (k.getSource() instanceof javax.swing.text.JTextComponent
+                                && !(k.getSource() instanceof DDNumberSpinner.SpinText))
+                        || k.getSource() instanceof javax.swing.JTabbedPane)
+                    return;
 
-                switch (k.getKeyCode())
-                {
-                    case KeyEvent.VK_N:
-                        if (TESTING(PokerConstants.TESTING_PAUSE_AI)) bet.doAI();
+                switch (k.getKeyCode()) {
+                    case KeyEvent.VK_N :
+                        if (TESTING(PokerConstants.TESTING_PAUSE_AI))
+                            bet.doAI();
                         break;
 
-                    case KeyEvent.VK_S: // TESTING_FAST_SAVE use
+                    case KeyEvent.VK_S : // TESTING_FAST_SAVE use
                         bet.fastSave();
                         break;
                 }
@@ -584,15 +504,11 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
     /**
      * debug autosave
      */
-    private void fastSave()
-    {
-        if (game_.canSave())
-        {
+    private void fastSave() {
+        if (game_.canSave()) {
             logger.debug("FAST SAVE");
             game_.saveWriteGame();
-        }
-        else
-        {
+        } else {
             logger.debug("SKIPPING FAST SAVE - not yet saved manually");
         }
     }

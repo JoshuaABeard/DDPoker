@@ -42,41 +42,34 @@ import org.apache.wicket.util.convert.IConverter;
 
 import java.util.Date;
 
-public class DateLabel extends Label implements IGenericComponent<Date, DateLabel>
-{
+public class DateLabel extends Label implements IGenericComponent<Date, DateLabel> {
     private static final long serialVersionUID = 1L;
 
     private final ParamDateConverter converter;
 
-    public static DateLabel forDatePattern(String id, IModel<Date> model, String datePattern)
-    {
+    public static DateLabel forDatePattern(String id, IModel<Date> model, String datePattern) {
         return new DateLabel(id, model, new ParamDateConverter(datePattern));
     }
 
-    public static DateLabel forDatePattern(String id, String datePattern)
-    {
+    public static DateLabel forDatePattern(String id, String datePattern) {
         return forDatePattern(id, null, datePattern);
     }
 
-    private DateLabel(String id, IModel<Date> model, ParamDateConverter converter)
-    {
+    private DateLabel(String id, IModel<Date> model, ParamDateConverter converter) {
         super(id, model);
         this.converter = converter;
     }
 
     @Override
-    protected IConverter<?> createConverter(Class<?> type)
-    {
-        if (Date.class.isAssignableFrom(type))
-        {
+    protected IConverter<?> createConverter(Class<?> type) {
+        if (Date.class.isAssignableFrom(type)) {
             return converter;
         }
         return null;
     }
 
     @Override
-    public void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag)
-    {
+    public void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
         String s = getDefaultModelObjectAsString();
         replaceComponentTagBody(markupStream, openTag, s);
     }

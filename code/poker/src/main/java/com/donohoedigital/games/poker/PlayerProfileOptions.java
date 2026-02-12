@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -58,14 +58,13 @@ import java.text.*;
 
 /**
  *
- * @author  Doug Donohoe
+ * @author Doug Donohoe
  */
-public class PlayerProfileOptions extends BasePhase implements ChangeListener
-{
+public class PlayerProfileOptions extends BasePhase implements ChangeListener {
     static Logger logger = LogManager.getLogger(PlayerProfileOptions.class);
-    
+
     public static final String PROFILE_NAME = "player";
-    
+
     private DDHtmlArea text_;
     private MenuBackground menu_;
     private DDLabelBorder statsBorder_;
@@ -79,27 +78,26 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener
     private GlassButton dall_;
 
     @Override
-    public void init(GameEngine engine, GameContext context, GamePhase gamephase)
-    {
+    public void init(GameEngine engine, GameContext context, GamePhase gamephase) {
         super.init(engine, context, gamephase);
-        
+
         // name of style used for all widgets in data area
         String STYLE = gamephase_.getString("style", "default");
-        
+
         // Create base panel which holds everything
         menu_ = new MenuBackground(gamephase);
         DDPanel menubox = menu_.getMenuBox();
-        
+
         // put buttons in the menubox_
         ButtonBox buttonbox = new ButtonBox(context_, gamephase_, this, "empty", false, false);
         menubox.add(buttonbox, BorderLayout.SOUTH);
-        
+
         // holds data we are gathering
         DDPanel data = new DDPanel("newtournament");
         BorderLayout layout = (BorderLayout) data.getLayout();
         layout.setVgap(10);
         layout.setHgap(10);
-        data.setBorder(BorderFactory.createEmptyBorder(2,10,5,10));
+        data.setBorder(BorderFactory.createEmptyBorder(2, 10, 5, 10));
         menubox.add(data, BorderLayout.CENTER);
 
         // player list & stats
@@ -108,19 +106,20 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener
         layout.setVgap(10);
         layout.setHgap(10);
         data.add(top, BorderLayout.NORTH);
-        
+
         // get current profile list and sort it
         List<BaseProfile> profiles = PlayerProfile.getProfileList();
         Collections.sort(profiles);
-        
+
         // player list
         DDLabelBorder pborder = new DDLabelBorder("players", STYLE);
         pborder.setPreferredSize(new Dimension(200, 400));
         top.add(pborder, BorderLayout.WEST);
-        profileList_ = new PlayerProfileList(engine_, context, profiles, STYLE, PROFILE_NAME, "newtournament", "pokericon16png", false);
+        profileList_ = new PlayerProfileList(engine_, context, profiles, STYLE, PROFILE_NAME, "newtournament",
+                "pokericon16png", false);
         profileList_.addChangeListener(this);
         pborder.add(profileList_, BorderLayout.CENTER);
-        
+
         // help text
         text_ = new DDHtmlArea(GuiManager.DEFAULT, STYLE);
         text_.setDisplayOnly(true);
@@ -138,7 +137,7 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener
         statuspanel.add(statusBorder_, BorderLayout.NORTH);
 
         statusLabel_ = new DDLabel("onlinestatus", "PokerStandardSmall");
-        statusLabel_.setBorder(BorderFactory.createEmptyBorder(2,3,2,6));
+        statusLabel_.setBorder(BorderFactory.createEmptyBorder(2, 3, 2, 6));
         statusBorder_.add(statusLabel_, BorderLayout.WEST);
 
         // stats
@@ -147,20 +146,19 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener
         layout.setVgap(10);
         statsBorder_.setPreferredSize(new Dimension(500, 370));
         statuspanel.add(statsBorder_, BorderLayout.CENTER);
-        
+
         statsBase_ = new DDPanel();
         statsBase_.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 10, VerticalFlowLayout.LEFT));
-        statsBase_.setBorder(BorderFactory.createEmptyBorder(2,3,2,6));
+        statsBase_.setBorder(BorderFactory.createEmptyBorder(2, 3, 2, 6));
 
-        scroll_ = new DDScrollPane(GuiUtils.NORTH(statsBase_), STYLE, null,
-                                   JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                                   JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scroll_ = new DDScrollPane(GuiUtils.NORTH(statsBase_), STYLE, null, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scroll_.setPreferredSize(new Dimension(500, 300));
         scroll_.setOpaque(false);
         scroll_.getVerticalScrollBar().setUnitIncrement(60);
         scroll_.getVerticalScrollBar().setBlockIncrement(180);
         statsBorder_.add(scroll_, BorderLayout.NORTH);
-        
+
         DDPanel bottom = new DDPanel();
         bottom.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
         layout = (BorderLayout) bottom.getLayout();
@@ -168,44 +166,37 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener
         statsBorder_.add(bottom, BorderLayout.CENTER);
         dall_ = new DeleteAllButton();
         bottom.add(GuiUtils.EAST(GuiUtils.CENTER(dall_)), BorderLayout.NORTH);
-        
+
         total_ = new DDLabel(GuiManager.DEFAULT, "ProfileDetails");
         total_.setText("");
         bottom.add(total_, BorderLayout.CENTER);
-        
+
         // select 1st row
         profileList_.selectInit();
     }
-    
+
     /**
      * Create list editor for non-ui use (like from PokerStartMenu)
      */
-    public static ProfileList getPlayerProfileList(GameEngine engine, GameContext context)
-    {
+    public static ProfileList getPlayerProfileList(GameEngine engine, GameContext context) {
         return new PlayerProfileList(engine, context, PROFILE_NAME);
     }
-    
+
     /**
      * Our list editor
      */
-    private static class PlayerProfileList extends ProfileList
-    {
-        private PlayerProfileList(GameEngine engine, GameContext context, String sMsgName)
-        {
+    private static class PlayerProfileList extends ProfileList {
+        private PlayerProfileList(GameEngine engine, GameContext context, String sMsgName) {
             super(engine, context, sMsgName);
         }
-        
-        private PlayerProfileList(GameEngine engine, GameContext context, List<BaseProfile> profiles,
-                                  String sStyle,
-                                  String sMsgName,
-                                  String sPanelName,
-                                  String sIconName,
-                                  boolean bUseCopyButton)
-        {
+
+        private PlayerProfileList(GameEngine engine, GameContext context, List<BaseProfile> profiles, String sStyle,
+                String sMsgName, String sPanelName, String sIconName, boolean bUseCopyButton) {
             super(engine, context, profiles, sStyle, sMsgName, sPanelName, sIconName, bUseCopyButton);
         }
-        
-        /** Create empty profile
+
+        /**
+         * Create empty profile
          *
          */
         @Override
@@ -214,8 +205,9 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener
             profile.initCheck();
             return profile;
         }
-        
-        /** Return copy of given profile
+
+        /**
+         * Return copy of given profile
          *
          */
         @Override
@@ -224,122 +216,109 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener
             String sName = (bForEdit) ? pp.getName() : PropertyConfig.getMessage("msg.copy", pp.getName());
             return new PlayerProfile(pp, sName);
         }
-        
+
         /**
          * store default profile
          */
         @SuppressWarnings({"AssignmentToStaticFieldFromInstanceMethod"})
         @Override
-        public void rememberProfile(BaseProfile profile)
-        {
+        public void rememberProfile(BaseProfile profile) {
             super.rememberProfile(profile);
             default_ = (PlayerProfile) profile;
             PokerDatabase.init(default_);
         }
 
         @Override
-        protected boolean deleteProfile(BaseProfile profile)
-        {
+        protected boolean deleteProfile(BaseProfile profile) {
             // If online profile, then delete on the server.
             PlayerProfile playerProfile = (PlayerProfile) profile;
-            
+
             // Delete on the client.
             PokerDatabase.delete(default_);
 
             File advisorFile = PlayerType.getAdvisorFile(playerProfile);
 
-            if (advisorFile.exists())
-            {
+            if (advisorFile.exists()) {
                 advisorFile.delete();
             }
 
             return true;
         }
     }
-    
+
     /**
      * Cache default profile
      */
     private static PlayerProfile default_ = null;
-    
+
     /**
      * Return stored profile based on preference maintained by PlayerProfileList
      */
-    public static PlayerProfile getDefaultProfile()
-    {
-        if (default_ == null)
-        {
+    public static PlayerProfile getDefaultProfile() {
+        if (default_ == null) {
             String sName = ProfileList.getStoredProfile(PROFILE_NAME);
             String sCmdlineOverride = PokerMain.getPokerMain().getProfileOverride();
 
             // if we have a profile, look it up
-            if (sName != null)
-            {
+            if (sName != null) {
                 File file = PlayerProfile.getProfileFile(sName);
-                if (file.exists()) 
-                {    
-                    default_ = new PlayerProfile(file,  true);
-                }
-                else // file doesn't exist, so forget it
+                if (file.exists()) {
+                    default_ = new PlayerProfile(file, true);
+                } else // file doesn't exist, so forget it
                 {
                     ProfileList.setStoredProfile(null, PROFILE_NAME);
                 }
             }
-            
+
             // still null (nothing in prefs), see if any files exist
             // and choose most recent modification and remember it
-            if (default_ == null || sCmdlineOverride != null)
-            {
+            if (default_ == null || sCmdlineOverride != null) {
                 List<BaseProfile> list = PlayerProfile.getProfileList();
                 PlayerProfile p = null;
                 PlayerProfile choose = null;
                 long lastmod = 0;
-                for (int i = 0; list != null && i < list.size(); i++)
-                {
+                for (int i = 0; list != null && i < list.size(); i++) {
                     p = (PlayerProfile) list.get(i);
 
-                    if (sCmdlineOverride != null && p.getName().equalsIgnoreCase(sCmdlineOverride))
-                    {
-                        logger.debug("Using profile "+sCmdlineOverride+" instead of default "+(
-                                     default_ == null ? "[null]" : default_.getName()));
+                    if (sCmdlineOverride != null && p.getName().equalsIgnoreCase(sCmdlineOverride)) {
+                        logger.debug("Using profile " + sCmdlineOverride + " instead of default "
+                                + (default_ == null ? "[null]" : default_.getName()));
                         choose = p;
                         break;
                     }
 
-                    if (p.getLastModified() > lastmod)
-                    {
+                    if (p.getLastModified() > lastmod) {
                         choose = p;
                         lastmod = choose.getLastModified();
                     }
                 }
-                
+
                 // if found one, remember it
-                if (choose != null)
-                {                    
-                    if (sCmdlineOverride == null) ProfileList.setStoredProfile(choose, PROFILE_NAME);
+                if (choose != null) {
+                    if (sCmdlineOverride == null)
+                        ProfileList.setStoredProfile(choose, PROFILE_NAME);
                     default_ = choose;
                 }
             }
-            
+
             PokerDatabase.init(default_);
         }
 
         return default_;
     }
-    
+
     /**
      * Start of phase
      */
     @Override
-    public void start()
-    {
+    public void start() {
         // set help text
         context_.getWindow().setHelpTextWidget(text_);
         context_.getWindow().showHelp(menu_.getMenuBox()); // init help
 
         // place the whole thing in the Engine's base panel
         context_.setMainUIComponent(this, menu_, false, profileList_);
-        
+
         // check button states and focus
         checkButtons();
     }
@@ -348,33 +327,29 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener
      * Returns true
      */
     @Override
-    public boolean processButton(GameButton button)
-    {
+    public boolean processButton(GameButton button) {
         return true;
     }
-    
+
     /**
      * set buttons enabled/disabled based on selection
      */
-    private void checkButtons()
-    {
+    private void checkButtons() {
         // JDD - with re-organization of player profile
         // stuff, no longer need to enforce that something
-        // is selected when Done button clicked.  The
+        // is selected when Done button clicked. The
         // PokerStartMenu now enforces that a profile exists
-        //boolean bSelected = (selected_ != null);
-        //start_.setEnabled(bSelected);
+        // boolean bSelected = (selected_ != null);
+        // start_.setEnabled(bSelected);
     }
-    
+
     /**
      * profile selected logic
      */
-    public void stateChanged(ChangeEvent e)
-    {
+    public void stateChanged(ChangeEvent e) {
         PlayerProfile pp = (PlayerProfile) profileList_.getSelectedProfile();
-        
-        if (pp != null)
-        {
+
+        if (pp != null) {
             // set current selected profile and update stats label
             selected_ = pp;
             String statusMsg = (pp.isActivated() ? "msg.onlinestatus.enabled" : "msg.onlinestatus.disabled");
@@ -384,9 +359,7 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener
             setStats(selected_);
             statsBorder_.setText(PropertyConfig.getMessage("labelborder.stats.label2", selected_.getName()));
             statsBorder_.repaint();
-        }
-        else
-        {
+        } else {
             selected_ = null;
             statusLabel_.setText(PropertyConfig.getMessage("label.onlinestatus.label"));
             statusBorder_.setText(PropertyConfig.getMessage("labelborder.onlinestatus.label"));
@@ -403,142 +376,114 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener
     /**
      * stats
      */
-    private void setStats(PlayerProfile selected)
-    {
-        //selected.debugPrint();
+    private void setStats(PlayerProfile selected) {
+        // selected.debugPrint();
         statsBase_.removeAll();
-        
+
         int nTotalPrize = 0;
         int nTotalSpent = 0;
-        
-        if (selected != null)
-        {
+
+        if (selected != null) {
             List<TournamentHistory> history = selected.getHistory();
             TournamentHistory hist;
             DDLabel label;
             DDPanel panel;
             DeleteButton button;
-            if (history.isEmpty())
-            {
-                // label                
+            if (history.isEmpty()) {
+                // label
                 label = new DDLabel(GuiManager.DEFAULT, "PlayerDetails");
                 label.setText(PropertyConfig.getMessage("msg.hist.none"));
                 statsBase_.add(label);
                 dall_.setEnabled(false);
-            }
-            else
-            {
+            } else {
                 dall_.setEnabled(true);
-                for (int i = 0; i < history.size(); ++i)
-                {
+                for (int i = 0; i < history.size(); ++i) {
                     hist = history.get(i);
-                    
+
                     // panel
                     panel = new DDPanel();
                     statsBase_.add(panel);
-                    
+
                     // label
                     label = new DDLabel(GuiManager.DEFAULT, "PlayerDetails");
                     label.setVerticalAlignment(SwingConstants.TOP);
                     label.setHorizontalAlignment(SwingConstants.LEFT);
                     label.setText(toHTML(hist));
                     panel.add(label, BorderLayout.WEST);
-                    
+
                     // delete
                     button = new DeleteButton(i);
                     panel.add(GuiUtils.CENTER(button), BorderLayout.EAST);
                     panel.setPreferredWidth(480);
 
-                    if (hist.getPlace() > 0)
-                    {
+                    if (hist.getPlace() > 0) {
                         nTotalPrize += hist.getPrize();
                         nTotalSpent += hist.getTotalSpent();
                     }
                 }
             }
         }
-        
-        total_.setText(PropertyConfig.getMessage("msg.hist.total",
-                                                 nTotalSpent,
-                                                 nTotalPrize,
-                                                 nTotalPrize - nTotalSpent));
-        
+
+        total_.setText(
+                PropertyConfig.getMessage("msg.hist.total", nTotalSpent, nTotalPrize, nTotalPrize - nTotalSpent));
+
         scroll_.revalidate();
     }
 
-    private String toHTML(TournamentHistory hist)
-    {
+    private String toHTML(TournamentHistory hist) {
         GameEngine engine = GameEngine.getGameEngine();
         SimpleDateFormat formatter = PropertyConfig.getDateFormat((engine != null) ? engine.getLocale() : null);
 
-        // NOTE: place is 0 on the cilent until a player finishes.        
+        // NOTE: place is 0 on the cilent until a player finishes.
         int place = hist.getPlace();
-        return PropertyConfig.getMessage(place != 0 ? "msg.hist.info" : "msg.hist.unfinished",
-                                         hist.getTournamentName(),
-                                         PropertyConfig.getPlace(place),
-                                         hist.getNumPlayers(),
-                                         hist.getTotalSpent(),
-                                         hist.getPrize(),
-                                         formatter.format(hist.getEndDate())
-        );
+        return PropertyConfig.getMessage(place != 0 ? "msg.hist.info" : "msg.hist.unfinished", hist.getTournamentName(),
+                PropertyConfig.getPlace(place), hist.getNumPlayers(), hist.getTotalSpent(), hist.getPrize(),
+                formatter.format(hist.getEndDate()));
     }
-    
-    private class DeleteButton extends GlassButton implements ActionListener
-    {
+
+    private class DeleteButton extends GlassButton implements ActionListener {
         int nIndex_;
 
-        private DeleteButton(int n)
-        {
+        private DeleteButton(int n) {
             super("deletestats", "Glass");
             nIndex_ = n;
             addActionListener(this);
         }
-        
-        /** 
+
+        /**
          * Delete button
          */
-        public void actionPerformed(ActionEvent e) 
-        {
-            if (deleteHistory(context_, selected_, nIndex_))
-            {
-                setStats(selected_);
-            }
-        }
-    }
-    
-    private class DeleteAllButton extends GlassButton implements ActionListener
-    {
-        private DeleteAllButton()
-        {
-            super("deleteall", "Glass");
-            addActionListener(this);
-        }
-        
-        /** 
-         * Delete button
-         */
-        public void actionPerformed(ActionEvent e) 
-        {
-            if (deleteAllHistory(context_, selected_))
-            {
+        public void actionPerformed(ActionEvent e) {
+            if (deleteHistory(context_, selected_, nIndex_)) {
                 setStats(selected_);
             }
         }
     }
 
-    public static boolean deleteHistory(GameContext context, PlayerProfile profile, int nIndex)
-    {
+    private class DeleteAllButton extends GlassButton implements ActionListener {
+        private DeleteAllButton() {
+            super("deleteall", "Glass");
+            addActionListener(this);
+        }
+
+        /**
+         * Delete button
+         */
+        public void actionPerformed(ActionEvent e) {
+            if (deleteAllHistory(context_, selected_)) {
+                setStats(selected_);
+            }
+        }
+    }
+
+    public static boolean deleteHistory(GameContext context, PlayerProfile profile, int nIndex) {
         {
             TournamentHistory hist_ = profile.getHistory().get(nIndex);
-            String date = hist_.getPlace() > 0 ?
-                          PropertyConfig.getDateFormat(GameEngine.getGameEngine().getLocale()).format(hist_.getEndDate()) :
-                          PropertyConfig.getMessage("msg.hist.unfinished2");
-            if (EngineUtils.displayConfirmationDialog(context,
-                    PropertyConfig.getMessage("msg.confirm.deletehist",
-                                              Utils.encodeHTML(hist_.getTournamentName()),
-                                              date,
-                                              Utils.encodeHTML(profile.getName()))))
-            {
+            String date = hist_.getPlace() > 0
+                    ? PropertyConfig.getDateFormat(GameEngine.getGameEngine().getLocale()).format(hist_.getEndDate())
+                    : PropertyConfig.getMessage("msg.hist.unfinished2");
+            if (EngineUtils.displayConfirmationDialog(context, PropertyConfig.getMessage("msg.confirm.deletehist",
+                    Utils.encodeHTML(hist_.getTournamentName()), date, Utils.encodeHTML(profile.getName())))) {
                 PokerDatabase.deleteTournament(profile.getHistory().remove(nIndex));
                 return true;
             }
@@ -546,11 +491,9 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener
         }
     }
 
-    public static boolean deleteAllHistory(GameContext context, PlayerProfile profile)
-    {
+    public static boolean deleteAllHistory(GameContext context, PlayerProfile profile) {
         if (EngineUtils.displayConfirmationDialog(context,
-                PropertyConfig.getMessage("msg.confirm.deletehistall", Utils.encodeHTML(profile.getName()))))
-        {
+                PropertyConfig.getMessage("msg.confirm.deletehistall", Utils.encodeHTML(profile.getName())))) {
             PokerDatabase.deleteAllTournaments(profile);
             return true;
         }

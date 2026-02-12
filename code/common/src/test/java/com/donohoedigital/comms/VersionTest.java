@@ -37,8 +37,8 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for Version - Version parsing and comparison.
- * Supports formats like: 3.1.2, 3.1a5, 3.1b10, 3.1.2d, 3.1.2_en, 3.1.2-community
+ * Tests for Version - Version parsing and comparison. Supports formats like:
+ * 3.1.2, 3.1a5, 3.1b10, 3.1.2d, 3.1.2_en, 3.1.2-community
  */
 class VersionTest {
 

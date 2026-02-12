@@ -29,15 +29,13 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for SimpleBias hand strength bias table lookups.
  */
-class SimpleBiasTest
-{
+class SimpleBiasTest {
     // ========================================
     // Pocket Pairs Tests (table index 0)
     // ========================================
 
     @Test
-    void should_ReturnMaxBias_When_PocketAcesAtZeroTable()
-    {
+    void should_ReturnMaxBias_When_PocketAcesAtZeroTable() {
         Card aceSpades = SPADES_A;
         Card aceHearts = HEARTS_A;
 
@@ -47,8 +45,7 @@ class SimpleBiasTest
     }
 
     @Test
-    void should_ReturnLowBias_When_LowPairAtZeroTable()
-    {
+    void should_ReturnLowBias_When_LowPairAtZeroTable() {
         Card twoClubs = CLUBS_2;
         Card twoDiamonds = DIAMONDS_2;
 
@@ -62,8 +59,7 @@ class SimpleBiasTest
     // ========================================
 
     @Test
-    void should_ReturnHigherBias_When_SuitedHighCards()
-    {
+    void should_ReturnHigherBias_When_SuitedHighCards() {
         // Ace-King suited
         Card aceSpades = SPADES_A;
         Card kingSpades = SPADES_K;
@@ -84,8 +80,7 @@ class SimpleBiasTest
     // ========================================
 
     @Test
-    void should_ReturnMaxBias_When_AnyHandAt100PercentTable()
-    {
+    void should_ReturnMaxBias_When_AnyHandAt100PercentTable() {
         // Table index 10 is 100% (plays all hands)
         Card twoClubs = CLUBS_2;
         Card sevenDiamonds = DIAMONDS_7;
@@ -96,8 +91,7 @@ class SimpleBiasTest
     }
 
     @Test
-    void should_ReturnIncreasingBias_When_IncreasingTableIndex()
-    {
+    void should_ReturnIncreasingBias_When_IncreasingTableIndex() {
         Card aceSpades = SPADES_A;
         Card queenSpades = SPADES_Q;
 
@@ -114,8 +108,7 @@ class SimpleBiasTest
     // ========================================
 
     @Test
-    void should_ReturnCorrectBias_When_HandObjectProvided()
-    {
+    void should_ReturnCorrectBias_When_HandObjectProvided() {
         Card kingClubs = CLUBS_K;
         Card kingHearts = HEARTS_K;
         Hand pocket = new Hand(kingClubs, kingHearts);
@@ -127,8 +120,7 @@ class SimpleBiasTest
     }
 
     @Test
-    void should_ReturnSameBias_When_CardOrderReversed()
-    {
+    void should_ReturnSameBias_When_CardOrderReversed() {
         Card jack = SPADES_J;
         Card ten = HEARTS_T;
 
@@ -143,8 +135,7 @@ class SimpleBiasTest
     // ========================================
 
     @Test
-    void should_ReturnCorrectBias_When_CardIndicesProvided()
-    {
+    void should_ReturnCorrectBias_When_CardIndicesProvided() {
         // Ace of spades = 51, King of hearts = 50
         float biasFromIndices = SimpleBias.getBiasValue(4, 51, 50);
 
@@ -160,18 +151,14 @@ class SimpleBiasTest
     // ========================================
 
     @Test
-    void should_ReturnValueBetweenZeroAndOne_When_AnyValidInput()
-    {
+    void should_ReturnValueBetweenZeroAndOne_When_AnyValidInput() {
         Card queen = DIAMONDS_Q;
         Card jack = CLUBS_J;
 
-        for (int tableIndex = 0; tableIndex <= 10; tableIndex++)
-        {
+        for (int tableIndex = 0; tableIndex <= 10; tableIndex++) {
             float bias = SimpleBias.getBiasValue(tableIndex, queen, jack);
 
-            assertThat(bias)
-                .isGreaterThanOrEqualTo(0.0f)
-                .isLessThanOrEqualTo(1.0f);
+            assertThat(bias).isGreaterThanOrEqualTo(0.0f).isLessThanOrEqualTo(1.0f);
         }
     }
 
@@ -180,8 +167,7 @@ class SimpleBiasTest
     // ========================================
 
     @Test
-    void should_ReturnHighBias_When_PremiumPocketPair()
-    {
+    void should_ReturnHighBias_When_PremiumPocketPair() {
         Card queenSpades = SPADES_Q;
         Card queenHearts = HEARTS_Q;
 
@@ -191,8 +177,7 @@ class SimpleBiasTest
     }
 
     @Test
-    void should_ReturnLowerBias_When_LowUnsuitedCards()
-    {
+    void should_ReturnLowerBias_When_LowUnsuitedCards() {
         Card five = CLUBS_5;
         Card three = DIAMONDS_3;
 
@@ -202,14 +187,12 @@ class SimpleBiasTest
     }
 
     @Test
-    void should_HandleAllTableIndices_When_ValidRange()
-    {
+    void should_HandleAllTableIndices_When_ValidRange() {
         Card ace = SPADES_A;
         Card king = SPADES_K;
 
         // All table indices from 0-10 should work
-        for (int i = 0; i <= 10; i++)
-        {
+        for (int i = 0; i <= 10; i++) {
             float bias = SimpleBias.getBiasValue(i, ace, king);
             assertThat(bias).isBetween(0.0f, 1.0f);
         }
@@ -220,20 +203,17 @@ class SimpleBiasTest
     // ========================================
 
     @Test
-    void should_ShowProgressiveIncrease_When_ComparingAllTableLevels()
-    {
+    void should_ShowProgressiveIncrease_When_ComparingAllTableLevels() {
         Card ace = SPADES_A;
         Card queen = SPADES_Q;
 
         float previousBias = -1.0f;
 
         // Bias should generally increase or stay same as table index increases
-        for (int i = 0; i <= 10; i++)
-        {
+        for (int i = 0; i <= 10; i++) {
             float bias = SimpleBias.getBiasValue(i, ace, queen);
 
-            if (previousBias >= 0)
-            {
+            if (previousBias >= 0) {
                 assertThat(bias).isGreaterThanOrEqualTo(previousBias);
             }
 
@@ -242,8 +222,7 @@ class SimpleBiasTest
     }
 
     @Test
-    void should_ReturnHigherBias_When_SuitedConnectors()
-    {
+    void should_ReturnHigherBias_When_SuitedConnectors() {
         // Suited connectors should have higher bias than unsuited
         float suited89 = SimpleBias.getBiasValue(5, SPADES_8, SPADES_9);
         float unsuited89 = SimpleBias.getBiasValue(5, SPADES_8, HEARTS_9);
@@ -252,8 +231,7 @@ class SimpleBiasTest
     }
 
     @Test
-    void should_ReturnLowerBias_When_GapHands()
-    {
+    void should_ReturnLowerBias_When_GapHands() {
         // Gap hands (non-connectors) should have lower bias than connectors
         float connector = SimpleBias.getBiasValue(5, SPADES_9, SPADES_T);
         float oneGap = SimpleBias.getBiasValue(5, SPADES_8, SPADES_T);
@@ -262,8 +240,7 @@ class SimpleBiasTest
     }
 
     @Test
-    void should_ReturnConsistentBias_When_SamePairAcrossTables()
-    {
+    void should_ReturnConsistentBias_When_SamePairAcrossTables() {
         // Pocket jacks should have different bias at different tables
         float tightJacks = SimpleBias.getBiasValue(0, SPADES_J, HEARTS_J);
         float looseJacks = SimpleBias.getBiasValue(10, SPADES_J, HEARTS_J);
@@ -273,35 +250,22 @@ class SimpleBiasTest
     }
 
     @Test
-    void should_TestAllThirteenRanks_When_IteratingPairs()
-    {
+    void should_TestAllThirteenRanks_When_IteratingPairs() {
         // Test that all 13 ranks work correctly at middle table
-        Hand[] pairs = {
-            new Hand(SPADES_A, HEARTS_A),
-            new Hand(SPADES_K, HEARTS_K),
-            new Hand(SPADES_Q, HEARTS_Q),
-            new Hand(SPADES_J, HEARTS_J),
-            new Hand(SPADES_T, HEARTS_T),
-            new Hand(SPADES_9, HEARTS_9),
-            new Hand(SPADES_8, HEARTS_8),
-            new Hand(SPADES_7, HEARTS_7),
-            new Hand(SPADES_6, HEARTS_6),
-            new Hand(SPADES_5, HEARTS_5),
-            new Hand(SPADES_4, HEARTS_4),
-            new Hand(SPADES_3, HEARTS_3),
-            new Hand(SPADES_2, HEARTS_2)
-        };
+        Hand[] pairs = {new Hand(SPADES_A, HEARTS_A), new Hand(SPADES_K, HEARTS_K), new Hand(SPADES_Q, HEARTS_Q),
+                new Hand(SPADES_J, HEARTS_J), new Hand(SPADES_T, HEARTS_T), new Hand(SPADES_9, HEARTS_9),
+                new Hand(SPADES_8, HEARTS_8), new Hand(SPADES_7, HEARTS_7), new Hand(SPADES_6, HEARTS_6),
+                new Hand(SPADES_5, HEARTS_5), new Hand(SPADES_4, HEARTS_4), new Hand(SPADES_3, HEARTS_3),
+                new Hand(SPADES_2, HEARTS_2)};
 
-        for (Hand pair : pairs)
-        {
+        for (Hand pair : pairs) {
             float bias = SimpleBias.getBiasValue(5, pair);
             assertThat(bias).isBetween(0.0f, 1.0f);
         }
     }
 
     @Test
-    void should_DifferentiateBetweenHighAndLowCards_When_SameSuit()
-    {
+    void should_DifferentiateBetweenHighAndLowCards_When_SameSuit() {
         // High suited cards should have higher bias than low suited cards
         float highSuited = SimpleBias.getBiasValue(3, SPADES_A, SPADES_K);
         float lowSuited = SimpleBias.getBiasValue(3, SPADES_3, SPADES_2);
@@ -310,8 +274,7 @@ class SimpleBiasTest
     }
 
     @Test
-    void should_HandleTableBoundaries_When_ComparingExtremes()
-    {
+    void should_HandleTableBoundaries_When_ComparingExtremes() {
         Card ace = SPADES_A;
         Card two = CLUBS_2;
 
@@ -326,8 +289,7 @@ class SimpleBiasTest
     }
 
     @Test
-    void should_ReturnMaxBias_When_PremiumHandsAt100PercentTable()
-    {
+    void should_ReturnMaxBias_When_PremiumHandsAt100PercentTable() {
         // At 100% table, all hands should have bias of 1.0
         assertThat(SimpleBias.getBiasValue(10, SPADES_A, HEARTS_A)).isEqualTo(1.0f);
         assertThat(SimpleBias.getBiasValue(10, SPADES_A, SPADES_K)).isEqualTo(1.0f);

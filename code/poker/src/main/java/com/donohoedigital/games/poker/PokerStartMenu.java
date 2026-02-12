@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -60,9 +60,9 @@ import java.util.prefs.Preferences;
  * @author donohoe
  */
 @SuppressWarnings({"AssignmentToStaticFieldFromInstanceMethod"})
-public class PokerStartMenu extends StartMenu
-{
-    //private static final Logger logger = LogManager.getLogger(PokerStartMenu.class);
+public class PokerStartMenu extends StartMenu {
+    // private static final Logger logger =
+    // LogManager.getLogger(PokerStartMenu.class);
 
     private static boolean messageCheck = true;
     private static boolean firstTimeMusic = true;
@@ -75,20 +75,16 @@ public class PokerStartMenu extends StartMenu
     /**
      * Creates a new instance of PokerStartMenu
      */
-    public PokerStartMenu()
-    {
+    public PokerStartMenu() {
     }
 
     /**
-     * Layout the container - place text where desired and add other
-     * components
+     * Layout the container - place text where desired and add other components
      */
     @Override
-    protected void layoutMenu(DDPanel base, JComponent helptext)
-    {
+    protected void layoutMenu(DDPanel base, JComponent helptext) {
         // if expired or regular menu, let super handle
-        if (bExpired_)
-        {
+        if (bExpired_) {
             super.layoutMenu(base, helptext);
             return;
         }
@@ -126,17 +122,13 @@ public class PokerStartMenu extends StartMenu
         addControlButton(ctrlbuttonbase, "exit");
         addControlButton(ctrlbuttonbase, "calc");
         addControlButton(ctrlbuttonbase, "options");
-        if (!false)
-        {
+        if (!false) {
             addControlButton(ctrlbuttonbase, "register");
-        }
-        else
-        {
+        } else {
             addControlButton(ctrlbuttonbase, "order");
         }
         addControlButton(ctrlbuttonbase, "support");
         addControlButton(ctrlbuttonbase, "help");
-
 
         ////
         //// player profile
@@ -148,10 +140,8 @@ public class PokerStartMenu extends StartMenu
         // base panel setup
         DDPanel playerInfo = new DDPanel(GuiManager.DEFAULT, STYLE);
         playerInfo.setBorderLayoutGap(0, 5);
-        playerInfo.setBorder(BorderFactory.createCompoundBorder(
-                new DDBevelBorder("BrushedMetal", DDBevelBorder.RAISED),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5))
-        );
+        playerInfo.setBorder(BorderFactory.createCompoundBorder(new DDBevelBorder("BrushedMetal", DDBevelBorder.RAISED),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)));
 
         // add to bottom of menu's center panel (mouse over text is in CENTER)
         rightbase.add(playerInfo, BorderLayout.SOUTH);
@@ -164,7 +154,8 @@ public class PokerStartMenu extends StartMenu
         label_.setHorizontalAlignment(SwingConstants.LEFT);
 
         // button
-        EngineButtonListener listener = new EngineButtonListener(context_, this, gamephase_.getButtonNameFromParam("profile"));
+        EngineButtonListener listener = new EngineButtonListener(context_, this,
+                gamephase_.getButtonNameFromParam("profile"));
         DDImageButton button = new DDImageButton(listener.getGameButton().getName());
         button.addActionListener(listener);
         playerInfo.add(GuiUtils.NORTH(button), BorderLayout.WEST);
@@ -173,29 +164,25 @@ public class PokerStartMenu extends StartMenu
         profile_ = PlayerProfileOptions.getDefaultProfile();
     }
 
-    private void addControlButton(JComponent parent, String sName)
-    {
-        EngineButtonListener listener = new EngineButtonListener(context_, this, gamephase_.getButtonNameFromParam(sName));
+    private void addControlButton(JComponent parent, String sName) {
+        EngineButtonListener listener = new EngineButtonListener(context_, this,
+                gamephase_.getButtonNameFromParam(sName));
         DDImageButton practice = new DDImageButton(listener.getGameButton().getName());
         practice.addActionListener(listener);
         parent.add(practice);
     }
 
-    private void addBigButton(JComponent parent, String sName,
-                              int x, int y)
-    {
-        EngineButtonListener listener = new EngineButtonListener(context_, this, gamephase_.getButtonNameFromParam(sName));
+    private void addBigButton(JComponent parent, String sName, int x, int y) {
+        EngineButtonListener listener = new EngineButtonListener(context_, this,
+                gamephase_.getButtonNameFromParam(sName));
         DDImageButton practice = new DDImageButton(listener.getGameButton().getName());
         practice.addActionListener(listener);
-        parent.add(practice, new ExplicitConstraints(practice,
-                                                     MathEF.constant(x), MathEF.constant(y),
-                                                     ComponentEF.preferredWidth(practice),
-                                                     ComponentEF.preferredHeight(practice)));
+        parent.add(practice, new ExplicitConstraints(practice, MathEF.constant(x), MathEF.constant(y),
+                ComponentEF.preferredWidth(practice), ComponentEF.preferredHeight(practice)));
     }
 
     @Override
-    protected javax.swing.border.Border getHelpTextBorder()
-    {
+    protected javax.swing.border.Border getHelpTextBorder() {
         return BorderFactory.createEmptyBorder(0, 10, 5, 10);
     }
 
@@ -203,11 +190,9 @@ public class PokerStartMenu extends StartMenu
      * we override to do nothing
      */
     @Override
-    protected void addButtons(DDPanel parent)
-    {
+    protected void addButtons(DDPanel parent) {
         // if expired or regular menu, let super handle
-        if (bExpired_)
-        {
+        if (bExpired_) {
             super.addButtons(parent);
         }
 
@@ -218,36 +203,31 @@ public class PokerStartMenu extends StartMenu
      * Returns false if profile check hasn't happened
      */
     @Override
-    public boolean processButton(GameButton button)
-    {
+    public boolean processButton(GameButton button) {
         // if we need to do a profile check, skip button presses to
         // avoid processing Enter key press right after startup
-        // and before dialog displayed        
-        if (bProfileCheck_) return false;
+        // and before dialog displayed
+        if (bProfileCheck_)
+            return false;
         return super.processButton(button);
     }
 
     /**
-     * license agreement check
-     * Note: License class removed in Community Edition
+     * license agreement check Note: License class removed in Community Edition
      */
-    private void licenseCheck()
-    {
+    private void licenseCheck() {
         // License agreement auto-accepted for Community Edition
         String key = "agreed";
         Preferences prefs = Prefs.getUserPrefs("license");
-        if (!prefs.getBoolean(key, false))
-        {
+        if (!prefs.getBoolean(key, false)) {
             prefs.putBoolean(key, true);
         }
     }
 
-
     /**
      * server config check - show dialog if server not configured
      */
-    private void serverConfigCheck()
-    {
+    private void serverConfigCheck() {
         // Only check once per session
         // Server config check removed - not needed for modern deployment
         serverConfigCheck = false;
@@ -256,27 +236,21 @@ public class PokerStartMenu extends StartMenu
     /**
      * profile check
      */
-    private void profileCheck()
-    {
+    private void profileCheck() {
         // Get default profile (may be null for first-time users)
         profile_ = PlayerProfileOptions.getDefaultProfile();
 
         // First-time user - show wizard or fallback to old flow
-        if (profile_ == null)
-        {
+        if (profile_ == null) {
             ProfileList list = PlayerProfileOptions.getPlayerProfileList(engine_, context_);
 
-            if (shouldShowFirstTimeWizard())
-            {
+            if (shouldShowFirstTimeWizard()) {
                 // Launch first-time user experience wizard
                 launchFirstTimeWizard(list);
-            }
-            else
-            {
+            } else {
                 // Fallback to old flow if wizard disabled/completed
                 profile_ = (PlayerProfile) list.newProfile("startmenu");
-                if (profile_ != null)
-                {
+                if (profile_ != null) {
                     list.rememberProfile(profile_);
                 }
             }
@@ -286,8 +260,7 @@ public class PokerStartMenu extends StartMenu
         bProfileCheck_ = false;
 
         // play background music
-        if (profile_ != null && isStartMenu())
-        {
+        if (profile_ != null && isStartMenu()) {
             EngineUtils.startBackgroundMusic(gamephase_, firstTimeMusic);
             firstTimeMusic = false;
         }
@@ -296,8 +269,8 @@ public class PokerStartMenu extends StartMenu
         boolean enabled = PokerUtils.isOptionOn(EngineConstants.OPTION_ONLINE_ENABLED);
 
         // Preform message check the first time the start menu is displayed.
-        if (enabled && messageCheck && profile_ != null && PokerUtils.isOptionOn(PokerConstants.OPTION_AUTO_CHECK_UPDATE))
-        {
+        if (enabled && messageCheck && profile_ != null
+                && PokerUtils.isOptionOn(PokerConstants.OPTION_AUTO_CHECK_UPDATE)) {
             String LASTMSG_KEY = "lastmsg";
 
             // get last msg key and check for update
@@ -306,8 +279,7 @@ public class PokerStartMenu extends StartMenu
 
             EngineMessage msg = DDMessageCheck.checkUpdate(context_, last, profile_.getName());
 
-            if (msg != null && msg.getString(EngineMessage.PARAM_DDMSG) != null)
-            {
+            if (msg != null && msg.getString(EngineMessage.PARAM_DDMSG) != null) {
                 prefs.putLong(LASTMSG_KEY, msg.getLong(EngineMessage.PARAM_DDMSG_ID));
                 String userMessage = msg.getString(EngineMessage.PARAM_DDMSG);
                 PokerUtils.displayInformationDialog(context_, userMessage, "msg.windowtitle.ddmsgMessage", null);
@@ -320,8 +292,7 @@ public class PokerStartMenu extends StartMenu
     /**
      * Check if first-time wizard should be shown
      */
-    private boolean shouldShowFirstTimeWizard()
-    {
+    private boolean shouldShowFirstTimeWizard() {
         // Check if wizard has been completed or dismissed
         Preferences prefs = Prefs.getUserPrefs("ftue");
         boolean wizardCompleted = prefs.getBoolean("wizard_completed", false);
@@ -333,8 +304,7 @@ public class PokerStartMenu extends StartMenu
     /**
      * Launch first-time user experience wizard
      */
-    private void launchFirstTimeWizard(ProfileList list)
-    {
+    private void launchFirstTimeWizard(ProfileList list) {
         com.donohoedigital.comms.DMTypedHashMap params = new com.donohoedigital.comms.DMTypedHashMap();
         params.setObject("profilelist", list);
 
@@ -343,8 +313,7 @@ public class PokerStartMenu extends StartMenu
 
         // Wizard returns with profile created
         profile_ = PlayerProfileOptions.getDefaultProfile();
-        if (profile_ != null)
-        {
+        if (profile_ != null) {
             list.rememberProfile(profile_);
         }
     }
@@ -352,53 +321,40 @@ public class PokerStartMenu extends StartMenu
     /**
      * Update profile label
      */
-    private void updateProfileLabel()
-    {
-        if (profile_ != null)
-        {
+    private void updateProfileLabel() {
+        if (profile_ != null) {
             int nPrize = profile_.getTotalPrizeMoneyEarned();
             int nSpent = profile_.getTotalMoneySpent();
             int nProfit = nPrize - nSpent;
-            label_.setText(PropertyConfig.getMessage("msg.profile.summary",
-                                                     Utils.encodeHTML(profile_.getName()),
-                                                     nSpent,
-                                                     nPrize,
-                                                     nProfit));
+            label_.setText(PropertyConfig.getMessage("msg.profile.summary", Utils.encodeHTML(profile_.getName()),
+                    nSpent, nPrize, nProfit));
             label_.repaint();
         }
     }
 
     /**
-     * Private class used to ensure StartMenu is displayed
-     * before profileCheck() is called
+     * Private class used to ensure StartMenu is displayed before profileCheck() is
+     * called
      */
-    private class InitLabel extends DDLabel
-    {
+    private class InitLabel extends DDLabel {
         boolean bCheck = true;
 
-        public InitLabel(String sName, String sStyle)
-        {
+        public InitLabel(String sName, String sStyle) {
             super(sName, sStyle);
         }
 
         @Override
-        public void paintComponent(Graphics g1)
-        {
+        public void paintComponent(Graphics g1) {
             super.paintComponent(g1);
-            if (bProfileCheck_ && bCheck)
-            {
+            if (bProfileCheck_ && bCheck) {
                 bCheck = false;
-                SwingUtilities.invokeLater(
-                        new Runnable()
-                        {
-                            public void run()
-                            {
-                                licenseCheck();
-                                serverConfigCheck();
-                                profileCheck();
-                            }
-                        }
-                );
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        licenseCheck();
+                        serverConfigCheck();
+                        profileCheck();
+                    }
+                });
             }
         }
     }

@@ -22,7 +22,6 @@ package com.donohoedigital.games.poker.ai;
 import com.donohoedigital.base.ApplicationError;
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
-import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -33,11 +32,9 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for PocketOdds effective hand strength calculations with lookahead.
  */
-class PocketOddsTest
-{
+class PocketOddsTest {
     @BeforeAll
-    static void initializeConfig()
-    {
+    static void initializeConfig() {
         // Initialize ConfigManager for PokerUtils.nChooseK() and StylesConfig
         ConfigManager configMgr = new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
         configMgr.loadGuiConfig(); // Required for StylesConfig
@@ -47,45 +44,37 @@ class PocketOddsTest
     // ========================================
 
     @Test
-    void should_ThrowError_When_CommunityIsNull()
-    {
+    void should_ThrowError_When_CommunityIsNull() {
         Hand pocket = new Hand(SPADES_A, HEARTS_K);
 
-        assertThatThrownBy(() -> PocketOdds.getInstance(null, pocket))
-                .isInstanceOf(ApplicationError.class)
+        assertThatThrownBy(() -> PocketOdds.getInstance(null, pocket)).isInstanceOf(ApplicationError.class)
                 .hasMessageContaining("null community");
     }
 
     @Test
-    void should_ThrowError_When_CommunityIsEmpty()
-    {
+    void should_ThrowError_When_CommunityIsEmpty() {
         Hand community = new Hand();
         Hand pocket = new Hand(SPADES_A, HEARTS_K);
 
-        assertThatThrownBy(() -> PocketOdds.getInstance(community, pocket))
-                .isInstanceOf(ApplicationError.class)
+        assertThatThrownBy(() -> PocketOdds.getInstance(community, pocket)).isInstanceOf(ApplicationError.class)
                 .hasMessageContaining("before the flop");
     }
 
     @Test
-    void should_ThrowError_When_CommunityHasTwoCards()
-    {
+    void should_ThrowError_When_CommunityHasTwoCards() {
         Hand community = new Hand(SPADES_A, HEARTS_K);
         Hand pocket = new Hand(DIAMONDS_Q, CLUBS_J);
 
-        assertThatThrownBy(() -> PocketOdds.getInstance(community, pocket))
-                .isInstanceOf(ApplicationError.class)
+        assertThatThrownBy(() -> PocketOdds.getInstance(community, pocket)).isInstanceOf(ApplicationError.class)
                 .hasMessageContaining("before the flop");
     }
 
     @Test
-    void should_ThrowError_When_CommunityIsRiver()
-    {
+    void should_ThrowError_When_CommunityIsRiver() {
         Hand community = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q, CLUBS_J, SPADES_T);
         Hand pocket = new Hand(HEARTS_9, DIAMONDS_8);
 
-        assertThatThrownBy(() -> PocketOdds.getInstance(community, pocket))
-                .isInstanceOf(ApplicationError.class)
+        assertThatThrownBy(() -> PocketOdds.getInstance(community, pocket)).isInstanceOf(ApplicationError.class)
                 .hasMessageContaining("after the river");
     }
 
@@ -94,35 +83,29 @@ class PocketOddsTest
     // ========================================
 
     @Test
-    void should_ThrowError_When_PocketIsNull()
-    {
+    void should_ThrowError_When_PocketIsNull() {
         Hand community = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
 
-        assertThatThrownBy(() -> PocketOdds.getInstance(community, null))
-                .isInstanceOf(ApplicationError.class)
+        assertThatThrownBy(() -> PocketOdds.getInstance(community, null)).isInstanceOf(ApplicationError.class)
                 .hasMessageContaining("null pocket");
     }
 
     @Test
-    void should_ThrowError_When_PocketIsEmpty()
-    {
+    void should_ThrowError_When_PocketIsEmpty() {
         Hand community = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         Hand pocket = new Hand();
 
-        assertThatThrownBy(() -> PocketOdds.getInstance(community, pocket))
-                .isInstanceOf(ApplicationError.class)
+        assertThatThrownBy(() -> PocketOdds.getInstance(community, pocket)).isInstanceOf(ApplicationError.class)
                 .hasMessageContaining("empty pocket");
     }
 
     @Test
-    void should_ThrowError_When_PocketHasOneCard()
-    {
+    void should_ThrowError_When_PocketHasOneCard() {
         Hand community = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         Hand pocket = new Hand();
         pocket.addCard(CLUBS_J);
 
-        assertThatThrownBy(() -> PocketOdds.getInstance(community, pocket))
-                .isInstanceOf(ApplicationError.class)
+        assertThatThrownBy(() -> PocketOdds.getInstance(community, pocket)).isInstanceOf(ApplicationError.class)
                 .hasMessageContaining("empty pocket");
     }
 
@@ -131,8 +114,7 @@ class PocketOddsTest
     // ========================================
 
     @Test
-    void should_ReturnSameInstance_When_SameCommunityAndPocket()
-    {
+    void should_ReturnSameInstance_When_SameCommunityAndPocket() {
         Hand community = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         Hand pocket = new Hand(CLUBS_J, SPADES_T);
 
@@ -143,8 +125,7 @@ class PocketOddsTest
     }
 
     @Test
-    void should_ReturnDifferentInstance_When_DifferentCommunity()
-    {
+    void should_ReturnDifferentInstance_When_DifferentCommunity() {
         Hand community1 = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         Hand community2 = new Hand(SPADES_A, HEARTS_K, DIAMONDS_J);
         Hand pocket = new Hand(CLUBS_T, SPADES_9);
@@ -156,8 +137,7 @@ class PocketOddsTest
     }
 
     @Test
-    void should_ReturnDifferentInstance_When_DifferentPocket()
-    {
+    void should_ReturnDifferentInstance_When_DifferentPocket() {
         Hand community = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         Hand pocket1 = new Hand(CLUBS_J, SPADES_T);
         Hand pocket2 = new Hand(HEARTS_9, DIAMONDS_8);
@@ -170,8 +150,7 @@ class PocketOddsTest
     }
 
     @Test
-    void should_ClearCache_When_CommunityChanges()
-    {
+    void should_ClearCache_When_CommunityChanges() {
         Hand community1 = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         Hand pocket = new Hand(CLUBS_J, SPADES_T);
 
@@ -181,7 +160,8 @@ class PocketOddsTest
         Hand community2 = new Hand(SPADES_2, HEARTS_3, DIAMONDS_4);
         PocketOdds odds2 = PocketOdds.getInstance(community2, pocket);
 
-        // Go back to original community - should create new instance (cache was cleared)
+        // Go back to original community - should create new instance (cache was
+        // cleared)
         PocketOdds odds3 = PocketOdds.getInstance(community1, pocket);
 
         assertThat(odds1).isNotSameAs(odds3);
@@ -192,8 +172,7 @@ class PocketOddsTest
     // ========================================
 
     @Test
-    void should_ReturnSameStrength_When_CalledWithDifferentMethods()
-    {
+    void should_ReturnSameStrength_When_CalledWithDifferentMethods() {
         Hand community = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         Hand pocket = new Hand(CLUBS_J, SPADES_T);
 
@@ -204,14 +183,11 @@ class PocketOddsTest
         float strengthCards = odds.getEffectiveHandStrength(HEARTS_9, DIAMONDS_8);
         float strengthIndices = odds.getEffectiveHandStrength(HEARTS_9.getIndex(), DIAMONDS_8.getIndex());
 
-        assertThat(strengthHand)
-                .isEqualTo(strengthCards)
-                .isEqualTo(strengthIndices);
+        assertThat(strengthHand).isEqualTo(strengthCards).isEqualTo(strengthIndices);
     }
 
     @Test
-    void should_ReturnAverageStrength_When_NoOpponentSpecified()
-    {
+    void should_ReturnAverageStrength_When_NoOpponentSpecified() {
         Hand community = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         Hand pocket = new Hand(CLUBS_J, SPADES_T);
 
@@ -228,8 +204,7 @@ class PocketOddsTest
     // ========================================
 
     @Test
-    void should_ReturnHighEHS_When_MadeNutsOnFlop()
-    {
+    void should_ReturnHighEHS_When_MadeNutsOnFlop() {
         // Flop: A♠ K♠ Q♠ (three to royal flush)
         Hand community = new Hand(SPADES_A, SPADES_K, SPADES_Q);
         // Pocket: J♠ T♠ (made royal flush)
@@ -243,8 +218,7 @@ class PocketOddsTest
     }
 
     @Test
-    void should_ReturnHighEHS_When_SetOnFlop()
-    {
+    void should_ReturnHighEHS_When_SetOnFlop() {
         // Flop: K♠ K♥ 7♦ (paired board)
         Hand community = new Hand(SPADES_K, HEARTS_K, DIAMONDS_7);
         // Pocket: K♦ K♣ (quad kings)
@@ -258,8 +232,7 @@ class PocketOddsTest
     }
 
     @Test
-    void should_ReturnMediumEHS_When_FlushDrawOnFlop()
-    {
+    void should_ReturnMediumEHS_When_FlushDrawOnFlop() {
         // Flop: A♠ 7♠ 4♠ (monotone spades)
         Hand community = new Hand(SPADES_A, SPADES_7, SPADES_4);
         // Pocket: K♠ Q♠ (nut flush draw + overcards)
@@ -273,8 +246,7 @@ class PocketOddsTest
     }
 
     @Test
-    void should_ReturnMediumEHS_When_OpenEndedStraightDrawOnFlop()
-    {
+    void should_ReturnMediumEHS_When_OpenEndedStraightDrawOnFlop() {
         // Flop: K♠ Q♥ J♦
         Hand community = new Hand(SPADES_K, HEARTS_Q, DIAMONDS_J);
         // Pocket: T♠ 9♠ (open-ended straight draw + gutshot to higher straight)
@@ -288,11 +260,11 @@ class PocketOddsTest
     }
 
     @Test
-    void should_ReturnLowEHS_When_DrawingDeadOnFlop()
-    {
+    void should_ReturnLowEHS_When_DrawingDeadOnFlop() {
         // Flop: A♠ A♥ A♦ (trip aces on board)
         Hand community = new Hand(SPADES_A, HEARTS_A, DIAMONDS_A);
-        // Pocket: 2♠ 3♠ (essentially drawing dead - needs runner-runner for straight flush)
+        // Pocket: 2♠ 3♠ (essentially drawing dead - needs runner-runner for straight
+        // flush)
         Hand pocket = new Hand(SPADES_2, SPADES_3);
 
         PocketOdds odds = PocketOdds.getInstance(community, pocket);
@@ -303,8 +275,7 @@ class PocketOddsTest
     }
 
     @Test
-    void should_ReturnMediumEHS_When_BottomPairOnFlop()
-    {
+    void should_ReturnMediumEHS_When_BottomPairOnFlop() {
         // Flop: A♠ K♥ 7♦
         Hand community = new Hand(SPADES_A, HEARTS_K, DIAMONDS_7);
         // Pocket: 7♠ 6♠ (bottom pair, weak kicker, backdoor flush draw)
@@ -322,8 +293,7 @@ class PocketOddsTest
     // ========================================
 
     @Test
-    void should_HandleTurnScenario_When_FourCommunityCards()
-    {
+    void should_HandleTurnScenario_When_FourCommunityCards() {
         // Turn: A♠ K♥ Q♦ J♠ (four to straight)
         Hand community = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q, SPADES_J);
         // Pocket: T♠ 9♠ (made straight)
@@ -337,8 +307,7 @@ class PocketOddsTest
     }
 
     @Test
-    void should_ReturnHighEHS_When_FlushOnTurn()
-    {
+    void should_ReturnHighEHS_When_FlushOnTurn() {
         // Turn: A♠ K♠ 7♠ 4♠ (four spades on board)
         Hand community = new Hand(SPADES_A, SPADES_K, SPADES_7, SPADES_4);
         // Pocket: Q♠ J♠ (nut flush)
@@ -352,8 +321,7 @@ class PocketOddsTest
     }
 
     @Test
-    void should_ReturnMediumEHS_When_DrawOnTurn()
-    {
+    void should_ReturnMediumEHS_When_DrawOnTurn() {
         // Turn: A♠ K♥ Q♦ 7♣ (rainbow board)
         Hand community = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q, CLUBS_7);
         // Pocket: J♠ 9♠ (gutshot + backdoor flush draw)
@@ -371,8 +339,7 @@ class PocketOddsTest
     // ========================================
 
     @Test
-    void should_ReturnValidRange_When_AnyScenario()
-    {
+    void should_ReturnValidRange_When_AnyScenario() {
         Hand community = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         Hand pocket = new Hand(CLUBS_J, SPADES_T);
 
@@ -393,8 +360,7 @@ class PocketOddsTest
     // ========================================
 
     @Test
-    void should_HandlePairedBoard_When_CalculatingOdds()
-    {
+    void should_HandlePairedBoard_When_CalculatingOdds() {
         // Flop: K♠ K♥ 7♦ (paired board)
         Hand community = new Hand(SPADES_K, HEARTS_K, DIAMONDS_7);
         // Pocket: A♠ A♥ (overpair to board pair)
@@ -408,8 +374,7 @@ class PocketOddsTest
     }
 
     @Test
-    void should_HandleMonotoneBoard_When_CalculatingOdds()
-    {
+    void should_HandleMonotoneBoard_When_CalculatingOdds() {
         // Flop: A♠ 7♠ 2♠ (all spades)
         Hand community = new Hand(SPADES_A, SPADES_7, SPADES_2);
         // Pocket: K♦ Q♦ (no spades - drawing thin, has overcards)
@@ -423,8 +388,7 @@ class PocketOddsTest
     }
 
     @Test
-    void should_ProvideConsistentResults_When_CalledMultipleTimes()
-    {
+    void should_ProvideConsistentResults_When_CalledMultipleTimes() {
         Hand community = new Hand(SPADES_A, HEARTS_K, DIAMONDS_Q);
         Hand pocket = new Hand(CLUBS_J, SPADES_T);
 

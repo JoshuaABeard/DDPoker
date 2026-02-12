@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Timeout;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -40,8 +39,9 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for Peer2PeerMessage - TCP wire protocol for P2P communication.
- * Wire format: 'D'(2) | protocol(4) | type(4) | size(4) | CRC32(8) | DDMessage payload
+ * Tests for Peer2PeerMessage - TCP wire protocol for P2P communication. Wire
+ * format: 'D'(2) | protocol(4) | type(4) | size(4) | CRC32(8) | DDMessage
+ * payload
  */
 @Timeout(value = 5, unit = TimeUnit.SECONDS)
 class Peer2PeerMessageTest {
@@ -60,9 +60,12 @@ class Peer2PeerMessageTest {
 
     @AfterEach
     void cleanup() throws IOException {
-        if (clientChannel != null && clientChannel.isOpen()) clientChannel.close();
-        if (acceptedChannel != null && acceptedChannel.isOpen()) acceptedChannel.close();
-        if (serverChannel != null && serverChannel.isOpen()) serverChannel.close();
+        if (clientChannel != null && clientChannel.isOpen())
+            clientChannel.close();
+        if (acceptedChannel != null && acceptedChannel.isOpen())
+            acceptedChannel.close();
+        if (serverChannel != null && serverChannel.isOpen())
+            serverChannel.close();
     }
 
     // =================================================================
@@ -169,19 +172,18 @@ class Peer2PeerMessageTest {
         // Manually craft a message with invalid CRC
         // Format: 'D'(2) | protocol(4) | type(4) | size(4) | CRC32(8) | payload
         ByteBuffer buffer = ByteBuffer.allocate(100);
-        buffer.putChar('D');          // Starting char
-        buffer.putInt(1);             // Protocol
+        buffer.putChar('D'); // Starting char
+        buffer.putInt(1); // Protocol
         buffer.putInt(Peer2PeerMessage.P2P_MSG); // Type
-        buffer.putInt(10);            // Size (small payload)
-        buffer.putLong(0xDEADBEEF);   // Invalid CRC
-        buffer.put(new byte[10]);     // Dummy payload
+        buffer.putInt(10); // Size (small payload)
+        buffer.putLong(0xDEADBEEF); // Invalid CRC
+        buffer.put(new byte[10]); // Dummy payload
         buffer.flip();
         clientChannel.write(buffer);
 
         // Try to read - should fail with ApplicationError
         Peer2PeerMessage readMsg = new Peer2PeerMessage();
-        assertThatThrownBy(() -> readMsg.read(acceptedChannel))
-                .isInstanceOf(ApplicationError.class)
+        assertThatThrownBy(() -> readMsg.read(acceptedChannel)).isInstanceOf(ApplicationError.class)
                 .hasMessageContaining("CRC mismatch");
     }
 
@@ -197,8 +199,7 @@ class Peer2PeerMessageTest {
 
         // Try to read - should fail
         Peer2PeerMessage readMsg = new Peer2PeerMessage();
-        assertThatThrownBy(() -> readMsg.read(acceptedChannel))
-                .isInstanceOf(ApplicationError.class)
+        assertThatThrownBy(() -> readMsg.read(acceptedChannel)).isInstanceOf(ApplicationError.class)
                 .hasMessageContaining("no starting D");
     }
 
@@ -213,25 +214,25 @@ class Peer2PeerMessageTest {
         // Manually craft a message with size > 500000
         // Need valid CRC for protocol, type, and size fields
         ByteBuffer buffer = ByteBuffer.allocate(100);
-        buffer.putChar('D');          // Starting char
+        buffer.putChar('D'); // Starting char
 
         // Calculate CRC for the header fields
         java.util.zip.CRC32 crc32 = new java.util.zip.CRC32();
-        crc32.update(1);              // Protocol
+        crc32.update(1); // Protocol
         crc32.update(Peer2PeerMessage.P2P_MSG); // Type
-        crc32.update(600000);         // Size > 500000 (invalid)
+        crc32.update(600000); // Size > 500000 (invalid)
 
-        buffer.putInt(1);             // Protocol
+        buffer.putInt(1); // Protocol
         buffer.putInt(Peer2PeerMessage.P2P_MSG); // Type
-        buffer.putInt(600000);        // Size > 500000 (invalid)
+        buffer.putInt(600000); // Size > 500000 (invalid)
         buffer.putLong(crc32.getValue()); // Valid CRC for header
         buffer.flip();
         clientChannel.write(buffer);
 
-        // Try to read - should fail (note: error message has typo "to long" instead of "too long")
+        // Try to read - should fail (note: error message has typo "to long" instead of
+        // "too long")
         Peer2PeerMessage readMsg = new Peer2PeerMessage();
-        assertThatThrownBy(() -> readMsg.read(acceptedChannel))
-                .isInstanceOf(ApplicationError.class)
+        assertThatThrownBy(() -> readMsg.read(acceptedChannel)).isInstanceOf(ApplicationError.class)
                 .hasMessageContaining("to long");
     }
 
@@ -255,8 +256,7 @@ class Peer2PeerMessageTest {
 
         // Try to read - should get EOF
         Peer2PeerMessage readMsg = new Peer2PeerMessage();
-        assertThatThrownBy(() -> readMsg.read(acceptedChannel))
-                .isInstanceOf(EOFException.class);
+        assertThatThrownBy(() -> readMsg.read(acceptedChannel)).isInstanceOf(EOFException.class);
     }
 
     // =================================================================

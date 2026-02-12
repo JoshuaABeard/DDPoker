@@ -29,17 +29,15 @@ import java.lang.reflect.Field;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for V1Player static utility methods.
- * Uses real PokerPlayer instances (Mockito can't mock it).
+ * Tests for V1Player static utility methods. Uses real PokerPlayer instances
+ * (Mockito can't mock it).
  */
-class V1PlayerStaticTest
-{
+class V1PlayerStaticTest {
     private PokerPlayer player;
     private TournamentProfile profile;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         player = new PokerPlayer(1, "TestPlayer", false);
         profile = new TournamentProfile("test");
         profile.setBuyinChips(1500);
@@ -48,16 +46,12 @@ class V1PlayerStaticTest
     /**
      * Helper to set rebuy count via reflection (no public setter exists)
      */
-    private void setNumRebuys(int count)
-    {
-        try
-        {
+    private void setNumRebuys(int count) {
+        try {
             Field field = PokerPlayer.class.getDeclaredField("nNumRebuy_");
             field.setAccessible(true);
             field.set(player, count);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new RuntimeException("Failed to set rebuy count", e);
         }
     }
@@ -66,8 +60,7 @@ class V1PlayerStaticTest
     // ========================================
 
     @Test
-    void should_AlwaysRebuy_When_PropensityIs0to25()
-    {
+    void should_AlwaysRebuy_When_PropensityIs0to25() {
         setNumRebuys(0);
 
         boolean result = V1Player.WantsRebuy(player, 25);
@@ -76,8 +69,7 @@ class V1PlayerStaticTest
     }
 
     @Test
-    void should_AlwaysRebuy_When_PropensityIs0()
-    {
+    void should_AlwaysRebuy_When_PropensityIs0() {
         setNumRebuys(3);
 
         boolean result = V1Player.WantsRebuy(player, 0);
@@ -86,8 +78,7 @@ class V1PlayerStaticTest
     }
 
     @Test
-    void should_RebuyUpTo3Times_When_PropensityIs26to50()
-    {
+    void should_RebuyUpTo3Times_When_PropensityIs26to50() {
         // Should rebuy when rebuys < 3
         setNumRebuys(0);
         assertThat(V1Player.WantsRebuy(player, 40)).isTrue();
@@ -104,8 +95,7 @@ class V1PlayerStaticTest
     }
 
     @Test
-    void should_RebuyUpTo2Times_When_PropensityIs51to75()
-    {
+    void should_RebuyUpTo2Times_When_PropensityIs51to75() {
         // Should rebuy when rebuys < 2
         setNumRebuys(0);
         assertThat(V1Player.WantsRebuy(player, 60)).isTrue();
@@ -122,8 +112,7 @@ class V1PlayerStaticTest
     }
 
     @Test
-    void should_RebuyOnce_When_PropensityIs76to90()
-    {
+    void should_RebuyOnce_When_PropensityIs76to90() {
         // Should rebuy when rebuys < 1
         setNumRebuys(0);
         assertThat(V1Player.WantsRebuy(player, 85)).isTrue();
@@ -137,8 +126,7 @@ class V1PlayerStaticTest
     }
 
     @Test
-    void should_NeverRebuy_When_PropensityIs91Plus()
-    {
+    void should_NeverRebuy_When_PropensityIs91Plus() {
         setNumRebuys(0);
         assertThat(V1Player.WantsRebuy(player, 91)).isFalse();
 
@@ -147,8 +135,7 @@ class V1PlayerStaticTest
     }
 
     @Test
-    void should_NeverRebuy_When_AlreadyRebuilt5Times()
-    {
+    void should_NeverRebuy_When_AlreadyRebuilt5Times() {
         // Even with propensity 0 (always rebuy), should refuse after 5 rebuys
         setNumRebuys(5);
         assertThat(V1Player.WantsRebuy(player, 0)).isFalse();
@@ -162,8 +149,7 @@ class V1PlayerStaticTest
     // ========================================
 
     @Test
-    void should_AlwaysAddon_When_PropensityLessThan25()
-    {
+    void should_AlwaysAddon_When_PropensityLessThan25() {
         player.setChipCount(5000); // Any chip count
 
         boolean result = V1Player.WantsAddon(player, 24, profile);
@@ -172,8 +158,7 @@ class V1PlayerStaticTest
     }
 
     @Test
-    void should_AlwaysAddon_When_PropensityIs0()
-    {
+    void should_AlwaysAddon_When_PropensityIs0() {
         player.setChipCount(10000);
 
         boolean result = V1Player.WantsAddon(player, 0, profile);
@@ -182,8 +167,7 @@ class V1PlayerStaticTest
     }
 
     @Test
-    void should_AddonIfUnder3xBuyin_When_PropensityIs25to49()
-    {
+    void should_AddonIfUnder3xBuyin_When_PropensityIs25to49() {
         // Should addon when chips < 3x buyin (4500)
         player.setChipCount(4499);
         assertThat(V1Player.WantsAddon(player, 40, profile)).isTrue();
@@ -200,8 +184,7 @@ class V1PlayerStaticTest
     }
 
     @Test
-    void should_AddonIfUnder2xBuyin_When_PropensityIs50to74()
-    {
+    void should_AddonIfUnder2xBuyin_When_PropensityIs50to74() {
         // Should addon when chips < 2x buyin (3000)
         player.setChipCount(2999);
         assertThat(V1Player.WantsAddon(player, 60, profile)).isTrue();
@@ -218,8 +201,7 @@ class V1PlayerStaticTest
     }
 
     @Test
-    void should_NeverAddon_When_PropensityIs75Plus()
-    {
+    void should_NeverAddon_When_PropensityIs75Plus() {
         // Never addon regardless of chip count
         player.setChipCount(100);
         assertThat(V1Player.WantsAddon(player, 75, profile)).isFalse();
@@ -233,8 +215,7 @@ class V1PlayerStaticTest
     // ========================================
 
     @Test
-    void should_Return3xOr4xBigBlind_When_Called()
-    {
+    void should_Return3xOr4xBigBlind_When_Called() {
         int bigBlind = 20;
 
         // Call multiple times to test probabilistic behavior
@@ -243,13 +224,15 @@ class V1PlayerStaticTest
         int count4x = 0;
         int iterations = 100;
 
-        for (int i = 0; i < iterations; i++)
-        {
+        for (int i = 0; i < iterations; i++) {
             int raise = V1Player.getRaise(bigBlind);
 
-            if (raise == 60) count3x++; // 3 * 20
-            else if (raise == 80) count4x++; // 4 * 20
-            else fail("getRaise returned unexpected value: " + raise);
+            if (raise == 60)
+                count3x++; // 3 * 20
+            else if (raise == 80)
+                count4x++; // 4 * 20
+            else
+                fail("getRaise returned unexpected value: " + raise);
         }
 
         // Both should occur at least once
@@ -264,8 +247,7 @@ class V1PlayerStaticTest
     }
 
     @Test
-    void should_ScaleWithBigBlind_When_DifferentBigBlinds()
-    {
+    void should_ScaleWithBigBlind_When_DifferentBigBlinds() {
         int raise1 = V1Player.getRaise(10);
         int raise2 = V1Player.getRaise(50);
         int raise3 = V1Player.getRaise(100);

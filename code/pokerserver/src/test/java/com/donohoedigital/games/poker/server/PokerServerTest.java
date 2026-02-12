@@ -41,46 +41,39 @@ import static org.assertj.core.api.Assertions.*;
 @Tag("slow")
 @SpringJUnitConfig(locations = {"/app-context-pokerservertests.xml"})
 @Transactional
-class PokerServerTest
-{
+class PokerServerTest {
     @Autowired
     private OnlineProfileService profileService;
 
     private PokerServer pokerServer;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         // Initialize ConfigManager for tests (only once)
-        if (!PropertyConfig.isInitialized())
-        {
+        if (!PropertyConfig.isInitialized()) {
             new ConfigManager("poker", ApplicationType.SERVER);
         }
     }
 
     @AfterEach
-    void cleanup()
-    {
+    void cleanup() {
         // Clear any system properties set during tests
         System.clearProperty("settings.admin.user");
         System.clearProperty("settings.admin.password");
     }
 
     /**
-     * Helper to create a PokerServer instance with injected dependencies for testing
+     * Helper to create a PokerServer instance with injected dependencies for
+     * testing
      */
-    private PokerServer createPokerServerForTest()
-    {
+    private PokerServer createPokerServerForTest() {
         PokerServer server = new PokerServer();
         // Use reflection to inject the OnlineProfileService since it's package-private
-        try
-        {
+        try {
             var field = PokerServer.class.getDeclaredField("onlineProfileService");
             field.setAccessible(true);
             field.set(server, profileService);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new RuntimeException("Failed to inject OnlineProfileService", e);
         }
         return server;
@@ -88,8 +81,7 @@ class PokerServerTest
 
     @Test
     @Rollback
-    void should_CreateAdminProfile_When_ItDoesNotExist()
-    {
+    void should_CreateAdminProfile_When_ItDoesNotExist() {
         // Set admin credentials via system properties
         System.setProperty("settings.admin.user", "newadmin");
         System.setProperty("settings.admin.password", "testpass123");
@@ -117,8 +109,7 @@ class PokerServerTest
 
     @Test
     @Rollback
-    void should_UpdateAdminProfile_When_ItAlreadyExists()
-    {
+    void should_UpdateAdminProfile_When_ItAlreadyExists() {
         // Create an existing admin profile
         OnlineProfile existing = PokerTestData.createOnlineProfile("existingadmin");
         existing.setActivated(false);
@@ -154,8 +145,7 @@ class PokerServerTest
 
     @Test
     @Rollback
-    void should_GeneratePassword_When_NotProvided()
-    {
+    void should_GeneratePassword_When_NotProvided() {
         // Set only admin username, no password
         System.setProperty("settings.admin.user", "autogenadmin");
 
@@ -176,8 +166,7 @@ class PokerServerTest
 
     @Test
     @Rollback
-    void should_CreateDefaultAdmin_When_AdminUsernameNotSet()
-    {
+    void should_CreateDefaultAdmin_When_AdminUsernameNotSet() {
         // Ensure no admin user is set (should default to "admin")
         System.clearProperty("settings.admin.user");
         System.clearProperty("settings.admin.password");
@@ -200,8 +189,7 @@ class PokerServerTest
 
     @Test
     @Rollback
-    void should_KeepExistingPassword_When_ProfileExistsAndPasswordNotProvided()
-    {
+    void should_KeepExistingPassword_When_ProfileExistsAndPasswordNotProvided() {
         // Create an existing admin profile with a specific hashed password
         OnlineProfile existing = PokerTestData.createOnlineProfile("keepadmin");
         profileService.hashAndSetPassword(existing, "existingpass123");
@@ -211,7 +199,8 @@ class PokerServerTest
 
         // Write password file so initializeAdminProfile can read it
         String workDir = System.getenv("WORK");
-        if (workDir == null) workDir = "/data";
+        if (workDir == null)
+            workDir = "/data";
         try {
             java.nio.file.Path dirPath = java.nio.file.Paths.get(workDir);
             java.nio.file.Files.createDirectories(dirPath);

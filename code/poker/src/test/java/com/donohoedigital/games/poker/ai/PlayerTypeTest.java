@@ -36,16 +36,13 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for PlayerType AI configuration.
  */
-class PlayerTypeTest
-{
+class PlayerTypeTest {
     private HandSelectionScheme defaultScheme;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         // Initialize ConfigManager for tests (only once)
-        if (!com.donohoedigital.config.PropertyConfig.isInitialized())
-        {
+        if (!com.donohoedigital.config.PropertyConfig.isInitialized()) {
             new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
         }
 
@@ -58,16 +55,14 @@ class PlayerTypeTest
     // ========================================
 
     @Test
-    void should_CreateEmptyPlayerType_When_DefaultConstructorUsed()
-    {
+    void should_CreateEmptyPlayerType_When_DefaultConstructorUsed() {
         PlayerType playerType = new PlayerType();
 
         assertThat(playerType.getName()).isEmpty();
     }
 
     @Test
-    void should_CreateNamedPlayerType_When_StringConstructorUsed()
-    {
+    void should_CreateNamedPlayerType_When_StringConstructorUsed() {
         PlayerType playerType = new PlayerType("TestPlayer");
 
         assertThat(playerType.getName()).isEqualTo("TestPlayer");
@@ -77,8 +72,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_CopyPlayerTypeWithNewName_When_CopyConstructorUsed()
-    {
+    void should_CopyPlayerTypeWithNewName_When_CopyConstructorUsed() {
         PlayerType original = new PlayerType("Original");
         original.setDescription("Test description");
         original.setHandSelectionFull(defaultScheme);
@@ -91,8 +85,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_RemoveMetadataWhenDifferentName_When_CopyConstructorUsed()
-    {
+    void should_RemoveMetadataWhenDifferentName_When_CopyConstructorUsed() {
         PlayerType original = new PlayerType("Original");
         original.getMap().setBoolean("default", true);
         original.getMap().setInteger("order", 5);
@@ -106,8 +99,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_PreserveMetadataWhenSameName_When_CopyConstructorUsed()
-    {
+    void should_PreserveMetadataWhenSameName_When_CopyConstructorUsed() {
         PlayerType original = new PlayerType("SameName");
         original.getMap().setBoolean("default", true);
         original.getMap().setInteger("order", 5);
@@ -125,8 +117,7 @@ class PlayerTypeTest
     // ========================================
 
     @Test
-    void should_ReturnEmptyString_When_NoDescriptionSet()
-    {
+    void should_ReturnEmptyString_When_NoDescriptionSet() {
         PlayerType playerType = new PlayerType("Test");
 
         String desc = playerType.getDescription();
@@ -135,8 +126,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_ReturnDescription_When_DescriptionSet()
-    {
+    void should_ReturnDescription_When_DescriptionSet() {
         PlayerType playerType = new PlayerType("Test");
 
         playerType.setDescription("Test AI player");
@@ -145,8 +135,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_UpdateDescription_When_DescriptionChanged()
-    {
+    void should_UpdateDescription_When_DescriptionChanged() {
         PlayerType playerType = new PlayerType("Test");
 
         playerType.setDescription("First");
@@ -160,16 +149,14 @@ class PlayerTypeTest
     // ========================================
 
     @Test
-    void should_HaveDefaultAIClass_When_PlayerTypeCreated()
-    {
+    void should_HaveDefaultAIClass_When_PlayerTypeCreated() {
         PlayerType playerType = new PlayerType("Test");
 
         assertThat(playerType.getAIClassName()).isEqualTo("com.donohoedigital.games.poker.ai.V2Player");
     }
 
     @Test
-    void should_UpdateAIClass_When_SetAIClassNameCalled()
-    {
+    void should_UpdateAIClass_When_SetAIClassNameCalled() {
         PlayerType playerType = new PlayerType("Test");
 
         playerType.setAIClassName("com.example.CustomAI");
@@ -178,8 +165,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_AllowCopy_When_V2PlayerOrNull()
-    {
+    void should_AllowCopy_When_V2PlayerOrNull() {
         PlayerType v2Player = new PlayerType("V2");
         v2Player.setAIClassName("com.donohoedigital.games.poker.ai.V2Player");
 
@@ -191,8 +177,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_DisallowCopy_When_V1Player()
-    {
+    void should_DisallowCopy_When_V1Player() {
         PlayerType v1Player = new PlayerType("V1");
         v1Player.setAIClassName("com.donohoedigital.games.poker.ai.V1Player");
 
@@ -204,8 +189,7 @@ class PlayerTypeTest
     // ========================================
 
     @Test
-    void should_StoreFullScheme_When_SetHandSelectionFullCalled()
-    {
+    void should_StoreFullScheme_When_SetHandSelectionFullCalled() {
         PlayerType playerType = new PlayerType("Test");
         HandSelectionScheme scheme = new HandSelectionScheme("FullScheme");
 
@@ -215,8 +199,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_StoreShortScheme_When_SetHandSelectionShortCalled()
-    {
+    void should_StoreShortScheme_When_SetHandSelectionShortCalled() {
         PlayerType playerType = new PlayerType("Test");
         HandSelectionScheme scheme = new HandSelectionScheme("ShortScheme");
 
@@ -226,8 +209,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_StoreVeryShortScheme_When_SetHandSelectionVeryShortCalled()
-    {
+    void should_StoreVeryShortScheme_When_SetHandSelectionVeryShortCalled() {
         PlayerType playerType = new PlayerType("Test");
         HandSelectionScheme scheme = new HandSelectionScheme("VeryShortScheme");
 
@@ -237,8 +219,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_StoreHupScheme_When_SetHandSelectionHupCalled()
-    {
+    void should_StoreHupScheme_When_SetHandSelectionHupCalled() {
         PlayerType playerType = new PlayerType("Test");
         HandSelectionScheme scheme = new HandSelectionScheme("HupScheme");
 
@@ -252,8 +233,7 @@ class PlayerTypeTest
     // ========================================
 
     @Test
-    void should_ReturnStrategyValue_When_GetStratValueCalled()
-    {
+    void should_ReturnStrategyValue_When_GetStratValueCalled() {
         PlayerType playerType = new PlayerType("Test");
 
         playerType.setStratValue("aggression", 5);
@@ -262,8 +242,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_ReturnDefaultValue_When_StrategyValueNotSet()
-    {
+    void should_ReturnDefaultValue_When_StrategyValueNotSet() {
         PlayerType playerType = new PlayerType("Test");
 
         int value = playerType.getStratValue("nonexistent");
@@ -273,8 +252,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_UpdateStrategyValue_When_SetStratValueCalled()
-    {
+    void should_UpdateStrategyValue_When_SetStratValueCalled() {
         PlayerType playerType = new PlayerType("Test");
 
         playerType.setStratValue("bluff", 3);
@@ -284,8 +262,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_GetStratValueWithRound_When_RoundParameterProvided()
-    {
+    void should_GetStratValueWithRound_When_RoundParameterProvided() {
         PlayerType playerType = new PlayerType("Test");
         playerType.setStratValue("aggression", 5);
 
@@ -300,8 +277,7 @@ class PlayerTypeTest
     // ========================================
 
     @Test
-    void should_ReturnMap_When_GetMapCalled()
-    {
+    void should_ReturnMap_When_GetMapCalled() {
         PlayerType playerType = new PlayerType("Test");
 
         DMTypedHashMap map = playerType.getMap();
@@ -310,8 +286,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_PersistDataInMap_When_ValuesSet()
-    {
+    void should_PersistDataInMap_When_ValuesSet() {
         PlayerType playerType = new PlayerType("Test");
 
         playerType.getMap().setString("customKey", "customValue");
@@ -324,8 +299,7 @@ class PlayerTypeTest
     // ========================================
 
     @Test
-    void should_ReturnProfileBegin_When_GetBeginCalled()
-    {
+    void should_ReturnProfileBegin_When_GetBeginCalled() {
         PlayerType playerType = new PlayerType("Test");
 
         String begin = playerType.getBegin();
@@ -334,8 +308,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_ReturnProfileDirName_When_GetProfileDirNameCalled()
-    {
+    void should_ReturnProfileDirName_When_GetProfileDirNameCalled() {
         PlayerType playerType = new PlayerType("Test");
 
         String dirName = playerType.getProfileDirName();
@@ -344,8 +317,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_ReturnProfileFileList_When_GetProfileFileListCalled()
-    {
+    void should_ReturnProfileFileList_When_GetProfileFileListCalled() {
         PlayerType playerType = new PlayerType("Test");
 
         List<?> list = playerType.getProfileFileList();
@@ -354,18 +326,14 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_ReturnUniqueKey_When_GetUniqueKeyCalled()
-    {
+    void should_ReturnUniqueKey_When_GetUniqueKeyCalled() {
         PlayerType playerType = new PlayerType("TestPlayer");
 
         String key = playerType.getUniqueKey();
 
         // Unique key is based on filename, may be null for unsaved profiles
         // Allow null since profile has not been saved to file
-        assertThat(key).satisfiesAnyOf(
-            k -> assertThat(k).isNull(),
-            k -> assertThat(k).isEmpty()
-        );
+        assertThat(key).satisfiesAnyOf(k -> assertThat(k).isNull(), k -> assertThat(k).isEmpty());
     }
 
     // ========================================
@@ -373,8 +341,7 @@ class PlayerTypeTest
     // ========================================
 
     @Test
-    void should_WritePlayerType_When_WriteCalled() throws Exception
-    {
+    void should_WritePlayerType_When_WriteCalled() throws Exception {
         PlayerType playerType = new PlayerType("TestPlayer");
         playerType.setDescription("Test player type");
         playerType.setHandSelectionFull(defaultScheme);
@@ -388,8 +355,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_WriteHandSelectionIDs_When_SchemesSet() throws Exception
-    {
+    void should_WriteHandSelectionIDs_When_SchemesSet() throws Exception {
         PlayerType playerType = new PlayerType("Test");
         HandSelectionScheme scheme1 = new HandSelectionScheme("Scheme1");
         HandSelectionScheme scheme2 = new HandSelectionScheme("Scheme2");
@@ -410,16 +376,14 @@ class PlayerTypeTest
     // ========================================
 
     @Test
-    void should_ReturnProfileList_When_GetProfileListCalled()
-    {
+    void should_ReturnProfileList_When_GetProfileListCalled() {
         List<?> list = PlayerType.getProfileList();
 
         assertThat(list).isNotNull();
     }
 
     @Test
-    void should_ReturnCachedList_When_GetProfileListCachedCalled()
-    {
+    void should_ReturnCachedList_When_GetProfileListCachedCalled() {
         List<?> list1 = PlayerType.getProfileListCached();
         List<?> list2 = PlayerType.getProfileListCached();
 
@@ -435,8 +399,7 @@ class PlayerTypeTest
     // ========================================
 
     @Test
-    void should_CompareByName_When_CompareToUsed()
-    {
+    void should_CompareByName_When_CompareToUsed() {
         PlayerType pt1 = new PlayerType("Alpha");
         PlayerType pt2 = new PlayerType("Beta");
 
@@ -450,8 +413,7 @@ class PlayerTypeTest
     // ========================================
 
     @Test
-    void should_ReturnStratFactor_When_GetStratFactorCalled()
-    {
+    void should_ReturnStratFactor_When_GetStratFactorCalled() {
         PlayerType playerType = new PlayerType("Test");
         playerType.setStratValue("aggression", 5);
 
@@ -461,8 +423,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_ReturnStratFactorWithRound_When_GetStratFactorWithRoundCalled()
-    {
+    void should_ReturnStratFactorWithRound_When_GetStratFactorWithRoundCalled() {
         PlayerType playerType = new PlayerType("Test");
         playerType.setStratValue("bluff", 7);
 
@@ -472,8 +433,7 @@ class PlayerTypeTest
     }
 
     @Test
-    void should_ReturnStratFactorWithHand_When_HandProvided()
-    {
+    void should_ReturnStratFactorWithHand_When_HandProvided() {
         PlayerType playerType = new PlayerType("Test");
         playerType.setStratValue("position", 5);
         Hand hand = new Hand();

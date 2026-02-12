@@ -19,8 +19,6 @@
  */
 package com.donohoedigital.games.poker.integration;
 
-import com.donohoedigital.base.TypedHashMap;
-import com.donohoedigital.games.config.GamePhase;
 import com.donohoedigital.games.engine.ChainPhase;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.GameEngine;
@@ -33,7 +31,9 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Integration tests for ChainPhase using real GameEngine infrastructure.
  *
- * <p>Tests ChainPhase chaining logic and phase processing with minimal mocking.</p>
+ * <p>
+ * Tests ChainPhase chaining logic and phase processing with minimal mocking.
+ * </p>
  */
 @Tag("slow")
 class ChainPhaseIntegrationTest extends IntegrationTestBase {

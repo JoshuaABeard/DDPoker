@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -39,8 +39,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
 @DataCoder('c')
-public class GameClock extends Timer implements ActionListener, DataMarshal
-{
+public class GameClock extends Timer implements ActionListener, DataMarshal {
     private static final int ACTION_TICK = 0;
     private static final int ACTION_START = 1;
     private static final int ACTION_STOP = 2;
@@ -54,109 +53,86 @@ public class GameClock extends Timer implements ActionListener, DataMarshal
     private boolean bFlash_;
     private boolean bPaused_;
 
-    public GameClock()
-    {
+    public GameClock() {
         super(1000, null);
         addActionListener(this);
     }
-    
-    public void setFlash(boolean b)
-    {
+
+    public void setFlash(boolean b) {
         bFlash_ = b;
     }
-    
-    public boolean isFlash()
-    {
+
+    public boolean isFlash() {
         return bFlash_;
     }
 
-    public int getSecondsRemaining()
-    {
-        return (int)(getMillis() / 1000);
+    public int getSecondsRemaining() {
+        return (int) (getMillis() / 1000);
     }
 
     public boolean isExpired() {
         return (getMillis() == 0);
     }
 
-    public synchronized void setSecondsRemaining(int n)
-    {
+    public synchronized void setSecondsRemaining(int n) {
         nTickBegin_ = System.currentTimeMillis();
         setMillis(n * 1000);
         this.fireActionPerformed(new ActionEvent(this, ACTION_SET, null, System.currentTimeMillis(), 0));
     }
-    
-    private synchronized void setMillis(long n)
-    {
+
+    private synchronized void setMillis(long n) {
         nMillisRemaining_ = n;
     }
-    
-    private synchronized long getMillis()
-    {
+
+    private synchronized long getMillis() {
         return nMillisRemaining_;
     }
 
-    public void pause()
-    {
+    public void pause() {
         bPaused_ = true;
         stop();
     }
 
-    public void unpause()
-    {
+    public void unpause() {
         bPaused_ = false;
         start();
     }
 
-    public boolean isPaused()
-    {
+    public boolean isPaused() {
         return bPaused_;
     }
 
-    public void start()
-    {
-        if (!isRunning())
-        {
+    public void start() {
+        if (!isRunning()) {
             nTickBegin_ = System.currentTimeMillis();
             super.start();
             this.fireActionPerformed(new ActionEvent(this, ACTION_START, null, System.currentTimeMillis(), 0));
         }
     }
 
-    public void stop()
-    {
-        if (isRunning())
-        {
+    public void stop() {
+        if (isRunning()) {
             super.stop();
             this.fireActionPerformed(new ActionEvent(this, ACTION_STOP, null, System.currentTimeMillis(), 0));
         }
     }
 
-    public void toggle()
-    {
-        if (isRunning())
-        {
+    public void toggle() {
+        if (isRunning()) {
             stop();
-        }
-        else
-        {
+        } else {
             start();
         }
     }
 
-    public synchronized void actionPerformed(ActionEvent e)
-    {
-        if (e.getID() == ACTION_TICK)
-        {
+    public synchronized void actionPerformed(ActionEvent e) {
+        if (e.getID() == ACTION_TICK) {
             long now = System.currentTimeMillis();
             long elapsed = now - nTickBegin_;
-            if (elapsed >= getMillis())
-            {
+            if (elapsed >= getMillis()) {
                 setMillis(0);
                 stop();
-            }
-            else
-            {
+            } else {
                 setMillis(getMillis() - elapsed);
             }
             nTickBegin_ = now;
@@ -164,22 +140,19 @@ public class GameClock extends Timer implements ActionListener, DataMarshal
 
         Object[] listeners = listenerList.getListenerList();
 
-        for (int i = listeners.length - 2; i >= 0; i -= 2)
-        {
-            if (listeners[i] == GameClockListener.class)
-            {
-                switch (e.getID())
-                {
-                    case ACTION_SET:
+        for (int i = listeners.length - 2; i >= 0; i -= 2) {
+            if (listeners[i] == GameClockListener.class) {
+                switch (e.getID()) {
+                    case ACTION_SET :
                         ((GameClockListener) listeners[i + 1]).gameClockSet(this);
                         break;
-                    case ACTION_START:
+                    case ACTION_START :
                         ((GameClockListener) listeners[i + 1]).gameClockStarted(this);
                         break;
-                    case ACTION_STOP:
+                    case ACTION_STOP :
                         ((GameClockListener) listeners[i + 1]).gameClockStopped(this);
                         break;
-                    case ACTION_TICK:
+                    case ACTION_TICK :
                         ((GameClockListener) listeners[i + 1]).gameClockTicked(this);
                         break;
                 }
@@ -188,18 +161,15 @@ public class GameClock extends Timer implements ActionListener, DataMarshal
 
     }
 
-    public void addGameClockListener(GameClockListener listener)
-    {
+    public void addGameClockListener(GameClockListener listener) {
         listenerList.add(GameClockListener.class, listener);
     }
 
-    public void removeGameClockListener(GameClockListener listener)
-    {
+    public void removeGameClockListener(GameClockListener listener) {
         listenerList.remove(GameClockListener.class, listener);
     }
 
-    public void demarshal(MsgState state, String sData)
-    {
+    public void demarshal(MsgState state, String sData) {
         TokenizedList list = new TokenizedList();
         list.demarshal(state, sData);
         nMillisRemaining_ = list.removeLongToken();
@@ -209,8 +179,7 @@ public class GameClock extends Timer implements ActionListener, DataMarshal
         }
     }
 
-    public String marshal(MsgState state)
-    {
+    public String marshal(MsgState state) {
         TokenizedList list = new TokenizedList();
         list.addToken(nMillisRemaining_);
         list.addToken(isRunning());

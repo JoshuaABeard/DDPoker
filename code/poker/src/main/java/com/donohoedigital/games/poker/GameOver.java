@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -52,8 +52,7 @@ import java.awt.event.*;
 /**
  * @author Doug Donohoe
  */
-public class GameOver extends DialogPhase
-{
+public class GameOver extends DialogPhase {
     static Logger logger = LogManager.getLogger(GameOver.class);
 
     private PokerGame game_;
@@ -63,8 +62,7 @@ public class GameOver extends DialogPhase
      * init phase
      */
     @Override
-    public void init(GameEngine engine, GameContext context, GamePhase gamephase)
-    {
+    public void init(GameEngine engine, GameContext context, GamePhase gamephase) {
         // get your game on
         game_ = (PokerGame) context.getGame();
         bOnline_ = game_.isOnlineGame();
@@ -85,8 +83,7 @@ public class GameOver extends DialogPhase
      * start up, play any music
      */
     @Override
-    public void start()
-    {
+    public void start() {
         // music (before super call in case this is modal)
         EngineUtils.startBackgroundMusic(gamephase_, true);
 
@@ -97,8 +94,7 @@ public class GameOver extends DialogPhase
      * finish up, stop music
      */
     @Override
-    public void finish()
-    {
+    public void finish() {
         AudioConfig.stopBackgroundMusic();
     }
 
@@ -106,11 +102,12 @@ public class GameOver extends DialogPhase
      * end game
      */
     @Override
-    public JComponent createDialogContents()
-    {
+    public JComponent createDialogContents() {
         // setup window
-        if (!bOnline_) getDialog().setClosable(false);
-        if (bOnline_ || game_.isGameOver()) getDialog().setIconifiable(true);
+        if (!bOnline_)
+            getDialog().setClosable(false);
+        if (bOnline_ || game_.isGameOver())
+            getDialog().setIconifiable(true);
         PokerPlayer human = game_.getHumanPlayer();
 
         // buttons
@@ -121,62 +118,43 @@ public class GameOver extends DialogPhase
         base.setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
 
         String sExtra = "";
-        if (game_.isGameOver())
-        {
+        if (game_.isGameOver()) {
             sExtra = PropertyConfig.getMessage("msg.gameover.done");
-        }
-        else if (bOnline_)
-        {
-            if (human.isHost())
-            {
+        } else if (bOnline_) {
+            if (human.isHost()) {
                 // remove quit button for host. We do this as opposed
                 // to having a different gamedef.xml entry because the
                 // TD supports only specifying one phase to run (as
-                // opposed to one phase for host, one for client).  This
+                // opposed to one phase for host, one for client). This
                 // is the only instance of that, so we just do this here
                 // instead of adding support in TD for different host/client
                 // phases.
                 removeMatchingButton("quit");
                 sExtra = PropertyConfig.getMessage("msg.gameover.online.host");
-            }
-            else
-            {
+            } else {
                 sExtra = PropertyConfig.getMessage("msg.gameover.online");
             }
-        }
-        else
-        {
+        } else {
             sExtra = PropertyConfig.getMessage("msg.gameover.practice");
         }
 
         String sMsg;
-        if (human.getPlace() == 1)
-        {
+        if (human.getPlace() == 1) {
             sMsg = PropertyConfig.getMessage("msg.gameover.out.win");
-        }
-        else if (human.getPrize() > 0)
-        {
+        } else if (human.getPrize() > 0) {
             sMsg = PropertyConfig.getMessage("msg.gameover.out.money");
-        }
-        else if (game_.isGameOver())
-        {
+        } else if (game_.isGameOver()) {
             sMsg = PropertyConfig.getMessage("msg.gameover.out.observer");
-        }
-        else
-        {
+        } else {
             sMsg = PropertyConfig.getMessage("msg.gameover.out.busted");
         }
 
         // label
         boolean bObs = human.isObserver() && human.getPlace() == 0;
         DDLabel label = new DDLabel(GuiManager.DEFAULT, STYLE);
-        label.setText(Utils.fixHtmlTextFor15(PropertyConfig.getMessage(bObs ? "msg.gameover.obs" : "msg.gameover",
-                                                                       sMsg,
-                                                                       PropertyConfig.getPlace(human.getPlace()),
-                                                                       game_.getNumPlayers(),
-                                                                       human.getTotalSpent(),
-                                                                       human.getPrize(),
-                                                                       sExtra)));
+        label.setText(Utils.fixHtmlTextFor15(PropertyConfig.getMessage(bObs ? "msg.gameover.obs" : "msg.gameover", sMsg,
+                PropertyConfig.getPlace(human.getPlace()), game_.getNumPlayers(), human.getTotalSpent(),
+                human.getPrize(), sExtra)));
         label.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
         base.add(GuiUtils.CENTER(label), BorderLayout.NORTH);
 
@@ -187,8 +165,7 @@ public class GameOver extends DialogPhase
         base.add(leader, BorderLayout.CENTER);
 
         // if human wins play cheers
-        if (human.getPrize() > 0)
-        {
+        if (human.getPrize() > 0) {
             PokerUtils.cheerAudio();
         }
 
@@ -196,10 +173,8 @@ public class GameOver extends DialogPhase
     }
 
     @Override
-    public boolean processButton(GameButton button)
-    {
-        if (button.getName().startsWith("playAgain"))
-        {
+    public boolean processButton(GameButton button) {
+        if (button.getName().startsWith("playAgain")) {
             TypedHashMap params = new TypedHashMap();
             params.setObject(RestartTournament.PARAM_PROFILE, game_.getProfile());
             removeDialog();

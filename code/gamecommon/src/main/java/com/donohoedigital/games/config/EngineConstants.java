@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -40,13 +40,12 @@ package com.donohoedigital.games.config;
 
 /**
  *
- * @author  donohoe
+ * @author donohoe
  */
-public class EngineConstants
-{
+public class EngineConstants {
     // used when TESTING_CHANGE_STARTING_SIZE is on
-    public static final int TESTING_CHANGE_SIZE_WIDTH = 800;//1000;
-    public static final int TESTING_CHANGE_SIZE_HEIGHT = 600;//750;
+    public static final int TESTING_CHANGE_SIZE_WIDTH = 800;// 1000;
+    public static final int TESTING_CHANGE_SIZE_HEIGHT = 600;// 750;
 
     // debug settings configured in common.properties file
     public static final String TESTING_OVERRIDE_KEY = "settings.debug.override.key";
@@ -67,22 +66,22 @@ public class EngineConstants
 
     // game options node and defines
     public static final String PREF_WINDOW_MODE = "windowmode";
-    
+
     // window mode options
     public static final int MODE_ASK = 1;
     public static final int MODE_WINDOW = 2;
     public static final int MODE_FULL = 3;
-    
+
     public static final String PREF_FX = "fx";
     public static final String PREF_FX_VOL = "fxvol";
     public static final String PREF_MUSIC = "music";
     public static final String PREF_BGMUSIC = "bgmusic";
     public static final String PREF_MUSIC_VOL = "musicvol";
     public static final String PREF_BGMUSIC_VOL = "bgvol";
-    
+
     // auto save
     public static final String PREF_AUTOSAVE = "autosave";
-    
+
     // fill option
     public static final String PREF_FILL = "fill";
     public static final String PREF_SCROLL = "scroll";

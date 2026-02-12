@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -44,11 +44,10 @@ import com.donohoedigital.config.*;
 
 /**
  *
- * @author  Doug Donohoe
+ * @author Doug Donohoe
  */
 @DataCoder('C')
-public class Card extends com.ddpoker.Card implements DataMarshal, Comparable<Card>
-{
+public class Card extends com.ddpoker.Card implements DataMarshal, Comparable<Card> {
     // unknown rank
     public static final int UNKNOWN = 0;
 
@@ -117,8 +116,7 @@ public class Card extends com.ddpoker.Card implements DataMarshal, Comparable<Ca
     // all cards
     private static final Card[] cards_ = new Card[53];
 
-    static
-    {
+    static {
         cards_[BLANK.index_] = BLANK;
 
         cards_[SPADES_2.index_] = SPADES_2;
@@ -179,12 +177,14 @@ public class Card extends com.ddpoker.Card implements DataMarshal, Comparable<Ca
     }
 
     /**
-     * Internal storage of card rank.  Package access for performance (methods are slower).
+     * Internal storage of card rank. Package access for performance (methods are
+     * slower).
      */
     int rank_;
 
     /**
-     * Internal storage of card suit.  Package access for performance (methods are slower).
+     * Internal storage of card suit. Package access for performance (methods are
+     * slower).
      */
     int suit_;
     private CardSuit cardSuit_;
@@ -196,15 +196,13 @@ public class Card extends com.ddpoker.Card implements DataMarshal, Comparable<Ca
     /**
      * Empty constructor for saving
      */
-    public Card()
-    {
+    public Card() {
     }
-    
-    /** 
-     * Creates a new instance of Card 
+
+    /**
+     * Creates a new instance of Card
      */
-    public Card(CardSuit suit, int rank)
-    {
+    public Card(CardSuit suit, int rank) {
         cardSuit_ = suit;
         suit_ = suit.getRank();
         rank_ = rank;
@@ -213,12 +211,11 @@ public class Card extends com.ddpoker.Card implements DataMarshal, Comparable<Ca
     }
 
     /**
-     * Copy value of a card.  Warning:  Use carefully!!!  The fingerprint of any hands
-     * this card is in will not be updated when this happens.  You must call
-     * cardsChanged() on the Hand after using this.  
+     * Copy value of a card. Warning: Use carefully!!! The fingerprint of any hands
+     * this card is in will not be updated when this happens. You must call
+     * cardsChanged() on the Hand after using this.
      */
-    public void setValue(Card c)
-    {
+    public void setValue(Card c) {
         cardSuit_ = c.cardSuit_;
         suit_ = c.suit_;
         rank_ = c.rank_;
@@ -226,194 +223,174 @@ public class Card extends com.ddpoker.Card implements DataMarshal, Comparable<Ca
         fingerprint_ = c.fingerprint_;
     }
 
-    public static String getRankSingle(int rank)
-    {
-        if (rank == 10) return getDisplayT();
-        else return getRank(rank);
+    public static String getRankSingle(int rank) {
+        if (rank == 10)
+            return getDisplayT();
+        else
+            return getRank(rank);
     }
 
-    public static int getRank(char cRank)
-    {
-        switch (cRank)
-        {
-            case 'A':
-            case 'a':
+    public static int getRank(char cRank) {
+        switch (cRank) {
+            case 'A' :
+            case 'a' :
                 return ACE;
-            case 'K':
-            case 'k':
+            case 'K' :
+            case 'k' :
                 return KING;
-            case 'Q':
-            case 'q':
+            case 'Q' :
+            case 'q' :
                 return QUEEN;
-            case 'J':
-            case 'j':
+            case 'J' :
+            case 'j' :
                 return JACK;
-            case 'T':
-            case 't':
+            case 'T' :
+            case 't' :
                 return TEN;
-            case '9':
+            case '9' :
                 return NINE;
-            case '8':
+            case '8' :
                 return EIGHT;
-            case '7':
+            case '7' :
                 return SEVEN;
-            case '6':
+            case '6' :
                 return SIX;
-            case '5':
+            case '5' :
                 return FIVE;
-            case '4':
+            case '4' :
                 return FOUR;
-            case '3':
+            case '3' :
                 return THREE;
-            case '2':
+            case '2' :
                 return TWO;
-            default:
+            default :
                 return UNKNOWN;
         }
     }
 
-    public static String getRank(int rank)
-    {
+    public static String getRank(int rank) {
         String sRank = null;
-        switch (rank)
-        {
-            case 1: // special use only (low ace)
-            case ACE:
+        switch (rank) {
+            case 1 : // special use only (low ace)
+            case ACE :
                 sRank = getDisplayA();
                 break;
-                
-            case KING:
+
+            case KING :
                 sRank = getDisplayK();
                 break;
-                
-            case QUEEN:
+
+            case QUEEN :
                 sRank = getDisplayQ();
                 break;
-                
-            case JACK:
+
+            case JACK :
                 sRank = getDisplayJ();
                 break;
-                
-            case 10:
-            case 9:
-            case 8:
-            case 7:
-            case 6:
-            case 5:
-            case 4:
-            case 3:
-            case 2:
+
+            case 10 :
+            case 9 :
+            case 8 :
+            case 7 :
+            case 6 :
+            case 5 :
+            case 4 :
+            case 3 :
+            case 2 :
                 sRank = Integer.toString(rank);
                 break;
 
-            case UNKNOWN:
+            case UNKNOWN :
                 sRank = getDisplayUnknown();
                 break;
 
-            default:
+            default :
                 ApplicationError.assertTrue(false, "Invalid rank: " + rank);
         }
         return sRank;
     }
-    
-    public String getDisplay()
-    {
+
+    public String getDisplay() {
         return getRank(rank_) + cardSuit_.getAbbr();
     }
 
-    public String getRankDisplay()
-    {
+    public String getRankDisplay() {
         return getRank(rank_);
     }
-    
+
     /**
      * Return rank as single char (used in debug output)
      */
-    public String getRankDisplaySingle()
-    {
-        if (rank_ == 10) return "T";
+    public String getRankDisplaySingle() {
+        if (rank_ == 10)
+            return "T";
         return getRank(rank_);
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return getDisplay();
     }
 
-    public String toStringSingle()
-    {
+    public String toStringSingle() {
         return getRankDisplaySingle() + getSuitDisplay();
     }
 
-    public String toHTML()
-    {
+    public String toHTML() {
         return "<DDCARD CARD=\"" + getRankDisplaySingle() + getSuitDisplay() + "\">";
     }
 
-    public CardSuit getCardSuit()
-    {
+    public CardSuit getCardSuit() {
         return cardSuit_;
     }
-    
-    public String getSuitDisplay()
-    {
+
+    public String getSuitDisplay() {
         return cardSuit_.getAbbr();
     }
-    
-    public boolean isHearts()
-    {
+
+    public boolean isHearts() {
         return cardSuit_ == CardSuit.HEARTS;
     }
-    
-    public boolean isDiamonds()
-    {
+
+    public boolean isDiamonds() {
         return cardSuit_ == CardSuit.DIAMONDS;
     }
-    
-    public boolean isClubs()
-    {
+
+    public boolean isClubs() {
         return cardSuit_ == CardSuit.CLUBS;
     }
-        
-    public boolean isSpades()
-    {
+
+    public boolean isSpades() {
         return cardSuit_ == CardSuit.SPADES;
     }
-    
-    public boolean isSameSuit(Card c)
-    {
+
+    public boolean isSameSuit(Card c) {
         return c.cardSuit_ == cardSuit_;
     }
-    
-    public boolean isSameRank(Card c)
-    {
+
+    public boolean isSameRank(Card c) {
         return c.rank_ == rank_;
     }
-    
-    public boolean isFaceCard()
-    {
+
+    public boolean isFaceCard() {
         return rank_ >= JACK && rank_ <= KING;
     }
 
-    public boolean isBlank()
-    {
+    public boolean isBlank() {
         return rank_ == UNKNOWN && cardSuit_ == CardSuit.UNKNOWN;
     }
 
-    public void demarshal(MsgState state, String sData)
-    {
+    public void demarshal(MsgState state, String sData) {
         TokenizedList list = new TokenizedList();
         list.demarshal(state, sData);
         cardSuit_ = CardSuit.forRank(list.removeIntToken());
         suit_ = cardSuit_.getRank();
-        rank_  = list.removeIntToken();
+        rank_ = list.removeIntToken();
         index_ = computeIndex();
         fingerprint_ = 1L << index_;
     }
 
-    public String marshal(MsgState state)
-    {
+    public String marshal(MsgState state) {
         TokenizedList list = new TokenizedList();
         list.addToken(cardSuit_.getRank());
         list.addToken(rank_);
@@ -423,42 +400,39 @@ public class Card extends com.ddpoker.Card implements DataMarshal, Comparable<Ca
     /**
      * Is given card higher than this card?
      */
-    public boolean isGreaterThan(Card c)
-    {
+    public boolean isGreaterThan(Card c) {
         return compareTo(c) > 0;
     }
-    
+
     /**
      * Is given card less than this card
      */
-    public boolean isLessThan(Card c)
-    {
+    public boolean isLessThan(Card c) {
         return compareTo(c) < 0;
     }
-    
+
     /**
      * Comparable interface for sorting
      */
-    public int compareTo(Card c)
-    {
-        if (c == null) return Integer.MAX_VALUE;
+    public int compareTo(Card c) {
+        if (c == null)
+            return Integer.MAX_VALUE;
 
-        if (rank_ == c.rank_)
-        {
+        if (rank_ == c.rank_) {
             return cardSuit_.compareTo(c.cardSuit_);
         }
-        
+
         return rank_ - c.rank_;
     }
-    
+
     /**
      * Equals
      */
     @Override
-    public boolean equals(Object o)
-    {
-        if (!(o instanceof Card)) return false;
-        
+    public boolean equals(Object o) {
+        if (!(o instanceof Card))
+            return false;
+
         Card c = (Card) o;
         return (rank_ == c.rank_ && cardSuit_ == c.cardSuit_);
     }
@@ -467,33 +441,31 @@ public class Card extends com.ddpoker.Card implements DataMarshal, Comparable<Ca
      * Hash code
      */
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return 31 * cardSuit_.hashCode() + rank_;
     }
 
-    public static Card getCard(String card)
-    {
-        if (card == null) return Card.BLANK;
-        
+    public static Card getCard(String card) {
+        if (card == null)
+            return Card.BLANK;
+
         int suit = CardSuit.UNKNOWN_RANK;
 
-        switch (card.charAt(1))
-        {
-            case 'c':
-            case 'C':
+        switch (card.charAt(1)) {
+            case 'c' :
+            case 'C' :
                 suit = CardSuit.CLUBS_RANK;
                 break;
-            case 'd':
-            case 'D':
+            case 'd' :
+            case 'D' :
                 suit = CardSuit.DIAMONDS_RANK;
                 break;
-            case 'h':
-            case 'H':
+            case 'h' :
+            case 'H' :
                 suit = CardSuit.HEARTS_RANK;
                 break;
-            case 's':
-            case 'S':
+            case 's' :
+            case 'S' :
                 suit = CardSuit.SPADES_RANK;
                 break;
         }
@@ -503,44 +475,36 @@ public class Card extends com.ddpoker.Card implements DataMarshal, Comparable<Ca
         return getCard(suit, rank);
     }
 
-    public static Card getCard(int index)
-    {
+    public static Card getCard(int index) {
         return cards_[index];
     }
 
-    public static Card getCard(int suit, int rank)
-    {
+    public static Card getCard(int suit, int rank) {
         return cards_[computeIndex(suit, rank)];
     }
 
-    public static Card getCard(CardSuit suit, int rank)
-    {
+    public static Card getCard(CardSuit suit, int rank) {
         return cards_[computeIndex(suit.getRank(), rank)];
     }
 
     /**
      * Get index for arrays and hand fingerprinting.
      */
-    public int getIndex()
-    {
+    public int getIndex() {
         return index_;
     }
 
-    public long fingerprint()
-    {
+    public long fingerprint() {
         return fingerprint_;
     }
 
-    private int computeIndex()
-    {
+    private int computeIndex() {
         return computeIndex(suit_, rank_);
     }
 
-    private static int computeIndex(int suit, int rank)
-    {
+    private static int computeIndex(int suit, int rank) {
         // blank or otherwise unknown
-        if (rank < TWO || rank > ACE || suit < CardSuit.CLUBS_RANK || suit > CardSuit.SPADES_RANK)
-        {
+        if (rank < TWO || rank > ACE || suit < CardSuit.CLUBS_RANK || suit > CardSuit.SPADES_RANK) {
             return 52;
         }
         return (rank - 2) * 4 + suit;
@@ -548,42 +512,42 @@ public class Card extends com.ddpoker.Card implements DataMarshal, Comparable<Ca
 
     /**
      * Get the numeric value of this card's rank.
+     *
      * @return One of the following:
-     * <ul>
-     * <li>Card.ACE</li>
-     * <li>Card.KING</li>
-     * <li>Card.QUEEN</li>
-     * <li>Card.JACK</li>
-     * <li>Card.TEN</li>
-     * <li>Card.NINE</li>
-     * <li>Card.EIGHT</li>
-     * <li>Card.SEVEN</li>
-     * <li>Card.SIX</li>
-     * <li>Card.FIVE</li>
-     * <li>Card.FOUR</li>
-     * <li>Card.THREE</li>
-     * <li>Card.TWO</li>
-     * </ul>
+     *         <ul>
+     *         <li>Card.ACE</li>
+     *         <li>Card.KING</li>
+     *         <li>Card.QUEEN</li>
+     *         <li>Card.JACK</li>
+     *         <li>Card.TEN</li>
+     *         <li>Card.NINE</li>
+     *         <li>Card.EIGHT</li>
+     *         <li>Card.SEVEN</li>
+     *         <li>Card.SIX</li>
+     *         <li>Card.FIVE</li>
+     *         <li>Card.FOUR</li>
+     *         <li>Card.THREE</li>
+     *         <li>Card.TWO</li>
+     *         </ul>
      */
     @Override
-    public int getRank()
-    {
+    public int getRank() {
         return rank_;
     }
 
     /**
      * Get the numeric value of this card's suit.
+     *
      * @return One of the following:
-     * <ul>
-     * <li>Card.CLUBS</li>
-     * <li>Card.DIAMONDS</li>
-     * <li>Card.HEARTS</li>
-     * <li>Card.SPADES</li>
-     * </ul>
+     *         <ul>
+     *         <li>Card.CLUBS</li>
+     *         <li>Card.DIAMONDS</li>
+     *         <li>Card.HEARTS</li>
+     *         <li>Card.SPADES</li>
+     *         </ul>
      */
     @Override
-    public int getSuit()
-    {
+    public int getSuit() {
         return suit_;
     }
 
@@ -597,44 +561,44 @@ public class Card extends com.ddpoker.Card implements DataMarshal, Comparable<Ca
     private static String DISPLAY_T = null;
 
     @SuppressWarnings({"NonThreadSafeLazyInitialization"})
-    private static String getDisplayUnknown()
-    {
-        if (DISPLAY_UNKNOWN == null) DISPLAY_UNKNOWN = PropertyConfig.getMessage("msg.card.unknown");
+    private static String getDisplayUnknown() {
+        if (DISPLAY_UNKNOWN == null)
+            DISPLAY_UNKNOWN = PropertyConfig.getMessage("msg.card.unknown");
         return DISPLAY_UNKNOWN;
     }
 
     @SuppressWarnings({"NonThreadSafeLazyInitialization"})
-    private static String getDisplayA()
-    {
-        if (DISPLAY_A == null) DISPLAY_A = PropertyConfig.getMessage("msg.card.ace");
+    private static String getDisplayA() {
+        if (DISPLAY_A == null)
+            DISPLAY_A = PropertyConfig.getMessage("msg.card.ace");
         return DISPLAY_A;
     }
 
     @SuppressWarnings({"NonThreadSafeLazyInitialization"})
-    private static String getDisplayK()
-    {
-        if (DISPLAY_K == null) DISPLAY_K = PropertyConfig.getMessage("msg.card.king");
+    private static String getDisplayK() {
+        if (DISPLAY_K == null)
+            DISPLAY_K = PropertyConfig.getMessage("msg.card.king");
         return DISPLAY_K;
     }
 
     @SuppressWarnings({"NonThreadSafeLazyInitialization"})
-    private static String getDisplayQ()
-    {
-        if (DISPLAY_Q == null) DISPLAY_Q = PropertyConfig.getMessage("msg.card.queen");
+    private static String getDisplayQ() {
+        if (DISPLAY_Q == null)
+            DISPLAY_Q = PropertyConfig.getMessage("msg.card.queen");
         return DISPLAY_Q;
     }
 
     @SuppressWarnings({"NonThreadSafeLazyInitialization"})
-    private static String getDisplayJ()
-    {
-        if (DISPLAY_J == null) DISPLAY_J = PropertyConfig.getMessage("msg.card.jack");
+    private static String getDisplayJ() {
+        if (DISPLAY_J == null)
+            DISPLAY_J = PropertyConfig.getMessage("msg.card.jack");
         return DISPLAY_J;
     }
 
     @SuppressWarnings({"NonThreadSafeLazyInitialization"})
-    private static String getDisplayT()
-    {
-        if (DISPLAY_T == null) DISPLAY_T = PropertyConfig.getMessage("msg.card.ten");
+    private static String getDisplayT() {
+        if (DISPLAY_T == null)
+            DISPLAY_T = PropertyConfig.getMessage("msg.card.ten");
         return DISPLAY_T;
     }
 }

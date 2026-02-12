@@ -34,8 +34,8 @@ import java.util.prefs.Preferences;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Edge case tests for FirstTimeWizard - Tests boundary conditions, invalid inputs,
- * and unusual scenarios to ensure robustness.
+ * Edge case tests for FirstTimeWizard - Tests boundary conditions, invalid
+ * inputs, and unusual scenarios to ensure robustness.
  */
 class FirstTimeWizardEdgeCaseTest {
 

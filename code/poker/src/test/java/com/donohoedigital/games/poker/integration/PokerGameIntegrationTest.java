@@ -22,22 +22,27 @@ package com.donohoedigital.games.poker.integration;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Integration tests for PokerGame requiring GameEngine/PokerMain infrastructure.
+ * Integration tests for PokerGame requiring GameEngine/PokerMain
+ * infrastructure.
  *
- * <p>These tests validate end-to-end game functionality that depends on:</p>
+ * <p>
+ * These tests validate end-to-end game functionality that depends on:
+ * </p>
  * <ul>
- *   <li>PokerMain.getPokerMain() - for computer player setup</li>
- *   <li>GameEngine clock management - for game timing</li>
+ * <li>PokerMain.getPokerMain() - for computer player setup</li>
+ * <li>GameEngine clock management - for game timing</li>
  * </ul>
  *
- * <p>Run these tests separately from unit tests:</p>
+ * <p>
+ * Run these tests separately from unit tests:
+ * </p>
+ *
  * <pre>
  * mvn test -Dgroups=integration
  * </pre>

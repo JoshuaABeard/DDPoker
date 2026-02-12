@@ -20,15 +20,11 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.comms.DMTypedHashMap;
-import com.donohoedigital.base.Utils;
 import com.donohoedigital.config.Prefs;
 import com.donohoedigital.config.PropertyConfig;
-import com.donohoedigital.games.config.EngineConstants;
-import com.donohoedigital.games.config.GameButton;
 import com.donohoedigital.games.engine.DialogPhase;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.GameEngine;
-import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,8 +35,8 @@ import java.util.prefs.Preferences;
 import java.util.regex.Pattern;
 
 /**
- * First-Time User Experience (FTUE) wizard for DDPoker.
- * Guides new users through initial setup based on their play mode preference.
+ * First-Time User Experience (FTUE) wizard for DDPoker. Guides new users
+ * through initial setup based on their play mode preference.
  */
 public class FirstTimeWizard extends DialogPhase {
     private static final Logger logger = LogManager.getLogger(FirstTimeWizard.class);
@@ -80,8 +76,7 @@ public class FirstTimeWizard extends DialogPhase {
     private static final int STEP_LINK_COMPLETE_NUM = 4;
 
     // Server address validation regex (from ServerConfigDialog)
-    private static final String ONLINE_SERVER_REGEXP =
-        "^(?:localhost|(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,}|(?:\\d{1,3}\\.){3}\\d{1,3}):\\d{1,5}$";
+    private static final String ONLINE_SERVER_REGEXP = "^(?:localhost|(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,}|(?:\\d{1,3}\\.){3}\\d{1,3}):\\d{1,5}$";
     private static final Pattern SERVER_PATTERN = Pattern.compile(ONLINE_SERVER_REGEXP);
 
     // Email validation regex
@@ -385,13 +380,13 @@ public class FirstTimeWizard extends DialogPhase {
      */
     public void nextStep() {
         switch (selectedMode) {
-            case MODE_OFFLINE:
+            case MODE_OFFLINE :
                 handleOfflineNextStep();
                 break;
-            case MODE_ONLINE_NEW:
+            case MODE_ONLINE_NEW :
                 handleOnlineNewNextStep();
                 break;
-            case MODE_ONLINE_LINK:
+            case MODE_ONLINE_LINK :
                 handleOnlineLinkNextStep();
                 break;
         }
@@ -441,13 +436,13 @@ public class FirstTimeWizard extends DialogPhase {
      */
     public void previousStep() {
         switch (selectedMode) {
-            case MODE_OFFLINE:
+            case MODE_OFFLINE :
                 handleOfflinePreviousStep();
                 break;
-            case MODE_ONLINE_NEW:
+            case MODE_ONLINE_NEW :
                 handleOnlinePreviousStep();
                 break;
-            case MODE_ONLINE_LINK:
+            case MODE_ONLINE_LINK :
                 handleOnlineLinkPreviousStep();
                 break;
         }
@@ -635,25 +630,25 @@ public class FirstTimeWizard extends DialogPhase {
 
         JComponent panel = null;
         switch (stepType) {
-            case STEP_TYPE_WELCOME:
+            case STEP_TYPE_WELCOME :
                 panel = createWelcomePanel();
                 break;
-            case STEP_TYPE_PLAY_MODE:
+            case STEP_TYPE_PLAY_MODE :
                 panel = createPlayModePanel();
                 break;
-            case STEP_TYPE_PROFILE:
+            case STEP_TYPE_PROFILE :
                 panel = selectedMode == MODE_OFFLINE ? createOfflineProfilePanel() : createOnlineProfilePanel();
                 break;
-            case STEP_TYPE_SERVER_CONFIG:
+            case STEP_TYPE_SERVER_CONFIG :
                 panel = createServerConfigPanel();
                 break;
-            case STEP_TYPE_EMAIL_SENT:
+            case STEP_TYPE_EMAIL_SENT :
                 panel = createEmailSentPanel();
                 break;
-            case STEP_TYPE_LINK_PROFILE:
+            case STEP_TYPE_LINK_PROFILE :
                 panel = createLinkProfilePanel();
                 break;
-            case STEP_TYPE_COMPLETE:
+            case STEP_TYPE_COMPLETE :
                 panel = createCompletePanel();
                 break;
         }
@@ -1072,7 +1067,7 @@ public class FirstTimeWizard extends DialogPhase {
         errorLabel.setText("");
 
         switch (stepType) {
-            case STEP_TYPE_PROFILE:
+            case STEP_TYPE_PROFILE :
                 if (!validateProfileName()) {
                     errorLabel.setText(getValidationError());
                     return false;
@@ -1083,14 +1078,14 @@ public class FirstTimeWizard extends DialogPhase {
                 }
                 break;
 
-            case STEP_TYPE_SERVER_CONFIG:
+            case STEP_TYPE_SERVER_CONFIG :
                 if (!serverConfigComplete) {
                     errorLabel.setText(PropertyConfig.getMessage("msg.ftue.validation.server.invalid"));
                     return false;
                 }
                 break;
 
-            case STEP_TYPE_LINK_PROFILE:
+            case STEP_TYPE_LINK_PROFILE :
                 if (!validateProfileName()) {
                     errorLabel.setText(getValidationError());
                     return false;
@@ -1101,7 +1096,7 @@ public class FirstTimeWizard extends DialogPhase {
                 }
                 break;
 
-            case STEP_TYPE_EMAIL_SENT:
+            case STEP_TYPE_EMAIL_SENT :
                 if (!validatePassword()) {
                     errorLabel.setText(PropertyConfig.getMessage("msg.ftue.validation.password.empty"));
                     return false;

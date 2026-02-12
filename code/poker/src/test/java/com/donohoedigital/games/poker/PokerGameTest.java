@@ -28,8 +28,8 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for PokerGame - core game lifecycle, player management, table management,
- * and tournament operations.
+ * Tests for PokerGame - core game lifecycle, player management, table
+ * management, and tournament operations.
  */
 class PokerGameTest {
 
@@ -195,7 +195,8 @@ class PokerGameTest {
         PokerPlayer player = createTestPlayer("TestPlayer", false);
         game.addPlayer(player);
 
-        // Key matching requires specific initialization that's not available in unit tests
+        // Key matching requires specific initialization that's not available in unit
+        // tests
         // Test the null case instead
         PokerPlayer found = game.getPokerPlayerFromKey("non-existent-key");
 

@@ -32,12 +32,11 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for V2Player hand strength computation methods.
- * Extends IntegrationTestBase for full game infrastructure.
+ * Tests for V2Player hand strength computation methods. Extends
+ * IntegrationTestBase for full game infrastructure.
  */
 @Tag("integration")
-class V2PlayerHandStrengthTest extends IntegrationTestBase
-{
+class V2PlayerHandStrengthTest extends IntegrationTestBase {
     private PokerGame game;
     private PokerTable table;
     private HoldemHand hand;
@@ -47,8 +46,7 @@ class V2PlayerHandStrengthTest extends IntegrationTestBase
     private V2Player ai;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         // Create game infrastructure
         game = new PokerGame(null);
         TournamentProfile profile = new TournamentProfile("test");
@@ -96,8 +94,7 @@ class V2PlayerHandStrengthTest extends IntegrationTestBase
     /**
      * Helper to deal pocket cards to a player
      */
-    private void dealPocketCards(PokerPlayer p, Card c1, Card c2)
-    {
+    private void dealPocketCards(PokerPlayer p, Card c1, Card c2) {
         Hand pocket = p.getHand();
         pocket.clear();
         pocket.addCard(c1);
@@ -107,12 +104,10 @@ class V2PlayerHandStrengthTest extends IntegrationTestBase
     /**
      * Helper to deal community cards
      */
-    private void dealCommunity(Card... cards)
-    {
+    private void dealCommunity(Card... cards) {
         Hand community = hand.getCommunity();
         community.clear();
-        for (Card c : cards)
-        {
+        for (Card c : cards) {
             community.addCard(c);
         }
     }
@@ -122,15 +117,10 @@ class V2PlayerHandStrengthTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_ReturnHighStrength_When_PlayerHasPocketAces()
-    {
-        dealPocketCards(player,
-            new Card(CardSuit.SPADES, Card.ACE),
-            new Card(CardSuit.HEARTS, Card.ACE));
-        dealCommunity(
-            new Card(CardSuit.CLUBS, Card.TWO),
-            new Card(CardSuit.DIAMONDS, Card.SEVEN),
-            new Card(CardSuit.HEARTS, Card.KING));
+    void should_ReturnHighStrength_When_PlayerHasPocketAces() {
+        dealPocketCards(player, new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.ACE));
+        dealCommunity(new Card(CardSuit.CLUBS, Card.TWO), new Card(CardSuit.DIAMONDS, Card.SEVEN),
+                new Card(CardSuit.HEARTS, Card.KING));
 
         float rhs = ai.getRawHandStrength();
 
@@ -139,15 +129,10 @@ class V2PlayerHandStrengthTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnMediumStrength_When_PlayerHasMiddlePair()
-    {
-        dealPocketCards(player,
-            new Card(CardSuit.SPADES, Card.NINE),
-            new Card(CardSuit.HEARTS, Card.NINE));
-        dealCommunity(
-            new Card(CardSuit.CLUBS, Card.ACE),
-            new Card(CardSuit.DIAMONDS, Card.KING),
-            new Card(CardSuit.HEARTS, Card.QUEEN));
+    void should_ReturnMediumStrength_When_PlayerHasMiddlePair() {
+        dealPocketCards(player, new Card(CardSuit.SPADES, Card.NINE), new Card(CardSuit.HEARTS, Card.NINE));
+        dealCommunity(new Card(CardSuit.CLUBS, Card.ACE), new Card(CardSuit.DIAMONDS, Card.KING),
+                new Card(CardSuit.HEARTS, Card.QUEEN));
 
         float rhs = ai.getRawHandStrength();
 
@@ -156,15 +141,10 @@ class V2PlayerHandStrengthTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnLowStrength_When_PlayerHasHighCard()
-    {
-        dealPocketCards(player,
-            new Card(CardSuit.SPADES, Card.KING),
-            new Card(CardSuit.HEARTS, Card.QUEEN));
-        dealCommunity(
-            new Card(CardSuit.CLUBS, Card.TWO),
-            new Card(CardSuit.DIAMONDS, Card.FIVE),
-            new Card(CardSuit.SPADES, Card.EIGHT));
+    void should_ReturnLowStrength_When_PlayerHasHighCard() {
+        dealPocketCards(player, new Card(CardSuit.SPADES, Card.KING), new Card(CardSuit.HEARTS, Card.QUEEN));
+        dealCommunity(new Card(CardSuit.CLUBS, Card.TWO), new Card(CardSuit.DIAMONDS, Card.FIVE),
+                new Card(CardSuit.SPADES, Card.EIGHT));
 
         float rhs = ai.getRawHandStrength();
 
@@ -173,16 +153,11 @@ class V2PlayerHandStrengthTest extends IntegrationTestBase
     }
 
     @Test
-    void should_AdjustForOpponentCount_When_MultipleOpponents()
-    {
+    void should_AdjustForOpponentCount_When_MultipleOpponents() {
         // With pocket aces, strength decreases as opponent count increases
-        dealPocketCards(player,
-            new Card(CardSuit.SPADES, Card.ACE),
-            new Card(CardSuit.HEARTS, Card.ACE));
-        dealCommunity(
-            new Card(CardSuit.CLUBS, Card.TWO),
-            new Card(CardSuit.DIAMONDS, Card.SEVEN),
-            new Card(CardSuit.HEARTS, Card.KING));
+        dealPocketCards(player, new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.ACE));
+        dealCommunity(new Card(CardSuit.CLUBS, Card.TWO), new Card(CardSuit.DIAMONDS, Card.SEVEN),
+                new Card(CardSuit.HEARTS, Card.KING));
 
         float rhs = ai.getRawHandStrength();
 
@@ -196,15 +171,10 @@ class V2PlayerHandStrengthTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_ReturnHighPPot_When_PlayerHasFlushDraw()
-    {
-        dealPocketCards(player,
-            new Card(CardSuit.SPADES, Card.ACE),
-            new Card(CardSuit.SPADES, Card.KING));
-        dealCommunity(
-            new Card(CardSuit.SPADES, Card.TWO),
-            new Card(CardSuit.SPADES, Card.SEVEN),
-            new Card(CardSuit.HEARTS, Card.JACK));
+    void should_ReturnHighPPot_When_PlayerHasFlushDraw() {
+        dealPocketCards(player, new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.SPADES, Card.KING));
+        dealCommunity(new Card(CardSuit.SPADES, Card.TWO), new Card(CardSuit.SPADES, Card.SEVEN),
+                new Card(CardSuit.HEARTS, Card.JACK));
 
         float ppot = ai.getPositiveHandPotential();
 
@@ -213,15 +183,10 @@ class V2PlayerHandStrengthTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnHighPPot_When_PlayerHasStraightDraw()
-    {
-        dealPocketCards(player,
-            new Card(CardSuit.SPADES, Card.JACK),
-            new Card(CardSuit.HEARTS, Card.TEN));
-        dealCommunity(
-            new Card(CardSuit.CLUBS, Card.NINE),
-            new Card(CardSuit.DIAMONDS, Card.EIGHT),
-            new Card(CardSuit.HEARTS, Card.TWO));
+    void should_ReturnHighPPot_When_PlayerHasStraightDraw() {
+        dealPocketCards(player, new Card(CardSuit.SPADES, Card.JACK), new Card(CardSuit.HEARTS, Card.TEN));
+        dealCommunity(new Card(CardSuit.CLUBS, Card.NINE), new Card(CardSuit.DIAMONDS, Card.EIGHT),
+                new Card(CardSuit.HEARTS, Card.TWO));
 
         float ppot = ai.getPositiveHandPotential();
 
@@ -230,15 +195,10 @@ class V2PlayerHandStrengthTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnLowNPot_When_PlayerHasNuts()
-    {
-        dealPocketCards(player,
-            new Card(CardSuit.SPADES, Card.ACE),
-            new Card(CardSuit.HEARTS, Card.ACE));
-        dealCommunity(
-            new Card(CardSuit.CLUBS, Card.ACE),
-            new Card(CardSuit.DIAMONDS, Card.KING),
-            new Card(CardSuit.HEARTS, Card.KING));
+    void should_ReturnLowNPot_When_PlayerHasNuts() {
+        dealPocketCards(player, new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.ACE));
+        dealCommunity(new Card(CardSuit.CLUBS, Card.ACE), new Card(CardSuit.DIAMONDS, Card.KING),
+                new Card(CardSuit.HEARTS, Card.KING));
 
         float npot = ai.getNegativeHandPotential();
 
@@ -247,15 +207,10 @@ class V2PlayerHandStrengthTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnHighNPot_When_PlayerHasVulnerableHand()
-    {
-        dealPocketCards(player,
-            new Card(CardSuit.SPADES, Card.JACK),
-            new Card(CardSuit.HEARTS, Card.TEN));
-        dealCommunity(
-            new Card(CardSuit.CLUBS, Card.JACK),
-            new Card(CardSuit.DIAMONDS, Card.TEN),
-            new Card(CardSuit.HEARTS, Card.NINE));
+    void should_ReturnHighNPot_When_PlayerHasVulnerableHand() {
+        dealPocketCards(player, new Card(CardSuit.SPADES, Card.JACK), new Card(CardSuit.HEARTS, Card.TEN));
+        dealCommunity(new Card(CardSuit.CLUBS, Card.JACK), new Card(CardSuit.DIAMONDS, Card.TEN),
+                new Card(CardSuit.HEARTS, Card.NINE));
 
         float npot = ai.getNegativeHandPotential();
 
@@ -268,15 +223,10 @@ class V2PlayerHandStrengthTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_IncorporatePotential_When_Computing()
-    {
-        dealPocketCards(player,
-            new Card(CardSuit.SPADES, Card.ACE),
-            new Card(CardSuit.SPADES, Card.KING));
-        dealCommunity(
-            new Card(CardSuit.SPADES, Card.TWO),
-            new Card(CardSuit.SPADES, Card.SEVEN),
-            new Card(CardSuit.HEARTS, Card.JACK));
+    void should_IncorporatePotential_When_Computing() {
+        dealPocketCards(player, new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.SPADES, Card.KING));
+        dealCommunity(new Card(CardSuit.SPADES, Card.TWO), new Card(CardSuit.SPADES, Card.SEVEN),
+                new Card(CardSuit.HEARTS, Card.JACK));
 
         float rhs = ai.getRawHandStrength();
         float ppot = ai.getPositiveHandPotential();
@@ -290,17 +240,11 @@ class V2PlayerHandStrengthTest extends IntegrationTestBase
     }
 
     @Test
-    void should_HaveZeroPotential_When_OnRiver()
-    {
-        dealPocketCards(player,
-            new Card(CardSuit.SPADES, Card.ACE),
-            new Card(CardSuit.HEARTS, Card.KING));
-        dealCommunity(
-            new Card(CardSuit.CLUBS, Card.TWO),
-            new Card(CardSuit.DIAMONDS, Card.SEVEN),
-            new Card(CardSuit.HEARTS, Card.JACK),
-            new Card(CardSuit.SPADES, Card.FOUR),
-            new Card(CardSuit.CLUBS, Card.NINE));
+    void should_HaveZeroPotential_When_OnRiver() {
+        dealPocketCards(player, new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.KING));
+        dealCommunity(new Card(CardSuit.CLUBS, Card.TWO), new Card(CardSuit.DIAMONDS, Card.SEVEN),
+                new Card(CardSuit.HEARTS, Card.JACK), new Card(CardSuit.SPADES, Card.FOUR),
+                new Card(CardSuit.CLUBS, Card.NINE));
 
         float ppot = ai.getPositiveHandPotential();
         float npot = ai.getNegativeHandPotential();
@@ -315,15 +259,10 @@ class V2PlayerHandStrengthTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_AdjustForField_When_ComputingBiased()
-    {
-        dealPocketCards(player,
-            new Card(CardSuit.SPADES, Card.ACE),
-            new Card(CardSuit.HEARTS, Card.KING));
-        dealCommunity(
-            new Card(CardSuit.CLUBS, Card.ACE),
-            new Card(CardSuit.DIAMONDS, Card.SEVEN),
-            new Card(CardSuit.HEARTS, Card.JACK));
+    void should_AdjustForField_When_ComputingBiased() {
+        dealPocketCards(player, new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.KING));
+        dealCommunity(new Card(CardSuit.CLUBS, Card.ACE), new Card(CardSuit.DIAMONDS, Card.SEVEN),
+                new Card(CardSuit.HEARTS, Card.JACK));
 
         float rhs = ai.getRawHandStrength();
         float bhs = ai.getBiasedHandStrength();
@@ -334,15 +273,10 @@ class V2PlayerHandStrengthTest extends IntegrationTestBase
     }
 
     @Test
-    void should_DifferFromRaw_When_BiasApplied()
-    {
-        dealPocketCards(player,
-            new Card(CardSuit.SPADES, Card.KING),
-            new Card(CardSuit.HEARTS, Card.QUEEN));
-        dealCommunity(
-            new Card(CardSuit.CLUBS, Card.KING),
-            new Card(CardSuit.DIAMONDS, Card.SEVEN),
-            new Card(CardSuit.HEARTS, Card.TWO));
+    void should_DifferFromRaw_When_BiasApplied() {
+        dealPocketCards(player, new Card(CardSuit.SPADES, Card.KING), new Card(CardSuit.HEARTS, Card.QUEEN));
+        dealCommunity(new Card(CardSuit.CLUBS, Card.KING), new Card(CardSuit.DIAMONDS, Card.SEVEN),
+                new Card(CardSuit.HEARTS, Card.TWO));
 
         float rhs = ai.getRawHandStrength();
         float bhs = ai.getBiasedHandStrength();

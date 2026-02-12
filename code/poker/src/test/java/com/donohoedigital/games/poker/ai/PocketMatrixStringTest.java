@@ -27,15 +27,14 @@ import static com.donohoedigital.games.poker.engine.Card.*;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for PocketMatrixString storage of String values for all possible poker pockets.
+ * Tests for PocketMatrixString storage of String values for all possible poker
+ * pockets.
  */
-class PocketMatrixStringTest
-{
+class PocketMatrixStringTest {
     private PocketMatrixString matrix;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         matrix = new PocketMatrixString();
     }
 
@@ -44,16 +43,14 @@ class PocketMatrixStringTest
     // ========================================
 
     @Test
-    void should_InitializeWithNulls_When_DefaultConstructor()
-    {
+    void should_InitializeWithNulls_When_DefaultConstructor() {
         assertThat(matrix.get(0, 1)).isNull();
         assertThat(matrix.get(10, 20)).isNull();
         assertThat(matrix.get(50, 51)).isNull();
     }
 
     @Test
-    void should_InitializeWithValue_When_ValueConstructor()
-    {
+    void should_InitializeWithValue_When_ValueConstructor() {
         PocketMatrixString matrixWithDefault = new PocketMatrixString("default");
 
         assertThat(matrixWithDefault.get(0, 1)).isEqualTo("default");
@@ -62,8 +59,7 @@ class PocketMatrixStringTest
     }
 
     @Test
-    void should_InitializeWithNull_When_NullConstructorArgument()
-    {
+    void should_InitializeWithNull_When_NullConstructorArgument() {
         PocketMatrixString matrixWithNull = new PocketMatrixString(null);
 
         assertThat(matrixWithNull.get(0, 1)).isNull();
@@ -75,16 +71,14 @@ class PocketMatrixStringTest
     // ========================================
 
     @Test
-    void should_StoreAndRetrieveValue_When_SettingByCardIndices()
-    {
+    void should_StoreAndRetrieveValue_When_SettingByCardIndices() {
         matrix.set(5, 10, "test-value");
 
         assertThat(matrix.get(5, 10)).isEqualTo("test-value");
     }
 
     @Test
-    void should_ReturnSameValue_When_IndicesReversed()
-    {
+    void should_ReturnSameValue_When_IndicesReversed() {
         matrix.set(5, 10, "symmetric");
 
         assertThat(matrix.get(10, 5)).isEqualTo("symmetric");
@@ -92,8 +86,7 @@ class PocketMatrixStringTest
     }
 
     @Test
-    void should_OverwritePreviousValue_When_SettingSameIndicesTwice()
-    {
+    void should_OverwritePreviousValue_When_SettingSameIndicesTwice() {
         matrix.set(7, 14, "first");
         matrix.set(7, 14, "second");
 
@@ -105,16 +98,14 @@ class PocketMatrixStringTest
     // ========================================
 
     @Test
-    void should_StoreAndRetrieveValue_When_SettingByCardObjects()
-    {
+    void should_StoreAndRetrieveValue_When_SettingByCardObjects() {
         matrix.set(SPADES_A, HEARTS_K, "AK suited");
 
         assertThat(matrix.get(SPADES_A, HEARTS_K)).isEqualTo("AK suited");
     }
 
     @Test
-    void should_ReturnSameValue_When_CardObjectsReversed()
-    {
+    void should_ReturnSameValue_When_CardObjectsReversed() {
         matrix.set(CLUBS_2, DIAMONDS_3, "23 off");
 
         assertThat(matrix.get(DIAMONDS_3, CLUBS_2)).isEqualTo("23 off");
@@ -126,8 +117,7 @@ class PocketMatrixStringTest
     // ========================================
 
     @Test
-    void should_StoreAndRetrieveValue_When_SettingByHandObject()
-    {
+    void should_StoreAndRetrieveValue_When_SettingByHandObject() {
         Hand pocket = new Hand(SPADES_A, HEARTS_A);
 
         matrix.set(pocket, "Pocket Aces");
@@ -136,8 +126,7 @@ class PocketMatrixStringTest
     }
 
     @Test
-    void should_ReturnSameValue_When_AccessedViaHandOrIndividualCards()
-    {
+    void should_ReturnSameValue_When_AccessedViaHandOrIndividualCards() {
         Hand pocket = new Hand(CLUBS_J, SPADES_T);
 
         matrix.set(pocket, "Jack-Ten");
@@ -151,8 +140,7 @@ class PocketMatrixStringTest
     // ========================================
 
     @Test
-    void should_SetAllValuesToNull_When_ClearWithNull()
-    {
+    void should_SetAllValuesToNull_When_ClearWithNull() {
         matrix.set(5, 10, "value1");
         matrix.set(20, 30, "value2");
 
@@ -163,8 +151,7 @@ class PocketMatrixStringTest
     }
 
     @Test
-    void should_SetAllValuesToSpecified_When_ClearWithValue()
-    {
+    void should_SetAllValuesToSpecified_When_ClearWithValue() {
         matrix.set(5, 10, "old1");
         matrix.set(20, 30, "old2");
 
@@ -180,16 +167,14 @@ class PocketMatrixStringTest
     // ========================================
 
     @Test
-    void should_HandleEmptyString_When_SettingAndGetting()
-    {
+    void should_HandleEmptyString_When_SettingAndGetting() {
         matrix.set(10, 20, "");
 
         assertThat(matrix.get(10, 20)).isEmpty();
     }
 
     @Test
-    void should_HandleLongString_When_SettingAndGetting()
-    {
+    void should_HandleLongString_When_SettingAndGetting() {
         String longString = "This is a very long string representing complex pocket hand information with lots of details";
         matrix.set(15, 25, longString);
 
@@ -197,16 +182,14 @@ class PocketMatrixStringTest
     }
 
     @Test
-    void should_HandleSpecialCharacters_When_SettingAndGetting()
-    {
+    void should_HandleSpecialCharacters_When_SettingAndGetting() {
         matrix.set(10, 20, "A♠K♥ $100 @position #3");
 
         assertThat(matrix.get(10, 20)).isEqualTo("A♠K♥ $100 @position #3");
     }
 
     @Test
-    void should_HandleUnicodeCharacters_When_SettingAndGetting()
-    {
+    void should_HandleUnicodeCharacters_When_SettingAndGetting() {
         matrix.set(10, 20, "Pocket: 🃁🂱 Strength: 💪");
 
         assertThat(matrix.get(10, 20)).isEqualTo("Pocket: 🃁🂱 Strength: 💪");
@@ -217,8 +200,7 @@ class PocketMatrixStringTest
     // ========================================
 
     @Test
-    void should_HandleBoundaryCardIndices_When_SettingAndGetting()
-    {
+    void should_HandleBoundaryCardIndices_When_SettingAndGetting() {
         // 0 and 51 are valid card indices (52 cards total)
         matrix.set(0, 51, "boundary-test");
 
@@ -227,8 +209,7 @@ class PocketMatrixStringTest
     }
 
     @Test
-    void should_HandleAllSuitedPairs_When_SettingDifferentValues()
-    {
+    void should_HandleAllSuitedPairs_When_SettingDifferentValues() {
         // Aces of different suits
         matrix.set(SPADES_A, HEARTS_A, "A♠A♥");
         matrix.set(SPADES_A, DIAMONDS_A, "A♠A♦");
@@ -242,8 +223,7 @@ class PocketMatrixStringTest
     // ========================================
 
     @Test
-    void should_StoreHandNames_When_SettingCommonPokerHands()
-    {
+    void should_StoreHandNames_When_SettingCommonPokerHands() {
         matrix.set(SPADES_A, HEARTS_A, "Pocket Rockets");
         matrix.set(SPADES_K, HEARTS_K, "Cowboys");
         matrix.set(SPADES_Q, HEARTS_Q, "Ladies");
@@ -258,8 +238,7 @@ class PocketMatrixStringTest
     }
 
     @Test
-    void should_StoreJSONStrings_When_UsedForSerialization()
-    {
+    void should_StoreJSONStrings_When_UsedForSerialization() {
         String jsonData = "{\"hand\":\"AK\",\"strength\":0.85,\"position\":\"late\"}";
         matrix.set(SPADES_A, HEARTS_K, jsonData);
 
@@ -267,8 +246,7 @@ class PocketMatrixStringTest
     }
 
     @Test
-    void should_HandleMultilineStrings_When_SettingAndGetting()
-    {
+    void should_HandleMultilineStrings_When_SettingAndGetting() {
         String multiline = "Line 1: Ace-King\nLine 2: Strong hand\nLine 3: Play aggressively";
         matrix.set(10, 20, multiline);
 
@@ -276,8 +254,7 @@ class PocketMatrixStringTest
     }
 
     @Test
-    void should_HandleWhitespaceStrings_When_SettingAndGetting()
-    {
+    void should_HandleWhitespaceStrings_When_SettingAndGetting() {
         matrix.set(10, 20, "   spaces   ");
         matrix.set(15, 25, "\t\ttabs\t\t");
         matrix.set(20, 30, "\n\nnewlines\n\n");
@@ -288,8 +265,7 @@ class PocketMatrixStringTest
     }
 
     @Test
-    void should_StoreDistinctStrings_When_SameRankDifferentSuits()
-    {
+    void should_StoreDistinctStrings_When_SameRankDifferentSuits() {
         // Multiple kings with different suits
         matrix.set(SPADES_K, HEARTS_K, "K♠K♥");
         matrix.set(SPADES_K, DIAMONDS_K, "K♠K♦");
@@ -303,8 +279,7 @@ class PocketMatrixStringTest
     }
 
     @Test
-    void should_HandleSequentialIndices_When_TestingAdjacentCards()
-    {
+    void should_HandleSequentialIndices_When_TestingAdjacentCards() {
         // Test adjacent card indices
         matrix.set(0, 1, "pair-0-1");
         matrix.set(1, 2, "pair-1-2");
@@ -316,8 +291,7 @@ class PocketMatrixStringTest
     }
 
     @Test
-    void should_AllowNullValues_When_ExplicitlySet()
-    {
+    void should_AllowNullValues_When_ExplicitlySet() {
         matrix.set(10, 20, "initially-set");
         matrix.set(10, 20, null);
 

@@ -30,11 +30,12 @@ import static com.donohoedigital.games.poker.engine.Card.*;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for HandPotential - hand potential calculation and future hand prediction.
+ * Tests for HandPotential - hand potential calculation and future hand
+ * prediction.
  *
- * Note: HandPotential is a computationally expensive class that analyzes all possible
- * future boards. Tests focus on the main API and basic scenarios rather than
- * exhaustive statistical validation.
+ * Note: HandPotential is a computationally expensive class that analyzes all
+ * possible future boards. Tests focus on the main API and basic scenarios
+ * rather than exhaustive statistical validation.
  */
 class HandPotentialTest {
 
@@ -129,10 +130,7 @@ class HandPotentialTest {
         float potential = HandPotential.getPotential(hole, community);
 
         // Very strong hands may return NaN due to calculation edge cases
-        assertThat(potential).satisfiesAnyOf(
-            p -> assertThat(p).isBetween(0.0f, 1.0f),
-            p -> assertThat(p).isNaN()
-        );
+        assertThat(potential).satisfiesAnyOf(p -> assertThat(p).isBetween(0.0f, 1.0f), p -> assertThat(p).isNaN());
     }
 
     @Test
@@ -261,10 +259,7 @@ class HandPotentialTest {
         float potential = HandPotential.getPotential(hole, community);
 
         // Very strong hands may return NaN due to calculation edge cases
-        assertThat(potential).satisfiesAnyOf(
-            p -> assertThat(p).isBetween(0.0f, 1.0f),
-            p -> assertThat(p).isNaN()
-        );
+        assertThat(potential).satisfiesAnyOf(p -> assertThat(p).isBetween(0.0f, 1.0f), p -> assertThat(p).isNaN());
     }
 
     @Test

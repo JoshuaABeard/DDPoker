@@ -54,13 +54,13 @@ import static com.donohoedigital.games.poker.model.TournamentHistory.*;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for TournamentHistoryService business logic beyond simple DAO pass-through operations.
+ * Tests for TournamentHistoryService business logic beyond simple DAO
+ * pass-through operations.
  */
 @Tag("slow")
 @SpringJUnitConfig(locations = {"/app-context-pokerservertests.xml"})
 @Transactional
-class TournamentHistoryServiceTest
-{
+class TournamentHistoryServiceTest {
     private static final Logger logger = LogManager.getLogger(TournamentHistoryServiceTest.class);
 
     @Autowired
@@ -74,8 +74,7 @@ class TournamentHistoryServiceTest
 
     @Test
     @Rollback
-    void should_StoreTournamentHistories_When_GameUpdatedWithResults()
-    {
+    void should_StoreTournamentHistories_When_GameUpdatedWithResults() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("Dexter");
         OnlineProfile guest1 = PokerTestData.createOnlineProfile("Zorro");
         OnlineGame game = PokerTestData.createOnlineGame(profile.getName(), 1, "XXX-999");
@@ -91,15 +90,13 @@ class TournamentHistoryServiceTest
         list.add(PokerTestData.createTournamentHistory(guest1.getName(), PLAYER_TYPE_ONLINE));
 
         // some ai
-        for (int i = 0; i < 4; i++)
-        {
-            list.add(PokerTestData.createTournamentHistory("AI #"+(i+1), PLAYER_TYPE_AI));
+        for (int i = 0; i < 4; i++) {
+            list.add(PokerTestData.createTournamentHistory("AI #" + (i + 1), PLAYER_TYPE_AI));
         }
 
         // some local
-        for (int i = 0; i < 4; i++)
-        {
-            list.add(PokerTestData.createTournamentHistory("Local #"+(i+1), PLAYER_TYPE_LOCAL));
+        for (int i = 0; i < 4; i++) {
+            list.add(PokerTestData.createTournamentHistory("Local #" + (i + 1), PLAYER_TYPE_LOCAL));
         }
 
         // a non-existent online
@@ -107,8 +104,7 @@ class TournamentHistoryServiceTest
 
         // set places
         int place = list.size();
-        for (TournamentHistory hist : list)
-        {
+        for (TournamentHistory hist : list) {
             hist.setPlace(place);
             place--;
         }
@@ -117,13 +113,13 @@ class TournamentHistoryServiceTest
         gameService.updateOnlineGame(game, list);
 
         // fetch
-        TournamentHistoryList allForGame = histService.getAllTournamentHistoriesForGame(null, 0, list.size()*2, game.getId());
+        TournamentHistoryList allForGame = histService.getAllTournamentHistoriesForGame(null, 0, list.size() * 2,
+                game.getId());
         assertThat(allForGame).hasSize(list.size());
         assertThat(allForGame.getTotalSize()).isEqualTo(list.size());
 
         // verify all histories
-        for (TournamentHistory hist : allForGame)
-        {
+        for (TournamentHistory hist : allForGame) {
             logger.info("RETURN: " + hist);
             assertThat(hist.getTournamentName()).isEqualTo(game.getTournament().getName());
             assertThat(hist.getNumPlayers()).isEqualTo(list.size());
@@ -136,16 +132,14 @@ class TournamentHistoryServiceTest
 
     @Test
     @Rollback
-    void should_ReturnZeroCount_When_NoHistoriesForGame()
-    {
+    void should_ReturnZeroCount_When_NoHistoriesForGame() {
         int count = histService.getAllTournamentHistoriesForGameCount(99999L);
         assertThat(count).isZero();
     }
 
     @Test
     @Rollback
-    void should_ReturnCorrectCount_When_HistoriesExist()
-    {
+    void should_ReturnCorrectCount_When_HistoriesExist() {
         // Create game and profiles
         OnlineProfile profile = PokerTestData.createOnlineProfile("Host");
         OnlineGame game = PokerTestData.createOnlineGame(profile.getName(), 1, "XXX-123");
@@ -170,8 +164,7 @@ class TournamentHistoryServiceTest
 
     @Test
     @Rollback
-    void should_ReturnZeroCount_When_NoHistoriesForProfile()
-    {
+    void should_ReturnZeroCount_When_NoHistoriesForProfile() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("NewPlayer");
         profileService.saveOnlineProfile(profile);
 
@@ -181,8 +174,7 @@ class TournamentHistoryServiceTest
 
     @Test
     @Rollback
-    void should_ReturnHistoriesForProfile_When_ProfileHasPlayed()
-    {
+    void should_ReturnHistoriesForProfile_When_ProfileHasPlayed() {
         // Create profiles and game
         OnlineProfile profile = PokerTestData.createOnlineProfile("Player1");
         OnlineGame game = PokerTestData.createOnlineGame(profile.getName(), 1, "XXX-456");
@@ -202,7 +194,8 @@ class TournamentHistoryServiceTest
         int count = histService.getAllTournamentHistoriesForProfileCount(profile.getId(), null, null, null);
         assertThat(count).isEqualTo(1);
 
-        TournamentHistoryList histories = histService.getAllTournamentHistoriesForProfile(null, 0, 10, profile.getId(), null, null, null);
+        TournamentHistoryList histories = histService.getAllTournamentHistoriesForProfile(null, 0, 10, profile.getId(),
+                null, null, null);
         assertThat(histories).hasSize(1);
         assertThat(histories.get(0).getPlayerName()).isEqualTo(profile.getName());
     }
@@ -213,16 +206,14 @@ class TournamentHistoryServiceTest
 
     @Test
     @Rollback
-    void should_ReturnZeroCount_When_NoLeaderboardData()
-    {
+    void should_ReturnZeroCount_When_NoLeaderboardData() {
         int count = histService.getLeaderboardCount(10, null, null, null);
         assertThat(count).isZero();
     }
 
     @Test
     @Rollback
-    void should_ReturnLeaderboard_When_DataExists()
-    {
+    void should_ReturnLeaderboard_When_DataExists() {
         // Create profiles and game
         OnlineProfile profile1 = PokerTestData.createOnlineProfile("Winner");
         OnlineProfile profile2 = PokerTestData.createOnlineProfile("RunnerUp");
@@ -251,7 +242,8 @@ class TournamentHistoryServiceTest
         int count = histService.getLeaderboardCount(10, null, null, null);
         assertThat(count).isGreaterThanOrEqualTo(0);
 
-        LeaderboardSummaryList leaderboard = histService.getLeaderboard(null, 0, 10, TournamentHistoryService.LeaderboardType.ddr1, 10, null, null, null);
+        LeaderboardSummaryList leaderboard = histService.getLeaderboard(null, 0, 10,
+                TournamentHistoryService.LeaderboardType.ddr1, 10, null, null, null);
         assertThat(leaderboard).isNotNull();
     }
 
@@ -261,8 +253,7 @@ class TournamentHistoryServiceTest
 
     @Test
     @Rollback
-    void should_HandleEmptyHistoryList_When_UpdatingGame()
-    {
+    void should_HandleEmptyHistoryList_When_UpdatingGame() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("EmptyHost");
         OnlineGame game = PokerTestData.createOnlineGame(profile.getName(), 1, "XXX-000");
 
@@ -278,14 +269,12 @@ class TournamentHistoryServiceTest
 
     @Test
     @Rollback
-    void should_HandleMultipleGamesForProfile_When_QueryingHistory()
-    {
+    void should_HandleMultipleGamesForProfile_When_QueryingHistory() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("ActivePlayer");
         profileService.saveOnlineProfile(profile);
 
         // Create multiple games with this profile
-        for (int i = 0; i < 3; i++)
-        {
+        for (int i = 0; i < 3; i++) {
             OnlineGame game = PokerTestData.createOnlineGame(profile.getName(), i, "XXX-" + i);
             gameService.saveOnlineGame(game);
 
@@ -303,8 +292,7 @@ class TournamentHistoryServiceTest
 
     @Test
     @Rollback
-    void should_FilterByName_When_QueryingProfileHistory()
-    {
+    void should_FilterByName_When_QueryingProfileHistory() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("SearchPlayer");
         profileService.saveOnlineProfile(profile);
 
@@ -335,8 +323,7 @@ class TournamentHistoryServiceTest
 
     @Test
     @Rollback
-    void should_UpgradeHistories_When_UpgradeAllTournamentHistoriesForGameCalled()
-    {
+    void should_UpgradeHistories_When_UpgradeAllTournamentHistoriesForGameCalled() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("UpgradePlayer");
         OnlineGame game = PokerTestData.createOnlineGame(profile.getName(), 1, "XXX-555");
 
@@ -361,8 +348,7 @@ class TournamentHistoryServiceTest
 
     @Test
     @Rollback
-    void should_HandleEmptyGame_When_UpgradingHistories()
-    {
+    void should_HandleEmptyGame_When_UpgradingHistories() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("EmptyUpgrade");
         OnlineGame game = PokerTestData.createOnlineGame(profile.getName(), 1, "XXX-666");
 
@@ -383,14 +369,12 @@ class TournamentHistoryServiceTest
 
     @Test
     @Rollback
-    void should_HandlePagination_When_GettingProfileHistory()
-    {
+    void should_HandlePagination_When_GettingProfileHistory() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("PaginationPlayer");
         profileService.saveOnlineProfile(profile);
 
         // Create multiple games for this profile
-        for (int i = 0; i < 5; i++)
-        {
+        for (int i = 0; i < 5; i++) {
             OnlineGame game = PokerTestData.createOnlineGame(profile.getName(), i, "PAGE-" + i);
             gameService.saveOnlineGame(game);
 
@@ -403,18 +387,19 @@ class TournamentHistoryServiceTest
         }
 
         // Get first page
-        TournamentHistoryList page1 = histService.getAllTournamentHistoriesForProfile(null, 0, 2, profile.getId(), null, null, null);
+        TournamentHistoryList page1 = histService.getAllTournamentHistoriesForProfile(null, 0, 2, profile.getId(), null,
+                null, null);
         assertThat(page1).hasSizeLessThanOrEqualTo(2);
 
         // Get second page
-        TournamentHistoryList page2 = histService.getAllTournamentHistoriesForProfile(null, 2, 2, profile.getId(), null, null, null);
+        TournamentHistoryList page2 = histService.getAllTournamentHistoriesForProfile(null, 2, 2, profile.getId(), null,
+                null, null);
         assertThat(page2).isNotNull();
     }
 
     @Test
     @Rollback
-    void should_FilterByDateRange_When_QueryingProfileHistory()
-    {
+    void should_FilterByDateRange_When_QueryingProfileHistory() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("DateRangePlayer");
         profileService.saveOnlineProfile(profile);
 
@@ -437,14 +422,14 @@ class TournamentHistoryServiceTest
         begin.add(Calendar.DAY_OF_MONTH, -10);
         Calendar end = Calendar.getInstance();
 
-        int count = histService.getAllTournamentHistoriesForProfileCount(profile.getId(), null, begin.getTime(), end.getTime());
+        int count = histService.getAllTournamentHistoriesForProfileCount(profile.getId(), null, begin.getTime(),
+                end.getTime());
         assertThat(count).isGreaterThanOrEqualTo(1);
     }
 
     @Test
     @Rollback
-    void should_ReturnDifferentLeaderboards_When_DifferentTypesRequested()
-    {
+    void should_ReturnDifferentLeaderboards_When_DifferentTypesRequested() {
         // Create profiles and games with prize data
         OnlineProfile profile1 = PokerTestData.createOnlineProfile("LeaderWinner");
         OnlineProfile profile2 = PokerTestData.createOnlineProfile("LeaderRunner");
@@ -469,18 +454,19 @@ class TournamentHistoryServiceTest
         gameService.updateOnlineGame(game, list);
 
         // Get DDR1 leaderboard
-        LeaderboardSummaryList ddr1 = histService.getLeaderboard(null, 0, 10, TournamentHistoryService.LeaderboardType.ddr1, 10, null, null, null);
+        LeaderboardSummaryList ddr1 = histService.getLeaderboard(null, 0, 10,
+                TournamentHistoryService.LeaderboardType.ddr1, 10, null, null, null);
         assertThat(ddr1).isNotNull();
 
         // Get ROI leaderboard
-        LeaderboardSummaryList roi = histService.getLeaderboard(null, 0, 10, TournamentHistoryService.LeaderboardType.roi, 10, null, null, null);
+        LeaderboardSummaryList roi = histService.getLeaderboard(null, 0, 10,
+                TournamentHistoryService.LeaderboardType.roi, 10, null, null, null);
         assertThat(roi).isNotNull();
     }
 
     @Test
     @Rollback
-    void should_FilterLeaderboardByName_When_NameSearchProvided()
-    {
+    void should_FilterLeaderboardByName_When_NameSearchProvided() {
         // Create profiles with similar names
         OnlineProfile profile1 = PokerTestData.createOnlineProfile("LeaderSearch123");
         OnlineProfile profile2 = PokerTestData.createOnlineProfile("LeaderSearch456");
@@ -488,8 +474,7 @@ class TournamentHistoryServiceTest
         profileService.saveOnlineProfile(profile2);
 
         // Create games for both
-        for (int i = 0; i < 2; i++)
-        {
+        for (int i = 0; i < 2; i++) {
             String playerName = i == 0 ? profile1.getName() : profile2.getName();
             OnlineGame game = PokerTestData.createOnlineGame(playerName, i, "SEARCH-" + i);
             gameService.saveOnlineGame(game);
@@ -510,8 +495,7 @@ class TournamentHistoryServiceTest
 
     @Test
     @Rollback
-    void should_HandleLargeNumberOfHistories_When_QueryingGame()
-    {
+    void should_HandleLargeNumberOfHistories_When_QueryingGame() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("LargeGameHost");
         profileService.saveOnlineProfile(profile);
 
@@ -520,8 +504,7 @@ class TournamentHistoryServiceTest
 
         // Create many histories (simulate large tournament)
         TournamentHistoryList list = new TournamentHistoryList();
-        for (int i = 0; i < 20; i++)
-        {
+        for (int i = 0; i < 20; i++) {
             TournamentHistory hist = PokerTestData.createTournamentHistory("Player" + i, PLAYER_TYPE_ONLINE);
             hist.setPlace(i + 1);
             list.add(hist);
@@ -539,8 +522,7 @@ class TournamentHistoryServiceTest
 
     @Test
     @Rollback
-    void should_PreservePlaceRankings_When_RetrievingHistories()
-    {
+    void should_PreservePlaceRankings_When_RetrievingHistories() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("RankingHost");
         profileService.saveOnlineProfile(profile);
 
@@ -548,8 +530,7 @@ class TournamentHistoryServiceTest
         gameService.saveOnlineGame(game);
 
         TournamentHistoryList list = new TournamentHistoryList();
-        for (int i = 0; i < 5; i++)
-        {
+        for (int i = 0; i < 5; i++) {
             TournamentHistory hist = PokerTestData.createTournamentHistory("Player" + i, PLAYER_TYPE_ONLINE);
             hist.setPlace(i + 1);
             list.add(hist);
@@ -561,16 +542,14 @@ class TournamentHistoryServiceTest
         assertThat(retrieved).hasSize(5);
 
         // Verify places are preserved
-        for (int i = 0; i < retrieved.size(); i++)
-        {
+        for (int i = 0; i < retrieved.size(); i++) {
             assertThat(retrieved.get(i).getPlace()).isBetween(1, 5);
         }
     }
 
     @Test
     @Rollback
-    void should_HandleMixedPlayerTypes_When_StoringHistories()
-    {
+    void should_HandleMixedPlayerTypes_When_StoringHistories() {
         OnlineProfile profile = PokerTestData.createOnlineProfile("MixedHost");
         profileService.saveOnlineProfile(profile);
 

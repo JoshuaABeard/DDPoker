@@ -34,14 +34,15 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * TDD tests for PlayerIdentity - UUID-based player identification system.
- * Tests written BEFORE implementation (Red-Green-Refactor cycle).
+ * TDD tests for PlayerIdentity - UUID-based player identification system. Tests
+ * written BEFORE implementation (Red-Green-Refactor cycle).
  */
 class PlayerIdentityTest {
 
     @AfterEach
     void tearDown() {
-        // Reset config directory override after each test to prevent cross-test pollution
+        // Reset config directory override after each test to prevent cross-test
+        // pollution
         PlayerIdentity.resetConfigDirectoryForTesting();
     }
 
@@ -54,8 +55,7 @@ class PlayerIdentityTest {
 
         // UUID v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
         // where y is 8, 9, a, or b
-        assertThat(playerId)
-            .matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
+        assertThat(playerId).matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
     }
 
     @Test
@@ -90,9 +90,7 @@ class PlayerIdentityTest {
             String configDir = PlayerIdentity.getConfigDirectory();
 
             // Windows: %APPDATA%\ddpoker
-            assertThat(configDir)
-                .contains("ddpoker")
-                .doesNotStartWith(".");  // Not hidden directory
+            assertThat(configDir).contains("ddpoker").doesNotStartWith("."); // Not hidden directory
         } finally {
             System.setProperty("os.name", originalOs);
         }
@@ -108,8 +106,7 @@ class PlayerIdentityTest {
             String configDir = PlayerIdentity.getConfigDirectory();
 
             // macOS: ~/Library/Application Support/ddpoker
-            assertThat(configDir)
-                .contains("/Library/Application Support/ddpoker");
+            assertThat(configDir).contains("/Library/Application Support/ddpoker");
         } finally {
             System.setProperty("os.name", originalOs);
         }
@@ -125,8 +122,7 @@ class PlayerIdentityTest {
             String configDir = PlayerIdentity.getConfigDirectory();
 
             // Linux: ~/.ddpoker (hidden directory)
-            assertThat(configDir)
-                .endsWith("/.ddpoker");
+            assertThat(configDir).endsWith("/.ddpoker");
         } finally {
             System.setProperty("os.name", originalOs);
         }
@@ -149,10 +145,8 @@ class PlayerIdentityTest {
 
         // Verify JSON content
         String content = Files.readString(playerFile);
-        assertThat(content)
-            .contains("\"playerId\"")
-            .contains("550e8400-e29b-41d4-a716-446655440000")
-            .contains("\"createdAt\"");
+        assertThat(content).contains("\"playerId\"").contains("550e8400-e29b-41d4-a716-446655440000")
+                .contains("\"createdAt\"");
     }
 
     @Test
@@ -272,11 +266,8 @@ class PlayerIdentityTest {
         PlayerIdentity.setConfigDirectoryForTesting(tempDir.toString());
 
         // Various valid UUID v4 formats
-        String[] validUuids = {
-            "550e8400-e29b-41d4-a716-446655440000",
-            "7f3d8b92-4c21-4d88-9e3a-1b5c6d7e8f90",
-            "a1b2c3d4-e5f6-4789-abcd-ef0123456789"
-        };
+        String[] validUuids = {"550e8400-e29b-41d4-a716-446655440000", "7f3d8b92-4c21-4d88-9e3a-1b5c6d7e8f90",
+                "a1b2c3d4-e5f6-4789-abcd-ef0123456789"};
 
         for (String uuid : validUuids) {
             PlayerIdentity.save(uuid);

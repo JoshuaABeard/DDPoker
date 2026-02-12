@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -37,74 +37,66 @@ import com.donohoedigital.base.*;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
- * User: donohoe
- * Date: Apr 3, 2008
- * Time: 3:09:29 PM
- * To change this template use File | Settings | File Templates.
+ * Created by IntelliJ IDEA. User: donohoe Date: Apr 3, 2008 Time: 3:09:29 PM To
+ * change this template use File | Settings | File Templates.
  */
-public abstract class AbstractPlayerList extends ArrayList<AbstractPlayerList.PlayerInfo>
-{
+public abstract class AbstractPlayerList extends ArrayList<AbstractPlayerList.PlayerInfo> {
     private static final String DELIM = "\n";
-
 
     public abstract String getName();
 
     /**
      * Add player to list
      */
-    public void add(String sName, String sKey, boolean bSave)
-    {
-        if (sKey == null) sKey = "NoKey-"+sName;
+    public void add(String sName, String sKey, boolean bSave) {
+        if (sKey == null)
+            sKey = "NoKey-" + sName;
         add(new PlayerInfo(sName, sKey), bSave);
     }
 
     /**
      * Add PlayerInfo
      */
-    private void add(PlayerInfo info, boolean bSave)
-    {
+    private void add(PlayerInfo info, boolean bSave) {
         int nPlace = Collections.binarySearch(this, info);
-        if (nPlace < 0)
-        {
+        if (nPlace < 0) {
             add(-(nPlace + 1), info); // insert sorted
-            if (bSave) save();
+            if (bSave)
+                save();
         }
     }
 
     /**
      * remove player from list
      */
-    public void remove(String sName, boolean bSave)
-    {
+    public void remove(String sName, boolean bSave) {
         int nPlace = Collections.binarySearch(this, new PlayerInfo(sName, null));
-        if (nPlace >= 0)
-        {
+        if (nPlace >= 0) {
             remove(nPlace);
-            if (bSave) save();
+            if (bSave)
+                save();
         }
     }
 
     /**
      * Is this player in the list?
+     *
      * @param sName
      * @param sKey
      */
-    public boolean containsPlayer(String sName, String sKey)
-    {
+    public boolean containsPlayer(String sName, String sKey) {
         return containsPlayer(sName) || containsKey(sKey);
     }
 
     /**
      * Is this key in the list?
      */
-    public boolean containsKey(String sKey)
-    {
+    public boolean containsKey(String sKey) {
         PlayerInfo p;
-        for (int i = size() - 1; i >= 0; i--)
-        {
+        for (int i = size() - 1; i >= 0; i--) {
             p = get(i);
-            if (p.sKey != null && p.sKey.equals(sKey)) return true;
+            if (p.sKey != null && p.sKey.equals(sKey))
+                return true;
         }
         return false;
     }
@@ -112,8 +104,7 @@ public abstract class AbstractPlayerList extends ArrayList<AbstractPlayerList.Pl
     /**
      * Is this player in the list?
      */
-    public boolean containsPlayer(String sName)
-    {
+    public boolean containsPlayer(String sName) {
         int nPlace = Collections.binarySearch(this, new PlayerInfo(sName, null));
         return nPlace >= 0;
     }
@@ -121,18 +112,17 @@ public abstract class AbstractPlayerList extends ArrayList<AbstractPlayerList.Pl
     /**
      * update list from prefs
      */
-    public void fetch()
-    {
+    public void fetch() {
         clear();
 
         String data = fetchNames();
-        if (data == null) return;
+        if (data == null)
+            return;
         String keys = fetchKeys();
 
         StringTokenizer st = new StringTokenizer(data, DELIM);
         StringTokenizer stk = keys == null ? null : new StringTokenizer(keys, DELIM); // check for null for back compat
-        while (st.hasMoreTokens())
-        {
+        while (st.hasMoreTokens()) {
             add(st.nextToken(), stk == null ? null : stk.nextToken(), false);
         }
     }
@@ -144,16 +134,16 @@ public abstract class AbstractPlayerList extends ArrayList<AbstractPlayerList.Pl
     /**
      * save list to prefs
      */
-    public void save()
-    {
+    public void save() {
         StringBuilder sb = new StringBuilder();
         StringBuilder sbk = new StringBuilder();
-        for (int i = 0; i < size(); i++)
-        {
-            if (i > 0) sb.append(DELIM);
+        for (int i = 0; i < size(); i++) {
+            if (i > 0)
+                sb.append(DELIM);
             sb.append(get(i).sName);
 
-            if (i > 0) sbk.append(DELIM);
+            if (i > 0)
+                sbk.append(DELIM);
             sbk.append(get(i).sKey);
         }
         saveNames(sb.toString());
@@ -168,22 +158,20 @@ public abstract class AbstractPlayerList extends ArrayList<AbstractPlayerList.Pl
      * to String - CSV format
      */
     @Override
-    public String toString()
-    {
+    public String toString() {
         return toCSV();
     }
-    
+
     /**
      * to CSV
      */
-    public String toCSV()
-    {
+    public String toCSV() {
         StringBuilder sb = new StringBuilder();
         PlayerInfo p;
-        for (int i = 0; i < size(); i++)
-        {
+        for (int i = 0; i < size(); i++) {
             p = get(i);
-            if (i > 0) sb.append(", ");
+            if (i > 0)
+                sb.append(", ");
             sb.append(Utils.encodeCSV(p.sName));
         }
         return sb.toString();
@@ -192,66 +180,57 @@ public abstract class AbstractPlayerList extends ArrayList<AbstractPlayerList.Pl
     /**
      * from CSV - preserve existing name info
      */
-    public void fromCSV(String sText, boolean bSave)
-    {
+    public void fromCSV(String sText, boolean bSave) {
         sText = sText.replace('\n', ',');
         List<PlayerInfo> keep = new ArrayList<PlayerInfo>(size());
         String sName;
         PlayerInfo search = new PlayerInfo(null, null);
         String[] names = CSVParser.parseLine(sText);
-        for (String name : names)
-        {
+        for (String name : names) {
             sName = name.trim();
-            if (sName.length() == 0) continue;
+            if (sName.length() == 0)
+                continue;
             search.sName = sName;
             int nPlace = Collections.binarySearch(this, new PlayerInfo(sName, null));
-            if (nPlace >= 0)
-            {
+            if (nPlace >= 0) {
                 keep.add(get(nPlace));
-            }
-            else
-            {
+            } else {
                 keep.add(new PlayerInfo(sName, null));
             }
         }
 
         // add saved names to list, due one at a time for sorting
         clear();
-        for (PlayerInfo info : keep)
-        {
+        for (PlayerInfo info : keep) {
             add(info, false);
         }
 
         // save if requested
-        if (bSave) save();
+        if (bSave)
+            save();
     }
 
     /**
      * class to hold player info (name & key)
      */
     @SuppressWarnings({"PublicInnerClass"})
-    public static class PlayerInfo implements Comparable<PlayerInfo>
-    {
+    public static class PlayerInfo implements Comparable<PlayerInfo> {
         private String sName, sKey;
 
-        PlayerInfo(String sName, String sKey)
-        {
+        PlayerInfo(String sName, String sKey) {
             this.sName = sName;
             this.sKey = sKey;
         }
 
-        public String getName()
-        {
+        public String getName() {
             return sName;
         }
 
-        public String getKey()
-        {
+        public String getKey() {
             return sKey;
         }
 
-        public int compareTo(PlayerInfo p)
-        {
+        public int compareTo(PlayerInfo p) {
             return String.CASE_INSENSITIVE_ORDER.compare(sName, p.sName);
         }
     }

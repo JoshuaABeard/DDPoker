@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -79,8 +79,7 @@ public class HandList extends BaseProfile {
             alHands_ = new ArrayList(proto.alHands_);
             sName_ = proto.getName();
         }
-        if (name != null)
-        {
+        if (name != null) {
             sName_ = name;
         }
         map_ = new DMTypedHashMap();
@@ -90,8 +89,7 @@ public class HandList extends BaseProfile {
         alHands_.addAll(group.alHands_);
     }
 
-    public void addAllPairs(int rank)
-    {
+    public void addAllPairs(int rank) {
 
         Card c = Card.getCard(CardSuit.CLUBS, rank);
         Card d = Card.getCard(CardSuit.DIAMONDS, rank);
@@ -108,14 +106,14 @@ public class HandList extends BaseProfile {
         ++count_;
     }
 
-    public void removeAllPairs(int rank)
-    {
+    public void removeAllPairs(int rank) {
         Card c = Card.getCard(CardSuit.CLUBS, rank);
         Card d = Card.getCard(CardSuit.DIAMONDS, rank);
         Card h = Card.getCard(CardSuit.HEARTS, rank);
         Card s = Card.getCard(CardSuit.SPADES, rank);
 
-        if (containsAny(rank, rank)) --count_;
+        if (containsAny(rank, rank))
+            --count_;
 
         remove(new HandSorted(c, d));
         remove(new HandSorted(c, h));
@@ -125,17 +123,14 @@ public class HandList extends BaseProfile {
         remove(new HandSorted(h, s));
     }
 
-    public void addAllPairs(int rank1, int rank2)
-    {
+    public void addAllPairs(int rank1, int rank2) {
 
-        if (rank1 > rank2)
-        {
+        if (rank1 > rank2) {
             addAllPairs(rank2, rank1);
             return;
         }
 
-        for (int rank = rank1; rank <= rank2; ++rank)
-        {
+        for (int rank = rank1; rank <= rank2; ++rank) {
             addAllPairs(rank);
         }
     }
@@ -157,20 +152,18 @@ public class HandList extends BaseProfile {
         Card h2 = Card.getCard(CardSuit.HEARTS, rank2);
         Card s2 = Card.getCard(CardSuit.SPADES, rank2);
 
-        add(new HandSorted(c1,c2));
-        add(new HandSorted(d1,d2));
-        add(new HandSorted(h1,h2));
-        add(new HandSorted(s1,s2));
+        add(new HandSorted(c1, c2));
+        add(new HandSorted(d1, d2));
+        add(new HandSorted(h1, h2));
+        add(new HandSorted(s1, s2));
 
         ++count_;
     }
 
-    public void removeAllSuited(int rank1, int rank2)
-    {
+    public void removeAllSuited(int rank1, int rank2) {
 
         // there are, obviously, no suited pairs
-        if (rank1 == rank2)
-        {
+        if (rank1 == rank2) {
             return;
         }
 
@@ -184,7 +177,8 @@ public class HandList extends BaseProfile {
         Card h2 = Card.getCard(CardSuit.HEARTS, rank2);
         Card s2 = Card.getCard(CardSuit.SPADES, rank2);
 
-        if (containsAny(rank1, rank2, true)) --count_;
+        if (containsAny(rank1, rank2, true))
+            --count_;
 
         remove(new HandSorted(c1, c2));
         remove(new HandSorted(d1, d2));
@@ -192,12 +186,10 @@ public class HandList extends BaseProfile {
         remove(new HandSorted(s1, s2));
     }
 
-    public void addAllUnsuited(int rank1, int rank2)
-    {
+    public void addAllUnsuited(int rank1, int rank2) {
 
         // same rank, add only valid pairs
-        if (rank1 == rank2)
-        {
+        if (rank1 == rank2) {
             addAllPairs(rank1);
             return;
         }
@@ -231,12 +223,10 @@ public class HandList extends BaseProfile {
         ++count_;
     }
 
-    public void removeAllUnsuited(int rank1, int rank2)
-    {
+    public void removeAllUnsuited(int rank1, int rank2) {
 
         // same rank, add only valid pairs
-        if (rank1 == rank2)
-        {
+        if (rank1 == rank2) {
             addAllPairs(rank1);
             return;
         }
@@ -251,7 +241,8 @@ public class HandList extends BaseProfile {
         Card h2 = Card.getCard(CardSuit.HEARTS, rank2);
         Card s2 = Card.getCard(CardSuit.SPADES, rank2);
 
-        if (containsAny(rank1, rank2, false)) --count_;
+        if (containsAny(rank1, rank2, false))
+            --count_;
 
         remove(new HandSorted(c1, d2));
         remove(new HandSorted(c1, h2));
@@ -288,34 +279,32 @@ public class HandList extends BaseProfile {
         Card h2 = Card.getCard(CardSuit.HEARTS, rank2);
         Card s2 = Card.getCard(CardSuit.SPADES, rank2);
 
-        add(new HandSorted(c1,c2));
-        add(new HandSorted(c1,d2));
-        add(new HandSorted(c1,h2));
-        add(new HandSorted(c1,s2));
+        add(new HandSorted(c1, c2));
+        add(new HandSorted(c1, d2));
+        add(new HandSorted(c1, h2));
+        add(new HandSorted(c1, s2));
 
-        add(new HandSorted(d1,c2));
-        add(new HandSorted(d1,d2));
-        add(new HandSorted(d1,h2));
-        add(new HandSorted(d1,s2));
+        add(new HandSorted(d1, c2));
+        add(new HandSorted(d1, d2));
+        add(new HandSorted(d1, h2));
+        add(new HandSorted(d1, s2));
 
-        add(new HandSorted(h1,c2));
-        add(new HandSorted(h1,d2));
-        add(new HandSorted(h1,h2));
-        add(new HandSorted(h1,s2));
+        add(new HandSorted(h1, c2));
+        add(new HandSorted(h1, d2));
+        add(new HandSorted(h1, h2));
+        add(new HandSorted(h1, s2));
 
-        add(new HandSorted(s1,c2));
-        add(new HandSorted(s1,d2));
-        add(new HandSorted(s1,h2));
-        add(new HandSorted(s1,s2));
+        add(new HandSorted(s1, c2));
+        add(new HandSorted(s1, d2));
+        add(new HandSorted(s1, h2));
+        add(new HandSorted(s1, s2));
     }
 
-    public void add(HandSorted hand)
-    {
+    public void add(HandSorted hand) {
         alHands_.add(hand);
     }
 
-    public void remove(HandSorted hand)
-    {
+    public void remove(HandSorted hand) {
         alHands_.remove(hand);
     }
 
@@ -330,28 +319,26 @@ public class HandList extends BaseProfile {
     /**
      * Get begin part of profile name
      */
-    protected String getBegin()
-    {
+    protected String getBegin() {
         return GROUP_BEGIN;
     }
 
     /**
      * Get name of directory to store profiles in
      */
-    protected String getProfileDirName()
-    {
+    protected String getProfileDirName() {
         return PROFILE_DIR;
     }
 
     /**
-     *  Get profile list
+     * Get profile list
      */
     protected ArrayList getProfileFileList() {
         return null;
     }
 
     public HandSorted get(int index) {
-        return (HandSorted)alHands_.get(index);
+        return (HandSorted) alHands_.get(index);
     }
 
     public int size() {
@@ -366,7 +353,8 @@ public class HandList extends BaseProfile {
         }
         int count = size();
         for (int i = 0; i < count; ++i) {
-            if (i > 0) buf.append(", ");
+            if (i > 0)
+                buf.append(", ");
             buf.append(get(i).toString());
         }
         return buf.toString();
@@ -392,56 +380,46 @@ public class HandList extends BaseProfile {
     /**
      * Get map
      */
-    public DMTypedHashMap getMap()
-    {
+    public DMTypedHashMap getMap() {
         return map_;
     }
 
-    public String toString()
-    {
+    public String toString() {
         return getName();
     }
 
-    public boolean containsAny(int rank1, int rank2)
-    {
-        for (int i = size() - 1; i >= 0; --i)
-        {
+    public boolean containsAny(int rank1, int rank2) {
+        for (int i = size() - 1; i >= 0; --i) {
             Hand hand = get(i);
             Card card1 = hand.getCard(0);
             Card card2 = hand.getCard(1);
-            if (((card1.getRank() == rank1) && (card2.getRank() == rank2)) ||
-                    ((card1.getRank() == rank2) && (card2.getRank() == rank1)))
-            {
+            if (((card1.getRank() == rank1) && (card2.getRank() == rank2))
+                    || ((card1.getRank() == rank2) && (card2.getRank() == rank1))) {
                 return true;
             }
         }
         return false;
     }
 
-    public boolean containsAny(int rank1, int rank2, boolean suited)
-    {
-        for (int i = size() - 1; i >= 0; --i)
-        {
+    public boolean containsAny(int rank1, int rank2, boolean suited) {
+        for (int i = size() - 1; i >= 0; --i) {
             Hand hand = get(i);
             Card card1 = hand.getCard(0);
             Card card2 = hand.getCard(1);
-            if (((card1.getCardSuit().getRank() == card2.getCardSuit().getRank()) == suited) &&
-                (((card1.getRank() == rank1) && (card2.getRank() == rank2)) ||
-                    ((card1.getRank() == rank2) && (card2.getRank() == rank1))))
-            {
+            if (((card1.getCardSuit().getRank() == card2.getCardSuit().getRank()) == suited)
+                    && (((card1.getRank() == rank1) && (card2.getRank() == rank2))
+                            || ((card1.getRank() == rank2) && (card2.getRank() == rank1)))) {
                 return true;
             }
         }
         return false;
     }
 
-    public int getCount()
-    {
+    public int getCount() {
         return count_;
     }
 
-    public double getPercent()
-    {
+    public double getPercent() {
         return size() / 13.26;
     }
 }

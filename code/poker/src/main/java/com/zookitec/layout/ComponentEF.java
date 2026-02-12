@@ -11,49 +11,49 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
- *  
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *  
+ *
  *  Bug fixes, suggestions and comments should be sent to: alex@zookitec.com
  */
- 
-package com.zookitec.layout;
 
+package com.zookitec.layout;
 
 import java.awt.*;
 import java.util.*;
 import java.lang.ref.*;
 
 /**
- * An expression factory used to create expressions for attributes of a component.
+ * An expression factory used to create expressions for attributes of a
+ * component.
  */
 public class ComponentEF {
 
-    static final int TOP         =  0;
-    static final int BOTTOM      =  1;
-    static final int LEFT        =  2;
-    static final int RIGHT       =  3;
-    static final int WIDTH       =  4;
-    static final int HEIGHT      =  5;
+    static final int TOP = 0;
+    static final int BOTTOM = 1;
+    static final int LEFT = 2;
+    static final int RIGHT = 3;
+    static final int WIDTH = 4;
+    static final int HEIGHT = 5;
 
     /**
-     * All expressions for attributes with a value less
-     * than ROUND_FLOOR_MAX have the rounding mode set to ROUND_FLOOR.
+     * All expressions for attributes with a value less than ROUND_FLOOR_MAX have
+     * the rounding mode set to ROUND_FLOOR.
      */
     private static final int ROUND_FLOOR_MAX = 5;
 
-    static final int MIN_WIDTH   =  6;
-    static final int MIN_HEIGHT  =  7;
-    static final int MAX_WIDTH   =  8;
-    static final int MAX_HEIGHT  =  9;
-    static final int PREF_WIDTH  = 10;
+    static final int MIN_WIDTH = 6;
+    static final int MIN_HEIGHT = 7;
+    static final int MAX_WIDTH = 8;
+    static final int MAX_HEIGHT = 9;
+    static final int PREF_WIDTH = 10;
     static final int PREF_HEIGHT = 11;
 
     private static final int ATTRIBUTE_COUNT = 12;
@@ -61,10 +61,10 @@ public class ComponentEF {
     /**
      * array of maps from component to expression for each attribte
      */
-    private static WeakHashMap [] cache = new WeakHashMap[ATTRIBUTE_COUNT];
+    private static WeakHashMap[] cache = new WeakHashMap[ATTRIBUTE_COUNT];
 
-    private ComponentEF() {}
-
+    private ComponentEF() {
+    }
 
     static Expression getExpression(Component component, int attribute) {
         if (attribute < 0 || attribute >= ATTRIBUTE_COUNT) {
@@ -75,7 +75,7 @@ public class ComponentEF {
             cache[attribute] = new WeakHashMap();
             expression = new ComponentExpression(component, attribute);
             cache[attribute].put(component, expression);
-        } else if ((expression = (Expression)cache[attribute].get(component)) == null) {
+        } else if ((expression = (Expression) cache[attribute].get(component)) == null) {
             expression = new ComponentExpression(component, attribute);
             cache[attribute].put(component, expression);
         }
@@ -85,7 +85,9 @@ public class ComponentEF {
     /**
      * Creates an expression for the preferred width of the specified component.
      *
-     * @param component the component; this can be null when used to create an expression group.
+     * @param component
+     *            the component; this can be null when used to create an expression
+     *            group.
      *
      * @return the expression
      */
@@ -96,7 +98,9 @@ public class ComponentEF {
     /**
      * Creates an expression for the preferred height of the specified component.
      *
-     * @param component the component; this can be null when used to create an expression group.
+     * @param component
+     *            the component; this can be null when used to create an expression
+     *            group.
      *
      * @return the expression
      */
@@ -107,7 +111,9 @@ public class ComponentEF {
     /**
      * Creates an expression for the minimum width of the specified component.
      *
-     * @param component the component; this can be null when used to create an expression group.
+     * @param component
+     *            the component; this can be null when used to create an expression
+     *            group.
      *
      * @return the expression
      */
@@ -118,7 +124,9 @@ public class ComponentEF {
     /**
      * Creates an expression for the minimum height of the specified component.
      *
-     * @param component the component; this can be null when used to create an expression group.
+     * @param component
+     *            the component; this can be null when used to create an expression
+     *            group.
      *
      * @return the expression
      */
@@ -129,7 +137,9 @@ public class ComponentEF {
     /**
      * Creates an expression for the maximum width of the specified component.
      *
-     * @param component the component; this can be null when used to create an expression group.
+     * @param component
+     *            the component; this can be null when used to create an expression
+     *            group.
      *
      * @return the expression
      */
@@ -140,7 +150,9 @@ public class ComponentEF {
     /**
      * Creates an expression for the maximum height of the specified component.
      *
-     * @param component the component; this can be null when used to create an expression group.
+     * @param component
+     *            the component; this can be null when used to create an expression
+     *            group.
      *
      * @return the expression
      */
@@ -148,11 +160,12 @@ public class ComponentEF {
         return getExpression(component, MAX_HEIGHT);
     }
 
-
     /**
      * Creates an expression for the width of the specified component.
      *
-     * @param component the component; this can be null when used to create an expression group.
+     * @param component
+     *            the component; this can be null when used to create an expression
+     *            group.
      *
      * @return the expression
      */
@@ -160,11 +173,12 @@ public class ComponentEF {
         return getExpression(component, WIDTH);
     }
 
-
     /**
      * Creates an expression for the height of the specified component.
      *
-     * @param component the component; this can be null when used to create an expression group.
+     * @param component
+     *            the component; this can be null when used to create an expression
+     *            group.
      *
      * @return the expression
      */
@@ -175,7 +189,9 @@ public class ComponentEF {
     /**
      * Creates an expression for the x coordinate of the left side of the component.
      *
-     * @param component the component; this can be null when used to create an expression group.
+     * @param component
+     *            the component; this can be null when used to create an expression
+     *            group.
      *
      * @return the expression
      */
@@ -186,7 +202,9 @@ public class ComponentEF {
     /**
      * Creates an expression for the y coordinate of the top of the component.
      *
-     * @param component the component; this can be null when used to create an expression group.
+     * @param component
+     *            the component; this can be null when used to create an expression
+     *            group.
      *
      * @return the expression
      */
@@ -195,9 +213,12 @@ public class ComponentEF {
     }
 
     /**
-     * Creates an expression for the x coordinate of the right side of the component.
+     * Creates an expression for the x coordinate of the right side of the
+     * component.
      *
-     * @param component the component; this can be null when used to create an expression group.
+     * @param component
+     *            the component; this can be null when used to create an expression
+     *            group.
      *
      * @return the expression
      */
@@ -209,7 +230,9 @@ public class ComponentEF {
     /**
      * Creates an expression for the y coordinate of the bottom of the component.
      *
-     * @param component the component; this can be null when used to create an expression group.
+     * @param component
+     *            the component; this can be null when used to create an expression
+     *            group.
      *
      * @return the expression
      */
@@ -220,8 +243,10 @@ public class ComponentEF {
     /**
      * Creates an expression for a fraction of a components width.
      *
-     * @param the component
-     * @param the fraction
+     * @param the
+     *            component
+     * @param the
+     *            fraction
      *
      * @return the expression
      */
@@ -234,8 +259,10 @@ public class ComponentEF {
     /**
      * Creates an expression for a fraction of a components height.
      *
-     * @param the component
-     * @param the fraction
+     * @param the
+     *            component
+     * @param the
+     *            fraction
      *
      * @return the expression
      */
@@ -246,10 +273,13 @@ public class ComponentEF {
     }
 
     /**
-     * Creates an expression for the x coordinate of a fraction of a components width.
+     * Creates an expression for the x coordinate of a fraction of a components
+     * width.
      *
-     * @param the component
-     * @param the fraction
+     * @param the
+     *            component
+     * @param the
+     *            fraction
      *
      * @return the expression
      */
@@ -259,10 +289,13 @@ public class ComponentEF {
     }
 
     /**
-     * Creates an expression for the y coordinate of a fraction of a components height.
+     * Creates an expression for the y coordinate of a fraction of a components
+     * height.
      *
-     * @param the component
-     * @param the fraction
+     * @param the
+     *            component
+     * @param the
+     *            fraction
      *
      * @return the expression
      */
@@ -270,7 +303,6 @@ public class ComponentEF {
         Expression expr = MathEF.add(top(component), heightFraction(component, fraction));
         return expr;
     }
-
 
     public static Expression centerX(Component component) {
         return xFraction(component, 0.5);
@@ -280,21 +312,21 @@ public class ComponentEF {
         return yFraction(component, 0.5);
     }
 
-
     /**
-    * An expression whose value depends on the attributes of a component.
-    *
-    */
+     * An expression whose value depends on the attributes of a component.
+     *
+     */
     static class ComponentExpression extends Expression implements Cloneable {
 
         private WeakReference componentRef;
         private int attribute;
 
-
         /**
          * Construct a new component expression.
          *
-         * @param component the component whose attribute provides the value of this expression.
+         * @param component
+         *            the component whose attribute provides the value of this
+         *            expression.
          */
         public ComponentExpression(Component component, int attribute) {
             componentRef = new WeakReference(component);
@@ -305,13 +337,12 @@ public class ComponentEF {
         }
 
         public Component getComponent() {
-            return (Component)componentRef.get();
+            return (Component) componentRef.get();
         }
 
         public int getAttribute() {
             return attribute;
         }
-
 
         protected double computeValue(ExplicitLayout layout) {
             ExplicitConstraints constraints;
@@ -322,13 +353,17 @@ public class ComponentEF {
                     return (constraints == null) ? 0 : constraints.getYValue(layout);
                 case BOTTOM :
                     constraints = layout.getConstraints(component);
-                    return (constraints == null) ? 0 : (constraints.getYValue(layout) + constraints.getHeightValue(layout));
+                    return (constraints == null)
+                            ? 0
+                            : (constraints.getYValue(layout) + constraints.getHeightValue(layout));
                 case LEFT :
                     constraints = layout.getConstraints(component);
                     return (constraints == null) ? 0 : constraints.getXValue(layout);
                 case RIGHT :
                     constraints = layout.getConstraints(component);
-                    return (constraints == null) ? 0 : constraints.getXValue(layout) + constraints.getWidthValue(layout);
+                    return (constraints == null)
+                            ? 0
+                            : constraints.getXValue(layout) + constraints.getWidthValue(layout);
                 case WIDTH :
                     constraints = layout.getConstraints(component);
                     return (constraints == null) ? 0 : constraints.getWidthValue(layout);
@@ -347,7 +382,8 @@ public class ComponentEF {
                     return component.getMaximumSize().width;
                 case MAX_HEIGHT :
                     return component.getMaximumSize().height;
-                default : return 0;
+                default :
+                    return 0;
             }
 
         }

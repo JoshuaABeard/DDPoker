@@ -37,8 +37,7 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for Roster AI player name management.
  */
-class RosterTest
-{
+class RosterTest {
     @TempDir
     Path tempDir;
 
@@ -46,11 +45,9 @@ class RosterTest
     private File rosterFile;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         // Initialize ConfigManager for tests (only once)
-        if (!com.donohoedigital.config.PropertyConfig.isInitialized())
-        {
+        if (!com.donohoedigital.config.PropertyConfig.isInitialized()) {
             new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
         }
 
@@ -59,21 +56,20 @@ class RosterTest
 
         // Mock the file by creating a temp .dat file and setting it directly
         File datFile = tempDir.resolve("test.dat").toFile();
-        try
-        {
+        try {
             datFile.createNewFile();
             // Use reflection to set the file_ field
-            java.lang.reflect.Field fileField = playerType.getClass().getSuperclass().getSuperclass().getDeclaredField("file_");
+            java.lang.reflect.Field fileField = playerType.getClass().getSuperclass().getSuperclass()
+                    .getDeclaredField("file_");
             fileField.setAccessible(true);
             fileField.set(playerType, datFile);
 
             // Set the fileName
-            java.lang.reflect.Field fileNameField = playerType.getClass().getSuperclass().getDeclaredField("sFileName_");
+            java.lang.reflect.Field fileNameField = playerType.getClass().getSuperclass()
+                    .getDeclaredField("sFileName_");
             fileNameField.setAccessible(true);
             fileNameField.set(playerType, "test.dat");
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new RuntimeException("Failed to set up test", e);
         }
 
@@ -82,20 +78,16 @@ class RosterTest
     }
 
     @AfterEach
-    void tearDown() throws InterruptedException
-    {
+    void tearDown() throws InterruptedException {
         // Force garbage collection to close file handles
         System.gc();
         Thread.sleep(100);
 
         // Clean up roster file if it exists
-        if (rosterFile != null && rosterFile.exists())
-        {
+        if (rosterFile != null && rosterFile.exists()) {
             // Try multiple times in case file is locked
-            for (int i = 0; i < 3; i++)
-            {
-                if (rosterFile.delete())
-                {
+            for (int i = 0; i < 3; i++) {
+                if (rosterFile.delete()) {
                     break;
                 }
                 Thread.sleep(50);
@@ -108,16 +100,14 @@ class RosterTest
     // ========================================
 
     @Test
-    void should_ReturnEmptyString_When_RosterFileDoesNotExist()
-    {
+    void should_ReturnEmptyString_When_RosterFileDoesNotExist() {
         String roster = Roster.getRoster(playerType);
 
         assertThat(roster).isEmpty();
     }
 
     @Test
-    void should_ReturnRosterContent_When_RosterFileExists() throws IOException
-    {
+    void should_ReturnRosterContent_When_RosterFileExists() throws IOException {
         Files.write(rosterFile.toPath(), "Alice,Bob,Charlie".getBytes());
 
         String roster = Roster.getRoster(playerType);
@@ -126,8 +116,7 @@ class RosterTest
     }
 
     @Test
-    void should_TrimWhitespace_When_RosterFileHasTrailingNewlines() throws IOException
-    {
+    void should_TrimWhitespace_When_RosterFileHasTrailingNewlines() throws IOException {
         Files.write(rosterFile.toPath(), "Alice,Bob\n\n".getBytes());
 
         String roster = Roster.getRoster(playerType);
@@ -136,8 +125,7 @@ class RosterTest
     }
 
     @Test
-    void should_HandleMultilineRoster_When_FileHasMultipleLines() throws IOException
-    {
+    void should_HandleMultilineRoster_When_FileHasMultipleLines() throws IOException {
         Files.write(rosterFile.toPath(), "Alice,Bob\nCharlie,Dave".getBytes());
 
         String roster = Roster.getRoster(playerType);
@@ -150,16 +138,14 @@ class RosterTest
     // ========================================
 
     @Test
-    void should_CreateRosterFile_When_SettingRoster()
-    {
+    void should_CreateRosterFile_When_SettingRoster() {
         Roster.setRoster(playerType, "Alice,Bob,Charlie");
 
         assertThat(rosterFile).exists();
     }
 
     @Test
-    void should_WriteRosterContent_When_SettingRoster() throws IOException
-    {
+    void should_WriteRosterContent_When_SettingRoster() throws IOException {
         Roster.setRoster(playerType, "Alice,Bob,Charlie");
 
         String content = new String(Files.readAllBytes(rosterFile.toPath()));
@@ -167,8 +153,7 @@ class RosterTest
     }
 
     @Test
-    void should_OverwriteExistingRoster_When_SettingNewRoster() throws IOException
-    {
+    void should_OverwriteExistingRoster_When_SettingNewRoster() throws IOException {
         Files.write(rosterFile.toPath(), "OldNames".getBytes());
 
         Roster.setRoster(playerType, "NewNames");
@@ -178,8 +163,7 @@ class RosterTest
     }
 
     @Test
-    void should_WriteEmptyString_When_SettingEmptyRoster() throws IOException
-    {
+    void should_WriteEmptyString_When_SettingEmptyRoster() throws IOException {
         Roster.setRoster(playerType, "");
 
         String content = new String(Files.readAllBytes(rosterFile.toPath()));
@@ -191,16 +175,14 @@ class RosterTest
     // ========================================
 
     @Test
-    void should_ReturnEmptyList_When_RosterFileDoesNotExist()
-    {
+    void should_ReturnEmptyList_When_RosterFileDoesNotExist() {
         List<String> names = Roster.getRosterNameList(playerType);
 
         assertThat(names).isEmpty();
     }
 
     @Test
-    void should_ParseNames_When_CommaSeparatedRoster() throws IOException
-    {
+    void should_ParseNames_When_CommaSeparatedRoster() throws IOException {
         Files.write(rosterFile.toPath(), "Alice,Bob,Charlie".getBytes());
 
         List<String> names = Roster.getRosterNameList(playerType);
@@ -209,8 +191,7 @@ class RosterTest
     }
 
     @Test
-    void should_TrimWhitespace_When_NamesHaveSpaces() throws IOException
-    {
+    void should_TrimWhitespace_When_NamesHaveSpaces() throws IOException {
         Files.write(rosterFile.toPath(), " Alice , Bob , Charlie ".getBytes());
 
         List<String> names = Roster.getRosterNameList(playerType);
@@ -219,8 +200,7 @@ class RosterTest
     }
 
     @Test
-    void should_HandleMultipleCommas_When_RosterHasExtraCommas() throws IOException
-    {
+    void should_HandleMultipleCommas_When_RosterHasExtraCommas() throws IOException {
         Files.write(rosterFile.toPath(), "Alice,,,Bob,,Charlie".getBytes());
 
         List<String> names = Roster.getRosterNameList(playerType);
@@ -229,8 +209,7 @@ class RosterTest
     }
 
     @Test
-    void should_HandleLeadingComma_When_RosterStartsWithComma() throws IOException
-    {
+    void should_HandleLeadingComma_When_RosterStartsWithComma() throws IOException {
         Files.write(rosterFile.toPath(), ",Alice,Bob".getBytes());
 
         List<String> names = Roster.getRosterNameList(playerType);
@@ -239,8 +218,7 @@ class RosterTest
     }
 
     @Test
-    void should_HandleTrailingComma_When_RosterEndsWithComma() throws IOException
-    {
+    void should_HandleTrailingComma_When_RosterEndsWithComma() throws IOException {
         Files.write(rosterFile.toPath(), "Alice,Bob,".getBytes());
 
         List<String> names = Roster.getRosterNameList(playerType);
@@ -249,8 +227,7 @@ class RosterTest
     }
 
     @Test
-    void should_RemoveDuplicates_When_RosterHasDuplicateNames() throws IOException
-    {
+    void should_RemoveDuplicates_When_RosterHasDuplicateNames() throws IOException {
         Files.write(rosterFile.toPath(), "Alice,Bob,Alice,Charlie,Bob".getBytes());
 
         List<String> names = Roster.getRosterNameList(playerType);
@@ -259,8 +236,7 @@ class RosterTest
     }
 
     @Test
-    void should_ReturnSingleName_When_RosterHasOneName() throws IOException
-    {
+    void should_ReturnSingleName_When_RosterHasOneName() throws IOException {
         Files.write(rosterFile.toPath(), "Alice".getBytes());
 
         List<String> names = Roster.getRosterNameList(playerType);
@@ -269,8 +245,7 @@ class RosterTest
     }
 
     @Test
-    void should_ReturnEmptyList_When_RosterIsOnlyCommas() throws IOException
-    {
+    void should_ReturnEmptyList_When_RosterIsOnlyCommas() throws IOException {
         Files.write(rosterFile.toPath(), ",,,".getBytes());
 
         List<String> names = Roster.getRosterNameList(playerType);
@@ -279,8 +254,7 @@ class RosterTest
     }
 
     @Test
-    void should_ReturnEmptyList_When_RosterIsOnlyWhitespace() throws IOException
-    {
+    void should_ReturnEmptyList_When_RosterIsOnlyWhitespace() throws IOException {
         Files.write(rosterFile.toPath(), "   ".getBytes());
 
         List<String> names = Roster.getRosterNameList(playerType);
@@ -293,8 +267,7 @@ class RosterTest
     // ========================================
 
     @Test
-    void should_RoundTripSuccessfully_When_SettingAndGettingRoster()
-    {
+    void should_RoundTripSuccessfully_When_SettingAndGettingRoster() {
         String original = "Alice,Bob,Charlie";
 
         Roster.setRoster(playerType, original);
@@ -304,8 +277,7 @@ class RosterTest
     }
 
     @Test
-    void should_PreserveNameList_When_RoundTripThroughFileSystem()
-    {
+    void should_PreserveNameList_When_RoundTripThroughFileSystem() {
         Roster.setRoster(playerType, "Alice,Bob,Charlie");
 
         List<String> names = Roster.getRosterNameList(playerType);
@@ -314,8 +286,7 @@ class RosterTest
     }
 
     @Test
-    void should_HandleComplexNames_When_NamesHaveSpecialCharacters() throws IOException
-    {
+    void should_HandleComplexNames_When_NamesHaveSpecialCharacters() throws IOException {
         Files.write(rosterFile.toPath(), "O'Brien,José,François".getBytes());
 
         List<String> names = Roster.getRosterNameList(playerType);

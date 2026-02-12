@@ -27,21 +27,19 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Integration tests for RuleEngine AI decision-making.
- * Tests RuleEngine's outcome management and eligibility system.
+ * Integration tests for RuleEngine AI decision-making. Tests RuleEngine's
+ * outcome management and eligibility system.
  *
  * Note: Full AI execution tests (with V2Player) require complete game scenarios
  * and are better suited for end-to-end testing.
  */
 @Tag("slow")
 @Tag("integration")
-class RuleEngineIntegrationTest extends IntegrationTestBase
-{
+class RuleEngineIntegrationTest extends IntegrationTestBase {
     private RuleEngine engine;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         engine = new RuleEngine();
     }
 
@@ -50,8 +48,7 @@ class RuleEngineIntegrationTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_CreateEngine_When_Constructed()
-    {
+    void should_CreateEngine_When_Constructed() {
         assertThat(engine).isNotNull();
     }
 
@@ -60,8 +57,7 @@ class RuleEngineIntegrationTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_HaveValidOutcomeConstants_When_Defined()
-    {
+    void should_HaveValidOutcomeConstants_When_Defined() {
         assertThat(RuleEngine.OUTCOME_NONE).isEqualTo(-1);
         assertThat(RuleEngine.OUTCOME_FOLD).isEqualTo(0);
         assertThat(RuleEngine.OUTCOME_CHECK).isEqualTo(1);
@@ -71,8 +67,7 @@ class RuleEngineIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_HaveSpecializedOutcomes_When_Defined()
-    {
+    void should_HaveSpecializedOutcomes_When_Defined() {
         assertThat(RuleEngine.OUTCOME_LIMP).isEqualTo(2);
         assertThat(RuleEngine.OUTCOME_STEAL).isEqualTo(3);
         assertThat(RuleEngine.OUTCOME_SEMI_BLUFF).isEqualTo(7);
@@ -87,38 +82,33 @@ class RuleEngineIntegrationTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_HaveHandStrengthFactors_When_Defined()
-    {
+    void should_HaveHandStrengthFactors_When_Defined() {
         assertThat(RuleEngine.FACTOR_RAW_HAND_STRENGTH).isEqualTo(12);
         assertThat(RuleEngine.FACTOR_BIASED_HAND_STRENGTH).isEqualTo(13);
         assertThat(RuleEngine.FACTOR_HAND_POTENTIAL).isEqualTo(14);
     }
 
     @Test
-    void should_HavePositionFactors_When_Defined()
-    {
+    void should_HavePositionFactors_When_Defined() {
         assertThat(RuleEngine.FACTOR_POSITION).isEqualTo(8);
         assertThat(RuleEngine.FACTOR_PRE_FLOP_POSITION).isEqualTo(30);
         assertThat(RuleEngine.FACTOR_RAISER_POSITION).isEqualTo(33);
     }
 
     @Test
-    void should_HaveOddsFactors_When_Defined()
-    {
+    void should_HaveOddsFactors_When_Defined() {
         assertThat(RuleEngine.FACTOR_POT_ODDS).isEqualTo(11);
         assertThat(RuleEngine.FACTOR_IMPLIED_ODDS).isEqualTo(32);
     }
 
     @Test
-    void should_HaveDrawFactors_When_Defined()
-    {
+    void should_HaveDrawFactors_When_Defined() {
         assertThat(RuleEngine.FACTOR_STRAIGHT_DRAW).isEqualTo(22);
         assertThat(RuleEngine.FACTOR_FLUSH_DRAW).isEqualTo(23);
     }
 
     @Test
-    void should_HaveOpponentFactors_When_Defined()
-    {
+    void should_HaveOpponentFactors_When_Defined() {
         assertThat(RuleEngine.FACTOR_AGGRESSION).isEqualTo(18);
         assertThat(RuleEngine.FACTOR_OPPONENT_BET_FREQUENCY).isEqualTo(41);
         assertThat(RuleEngine.FACTOR_OPPONENT_RAISE_FREQUENCY).isEqualTo(42);
@@ -127,8 +117,7 @@ class RuleEngineIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_HavePsychologicalFactors_When_Defined()
-    {
+    void should_HavePsychologicalFactors_When_Defined() {
         assertThat(RuleEngine.FACTOR_BOREDOM).isEqualTo(35);
         assertThat(RuleEngine.FACTOR_STEAM).isEqualTo(36);
     }
@@ -138,24 +127,21 @@ class RuleEngineIntegrationTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_SetEligible_When_SetEligibleCalled()
-    {
+    void should_SetEligible_When_SetEligibleCalled() {
         engine.setEligible(RuleEngine.OUTCOME_CALL, true);
 
         assertThat(engine.isEligible(RuleEngine.OUTCOME_CALL)).isTrue();
     }
 
     @Test
-    void should_SetIneligible_When_SetEligibleCalledWithFalse()
-    {
+    void should_SetIneligible_When_SetEligibleCalledWithFalse() {
         engine.setEligible(RuleEngine.OUTCOME_CALL, false);
 
         assertThat(engine.isEligible(RuleEngine.OUTCOME_CALL)).isFalse();
     }
 
     @Test
-    void should_SetMultipleEligible_When_CalledMultipleTimes()
-    {
+    void should_SetMultipleEligible_When_CalledMultipleTimes() {
         engine.setEligible(RuleEngine.OUTCOME_CALL, true);
         engine.setEligible(RuleEngine.OUTCOME_RAISE, true);
         engine.setEligible(RuleEngine.OUTCOME_FOLD, true);
@@ -166,8 +152,7 @@ class RuleEngineIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ToggleEligibility_When_SetMultipleTimes()
-    {
+    void should_ToggleEligibility_When_SetMultipleTimes() {
         engine.setEligible(RuleEngine.OUTCOME_CALL, true);
         assertThat(engine.isEligible(RuleEngine.OUTCOME_CALL)).isTrue();
 
@@ -179,8 +164,7 @@ class RuleEngineIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ManageIndependentOutcomes_When_SettingEligibility()
-    {
+    void should_ManageIndependentOutcomes_When_SettingEligibility() {
         engine.setEligible(RuleEngine.OUTCOME_CALL, true);
         engine.setEligible(RuleEngine.OUTCOME_RAISE, false);
 
@@ -189,8 +173,7 @@ class RuleEngineIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_GetEligibleOutcomes_When_MultipleSet()
-    {
+    void should_GetEligibleOutcomes_When_MultipleSet() {
         engine.setEligible(RuleEngine.OUTCOME_CALL, true);
         engine.setEligible(RuleEngine.OUTCOME_RAISE, true);
         engine.setEligible(RuleEngine.OUTCOME_FOLD, true);
@@ -203,8 +186,7 @@ class RuleEngineIntegrationTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_SupportAllBasicOutcomes_When_CheckingEligibility()
-    {
+    void should_SupportAllBasicOutcomes_When_CheckingEligibility() {
         // Test that all basic outcomes can be set
         engine.setEligible(RuleEngine.OUTCOME_FOLD, true);
         engine.setEligible(RuleEngine.OUTCOME_CHECK, true);
@@ -220,8 +202,7 @@ class RuleEngineIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_SupportAdvancedOutcomes_When_CheckingEligibility()
-    {
+    void should_SupportAdvancedOutcomes_When_CheckingEligibility() {
         // Test advanced tactical outcomes
         engine.setEligible(RuleEngine.OUTCOME_LIMP, true);
         engine.setEligible(RuleEngine.OUTCOME_STEAL, true);
@@ -241,8 +222,7 @@ class RuleEngineIntegrationTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_HaveCurveConstants_When_Defined()
-    {
+    void should_HaveCurveConstants_When_Defined() {
         assertThat(RuleEngine.CURVE_LINEAR).isEqualTo(1);
         assertThat(RuleEngine.CURVE_SQUARE).isEqualTo(2);
         assertThat(RuleEngine.CURVE_CUBE).isEqualTo(3);
@@ -256,8 +236,7 @@ class RuleEngineIntegrationTest extends IntegrationTestBase
     // for eligibility checking
 
     @Test
-    void should_HandleAllInOutcome_When_Checking()
-    {
+    void should_HandleAllInOutcome_When_Checking() {
         engine.setEligible(RuleEngine.OUTCOME_ALL_IN, true);
 
         assertThat(engine.isEligible(RuleEngine.OUTCOME_ALL_IN)).isTrue();

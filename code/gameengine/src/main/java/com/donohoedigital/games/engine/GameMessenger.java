@@ -39,11 +39,13 @@ import com.donohoedigital.games.comms.EngineMessenger;
 import com.donohoedigital.games.config.EngineConstants;
 
 /**
- * GameMessenger wraps EngineMessenger, getting server URL from options (instead of .properties)
+ * GameMessenger wraps EngineMessenger, getting server URL from options (instead
+ * of .properties)
  */
 public class GameMessenger extends EngineMessenger {
 
-    // Lazy initialization via classloading magic means the messenger won't be created until
+    // Lazy initialization via classloading magic means the messenger won't be
+    // created until
     // getGameMessengerInstance() is called
     private static class Holder {
         private static final GameMessenger INSTANCE = new GameMessenger();
@@ -59,7 +61,8 @@ public class GameMessenger extends EngineMessenger {
     }
 
     private static String getBaseServerUrl(String url) {
-        if (url != null) return url;
+        if (url != null)
+            return url;
         GameEngine engine = GameEngine.getGameEngine();
         EnginePrefs prefs = engine.getPrefsNode();
         String serverAndPort = prefs.getStringOption(EngineConstants.OPTION_ONLINE_SERVER);

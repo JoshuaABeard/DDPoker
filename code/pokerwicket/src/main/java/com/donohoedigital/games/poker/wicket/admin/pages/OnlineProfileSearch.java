@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -67,9 +67,8 @@ import java.util.Iterator;
  * @author Doug Donohoe
  */
 @MountPath("admin/online-profile-search")
-public class OnlineProfileSearch extends AdminPokerPage
-{
-    //private static Logger logger = LogManager.getLogger(Search.class);
+public class OnlineProfileSearch extends AdminPokerPage {
+    // private static Logger logger = LogManager.getLogger(Search.class);
 
     private static final long serialVersionUID = 42L;
 
@@ -81,8 +80,7 @@ public class OnlineProfileSearch extends AdminPokerPage
     @SpringBean
     private DDPostalService postalService;
 
-    public OnlineProfileSearch()
-    {
+    public OnlineProfileSearch() {
         super(null);
 
         // search data
@@ -99,13 +97,11 @@ public class OnlineProfileSearch extends AdminPokerPage
         CompoundPropertyModel<SearchData> formData = new CompoundPropertyModel<SearchData>(data);
 
         // form
-        Form<SearchData> form = new Form<SearchData>("form", formData)
-        {
+        Form<SearchData> form = new Form<SearchData>("form", formData) {
             private static final long serialVersionUID = 42L;
 
             @Override
-            protected void onSubmit()
-            {
+            protected void onSubmit() {
                 getModelObject().resetSize();
                 dataView.setCurrentPage(0);
             }
@@ -120,26 +116,22 @@ public class OnlineProfileSearch extends AdminPokerPage
         form.add(new TextField<String>("key"));
 
         // no results found
-        add(new WebMarkupContainer("no-match", formData)
-        {
+        add(new WebMarkupContainer("no-match", formData) {
             private static final long serialVersionUID = 42L;
 
             @Override
-            public boolean isVisible()
-            {
+            public boolean isVisible() {
                 SearchData d = (SearchData) getDefaultModelObject();
                 return !d.isSearchNull() && d.isEmpty();
             }
-        }
-        );
+        });
     }
 
     ////
     //// List
     ////
 
-    class SearchData extends PageableServiceProvider<OnlineProfile>
-    {
+    class SearchData extends PageableServiceProvider<OnlineProfile> {
         private static final long serialVersionUID = 42L;
 
         private String name;
@@ -147,59 +139,51 @@ public class OnlineProfileSearch extends AdminPokerPage
         private String key;
 
         @Override
-        public Iterator<OnlineProfile> iterator(long first, long pagesize)
-        {
-            return profileService.getMatchingOnlineProfiles((int) size(), (int) first, (int) pagesize, name, email, key, true).iterator();
+        public Iterator<OnlineProfile> iterator(long first, long pagesize) {
+            return profileService
+                    .getMatchingOnlineProfiles((int) size(), (int) first, (int) pagesize, name, email, key, true)
+                    .iterator();
         }
 
         @Override
-        public int calculateSize()
-        {
-            if (isSearchNull()) return 0;
+        public int calculateSize() {
+            if (isSearchNull())
+                return 0;
             return profileService.getMatchingOnlineProfilesCount(name, email, key, true);
         }
 
-        public String getName()
-        {
+        public String getName() {
             return name;
         }
 
-        public void setName(String s)
-        {
+        public void setName(String s) {
             name = s;
         }
 
-        public String getEmail()
-        {
+        public String getEmail() {
             return email;
         }
 
-        public void setEmail(String email)
-        {
-            if (email != null)
-            {
+        public void setEmail(String email) {
+            if (email != null) {
                 email = email.replaceAll("mailto:", DBUtils.SQL_EXACT_MATCH);
             }
             this.email = email;
         }
 
-        public String getKey()
-        {
+        public String getKey() {
             return key;
         }
 
-        public void setKey(String key)
-        {
+        public void setKey(String key) {
             this.key = key;
         }
 
-        public String[] getAll()
-        {
+        public String[] getAll() {
             return new String[]{name, email, key};
         }
 
-        public boolean isSearchNull()
-        {
+        public boolean isSearchNull() {
             return Strings.isEmpty(name) && Strings.isEmpty(email) && Strings.isEmpty(key);
         }
     }
@@ -207,18 +191,15 @@ public class OnlineProfileSearch extends AdminPokerPage
     /**
      * The leaderboard table
      */
-    private class GameListTableView extends CountDataView<OnlineProfile>
-    {
+    private class GameListTableView extends CountDataView<OnlineProfile> {
         private static final long serialVersionUID = 42L;
 
-        private GameListTableView(String id, SearchData data)
-        {
+        private GameListTableView(String id, SearchData data) {
             super(id, data, ITEMS_PER_PAGE);
         }
 
         @Override
-        protected void populateItem(Item<OnlineProfile> row)
-        {
+        protected void populateItem(Item<OnlineProfile> row) {
             OnlineProfile profile = row.getModelObject();
             final String email = profile.getEmail();
             final String key = profile.getLicenseKey();
@@ -231,44 +212,41 @@ public class OnlineProfileSearch extends AdminPokerPage
             row.add(link);
 
             // player name (in link)
-            link.add(new HighlightLabel("name", getSearchData().getName(), PokerWicketApplication.SEARCH_HIGHLIGHT, true));
+            link.add(new HighlightLabel("name", getSearchData().getName(), PokerWicketApplication.SEARCH_HIGHLIGHT,
+                    true));
 
             // email
-            Link<?> emailLink = new Link("emailLink")
-            {
+            Link<?> emailLink = new Link("emailLink") {
                 private static final long serialVersionUID = 42L;
 
                 @Override
-                public void onClick()
-                {
+                public void onClick() {
                     setResponsePage(new RegistrationSearch(null, DBUtils.sqlExactMatch(email)));
                 }
             };
             row.add(emailLink);
-            emailLink.add(new HighlightLabel("email", getSearchData().getEmail(), PokerWicketApplication.SEARCH_HIGHLIGHT, true));
+            emailLink.add(new HighlightLabel("email", getSearchData().getEmail(),
+                    PokerWicketApplication.SEARCH_HIGHLIGHT, true));
 
             // key
-            Link<?> keyLink = new Link("keyLink")
-            {
+            Link<?> keyLink = new Link("keyLink") {
                 private static final long serialVersionUID = 42L;
 
                 @Override
-                public void onClick()
-                {
+                public void onClick() {
                     setResponsePage(new RegistrationSearch(DBUtils.sqlExactMatch(key), null));
                 }
             };
             row.add(keyLink);
-            keyLink.add(new HighlightLabel("licenseKey", getSearchData().getKey(), PokerWicketApplication.SEARCH_HIGHLIGHT, true));
+            keyLink.add(new HighlightLabel("licenseKey", getSearchData().getKey(),
+                    PokerWicketApplication.SEARCH_HIGHLIGHT, true));
 
             // reset password link
-            Link<?> resetPasswordLink = new Link("resetPasswordLink")
-            {
+            Link<?> resetPasswordLink = new Link("resetPasswordLink") {
                 private static final long serialVersionUID = 42L;
 
                 @Override
-                public void onClick()
-                {
+                public void onClick() {
                     // Generate new password, hash it, and update profile
                     String newPassword = profileService.generatePassword();
                     profileService.hashAndSetPassword(profile, newPassword);
@@ -276,13 +254,14 @@ public class OnlineProfileSearch extends AdminPokerPage
 
                     // Email the new password
                     String sSubject = PropertyConfig.getMessage("msg.email.forgot.subject", profile.getName());
-                    String sPlainText = PropertyConfig.getMessage("msg.email.forgot.plain", profile.getName(), newPassword);
-                    String sHtmlText = PropertyConfig.getMessage("msg.email.forgot.html", Utils.encodeHTML(profile.getName()), Utils.encodeHTML(newPassword));
+                    String sPlainText = PropertyConfig.getMessage("msg.email.forgot.plain", profile.getName(),
+                            newPassword);
+                    String sHtmlText = PropertyConfig.getMessage("msg.email.forgot.html",
+                            Utils.encodeHTML(profile.getName()), Utils.encodeHTML(newPassword));
 
-                    postalService.sendMail(profile.getEmail(), PropertyConfig.getRequiredStringProperty("settings.server.profilefrom"),
-                                           null, sSubject,
-                                           sPlainText, sHtmlText,
-                                           null, null);
+                    postalService.sendMail(profile.getEmail(),
+                            PropertyConfig.getRequiredStringProperty("settings.server.profilefrom"), null, sSubject,
+                            sPlainText, sHtmlText, null, null);
 
                     info("Password reset and emailed to " + profile.getName() + " (" + profile.getEmail() + ")");
                 }
@@ -297,14 +276,12 @@ public class OnlineProfileSearch extends AdminPokerPage
             row.add(new Aliases("aliases", new PokerUser(profile)));
         }
 
-        protected SearchData getSearchData()
-        {
+        protected SearchData getSearchData() {
             return (SearchData) getDataProvider();
         }
 
         @Override
-        public boolean isVisible()
-        {
+        public boolean isVisible() {
             return !getSearchData().isSearchNull();
         }
     }

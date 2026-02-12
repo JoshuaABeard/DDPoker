@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -52,12 +52,11 @@ import java.beans.*;
 
 /**
  *
- * @author  Doug Donohoe
+ * @author Doug Donohoe
  */
-public class TableDesignDialog extends DialogPhase implements ChangeListener, PropertyChangeListener
-{
+public class TableDesignDialog extends DialogPhase implements ChangeListener, PropertyChangeListener {
     static Logger logger = LogManager.getLogger(TableDesignDialog.class);
-    
+
     private TableDesign profile_;
     private DDTextField name_;
     private ColorChooserPanel topChooser_, bottomChooser_;
@@ -66,15 +65,14 @@ public class TableDesignDialog extends DialogPhase implements ChangeListener, Pr
     /**
      * create chat ui
      */
-    public JComponent createDialogContents() 
-    {
+    public JComponent createDialogContents() {
         profile_ = (TableDesign) gamephase_.getObject(ProfileList.PARAM_PROFILE);
         ApplicationError.assertNotNull(profile_, "No 'profile' in params");
-        
+
         // contents
         DDPanel base = new DDPanel();
-        base.setBorderLayoutGap(10,10);
-        base.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+        base.setBorderLayoutGap(10, 10);
+        base.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         DDPanel namebase = new DDPanel();
         namebase.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
@@ -102,12 +100,10 @@ public class TableDesignDialog extends DialogPhase implements ChangeListener, Pr
 
         DDButton swap = new GlassButton("swap", "Glass");
         JComponent swapcenter = GuiUtils.CENTER(swap);
-        swapcenter.setBorder(BorderFactory.createEmptyBorder(5,0,0,0));
+        swapcenter.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
         colors.add(swapcenter, BorderLayout.CENTER);
-        swap.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent e)
-            {
+        swap.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
                 Color old = profile_.getColorBottom();
                 profile_.setColorBottom(profile_.getColorTop());
                 profile_.setColorTop(old);
@@ -132,12 +128,11 @@ public class TableDesignDialog extends DialogPhase implements ChangeListener, Pr
 
         return base;
     }
-    
+
     /**
      * Focus to text field
      */
-    protected Component getFocusComponent()
-    {
+    protected Component getFocusComponent() {
         return name_;
     }
 
@@ -146,23 +141,21 @@ public class TableDesignDialog extends DialogPhase implements ChangeListener, Pr
     /**
      * Default processButton calls closes dialog on any button press
      */
-    public boolean processButton(GameButton button) 
-    {   
+    public boolean processButton(GameButton button) {
         Boolean bResult = Boolean.FALSE;
 
-        if (button.getName().equals(okayButton_.getName()))
-        {
+        if (button.getName().equals(okayButton_.getName())) {
             // okay
             String sText = name_.getText();
             String sCurrent = profile_.getName();
-            if (!sText.equals(sCurrent))
-            {
+            if (!sText.equals(sCurrent)) {
                 // name changed
                 profile_.setName(sText);
                 bResult = Boolean.TRUE;
             }
 
-            if (CHANGED) bResult = Boolean.TRUE;
+            if (CHANGED)
+                bResult = Boolean.TRUE;
         }
 
         removeDialog();
@@ -170,31 +163,24 @@ public class TableDesignDialog extends DialogPhase implements ChangeListener, Pr
 
         return true;
     }
-    
+
     /**
      * Enable buttons
      */
-    private void checkButtons()
-    {
-        okayButton_.setEnabled(name_.isValidData() &&
-                               topChooser_.isValidData() &&
-                               bottomChooser_.isValidData());
+    private void checkButtons() {
+        okayButton_.setEnabled(name_.isValidData() && topChooser_.isValidData() && bottomChooser_.isValidData());
     }
 
     /**
      * color changed
      */
-    public void stateChanged(ChangeEvent e)
-    {
+    public void stateChanged(ChangeEvent e) {
         CHANGED = true;
 
-        if (e.getSource() == topChooser_)
-        {
+        if (e.getSource() == topChooser_) {
             profile_.setColorTop(topChooser_.getColor());
             faux.updateTop(topChooser_.getColor());
-        }
-        else
-        {
+        } else {
             profile_.setColorBottom(bottomChooser_.getColor());
             faux.updateBottom(bottomChooser_.getColor());
         }
@@ -202,8 +188,7 @@ public class TableDesignDialog extends DialogPhase implements ChangeListener, Pr
         checkButtons();
     }
 
-    public void propertyChange(PropertyChangeEvent evt)
-    {
+    public void propertyChange(PropertyChangeEvent evt) {
         checkButtons();
     }
 }

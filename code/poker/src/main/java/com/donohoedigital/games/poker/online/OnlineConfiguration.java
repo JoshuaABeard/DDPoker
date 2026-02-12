@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -62,8 +62,7 @@ import static com.donohoedigital.config.DebugConfig.*;
 /**
  * @author donohoe
  */
-public class OnlineConfiguration extends BasePhase implements PropertyChangeListener
-{
+public class OnlineConfiguration extends BasePhase implements PropertyChangeListener {
     static Logger logger = LogManager.getLogger(OnlineConfiguration.class);
 
     private DDHtmlArea text_;
@@ -89,12 +88,10 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
     /**
      * Creates a new instance of TournamentOptions
      */
-    public OnlineConfiguration()
-    {
+    public OnlineConfiguration() {
     }
 
-    public void init(GameEngine engine, GameContext context, GamePhase gamephase)
-    {
+    public void init(GameEngine engine, GameContext context, GamePhase gamephase) {
         super.init(engine, context, gamephase);
 
         // wake alive thread to send message that we are almost ready
@@ -108,7 +105,7 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
 
         // Create base panel which holds everything
         menu_ = new MenuBackground(gamephase);
-        //menu_.addAncestorListener(this);
+        // menu_.addAncestorListener(this);
         DDPanel menubox = menu_.getMenuBox();
         String sHelpName = menu_.getHelpName();
 
@@ -134,7 +131,7 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
         iptop.setBorderLayoutGap(10, 0);
         data.add(iptop, BorderLayout.NORTH);
 
-        //**// LAN IP
+        // **// LAN IP
         DDLabelBorder iplan = new DDLabelBorder("iplan", STYLE);
         iptop.add(iplan, BorderLayout.NORTH);
         DDPanel ippanel = new DDPanel();
@@ -146,10 +143,11 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
         w.text.setText(game_.getLocalIP());
         w.text.setDisplayOnly(true);
 
-        DDTextField lanText_ = addIPText("connect.lan", ippanel, BorderLayout.CENTER, STYLE, "BrushedMetal", game_).text;
+        DDTextField lanText_ = addIPText("connect.lan", ippanel, BorderLayout.CENTER, STYLE, "BrushedMetal",
+                game_).text;
         lanText_.setText(game_.getLanConnectURL());
 
-        //**// Internet IP
+        // **// Internet IP
         DDLabelBorder ippub = new DDLabelBorder("ippub", STYLE);
         iptop.add(ippub, BorderLayout.CENTER);
         ippanel = new DDPanel();
@@ -163,19 +161,14 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
         ippub.add(pbox, BorderLayout.NORTH);
         configurePublic_ = new DDCheckBox("publicgame", STYLE);
         configurePublic_.setSelected(false);
-        configurePublic_.addChangeListener(new ChangeListener()
-        {
-            public void stateChanged(ChangeEvent e)
-            {
+        configurePublic_.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
                 doCheckBox();
             }
         });
-        configurePublic_.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent e)
-            {
-                if (configurePublic_.isSelected())
-                {
+        configurePublic_.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (configurePublic_.isSelected()) {
                     String sMsg = PropertyConfig.getMessage("msg.publicip.notice", "" + game_.getPort());
                     EngineUtils.displayInformationDialog(context_, sMsg, "PublicIP");
                 }
@@ -205,10 +198,8 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
 
         test_ = new GlassButton("testip", "Glass");
         pubbuttons.add(test_);
-        test_.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent e)
-            {
+        test_.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
                 testConnection();
             }
         });
@@ -218,7 +209,7 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
         bottom.setBorderLayoutGap(0, 10);
         iptop.add(bottom, BorderLayout.SOUTH);
 
-        //**// Public game
+        // **// Public game
         DDLabelBorder publicgame = new DDLabelBorder("publicgame", STYLE);
         bottom.add(publicgame, BorderLayout.WEST);
 
@@ -235,7 +226,8 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
         game_.updatePlayerList(player);
 
         // add profile
-        EngineButtonListener listener = new EngineButtonListener(context_, this, gamephase_.getButtonNameFromParam("profile"));
+        EngineButtonListener listener = new EngineButtonListener(context_, this,
+                gamephase_.getButtonNameFromParam("profile"));
         DDImageButton button = new DDImageButton(listener.getGameButton().getName());
         button.addActionListener(listener);
         gbox.add(button, BorderLayout.WEST);
@@ -245,8 +237,7 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
         gbox.add(profilepanel, BorderLayout.CENTER);
 
         DDLabel label = new DDLabel(GuiManager.DEFAULT, "StartMenuSmall");
-        String profileText = PropertyConfig.getMessage("msg.publiclist.profile",
-                                                       Utils.encodeHTML(profile_.getName()));
+        String profileText = PropertyConfig.getMessage("msg.publiclist.profile", Utils.encodeHTML(profile_.getName()));
         label.setText(profileText);
         profilepanel.add(label);
 
@@ -258,12 +249,9 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
         listPublic_.setSelected(false);
 
         // shouldn't happen unless player copies a player profile file over
-        listPublic_.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent e)
-            {
-                if (listPublic_.isSelected() && false)
-                {
+        listPublic_.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (listPublic_.isSelected() && false) {
                     EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.playerprofile.demo"));
                     listPublic_.setSelected(false);
                 }
@@ -271,7 +259,7 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
         });
         gbox.add(listPublic_, BorderLayout.SOUTH);
 
-        //**// options
+        // **// options
         DDLabelBorder options = new DDLabelBorder("onlineoptions", STYLE);
         bottom.add(options, BorderLayout.CENTER);
 
@@ -291,8 +279,8 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
     /**
      * conveinence method to add ip label/txt
      */
-    static Widgets addIPText(String sName, JComponent parent, Object layout, String STYLE, String BEVELSTYLE, PokerGame game)
-    {
+    static Widgets addIPText(String sName, JComponent parent, Object layout, String STYLE, String BEVELSTYLE,
+            PokerGame game) {
         Widgets w = new Widgets();
         DDPanel panel = new DDPanel();
         parent.add(panel, layout);
@@ -300,18 +288,17 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
 
         DDLabel label = new DDLabel(sName, STYLE);
         final DDTextField text = new DDTextField(sName, STYLE, BEVELSTYLE);
-        if (game != null) text.setRegExp(game.getConnectRegExp());
+        if (game != null)
+            text.setRegExp(game.getConnectRegExp());
         text.setDisplayOnly(true);
         panel.add(label, BorderLayout.WEST);
         panel.add(text, BorderLayout.CENTER);
         DDButton copy = new GlassButton("copyurl", "Glass");
         panel.add(GuiUtils.CENTER(copy), BorderLayout.EAST);
-        copy.addActionListener(new ActionListener()
-        {
+        copy.addActionListener(new ActionListener() {
             DDTextField _text = text;
 
-            public void actionPerformed(ActionEvent e)
-            {
+            public void actionPerformed(ActionEvent e) {
                 GuiUtils.copyToClipboard(text.getText());
             }
         });
@@ -326,8 +313,7 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
     /**
      * conveinence method to add public ip field/button
      */
-    private Widgets addIPField(JComponent parent, Object layout, boolean bPublic)
-    {
+    private Widgets addIPField(JComponent parent, Object layout, boolean bPublic) {
         Widgets w = new Widgets();
         DDPanel panel = new DDPanel();
         parent.add(GuiUtils.WEST(panel), layout);
@@ -340,14 +326,11 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
         text.setColumns(12);
         panel.add(label, BorderLayout.WEST);
         panel.add(text, BorderLayout.CENTER);
-        if (bPublic)
-        {
+        if (bPublic) {
             DDButton copy = new GlassButton("publicip", "Glass");
             panel.add(GuiUtils.CENTER(copy), BorderLayout.EAST);
-            copy.addActionListener(new ActionListener()
-            {
-                public void actionPerformed(ActionEvent e)
-                {
+            copy.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
                     getPublicIP();
                 }
             });
@@ -368,8 +351,7 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
     /**
      * Return widgets created by above method
      */
-    static class Widgets
-    {
+    static class Widgets {
         DDLabel label;
         DDTextField text;
         com.donohoedigital.gui.DDButton button;
@@ -378,11 +360,9 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
     /**
      * get public ip
      */
-    private void getPublicIP()
-    {
+    private void getPublicIP() {
         SendMessageDialog dialog = (SendMessageDialog) context_.processPhaseNow("GetPublicIP", null);
-        if (dialog.getStatus() == DDMessageListener.STATUS_OK)
-        {
+        if (dialog.getStatus() == DDMessageListener.STATUS_OK) {
             String sIP = dialog.getReturnMessage().getString(EngineMessage.PARAM_IP);
             pubIPText_.setText(sIP);
             game_.setPublicIP(sIP);
@@ -392,20 +372,16 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
     /**
      * test connection
      */
-    private void testConnection()
-    {
+    private void testConnection() {
         if (TESTING(UDPServer.TESTING_UDP))
             logger.debug("Starting test public connect --------------------------------");
         DMTypedHashMap params = new DMTypedHashMap();
         params.setObject(TestPublicConnect.PARAM_URL, new PokerURL(game_.getPublicConnectURL()));
         SendMessageDialog dialog = (SendMessageDialog) context_.processPhaseNow("TestPublicConnect", params);
-        if (dialog.getStatus() == DDMessageListener.STATUS_OK)
-        {
+        if (dialog.getStatus() == DDMessageListener.STATUS_OK) {
             bTestPassed_ = true;
             sLastValidTest_ = game_.getPublicConnectURL();
-        }
-        else
-        {
+        } else {
             bTestPassed_ = false;
             sLastValidTest_ = null;
         }
@@ -416,8 +392,7 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
     /**
      * Start of phase
      */
-    public void start()
-    {
+    public void start() {
         // set help text
         context_.getWindow().setHelpTextWidget(text_);
         context_.getWindow().showHelp(menu_.getMenuBox()); // init help
@@ -432,52 +407,40 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
     /**
      * Finish
      */
-    public void finish()
-    {
+    public void finish() {
 
     }
 
     /**
      * Returns true
      */
-    public boolean processButton(GameButton button)
-    {
-        if (button.getName().equals(start_.getName()))
-        {
+    public boolean processButton(GameButton button) {
+        if (button.getName().equals(start_.getName())) {
             // start button enabled only if valid test occurred
             // and internet enabled
-            if (configurePublic_.isSelected() && !bTestPassed_)
-            {
-                GameButton bSkipTest = EngineUtils.displayConfirmationDialogCustom(context_,
-                                                                                   "OnlineTestConfirmation",
-                                                                                   PropertyConfig.getMessage("msg.testpublic"), null, "TestPublic", null);
-                if (bSkipTest != null && bSkipTest.getName().startsWith("doTest"))
-                {
+            if (configurePublic_.isSelected() && !bTestPassed_) {
+                GameButton bSkipTest = EngineUtils.displayConfirmationDialogCustom(context_, "OnlineTestConfirmation",
+                        PropertyConfig.getMessage("msg.testpublic"), null, "TestPublic", null);
+                if (bSkipTest != null && bSkipTest.getName().startsWith("doTest")) {
                     testConnection();
-                    if (!bTestPassed_)
-                    {
+                    if (!bTestPassed_) {
                         return false;
                     }
-                }
-                else if (bSkipTest != null && bSkipTest.getName().startsWith("cancel"))
-                {
+                } else if (bSkipTest != null && bSkipTest.getName().startsWith("cancel")) {
                     return false;
                 }
             }
 
             // if box isn't selected, then unset the public IP
             // incase it was selected and deselected
-            if (!configurePublic_.isSelected())
-            {
+            if (!configurePublic_.isSelected()) {
                 game_.setPublicIP(null);
             }
 
             // if listed, send the game to the server
             // (make sure config public is selected too)
-            if (configurePublic_.isSelected() && listPublic_.isSelected())
-            {
-                if (!OnlineServer.getWanManager().addWanGame(game_, profile_))
-                {
+            if (configurePublic_.isSelected() && listPublic_.isSelected()) {
+                if (!OnlineServer.getWanManager().addWanGame(game_, profile_)) {
                     // failed to connect
                     return false;
                 }
@@ -489,8 +452,7 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
             start_.setEnabled(false);
 
             // if host as observer, switch host to an observer
-            if (hostAsObs_.isSelected())
-            {
+            if (hostAsObs_.isSelected()) {
                 PokerPlayer host = game_.getHost();
                 game_.removePlayer(host);
                 game_.addObserver(host);
@@ -506,18 +468,13 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
             context_.setSpecialSavePhase(null);
 
             // display a message for the host
-            if (game_.isPublic())
-            {
+            if (game_.isPublic()) {
                 game_.getOnlineManager().sendDirectorChat(PropertyConfig.getMessage("msg.chat.publicgame"), null);
-            }
-            else
-            {
+            } else {
                 game_.getOnlineManager().sendDirectorChat(PropertyConfig.getMessage("msg.chat.privategame"), null);
             }
             game_.getOnlineManager().sendDirectorChat(PropertyConfig.getMessage("msg.chat.lobbyopen"), null);
-        }
-        else if (button.getName().startsWith("cancel"))
-        {
+        } else if (button.getName().startsWith("cancel")) {
             context_.setGame(null);
         }
 
@@ -527,48 +484,41 @@ public class OnlineConfiguration extends BasePhase implements PropertyChangeList
     /**
      * When text field changes
      */
-    public void propertyChange(PropertyChangeEvent evt)
-    {
+    public void propertyChange(PropertyChangeEvent evt) {
         String ip = pubIPText_.getText().trim();
         game_.setPublicIP(ip);
-        if (ip.length() > 0)
-        {
+        if (ip.length() > 0) {
             pubText_.setText(game_.getPublicConnectURL());
-        }
-        else
-        {
+        } else {
             pubText_.setText("");
         }
 
-        bTestPassed_ = pubIPText_.isValidData() && sLastValidTest_ != null && game_.getPublicConnectURL().equals(sLastValidTest_);
+        bTestPassed_ = pubIPText_.isValidData() && sLastValidTest_ != null
+                && game_.getPublicConnectURL().equals(sLastValidTest_);
         checkButtons();
     }
 
     /**
      * set buttons enabled/disabled based on selection
      */
-    private void checkButtons()
-    {
+    private void checkButtons() {
         boolean bValid = true;
         test_.setEnabled(pubText_.isValidData() && configurePublic_.isSelected());
-        if (configurePublic_.isSelected() && !pubText_.isValidData()) bValid = false;
+        if (configurePublic_.isSelected() && !pubText_.isValidData())
+            bValid = false;
         start_.setEnabled(bValid);
     }
 
     /**
      * Handle checkbox change
      */
-    private void doCheckBox()
-    {
+    private void doCheckBox() {
         boolean bPub = configurePublic_.isSelected();
 
         // must be a valid online profile to list a game
-        if (profile_.isActivated())
-        {
+        if (profile_.isActivated()) {
             listPublic_.setEnabled(bPub);
-        }
-        else
-        {
+        } else {
             listPublic_.setEnabled(false);
         }
 

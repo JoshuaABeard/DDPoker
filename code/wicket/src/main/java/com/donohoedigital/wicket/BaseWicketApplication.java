@@ -40,10 +40,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 /**
- * Created by IntelliJ IDEA.
- * User: donohoe
- * Date: Apr 17, 2008
- * Time: 12:59:24 PM
+ * Created by IntelliJ IDEA. User: donohoe Date: Apr 17, 2008 Time: 12:59:24 PM
  * To change this template use File | Settings | File Templates.
  */
 public abstract class BaseWicketApplication extends WebApplication implements ApplicationContextAware {

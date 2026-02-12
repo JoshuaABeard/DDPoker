@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -48,17 +48,14 @@ import java.util.List;
 /**
  * @author Doug Donohoe
  */
-public class GamesListFeed extends Channel
-{
+public class GamesListFeed extends Channel {
     private static final long serialVersionUID = 42L;
 
-    public GamesListFeed(String title, String url, OnlineGameList list)
-    {
+    public GamesListFeed(String title, String url, OnlineGameList list) {
         super("rss_2.0");
 
         Date date = new Date();
-        if (!list.isEmpty())
-        {
+        if (!list.isEmpty()) {
             date = list.get(0).getModifyDate();
         }
 
@@ -78,7 +75,8 @@ public class GamesListFeed extends Channel
 
         // image
         Image image = new Image();
-        // Extract base URL from the feed URL (e.g., "http://host:port" from "http://host:port/path")
+        // Extract base URL from the feed URL (e.g., "http://host:port" from
+        // "http://host:port/path")
         String imageUrl = url;
         int pathStart = url.indexOf('/', url.indexOf("://") + 3);
         if (pathStart > 0) {
@@ -94,8 +92,7 @@ public class GamesListFeed extends Channel
 
         // items
         List<Item> items = new ArrayList<>();
-        for (OnlineGame game : list)
-        {
+        for (OnlineGame game : list) {
             Item item = new Item();
             items.add(item);
 
@@ -106,18 +103,17 @@ public class GamesListFeed extends Channel
             item.setGuid(guid);
 
             // title & date
-            item.setTitle(Utils.encodeXML(game.getTournament().getName() + " hosted by " + game.getHostPlayer() + " (" + getMode(game.getMode()) + ')'));
+            item.setTitle(Utils.encodeXML(game.getTournament().getName() + " hosted by " + game.getHostPlayer() + " ("
+                    + getMode(game.getMode()) + ')'));
             item.setPubDate(game.getModifyDate());
 
             // Description
             Description desc = new Description();
-            if (game.getMode() == OnlineGame.MODE_END)
-            {
+            if (game.getMode() == OnlineGame.MODE_END) {
                 TournamentHistory hist = game.getHistories().get(0);
-                desc.setValue(hist.getPlayerName() + " finished 1st, winning $" + PropertyConfig.getAmount(hist.getPrize(), false, false));
-            }
-            else
-            {
+                desc.setValue(hist.getPlayerName() + " finished 1st, winning $"
+                        + PropertyConfig.getAmount(hist.getPrize(), false, false));
+            } else {
                 desc.setValue(Utils.encodeXML(game.getTournament().getDescription()));
             }
             item.setDescription(desc);
@@ -129,48 +125,43 @@ public class GamesListFeed extends Channel
             icats.add(itemcat);
             item.setCategories(icats);
 
-            if (!cats.contains(itemcat))
-            {
+            if (!cats.contains(itemcat)) {
                 cats.add(itemcat);
             }
         }
         setItems(items);
     }
 
-    private String getCategory(int mode)
-    {
-        switch (mode)
-        {
-            case OnlineGame.MODE_REG:
+    private String getCategory(int mode) {
+        switch (mode) {
+            case OnlineGame.MODE_REG :
                 return "Available Games";
 
-            case OnlineGame.MODE_PLAY:
+            case OnlineGame.MODE_PLAY :
                 return "Running Games";
 
-            case OnlineGame.MODE_END:
+            case OnlineGame.MODE_END :
                 return "Finished Games";
 
-            case OnlineGame.MODE_STOP:
+            case OnlineGame.MODE_STOP :
                 return "Stopped Games";
         }
 
         throw new ApplicationError("Unknown mode: " + mode);
     }
 
-    private String getMode(int mode)
-    {
-        switch (mode)
-        {
-            case OnlineGame.MODE_REG:
+    private String getMode(int mode) {
+        switch (mode) {
+            case OnlineGame.MODE_REG :
                 return "available";
 
-            case OnlineGame.MODE_PLAY:
+            case OnlineGame.MODE_PLAY :
                 return "running";
 
-            case OnlineGame.MODE_END:
+            case OnlineGame.MODE_END :
                 return "finished";
 
-            case OnlineGame.MODE_STOP:
+            case OnlineGame.MODE_STOP :
                 return "stopped";
         }
 

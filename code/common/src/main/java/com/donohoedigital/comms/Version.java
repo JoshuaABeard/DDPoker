@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -38,15 +38,11 @@
 
 package com.donohoedigital.comms;
 
-import com.donohoedigital.base.ApplicationError;
-import com.donohoedigital.base.ErrorCodes;
-
 /**
  * @author donohoe
  */
 @DataCoder('V')
-public class Version implements DataMarshal
-{
+public class Version implements DataMarshal {
     private int nMajor_;
     private int nMinor_;
     private int nPatch_;
@@ -64,56 +60,51 @@ public class Version implements DataMarshal
     /**
      * Empty needed for demarshal
      */
-    public Version()
-    {
+    public Version() {
     }
 
     /**
      * Create a new instance of Version using the string format
      */
-    public Version(String s)
-    {
+    public Version(String s) {
         char c;
         int beginIndex = 0;
         int endIndex = -1;
         int length = s.length();
 
-        while (Character.isDigit(c = s.charAt(++endIndex)))
-        {
+        while (Character.isDigit(c = s.charAt(++endIndex))) {
         }
         nMajor_ = Integer.parseInt(s.substring(beginIndex, endIndex));
 
         beginIndex = endIndex + 1;
-        while ((++endIndex < length) && (Character.isDigit(c = s.charAt(endIndex))))
-        {
+        while ((++endIndex < length) && (Character.isDigit(c = s.charAt(endIndex)))) {
         }
         nMinor_ = Integer.parseInt(s.substring(beginIndex, endIndex));
 
-        if (endIndex == length) return;
+        if (endIndex == length)
+            return;
         bAlpha_ = (c == 'a');
         bBeta_ = (c == 'b');
-        if (bAlpha_ || bBeta_)
-        {
+        if (bAlpha_ || bBeta_) {
             beginIndex = endIndex + 1;
-            while ((++endIndex < length) && (Character.isDigit(c = s.charAt(endIndex))))
-            {
+            while ((++endIndex < length) && (Character.isDigit(c = s.charAt(endIndex)))) {
             }
             nAlphaBetaVersion_ = Integer.parseInt(s.substring(beginIndex, endIndex));
         }
 
-        if (endIndex == length) return;
+        if (endIndex == length)
+            return;
         if (c == 'p' || c == '.') // old style is 3.1p2, new is 3.1.2
         {
             beginIndex = endIndex + 1;
-            while ((++endIndex < length) && (Character.isDigit(c = s.charAt(endIndex))))
-            {
+            while ((++endIndex < length) && (Character.isDigit(c = s.charAt(endIndex)))) {
             }
             nPatch_ = Integer.parseInt(s.substring(beginIndex, endIndex));
         }
 
-        if (endIndex == length) return;
-        if (c == '_')
-        {
+        if (endIndex == length)
+            return;
+        if (c == '_') {
             beginIndex = endIndex + 1;
             sLocale_ = s.substring(beginIndex);
         }
@@ -122,32 +113,29 @@ public class Version implements DataMarshal
     /**
      * Creates a new instance of Version
      */
-    public Version(int nMajor, int nMinor, int nPatch, boolean bVerify)
-    {
+    public Version(int nMajor, int nMinor, int nPatch, boolean bVerify) {
         this(TYPE_PRODUCTION, nMajor, nMinor, 0, nPatch, bVerify);
     }
 
     /**
      * Creates a new instance of Version with suffix
      */
-    public Version(int nMajor, int nMinor, int nPatch, boolean bVerify, String sSuffix)
-    {
+    public Version(int nMajor, int nMinor, int nPatch, boolean bVerify, String sSuffix) {
         this(TYPE_PRODUCTION, nMajor, nMinor, 0, nPatch, bVerify, sSuffix);
     }
 
     /**
      * Creates a new instance of Version
      */
-    public Version(int nType, int nMajor, int nMinor, int nAlphaBetaVersion, int nPatchVersion, boolean bVerify)
-    {
+    public Version(int nType, int nMajor, int nMinor, int nAlphaBetaVersion, int nPatchVersion, boolean bVerify) {
         this(nType, nMajor, nMinor, nAlphaBetaVersion, nPatchVersion, bVerify, null);
     }
 
     /**
      * Creates a new instance of Version with suffix
      */
-    public Version(int nType, int nMajor, int nMinor, int nAlphaBetaVersion, int nPatchVersion, boolean bVerify, String sSuffix)
-    {
+    public Version(int nType, int nMajor, int nMinor, int nAlphaBetaVersion, int nPatchVersion, boolean bVerify,
+            String sSuffix) {
         bVerify_ = bVerify;
         nMajor_ = nMajor;
         nMinor_ = nMinor;
@@ -158,136 +146,158 @@ public class Version implements DataMarshal
         sSuffix_ = sSuffix;
     }
 
-    public boolean isVerify()
-    {
+    public boolean isVerify() {
         return bVerify_;
     }
 
-    public int getMajor()
-    {
+    public int getMajor() {
         return nMajor_;
     }
 
-    public String getMajorAsString()
-    {
+    public String getMajorAsString() {
         return String.valueOf(nMajor_);
     }
 
-    public int getMinor()
-    {
+    public int getMinor() {
         return nMinor_;
     }
 
-    public int getPatch()
-    {
+    public int getPatch() {
         return nPatch_;
     }
 
-    public boolean isAlpha()
-    {
+    public boolean isAlpha() {
         return bAlpha_;
     }
 
-    public boolean isBeta()
-    {
+    public boolean isBeta() {
         return bBeta_;
     }
 
-    public boolean isProduction()
-    {
+    public boolean isProduction() {
         return !bAlpha_ && !bBeta_;
     }
 
-    public int getAlphaBetaVersion()
-    {
+    public int getAlphaBetaVersion() {
         return nAlphaBetaVersion_;
     }
 
-    public String getLocale()
-    {
+    public String getLocale() {
         return sLocale_;
     }
 
-    public void setLocale(String s)
-    {
+    public void setLocale(String s) {
         sLocale_ = s;
     }
 
     /**
-     * Return true if this version is an earlier version
-     * than given version
+     * Return true if this version is an earlier version than given version
      */
     @SuppressWarnings({"RedundantIfStatement"})
-    public boolean isMajorMinorBefore(Version version)
-    {
-        if (nMajor_ > version.nMajor_) return false;
-        if (nMajor_ < version.nMajor_) return true;
-        if (nMinor_ > version.nMinor_) return false;
-        if (nMinor_ < version.nMinor_) return true;
-        if (bAlpha_ && version.bBeta_) return true;
-        if (bBeta_ && version.bAlpha_) return false;
-        if (!isProduction() && version.isProduction()) return true;
-        if (isProduction() && !version.isProduction()) return false;
-        if (bAlpha_ && version.bAlpha_ && nAlphaBetaVersion_ > version.nAlphaBetaVersion_) return false;
-        if (bAlpha_ && version.bAlpha_ && nAlphaBetaVersion_ < version.nAlphaBetaVersion_) return true;
-        if (bBeta_ && version.bBeta_ && nAlphaBetaVersion_ > version.nAlphaBetaVersion_) return false;
-        if (bBeta_ && version.bBeta_ && nAlphaBetaVersion_ < version.nAlphaBetaVersion_) return true;
+    public boolean isMajorMinorBefore(Version version) {
+        if (nMajor_ > version.nMajor_)
+            return false;
+        if (nMajor_ < version.nMajor_)
+            return true;
+        if (nMinor_ > version.nMinor_)
+            return false;
+        if (nMinor_ < version.nMinor_)
+            return true;
+        if (bAlpha_ && version.bBeta_)
+            return true;
+        if (bBeta_ && version.bAlpha_)
+            return false;
+        if (!isProduction() && version.isProduction())
+            return true;
+        if (isProduction() && !version.isProduction())
+            return false;
+        if (bAlpha_ && version.bAlpha_ && nAlphaBetaVersion_ > version.nAlphaBetaVersion_)
+            return false;
+        if (bAlpha_ && version.bAlpha_ && nAlphaBetaVersion_ < version.nAlphaBetaVersion_)
+            return true;
+        if (bBeta_ && version.bBeta_ && nAlphaBetaVersion_ > version.nAlphaBetaVersion_)
+            return false;
+        if (bBeta_ && version.bBeta_ && nAlphaBetaVersion_ < version.nAlphaBetaVersion_)
+            return true;
 
         return false;
     }
 
     /**
-     * Return true if this version is an earlier version
-     * than given version
+     * Return true if this version is an earlier version than given version
      */
     @SuppressWarnings({"RedundantIfStatement"})
-    public boolean isBefore(Version version)
-    {
-        if (nMajor_ > version.nMajor_) return false;
-        if (nMajor_ < version.nMajor_) return true;
-        if (nMinor_ > version.nMinor_) return false;
-        if (nMinor_ < version.nMinor_) return true;
-        if (bAlpha_ && version.bBeta_) return true;
-        if (bBeta_ && version.bAlpha_) return false;
-        if (!isProduction() && version.isProduction()) return true;
-        if (isProduction() && !version.isProduction()) return false;
-        if (bAlpha_ && version.bAlpha_ && nAlphaBetaVersion_ > version.nAlphaBetaVersion_) return false;
-        if (bAlpha_ && version.bAlpha_ && nAlphaBetaVersion_ < version.nAlphaBetaVersion_) return true;
-        if (bBeta_ && version.bBeta_ && nAlphaBetaVersion_ > version.nAlphaBetaVersion_) return false;
-        if (bBeta_ && version.bBeta_ && nAlphaBetaVersion_ < version.nAlphaBetaVersion_) return true;
-        if (nPatch_ > version.nPatch_) return false;
-        if (nPatch_ < version.nPatch_) return true;
+    public boolean isBefore(Version version) {
+        if (nMajor_ > version.nMajor_)
+            return false;
+        if (nMajor_ < version.nMajor_)
+            return true;
+        if (nMinor_ > version.nMinor_)
+            return false;
+        if (nMinor_ < version.nMinor_)
+            return true;
+        if (bAlpha_ && version.bBeta_)
+            return true;
+        if (bBeta_ && version.bAlpha_)
+            return false;
+        if (!isProduction() && version.isProduction())
+            return true;
+        if (isProduction() && !version.isProduction())
+            return false;
+        if (bAlpha_ && version.bAlpha_ && nAlphaBetaVersion_ > version.nAlphaBetaVersion_)
+            return false;
+        if (bAlpha_ && version.bAlpha_ && nAlphaBetaVersion_ < version.nAlphaBetaVersion_)
+            return true;
+        if (bBeta_ && version.bBeta_ && nAlphaBetaVersion_ > version.nAlphaBetaVersion_)
+            return false;
+        if (bBeta_ && version.bBeta_ && nAlphaBetaVersion_ < version.nAlphaBetaVersion_)
+            return true;
+        if (nPatch_ > version.nPatch_)
+            return false;
+        if (nPatch_ < version.nPatch_)
+            return true;
 
         return false;
     }
 
     /**
-     * Return true if this version is a later version
-     * than given version
+     * Return true if this version is a later version than given version
      */
     @SuppressWarnings({"RedundantIfStatement"})
-    public boolean isAfter(Version version)
-    {
-        if (nMajor_ < version.nMajor_) return false;
-        if (nMajor_ > version.nMajor_) return true;
-        if (nMinor_ < version.nMinor_) return false;
-        if (nMinor_ > version.nMinor_) return true;
-        if (bBeta_ && version.bAlpha_) return true;
-        if (bAlpha_ && version.bBeta_) return false;
-        if (!isProduction() && version.isProduction()) return false;
-        if (isProduction() && !version.isProduction()) return true;
-        if (bAlpha_ && version.bAlpha_ && nAlphaBetaVersion_ < version.nAlphaBetaVersion_) return false;
-        if (bAlpha_ && version.bAlpha_ && nAlphaBetaVersion_ > version.nAlphaBetaVersion_) return true;
-        if (bBeta_ && version.bBeta_ && nAlphaBetaVersion_ < version.nAlphaBetaVersion_) return false;
-        if (bBeta_ && version.bBeta_ && nAlphaBetaVersion_ > version.nAlphaBetaVersion_) return true;
-        if (nPatch_ < version.nPatch_) return false;
-        if (nPatch_ > version.nPatch_) return true;
+    public boolean isAfter(Version version) {
+        if (nMajor_ < version.nMajor_)
+            return false;
+        if (nMajor_ > version.nMajor_)
+            return true;
+        if (nMinor_ < version.nMinor_)
+            return false;
+        if (nMinor_ > version.nMinor_)
+            return true;
+        if (bBeta_ && version.bAlpha_)
+            return true;
+        if (bAlpha_ && version.bBeta_)
+            return false;
+        if (!isProduction() && version.isProduction())
+            return false;
+        if (isProduction() && !version.isProduction())
+            return true;
+        if (bAlpha_ && version.bAlpha_ && nAlphaBetaVersion_ < version.nAlphaBetaVersion_)
+            return false;
+        if (bAlpha_ && version.bAlpha_ && nAlphaBetaVersion_ > version.nAlphaBetaVersion_)
+            return true;
+        if (bBeta_ && version.bBeta_ && nAlphaBetaVersion_ < version.nAlphaBetaVersion_)
+            return false;
+        if (bBeta_ && version.bBeta_ && nAlphaBetaVersion_ > version.nAlphaBetaVersion_)
+            return true;
+        if (nPatch_ < version.nPatch_)
+            return false;
+        if (nPatch_ > version.nPatch_)
+            return true;
 
         return false;
     }
 
-    public void demarshal(MsgState state, String sData)
-    {
+    public void demarshal(MsgState state, String sData) {
         TokenizedList list = new TokenizedList();
         list.demarshal(state, sData);
         nMajor_ = list.removeIntToken();
@@ -297,20 +307,17 @@ public class Version implements DataMarshal
         nPatch_ = list.removeIntToken();
 
         // Locale (added for French, 3/3/2004)
-        if (list.hasMoreTokens())
-        {
+        if (list.hasMoreTokens()) {
             sLocale_ = list.removeStringToken();
 
             // alpha (added for DD Poker Alpha 2, 5/13/2005)
-            if (list.hasMoreTokens())
-            {
+            if (list.hasMoreTokens()) {
                 bAlpha_ = list.removeBooleanToken();
             }
         }
     }
 
-    public String marshal(MsgState state)
-    {
+    public String marshal(MsgState state) {
         TokenizedList list = new TokenizedList();
         list.addToken(nMajor_);
         list.addToken(nMinor_);
@@ -323,11 +330,9 @@ public class Version implements DataMarshal
     }
 
     @Override
-    public String toString()
-    {
-        return nMajor_ + "." + nMinor_ + (bAlpha_ | bBeta_ ? (bAlpha_ ? "a" : "b") + nAlphaBetaVersion_ : "") +
-               (nPatch_ != 0 ? "." + nPatch_ : "") +
-               (sLocale_ != null ? "_" + sLocale_ : "") +
-               (sSuffix_ != null ? sSuffix_ : "");
+    public String toString() {
+        return nMajor_ + "." + nMinor_ + (bAlpha_ | bBeta_ ? (bAlpha_ ? "a" : "b") + nAlphaBetaVersion_ : "")
+                + (nPatch_ != 0 ? "." + nPatch_ : "") + (sLocale_ != null ? "_" + sLocale_ : "")
+                + (sSuffix_ != null ? sSuffix_ : "");
     }
 }

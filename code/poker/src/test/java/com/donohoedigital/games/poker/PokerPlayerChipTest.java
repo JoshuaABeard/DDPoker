@@ -28,20 +28,18 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for PokerPlayer chip management methods.
- * Critical money-handling operations that must be 100% accurate.
- * Extends IntegrationTestBase for game infrastructure.
+ * Tests for PokerPlayer chip management methods. Critical money-handling
+ * operations that must be 100% accurate. Extends IntegrationTestBase for game
+ * infrastructure.
  */
 @Tag("integration")
-class PokerPlayerChipTest extends IntegrationTestBase
-{
+class PokerPlayerChipTest extends IntegrationTestBase {
     private PokerGame game;
     private PokerTable table;
     private PokerPlayer player;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         // Create minimal game infrastructure
         game = new PokerGame(null);
         TournamentProfile profile = new TournamentProfile("test");
@@ -62,8 +60,7 @@ class PokerPlayerChipTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_AddChips_When_PositiveAmount()
-    {
+    void should_AddChips_When_PositiveAmount() {
         int initialChips = player.getChipCount();
 
         player.addChips(500);
@@ -72,8 +69,7 @@ class PokerPlayerChipTest extends IntegrationTestBase
     }
 
     @Test
-    void should_AddZeroChips_When_ZeroAmount()
-    {
+    void should_AddZeroChips_When_ZeroAmount() {
         int initialChips = player.getChipCount();
 
         player.addChips(0);
@@ -82,8 +78,7 @@ class PokerPlayerChipTest extends IntegrationTestBase
     }
 
     @Test
-    void should_HandleNegativeChips_When_NegativeAmount()
-    {
+    void should_HandleNegativeChips_When_NegativeAmount() {
         int initialChips = player.getChipCount();
 
         // Note: addChips allows negative (it's just addition)
@@ -98,8 +93,7 @@ class PokerPlayerChipTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_TrackPendingRebuy_When_PendingTrue()
-    {
+    void should_TrackPendingRebuy_When_PendingTrue() {
         player.addRebuy(1500, 1500, true);
 
         // Pending rebuys tracked but not applied to chip count yet
@@ -108,8 +102,7 @@ class PokerPlayerChipTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ApplyImmediateRebuy_When_PendingFalse()
-    {
+    void should_ApplyImmediateRebuy_When_PendingFalse() {
         player.addRebuy(1500, 1500, false);
 
         // Immediate rebuy applied to chip count
@@ -118,8 +111,7 @@ class PokerPlayerChipTest extends IntegrationTestBase
     }
 
     @Test
-    void should_FinalizePendingRebuys_When_AddPendingRebuysCall()
-    {
+    void should_FinalizePendingRebuys_When_AddPendingRebuysCall() {
         // Add multiple pending rebuys
         player.addRebuy(1500, 1500, true);
         player.addRebuy(1500, 1500, true);
@@ -133,8 +125,7 @@ class PokerPlayerChipTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ResetPendingCounters_When_AddPendingRebuysCompletes()
-    {
+    void should_ResetPendingCounters_When_AddPendingRebuysCompletes() {
         player.addRebuy(1500, 1500, true);
         player.addPendingRebuys();
 
@@ -150,8 +141,7 @@ class PokerPlayerChipTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_MaintainChipAccuracy_When_MultipleOperations()
-    {
+    void should_MaintainChipAccuracy_When_MultipleOperations() {
         // Start with 1000
         assertThat(player.getChipCount()).isEqualTo(1000);
 
@@ -168,8 +158,7 @@ class PokerPlayerChipTest extends IntegrationTestBase
     }
 
     @Test
-    void should_NotCreateChips_When_NoOperations()
-    {
+    void should_NotCreateChips_When_NoOperations() {
         int initialChips = player.getChipCount();
 
         // No operations - chips should be unchanged

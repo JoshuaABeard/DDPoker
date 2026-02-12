@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -37,7 +37,6 @@ import com.donohoedigital.base.TypedHashMap;
 import com.donohoedigital.base.Utils;
 import com.donohoedigital.config.ConfigUtils;
 import com.donohoedigital.config.ImageConfig;
-import com.donohoedigital.config.Perf;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.engine.FileChooserDialog;
 import com.donohoedigital.games.engine.GameContext;
@@ -62,8 +61,7 @@ import java.util.Date;
 /**
  * subclass to handle selection and copy
  */
-class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListener, FocusListener
-{
+class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListener, FocusListener {
     static Logger logger = LogManager.getLogger(ChatListPanel.class);
 
     private static ImageIcon exportIcon_ = ImageConfig.getImageIcon("menuicon.export");
@@ -80,9 +78,8 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
     /**
      * Create new panel specifying styles, scrollbar policies
      */
-    public ChatListPanel(GameContext context, Class itemPanelClass, int nMax,
-                         String sStyle, String bevelStyle, int nVerticalPolicy, int nHorizPolicy)
-    {
+    public ChatListPanel(GameContext context, Class itemPanelClass, int nMax, String sStyle, String bevelStyle,
+            int nVerticalPolicy, int nHorizPolicy) {
         super(itemPanelClass, sStyle, bevelStyle, nVerticalPolicy, nHorizPolicy);
         context_ = context;
         MAX_MESSAGES = nMax;
@@ -95,15 +92,12 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
         listParent.addFocusListener(this);
         listParent.setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
 
-        GuiUtils.addKeyAction(listParent, JComponent.WHEN_FOCUSED,
-                              "chatcopy", new CopyAction(),
-                              KeyEvent.VK_C, Utils.ISMAC ? KeyEvent.META_DOWN_MASK : KeyEvent.CTRL_DOWN_MASK);
+        GuiUtils.addKeyAction(listParent, JComponent.WHEN_FOCUSED, "chatcopy", new CopyAction(), KeyEvent.VK_C,
+                Utils.ISMAC ? KeyEvent.META_DOWN_MASK : KeyEvent.CTRL_DOWN_MASK);
 
-        GuiUtils.addKeyAction(listParent, JComponent.WHEN_FOCUSED,
-                              "chatselectall", new SelectAllAction(),
-                              KeyEvent.VK_A, Utils.ISMAC ? KeyEvent.META_DOWN_MASK : KeyEvent.CTRL_DOWN_MASK);
-        setViewportBorder(BorderFactory.createCompoundBorder(
-                getViewportBorder(),
+        GuiUtils.addKeyAction(listParent, JComponent.WHEN_FOCUSED, "chatselectall", new SelectAllAction(),
+                KeyEvent.VK_A, Utils.ISMAC ? KeyEvent.META_DOWN_MASK : KeyEvent.CTRL_DOWN_MASK);
+        setViewportBorder(BorderFactory.createCompoundBorder(getViewportBorder(),
                 BorderFactory.createMatteBorder(1, 1, 1, 1, getListParent().getBackground())));
         setFocusable(false); // Doug: turned off - not sure if this is what we want.
         getListParent().setOpaque(true);
@@ -114,17 +108,13 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
     /**
      * display the message
      */
-    void displayMessage(ChatPanel.ChatMessage msg)
-    {
+    void displayMessage(ChatPanel.ChatMessage msg) {
         int last = messages_.size() - 1;
 
-        if (messages_.size() == MAX_MESSAGES)
-        {
+        if (messages_.size() == MAX_MESSAGES) {
             updateItem(0, msg);
             moveItemToLast(0);
-        }
-        else
-        {
+        } else {
             ++last;
             addItem(msg, false);
         }
@@ -137,20 +127,17 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
     }
 
     /**
-     * select given index - do this via runnable so
-     * item is rendered and sized appropriately
+     * select given index - do this via runnable so item is rendered and sized
+     * appropriately
      */
-    private class SelectIndex implements Runnable
-    {
+    private class SelectIndex implements Runnable {
         int idx;
 
-        SelectIndex(int idx)
-        {
+        SelectIndex(int idx) {
             this.idx = idx;
         }
 
-        public void run()
-        {
+        public void run() {
             // validate needed to make sure size is correct.
             // swing is weird - calling validate() in the
             // actual ListPanel code doesn't work
@@ -165,8 +152,7 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
     /**
      * gain focus, set selection visible
      */
-    public void focusGained(FocusEvent e)
-    {
+    public void focusGained(FocusEvent e) {
         setSelectionVisible(true);
         bIgnoreGain = false;
     }
@@ -174,33 +160,29 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
     /**
      * lose focus, set selection invisible
      */
-    public void focusLost(FocusEvent e)
-    {
+    public void focusLost(FocusEvent e) {
         setSelectionVisible(false);
     }
 
     /**
      * set selection visible on all
      */
-    private void setSelectionVisible(boolean b)
-    {
+    private void setSelectionVisible(boolean b) {
         ChatItemPanel chat;
         DDHtmlArea html = null;
         boolean bSetVisible = false;
-        for (int i = 0; i < getItems().size(); i++)
-        {
+        for (int i = 0; i < getItems().size(); i++) {
             chat = (ChatItemPanel) getItemPanel(i);
             html = chat.html_;
-            if (html.getSelectionEnd() != html.getSelectionStart())
-            {
+            if (html.getSelectionEnd() != html.getSelectionStart()) {
                 html.getCaret().setSelectionVisible(b);
-                if (b) bSetVisible = true;
+                if (b)
+                    bSetVisible = true;
             }
         }
 
         // if setting visible, but nothing selected, then select all of last item
-        if (b && !bSetVisible && html != null && !bIgnoreGain)
-        {
+        if (b && !bSetVisible && html != null && !bIgnoreGain) {
             html.selectAll();
             html.getCaret().setSelectionVisible(true);
         }
@@ -209,10 +191,8 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
     /**
      * copy action
      */
-    private class CopyAction extends AbstractAction
-    {
-        public void actionPerformed(ActionEvent e)
-        {
+    private class CopyAction extends AbstractAction {
+        public void actionPerformed(ActionEvent e) {
             copy();
         }
     }
@@ -220,10 +200,8 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
     /**
      * select all action
      */
-    private class SelectAllAction extends AbstractAction
-    {
-        public void actionPerformed(ActionEvent e)
-        {
+    private class SelectAllAction extends AbstractAction {
+        public void actionPerformed(ActionEvent e) {
             selectText(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE);
         }
     }
@@ -231,35 +209,33 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
     /**
      * copy all select text to clipboard
      */
-    private void copy()
-    {
+    private void copy() {
         ChatItemPanel chat;
         DDHtmlArea html;
         StringBuilder sb = new StringBuilder();
         String sText;
-        for (int i = 0; i < getItems().size(); i++)
-        {
+        for (int i = 0; i < getItems().size(); i++) {
             chat = (ChatItemPanel) getItemPanel(i);
             html = chat.html_;
-            if (html.getSelectionEnd() != html.getSelectionStart())
-            {
+            if (html.getSelectionEnd() != html.getSelectionStart()) {
                 sText = html.getSelectedText();
                 // replace white space \s and nbsp (ascii 160 == AO)
                 sText = sText.replaceAll(WHITESPACE, " ");
-                if (sb.length() > 0) sb.append("\n");
+                if (sb.length() > 0)
+                    sb.append("\n");
                 sb.append(sText.trim());
             }
         }
-        if (sb.length() == 0) return;
-        //logger.debug("Copy: "+ sb);
+        if (sb.length() == 0)
+            return;
+        // logger.debug("Copy: "+ sb);
         GuiUtils.copyToClipboard(sb.toString());
     }
 
     /**
      * start of selection, request focus
      */
-    public void mousePressed(MouseEvent e)
-    {
+    public void mousePressed(MouseEvent e) {
         start_ = SwingUtilities.convertPoint((Component) e.getSource(), e.getPoint(), getListParent());
         bIgnoreGain = true;
         getListParent().requestFocus();
@@ -268,12 +244,10 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
     /**
      * drag - select text
      */
-    public void mouseDragged(MouseEvent e)
-    {
+    public void mouseDragged(MouseEvent e) {
         Component c = (Component) e.getSource();
         Point thisend = SwingUtilities.convertPoint(c, e.getPoint(), getListParent());
-        if (!thisend.equals(end_))
-        {
+        if (!thisend.equals(end_)) {
             end_ = thisend;
             int x1 = Math.min(start_.x, end_.x);
             int x2 = Math.max(start_.x, end_.x);
@@ -281,17 +255,19 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
             int y2 = Math.max(start_.y, end_.y);
 
             selectText(x1, y1, x2, y2);
-            getViewport().scrollRectToVisible(new Rectangle(SwingUtilities.convertPoint(c, e.getPoint(), getViewport())));
+            getViewport()
+                    .scrollRectToVisible(new Rectangle(SwingUtilities.convertPoint(c, e.getPoint(), getViewport())));
         }
     }
 
     /**
      * select text that intersects box
      */
-    private void selectText(int x1, int y1, int x2, int y2)
-    {
-        if (x1 == x2) x2 = x1 + 1;
-        if (y1 == y2) y2 = y1 + 1;
+    private void selectText(int x1, int y1, int x2, int y2) {
+        if (x1 == x2)
+            x2 = x1 + 1;
+        if (y1 == y2)
+            y2 = y1 + 1;
         Point topleft = new Point(x1, y1);
         Point botright = new Point(x2, y2);
         Rectangle area = new Rectangle(x1, y1, x2 - x1, y2 - y1);
@@ -300,38 +276,26 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
         Rectangle bounds = new Rectangle();
         Point adjtopleft, adjbotright;
         DDHtmlArea html;
-        for (int i = 0; i < getItems().size(); i++)
-        {
+        for (int i = 0; i < getItems().size(); i++) {
             chat = (ChatItemPanel) getItemPanel(i);
             chat.getBounds(bounds);
             html = chat.html_;
             adjtopleft = SwingUtilities.convertPoint(getListParent(), topleft, html);
             adjbotright = SwingUtilities.convertPoint(getListParent(), botright, html);
-            if (bounds.intersects(area))
-            {
-                if (bounds.contains(topleft))
-                {
-                    if (bounds.contains(botright))
-                    {
+            if (bounds.intersects(area)) {
+                if (bounds.contains(topleft)) {
+                    if (bounds.contains(botright)) {
                         html.select(html.viewToModel2D(adjtopleft), html.viewToModel2D(adjbotright));
-                    }
-                    else
-                    {
+                    } else {
                         html.select(html.viewToModel2D(adjtopleft), Integer.MAX_VALUE);
                     }
-                }
-                else if (bounds.contains(botright))
-                {
+                } else if (bounds.contains(botright)) {
                     html.select(0, html.viewToModel2D(adjbotright));
-                }
-                else
-                {
+                } else {
                     html.selectAll();
                 }
                 html.getCaret().setSelectionVisible(true);
-            }
-            else
-            {
+            } else {
                 html.select(0, 0);
                 html.getCaret().setSelectionVisible(false);
             }
@@ -341,58 +305,44 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
     /**
      * select word that intersects start point
      */
-    private void selectWord()
-    {
+    private void selectWord() {
         ChatItemPanel chat;
         Rectangle bounds = new Rectangle();
         Point adjstart;
         DDHtmlArea html;
 
-        for (int i = 0; i < getItems().size(); i++)
-        {
+        for (int i = 0; i < getItems().size(); i++) {
             chat = (ChatItemPanel) getItemPanel(i);
             chat.getBounds(bounds);
             html = chat.html_;
             adjstart = SwingUtilities.convertPoint(getListParent(), start_, html);
-            if (bounds.contains(start_))
-            {
+            if (bounds.contains(start_)) {
                 int pos = html.viewToModel2D(adjstart);
                 int length = html.getDocument().getLength();
                 int start = pos - 1;
                 int end = pos + 1;
-                while (start-- >= 0)
-                {
-                    try
-                    {
+                while (start-- >= 0) {
+                    try {
                         String s = html.getDocument().getText(start, 1);
-                        if (s.matches(WHITESPACE))
-                        {
+                        if (s.matches(WHITESPACE)) {
                             start++;
                             break;
                         }
-                    }
-                    catch (BadLocationException be)
-                    {
+                    } catch (BadLocationException be) {
 
                     }
                 }
-                while (end++ < length)
-                {
-                    try
-                    {
+                while (end++ < length) {
+                    try {
                         String s = html.getDocument().getText(end, 1);
-                        if (s.matches(WHITESPACE))
-                        {
+                        if (s.matches(WHITESPACE)) {
                             break;
                         }
-                    }
-                    catch (BadLocationException be)
-                    {
+                    } catch (BadLocationException be) {
 
                     }
                 }
-                if (start != end)
-                {
+                if (start != end) {
                     html.select(start, end);
                     html.getCaret().setSelectionVisible(true);
                 }
@@ -404,17 +354,12 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
     /**
      * single click - deselect
      */
-    public void mouseClicked(MouseEvent e)
-    {
+    public void mouseClicked(MouseEvent e) {
         Point thisend = SwingUtilities.convertPoint((Component) e.getSource(), e.getPoint(), getListParent());
-        if (thisend.equals(start_))
-        {
-            if (e.getClickCount() == 2)
-            {
+        if (thisend.equals(start_)) {
+            if (e.getClickCount() == 2) {
                 selectWord();
-            }
-            else
-            {
+            } else {
                 selectText(-1, -1, 0, 0);
             }
         }
@@ -423,10 +368,11 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
     /**
      * popup menu
      */
-    public void mouseReleased(MouseEvent e)
-    {
-        if (!GuiUtils.isPopupTrigger(e, false)) return;
-        if (getItems().size() == 0) return;
+    public void mouseReleased(MouseEvent e) {
+        if (!GuiUtils.isPopupTrigger(e, false))
+            return;
+        if (getItems().size() == 0)
+            return;
 
         DDPopupMenu menu = new DDPopupMenu();
 
@@ -438,16 +384,13 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
         DDMenuItem item = new DDMenuItem(GuiManager.DEFAULT, "PopupMenu");
         item.setText(PropertyConfig.getMessage("menuitem.chat.export"));
         item.setIcon(exportIcon_);
-        item.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent e)
-            {
+        item.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
                 TypedHashMap params = new TypedHashMap();
                 params.setString(FileChooserDialog.PARAM_SUGGESTED_NAME, "chat");
                 Phase choose = context_.processPhaseNow("ExportChat", params);
                 Object oResult = choose.getResult();
-                if (oResult != null && oResult instanceof File)
-                {
+                if (oResult != null && oResult instanceof File) {
                     File file = (File) oResult;
                     logger.info("Exporting chat to " + file.getAbsolutePath());
                     ConfigUtils.writeFile((File) oResult, toHtml(), false);
@@ -463,37 +406,27 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
     /**
      * Return contents of chat list panel as html
      */
-    private String toHtml()
-    {
-        String sDate = PropertyConfig.getDateFormat(GameEngine.getGameEngine().getLocale()).format(new Date(System.currentTimeMillis()));
+    private String toHtml() {
+        String sDate = PropertyConfig.getDateFormat(GameEngine.getGameEngine().getLocale())
+                .format(new Date(System.currentTimeMillis()));
         PokerGame game = (PokerGame) context_.getGame();
         String sDetails;
 
         // get game info
-        if (game != null)
-        {
-            if (game.isOnlineGame())
-            {
-                sDetails = "In Online Game - <font color=blue>" + Utils.encodeHTML(game.getProfile().getName()) +
-                           "</font> hosted by <font color=red>" + Utils.encodeHTML(game.getHost().getName()) +
-                           "</font>";
-                if (game.isPublic())
-                {
+        if (game != null) {
+            if (game.isOnlineGame()) {
+                sDetails = "In Online Game - <font color=blue>" + Utils.encodeHTML(game.getProfile().getName())
+                        + "</font> hosted by <font color=red>" + Utils.encodeHTML(game.getHost().getName()) + "</font>";
+                if (game.isPublic()) {
                     sDetails += " (" + game.getPublicConnectURL() + ")";
-                }
-                else
-                {
+                } else {
                     sDetails += " (private game)";
                 }
+            } else {
+                sDetails = "In Practice Game - <font color=blue>" + Utils.encodeHTML(game.getProfile().getName())
+                        + "</font>";
             }
-            else
-            {
-                sDetails = "In Practice Game - <font color=blue>" + Utils.encodeHTML(game.getProfile().getName()) +
-                           "</font>";
-            }
-        }
-        else
-        {
+        } else {
             sDetails = "In Online Lobby";
         }
 
@@ -504,7 +437,8 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
 
         // top table
         sb.append("<TABLE CELLSPACING=\"2\" CELLPADDING=\"0\"><TR>\n");
-        sb.append("<TD><img src=\"images/pokericon32.jpg\">&nbsp;&nbsp;</TD><TD COLSPAN=2 style=\"font-size: 23px;\">DD Poker Chat Export</TD></TR>\n");
+        sb.append(
+                "<TD><img src=\"images/pokericon32.jpg\">&nbsp;&nbsp;</TD><TD COLSPAN=2 style=\"font-size: 23px;\">DD Poker Chat Export</TD></TR>\n");
         sb.append("<TR><TD></TD><TD style=\"font-size: 15px;\"><B>Date:&nbsp;&nbsp;</B></TD>");
         sb.append("<TD style=\"font-size: 15px;\">" + sDate + "</TD></TR>\n");
         sb.append("<TR><TD></TD><TD style=\"font-size: 15px;\"><B>Where:&nbsp;&nbsp;</B></TD>");
@@ -516,12 +450,11 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
         Rectangle bounds = new Rectangle();
         String s;
         ChatPanel.ChatMessage msg;
-        for (int i = 0; i < getItems().size(); i++)
-        {
+        for (int i = 0; i < getItems().size(); i++) {
             chat = (ChatItemPanel) getItemPanel(i);
             chat.getBounds(bounds);
             msg = chat.getMessage();
-            s = msg.sMsg;//html.getText();
+            s = msg.sMsg;// html.getText();
 
             // <ddimg width="12" src="icon-small" yadj="-3" height="12">
             s = s.replaceAll("ddimg", "img");
@@ -536,8 +469,7 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
             s = s.replaceAll("<DDCARD CARD=\"(..)\">", "<img align=\"top\" src=\"images/cards/card_$1.png\">");
             sb.append(s);
 
-            if (msg.bTable)
-            {
+            if (msg.bTable) {
                 sb.append("<img src=\"images/spacer.gif\" width=\"1\" height=\"1\">");
             }
             sb.append("<BR>");
@@ -553,26 +485,21 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
     }
 
     // not used
-    public void mouseEntered(MouseEvent e)
-    {
+    public void mouseEntered(MouseEvent e) {
     }
 
-    public void mouseExited(MouseEvent e)
-    {
+    public void mouseExited(MouseEvent e) {
     }
 
-    public void mouseMoved(MouseEvent e)
-    {
+    public void mouseMoved(MouseEvent e) {
     }
-
 
     DDHtmlArea styleproto_ = null;
 
     /**
      * chat item to display chat text
      */
-    public static class ChatItemPanel extends ListItemPanel implements ActionListener
-    {
+    public static class ChatItemPanel extends ListItemPanel implements ActionListener {
         // keep track of one of the areas so we can share style sheet
 
         static Border EMPTY_BORDER = BorderFactory.createEmptyBorder();
@@ -581,8 +508,7 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
         DDHtmlArea html_;
         JComponent replyBase_;
 
-        public ChatItemPanel(ListPanel p, Object item, String sStyle)
-        {
+        public ChatItemPanel(ListPanel p, Object item, String sStyle) {
             super(p, item, sStyle);
 
             ChatListPanel panel = (ChatListPanel) p;
@@ -598,7 +524,7 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
             // (subsequent items inherit the font size via shared stylesheet)
             if (panel.styleproto_ == null) {
                 int fontSize = PokerUtils.getIntPref(PokerConstants.OPTION_CHAT_FONT_SIZE,
-                                                      PokerConstants.DEFAULT_CHAT_FONT_SIZE);
+                        PokerConstants.DEFAULT_CHAT_FONT_SIZE);
                 Font currentFont = html_.getFont();
                 if (currentFont.getSize() != fontSize) {
                     html_.setFont(currentFont.deriveFont((float) fontSize));
@@ -613,25 +539,19 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
             setEnabled(false);
             setUseEmptyBorder(true);
         }
-        
-        public void update()
-        {
+
+        public void update() {
             ChatPanel.ChatMessage msg = getMessage();
             html_.setText(msg.sMsg);
             html_.setBorder(msg.bTable ? TABLE_BORDER : EMPTY_BORDER);
 
-            if (msg.nReplyTo == -1)
-            {
-                if (replyBase_ != null)
-                {
+            if (msg.nReplyTo == -1) {
+                if (replyBase_ != null) {
                     remove(replyBase_);
                     replyBase_ = null;
                 }
-            }
-            else
-            {
-                if (replyBase_ == null)
-                {
+            } else {
+                if (replyBase_ == null) {
                     replyBase_ = new DDPanel();
 
                     GlassButton reply = new GlassButton("chat.reply", "Glass");
@@ -643,18 +563,15 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
             }
         }
 
-        public ChatPanel.ChatMessage getMessage()
-        {
+        public ChatPanel.ChatMessage getMessage() {
             return (ChatPanel.ChatMessage) item_;
         }
 
-        public Dimension getPreferredSize()
-        {
+        public Dimension getPreferredSize() {
             return new Dimension(getListPanel().getItemWidth(), (int) super.getPreferredSize().getHeight());
         }
 
-        public void actionPerformed(ActionEvent e)
-        {
+        public void actionPerformed(ActionEvent e) {
             ChatPanel.ChatMessage msg = (ChatPanel.ChatMessage) item_;
             msg.reply();
         }

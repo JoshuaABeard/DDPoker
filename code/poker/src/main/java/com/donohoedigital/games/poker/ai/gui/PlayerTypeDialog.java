@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -47,8 +47,7 @@ import java.awt.event.*;
 import java.beans.*;
 import java.util.*;
 
-public class PlayerTypeDialog extends OptionMenuDialog implements PropertyChangeListener, FocusListener
-{
+public class PlayerTypeDialog extends OptionMenuDialog implements PropertyChangeListener, FocusListener {
     static Logger logger = LogManager.getLogger(PlayerTypeDialog.class);
 
     private PlayerType profile_;
@@ -60,35 +59,31 @@ public class PlayerTypeDialog extends OptionMenuDialog implements PropertyChange
     /**
      * help text area
      */
-    protected int getTextPreferredHeight()
-    {
+    protected int getTextPreferredHeight() {
         return 65;
     }
 
     /**
      * create ui
      */
-    public JComponent getOptions()
-    {
+    public JComponent getOptions() {
         PlayerType profile = (PlayerType) gamephase_.getObject(ProfileList.PARAM_PROFILE);
         ApplicationError.assertNotNull(profile, "No 'profile' in params");
-        
+
         return getOptions(profile, STYLE);
     }
-    
-    public JComponent getOptions(PlayerType profile, String sStyle)
-    {
+
+    public JComponent getOptions(PlayerType profile, String sStyle) {
         profile_ = profile;
         boolean bDoMapLoad = true;
 
         // if a new profile, then use the empty map instead of the dummy
         // so the default values are initialized
         // this shows the basic flaw in the options stuff in that a UI has
-        // to be created to set the default values.  In this case of
+        // to be created to set the default values. In this case of
         // tournaments, it is okay to do this
         TypedHashMap map = profile_.getMap();
-        if (map.size() == 0)
-        {
+        if (map.size() == 0) {
             bDoMapLoad = false;
         }
 
@@ -109,7 +104,7 @@ public class PlayerTypeDialog extends OptionMenuDialog implements PropertyChange
         BorderLayout layout = (BorderLayout) topformat.getLayout();
         layout.setHgap(10);
         top.add(topformat, BorderLayout.CENTER);
-        top.setBorder(BorderFactory.createEmptyBorder(4,4,4,4));
+        top.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 
         // don't add to option list so we don't reset/set map
         OptionText ot = new OptionText(null, "playertypename", STYLE, dummy_, 30, "^.+$", 200, true);
@@ -123,10 +118,8 @@ public class PlayerTypeDialog extends OptionMenuDialog implements PropertyChange
         desc_ = new GlassButton("description", "Glass");
         desc_.setPreferredSize(new Dimension(80, 24));
         desc_.setBorderGap(0, 0, 0, 0);
-        desc_.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent e)
-            {
+        desc_.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
                 setDescription();
             }
         });
@@ -154,15 +147,13 @@ public class PlayerTypeDialog extends OptionMenuDialog implements PropertyChange
     /**
      * Set description
      */
-    private void setDescription()
-    {
+    private void setDescription() {
         TypedHashMap params = new TypedHashMap();
         params.setString(DescriptionDialog.PARAM_DESC, profile_.getDescription());
         Phase phase = context_.processPhaseNow("PlayerTypeDescriptionDialog", params);
         String sDesc = (String) phase.getResult();
 
-        if (sDesc != null)
-        {
+        if (sDesc != null) {
             profile_.setDescription(sDesc);
         }
     }
@@ -170,30 +161,26 @@ public class PlayerTypeDialog extends OptionMenuDialog implements PropertyChange
     /**
      * Focus to text field
      */
-    protected Component getFocusComponent()
-    {
+    protected Component getFocusComponent() {
         return name_;
     }
-    
+
     /**
      * Default processButton calls closes dialog on any button press
      */
-    public boolean processButton(GameButton button) 
-    {   
+    public boolean processButton(GameButton button) {
         setResult(Boolean.FALSE);
         return super.processButton(button);
     }
-    
+
     /**
      * Okay button press
      */
-    protected void okayButton()
-    {
+    protected void okayButton() {
         name_.removePropertyChangeListener(this);
         String sText = name_.getText();
         String sCurrent = profile_.getName();
-        if (!sCurrent.equals(sText))
-        {
+        if (!sCurrent.equals(sText)) {
             profile_.setName(sText);
         }
 
@@ -203,19 +190,18 @@ public class PlayerTypeDialog extends OptionMenuDialog implements PropertyChange
     /**
      * Override to ignore non-Boolean results
      */
-    public void setResult(Object o)
-    {
-        if (o instanceof Boolean)
-        {
+    public void setResult(Object o) {
+        if (o instanceof Boolean) {
             super.setResult(o);
         }
     }
-    
+
     /**
      * msg text change
      */
-    public void propertyChange(PropertyChangeEvent evt) {    
-        if (evt.getPropertyName().equals("value")) checkButtons();
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (evt.getPropertyName().equals("value"))
+            checkButtons();
     }
 
     /**
@@ -224,15 +210,14 @@ public class PlayerTypeDialog extends OptionMenuDialog implements PropertyChange
     public void focusGained(FocusEvent e) {
         DDTextField t = (DDTextField) e.getSource();
         JScrollPane p = GuiUtils.getScrollParent(t);
-        if (p != null)
-        {
+        if (p != null) {
             Point loc = t.getLocation();
             loc = SwingUtilities.convertPoint(t.getParent(), loc, p.getViewport());
             p.getViewport().scrollRectToVisible(new Rectangle(loc, t.getSize()));
         }
     }
-    
-    /** 
+
+    /**
      * EMPTY
      */
     public void focusLost(FocusEvent e) {

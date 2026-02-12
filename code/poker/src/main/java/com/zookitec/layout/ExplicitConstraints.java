@@ -11,80 +11,89 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
- *  
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *  
+ *
  *  Bug fixes, suggestions and comments should be sent to: alex@zookitec.com
  */
- 
+
 package com.zookitec.layout;
 
 import java.awt.*;
 import java.io.*;
 
 /**
- * This class contains expressions that define the location and size of a component.
+ * This class contains expressions that define the location and size of a
+ * component.
  *
  * <p>
- * The location of a <code>java.awt.Component</code> is usually specified using the (x, y) coordinate of
- * its top-left corner. This class defines a component's location using expressions for the x and y coordinates
- * of some point on the component defined as the component origin. The component origin is specified
- * as fractions of the component's width and height. This is typically used to align the LEFT, RIGHT,
- * TOP, BOTTOM or CENTER of a group of components; constants have been conveniently defined
- * for this purpose.
+ * The location of a <code>java.awt.Component</code> is usually specified using
+ * the (x, y) coordinate of its top-left corner. This class defines a
+ * component's location using expressions for the x and y coordinates of some
+ * point on the component defined as the component origin. The component origin
+ * is specified as fractions of the component's width and height. This is
+ * typically used to align the LEFT, RIGHT, TOP, BOTTOM or CENTER of a group of
+ * components; constants have been conveniently defined for this purpose.
  * </p>
  *
  * <p>
- * The size of the component is specified as a width and a height expression. The methods <code>setWidthZeroIfInvisible</code>
- * and <code>setHeightZeroIfInvisible</code> are used to set flags which determine whether the width and height is set to zero
- * if the component is not visible, regardless of the value of the corresponding expression. For example, these
- * flags could be used to determine whether components shuffle up to fill the gap when a component is made invisible.
+ * The size of the component is specified as a width and a height expression.
+ * The methods <code>setWidthZeroIfInvisible</code> and
+ * <code>setHeightZeroIfInvisible</code> are used to set flags which determine
+ * whether the width and height is set to zero if the component is not visible,
+ * regardless of the value of the corresponding expression. For example, these
+ * flags could be used to determine whether components shuffle up to fill the
+ * gap when a component is made invisible.
  * </p>
  *
  */
 public class ExplicitConstraints implements Serializable, Cloneable {
 
     /**
-     * Constant used to set the origin x coordinate to the left side of the component.
-     * <br>LEFT = 0
+     * Constant used to set the origin x coordinate to the left side of the
+     * component. <br>
+     * LEFT = 0
      */
     public static final double LEFT = 0.0;
 
     /**
-     * Constant used to set the origin x coordinate to the right side of the component.
-     * <br>RIGHT = 1
+     * Constant used to set the origin x coordinate to the right side of the
+     * component. <br>
+     * RIGHT = 1
      */
     public static final double RIGHT = 1.0;
 
     /**
      * Constant used to set the origin y coordinate to the top of the component.
-     * <br>TOP = 0
+     * <br>
+     * TOP = 0
      */
     public static final double TOP = 0.0;
 
     /**
      * Constant used to set the origin y coordinate to the bottom of the component.
-     * <br>BOTTOM = 1
+     * <br>
+     * BOTTOM = 1
      */
     public static final double BOTTOM = 1.0;
 
     /**
-     * Constant used to set the origin x or y coordinate to the center of the component.
-     * <br>CENTER = 0.5
+     * Constant used to set the origin x or y coordinate to the center of the
+     * component. <br>
+     * CENTER = 0.5
      */
     public static final double CENTER = 0.5;
 
-
-
     /**
-     * The component whose size and location is specified by this constraints object.
+     * The component whose size and location is specified by this constraints
+     * object.
      *
      * @serial
      */
@@ -118,7 +127,6 @@ public class ExplicitConstraints implements Serializable, Cloneable {
      */
     private Expression height;
 
-
     /**
      * The expression for the component's right X coordinate.
      *
@@ -133,7 +141,6 @@ public class ExplicitConstraints implements Serializable, Cloneable {
      */
     private Expression bottom;
 
-
     /**
      * The origin x coordinate as a fraction of the component's width.
      *
@@ -147,7 +154,6 @@ public class ExplicitConstraints implements Serializable, Cloneable {
      * @serial
      */
     private float originY = 0.0F;
-
 
     private boolean widthZeroIfInvisible = true;
     private boolean heightZeroIfInvisible = true;
@@ -166,12 +172,17 @@ public class ExplicitConstraints implements Serializable, Cloneable {
 
     /**
      * Constructs a new ExplicitConstraints object for the specified component.
-     * <P>The attributes are initialised using defaults as follows:
+     * <P>
+     * The attributes are initialised using defaults as follows:
      * <ul>
      * <li>X = ContainerEF.left()</li>
      * <li>Y = ContainerEF.top()</li>
-     * <li>Width = null;<br>this indicates to constructor that the component's preferred width is default</li>
-     * <li>Height = null;<br>this indicates to constructor that the component's preferred height is default</li>
+     * <li>Width = null;<br>
+     * this indicates to constructor that the component's preferred width is
+     * default</li>
+     * <li>Height = null;<br>
+     * this indicates to constructor that the component's preferred height is
+     * default</li>
      * <li>OriginX = LEFT</li>
      * <li>OriginY = TOP</li>
      * <li>WidthZeroIfInvisible = true</li>
@@ -179,48 +190,58 @@ public class ExplicitConstraints implements Serializable, Cloneable {
      * </ul>
      * </p>
      *
-     * @param component the component; this cannot be null.
+     * @param component
+     *            the component; this cannot be null.
      */
     public ExplicitConstraints(Component component) {
         init(component, null);
     }
 
     /**
-     * Constructs a new ExplicitConstraints object for the specified component.
-     * The attributes are initialised using defaults as specified in the
-     * no-args constructor. This constructor is intended for use when a
-     * ConstraintsSource is used to define the constraints; the name is
-     * used to identify the component.
+     * Constructs a new ExplicitConstraints object for the specified component. The
+     * attributes are initialised using defaults as specified in the no-args
+     * constructor. This constructor is intended for use when a ConstraintsSource is
+     * used to define the constraints; the name is used to identify the component.
      *
      *
-     * @param component the component; this cannot be null.
-     * @param name the name of the component.
+     * @param component
+     *            the component; this cannot be null.
+     * @param name
+     *            the name of the component.
      *
      */
     public ExplicitConstraints(Component component, String name) {
         init(component, name);
     }
 
-
     /**
-     * Constructs a new ExplicitConstraints object for the specified component using the
-     * specified attributes.
+     * Constructs a new ExplicitConstraints object for the specified component using
+     * the specified attributes.
      *
      *
-     * @param x the expression for the x coordinate of the component's origin.
-     * @param y the expression for the y coordinate of the component's origin.
-     * @param width the expression for the component's width or null for preferred width.
-     * @param height the expression for the component's height or null for preferred height.
-     * @param originX the origin x coordinate fraction in the range 0 .. 1 inclusive.
-     * @param originY the origin y coordinate fraction in the range 0 .. 1 inclusive.
-     * @param widthZero true if width is zero when component is not visible.
-     * @param heightZero true if height is zero when component is not visible.
+     * @param x
+     *            the expression for the x coordinate of the component's origin.
+     * @param y
+     *            the expression for the y coordinate of the component's origin.
+     * @param width
+     *            the expression for the component's width or null for preferred
+     *            width.
+     * @param height
+     *            the expression for the component's height or null for preferred
+     *            height.
+     * @param originX
+     *            the origin x coordinate fraction in the range 0 .. 1 inclusive.
+     * @param originY
+     *            the origin y coordinate fraction in the range 0 .. 1 inclusive.
+     * @param widthZero
+     *            true if width is zero when component is not visible.
+     * @param heightZero
+     *            true if height is zero when component is not visible.
      *
      *
      */
-    public ExplicitConstraints(Component component, Expression x, Expression y,
-                               Expression width, Expression height, double originX, double originY,
-                               boolean widthZero, boolean heightZero) {
+    public ExplicitConstraints(Component component, Expression x, Expression y, Expression width, Expression height,
+            double originX, double originY, boolean widthZero, boolean heightZero) {
         this(component, x, y, width, height);
         setOriginX(originX);
         setOriginY(originY);
@@ -228,14 +249,11 @@ public class ExplicitConstraints implements Serializable, Cloneable {
         setHeightZeroIfInvisible(heightZero);
     }
 
-
     public ExplicitConstraints(Component component, Expression x, Expression y) {
         this(component, x, y, null, null);
     }
 
-
-    public ExplicitConstraints(Component component, Expression x, Expression y,
-                               Expression width, Expression height) {
+    public ExplicitConstraints(Component component, Expression x, Expression y, Expression width, Expression height) {
         this.component = component;
         setX(x);
         setY(y);
@@ -244,31 +262,43 @@ public class ExplicitConstraints implements Serializable, Cloneable {
     }
 
     /**
-     * Constructs a new ExplicitConstraints object for the specified component using the
-     * specified attributes.
+     * Constructs a new ExplicitConstraints object for the specified component using
+     * the specified attributes.
      *
      * <P>
-     * The boolean flags allow you to specify the following combinations of width, right,
-     * height and bottom:</P>
+     * The boolean flags allow you to specify the following combinations of width,
+     * right, height and bottom:
+     * </P>
      * <UL>
      * <LI>width, height
      * <LI>width, bottom
      * <LI>right, height
      * <LI>right, bottom
      * </UL>
-     * <P>They are also necessary to distinguish the constructor signature from
-     * the x,y,width,height constructor.</P>
+     * <P>
+     * They are also necessary to distinguish the constructor signature from the
+     * x,y,width,height constructor.
+     * </P>
      *
-     * @param left the expression for the component's left x coordinate.
-     * @param top the expression for the component's top y coordinate.
-     * @param widthOrRight the expression for the component's width or right x coordinate depending on isWidth.
-     * @param isWidth true if widthOrRight specifies width; false if widthOrRight specifies right.     *
-     * @param hightOrBottom the expression for the component's height or bottom y coordinate depending on isHeight.
-     * @param isHeight true if heightOrBottom specifies height; false if heightOrBottom specifies bottom.
+     * @param left
+     *            the expression for the component's left x coordinate.
+     * @param top
+     *            the expression for the component's top y coordinate.
+     * @param widthOrRight
+     *            the expression for the component's width or right x coordinate
+     *            depending on isWidth.
+     * @param isWidth
+     *            true if widthOrRight specifies width; false if widthOrRight
+     *            specifies right. *
+     * @param hightOrBottom
+     *            the expression for the component's height or bottom y coordinate
+     *            depending on isHeight.
+     * @param isHeight
+     *            true if heightOrBottom specifies height; false if heightOrBottom
+     *            specifies bottom.
      */
-    public ExplicitConstraints(Component component, Expression left, Expression top,
-                               Expression widthOrRight, boolean isWidth,
-                               Expression heightOrBottom, boolean isHeight) {
+    public ExplicitConstraints(Component component, Expression left, Expression top, Expression widthOrRight,
+            boolean isWidth, Expression heightOrBottom, boolean isHeight) {
         this.component = component;
         setX(left);
         setY(top);
@@ -284,9 +314,6 @@ public class ExplicitConstraints implements Serializable, Cloneable {
         }
     }
 
-
-
-
     private void init(Component component, String name) {
         if (component == null) {
             throw new NullPointerException("component cannot be null");
@@ -295,7 +322,6 @@ public class ExplicitConstraints implements Serializable, Cloneable {
         this.name = name;
         restoreDefaults();
     }
-
 
     /**
      * Gets a name used to identify a component in a ConstraintsSource.
@@ -306,11 +332,10 @@ public class ExplicitConstraints implements Serializable, Cloneable {
         return name;
     }
 
-
     /**
-     * Gets the component whose size and location are defined by this constraints object.
-     * This may return null if this is a default constraints object created using the
-     * no-args constructor.
+     * Gets the component whose size and location are defined by this constraints
+     * object. This may return null if this is a default constraints object created
+     * using the no-args constructor.
      *
      * @return the component
      */
@@ -318,11 +343,11 @@ public class ExplicitConstraints implements Serializable, Cloneable {
         return component;
     }
 
-
     /**
      * Sets the expression for the x coordinate of the component's origin.
      *
-     * @param x the expression for the x coordinate of the component's origin.
+     * @param x
+     *            the expression for the x coordinate of the component's origin.
      */
     public void setX(Expression x) {
         if (x == null) {
@@ -337,7 +362,8 @@ public class ExplicitConstraints implements Serializable, Cloneable {
     /**
      * Sets the expression for the y coordinate of the component's origin.
      *
-     * @param y the expression for the y coordinate of the component's origin.
+     * @param y
+     *            the expression for the y coordinate of the component's origin.
      */
     public void setY(Expression y) {
         if (y == null) {
@@ -351,14 +377,18 @@ public class ExplicitConstraints implements Serializable, Cloneable {
 
     /**
      * Sets the expression for the component's width.
-     * <p>Warning: This width expression should not be dependent on the component's x coordinate if
-     * originX != 0.0. This is because the x coordinate is dependent on the width expression
-     * if originX != 0.0. Such a circular definition will result in a stack overflow error.</p>
+     * <p>
+     * Warning: This width expression should not be dependent on the component's x
+     * coordinate if originX != 0.0. This is because the x coordinate is dependent
+     * on the width expression if originX != 0.0. Such a circular definition will
+     * result in a stack overflow error.
+     * </p>
      * If the width expression is null, an expression for the component's preferred
      * width is used. This overrides any previous call to setRight.
      *
      *
-     * @param width the expression for the component's width
+     * @param width
+     *            the expression for the component's width
      */
     public void setWidth(Expression width) {
         if (width == null) {
@@ -371,13 +401,17 @@ public class ExplicitConstraints implements Serializable, Cloneable {
 
     /**
      * Sets the expression for the component's height.
-     * <p>Warning: This height expression should not be dependent on the component's y coordinate if
-     * originY != 0.0. This is because the y coordinate is dependent on the width expression
-     * if originY != 0.0. Such a circular definition will result in a stack overflow error.</p>
+     * <p>
+     * Warning: This height expression should not be dependent on the component's y
+     * coordinate if originY != 0.0. This is because the y coordinate is dependent
+     * on the width expression if originY != 0.0. Such a circular definition will
+     * result in a stack overflow error.
+     * </p>
      * If the height expression is null, an expression for the component's preferred
      * height is used. This overrides any previous call to setBottom.
      *
-     * @param height the expression for the component's height.
+     * @param height
+     *            the expression for the component's height.
      */
     public void setHeight(Expression height) {
         if (height == null) {
@@ -389,8 +423,8 @@ public class ExplicitConstraints implements Serializable, Cloneable {
     }
 
     /**
-     * Sets the expression for the component's right x coordinate.
-     * This is an alternative to specifying the width expression.
+     * Sets the expression for the component's right x coordinate. This is an
+     * alternative to specifying the width expression.
      */
     public void setRight(Expression right) {
         this.right = right;
@@ -401,8 +435,8 @@ public class ExplicitConstraints implements Serializable, Cloneable {
     }
 
     /**
-     * Sets the expression for the component's bottom y coordinate and sets originY to TOP.
-     * This is an alternative to specifying the height expression.
+     * Sets the expression for the component's bottom y coordinate and sets originY
+     * to TOP. This is an alternative to specifying the height expression.
      */
     public void setBottom(Expression bottom) {
         this.bottom = bottom;
@@ -412,12 +446,12 @@ public class ExplicitConstraints implements Serializable, Cloneable {
         }
     }
 
-
     /**
-     * This flag influences the value returned by getWidthValue() depending on whether
-     * the component is visible.
+     * This flag influences the value returned by getWidthValue() depending on
+     * whether the component is visible.
      *
-     * @param flag the value of the flag
+     * @param flag
+     *            the value of the flag
      *
      * @see #getWidthValue(ExplicitLayout)
      */
@@ -425,12 +459,12 @@ public class ExplicitConstraints implements Serializable, Cloneable {
         widthZeroIfInvisible = flag;
     }
 
-
     /**
-     * Sets a flag that influences the value returned by getHeightValue() depending on whether
-     * the component is visible.
+     * Sets a flag that influences the value returned by getHeightValue() depending
+     * on whether the component is visible.
      *
-     * @param flag the value of the flag.
+     * @param flag
+     *            the value of the flag.
      *
      * @see #getHeightValue(ExplicitLayout)
      */
@@ -439,9 +473,11 @@ public class ExplicitConstraints implements Serializable, Cloneable {
     }
 
     /**
-     * Determines whether the component width is set to zero if the component is not visible.
+     * Determines whether the component width is set to zero if the component is not
+     * visible.
      *
-     * @return true if the component width is set to zero if the component is not visible; false otherwise.
+     * @return true if the component width is set to zero if the component is not
+     *         visible; false otherwise.
      *
      * @see #getWidthValue(ExplicitLayout)
      */
@@ -449,10 +485,12 @@ public class ExplicitConstraints implements Serializable, Cloneable {
         return widthZeroIfInvisible;
     }
 
-   /**
-     * Determines whether the component height is set to zero if the component is not visible.
+    /**
+     * Determines whether the component height is set to zero if the component is
+     * not visible.
      *
-     * @return true if the component height is set to zero if the component is not visible; false otherwise.
+     * @return true if the component height is set to zero if the component is not
+     *         visible; false otherwise.
      *
      * @see #getHeightValue(ExplicitLayout)
      */
@@ -505,22 +543,26 @@ public class ExplicitConstraints implements Serializable, Cloneable {
     }
     /**
      * Gets the x coordinate value for the top-left corner of the component.
-     * <P>This is used by <code>ExplicitLayout</code> to set the component's location.</P>
+     * <P>
+     * This is used by <code>ExplicitLayout</code> to set the component's location.
+     * </P>
      *
-     * @param layout the explicit layout containing this constraints object
+     * @param layout
+     *            the explicit layout containing this constraints object
      *
      * @return the x coordinate value
      *
      */
     public int getXValue(ExplicitLayout layout) {
         try {
-            if (inX) throw new IllegalStateException(infiniteMsg("x coordinate", layout));
+            if (inX)
+                throw new IllegalStateException(infiniteMsg("x coordinate", layout));
             inX = true;
             double value = x.getValue(layout);
             if (originX != 0.0) {
                 value -= originX * getWidthValue(layout);
             }
-            return (int)Math.round(value);
+            return (int) Math.round(value);
         } finally {
             inX = false;
         }
@@ -528,22 +570,26 @@ public class ExplicitConstraints implements Serializable, Cloneable {
 
     /**
      * Gets the y coordinate value for the top-left corner of the component.
-     * <P>This is used by <code>ExplicitLayout</code> to set the component's location.</P>
+     * <P>
+     * This is used by <code>ExplicitLayout</code> to set the component's location.
+     * </P>
      *
-     * @param layout the explicit layout containing this constraints object
+     * @param layout
+     *            the explicit layout containing this constraints object
      *
      * @return the y coordinate value
      *
      */
     public int getYValue(ExplicitLayout layout) {
         try {
-            if (inY) throw new IllegalStateException(infiniteMsg("y coordinate", layout));
+            if (inY)
+                throw new IllegalStateException(infiniteMsg("y coordinate", layout));
             inY = true;
             double value = y.getValue(layout);
             if (originY != 0.0) {
                 value -= originY * getHeightValue(layout);
             }
-            return (int)Math.round(value);
+            return (int) Math.round(value);
         } finally {
             inY = false;
         }
@@ -552,25 +598,30 @@ public class ExplicitConstraints implements Serializable, Cloneable {
     /**
      * Gets the width value for the component.
      *
-     * <p>If widthZeroIfInvisible flag is true, this gets the value of the width expression
-     * if the component is visible and 0 if the component is not visible.<br>
-     * If widthZeroIfInvisible flag is false, this gets the value of the width expression
-     * regardless of whether the component is visible or not.</p>
+     * <p>
+     * If widthZeroIfInvisible flag is true, this gets the value of the width
+     * expression if the component is visible and 0 if the component is not
+     * visible.<br>
+     * If widthZeroIfInvisible flag is false, this gets the value of the width
+     * expression regardless of whether the component is visible or not.
+     * </p>
      *
-     * <p>This is used by <code>ExplicitLayout</code> to set the component's width.</p>
+     * <p>
+     * This is used by <code>ExplicitLayout</code> to set the component's width.
+     * </p>
      *
-     * @param layout the explicit layout containing this constraints object
+     * @param layout
+     *            the explicit layout containing this constraints object
      *
      * @return the width value
      *
      */
     public int getWidthValue(ExplicitLayout layout) {
         try {
-            if (inW) throw new IllegalStateException(infiniteMsg("width", layout));
+            if (inW)
+                throw new IllegalStateException(infiniteMsg("width", layout));
             inW = true;
-            return (widthZeroIfInvisible && !component.isVisible())
-                ? 0
-                : (int)Math.round(width.getValue(layout));
+            return (widthZeroIfInvisible && !component.isVisible()) ? 0 : (int) Math.round(width.getValue(layout));
         } finally {
             inW = false;
         }
@@ -579,25 +630,30 @@ public class ExplicitConstraints implements Serializable, Cloneable {
     /**
      * Gets the height value for the component.
      *
-     * <p>If heightZeroIfInvisible flag is true, this gets the value of the height expression
-     * if the component is visible and 0 if the component is not visible.<br>
-     * If heightZeroIfInvisible flag is false, this gets the value of the height expression
-     * regardless of whether the component is visible or not.</p>
+     * <p>
+     * If heightZeroIfInvisible flag is true, this gets the value of the height
+     * expression if the component is visible and 0 if the component is not
+     * visible.<br>
+     * If heightZeroIfInvisible flag is false, this gets the value of the height
+     * expression regardless of whether the component is visible or not.
+     * </p>
      *
-     * <p>This is used by <code>ExplicitLayout</code> to set the component's height.</p>
+     * <p>
+     * This is used by <code>ExplicitLayout</code> to set the component's height.
+     * </p>
      *
-     * @param layout the explicit layout containing this constraints object
+     * @param layout
+     *            the explicit layout containing this constraints object
      *
      * @return the height value
      *
      */
     public int getHeightValue(ExplicitLayout layout) {
         try {
-            if (inH) throw new IllegalStateException(infiniteMsg("height", layout));
+            if (inH)
+                throw new IllegalStateException(infiniteMsg("height", layout));
             inH = true;
-            return (heightZeroIfInvisible && !component.isVisible())
-                ? 0
-                : (int)Math.round(height.getValue(layout));
+            return (heightZeroIfInvisible && !component.isVisible()) ? 0 : (int) Math.round(height.getValue(layout));
         } finally {
             inH = false;
         }
@@ -605,7 +661,7 @@ public class ExplicitConstraints implements Serializable, Cloneable {
 
     private String infiniteMsg(String attribute, ExplicitLayout layout) {
         StringBuffer sb = new StringBuffer();
-        Component [] components;
+        Component[] components;
         int index;
         components = layout.getContainer().getComponents();
         for (index = 0; index < components.length; index++) {
@@ -613,26 +669,28 @@ public class ExplicitConstraints implements Serializable, Cloneable {
                 break;
             }
         }
-        return sb.append("Infinite recursion in ").append(attribute).
-        append(" expression for component ").append(index).
-        append(" of container\n").append(layout.getContainer()).toString();
+        return sb.append("Infinite recursion in ").append(attribute).append(" expression for component ").append(index)
+                .append(" of container\n").append(layout.getContainer()).toString();
     }
 
     /**
-     * Sets the origin x coordinate as a fraction of the component's width.
-     * OriginX cannot be set to anything other than LEFT if a right X expression is specified.
+     * Sets the origin x coordinate as a fraction of the component's width. OriginX
+     * cannot be set to anything other than LEFT if a right X expression is
+     * specified.
      *
-     * @param originX the origin x coordinate fraction in the range 0 .. 1 inclusive.
-     * The constants LEFT, CENTER and RIGHT can be used.
+     * @param originX
+     *            the origin x coordinate fraction in the range 0 .. 1 inclusive.
+     *            The constants LEFT, CENTER and RIGHT can be used.
      *
-     * @throws IllegalArgumentException if originX is out of range.
+     * @throws IllegalArgumentException
+     *             if originX is out of range.
      */
     public void setOriginX(double originX) {
         if (originX < 0.0 || originX > 1.0) {
             throw new IllegalArgumentException("originX out of range 0 .. 1");
         }
         if (right == null) {
-            this.originX = (float)originX;
+            this.originX = (float) originX;
         }
     }
 
@@ -646,20 +704,23 @@ public class ExplicitConstraints implements Serializable, Cloneable {
     }
 
     /**
-     * Sets the origin y coordinate as a fraction of the component's height.
-     * OriginY cannot be set to anything other than TOP if a bottom X expression is specified.
+     * Sets the origin y coordinate as a fraction of the component's height. OriginY
+     * cannot be set to anything other than TOP if a bottom X expression is
+     * specified.
      *
-     * @param originY the origin y coordinate fraction in the range 0 .. 1 inclusive.
-     * The constants TOP, CENTER and BOTTOM can be used.
+     * @param originY
+     *            the origin y coordinate fraction in the range 0 .. 1 inclusive.
+     *            The constants TOP, CENTER and BOTTOM can be used.
      *
-     * @throws IllegalArgumentException if originY is out of range.
+     * @throws IllegalArgumentException
+     *             if originY is out of range.
      */
     public void setOriginY(double originY) {
         if (originY < 0.0 || originY > 1.0) {
             throw new IllegalArgumentException("originY out of range 0 .. 1");
         }
         if (bottom == null) {
-            this.originY = (float)originY;
+            this.originY = (float) originY;
         }
     }
 
@@ -672,8 +733,6 @@ public class ExplicitConstraints implements Serializable, Cloneable {
         return originY;
     }
 
-
-
     /**
      * Invalidate the the x, y, width and height expressions.
      */
@@ -683,7 +742,6 @@ public class ExplicitConstraints implements Serializable, Cloneable {
         width.invalidate();
         height.invalidate();
     }
-
 
     public void restoreDefaults() {
         x = ContainerEF.left(null);
@@ -699,12 +757,13 @@ public class ExplicitConstraints implements Serializable, Cloneable {
     }
 
     /**
-     * Copies the attributes from some other constraints object to this.
-     * This copies the x, y, width and height, originX, originY,
-     * widthZeroIfInvisible and heightZeroIfInvisible attributes. It does not
-     * copy the component or name attribute.
+     * Copies the attributes from some other constraints object to this. This copies
+     * the x, y, width and height, originX, originY, widthZeroIfInvisible and
+     * heightZeroIfInvisible attributes. It does not copy the component or name
+     * attribute.
      *
-     * @param other some other constraints object
+     * @param other
+     *            some other constraints object
      */
     public void copy(ExplicitConstraints other) {
         x = other.x;
@@ -718,8 +777,6 @@ public class ExplicitConstraints implements Serializable, Cloneable {
         widthZeroIfInvisible = other.widthZeroIfInvisible;
         heightZeroIfInvisible = other.heightZeroIfInvisible;
     }
-
-
 
     public Object clone() {
         try {

@@ -34,8 +34,8 @@ import static org.junit.Assert.*;
 public class DeckRandomnessTest {
 
     /**
-     * Test that unseeded mode (seed=0) produces non-deterministic shuffles
-     * using SecureRandom without setSeed()
+     * Test that unseeded mode (seed=0) produces non-deterministic shuffles using
+     * SecureRandom without setSeed()
      */
     @Test
     public void testUnseededModeUsesSecureRandom() {
@@ -52,8 +52,7 @@ public class DeckRandomnessTest {
                 break;
             }
         }
-        assertTrue("Production decks should have at least one different card position",
-                foundDifference);
+        assertTrue("Production decks should have at least one different card position", foundDifference);
     }
 
     /**
@@ -69,8 +68,7 @@ public class DeckRandomnessTest {
 
         // Verify every card is in the same position
         for (int i = 0; i < 52; i++) {
-            assertTrue("Card at position " + i + " should match",
-                    deck1.get(i).equals(deck2.get(i)));
+            assertTrue("Card at position " + i + " should match", deck1.get(i).equals(deck2.get(i)));
         }
     }
 
@@ -90,8 +88,7 @@ public class DeckRandomnessTest {
                 break;
             }
         }
-        assertTrue("Decks with different seeds should have at least one different card position",
-                foundDifference);
+        assertTrue("Decks with different seeds should have at least one different card position", foundDifference);
     }
 
     /**
@@ -137,12 +134,12 @@ public class DeckRandomnessTest {
                 break;
             }
         }
-        assertTrue("ThreadLocal SecureRandom should produce different shuffles across threads",
-                foundDifferent);
+        assertTrue("ThreadLocal SecureRandom should produce different shuffles across threads", foundDifferent);
     }
 
     /**
-     * Test that shuffle() uses ThreadLocalRandom and produces non-deterministic results
+     * Test that shuffle() uses ThreadLocalRandom and produces non-deterministic
+     * results
      */
     @Test
     public void testShuffleUsesThreadLocalRandom() {
@@ -152,8 +149,7 @@ public class DeckRandomnessTest {
 
         // Verify they start identical
         for (int i = 0; i < 52; i++) {
-            assertTrue("Unshuffled decks should be identical at position " + i,
-                    deck1.get(i).equals(deck2.get(i)));
+            assertTrue("Unshuffled decks should be identical at position " + i, deck1.get(i).equals(deck2.get(i)));
         }
 
         // Shuffle both
@@ -168,12 +164,12 @@ public class DeckRandomnessTest {
                 break;
             }
         }
-        assertTrue("shuffle() should produce non-deterministic results",
-                foundDifference);
+        assertTrue("shuffle() should produce non-deterministic results", foundDifference);
     }
 
     /**
-     * Test that addRandom() uses ThreadLocalRandom and produces non-deterministic results
+     * Test that addRandom() uses ThreadLocalRandom and produces non-deterministic
+     * results
      */
     @Test
     public void testAddRandomUsesThreadLocalRandom() {
@@ -202,8 +198,7 @@ public class DeckRandomnessTest {
                 break;
             }
         }
-        assertTrue("addRandom() should produce non-deterministic results (ThreadLocalRandom)",
-                foundDifference);
+        assertTrue("addRandom() should produce non-deterministic results (ThreadLocalRandom)", foundDifference);
     }
 
     /**
@@ -220,16 +215,12 @@ public class DeckRandomnessTest {
         }
 
         // Count unique first cards (simple uniqueness check)
-        long uniqueFirstCards = decks.stream()
-                .map(d -> d.get(0))
-                .distinct()
-                .count();
+        long uniqueFirstCards = decks.stream().map(d -> d.get(0)).distinct().count();
 
         // With SecureRandom, we expect at least half to have different first cards
         // (extremely conservative - actual probability is much higher)
-        assertTrue("Unseeded mode should produce varied shuffles, got " +
-                uniqueFirstCards + " unique first cards out of " + numDecks,
-                uniqueFirstCards >= numDecks / 2);
+        assertTrue("Unseeded mode should produce varied shuffles, got " + uniqueFirstCards
+                + " unique first cards out of " + numDecks, uniqueFirstCards >= numDecks / 2);
     }
 
     /**
@@ -248,7 +239,6 @@ public class DeckRandomnessTest {
                 break;
             }
         }
-        assertTrue("Seed 0 should trigger unseeded mode (SecureRandom)",
-                foundDifference);
+        assertTrue("Seed 0 should trigger unseeded mode (SecureRandom)", foundDifference);
     }
 }

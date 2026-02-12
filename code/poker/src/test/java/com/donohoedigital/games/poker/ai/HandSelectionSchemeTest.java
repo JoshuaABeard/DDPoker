@@ -37,14 +37,11 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for HandSelectionScheme AI hand selection logic.
  */
-class HandSelectionSchemeTest
-{
+class HandSelectionSchemeTest {
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         // Initialize ConfigManager for tests (only once)
-        if (!com.donohoedigital.config.PropertyConfig.isInitialized())
-        {
+        if (!com.donohoedigital.config.PropertyConfig.isInitialized()) {
             new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
         }
     }
@@ -54,16 +51,14 @@ class HandSelectionSchemeTest
     // ========================================
 
     @Test
-    void should_CreateEmptyScheme_When_DefaultConstructorUsed()
-    {
+    void should_CreateEmptyScheme_When_DefaultConstructorUsed() {
         HandSelectionScheme scheme = new HandSelectionScheme();
 
         assertThat(scheme.getName()).isEmpty();
     }
 
     @Test
-    void should_CreateNamedScheme_When_StringConstructorUsed()
-    {
+    void should_CreateNamedScheme_When_StringConstructorUsed() {
         HandSelectionScheme scheme = new HandSelectionScheme("TestScheme");
 
         assertThat(scheme.getName()).isEqualTo("TestScheme");
@@ -72,8 +67,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_CopySchemeWithNewName_When_CopyConstructorUsed()
-    {
+    void should_CopySchemeWithNewName_When_CopyConstructorUsed() {
         HandSelectionScheme original = new HandSelectionScheme("Original");
         original.setDescription("Original description");
 
@@ -85,8 +79,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_PreserveIDWhenSameName_When_CopyConstructorUsed()
-    {
+    void should_PreserveIDWhenSameName_When_CopyConstructorUsed() {
         HandSelectionScheme original = new HandSelectionScheme("SameName");
         original.getMap().setLong("id", 12345L);
 
@@ -96,8 +89,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_RemoveIDWhenDifferentName_When_CopyConstructorUsed()
-    {
+    void should_RemoveIDWhenDifferentName_When_CopyConstructorUsed() {
         HandSelectionScheme original = new HandSelectionScheme("Original");
         original.getMap().setLong("id", 12345L);
 
@@ -111,8 +103,7 @@ class HandSelectionSchemeTest
     // ========================================
 
     @Test
-    void should_ReturnProfileBegin_When_GetBeginCalled()
-    {
+    void should_ReturnProfileBegin_When_GetBeginCalled() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         String begin = scheme.getBegin();
@@ -121,8 +112,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_ReturnProfileDirName_When_GetProfileDirNameCalled()
-    {
+    void should_ReturnProfileDirName_When_GetProfileDirNameCalled() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         String dirName = scheme.getProfileDirName();
@@ -131,8 +121,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_ReturnProfileFileList_When_GetProfileFileListCalled()
-    {
+    void should_ReturnProfileFileList_When_GetProfileFileListCalled() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         List<?> list = scheme.getProfileFileList();
@@ -145,8 +134,7 @@ class HandSelectionSchemeTest
     // ========================================
 
     @Test
-    void should_ReturnHandGroups_When_GetHandGroupsCalled()
-    {
+    void should_ReturnHandGroups_When_GetHandGroupsCalled() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         List<HandGroup> groups = scheme.getHandGroups();
@@ -155,8 +143,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_AddEmptyGroup_When_EnsureEmptyGroupCalled()
-    {
+    void should_AddEmptyGroup_When_EnsureEmptyGroupCalled() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         scheme.ensureEmptyGroup();
@@ -166,8 +153,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_RemoveEmptyGroups_When_RemoveEmptyGroupsCalled()
-    {
+    void should_RemoveEmptyGroups_When_RemoveEmptyGroupsCalled() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         // Add empty group
@@ -186,8 +172,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_OnlyHaveOneEmptyGroup_When_EnsureEmptyGroupCalledMultipleTimes()
-    {
+    void should_OnlyHaveOneEmptyGroup_When_EnsureEmptyGroupCalledMultipleTimes() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         scheme.ensureEmptyGroup();
@@ -202,8 +187,7 @@ class HandSelectionSchemeTest
     // ========================================
 
     @Test
-    void should_ReturnEmptyString_When_NoDescriptionSet()
-    {
+    void should_ReturnEmptyString_When_NoDescriptionSet() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         String desc = scheme.getDescription();
@@ -212,8 +196,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_ReturnDescription_When_DescriptionSet()
-    {
+    void should_ReturnDescription_When_DescriptionSet() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         scheme.setDescription("Test description");
@@ -222,8 +205,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_UpdateDescription_When_DescriptionChanged()
-    {
+    void should_UpdateDescription_When_DescriptionChanged() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         scheme.setDescription("First");
@@ -237,8 +219,7 @@ class HandSelectionSchemeTest
     // ========================================
 
     @Test
-    void should_ReturnZeroStrength_When_NoHandGroupsMatch()
-    {
+    void should_ReturnZeroStrength_When_NoHandGroupsMatch() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
         Card aceHearts = new Card(CardSuit.HEARTS, Card.ACE);
         Card aceSpades = new Card(CardSuit.SPADES, Card.ACE);
@@ -249,8 +230,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_ReturnCorrectStrength_When_HandGroupMatches()
-    {
+    void should_ReturnCorrectStrength_When_HandGroupMatches() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         // Add a hand group with pocket aces at strength 10
@@ -268,8 +248,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_ReturnHandStrengthFromHand_When_HandObjectProvided()
-    {
+    void should_ReturnHandStrengthFromHand_When_HandObjectProvided() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         // Add a hand group with pocket kings at strength 9
@@ -288,14 +267,12 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_ReturnHighestStrength_When_MultipleGroupsMatch()
-    {
+    void should_ReturnHighestStrength_When_MultipleGroupsMatch() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         // Add overlapping groups - higher strength group should be found last
         HandGroup broadGroup = new HandGroup();
-        for (int i = Card.TWO; i <= Card.ACE; i++)
-        {
+        for (int i = Card.TWO; i <= Card.ACE; i++) {
             broadGroup.setContainsPair(i, true);
         }
         broadGroup.setStrength(5);
@@ -316,8 +293,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_DistinguishSuitedVsOffsuit_When_CheckingHandStrength()
-    {
+    void should_DistinguishSuitedVsOffsuit_When_CheckingHandStrength() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         // Add only suited AK
@@ -342,8 +318,7 @@ class HandSelectionSchemeTest
     // ========================================
 
     @Test
-    void should_ReturnMap_When_GetMapCalled()
-    {
+    void should_ReturnMap_When_GetMapCalled() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         DMTypedHashMap map = scheme.getMap();
@@ -352,8 +327,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_PersistDataInMap_When_ValuesSet()
-    {
+    void should_PersistDataInMap_When_ValuesSet() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         scheme.getMap().setString("testKey", "testValue");
@@ -366,8 +340,7 @@ class HandSelectionSchemeTest
     // ========================================
 
     @Test
-    void should_WriteScheme_When_WriteCalled() throws Exception
-    {
+    void should_WriteScheme_When_WriteCalled() throws Exception {
         HandSelectionScheme scheme = new HandSelectionScheme("TestScheme");
         scheme.setDescription("Test description");
 
@@ -380,8 +353,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_GenerateIDOnWrite_When_NoIDExists() throws Exception
-    {
+    void should_GenerateIDOnWrite_When_NoIDExists() throws Exception {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         StringWriter writer = new StringWriter();
@@ -392,8 +364,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_PreserveExistingID_When_WriteCalledMultipleTimes() throws Exception
-    {
+    void should_PreserveExistingID_When_WriteCalledMultipleTimes() throws Exception {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         scheme.write(new StringWriter());
@@ -407,8 +378,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_WriteHandGroups_When_HandGroupsExist() throws Exception
-    {
+    void should_WriteHandGroups_When_HandGroupsExist() throws Exception {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         HandGroup group = new HandGroup();
@@ -425,8 +395,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_NotWriteEmptyGroups_When_GroupHasNoClasses() throws Exception
-    {
+    void should_NotWriteEmptyGroups_When_GroupHasNoClasses() throws Exception {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         scheme.getHandGroups().add(new HandGroup()); // Empty group
@@ -443,8 +412,7 @@ class HandSelectionSchemeTest
     // ========================================
 
     @Test
-    void should_GenerateHTML_When_ToHTMLCalled()
-    {
+    void should_GenerateHTML_When_ToHTMLCalled() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
         scheme.setDescription("Test description");
 
@@ -455,8 +423,7 @@ class HandSelectionSchemeTest
     }
 
     @Test
-    void should_IncludeHandGroupsInHTML_When_HandGroupsExist()
-    {
+    void should_IncludeHandGroupsInHTML_When_HandGroupsExist() {
         HandSelectionScheme scheme = new HandSelectionScheme("Test");
 
         HandGroup group = new HandGroup();
@@ -474,8 +441,7 @@ class HandSelectionSchemeTest
     // ========================================
 
     @Test
-    void should_ReturnNull_When_GetByNameCalledWithNonexistentName()
-    {
+    void should_ReturnNull_When_GetByNameCalledWithNonexistentName() {
         HandSelectionScheme result = HandSelectionScheme.getByName("NonexistentScheme");
 
         assertThat(result).isNull();

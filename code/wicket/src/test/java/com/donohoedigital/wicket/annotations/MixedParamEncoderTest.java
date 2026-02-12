@@ -42,7 +42,7 @@ class MixedParamEncoderTest {
 
     @Test
     void should_EncodeAndDecodeParameters_When_UsingMixedParamEncoder() {
-        MixedParamEncoder encoder = new MixedParamEncoder(new String[] {"x", "y", "a", "b", "c", "d", "e"});
+        MixedParamEncoder encoder = new MixedParamEncoder(new String[]{"x", "y", "a", "b", "c", "d", "e"});
         PageParameters params = new PageParameters();
         params.add("y", "-");
         params.add("a", ".");

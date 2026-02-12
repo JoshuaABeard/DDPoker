@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -45,26 +45,20 @@ public class SchemaValidate extends DefaultHandler {
     /** Warning. */
     public void warning(SAXParseException ex) {
 
-        result.append("[Warning] "+
-                           getLocationString(ex)+": "+
-                           ex.getMessage() +  " \n");
+        result.append("[Warning] " + getLocationString(ex) + ": " + ex.getMessage() + " \n");
     }
 
     /** Error. */
     public void error(SAXParseException ex) {
 
-        result.append("[Error] "+
-                           getLocationString(ex)+": "+
-                           ex.getMessage() + " " + "\n");
-//                           "\n at " + Utils.formatExceptionText(new Throwable()) + "\n");
+        result.append("[Error] " + getLocationString(ex) + ": " + ex.getMessage() + " " + "\n");
+        // "\n at " + Utils.formatExceptionText(new Throwable()) + "\n");
     }
 
     /** Fatal error. */
     public void fatalError(SAXParseException ex) throws SAXException {
 
-        result.append("[Fatal Error] "+
-                           getLocationString(ex)+": "+
-                           ex.getMessage() + " \n");
+        result.append("[Fatal Error] " + getLocationString(ex) + ": " + ex.getMessage() + " \n");
     }
 
     /** Returns a string of the location. */
@@ -98,11 +92,11 @@ public class SchemaValidate extends DefaultHandler {
             parser.setFeature("http://apache.org/xml/features/validation/schema-full-checking", true);
             parser.parse(xmlFileURL);
             return validate.result.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        catch (Exception e) { e.printStackTrace(); }
         return null;
     }
-
 
     public static void main(String[] args) {
         if (args.length != 1) {
@@ -111,17 +105,14 @@ public class SchemaValidate extends DefaultHandler {
         }
         try {
             String validationResults = process(args[0]);
-            if (validationResults.length() == 0)
-            {
+            if (validationResults.length() == 0) {
                 System.out.println("Contents okay.");
-            }
-            else
-            {
+            } else {
                 System.out.println("Problems found:\n");
                 System.out.println(validationResults);
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        catch (Exception e) { e.printStackTrace(); }
     }
 }
-

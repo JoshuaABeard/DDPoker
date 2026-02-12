@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -49,8 +49,7 @@ import java.util.*;
  * <p/>
  * TODO: game and history services
  */
-public class OnlineServer
-{
+public class OnlineServer {
     private static Logger logger = LogManager.getLogger(OnlineServer.class);
 
     private static OnlineServer manager_ = new OnlineServer();
@@ -60,16 +59,14 @@ public class OnlineServer
      *
      * @return the manager instance
      */
-    public static OnlineServer getWanManager()
-    {
+    public static OnlineServer getWanManager() {
         return manager_;
     }
 
     /**
      * Add the game to the public list
      */
-    public boolean addWanGame(PokerGame game, PlayerProfile profile)
-    {
+    public boolean addWanGame(PokerGame game, PlayerProfile profile) {
         // Wrap the game info
         GameContext context = game.getGameContext();
         OnlineGame onlineGame = createOnlineGame(context);
@@ -88,14 +85,12 @@ public class OnlineServer
         return (dialog.getStatus() == DDMessageListener.STATUS_OK);
     }
 
-
     /**
      * Remove the game from the public list
      *
      * @param game
      */
-    public void removeWanGame(PokerGame game)
-    {
+    public void removeWanGame(PokerGame game) {
         // send a message requesting that the game be deleted - not done in a dialog
         // since failing to remove the game should not affect the user interaction
         OnlineMessage reqOnlineMsg = new OnlineMessage(OnlineMessage.CAT_WAN_GAME_REMOVE);
@@ -111,13 +106,12 @@ public class OnlineServer
     /**
      * Update the current WAN game's profile
      */
-    public void updateGameProfile(PokerGame game)
-    {
+    public void updateGameProfile(PokerGame game) {
         // Send a message requesting that the game be updated.
         OnlineGame onlineGame = createOnlineGame(game.getGameContext());
         OnlineMessage reqOnlineMsg = new OnlineMessage(OnlineMessage.CAT_WAN_GAME_UPDATE);
         onlineGame.setTournament(game.getProfile());
-        //logger.debug("Updating game: " + onlineGame);
+        // logger.debug("Updating game: " + onlineGame);
         reqOnlineMsg.setWanGame(onlineGame.getData());
         EngineMessage reqEngineMsg = new EngineMessage();
         reqOnlineMsg.getData().copyTo(reqEngineMsg);
@@ -128,16 +122,16 @@ public class OnlineServer
     /**
      * Start the current WAN game.
      *
-     * @param game current poker game
+     * @param game
+     *            current poker game
      */
-    public void startGame(PokerGame game)
-    {
+    public void startGame(PokerGame game) {
         // Send a message requesting that the game be updated and the histories added.
         int category = OnlineMessage.CAT_WAN_GAME_START;
         OnlineGame onlineGame = getServerGame(game.getGameContext(), category);
         onlineGame.setTournament(game.getProfile());
         OnlineMessage reqOnlineMsg = new OnlineMessage(category);
-        //logger.debug("Starting game: " + onlineGame);
+        // logger.debug("Starting game: " + onlineGame);
         reqOnlineMsg.setWanGame(onlineGame.getData());
         EngineMessage reqEngineMsg = new EngineMessage();
         reqOnlineMsg.getData().copyTo(reqEngineMsg);
@@ -148,10 +142,10 @@ public class OnlineServer
     /**
      * End the current WAN game.
      *
-     * @param game current poker game
+     * @param game
+     *            current poker game
      */
-    public void endGame(PokerGame game, boolean bDone)
-    {
+    public void endGame(PokerGame game, boolean bDone) {
         // Create tournament history objects for all players.
         TournamentHistory history = null;
         DMArrayList<TournamentHistory> histories = null;
@@ -164,28 +158,22 @@ public class OnlineServer
         int playerCount = players.size();
         int nRank = 0, nChips, nLastChips = -1;
 
-        for (int i = 0; i < playerCount; ++i)
-        {
+        for (int i = 0; i < playerCount; ++i) {
             player = players.get(i);
             nChips = player.getChipCount();
 
             // if no place, game still in progress, so rank
             // is based on chip count - allow for ties
-            if (player.getPlace() == 0)
-            {
-                if (nChips != nLastChips)
-                {
+            if (player.getPlace() == 0) {
+                if (nChips != nLastChips) {
                     nRank = (i + 1);
                 }
                 nLastChips = nChips;
-            }
-            else
-            {
+            } else {
                 nRank = (i + 1);
             }
 
-            if (histories == null)
-            {
+            if (histories == null) {
                 histories = new DMArrayList<TournamentHistory>();
             }
 
@@ -200,53 +188,54 @@ public class OnlineServer
         logger.debug("Sending game: " + onlineGame);
         reqOnlineMsg.setWanGame(onlineGame.getData());
         logger.debug("Sending histories: " + histories);
-        if (histories != null) reqOnlineMsg.setWanHistories(histories);
+        if (histories != null)
+            reqOnlineMsg.setWanHistories(histories);
         EngineMessage reqEngineMsg = new EngineMessage();
         reqOnlineMsg.getData().copyTo(reqEngineMsg);
 
         sendEngineMessage(reqEngineMsg);
     }
 
-    private TournamentHistory createTournamentHistory(PokerGame game, PokerPlayer player, int nRank)
-    {
+    private TournamentHistory createTournamentHistory(PokerGame game, PokerPlayer player, int nRank) {
         TournamentHistory hist = new TournamentHistory();
         hist.setTournamentName(game.getProfile().getName());
         hist.setPlayerName(player.getName());
-        hist.setPlayerType(player.isComputer() ? PLAYER_TYPE_AI : (player.isOnlineActivated() ? PLAYER_TYPE_ONLINE : PLAYER_TYPE_LOCAL));
+        hist.setPlayerType(player.isComputer()
+                ? PLAYER_TYPE_AI
+                : (player.isOnlineActivated() ? PLAYER_TYPE_ONLINE : PLAYER_TYPE_LOCAL));
         hist.setEndDate(new Date());
         hist.setBuyin(player.getBuyin());
         hist.setAddon(player.getAddon());
         hist.setRebuy(player.getRebuy());
         hist.setDisconnects(player.getDisconnects());
-        hist.setPlacePrizeNumPlayers(player.getPlace(), player.getPrize(), game.getNumPlayers(), nRank, player.getChipCount());
+        hist.setPlacePrizeNumPlayers(player.getPlace(), player.getPrize(), game.getNumPlayers(), nRank,
+                player.getChipCount());
         return hist;
     }
 
     /**
      * Get an initialized game object for sending to the server.
      */
-    private OnlineGame getServerGame(GameContext context, int category)
-    {
+    private OnlineGame getServerGame(GameContext context, int category) {
         // Determine the new mode and set the start/end date.
         OnlineGame game = createOnlineGame(context);
         int mode = -1;
         Date date = new Date();
 
-        switch (category)
-        {
-            case OnlineMessage.CAT_WAN_GAME_START:
+        switch (category) {
+            case OnlineMessage.CAT_WAN_GAME_START :
                 mode = OnlineGame.MODE_PLAY;
                 game.setStartDate(date);
                 break;
-            case OnlineMessage.CAT_WAN_GAME_STOP:
+            case OnlineMessage.CAT_WAN_GAME_STOP :
                 mode = OnlineGame.MODE_STOP;
                 game.setEndDate(date);
                 break;
-            case OnlineMessage.CAT_WAN_GAME_END:
+            case OnlineMessage.CAT_WAN_GAME_END :
                 mode = OnlineGame.MODE_END;
                 game.setEndDate(date);
                 break;
-            default:
+            default :
                 return game;
         }
 
@@ -258,8 +247,7 @@ public class OnlineServer
     /**
      * Create a new online game based on the given context.
      */
-    private OnlineGame createOnlineGame(GameContext context)
-    {
+    private OnlineGame createOnlineGame(GameContext context) {
         PokerMain main = (PokerMain) GameEngine.getGameEngine();
         OnlineGame game = new OnlineGame();
 
@@ -272,14 +260,13 @@ public class OnlineServer
     /**
      * Send the given engine message and log any errors.
      *
-     * @param reqMsg message
+     * @param reqMsg
+     *            message
      */
-    private void sendEngineMessage(EngineMessage reqMsg)
-    {
+    private void sendEngineMessage(EngineMessage reqMsg) {
         EngineMessage resMsg = GameMessenger.SendEngineMessage(null, reqMsg, null);
 
-        if (resMsg.getStatus() == DDMessageListener.STATUS_APPL_ERROR)
-        {
+        if (resMsg.getStatus() == DDMessageListener.STATUS_APPL_ERROR) {
             logger.error("WAN Game server error: " + resMsg.getApplicationErrorMessage());
         }
     }

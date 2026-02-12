@@ -11,19 +11,18 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- *  
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
- *  
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *  
+ *
  *  Bug fixes, suggestions and comments should be sent to: alex@zookitec.com
  */
- 
 
 package com.zookitec.layout;
 
@@ -32,15 +31,14 @@ import java.util.*;
 import java.io.*;
 
 /**
- * A layout manager that provides explicit control over the layout of components.
+ * A layout manager that provides explicit control over the layout of
+ * components.
  */
 public class ExplicitLayout implements LayoutManager2, Serializable {
 
-
-    private static final Dimension MINIMUM_SIZE = new Dimension(0,0);
+    private static final Dimension MINIMUM_SIZE = new Dimension(0, 0);
     private static final Dimension MAXIMUM_SIZE = new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
-    private static final Dimension PREFERRED_SIZE = new Dimension(100,100);
-
+    private static final Dimension PREFERRED_SIZE = new Dimension(100, 100);
 
     /**
      * The container being layed out.
@@ -55,15 +53,12 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
      */
     private Hashtable component2constraints;
 
-
     /**
      * Hashtable mapping component names to constraints.
      *
      * @serial
      */
     private Hashtable name2constraints;
-
-
 
     /**
      * An expression for the maximum size of this layout; this can be null.
@@ -86,10 +81,9 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
      */
     private DimensionExpression minimumSize;
 
-// REMOVE FOR STANDARD
+    // REMOVE FOR STANDARD
     private LayoutListener layoutListener;
-// END REMOVE FOR STANDARD
-
+    // END REMOVE FOR STANDARD
 
     /**
      * Constructs an ExplicitLayout
@@ -98,7 +92,6 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
         component2constraints = new Hashtable();
         name2constraints = new Hashtable();
     }
-
 
     /**
      * Gets the container being layed out.
@@ -112,38 +105,38 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
     /**
      * Gets the constraints object for the specified <code>component</code>.
      *
-     * @param component the component
+     * @param component
+     *            the component
      *
-     * @return the contraints for the specified <code>component</code>; null if component unknown.
+     * @return the contraints for the specified <code>component</code>; null if
+     *         component unknown.
      *
      */
     public ExplicitConstraints getConstraints(Component component) {
-        return (ExplicitConstraints)component2constraints.get(component);
+        return (ExplicitConstraints) component2constraints.get(component);
     }
-
 
     /**
      * Gets the constraints object for the named component by name.
      *
-     * @param name the name of the component
+     * @param name
+     *            the name of the component
      *
      * @return the coonstraints; null if component unknown.
      *
      */
     public ExplicitConstraints getConstraints(String name) {
-        return (ExplicitConstraints)name2constraints.get(name);
+        return (ExplicitConstraints) name2constraints.get(name);
     }
 
-
     /**
-     * Gets an enumeration of all the named constraints.
-     * These are constraints constructed using ExplicitConstraints(Component component, String name)
-     * for which ExplicitConstraints.getName is not null.
+     * Gets an enumeration of all the named constraints. These are constraints
+     * constructed using ExplicitConstraints(Component component, String name) for
+     * which ExplicitConstraints.getName is not null.
      */
     public Enumeration getNamedConstraints() {
         return name2constraints.elements();
     }
-
 
     /**
      * Used to represent expressions for the minimum, preferred and maximum size.
@@ -168,12 +161,11 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
             dimension = new Dimension();
         }
 
-
         public Dimension getDimension(ExplicitLayout layout) {
             if (!valid) {
                 Insets insets = layout.getContainer().getInsets();
-                dimension.width = (int)width.getValue(layout) + insets.left + insets.right;
-                dimension.height = (int)height.getValue(layout) + insets.top + insets.bottom;
+                dimension.width = (int) width.getValue(layout) + insets.left + insets.right;
+                dimension.height = (int) height.getValue(layout) + insets.top + insets.bottom;
                 valid = true;
             }
             return dimension;
@@ -189,12 +181,14 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
         }
     }
 
-
     /**
-     * Not supported. Use <code>addLayoutComponent(Component , Object)</code> instead.
+     * Not supported. Use <code>addLayoutComponent(Component , Object)</code>
+     * instead.
      *
-     * @param name the component name
-     * @param comp the component to be added
+     * @param name
+     *            the component name
+     * @param comp
+     *            the component to be added
      *
      * @see #addLayoutComponent(Component , Object)
      *
@@ -203,7 +197,6 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
     public void addLayoutComponent(String name, Component comp) {
         throw new IllegalArgumentException("No constraints specified");
     }
-
 
     /**
      * Adds the specified component to the layout using the specified constraints.
@@ -214,12 +207,16 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
      * prototype null layout; direct calls to component.setBounds will still be
      * effective if constrains is null.
      *
-     * @param component the component to add to the layout
-     * @param constraints the constraints of the component
+     * @param component
+     *            the component to add to the layout
+     * @param constraints
+     *            the constraints of the component
      *
-     * @throws IllegalArgumentException if constraints is not an instance of ExplicitConstraints
-     * @throws IllegalArgumentException if the component specified by the constraints is null or different from the
-     * component being added.
+     * @throws IllegalArgumentException
+     *             if constraints is not an instance of ExplicitConstraints
+     * @throws IllegalArgumentException
+     *             if the component specified by the constraints is null or
+     *             different from the component being added.
      * @see ExplicitConstraints
      *
      */
@@ -229,25 +226,25 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
             constraints = new AbsoluteConstraints(component);
         } else {
             if (!(constraints instanceof ExplicitConstraints)) {
-                throw new IllegalArgumentException("constraints must be an instance of ExplicitConstraints, not '" + constraints + "'");
+                throw new IllegalArgumentException(
+                        "constraints must be an instance of ExplicitConstraints, not '" + constraints + "'");
             }
-            if (((ExplicitConstraints)constraints).getComponent() != component) {
+            if (((ExplicitConstraints) constraints).getComponent() != component) {
                 throw new IllegalArgumentException("component does not match component specifed in the constraints");
             }
         }
         component2constraints.put(component, constraints);
-        if ((name = ((ExplicitConstraints)constraints).getName()) != null) {
+        if ((name = ((ExplicitConstraints) constraints).getName()) != null) {
             name2constraints.put(name, constraints);
         }
 
     }
 
-
-
     /**
      * Removes the specified component from the layout.
      *
-     * @param component the component to remove
+     * @param component
+     *            the component to remove
      */
     public void removeLayoutComponent(Component component) {
         ExplicitConstraints constraints = getConstraints(component);
@@ -257,7 +254,6 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
 
     }
 
-
     /**
      * Not used.
      */
@@ -265,14 +261,12 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
         return 0.0f;
     }
 
-
     /**
      * Not used.
      */
     public float getLayoutAlignmentY(Container target) {
         return 0.0f;
     }
-
 
     /**
      * Discards all cached information used by this layout manager.
@@ -290,19 +284,20 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
             }
             Enumeration _enum = component2constraints.elements();
             while (_enum.hasMoreElements()) {
-                ((ExplicitConstraints)_enum.nextElement()).invalidate();
+                ((ExplicitConstraints) _enum.nextElement()).invalidate();
             }
         }
     }
 
-
     /**
-     * Sets expressions for the maximum width and height of the container.
-     * The expressions should not include the container's internal borders as
-     * returned by the Container getInsets method.
+     * Sets expressions for the maximum width and height of the container. The
+     * expressions should not include the container's internal borders as returned
+     * by the Container getInsets method.
      *
-     * @param width an expression for the maximum width of the container.
-     * @param height an expression for the maximum height of the container.
+     * @param width
+     *            an expression for the maximum width of the container.
+     * @param height
+     *            an expression for the maximum height of the container.
      */
     public void setMaximumLayoutSize(Expression width, Expression height) {
         maximumSize = new DimensionExpression(width, height);
@@ -311,10 +306,11 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
     /**
      * Gets the maximum layout size for the container calculated by adding the
      * container's insets to the maximum size expressions specified by the
-     * setMaximumLayoutSize method. If the setMaximumLayoutSize method has not
-     * been called, return dimension Integer.MAX_VALUE, Integer.MAX_VALUE.
+     * setMaximumLayoutSize method. If the setMaximumLayoutSize method has not been
+     * called, return dimension Integer.MAX_VALUE, Integer.MAX_VALUE.
      *
-     * @param parent the container to which this layout manager belongs.
+     * @param parent
+     *            the container to which this layout manager belongs.
      *
      */
     public Dimension maximumLayoutSize(Container parent) {
@@ -328,13 +324,14 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
         }
     }
 
-
     /**
-     * Sets expressions for the preferred width and height of the container.
-     * The expressions should not include insets.
+     * Sets expressions for the preferred width and height of the container. The
+     * expressions should not include insets.
      *
-     * @param width an expression for the preferred width of the container.
-     * @param height an expression for the preferred height of the container.
+     * @param width
+     *            an expression for the preferred width of the container.
+     * @param height
+     *            an expression for the preferred height of the container.
      */
     public void setPreferredLayoutSize(Expression width, Expression height) {
         preferredSize = new DimensionExpression(width, height);
@@ -346,7 +343,8 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
      * setPreferredLayoutSize method. If the setPreferredLayoutSize method has not
      * been called, return dimension 100,100.
      *
-     * @param parent the container to which this layout manager belongs.
+     * @param parent
+     *            the container to which this layout manager belongs.
      *
      */
     public Dimension preferredLayoutSize(Container parent) {
@@ -360,12 +358,13 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
         }
     }
 
-
     /**
      * Sets expressions for the minimum width and height of the container.
      *
-     * @param width an expression for the minimum width of the container.
-     * @param height an expression for the minimum height of the container.
+     * @param width
+     *            an expression for the minimum width of the container.
+     * @param height
+     *            an expression for the minimum height of the container.
      */
     public void setMinimumLayoutSize(Expression width, Expression height) {
         minimumSize = new DimensionExpression(width, height);
@@ -374,10 +373,11 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
     /**
      * Gets the minimum layout size for the container calculated by adding the
      * container's insets to the minimum size expressions specified by the
-     * setMinimumLayoutSize method. If the setMinimumLayoutSize method has not
-     * been called, return dimension 0,0.
+     * setMinimumLayoutSize method. If the setMinimumLayoutSize method has not been
+     * called, return dimension 0,0.
      *
-     * @param parent the container to which this layout manager belongs.
+     * @param parent
+     *            the container to which this layout manager belongs.
      *
      */
     public Dimension minimumLayoutSize(Container parent) {
@@ -392,10 +392,11 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
     }
 
     /**
-     * This method sets the size and position of each component as defined in the component's
-     * ExplicitConstraints object.
+     * This method sets the size and position of each component as defined in the
+     * component's ExplicitConstraints object.
      *
-     * @param parent the container to which this layout manager belongs.
+     * @param parent
+     *            the container to which this layout manager belongs.
      */
     public void layoutContainer(Container parent) {
         synchronized (parent.getTreeLock()) {
@@ -405,29 +406,28 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
                 layoutListener.beforeLayout(this);
             }
 
-            Component [] components = parent.getComponents();
+            Component[] components = parent.getComponents();
             ExplicitConstraints constraints;
-            int x,y,w,h;
+            int x, y, w, h;
             for (int i = 0; i < components.length; i++) {
-                //get the constraints for the component
-                constraints = (ExplicitConstraints)component2constraints.get(components[i]);
+                // get the constraints for the component
+                constraints = (ExplicitConstraints) component2constraints.get(components[i]);
                 if (constraints != null) {
-                    //set the component bounds based on the constraints
+                    // set the component bounds based on the constraints
                     w = constraints.getWidthValue(this);
                     h = constraints.getHeightValue(this);
                     x = constraints.getXValue(this);
                     y = constraints.getYValue(this);
-                    components[i].setBounds(x,y,w,h);
+                    components[i].setBounds(x, y, w, h);
                 }
             }
         }
     }
 
-
     /**
-     * Class used in place of null constraints. This doesn't have any
-     * effect on the size and location of the specified component but allows
-     * other component's to be positioned relative to the specified component.
+     * Class used in place of null constraints. This doesn't have any effect on the
+     * size and location of the specified component but allows other component's to
+     * be positioned relative to the specified component.
      *
      */
     class AbsoluteConstraints extends ExplicitConstraints {
@@ -452,19 +452,22 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
         }
     }
 
-
-
     /**
      * Sets a LayoutListener.
      *
-     * <P>The LayoutListener.beforeLayout method is called by
-     * layoutContainer before the container is layed out. This gives the the LayoutListener
-     * opprotunity to modify the constraints before the container is layed out.</P>
+     * <P>
+     * The LayoutListener.beforeLayout method is called by layoutContainer before
+     * the container is layed out. This gives the the LayoutListener opprotunity to
+     * modify the constraints before the container is layed out.
+     * </P>
      *
-     * <P>For example, a LayoutListener could be used to set different layout constraints
-     * depending on the container's width / height ratio.</P?
+     * <P>
+     * For example, a LayoutListener could be used to set different layout
+     * constraints depending on the container's width / height ratio.</P?
      *
-     * @param layoutListener a object that implements LayoutListener; null to remove the layout listener.
+     * @param layoutListener
+     *            a object that implements LayoutListener; null to remove the layout
+     *            listener.
      */
     public void setLayoutListener(LayoutListener layoutListener) {
         this.layoutListener = layoutListener;
@@ -478,8 +481,5 @@ public class ExplicitLayout implements LayoutManager2, Serializable {
     public LayoutListener getLayoutListener() {
         return layoutListener;
     }
-
-
-
 
 }

@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -47,29 +47,29 @@ import java.awt.event.*;
 
 /**
  *
- * @author  Doug Donohoe
+ * @author Doug Donohoe
  */
-public class DDTabbedPane extends JTabbedPane implements DDHasLabelComponent, ChangeListener,
-                                                         MouseMotionListener, MouseListener
-{
-    //static Logger logger = LogManager.getLogger(DDTabbedPane.class);
+public class DDTabbedPane extends JTabbedPane
+        implements
+            DDHasLabelComponent,
+            ChangeListener,
+            MouseMotionListener,
+            MouseListener {
+    // static Logger logger = LogManager.getLogger(DDTabbedPane.class);
 
-    private static final Color DEFAULT_SELECTED = new Color(255,255,255,175);
+    private static final Color DEFAULT_SELECTED = new Color(255, 255, 255, 175);
     private Color cSelectedTab_ = DEFAULT_SELECTED;
 
-    public DDTabbedPane(String sStyle, int nPlacement)
-    {
+    public DDTabbedPane(String sStyle, int nPlacement) {
         this(sStyle, sStyle, nPlacement);
     }
 
-    public DDTabbedPane(String sStyle, String sBevelStyle, int nPlacement)
-    {
+    public DDTabbedPane(String sStyle, String sBevelStyle, int nPlacement) {
         super(nPlacement);
         init(sStyle, sBevelStyle);
     }
 
-    private void init(String sStyle, String sBevelStyle)
-    {        
+    private void init(String sStyle, String sBevelStyle) {
         GuiManager.init(this, GuiManager.DEFAULT, sStyle);
         setUI(new DDTabbedPaneUI(this, sBevelStyle));
         addChangeListener(this);
@@ -78,8 +78,7 @@ public class DDTabbedPane extends JTabbedPane implements DDHasLabelComponent, Ch
         setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
     }
 
-    public void addTab(String sTitleKey, Icon icon, Icon error, DDTabPanel tab)
-    {
+    public void addTab(String sTitleKey, Icon icon, Icon error, DDTabPanel tab) {
         super.addTab(PropertyConfig.getMessage(sTitleKey), icon, tab, null);
         tab.setTabNum(getTabCount() - 1);
         tab.setIcon(icon);
@@ -88,24 +87,20 @@ public class DDTabbedPane extends JTabbedPane implements DDHasLabelComponent, Ch
         tab.setHelpText(PropertyConfig.getStringProperty(sTitleKey + ".help", null, false));
     }
 
-
     /**
      * tab changed - clear help
      */
-    public void stateChanged(ChangeEvent e)
-    {
+    public void stateChanged(ChangeEvent e) {
         setHelp(getSelectedIndex());
     }
 
     /**
      * set help text for given tab
      */
-    private void setHelp(int i)
-    {
+    private void setHelp(int i) {
         Component c = getComponentAt(i);
-        if (c instanceof DDTabPanel)
-        {
-            String sHelp = ((DDTabPanel)c).getHelpText();
+        if (c instanceof DDTabPanel) {
+            String sHelp = ((DDTabPanel) c).getHelpText();
             DDWindow window = GuiUtils.getHelpManager(c);
             if (sHelp != null && window != null) {
                 window.setHelpMessage(sHelp);
@@ -116,75 +111,65 @@ public class DDTabbedPane extends JTabbedPane implements DDHasLabelComponent, Ch
     /**
      * Do valid check over all tabs
      */
-    public boolean doValidCheck()
-    {
+    public boolean doValidCheck() {
         boolean bValid = true;
         int nNum = getTabCount();
         Component c;
-        for (int i = 0; i < nNum; i++)
-        {
+        for (int i = 0; i < nNum; i++) {
             c = getComponentAt(i);
-            if (c instanceof DDTabPanel)
-            {
-                bValid &= ((DDTabPanel)c).doValidCheck();
+            if (c instanceof DDTabPanel) {
+                bValid &= ((DDTabPanel) c).doValidCheck();
             }
         }
 
         return bValid;
     }
 
-    public String getType()
-    {
+    public String getType() {
         return "tab";
     }
-    
+
     // needed for DDHasLabel interface
     public String getText() {
         return null;
     }
-    
+
     public void setText(String s) {
     }
 
     // always anti-alias?
     private boolean bAlwaysAntiAlias_ = true;
 
-    public Color getSelectedTabColor()
-    {
+    public Color getSelectedTabColor() {
         return cSelectedTab_;
     }
 
-    public void setSelectedTabColor(Color c)
-    {
+    public void setSelectedTabColor(Color c) {
         cSelectedTab_ = c;
     }
 
     /**
-     * set whether anti aliases should always occur,
-     * overriding GuiUtils.drawAntiAlias()
+     * set whether anti aliases should always occur, overriding
+     * GuiUtils.drawAntiAlias()
      */
-    public void setAlwaysAntiAlias(boolean b)
-    {
+    public void setAlwaysAntiAlias(boolean b) {
         bAlwaysAntiAlias_ = b;
     }
 
     /**
      * is GuiUtils.drawAntiAlias() overriden
      */
-    public boolean isAlwaysAntiAlias()
-    {
+    public boolean isAlwaysAntiAlias() {
         return bAlwaysAntiAlias_;
     }
 
     /**
-     * Swing doesn't exactly do semi-transparent correctly unless
-     * you start with the hightest parent w/ no transparency
+     * Swing doesn't exactly do semi-transparent correctly unless you start with the
+     * hightest parent w/ no transparency
      */
-    public void repaint(long tm, int x, int y, int width, int height)
-    {
+    public void repaint(long tm, int x, int y, int width, int height) {
         Component foo = GuiUtils.getSolidRepaintComponent(this);
-        if (foo != null && foo != this)
-        {
+        if (foo != null && foo != this) {
             Point pRepaint = SwingUtilities.convertPoint(this, x, y, foo);
             foo.repaint(pRepaint.x, pRepaint.y, width, height);
             return;
@@ -196,16 +181,13 @@ public class DDTabbedPane extends JTabbedPane implements DDHasLabelComponent, Ch
     /**
      * Override to set anti aliasing hit if isAntiAlias() is true
      */
-    public void paintComponent(Graphics g1)
-    {
-	    Graphics2D g = (Graphics2D) g1;
+    public void paintComponent(Graphics g1) {
+        Graphics2D g = (Graphics2D) g1;
 
         // we want font to look nice
- 		Object old =g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
-        if (bAlwaysAntiAlias_ || GuiUtils.drawAntiAlias(this))
-        {
-            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, 
-                                RenderingHints.VALUE_ANTIALIAS_ON);
+        Object old = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+        if (bAlwaysAntiAlias_ || GuiUtils.drawAntiAlias(this)) {
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         }
         super.paintComponent(g);
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, old);
@@ -215,39 +197,32 @@ public class DDTabbedPane extends JTabbedPane implements DDHasLabelComponent, Ch
     /// mouse events to do mouse over help
     ///
 
-    public void mouseDragged(MouseEvent e)
-    {
+    public void mouseDragged(MouseEvent e) {
     }
 
     private int nLastTab = -2;
-    public void mouseMoved(MouseEvent e)
-    {
+    public void mouseMoved(MouseEvent e) {
         int i = getUI().tabForCoordinate(this, e.getX(), e.getY());
-        if (i != nLastTab)
-        {
+        if (i != nLastTab) {
             nLastTab = i;
-            if (i != -1) setHelp(i);
+            if (i != -1)
+                setHelp(i);
         }
     }
 
-    public void mouseClicked(MouseEvent e)
-    {
+    public void mouseClicked(MouseEvent e) {
     }
 
-    public void mousePressed(MouseEvent e)
-    {
+    public void mousePressed(MouseEvent e) {
     }
 
-    public void mouseReleased(MouseEvent e)
-    {
+    public void mouseReleased(MouseEvent e) {
     }
 
-    public void mouseEntered(MouseEvent e)
-    {
+    public void mouseEntered(MouseEvent e) {
     }
 
-    public void mouseExited(MouseEvent e)
-    {
+    public void mouseExited(MouseEvent e) {
         nLastTab = -2;
     }
 }

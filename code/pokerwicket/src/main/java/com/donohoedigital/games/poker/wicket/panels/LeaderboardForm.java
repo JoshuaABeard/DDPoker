@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -46,8 +46,7 @@ import org.apache.wicket.request.mapper.parameter.PageParameters;
 /**
  * @author Doug Donohoe
  */
-public class LeaderboardForm extends NameRangeSearchForm
-{
+public class LeaderboardForm extends NameRangeSearchForm {
     private static final long serialVersionUID = 42L;
 
     private final StringModel type = new StringModel();
@@ -57,9 +56,7 @@ public class LeaderboardForm extends NameRangeSearchForm
      * @see org.apache.wicket.Component#Component(String)
      */
     public LeaderboardForm(String id, PageParameters params, final Class<? extends BasePokerPage> clazz,
-                           final Leaderboard.LeaderData data, final String paramName, final String paramBegin,
-                           final String paramEnd)
-    {
+            final Leaderboard.LeaderData data, final String paramName, final String paramBegin, final String paramEnd) {
         super(id, params, clazz, data, paramName, paramBegin, paramEnd, "Player");
 
         // get # of games
@@ -68,8 +65,7 @@ public class LeaderboardForm extends NameRangeSearchForm
 
         // games list of choices
         SelectChoiceList<IntegerSelectChoice> gamesValues = new SelectChoiceList<>();
-        for (int g : new int[]{1, 5, 10, 15, 20, 25, 30, 40, 50, 100, 150, 200, 250, 300, 500, 1000})
-        {
+        for (int g : new int[]{1, 5, 10, 15, 20, 25, 30, 40, 50, 100, 150, 200, 250, 300, 500, 1000}) {
             gamesValues.add(new IntegerSelectChoice(g));
         }
         IntegerSelectChoice gameChoice = gamesValues.addSorted(new IntegerSelectChoice(games));
@@ -89,8 +85,7 @@ public class LeaderboardForm extends NameRangeSearchForm
      * add games selection & type to params (on submit)
      */
     @Override
-    protected void addCustomPageParameters(PageParameters p)
-    {
+    protected void addCustomPageParameters(PageParameters p) {
         p.set(Leaderboard.PARAM_GAMES, gamesC.getDefaultModelObjectAsString());
         p.set(Leaderboard.PARAM_TYPE, type.getObject());
     }

@@ -33,13 +33,11 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for OpponentModel player behavior tracking and modeling.
  */
-class OpponentModelTest
-{
+class OpponentModelTest {
     private OpponentModel model;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         // Initialize ConfigManager for tests that create PokerTable
         new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
         model = new OpponentModel();
@@ -50,40 +48,34 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_InitializeHandsPlayedToZero_When_InitCalled()
-    {
+    void should_InitializeHandsPlayedToZero_When_InitCalled() {
         model.init();
 
         assertThat(model.handsPlayed).isZero();
     }
 
     @Test
-    void should_CreateTightnessTrackers_When_InitCalled()
-    {
+    void should_CreateTightnessTrackers_When_InitCalled() {
         model.init();
 
         // Should have 6 tightness trackers (one per position category)
-        for (int i = 0; i < 6; i++)
-        {
+        for (int i = 0; i < 6; i++) {
             assertThat(model.tightness[i]).isNotNull();
         }
     }
 
     @Test
-    void should_CreateAggressionTrackers_When_InitCalled()
-    {
+    void should_CreateAggressionTrackers_When_InitCalled() {
         model.init();
 
         // Should have 6 aggression trackers (one per position category)
-        for (int i = 0; i < 6; i++)
-        {
+        for (int i = 0; i < 6; i++) {
             assertThat(model.aggression[i]).isNotNull();
         }
     }
 
     @Test
-    void should_CreateBooleanTrackers_When_InitCalled()
-    {
+    void should_CreateBooleanTrackers_When_InitCalled() {
         model.init();
 
         // Preflop trackers
@@ -118,40 +110,34 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_HaveSixTightnessTrackers_When_InitCalled()
-    {
+    void should_HaveSixTightnessTrackers_When_InitCalled() {
         model.init();
 
         assertThat(model.tightness).hasSize(6);
     }
 
     @Test
-    void should_HaveSixAggressionTrackers_When_InitCalled()
-    {
+    void should_HaveSixAggressionTrackers_When_InitCalled() {
         model.init();
 
         assertThat(model.aggression).hasSize(6);
     }
 
     @Test
-    void should_InitializeAllTightnessTrackers_When_InitCalled()
-    {
+    void should_InitializeAllTightnessTrackers_When_InitCalled() {
         model.init();
 
-        for (int i = 0; i < 6; i++)
-        {
+        for (int i = 0; i < 6; i++) {
             assertThat(model.tightness[i]).isNotNull();
             // Trackers should be initialized (not just null)
         }
     }
 
     @Test
-    void should_InitializeAllAggressionTrackers_When_InitCalled()
-    {
+    void should_InitializeAllAggressionTrackers_When_InitCalled() {
         model.init();
 
-        for (int i = 0; i < 6; i++)
-        {
+        for (int i = 0; i < 6; i++) {
             assertThat(model.aggression[i]).isNotNull();
             // Trackers should be initialized (not just null)
         }
@@ -162,8 +148,7 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_ReuseExistingTrackers_When_InitCalledMultipleTimes()
-    {
+    void should_ReuseExistingTrackers_When_InitCalledMultipleTimes() {
         model.init();
         FloatTracker firstTightness0 = model.tightness[0];
         BooleanTracker firstHandsPaid = model.handsPaid;
@@ -176,8 +161,7 @@ class OpponentModelTest
     }
 
     @Test
-    void should_ResetHandsPlayed_When_InitCalledAfterHandsPlayed()
-    {
+    void should_ResetHandsPlayed_When_InitCalledAfterHandsPlayed() {
         model.init();
         model.handsPlayed = 100;
 
@@ -187,8 +171,7 @@ class OpponentModelTest
     }
 
     @Test
-    void should_ClearAllTrackers_When_InitCalledAfterUse()
-    {
+    void should_ClearAllTrackers_When_InitCalledAfterUse() {
         model.init();
 
         // Simulate some usage by incrementing hands played
@@ -209,30 +192,25 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_CreateFloatTrackers_When_TightnessInitialized()
-    {
+    void should_CreateFloatTrackers_When_TightnessInitialized() {
         model.init();
 
-        for (int i = 0; i < 6; i++)
-        {
+        for (int i = 0; i < 6; i++) {
             assertThat(model.tightness[i]).isInstanceOf(FloatTracker.class);
         }
     }
 
     @Test
-    void should_CreateFloatTrackers_When_AggressionInitialized()
-    {
+    void should_CreateFloatTrackers_When_AggressionInitialized() {
         model.init();
 
-        for (int i = 0; i < 6; i++)
-        {
+        for (int i = 0; i < 6; i++) {
             assertThat(model.aggression[i]).isInstanceOf(FloatTracker.class);
         }
     }
 
     @Test
-    void should_CreateBooleanTrackers_When_HandTrackersInitialized()
-    {
+    void should_CreateBooleanTrackers_When_HandTrackersInitialized() {
         model.init();
 
         assertThat(model.handsPaid).isInstanceOf(BooleanTracker.class);
@@ -242,8 +220,7 @@ class OpponentModelTest
     }
 
     @Test
-    void should_CreateBooleanTrackers_When_StreetTrackersInitialized()
-    {
+    void should_CreateBooleanTrackers_When_StreetTrackersInitialized() {
         model.init();
 
         // Flop trackers
@@ -264,55 +241,71 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_HaveEighteenBooleanTrackers_When_InitCalled()
-    {
+    void should_HaveEighteenBooleanTrackers_When_InitCalled() {
         model.init();
 
         int trackerCount = 0;
 
         // Count all non-null boolean trackers
-        if (model.handsPaid != null) trackerCount++;
-        if (model.handsLimped != null) trackerCount++;
-        if (model.handsFoldedUnraised != null) trackerCount++;
-        if (model.handsRaisedPreFlop != null) trackerCount++;
-        if (model.handsOverbetPotPostFlop != null) trackerCount++;
-        if (model.handsBetFoldPostFlop != null) trackerCount++;
+        if (model.handsPaid != null)
+            trackerCount++;
+        if (model.handsLimped != null)
+            trackerCount++;
+        if (model.handsFoldedUnraised != null)
+            trackerCount++;
+        if (model.handsRaisedPreFlop != null)
+            trackerCount++;
+        if (model.handsOverbetPotPostFlop != null)
+            trackerCount++;
+        if (model.handsBetFoldPostFlop != null)
+            trackerCount++;
 
-        if (model.actFlop != null) trackerCount++;
-        if (model.checkFoldFlop != null) trackerCount++;
-        if (model.openFlop != null) trackerCount++;
-        if (model.raiseFlop != null) trackerCount++;
+        if (model.actFlop != null)
+            trackerCount++;
+        if (model.checkFoldFlop != null)
+            trackerCount++;
+        if (model.openFlop != null)
+            trackerCount++;
+        if (model.raiseFlop != null)
+            trackerCount++;
 
-        if (model.actTurn != null) trackerCount++;
-        if (model.checkFoldTurn != null) trackerCount++;
-        if (model.openTurn != null) trackerCount++;
-        if (model.raiseTurn != null) trackerCount++;
+        if (model.actTurn != null)
+            trackerCount++;
+        if (model.checkFoldTurn != null)
+            trackerCount++;
+        if (model.openTurn != null)
+            trackerCount++;
+        if (model.raiseTurn != null)
+            trackerCount++;
 
-        if (model.actRiver != null) trackerCount++;
-        if (model.checkFoldRiver != null) trackerCount++;
-        if (model.openRiver != null) trackerCount++;
-        if (model.raiseRiver != null) trackerCount++;
+        if (model.actRiver != null)
+            trackerCount++;
+        if (model.checkFoldRiver != null)
+            trackerCount++;
+        if (model.openRiver != null)
+            trackerCount++;
+        if (model.raiseRiver != null)
+            trackerCount++;
 
         assertThat(trackerCount).isEqualTo(18);
     }
 
     @Test
-    void should_HaveTwelveFloatTrackers_When_InitCalled()
-    {
+    void should_HaveTwelveFloatTrackers_When_InitCalled() {
         model.init();
 
         int trackerCount = 0;
 
         // Count tightness trackers
-        for (int i = 0; i < 6; i++)
-        {
-            if (model.tightness[i] != null) trackerCount++;
+        for (int i = 0; i < 6; i++) {
+            if (model.tightness[i] != null)
+                trackerCount++;
         }
 
         // Count aggression trackers
-        for (int i = 0; i < 6; i++)
-        {
-            if (model.aggression[i] != null) trackerCount++;
+        for (int i = 0; i < 6; i++) {
+            if (model.aggression[i] != null)
+                trackerCount++;
         }
 
         assertThat(trackerCount).isEqualTo(12);
@@ -323,8 +316,7 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_InitializePreflopTrackers_When_InitCalled()
-    {
+    void should_InitializePreflopTrackers_When_InitCalled() {
         model.init();
 
         assertThat(model.handsPaid).isNotNull();
@@ -340,8 +332,7 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_InitializeFlopTrackers_When_InitCalled()
-    {
+    void should_InitializeFlopTrackers_When_InitCalled() {
         model.init();
 
         assertThat(model.actFlop).isNotNull();
@@ -355,8 +346,7 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_InitializeTurnTrackers_When_InitCalled()
-    {
+    void should_InitializeTurnTrackers_When_InitCalled() {
         model.init();
 
         assertThat(model.actTurn).isNotNull();
@@ -370,8 +360,7 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_InitializeRiverTrackers_When_InitCalled()
-    {
+    void should_InitializeRiverTrackers_When_InitCalled() {
         model.init();
 
         assertThat(model.actRiver).isNotNull();
@@ -385,8 +374,7 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_InitializeConsistently_When_CalledMultipleTimes()
-    {
+    void should_InitializeConsistently_When_CalledMultipleTimes() {
         model.init();
         int firstHandsPlayed = model.handsPlayed;
         FloatTracker firstTightness = model.tightness[0];
@@ -400,19 +388,16 @@ class OpponentModelTest
     }
 
     @Test
-    void should_NotHaveNullTrackers_When_InitCompletes()
-    {
+    void should_NotHaveNullTrackers_When_InitCompletes() {
         model.init();
 
         // Check all tightness trackers
-        for (int i = 0; i < 6; i++)
-        {
+        for (int i = 0; i < 6; i++) {
             assertThat(model.tightness[i]).as("tightness[%d]", i).isNotNull();
         }
 
         // Check all aggression trackers
-        for (int i = 0; i < 6; i++)
-        {
+        for (int i = 0; i < 6; i++) {
             assertThat(model.aggression[i]).as("aggression[%d]", i).isNotNull();
         }
     }
@@ -422,11 +407,9 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_HandleMultipleInitCalls_When_CalledRepeatedly()
-    {
+    void should_HandleMultipleInitCalls_When_CalledRepeatedly() {
         // Initialize multiple times
-        for (int i = 0; i < 5; i++)
-        {
+        for (int i = 0; i < 5; i++) {
             model.init();
             assertThat(model.handsPlayed).isZero();
             assertThat(model.tightness[0]).isNotNull();
@@ -434,8 +417,7 @@ class OpponentModelTest
     }
 
     @Test
-    void should_InitializeOverbetPotFlagToFalse_When_InitCalled()
-    {
+    void should_InitializeOverbetPotFlagToFalse_When_InitCalled() {
         model.overbetPotPostFlop = true;
         model.init();
 
@@ -450,16 +432,14 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_ReturnZero_When_NoHandsPlayed()
-    {
+    void should_ReturnZero_When_NoHandsPlayed() {
         model.init();
 
         assertThat(model.getHandsPlayed()).isZero();
     }
 
     @Test
-    void should_ReturnHandsPlayed_When_HandsPlayedSet()
-    {
+    void should_ReturnHandsPlayed_When_HandsPlayedSet() {
         model.init();
         model.handsPlayed = 42;
 
@@ -471,8 +451,7 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_ReturnDefaultValue_When_TightnessNotReady()
-    {
+    void should_ReturnDefaultValue_When_TightnessNotReady() {
         model.init();
 
         float result = model.getPreFlopTightness(POSITION_EARLY, 0.5f);
@@ -481,13 +460,11 @@ class OpponentModelTest
     }
 
     @Test
-    void should_ReturnOverallTightness_When_PositionTrackerNotReady()
-    {
+    void should_ReturnOverallTightness_When_PositionTrackerNotReady() {
         model.init();
 
         // Add enough entries to overall tracker (index 0) to make it ready
-        for (int i = 0; i < 15; i++)
-        {
+        for (int i = 0; i < 15; i++) {
             model.tightness[0].addEntry(0.7f);
         }
 
@@ -498,13 +475,11 @@ class OpponentModelTest
     }
 
     @Test
-    void should_ReturnPositionTightness_When_PositionTrackerReady()
-    {
+    void should_ReturnPositionTightness_When_PositionTrackerReady() {
         model.init();
 
         // Make position tracker ready with specific value
-        for (int i = 0; i < 15; i++)
-        {
+        for (int i = 0; i < 15; i++) {
             model.tightness[1].addEntry(0.9f); // POSITION_EARLY = index 1
         }
 
@@ -514,8 +489,7 @@ class OpponentModelTest
     }
 
     @Test
-    void should_HandleAllPositions_When_GettingTightness()
-    {
+    void should_HandleAllPositions_When_GettingTightness() {
         model.init();
 
         // Test all position constants
@@ -534,8 +508,7 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_ReturnDefaultValue_When_AggressionNotReady()
-    {
+    void should_ReturnDefaultValue_When_AggressionNotReady() {
         model.init();
 
         float result = model.getPreFlopAggression(POSITION_MIDDLE, 0.3f);
@@ -544,13 +517,11 @@ class OpponentModelTest
     }
 
     @Test
-    void should_ReturnOverallAggression_When_PositionTrackerNotReady()
-    {
+    void should_ReturnOverallAggression_When_PositionTrackerNotReady() {
         model.init();
 
         // Add enough entries to overall tracker to make it ready
-        for (int i = 0; i < 10; i++)
-        {
+        for (int i = 0; i < 10; i++) {
             model.aggression[0].addEntry(0.8f);
         }
 
@@ -560,13 +531,11 @@ class OpponentModelTest
     }
 
     @Test
-    void should_ReturnPositionAggression_When_PositionTrackerReady()
-    {
+    void should_ReturnPositionAggression_When_PositionTrackerReady() {
         model.init();
 
         // Make late position tracker ready
-        for (int i = 0; i < 10; i++)
-        {
+        for (int i = 0; i < 10; i++) {
             model.aggression[3].addEntry(0.6f); // POSITION_LATE = index 3
         }
 
@@ -580,8 +549,7 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_ReturnDefaultValue_When_ActFlopNotReady()
-    {
+    void should_ReturnDefaultValue_When_ActFlopNotReady() {
         model.init();
 
         float result = model.getActPostFlop(HoldemHand.ROUND_FLOP, 0.4f);
@@ -590,13 +558,11 @@ class OpponentModelTest
     }
 
     @Test
-    void should_ReturnActPercent_When_ActFlopReady()
-    {
+    void should_ReturnActPercent_When_ActFlopReady() {
         model.init();
 
         // Add entries to make tracker ready
-        for (int i = 0; i < 10; i++)
-        {
+        for (int i = 0; i < 10; i++) {
             model.actFlop.addEntry(i % 2 == 0); // 50% true
         }
 
@@ -606,12 +572,10 @@ class OpponentModelTest
     }
 
     @Test
-    void should_ReturnActTurnPercent_When_ActTurnReady()
-    {
+    void should_ReturnActTurnPercent_When_ActTurnReady() {
         model.init();
 
-        for (int i = 0; i < 10; i++)
-        {
+        for (int i = 0; i < 10; i++) {
             model.actTurn.addEntry(true);
         }
 
@@ -621,12 +585,10 @@ class OpponentModelTest
     }
 
     @Test
-    void should_ReturnActRiverPercent_When_ActRiverReady()
-    {
+    void should_ReturnActRiverPercent_When_ActRiverReady() {
         model.init();
 
-        for (int i = 0; i < 10; i++)
-        {
+        for (int i = 0; i < 10; i++) {
             model.actRiver.addEntry(false);
         }
 
@@ -636,12 +598,10 @@ class OpponentModelTest
     }
 
     @Test
-    void should_ThrowException_When_InvalidRoundForAct()
-    {
+    void should_ThrowException_When_InvalidRoundForAct() {
         model.init();
 
-        assertThatThrownBy(() -> model.getActPostFlop(HoldemHand.ROUND_PRE_FLOP, 0.5f))
-            .isInstanceOf(Exception.class);
+        assertThatThrownBy(() -> model.getActPostFlop(HoldemHand.ROUND_PRE_FLOP, 0.5f)).isInstanceOf(Exception.class);
     }
 
     // ========================================
@@ -649,8 +609,7 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_ReturnDefaultValue_When_OpenFlopNotReady()
-    {
+    void should_ReturnDefaultValue_When_OpenFlopNotReady() {
         model.init();
 
         float result = model.getOpenPostFlop(HoldemHand.ROUND_FLOP, 0.3f);
@@ -659,12 +618,10 @@ class OpponentModelTest
     }
 
     @Test
-    void should_ReturnOpenPercent_When_OpenFlopReady()
-    {
+    void should_ReturnOpenPercent_When_OpenFlopReady() {
         model.init();
 
-        for (int i = 0; i < 10; i++)
-        {
+        for (int i = 0; i < 10; i++) {
             model.openFlop.addEntry(true);
         }
 
@@ -674,12 +631,10 @@ class OpponentModelTest
     }
 
     @Test
-    void should_ThrowException_When_InvalidRoundForOpen()
-    {
+    void should_ThrowException_When_InvalidRoundForOpen() {
         model.init();
 
-        assertThatThrownBy(() -> model.getOpenPostFlop(99, 0.5f))
-            .isInstanceOf(Exception.class);
+        assertThatThrownBy(() -> model.getOpenPostFlop(99, 0.5f)).isInstanceOf(Exception.class);
     }
 
     // ========================================
@@ -687,8 +642,7 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_ReturnDefaultValue_When_RaiseFlopNotReady()
-    {
+    void should_ReturnDefaultValue_When_RaiseFlopNotReady() {
         model.init();
 
         float result = model.getRaisePostFlop(HoldemHand.ROUND_FLOP, 0.2f);
@@ -697,12 +651,10 @@ class OpponentModelTest
     }
 
     @Test
-    void should_ReturnRaisePercent_When_RaiseFlopReady()
-    {
+    void should_ReturnRaisePercent_When_RaiseFlopReady() {
         model.init();
 
-        for (int i = 0; i < 10; i++)
-        {
+        for (int i = 0; i < 10; i++) {
             model.raiseFlop.addEntry(i < 3); // 30% true
         }
 
@@ -713,12 +665,10 @@ class OpponentModelTest
     }
 
     @Test
-    void should_ThrowException_When_InvalidRoundForRaise()
-    {
+    void should_ThrowException_When_InvalidRoundForRaise() {
         model.init();
 
-        assertThatThrownBy(() -> model.getRaisePostFlop(-1, 0.5f))
-            .isInstanceOf(Exception.class);
+        assertThatThrownBy(() -> model.getRaisePostFlop(-1, 0.5f)).isInstanceOf(Exception.class);
     }
 
     // ========================================
@@ -726,8 +676,7 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_ReturnDefaultValue_When_CheckFoldFlopNotReady()
-    {
+    void should_ReturnDefaultValue_When_CheckFoldFlopNotReady() {
         model.init();
 
         float result = model.getCheckFoldPostFlop(HoldemHand.ROUND_FLOP, 0.6f);
@@ -736,12 +685,10 @@ class OpponentModelTest
     }
 
     @Test
-    void should_ReturnCheckFoldPercent_When_CheckFoldFlopReady()
-    {
+    void should_ReturnCheckFoldPercent_When_CheckFoldFlopReady() {
         model.init();
 
-        for (int i = 0; i < 10; i++)
-        {
+        for (int i = 0; i < 10; i++) {
             model.checkFoldFlop.addEntry(i < 7); // 70% true
         }
 
@@ -751,12 +698,10 @@ class OpponentModelTest
     }
 
     @Test
-    void should_ThrowException_When_InvalidRoundForCheckFold()
-    {
+    void should_ThrowException_When_InvalidRoundForCheckFold() {
         model.init();
 
-        assertThatThrownBy(() -> model.getCheckFoldPostFlop(100, 0.5f))
-            .isInstanceOf(Exception.class);
+        assertThatThrownBy(() -> model.getCheckFoldPostFlop(100, 0.5f)).isInstanceOf(Exception.class);
     }
 
     // ========================================
@@ -764,8 +709,7 @@ class OpponentModelTest
     // ========================================
 
     @Test
-    void should_SaveHandsPlayed_When_SaveToMapCalled()
-    {
+    void should_SaveHandsPlayed_When_SaveToMapCalled() {
         model.init();
         model.handsPlayed = 123;
 
@@ -776,8 +720,7 @@ class OpponentModelTest
     }
 
     @Test
-    void should_SaveAllTrackers_When_SaveToMapCalled()
-    {
+    void should_SaveAllTrackers_When_SaveToMapCalled() {
         model.init();
 
         DMTypedHashMap map = new DMTypedHashMap();
@@ -792,8 +735,7 @@ class OpponentModelTest
     }
 
     @Test
-    void should_LoadHandsPlayed_When_LoadFromMapCalled()
-    {
+    void should_LoadHandsPlayed_When_LoadFromMapCalled() {
         model.init();
 
         DMTypedHashMap map = new DMTypedHashMap();
@@ -805,14 +747,12 @@ class OpponentModelTest
     }
 
     @Test
-    void should_RoundTripSuccessfully_When_SaveAndLoad()
-    {
+    void should_RoundTripSuccessfully_When_SaveAndLoad() {
         model.init();
         model.handsPlayed = 789;
 
         // Add some data to trackers
-        for (int i = 0; i < 15; i++)
-        {
+        for (int i = 0; i < 15; i++) {
             model.tightness[0].addEntry(0.5f);
             model.aggression[0].addEntry(0.3f);
         }
@@ -828,8 +768,7 @@ class OpponentModelTest
     }
 
     @Test
-    void should_HandleEmptyPrefix_When_SaveToMap()
-    {
+    void should_HandleEmptyPrefix_When_SaveToMap() {
         model.init();
         model.handsPlayed = 50;
 
@@ -840,8 +779,7 @@ class OpponentModelTest
     }
 
     @Test
-    void should_SaveOverbetFlag_When_SaveToMapCalled()
-    {
+    void should_SaveOverbetFlag_When_SaveToMapCalled() {
         model.init();
         model.overbetPotPostFlop = true;
 
@@ -852,8 +790,7 @@ class OpponentModelTest
     }
 
     @Test
-    void should_LoadOverbetFlag_When_LoadFromMapCalled()
-    {
+    void should_LoadOverbetFlag_When_LoadFromMapCalled() {
         model.init();
 
         DMTypedHashMap map = new DMTypedHashMap();
@@ -868,8 +805,7 @@ class OpponentModelTest
     // endHand Integration Tests
     // ========================================
 
-    private PokerGame createTestGame()
-    {
+    private PokerGame createTestGame() {
         PokerGame game = new PokerGame(null);
         TournamentProfile profile = new TournamentProfile("test");
         profile.setBuyinChips(1500);
@@ -877,15 +813,13 @@ class OpponentModelTest
         return game;
     }
 
-    private PokerTable createTestTable(PokerGame game)
-    {
+    private PokerTable createTestTable(PokerGame game) {
         PokerTable table = new PokerTable(game, 1);
         table.setMinChip(1);
         return table;
     }
 
-    private PokerPlayer createTestPlayer(int id, String name, PokerGame game, PokerTable table, int seat)
-    {
+    private PokerPlayer createTestPlayer(int id, String name, PokerGame game, PokerTable table, int seat) {
         PokerPlayer player = new PokerPlayer(id, name, true);
         player.setChipCount(1000);
         game.addPlayer(player);
@@ -895,8 +829,7 @@ class OpponentModelTest
     }
 
     @Test
-    void should_IncrementHandsPlayed_When_EndHandCalled()
-    {
+    void should_IncrementHandsPlayed_When_EndHandCalled() {
         model.init();
         PokerGame game = createTestGame();
         PokerTable table = createTestTable(game);
@@ -917,8 +850,7 @@ class OpponentModelTest
     }
 
     @Test
-    void should_TrackPreFlopFold_When_PlayerFoldedPreFlop()
-    {
+    void should_TrackPreFlopFold_When_PlayerFoldedPreFlop() {
         model.init();
         PokerGame game = createTestGame();
         PokerTable table = createTestTable(game);
@@ -944,8 +876,7 @@ class OpponentModelTest
     }
 
     @Test
-    void should_TrackPreFlopRaise_When_PlayerRaisedPreFlop()
-    {
+    void should_TrackPreFlopRaise_When_PlayerRaisedPreFlop() {
         model.init();
         PokerGame game = createTestGame();
         PokerTable table = createTestTable(game);
@@ -973,8 +904,7 @@ class OpponentModelTest
     }
 
     @Test
-    void should_TrackPreFlopCall_When_PlayerCalledPreFlop()
-    {
+    void should_TrackPreFlopCall_When_PlayerCalledPreFlop() {
         model.init();
         PokerGame game = createTestGame();
         PokerTable table = createTestTable(game);
@@ -1002,8 +932,7 @@ class OpponentModelTest
     }
 
     @Test
-    void should_TrackFlopAction_When_PlayerActedOnFlop()
-    {
+    void should_TrackFlopAction_When_PlayerActedOnFlop() {
         model.init();
         PokerGame game = createTestGame();
         PokerTable table = createTestTable(game);
@@ -1029,8 +958,7 @@ class OpponentModelTest
     }
 
     @Test
-    void should_TrackCheckFold_When_PlayerCheckedFlop()
-    {
+    void should_TrackCheckFold_When_PlayerCheckedFlop() {
         model.init();
         PokerGame game = createTestGame();
         PokerTable table = createTestTable(game);
@@ -1056,8 +984,7 @@ class OpponentModelTest
     }
 
     @Test
-    void should_HandleMultipleRounds_When_PlayerActsOnTurnAndRiver()
-    {
+    void should_HandleMultipleRounds_When_PlayerActsOnTurnAndRiver() {
         model.init();
         PokerGame game = createTestGame();
         PokerTable table = createTestTable(game);
@@ -1093,8 +1020,7 @@ class OpponentModelTest
     }
 
     @Test
-    void should_NotCrash_When_NoActionsInHand()
-    {
+    void should_NotCrash_When_NoActionsInHand() {
         model.init();
         PokerGame game = createTestGame();
         PokerTable table = createTestTable(game);
@@ -1109,16 +1035,14 @@ class OpponentModelTest
         hand.advanceRound();
 
         // Call endHand with no actions
-        assertThatCode(() -> model.endHand(null, hand, player))
-            .doesNotThrowAnyException();
+        assertThatCode(() -> model.endHand(null, hand, player)).doesNotThrowAnyException();
 
         // Verify handsPlayed still incremented
         assertThat(model.getHandsPlayed()).isEqualTo(1);
     }
 
     @Test
-    void should_ResetOverbetFlag_When_EndHandCompletes()
-    {
+    void should_ResetOverbetFlag_When_EndHandCompletes() {
         model.init();
         model.overbetPotPostFlop = true;
 

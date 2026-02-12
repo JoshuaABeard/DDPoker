@@ -24,34 +24,42 @@ import com.donohoedigital.games.engine.GameEngine;
 import java.lang.reflect.Field;
 
 /**
- * Minimal GameEngine mock for integration tests.
- * Provides just enough functionality to test poker game logic without requiring
- * full GUI infrastructure.
+ * Minimal GameEngine mock for integration tests. Provides just enough
+ * functionality to test poker game logic without requiring full GUI
+ * infrastructure.
  *
- * <p>This mock allows integration tests to:</p>
+ * <p>
+ * This mock allows integration tests to:
+ * </p>
  * <ul>
- *   <li>Call GameEngine.getGameEngine() without NPE</li>
- *   <li>Run tests in headless mode without GUI components</li>
+ * <li>Call GameEngine.getGameEngine() without NPE</li>
+ * <li>Run tests in headless mode without GUI components</li>
  * </ul>
  *
- * <p><strong>Important:</strong> This is a minimal mock. It does NOT provide:</p>
+ * <p>
+ * <strong>Important:</strong> This is a minimal mock. It does NOT provide:
+ * </p>
  * <ul>
- *   <li>Actual GUI components or windows</li>
- *   <li>Event processing or phase management</li>
- *   <li>Full game engine initialization</li>
+ * <li>Actual GUI components or windows</li>
+ * <li>Event processing or phase management</li>
+ * <li>Full game engine initialization</li>
  * </ul>
  *
- * <p>Use {@link IntegrationTestBase} to automatically set up and tear down this mock.</p>
+ * <p>
+ * Use {@link IntegrationTestBase} to automatically set up and tear down this
+ * mock.
+ * </p>
  */
 public class MockGameEngine {
 
     private static GameEngine mockInstance;
 
     /**
-     * Initialize mock GameEngine for testing.
-     * Sets the GameEngine singleton to a minimal mock instance.
+     * Initialize mock GameEngine for testing. Sets the GameEngine singleton to a
+     * minimal mock instance.
      *
-     * @throws RuntimeException if reflection fails to set singleton
+     * @throws RuntimeException
+     *             if reflection fails to set singleton
      */
     public static void initializeForTesting() {
         if (mockInstance != null) {
@@ -78,10 +86,11 @@ public class MockGameEngine {
     }
 
     /**
-     * Reset mock GameEngine after testing.
-     * Clears the GameEngine singleton to prevent test pollution.
+     * Reset mock GameEngine after testing. Clears the GameEngine singleton to
+     * prevent test pollution.
      *
-     * @throws RuntimeException if reflection fails to clear singleton
+     * @throws RuntimeException
+     *             if reflection fails to clear singleton
      */
     public static void resetForTesting() {
         try {
@@ -95,8 +104,8 @@ public class MockGameEngine {
     }
 
     /**
-     * Get the mock GameEngine instance.
-     * Useful for verifying the mock is initialized correctly.
+     * Get the mock GameEngine instance. Useful for verifying the mock is
+     * initialized correctly.
      *
      * @return the mock GameEngine instance, or null if not initialized
      */

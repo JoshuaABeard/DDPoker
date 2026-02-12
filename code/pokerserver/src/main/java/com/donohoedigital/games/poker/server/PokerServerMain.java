@@ -42,8 +42,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 public class PokerServerMain {
     private static final Logger logger = LogManager.getLogger(PokerServerMain.class);
 
-    public static void main(String[] argv)
-    {
+    public static void main(String[] argv) {
         LoggingConfig loggingConfig = new LoggingConfig("poker", ApplicationType.SERVER);
         loggingConfig.init();
 
@@ -53,7 +52,8 @@ public class PokerServerMain {
         logger.info("Version: {}", PokerConstants.VERSION);
         logger.info("========================================");
 
-        // create application context (spring creates everything, including the "server" bean, calling init())
+        // create application context (spring creates everything, including the "server"
+        // bean, calling init())
         new ClassPathXmlApplicationContext("app-context-pokerserver.xml");
     }
 }

@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -46,29 +46,47 @@ import com.donohoedigital.p2p.P2PURL;
 /**
  * @author Doug Donohoe
  */
-public class PokerConstants
-{
+public class PokerConstants {
     // version of Poker
-    //public static Version VERSION = new Version(1, 0, true, 8, false, 0, false); // beta
-    //public static Version VERSION = new Version(1, 0, false, 0, true, 1, false); // demo 1
-    //public static Version VERSION = new Version(1, 0, false); // release 1.0 CD
-    //public static Version VERSION = new Version(1, 0, true); // release 1.0 download
-    //public static Version VERSION = new Version(1, 1, false); // release 1.1 CD
-    //public static Version VERSION = new Version(1, 1, true); // release 1.1 download
-    //public static Version VERSION = new Version(1, 2, false, 0, true, 1, false); // release 1.2 demo 1
-    //public static Version VERSION = new Version(1, 2, true); // release 1.2 - Patch 2
-    //public static Version VERSION = new Version(Version.TYPE_BETA, 2, 0, 6, 4, true); // release 2.0 - Beta 6, Patch 4
-    //public static final Version VERSION = new Version(2, 5, 3, true); // release 2.5 - Patch 3
-    //public static final Version VERSION = new Version(3, 0, 5, true); // release 3.0, Patch 5
-    //public static final Version VERSION = new Version(3, 0, 6, true); // release 3.0, Patch 6
-    //public static final Version VERSION = new Version(3, 1, 0, true); // release 3.1 (open sourced!)
-    //public static final Version VERSION = new Version(3, 1, 1, true); // release 3.1.1 (add Windows installer)
-    //public static final Version VERSION = new Version(3, 1, 2, true); // release 3.1.2 (dependency updates)
-    //public static final Version VERSION = new Version(3, 1, 3, true); // release 3.1.3 (Java 11, dependency updates)
-    //public static final Version VERSION = new Version(3, 1, 4, true); // release 3.1.4 (Java 17, dependency updates)
-    //public static final Version VERSION = new Version(3, 1, 5, true); // release 3.1.5 (Java 21, dependency updates)
-    //public static final Version VERSION = new Version(3, 1, 6, true); // release 3.1.6 (Java 25, dependency updates)
-    public static final Version VERSION = new Version(3, 3, 0, true, " Community Edition"); // release 3.3.0 Community Edition (file-based JSON configuration)
+    // public static Version VERSION = new Version(1, 0, true, 8, false, 0, false);
+    // // beta
+    // public static Version VERSION = new Version(1, 0, false, 0, true, 1, false);
+    // // demo 1
+    // public static Version VERSION = new Version(1, 0, false); // release 1.0 CD
+    // public static Version VERSION = new Version(1, 0, true); // release 1.0
+    // download
+    // public static Version VERSION = new Version(1, 1, false); // release 1.1 CD
+    // public static Version VERSION = new Version(1, 1, true); // release 1.1
+    // download
+    // public static Version VERSION = new Version(1, 2, false, 0, true, 1, false);
+    // // release 1.2 demo 1
+    // public static Version VERSION = new Version(1, 2, true); // release 1.2 -
+    // Patch 2
+    // public static Version VERSION = new Version(Version.TYPE_BETA, 2, 0, 6, 4,
+    // true); // release 2.0 - Beta 6, Patch 4
+    // public static final Version VERSION = new Version(2, 5, 3, true); // release
+    // 2.5 - Patch 3
+    // public static final Version VERSION = new Version(3, 0, 5, true); // release
+    // 3.0, Patch 5
+    // public static final Version VERSION = new Version(3, 0, 6, true); // release
+    // 3.0, Patch 6
+    // public static final Version VERSION = new Version(3, 1, 0, true); // release
+    // 3.1 (open sourced!)
+    // public static final Version VERSION = new Version(3, 1, 1, true); // release
+    // 3.1.1 (add Windows installer)
+    // public static final Version VERSION = new Version(3, 1, 2, true); // release
+    // 3.1.2 (dependency updates)
+    // public static final Version VERSION = new Version(3, 1, 3, true); // release
+    // 3.1.3 (Java 11, dependency updates)
+    // public static final Version VERSION = new Version(3, 1, 4, true); // release
+    // 3.1.4 (Java 17, dependency updates)
+    // public static final Version VERSION = new Version(3, 1, 5, true); // release
+    // 3.1.5 (Java 21, dependency updates)
+    // public static final Version VERSION = new Version(3, 1, 6, true); // release
+    // 3.1.6 (Java 25, dependency updates)
+    public static final Version VERSION = new Version(3, 3, 0, true, " Community Edition"); // release 3.3.0 Community
+                                                                                            // Edition (file-based JSON
+                                                                                            // configuration)
 
     // OS versions (can be different if specific patches released)
     public static final Version LATEST_MAC = VERSION;
@@ -86,19 +104,21 @@ public class PokerConstants
     public static final Version VERSION_LAST_COMPAT = new Version(3, 0, 4, true);
 
     // get start of license keys
-    public static int getKeyStart()
-    {
+    public static int getKeyStart() {
         return getKeyStart(VERSION);
     }
 
     // get start
-    public static int getKeyStart(Version version)
-    {
+    public static int getKeyStart(Version version) {
         if (version.isBeta() || version.isAlpha())
-            return 22; // Poker Beta 1.0 used 20; Poker Alpha/Beta 2.0 used 19; Poker 3.0 didn't use alpha/beta
-        else if (version.getMajor() == 1) return 21; // POKER (2nd game), Version 1
-        else if (version.getMajor() == 2) return 22; // POKER (2nd game), Version 2
-        else return 23; // POKER (2nd game), Version 3
+            return 22; // Poker Beta 1.0 used 20; Poker Alpha/Beta 2.0 used 19; Poker 3.0 didn't use
+                        // alpha/beta
+        else if (version.getMajor() == 1)
+            return 21; // POKER (2nd game), Version 1
+        else if (version.getMajor() == 2)
+            return 22; // POKER (2nd game), Version 2
+        else
+            return 23; // POKER (2nd game), Version 3
     }
 
     // used with dummy profiles in wan_profile table
@@ -109,7 +129,7 @@ public class PokerConstants
     // territories start at 6000 (see gameboard.xml),
     // observers start at 7000 and tables at 8000
     public static final int START_OBSERVER_ID = 7000;
-    public static final int START_TABLE_ID = 8000;  // 5600+ / 2 per table = 2800+ tables.
+    public static final int START_TABLE_ID = 8000; // 5600+ / 2 per table = 2800+ tables.
     public static final int START_OTHER_ID = 11000; // so start OTHER_ID at 11000
 
     // format
@@ -117,8 +137,7 @@ public class PokerConstants
     public static final Format fTimeNum2 = new Format("%02d");
     public static final Format fPerc = new Format("%3.2f");
 
-    public static String formatPercent(double pct)
-    {
+    public static String formatPercent(double pct) {
         return fPerc.form(pct);
     }
 
@@ -188,14 +207,14 @@ public class PokerConstants
     public static final String PREF_LAST_JOIN = "lastjoin";
 
     // dealer chat options
-    public static final int DEALER_NONE = 1;         // show none
+    public static final int DEALER_NONE = 1; // show none
     public static final int DEALER_NO_PLAYER_ACTION = 2; // show CHAT_1 only
-    public static final int DEALER_ALL = 3;          // show CHAT_1 and CHAT_2
+    public static final int DEALER_ALL = 3; // show CHAT_1 and CHAT_2
 
     // display chat options
-    public static final int DISPLAY_ONE = 1;         // one chat window
-    public static final int DISPLAY_TAB = 2;         // tabbed chat
-    public static final int DISPLAY_SPLIT = 3;       // split chat
+    public static final int DISPLAY_ONE = 1; // one chat window
+    public static final int DISPLAY_TAB = 2; // tabbed chat
+    public static final int DISPLAY_SPLIT = 3; // split chat
 
     // dealer chat levles
     public static final int CHAT_PRIVATE = -1;
@@ -252,16 +271,10 @@ public class PokerConstants
     public static final String URL_START = "poker" + P2PURL.PROTOCOL_DELIM;
     public static final String ID_PASS_DELIM = "/";
     public static final String REGEXP_DOLLAR_AMOUNT = "^\\$?[0-9\\,]*$";
-    public static final String REGEXP_IP_ADDRESS =
-            "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b";
-    public static final String REGEXP_GAME_URL = URL_START +
-                                                 REGEXP_IP_ADDRESS +
-                                                 P2PURL.PORT_DELIM +
-                                                 "\\d{1,5}" + // port
-                                                 P2PURL.URI_DELIM +
-                                                 '(' + ONLINE_GAME_PREFIX_TCP + '|' + ONLINE_GAME_PREFIX_UDP + ')' + "\\d{1,5}" + // gameid
-                                                 ID_PASS_DELIM +
-                                                 "[A-NP-Z]{3}-[1-9]{3}"; // password
+    public static final String REGEXP_IP_ADDRESS = "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b";
+    public static final String REGEXP_GAME_URL = URL_START + REGEXP_IP_ADDRESS + P2PURL.PORT_DELIM + "\\d{1,5}" + // port
+            P2PURL.URI_DELIM + '(' + ONLINE_GAME_PREFIX_TCP + '|' + ONLINE_GAME_PREFIX_UDP + ')' + "\\d{1,5}" + // gameid
+            ID_PASS_DELIM + "[A-NP-Z]{3}-[1-9]{3}"; // password
 
     // join game file information
     public static final String CONTENT_TYPE_JOIN = "application/x-ddpoker-join";
@@ -283,21 +296,19 @@ public class PokerConstants
 
     // get string representation of chat admin type
 
-    public static String toStringAdminType(int n)
-    {
-        switch (n)
-        {
-            case CHAT_ADMIN_MSG:
+    public static String toStringAdminType(int n) {
+        switch (n) {
+            case CHAT_ADMIN_MSG :
                 return "message";
-            case CHAT_ADMIN_JOIN:
+            case CHAT_ADMIN_JOIN :
                 return "join";
-            case CHAT_ADMIN_LEAVE:
+            case CHAT_ADMIN_LEAVE :
                 return "leave";
-            case CHAT_ADMIN_WELCOME:
+            case CHAT_ADMIN_WELCOME :
                 return "welcome";
-            case CHAT_ADMIN_ERROR:
+            case CHAT_ADMIN_ERROR :
                 return "error";
-            default:
+            default :
                 return "unknown-" + n;
         }
     }

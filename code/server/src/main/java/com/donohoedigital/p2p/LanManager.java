@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -49,8 +49,7 @@ import java.util.*;
 /**
  * @author donohoe
  */
-public class LanManager implements DDMessageListener
-{
+public class LanManager implements DDMessageListener {
     static Logger logger = LogManager.getLogger(LanManager.class);
 
     private static final boolean DEBUG = false;
@@ -73,8 +72,7 @@ public class LanManager implements DDMessageListener
     /**
      * Creates a new instance of LanManager
      */
-    public LanManager(LanControllerInterface controller)
-    {
+    public LanManager(LanControllerInterface controller) {
         // controller
         controller_ = controller;
         ApplicationError.assertNotNull(controller_, "No controller");
@@ -87,94 +85,73 @@ public class LanManager implements DDMessageListener
         key_ = controller.getPlayerId();
 
         // our host
-        try
-        {
+        try {
             InetAddress local = InetAddress.getLocalHost();
             sLocalHost_ = local.getHostName();
             sLocalIP_ = local.getHostAddress();
 
             // strip ".local" at end of mac host name
-            if (Utils.ISMAC)
-            {
+            if (Utils.ISMAC) {
                 sLocalHost_ = sLocalHost_.replaceAll("\\.local$", "");
             }
-        }
-        catch (UnknownHostException uhe)
-        {
+        } catch (UnknownHostException uhe) {
             StringTokenizer st = new StringTokenizer(uhe.getMessage(), ":");
-            if (st.hasMoreTokens())
-            {
+            if (st.hasMoreTokens()) {
                 sLocalHost_ = st.nextToken();
                 logger.warn("Unable to determine local host name, guessing it is: " + sLocalHost_);
-            }
-            else
-            {
+            } else {
                 logger.warn("Unable to determine local host name: " + uhe.getMessage());
                 sLocalHost_ = "[unknown]";
             }
 
             // try and determine local IP from network interface
-            try
-            {
+            try {
                 // default to loopback addr
                 sLocalIP_ = "127.0.0.1";
 
                 // loop over all IPs
                 Enumeration<NetworkInterface> enu = NetworkInterface.getNetworkInterfaces();
-                while (enu.hasMoreElements())
-                {
+                while (enu.hasMoreElements()) {
                     Enumeration<InetAddress> ias = enu.nextElement().getInetAddresses();
-                    while (ias.hasMoreElements())
-                    {
+                    while (ias.hasMoreElements()) {
                         // if an IP4 (non loopback), add it to list
                         InetAddress i = ias.nextElement();
-                        if (i instanceof Inet4Address)
-                        {
-                            if (i.isLoopbackAddress()) continue;
+                        if (i instanceof Inet4Address) {
+                            if (i.isLoopbackAddress())
+                                continue;
                             sLocalIP_ = i.getHostAddress();
                         }
                     }
                 }
 
                 logger.warn("Local ip set to: " + sLocalIP_);
-            }
-            catch (Throwable ignored)
-            {
+            } catch (Throwable ignored) {
             }
         }
     }
 
     /**
-     * Start the multicast listener, send HELLO message and
-     * then start alive thread for periodic alive messages
+     * Start the multicast listener, send HELLO message and then start alive thread
+     * for periodic alive messages
      */
-    public void start()
-    {
+    public void start() {
         // create alive thread
         alive_ = new Alive();
 
         // create and start multicast listener
-        try
-        {
+        try {
             multi_ = new Peer2PeerMulticast();
             multi_.addDDMessageListener(this);
             multi_.start();
-        }
-        catch (ApplicationError ae)
-        {
-            if (ae.getException() != null && ae.getException().getMessage() != null &&
-                ae.getException().getMessage().contains("error setting options"))
-            {
+        } catch (ApplicationError ae) {
+            if (ae.getException() != null && ae.getException().getMessage() != null
+                    && ae.getException().getMessage().contains("error setting options")) {
                 logger.debug("Unable to start Peer2PeerMulticast (error setting options), local ip: " + sLocalIP_);
-            }
-            else
-            {
+            } else {
                 logger.error("Unable to start Peer2PeerMulticast: " + Utils.formatExceptionText(ae));
             }
             return;
-        }
-        catch (Throwable t)
-        {
+        } catch (Throwable t) {
             logger.error("Unable to start Peer2PeerMulticast: " + Utils.formatExceptionText(t));
             return;
         }
@@ -192,34 +169,31 @@ public class LanManager implements DDMessageListener
     /**
      * Get ip
      */
-    public String getIP()
-    {
+    public String getIP() {
         return sLocalIP_;
     }
 
     /**
      * Get time alive in millis
      */
-    public long getTimeAlive()
-    {
+    public long getTimeAlive() {
         return System.currentTimeMillis() - startTime_;
     }
 
     /**
-     * Get list of clients on LAN.  You can add LanListener to
-     * this to get notification of changes to the list.
+     * Get list of clients on LAN. You can add LanListener to this to get
+     * notification of changes to the list.
      */
-    public LanClientList getList()
-    {
+    public LanClientList getList() {
         return clients_;
     }
 
     /**
      * Send message of given category
      */
-    public void sendMessage(int nCategory)
-    {
-        if (DEBUG) logger.debug("Sending message: " + LanClientList.toString(nCategory));
+    public void sendMessage(int nCategory) {
+        if (DEBUG)
+            logger.debug("Sending message: " + LanClientList.toString(nCategory));
 
         LanClientInfo info = new LanClientInfo(nCategory);
         info.setHostName(sLocalHost_);
@@ -229,16 +203,11 @@ public class LanManager implements DDMessageListener
         info.setAliveMillis(getTimeAlive());
         info.setGameData(controller_.getOnlineGame());
 
-        try
-        {
+        try {
             multi_.send(info.getData());
-        }
-        catch (ApplicationError e)
-        {
+        } catch (ApplicationError e) {
             logger.error("Send error: " + e.toString());
-        }
-        catch (Throwable t)
-        {
+        } catch (Throwable t) {
             logger.error("Send error: " + Utils.formatExceptionText(t));
         }
     }
@@ -246,55 +215,40 @@ public class LanManager implements DDMessageListener
     /**
      * message received
      */
-    public void messageReceived(DDMessage message)
-    {
+    public void messageReceived(DDMessage message) {
         LanClientInfo info = new LanClientInfo(message);
 
         // validate key
-        if (!controller_.isValid(info.getData()))
-        {
+        if (!controller_.isValid(info.getData())) {
             logger.error("Invalid key: " + info);
             return;
         }
 
         // get GUID
         String guid = info.getGuid();
-        if (guid == null)
-        {
+        if (guid == null) {
             logger.error("Missing GUID: " + info);
             return;
         }
 
         // ignore our own messages
-        if (guid.equals(guid_)) return;
+        if (guid.equals(guid_))
+            return;
 
         // check for duplicate key or another copy on same machine
         String sKey = info.getKey();
         String sIP = info.getIP();
-        if ((sIP.equals(sLocalIP_) || sKey.equals(key_)) && !controller_.allowDuplicate())
-        {
+        if ((sIP.equals(sLocalIP_) || sKey.equals(key_)) && !controller_.allowDuplicate()) {
             long time = info.getAliveMillis();
-            if (getTimeAlive() < time)
-            {
-                if (sKey.equals(key_))
-                {
+            if (getTimeAlive() < time) {
+                if (sKey.equals(key_)) {
                     // notify user of duplicate
-                    controller_.handleDuplicateKey(
-                            info.getPlayerName(),
-                            info.getHostName(),
-                            info.getIP());
-                }
-                else
-                {
+                    controller_.handleDuplicateKey(info.getPlayerName(), info.getHostName(), info.getIP());
+                } else {
                     // notify user of duplicate
-                    controller_.handleDuplicateIp(
-                            info.getPlayerName(),
-                            info.getHostName(),
-                            info.getIP());
+                    controller_.handleDuplicateIp(info.getPlayerName(), info.getHostName(), info.getIP());
                 }
-            }
-            else
-            {
+            } else {
                 alive_.resetAliveCnt();
                 alive_.interrupt();
             }
@@ -307,9 +261,7 @@ public class LanManager implements DDMessageListener
         clients_.process(info);
 
         // if hello, send some alive messages
-        if (info.getCategory() == LanClientList.LAN_HELLO ||
-            info.getCategory() == LanClientList.LAN_REFRESH)
-        {
+        if (info.getCategory() == LanClientList.LAN_HELLO || info.getCategory() == LanClientList.LAN_REFRESH) {
             alive_.resetAliveCnt();
             alive_.interrupt();
         }
@@ -318,25 +270,22 @@ public class LanManager implements DDMessageListener
     /**
      * DDMessageListener: Not used *
      */
-    public void updateStep(int nStep)
-    {
+    public void updateStep(int nStep) {
     }
 
     /**
      * DDMessageListener: Not used *
      */
-    public void debugStep(int nStep, String sMsg)
-    {
+    public void debugStep(int nStep, String sMsg) {
     }
 
     /**
-     * interface to alive from application.  bContinous true means
-     * the alive thread will send out an alive ping continously.
-     * bSendRefresh true means it will send out the LAN_REFRESH message
-     * instead of LAN_ALIVE, which will wake up other clients out there.
+     * interface to alive from application. bContinous true means the alive thread
+     * will send out an alive ping continously. bSendRefresh true means it will send
+     * out the LAN_REFRESH message instead of LAN_ALIVE, which will wake up other
+     * clients out there.
      */
-    public void setAliveThread(boolean bContinous, boolean bSendRefresh)
-    {
+    public void setAliveThread(boolean bContinous, boolean bSendRefresh) {
         alive_.setContinous(bContinous);
         alive_.setSendRefresh(bSendRefresh);
         alive_.interrupt();
@@ -345,55 +294,46 @@ public class LanManager implements DDMessageListener
     /**
      * wake up alive thread so it sends immediately
      */
-    public void wakeAliveThread()
-    {
+    public void wakeAliveThread() {
         alive_.interrupt();
     }
 
     /**
      * alive thread
      */
-    private class Alive extends Thread
-    {
+    private class Alive extends Thread {
         boolean bDone_ = false;
         boolean bRefresh_ = false;
         private int nAliveCnt_ = ALIVE_INIT_CNT;
         private boolean bContinuous_ = false;
 
-        public Alive()
-        {
+        public Alive() {
             setName("LanManager-Alive");
         }
 
-        public void resetAliveCnt()
-        {
-            if (nAliveCnt_ < ALIVE_REFRESH_CNT)
-            {
+        public void resetAliveCnt() {
+            if (nAliveCnt_ < ALIVE_REFRESH_CNT) {
                 nAliveCnt_ = ALIVE_REFRESH_CNT;
             }
-            if (DEBUG) logger.debug("Alive cnt reset to: " + nAliveCnt_);
+            if (DEBUG)
+                logger.debug("Alive cnt reset to: " + nAliveCnt_);
         }
 
-        public void setContinous(boolean b)
-        {
+        public void setContinous(boolean b) {
             bContinuous_ = b;
         }
 
-        public void setSendRefresh(boolean bRefresh)
-        {
+        public void setSendRefresh(boolean bRefresh) {
             bRefresh_ = bRefresh;
         }
 
-        public void finish()
-        {
+        public void finish() {
             bDone_ = true;
             interrupt();
         }
 
-        public void run()
-        {
-            while (!bDone_)
-            {
+        public void run() {
+            while (!bDone_) {
                 Utils.sleepSeconds(ALIVE_SECONDS);
 
                 // clear interrupted flag incase was set by an update above.
@@ -401,14 +341,13 @@ public class LanManager implements DDMessageListener
                 interrupted();
 
                 // if not done, and in continous mode or have ticks left in alive cnt, sent msg
-                if (!bDone_ && (bContinuous_ || nAliveCnt_ > 0))
-                {
-                    if (!bContinuous_) nAliveCnt_--;
+                if (!bDone_ && (bContinuous_ || nAliveCnt_ > 0)) {
+                    if (!bContinuous_)
+                        nAliveCnt_--;
                     sendMessage(bRefresh_ ? LanClientList.LAN_REFRESH : LanClientList.LAN_ALIVE);
                 }
 
-                if (!bDone_)
-                {
+                if (!bDone_) {
                     clients_.timeoutCheck((ALIVE_SECONDS * 2) + 1);
                 }
             }
@@ -418,15 +357,12 @@ public class LanManager implements DDMessageListener
     /**
      * Shutdown thread for cleanup
      */
-    private class Shutdown extends Thread
-    {
-        public Shutdown()
-        {
+    private class Shutdown extends Thread {
+        public Shutdown() {
             setName("LanManager-Shutdown");
         }
 
-        public void run()
-        {
+        public void run() {
             logger.debug("Shutting down...");
             alive_.finish();
             sendMessage(LanClientList.LAN_GOODBYE);

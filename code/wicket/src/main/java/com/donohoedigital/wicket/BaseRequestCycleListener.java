@@ -77,7 +77,8 @@ public class BaseRequestCycleListener implements IRequestCycleListener {
 
     @Override
     public IRequestHandler onException(RequestCycle cycle, Exception ex) {
-        if (ex instanceof PageExpiredException) return null;
+        if (ex instanceof PageExpiredException)
+            return null;
 
         return new RenderPageRequestHandler(new PageProvider(application.getExceptionPage(ex)));
     }

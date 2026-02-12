@@ -44,23 +44,26 @@ import org.springframework.transaction.annotation.Transactional;
 @Tag("slow")
 @SpringJUnitConfig(locations = {"/app-context-pokerservertests.xml"})
 @Transactional
-class OnlineProfileServiceDummyTest
-{
+class OnlineProfileServiceDummyTest {
     /**
-     * Do in own test since rollback invalidates the dummy's (and they aren't reloaded since cached)
+     * Do in own test since rollback invalidates the dummy's (and they aren't
+     * reloaded since cached)
      */
     @SuppressWarnings("CommentedOutCode")
     @Test
     @Rollback
-    void should_LoadDummyProfiles_When_Requested()
-    {
-        // FIX: doesn't work when run with other tests due to caching issue.  Figure this out!
-//        OnlineProfile aibest = service.getOnlineProfileByName(OnlineProfile.Dummy.AI_BEST.getName());
-//        OnlineProfile airest = service.getOnlineProfileByName(OnlineProfile.Dummy.AI_REST.getName());
-//        OnlineProfile human = service.getOnlineProfileByName(OnlineProfile.Dummy.HUMAN.getName());
-//
-//        assertThat(aibest).isNotNull();
-//        assertThat(airest).isNotNull();
-//        assertThat(human).isNotNull();
+    void should_LoadDummyProfiles_When_Requested() {
+        // FIX: doesn't work when run with other tests due to caching issue. Figure this
+        // out!
+        // OnlineProfile aibest =
+        // service.getOnlineProfileByName(OnlineProfile.Dummy.AI_BEST.getName());
+        // OnlineProfile airest =
+        // service.getOnlineProfileByName(OnlineProfile.Dummy.AI_REST.getName());
+        // OnlineProfile human =
+        // service.getOnlineProfileByName(OnlineProfile.Dummy.HUMAN.getName());
+        //
+        // assertThat(aibest).isNotNull();
+        // assertThat(airest).isNotNull();
+        // assertThat(human).isNotNull();
     }
 }

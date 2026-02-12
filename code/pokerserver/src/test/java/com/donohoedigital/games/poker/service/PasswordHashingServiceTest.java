@@ -69,7 +69,8 @@ class PasswordHashingServiceTest {
         String hash2 = service.hashPassword(plaintext);
 
         // Then: hashes should be different (different salts)
-        assertNotEquals(hash1, hash2, "Same password hashed twice should produce different hashes due to different salts");
+        assertNotEquals(hash1, hash2,
+                "Same password hashed twice should produce different hashes due to different salts");
 
         // But both should validate correctly
         assertTrue(service.checkPassword(plaintext, hash1), "First hash should validate");

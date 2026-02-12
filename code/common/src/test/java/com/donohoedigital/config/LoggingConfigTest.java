@@ -39,10 +39,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 
 /**
- * Created by IntelliJ IDEA.
- * User: donohoe
- * Date: Oct 14, 2008
- * Time: 8:16:40 AM
+ * Created by IntelliJ IDEA. User: donohoe Date: Oct 14, 2008 Time: 8:16:40 AM
  * To change this template use File | Settings | File Templates.
  */
 public class LoggingConfigTest extends TestCase {
@@ -86,8 +83,8 @@ public class LoggingConfigTest extends TestCase {
      * Test server
      */
     public void testServer() {
-        process(new LoggingConfig(UNITTEST_APPNAME, ApplicationType.SERVER, runtime, false),
-                runtime.getServerHome(), "SRV", true);
+        process(new LoggingConfig(UNITTEST_APPNAME, ApplicationType.SERVER, runtime, false), runtime.getServerHome(),
+                "SRV", true);
     }
 
     /**
@@ -102,8 +99,8 @@ public class LoggingConfigTest extends TestCase {
      * Test webapp
      */
     public void testWebapp() {
-        process(new LoggingConfig(UNITTEST_APPNAME, ApplicationType.WEBAPP, runtime, false),
-                runtime.getServerHome(), "WEB", true);
+        process(new LoggingConfig(UNITTEST_APPNAME, ApplicationType.WEBAPP, runtime, false), runtime.getServerHome(),
+                "WEB", true);
     }
 
     public void testOverride() {
@@ -126,8 +123,8 @@ public class LoggingConfigTest extends TestCase {
             logger.info(message);
 
             // capture lines include 0-2 informational messages from LoggingConfig
-            //  + if CMD, 1st line "Log4j configured using ..." is skipped
-            //  + if OVER (testing overrides), extra line for that override file
+            // + if CMD, 1st line "Log4j configured using ..." is skipped
+            // + if OVER (testing overrides), extra line for that override file
             int expected = slug.equals("CLI") ? 1 : slug.equals("OVER") ? 3 : 2;
 
             // inspect stdout

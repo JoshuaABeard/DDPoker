@@ -30,12 +30,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * Servlet for downloading large files (bypassing Jetty ResourceHandler's size limits).
- * Streams files directly without buffering the entire file in memory.
+ * Servlet for downloading large files (bypassing Jetty ResourceHandler's size
+ * limits). Streams files directly without buffering the entire file in memory.
  */
 public class LargeFileDownloadServlet extends HttpServlet {
 
-    private static final int BUFFER_SIZE = 8192;  // 8KB buffer for streaming
+    private static final int BUFFER_SIZE = 8192; // 8KB buffer for streaming
     private String downloadsPath = "/app/downloads";
 
     @Override
@@ -91,7 +91,7 @@ public class LargeFileDownloadServlet extends HttpServlet {
 
         // Stream the file
         try (FileInputStream fileInputStream = new FileInputStream(file);
-             OutputStream outputStream = response.getOutputStream()) {
+                OutputStream outputStream = response.getOutputStream()) {
 
             byte[] buffer = new byte[BUFFER_SIZE];
             int bytesRead;
@@ -126,8 +126,8 @@ public class LargeFileDownloadServlet extends HttpServlet {
                     String name = file.getName();
                     long sizeBytes = file.length();
                     String size = formatFileSize(sizeBytes);
-                    html.append("<tr><td><a href=\"/downloads/").append(name).append("\">")
-                        .append(name).append("</a></td><td>").append(size).append("</td></tr>\n");
+                    html.append("<tr><td><a href=\"/downloads/").append(name).append("\">").append(name)
+                            .append("</a></td><td>").append(size).append("</td></tr>\n");
                 }
             }
             html.append("</tbody>\n</table>\n");
@@ -140,8 +140,10 @@ public class LargeFileDownloadServlet extends HttpServlet {
     }
 
     private String formatFileSize(long bytes) {
-        if (bytes < 1024) return bytes + " B";
-        if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
+        if (bytes < 1024)
+            return bytes + " B";
+        if (bytes < 1024 * 1024)
+            return String.format("%.1f KB", bytes / 1024.0);
         return String.format("%.1f MB", bytes / (1024.0 * 1024.0));
     }
 }

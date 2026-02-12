@@ -31,8 +31,8 @@ import java.nio.channels.SocketChannel;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for PokerConnection TCP functionality.
- * Tests the TCP-specific behavior of PokerConnection wrapper class.
+ * Tests for PokerConnection TCP functionality. Tests the TCP-specific behavior
+ * of PokerConnection wrapper class.
  */
 class PokerConnectionTcpTest {
 
@@ -59,9 +59,12 @@ class PokerConnectionTcpTest {
 
     @AfterEach
     void cleanup() throws IOException {
-        if (clientChannel != null && clientChannel.isOpen()) clientChannel.close();
-        if (acceptedChannel != null && acceptedChannel.isOpen()) acceptedChannel.close();
-        if (serverChannel != null && serverChannel.isOpen()) serverChannel.close();
+        if (clientChannel != null && clientChannel.isOpen())
+            clientChannel.close();
+        if (acceptedChannel != null && acceptedChannel.isOpen())
+            acceptedChannel.close();
+        if (serverChannel != null && serverChannel.isOpen())
+            serverChannel.close();
     }
 
     // =================================================================

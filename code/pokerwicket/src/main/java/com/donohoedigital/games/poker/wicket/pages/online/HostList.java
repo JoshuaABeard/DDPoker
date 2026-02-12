@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -59,20 +59,16 @@ import java.util.Date;
 import java.util.Iterator;
 
 /**
- * Created by IntelliJ IDEA.
- * User: donohoe
- * Date: May 1, 2008
- * Time: 1:36:58 PM
- * To change this template use File | Settings | File Templates.
+ * Created by IntelliJ IDEA. User: donohoe Date: May 1, 2008 Time: 1:36:58 PM To
+ * change this template use File | Settings | File Templates.
  */
 @MountPath("hosts")
-@MountMixedParam(parameterNames = {HostList.PARAM_BEGIN, HostList.PARAM_END, HostList.PARAM_NAME,
-        HostList.PARAM_PAGE, HostList.PARAM_SIZE})
-public class HostList extends OnlinePokerPage
-{
+@MountMixedParam(parameterNames = {HostList.PARAM_BEGIN, HostList.PARAM_END, HostList.PARAM_NAME, HostList.PARAM_PAGE,
+        HostList.PARAM_SIZE})
+public class HostList extends OnlinePokerPage {
     private static final long serialVersionUID = 42L;
 
-    //private static Logger logger = LogManager.getLogger(Search.class);
+    // private static Logger logger = LogManager.getLogger(Search.class);
 
     public static final String PARAM_BEGIN = "b";
     public static final String PARAM_END = "e";
@@ -86,24 +82,22 @@ public class HostList extends OnlinePokerPage
     @SpringBean
     private OnlineGameService gameService;
 
-    public HostList()
-    {
+    public HostList() {
         this(new PageParameters());
     }
 
-    public HostList(PageParameters params)
-    {
+    public HostList(PageParameters params) {
         super(params);
         init(params);
     }
 
-    private void init(PageParameters params)
-    {
+    private void init(PageParameters params) {
         // host data
         HostData data = new HostData();
 
         // search form
-        NameRangeSearchForm form = new NameRangeSearchForm("form", params, getClass(), data, PARAM_NAME, PARAM_BEGIN, PARAM_END, "Host");
+        NameRangeSearchForm form = new NameRangeSearchForm("form", params, getClass(), data, PARAM_NAME, PARAM_BEGIN,
+                PARAM_END, "Host");
         add(form);
 
         // process size after form data read
@@ -113,9 +107,7 @@ public class HostList extends OnlinePokerPage
         GameListTableView dataView = new GameListTableView("row", data);
         add(dataView);
         add(new BookmarkablePagingNavigator("navigator", dataView, 1, true,
-                                            new BasicPluralLabelProvider("host", "hosts"),
-                                            getClass(), params,
-                                            PARAM_PAGE));
+                new BasicPluralLabelProvider("host", "hosts"), getClass(), params, PARAM_PAGE));
 
         // no results found
         add(new StringLabel("begin", form.getBeginDateAsUserSeesIt()).setVisible(data.isEmpty()));
@@ -127,8 +119,7 @@ public class HostList extends OnlinePokerPage
     //// List
     ////
 
-    private class HostData extends PageableServiceProvider<HostSummary> implements NameRangeSearch
-    {
+    private class HostData extends PageableServiceProvider<HostSummary> implements NameRangeSearch {
         private static final long serialVersionUID = 42L;
 
         private String name;
@@ -138,56 +129,48 @@ public class HostList extends OnlinePokerPage
         private final Date endDefault = Utils.getDateEndOfDay(new Date());
 
         @Override
-        public Iterator<HostSummary> iterator(long first, long pagesize)
-        {
+        public Iterator<HostSummary> iterator(long first, long pagesize) {
             DateRange dr = new DateRange(this);
-            return gameService.getHostSummary((int) size(), (int) first, (int) pagesize, name, dr.getBegin(), dr.getEnd()).iterator();
+            return gameService
+                    .getHostSummary((int) size(), (int) first, (int) pagesize, name, dr.getBegin(), dr.getEnd())
+                    .iterator();
         }
 
         @Override
-        public int calculateSize()
-        {
+        public int calculateSize() {
             DateRange dr = new DateRange(this);
             return gameService.getHostSummaryCount(name, dr.getBegin(), dr.getEnd());
         }
 
-        public Date getBegin()
-        {
+        public Date getBegin() {
             return begin;
         }
 
-        public void setBegin(Date begin)
-        {
+        public void setBegin(Date begin) {
             this.begin = begin;
         }
 
-        public Date getEnd()
-        {
+        public Date getEnd() {
             return end;
         }
 
-        public void setEnd(Date end)
-        {
+        public void setEnd(Date end) {
             this.end = Utils.getDateEndOfDay(end);
         }
 
-        public String getName()
-        {
+        public String getName() {
             return name;
         }
 
-        public void setName(String name)
-        {
+        public void setName(String name) {
             this.name = name;
         }
 
-        public Date getBeginDefault()
-        {
+        public Date getBeginDefault() {
             return beginDefault;
         }
 
-        public Date getEndDefault()
-        {
+        public Date getEndDefault() {
             return endDefault;
         }
     }
@@ -195,28 +178,27 @@ public class HostList extends OnlinePokerPage
     /**
      * The leaderboard table
      */
-    private class GameListTableView extends CountDataView<HostSummary>
-    {
+    private class GameListTableView extends CountDataView<HostSummary> {
         private static final long serialVersionUID = 42L;
 
-        private GameListTableView(String id, HostData data)
-        {
+        private GameListTableView(String id, HostData data) {
             super(id, data, ITEMS_PER_PAGE);
         }
 
         @Override
-        protected void populateItem(Item<HostSummary> row)
-        {
+        protected void populateItem(Item<HostSummary> row) {
             HostSummary summary = row.getModelObject();
             HostList.HostData data = getSearchData();
 
             // CSS class
             row.add(new AttributeModifier("class",
-                                          new StringModel(PokerSession.isLoggedInUser(summary.getHostName()) ? "highlight" :
-                                                          row.getIndex() % 2 == 0 ? "odd" : "even")));
+                    new StringModel(PokerSession.isLoggedInUser(summary.getHostName())
+                            ? "highlight"
+                            : row.getIndex() % 2 == 0 ? "odd" : "even")));
 
             // num
-            row.add(new PlaceLabel("num", new IntegerModel(((int) getCurrentPage()) * getPageSize() + row.getIndex() + 1)));
+            row.add(new PlaceLabel("num",
+                    new IntegerModel(((int) getCurrentPage()) * getPageSize() + row.getIndex() + 1)));
             // link to player details
             Link<?> link = RecentGames.getHostLink("hostLink", summary.getHostName(), data.getBegin(), data.getEnd());
             row.add(link);
@@ -229,8 +211,7 @@ public class HostList extends OnlinePokerPage
             row.add(new GroupingIntegerLabel("gamesHosted"));
         }
 
-        private HostData getSearchData()
-        {
+        private HostData getSearchData() {
             return (HostData) getDataProvider();
         }
     }

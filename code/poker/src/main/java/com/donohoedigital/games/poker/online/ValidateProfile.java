@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -50,8 +50,7 @@ import org.apache.logging.log4j.Logger;
 /**
  *
  */
-public class ValidateProfile extends SendMessageDialog
-{
+public class ValidateProfile extends SendMessageDialog {
     private static final Logger logger = LogManager.getLogger(ValidateProfile.class);
 
     public static final String PARAM_AUTH = "auth";
@@ -62,8 +61,7 @@ public class ValidateProfile extends SendMessageDialog
      * Retrieve client info then do normal initialization
      */
     @Override
-    public void init(GameEngine engine, GameContext context, GamePhase gamephase)
-    {
+    public void init(GameEngine engine, GameContext context, GamePhase gamephase) {
         auth_ = (OnlineProfile) gamephase.getObject(PARAM_AUTH);
         super.init(engine, context, gamephase);
     }
@@ -72,8 +70,7 @@ public class ValidateProfile extends SendMessageDialog
      * message to send to server
      */
     @Override
-    protected EngineMessage getMessage()
-    {
+    protected EngineMessage getMessage() {
         // Send a message to validate profile
         OnlineMessage reqOnlineMsg = new OnlineMessage(OnlineMessage.CAT_WAN_PROFILE_VALIDATE);
         reqOnlineMsg.setWanAuth(auth_.getData());
@@ -87,8 +84,7 @@ public class ValidateProfile extends SendMessageDialog
      * Message to display to user
      */
     @Override
-    protected String getMessageKey()
-    {
+    protected String getMessageKey() {
         return "msg.validateProfile";
     }
 
@@ -96,8 +92,7 @@ public class ValidateProfile extends SendMessageDialog
      * Don't do server redirect query
      */
     @Override
-    protected boolean doServerQuery()
-    {
+    protected boolean doServerQuery() {
         return false;
     }
 
@@ -105,27 +100,23 @@ public class ValidateProfile extends SendMessageDialog
      * Process response from server - load profile UUID and set it as session key
      */
     @Override
-    public void messageReceived(DDMessage message)
-    {
+    public void messageReceived(DDMessage message) {
         super.messageReceived(message);
 
         // Extract profile data from response
         OnlineMessage omsg = new OnlineMessage(message);
         DMTypedHashMap profileData = omsg.getWanAuth();
 
-        if (profileData != null)
-        {
+        if (profileData != null) {
             OnlineProfile validatedProfile = new OnlineProfile(profileData);
 
-            if (validatedProfile.getUuid() != null && !validatedProfile.getUuid().isEmpty())
-            {
+            if (validatedProfile.getUuid() != null && !validatedProfile.getUuid().isEmpty()) {
                 // Set this profile's UUID as the session key for online games
                 DDMessage.setDefaultRealKey(validatedProfile.getUuid());
                 DDMessage.setDefaultKey(validatedProfile.getUuid());
-                logger.info("Loaded profile UUID for " + validatedProfile.getName() + ": " + validatedProfile.getUuid());
-            }
-            else
-            {
+                logger.info(
+                        "Loaded profile UUID for " + validatedProfile.getName() + ": " + validatedProfile.getUuid());
+            } else {
                 logger.warn("Profile validation successful but no UUID received for: " + validatedProfile.getName());
             }
         }

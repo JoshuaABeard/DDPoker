@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -40,18 +40,15 @@ import com.donohoedigital.udp.*;
 import org.apache.logging.log4j.*;
 
 /**
- * Created by IntelliJ IDEA.
- * User: donohoe
- * Date: May 12, 2006
- * Time: 12:15:50 PM
+ * Created by IntelliJ IDEA. User: donohoe Date: May 12, 2006 Time: 12:15:50 PM
  * To change this template use File | Settings | File Templates.
  */
-public class PokerConnect implements UDPLinkMonitor
-{
+public class PokerConnect implements UDPLinkMonitor {
     static Logger logger = LogManager.getLogger(PokerConnect.class);
 
     // timeout
-    private static final int TIMEOUT = PropertyConfig.getRequiredIntegerProperty("settings.poker.connect.timeout.millis");
+    private static final int TIMEOUT = PropertyConfig
+            .getRequiredIntegerProperty("settings.poker.connect.timeout.millis");
 
     // members
     private UDPServer udp_;
@@ -67,16 +64,14 @@ public class PokerConnect implements UDPLinkMonitor
     /**
      * Constructor
      */
-    public PokerConnect(UDPServer udp, PokerURL url, DDMessageListener listener)
-    {
+    public PokerConnect(UDPServer udp, PokerURL url, DDMessageListener listener) {
         this(udp, url, null, listener);
     }
 
     /**
      * Constructor
      */
-    public PokerConnect(UDPServer udp, PokerURL url, UDPID to, DDMessageListener listener)
-    {
+    public PokerConnect(UDPServer udp, PokerURL url, UDPID to, DDMessageListener listener) {
         udp_ = udp;
         url_ = url;
         to_ = to;
@@ -86,13 +81,12 @@ public class PokerConnect implements UDPLinkMonitor
     /**
      * connect, return true if success, false if failure
      */
-    public boolean connect(OnlineMessage msg)
-    {
+    public boolean connect(OnlineMessage msg) {
         omsg_ = msg;
 
-        if (udp_.isBound())
-        {
-            if (listener_ != null) listener_.updateStep(DDMessageListener.STEP_CONNECTING);
+        if (udp_.isBound()) {
+            if (listener_ != null)
+                listener_.updateStep(DDMessageListener.STEP_CONNECTING);
             link_ = udp_.manager().getLink(to_, url_.getHost(), url_.getPort());
             link_.addMonitor(this);
             link_.connect();
@@ -101,17 +95,16 @@ public class PokerConnect implements UDPLinkMonitor
             link_.send();
 
             // wait until done
-            if (listener_ != null)  listener_.updateStep(DDMessageListener.STEP_WAITING_FOR_REPLY);
+            if (listener_ != null)
+                listener_.updateStep(DDMessageListener.STEP_WAITING_FOR_REPLY);
             Utils.wait(done_, TIMEOUT);
         }
 
         // no reply, we had an error
         boolean bOK = true;
-        if (reply_ == null)
-        {
+        if (reply_ == null) {
             // no error set, we timed out
-            if (error_ == null)
-            {
+            if (error_ == null) {
                 timeout();
             }
             reply_ = new OnlineMessage(error_);
@@ -121,16 +114,17 @@ public class PokerConnect implements UDPLinkMonitor
         bOK = (error_ == null);
 
         // if error, close link
-        if (!bOK)
-        {
+        if (!bOK) {
             close();
         }
 
         // cleanup
-        if (link_ != null) link_.removeMonitor(this);
+        if (link_ != null)
+            link_.removeMonitor(this);
 
         // last update
-        if (listener_ != null)  listener_.updateStep(DDMessageListener.STEP_DONE);
+        if (listener_ != null)
+            listener_.updateStep(DDMessageListener.STEP_DONE);
 
         return bOK;
     }
@@ -138,29 +132,26 @@ public class PokerConnect implements UDPLinkMonitor
     /**
      * close
      */
-    public void close()
-    {
-        if (link_ != null) link_.close();
+    public void close() {
+        if (link_ != null)
+            link_.close();
     }
 
     /**
      * Link events - shutdown if receive a timeout or if link was closed
      */
-    public void monitorEvent(UDPLinkEvent event)
-    {
-        switch(event.getType())
-        {
-            case CLOSED:
-            case TIMEOUT:
-            case RESEND_FAILURE:
+    public void monitorEvent(UDPLinkEvent event) {
+        switch (event.getType()) {
+            case CLOSED :
+            case TIMEOUT :
+            case RESEND_FAILURE :
                 timeout();
                 break;
 
-            case RECEIVED:
+            case RECEIVED :
                 // process message
                 UDPData data = event.getData();
-                if (data.getType() == UDPData.Type.MESSAGE)
-                {
+                if (data.getType() == UDPData.Type.MESSAGE) {
                     PokerUDPTransporter msg = new PokerUDPTransporter(data);
                     messageReceived(new OnlineMessage(msg.getMessage()));
                 }
@@ -170,12 +161,11 @@ public class PokerConnect implements UDPLinkMonitor
     /**
      * message received
      */
-    private void messageReceived(OnlineMessage reply)
-    {
-        if (done_.isDone()) return;
+    private void messageReceived(OnlineMessage reply) {
+        if (done_.isDone())
+            return;
 
-        if (reply.getInReplyTo() == omsg_.getMessageID())
-        {
+        if (reply.getInReplyTo() == omsg_.getMessageID()) {
             // get status (in terms of existing framework)
             DDMessage ret = reply.getData();
             int nStatus = Peer2PeerMessenger.getStatus(ret); // TODO: clean this up?
@@ -183,8 +173,7 @@ public class PokerConnect implements UDPLinkMonitor
             reply_ = reply;
 
             // if status isn't okay, this is an error return
-            if (nStatus != DDMessageListener.STATUS_OK)
-            {
+            if (nStatus != DDMessageListener.STATUS_OK) {
                 error_ = ret;
             }
 
@@ -196,25 +185,23 @@ public class PokerConnect implements UDPLinkMonitor
     /**
      * Get reply
      */
-    public OnlineMessage getReply()
-    {
+    public OnlineMessage getReply() {
         return reply_;
     }
 
     /**
      * Get error
      */
-    public DDMessage getError()
-    {
+    public DDMessage getError() {
         return error_;
     }
 
     /**
      * timeout
      */
-    private void timeout()
-    {
-        if (error_ != null) return;
+    private void timeout() {
+        if (error_ != null)
+            return;
 
         error_ = new DDMessage(DDMessage.CAT_APPL_ERROR);
         error_.setStatus(DDMessageListener.STATUS_TIMEOUT);

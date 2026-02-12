@@ -34,15 +34,13 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Integration tests for PlayerProfile functionality.
- * Tests profile creation, loading, and management without UI.
+ * Integration tests for PlayerProfile functionality. Tests profile creation,
+ * loading, and management without UI.
  */
 @Tag("integration")
-public class PlayerProfileIntegrationTest
-{
+public class PlayerProfileIntegrationTest {
     @BeforeEach
-    void setUp() throws Exception
-    {
+    void setUp() throws Exception {
         // Initialize config for headless testing
         new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
 
@@ -51,23 +49,17 @@ public class PlayerProfileIntegrationTest
     }
 
     @AfterEach
-    void tearDown()
-    {
+    void tearDown() {
         cleanupTestProfiles();
     }
 
-    private void cleanupTestProfiles()
-    {
+    private void cleanupTestProfiles() {
         List<BaseProfile> profiles = PlayerProfile.getProfileList();
-        if (profiles != null)
-        {
-            for (BaseProfile profile : profiles)
-            {
-                if (profile.getName().startsWith("Test"))
-                {
+        if (profiles != null) {
+            for (BaseProfile profile : profiles) {
+                if (profile.getName().startsWith("Test")) {
                     File file = profile.getFile();
-                    if (file != null && file.exists())
-                    {
+                    if (file != null && file.exists()) {
                         file.delete();
                     }
                 }
@@ -76,8 +68,7 @@ public class PlayerProfileIntegrationTest
     }
 
     @Test
-    void should_CreateProfile_When_ValidNameProvided()
-    {
+    void should_CreateProfile_When_ValidNameProvided() {
         // Create a new profile
         PlayerProfile profile = new PlayerProfile("TestPlayer");
         profile.initCheck();
@@ -91,8 +82,7 @@ public class PlayerProfileIntegrationTest
     }
 
     @Test
-    void should_LoadProfile_When_FileExists()
-    {
+    void should_LoadProfile_When_FileExists() {
         // Create and save a profile
         PlayerProfile original = new PlayerProfile("TestPlayerLoad");
         original.initCheck();
@@ -111,8 +101,7 @@ public class PlayerProfileIntegrationTest
     }
 
     @Test
-    void should_ListProfiles_When_ProfilesExist()
-    {
+    void should_ListProfiles_When_ProfilesExist() {
         // Create multiple profiles
         createAndSaveProfile("TestPlayer1");
         createAndSaveProfile("TestPlayer2");
@@ -123,15 +112,12 @@ public class PlayerProfileIntegrationTest
 
         // Verify profiles are listed
         assertThat(profiles).isNotNull();
-        long testProfileCount = profiles.stream()
-            .filter(p -> p.getName().startsWith("Test"))
-            .count();
+        long testProfileCount = profiles.stream().filter(p -> p.getName().startsWith("Test")).count();
         assertThat(testProfileCount).isGreaterThanOrEqualTo(3);
     }
 
     @Test
-    void should_DeleteProfile_When_FileDeleted()
-    {
+    void should_DeleteProfile_When_FileDeleted() {
         // Create a profile
         PlayerProfile profile = createAndSaveProfile("TestPlayerDelete");
         File file = profile.getFile();
@@ -146,8 +132,7 @@ public class PlayerProfileIntegrationTest
     }
 
     @Test
-    void should_UpdateProfile_When_NameChanged()
-    {
+    void should_UpdateProfile_When_NameChanged() {
         // Create a profile
         PlayerProfile profile = createAndSaveProfile("TestPlayerOriginal");
 
@@ -161,8 +146,7 @@ public class PlayerProfileIntegrationTest
     }
 
     @Test
-    void should_InitializeStats_When_ProfileCreated()
-    {
+    void should_InitializeStats_When_ProfileCreated() {
         // Create a profile
         PlayerProfile profile = new PlayerProfile("TestPlayerStats");
         profile.initCheck();
@@ -173,8 +157,7 @@ public class PlayerProfileIntegrationTest
     }
 
     @Test
-    void should_SortProfiles_When_MultipleExist()
-    {
+    void should_SortProfiles_When_MultipleExist() {
         // Create profiles with different names
         createAndSaveProfile("TestAlpha");
         createAndSaveProfile("TestZulu");
@@ -184,19 +167,15 @@ public class PlayerProfileIntegrationTest
         List<BaseProfile> profiles = PlayerProfile.getProfileList();
 
         // Filter to test profiles and sort by name
-        List<String> testProfileNames = profiles.stream()
-            .filter(p -> p.getName().startsWith("Test"))
-            .map(BaseProfile::getName)
-            .sorted()
-            .toList();
+        List<String> testProfileNames = profiles.stream().filter(p -> p.getName().startsWith("Test"))
+                .map(BaseProfile::getName).sorted().toList();
 
         // Verify we have all three profiles
         assertThat(testProfileNames).containsExactly("TestAlpha", "TestBravo", "TestZulu");
     }
 
     // Helper method
-    private PlayerProfile createAndSaveProfile(String name)
-    {
+    private PlayerProfile createAndSaveProfile(String name) {
         PlayerProfile profile = new PlayerProfile(name);
         profile.initCheck();
         profile.initFile();

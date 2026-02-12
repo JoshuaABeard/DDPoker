@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -45,52 +45,46 @@ import java.beans.*;
 import java.io.*;
 
 /**
- * Our own version of GameState - used to override starting ID (primary)
- * and to deal with incoming messages as a proxy MsgState (secondary).
+ * Our own version of GameState - used to override starting ID (primary) and to
+ * deal with incoming messages as a proxy MsgState (secondary).
  *
- * @author  donohoe
+ * @author donohoe
  */
-public class PokerGameState extends GameState implements PropertyChangeListener
-{
+public class PokerGameState extends GameState implements PropertyChangeListener {
     private PokerGame game_;
 
     /**
      * Used for new games
      */
-    public PokerGameState(String sName, String sBegin, String sExt, String sDesc)
-    {
+    public PokerGameState(String sName, String sBegin, String sExt, String sDesc) {
         super(sName, sBegin, sExt, sDesc);
     }
 
     /**
      * Used for new games
      */
-    public PokerGameState(String sName, String sDesc)
-    {
+    public PokerGameState(String sName, String sDesc) {
         super(sName, sDesc);
     }
 
     /**
      * Used for loading games
      */
-    public PokerGameState(File f, boolean bLoadHeader)
-    {
+    public PokerGameState(File f, boolean bLoadHeader) {
         super(f, bLoadHeader);
     }
 
     /**
      * Used for loading games
      */
-    public PokerGameState(String sName, File fDir, String sBegin, String sExt, String sDesc)
-    {
+    public PokerGameState(String sName, File fDir, String sBegin, String sExt, String sDesc) {
         super(sName, fDir, sBegin, sExt, sDesc);
     }
 
     /**
      * Used for loading games
      */
-    public PokerGameState(byte[] data)
-    {
+    public PokerGameState(byte[] data) {
         super(data);
     }
 
@@ -98,8 +92,7 @@ public class PokerGameState extends GameState implements PropertyChangeListener
      * Return out starting id (see note in PokerConstants.java)
      */
     @Override
-    protected int getStartId()
-    {
+    protected int getStartId() {
         return PokerConstants.START_OTHER_ID;
     }
 
@@ -120,14 +113,14 @@ public class PokerGameState extends GameState implements PropertyChangeListener
         game_.addPropertyChangeListener(PokerGame.PROP_OBSERVERS, this);
         game_.addPropertyChangeListener(PokerGame.PROP_TABLES, this);
         game_.addPropertyChangeListener(PokerGame.PROP_GAME_LOADED, this);
-        if (bInitIds) setIds();
+        if (bInitIds)
+            setIds();
     }
 
     /**
      * clean up
      */
-    public void finish()
-    {
+    public void finish() {
         game_.removePropertyChangeListener(PokerGame.PROP_PLAYERS, this);
         game_.removePropertyChangeListener(PokerGame.PROP_OBSERVERS, this);
         game_.removePropertyChangeListener(PokerGame.PROP_TABLES, this);
@@ -137,16 +130,14 @@ public class PokerGameState extends GameState implements PropertyChangeListener
     /**
      * When players/tables add/removed, reload ids
      */
-    public void propertyChange(PropertyChangeEvent evt)
-    {
+    public void propertyChange(PropertyChangeEvent evt) {
         setIds();
     }
 
     /**
      * init ids - similar to what Game does before loading
      */
-    public void setIds()
-    {
+    public void setIds() {
         resetIds();
         Territory territories[] = Territory.getTerritoryArrayCached();
         prepopulateIds(game_, territories, game_, game_);

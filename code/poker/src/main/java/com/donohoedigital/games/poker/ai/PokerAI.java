@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -40,7 +40,6 @@ import com.donohoedigital.comms.DataCoder;
 import com.donohoedigital.comms.MsgState;
 import com.donohoedigital.comms.TokenizedList;
 import com.donohoedigital.config.ConfigUtils;
-import com.donohoedigital.config.Perf;
 import com.donohoedigital.games.config.GameState;
 import com.donohoedigital.games.engine.EngineGameAI;
 import com.donohoedigital.games.poker.*;
@@ -59,8 +58,7 @@ import java.beans.PropertyChangeListener;
 // TODO: provide generic idiot-proof marshal/demarshal interface
 
 @DataCoder('%')
-public class PokerAI extends EngineGameAI implements PokerTableListener, PropertyChangeListener
-{
+public class PokerAI extends EngineGameAI implements PokerTableListener, PropertyChangeListener {
     static Logger logger = LogManager.getLogger(PokerAI.class);
 
     private OpponentModel opponentModel_ = new OpponentModel();
@@ -88,84 +86,68 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
     /**
      * Creates a new instance of PokerAI
      */
-    public PokerAI()
-    {
+    public PokerAI() {
         super(false);
     }
 
-    public void propertyChange(PropertyChangeEvent evt)
-    {
+    public void propertyChange(PropertyChangeEvent evt) {
         String name = evt.getPropertyName();
 
-        if (name.equals(PokerGame.PROP_GAME_OVER))
-        {
+        if (name.equals(PokerGame.PROP_GAME_OVER)) {
             gameOver();
         }
     }
 
-    public void gameLoaded()
-    {
+    public void gameLoaded() {
         addListeners();
     }
 
-    protected void gameOver()
-    {
+    protected void gameOver() {
 
     }
 
-    public void init()
-    {
+    public void init() {
         map_ = new DMTypedHashMap();
 
         opponentModel_.init();
     }
 
-    public boolean hasActedThisRound()
-    {
+    public boolean hasActedThisRound() {
         return map_.getBoolean(MAP_ACTED_THIS_ROUND, false);
     }
 
-    public void setPlayerType(PlayerType playerType)
-    {
+    public void setPlayerType(PlayerType playerType) {
         playerType_ = playerType;
     }
 
-    public PlayerType getPlayerType()
-    {
+    public PlayerType getPlayerType() {
         return playerType_;
     }
 
     /**
      * Set player we are AI for
      */
-    public void setPokerPlayer(PokerPlayer player)
-    {
+    public void setPokerPlayer(PokerPlayer player) {
         PokerPlayer old = getPokerPlayer();
 
-        if (player != old)
-        {
-            if (old != null)
-            {
+        if (player != old) {
+            if (old != null) {
                 removeListeners();
             }
-            if (player != null)
-            {
+            if (player != null) {
                 setGamePlayer(player);
                 addListeners();
             }
         }
     }
 
-    public void addListeners()
-    {
+    public void addListeners() {
         PokerPlayer player = getPokerPlayer();
 
-        if (player != null)
-        {
+        if (player != null) {
             PokerTable table = player.getTable();
 
-            if (table != null)
-            {
+            if (table != null) {
                 // logger.info("Adding listeners for " + player.getName());
 
                 table.addPokerTableListener(this, PokerTableEvent.TYPES_ALL);
@@ -178,16 +160,13 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
         }
     }
 
-    private void removeListeners()
-    {
+    private void removeListeners() {
         PokerPlayer player = getPokerPlayer();
 
-        if (player != null)
-        {
+        if (player != null) {
             PokerTable table = player.getTable();
 
-            if (table != null)
-            {
+            if (table != null) {
                 // logger.info("Removing listeners for " + player.getName());
 
                 table.removePokerTableListener(this, PokerTableEvent.TYPES_ALL);
@@ -203,25 +182,21 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
     /**
      * Get player in a particular seat
      */
-    public PokerPlayer getPokerPlayer(int seat)
-    {
+    public PokerPlayer getPokerPlayer(int seat) {
         return getPokerPlayer().getTable().getPlayer(seat);
     }
 
     /**
      * Get player we are AI for
      */
-    public PokerPlayer getPokerPlayer()
-    {
-        return (PokerPlayer)getGamePlayer();
+    public PokerPlayer getPokerPlayer() {
+        return (PokerPlayer) getGamePlayer();
     }
 
-    public static PokerAI createPokerAI(PlayerType playerType)
-    {
+    public static PokerAI createPokerAI(PlayerType playerType) {
         String className = playerType.getAIClassName();
 
-        try
-        {
+        try {
             Class c = Class.forName(className);
 
             PokerAI ai = (PokerAI) ConfigUtils.newInstance(c);
@@ -231,19 +206,16 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
             ai.init();
 
             return ai;
-        }
-        catch (ClassNotFoundException e)
-        {
+        } catch (ClassNotFoundException e) {
             throw new ApplicationError("Can't find " + className);
         }
     }
 
     /**
-     * Return action AI would take.  This can be called for a human player
-     * to get a "hint" if desired.
+     * Return action AI would take. This can be called for a human player to get a
+     * "hint" if desired.
      */
-    public HandAction getHandAction(boolean bQuick)
-    {
+    public HandAction getHandAction(boolean bQuick) {
         PlayerAction action = getAction(bQuick);
 
         PokerPlayer player = getPokerPlayer();
@@ -257,145 +229,118 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
 
         // translate new-style action to old-style action
 
-        if ((action.isCheck() || action.isFold() || action.isCall()) && (call == 0))
-        {
+        if ((action.isCheck() || action.isFold() || action.isCall()) && (call == 0)) {
             return new HandAction(player, round, HandAction.ACTION_CHECK, action.getReason());
-        }
-        else if (action.isFold())
-        {
+        } else if (action.isFold()) {
             return new HandAction(player, round, HandAction.ACTION_FOLD, action.getReason());
-        }
-        else if (action.isCall())
-        {
-            if (call <= playerchips)
-            {
+        } else if (action.isCall()) {
+            if (call <= playerchips) {
                 return new HandAction(player, round, HandAction.ACTION_CALL, call, action.getReason());
-            }
-            else
-            {
+            } else {
                 return new HandAction(player, round, HandAction.ACTION_CALL, playerchips, action.getReason());
             }
 
-        }
-        else if (action.isBet() || action.isRaise())
-        {
+        } else if (action.isBet() || action.isRaise()) {
             int amount = getBetAmount();
 
-            if (amount == 0)
-            {
+            if (amount == 0) {
                 amount = call + minraise;
             }
 
-            if (amount > playerchips)
-            {
+            if (amount > playerchips) {
                 amount = playerchips;
-            }
-            else if ((amount - call < minraise) && (amount < playerchips))
-            {
-                if (playerchips - call < minraise)
-                {
+            } else if ((amount - call < minraise) && (amount < playerchips)) {
+                if (playerchips - call < minraise) {
                     amount = playerchips;
-                }
-                else
-                {
+                } else {
                     amount = call + minraise;
                 }
             }
 
-            if ((call == 0) && (round != HoldemHand.ROUND_PRE_FLOP))
-            {
+            if ((call == 0) && (round != HoldemHand.ROUND_PRE_FLOP)) {
                 return new HandAction(player, round, HandAction.ACTION_BET, amount, action.getReason());
-            }
-            else if (amount <= call)
-            {
+            } else if (amount <= call) {
                 return new HandAction(player, round, HandAction.ACTION_CALL, amount, action.getReason());
-            }
-            else
-            {
+            } else {
                 return new HandAction(player, round, HandAction.ACTION_RAISE, amount - call, action.getReason());
             }
-        }
-        else
-        {
+        } else {
             return null;
         }
     }
 
-    public boolean isRebuy()
-    {
+    public boolean isRebuy() {
         return wantsRebuy();
     }
 
-    public boolean isAddon()
-    {
+    public boolean isAddon() {
         return wantsAddon();
     }
 
     /**
-     * This event listener implementation dispatches events to comprehensible
-     * public APIs, with some events being ignored or handled internally.
+     * This event listener implementation dispatches events to comprehensible public
+     * APIs, with some events being ignored or handled internally.
      */
-    public void tableEventOccurred(PokerTableEvent event)
-    {
+    public void tableEventOccurred(PokerTableEvent event) {
         boolean hasPocket = (getPocket() != null) && (event.getTable().getHoldemHand() != null);
 
         // do items required in the calling thread
-        switch (event.getType())
-        {
-            case PokerTableEvent.TYPE_PLAYER_ADDED:
+        switch (event.getType()) {
+            case PokerTableEvent.TYPE_PLAYER_ADDED :
 
                 playerAdded(event.getSeat());
                 break;
 
-            case PokerTableEvent.TYPE_PLAYER_REMOVED:
+            case PokerTableEvent.TYPE_PLAYER_REMOVED :
 
                 playerRemoved(event.getSeat());
                 break;
 
-            case PokerTableEvent.TYPE_NEW_HAND:
+            case PokerTableEvent.TYPE_NEW_HAND :
 
                 newHand();
                 break;
 
-            case PokerTableEvent.TYPE_DEALER_ACTION:
+            case PokerTableEvent.TYPE_DEALER_ACTION :
 
                 map_.setBoolean(MAP_ACTED_THIS_ROUND, Boolean.FALSE);
 
-                if (hasPocket) switch (event.getRound())
-                {
-                    case HoldemHand.ROUND_PRE_FLOP:
-                        dealtPockets();
-                        break;
-                    case HoldemHand.ROUND_FLOP:
-                        dealtFlop();
-                        break;
-                    case HoldemHand.ROUND_TURN:
-                        dealtTurn();
-                        break;
-                    case HoldemHand.ROUND_RIVER:
-                        dealtRiver();
-                        break;
-                }
+                if (hasPocket)
+                    switch (event.getRound()) {
+                        case HoldemHand.ROUND_PRE_FLOP :
+                            dealtPockets();
+                            break;
+                        case HoldemHand.ROUND_FLOP :
+                            dealtFlop();
+                            break;
+                        case HoldemHand.ROUND_TURN :
+                            dealtTurn();
+                            break;
+                        case HoldemHand.ROUND_RIVER :
+                            dealtRiver();
+                            break;
+                    }
                 break;
 
-            case PokerTableEvent.TYPE_LEVEL_CHANGED:
+            case PokerTableEvent.TYPE_LEVEL_CHANGED :
 
                 blindsChanged();
                 break;
 
-            case PokerTableEvent.TYPE_END_HAND:
+            case PokerTableEvent.TYPE_END_HAND :
 
-                if (hasPocket) endHand();
+                if (hasPocket)
+                    endHand();
                 break;
 
-            case PokerTableEvent.TYPE_PLAYER_ACTION:
+            case PokerTableEvent.TYPE_PLAYER_ACTION :
 
-                if (!hasPocket) break;
+                if (!hasPocket)
+                    break;
 
                 int seat = event.getPlayer().getSeat();
 
-                if (seat == getPokerPlayer().getSeat())
-                {
+                if (seat == getPokerPlayer().getSeat()) {
                     map_.setBoolean(MAP_ACTED_THIS_ROUND, Boolean.TRUE);
                 }
 
@@ -404,60 +349,52 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
                 int actionType = HandAction.ACTION_NONE;
 
                 // TODO: notify on blind / ante / overbet events?
-                switch (action.getAction())
-                {
-                    case HandAction.ACTION_FOLD:
+                switch (action.getAction()) {
+                    case HandAction.ACTION_FOLD :
                         actionType = PlayerAction.FOLD;
                         break;
-                    case HandAction.ACTION_CHECK:
-                    case HandAction.ACTION_CHECK_RAISE:
+                    case HandAction.ACTION_CHECK :
+                    case HandAction.ACTION_CHECK_RAISE :
                         actionType = PlayerAction.CHECK;
                         break;
-                    case HandAction.ACTION_CALL:
+                    case HandAction.ACTION_CALL :
                         actionType = PlayerAction.CALL;
                         break;
-                    case HandAction.ACTION_BET:
+                    case HandAction.ACTION_BET :
                         actionType = PlayerAction.BET;
                         break;
-                    case HandAction.ACTION_RAISE:
+                    case HandAction.ACTION_RAISE :
                         actionType = PlayerAction.RAISE;
                         break;
                 }
 
-                if (actionType != HandAction.ACTION_NONE)
-                {
+                if (actionType != HandAction.ACTION_NONE) {
                     playerActed(event.getPlayer(), actionType, action.getAmount());
                 }
 
                 break;
 
-            case PokerTableEvent.TYPE_CARD_CHANGED:
+            case PokerTableEvent.TYPE_CARD_CHANGED :
                 if (hasPocket) {
                     PokerPlayer player = event.getPlayer();
 
-                    if (player != null)
-                    {
+                    if (player != null) {
                         dealtPockets();
-                    }
-                    else
-                    {
+                    } else {
                         HoldemHand hhand = event.getTable().getHoldemHand();
 
-                        if (hhand != null)
-                        {
+                        if (hhand != null) {
                             Hand community = hhand.getCommunity();
 
-                            if (community != null)
-                            {
-                                switch (community.size())
-                                {
-                                    case 5:
+                            if (community != null) {
+                                switch (community.size()) {
+                                    case 5 :
                                         dealtRiver();
                                         break;
-                                    case 4:
+                                    case 4 :
                                         dealtTurn();
                                         break;
-                                    case 3:
+                                    case 3 :
                                         dealtFlop();
                                         break;
                                 }
@@ -466,45 +403,43 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
                     }
                 }
                 break;
-            case PokerTableEvent.TYPE_PLAYER_CHIPS_CHANGED:
+            case PokerTableEvent.TYPE_PLAYER_CHIPS_CHANGED :
                 if (hasPocket) {
 
                     HoldemHand hhand = this.getPokerPlayer().getHoldemHand();
                     Hand community = hhand.getCommunity();
 
-                    if (community == null)
-                    {
+                    if (community == null) {
                         dealtPockets();
-                    }
-                    else switch (community.size())
-                    {
-                        case 5:
-                            dealtRiver();
-                            break;
-                        case 4:
-                            dealtTurn();
-                            break;
-                        case 3:
-                            dealtFlop();
-                            break;
-                    }
+                    } else
+                        switch (community.size()) {
+                            case 5 :
+                                dealtRiver();
+                                break;
+                            case 4 :
+                                dealtTurn();
+                                break;
+                            case 3 :
+                                dealtFlop();
+                                break;
+                        }
                 }
                 break;
         }
     }
 
     /**
-     * May be overridden to return a Class object that DDPoker should instantiate for
-     * configuring player types using this player implementation.  Returns null by
-     * default, indicating that this class has no configurable options.
+     * May be overridden to return a Class object that DDPoker should instantiate
+     * for configuring player types using this player implementation. Returns null
+     * by default, indicating that this class has no configurable options.
      */
-    public Class getOptionsPanelClass()
-    {
+    public Class getOptionsPanelClass() {
         return null;
     }
 
     /**
-     * @param quick If true, decision-making speed is preferred over quality.
+     * @param quick
+     *            If true, decision-making speed is preferred over quality.
      * @return One of the following:
      *         <p/>
      *         <ul>
@@ -515,8 +450,7 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
      *         <li>PlayerAction.raise(amount)</li>
      *         </ul>
      *         <p/>
-     *         FOLD or CALL == CHECK, when applicable.
-     *         <br>
+     *         FOLD or CALL == CHECK, when applicable. <br>
      *         <br>
      *         If BET or RAISE is less than minimum, amount is adjusted upwards.
      *         <br>
@@ -524,13 +458,12 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
      *         If BET or RAISE exceeds player chips, amount is adjusted downwards.
      *         <br>
      *         <br>
-     *         A bet or raise of zero == minimum bet/raise.
+     *         A bet or raise of zero == minimum bet/raise. <br>
      *         <br>
-     *         <br>
-     *         With bets to call, BET of equal amount == CALL, greater amount == RAISE.
+     *         With bets to call, BET of equal amount == CALL, greater amount ==
+     *         RAISE.
      */
-    public PlayerAction getAction(boolean quick)
-    {
+    public PlayerAction getAction(boolean quick) {
         return PlayerAction.fold();
     }
 
@@ -539,8 +472,7 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
      *
      * @return true if player wishes to rebuy.
      */
-    public boolean wantsRebuy()
-    {
+    public boolean wantsRebuy() {
         return false;
     }
 
@@ -549,16 +481,14 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
      *
      * @return true if player wishes to add on.
      */
-    public boolean wantsAddon()
-    {
+    public boolean wantsAddon() {
         return false;
     }
 
     /**
      * Is this player currently seated on the button?
      */
-    public boolean isButton()
-    {
+    public boolean isButton() {
         PokerPlayer player = getPokerPlayer();
 
         return player.getSeat() == player.getTable().getButton();
@@ -567,16 +497,13 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
     /**
      * Is the player in a particular seat on the button?
      */
-    public boolean isButton(int seat)
-    {
+    public boolean isButton(int seat) {
         PokerTable table = getPokerPlayer().getTable();
         PokerPlayer player = table.getPlayer(seat);
 
-        if (player == null)
-        {
+        if (player == null) {
             return false;
-        } else
-        {
+        } else {
             return (seat == table.getButton());
         }
     }
@@ -584,8 +511,7 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
     /**
      * Did this player post the small blind?
      */
-    public boolean isSmallBlind()
-    {
+    public boolean isSmallBlind() {
         PokerPlayer player = getPokerPlayer();
 
         return player.getSeat() == player.getHoldemHand().getSmallBlindSeat();
@@ -594,8 +520,7 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
     /**
      * Did this player post the big blind?
      */
-    public boolean isBigBlind()
-    {
+    public boolean isBigBlind() {
         PokerPlayer player = getPokerPlayer();
 
         return player.getSeat() == player.getHoldemHand().getBigBlindSeat();
@@ -604,8 +529,7 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
     /**
      * Is this player in early position?
      */
-    public boolean isEarlyPosition()
-    {
+    public boolean isEarlyPosition() {
         PokerPlayer player = getPokerPlayer();
 
         return player.isEarly();
@@ -614,8 +538,7 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
     /**
      * Is this player in middle position?
      */
-    public boolean isMiddlePosition()
-    {
+    public boolean isMiddlePosition() {
         PokerPlayer player = getPokerPlayer();
 
         return player.isMiddle();
@@ -624,8 +547,7 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
     /**
      * Is this player in late position?
      */
-    public boolean isLatePosition()
-    {
+    public boolean isLatePosition() {
         PokerPlayer player = getPokerPlayer();
 
         return player.isLate() && !isButton();
@@ -634,17 +556,13 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
     /**
      * Is the player in a particular seat in late position?
      */
-    public boolean isLatePosition(int seat)
-    {
+    public boolean isLatePosition(int seat) {
         PokerTable table = getPokerPlayer().getTable();
         PokerPlayer player = table.getPlayer(seat);
 
-        if (player == null)
-        {
+        if (player == null) {
             return false;
-        }
-        else
-        {
+        } else {
             return player.isLate() && (seat != table.getButton());
         }
     }
@@ -652,8 +570,7 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
     /**
      * Has the pot been raised?
      */
-    public boolean isPotRaised()
-    {
+    public boolean isPotRaised() {
         PokerPlayer player = getPokerPlayer();
 
         int potStatus = player.getHoldemHand().getPotStatus();
@@ -664,18 +581,16 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
     /**
      * Has the pot been reraised?
      */
-    public boolean isPotReraised()
-    {
+    public boolean isPotReraised() {
         PokerPlayer player = getPokerPlayer();
 
         return player.getHoldemHand().getPotStatus() == PokerConstants.RERAISED_POT;
     }
 
     /**
-     * Has the pot been called?  Pre-flop only.
+     * Has the pot been called? Pre-flop only.
      */
-    public boolean isPotCalled()
-    {
+    public boolean isPotCalled() {
         PokerPlayer player = getPokerPlayer();
 
         return player.getHoldemHand().getPotStatus() == PokerConstants.CALLED_POT;
@@ -684,79 +599,63 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
     /**
      * Has there been no pot action this round?
      */
-    public boolean isNoPotAction()
-    {
+    public boolean isNoPotAction() {
         PokerPlayer player = getPokerPlayer();
 
         return player.getHoldemHand().getPotStatus() == PokerConstants.NO_POT_ACTION;
     }
 
-    protected void printMessage(String sMessage)
-    {
+    protected void printMessage(String sMessage) {
         logger.debug(sMessage);
     }
 
-    public int getBetAmount()
-    {
+    public int getBetAmount() {
         return 0;
     }
 
-    public String getPlayerName()
-    {
+    public String getPlayerName() {
         return getPokerPlayer().getName();
     }
 
-    public int getSeatNumber()
-    {
+    public int getSeatNumber() {
         return getPokerPlayer().getSeat() + 1;
     }
 
-    public void playerAdded(int seat)
-    {
+    public void playerAdded(int seat) {
     }
 
-    public void playerRemoved(int seat)
-    {
+    public void playerRemoved(int seat) {
     }
 
-    public void newHand()
-    {
+    public void newHand() {
     }
 
-    public void dealtPockets()
-    {
+    public void dealtPockets() {
     }
 
-    public void dealtFlop()
-    {
+    public void dealtFlop() {
     }
 
-    public void dealtTurn()
-    {
+    public void dealtTurn() {
     }
 
-    public void dealtRiver()
-    {
+    public void dealtRiver() {
     }
 
-    public void blindsChanged()
-    {
+    public void blindsChanged() {
     }
 
-    public void endHand()
-    {
+    public void endHand() {
         PokerPlayer player = getPokerPlayer();
 
         HoldemHand hhand = player.getHoldemHand();
 
-        if ((player.getHand() != null) && (hhand != null))
-        {
+        if ((player.getHand() != null) && (hhand != null)) {
             getOpponentModel().endHand(this, hhand, player);
         }
     }
 
-    public void playerActed(PokerPlayer player, int action, int amount)
-    {
+    public void playerActed(PokerPlayer player, int action, int amount) {
     }
 
     /**
@@ -764,87 +663,74 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
      *
      * @return PRE_FLOP, FLOP, TURN, or RIVER.
      */
-    public int getBettingRound()
-    {
+    public int getBettingRound() {
         return getPokerPlayer().getHoldemHand().getRound();
     }
 
     /**
      * Are we betting before flop?
      */
-    public boolean isPreFlop()
-    {
+    public boolean isPreFlop() {
         return (getBettingRound() == PokerAI.PRE_FLOP);
     }
 
     /**
      * Are we betting after flop?
      */
-    public boolean isFlop()
-    {
+    public boolean isFlop() {
         return (getBettingRound() == PokerAI.FLOP);
     }
 
     /**
      * Are we betting after turn?
      */
-    public boolean isTurn()
-    {
+    public boolean isTurn() {
         return (getBettingRound() == PokerAI.TURN);
     }
 
     /**
      * Are we betting after river?
      */
-    public boolean isRiver()
-    {
+    public boolean isRiver() {
         return (getBettingRound() == PokerAI.RIVER);
     }
 
     /**
      * Get this player's hole cards.
      */
-    public Hand getPocket()
-    {
+    public Hand getPocket() {
         return getPokerPlayer().getHandSorted();
     }
 
     /**
      * Get the cards currently on the board.
      */
-    public Hand getCommunity()
-    {
+    public Hand getCommunity() {
         return getPokerPlayer().getHoldemHand().getCommunity();
     }
 
-    public int getPotStatus()
-    {
+    public int getPotStatus() {
         return getPokerPlayer().getHoldemHand().getPotStatus();
     }
 
     /**
      * Returns the number of players who started the hand.
      */
-    public int getNumPlayers()
-    {
+    public int getNumPlayers() {
         return getPokerPlayer().getHoldemHand().getNumPlayers();
     }
 
-    public int getRound()
-    {
+    public int getRound() {
         HoldemHand hhand = getPokerPlayer().getHoldemHand();
 
-        if (hhand == null)
-        {
+        if (hhand == null) {
             return HoldemHand.ROUND_NONE;
-        } else
-        {
+        } else {
             return hhand.getRound();
         }
     }
 
-    public int getAmountToCall()
-    {
+    public int getAmountToCall() {
         return getPokerPlayer().getHoldemHand().getCall(getPokerPlayer());
     }
 
@@ -870,8 +756,7 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
      *  2 Seats Occupied:	                B S
      * </pre></code>
      */
-    public int getStartingPositionCategory()
-    {
+    public int getStartingPositionCategory() {
         return getStartingPositionCategory(getPokerPlayer());
     }
 
@@ -897,69 +782,76 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
      *  2 Seats Occupied:	                B S
      * </pre></code>
      */
-    public int getStartingPositionCategory(PokerPlayer player)
-    {
+    public int getStartingPositionCategory(PokerPlayer player) {
         HoldemHand hhand = player.getHoldemHand();
 
         // no hand in play
-        if ((hhand == null) || player.isFolded() || player.isAllIn()) return POSITION_NONE;
+        if ((hhand == null) || player.isFolded() || player.isAllIn())
+            return POSITION_NONE;
 
         int numPlayers = getNumPlayers();
 
         int nPosition;
 
-        for (nPosition = 0; nPosition < numPlayers; ++nPosition)
-        {
-            if (hhand.getPlayerAt(nPosition) == player) break;
+        for (nPosition = 0; nPosition < numPlayers; ++nPosition) {
+            if (hhand.getPlayerAt(nPosition) == player)
+                break;
         }
 
         // not in hand
-        if (nPosition == numPlayers) return POSITION_NONE;
+        if (nPosition == numPlayers)
+            return POSITION_NONE;
 
         // special case for heads-up
-        if (numPlayers == 2) return (nPosition == 0) ? POSITION_SMALL : POSITION_BIG;
+        if (numPlayers == 2)
+            return (nPosition == 0) ? POSITION_SMALL : POSITION_BIG;
 
-        if (numPlayers - nPosition >= 8) return POSITION_EARLY;
+        if (numPlayers - nPosition >= 8)
+            return POSITION_EARLY;
 
-        if (numPlayers - nPosition >= 5) return POSITION_MIDDLE;
+        if (numPlayers - nPosition >= 5)
+            return POSITION_MIDDLE;
 
-        if (nPosition == (numPlayers - 2)) return POSITION_SMALL;
+        if (nPosition == (numPlayers - 2))
+            return POSITION_SMALL;
 
-        if (nPosition == numPlayers - 1) return POSITION_BIG;
+        if (nPosition == numPlayers - 1)
+            return POSITION_BIG;
 
-        if (numPlayers - nPosition >= 1) return POSITION_LATE;
+        if (numPlayers - nPosition >= 1)
+            return POSITION_LATE;
 
         throw new ApplicationError(ErrorCodes.ERROR_CODE_ERROR, "Fall through in getStartingPositionCategory()", null);
     }
 
     /**
-     * Returns the starting order of this player before the flop.
-     * At a full table, under the gun returns 0, big blind 9.
+     * Returns the starting order of this player before the flop. At a full table,
+     * under the gun returns 0, big blind 9.
      */
-    public int getStartingOrder()
-    {
+    public int getStartingOrder() {
         return getStartingOrder(getPokerPlayer());
     }
 
     /**
-     * Returns the starting order of a player before the flop.
-     * At a full table, under the gun returns 0, big blind 9.
+     * Returns the starting order of a player before the flop. At a full table,
+     * under the gun returns 0, big blind 9.
+     *
      * @param player
-     */ 
-    public int getStartingOrder(PokerPlayer player)
-    {
+     */
+    public int getStartingOrder(PokerPlayer player) {
         HoldemHand hhand = player.getHoldemHand();
 
         // no hand in play
-        if ((hhand == null) || player.isFolded() || player.isAllIn()) return POSITION_NONE;
+        if ((hhand == null) || player.isFolded() || player.isAllIn())
+            return POSITION_NONE;
 
         int numPlayers = getNumPlayers();
 
         int nPosition;
 
-        for (nPosition = 0; nPosition < numPlayers; ++nPosition)
-        {
-            if (hhand.getPlayerAt(nPosition) == player) break;
+        for (nPosition = 0; nPosition < numPlayers; ++nPosition) {
+            if (hhand.getPlayerAt(nPosition) == player)
+                break;
         }
 
         return nPosition;
@@ -985,8 +877,7 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
      *  2 Players Left:	                L T
      * </pre></code>
      */
-    public int getPostFlopPositionCategory()
-    {
+    public int getPostFlopPositionCategory() {
         return getPostFlopPositionCategory(getPokerPlayer());
     }
 
@@ -1010,24 +901,22 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
      *  2 Players Left:	                L T
      * </pre></code>
      */
-    public int getPostFlopPositionCategory(PokerPlayer player)
-    {
+    public int getPostFlopPositionCategory(PokerPlayer player) {
         HoldemHand hhand = player.getHoldemHand();
 
         // no hand in play, or out of hand
-        if ((hhand == null) || player.isFolded() || player.isAllIn()) return POSITION_NONE;
+        if ((hhand == null) || player.isFolded() || player.isAllIn())
+            return POSITION_NONE;
 
         int numPlayers = getNumPlayers();
 
         int button = 0;
 
         // find the button
-        for (int i = 0; i < numPlayers; ++i)
-        {
+        for (int i = 0; i < numPlayers; ++i) {
             PokerPlayer p = hhand.getPlayerAt(i);
 
-            if (p.getSeat() == hhand.getTable().getButton())
-            {
+            if (p.getSeat() == hhand.getTable().getButton()) {
                 button = i;
                 break;
             }
@@ -1038,159 +927,148 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
         int nPosition = 0;
         int numLeft = numPlayers;
 
-        for (int i = 0; i < numPlayers; ++i)
-        {
+        for (int i = 0; i < numPlayers; ++i) {
             PokerPlayer p = hhand.getPlayerAt((i + button + 1) % numPlayers);
 
-            if (p == player) found = true;
+            if (p == player)
+                found = true;
 
-            if (p.isFolded() || p.isAllIn()) --numLeft;
+            if (p.isFolded() || p.isAllIn())
+                --numLeft;
 
-            else if (!found) ++nPosition;
+            else if (!found)
+                ++nPosition;
         }
 
         // not in hand
-        if (!found) return POSITION_NONE;
+        if (!found)
+            return POSITION_NONE;
 
-        switch (numLeft - nPosition)
-        {
-            case 1:
+        switch (numLeft - nPosition) {
+            case 1 :
                 return POSITION_LAST;
-            case 2:
+            case 2 :
                 return POSITION_LATE;
-            case 3:
+            case 3 :
                 return (numLeft > 6) ? POSITION_LATE : POSITION_MIDDLE;
-            case 4:
+            case 4 :
                 return POSITION_MIDDLE;
-            case 5:
+            case 5 :
                 return (numLeft > 6) ? POSITION_MIDDLE : POSITION_EARLY;
-            case 6:
+            case 6 :
                 return (numLeft > 7) ? POSITION_MIDDLE : POSITION_EARLY;
-            case 7:
+            case 7 :
                 return (numLeft > 9) ? POSITION_MIDDLE : POSITION_EARLY;
-            case 8:
-            case 9:
-            case 10:
+            case 8 :
+            case 9 :
+            case 10 :
                 return POSITION_EARLY;
         }
 
         throw new ApplicationError(ErrorCodes.ERROR_CODE_ERROR, "Fall through in getPostFlopPositionCategory()", null);
     }
 
-    public String getStartingPositionDisplay()
-    {
-        switch (getStartingPositionCategory())
-        {
-            case POSITION_SMALL: return "Small Blind";
-            case POSITION_BIG: return "Big Blind";
-            case POSITION_EARLY: return "Early";
-            case POSITION_MIDDLE: return "Middle";
-            case POSITION_LATE: return isButton() ? "Button" : "Late";
+    public String getStartingPositionDisplay() {
+        switch (getStartingPositionCategory()) {
+            case POSITION_SMALL :
+                return "Small Blind";
+            case POSITION_BIG :
+                return "Big Blind";
+            case POSITION_EARLY :
+                return "Early";
+            case POSITION_MIDDLE :
+                return "Middle";
+            case POSITION_LATE :
+                return isButton() ? "Button" : "Late";
         }
 
         return null;
     }
 
-    public String getPostFlopPositionDisplay()
-    {
+    public String getPostFlopPositionDisplay() {
         int nCat = getPostFlopPositionCategory();
 
-        switch (nCat)
-        {
-            case POSITION_EARLY: return "Early";
-            case POSITION_MIDDLE: return "Middle";
-            case POSITION_LATE: return "Late";
-            case POSITION_LAST: return "Last";
+        switch (nCat) {
+            case POSITION_EARLY :
+                return "Early";
+            case POSITION_MIDDLE :
+                return "Middle";
+            case POSITION_LATE :
+                return "Late";
+            case POSITION_LAST :
+                return "Last";
         }
 
         return null;
     }
 
-    public int getChipCount()
-    {
+    public int getChipCount() {
         return getPokerPlayer().getChipCount();
     }
 
-    public int getBigBlindAmount()
-    {
+    public int getBigBlindAmount() {
         return getPokerPlayer().getHoldemHand().getBigBlind();
     }
 
-    public int getSmallBlindAmount()
-    {
+    public int getSmallBlindAmount() {
         return getPokerPlayer().getHoldemHand().getSmallBlind();
     }
 
-    public int getTotalPotAmount()
-    {
+    public int getTotalPotAmount() {
         return getPokerPlayer().getHoldemHand().getTotalPotChipCount();
     }
 
-    public int getPlayersBefore()
-    {
+    public int getPlayersBefore() {
         return getPokerPlayer().getHoldemHand().getNumBefore(getPokerPlayer());
     }
 
-    public int getPlayersLeftToAct()
-    {
+    public int getPlayersLeftToAct() {
         return getPokerPlayer().getHoldemHand().getNumAfter(getPokerPlayer());
     }
 
-    public int getBigBlindChipCount()
-    {
+    public int getBigBlindChipCount() {
         return getPokerPlayer().getHoldemHand().getBigBlindPlayer().getChipCount();
     }
 
-    public Hand getHand()
-    {
+    public Hand getHand() {
         return getPokerPlayer().getHand();
     }
 
-    public int getNumAfter()
-    {
+    public int getNumAfter() {
         PokerPlayer player = getPokerPlayer();
         return player.getHoldemHand().getNumAfter(player);
     }
 
-    public void demarshal(MsgState state, TokenizedList list)
-    {
+    public void demarshal(MsgState state, TokenizedList list) {
         init();
 
         super.demarshal(state, list);
 
         PokerSaveDetails pdetails = null;
-        if (state != null && state instanceof GameState)
-        {
-            pdetails = (PokerSaveDetails) ((GameState)state).getSaveDetails().getCustomInfo();
+        if (state != null && state instanceof GameState) {
+            pdetails = (PokerSaveDetails) ((GameState) state).getSaveDetails().getCustomInfo();
         }
 
         String sPlayerType = list.removeStringToken();
         PlayerType playerType = PlayerType.getByUniqueKey(sPlayerType, pdetails);
         setPlayerType(playerType);
 
-        if (list.peekToken() instanceof DMTypedHashMap)
-        {
-            map_ = (DMTypedHashMap)list.removeToken();
-        }
-        else
-        {
+        if (list.peekToken() instanceof DMTypedHashMap) {
+            map_ = (DMTypedHashMap) list.removeToken();
+        } else {
             map_ = new DMTypedHashMap();
         }
 
-        if (map_.containsKey("model.handsPlayed"))
-        {
-            //System.out.println("loading new style opponent model");
+        if (map_.containsKey("model.handsPlayed")) {
+            // System.out.println("loading new style opponent model");
             getOpponentModel().loadFromMap(map_, "model.");
-        }
-        else
-        {
-            //System.out.println("loading old style opponent model");
+        } else {
+            // System.out.println("loading old style opponent model");
             getOpponentModel().loadFromMap(map_, "om." + getPokerPlayer().getSeat() + ".");
         }
     }
 
-    public void marshal(MsgState state, TokenizedList list)
-    {
+    public void marshal(MsgState state, TokenizedList list) {
         super.marshal(state, list);
 
         getOpponentModel().saveToMap(map_, "model.");
@@ -1200,13 +1078,11 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
         list.addToken(map_);
     }
 
-    protected DMTypedHashMap getMap()
-    {
+    protected DMTypedHashMap getMap() {
         return map_;
     }
 
-    public OpponentModel getOpponentModel()
-    {
+    public OpponentModel getOpponentModel() {
         return opponentModel_;
     }
 }

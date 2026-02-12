@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -38,18 +38,13 @@ import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.engine.*;
 
 /**
- * Created by IntelliJ IDEA.
- * User: donohoe
- * Date: Mar 18, 2005
- * Time: 4:40:33 PM
+ * Created by IntelliJ IDEA. User: donohoe Date: Mar 18, 2005 Time: 4:40:33 PM
  * To change this template use File | Settings | File Templates.
  */
-public class ImproveOdds extends Odds
-{
+public class ImproveOdds extends Odds {
     String sTotal_;
 
-    public ImproveOdds(GameContext context)
-    {
+    public ImproveOdds(GameContext context) {
         super(context, "improveodds");
         setDynamicTitle(true);
     }
@@ -57,28 +52,25 @@ public class ImproveOdds extends Odds
     /**
      * dynamic title param, called after updateInfo()
      */
-    protected Object getDynamicTitleParam()
-    {
+    protected Object getDynamicTitleParam() {
         return sTotal_;
     }
 
-	///
+    ///
     /// display logic
     ///
 
     /**
      * we update during all-in showdown
      */
-    protected boolean isUpdatedDuringAllInShowdown()
-    {
+    protected boolean isUpdatedDuringAllInShowdown() {
         return true;
     }
 
     /**
      * get display string
      */
-    protected String getDisplay(int nRound, HoldemHand hhand, PokerPlayer asViewedBy, Hand hand)
-    {
+    protected String getDisplay(int nRound, HoldemHand hhand, PokerPlayer asViewedBy, Hand hand) {
         sTotal_ = null;
 
         // get community cards
@@ -87,8 +79,7 @@ public class ImproveOdds extends Odds
         nRound = hhand.getRoundForDisplay();
 
         // pre-flop
-        if (nRound == HoldemHand.ROUND_PRE_FLOP)
-        {
+        if (nRound == HoldemHand.ROUND_PRE_FLOP) {
             return "";
         }
 
@@ -98,33 +89,29 @@ public class ImproveOdds extends Odds
         HandFutures fut = null;
 
         // switch based on round
-        switch (nRound)
-        {
-            case HoldemHand.ROUND_FLOP:
-            case HoldemHand.ROUND_TURN:
-                //HandFutures.DEBUG = true;
+        switch (nRound) {
+            case HoldemHand.ROUND_FLOP :
+            case HoldemHand.ROUND_TURN :
+                // HandFutures.DEBUG = true;
                 fut = new HandFutures(fast, hand, community);
-                //HandFutures.DEBUG = false;
+                // HandFutures.DEBUG = false;
                 StringBuilder sb = new StringBuilder();
                 double d;
                 double dTotal = 0.0;
                 int nCnt = 0;
-                for (int i = Math.max(info.getHandType() + 1, HandInfo.TRIPS); i <= HandInfo.ROYAL_FLUSH; i++)
-                {
+                for (int i = Math.max(info.getHandType() + 1, HandInfo.TRIPS); i <= HandInfo.ROYAL_FLUSH; i++) {
                     d = fut.getOddsImproveTo(i);
-                    if (d == 0.0d) continue;
+                    if (d == 0.0d)
+                        continue;
                     nCnt++;
                     dTotal += d;
-                    sb.append(PropertyConfig.getMessage("msg.odds.imptype",
-                                    HandInfo.getHandTypeDesc(i),
-                                    PokerConstants.formatPercent(d)));
+                    sb.append(PropertyConfig.getMessage("msg.odds.imptype", HandInfo.getHandTypeDesc(i),
+                            PokerConstants.formatPercent(d)));
                 }
-                if (sb.length() > 0)
-                {
+                if (sb.length() > 0) {
                     sb.insert(0, PropertyConfig.getMessage("msg.odds.table.start"));
                     sTotal_ = PokerConstants.formatPercent(dTotal);
-                    if (nCnt > 1)
-                    {
+                    if (nCnt > 1) {
                         sb.append(PropertyConfig.getMessage("msg.odds.total", sTotal_));
                     }
                     sb.append(PropertyConfig.getMessage("msg.odds.table.end"));
@@ -132,9 +119,9 @@ public class ImproveOdds extends Odds
                 }
                 break;
 
-            case HoldemHand.ROUND_RIVER:
-            case HoldemHand.ROUND_SHOWDOWN:
-            default:
+            case HoldemHand.ROUND_RIVER :
+            case HoldemHand.ROUND_SHOWDOWN :
+            default :
                 break;
         }
 

@@ -5,7 +5,7 @@
  *
  * From www.JavaExchange.com, Open Software licensing
  *
- * 11/05/02 -- Performance enhancement from Mike Dubman.  
+ * 11/05/02 -- Performance enhancement from Mike Dubman.
  *             Moved InetAddr.getLocal to static block.  Mike has measured
  *             a 10 fold improvement in run time.
  * 01/29/02 -- Bug fix: Improper seeding of nonsecure Random object
@@ -89,8 +89,7 @@ import java.util.*;
  * - Marc
  */
 
-public class RandomGUID extends Object
-{
+public class RandomGUID extends Object {
 
     public String valueBeforeMD5 = "";
     public String valueAfterMD5 = "";
@@ -98,73 +97,61 @@ public class RandomGUID extends Object
     private static SecureRandom mySecureRand;
 
     /*
-     * Static block to take care of one time secureRandom seed.
-     * It takes a few seconds to initialize SecureRandom.  You might
-     * want to consider removing this static block or replacing
-     * it with a "time since first loaded" seed to reduce this time.
-     * This block will run only once per JVM instance.
+     * Static block to take care of one time secureRandom seed. It takes a few
+     * seconds to initialize SecureRandom. You might want to consider removing this
+     * static block or replacing it with a "time since first loaded" seed to reduce
+     * this time. This block will run only once per JVM instance.
      */
 
-    static
-    {
+    static {
         mySecureRand = new SecureRandom();
         long secureInitializer = mySecureRand.nextLong();
         myRand = new Random(secureInitializer);
     }
 
     /*
-     * Default constructor.  With no specification of security option,
-     * this constructor defaults to lower security, high performance.
+     * Default constructor. With no specification of security option, this
+     * constructor defaults to lower security, high performance.
      */
-    public RandomGUID(String sLocalHost)
-    {
+    public RandomGUID(String sLocalHost) {
         getRandomGUID(sLocalHost, false);
     }
 
     /*
-     * Constructor with security option.  Setting secure true
-     * enables each random number generated to be cryptographically
-     * strong.  Secure false defaults to the standard Random function seeded
-     * with a single cryptographically strong random number.
+     * Constructor with security option. Setting secure true enables each random
+     * number generated to be cryptographically strong. Secure false defaults to the
+     * standard Random function seeded with a single cryptographically strong random
+     * number.
      */
-    public RandomGUID(String sLocalHost, boolean secure)
-    {
+    public RandomGUID(String sLocalHost, boolean secure) {
         getRandomGUID(sLocalHost, secure);
     }
 
     /*
      * Method to generate the random GUID
      */
-    private void getRandomGUID(String sLocalHost, boolean secure)
-    {
+    private void getRandomGUID(String sLocalHost, boolean secure) {
         MessageDigest md5 = null;
         StringBuilder sbValueBeforeMD5 = new StringBuilder();
 
-        try
-        {
+        try {
             md5 = MessageDigest.getInstance("MD5");
-        }
-        catch (NoSuchAlgorithmException e)
-        {
+        } catch (NoSuchAlgorithmException e) {
             System.err.println("Error: " + e);
         }
 
-        try
-        {
+        try {
             long time = System.currentTimeMillis();
             long rand = 0;
 
-            if (secure)
-            {
+            if (secure) {
                 rand = mySecureRand.nextLong();
-            }
-            else
-            {
+            } else {
                 rand = myRand.nextLong();
             }
 
             // This StringBuilder can be a long as you need; the MD5
-            // hash will always return 128 bits.  You can change
+            // hash will always return 128 bits. You can change
             // the seed to include anything you want here.
             // You could even stream a file through the MD5 making
             // the odds of guessing it at least as great as that
@@ -180,30 +167,25 @@ public class RandomGUID extends Object
 
             byte[] array = md5.digest();
             StringBuilder sb = new StringBuilder();
-            for (int j = 0; j < array.length; ++j)
-            {
+            for (int j = 0; j < array.length; ++j) {
                 int b = array[j] & 0xFF;
-                if (b < 0x10) sb.append('0');
+                if (b < 0x10)
+                    sb.append('0');
                 sb.append(Integer.toHexString(b));
             }
 
             valueAfterMD5 = sb.toString();
 
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             System.err.println("Error:" + e);
         }
     }
 
-
     /*
-     * Convert to the standard format for GUID
-     * (Useful for SQL Server UniqueIdentifiers, etc.)
-     * Example: C2FEEEAC-CFCD-11D1-8B05-00600806D9B6
+     * Convert to the standard format for GUID (Useful for SQL Server
+     * UniqueIdentifiers, etc.) Example: C2FEEEAC-CFCD-11D1-8B05-00600806D9B6
      */
-    public String toString()
-    {
+    public String toString() {
         String raw = valueAfterMD5.toUpperCase();
         StringBuilder sb = new StringBuilder();
         sb.append(raw.substring(0, 8));
@@ -222,10 +204,8 @@ public class RandomGUID extends Object
     /*
      * Demonstraton and self test of class
      */
-    public static void main(String args[])
-    {
-        for (int i = 0; i < 100; i++)
-        {
+    public static void main(String args[]) {
+        for (int i = 0; i < 100; i++) {
             RandomGUID myGUID = new RandomGUID("test", true);
             System.out.println("Seeding String=" + myGUID.valueBeforeMD5);
             System.out.println("rawGUID=" + myGUID.valueAfterMD5);

@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -47,13 +47,12 @@ import org.apache.logging.log4j.Logger;
 
 /**
  *
- * @author  donohoe
+ * @author donohoe
  */
 @SuppressWarnings({"FieldCanBeLocal", "unused", "StatementWithEmptyBody", "DuplicatedCode"})
-public class HandInfoFast
-{
+public class HandInfoFast {
     static Logger logger = LogManager.getLogger(HandInfoFast.class);
-    
+
     // num cards
     private static final int NUM_CARDS = 5;
 
@@ -74,10 +73,10 @@ public class HandInfoFast
     int nOvercardCount_;
 
     private final byte[] nNumRank_ = new byte[Card.ACE + 1];
-    private final byte[] nGroupings_ = new byte[NUM_CARDS+1];
+    private final byte[] nGroupings_ = new byte[NUM_CARDS + 1];
     private final byte[][] nTopGroupings_ = new byte[NUM_CARDS + 1][2];
     private final byte TOPGROUPINIT = (byte) 0; // low value is 2 (up to A)
-    
+
     // straight
     private byte nNutStraightHigh_ = -1;
     private byte nStraightHigh_ = 0;
@@ -108,168 +107,143 @@ public class HandInfoFast
     private boolean b2ndNutFlushDraw_ = false;
     private boolean bWeakFlushDraw_ = false;
 
-    public HandInfoFast()
-    {
+    public HandInfoFast() {
     }
 
-    public int getHandType()
-    {
+    public int getHandType() {
         return getTypeFromScore(nScore_);
     }
 
-    public Hand getCommunity()
-    {
+    public Hand getCommunity() {
         return community_;
     }
 
-    public Hand getPocket()
-    {
+    public Hand getPocket() {
         return pocket_;
     }
 
-    public int getLowestBoardRank()
-    {
+    public int getLowestBoardRank() {
         return nLowestBoardRank_;
     }
 
-    public int getHighestBoardRank()
-    {
+    public int getHighestBoardRank() {
         return nHighestBoardRank_;
     }
 
-    public int getBigPairRank()
-    {
+    public int getBigPairRank() {
         return nBigPairRank_;
     }
 
-    public int getSmallPairRank()
-    {
+    public int getSmallPairRank() {
         return nSmallPairRank_;
     }
 
-    public int getTripsRank()
-    {
+    public int getTripsRank() {
         return nTripsRank_;
     }
 
-    public int getQuadsRank()
-    {
+    public int getQuadsRank() {
         return nQuadsRank_;
     }
 
-    public int getHighCardRank()
-    {
+    public int getHighCardRank() {
         return nHighCardRank_;
     }
 
-    public int getOvercardCount()
-    {
+    public int getOvercardCount() {
         return nOvercardCount_;
     }
 
     /**
      * Return hand type from score
      */
-    public static int getTypeFromScore(int nScore)
-    {
+    public static int getTypeFromScore(int nScore) {
         return nScore / HandInfo.BASE;
     }
-    
+
     /**
      * Get major suit from last getScore() call
      */
-    public int getLastMajorSuit()
-    {
+    public int getLastMajorSuit() {
         return nBiggestSuit_;
     }
- 
+
     /**
-     * Get card ranks from score and store in given int array.  The
-     * most important cards start at index 0. 
+     * Get card ranks from score and store in given int array. The most important
+     * cards start at index 0.
      */
-    public static void getCards(int nScore, int[] cards)
-    {
+    public static void getCards(int nScore, int[] cards) {
         nScore = nScore % HandInfo.BASE;
         int cnt = 0;
         int n;
-        for (int i = 16; i >= 0; i -= 4)
-        {
+        for (int i = 16; i >= 0; i -= 4) {
             n = (nScore >> i) % 16;
-            if (n == 0) continue;
+            if (n == 0)
+                continue;
             cards[cnt++] = n;
         }
     }
-    
+
     /**
      * Get cards from score
      */
-    public static void debugScore(int nScore)
-    {
+    public static void debugScore(int nScore) {
         int nType = getTypeFromScore(nScore);
         logger.debug("{} TYPE: {}", nScore, HandInfo.getHandTypeDesc(nType));
         nScore = nScore % HandInfo.BASE;
         int n;
-        for (int i = 16; i >= 0; i -= 4)
-        {
+        for (int i = 16; i >= 0; i -= 4) {
             n = (nScore >> i);
             n = n % 16;
-            if (n == 0)
-            {
-                //skip
-            }
-            else
-            {
+            if (n == 0) {
+                // skip
+            } else {
                 logger.debug("Card: {}", Card.getRank(n));
             }
         }
     }
 
-    public int getScore(Hand pocket, Hand community)
-    {
-        try
-        {
+    public int getScore(Hand pocket, Hand community) {
+        try {
             return getScoreInternal(pocket, community);
-        }
-        catch (RuntimeException e)
-        {
+        } catch (RuntimeException e) {
             System.out.println("Caught runtime exception in getScore(" + pocket + ", " + community + ")");
 
             throw e;
         }
     }
 
-    private int getScoreInternal(Hand pocket, Hand community)
-    {
+    private int getScoreInternal(Hand pocket, Hand community) {
         nScore_ = 0;
 
         pocket_.clear();
         community_.clear();
         all_.clear();
 
-        if (pocket != null)
-        {
+        if (pocket != null) {
             pocket_.addAll(pocket);
             all_.addAll(pocket);
         }
 
-        if (community != null)
-        {
+        if (community != null) {
             community_.addAll(community);
             all_.addAll(community);
         }
 
-        byte nMaxHandSize = (byte)(Math.min(all_.size(), NUM_CARDS));
+        byte nMaxHandSize = (byte) (Math.min(all_.size(), NUM_CARDS));
 
         boolean bStraight = false;
         boolean bFlush = false;
-        int r,c;
+        int r, c;
         byte rank, suit;
 
         // init
-        for (r=Card.TWO; r <= Card.ACE; r++) nNumRank_[r] = 0;
-        for (r=0; r <= NUM_CARDS; r++) nGroupings_[r] = 0;
+        for (r = Card.TWO; r <= Card.ACE; r++)
+            nNumRank_[r] = 0;
+        for (r = 0; r <= NUM_CARDS; r++)
+            nGroupings_[r] = 0;
 
-        for (suit=0; suit < CardSuit.NUM_SUITS; suit++) {
+        for (suit = 0; suit < CardSuit.NUM_SUITS; suit++) {
             nNumSuit_[suit] = 0;
             nBoardRankBits_[suit] = 0;
             nHoleSuitHigh_[suit] = 0;
@@ -277,7 +251,7 @@ public class HandInfoFast
         }
         nBoardRankBits_[CardSuit.NUM_SUITS] = 0;
 
-        for (int i=0; i < (NUM_CARDS+1); i++) {
+        for (int i = 0; i < (NUM_CARDS + 1); i++) {
             nTopGroupings_[i][0] = TOPGROUPINIT;
             nTopGroupings_[i][1] = TOPGROUPINIT;
         }
@@ -293,32 +267,26 @@ public class HandInfoFast
         nBiggestSuit_ = 0;
 
         // determine num of each rank, check flush
-        // descending iteration so that board cards first, permitting overcard identification
-        for (r=all_.size()-1; r >=0; r--)
-        {
-            rank = (byte)all_.getCard(r).getRank();
-            suit = (byte)all_.getCard(r).getCardSuit().getRank();
+        // descending iteration so that board cards first, permitting overcard
+        // identification
+        for (r = all_.size() - 1; r >= 0; r--) {
+            rank = (byte) all_.getCard(r).getRank();
+            suit = (byte) all_.getCard(r).getCardSuit().getRank();
 
-            if (r < pocket_.size())
-            {
-                if (rank > nHighestBoardRank_)
-                {
+            if (r < pocket_.size()) {
+                if (rank > nHighestBoardRank_) {
                     ++nOvercardCount_;
                 }
 
                 if (rank > nHoleSuitHigh_[suit]) {
                     nHoleSuitHigh_[suit] = rank;
                 }
-            }
-            else
-            {
-                if (rank < nLowestBoardRank_)
-                {
+            } else {
+                if (rank < nLowestBoardRank_) {
                     nLowestBoardRank_ = rank;
                 }
 
-                if (rank > nHighestBoardRank_)
-                {
+                if (rank > nHighestBoardRank_) {
                     nHighestBoardRank_ = rank;
                 }
 
@@ -337,16 +305,14 @@ public class HandInfoFast
 
             nGroupings_[nNumRank_[rank]]++;
             if (nNumRank_[rank] != 0) {
-                nGroupings_[nNumRank_[rank]-1]--;
+                nGroupings_[nNumRank_[rank] - 1]--;
             }
 
-            if ((++nNumSuit_[suit]) >= NUM_CARDS)
-            {
+            if ((++nNumSuit_[suit]) >= NUM_CARDS) {
                 bFlush = true;
             }
 
-            if (nNumSuit_[suit] > nNumSuit_[nBiggestSuit_])
-            {
+            if (nNumSuit_[suit] > nNumSuit_[nBiggestSuit_]) {
                 nBiggestSuit_ = suit;
             }
         }
@@ -354,48 +320,34 @@ public class HandInfoFast
         nBetterFlushCards_ = 0;
         nFlushHighRank_ = 0;
 
-        if (bFlush)
-        {
+        if (bFlush) {
 
-            if (nHoleSuitHigh_[nBiggestSuit_] == 0)
-            {
+            if (nHoleSuitHigh_[nBiggestSuit_] == 0) {
                 // board flush
                 int flushcount = 0;
-                for (int flushrank = Card.ACE; flushcount < 5; --flushrank)
-                {
-                    if ((nBoardRankBits_[nBiggestSuit_] & (1L << flushrank)) == 0)
-                    {
+                for (int flushrank = Card.ACE; flushcount < 5; --flushrank) {
+                    if ((nBoardRankBits_[nBiggestSuit_] & (1L << flushrank)) == 0) {
                         ++nBetterFlushCards_;
-                    }
-                    else
-                    {
+                    } else {
                         ++flushcount;
 
-                        if (nFlushHighRank_ == 0)
-                        {
+                        if (nFlushHighRank_ == 0) {
                             nFlushHighRank_ = flushrank;
                         }
                     }
                 }
-            }
-            else
-            {
-                for (int flushrank = Card.ACE; flushrank > nHoleSuitHigh_[nBiggestSuit_]; --flushrank)
-                {
-                    if ((nBoardRankBits_[nBiggestSuit_] & (1L << flushrank)) == 0)
-                    {
+            } else {
+                for (int flushrank = Card.ACE; flushrank > nHoleSuitHigh_[nBiggestSuit_]; --flushrank) {
+                    if ((nBoardRankBits_[nBiggestSuit_] & (1L << flushrank)) == 0) {
                         ++nBetterFlushCards_;
-                    }
-                    else if (nFlushHighRank_ == 0)
-                    {
+                    } else if (nFlushHighRank_ == 0) {
                         nFlushHighRank_ = flushrank;
                     }
                 }
 
                 // handles cases where the high flush cards are not on the board
 
-                if (nFlushHighRank_ == 0)
-                {
+                if (nFlushHighRank_ == 0) {
                     nFlushHighRank_ = nHoleSuitHigh_[nBiggestSuit_];
                 }
             }
@@ -407,20 +359,16 @@ public class HandInfoFast
         bWeakFlushDraw_ = false;
 
         // check flush draws
-        if (!bFlush && (nNumSuit_[nBiggestSuit_] == 4))
-        {
+        if (!bFlush && (nNumSuit_[nBiggestSuit_] == 4)) {
             bFlushDraw_ = true;
-            if (nBoardNumSuit_[nBiggestSuit_] == 4)
-            {
+            if (nBoardNumSuit_[nBiggestSuit_] == 4) {
                 // board flush draw
-            }
-            else
-            {
+            } else {
                 switch (nHoleSuitHigh_[nBiggestSuit_]) {
-                    case Card.ACE:
+                    case Card.ACE :
                         bNutFlushDraw_ = true;
                         break;
-                    case Card.KING:
+                    case Card.KING :
                         if (nBoardRankBits_[nBiggestSuit_] >= 16384) // 1 << A
                         {
                             bNutFlushDraw_ = true;
@@ -428,70 +376,66 @@ public class HandInfoFast
                             b2ndNutFlushDraw_ = true;
                         }
                         break;
-                    case Card.QUEEN:
-                        switch((int)(nBoardRankBits_[nBiggestSuit_] >> Card.KING))
-                        {
-                            case 3: // AK on board
+                    case Card.QUEEN :
+                        switch ((int) (nBoardRankBits_[nBiggestSuit_] >> Card.KING)) {
+                            case 3 : // AK on board
                                 bNutFlushDraw_ = true;
                                 break;
-                            case 2: // A on board
-                            case 1: // K on board
+                            case 2 : // A on board
+                            case 1 : // K on board
                                 b2ndNutFlushDraw_ = true;
                                 break;
-                            default:
+                            default :
                                 bWeakFlushDraw_ = true;
                                 break;
                         }
                         break;
-                    case Card.JACK:
-                        switch ((int) (nBoardRankBits_[nBiggestSuit_] >> Card.QUEEN))
-                        {
-                            case 7: // AKQ on board
+                    case Card.JACK :
+                        switch ((int) (nBoardRankBits_[nBiggestSuit_] >> Card.QUEEN)) {
+                            case 7 : // AKQ on board
                                 bNutFlushDraw_ = true;
                                 break;
-                            case 6: // AK on board
-                            case 5: // AQ on board
-                            case 3: // KQ on board
+                            case 6 : // AK on board
+                            case 5 : // AQ on board
+                            case 3 : // KQ on board
                                 b2ndNutFlushDraw_ = true;
                                 break;
-                            default:
+                            default :
                                 bWeakFlushDraw_ = true;
                                 break;
                         }
                         break;
-                    case Card.TEN:
-                        switch ((int) (nBoardRankBits_[nBiggestSuit_] >> Card.JACK))
-                        {
-                            case 15: // AKQJ on board
+                    case Card.TEN :
+                        switch ((int) (nBoardRankBits_[nBiggestSuit_] >> Card.JACK)) {
+                            case 15 : // AKQJ on board
                                 bNutFlushDraw_ = true;
                                 break;
-                            case 14: // AKQ on board
-                            case 13: // AKJ on board
-                            case 11: // AQJ on board
-                            case 7: // KQJ on board
+                            case 14 : // AKQ on board
+                            case 13 : // AKJ on board
+                            case 11 : // AQJ on board
+                            case 7 : // KQJ on board
                                 b2ndNutFlushDraw_ = true;
                                 break;
-                            default:
+                            default :
                                 bWeakFlushDraw_ = true;
                                 break;
                         }
                         break;
-                    case Card.NINE:
-                        switch ((int) (nBoardRankBits_[nBiggestSuit_] >> Card.TEN))
-                        {
-                            case 30: // AKQJ on board
-                            case 29: // AKQT on board
-                            case 27: // AKJT on board
-                            case 23: // AQJT on board
-                            case 15: // KQJT on board
+                    case Card.NINE :
+                        switch ((int) (nBoardRankBits_[nBiggestSuit_] >> Card.TEN)) {
+                            case 30 : // AKQJ on board
+                            case 29 : // AKQT on board
+                            case 27 : // AKJT on board
+                            case 23 : // AQJT on board
+                            case 15 : // KQJT on board
                                 b2ndNutFlushDraw_ = true;
                                 break;
-                            default:
+                            default :
                                 bWeakFlushDraw_ = true;
                                 break;
                         }
                         break;
-                    default:
+                    default :
                         bWeakFlushDraw_ = true;
                         break;
                 }
@@ -499,79 +443,72 @@ public class HandInfoFast
         }
 
         // Ace present for low straight
-        nStraightSize_ = (byte)(nNumRank_[Card.ACE] != 0 ? 1 : 0);
+        nStraightSize_ = (byte) (nNumRank_[Card.ACE] != 0 ? 1 : 0);
 
         // check for straight and pair data
-        for (r=Card.TWO; r <= Card.ACE; r++)
-        {
+        for (r = Card.TWO; r <= Card.ACE; r++) {
             // check straight
-            if (nNumRank_[r] != 0)
-            {
-                if ((++nStraightSize_) >= NUM_CARDS )
-                {
+            if (nNumRank_[r] != 0) {
+                if ((++nStraightSize_) >= NUM_CARDS) {
                     bStraight = true;
-                    nStraightHigh_ = (byte)r;
+                    nStraightHigh_ = (byte) r;
                 }
             } else {
                 if (!bStraight) {
 
                     long boardBits = (nBoardRankBits_[CardSuit.NUM_SUITS] >> (r - nStraightSize_)) & 31;
-                    boolean pocketOver = (r - nStraightSize_ <= Card.NINE) && (nNumRank_[r+5-nStraightSize_] != 0) &&
-                            ((nBoardRankBits_[CardSuit.NUM_SUITS] >> (r - nStraightSize_ - 1) & 1) == 0);
+                    boolean pocketOver = (r - nStraightSize_ <= Card.NINE) && (nNumRank_[r + 5 - nStraightSize_] != 0)
+                            && ((nBoardRankBits_[CardSuit.NUM_SUITS] >> (r - nStraightSize_ - 1) & 1) == 0);
 
                     switch (nStraightSize_) {
-                        case 4:
+                        case 4 :
                             // add in wheel draws for the ace with 2345
-                            if (r == 6)
-                            {
+                            if (r == 6) {
                                 nStraightDrawOuts_ += (bFlushDraw_ ? 3 : 4);
                             }
                             // exclude ass-end draws, and draws that don't involve pocket
-                            if (pocketOver || ((boardBits != 15) && (boardBits != 14) && (boardBits !=12)))
-                            {
+                            if (pocketOver || ((boardBits != 15) && (boardBits != 14) && (boardBits != 12))) {
                                 nStraightDrawOuts_ += (bFlushDraw_ ? 3 : 4);
-                                //System.out.println("Hand:" + pocket_ + community_ + " : " + Integer.toString(bFlushDraw_ ? 3 : 4) + " straight outs : " + r);
+                                // System.out.println("Hand:" + pocket_ + community_ + " : " +
+                                // Integer.toString(bFlushDraw_ ? 3 : 4) + " straight outs : " + r);
                             }
                             break;
-                        case 3:
+                        case 3 :
                             // exclude ass-end draws, and draws that don't involve pocket
-                            if (pocketOver || ((boardBits != 23) && (boardBits != 22) && (boardBits != 20)))
-                            {
-                                if ((r < Card.ACE) && (nNumRank_[r+1] != 0))
-                                {
+                            if (pocketOver || ((boardBits != 23) && (boardBits != 22) && (boardBits != 20))) {
+                                if ((r < Card.ACE) && (nNumRank_[r + 1] != 0)) {
                                     nStraightDrawOuts_ += (bFlushDraw_ ? 3 : 4);
-                                    //System.out.println("Hand:" + pocket_ + community_ + " : " + Integer.toString(bFlushDraw_ ? 3 : 4) + " straight outs : " + r);
+                                    // System.out.println("Hand:" + pocket_ + community_ + " : " +
+                                    // Integer.toString(bFlushDraw_ ? 3 : 4) + " straight outs : " + r);
                                 }
                             }
                             break;
-                        case 2:
+                        case 2 :
                             // exclude ass-end draws, and draws that don't involve pocket
-                            if (pocketOver || ((boardBits != 27) && (boardBits != 26) && (boardBits != 24)))
-                            {
-                                if ((r < Card.KING) && (nNumRank_[r + 1] != 0) && (nNumRank_[r + 2] != 0))
-                                {
+                            if (pocketOver || ((boardBits != 27) && (boardBits != 26) && (boardBits != 24))) {
+                                if ((r < Card.KING) && (nNumRank_[r + 1] != 0) && (nNumRank_[r + 2] != 0)) {
                                     nStraightDrawOuts_ += (bFlushDraw_ ? 3 : 4);
-                                    //System.out.println("Hand:" + pocket_ + community_ + " : " + Integer.toString(bFlushDraw_ ? 3 : 4) + " straight outs : " + r);
+                                    // System.out.println("Hand:" + pocket_ + community_ + " : " +
+                                    // Integer.toString(bFlushDraw_ ? 3 : 4) + " straight outs : " + r);
                                 }
                             }
                             break;
-                        case 1:
+                        case 1 :
                             // exclude ass-end draws, and draws that don't involve pocket
-                            if (pocketOver || ((boardBits != 29) && (boardBits != 28) && (boardBits != 26)))
-                            {
-                                if ((r < Card.QUEEN) && (nNumRank_[r + 1] != 0) && (nNumRank_[r + 2] != 0) && (nNumRank_[r + 3] != 0))
-                                {
+                            if (pocketOver || ((boardBits != 29) && (boardBits != 28) && (boardBits != 26))) {
+                                if ((r < Card.QUEEN) && (nNumRank_[r + 1] != 0) && (nNumRank_[r + 2] != 0)
+                                        && (nNumRank_[r + 3] != 0)) {
                                     nStraightDrawOuts_ += (bFlushDraw_ ? 3 : 4);
-                                    //System.out.println("Hand:" + pocket_ + community_ + " : " + Integer.toString(bFlushDraw_ ? 3 : 4) + " straight outs : " + r);
+                                    // System.out.println("Hand:" + pocket_ + community_ + " : " +
+                                    // Integer.toString(bFlushDraw_ ? 3 : 4) + " straight outs : " + r);
                                 }
                             }
                             break;
-                        case 0:
+                        case 0 :
                             // exclude ass-end draws, and draws that don't involve pocket
-                            if (boardBits != 30)
-                            {
-                                if ((r < Card.JACK) && (nNumRank_[r + 1] != 0) && (nNumRank_[r + 2] != 0) && (nNumRank_[r + 3] != 0) && (nNumRank_[r + 4] != 0))
-                                {
+                            if (boardBits != 30) {
+                                if ((r < Card.JACK) && (nNumRank_[r + 1] != 0) && (nNumRank_[r + 2] != 0)
+                                        && (nNumRank_[r + 3] != 0) && (nNumRank_[r + 4] != 0)) {
                                     nStraightDrawOuts_ += (bFlushDraw_ ? 3 : 4);
                                 }
                             }
@@ -583,10 +520,9 @@ public class HandInfoFast
 
             // get top set of each type (pair,trips,quads,etc.)
             c = nNumRank_[r];
-            if ( c != 0 )
-            {
+            if (c != 0) {
                 nTopGroupings_[c][1] = nTopGroupings_[c][0];
-                nTopGroupings_[c][0] = (byte)r;
+                nTopGroupings_[c][0] = (byte) r;
             }
         }
 
@@ -599,26 +535,23 @@ public class HandInfoFast
         // now id type
         int score;
 
-        if ( bStraight && bFlush && isStraightFlush(all_))
-        {
-            if (nStraightHigh_ == Card.ACE) score = HandInfo.ROYAL_FLUSH * HandInfo.BASE;
-            else score = HandInfo.STRAIGHT_FLUSH * HandInfo.BASE;
+        if (bStraight && bFlush && isStraightFlush(all_)) {
+            if (nStraightHigh_ == Card.ACE)
+                score = HandInfo.ROYAL_FLUSH * HandInfo.BASE;
+            else
+                score = HandInfo.STRAIGHT_FLUSH * HandInfo.BASE;
             score += nStraightHigh_ * HandInfo.H0;
             nSmallPairRank_ = 0;
             nBigPairRank_ = 0;
             nStraightDrawOuts_ = 0;
-        }
-        else if (nGroupings_[4] != 0)
-        {
+        } else if (nGroupings_[4] != 0) {
             score = HandInfo.QUADS * HandInfo.BASE;
             score += nTopGroupings_[4][0] * HandInfo.H1;
-            nTopGroupings_[4][1] = TOPGROUPINIT;    // just in case 2 sets quads
+            nTopGroupings_[4][1] = TOPGROUPINIT; // just in case 2 sets quads
             score += getKickers(1, nTopGroupings_[4], HandInfo.H0);
             nQuadsRank_ = nTopGroupings_[4][0];
             nStraightDrawOuts_ = 0;
-        }
-        else if (nGroupings_[3]>=2)
-        {
+        } else if (nGroupings_[3] >= 2) {
             score = HandInfo.FULL_HOUSE * HandInfo.BASE;
             score += nTopGroupings_[3][0] * HandInfo.H1;
             score += nTopGroupings_[3][1] * HandInfo.H0;
@@ -626,9 +559,7 @@ public class HandInfoFast
             nBigPairRank_ = nTopGroupings_[3][1];
             nSmallPairRank_ = nTopGroupings_[3][1];
             nStraightDrawOuts_ = 0;
-        }
-        else if (nGroupings_[3]==1 && nGroupings_[2]!=0)
-        {
+        } else if (nGroupings_[3] == 1 && nGroupings_[2] != 0) {
             score = HandInfo.FULL_HOUSE * HandInfo.BASE;
             score += nTopGroupings_[3][0] * HandInfo.H1;
             score += nTopGroupings_[2][0] * HandInfo.H0;
@@ -636,45 +567,33 @@ public class HandInfoFast
             nBigPairRank_ = nTopGroupings_[2][0];
             nSmallPairRank_ = nTopGroupings_[2][0];
             nStraightDrawOuts_ = 0;
-        }
-        else if (bFlush)
-        {
+        } else if (bFlush) {
             score = HandInfo.FLUSH * HandInfo.BASE;
             score += getFlushKickers(all_, 5, nBiggestSuit_, HandInfo.H4);
             nStraightDrawOuts_ = 0;
-        }
-        else if (bStraight)
-        {
+        } else if (bStraight) {
             score = HandInfo.STRAIGHT * HandInfo.BASE;
             score += nStraightHigh_ * HandInfo.H0;
             nStraightDrawOuts_ = 0;
-        }
-        else if (nGroupings_[3]==1)
-        {
+        } else if (nGroupings_[3] == 1) {
             score = HandInfo.TRIPS * HandInfo.BASE;
             score += nTopGroupings_[3][0] * HandInfo.H2;
-            score += getKickers(nMaxHandSize-3, nTopGroupings_[3], HandInfo.H1);
+            score += getKickers(nMaxHandSize - 3, nTopGroupings_[3], HandInfo.H1);
             nTripsRank_ = nTopGroupings_[3][0];
-        }
-        else if (nGroupings_[2]>=2)
-        {
+        } else if (nGroupings_[2] >= 2) {
             score = HandInfo.TWO_PAIR * HandInfo.BASE;
             score += nTopGroupings_[2][0] * HandInfo.H2;
             score += nTopGroupings_[2][1] * HandInfo.H1;
-            score += getKickers(nMaxHandSize-4, nTopGroupings_[2], HandInfo.H0);
+            score += getKickers(nMaxHandSize - 4, nTopGroupings_[2], HandInfo.H0);
             nBigPairRank_ = nTopGroupings_[2][0];
             nSmallPairRank_ = nTopGroupings_[2][1];
-        }
-        else if (nGroupings_[2]==1)
-        {
+        } else if (nGroupings_[2] == 1) {
             score = HandInfo.PAIR * HandInfo.BASE;
             score += nTopGroupings_[2][0] * HandInfo.H3;
-            score += getKickers(nMaxHandSize-2, nTopGroupings_[2], HandInfo.H2);
+            score += getKickers(nMaxHandSize - 2, nTopGroupings_[2], HandInfo.H2);
             nBigPairRank_ = nTopGroupings_[2][0];
             nSmallPairRank_ = nTopGroupings_[2][0];
-        }
-        else
-        {
+        } else {
             score = HandInfo.HIGH_CARD * HandInfo.BASE;
             score += getKickers(nMaxHandSize, nTopGroupings_[2], HandInfo.H4);
             nHighCardRank_ = getKickers(1, nTopGroupings_[2], 1);
@@ -684,43 +603,40 @@ public class HandInfoFast
 
         return score;
     }
-        
+
     /**
      * Does this hand have a straight flush?
      */
-    private boolean isStraightFlush(Hand h) 
-    {
+    private boolean isStraightFlush(Hand h) {
         // init
         int i;
-        for (i=Card.TWO; i <= Card.ACE; i++) bExist_[i] = false;
+        for (i = Card.TWO; i <= Card.ACE; i++)
+            bExist_[i] = false;
 
         // note which cards in hand are from flush suit
-        for (i=0; i < h.size(); i++)
-        {
-            if (h.getCard(i).getCardSuit().getRank() == nBiggestSuit_)
-            {
-                    bExist_[h.getCard(i).getRank()] = true;
+        for (i = 0; i < h.size(); i++) {
+            if (h.getCard(i).getCardSuit().getRank() == nBiggestSuit_) {
+                bExist_[h.getCard(i).getRank()] = true;
             }
         }
 
         // check for straight
         int straight = bExist_[Card.ACE] ? 1 : 0;
         byte high = 0;
-        for (i=Card.TWO; i <= Card.ACE; i++) 
-        {
-            if (bExist_[i])
-            {
+        for (i = Card.TWO; i <= Card.ACE; i++) {
+            if (bExist_[i]) {
                 if ((++straight) >= NUM_CARDS) {
-                        high = (byte)i;
+                    high = (byte) i;
                 }
             } else {
                 straight = 0;
             }
         }
-        
+
         /// if high is set, we have a straight
-        if (high == 0) return false;
-        
+        if (high == 0)
+            return false;
+
         // store new high card
         nStraightHigh_ = high;
         return true;
@@ -729,125 +645,106 @@ public class HandInfoFast
     /**
      * Get kickers
      */
-    private int getKickers(int nNumKickers, byte[] not_allowed, int H_start) 
-    {
-            int i = Card.ACE;
-            int value=0;
-            while (nNumKickers != 0) 
-            {
-                    while (nNumRank_[i]==0 || i==not_allowed[0] || i==not_allowed[1]) {
-                            i--;
-                    }
-                    nNumKickers--;
-                    value += (i * H_start);
-                    H_start = (H_start >> 4);
-                    i--;
+    private int getKickers(int nNumKickers, byte[] not_allowed, int H_start) {
+        int i = Card.ACE;
+        int value = 0;
+        while (nNumKickers != 0) {
+            while (nNumRank_[i] == 0 || i == not_allowed[0] || i == not_allowed[1]) {
+                i--;
             }
-            return value;
+            nNumKickers--;
+            value += (i * H_start);
+            H_start = (H_start >> 4);
+            i--;
+        }
+        return value;
     }
 
     /**
      * Get suited kickers
      */
     @SuppressWarnings("SameParameterValue")
-    private int getFlushKickers(Hand h, int nNumKickers, byte suit, int H_start)
-    {
-            int i;
-            int value=0;
+    private int getFlushKickers(Hand h, int nNumKickers, byte suit, int H_start) {
+        int i;
+        int value = 0;
 
-            for (i=Card.TWO; i <= Card.ACE; i++) bExist_[i] = false;
+        for (i = Card.TWO; i <= Card.ACE; i++)
+            bExist_[i] = false;
 
-            for (i=0;i<h.size();i++)
-            {
-                   if (h.getCard(i).getCardSuit().getRank() == suit)
-                   {
-                            bExist_[h.getCard(i).getRank()] = true;
-                   }
+        for (i = 0; i < h.size(); i++) {
+            if (h.getCard(i).getCardSuit().getRank() == suit) {
+                bExist_[h.getCard(i).getRank()] = true;
             }
+        }
 
-            i = Card.ACE;
-            while (nNumKickers != 0) {
-                    while (!bExist_[i]) i--;
-                    nNumKickers--;
-                    value += (i * H_start);
-                    H_start = (H_start >> 4);
-                    i--;
-            }
-            return value;
+        i = Card.ACE;
+        while (nNumKickers != 0) {
+            while (!bExist_[i])
+                i--;
+            nNumKickers--;
+            value += (i * H_start);
+            H_start = (H_start >> 4);
+            i--;
+        }
+        return value;
     }
 
-    public boolean hasNutFlushDraw()
-    {
+    public boolean hasNutFlushDraw() {
         return bNutFlushDraw_;
     }
 
-    public boolean has2ndNutFlushDraw()
-    {
+    public boolean has2ndNutFlushDraw() {
         return b2ndNutFlushDraw_;
     }
 
-    public boolean hasWeakFlushDraw()
-    {
+    public boolean hasWeakFlushDraw() {
         return bWeakFlushDraw_;
     }
 
-    public boolean hasFlushDraw()
-    {
+    public boolean hasFlushDraw() {
         return bFlushDraw_;
     }
 
     public int getFlushDrawPocketsPlayed() {
-        return 4-nBoardNumSuit_[nBiggestSuit_];
+        return 4 - nBoardNumSuit_[nBiggestSuit_];
     }
 
-    public boolean hasStraightDraw()
-    {
+    public boolean hasStraightDraw() {
         return nStraightDrawOuts_ > 0;
     }
 
-    public int getStraightDrawOuts()
-    {
+    public int getStraightDrawOuts() {
         return nStraightDrawOuts_;
     }
 
-    public int getBetterFlushCardCount()
-    {
+    public int getBetterFlushCardCount() {
         return nBetterFlushCards_;
     }
 
-    public int  getNutStraightHighRank()
-    {
+    public int getNutStraightHighRank() {
         // lazy eval
-        if (nNutStraightHigh_ < 0)
-        {
+        if (nNutStraightHigh_ < 0) {
             nNutStraightHigh_ = 0;
 
-            int cards =
-                    (community_.containsRank(Card.ACE) ? 1 : 0) +
-                    (community_.containsRank(Card.KING) ? 1 : 0) +
-                    (community_.containsRank(Card.QUEEN) ? 1 : 0) +
-                    (community_.containsRank(Card.JACK) ? 1 : 0);
+            int cards = (community_.containsRank(Card.ACE) ? 1 : 0) + (community_.containsRank(Card.KING) ? 1 : 0)
+                    + (community_.containsRank(Card.QUEEN) ? 1 : 0) + (community_.containsRank(Card.JACK) ? 1 : 0);
 
-            for (int rank = Card.ACE; rank >= Card.SIX; --rank)
-            {
+            for (int rank = Card.ACE; rank >= Card.SIX; --rank) {
                 cards += (community_.containsRank(rank - 4) ? 1 : 0);
 
-                if (cards > 2)
-                {
-                    nNutStraightHigh_ = (byte)rank;
+                if (cards > 2) {
+                    nNutStraightHigh_ = (byte) rank;
                     break;
                 }
 
                 cards -= (community_.containsRank(rank) ? 1 : 0);
             }
 
-            if (nNutStraightHigh_ == 0)
-            {
+            if (nNutStraightHigh_ == 0) {
                 cards += (community_.containsRank(Card.ACE) ? 1 : 0);
 
-                if (cards > 2)
-                {
-                    nNutStraightHigh_ = (byte)Card.FIVE;
+                if (cards > 2) {
+                    nNutStraightHigh_ = (byte) Card.FIVE;
                 }
             }
         }
@@ -855,97 +752,83 @@ public class HandInfoFast
         return nNutStraightHigh_;
     }
 
-    public int getStraightHighRank()
-    {
+    public int getStraightHighRank() {
         return nStraightHigh_;
     }
 
-    public int getStraightLowRank()
-    {
+    public int getStraightLowRank() {
         return nStraightHigh_ - 4;
     }
 
-    public int getFlushHighRank()
-    {
+    public int getFlushHighRank() {
         return nFlushHighRank_;
     }
 
-    public String toString()
-    {
+    public String toString() {
         return toString(", ", true);
     }
 
-    public String toString(String divider, boolean bLongNames)
-    {
+    public String toString(String divider, boolean bLongNames) {
         StringBuilder buf = new StringBuilder();
 
         int type = getTypeFromScore(nScore_);
 
         buf.append(HandInfo.getHandTypeDesc(type));
 
-        switch (type)
-        {
-            case HandInfo.HIGH_CARD:
+        switch (type) {
+            case HandInfo.HIGH_CARD :
                 buf.append(divider);
                 buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
                         getCard(getHighCardRank(), bLongNames, false)));
                 break;
-            case HandInfo.PAIR:
+            case HandInfo.PAIR :
                 buf.append(divider);
-                buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
-                        getCard(getBigPairRank(), bLongNames, true)));
+                buf.append(
+                        PropertyConfig.getMessage("msg.handfmt." + type, getCard(getBigPairRank(), bLongNames, true)));
                 break;
-            case HandInfo.TWO_PAIR:
+            case HandInfo.TWO_PAIR :
                 buf.append(divider);
-                buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
-                        getCard(getBigPairRank(), bLongNames, true),
+                buf.append(PropertyConfig.getMessage("msg.handfmt." + type, getCard(getBigPairRank(), bLongNames, true),
                         getCard(getSmallPairRank(), bLongNames, true)));
                 break;
-            case HandInfo.TRIPS:
+            case HandInfo.TRIPS :
                 buf.append(divider);
-                buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
-                        getCard(getTripsRank(), bLongNames, true)));
+                buf.append(PropertyConfig.getMessage("msg.handfmt." + type, getCard(getTripsRank(), bLongNames, true)));
                 break;
-            case HandInfo.STRAIGHT:
-            case HandInfo.STRAIGHT_FLUSH:
+            case HandInfo.STRAIGHT :
+            case HandInfo.STRAIGHT_FLUSH :
                 buf.append(divider);
                 buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
                         getCard(getStraightLowRank(), bLongNames, false),
                         getCard(getStraightHighRank(), bLongNames, false)));
                 break;
-            case HandInfo.FLUSH:
+            case HandInfo.FLUSH :
                 buf.append(divider);
                 buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
                         getCard(getFlushHighRank(), bLongNames, false)));
                 break;
-            case HandInfo.FULL_HOUSE:
+            case HandInfo.FULL_HOUSE :
                 buf.append(divider);
-                buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
-                        getCard(getTripsRank(), bLongNames, true),
+                buf.append(PropertyConfig.getMessage("msg.handfmt." + type, getCard(getTripsRank(), bLongNames, true),
                         getCard(getBigPairRank(), bLongNames, true)));
                 break;
-            case HandInfo.QUADS:
+            case HandInfo.QUADS :
                 buf.append(divider);
-                buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
-                        getCard(getQuadsRank(), bLongNames, true)));
+                buf.append(PropertyConfig.getMessage("msg.handfmt." + type, getCard(getQuadsRank(), bLongNames, true)));
                 break;
-            case HandInfo.ROYAL_FLUSH:
+            case HandInfo.ROYAL_FLUSH :
                 break;
         }
 
         return buf.toString();
     }
 
-    private String getCard(int nRank, boolean bLongNames, boolean bPlural)
-    {
-        if (bLongNames)
-        {
-            String sKey = bPlural?"msg.cardrank.plural."+nRank:"msg.cardrank.singular."+nRank;
+    private String getCard(int nRank, boolean bLongNames, boolean bPlural) {
+        if (bLongNames) {
+            String sKey = bPlural ? "msg.cardrank.plural." + nRank : "msg.cardrank.singular." + nRank;
             return PropertyConfig.getMessage(sKey);
-        }
-        else
-        {
-            String sKey = bPlural?"msg.cardrank.plural":"msg.cardrank.singular";
+        } else {
+            String sKey = bPlural ? "msg.cardrank.plural" : "msg.cardrank.singular";
             return PropertyConfig.getMessage(sKey, Card.getRank(nRank));
         }
     }

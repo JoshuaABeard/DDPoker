@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -46,14 +46,10 @@ import java.util.*;
 import java.util.Timer;
 
 /**
- * Created by IntelliJ IDEA.
- * User: donohoe
- * Date: May 19, 2006
- * Time: 3:04:18 PM
+ * Created by IntelliJ IDEA. User: donohoe Date: May 19, 2006 Time: 3:04:18 PM
  * To change this template use File | Settings | File Templates.
  */
-public class UDPStatus extends BasePhase implements DDTable.TableMenuItems
-{
+public class UDPStatus extends BasePhase implements DDTable.TableMenuItems {
     static Logger logger = LogManager.getLogger(UDPStatus.class);
 
     private DDPanel base_;
@@ -69,22 +65,19 @@ public class UDPStatus extends BasePhase implements DDTable.TableMenuItems
 
     private boolean bRunning_ = false;
 
-
     /**
      * Set new UDP
      */
-    public static void setUDPServer(UDPServer udp)
-    {
-        if (STATUS == null) return;
+    public static void setUDPServer(UDPServer udp) {
+        if (STATUS == null)
+            return;
 
-        if (STATUS.udp_ != null)
-        {
+        if (STATUS.udp_ != null) {
             STATUS.udp_.manager().removeMonitor(STATUS.model_);
         }
         STATUS.udp_ = udp;
 
-        if (STATUS.udp_ != null)
-        {
+        if (STATUS.udp_ != null) {
             STATUS.udp_.manager().addMonitor(STATUS.model_);
             STATUS.model_.update();
         }
@@ -93,8 +86,7 @@ public class UDPStatus extends BasePhase implements DDTable.TableMenuItems
     /**
      * init
      */
-    public void init(GameEngine engine, GameContext context, GamePhase gamephase)
-    {
+    public void init(GameEngine engine, GameContext context, GamePhase gamephase) {
         super.init(engine, context, gamephase);
         STATUS = this;
 
@@ -109,7 +101,7 @@ public class UDPStatus extends BasePhase implements DDTable.TableMenuItems
         // info
         text_ = new DDHtmlArea(GuiManager.DEFAULT, "UDPStatus");
         text_.setDisplayOnly(true);
-        text_.setBorder(BorderFactory.createEmptyBorder(2,4,2,20));
+        text_.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 20));
         text_.setAlwaysAntiAlias(true);
         text_.setText("&nbsp;");
 
@@ -135,8 +127,7 @@ public class UDPStatus extends BasePhase implements DDTable.TableMenuItems
         table_.setModel(model_);
         table_.setShowHorizontalLines(true);
         table_.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        for (int i = 2; i < COLUMN_NAMES.length; i++)
-        {
+        for (int i = 2; i < COLUMN_NAMES.length; i++) {
             table_.setAlign(i, SwingConstants.RIGHT);
         }
         table_.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
@@ -149,14 +140,15 @@ public class UDPStatus extends BasePhase implements DDTable.TableMenuItems
     /**
      * Start of phase
      */
-    public void start()
-    {
-        // if users presses launch button again, this will be called.  don't run logic again in this case
-        if (bRunning_) return;
+    public void start() {
+        // if users presses launch button again, this will be called. don't run logic
+        // again in this case
+        if (bRunning_)
+            return;
         bRunning_ = true;
 
         // set help text
-        //context_.getWindow().setHelpTextWidget(text_);
+        // context_.getWindow().setHelpTextWidget(text_);
 
         // place the whole thing in the Engine's base panel
         context_.setMainUIComponent(this, base_, true, table_);
@@ -172,10 +164,8 @@ public class UDPStatus extends BasePhase implements DDTable.TableMenuItems
     /**
      * time task
      */
-    private class UpdateTask extends TimerTask
-    {
-        public void run()
-        {
+    private class UpdateTask extends TimerTask {
+        public void run() {
             model_.update();
         }
     }
@@ -183,8 +173,7 @@ public class UDPStatus extends BasePhase implements DDTable.TableMenuItems
     /**
      * finish
      */
-    public void finish()
-    {
+    public void finish() {
         bRunning_ = false;
         timer_.cancel();
         timer_ = null;
@@ -209,40 +198,34 @@ public class UDPStatus extends BasePhase implements DDTable.TableMenuItems
     private static String COL_BYTESOUT = "udp.bytesout";
 
     // client table info
-    private static final int[] COLUMN_WIDTHS = new int[] {
-        110, 150, 40, 70, 35, 50, 45,
-        50, 30, 70, 70,
-    };
-    private static final String[] COLUMN_NAMES = new String[] {
-        COL_LINK, COL_REMOTE, COL_MTU, COL_TIME, COL_AVG, COL_SEND, COL_RESEND,
-        COL_RECEIVE, COL_DUP, COL_BYTESIN, COL_BYTESOUT
+    private static final int[] COLUMN_WIDTHS = new int[]{110, 150, 40, 70, 35, 50, 45, 50, 30, 70, 70,};
+    private static final String[] COLUMN_NAMES = new String[]{COL_LINK, COL_REMOTE, COL_MTU, COL_TIME, COL_AVG,
+            COL_SEND, COL_RESEND, COL_RECEIVE, COL_DUP, COL_BYTESIN, COL_BYTESOUT
 
     };
 
     /**
      * Used by table to display players in game
      */
-    private class UDPModel extends DefaultTableModel implements UDPManagerMonitor
-    {
+    private class UDPModel extends DefaultTableModel implements UDPManagerMonitor {
         private ArrayList<UDPLink> list = new ArrayList<UDPLink>();
 
-        public UDPModel()
-        {
+        public UDPModel() {
         }
 
-        public void monitorEvent(UDPManagerEvent event)
-        {
+        public void monitorEvent(UDPManagerEvent event) {
             update();
         }
 
-        private void update()
-        {
+        private void update() {
             // skip repaint if nothing changed
-            if (udp_ == null && list.size() == 0) return;
+            if (udp_ == null && list.size() == 0)
+                return;
 
             // get list
             list.clear();
-            if (udp_ != null) udp_.manager().getLinks(list);
+            if (udp_ != null)
+                udp_.manager().getLinks(list);
 
             // sort
             Collections.sort(list, LINK_COMPARATOR);
@@ -255,30 +238,20 @@ public class UDPStatus extends BasePhase implements DDTable.TableMenuItems
             });
         }
 
-        private void updateSwing()
-        {
+        private void updateSwing() {
             UDPManager mgr = (udp_ != null) ? udp_.manager() : null;
-            if (mgr != null)
-            {
+            if (mgr != null) {
                 MovingAverage in = mgr.getBytesInMovingAverage();
                 MovingAverage out = mgr.getBytesOutMovingAverage();
                 int cnt = mgr.getMessageOnOutGoingQueue();
-                String sMsg = PropertyConfig.getMessage("msg.udp.stats",
-                                                        Utils.formatSizeBytes(in.getAverageLong()),
-                                                        Utils.formatSizeBytes(in.getHigh()),
-                                                        Utils.formatSizeBytes(in.getPeak()),
-                                                        Utils.formatSizeBytes(out.getAverageLong()),
-                                                        Utils.formatSizeBytes(out.getHigh()),
-                                                        Utils.formatSizeBytes(out.getPeak()),
-                                                        Utils.formatSizeBytes(mgr.getBytesOnOutgoingQueue()),
-                                                        cnt,
-                                                        PropertyConfig.getMessage(cnt == 1 ? "msg.udp.msg.singular":"msg.udp.msg.plural"),
-                                                        mgr.getPeakMessageOnOutGoingQueue()
-                );
+                String sMsg = PropertyConfig.getMessage("msg.udp.stats", Utils.formatSizeBytes(in.getAverageLong()),
+                        Utils.formatSizeBytes(in.getHigh()), Utils.formatSizeBytes(in.getPeak()),
+                        Utils.formatSizeBytes(out.getAverageLong()), Utils.formatSizeBytes(out.getHigh()),
+                        Utils.formatSizeBytes(out.getPeak()), Utils.formatSizeBytes(mgr.getBytesOnOutgoingQueue()), cnt,
+                        PropertyConfig.getMessage(cnt == 1 ? "msg.udp.msg.singular" : "msg.udp.msg.plural"),
+                        mgr.getPeakMessageOnOutGoingQueue());
                 text_.setText(sMsg);
-            }
-            else
-            {
+            } else {
                 text_.setText("");
             }
 
@@ -304,77 +277,49 @@ public class UDPStatus extends BasePhase implements DDTable.TableMenuItems
             return list.size();
         }
 
-        public Object getValueAt(int rowIndex, int colIndex)
-        {
+        public Object getValueAt(int rowIndex, int colIndex) {
             UDPLink link = getLink(rowIndex);
-            if (link == null) return "";
+            if (link == null)
+                return "";
 
             UDPLink.UDPStats stats = link.getStats();
 
-            if (COLUMN_NAMES[colIndex].equals(COL_LINK))
-            {
+            if (COLUMN_NAMES[colIndex].equals(COL_LINK)) {
                 return link.getName();
-            }
-            else if (COLUMN_NAMES[colIndex].equals(COL_REMOTE))
-            {
+            } else if (COLUMN_NAMES[colIndex].equals(COL_REMOTE)) {
                 return Utils.getAddressPort(link.getRemoteIP());
-            }
-            else if (COLUMN_NAMES[colIndex].equals(COL_MTU))
-            {
+            } else if (COLUMN_NAMES[colIndex].equals(COL_MTU)) {
                 return link.getMTU();
-            }
-            else if (COLUMN_NAMES[colIndex].equals(COL_TIME))
-            {
+            } else if (COLUMN_NAMES[colIndex].equals(COL_TIME)) {
                 return Utils.getTimeString(link.getTimeConnected(), false);
-            }
-            else if (COLUMN_NAMES[colIndex].equals(COL_AVG))
-            {
+            } else if (COLUMN_NAMES[colIndex].equals(COL_AVG)) {
                 return stats.getAverage();
-            }
-            else if (COLUMN_NAMES[colIndex].equals(COL_SEND))
-            {
+            } else if (COLUMN_NAMES[colIndex].equals(COL_SEND)) {
                 return stats.getDataOut();
-            }
-            else if (COLUMN_NAMES[colIndex].equals(COL_RESEND))
-            {
+            } else if (COLUMN_NAMES[colIndex].equals(COL_RESEND)) {
                 return stats.getDataResend();
-            }
-            else if (COLUMN_NAMES[colIndex].equals(COL_RECEIVE))
-            {
+            } else if (COLUMN_NAMES[colIndex].equals(COL_RECEIVE)) {
                 return stats.getDataIn();
-            }
-            else if (COLUMN_NAMES[colIndex].equals(COL_DUP))
-            {
+            } else if (COLUMN_NAMES[colIndex].equals(COL_DUP)) {
                 return stats.getDataDups();
-            }
-            else if (COLUMN_NAMES[colIndex].equals(COL_PKTSNT))
-            {
+            } else if (COLUMN_NAMES[colIndex].equals(COL_PKTSNT)) {
                 return stats.getPacketSent();
-            }
-            else if (COLUMN_NAMES[colIndex].equals(COL_PKTERR))
-            {
+            } else if (COLUMN_NAMES[colIndex].equals(COL_PKTERR)) {
                 return stats.getPacketSendErrors();
-            }
-            else if (COLUMN_NAMES[colIndex].equals(COL_PKTRCV))
-            {
+            } else if (COLUMN_NAMES[colIndex].equals(COL_PKTRCV)) {
                 return stats.getPacketReceived();
-            }
-            else if (COLUMN_NAMES[colIndex].equals(COL_BYTESIN))
-            {
+            } else if (COLUMN_NAMES[colIndex].equals(COL_BYTESIN)) {
                 return Utils.formatSizeBytes(stats.getBytesIn());
-            }
-            else if (COLUMN_NAMES[colIndex].equals(COL_BYTESOUT))
-            {
+            } else if (COLUMN_NAMES[colIndex].equals(COL_BYTESOUT)) {
                 return Utils.formatSizeBytes(stats.getBytesOut());
             }
-
 
             return "[bad column]";
         }
 
-        private UDPLink getLink(int rowIndex)
-        {
-            if (rowIndex >= list.size()) return null; // check in case of paint after update
+        private UDPLink getLink(int rowIndex) {
+            if (rowIndex >= list.size())
+                return null; // check in case of paint after update
             return list.get(rowIndex);
         }
     }
@@ -384,44 +329,38 @@ public class UDPStatus extends BasePhase implements DDTable.TableMenuItems
     /**
      * link comprator for displaying status
      */
-    private static class UDPLinkComparator implements Comparator<UDPLink>
-    {
-        public int compare(UDPLink link1, UDPLink link2)
-        {
-            if (link1.getName().startsWith("Chat"))
-            {
+    private static class UDPLinkComparator implements Comparator<UDPLink> {
+        public int compare(UDPLink link1, UDPLink link2) {
+            if (link1.getName().startsWith("Chat")) {
                 return -1;
-            }
-            else
-            {
+            } else {
                 return (link1.getName().compareToIgnoreCase(link2.getName()));
             }
         }
     }
 
-//    /**
-//     * get selected player
-//     */
-//    private UDPLink getSelectedPlayer(DDTable table)
-//    {
-//        int n = table.getSelectedRow();
-//        if (n < 0) return null;
-//        return model_.getPlayer(n);
-//    }
+    // /**
+    // * get selected player
+    // */
+    // private UDPLink getSelectedPlayer(DDTable table)
+    // {
+    // int n = table.getSelectedRow();
+    // if (n < 0) return null;
+    // return model_.getPlayer(n);
+    // }
 
     ////
     //// Table menu interface
     ////
 
-    public boolean isItemsToBeAdded(DDTable table)
-    {
-        return false; //getSelectedPlayer(table) != null;
+    public boolean isItemsToBeAdded(DDTable table) {
+        return false; // getSelectedPlayer(table) != null;
     }
 
-    //private static ImageIcon infoIcon_ = ImageConfig.getImageIcon("menuicon.info");
+    // private static ImageIcon infoIcon_ =
+    // ImageConfig.getImageIcon("menuicon.info");
 
-    public void addMenuItems(DDTable table, DDPopupMenu menu)
-    {
+    public void addMenuItems(DDTable table, DDPopupMenu menu) {
 
     }
 }

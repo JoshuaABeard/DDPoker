@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -53,8 +53,7 @@ import java.awt.*;
 /**
  * @author Doug Donohoe
  */
-public class TestPublicConnect extends SendMessageDialog implements OnlineMessageListener
-{
+public class TestPublicConnect extends SendMessageDialog implements OnlineMessageListener {
     static Logger logger = LogManager.getLogger(TestPublicConnect.class);
 
     public static final String PARAM_URL = "url";
@@ -69,8 +68,7 @@ public class TestPublicConnect extends SendMessageDialog implements OnlineMessag
      * message to send to server
      */
     @Override
-    protected EngineMessage getMessage()
-    {
+    protected EngineMessage getMessage() {
         OnlineMessage omsg = new OnlineMessage(OnlineMessage.CAT_TEST);
         PokerURL url = (PokerURL) gamephase_.getObject(PARAM_URL);
         omsg.setGUID(engine_.getGUID());
@@ -84,8 +82,7 @@ public class TestPublicConnect extends SendMessageDialog implements OnlineMessag
      * Message to display to user
      */
     @Override
-    protected String getMessageKey()
-    {
+    protected String getMessageKey() {
         return "msg.testPublicConnect";
     }
 
@@ -93,18 +90,16 @@ public class TestPublicConnect extends SendMessageDialog implements OnlineMessag
      * Don't do server redirect query
      */
     @Override
-    protected boolean doServerQuery()
-    {
+    protected boolean doServerQuery() {
         return false;
     }
 
     @Override
-    public JComponent createDialogContents()
-    {
+    public JComponent createDialogContents() {
         JComponent ret = super.createDialogContents();
 
         // add our server status
-        DDPanel status = new DDPanel();//DDPanel.CENTER();
+        DDPanel status = new DDPanel();// DDPanel.CENTER();
         status.setBorder(BorderFactory.createEmptyBorder(0, 30, 5, 0));
         server_ = new DDLabel("servertest", STYLE);
         status.add(server_);
@@ -113,7 +108,6 @@ public class TestPublicConnect extends SendMessageDialog implements OnlineMessag
         server_.setHorizontalAlignment(SwingConstants.LEFT);
         bottom_.add(status, BorderLayout.SOUTH);
 
-
         return ret;
     }
 
@@ -121,8 +115,7 @@ public class TestPublicConnect extends SendMessageDialog implements OnlineMessag
      * start - set listener
      */
     @Override
-    public void start()
-    {
+    public void start() {
         PokerGame game = (PokerGame) context_.getGame();
         game.getOnlineManager().addOnlineMessageListener(this);
         super.start();
@@ -132,8 +125,7 @@ public class TestPublicConnect extends SendMessageDialog implements OnlineMessag
      * finish - remove listener
      */
     @Override
-    public void finish()
-    {
+    public void finish() {
         PokerGame game = (PokerGame) context_.getGame();
         game.getOnlineManager().removeOnlineMessageListener(this);
         super.finish();
@@ -143,26 +135,22 @@ public class TestPublicConnect extends SendMessageDialog implements OnlineMessag
      * override so we don't auto-close
      */
     @Override
-    protected boolean isAutoClose()
-    {
+    protected boolean isAutoClose() {
         return false;
     }
 
     /**
      * Listen for receipt of message
      */
-    public void messageReceived(OnlineMessage omsg)
-    {
-        if (omsg.getCategory() != OnlineMessage.CAT_TEST) return;
+    public void messageReceived(OnlineMessage omsg) {
+        if (omsg.getCategory() != OnlineMessage.CAT_TEST)
+            return;
 
         String sGuid = omsg.getGUID();
-        if (engine_.getGUID().equals(sGuid))
-        {
+        if (engine_.getGUID().equals(sGuid)) {
             setStatusText(PropertyConfig.getMessage("msg.p2p.test.msgrcvd"));
             updateIcon(OKAY, "serverokay");
-        }
-        else
-        {
+        } else {
             logger.warn("Received test message with different GUID: " + omsg);
         }
     }
@@ -170,42 +158,34 @@ public class TestPublicConnect extends SendMessageDialog implements OnlineMessag
     /**
      * Update icon on server status label
      */
-    private void updateIcon(final ImageIcon icon, final String sName)
-    {
-        SwingUtilities.invokeLater(
-                new Runnable()
-                {
-                    ImageIcon _icon = icon;
-                    String _sName = sName;
+    private void updateIcon(final ImageIcon icon, final String sName) {
+        SwingUtilities.invokeLater(new Runnable() {
+            ImageIcon _icon = icon;
+            String _sName = sName;
 
-                    public void run()
-                    {
-                        server_.reinit(_sName, STYLE);
-                        server_.setIcon(_icon);
-                    }
-                }
-        );
+            public void run() {
+                server_.reinit(_sName, STYLE);
+                server_.setIcon(_icon);
+            }
+        });
     }
 
     /**
      * Override to change done step message
      */
     @Override
-    public void updateStep(int nStep)
-    {
-        if (nStep == DDMessageListener.STEP_DONE)
-        {
+    public void updateStep(int nStep) {
+        if (nStep == DDMessageListener.STEP_DONE) {
             setStatusText(PropertyConfig.getMessage("msg.p2p.test.done"));
-        }
-        else super.updateStep(nStep);
+        } else
+            super.updateStep(nStep);
     }
 
     /**
      * Override to set icon upon failure
      */
     @Override
-    protected void displayError(int nStatus)
-    {
+    protected void displayError(int nStatus) {
         updateIcon(FAIL, "serverfail");
         super.displayError(nStatus);
     }

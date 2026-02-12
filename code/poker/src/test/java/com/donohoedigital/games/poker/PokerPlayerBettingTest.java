@@ -28,13 +28,12 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for PokerPlayer betting action methods.
- * Tests bet(), call(), raise(), fold(), and isAllIn() methods.
- * Extends IntegrationTestBase for game infrastructure.
+ * Tests for PokerPlayer betting action methods. Tests bet(), call(), raise(),
+ * fold(), and isAllIn() methods. Extends IntegrationTestBase for game
+ * infrastructure.
  */
 @Tag("integration")
-class PokerPlayerBettingTest extends IntegrationTestBase
-{
+class PokerPlayerBettingTest extends IntegrationTestBase {
     private PokerGame game;
     private PokerTable table;
     private HoldemHand hand;
@@ -42,8 +41,7 @@ class PokerPlayerBettingTest extends IntegrationTestBase
     private PokerPlayer opponent;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         // Create game infrastructure
         game = new PokerGame(null);
         TournamentProfile profile = new TournamentProfile("test");
@@ -81,24 +79,21 @@ class PokerPlayerBettingTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_ReturnTrue_When_ChipsAreZero()
-    {
+    void should_ReturnTrue_When_ChipsAreZero() {
         player.setChipCount(0);
 
         assertThat(player.isAllIn()).isTrue();
     }
 
     @Test
-    void should_ReturnFalse_When_ChipsGreaterThanZero()
-    {
+    void should_ReturnFalse_When_ChipsGreaterThanZero() {
         player.setChipCount(1);
 
         assertThat(player.isAllIn()).isFalse();
     }
 
     @Test
-    void should_ReturnFalse_When_ChipsAreMany()
-    {
+    void should_ReturnFalse_When_ChipsAreMany() {
         player.setChipCount(1000);
 
         assertThat(player.isAllIn()).isFalse();
@@ -109,8 +104,7 @@ class PokerPlayerBettingTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_SetFoldedState_When_FoldCalled()
-    {
+    void should_SetFoldedState_When_FoldCalled() {
         hand.setCurrentPlayerIndex(0);
         player.fold("test fold", HandAction.FOLD_NORMAL);
 
@@ -118,8 +112,7 @@ class PokerPlayerBettingTest extends IntegrationTestBase
     }
 
     @Test
-    void should_NotChangeChips_When_FoldCalled()
-    {
+    void should_NotChangeChips_When_FoldCalled() {
         int initialChips = player.getChipCount();
 
         hand.setCurrentPlayerIndex(0);
@@ -133,8 +126,7 @@ class PokerPlayerBettingTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_DeductChips_When_BetCalled()
-    {
+    void should_DeductChips_When_BetCalled() {
         int initialChips = player.getChipCount();
         int betAmount = 100;
 
@@ -145,8 +137,7 @@ class PokerPlayerBettingTest extends IntegrationTestBase
     }
 
     @Test
-    void should_BeAllIn_When_BetAllChips()
-    {
+    void should_BeAllIn_When_BetAllChips() {
         int allChips = player.getChipCount();
 
         hand.setCurrentPlayerIndex(0);
@@ -161,8 +152,7 @@ class PokerPlayerBettingTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_DeductCallAmount_When_CallCalled()
-    {
+    void should_DeductCallAmount_When_CallCalled() {
         // Opponent bets first
         hand.setCurrentPlayerIndex(1);
         opponent.bet(100, "bet");
@@ -178,8 +168,7 @@ class PokerPlayerBettingTest extends IntegrationTestBase
     }
 
     @Test
-    void should_BeAllIn_When_CallWithInsufficientChips()
-    {
+    void should_BeAllIn_When_CallWithInsufficientChips() {
         // Opponent makes big bet
         hand.setCurrentPlayerIndex(1);
         opponent.bet(500, "big bet");
@@ -201,8 +190,7 @@ class PokerPlayerBettingTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_DeductRaiseAmount_When_RaiseCalled()
-    {
+    void should_DeductRaiseAmount_When_RaiseCalled() {
         // Opponent bets first
         hand.setCurrentPlayerIndex(1);
         opponent.bet(100, "bet");
@@ -219,8 +207,7 @@ class PokerPlayerBettingTest extends IntegrationTestBase
     }
 
     @Test
-    void should_BeAllIn_When_RaiseWithAllChips()
-    {
+    void should_BeAllIn_When_RaiseWithAllChips() {
         // Opponent bets
         hand.setCurrentPlayerIndex(1);
         opponent.bet(50, "bet");
@@ -241,8 +228,7 @@ class PokerPlayerBettingTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_MaintainChipAccuracy_When_MultipleBets()
-    {
+    void should_MaintainChipAccuracy_When_MultipleBets() {
         int initialChips = player.getChipCount();
 
         hand.setCurrentPlayerIndex(0);

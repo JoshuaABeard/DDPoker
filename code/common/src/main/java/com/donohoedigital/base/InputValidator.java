@@ -22,25 +22,23 @@ package com.donohoedigital.base;
 import java.util.regex.Pattern;
 
 /**
- * Utility class for validating user input to prevent injection attacks and malformed data.
+ * Utility class for validating user input to prevent injection attacks and
+ * malformed data.
  *
- * <p>Validation rules:
+ * <p>
+ * Validation rules:
  * <ul>
- *   <li>Email: RFC 5322 subset, max 254 chars</li>
- *   <li>String length: trimmed, configurable min/max</li>
- *   <li>Integer bounds: configurable range</li>
+ * <li>Email: RFC 5322 subset, max 254 chars</li>
+ * <li>String length: trimmed, configurable min/max</li>
+ * <li>Integer bounds: configurable range</li>
  * </ul>
  */
-public class InputValidator
-{
+public class InputValidator {
     /**
-     * Email validation pattern - simplified RFC 5322 subset.
-     * Allows: letters, numbers, +, _, ., - before @
-     * Requires: @ with domain (letters, numbers, ., -)
+     * Email validation pattern - simplified RFC 5322 subset. Allows: letters,
+     * numbers, +, _, ., - before @ Requires: @ with domain (letters, numbers, ., -)
      */
-    private static final Pattern EMAIL_PATTERN = Pattern.compile(
-        "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]+$"
-    );
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]+$");
 
     /**
      * Maximum email length per RFC 5321
@@ -50,29 +48,26 @@ public class InputValidator
     /**
      * Private constructor - utility class should not be instantiated
      */
-    private InputValidator()
-    {
+    private InputValidator() {
         throw new AssertionError("InputValidator is a utility class and should not be instantiated");
     }
 
     /**
      * Validates email format and length.
      *
-     * @param email the email address to validate
+     * @param email
+     *            the email address to validate
      * @return true if email is valid, false otherwise
      */
-    public static boolean isValidEmail(String email)
-    {
-        if (email == null || email.trim().isEmpty())
-        {
+    public static boolean isValidEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
             return false;
         }
 
         String trimmedEmail = email.trim();
 
         // Check length first (faster than regex)
-        if (trimmedEmail.length() > MAX_EMAIL_LENGTH)
-        {
+        if (trimmedEmail.length() > MAX_EMAIL_LENGTH) {
             return false;
         }
 
@@ -83,15 +78,16 @@ public class InputValidator
     /**
      * Validates string length after trimming.
      *
-     * @param value the string to validate
-     * @param minLength minimum length (inclusive)
-     * @param maxLength maximum length (inclusive)
+     * @param value
+     *            the string to validate
+     * @param minLength
+     *            minimum length (inclusive)
+     * @param maxLength
+     *            maximum length (inclusive)
      * @return true if string length is within bounds, false otherwise
      */
-    public static boolean isValidLength(String value, int minLength, int maxLength)
-    {
-        if (value == null)
-        {
+    public static boolean isValidLength(String value, int minLength, int maxLength) {
+        if (value == null) {
             return false;
         }
 
@@ -104,13 +100,15 @@ public class InputValidator
     /**
      * Validates integer is within specified bounds.
      *
-     * @param value the integer to validate
-     * @param min minimum value (inclusive)
-     * @param max maximum value (inclusive)
+     * @param value
+     *            the integer to validate
+     * @param min
+     *            minimum value (inclusive)
+     * @param max
+     *            maximum value (inclusive)
      * @return true if value is within bounds, false otherwise
      */
-    public static boolean isValidInt(int value, int min, int max)
-    {
+    public static boolean isValidInt(int value, int min, int max) {
         return value >= min && value <= max;
     }
 
@@ -121,33 +119,33 @@ public class InputValidator
     /**
      * Validates profile name (1-50 characters).
      *
-     * @param name the profile name to validate
+     * @param name
+     *            the profile name to validate
      * @return true if valid, false otherwise
      */
-    public static boolean isValidProfileName(String name)
-    {
+    public static boolean isValidProfileName(String name) {
         return isValidLength(name, 1, 50);
     }
 
     /**
      * Validates game name (1-100 characters).
      *
-     * @param name the game name to validate
+     * @param name
+     *            the game name to validate
      * @return true if valid, false otherwise
      */
-    public static boolean isValidGameName(String name)
-    {
+    public static boolean isValidGameName(String name) {
         return isValidLength(name, 1, 100);
     }
 
     /**
      * Validates chat message (1-500 characters).
      *
-     * @param message the chat message to validate
+     * @param message
+     *            the chat message to validate
      * @return true if valid, false otherwise
      */
-    public static boolean isValidChatMessage(String message)
-    {
+    public static boolean isValidChatMessage(String message) {
         return isValidLength(message, 1, 500);
     }
 }

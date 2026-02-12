@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -52,8 +52,7 @@ import java.util.Date;
 /**
  * @author Doug Donohoe
  */
-public class NameRangeSearchForm extends VoidPanel
-{
+public class NameRangeSearchForm extends VoidPanel {
     private static final long serialVersionUID = 42L;
 
     private final ParamDateConverter CONVERTER = new ParamDateConverter();
@@ -66,8 +65,8 @@ public class NameRangeSearchForm extends VoidPanel
      * @see org.apache.wicket.Component#Component(String)
      */
     public NameRangeSearchForm(String id, PageParameters params, final Class<? extends BasePokerPage> clazz,
-                               final NameRangeSearch data, final String paramName, final String paramBegin, final String paramEnd, String nameLabel)
-    {
+            final NameRangeSearch data, final String paramName, final String paramBegin, final String paramEnd,
+            String nameLabel) {
         super(id);
 
         String name = params.get(paramName).toString();
@@ -79,13 +78,11 @@ public class NameRangeSearchForm extends VoidPanel
         data.setName(name);
 
         // form
-        form = new StatelessForm<NameRangeSearch>("form", new CompoundPropertyModel<>(data))
-        {
+        form = new StatelessForm<NameRangeSearch>("form", new CompoundPropertyModel<>(data)) {
             private static final long serialVersionUID = 42L;
 
             @Override
-            protected void onSubmit()
-            {
+            protected void onSubmit() {
                 PageParameters p = new PageParameters();
                 addCustomPageParameters(p);
                 p.set(paramName, getModelObject().getName());
@@ -109,26 +106,22 @@ public class NameRangeSearchForm extends VoidPanel
         form.add(new FormFeedbackPanel("form-style2"));
     }
 
-    public String getBeginDateAsUserSeesIt()
-    {
+    public String getBeginDateAsUserSeesIt() {
         return beginT.getDefaultModelObjectAsString();
     }
 
-    public String getEndDateAsUserSeesIt()
-    {
+    public String getEndDateAsUserSeesIt() {
         return endT.getDefaultModelObjectAsString();
     }
 
-    public String toStringDate(Date date)
-    {
+    public String toStringDate(Date date) {
         return CONVERTER.convertToString(date);
     }
 
     /**
      * subclass can override to add custom page parameters
      */
-    protected void addCustomPageParameters(PageParameters p)
-    {
+    protected void addCustomPageParameters(PageParameters p) {
         // do nothing
     }
 }

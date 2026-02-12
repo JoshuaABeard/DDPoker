@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -47,10 +47,8 @@ import java.util.*;
  * @author Doug Donohoe
  */
 @Tag("slow")
-public class XMLExportTest extends TestCase
-{
-    public void testSimpleXMLEncoder()
-    {
+public class XMLExportTest extends TestCase {
+    public void testSimpleXMLEncoder() {
         // setup config manager (so we know where profiles live)
         new ConfigManager("poker", ApplicationType.COMMAND_LINE);
         Logger logger = LogManager.getLogger(XMLExportTest.class);
@@ -63,8 +61,7 @@ public class XMLExportTest extends TestCase
         // get all tp
         List<BaseProfile> profiles = TournamentProfile.getProfileList();
         int x = 0;
-        for (BaseProfile p : profiles)
-        {
+        for (BaseProfile p : profiles) {
             x++;
             TournamentProfile tp = (TournamentProfile) p;
 
@@ -83,13 +80,13 @@ public class XMLExportTest extends TestCase
 
             // results
             List<TournamentHistory> hists = new ArrayList<>();
-            for (int i = 1; i < 5; i++)
-            {
-                hists.add(PokerTestData.createTournamentHistory(game, null, "Player " + i, TournamentHistory.PLAYER_TYPE_ONLINE));
+            for (int i = 1; i < 5; i++) {
+                hists.add(PokerTestData.createTournamentHistory(game, null, "Player " + i,
+                        TournamentHistory.PLAYER_TYPE_ONLINE));
             }
             game.setHistories(hists);
 
-            // encode            
+            // encode
             game.encodeXML(encoder);
         }
 

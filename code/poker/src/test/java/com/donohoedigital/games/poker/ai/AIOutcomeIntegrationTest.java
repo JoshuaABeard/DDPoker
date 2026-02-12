@@ -33,8 +33,7 @@ import static org.assertj.core.api.Assertions.*;
  * Requires full game infrastructure (GameEngine, PokerMain, etc.)
  */
 @Tag("integration")
-class AIOutcomeIntegrationTest extends IntegrationTestBase
-{
+class AIOutcomeIntegrationTest extends IntegrationTestBase {
     private PokerGame game;
     private PokerTable table;
     private HoldemHand hand;
@@ -42,8 +41,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     private AIOutcome outcome;
 
     @BeforeEach
-    void setUp()
-    {
+    void setUp() {
         // Create game infrastructure
         game = new PokerGame();
         table = new PokerTable(game, 0);
@@ -66,22 +64,19 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_CreateOutcome_When_Constructed()
-    {
+    void should_CreateOutcome_When_Constructed() {
         assertThat(outcome).isNotNull();
     }
 
     @Test
-    void should_AddTuple_When_TupleAdded()
-    {
+    void should_AddTuple_When_TupleAdded() {
         outcome.addTuple(AIOutcome.CALL, "pot odds", 0.2f, 0.8f, 0.0f);
 
         assertThat(outcome.getCall()).isEqualTo(0.8f);
     }
 
     @Test
-    void should_AddMultipleTuples_When_CalledMultipleTimes()
-    {
+    void should_AddMultipleTuples_When_CalledMultipleTimes() {
         outcome.addTuple(AIOutcome.CALL, "pot odds", 0.2f, 0.8f, 0.0f);
         outcome.addTuple(AIOutcome.CALL, "implied odds", 0.1f, 0.9f, 0.0f);
 
@@ -93,32 +88,28 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_ReturnCheckFold_When_Computed()
-    {
+    void should_ReturnCheckFold_When_Computed() {
         outcome.addTuple(AIOutcome.FOLD, "weak hand", 1.0f, 0.0f, 0.0f);
 
         assertThat(outcome.getCheckFold()).isEqualTo(1.0f);
     }
 
     @Test
-    void should_ReturnCall_When_Computed()
-    {
+    void should_ReturnCall_When_Computed() {
         outcome.addTuple(AIOutcome.CALL, "pot odds", 0.0f, 1.0f, 0.0f);
 
         assertThat(outcome.getCall()).isEqualTo(1.0f);
     }
 
     @Test
-    void should_ReturnBetRaise_When_Computed()
-    {
+    void should_ReturnBetRaise_When_Computed() {
         outcome.addTuple(AIOutcome.BET, "value bet", 0.0f, 0.0f, 1.0f);
 
         assertThat(outcome.getBetRaise()).isEqualTo(1.0f);
     }
 
     @Test
-    void should_AverageProbabilities_When_MultipleTuples()
-    {
+    void should_AverageProbabilities_When_MultipleTuples() {
         outcome.addTuple(AIOutcome.CALL, "tactic1", 0.2f, 0.6f, 0.2f);
         outcome.addTuple(AIOutcome.CALL, "tactic2", 0.1f, 0.8f, 0.1f);
         outcome.addTuple(AIOutcome.CALL, "tactic3", 0.3f, 0.5f, 0.2f);
@@ -133,8 +124,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_ReturnCheck_When_CheckFoldStrongestAndNoPotAction()
-    {
+    void should_ReturnCheck_When_CheckFoldStrongestAndNoPotAction() {
         outcome.addTuple(AIOutcome.CHECK, "weak hand", 0.9f, 0.05f, 0.05f);
 
         int strongest = outcome.getStrongestOutcome(NO_POT_ACTION);
@@ -143,8 +133,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnFold_When_CheckFoldStrongestAndPotAction()
-    {
+    void should_ReturnFold_When_CheckFoldStrongestAndPotAction() {
         outcome.addTuple(AIOutcome.FOLD, "weak hand", 0.9f, 0.05f, 0.05f);
 
         int strongest = outcome.getStrongestOutcome(RAISED_POT);
@@ -153,8 +142,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnCall_When_CallStrongest()
-    {
+    void should_ReturnCall_When_CallStrongest() {
         outcome.addTuple(AIOutcome.CALL, "pot odds", 0.1f, 0.8f, 0.1f);
 
         int strongest = outcome.getStrongestOutcome(RAISED_POT);
@@ -163,8 +151,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnBetOrRaise_When_BetRaiseStrongestAndNoPotAction()
-    {
+    void should_ReturnBetOrRaise_When_BetRaiseStrongestAndNoPotAction() {
         outcome.addTuple(AIOutcome.BET, "value bet", 0.1f, 0.1f, 0.8f);
 
         int strongest = outcome.getStrongestOutcome(NO_POT_ACTION);
@@ -174,8 +161,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ReturnRaise_When_BetRaiseStrongestAndPotAction()
-    {
+    void should_ReturnRaise_When_BetRaiseStrongestAndPotAction() {
         outcome.addTuple(AIOutcome.RAISE, "value raise", 0.1f, 0.1f, 0.8f);
 
         int strongest = outcome.getStrongestOutcome(RAISED_POT);
@@ -188,8 +174,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_SelectCheckOrFold_When_OnlyCheckFoldProbability()
-    {
+    void should_SelectCheckOrFold_When_OnlyCheckFoldProbability() {
         outcome.addTuple(AIOutcome.CHECK, "weak hand", 1.0f, 0.0f, 0.0f);
 
         int selected = outcome.selectOutcome(NO_POT_ACTION);
@@ -198,8 +183,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_SelectCall_When_OnlyCallProbability()
-    {
+    void should_SelectCall_When_OnlyCallProbability() {
         outcome.addTuple(AIOutcome.CALL, "pot odds", 0.0f, 1.0f, 0.0f);
 
         int selected = outcome.selectOutcome(RAISED_POT);
@@ -208,8 +192,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_SelectBetOrRaise_When_OnlyBetRaiseProbability()
-    {
+    void should_SelectBetOrRaise_When_OnlyBetRaiseProbability() {
         outcome.addTuple(AIOutcome.RAISE, "value raise", 0.0f, 0.0f, 1.0f);
 
         int selected = outcome.selectOutcome(RAISED_POT);
@@ -218,8 +201,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_SelectVariedOutcomes_When_MixedProbabilities()
-    {
+    void should_SelectVariedOutcomes_When_MixedProbabilities() {
         outcome.addTuple(AIOutcome.CALL, "mixed", 0.33f, 0.33f, 0.34f);
 
         // Run multiple times to verify all outcomes can be selected
@@ -227,12 +209,14 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
         boolean hasCall = false;
         boolean hasBetRaise = false;
 
-        for (int i = 0; i < 100; i++)
-        {
+        for (int i = 0; i < 100; i++) {
             int selected = outcome.selectOutcome(RAISED_POT);
-            if (selected == RuleEngine.OUTCOME_FOLD) hasCheckFold = true;
-            if (selected == RuleEngine.OUTCOME_CALL) hasCall = true;
-            if (selected == RuleEngine.OUTCOME_RAISE) hasBetRaise = true;
+            if (selected == RuleEngine.OUTCOME_FOLD)
+                hasCheckFold = true;
+            if (selected == RuleEngine.OUTCOME_CALL)
+                hasCall = true;
+            if (selected == RuleEngine.OUTCOME_RAISE)
+                hasBetRaise = true;
         }
 
         assertThat(hasCheckFold).isTrue();
@@ -245,8 +229,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_StoreBetRange_When_Set()
-    {
+    void should_StoreBetRange_When_Set() {
         BetRange range = new BetRange(BetRange.POT_SIZE, 100f, 200f);
         outcome.setBetRange(range, "aggressive");
 
@@ -254,15 +237,15 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_StoreAllInReason_When_Set()
-    {
+    void should_StoreAllInReason_When_Set() {
         BetRange range = new BetRange(BetRange.POT_SIZE, 100f, 200f);
         outcome.setBetRange(range, "chip advantage");
 
         // Need to add a bet/raise tuple for All In to show in HTML
         outcome.addTuple(AIOutcome.RAISE, "value raise", 0.0f, 0.0f, 1.0f);
 
-        // Use high brevity to avoid bet range calculation (which needs full hand context)
+        // Use high brevity to avoid bet range calculation (which needs full hand
+        // context)
         String html = outcome.toHTML(3);
 
         assertThat(html).contains("All In");
@@ -273,8 +256,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     // ========================================
 
     @Test
-    void should_IncludeRecommend_When_BrevityZero()
-    {
+    void should_IncludeRecommend_When_BrevityZero() {
         outcome.addTuple(AIOutcome.CALL, "pot odds", 0.0f, 1.0f, 0.0f);
 
         String html = outcome.toHTML(0);
@@ -284,8 +266,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_OmitRecommend_When_BrevityOne()
-    {
+    void should_OmitRecommend_When_BrevityOne() {
         outcome.addTuple(AIOutcome.CALL, "pot odds", 0.0f, 1.0f, 0.0f);
 
         String html = outcome.toHTML(1);
@@ -295,8 +276,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_IncludePercentages_When_BrevityLessThanFive()
-    {
+    void should_IncludePercentages_When_BrevityLessThanFive() {
         outcome.addTuple(AIOutcome.CALL, "pot odds", 0.0f, 1.0f, 0.0f);
 
         String html = outcome.toHTML(0);
@@ -306,8 +286,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_OmitPercentages_When_BrevityFive()
-    {
+    void should_OmitPercentages_When_BrevityFive() {
         outcome.addTuple(AIOutcome.CALL, "pot odds", 0.0f, 1.0f, 0.0f);
 
         String html = outcome.toHTML(5);
@@ -316,8 +295,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_IncludeTactics_When_BrevityLessThanTwo()
-    {
+    void should_IncludeTactics_When_BrevityLessThanTwo() {
         outcome.addTuple(AIOutcome.CALL, "pot odds", 0.0f, 1.0f, 0.0f);
 
         String html = outcome.toHTML(0);
@@ -326,8 +304,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_OmitTactics_When_BrevityTwo()
-    {
+    void should_OmitTactics_When_BrevityTwo() {
         outcome.addTuple(AIOutcome.CALL, "pot odds", 0.0f, 1.0f, 0.0f);
 
         String html = outcome.toHTML(2);
@@ -336,8 +313,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ShowCheck_When_NoPotActionAndCheckFold()
-    {
+    void should_ShowCheck_When_NoPotActionAndCheckFold() {
         outcome.addTuple(AIOutcome.CHECK, "weak hand", 1.0f, 0.0f, 0.0f);
 
         String html = outcome.toHTML(0);
@@ -347,8 +323,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_ShowBetOrRaise_When_BetRaiseProbability()
-    {
+    void should_ShowBetOrRaise_When_BetRaiseProbability() {
         outcome.addTuple(AIOutcome.BET, "value bet", 0.0f, 0.0f, 1.0f);
 
         String html = outcome.toHTML(0);
@@ -358,8 +333,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     }
 
     @Test
-    void should_CombineMultipleOutcomes_When_MixedProbabilities()
-    {
+    void should_CombineMultipleOutcomes_When_MixedProbabilities() {
         outcome.addTuple(AIOutcome.CALL, "mixed", 0.2f, 0.5f, 0.3f);
 
         String html = outcome.toHTML(0);
@@ -378,8 +352,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase
     // which is better suited for end-to-end integration tests
 
     @Test
-    void should_ComputeOnce_When_CalledMultipleTimes()
-    {
+    void should_ComputeOnce_When_CalledMultipleTimes() {
         outcome.addTuple(AIOutcome.CALL, "pot odds", 0.2f, 0.8f, 0.0f);
 
         float call1 = outcome.getCall();

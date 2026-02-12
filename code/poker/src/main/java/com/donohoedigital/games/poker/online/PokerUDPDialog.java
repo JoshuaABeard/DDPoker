@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -49,10 +49,9 @@ import com.donohoedigital.udp.*;
 
 /**
  *
- * @author  Doug Donohoe
+ * @author Doug Donohoe
  */
-public class PokerUDPDialog extends SendMessageDialog implements Runnable
-{
+public class PokerUDPDialog extends SendMessageDialog implements Runnable {
     static Logger logger = LogManager.getLogger(PokerUDPDialog.class);
 
     public static final String P2P_ERROR_MSG_MODIFIER = "p2p";
@@ -68,8 +67,7 @@ public class PokerUDPDialog extends SendMessageDialog implements Runnable
      * Get url before doing super work
      */
     @Override
-    public void start()
-    {
+    public void start() {
         PokerGame game = (PokerGame) context_.getGame();
 
         mgr_ = game.getOnlineManager();
@@ -80,42 +78,38 @@ public class PokerUDPDialog extends SendMessageDialog implements Runnable
 
         url_ = omsg_.getConnectURL();
         ApplicationError.assertNotNull(url_, "No URL to send to", null);
-        
+
         super.start();
     }
-    
+
     /**
      * Port part of URL for use in error message
      */
     @Override
-    protected int getPort()
-    {
+    protected int getPort() {
         return url_.getPort();
     }
-    
+
     /**
      * Return "p2p" for error modifier if none provided in gamephase params
      */
     @Override
-    protected String getErrorMod()
-    {
+    protected String getErrorMod() {
         return gamephase_.getString(PARAM_ERROR_KEY_MOD, P2P_ERROR_MSG_MODIFIER);
     }
-    
+
     /**
      * When window is opened, send the message
      */
     @Override
-    protected void opened()
-    {
-        sendMessage();        
+    protected void opened() {
+        sendMessage();
     }
-    
+
     /**
      * Send the message to the given URL, or if null, use the default destination
      */
-    protected void sendMessage()
-    {
+    protected void sendMessage() {
         // send async
         connect_ = new PokerConnect((UDPServer) mgr_.getP2P(), url_, this);
         Thread t = new Thread(this, "PokerConnect");
@@ -125,44 +119,37 @@ public class PokerUDPDialog extends SendMessageDialog implements Runnable
     /**
      * runnable for async thread
      */
-    public void run()
-    {
+    public void run() {
         // this blocks until message received
         boolean bOK = connect_.connect(omsg_);
 
         // deliver message
-        if (bOK)
-        {
+        if (bOK) {
             messageReceived(connect_.getReply().getData());
-        }
-        else
-        {
+        } else {
             messageReceived(connect_.getError());
         }
     }
-        
+
     /**
      * Return message to display from gamephase params PARAM_DISPLAY
      */
     @Override
-    protected String getMessageString()
-    {
+    protected String getMessageString() {
         return gamephase_.getString(PARAM_DISPLAY);
     }
 
     /**
      * Get error message
      */
-    public DDMessage getErrorMessage()
-    {
+    public DDMessage getErrorMessage() {
         return connect_.getError();
     }
 
     /**
      * get reply OnlineMessage
      */
-    public OnlineMessage getReply()
-    {
+    public OnlineMessage getReply() {
         return connect_.getReply();
     }
 
@@ -170,8 +157,7 @@ public class PokerUDPDialog extends SendMessageDialog implements Runnable
      * We don't use getMessage()
      */
     @Override
-    public EngineMessage getMessage()
-    {
+    public EngineMessage getMessage() {
         throw new ApplicationError(ErrorCodes.ERROR_UNSUPPORTED, "getMessage() not used in PokerUDPDialog", null);
     }
 
@@ -179,8 +165,7 @@ public class PokerUDPDialog extends SendMessageDialog implements Runnable
      * We don't use getReturnMessage()
      */
     @Override
-    public EngineMessage getReturnMessage()
-    {
+    public EngineMessage getReturnMessage() {
         throw new ApplicationError(ErrorCodes.ERROR_UNSUPPORTED, "getReturnMessage() not used in PokerUDPDialog", null);
     }
 }

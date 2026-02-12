@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -58,55 +58,48 @@ import static com.donohoedigital.games.poker.wicket.util.LoginUtils.LoginType.PA
 /**
  * @author Doug Donohoe
  */
-public class LoginUtils
-{
+public class LoginUtils {
     private static final Logger logger = LogManager.getLogger(LoginUtils.class);
 
     private static final String LOGIN = "login";
 
     private final BasePage<?> page;
 
-    enum LoginType
-    {
+    enum LoginType {
         COOKIE, PAGE
     }
 
     /**
      * Construct
      */
-    public LoginUtils(BasePage<?> page)
-    {
+    public LoginUtils(BasePage<?> page) {
         this.page = page;
     }
 
     /**
      * Login based on cookie (not authenticated)
      */
-    public void loginFromCookie()
-    {
+    public void loginFromCookie() {
         String c = WicketUtils.getCookieValue(LOGIN);
-        if (c != null && PokerSession.get().getLoggedInUser() == null)
-        {
-            if (!login(c, null, false, COOKIE))
-            {
+        if (c != null && PokerSession.get().getLoggedInUser() == null) {
+            if (!login(c, null, false, COOKIE)) {
                 deleteLoginCookie();
             }
         }
     }
 
     /**
-     * Login from a page (authenticate).  Stores cookie with login name if remember is true
+     * Login from a page (authenticate). Stores cookie with login name if remember
+     * is true
      */
-    public boolean loginFromPage(String name, String password, boolean remember)
-    {
+    public boolean loginFromPage(String name, String password, boolean remember) {
         return login(name, password, remember, PAGE);
     }
 
     /**
      * login logic
      */
-    private boolean login(String name, String password, boolean remember, LoginType type)
-    {
+    private boolean login(String name, String password, boolean remember, LoginType type) {
         OnlineProfileService profileService = PokerWicketApplication.get().getProfileService();
         PasswordHashingService hashingService = PokerWicketApplication.get().getPasswordHashingService();
         BannedKeyService banService = PokerWicketApplication.get().getBanService();
@@ -118,24 +111,24 @@ public class LoginUtils
         String ip = WicketUtils.getHttpServletRequest().getRemoteAddr();
 
         // profile should be there and activated
-        if (profile == null || !profile.isActivated() || profile.isRetired())
-        {
-            if (profile == null)
-            {
+        if (profile == null || !profile.isActivated() || profile.isRetired()) {
+            if (profile == null) {
                 if (type == PAGE)
-                    page.error(PropertyConfig.getMessage("msg.web.poker.invalidprofile")); // FIX: use wicket properties files
+                    page.error(PropertyConfig.getMessage("msg.web.poker.invalidprofile")); // FIX: use wicket properties
+                                                                                            // files
                 logger.info("{}: {} {} login failed (no such user).", type, ip, name);
-            }
-            else if (profile.isRetired())
-            {
+            } else if (profile.isRetired()) {
                 if (type == PAGE)
-                    page.error(PropertyConfig.getMessage("msg.web.poker.retired", Utils.encodeHTML(name))); // FIX: use wicket properties files
+                    page.error(PropertyConfig.getMessage("msg.web.poker.retired", Utils.encodeHTML(name))); // FIX: use
+                                                                                                            // wicket
+                                                                                                            // properties
+                                                                                                            // files
                 logger.info("{}: {} {} login failed (retired).", type, ip, name);
-            }
-            else // !profile.isActivated()
+            } else // !profile.isActivated()
             {
                 if (type == PAGE)
-                    page.error(PropertyConfig.getMessage("msg.web.poker.invalidprofile")); // FIX: use wicket properties files
+                    page.error(PropertyConfig.getMessage("msg.web.poker.invalidprofile")); // FIX: use wicket properties
+                                                                                            // files
                 logger.info("{}: {} {} login failed (not activated).", type, ip, name);
             }
 
@@ -144,10 +137,8 @@ public class LoginUtils
 
         // ban check
         BannedKey ban = banService.getIfBanned(profile.getLicenseKey(), profile.getEmail(), profile.getName());
-        if (ban != null)
-        {
-            if (type == PAGE)
-            {
+        if (ban != null) {
+            if (type == PAGE) {
                 DateFormat sf = new SimpleDateFormat("MM/dd/yyyy", Locale.US);
                 page.error(PropertyConfig.getMessage("msg.banned", sf.format(ban.getUntil())));
             }
@@ -157,16 +148,13 @@ public class LoginUtils
 
         // verify password (if login from page)
         boolean authenticated = false;
-        if (type == PAGE)
-        {
-            if (!hashingService.checkPassword(password, profile.getPasswordHash()))
-            {
-                page.error(PropertyConfig.getMessage("msg.web.poker.invalidprofile")); // FIX: use wicket properties files
+        if (type == PAGE) {
+            if (!hashingService.checkPassword(password, profile.getPasswordHash())) {
+                page.error(PropertyConfig.getMessage("msg.web.poker.invalidprofile")); // FIX: use wicket properties
+                                                                                        // files
                 logger.info("{}: {} {} login failed (password mismatch).", type, ip, name);
                 return false;
-            }
-            else
-            {
+            } else {
                 authenticated = true;
             }
         }
@@ -178,8 +166,7 @@ public class LoginUtils
         logger.info("{}: {} {} logged in (authenticated={}).", type, ip, name, user.isAuthenticated());
 
         // set cookie
-        if (remember)
-        {
+        if (remember) {
             Cookie c = WicketUtils.createCookie(LOGIN, name);
             WicketUtils.addCookie(c);
         }
@@ -188,8 +175,7 @@ public class LoginUtils
         page.continueToOriginalDestination();
 
         // if didn't continue on...
-        if (type == PAGE)
-        {
+        if (type == PAGE) {
             // default to page that login form was on
             // need to use "class" so page is re-rendered
             setResponsePage();
@@ -201,16 +187,14 @@ public class LoginUtils
     /**
      * clear login cookie
      */
-    public void deleteLoginCookie()
-    {
+    public void deleteLoginCookie() {
         WicketUtils.deleteCookie(LOGIN);
     }
 
     /**
      * logout logic
      */
-    public void logout()
-    {
+    public void logout() {
         // clear session
         PokerSession.get().invalidateNow();
 
@@ -224,9 +208,8 @@ public class LoginUtils
     /**
      * Set response page
      */
-    private void setResponsePage()
-    {
-        //logger.debug("Params: "+ page.getPageParameters());
+    private void setResponsePage() {
+        // logger.debug("Params: "+ page.getPageParameters());
         page.setResponsePage(page.getPageClass(), page.getPageParameters());
     }
 }

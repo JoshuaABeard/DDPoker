@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -49,13 +49,12 @@ import java.util.*;
 import java.util.List;
 
 /**
- * Loads styles.xml files in the module directories defined by
- * the appconfig.xml file.
+ * Loads styles.xml files in the module directories defined by the appconfig.xml
+ * file.
  *
  * @author donohoe
  */
-public class StylesConfig extends XMLConfigFileLoader
-{
+public class StylesConfig extends XMLConfigFileLoader {
     private static Logger sLogger = LogManager.getLogger(StylesConfig.class);
 
     private static final String STYLE_CONFIG = "styles.xml";
@@ -71,8 +70,7 @@ public class StylesConfig extends XMLConfigFileLoader
      * Creates a new instance of StylesConfig from the Appconfig file
      */
     @SuppressWarnings({"AssignmentToStaticFieldFromInstanceMethod"})
-    public StylesConfig(String[] modules) throws ApplicationError
-    {
+    public StylesConfig(String[] modules) throws ApplicationError {
         ApplicationError.warnNotNull(stylesConfig, "StylesConfig is already initialized");
         stylesConfig = this;
 
@@ -82,29 +80,24 @@ public class StylesConfig extends XMLConfigFileLoader
     /**
      * Get current instance of StylesConfig
      */
-    private static StylesConfig getConfig()
-    {
+    private static StylesConfig getConfig() {
         return stylesConfig;
     }
 
     /**
      * Return Color for requested color name
      */
-    public static Color getColor(String sName)
-    {
+    public static Color getColor(String sName) {
         return getConfig().colors_.get(sName);
     }
 
     /**
-     * Return Color file for request color name.  Return cDefault if not found
+     * Return Color file for request color name. Return cDefault if not found
      */
-    public static Color getColor(String sName, Color cDefault)
-    {
+    public static Color getColor(String sName, Color cDefault) {
         Color c = getColor(sName);
-        if (c == null)
-        {
-            if (!sName.contains("default"))
-            {
+        if (c == null) {
+            if (!sName.contains("default")) {
                 sLogger.warn("Color not found:" + sName);
             }
             return cDefault;
@@ -115,21 +108,17 @@ public class StylesConfig extends XMLConfigFileLoader
     /**
      * Return Font for requested name
      */
-    public static Font getFont(String sName)
-    {
+    public static Font getFont(String sName) {
         return getConfig().fonts_.get(sName);
     }
 
     /**
-     * Return Font for requested color name.  Return fDefault if not found
+     * Return Font for requested color name. Return fDefault if not found
      */
-    public static Font getFont(String sName, Font fDefault)
-    {
+    public static Font getFont(String sName, Font fDefault) {
         Font font = getConfig().fonts_.get(sName);
-        if (font == null)
-        {
-            if (!sName.contains("default"))
-            {
+        if (font == null) {
+            if (!sName.contains("default")) {
                 sLogger.warn("Font not found:" + sName);
             }
             return fDefault;
@@ -137,17 +126,14 @@ public class StylesConfig extends XMLConfigFileLoader
         return font;
     }
 
-    private void init(String[] modules) throws ApplicationError
-    {
+    private void init(String[] modules) throws ApplicationError {
         ApplicationError.assertNotNull(modules, "Modules list is null");
 
         Document doc;
-        for (String module : modules)
-        {
+        for (String module : modules) {
             // if styles file is missing, no big deal
             URL url = new MatchingResources("classpath*:config/" + module + "/" + STYLE_CONFIG).getSingleResourceURL();
-            if (url != null)
-            {
+            if (url != null) {
                 doc = this.loadXMLUrl(url, "styles.xsd");
                 init(doc);
             }
@@ -157,19 +143,18 @@ public class StylesConfig extends XMLConfigFileLoader
     /**
      * Initialize from JDOM doc
      */
-    private void init(Document doc) throws ApplicationError
-    {
+    private void init(Document doc) throws ApplicationError {
         Element root = doc.getRootElement();
 
         // get list of colors
         List<Element> colors = getChildren(root, "color", ns_, false, STYLE_CONFIG);
-        if (colors == null) return;
+        if (colors == null)
+            return;
 
         // create color for each one
         Element color;
         String sAttrErrorDesc;
-        for (int i = 0; i < colors.size(); i++)
-        {
+        for (int i = 0; i < colors.size(); i++) {
             sAttrErrorDesc = "Color #" + (i + 1) + " in " + STYLE_CONFIG;
             color = colors.get(i);
             initColor(color, sAttrErrorDesc);
@@ -177,12 +162,12 @@ public class StylesConfig extends XMLConfigFileLoader
 
         // get list of fonts
         List<Element> fonts = getChildren(root, "font", ns_, false, STYLE_CONFIG);
-        if (fonts == null) return;
+        if (fonts == null)
+            return;
 
         // create font for each one
         Element font;
-        for (int i = 0; i < fonts.size(); i++)
-        {
+        for (int i = 0; i < fonts.size(); i++) {
             sAttrErrorDesc = "Font #" + (i + 1) + " in " + STYLE_CONFIG;
             font = fonts.get(i);
             initFont(font, sAttrErrorDesc);
@@ -192,8 +177,7 @@ public class StylesConfig extends XMLConfigFileLoader
     /**
      * Read color info
      */
-    private void initColor(Element color, String sAttrErrorDesc) throws ApplicationError
-    {
+    private void initColor(Element color, String sAttrErrorDesc) throws ApplicationError {
         String sName = getStringAttributeValue(color, "name", true, sAttrErrorDesc);
         Integer r = getIntegerAttributeValue(color, "r", false, sAttrErrorDesc);
         Integer g = getIntegerAttributeValue(color, "g", false, sAttrErrorDesc);
@@ -201,36 +185,28 @@ public class StylesConfig extends XMLConfigFileLoader
         Integer a = getIntegerAttributeValue(color, "a", false, sAttrErrorDesc);
         String sCopy = getStringAttributeValue(color, "copy", false, sAttrErrorDesc);
 
-        if (sCopy != null)
-        {
+        if (sCopy != null) {
             ApplicationError.assertTrue(a == null, "'a' should not be defined in color entry " + sName + " (copy)");
             ApplicationError.assertTrue(r == null, "'r' should not be defined in color entry " + sName + " (copy)");
             ApplicationError.assertTrue(g == null, "'g' should not be defined in color entry " + sName + " (copy)");
             ApplicationError.assertTrue(b == null, "'b' should not be defined in color entry " + sName + " (copy)");
 
             Color copy = colors_.get(sCopy);
-            if (copy == null)
-            {
+            if (copy == null) {
                 String sMsg = sName + " copies " + sCopy + ", but that wasn't found.";
                 sLogger.error(sMsg);
                 throw new ApplicationError(ErrorCodes.ERROR_VALIDATION, sMsg,
-                                           "Make sure order is correct in " + STYLE_CONFIG +
-                                           "(" + sCopy + " must appear before " + sName);
+                        "Make sure order is correct in " + STYLE_CONFIG + "(" + sCopy + " must appear before " + sName);
             }
             colors_.put(sName, copy);
-        }
-        else
-        {
+        } else {
             ApplicationError.assertNotNull(r, "'r' missing in color entry " + sName);
             ApplicationError.assertNotNull(g, "'g' missing in color entry " + sName);
             ApplicationError.assertNotNull(b, "'b' missing in color entry " + sName);
 
-            if (a != null)
-            {
+            if (a != null) {
                 colors_.put(sName, new Color(r, g, b, a));
-            }
-            else
-            {
+            } else {
                 colors_.put(sName, new Color(r, g, b));
             }
         }
@@ -239,8 +215,7 @@ public class StylesConfig extends XMLConfigFileLoader
     /**
      * Read font info
      */
-    private void initFont(Element font, String sAttrErrorDesc) throws ApplicationError
-    {
+    private void initFont(Element font, String sAttrErrorDesc) throws ApplicationError {
         String sName = getStringAttributeValue(font, "name", true, sAttrErrorDesc);
         String sFontname = getStringAttributeValue(font, "fontname", true, sAttrErrorDesc);
         Integer nPointSize = getIntegerAttributeValue(font, "pointsize", true, sAttrErrorDesc);
@@ -248,26 +223,25 @@ public class StylesConfig extends XMLConfigFileLoader
         Boolean BBold = getBooleanAttributeValue(font, "bold", false, sAttrErrorDesc);
         String sCopy = getStringAttributeValue(font, "copy", false, sAttrErrorDesc);
 
-        if (sCopy != null)
-        {
-            ApplicationError.assertTrue(sFontname == null, "'fontname' should not be defined in font entry " + sName + " (copy)");
-            ApplicationError.assertTrue(nPointSize == null, "'pointsize' should not be defined in font entry " + sName + " (copy)");
-            ApplicationError.assertTrue(BBold == null, "'bold' should not be defined in font entry " + sName + " (copy)");
-            ApplicationError.assertTrue(BItalic == null, "'italic' should not be defined in font entry " + sName + " (copy)");
+        if (sCopy != null) {
+            ApplicationError.assertTrue(sFontname == null,
+                    "'fontname' should not be defined in font entry " + sName + " (copy)");
+            ApplicationError.assertTrue(nPointSize == null,
+                    "'pointsize' should not be defined in font entry " + sName + " (copy)");
+            ApplicationError.assertTrue(BBold == null,
+                    "'bold' should not be defined in font entry " + sName + " (copy)");
+            ApplicationError.assertTrue(BItalic == null,
+                    "'italic' should not be defined in font entry " + sName + " (copy)");
 
             Font copy = fonts_.get(sCopy);
-            if (copy == null)
-            {
+            if (copy == null) {
                 String sMsg = sName + " copies " + sCopy + ", but that wasn't found.";
                 sLogger.error(sMsg);
                 throw new ApplicationError(ErrorCodes.ERROR_VALIDATION, sMsg,
-                                           "Make sure order is correct in " + STYLE_CONFIG +
-                                           "(" + sCopy + " must appear before " + sName);
+                        "Make sure order is correct in " + STYLE_CONFIG + "(" + sCopy + " must appear before " + sName);
             }
             fonts_.put(sName, copy);
-        }
-        else
-        {
+        } else {
             ApplicationError.assertNotNull(sFontname, "'fontname' missing in font entry " + sName);
             ApplicationError.assertNotNull(nPointSize, "'pointsize' missing in font entry " + sName);
 
@@ -275,60 +249,50 @@ public class StylesConfig extends XMLConfigFileLoader
             boolean bBold = BBold == null ? false : BBold;
 
             int nStyle = Font.PLAIN;
-            if (bItalic && bBold) nStyle = Font.BOLD & Font.ITALIC;
-            else if (bItalic) nStyle = Font.ITALIC;
-            else if (bBold) nStyle = Font.BOLD;
+            if (bItalic && bBold)
+                nStyle = Font.BOLD & Font.ITALIC;
+            else if (bItalic)
+                nStyle = Font.ITALIC;
+            else if (bBold)
+                nStyle = Font.BOLD;
 
             Font newfont = null;
             // load directly from our font dir
-            if (sFontname.endsWith(".ttf"))
-            {
+            if (sFontname.endsWith(".ttf")) {
                 URL fontUrl = new MatchingResources("classpath*:config/fonts/" + sFontname).getSingleResourceURL();
                 Font basefont = fontdefs_.get(sFontname);
-                if (basefont == null)
-                {
-                    if (DEBUG_FONT) sLogger.debug("Loading custom font: " + fontUrl);
+                if (basefont == null) {
+                    if (DEBUG_FONT)
+                        sLogger.debug("Loading custom font: " + fontUrl);
                     InputStream is = null;
-                    try
-                    {
+                    try {
                         is = fontUrl.openStream();
                         basefont = Font.createFont(Font.TRUETYPE_FONT, is);
                         fontdefs_.put(sFontname, basefont);
-                    }
-                    catch (Exception e)
-                    {
+                    } catch (Exception e) {
                         sLogger.error("Error processing font " + fontUrl);
                         sLogger.error(Utils.formatExceptionText(e));
-                    }
-                    finally
-                    {
+                    } finally {
                         ConfigUtils.close(is);
                     }
                 }
-                if (basefont != null)
-                {
+                if (basefont != null) {
                     newfont = basefont.deriveFont(nStyle, nPointSize);
-                    if (DEBUG_FONT && !newfont.getFontName().equalsIgnoreCase(sFontname))
-                    {
-                        sLogger.debug(sName + " font mismatch, requested " +
-                                      sFontname + ":" + nPointSize + " " +
-                                      (bBold ? "(bold) " : " ") + (bItalic ? "(italic) " : " ") +
-                                      "==>  font: " + newfont.getFontName() + " (" + newfont.getFamily() + ")"
-                                      + " size: " + newfont.getSize());
+                    if (DEBUG_FONT && !newfont.getFontName().equalsIgnoreCase(sFontname)) {
+                        sLogger.debug(sName + " font mismatch, requested " + sFontname + ":" + nPointSize + " "
+                                + (bBold ? "(bold) " : " ") + (bItalic ? "(italic) " : " ") + "==>  font: "
+                                + newfont.getFontName() + " (" + newfont.getFamily() + ")" + " size: "
+                                + newfont.getSize());
                     }
                 }
             }
 
-            if (newfont == null)
-            {
+            if (newfont == null) {
                 newfont = new Font(sFontname, nStyle, nPointSize);
-                if (DEBUG_FONT && !newfont.getFontName().equalsIgnoreCase(sFontname))
-                {
-                    sLogger.debug(sName + "  loaded 2, font mismatch, requested " +
-                                  sFontname + ":" + nPointSize + " " +
-                                  (bBold ? "(bold) " : " ") + (bItalic ? "(italic) " : " ") +
-                                  "==> loaded font: " + newfont.getFontName() + " (" + newfont.getFamily() + ")"
-                                  + " size: " + newfont.getSize());
+                if (DEBUG_FONT && !newfont.getFontName().equalsIgnoreCase(sFontname)) {
+                    sLogger.debug(sName + "  loaded 2, font mismatch, requested " + sFontname + ":" + nPointSize + " "
+                            + (bBold ? "(bold) " : " ") + (bItalic ? "(italic) " : " ") + "==> loaded font: "
+                            + newfont.getFontName() + " (" + newfont.getFamily() + ")" + " size: " + newfont.getSize());
                 }
             }
             // TODO: check for matching fontname
@@ -338,23 +302,26 @@ public class StylesConfig extends XMLConfigFileLoader
 
     /**
      * Reset StylesConfig for testing.
-     * <p><strong>WARNING:</strong> Only call this from test code, never from production code.</p>
+     * <p>
+     * <strong>WARNING:</strong> Only call this from test code, never from
+     * production code.
+     * </p>
      */
-    public static void resetForTesting()
-    {
+    public static void resetForTesting() {
         stylesConfig = null;
     }
 
-//    /**
-//     * Code to list all fonts
-//     */
-//    private void listAllFonts()
-//    {
-//        String[] fonts;
-//        fonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
-//        for (int i = 0; i < fonts.length; i++)
-//        {
-//            logger.debug("Font " + i + ": " + fonts[i]);
-//        }
-//    }
+    // /**
+    // * Code to list all fonts
+    // */
+    // private void listAllFonts()
+    // {
+    // String[] fonts;
+    // fonts =
+    // GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+    // for (int i = 0; i < fonts.length; i++)
+    // {
+    // logger.debug("Font " + i + ": " + fonts[i]);
+    // }
+    // }
 }

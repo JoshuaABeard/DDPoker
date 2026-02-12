@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -35,7 +35,8 @@ package com.donohoedigital.gui;
 import java.awt.*;
 
 /**
- * A vertical flow layout where each component assumes its natural (preferred) size.
+ * A vertical flow layout where each component assumes its natural (preferred)
+ * size.
  */
 public class VerticalFlowLayout implements LayoutManager, java.io.Serializable {
 
@@ -156,12 +157,12 @@ public class VerticalFlowLayout implements LayoutManager, java.io.Serializable {
     private void moveComponents(Container target, int x, int y, int width, int height, int columnStart, int columnEnd) {
         synchronized (target.getTreeLock()) {
             switch (align) {
-                case TOP:
+                case TOP :
                     break;
-                case CENTER:
+                case CENTER :
                     y += height / 2;
                     break;
-                case BOTTOM:
+                case BOTTOM :
                     y += height;
                     break;
             }
@@ -170,16 +171,16 @@ public class VerticalFlowLayout implements LayoutManager, java.io.Serializable {
                 if (m.isVisible()) {
                     int dx;
                     switch (subAlign) {
-                        case CENTER:
+                        case CENTER :
                             dx = (width - m.getSize().width) / 2;
                             break;
-                        case LEFT:
+                        case LEFT :
                             dx = 0;
                             break;
-                        case RIGHT:
+                        case RIGHT :
                             dx = width - m.getSize().width;
                             break;
-                        default:
+                        default :
                             throw new IllegalStateException("subAlign = " + subAlign);
                     }
                     m.setLocation(x + dx, y);
@@ -225,29 +226,28 @@ public class VerticalFlowLayout implements LayoutManager, java.io.Serializable {
     public String toString() {
         String str = "";
         switch (align) {
-            case TOP:
+            case TOP :
                 str = ",align=top";
                 break;
-            case CENTER:
+            case CENTER :
                 str = ",align=center";
                 break;
-            case BOTTOM:
+            case BOTTOM :
                 str = ",align=bottom";
                 break;
         }
         String subStr = "";
         switch (subAlign) {
-            case LEFT:
+            case LEFT :
                 subStr = ",subAlign=left";
                 break;
-            case CENTER:
+            case CENTER :
                 subStr = ",subAlign=center";
                 break;
-            case RIGHT:
+            case RIGHT :
                 subStr = ",subAlign=right";
                 break;
         }
         return getClass().getName() + "[hgap=" + hgap + ",vgap=" + vgap + str + subAlign + "]";
     }
 }
-

@@ -28,8 +28,8 @@ import java.util.Queue;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Unit tests for PublicIPDetector using TDD approach.
- * Tests written BEFORE implementation (RED phase).
+ * Unit tests for PublicIPDetector using TDD approach. Tests written BEFORE
+ * implementation (RED phase).
  */
 class PublicIPDetectorTest {
 
@@ -37,8 +37,8 @@ class PublicIPDetectorTest {
     private PublicIPDetector detector;
 
     /**
-     * Test implementation of HttpFetcher for testing.
-     * Allows configuring responses and tracking calls.
+     * Test implementation of HttpFetcher for testing. Allows configuring responses
+     * and tracking calls.
      */
     private static class TestHttpFetcher implements PublicIPDetector.HttpFetcher {
         private final Queue<FetchResult> responses = new LinkedList<>();
@@ -112,8 +112,8 @@ class PublicIPDetectorTest {
     void should_FallbackToSecondService_When_FirstServiceFails() {
         // Arrange
         String expectedIP = "198.51.100.42";
-        testHttpFetcher.addException(new RuntimeException("Service unavailable"));  // First service fails
-        testHttpFetcher.addResponse(expectedIP);  // Second service succeeds
+        testHttpFetcher.addException(new RuntimeException("Service unavailable")); // First service fails
+        testHttpFetcher.addResponse(expectedIP); // Second service succeeds
 
         // Act
         String actualIP = detector.fetchPublicIP();
@@ -133,7 +133,7 @@ class PublicIPDetectorTest {
         String expectedIP = "192.0.2.42";
         testHttpFetcher.addException(new RuntimeException("First service unavailable"));
         testHttpFetcher.addException(new RuntimeException("Second service unavailable"));
-        testHttpFetcher.addResponse(expectedIP);  // Third service succeeds
+        testHttpFetcher.addResponse(expectedIP); // Third service succeeds
 
         // Act
         String actualIP = detector.fetchPublicIP();

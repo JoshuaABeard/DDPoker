@@ -56,14 +56,12 @@ public class DDMetalBumps implements Icon {
     static Vector<BumpBuffer> buffers = new Vector<>();
     BumpBuffer buffer;
 
-    public DDMetalBumps(int width, int height,
-                        Color newTopColor, Color newShadowColor, Color newBackColor) {
+    public DDMetalBumps(int width, int height, Color newTopColor, Color newShadowColor, Color newBackColor) {
         setBumpArea(width, height);
         setBumpColors(newTopColor, newShadowColor, newBackColor);
     }
 
-    private BumpBuffer getBuffer(GraphicsConfiguration gc, Color aTopColor,
-                                 Color aShadowColor, Color aBackColor) {
+    private BumpBuffer getBuffer(GraphicsConfiguration gc, Color aTopColor, Color aShadowColor, Color aBackColor) {
         if (buffer != null && buffer.hasSameConfiguration(gc, aTopColor, aShadowColor, aBackColor)) {
             return buffer;
         }
@@ -117,10 +115,7 @@ public class DDMetalBumps implements Icon {
             int h = Math.min(y2 - y, bufferHeight);
             for (x = savex; x < x2; x += bufferWidth) {
                 int w = Math.min(x2 - x, bufferWidth);
-                g.drawImage(buffer.getImage(),
-                        x, y, x + w, y + h,
-                        0, 0, w, h,
-                        null);
+                g.drawImage(buffer.getImage(), x, y, x + w, y + h, 0, 0, w, h, null);
             }
             y += bufferHeight;
         }
@@ -134,7 +129,6 @@ public class DDMetalBumps implements Icon {
         return yBumps * 2;
     }
 }
-
 
 class BumpBuffer {
 
@@ -156,9 +150,8 @@ class BumpBuffer {
         fillBumpBuffer();
     }
 
-    public boolean hasSameConfiguration(GraphicsConfiguration gc,
-                                        Color aTopColor, Color aShadowColor,
-                                        Color aBackColor) {
+    public boolean hasSameConfiguration(GraphicsConfiguration gc, Color aTopColor, Color aShadowColor,
+            Color aBackColor) {
         if (this.gc != null) {
             if (!this.gc.equals(gc)) {
                 return false;

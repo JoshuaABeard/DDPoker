@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -54,14 +54,11 @@ import java.util.*;
 
 /**
  *
- * @author  Doug Donohoe
+ * @author Doug Donohoe
  */
-public class GameListPanel extends DDPanel implements ListSelectionListener,
-                                            PropertyChangeListener,
-                                            ActionListener
-{
+public class GameListPanel extends DDPanel implements ListSelectionListener, PropertyChangeListener, ActionListener {
     static Logger logger = LogManager.getLogger(GameListPanel.class);
-    
+
     // file extensions
     public static final String SAVE_EXT = PropertyConfig.getRequiredStringProperty("settings.save.ext");
 
@@ -87,41 +84,34 @@ public class GameListPanel extends DDPanel implements ListSelectionListener,
     private String sBegin_;
 
     // save game info
-    private static final int[] COLUMN_WIDTHS_LOAD = new int[] {
-        240, 293, 166
-    };
-    private static final int[] COLUMN_WIDTHS_SAVE = new int[] {
-        240, 280, 166
-    };
-    private static final String[] COLUMN_NAMES_SAVE = new String[] {
-        "gamename", "players", "date"
-    };
-    
-    
+    private static final int[] COLUMN_WIDTHS_LOAD = new int[]{240, 293, 166};
+    private static final int[] COLUMN_WIDTHS_SAVE = new int[]{240, 280, 166};
+    private static final String[] COLUMN_NAMES_SAVE = new String[]{"gamename", "players", "date"};
+
     /**
      * Create new panel for saving games
      */
-    public static GameListPanel newSaveDialogPanel(GameEngine engine, GameContext context, GamePhase gamephase, String sStyle, DialogPhase dialog, DDButton okay)
-    {
-        return new GameListPanel(engine, context, gamephase, COLUMN_WIDTHS_SAVE, COLUMN_NAMES_SAVE,
-                                 sStyle, dialog, okay, "DisplayMessage", sStyle, null);
+    public static GameListPanel newSaveDialogPanel(GameEngine engine, GameContext context, GamePhase gamephase,
+            String sStyle, DialogPhase dialog, DDButton okay) {
+        return new GameListPanel(engine, context, gamephase, COLUMN_WIDTHS_SAVE, COLUMN_NAMES_SAVE, sStyle, dialog,
+                okay, "DisplayMessage", sStyle, null);
     }
-    
+
     /**
      * Create new panel for saving games
      */
-    public static GameListPanel newLoadMenuPanel(GameEngine engine, GameContext context, GamePhase gamephase, String sStyle, String sBevelStyle, DialogPhase dialog, DDButton okay)
-    {
-        return new GameListPanel(engine, context, gamephase, COLUMN_WIDTHS_LOAD, COLUMN_NAMES_SAVE,
-                                 sStyle, dialog, okay, "DisplayMessageMenu", "DisplayMessageMenu2", sBevelStyle);
+    public static GameListPanel newLoadMenuPanel(GameEngine engine, GameContext context, GamePhase gamephase,
+            String sStyle, String sBevelStyle, DialogPhase dialog, DDButton okay) {
+        return new GameListPanel(engine, context, gamephase, COLUMN_WIDTHS_LOAD, COLUMN_NAMES_SAVE, sStyle, dialog,
+                okay, "DisplayMessageMenu", "DisplayMessageMenu2", sBevelStyle);
     }
-    
-    /** 
+
+    /**
      * Save UI
      */
-    private GameListPanel(GameEngine engine, GameContext context, GamePhase gamephase, int[] widths, String[] names, String sStyle,
-                          DialogPhase dialog, DDButton okay, String labelStyle, String sNameStyle, String sBevelStyle)
-    {    
+    private GameListPanel(GameEngine engine, GameContext context, GamePhase gamephase, int[] widths, String[] names,
+            String sStyle, DialogPhase dialog, DDButton okay, String labelStyle, String sNameStyle,
+            String sBevelStyle) {
         engine_ = engine;
         context_ = context;
         gamephase_ = gamephase;
@@ -137,51 +127,41 @@ public class GameListPanel extends DDPanel implements ListSelectionListener,
         // base
         DDPanel base = this;
 
-        if (bSaveMode_)
-        {
+        if (bSaveMode_) {
             sBegin_ = game.getBegin();
             lastSave_ = game.getLastGameState();
             bOnlineSave_ = game.isOnlineGame();
-            if (bOnlineSave_)
-            {
+            if (bOnlineSave_) {
                 ApplicationError.assertNotNull(lastSave_, "Last save missing in online save");
             }
-        }
-        else
-        {
+        } else {
             sBegin_ = gamephase_.getString("loadbegin", GameState.GAME_BEGIN);
         }
-        
-        
-        
+
         // name of game
         DDPanel namebase = new DDPanel();
         namebase.setBorder(BorderFactory.createEmptyBorder(5, 10, 10, 10));
         namebase.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
         base.add(namebase, BorderLayout.NORTH);
-        
+
         DDLabel namelabel = new DDLabel("gamename", sNameStyle);
-        namelabel.setBorder(BorderFactory.createEmptyBorder(0,0,0,8));
+        namelabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 8));
         namebase.add(namelabel);
-        
+
         name_ = new DDTextField(GuiManager.DEFAULT, STYLE, sBevelStyle);
-        
-        if (bOnlineSave_)
-        {
+
+        if (bOnlineSave_) {
             name_.setDisplayOnly(true);
             name_.setColumns(18);
-        }
-        else
-        {
+        } else {
             name_.setColumns(30);
             name_.setTextLengthLimit(40);
             name_.setRegExp("^.+$");
             name_.addPropertyChangeListener("value", this);
         }
         namebase.add(name_);
-        
-        if (!bOnlineSave_)
-        {
+
+        if (!bOnlineSave_) {
             // list of previous savedgames
             DDPanel savebase = new DDPanel();
             BorderLayout layout = (BorderLayout) savebase.getLayout();
@@ -196,7 +176,7 @@ public class GameListPanel extends DDPanel implements ListSelectionListener,
             savebase.add(titlearea, BorderLayout.NORTH);
 
             // savedgames title
-            DDLabel prev = new DDLabel("savedgames."+sBegin_, labelStyle);
+            DDLabel prev = new DDLabel("savedgames." + sBegin_, labelStyle);
             titlearea.add(prev, BorderLayout.WEST);
 
             // delete button
@@ -219,272 +199,236 @@ public class GameListPanel extends DDPanel implements ListSelectionListener,
             saveTable_.setColumnSelectionAllowed(false);
             saveTable_.getSelectionModel().addListSelectionListener(this);
             saveTable_.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-            saveTable_.addMouseListener(new MouseAdapter(){
-                public void mouseClicked(MouseEvent e){
-                    if (e.getClickCount() == 2)
-                    {
+            saveTable_.addMouseListener(new MouseAdapter() {
+                public void mouseClicked(MouseEvent e) {
+                    if (e.getClickCount() == 2) {
                         handleDoubleClick();
                     }
-                }});
-        }
-        else
-        {
+                }
+            });
+        } else {
             DDHtmlArea online = new DDHtmlArea(GuiManager.DEFAULT, STYLE);
             online.setText(PropertyConfig.getMessage("msg.onlinesave"));
             online.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
             online.setPreferredSize(new Dimension(300, 75));
             base.add(online, BorderLayout.CENTER);
         }
-    
-        if (bSaveMode_ && lastSave_ != null)
-        {
+
+        if (bSaveMode_ && lastSave_ != null) {
             name_.setText(lastSave_.getGameName());
-            if (!bOnlineSave_) propertyChange(null); // force change
+            if (!bOnlineSave_)
+                propertyChange(null); // force change
         }
     }
-    
+
     /**
      * Handle dbl-click
      */
-    private void handleDoubleClick()
-    {
-        if (bSaveMode_)
-        {
+    private void handleDoubleClick() {
+        if (bSaveMode_) {
             // nothing to do in save mode for dbl click
-        }
-        else
-        {
+        } else {
             // load mode - load selected file
             processButton(okayButton_.getName());
         }
     }
-    
+
     /**
      * Set focus to the name widget
      */
-    public Component getFocusComponent()
-    {
+    public Component getFocusComponent() {
         return name_;
     }
-    
+
     /**
      * Handle button press
      */
-    public boolean processButton(GameButton button) 
-    {
+    public boolean processButton(GameButton button) {
         return processButton(button.getName());
     }
 
     /**
      * actual logic
      */
-    private boolean processButton(String sButtonName)
-    {
-        if (sButtonName.equals(okayButton_.getName()))
-        {  
-            if (bSaveMode_)
-            {
+    private boolean processButton(String sButtonName) {
+        if (sButtonName.equals(okayButton_.getName())) {
+            if (bSaveMode_) {
                 Game game = context_.getGame();
                 String sName = getName(true);
                 GameState newSave = null;
                 // see if we are saving same name as last time
-                if (lastSave_ != null)
-                {
-                    if (sName.equals(lastSave_.getGameName()))
-                    {
+                if (lastSave_ != null) {
+                    if (sName.equals(lastSave_.getGameName())) {
                         newSave = lastSave_;
                     }
                 }
-                
+
                 // next check for duplicate to existing game
-                if (newSave == null)
-                {
+                if (newSave == null) {
                     int nNum = model_.getRowCount();
-                    for (int i = 0; i < nNum; i++)
-                    {
-                        if (sName.equals(model_.getGameState(i).getGameName()))
-                        {
+                    for (int i = 0; i < nNum; i++) {
+                        if (sName.equals(model_.getGameState(i).getGameName())) {
                             if (EngineUtils.displayConfirmationDialog(context_,
-                                PropertyConfig.getMessage("msg.confirm.overwrite", sName)))
-                            {
+                                    PropertyConfig.getMessage("msg.confirm.overwrite", sName))) {
                                 newSave = model_.getGameState(i);
                                 // BUG 188 - update names when overwriting
                                 newSave.setDescription(game.getDescription());
-                            }
-                            else
-                            {
+                            } else {
                                 return false;
                             }
                         }
                     }
                 }
-                
+
                 // if not using previous save, create a new one
-                if (newSave == null)
-                {
+                if (newSave == null) {
                     newSave = game.newGameState(sName, SAVE_EXT);
                 }
-                
+
                 // get sync object
                 Object sync = SAVE_EXT; // dummy for regular saves
-                if (bOnlineSave_)
-                {
+                if (bOnlineSave_) {
                     sync = context_.getGameManager().getSaveLockObject();
                 }
-                
+
                 // sync with online game object to prevent issues
                 // in case user saves during an update from another user
-                synchronized (sync)
-                {
-                    //logger.debug("Saving...");
+                synchronized (sync) {
+                    // logger.debug("Saving...");
                     game.saveGame(newSave);
                     game.writeGame(newSave);
                 }
-                
-                if (dialog_ != null) dialog_.removeDialog();
-            }
-            else
-            {
-                if (dialog_ != null) dialog_.removeDialog();
+
+                if (dialog_ != null)
+                    dialog_.removeDialog();
+            } else {
+                if (dialog_ != null)
+                    dialog_.removeDialog();
                 logger.info("Loading saved game: " + selected_.getFile().getAbsolutePath());
                 LoadSavedGame.loadGame(context_, selected_);
             }
-        }
-        else // cancel button
+        } else // cancel button
         {
-            if (dialog_ != null) dialog_.removeDialog();
+            if (dialog_ != null)
+                dialog_.removeDialog();
         }
-        
+
         return true;
     }
-    
+
     boolean bIgnoreTextChange_ = false;
     /**
      * Table row selected
      */
-    public void valueChanged(ListSelectionEvent e) 
-    {
-        if (e.getValueIsAdjusting()) return;
-        
+    public void valueChanged(ListSelectionEvent e) {
+        if (e.getValueIsAdjusting())
+            return;
+
         ListSelectionModel lsm = saveTable_.getSelectionModel();
         int index = lsm.getMinSelectionIndex();
-        if (index >= 0 ) 
-        {
+        if (index >= 0) {
             selected_ = model_.getGameState(index);
             bIgnoreTextChange_ = true;
             name_.setText(selected_.getGameName());
-            bIgnoreTextChange_ = false;        }
-        else
-        {
+            bIgnoreTextChange_ = false;
+        } else {
             selected_ = null;
         }
-        
+
         checkButtons();
     }
-    
-    /** 
+
+    /**
      * Called when value changes on the text fields
      */
     public void propertyChange(PropertyChangeEvent evt) {
-        
-        if (bIgnoreTextChange_) return;
+
+        if (bIgnoreTextChange_)
+            return;
         checkButtons();
-        
+
         // see if we match something in the table, if so, highlight it
         String sName = getName(false);
-        //logger.debug("Text change: <"+sName+">");
-        
+        // logger.debug("Text change: <"+sName+">");
+
         ListSelectionModel selmodel = saveTable_.getSelectionModel();
         int nNum = model_.getRowCount();
-        for (int i = 0; sName != null && i < nNum; i++)
-        {
-            if (sName.equals(model_.getGameState(i).getGameName()))
-            {
+        for (int i = 0; sName != null && i < nNum; i++) {
+            if (sName.equals(model_.getGameState(i).getGameName())) {
                 selmodel.setSelectionInterval(i, i);
                 saveTable_.scrollRectToVisible(saveTable_.getCellRect(i, 0, true));
                 return;
             }
         }
-        
-        if (!selmodel.isSelectionEmpty())
-        {
+
+        if (!selmodel.isSelectionEmpty()) {
             selmodel.clearSelection();
         }
     }
-    
+
     /**
      * Turn buttons on / off
      */
-    private void checkButtons()
-    {
+    private void checkButtons() {
         delete_.setEnabled(selected_ != null);
-        
-        if (bSaveMode_)
-        {
+
+        if (bSaveMode_) {
             okayButton_.setEnabled(name_.isValidData());
-        }
-        else
-        {
+        } else {
             okayButton_.setEnabled(selected_ != null);
         }
     }
-    
-    private String getName(boolean bTrim)
-    {
+
+    private String getName(boolean bTrim) {
         String sName = name_.getText();
-        if (bTrim && sName != null) sName = sName.trim();
+        if (bTrim && sName != null)
+            sName = sName.trim();
         return sName;
     }
-    
+
     /**
      * Get saved files
      */
-    private SaveTableModel getSavedFileModel()
-    {
+    private SaveTableModel getSavedFileModel() {
         GameState saved[] = GameState.getSaveFileList(sBegin_, SAVE_EXT);
         return new SaveTableModel(saved);
     }
-    
+
     /**
      * Delete button
      */
-    public void actionPerformed(ActionEvent e) 
-    {
+    public void actionPerformed(ActionEvent e) {
         ApplicationError.assertNotNull(selected_, "Nothing selected to delete");
-        
+
         String sName = selected_.getGameName();
         String sKey = (selected_.isOnlineGame() ? "msg.confirm.delete.online" : "msg.confirm.delete");
-        if (EngineUtils.displayConfirmationDialog(context_, Utils.fixHtmlTextFor15(PropertyConfig.getMessage(sKey, sName))))
-        {
+        if (EngineUtils.displayConfirmationDialog(context_,
+                Utils.fixHtmlTextFor15(PropertyConfig.getMessage(sKey, sName)))) {
             selected_.delete();
             model_.removeRow(selected_);
             saveTable_.getSelectionModel().clearSelection();
             name_.setText("");
         }
     }
-    
+
     /**
      * Used by table to display save files
      */
-    private class SaveTableModel extends DefaultTableModel 
-    {
+    private class SaveTableModel extends DefaultTableModel {
         private ArrayList files;
 
-        public SaveTableModel(GameState[] filesin) 
-        {
+        public SaveTableModel(GameState[] filesin) {
             Arrays.sort(filesin, LISTSORTER);
             files = new ArrayList(filesin.length);
-            for (int i = 0; i < filesin.length; i++)
-            {
+            for (int i = 0; i < filesin.length; i++) {
                 files.add(filesin[i]);
             }
         }
-        
-        public void removeRow(GameState f)
-        {
+
+        public void removeRow(GameState f) {
             int row = files.indexOf(f);
             files.remove(row);
-            fireTableRowsDeleted(row,row);            
+            fireTableRowsDeleted(row, row);
         }
 
         public GameState getGameState(int r) {
@@ -513,38 +457,38 @@ public class GameListPanel extends DDPanel implements ListSelectionListener,
         public Object getValueAt(int rowIndex, int colIndex) {
             GameState game = getGameState(rowIndex);
             switch (colIndex) {
-                case 0:
+                case 0 :
                     return game.getGameName();
-                    
-                case 1:
+
+                case 1 :
                     return game.getDescription();
-                    
-                case 2:
+
+                case 2 :
                     Date date = new Date(game.lastModified());
                     return PropertyConfig.getDateFormat("msg.format.shortdatetime", engine_.getLocale()).format(date);
-                    
-                
+
             }
             throw new ArrayIndexOutOfBoundsException("Invalid column value");
         }
     }
 
     private static CompareFile LISTSORTER = new CompareFile();
-    
+
     /**
      * Sort in descending order (most recent at top)
      */
-    private static class CompareFile implements Comparator
-    {
+    private static class CompareFile implements Comparator {
         public int compare(Object o1, Object o2) {
             GameState gs1 = (GameState) o1;
             GameState gs2 = (GameState) o2;
             long dif = (gs2.lastModified() - gs1.lastModified());
-            if (dif < 0) return -1;
-            else if (dif > 0) return 1;
-            
+            if (dif < 0)
+                return -1;
+            else if (dif > 0)
+                return 1;
+
             return gs2.getFile().getName().compareTo(gs1.getFile().getName());
-            
+
         }
     }
 }

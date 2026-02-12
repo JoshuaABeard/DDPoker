@@ -29,7 +29,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for Pot - pot management, chip tracking, side pots, and winner distribution.
+ * Tests for Pot - pot management, chip tracking, side pots, and winner
+ * distribution.
  */
 class PotTest {
 

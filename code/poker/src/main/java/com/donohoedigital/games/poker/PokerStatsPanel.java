@@ -2,38 +2,37 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.config.PropertyConfig;
-import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.gui.*;
@@ -43,8 +42,7 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.*;
 import java.awt.*;
 
-public class PokerStatsPanel extends DDTabPanel
-{
+public class PokerStatsPanel extends DDTabPanel {
     static Logger logger = LogManager.getLogger(PokerStatsPanel.class);
 
     public static final int FLOP = 1;
@@ -62,19 +60,16 @@ public class PokerStatsPanel extends DDTabPanel
     DDHtmlArea htmlArea_;
     DDHtmlArea header_;
 
-    public PokerStatsPanel(int mode)
-    {
+    public PokerStatsPanel(int mode) {
         this(null, mode);
     }
 
-    public PokerStatsPanel(PokerPlayer player, int mode)
-    {
+    public PokerStatsPanel(PokerPlayer player, int mode) {
         super();
 
         mode_ = mode;
 
-        if (player != null)
-        {
+        if (player != null) {
             PokerTable table = player.getTable();
             HoldemHand hand = table.getHoldemHand();
             pocket_ = player.getHand();
@@ -84,13 +79,12 @@ public class PokerStatsPanel extends DDTabPanel
         setPreferredSize(new Dimension(460, 350));
     }
 
-    protected void createUI()
-    {
+    protected void createUI() {
         setBorderLayoutGap(0, 0);
 
         // top
         DDPanel top = new DDPanel();
-        top.setBorderLayoutGap(10,0);
+        top.setBorderLayoutGap(10, 0);
         add(top, BorderLayout.NORTH);
 
         // header
@@ -100,15 +94,14 @@ public class PokerStatsPanel extends DDTabPanel
 
         // html results
         htmlArea_ = new DDHtmlArea("PokerStats", "PokerStats");
-        htmlArea_.setBorder(BorderFactory.createEmptyBorder(2,2,2,2));
+        htmlArea_.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
         scroll_ = new DDScrollPane(htmlArea_, "PokerStandardDialog", null, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                                            JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scroll_.setOpaque(false);
         add(scroll_, BorderLayout.CENTER);
 
         // update stats
-        if (pocket_ != null)
-        {
+        if (pocket_ != null) {
             updateHeader();
             updateStats();
         }
@@ -117,54 +110,49 @@ public class PokerStatsPanel extends DDTabPanel
     /**
      * header
      */
-    private void updateHeader()
-    {
+    private void updateHeader() {
         String sMsg = null;
         int nMin = 0;
-        switch (mode_)
-        {
-            case FLOP:
+        switch (mode_) {
+            case FLOP :
                 nMin = 3;
                 sMsg = PropertyConfig.getMessage("msg.sim.flop");
                 break;
-            case TURN:
+            case TURN :
                 nMin = 4;
                 sMsg = PropertyConfig.getMessage("msg.sim.turn");
                 break;
-            case RIVER:
+            case RIVER :
                 nMin = 5;
                 sMsg = PropertyConfig.getMessage("msg.sim.river");
                 break;
-            case LADDER:
+            case LADDER :
                 nMin = 5;
                 sMsg = PropertyConfig.getMessage("msg.sim.ladder");
                 break;
-            case STRENGTH:
+            case STRENGTH :
                 nMin = 5;
                 sMsg = PropertyConfig.getMessage("msg.sim.strength");
                 break;
         }
 
         Hand pocket = new Hand(pocket_);
-        while (pocket.size() < 2) pocket.addCard(Card.BLANK);
+        while (pocket.size() < 2)
+            pocket.addCard(Card.BLANK);
 
         Hand community = new Hand(community_);
-        while (community.size() < nMin) community.addCard(Card.BLANK);
+        while (community.size() < nMin)
+            community.addCard(Card.BLANK);
         int nNumComm = community.size();
-        header_.setText(PropertyConfig.getMessage("msg.sim.header.generic",
-                                                     pocket.toHTML(),
-                                                     "&nbsp;&nbsp;" + community.toHTML(),
-                                                     (2+nNumComm) * 23 + 5,
-                                                     sMsg));
+        header_.setText(PropertyConfig.getMessage("msg.sim.header.generic", pocket.toHTML(),
+                "&nbsp;&nbsp;" + community.toHTML(), (2 + nNumComm) * 23 + 5, sMsg));
     }
 
     /**
      * run update thread
      */
-    public void updateStats()
-    {
-        if (checkRequiredCards())
-        {
+    public void updateStats() {
+        if (checkRequiredCards()) {
             new UpdateThread().start();
         }
     }
@@ -172,40 +160,40 @@ public class PokerStatsPanel extends DDTabPanel
     /**
      * check prereqs
      */
-    private boolean checkRequiredCards()
-    {
+    private boolean checkRequiredCards() {
         String sText = null;
-        if (pocket_.size() != 2)
-        {
+        if (pocket_.size() != 2) {
             sText = PropertyConfig.getMessage("msg.sim.needboth");
-        }
-        else
-        {
+        } else {
             int com = community_.size();
-            switch (mode_)
-            {
-                case FLOP:
-                    if (com >= 3) sText = PropertyConfig.getMessage("msg.sim.seenflop");
+            switch (mode_) {
+                case FLOP :
+                    if (com >= 3)
+                        sText = PropertyConfig.getMessage("msg.sim.seenflop");
                     break;
-                case TURN:
-                    if (com <= 2) sText = PropertyConfig.getMessage("msg.sim.needflop.1");
-                    else if (com == 4 || com == 5) sText = PropertyConfig.getMessage("msg.sim.seenturn");
+                case TURN :
+                    if (com <= 2)
+                        sText = PropertyConfig.getMessage("msg.sim.needflop.1");
+                    else if (com == 4 || com == 5)
+                        sText = PropertyConfig.getMessage("msg.sim.seenturn");
                     break;
-                case RIVER:
-                    if (com <= 2) sText = PropertyConfig.getMessage("msg.sim.needflop.2");
-                    else if (com == 5) sText = PropertyConfig.getMessage("msg.sim.seenriver");
+                case RIVER :
+                    if (com <= 2)
+                        sText = PropertyConfig.getMessage("msg.sim.needflop.2");
+                    else if (com == 5)
+                        sText = PropertyConfig.getMessage("msg.sim.seenriver");
                     break;
-                case LADDER:
+                case LADDER :
                     // ladder is good anytime
                     break;
-                case STRENGTH:
-                    if (com < 3) sText = PropertyConfig.getMessage("msg.sim.needflop.3");
+                case STRENGTH :
+                    if (com < 3)
+                        sText = PropertyConfig.getMessage("msg.sim.needflop.3");
                     break;
             }
         }
 
-        if (sText != null)
-        {
+        if (sText != null) {
             htmlArea_.setText(sText);
             return false;
         }
@@ -216,12 +204,10 @@ public class PokerStatsPanel extends DDTabPanel
     /**
      * update thread with given pocket/community
      */
-    public void updateStats(Hand pocket, Hand community)
-    {
+    public void updateStats(Hand pocket, Hand community) {
         // same hand, skip update
-        if (pocket_ != null && pocket.fingerprint() == pocket_.fingerprint() &&
-            community_ != null && community.fingerprint() == community_.fingerprint())
-        {
+        if (pocket_ != null && pocket.fingerprint() == pocket_.fingerprint() && community_ != null
+                && community.fingerprint() == community_.fingerprint()) {
             return;
         }
 
@@ -230,7 +216,8 @@ public class PokerStatsPanel extends DDTabPanel
         community_ = community;
 
         // UI not created, so stop here
-        if (header_ == null) return;
+        if (header_ == null)
+            return;
 
         // update
         updateHeader();
@@ -240,52 +227,45 @@ public class PokerStatsPanel extends DDTabPanel
     /**
      * thread generates info then updates html
      */
-    private class UpdateThread extends Thread
-    {
+    private class UpdateThread extends Thread {
         HandStrength strength_;
         HandPotential potential_;
         HandLadder ladder_;
 
-        public UpdateThread()
-        {
+        public UpdateThread() {
             super("UpdateThread");
         }
 
-        public void run()
-        {
-            switch (mode_)
-            {
-                case LADDER:
+        public void run() {
+            switch (mode_) {
+                case LADDER :
                     ladder_ = new HandLadder(pocket_, community_, null);
                     break;
 
-                case STRENGTH:
+                case STRENGTH :
                     strength_ = new HandStrength();
                     break;
 
-                default:
+                default :
                     potential_ = new HandPotential(pocket_, community_);
             }
 
-            SwingUtilities.invokeLater(new Thread("PokerStatsPanel")
-            {
-                public void run()
-                {
-                    switch (mode_)
-                    {
-                        case FLOP:
+            SwingUtilities.invokeLater(new Thread("PokerStatsPanel") {
+                public void run() {
+                    switch (mode_) {
+                        case FLOP :
                             htmlArea_.setText(potential_.toHTML(HoldemHand.ROUND_FLOP));
                             break;
-                        case TURN:
+                        case TURN :
                             htmlArea_.setText(potential_.toHTML(HoldemHand.ROUND_TURN));
                             break;
-                        case RIVER:
+                        case RIVER :
                             htmlArea_.setText(potential_.toHTML(HoldemHand.ROUND_RIVER));
                             break;
-                        case LADDER:
+                        case LADDER :
                             htmlArea_.setText(ladder_.toHTML());
                             break;
-                        case STRENGTH:
+                        case STRENGTH :
                             htmlArea_.setText(strength_.toHTML(pocket_, community_, 9));
                             break;
                     }

@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -45,14 +45,13 @@ import java.util.*;
 
 /**
  *
- * @author  donohoe
+ * @author donohoe
  */
 @DataCoder('Y')
-public class PokerSaveDetails implements DataMarshal
-{
+public class PokerSaveDetails implements DataMarshal {
     private int nProfileData_;
     private int nTables_;
-    
+
     // when saving for a particular player
     public static final int NO_OVERRIDE = -1;
     public static final int NO_PLAYER = -1;
@@ -73,148 +72,124 @@ public class PokerSaveDetails implements DataMarshal
     public PokerSaveDetails() {
         this(SaveDetails.SAVE_ALL);
     }
-    
-    /** 
-     * Creates a new instance of PokerSaveDetails 
+
+    /**
+     * Creates a new instance of PokerSaveDetails
      */
     public PokerSaveDetails(int nInit) {
         nProfileData_ = nInit;
         nTables_ = nInit;
     }
 
-    public int getSaveProfileData()
-    {
+    public int getSaveProfileData() {
         return nProfileData_;
     }
-    
-    public void setSaveProfileData(int n)
-    {
+
+    public void setSaveProfileData(int n) {
         nProfileData_ = n;
     }
-    
-    public int getSaveTables()
-    {
+
+    public int getSaveTables() {
         return nTables_;
     }
-    
-    public void setSaveTables(int n)
-    {
+
+    public void setSaveTables(int n) {
         nTables_ = n;
     }
 
-    public void setOtherTableUpdate(boolean b)
-    {
+    public void setOtherTableUpdate(boolean b) {
         bOtherTableUpdate_ = b;
     }
 
-    public boolean isOtherTableUpdate()
-    {
+    public boolean isOtherTableUpdate() {
         return bOtherTableUpdate_;
     }
 
-    public int getPlayerID()
-    {
+    public int getPlayerID() {
         return nPlayerID_;
     }
-    
-    public void setPlayerID(int n)
-    {
+
+    public void setPlayerID(int n) {
         nPlayerID_ = n;
     }
 
-    public boolean isHideOthersCards()
-    {
+    public boolean isHideOthersCards() {
         return bHideOthersCards_;
     }
-    
-    public void setHideOthersCards(boolean b)
-    {
+
+    public void setHideOthersCards(boolean b) {
         bHideOthersCards_ = b;
     }
-    
-    public boolean isSetCurrentTableToLocal()
-    {
+
+    public boolean isSetCurrentTableToLocal() {
         return bSetCurrentTableToLocal_;
     }
-    
-    public void setSetCurrentTableToLocal(boolean b)
-    {
+
+    public void setSetCurrentTableToLocal(boolean b) {
         bSetCurrentTableToLocal_ = b;
     }
 
-    public void setOverrideState(int n)
-    {
+    public void setOverrideState(int n) {
         nOverrideState_ = n;
     }
 
-    public int getOverrideState()
-    {
+    public int getOverrideState() {
         return nOverrideState_;
     }
 
-    public void setRemovedTables(int[] removed)
-    {
-        removed_  = removed;
+    public void setRemovedTables(int[] removed) {
+        removed_ = removed;
     }
 
-    public int[] getRemovedTables()
-    {
+    public int[] getRemovedTables() {
         return removed_;
     }
 
     // loading helper
 
-    public void setPlayerTypeProfiles(List<BaseProfile> files)
-    {
+    public void setPlayerTypeProfiles(List<BaseProfile> files) {
         files_ = files;
     }
 
-    public List<BaseProfile> getPlayerTypeProfiles()
-    {
+    public List<BaseProfile> getPlayerTypeProfiles() {
         return files_;
     }
 
     ///
     /// save/load
     ///
-    
-    public void demarshal(MsgState state, String sData)
-    {
+
+    public void demarshal(MsgState state, String sData) {
         TokenizedList list = new TokenizedList();
         list.demarshal(state, sData);
-    	nProfileData_ = list.removeIntToken();
-    	nTables_ = list.removeIntToken();
+        nProfileData_ = list.removeIntToken();
+        nTables_ = list.removeIntToken();
         bOtherTableUpdate_ = list.removeBooleanToken();
         nPlayerID_ = list.removeIntToken();
         bHideOthersCards_ = list.removeBooleanToken();
         bSetCurrentTableToLocal_ = list.removeBooleanToken();
         nOverrideState_ = list.removeIntToken();
         int nSize = list.removeIntToken();
-        if (nSize > 0)
-        {
+        if (nSize > 0) {
             removed_ = new int[nSize];
-            for (int i = 0; i < nSize; i++)
-            {
+            for (int i = 0; i < nSize; i++) {
                 removed_[i] = list.removeIntToken();
             }
         }
     }
-   
-    public String marshal(MsgState state)
-    {
+
+    public String marshal(MsgState state) {
         TokenizedList list = new TokenizedList();
-    	list.addToken(nProfileData_);
-    	list.addToken(nTables_);
+        list.addToken(nProfileData_);
+        list.addToken(nTables_);
         list.addToken(bOtherTableUpdate_);
         list.addToken(nPlayerID_);
         list.addToken(bHideOthersCards_);
         list.addToken(bSetCurrentTableToLocal_);
         list.addToken(nOverrideState_);
         list.addToken(removed_ == null ? 0 : removed_.length);
-        if (removed_ != null)
-        {
-            for (int removed : removed_)
-            {
+        if (removed_ != null) {
+            for (int removed : removed_) {
                 list.addToken(removed);
             }
         }

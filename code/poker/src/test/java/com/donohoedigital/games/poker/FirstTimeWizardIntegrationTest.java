@@ -25,7 +25,6 @@ import com.donohoedigital.config.ConfigManager;
 import com.donohoedigital.config.Prefs;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.GameEngine;
-import com.donohoedigital.games.engine.ProfileList;
 import org.junit.jupiter.api.*;
 
 import java.io.File;
@@ -34,7 +33,8 @@ import java.util.prefs.Preferences;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Integration tests for FirstTimeWizard - Tests full flow with PokerStartMenu integration.
+ * Integration tests for FirstTimeWizard - Tests full flow with PokerStartMenu
+ * integration.
  *
  * These tests verify the wizard works correctly when integrated with the actual
  * application startup flow, including profile creation, preference management,

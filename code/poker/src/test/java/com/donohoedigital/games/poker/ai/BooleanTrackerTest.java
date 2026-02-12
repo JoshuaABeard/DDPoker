@@ -25,7 +25,8 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for BooleanTracker - tracks boolean values with percentage calculations.
+ * Tests for BooleanTracker - tracks boolean values with percentage
+ * calculations.
  */
 class BooleanTrackerTest {
 

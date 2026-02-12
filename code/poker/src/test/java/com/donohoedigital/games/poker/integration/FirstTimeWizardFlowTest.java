@@ -23,7 +23,6 @@ import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
 import com.donohoedigital.config.Prefs;
 import com.donohoedigital.games.config.BaseProfile;
-import com.donohoedigital.games.poker.FirstTimeWizard;
 import com.donohoedigital.games.poker.PlayerProfile;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,17 +35,15 @@ import java.util.prefs.Preferences;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Integration tests for First-Time Wizard flow logic.
- * Tests wizard state and logic without launching the UI.
+ * Integration tests for First-Time Wizard flow logic. Tests wizard state and
+ * logic without launching the UI.
  */
 @Tag("integration")
-public class FirstTimeWizardFlowTest
-{
+public class FirstTimeWizardFlowTest {
     private Preferences wizardPrefs;
 
     @BeforeEach
-    void setUp() throws Exception
-    {
+    void setUp() throws Exception {
         // Initialize config for headless testing
         new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
 
@@ -57,19 +54,16 @@ public class FirstTimeWizardFlowTest
     }
 
     @AfterEach
-    void tearDown() throws Exception
-    {
+    void tearDown() throws Exception {
         // Clean up
-        if (wizardPrefs != null)
-        {
+        if (wizardPrefs != null) {
             wizardPrefs.clear();
             wizardPrefs.flush();
         }
     }
 
     @Test
-    void should_BeRequired_When_WizardNotCompleted() throws Exception
-    {
+    void should_BeRequired_When_WizardNotCompleted() throws Exception {
         // Ensure wizard is not marked as completed
         wizardPrefs.remove("wizard_completed");
         wizardPrefs.flush();
@@ -85,8 +79,7 @@ public class FirstTimeWizardFlowTest
     }
 
     @Test
-    void should_NotBeRequired_When_ProfileExists()
-    {
+    void should_NotBeRequired_When_ProfileExists() {
         // Create a profile
         PlayerProfile profile = new PlayerProfile("ExistingUser");
         profile.initCheck();
@@ -94,8 +87,7 @@ public class FirstTimeWizardFlowTest
         profile.setCreateDate();
         profile.save();
 
-        try
-        {
+        try {
             // Check that profile exists
             List<BaseProfile> profiles = PlayerProfile.getProfileList();
             assertThat(profiles).isNotEmpty();
@@ -103,20 +95,16 @@ public class FirstTimeWizardFlowTest
             // Wizard should not be required (profile exists)
             boolean hasProfiles = profiles != null && !profiles.isEmpty();
             assertThat(hasProfiles).isTrue();
-        }
-        finally
-        {
+        } finally {
             // Cleanup
-            if (profile.getFile() != null && profile.getFile().exists())
-            {
+            if (profile.getFile() != null && profile.getFile().exists()) {
                 profile.getFile().delete();
             }
         }
     }
 
     @Test
-    void should_MarkCompleted_When_WizardFinishes() throws Exception
-    {
+    void should_MarkCompleted_When_WizardFinishes() throws Exception {
         // Simulate wizard completion
         wizardPrefs.putBoolean("wizard_completed", true);
         wizardPrefs.flush();
@@ -127,8 +115,7 @@ public class FirstTimeWizardFlowTest
     }
 
     @Test
-    void should_CreateProfile_When_OfflineModeSelected()
-    {
+    void should_CreateProfile_When_OfflineModeSelected() {
         // Simulate offline wizard flow
         String playerName = "OfflineTestPlayer";
 
@@ -139,26 +126,21 @@ public class FirstTimeWizardFlowTest
         profile.setCreateDate();
         profile.save();
 
-        try
-        {
+        try {
             // Verify profile was created
             assertThat(profile.getName()).isEqualTo(playerName);
             assertThat(profile.getFile()).exists();
             assertThat(profile.isOnline()).isFalse();
-        }
-        finally
-        {
+        } finally {
             // Cleanup
-            if (profile.getFile() != null && profile.getFile().exists())
-            {
+            if (profile.getFile() != null && profile.getFile().exists()) {
                 profile.getFile().delete();
             }
         }
     }
 
     @Test
-    void should_ValidateName_When_EmptyProvided()
-    {
+    void should_ValidateName_When_EmptyProvided() {
         // Empty name should be invalid
         String emptyName = "";
 
@@ -167,8 +149,7 @@ public class FirstTimeWizardFlowTest
     }
 
     @Test
-    void should_ValidateName_When_NullProvided()
-    {
+    void should_ValidateName_When_NullProvided() {
         // Null name should be invalid
         String nullName = null;
 
@@ -177,8 +158,7 @@ public class FirstTimeWizardFlowTest
     }
 
     @Test
-    void should_AllowSkip_When_DontShowAgainChecked() throws Exception
-    {
+    void should_AllowSkip_When_DontShowAgainChecked() throws Exception {
         // Simulate "don't show again" option
         wizardPrefs.putBoolean("dont_show_again", true);
         wizardPrefs.flush();
@@ -189,8 +169,7 @@ public class FirstTimeWizardFlowTest
     }
 
     @Test
-    void should_RestorePreferences_When_WizardReopened() throws Exception
-    {
+    void should_RestorePreferences_When_WizardReopened() throws Exception {
         // Set some preferences
         wizardPrefs.putBoolean("wizard_completed", true);
         wizardPrefs.put("last_mode", "offline");

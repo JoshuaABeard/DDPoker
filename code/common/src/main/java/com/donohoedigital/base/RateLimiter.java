@@ -25,50 +25,52 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Simple time-window based rate limiter for preventing DoS attacks.
  *
- * <p>Uses a sliding window approach where requests are counted within a time window.
- * When the window expires, the counter resets.
+ * <p>
+ * Uses a sliding window approach where requests are counted within a time
+ * window. When the window expires, the counter resets.
  *
- * <p>Thread-safe using ConcurrentHashMap.
+ * <p>
+ * Thread-safe using ConcurrentHashMap.
  *
- * <p>Example usage:
+ * <p>
+ * Example usage:
+ *
  * <pre>
  * RateLimiter limiter = new RateLimiter();
  * if (limiter.allowRequest(userIp, 10, 60000)) {
- *     // Allow request (< 10 requests per minute)
+ * 	// Allow request (< 10 requests per minute)
  * } else {
- *     // Deny request (rate limit exceeded)
+ * 	// Deny request (rate limit exceeded)
  * }
  * </pre>
  */
-public class RateLimiter
-{
+public class RateLimiter {
     private final ConcurrentMap<String, RateLimitEntry> entries;
 
     /**
      * Creates a new RateLimiter instance.
      */
-    public RateLimiter()
-    {
+    public RateLimiter() {
         this.entries = new ConcurrentHashMap<>();
     }
 
     /**
      * Checks if a request should be allowed based on rate limiting rules.
      *
-     * @param key unique identifier for the rate limit (e.g., IP address, user ID)
-     * @param maxRequests maximum number of requests allowed in the time window
-     * @param windowMs time window in milliseconds
+     * @param key
+     *            unique identifier for the rate limit (e.g., IP address, user ID)
+     * @param maxRequests
+     *            maximum number of requests allowed in the time window
+     * @param windowMs
+     *            time window in milliseconds
      * @return true if request is allowed, false if rate limit exceeded
      */
-    public boolean allowRequest(String key, int maxRequests, long windowMs)
-    {
-        if (key == null)
-        {
+    public boolean allowRequest(String key, int maxRequests, long windowMs) {
+        if (key == null) {
             key = "null"; // Handle null keys gracefully
         }
 
-        if (maxRequests <= 0)
-        {
+        if (maxRequests <= 0) {
             return false; // No requests allowed if limit is 0 or negative
         }
 
@@ -76,15 +78,13 @@ public class RateLimiter
 
         // Compute or update the entry atomically
         RateLimitEntry entry = entries.compute(key, (k, existing) -> {
-            if (existing == null)
-            {
+            if (existing == null) {
                 // First request for this key
                 return new RateLimitEntry(now, 1);
             }
 
             // Check if window has expired
-            if (now - existing.windowStart >= windowMs)
-            {
+            if (now - existing.windowStart >= windowMs) {
                 // Window expired, start new window
                 return new RateLimitEntry(now, 1);
             }
@@ -98,11 +98,10 @@ public class RateLimiter
     }
 
     /**
-     * Removes expired entries to prevent memory leaks.
-     * Should be called periodically (e.g., every minute).
+     * Removes expired entries to prevent memory leaks. Should be called
+     * periodically (e.g., every minute).
      */
-    public void cleanup()
-    {
+    public void cleanup() {
         long now = System.currentTimeMillis();
         long maxAge = 60000; // Remove entries older than 1 minute
 
@@ -110,24 +109,20 @@ public class RateLimiter
     }
 
     /**
-     * Clears all rate limit entries.
-     * Useful for testing or manual reset.
+     * Clears all rate limit entries. Useful for testing or manual reset.
      */
-    public void reset()
-    {
+    public void reset() {
         entries.clear();
     }
 
     /**
      * Immutable entry tracking request count and window start time.
      */
-    private static class RateLimitEntry
-    {
+    private static class RateLimitEntry {
         final long windowStart;
         final int count;
 
-        RateLimitEntry(long windowStart, int count)
-        {
+        RateLimitEntry(long windowStart, int count) {
             this.windowStart = windowStart;
             this.count = count;
         }

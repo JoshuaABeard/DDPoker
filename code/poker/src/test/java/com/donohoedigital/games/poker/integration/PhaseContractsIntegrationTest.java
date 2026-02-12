@@ -29,7 +29,9 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Integration tests for Phase interface contracts and implementations.
  *
- * <p>Tests that all Phase implementations follow the Phase contract correctly.</p>
+ * <p>
+ * Tests that all Phase implementations follow the Phase contract correctly.
+ * </p>
  */
 @Tag("slow")
 class PhaseContractsIntegrationTest extends IntegrationTestBase {
