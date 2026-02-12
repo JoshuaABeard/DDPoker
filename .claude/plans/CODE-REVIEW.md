@@ -220,10 +220,11 @@ Comprehensive code review of DDPoker's server-side and shared infrastructure mod
 
 ---
 
-### DEBT-5: Optimize Database Queries
-**File:** `RegistrationImplJpa.java` (line 235)
-**Issue:** Complex GROUP BY + HAVING queries.
-**Fix:** Add query optimization, consider indexed views.
+### ✅ DEBT-5: Optimize Database Queries (COMPLETED)
+**Files:** `RegistrationImplJpa.java` (lines 85-129)
+**Issue:** GROUP BY queries using inefficient NOT IN subqueries to exclude banned keys.
+**Fix:** Replace NOT IN with LEFT JOIN pattern for better performance.
+**Completed:** Feb 12, 2026 (commit 16e9430) - Optimized countByDayOfYear() and countByHour() queries with LEFT JOIN
 
 ---
 
