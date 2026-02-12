@@ -1,0 +1,108 @@
+/*
+ * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+ * DD Poker - Current Games Page
+ * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+ */
+
+import { Metadata } from 'next'
+import { DataTable } from '@/components/data/DataTable'
+import { Pagination } from '@/components/data/Pagination'
+import { PlayerLink } from '@/components/online/PlayerLink'
+import { PlayerList } from '@/components/online/PlayerList'
+
+export const metadata: Metadata = {
+  title: 'Current Games - DD Poker',
+  description: 'View games currently in progress',
+}
+
+interface CurrentGame {
+  id: number
+  name: string
+  host: string
+  mode: string
+  players: string[]
+  blindLevel: number
+  started: string
+}
+
+async function getCurrentGames(page: number): Promise<{
+  games: CurrentGame[]
+  totalPages: number
+  totalItems: number
+}> {
+  // TODO: Replace with actual API call
+  // For now, return empty data
+  return {
+    games: [],
+    totalPages: 0,
+    totalItems: 0,
+  }
+}
+
+export default async function CurrentGamesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>
+}) {
+  const params = await searchParams
+  const currentPage = parseInt(params.page || '1')
+  const { games, totalPages, totalItems } = await getCurrentGames(currentPage)
+
+  const columns = [
+    {
+      key: 'name',
+      header: 'Game Name',
+      render: (game: CurrentGame) => game.name,
+    },
+    {
+      key: 'host',
+      header: 'Host',
+      render: (game: CurrentGame) => <PlayerLink playerName={game.host} />,
+    },
+    {
+      key: 'mode',
+      header: 'Mode',
+      render: (game: CurrentGame) => game.mode,
+    },
+    {
+      key: 'players',
+      header: 'Players',
+      render: (game: CurrentGame) => <PlayerList players={game.players} />,
+    },
+    {
+      key: 'blindLevel',
+      header: 'Blind Level',
+      render: (game: CurrentGame) => game.blindLevel,
+      align: 'center' as const,
+    },
+    {
+      key: 'started',
+      header: 'Started',
+      render: (game: CurrentGame) => new Date(game.started).toLocaleString(),
+    },
+  ]
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">Current Games</h1>
+
+      <p className="mb-6 text-gray-700">
+        Games currently in progress. Click on player names to view their tournament history.
+      </p>
+
+      <DataTable
+        data={games}
+        columns={columns}
+        emptyMessage="No games currently in progress"
+      />
+
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalItems={totalItems}
+          itemsPerPage={20}
+        />
+      )}
+    </div>
+  )
+}

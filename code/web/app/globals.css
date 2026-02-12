@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+/* ========================================================================
+   DD Poker Design System - CSS Custom Properties
+   ======================================================================== */
+
+:root {
+  /* Brand Colors */
+  --color-primary-green: #336600;
+  --color-dark-green: #006600;
+  --color-forest-green: forestgreen;
+  --color-blue: blue;
+  --color-orange: #FF9900;
+  --color-cyan: #00FFFF;
+  --color-yellow: yellow;
+  --color-red: red;
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+
+  /* Grays */
+  --color-gray-light: #DDDDDD;
+  --color-gray-medium: #BBBBBB;
+  --color-gray-dark: #999999;
+  --color-gray-darker: #333333;
+
+  /* Backgrounds */
+  --bg-white: white;
+  --bg-pale-goldenrod: palegoldenrod;
+  --bg-khaki: khaki;
+  --bg-light-yellow: #FFFFCC;
+  --bg-light-gray: #EEEEEE;
+
+  /* Borders */
+  --border-blue: #9AAFE5;
+  --border-blue-dark: #2E6AB1;
+  --border-gray: #AAAAAA;
+
+  /* Typography */
+  --font-family-base: Arial, Helvetica, sans-serif;
+  --font-family-mono: courier, monospace;
+  --font-size-base: 1.2rem;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 3rem;
+}
+
+/* ========================================================================
+   Tailwind Theme Configuration
+   ======================================================================== */
+
+@theme inline {
+  /* Colors mapped to Tailwind utilities */
+  --color-primary: var(--color-primary-green);
+  --color-primary-dark: var(--color-dark-green);
+  --color-accent: var(--color-orange);
+  --color-success: var(--color-forest-green);
+  --color-danger: var(--color-red);
+  --color-info: var(--color-cyan);
+
+  /* Extend color palette */
+  --color-poker-green: var(--color-primary-green);
+  --color-poker-green-dark: var(--color-dark-green);
+  --color-poker-green-forest: var(--color-forest-green);
+
+  /* Gray scale */
+  --color-gray-100: var(--color-gray-light);
+  --color-gray-300: var(--color-gray-medium);
+  --color-gray-500: var(--color-gray-dark);
+  --color-gray-700: var(--color-gray-darker);
+
+  /* Fonts */
+  --font-sans: var(--font-family-base);
+  --font-mono: var(--font-family-mono);
+
+  /* Font sizes */
+  --font-size-base: var(--font-size-base);
+  --font-size-tiny: 0.75rem;    /* 75% */
+  --font-size-small: 0.85rem;   /* 85% */
+  --font-size-caption: 0.85rem; /* 85% */
+  --font-size-large: 1.44rem;   /* 1.2em of 1.2rem base */
+
+  /* Spacing scale */
+  --spacing-1: var(--spacing-xs);
+  --spacing-2: var(--spacing-sm);
+  --spacing-4: var(--spacing-md);
+  --spacing-8: var(--spacing-lg);
+  --spacing-12: var(--spacing-xl);
+}
+
+/* ========================================================================
+   Global Base Styles
+   ======================================================================== */
+
+body {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  background: var(--bg-white);
+  color: var(--color-black);
+  line-height: 1.6;
+}
+
+/* ========================================================================
+   Utility Classes (DD Poker legacy)
+   ======================================================================== */
+
+.spicy {
+  font-style: italic;
+  font-weight: bold;
+  color: var(--color-red);
+}
+
+.mild {
+  font-style: italic;
+  font-weight: bold;
+  color: green;
+}
+
+.caption {
+  font-size: 85%;
+  font-style: italic;
+}
+
+.spacer10 {
+  height: 10px;
+}
+
+.tiny {
+  font-size: 75%;
+}
+
+.small {
+  font-size: 85%;
+}
+
+.large {
+  font-size: 1.2em;
+}
+
+.next {
+  margin-top: var(--spacing-md);
+}
+
+.extra-top-padding {
+  padding-top: var(--spacing-md);
+}

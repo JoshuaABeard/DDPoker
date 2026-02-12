@@ -18,6 +18,13 @@ services:
       - CHAT_PORT=11886
       - WEB_PORT=8080
 
+      # REST API configuration (Phase 1 - Spring Boot API)
+      # JWT secret for token signing (minimum 32 characters)
+      # Optional: If not set, a secure secret is auto-generated on first run
+      # and persisted to /data/jwt.secret (survives container restarts)
+      # To set manually: JWT_SECRET=$(openssl rand -base64 32)
+      # - JWT_SECRET=${JWT_SECRET}
+
       # Database configuration (H2 by default)
       # To switch to MySQL, uncomment and configure:
       # - DB_DRIVER=com.mysql.cj.jdbc.Driver
