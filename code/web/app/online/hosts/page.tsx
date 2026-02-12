@@ -42,13 +42,14 @@ async function getHosts(
 export default async function HostsPage({
   searchParams,
 }: {
-  searchParams: { page?: string; name?: string; begin?: string; end?: string }
+  searchParams: Promise<{ page?: string; name?: string; begin?: string; end?: string }>
 }) {
-  const currentPage = parseInt(searchParams.page || '1')
+  const params = await searchParams
+  const currentPage = parseInt(params.page || '1')
   const filters = {
-    name: searchParams.name,
-    begin: searchParams.begin,
-    end: searchParams.end,
+    name: params.name,
+    begin: params.begin,
+    end: params.end,
   }
 
   const { hosts, totalPages, totalItems } = await getHosts(currentPage, filters)

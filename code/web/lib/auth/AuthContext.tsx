@@ -19,7 +19,7 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-  login: (username: string, password: string, rememberMe: boolean) => Promise<void>
+  login: (username: string, password: string, rememberMe: boolean) => Promise<boolean>
   logout: () => Promise<void>
   checkAuthStatus: () => Promise<void>
   clearError: () => void
@@ -82,16 +82,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   /**
    * Log in a user
+   * @returns true if login successful, false otherwise
    */
-  const login = useCallback(async (username: string, password: string, rememberMe: boolean) => {
+  const login = useCallback(async (username: string, password: string, rememberMe: boolean): Promise<boolean> => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }))
 
     try {
-      const response = (await authApi.login({
+      const response = await authApi.login({
         username,
         password,
         rememberMe,
-      })) as unknown as AuthResponse
+      })
 
       if (response.success && response.username) {
         const user: StoredAuthUser = {
@@ -107,12 +108,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
           isLoading: false,
           error: null,
         })
+        return true
       } else {
         setState((prev) => ({
           ...prev,
           isLoading: false,
           error: response.message || 'Login failed',
         }))
+        return false
       }
     } catch (error) {
       setState((prev) => ({
@@ -120,6 +123,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isLoading: false,
         error: error instanceof Error ? error.message : 'Login failed',
       }))
+      return false
     }
   }, [])
 

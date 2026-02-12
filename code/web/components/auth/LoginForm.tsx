@@ -22,11 +22,13 @@ export function LoginForm() {
     e.preventDefault()
     clearError()
 
-    await login(username, password, rememberMe)
+    const success = await login(username, password, rememberMe)
 
-    // If login was successful, redirect
-    const returnUrl = searchParams.get('returnUrl') || '/online'
-    router.push(returnUrl)
+    // Only redirect if login was successful
+    if (success) {
+      const returnUrl = searchParams.get('returnUrl') || '/online'
+      router.push(returnUrl)
+    }
   }
 
   return (

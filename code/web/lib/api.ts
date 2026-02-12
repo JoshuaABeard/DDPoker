@@ -8,11 +8,11 @@ import { config, getApiUrl } from './config'
 import type {
   ApiError,
   ApiResponse,
+  AuthResponse,
   Game,
   GameDetails,
   LeaderboardEntry,
   LoginRequest,
-  LoginResponse,
   PaginatedResponse,
   PlayerProfile,
   RegisterRequest,
@@ -69,8 +69,8 @@ export const authApi = {
   /**
    * Log in a user
    */
-  login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-    const response = await apiFetch<LoginResponse>('/api/auth/login', {
+  login: async (credentials: LoginRequest): Promise<AuthResponse> => {
+    const response = await apiFetch<AuthResponse>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     })

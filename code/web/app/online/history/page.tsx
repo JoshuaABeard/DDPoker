@@ -63,13 +63,14 @@ async function getTournamentHistory(
 export default async function TournamentHistoryPage({
   searchParams,
 }: {
-  searchParams: { name?: string; page?: string; begin?: string; end?: string }
+  searchParams: Promise<{ name?: string; page?: string; begin?: string; end?: string }>
 }) {
-  const playerName = searchParams.name || ''
-  const currentPage = parseInt(searchParams.page || '1')
+  const params = await searchParams
+  const playerName = params.name || ''
+  const currentPage = parseInt(params.page || '1')
   const filters = {
-    begin: searchParams.begin,
-    end: searchParams.end,
+    begin: params.begin,
+    end: params.end,
   }
 
   if (!playerName) {

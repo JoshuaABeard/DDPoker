@@ -45,22 +45,23 @@ async function getLeaderboard(
 export default async function LeaderboardPage({
   searchParams,
 }: {
-  searchParams: {
+  searchParams: Promise<{
     type?: string
     page?: string
     name?: string
     begin?: string
     end?: string
     games?: string
-  }
+  }>
 }) {
-  const type = searchParams.type || 'ddr1'
-  const currentPage = parseInt(searchParams.page || '1')
+  const params = await searchParams
+  const type = params.type || 'ddr1'
+  const currentPage = parseInt(params.page || '1')
   const filters = {
-    name: searchParams.name,
-    begin: searchParams.begin,
-    end: searchParams.end,
-    games: searchParams.games,
+    name: params.name,
+    begin: params.begin,
+    end: params.end,
+    games: params.games,
   }
 
   const { entries, totalPages, totalItems } = await getLeaderboard(type, currentPage, filters)

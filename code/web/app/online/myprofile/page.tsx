@@ -28,7 +28,7 @@ export default function MyProfilePage() {
   }
 
   // TODO: Fetch user profile data and aliases from API
-  const aliases = [
+  const aliases: Array<{ name: string; createdDate: string; retiredDate?: string }> = [
     // Example data - replace with actual API call
     // { name: 'OldName', createdDate: '2023-01-01', retiredDate: '2024-01-01' },
   ]

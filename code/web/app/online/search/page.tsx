@@ -43,10 +43,11 @@ async function searchPlayers(
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: { name?: string; page?: string }
+  searchParams: Promise<{ name?: string; page?: string }>
 }) {
-  const searchTerm = searchParams.name || ''
-  const currentPage = parseInt(searchParams.page || '1')
+  const params = await searchParams
+  const searchTerm = params.name || ''
+  const currentPage = parseInt(params.page || '1')
 
   const { results, totalPages, totalItems } = searchTerm
     ? await searchPlayers(searchTerm, currentPage)

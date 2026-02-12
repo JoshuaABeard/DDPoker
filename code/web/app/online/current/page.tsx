@@ -42,9 +42,10 @@ async function getCurrentGames(page: number): Promise<{
 export default async function CurrentGamesPage({
   searchParams,
 }: {
-  searchParams: { page?: string }
+  searchParams: Promise<{ page?: string }>
 }) {
-  const currentPage = parseInt(searchParams.page || '1')
+  const params = await searchParams
+  const currentPage = parseInt(params.page || '1')
   const { games, totalPages, totalItems } = await getCurrentGames(currentPage)
 
   const columns = [

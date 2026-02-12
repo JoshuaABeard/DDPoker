@@ -14,7 +14,9 @@ export function HighlightText({ text, searchTerm }: HighlightTextProps) {
     return <span>{text}</span>
   }
 
-  const parts = text.split(new RegExp(`(${searchTerm})`, 'gi'))
+  // Escape special regex characters to prevent injection
+  const escapedSearchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const parts = text.split(new RegExp(`(${escapedSearchTerm})`, 'gi'))
 
   return (
     <span>

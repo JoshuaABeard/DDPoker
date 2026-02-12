@@ -47,12 +47,13 @@ async function getCompletedGames(
 export default async function CompletedGamesPage({
   searchParams,
 }: {
-  searchParams: { page?: string; begin?: string; end?: string }
+  searchParams: Promise<{ page?: string; begin?: string; end?: string }>
 }) {
-  const currentPage = parseInt(searchParams.page || '1')
+  const params = await searchParams
+  const currentPage = parseInt(params.page || '1')
   const filters = {
-    begin: searchParams.begin,
-    end: searchParams.end,
+    begin: params.begin,
+    end: params.end,
   }
 
   const { games, totalPages, totalItems } = await getCompletedGames(currentPage, filters)
