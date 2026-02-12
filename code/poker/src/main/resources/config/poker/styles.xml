@@ -843,10 +843,6 @@
 	<color name="ChatLobby.table.select.bg" r="255" g="255" b="0" a="150"/>
 	 <font name="ChatLobby.table" fontname="Inter-VariableFont_opsz,wght.ttf" pointsize="12"/>
 
-	<color name="UDPStatus.htmlarea.fg" copy="white"/>
-	<color name="UDPStatus.htmlarea.bg" copy="ignored"/>
-	 <font name="UDPStatus.htmlarea" fontname="Inter-VariableFont_opsz,wght.ttf" pointsize="13"/>
-
 	<color name="ChatInGame.panel.fg" copy="black"/>
 	<color name="ChatInGame.panel.bg" r="204" g="204" b="204"/>
 	<color name="ChatInGame.buttonpanel.mouseover.bg" r="204" g="204" b="204"/>
