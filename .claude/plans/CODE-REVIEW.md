@@ -169,10 +169,11 @@ Comprehensive code review of DDPoker's server-side and shared infrastructure mod
 
 ---
 
-### MF-3: Replace custom `Base64` with `java.util.Base64`
+### ✅ MF-3: Replace custom `Base64` with `java.util.Base64` (COMPLETED)
 **File:** `code/common/.../Base64.java`
 **Issue:** Custom third-party implementation (iharder.net) with exception-swallowing (empty catch blocks, `e.printStackTrace()` then return null). Java has included `java.util.Base64` since Java 8.
 **Fix:** Find all usages of `com.donohoedigital.base.Base64`, replace with `java.util.Base64.getEncoder()` / `getDecoder()`. API differs, so each call site needs attention.
+**Completed:** Feb 12, 2026 (commit 09631dd) - Replaced 4 usages in SecurityUtils.java, 1 in DDHttpClient.java, deleted Base64.java (1,353 lines removed)
 **Verify:** `mvn test` (full build)
 
 ---
