@@ -3,7 +3,7 @@ set -e
 
 # ============================================================
 # DD Poker Combined Server Entrypoint
-# Starts pokerserver and pokerweb as separate Java processes
+# Starts pokerserver and API as separate Java processes
 # ============================================================
 
 APP_DIR=/app
@@ -66,7 +66,7 @@ if [ -n "$ADMIN_PASSWORD" ]; then
 fi
 
 echo "============================================"
-echo "  DD Poker Server Starting"
+echo "  DD Poker Server Starting (Modernized)"
 echo "============================================"
 echo "  Data directory: $DATA_DIR"
 echo "  DB Driver: ${DB_DRIVER:-org.h2.Driver}"
@@ -85,16 +85,13 @@ echo "[entrypoint] pokerserver PID: $SERVER_PID"
 # Brief pause to let server initialize Spring context first
 sleep 3
 
-# Start pokerweb via embedded Jetty (background)
-echo "[entrypoint] Starting pokerweb (Jetty)..."
+# Start API via Spring Boot (background)
+echo "[entrypoint] Starting API (Spring Boot + Next.js)..."
 java $JAVA_OPTS -Xms24m -Xmx96m \
-  -Dpokerweb.war.path=/app/webapp \
-  -Dpokerweb.daemon=true \
-  -Dwicket.configuration=deployment \
   -cp "$CLASSPATH" \
-  com.donohoedigital.games.poker.wicket.PokerJetty &
+  com.donohoedigital.poker.api.ApiApplication &
 WEB_PID=$!
-echo "[entrypoint] pokerweb PID: $WEB_PID"
+echo "[entrypoint] API PID: $WEB_PID"
 
 echo "[entrypoint] Both processes started. Waiting..."
 

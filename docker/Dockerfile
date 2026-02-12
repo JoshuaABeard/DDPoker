@@ -1,30 +1,49 @@
 # ============================================================
-# DD Poker - Production Container
+# DD Poker - Production Container (Modernized Frontend)
 #
 # Strategy:
-#   BUILD TIME: Build universal JAR
-#   RUNTIME: Serve JAR via downloads directory
-#
-# Clients configure their own server settings on first run!
+#   BUILD TIME: Build Next.js static export + Java modules
+#   RUNTIME: Serve static files + REST API via Spring Boot
 #
 # Build: (from repo root, after Maven build)
-#   docker build -t ddpoker:latest .
+#   docker compose -f docker/docker-compose.yml build
 #
 # Run:
-#   docker run -p 8080:8080 -p 8877:8877 ddpoker:latest
+#   docker compose -f docker/docker-compose.yml up
+# ============================================================
+
+# ============================================================
+# STAGE 1: Build Next.js Frontend
+# ============================================================
+FROM node:22-alpine AS web-builder
+
+WORKDIR /build
+
+# Copy Next.js project
+COPY code/web/package*.json ./
+COPY code/web/ ./
+
+# Install dependencies and build static export
+RUN npm ci && npm run build
+
+# Verify build output exists
+RUN test -d out && echo "✓ Next.js static export built: $(du -sh out | cut -f1)"
+
+# ============================================================
+# STAGE 2: Java Runtime with API + Game Server
 # ============================================================
 FROM eclipse-temurin:25-jdk
 
 LABEL maintainer="DD Poker Docker"
-LABEL description="DD Poker server with client installers"
+LABEL description="DD Poker server with modernized Next.js frontend"
 
 # Create directories
-RUN mkdir -p /app/lib /app/classes /app/downloads /data
+RUN mkdir -p /app/lib /app/classes /app/downloads /app/webapp /data
 
 WORKDIR /app
 
 # ============================================================
-# SERVER RUNTIME
+# COPY COMPILED CLASSES (SERVER + API)
 # ============================================================
 
 # Copy compiled classes from all modules
@@ -45,22 +64,19 @@ COPY code/tools/target/classes/ /app/classes/
 COPY code/gameserver/target/classes/ /app/classes/
 COPY code/pokerserver/target/classes/ /app/classes/
 
-# Copy pokerweb classes
-COPY code/pokerwicket/target/classes/ /app/classes/
-
-# Copy the webapp directory
-COPY code/pokerwicket/src/main/webapp/ /app/webapp/
+# Copy API module classes (Spring Boot REST API)
+COPY code/api/target/classes/ /app/classes/
 
 # Copy runtime messages files
 COPY runtime/messages/ /app/runtime/messages/
 
 # Copy all dependency JARs
 COPY code/pokerserver/target/dependency/ /app/lib/
-COPY code/pokerwicket/target/dependency/ /app/lib/
+COPY code/api/target/dependency/ /app/lib/
 
 # Remove project JARs to avoid classpath conflicts
 RUN rm -f /app/lib/pokerserver-*.jar \
-    /app/lib/pokerwicket-*.jar \
+    /app/lib/api-*.jar \
     /app/lib/gameserver-*.jar \
     /app/lib/ddpoker-*.jar \
     /app/lib/pokerengine-*.jar \
@@ -78,6 +94,16 @@ RUN rm -f /app/lib/pokerserver-*.jar \
     /app/lib/jsp-*.jar \
     /app/lib/server-*.jar \
     /app/lib/udp-*.jar
+
+# ============================================================
+# COPY NEXT.JS STATIC EXPORT
+# ============================================================
+
+# Copy Next.js static files from build stage
+COPY --from=web-builder /build/out/ /app/webapp/
+
+# Verify webapp files exist
+RUN test -f /app/webapp/index.html && echo "✓ Next.js webapp deployed"
 
 # ============================================================
 # BUILD UNIVERSAL CLIENT JAR (at build time)
@@ -158,7 +184,7 @@ ENV DB_URL="jdbc:h2:file:/data/poker;MODE=MySQL;AUTO_SERVER=TRUE"
 ENV DB_USER=sa
 ENV DB_PASSWORD=
 
-# Server ports (no SERVER_HOST needed - clients configure themselves!)
+# Server ports
 ENV SERVER_PORT=8877
 ENV CHAT_PORT=11886
 ENV WEB_PORT=8080
@@ -175,9 +201,11 @@ ENV SMTP_STARTTLS_ENABLE=true
 ENV SMTP_FROM=noreply@ddpoker.local
 
 # Admin configuration (optional - set to enable admin panel access at /admin)
-# If ADMIN_PASSWORD is not set, a random password will be generated and logged
 ENV ADMIN_USERNAME=
 ENV ADMIN_PASSWORD=
+
+# JWT configuration (optional - auto-generated and persisted if not set)
+ENV JWT_SECRET=
 
 # Expose ports
 EXPOSE 8877 8080 11886/udp 11889/udp

@@ -77,8 +77,8 @@ public class SecurityConfig {
                         // Protected endpoints
                         .requestMatchers("/api/profile/**").authenticated().requestMatchers("/api/admin/**")
                         .hasRole("ADMIN")
-                        // All others require authentication
-                        .anyRequest().authenticated())
+                        // All other requests (static files, Next.js frontend) are permitted
+                        .anyRequest().permitAll())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
