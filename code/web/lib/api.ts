@@ -348,6 +348,93 @@ export const hostApi = {
 }
 
 /**
+ * Admin API
+ */
+export const adminApi = {
+  /**
+   * Search online profiles
+   */
+  searchProfiles: async (filters?: {
+    name?: string
+    email?: string
+    page?: number
+    pageSize?: number
+  }): Promise<{ profiles: any[]; total: number }> => {
+    const params = new URLSearchParams()
+    if (filters?.name) params.append('name', filters.name)
+    if (filters?.email) params.append('email', filters.email)
+    if (filters?.page !== undefined) params.append('page', filters.page.toString())
+    if (filters?.pageSize) params.append('pageSize', filters.pageSize.toString())
+
+    const response = await apiFetch<{ profiles: any[]; total: number }>(
+      `/api/admin/profiles?${params}`
+    )
+    return response.data
+  },
+
+  /**
+   * Search registrations
+   */
+  searchRegistrations: async (filters?: {
+    name?: string
+    email?: string
+    from?: string
+    to?: string
+    page?: number
+    pageSize?: number
+  }): Promise<{ registrations: any[]; total: number }> => {
+    const params = new URLSearchParams()
+    if (filters?.name) params.append('name', filters.name)
+    if (filters?.email) params.append('email', filters.email)
+    if (filters?.from) params.append('from', filters.from)
+    if (filters?.to) params.append('to', filters.to)
+    if (filters?.page !== undefined) params.append('page', filters.page.toString())
+    if (filters?.pageSize) params.append('pageSize', filters.pageSize.toString())
+
+    const response = await apiFetch<{ registrations: any[]; total: number }>(
+      `/api/admin/registrations?${params}`
+    )
+    return response.data
+  },
+
+  /**
+   * Get banned keys list
+   */
+  getBans: async (page = 0, pageSize = 50): Promise<{ bans: any[]; total: number }> => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      pageSize: pageSize.toString(),
+    })
+    const response = await apiFetch<{ bans: any[]; total: number }>(`/api/admin/bans?${params}`)
+    return response.data
+  },
+
+  /**
+   * Add a new ban
+   */
+  addBan: async (banData: {
+    key: string
+    reason?: string
+    expiresAt?: string
+  }): Promise<any> => {
+    const response = await apiFetch<any>('/api/admin/bans', {
+      method: 'POST',
+      body: JSON.stringify(banData),
+    })
+    return response.data
+  },
+
+  /**
+   * Remove a ban
+   */
+  removeBan: async (banId: number): Promise<void> => {
+    await apiFetch<void>(`/api/admin/bans/${banId}`, {
+      method: 'DELETE',
+    })
+  },
+}
+
+/**
  * Utility function to check if the API is reachable
  */
 export async function checkApiHealth(): Promise<boolean> {
