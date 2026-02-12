@@ -114,6 +114,8 @@ Add: `void hashAndSetPassword(OnlineProfile profile, String plaintext);`
 
 ## Step 5: Update PokerServer Admin Profile Initialization
 
+**✅ COMPLETED** - All PokerServerTest tests pass (5/5). Admin password file persistence implemented.
+
 **File:** `code/pokerserver/src/main/java/com/donohoedigital/games/poker/server/PokerServer.java`
 
 `initializeAdminProfile()` (lines 82-147) has 3 code paths that need updating:
@@ -190,6 +192,8 @@ Add: `void hashAndSetPassword(OnlineProfile profile, String plaintext);`
 ### 6e. `sendProfileEmail()` (line 1019, 1026) — no change needed
 - Already logs the generated plaintext (before hashing), which is the desired admin debug behavior
 
+**✅ COMPLETED** - All pokerserver tests pass (119/119). All servlet endpoints updated.
+
 ---
 
 ## Step 7: Update Wicket Web Pages
@@ -232,6 +236,8 @@ Add: `void hashAndSetPassword(OnlineProfile profile, String plaintext);`
 
 **File:** `code/pokerwicket/src/main/resources/.../OnlineProfileSearch.html` — replace password `<span>` with reset button markup
 
+**✅ COMPLETED** - All Wicket pages updated for bcrypt authentication and password reset flows.
+
 ---
 
 ## Step 8: Update Test Infrastructure
@@ -245,6 +251,26 @@ Add: `void hashAndSetPassword(OnlineProfile profile, String plaintext);`
 - Update assertions: check `getPasswordHash()` starts with `$2a$` instead of asserting plaintext round-trip
 
 **File:** Spring test context XML(s) — ensure `PasswordHashingServiceImpl` is available as a bean
+
+**✅ COMPLETED** - All test infrastructure updated. PokerTestData, HibernateTest, and OnlineProfileTest all updated. All 119 pokerserver tests pass.
+
+---
+
+## PLAN COMPLETE ✅
+
+All 8 steps successfully implemented. Password security migrated from reversible DES encryption to bcrypt hashing.
+
+### Final Test Results:
+- pokerserver: 119/119 tests passing
+- pokerengine: 15/15 tests passing (OnlineProfileStubTest)
+- All integration tests passing
+
+### Summary of Changes:
+- Passwords now hashed with bcrypt (irreversible)
+- Admin password persisted to file for display on restart
+- "Forgot password" converted to reset flow (generates new password)
+- Admin UI shows "Reset Password" button instead of plaintext password
+- All authentication uses bcrypt password verification
 
 ---
 
