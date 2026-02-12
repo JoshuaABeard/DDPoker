@@ -218,8 +218,8 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
             game_.getHost().clearMessageReceived();
         }
 
-        // alive thread for online games (only needed for non-UDP transport since UDP layer handles that)
-        if (bOnline_ && !mgr_.isUDP())
+        // alive thread for online games
+        if (bOnline_)
         {
             threadAlive_ = new TDAlive();
             threadAlive_.start();

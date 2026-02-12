@@ -50,7 +50,6 @@ import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.network.*;
 import com.donohoedigital.p2p.*;
 import com.donohoedigital.server.*;
-import com.donohoedigital.udp.*;
 import org.apache.logging.log4j.*;
 
 import javax.swing.*;
@@ -100,7 +99,7 @@ public class OnlineManager implements ChatManager
         game_ = game;
         context_ = game_.getGameContext();
         main_ = PokerMain.getPokerMain();
-        p2p_ = main_.getPokerConnectionServer(game.isUDP());
+        p2p_ = main_.getPokerConnectionServer(false);
 
         // note that we don't store the local player since that can get
         // reloaded with game updates.  However, the "host" status will
@@ -109,11 +108,8 @@ public class OnlineManager implements ChatManager
         bHost_ = getLocalPlayer().isHost();
         if (bHost_) banned_ = PokerPrefsPlayerList.getSharedList(PokerPrefsPlayerList.LIST_BANNED);
 
-        // online queue for sending messages (TCP only)
-        if (!isUDP())
-        {
-            oQueue_ = new OnlineManagerQueue(this);
-        }
+        // online queue for sending messages
+        oQueue_ = new OnlineManagerQueue(this);
     }
 
     /**
@@ -135,14 +131,6 @@ public class OnlineManager implements ChatManager
     PokerConnectionServer getP2P()
     {
         return p2p_;
-    }
-
-    /**
-     * is this a UDP based connection?
-     */
-    public boolean isUDP()
-    {
-        return p2p_ instanceof UDPServer;
     }
 
     // listener for host connection
@@ -711,12 +699,6 @@ public class OnlineManager implements ChatManager
         player.setProfilePath(omsg.getPlayerProfilePath()); // store in host copy so when we send back to player, it is correct
         player.setConnectURL(omsg.getConnectURL()); // URL this player uses to connect to host (store for client's use)
 
-        // udp: set name of link to player name
-        if (conn.isUDP())
-        {
-            ((UDPServer) p2p_).manager().getLink(conn.getUDPID()).setName(player.getName());
-        }
-
         // rejoing during play (after registration closed)
         if (nMode == PokerGame.MODE_PLAY)
         {
@@ -793,15 +775,6 @@ public class OnlineManager implements ChatManager
                 sendPlayerUpdateToAll(player);
                 sendDirectorChat(PropertyConfig.getMessage(bObs ? "msg.chat.observerjoined" : "msg.chat.playerjoined",
                                                            Utils.encodeHTML(player.getName())), null);
-
-
-                // if UDP send note about beta status // TODO: remote this when finalized
-                if (conn.isUDP())
-                {
-                    sendDirectorChat(player, "NOTE:  You are joining a game that uses the new UDP message " +
-                                             "infrastructure.  This is a 'beta' feature, meaning there could " +
-                                             "be small bugs or issues yet to resolve.");
-                }
 
                 // send greeting
                 String sGreeting = profile.getGreeting(Utils.encodeHTML(player.getName()));
@@ -1311,28 +1284,12 @@ public class OnlineManager implements ChatManager
         Peer2PeerMessenger msgr = null;
         if (bHeadless)
         {
-            if (isUDP())
-            {
-                PokerConnect conn = new PokerConnect((UDPServer) getP2P(), msg.getConnectURL(), null);
-                bOK = conn.connect(msg);
-
-                if (!bOK)
-                {
-                    error = conn.getError();
-                    return error;
-                }
-
-                reply = conn.getReply();
-            }
-            else
-            {
-                PokerP2PHeadless head = new PokerP2PHeadless(context_, msg);
-                head.send();
-                msgr = head.getPeer2PeerMessenger();
-                bOK = head.getStatus() == DDMessageListener.STATUS_OK;
-                error = head.getErrorMessage();
-                reply = head.getReply();
-            }
+            PokerP2PHeadless head = new PokerP2PHeadless(context_, msg);
+            head.send();
+            msgr = head.getPeer2PeerMessenger();
+            bOK = head.getStatus() == DDMessageListener.STATUS_OK;
+            error = head.getErrorMessage();
+            reply = head.getReply();
         }
         else
         {
@@ -1342,37 +1299,22 @@ public class OnlineManager implements ChatManager
             params.setBoolean(PokerP2PDialog.PARAM_FACELESS, bReconnect ? Boolean.TRUE : Boolean.FALSE);
             params.setBoolean(PokerP2PDialog.PARAM_FACELESS_ERROR, bReconnect ? Boolean.FALSE : Boolean.TRUE);
 
-            if (isUDP())
+            PokerP2PDialog dialog = (PokerP2PDialog) context_.processPhaseNow("ConnectGameTCP", params);
+            if (dialog == null)
             {
-                PokerUDPDialog dialog = (PokerUDPDialog) context_.processPhaseNow("ConnectGameUDP", params);
-                if (dialog == null)
-                {
-                    logger.warn("ConnectGameUDP phase returned null - connection failed");
-                    return new DDMessage(DDMessage.CAT_APPL_ERROR, "msg.udp.connect.failed");
-                }
-                bOK = dialog.getStatus() == DDMessageListener.STATUS_OK;
-                error = dialog.getErrorMessage();
-                reply = dialog.getReply();
+                logger.warn("ConnectGameTCP phase returned null - connection failed");
+                return new DDMessage(DDMessage.CAT_APPL_ERROR, "msg.p2p.connect.failed");
             }
-            else
-            {
-                PokerP2PDialog dialog = (PokerP2PDialog) context_.processPhaseNow("ConnectGameTCP", params);
-                if (dialog == null)
-                {
-                    logger.warn("ConnectGameTCP phase returned null - connection failed");
-                    return new DDMessage(DDMessage.CAT_APPL_ERROR, "msg.p2p.connect.failed");
-                }
-                msgr = dialog.getPeer2PeerMessenger();
-                bOK = dialog.getStatus() == DDMessageListener.STATUS_OK;
-                error = dialog.getErrorMessage();
-                reply = dialog.getReply();
-            }
+            msgr = dialog.getPeer2PeerMessenger();
+            bOK = dialog.getStatus() == DDMessageListener.STATUS_OK;
+            error = dialog.getErrorMessage();
+            reply = dialog.getReply();
         }
 
         // if not okay, close client and return error
         if (!bOK)
         {
-            if (!isUDP() && msgr != null)
+            if (msgr != null)
             {
                 try
                 {
@@ -1495,9 +1437,6 @@ public class OnlineManager implements ChatManager
      */
     public void alive(boolean bInGame)
     {
-        // no need to do alive check with UDP since the infrastructure handles that
-        ApplicationError.assertTrue(!isUDP(), "Don't call alive when UDP in use");
-
         if (bHost_)
         {
             OnlineMessage omsg = prepareMessage(OnlineMessage.CAT_ALIVE);
@@ -1632,12 +1571,6 @@ public class OnlineManager implements ChatManager
         PokerConnection conn = omsg.getConnection();
         host.setConnection(conn);
 
-        // udp: set name of link to player name
-        if (conn.isUDP())
-        {
-            ((UDPServer) p2p_).manager().getLink(conn.getUDPID()).setName(host.getName());
-        }
-
         // remember host version
         host.setVersion(omsg.getData().getVersion());
 
@@ -1665,8 +1598,8 @@ public class OnlineManager implements ChatManager
             td_ = td;
 
             // if we are the host and now in play mode, adjust number of worker threads based
-            // on actual players and observers.  (TCP only - UDP doesn't use threads)
-            if (bHost_ && td != null && !isUDP())
+            // on actual players and observers.
+            if (bHost_ && td != null)
             {
                 Peer2PeerServer tcp = (Peer2PeerServer) p2p_;
                 boolean bMoreThreads = false;
@@ -2069,14 +2002,7 @@ public class OnlineManager implements ChatManager
             if (DebugConfig.isTestingOn() && sMessage.startsWith("reconnect test"))
             {
                 logger.debug("TESTING 'reconnect test' to host");
-                if (isUDP())
-                {
-                    ((UDPServer) p2p_).manager().getLink(getHost().getConnection().getUDPID()).kill();
-                }
-                else
-                {
-                    connectionClosing(getHost().getConnection());
-                }
+                connectionClosing(getHost().getConnection());
                 return;
             }
             sendMessage(chat, getHost());
@@ -2221,14 +2147,6 @@ public class OnlineManager implements ChatManager
      */
     private boolean sendMessageChat(OnlineMessage chat, PokerPlayer sender)
     {
-        // special commands
-        if (chat.getChat().startsWith("./stats") && isUDP())
-        {
-            String stats = ((UDPServer) p2p_).manager().getStatusHTML(UDPStatus.LINK_COMPARATOR);
-            sendChatFromHost(sender, stats);
-            return false;
-        }
-
         int nTableNum = chat.getTableNumber();
         if (nTableNum == OnlineMessage.NO_TABLE)
         {
@@ -2490,27 +2408,8 @@ public class OnlineManager implements ChatManager
             return;
         }
 
-        // TCP: use online manager queue
-        if (!isUDP())
-        {
-            oQueue_.addMessage(omsg, pTo, bImmediate);
-        }
-        // UDP: just send since the infrastructure queues it already.  The immediate flag is
-        // unnecessary since it will be sent pretty much immediately due to use of BlockingQueue
-        else
-        {
-            DDMessageTransporter msg = p2p_.newMessage(omsg.getData());
-            PokerUDPServer udp = (PokerUDPServer) p2p_; // cast to avoid catching IOException
-            udp.send(pc, msg);
-
-            // disconnect test like in OnlineManagerQueue
-            if (DebugConfig.isTestingOn() &&
-                omsg.getCategory() == OnlineMessage.CAT_CHAT &&
-                omsg.getChat().startsWith("disconnect test"))
-            {
-                udp.closeConnection(pc);
-            }
-        }
+        // use online manager queue
+        oQueue_.addMessage(omsg, pTo, bImmediate);
     }
 
     /**
@@ -2542,12 +2441,6 @@ public class OnlineManager implements ChatManager
         // respond with GUID for match test and reply to
         omsg.setGUID(sGuid);
         omsg.setInReplyTo(in.getMessageID());
-
-        // sleep briefly in udp mode so connection shows up on UDPStatus
-        if (p2p instanceof UDPServer)
-        {
-            Utils.sleepMillis(100);
-        }
 
         return reply;
     }

@@ -611,31 +611,20 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
     }
 
     /**
-     * Get p2p server - UDP if true, TCP otherwise
+     * Get p2p server - always returns TCP (bUDP parameter ignored)
      */
     public PokerConnectionServer getPokerConnectionServer(boolean bUDP)
     {
         // if asking for P2P and not null, make sure we return the right type
-        if (p2p_ != null)
+        if (p2p_ != null && p2p_ != tcp_)
         {
-            if ((bUDP && p2p_ != udp_) ||
-                (!bUDP && p2p_ != tcp_))
-            {
-                shutdownPokerConnectionServer(p2p_);
-            }
+            shutdownPokerConnectionServer(p2p_);
         }
 
         if (p2p_ == null)
         {
-            // p2p server
-            if (bUDP)
-            {
-                p2p_ = getCreateUDPServer();
-            }
-            else
-            {
-                p2p_ = getTCPServer();
-            }
+            // always use TCP for game connections
+            p2p_ = getTCPServer();
         }
         return p2p_;
     }
@@ -835,6 +824,7 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
     {
         UDPLink link = event.getLink();
 
+        // Only handle UDP events for chat links
         switch (event.getType())
         {
             case CREATED:
@@ -859,7 +849,6 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
     public void monitorEvent(UDPLinkEvent event)
     {
         PokerUDPTransporter msg;
-        PokerUDPTransporter reply;
 
         UDPLink link = event.getLink();
         long elapsed = event.getElapsed();
@@ -873,14 +862,12 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
 
             case CLOSING:
                 if (TESTING(UDPServer.TESTING_UDP)) logger.debug("POKER Closing: {}", link.toStringNameIP());
-                if (!link.getRemoteIP().equals(udp_.getChatServer()))
-                    connectionClosing(new PokerConnection(link.getID()));
+                // No game connection handling - chat only
                 break;
 
             case CLOSED:
                 if (TESTING(UDPServer.TESTING_UDP)) logger.debug("POKER Closed: {}", link.toStringNameIP());
-                if (!link.getRemoteIP().equals(udp_.getChatServer()))
-                    connectionClosing(new PokerConnection(link.getID()));
+                // No game connection handling - chat only
                 break;
 
             case POSSIBLE_TIMEOUT:
@@ -889,59 +876,34 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
                 break;
 
             case TIMEOUT:
+                // Only handle chat link timeouts
                 if (link == udp_.getChatLink())
                 {
                     notifyTimeout();
-                }
-                else
-                {
-                    // application - nothing to do since link will be closed by udp manager
-                    logger.info("Timeout on {} (no message in last {} millis)", link.toStringNameIP(), elapsed);
                 }
                 break;
 
             case RESEND_FAILURE:
+                // Only handle chat link resend failures
                 if (link == udp_.getChatLink())
                 {
                     notifyTimeout();
-                }
-                else
-                {
-                    // application - nothing to do since link will be closed by udp manager
-                    logger.info("Resend Failure on {} (unable to send message {})", link.toStringNameIP(), data);
                 }
                 break;
 
             case SESSION_CHANGED:
                 if (TESTING(UDPServer.TESTING_UDP)) logger.debug("POKER session-changed: {}", link.toStringNameIP());
 
-                // force new hello since chat server was restarted
+                // Only handle chat link session changes
                 if (link == udp_.getChatLink())
                 {
                     notifyTimeout(); // this notifies user of disco
                     udp_.nullChatLink(); // this forces new hello
                 }
-                // if online game link, close on session change to force re-join
-                else
-                {
-                    PokerGame game = (PokerGame) getDefaultContext().getGame();
-                    if (game != null)
-                    {
-                        if (game.getHost().isLocallyControlled())
-                        {
-                            logger.info("Session changed (assuming rejoin): {}", link.toStringNameIP());
-                        }
-                        else
-                        {
-                            logger.warn("Session changed on host (this shouldn't happen), closing link: {}", link.toStringNameIP());
-                            link.close();
-                        }
-                    }
-                }
                 break;
 
             case RECEIVED:
-                // process message
+                // Only process chat messages
                 if (data.getType() == UDPData.Type.MESSAGE)
                 {
                     msg = new PokerUDPTransporter(data);
@@ -954,22 +916,10 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
                         logger.debug("POKER msg from {}: {}", link.toStringNameIP(), data.toStringShort() + sMsg);
                     }
 
+                    // Only handle chat messages
                     if (data.getUserType() == PokerConstants.USERTYPE_CHAT)
                     {
                         if (chatHandler_ != null) chatHandler_.chatReceived(new OnlineMessage(msg.getMessage()));
-                    }
-                    else
-                    {
-                        reply = (PokerUDPTransporter) messageReceived(new PokerConnection(link.getID()), msg);
-                        if (reply != null)
-                        {
-                            link.queue(reply.getData());
-                            link.send(); // send right away
-                            if (!reply.isKeepAlive())
-                            {
-                                link.close();
-                            }
-                        }
                     }
                 }
                 else
