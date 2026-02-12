@@ -138,41 +138,6 @@ public class HoldemHand implements DataMarshal
     {
     }
 
-    ////
-    //// seed for deck
-    ////
-
-    private static int lastSEED = (int) System.currentTimeMillis();
-    private static int SEEDADJ = 2; // BUG 510 - must be non-one
-    private static long lastADJ = System.currentTimeMillis();
-
-    /**
-     * Seed - degree of randomness from timing of hands and number of actions in hand
-     * MersenneTwisterFast recommends passing in an int
-     */
-    private synchronized static int NEXT_SEED()
-    {
-        long mult = (long) lastSEED * (long) SEEDADJ;
-        int seed = (int) (mult % Integer.MAX_VALUE);
-        if (seed == 0 || seed == lastSEED) seed = lastSEED / SEEDADJ;
-        if (seed == 0 || seed == lastSEED) seed = SEEDADJ;
-        if (seed == lastSEED) seed = (int) (System.currentTimeMillis() % Integer.MAX_VALUE);
-        lastSEED = seed;
-        return lastSEED;
-    }
-
-    /**
-     * adj seed
-     */
-    private synchronized static void ADJUST_SEED()
-    {
-        long now = System.currentTimeMillis();
-        long adj = SEEDADJ + (now - lastADJ);
-        if (adj >= Integer.MAX_VALUE) adj = 2;  // BUG 516 - extremely unlikely to occur, but this is correct
-        lastADJ = now;
-        SEEDADJ = (int) (adj % Integer.MAX_VALUE);
-    }
-
     /**
      * Creates a new instance of HoldemHand
      */
@@ -181,11 +146,12 @@ public class HoldemHand implements DataMarshal
     {
         table_ = table;
 
-        long seed = NEXT_SEED();
-        //logger.debug("SEED: "+ seed + " SEEDADJ: "+ SEEDADJ);
+        // Default to production mode (seed=0 uses SecureRandom)
+        long seed = 0;
         GameEngine engine = GameEngine.getGameEngine();
         if (engine != null && engine.isDemo())
         {
+            // Demo mode uses deterministic seed for reproducible hands
             // game could be null from calctool
             PokerGame game = table.getGame();
             if (game != null && !game.isClockMode())
@@ -2579,9 +2545,6 @@ public class HoldemHand implements DataMarshal
      */
     private void addHistory(HandAction action)
     {
-        // adjust every history action - will be different each game
-        ADJUST_SEED();
-
         PokerPlayer player = action.getPlayer();
         int nAction = action.getAction();
 

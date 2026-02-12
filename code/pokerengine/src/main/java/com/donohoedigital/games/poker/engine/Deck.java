@@ -44,6 +44,7 @@ import org.apache.logging.log4j.*;
 
 import java.security.*;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author Doug Donohoe
@@ -53,11 +54,18 @@ public class Deck extends DMArrayList<Card>
 {
     static Logger logger = LogManager.getLogger(Deck.class);
 
-    // random for normal shuffles - changed to secure random in 3.0
-    private static SecureRandom random = new SecureRandom();
-
-    // quick random for calc tool
-    private static MersenneTwisterFast qrandom = new MersenneTwisterFast();
+    /**
+     * Thread-local SecureRandom for production shuffles.
+     * Each thread gets its own instance to avoid cross-contamination between hands/tables.
+     * Uses OS entropy source - not seeded for maximum randomness.
+     *
+     * <p><b>Note on ThreadLocal usage:</b> ThreadLocal instances are never explicitly removed.
+     * This is acceptable for DD Poker's architecture (desktop app with long-lived threads).
+     * However, if this code is used in a thread-pooled or servlet environment, consider
+     * calling {@code secureRandom.remove()} after use to prevent memory leaks.</p>
+     */
+    private static final ThreadLocal<SecureRandom> secureRandom =
+            ThreadLocal.withInitial(SecureRandom::new);
 
     /**
      * Empty deck for loading (please use the constructor with a boolean)
@@ -75,8 +83,14 @@ public class Deck extends DMArrayList<Card>
     }
 
     /**
-     * Creates a new deck, shuffled if bShuffle is true
-     * and sets random seed to given value if non-zero
+     * Creates a new deck, shuffled if bShuffle is true.
+     * <p>
+     * Shuffle behavior:
+     * - seed = 0 (production): Uses SecureRandom with OS entropy for maximum randomness
+     * - seed > 0 (demo/test): Uses deterministic Random(seed) for reproducible shuffles
+     *
+     * @param bShuffle whether to shuffle the deck
+     * @param seed random seed (0 for production, >0 for demo/test mode)
      */
     public Deck(boolean bShuffle, long seed)
     {
@@ -138,34 +152,49 @@ public class Deck extends DMArrayList<Card>
 
         if (bShuffle)
         {
-            if (seed > 0) random.setSeed(seed);
-            Collections.shuffle(this, random);
+            if (seed > 0)
+            {
+                // Deterministic shuffle for demo/test mode
+                Random seededRandom = new Random(seed);
+                Collections.shuffle(this, seededRandom);
+            }
+            else
+            {
+                // Production shuffle using OS entropy (no seed)
+                Collections.shuffle(this, secureRandom.get());
+            }
         }
     }
 
     ////
-    //// shuffle logic borrowed from Collections
+    //// shuffle logic for simulation/calculator
     ////
 
     /**
-     * shuffle
+     * Shuffle the entire deck using ThreadLocalRandom.
+     * Fast, thread-safe shuffle for simulation/calculator use.
+     * For dealing cards to players, use constructor with seed=0 (SecureRandom).
      */
     public void shuffle()
     {
+        ThreadLocalRandom rng = ThreadLocalRandom.current();
         for (int i = size(); i > 1; i--)
         {
-            set(i - 1, set(qrandom.nextInt(i), get(i - 1)));
+            set(i - 1, set(rng.nextInt(i), get(i - 1)));
         }
     }
 
     /**
-     * quick shuffle - shuffle half deck, used for quicker addRandom()
+     * Quick shuffle - shuffles first 26 cards using ThreadLocalRandom.
+     * Used by addRandom() for performance. Note: only first half of deck is shuffled.
+     * Fast, thread-safe shuffle for simulation/calculator use.
      */
     private void qshuffle()
     {
+        ThreadLocalRandom rng = ThreadLocalRandom.current();
         for (int i = Math.min(26, size()); i > 1; i--)
         {
-            set(i - 1, set(qrandom.nextInt(i), get(i - 1)));
+            set(i - 1, set(rng.nextInt(i), get(i - 1)));
         }
     }
 
