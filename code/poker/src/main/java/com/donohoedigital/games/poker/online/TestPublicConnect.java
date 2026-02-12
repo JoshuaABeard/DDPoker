@@ -45,7 +45,6 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.network.*;
 import com.donohoedigital.gui.*;
-import com.donohoedigital.udp.*;
 import org.apache.logging.log4j.*;
 
 import javax.swing.*;
@@ -76,12 +75,6 @@ public class TestPublicConnect extends SendMessageDialog implements OnlineMessag
         PokerURL url = (PokerURL) gamephase_.getObject(PARAM_URL);
         omsg.setGUID(engine_.getGUID());
         omsg.setConnectURL(url);
-        PokerGame game = (PokerGame) context_.getGame();
-        if (game.getOnlineManager().isUDP())
-        {
-            UDPServer udp = ((UDPServer) game.getOnlineManager().getP2P());
-            omsg.setUPDID(udp.getID(udp.getIP(udp.getDefaultChannel())));
-        }
         EngineMessage msg = new EngineMessage();
         omsg.getData().copyTo(msg);
         return msg;

@@ -251,9 +251,8 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
                 game = new PokerGame(context_);
                 game.setTempOnlineGameID();
                 GameState state = game.newGameState("temp", GameListPanel.SAVE_EXT);
-                // TODO: UDP only if testing is enabled
-                String prefix = (DebugConfig.isTestingOn() && PokerUtils.isOptionOn(PokerConstants.OPTION_ONLINE_UDP)) ?
-                                PokerConstants.ONLINE_GAME_PREFIX_UDP : PokerConstants.ONLINE_GAME_PREFIX_TCP;
+                // Always use TCP prefix (UDP support removed)
+                String prefix = PokerConstants.ONLINE_GAME_PREFIX_TCP;
                 String id = prefix + state.getFileNumber();
                 String sName = PropertyConfig.getMessage("msg.onlineGameName.host", id);
                 state.setName(sName);
@@ -304,7 +303,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
      */
     private boolean canHost(PokerMain main, PokerGame game)
     {
-        PokerConnectionServer p2p = main.getPokerConnectionServer(game.isUDP());
+        PokerConnectionServer p2p = main.getPokerConnectionServer(false); // Always use TCP
         if (p2p != null && !p2p.isBound())
         {
             EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.canthost",

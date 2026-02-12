@@ -370,12 +370,9 @@ public class Lobby extends BasePhase implements ChangeListener, PropertyChangeLi
             game_.addPropertyChangeListener(PokerGame.PROP_GAME_LOADED, this);
         }
 
-        // alive thread (only needed for non-UDP transport since UDP layer handles that)
-        if (!mgr_.isUDP())
-        {
-            threadAlive_ = new LobbyAlive();
-            threadAlive_.start();
-        }
+        // alive thread
+        threadAlive_ = new LobbyAlive();
+        threadAlive_.start();
     }
     
     /**
