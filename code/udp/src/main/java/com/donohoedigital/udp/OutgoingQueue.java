@@ -51,7 +51,7 @@ public class OutgoingQueue extends Thread
 
     // members
     private LinkedBlockingQueue queue_ = new LinkedBlockingQueue();
-    private boolean bDone_ = false;
+    private volatile boolean bDone_ = false;
     private AtomicLong bytesOnQueue_ = new AtomicLong(0);
     private int peak_ = 0;
 

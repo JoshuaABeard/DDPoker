@@ -45,6 +45,7 @@ import java.io.*;
 import java.net.*;
 import java.text.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Doug Donohoe
@@ -381,7 +382,7 @@ public class PropertyConfig extends Properties
     }
 
     // cache formats
-    private static final Map<String, MessageFormat> formats_ = new HashMap<String, MessageFormat>();
+    private static final Map<String, MessageFormat> formats_ = new ConcurrentHashMap<>();
 
     /**
      * Get a message and insert the params into it (params replaced
@@ -399,17 +400,8 @@ public class PropertyConfig extends Properties
                 // cache long ones since they seem to take longer to parse
                 if (oParams.length > 4)
                 {
-                    synchronized (formats_)
-                    {
-                        MessageFormat format = formats_.get(sKey);
-                        if (format == null)
-                        {
-                            format = new MessageFormat(sFormatThis);
-                            formats_.put(sKey, format);
-                        }
-
-                        sMsg = format.format(oParams);
-                    }
+                    MessageFormat format = formats_.computeIfAbsent(sKey, k -> new MessageFormat(sFormatThis));
+                    sMsg = format.format(oParams);
                 }
                 else
                 {

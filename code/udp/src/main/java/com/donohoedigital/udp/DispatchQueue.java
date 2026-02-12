@@ -50,7 +50,7 @@ public class DispatchQueue extends Thread
 
     // members
     private LinkedBlockingQueue queue_ = new LinkedBlockingQueue();
-    private boolean bDone_ = false;
+    private volatile boolean bDone_ = false;
 
     // control messages
     private Object QUIT = new Object();
