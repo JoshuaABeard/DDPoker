@@ -188,7 +188,6 @@ public class OnlineMessage {
     public static final String ON_MSG_ID = "msgid";
     public static final String ON_IN_REPLY_TO = "replyto";
     public static final String ON_CONNECTION_URL = "url";
-    public static final String ON_UDPID = "udpid";
     public static final String ON_PLAYER_NAME = "playername";
     public static final String ON_PLAYER_PROFILE_PATH = "profile";
     public static final String ON_GAME_ID = "gameid";

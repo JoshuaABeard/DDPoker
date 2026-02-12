@@ -267,13 +267,8 @@ public class OnlineLobby extends BasePhase implements ChatHandler, DDTable.Table
      */
     public void chatReceived(OnlineMessage omsg) {
         if (omsg.getCategory() == OnlineMessage.CAT_CHAT) {
-            if (TESTING(EngineConstants.TESTING_UDP_APP))
-                logger.debug("CHAT " + omsg.getPlayerName() + " said " + omsg.getChat());
             chat_.chatReceived(omsg);
         } else if (omsg.getCategory() == OnlineMessage.CAT_CHAT_ADMIN) {
-            if (TESTING(EngineConstants.TESTING_UDP_APP))
-                logger.debug("CHAT admin " + PokerConstants.toStringAdminType(omsg.getChatType())
-                        + (omsg.getChat() != null ? " - " + omsg.getChat() : ""));
             switch (omsg.getChatType()) {
                 case PokerConstants.CHAT_ADMIN_WELCOME :
                     model_.setList(omsg.getPlayerList());

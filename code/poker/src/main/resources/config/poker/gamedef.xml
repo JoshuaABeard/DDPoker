@@ -751,12 +751,6 @@
     <param name="dialog-windowtitle-prop" strvalue="msg.windowtitle.connectGame"/>
   </phase>
 
-  <!-- PokerUDPDialog extends SendMessageDialog (UDP version) -->
-  <phase name="ConnectGameUDP" class="com.donohoedigital.games.poker.online.PokerUDPDialog"
-         extends="UserRegistrationSend">
-    <param name="dialog-windowtitle-prop" strvalue="msg.windowtitle.connectGame"/>
-  </phase>
-
   <!-- SendWanProfile extends SendMessageDialog (used to talk to the server) -->
   <phase name="SendWanProfile" class="com.donohoedigital.games.poker.SendWanProfile" extends="UserRegistrationSend"
          cache="false">

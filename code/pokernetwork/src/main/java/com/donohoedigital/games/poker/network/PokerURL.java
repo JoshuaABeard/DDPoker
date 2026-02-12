@@ -60,11 +60,7 @@ public class PokerURL extends P2PURL {
     }
 
     public boolean isTCP() {
-        return !isUDP(sID_);
-    }
-
-    public boolean isUDP() {
-        return isUDP(sID_);
+        return true; // All connections are TCP after UDP removal
     }
 
     public String getGameID() {
@@ -73,9 +69,5 @@ public class PokerURL extends P2PURL {
 
     public String getPassword() {
         return sPass_;
-    }
-
-    public static boolean isUDP(String sGameID) {
-        return sGameID.startsWith(PokerConstants.ONLINE_GAME_PREFIX_UDP);
     }
 }
