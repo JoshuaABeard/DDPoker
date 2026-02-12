@@ -34,6 +34,7 @@ package com.donohoedigital.poker.api.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -47,7 +48,7 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret:changeme-please-use-a-secure-random-secret-key-here}")
+    @Value("${jwt.secret}")
     private String jwtSecret;
 
     @Value("${jwt.expiration:86400000}") // 24 hours default
@@ -55,6 +56,17 @@ public class JwtTokenProvider {
 
     @Value("${jwt.remember-me-expiration:2592000000}") // 30 days default
     private long jwtRememberMeExpiration;
+
+    @PostConstruct
+    public void validateConfig() {
+        if (jwtSecret == null || jwtSecret.trim().isEmpty()) {
+            throw new IllegalStateException("JWT secret must be configured. Set JWT_SECRET environment variable.");
+        }
+        if (jwtSecret.length() < 32) {
+            throw new IllegalStateException(
+                    "JWT secret must be at least 32 characters (256 bits) for HMAC-SHA256 security.");
+        }
+    }
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));

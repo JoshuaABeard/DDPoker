@@ -145,25 +145,95 @@ Built complete Spring Boot REST API to replace Apache Wicket web frontend. Creat
 
 ## Review Results
 
-*[Review agent will fill this section]*
+**Status:** ❌ BLOCKING ISSUES FOUND - Security fixes required before Phase 2
 
-**Status:**
-
-**Reviewed by:**
-**Date:**
+**Reviewed by:** Claude Sonnet 4.5
+**Date:** 2026-02-12
 
 ### Findings
 
 #### ✅ Strengths
 
+1. **Excellent Architecture** - Service layer reuse is clean and effective. Zero duplication, all existing business logic preserved.
+
+2. **Proper JWT Cookie Handling** - HttpOnly cookies provide good XSS protection. Automatic transmission simplifies client implementation.
+
+3. **Good Logging** - Auth events properly logged with context (username, admin status, ban reasons).
+
+4. **Comprehensive Coverage** - All Wicket functionality covered by REST endpoints. API provides full feature parity.
+
+5. **Clean Code Structure** - Controllers are focused, security infrastructure is modular, DTOs are appropriately used.
+
 #### ⚠️ Suggestions (Non-blocking)
+
+1. **Add Input Validation** - Most endpoints lack validation annotations. Consider adding @Valid, @Size, @Pattern where appropriate.
+   - Affects: All controllers except AuthController
+
+2. **Consider Transaction Management** - Multi-step operations (password update, profile retirement) should use @Transactional.
+   - Affects: ProfileController.java:75-100, 115-123
+
+3. **Add DTO Layer** - Currently returning JPA entities directly. Consider DTOs for cleaner API contracts.
+   - Affects: All controllers
+   - Note: Already causing password hash exposure (see blocking issue #1)
+
+4. **Improve Error Responses** - Use proper HTTP status codes (400, 401, 403) instead of 200 with error messages in body.
+   - Affects: AuthController, ProfileController
+
+5. **Add Rate Limiting** - Login endpoint vulnerable to brute force attacks without rate limiting.
+   - Affects: AuthController.java:78
 
 #### ❌ Required Changes (Blocking)
 
+1. **CRITICAL: Password Hash Exposure**
+   - File: ProfileController.java:69, OnlineProfile.java:148
+   - Issue: GET /api/profile returns entire OnlineProfile entity including password hash
+   - Impact: Password hashes exposed to authenticated users (and potentially attackers)
+   - Fix: Add `@JsonIgnore` to OnlineProfile.getPasswordHash() OR use ProfileDTO without password field
+
+2. **CRITICAL: Weak JWT Secret Default**
+   - Files: application.properties:8, JwtTokenProvider.java:50
+   - Issue: Default JWT secret is weak and predictable
+   - Impact: If JWT_SECRET env var not set, all tokens can be forged
+   - Fix: Remove default value, add startup validation to fail-fast if not configured
+
+3. **CRITICAL: CSRF Protection Disabled**
+   - File: SecurityConfig.java:64
+   - Issue: `.csrf(AbstractHttpConfigurer::disable)` with cookie-based auth
+   - Impact: Even with stateless JWT, cookies are automatically sent with requests, enabling CSRF attacks
+   - Fix: Either enable CSRF protection OR add SameSite=Strict to cookies + document risk
+
+4. **CRITICAL: Broken /api/auth/me Endpoint**
+   - File: AuthController.java:145
+   - Issue: Uses `@RequestAttribute("username")` instead of `@AuthenticationPrincipal`
+   - Impact: Endpoint always returns "Not authenticated" even with valid JWT
+   - Fix: Change to `@AuthenticationPrincipal String username`
+
+5. **CRITICAL: CORS Allows All Origins with Credentials**
+   - File: SecurityConfig.java:86-89
+   - Issue: `allowedOriginPatterns("*")` + `allowCredentials(true)`
+   - Impact: Any website can make authenticated requests to API. Major security vulnerability.
+   - Fix: Restrict to specific allowed origins (e.g., https://www.ddpoker.com)
+
+6. **HIGH: Path Traversal Vulnerability**
+   - File: DownloadController.java:63
+   - Issue: String comparison `!filePath.startsWith(DOWNLOADS_DIR)` instead of path comparison
+   - Impact: Can potentially be bypassed with ../ sequences depending on OS path handling
+   - Fix: Use `!filePath.startsWith(Paths.get(DOWNLOADS_DIR))` for proper path comparison
+
 ### Verification
 
-- Tests:
-- Coverage:
-- Build:
-- Privacy:
-- Security:
+- **Tests:** ⚠️ None written (deferred per user directive for speed)
+- **Coverage:** N/A
+- **Build:** ✅ Compiles cleanly, all dependencies resolved
+- **Privacy:** ✅ No private data in code itself
+- **Security:** ❌ 6 blocking security issues identified above
+
+### Summary
+
+Phase 1 implementation demonstrates excellent architectural decisions (service reuse, clean separation, JWT in HttpOnly cookies) but has critical security vulnerabilities that MUST be addressed before proceeding to Phase 2. The issues are concentrated in:
+
+1. Data exposure (password hashes)
+2. Configuration weaknesses (JWT secret, CORS, CSRF)
+3. Implementation bugs (path traversal, broken auth endpoint)
+
+All blocking issues have straightforward fixes. Once resolved, the foundation will be solid for Phase 2 (Next.js frontend).

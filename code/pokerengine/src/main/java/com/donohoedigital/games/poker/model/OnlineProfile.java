@@ -34,6 +34,7 @@ package com.donohoedigital.games.poker.model;
 
 import com.donohoedigital.comms.DMTypedHashMap;
 import com.donohoedigital.db.model.BaseModel;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.Date;
@@ -145,6 +146,7 @@ public class OnlineProfile implements BaseModel<Long> {
     }
 
     @Column(name = "wpr_password", nullable = false)
+    @JsonIgnore
     public String getPasswordHash() {
         return data_.getString(PROFILE_PASSWORD_HASH);
     }

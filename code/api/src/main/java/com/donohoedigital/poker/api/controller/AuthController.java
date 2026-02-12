@@ -41,13 +41,14 @@ import com.donohoedigital.games.poker.service.OnlineProfileService;
 import com.donohoedigital.games.poker.service.PasswordHashingService;
 import com.donohoedigital.games.server.model.BannedKey;
 import com.donohoedigital.games.server.service.BannedKeyService;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.ResponseCookie;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -110,12 +111,16 @@ public class AuthController {
         // Generate JWT token
         String token = tokenProvider.generateToken(username, isAdmin, rememberMe);
 
-        // Set HttpOnly cookie
-        Cookie cookie = new Cookie(TOKEN_COOKIE_NAME, token);
-        cookie.setHttpOnly(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(rememberMe ? COOKIE_MAX_AGE_30_DAYS : -1); // Session cookie if not remember me
-        response.addCookie(cookie);
+        // Set HttpOnly cookie with SameSite=Strict for CSRF protection
+        ResponseCookie cookie = ResponseCookie.from(TOKEN_COOKIE_NAME, token).httpOnly(true).secure(false) // Set to
+                                                                                                            // true in
+                                                                                                            // production
+                                                                                                            // with
+                                                                                                            // HTTPS
+                .path("/").maxAge(rememberMe ? COOKIE_MAX_AGE_30_DAYS : -1) // Session cookie if not remember me
+                .sameSite("Strict") // CSRF protection
+                .build();
+        response.addHeader("Set-Cookie", cookie.toString());
 
         logger.info("User {} logged in successfully (admin={}, rememberMe={})", username, isAdmin, rememberMe);
 
@@ -128,11 +133,10 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<AuthResponse> logout(HttpServletResponse response) {
         // Clear cookie
-        Cookie cookie = new Cookie(TOKEN_COOKIE_NAME, "");
-        cookie.setHttpOnly(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(0); // Delete cookie
-        response.addCookie(cookie);
+        ResponseCookie cookie = ResponseCookie.from(TOKEN_COOKIE_NAME, "").httpOnly(true).secure(false).path("/")
+                .maxAge(0) // Delete cookie
+                .sameSite("Strict").build();
+        response.addHeader("Set-Cookie", cookie.toString());
 
         return ResponseEntity.ok(new AuthResponse(true, "Logout successful"));
     }
@@ -141,8 +145,7 @@ public class AuthController {
      * Get current user info (if authenticated).
      */
     @GetMapping("/me")
-    public ResponseEntity<AuthResponse> getCurrentUser(
-            @RequestAttribute(value = "username", required = false) String username) {
+    public ResponseEntity<AuthResponse> getCurrentUser(@AuthenticationPrincipal String username) {
         if (username == null) {
             return ResponseEntity.ok(new AuthResponse(false, "Not authenticated"));
         }

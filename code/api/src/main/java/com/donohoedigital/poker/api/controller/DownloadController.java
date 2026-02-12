@@ -58,9 +58,12 @@ public class DownloadController {
     @GetMapping("/{filename}")
     public ResponseEntity<Resource> downloadFile(@PathVariable String filename) {
         try {
-            // Prevent directory traversal
-            Path filePath = Paths.get(DOWNLOADS_DIR).resolve(filename).normalize();
-            if (!filePath.startsWith(DOWNLOADS_DIR)) {
+            // Prevent directory traversal - use Path comparison not String comparison
+            Path downloadsPath = Paths.get(DOWNLOADS_DIR).toAbsolutePath().normalize();
+            Path filePath = downloadsPath.resolve(filename).normalize();
+
+            // Verify the resolved path is still within the downloads directory
+            if (!filePath.startsWith(downloadsPath)) {
                 return ResponseEntity.badRequest().build();
             }
 
