@@ -61,7 +61,7 @@ public class UDPManager extends Thread implements Comparator<UDPLink>
     private final LinkedBlockingQueue<Object> queue_ = new LinkedBlockingQueue<Object>();
     private final List<UDPLink> links_ = Collections.synchronizedList(new ArrayList<UDPLink>());
     private List<UDPLink> linksCopy_ = Collections.synchronizedList(new ArrayList<UDPLink>());
-    boolean bDone_ = false;
+    volatile boolean bDone_ = false;
     private Timer timer_;
 
     // control messages

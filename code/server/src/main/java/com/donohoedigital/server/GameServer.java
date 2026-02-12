@@ -64,7 +64,7 @@ public abstract class GameServer extends Thread
     private boolean logStatus = true;
     private String appName;
     private Selector selector_;
-    private boolean bDone_ = false;
+    private volatile boolean bDone_ = false;
     private String sPort_;
     private int nElapsedNoWorkerTime_ = 0;
     private int nRunningNoWorkerCnt_ = 0;
@@ -744,7 +744,7 @@ public abstract class GameServer extends Thread
     /**
      * Get current contents of queue and start new list
      */
-    private synchronized List<Qentry> getRegisterQueue()
+    private List<Qentry> getRegisterQueue()
     {
         synchronized (registerQ_)
         {

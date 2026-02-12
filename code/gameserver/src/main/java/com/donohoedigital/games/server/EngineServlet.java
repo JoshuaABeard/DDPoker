@@ -73,6 +73,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.donohoedigital.config.DebugConfig.TESTING;
 
@@ -159,17 +160,11 @@ public abstract class EngineServlet extends BaseServlet
 
     //
     /// DEBUGGING
-    private static int SEQ = 0;
-    private static final Object SEQOBJ = new Object();
+    private static final AtomicInteger SEQ = new AtomicInteger(0);
 
-    @SuppressWarnings({"AssignmentToStaticFieldFromInstanceMethod"})
     private int nextSEQ()
     {
-        synchronized (SEQOBJ)
-        {
-            SEQ++;
-            return SEQ;
-        }
+        return SEQ.incrementAndGet();
     }
 
     private void log(int seq, String sMethod, String sMsg)
@@ -1259,10 +1254,10 @@ public abstract class EngineServlet extends BaseServlet
     //
 
     private static final Object MSG_FILE_SYNC = new Object();
-    private long lastUpdate = 0;
+    private volatile long lastUpdate = 0;
     private long lastUpgradeUpdate = 0;
-    private String ddMessage = null;
-    private String upMessage = null;
+    private volatile String ddMessage = null;
+    private volatile String upMessage = null;
 
     /**
      * Return the current dd message if not seen by user

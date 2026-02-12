@@ -88,11 +88,11 @@ public class UDPLink
     private AckList mtuAcks_;
     private long localSessionID_;
     private long remoteSessionID_;
-    private boolean bHelloReceived_;
-    private boolean bHelloSent_;
+    private volatile boolean bHelloReceived_;
+    private volatile boolean bHelloSent_;
     private long lastMessageReceived_;
-    private boolean bGoodbyeInProgress_ = false;
-    private boolean bDone_ = false;
+    private volatile boolean bGoodbyeInProgress_ = false;
+    private volatile boolean bDone_ = false;
     private ArrayList<UDPLinkMonitor> monitors_ = new ArrayList<UDPLinkMonitor>();
     private long start = System.currentTimeMillis();
 

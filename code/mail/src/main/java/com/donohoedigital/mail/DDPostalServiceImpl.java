@@ -65,13 +65,13 @@ public class DDPostalServiceImpl implements Runnable, DDPostalService
     // instance info
     private final boolean bInitMailQ_;
     private List<Message> mailQ_ = new ArrayList<>();
-    private boolean bDone_ = false;
+    private volatile boolean bDone_ = false;
     private Properties props_;
     private DDAuthenticator auth_;
     private int nWait_;
     private boolean bLoopAtEnd_;
     private final Map<String, DDMailErrorHandler> errorHandlers_ = new HashMap<>();
-    private boolean bSleeping_ = false;
+    private volatile boolean bSleeping_ = false;
     private final Object SLEEPCHECK = new Object();
     public static final String HEADER_ERRORINFO = "X-DDMail-ErrorInfo";
 
@@ -333,8 +333,8 @@ public class DDPostalServiceImpl implements Runnable, DDPostalService
             Transport transport = session.getTransport("smtp");
             transport.connect();
             boolean sent;
-            // loop from last message on queue, so we can remove entries
-            for (int i = nNum - 1; i >= 0; i--)
+            // loop through messages, processing and removing from front of queue
+            while (!list.isEmpty())
             {
                 msg = list.get(0);
                 sent = sendMessage(transport, msg);

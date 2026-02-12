@@ -83,8 +83,15 @@ public class DDHttpClient
         System.getProperties().setProperty("sun.net.client.defaultConnectTimeout", Integer.toString(CONNECTTIMEOUT));
     }
     
-    // cache dns lookups
-    private static final Map<String, InetSocketAddress> DNSCACHE = Collections.synchronizedMap(new HashMap<>());
+    // cache dns lookups (bounded at 256 entries)
+    private static final Map<String, InetSocketAddress> DNSCACHE = Collections.synchronizedMap(
+        new LinkedHashMap<String, InetSocketAddress>(256, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, InetSocketAddress> eldest) {
+                return size() > 256;
+            }
+        }
+    );
 
     // initialization members
     private InetSocketAddress addr_;

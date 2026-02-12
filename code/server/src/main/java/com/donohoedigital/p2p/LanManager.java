@@ -54,9 +54,9 @@ public class LanManager implements DDMessageListener
 
     private static final boolean DEBUG = false;
 
-    private static int ALIVE_SECONDS = 5;
-    private static int ALIVE_REFRESH_CNT = 10;
-    private static int ALIVE_INIT_CNT = 10;
+    private static final int ALIVE_SECONDS = 5;
+    private static final int ALIVE_REFRESH_CNT = 10;
+    private static final int ALIVE_INIT_CNT = 10;
 
     private Peer2PeerMulticast multi_;
     private Alive alive_;

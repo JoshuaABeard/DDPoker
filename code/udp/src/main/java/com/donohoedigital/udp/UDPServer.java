@@ -100,7 +100,7 @@ public class UDPServer extends Thread
     private Selector selector_;
     private boolean bExceptionOnNoBind_;
     private boolean bBindLoopback_;
-    private boolean bDone_ = false;
+    private volatile boolean bDone_ = false;
     private String sPort_ = null;
     private boolean bBindFailover_;
     private int nFailoverAttempts_;

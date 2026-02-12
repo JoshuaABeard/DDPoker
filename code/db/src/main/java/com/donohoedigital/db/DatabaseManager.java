@@ -39,6 +39,7 @@ import org.apache.logging.log4j.*;
 import java.lang.reflect.*;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Provide metadata driven database access.  Associated parameters are stored in <code>server.properties</code>.
@@ -62,7 +63,7 @@ public class DatabaseManager
     public static final String PARAM_PASSWORD = "password";
 
     private static boolean initialized_ = false;
-    private static Map<String, Database> hmDatabases_ = new HashMap<String, Database>();
+    private static Map<String, Database> hmDatabases_ = new ConcurrentHashMap<>();
 
     /**
      * Determine if the manager has been initialized.
