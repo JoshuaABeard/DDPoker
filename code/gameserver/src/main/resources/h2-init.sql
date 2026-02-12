@@ -7,11 +7,11 @@
 CREATE TABLE IF NOT EXISTS wan_profile (
     wpr_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     wpr_name VARCHAR(32) NOT NULL,
-    wpr_license_key VARCHAR(55) NOT NULL,
+    wpr_license_key VARCHAR(55) NULL DEFAULT '',
     wpr_email VARCHAR(255) NOT NULL,
     wpr_password VARCHAR(255) NOT NULL,
     wpr_uuid VARCHAR(36) NOT NULL,
-    wpr_is_activated BOOLEAN NOT NULL,
+    wpr_is_activated BOOLEAN NOT NULL DEFAULT TRUE,
     wpr_is_retired BOOLEAN NOT NULL,
     wpr_create_date DATETIME NOT NULL,
     wpr_modify_date DATETIME NOT NULL
@@ -19,6 +19,11 @@ CREATE TABLE IF NOT EXISTS wan_profile (
 CREATE UNIQUE INDEX IF NOT EXISTS wpr_name ON wan_profile(wpr_name);
 CREATE INDEX IF NOT EXISTS wpr_email ON wan_profile(wpr_email);
 CREATE UNIQUE INDEX IF NOT EXISTS wpr_uuid ON wan_profile(wpr_uuid);
+
+-- Migration for existing databases: Allow NULL for deprecated license fields
+ALTER TABLE IF EXISTS wan_profile ALTER COLUMN wpr_license_key SET DEFAULT '';
+ALTER TABLE IF EXISTS wan_profile ALTER COLUMN wpr_license_key SET NULL;
+ALTER TABLE IF EXISTS wan_profile ALTER COLUMN wpr_is_activated SET DEFAULT TRUE;
 
 CREATE TABLE IF NOT EXISTS wan_game (
     wgm_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,

@@ -59,7 +59,10 @@
     <property name="tcpChatServer" ref="tcpChatServer"/>
   </bean>
 
-  <bean id="tcpChatServer" class="com.donohoedigital.games.poker.server.TcpChatServer" depends-on="configManager"/>
+  <bean id="tcpChatServer" class="com.donohoedigital.games.poker.server.TcpChatServer" depends-on="configManager">
+    <property name="configLoadRequired" value="false"/>
+    <!-- ConfigManager already initialized by server bean -->
+  </bean>
 
 
   <bean id="email" class="com.donohoedigital.mail.DDPostalServiceImpl" depends-on="configManager">
