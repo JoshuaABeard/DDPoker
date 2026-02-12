@@ -23,6 +23,8 @@ No data migration is needed -- this is a new product version with no existing us
 
 Add `org.mindrot:jbcrypt:0.4` dependency. Zero transitive dependencies, standalone bcrypt library.
 
+**✅ COMPLETED**
+
 ---
 
 ## Step 2: TDD -- PasswordHashingService
@@ -56,6 +58,8 @@ public interface PasswordHashingService {
 
 **Verify:** tests pass.
 
+**✅ COMPLETED** - All 8 tests passing.
+
 ---
 
 ## Step 3: Simplify OnlineProfile Entity
@@ -81,6 +85,8 @@ public interface PasswordHashingService {
 ### Update existing tests:
 - **File:** `code/pokerengine/src/test/java/com/donohoedigital/games/poker/model/OnlineProfileStubTest.java` — update for renamed methods
 
+**✅ COMPLETED** - All DES encryption code removed, methods renamed, OnlineProfileStubTest updated. Made licenseKey column nullable (no longer required in Community Edition). All 15 OnlineProfileStubTest tests passing.
+
 ---
 
 ## Step 4: Update OnlineProfileService Interface & Implementation
@@ -101,6 +107,8 @@ Add: `void hashAndSetPassword(OnlineProfile profile, String plaintext);`
 - Modify `retire()` (line 125):
   - Before: `profile.setPassword("__retired__")`
   - After: `profile.setPasswordHash(passwordHashingService.hashPassword("__retired__"))`
+
+**✅ COMPLETED** - All changes implemented. Also fixed `OnlineProfileImplJpa.getDummy()` to call `setPasswordHash()` when creating dummy profiles (was causing 23 test failures). All OnlineProfileServiceTest tests now pass (37/37).
 
 ---
 
