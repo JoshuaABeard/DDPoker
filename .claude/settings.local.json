@@ -48,7 +48,8 @@
       "Bash(do if [ -d \"$dir/src/test/java\" ])",
       "WebFetch(domain:github.panteleyev.org)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:akman.github.io)"
+      "WebFetch(domain:akman.github.io)",
+      "Bash(pwsh:*)"
     ]
   }
 }
