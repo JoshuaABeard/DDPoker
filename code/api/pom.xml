@@ -8,11 +8,12 @@
     <parent>
         <groupId>com.donohoedigital</groupId>
         <artifactId>all</artifactId>
-        <version>3.0</version>
+        <version>3.3.0-CommunityEdition</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>api</artifactId>
+    <version>3.3.0-CommunityEdition</version>
     <packaging>jar</packaging>
     <name>DD Poker REST API</name>
     <description>Spring Boot REST API for DD Poker web portal</description>
@@ -86,6 +87,7 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
+            <version>6.2.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

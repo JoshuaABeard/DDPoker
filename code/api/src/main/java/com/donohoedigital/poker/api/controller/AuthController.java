@@ -33,9 +33,9 @@
 package com.donohoedigital.poker.api.controller;
 
 import com.donohoedigital.config.PropertyConfig;
-import com.donohoedigital.games.poker.api.dto.AuthResponse;
-import com.donohoedigital.games.poker.api.dto.LoginRequest;
-import com.donohoedigital.games.poker.api.security.JwtTokenProvider;
+import com.donohoedigital.poker.api.dto.AuthResponse;
+import com.donohoedigital.poker.api.dto.LoginRequest;
+import com.donohoedigital.poker.api.security.JwtTokenProvider;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 import com.donohoedigital.games.poker.service.OnlineProfileService;
 import com.donohoedigital.games.poker.service.PasswordHashingService;
@@ -141,7 +141,8 @@ public class AuthController {
      * Get current user info (if authenticated).
      */
     @GetMapping("/me")
-    public ResponseEntity<AuthResponse> getCurrentUser(@RequestAttribute(value = "username", required = false) String username) {
+    public ResponseEntity<AuthResponse> getCurrentUser(
+            @RequestAttribute(value = "username", required = false) String username) {
         if (username == null) {
             return ResponseEntity.ok(new AuthResponse(false, "Not authenticated"));
         }

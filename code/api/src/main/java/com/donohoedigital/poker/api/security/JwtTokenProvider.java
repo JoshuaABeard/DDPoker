@@ -63,9 +63,12 @@ public class JwtTokenProvider {
     /**
      * Generate JWT token for authenticated user.
      *
-     * @param username the username
-     * @param isAdmin whether user has admin role
-     * @param rememberMe whether to use extended expiration
+     * @param username
+     *            the username
+     * @param isAdmin
+     *            whether user has admin role
+     * @param rememberMe
+     *            whether to use extended expiration
      * @return JWT token string
      */
     public String generateToken(String username, boolean isAdmin, boolean rememberMe) {
@@ -73,10 +76,7 @@ public class JwtTokenProvider {
         long expiration = rememberMe ? jwtRememberMeExpiration : jwtExpiration;
         Date expiryDate = new Date(now.getTime() + expiration);
 
-        JwtBuilder builder = Jwts.builder()
-                .subject(username)
-                .issuedAt(now)
-                .expiration(expiryDate)
+        JwtBuilder builder = Jwts.builder().subject(username).issuedAt(now).expiration(expiryDate)
                 .signWith(getSigningKey());
 
         if (isAdmin) {
@@ -89,15 +89,12 @@ public class JwtTokenProvider {
     /**
      * Extract username from JWT token.
      *
-     * @param token JWT token
+     * @param token
+     *            JWT token
      * @return username
      */
     public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        Claims claims = Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token).getPayload();
 
         return claims.getSubject();
     }
@@ -105,15 +102,12 @@ public class JwtTokenProvider {
     /**
      * Check if user has admin role from token.
      *
-     * @param token JWT token
+     * @param token
+     *            JWT token
      * @return true if admin
      */
     public boolean isAdmin(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        Claims claims = Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token).getPayload();
 
         return "ADMIN".equals(claims.get("role"));
     }
@@ -121,15 +115,13 @@ public class JwtTokenProvider {
     /**
      * Validate JWT token.
      *
-     * @param token JWT token
+     * @param token
+     *            JWT token
      * @return true if valid
      */
     public boolean validateToken(String token) {
         try {
-            Jwts.parser()
-                    .verifyWith(getSigningKey())
-                    .build()
-                    .parseSignedClaims(token);
+            Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             return false;

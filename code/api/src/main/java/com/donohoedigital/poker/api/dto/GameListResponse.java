@@ -30,20 +30,58 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.poker.api;
+package com.donohoedigital.poker.api.dto;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ImportResource;
+import com.donohoedigital.games.poker.model.OnlineGame;
+
+import java.util.List;
 
 /**
- * Spring Boot application for DD Poker REST API. Imports existing Spring
- * contexts from pokerserver module.
+ * Game list response with pagination.
  */
-@SpringBootApplication(scanBasePackages = {"com.donohoedigital.poker.api"})
-@ImportResource({"classpath:app-context-pokerserver.xml"})
-public class ApiApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(ApiApplication.class, args);
+public class GameListResponse {
+    private List<OnlineGame> games;
+    private int total;
+    private int page;
+    private int pageSize;
+
+    public GameListResponse(List<OnlineGame> games, int total, int page, int pageSize) {
+        this.games = games;
+        this.total = total;
+        this.page = page;
+        this.pageSize = pageSize;
+    }
+
+    // Getters and setters
+    public List<OnlineGame> getGames() {
+        return games;
+    }
+
+    public void setGames(List<OnlineGame> games) {
+        this.games = games;
+    }
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
+
+    public int getPage() {
+        return page;
+    }
+
+    public void setPage(int page) {
+        this.page = page;
+    }
+
+    public int getPageSize() {
+        return pageSize;
+    }
+
+    public void setPageSize(int pageSize) {
+        this.pageSize = pageSize;
     }
 }

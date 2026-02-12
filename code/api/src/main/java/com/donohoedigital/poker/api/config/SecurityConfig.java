@@ -61,26 +61,21 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(AbstractHttpConfigurer::disable) // JWT uses token, not session
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                // Public endpoints
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/games/**").permitAll()
-                .requestMatchers("/api/leaderboard/**").permitAll()
-                .requestMatchers("/api/history/**").permitAll()
-                .requestMatchers("/api/search/**").permitAll()
-                .requestMatchers("/api/downloads/**").permitAll()
-                .requestMatchers("/api/rss/**").permitAll()
-                // Protected endpoints
-                .requestMatchers("/api/profile/**").authenticated()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                // All others require authentication
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+        http.csrf(AbstractHttpConfigurer::disable) // JWT uses token, not session
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // Public endpoints
+                        .requestMatchers("/api/auth/**").permitAll().requestMatchers("/api/games/**").permitAll()
+                        .requestMatchers("/api/leaderboard/**").permitAll().requestMatchers("/api/history/**")
+                        .permitAll().requestMatchers("/api/search/**").permitAll().requestMatchers("/api/downloads/**")
+                        .permitAll().requestMatchers("/api/rss/**").permitAll()
+                        // Protected endpoints
+                        .requestMatchers("/api/profile/**").authenticated().requestMatchers("/api/admin/**")
+                        .hasRole("ADMIN")
+                        // All others require authentication
+                        .anyRequest().authenticated())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
