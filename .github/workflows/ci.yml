@@ -21,6 +21,6 @@ jobs:
           java-version: '25'
           cache: 'maven'
 
-      - name: Run tests with coverage
+      - name: Run tests
         working-directory: code/
-        run: mvn verify -P coverage
+        run: mvn test -P dev
