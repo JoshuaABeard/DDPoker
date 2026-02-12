@@ -37,7 +37,6 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.service.*;
 import org.apache.logging.log4j.*;
-import org.springframework.context.*;
 import org.springframework.context.support.*;
 
 import java.text.*;
@@ -125,11 +124,13 @@ public class OnlineGamePurger extends BaseCommandLineApp
         }
 
         // get the service from spring
-        ApplicationContext ctx = new ClassPathXmlApplicationContext("app-context-pokertools.xml");
-        service = (OnlineGameService) ctx.getBean("onlineGameService");
+        try (ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("app-context-pokertools.xml"))
+        {
+            service = (OnlineGameService) ctx.getBean("onlineGameService");
 
-        // Do the work.
-        doPurge();
+            // Do the work.
+            doPurge();
+        }
     }
 
     /**

@@ -458,13 +458,12 @@ public class ConfigUtils
      */
     public static void copyFile(File from, File to)
     {
-        try
+        try (FileInputStream fis = new FileInputStream(from);
+             FileOutputStream fos = new FileOutputStream(to);
+             FileChannel src = fis.getChannel();
+             FileChannel dst = fos.getChannel())
         {
-            FileChannel src = new FileInputStream(from).getChannel();
-            FileChannel dst = new FileOutputStream(to).getChannel();
             src.transferTo(0, src.size(), dst);
-            src.close();
-            dst.close();
         }
         catch (Throwable t)
         {

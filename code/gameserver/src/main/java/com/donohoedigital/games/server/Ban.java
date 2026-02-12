@@ -44,7 +44,6 @@ import com.donohoedigital.games.server.model.*;
 import com.donohoedigital.games.server.service.*;
 import org.apache.logging.log4j.*;
 import org.springframework.beans.factory.annotation.*;
-import org.springframework.context.*;
 import org.springframework.context.support.*;
 
 import java.text.*;
@@ -108,11 +107,12 @@ public class Ban
             logger.info("Ban initializing, params: " + Utils.toString(args, " "));
 
             // create application context
-            ApplicationContext ctx = new ClassPathXmlApplicationContext("app-context-gameserver.xml");
-
-            // get the analyzer bean and run it
-            Ban app = (Ban) ctx.getBean("banApp");
-            app.initAndRun(info.getCommandLineOptions());
+            try (ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("app-context-gameserver.xml"))
+            {
+                // get the analyzer bean and run it
+                Ban app = (Ban) ctx.getBean("banApp");
+                app.initAndRun(info.getCommandLineOptions());
+            }
         }
         catch (ApplicationError ae)
         {
