@@ -54,74 +54,76 @@ Comprehensive code review of DDPoker's server-side and shared infrastructure mod
 
 ## P1: Quick Fixes — Concurrency (small effort, high value)
 
-### QF-1: Add `volatile` to cross-thread boolean flags
+### ✅ QF-1: Add `volatile` to cross-thread boolean flags (COMPLETED)
 
 **Issue:** Multiple classes use `boolean bDone_` flags to signal thread shutdown. Without `volatile`, the JVM may cache the value in a CPU register, so one thread's write is never visible to another. Threads may never terminate on shutdown.
 
 **Files:**
-- `code/server/.../GameServer.java` line 67: `private boolean bDone_`
-- `code/mail/.../DDPostalServiceImpl.java` line 68: `private boolean bDone_`, line 74: `private boolean bSleeping_`
-- `code/udp/.../UDPServer.java` line 103: `private boolean bDone_`
-- `code/udp/.../UDPManager.java` line 64: `boolean bDone_`
-- `code/udp/.../UDPLink.java` lines 91-95: `bHelloReceived_`, `bHelloSent_`, `bGoodbyeInProgress_`, `bDone_`
+- `code/server/.../GameServer.java` line 67: `private boolean bDone_` ✅ Already had volatile
+- `code/mail/.../DDPostalServiceImpl.java` line 68: `private boolean bDone_`, line 74: `private boolean bSleeping_` ✅ Already had volatile
+- `code/udp/.../UDPServer.java` line 103: `private boolean bDone_` ✅ Already had volatile
+- `code/udp/.../UDPManager.java` line 64: `boolean bDone_` ✅ Already had volatile
+- `code/udp/.../UDPLink.java` lines 91-95: `bHelloReceived_`, `bHelloSent_`, `bGoodbyeInProgress_`, `bDone_` ✅ Already had volatile
+- `code/udp/.../DispatchQueue.java` line 53: `private boolean bDone_` ✅ Fixed
+- `code/udp/.../OutgoingQueue.java` line 54: `private boolean bDone_` ✅ Fixed
 
-**Fix:** Add `volatile` keyword to each field.
+**Completed:** Feb 12, 2026 (commit 813e406) - Added volatile to remaining classes
 **Verify:** `mvn test -pl server,mail,udp`
 
 ---
 
-### QF-2: Add `volatile` to `EngineServlet` double-checked locking fields
-**File:** `EngineServlet.java` (lines 1285-1289)
-**Issue:** Double-checked locking without volatile:
-```java
-private long lastUpdate = 0;     // Should be volatile
-private String ddMessage = null;  // Should be volatile
-```
+### ✅ QF-2: Add `volatile` to `EngineServlet` double-checked locking fields (COMPLETED)
+**File:** `EngineServlet.java` (lines 1265, 1267)
+**Issue:** Double-checked locking without volatile
 **Fix:** Add `volatile` keyword.
+**Completed:** Previously completed - both fields already have volatile
 
 ---
 
-### QF-3: Use `ConcurrentHashMap` for shared static maps
+### ✅ QF-3: Use `ConcurrentHashMap` for shared static maps (COMPLETED)
 
 **Issue:** Unsynchronized `HashMap` used for static fields accessed from multiple threads. Can cause infinite loops, lost entries, or `ConcurrentModificationException`.
 
 **Files:**
-- `code/db/.../DatabaseManager.java` line 65: `private static Map<String, Database> hmDatabases_ = new HashMap<>()`
-- `code/common/.../DDHttpClient.java` line 87: `DNSCACHE` — synchronized but unbounded, no eviction
+- `code/db/.../DatabaseManager.java` line 66: ✅ Already uses `ConcurrentHashMap`
+- `code/common/.../DDHttpClient.java` lines 87-94: ✅ Already uses synchronized `LinkedHashMap` with size cap of 256
 
-**Fix for DatabaseManager:** Replace `HashMap` with `ConcurrentHashMap`.
-**Fix for DDHttpClient DNSCACHE:** Add a size cap (~256 entries) using `LinkedHashMap.removeEldestEntry()` wrapped in `Collections.synchronizedMap()`.
+**Completed:** Previously completed
 **Verify:** `mvn test -pl db,common`
 
 ---
 
-### QF-4: Fix `PropertyConfig.formats_` thread safety
+### ✅ QF-4: Fix `PropertyConfig.formats_` thread safety (COMPLETED)
 **File:** `code/common/.../PropertyConfig.java` line 384
 **Issue:** `HashMap<String, MessageFormat>` used inside a `synchronized` block. Works, but `ConcurrentHashMap` with `computeIfAbsent()` is cleaner and more performant.
 **Fix:** Replace with `ConcurrentHashMap`, use `computeIfAbsent()`, remove the synchronized block.
+**Completed:** Feb 12, 2026 (commit 813e406) - Converted to ConcurrentHashMap with computeIfAbsent
 **Verify:** `mvn test -pl common`
 
 ---
 
-### QF-5: Remove unnecessary nested `synchronized` on `GameServer.getRegisterQueue()`
+### ✅ QF-5: Remove unnecessary nested `synchronized` on `GameServer.getRegisterQueue()` (COMPLETED)
 **File:** `code/server/.../GameServer.java` line 747
-**Issue:** `private synchronized List<Qentry> getRegisterQueue()` acquires the instance lock, then `synchronized(registerQ_)` inside. Outer lock is unnecessary — deadlock risk if future code acquires locks in the opposite order.
+**Issue:** Method had unnecessary outer synchronized
 **Fix:** Remove `synchronized` from the method signature. Inner `synchronized(registerQ_)` is sufficient.
+**Completed:** Previously completed - method signature no longer has synchronized
 **Verify:** `mvn test -pl server`
 
 ---
 
-### QF-6: Replace Static SEQ Counter with AtomicInteger
-**File:** `EngineServlet.java` (line 162)
-**Issue:** Synchronized int counter for sequence numbers: `synchronized (SEQOBJ) { SEQ++; return SEQ; }`
+### ✅ QF-6: Replace Static SEQ Counter with AtomicInteger (COMPLETED)
+**File:** `EngineServlet.java` (line 163)
+**Issue:** Synchronized int counter for sequence numbers
 **Fix:** Use `AtomicInteger.incrementAndGet()`.
+**Completed:** Previously completed - already using AtomicInteger
 
 ---
 
-### QF-7: Make Mutable Static Fields Final
-**File:** `LanManager.java` (lines 55-59)
+### ✅ QF-7: Make Mutable Static Fields Final (COMPLETED)
+**File:** `LanManager.java` (lines 57-58)
 **Issue:** `private static int ALIVE_SECONDS = 5;` and `ALIVE_REFRESH_CNT = 10` are mutable statics that should be final.
 **Fix:** Add `final` modifier.
+**Completed:** Previously completed - both fields already have final
 
 ---
 
