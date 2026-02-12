@@ -89,4 +89,13 @@ public interface OnlineProfileService
 
     @Transactional
     PagedList<OnlineProfilePurgeSummary> getOnlineProfilePurgeSummary(Integer count, int offset, int pagesize);
+
+    /**
+     * Hash a plaintext password using bcrypt and set it on the profile.
+     * This is the primary method for setting passwords on profiles.
+     *
+     * @param profile the profile to update
+     * @param plaintext the plaintext password to hash and set
+     */
+    void hashAndSetPassword(OnlineProfile profile, String plaintext);
 }

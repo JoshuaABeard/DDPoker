@@ -165,13 +165,13 @@ class PokerServerTest
         // Call initialization
         pokerServer.initializeAdminProfile();
 
-        // Verify profile was created
+        // Verify profile was created with a hashed password
         OnlineProfile profile = profileService.getOnlineProfileByName("autogenadmin");
         assertThat(profile).isNotNull();
         assertThat(profile.getName()).isEqualTo("autogenadmin");
         assertThat(profile.isActivated()).isTrue();
-        assertThat(profile.getPassword()).isNotNull();
-        assertThat(profile.getPassword()).isNotEmpty();
+        assertThat(profile.getPasswordHash()).isNotNull();
+        assertThat(profile.getPasswordHash()).startsWith("$2a$");
     }
 
     @Test
@@ -188,26 +188,38 @@ class PokerServerTest
         // Call initialization
         pokerServer.initializeAdminProfile();
 
-        // Verify default "admin" profile was created with generated password
+        // Verify default "admin" profile was created with hashed password
         OnlineProfile profile = profileService.getOnlineProfileByName("admin");
         assertThat(profile).isNotNull();
         assertThat(profile.getName()).isEqualTo("admin");
         assertThat(profile.isActivated()).isTrue();
         assertThat(profile.isRetired()).isFalse();
-        assertThat(profile.getPassword()).isNotNull();
-        assertThat(profile.getPassword()).isNotEmpty();
+        assertThat(profile.getPasswordHash()).isNotNull();
+        assertThat(profile.getPasswordHash()).startsWith("$2a$");
     }
 
     @Test
     @Rollback
     void should_KeepExistingPassword_When_ProfileExistsAndPasswordNotProvided()
     {
-        // Create an existing admin profile with generated password
+        // Create an existing admin profile with a specific hashed password
         OnlineProfile existing = PokerTestData.createOnlineProfile("keepadmin");
-        existing.setPassword("existingpass123");
+        profileService.hashAndSetPassword(existing, "existingpass123");
         existing.setActivated(true);
         existing.setRetired(false);
         profileService.saveOnlineProfile(existing);
+
+        // Write password file so initializeAdminProfile can read it
+        String workDir = System.getenv("WORK");
+        if (workDir == null) workDir = "/data";
+        try {
+            java.nio.file.Path dirPath = java.nio.file.Paths.get(workDir);
+            java.nio.file.Files.createDirectories(dirPath);
+            java.nio.file.Path filePath = dirPath.resolve("admin-password.txt");
+            java.nio.file.Files.writeString(filePath, "existingpass123", java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to write password file for test", e);
+        }
 
         // Set only admin username, no password (should keep existing password)
         System.setProperty("settings.admin.user", "keepadmin");

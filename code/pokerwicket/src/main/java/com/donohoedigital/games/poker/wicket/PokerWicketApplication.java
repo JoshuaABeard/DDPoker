@@ -35,6 +35,7 @@ package com.donohoedigital.games.poker.wicket;
 import com.donohoedigital.base.RepoUtils;
 import com.donohoedigital.config.ConfigUtils;
 import com.donohoedigital.games.poker.service.OnlineProfileService;
+import com.donohoedigital.games.poker.service.PasswordHashingService;
 import com.donohoedigital.games.poker.wicket.admin.AdminAuthorizationStrategy;
 import com.donohoedigital.games.poker.wicket.pages.error.ErrorPage;
 import com.donohoedigital.games.poker.wicket.pages.error.ExpiredPage;
@@ -73,6 +74,9 @@ public class PokerWicketApplication extends BaseWicketApplication
 
     @Autowired
     private OnlineProfileService profileService;
+
+    @Autowired
+    private PasswordHashingService passwordHashingService;
 
     @Autowired
     private BannedKeyService banService;
@@ -171,5 +175,13 @@ public class PokerWicketApplication extends BaseWicketApplication
     public OnlineProfileService getProfileService()
     {
         return profileService;
+    }
+
+    /**
+     * Get password hashing service
+     */
+    public PasswordHashingService getPasswordHashingService()
+    {
+        return passwordHashingService;
     }
 }

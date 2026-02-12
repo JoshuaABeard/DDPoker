@@ -723,7 +723,7 @@ public class PokerServlet extends EngineServlet
             {
                 // Generate a password and UUID and set values.
                 String generatedPassword = onlineProfileService.generatePassword();
-                profile.setPassword(generatedPassword);
+                onlineProfileService.hashAndSetPassword(profile, generatedPassword);
                 profile.setLicenseKey(ddreceived.getKey());
                 profile.setUuid(UUID.randomUUID().toString());
                 profile.setActivated(false);
@@ -810,7 +810,7 @@ public class PokerServlet extends EngineServlet
                 // generate password and set values
                 String generatedPassword = onlineProfileService.generatePassword();
                 profileToUpdate.setEmail(profile.getEmail());
-                profileToUpdate.setPassword(generatedPassword);
+                onlineProfileService.hashAndSetPassword(profileToUpdate, generatedPassword);
                 profileToUpdate.setActivated(false);
 
                 // save changes
@@ -953,7 +953,7 @@ public class PokerServlet extends EngineServlet
         if (profileToUpdate != null)
         {
             // save new password
-            profileToUpdate.setPassword(newpassword.getPassword());
+            onlineProfileService.hashAndSetPassword(profileToUpdate, newpassword.getPassword());
 
             // save changes
             onlineProfileService.updateOnlineProfile(profileToUpdate);
@@ -973,7 +973,9 @@ public class PokerServlet extends EngineServlet
     }
 
     /**
-     * Send a WAN profile password (at user request, from client, pre-activate only (so temp password).
+     * Reset and send a WAN profile password (at user request, from client).
+     * Since passwords are hashed with bcrypt, we cannot retrieve the original password.
+     * Instead, we generate a new password, hash it, update the profile, and email the new password.
      */
     private DDMessage sendOnlineProfilePassword(DDMessage ddreceived)
     {
@@ -987,8 +989,13 @@ public class PokerServlet extends EngineServlet
         profile = onlineProfileService.getOnlineProfileByName(profile.getName());
         if (profile != null)
         {
-            // Email the password.
-            sendProfileEmail(postalService, "profile", profile.getEmail(), profile.getName(), profile.getPassword(), null);
+            // Generate new password, hash it, and update the profile
+            String newPassword = onlineProfileService.generatePassword();
+            onlineProfileService.hashAndSetPassword(profile, newPassword);
+            onlineProfileService.updateOnlineProfile(profile);
+
+            // Email the new password.
+            sendProfileEmail(postalService, "profile", profile.getEmail(), profile.getName(), newPassword, null);
 
             // Profile information is valid, so report success.
             resMsg = new OnlineMessage(ddreceived.getCategory());

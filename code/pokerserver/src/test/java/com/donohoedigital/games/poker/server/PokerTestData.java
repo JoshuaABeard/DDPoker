@@ -33,6 +33,7 @@
 package com.donohoedigital.games.poker.server;
 
 import com.donohoedigital.games.poker.model.*;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.*;
 
@@ -67,7 +68,9 @@ public class PokerTestData
         profile.setEmail("hibernate@example.com");
         profile.setLicenseKey("0000-0000-0000-0000");
         profile.setActivated(false);
+        // Set both transient password (for authentication tests) and hashed password (for storage)
         profile.setPassword("password");
+        profile.setPasswordHash(BCrypt.hashpw("password", BCrypt.gensalt()));
         return profile;
     }
 

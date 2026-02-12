@@ -68,16 +68,15 @@ class OnlineProfileTest
     @Rollback
     void should_PersistAndUpdate_When_ProfileSaved()
     {
-        String password = "foobar";
         OnlineProfile newProfile = PokerTestData.createOnlineProfile("TEST shouldPersist");
-        newProfile.setPassword(password);
         dao.save(newProfile);
 
         assertThat(newProfile.getId()).isNotNull();
 
         OnlineProfile fetch = dao.get(newProfile.getId());
         assertThat(fetch.getName()).isEqualTo(newProfile.getName());
-        assertThat(fetch.getPassword()).isEqualTo(password);
+        assertThat(fetch.getPasswordHash()).isNotNull();
+        assertThat(fetch.getPasswordHash()).startsWith("$2a$");
 
         // Update and verify persistence
         String newName = "Updated Name";

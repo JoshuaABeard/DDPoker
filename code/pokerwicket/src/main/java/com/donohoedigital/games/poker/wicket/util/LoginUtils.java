@@ -36,6 +36,7 @@ import com.donohoedigital.base.Utils;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 import com.donohoedigital.games.poker.service.OnlineProfileService;
+import com.donohoedigital.games.poker.service.PasswordHashingService;
 import com.donohoedigital.games.poker.wicket.PokerSession;
 import com.donohoedigital.games.poker.wicket.PokerUser;
 import com.donohoedigital.games.poker.wicket.PokerWicketApplication;
@@ -107,6 +108,7 @@ public class LoginUtils
     private boolean login(String name, String password, boolean remember, LoginType type)
     {
         OnlineProfileService profileService = PokerWicketApplication.get().getProfileService();
+        PasswordHashingService hashingService = PokerWicketApplication.get().getPasswordHashingService();
         BannedKeyService banService = PokerWicketApplication.get().getBanService();
 
         // lookup profile
@@ -157,7 +159,7 @@ public class LoginUtils
         boolean authenticated = false;
         if (type == PAGE)
         {
-            if (!profile.getPassword().equals(password))
+            if (!hashingService.checkPassword(password, profile.getPasswordHash()))
             {
                 page.error(PropertyConfig.getMessage("msg.web.poker.invalidprofile")); // FIX: use wicket properties files
                 logger.info("{}: {} {} login failed (password mismatch).", type, ip, name);

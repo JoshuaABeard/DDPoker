@@ -89,11 +89,14 @@ public class ForgotPassword extends OnlinePokerPage
                 }
                 else
                 {
-                    final String password = profile.getPassword();
+                    // Generate new password and hash it (passwords are irreversible with bcrypt)
+                    final String newPassword = profileService.generatePassword();
+                    profileService.hashAndSetPassword(profile, newPassword);
+                    profileService.updateOnlineProfile(profile);
 
                     String sSubject = PropertyConfig.getMessage("msg.email.forgot.subject", name);
-                    String sPlainText = PropertyConfig.getMessage("msg.email.forgot.plain", name, password);
-                    String sHtmlText = PropertyConfig.getMessage("msg.email.forgot.html", Utils.encodeHTML(name), Utils.encodeHTML(password));
+                    String sPlainText = PropertyConfig.getMessage("msg.email.forgot.plain", name, newPassword);
+                    String sHtmlText = PropertyConfig.getMessage("msg.email.forgot.html", Utils.encodeHTML(name), Utils.encodeHTML(newPassword));
 
                     // get results and send email
                     postalService.sendMail(profile.getEmail(), PropertyConfig.getRequiredStringProperty("settings.server.profilefrom"),
@@ -101,7 +104,7 @@ public class ForgotPassword extends OnlinePokerPage
                                            sPlainText, sHtmlText,
                                            null, null);
 
-                    info("Your password has been sent to the email linked to '" + name + "'");
+                    info("Your password has been reset and sent to the email linked to '" + name + "'");
                     name = null;
                 }
             }

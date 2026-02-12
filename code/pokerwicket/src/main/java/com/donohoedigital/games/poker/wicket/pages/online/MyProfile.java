@@ -180,7 +180,7 @@ public class MyProfile extends OnlinePokerPage
                     }
                     else
                     {
-                        profile.setPassword(data.getNu());
+                        profileService.hashAndSetPassword(profile, data.getNu());
                         profileService.updateOnlineProfile(profile);
                         data.setConfirm(null);
                         data.setNu(null);

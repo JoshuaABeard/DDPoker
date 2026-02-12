@@ -44,8 +44,16 @@ import com.donohoedigital.games.poker.model.OnlineProfile;
 import com.donohoedigital.games.poker.service.OnlineProfileService;
 import com.donohoedigital.games.server.EngineServer;
 import com.donohoedigital.udp.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.UUID;
 
 import static com.donohoedigital.config.DebugConfig.TESTING;
@@ -56,6 +64,9 @@ import static com.donohoedigital.config.DebugConfig.TESTING;
  */
 public class PokerServer extends EngineServer implements UDPLinkHandler, UDPManagerMonitor
 {
+    private static final Logger logger = LogManager.getLogger(PokerServer.class);
+    private static final String ADMIN_PASSWORD_FILE = "admin-password.txt";
+
     // udp server for test connections and chat
     private UDPServer udp_;
     private ChatServer chat_;
@@ -108,15 +119,16 @@ public class PokerServer extends EngineServer implements UDPLinkHandler, UDPMana
 
             profile = new OnlineProfile();
             profile.setName(adminUsername);
-            profile.setPassword(adminPassword);
             profile.setEmail("admin@localhost");
             profile.setUuid(UUID.randomUUID().toString());
             profile.setActivated(true);
             profile.setRetired(false);
             profile.setLicenseKey("0000-0000-0000-0000");
+            onlineProfileService.hashAndSetPassword(profile, adminPassword);
 
             if (onlineProfileService.saveOnlineProfile(profile))
             {
+                writeAdminPasswordFile(adminPassword);
                 logger.info("Admin profile created: {}", adminUsername);
             }
             else
@@ -129,21 +141,84 @@ public class PokerServer extends EngineServer implements UDPLinkHandler, UDPMana
             // Update existing admin profile only if password was explicitly set
             if (passwordExplicitlySet)
             {
-                profile.setPassword(adminPassword);
+                onlineProfileService.hashAndSetPassword(profile, adminPassword);
                 profile.setActivated(true);
                 profile.setRetired(false);
 
                 onlineProfileService.updateOnlineProfile(profile);
+                writeAdminPasswordFile(adminPassword);
                 logger.info("Admin profile password updated: {}", adminUsername);
             }
             else
             {
-                logger.info("Admin profile exists, keeping existing password: {}", adminUsername);
-                logger.warn("Admin credentials:");
-                logger.warn("  Username: {}", adminUsername);
-                logger.warn("  Password: {}", profile.getPassword());
+                // Profile exists, no explicit password - read from persisted file
+                String savedPassword = readAdminPasswordFile();
+                if (savedPassword != null)
+                {
+                    logger.info("Admin profile exists, keeping existing password: {}", adminUsername);
+                    logger.warn("Admin credentials (from {}):", ADMIN_PASSWORD_FILE);
+                    logger.warn("  Username: {}", adminUsername);
+                    logger.warn("  Password: {}", savedPassword);
+                    logger.warn("  Set ADMIN_PASSWORD environment variable to customize");
+                }
+                else
+                {
+                    // File missing (e.g., volume was wiped) - regenerate
+                    adminPassword = onlineProfileService.generatePassword();
+                    onlineProfileService.hashAndSetPassword(profile, adminPassword);
+                    onlineProfileService.updateOnlineProfile(profile);
+                    writeAdminPasswordFile(adminPassword);
+                    logger.warn("Admin credentials (regenerated, {} file was missing):", ADMIN_PASSWORD_FILE);
+                    logger.warn("  Username: {}", adminUsername);
+                    logger.warn("  Password: {}", adminPassword);
+                }
             }
         }
+    }
+
+    /**
+     * Write admin password to file for persistence across restarts
+     */
+    private void writeAdminPasswordFile(String password)
+    {
+        try
+        {
+            String workDir = System.getenv("WORK");
+            if (workDir == null) workDir = "/data";
+            Path dirPath = Paths.get(workDir);
+            Files.createDirectories(dirPath);
+            Path filePath = dirPath.resolve(ADMIN_PASSWORD_FILE);
+            Files.writeString(filePath, password, StandardCharsets.UTF_8);
+            logger.debug("Admin password saved to: {}", filePath);
+        }
+        catch (IOException e)
+        {
+            logger.error("Failed to write admin password file", e);
+        }
+    }
+
+    /**
+     * Read admin password from file
+     */
+    private String readAdminPasswordFile()
+    {
+        try
+        {
+            String workDir = System.getenv("WORK");
+            if (workDir == null) workDir = "/data";
+            Path filePath = Paths.get(workDir, ADMIN_PASSWORD_FILE);
+            if (Files.exists(filePath))
+            {
+                String password = Files.readString(filePath, StandardCharsets.UTF_8).trim();
+                logger.debug("Admin password read from: {}", filePath);
+                return password;
+            }
+        }
+        catch (IOException e)
+        {
+            logger.error("Failed to read admin password file", e);
+        }
+        return null;
     }
 
     /**

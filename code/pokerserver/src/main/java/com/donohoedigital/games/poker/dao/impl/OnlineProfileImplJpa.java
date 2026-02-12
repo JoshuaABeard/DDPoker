@@ -41,6 +41,7 @@ import com.donohoedigital.games.poker.model.OnlineProfile;
 import com.donohoedigital.games.poker.model.OnlineProfilePurgeSummary;
 import com.donohoedigital.games.poker.model.OnlineProfileSummary;
 import jakarta.persistence.Query;
+import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -171,6 +172,7 @@ public class OnlineProfileImplJpa extends JpaBaseDao<OnlineProfile, Long> implem
             profile.setLicenseKey(PokerConstants.DUMMY_PROFILE_KEY_START + dummy.ordinal());
             profile.setUuid(java.util.UUID.randomUUID().toString());
             profile.setPassword("!!DUMMY!!");
+            profile.setPasswordHash(BCrypt.hashpw("!!DUMMY!!", BCrypt.gensalt()));
             profile.setEmail("dummy-profile-" + dummy.ordinal() + "@example.com");
             profile.setActivated(true);
 

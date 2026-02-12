@@ -32,10 +32,6 @@
  */
 package com.donohoedigital.games.poker.model;
 
-import com.donohoedigital.base.ApplicationError;
-import com.donohoedigital.base.ErrorCodes;
-import com.donohoedigital.base.SecurityUtils;
-import com.donohoedigital.base.Utils;
 import com.donohoedigital.comms.DMTypedHashMap;
 import com.donohoedigital.db.model.BaseModel;
 import jakarta.persistence.*;
@@ -79,17 +75,13 @@ public class OnlineProfile implements BaseModel<Long>
     public static final String PROFILE_NAME = "profilename";
     public static final String PROFILE_EMAIL = "profileemail";
     public static final String PROFILE_PASSWORD = "profilepassword";
-    public static final String PROFILE_PASSWORD_IN_DB = "profilepasswordindb";
+    public static final String PROFILE_PASSWORD_HASH = "profilepasswordhash";
     public static final String PROFILE_UUID = "profileuuid";
     public static final String PROFILE_CREATE_DATE = "profilecreatedate";
     public static final String PROFILE_MODIFY_DATE = "profilemodifydate";
     public static final String PROFILE_RETIRED = "profileretired";
     public static final String PROFILE_ACTIVATED = "profileactivated";
     public static final String PROFILE_LICENSE_KEY = "profilelicensekey";
-
-    // security key for encryption
-    private static final byte[] SECURITY_KEY = new byte[]{(byte) 0x8c, (byte) 0xab, (byte) 0x4c, (byte) 0x92,
-            (byte) 0xdc, (byte) 0x7a, (byte) 0x97, (byte) 0x68};
 
     /**
      * Creates an uninitialized instance of OnlineProfile
@@ -171,30 +163,28 @@ public class OnlineProfile implements BaseModel<Long>
     }
 
     @Column(name = "wpr_password", nullable = false)
-    public String getPasswordInDatabase()
+    public String getPasswordHash()
     {
-        return data_.getString(PROFILE_PASSWORD_IN_DB);
+        return data_.getString(PROFILE_PASSWORD_HASH);
     }
 
-    private void setPasswordInDatabase(String s)
+    public void setPasswordHash(String hash)
     {
-        data_.setString(PROFILE_PASSWORD_IN_DB, s);
+        data_.setString(PROFILE_PASSWORD_HASH, hash);
     }
 
     @Transient
     public String getPassword()
     {
-        String s = data_.getString(PROFILE_PASSWORD);
-        return (s != null) ? decryptInternal(s) : null;
+        // Transient field for client-server message transport only (no decryption)
+        return data_.getString(PROFILE_PASSWORD);
     }
 
     public void setPassword(String s)
     {
-        setPasswordInDatabase(encryptToDatabase(s));
-
-        String enc = null;
-        if (s != null) enc = encryptInternal(s);
-        data_.setString(PROFILE_PASSWORD, enc);
+        // Store plaintext in transient field for client-server message transport only
+        // Hashing is the service layer's job (OnlineProfileService.hashAndSetPassword)
+        data_.setString(PROFILE_PASSWORD, s);
     }
 
     @Column(name = "wpr_is_retired", nullable = false)
@@ -273,12 +263,6 @@ public class OnlineProfile implements BaseModel<Long>
         setModifyDate(new Date());
     }
 
-    @PostLoad
-    private void onLoad()
-    {
-        setPassword(decryptFromDatabase(getPasswordInDatabase()));
-    }
-
     /**
      * Debug
      */
@@ -286,74 +270,6 @@ public class OnlineProfile implements BaseModel<Long>
     public String toString()
     {
         return "OnlineProfile: " + data_;
-    }
-
-    /**
-     * encryption key (for storing password internally)
-     */
-    private byte[] k()
-    {
-        String s = "bb2a2ec9db88305e47cb19ab47a0fa50";
-        byte[] k = new byte[s.length() / 2];
-        int n = 0;
-
-        for (int i = 0; i < k.length; ++i)
-        {
-            n = i * 2;
-            k[i] = (byte) Integer.parseInt(s.substring(n, n + 2), 16);
-        }
-
-        return SecurityUtils.hashRaw(Utils.encode(getName()), k, null);
-    }
-
-    /**
-     * encrypt given string to internal storage
-     */
-    private String encryptInternal(String s)
-    {
-        return SecurityUtils.encrypt(Utils.encode(s), k());
-    }
-
-    /**
-     * Decrypt given string from internal storage
-     */
-    private String decryptInternal(String s)
-    {
-        return Utils.decode(SecurityUtils.decrypt(s, k()));
-    }
-
-    /**
-     * Encrypt the given value for storage in the database.
-     */
-    private String encryptToDatabase(String value)
-    {
-        if (value == null)
-        {
-            return null;
-        }
-
-        return SecurityUtils.encrypt(Utils.encode(value), SECURITY_KEY);
-    }
-
-    /**
-     * Decrypt the given value as retrieved from the database.
-     */
-    private String decryptFromDatabase(String value)
-    {
-        if (value == null)
-        {
-            return null;
-        }
-
-        try
-        {
-            return Utils.decode(SecurityUtils.decrypt(value, SECURITY_KEY));
-        }
-        catch (Throwable t)
-        {
-            throw new ApplicationError(ErrorCodes.ERROR_INVALID,
-                                       "Unable to decrypt database value", t, value);
-        }
     }
 
     // ===================================================================
@@ -367,7 +283,7 @@ public class OnlineProfile implements BaseModel<Long>
      * @deprecated License functionality removed in Community Edition
      */
     @Deprecated
-    @Column(name = "wpr_license_key", nullable = false, length = 19)
+    @Column(name = "wpr_license_key", nullable = true, length = 19)
     public String getLicenseKey()
     {
         // Always return null - license keys not used in Community Edition

@@ -32,10 +32,13 @@
  */
 package com.donohoedigital.games.poker.wicket.admin.pages;
 
+import com.donohoedigital.base.Utils;
+import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.db.DBUtils;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 import com.donohoedigital.games.poker.service.OnlineProfileService;
 import com.donohoedigital.games.poker.wicket.PokerUser;
+import com.donohoedigital.mail.DDPostalService;
 import com.donohoedigital.games.poker.wicket.PokerWicketApplication;
 import com.donohoedigital.games.poker.wicket.pages.online.History;
 import com.donohoedigital.games.poker.wicket.panels.Aliases;
@@ -74,6 +77,9 @@ public class OnlineProfileSearch extends AdminPokerPage
 
     @SpringBean
     private OnlineProfileService profileService;
+
+    @SpringBean
+    private DDPostalService postalService;
 
     public OnlineProfileSearch()
     {
@@ -255,8 +261,36 @@ public class OnlineProfileSearch extends AdminPokerPage
             row.add(keyLink);
             keyLink.add(new HighlightLabel("licenseKey", getSearchData().getKey(), PokerWicketApplication.SEARCH_HIGHLIGHT, true));
 
-            // password, retired
-            row.add(new StringLabel("password"));
+            // reset password link
+            Link<?> resetPasswordLink = new Link("resetPasswordLink")
+            {
+                private static final long serialVersionUID = 42L;
+
+                @Override
+                public void onClick()
+                {
+                    // Generate new password, hash it, and update profile
+                    String newPassword = profileService.generatePassword();
+                    profileService.hashAndSetPassword(profile, newPassword);
+                    profileService.updateOnlineProfile(profile);
+
+                    // Email the new password
+                    String sSubject = PropertyConfig.getMessage("msg.email.forgot.subject", profile.getName());
+                    String sPlainText = PropertyConfig.getMessage("msg.email.forgot.plain", profile.getName(), newPassword);
+                    String sHtmlText = PropertyConfig.getMessage("msg.email.forgot.html", Utils.encodeHTML(profile.getName()), Utils.encodeHTML(newPassword));
+
+                    postalService.sendMail(profile.getEmail(), PropertyConfig.getRequiredStringProperty("settings.server.profilefrom"),
+                                           null, sSubject,
+                                           sPlainText, sHtmlText,
+                                           null, null);
+
+                    info("Password reset and emailed to " + profile.getName() + " (" + profile.getEmail() + ")");
+                }
+            };
+            row.add(resetPasswordLink);
+            resetPasswordLink.add(new StringLabel("resetPassword", "Reset"));
+
+            // retired
             row.add(new StringLabel("retired"));
 
             // player list

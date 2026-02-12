@@ -59,6 +59,9 @@ public class OnlineProfileServiceImpl implements OnlineProfileService
     @Autowired
     private OnlineProfileDao dao;
 
+    @Autowired
+    private PasswordHashingService passwordHashingService;
+
     private DisallowedManager disallowed = new DisallowedManager();
 
     /**
@@ -122,7 +125,8 @@ public class OnlineProfileServiceImpl implements OnlineProfileService
         OnlineProfile profile = dao.getByName(name);
         profile.setRetired(true);
         profile.setActivated(false);
-        profile.setPassword("__retired__");
+        // Hash the retired marker password
+        profile.setPasswordHash(passwordHashingService.hashPassword("__retired__"));
     }
 
     @Transactional
@@ -167,7 +171,10 @@ public class OnlineProfileServiceImpl implements OnlineProfileService
     public OnlineProfile authenticateOnlineProfile(OnlineProfile profile)
     {
         OnlineProfile lookup = getOnlineProfileByName(profile.getName());
-        if (lookup != null && (lookup.getPassword().equals(profile.getPassword()) && !lookup.isRetired()))
+        // Use bcrypt password checking: profile.getPassword() is plaintext from login attempt
+        // lookup.getPasswordHash() is the stored bcrypt hash from database
+        if (lookup != null && !lookup.isRetired() &&
+            passwordHashingService.checkPassword(profile.getPassword(), lookup.getPasswordHash()))
         {
             return lookup;
         }
@@ -178,6 +185,13 @@ public class OnlineProfileServiceImpl implements OnlineProfileService
     public PagedList<OnlineProfilePurgeSummary> getOnlineProfilePurgeSummary(Integer count, int offset, int pagesize)
     {
         return dao.getOnlineProfilePurgeSummary(count, offset, pagesize);
+    }
+
+    @Override
+    public void hashAndSetPassword(OnlineProfile profile, String plaintext)
+    {
+        String hash = passwordHashingService.hashPassword(plaintext);
+        profile.setPasswordHash(hash);
     }
 
     ///

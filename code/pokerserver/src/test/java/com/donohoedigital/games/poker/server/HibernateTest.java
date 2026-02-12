@@ -78,7 +78,7 @@ public class HibernateTest extends TestCase
         profile.setEmail("hibernate@example.com");
         profile.setLicenseKey("0000-0000-0000-0000");
         profile.setActivated(false);
-        profile.setPassword("password");
+        profile.setPasswordHash(org.mindrot.jbcrypt.BCrypt.hashpw("password", org.mindrot.jbcrypt.BCrypt.gensalt()));
 
         insEm.persist(profile);
         logger.info("Id after commit: " + profile.getId());
