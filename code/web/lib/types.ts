@@ -124,12 +124,6 @@ export interface AuthResponse {
   admin?: boolean
 }
 
-export interface LoginResponse {
-  token: string
-  playerProfile: PlayerProfile
-  expiresIn: number
-}
-
 export interface RegisterRequest {
   username: string
   email: string
