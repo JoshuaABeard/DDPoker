@@ -229,7 +229,10 @@ public class OnlineProfileSearch extends AdminPokerPage {
                     PokerWicketApplication.SEARCH_HIGHLIGHT, true));
 
             // key - removed (license keys no longer used)
-            row.add(new Label("licenseKey", "N/A"));
+            WebMarkupContainer keyLink = new WebMarkupContainer("keyLink");
+            keyLink.setEnabled(false);
+            row.add(keyLink);
+            keyLink.add(new Label("licenseKey", "N/A"));
 
             // reset password link
             Link<?> resetPasswordLink = new Link("resetPasswordLink") {

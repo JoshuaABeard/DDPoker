@@ -252,7 +252,7 @@ public class OnlineGame implements BaseModel<Long>, SimpleXMLEncodable {
     }
 
     /**
-     * override equals - uses URL and license key for equality
+     * override equals - uses URL for equality
      */
     @Override
     public boolean equals(Object o) {

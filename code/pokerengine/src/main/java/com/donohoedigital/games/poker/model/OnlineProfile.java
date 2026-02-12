@@ -240,9 +240,4 @@ public class OnlineProfile implements BaseModel<Long> {
     public String toString() {
         return "OnlineProfile: " + data_;
     }
-
-    // ===================================================================
-    // License key and activation stubs (removed in Community Edition)
-    // ===================================================================
-
 }

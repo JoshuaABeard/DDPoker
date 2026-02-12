@@ -748,7 +748,11 @@ public class PokerServlet extends EngineServlet {
         // XXX case (change email for new profile)
         if (profileToUpdate == null && profile.getPassword() == null) {
             profileToUpdate = onlineProfileService.getOnlineProfileByName(profile.getName());
-            // ignore retired profiles
+            // Note: Previously checked isActivated() || isRetired(), but isActivated()
+            // always
+            // returned true (stub), making this effectively only check isRetired().
+            // Now explicitly checking only isRetired() which is the correct open-source
+            // behavior.
             if (profileToUpdate != null && profileToUpdate.isRetired()) {
                 profileToUpdate = null;
             }

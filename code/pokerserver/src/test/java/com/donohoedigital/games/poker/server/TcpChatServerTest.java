@@ -115,7 +115,7 @@ class TcpChatServerTest {
         // Setup valid auth
         String licenseKey = "valid-key-12345";
         String profileName = "TestPlayer";
-        setupValidProfile(profileName, licenseKey);
+        setupValidProfile(profileName);
 
         // Start server
         setupServer();
@@ -124,7 +124,7 @@ class TcpChatServerTest {
         SocketChannel client = connectClient();
 
         // Send HELLO message
-        OnlineMessage hello = createHelloMessage(profileName, licenseKey);
+        OnlineMessage hello = createHelloMessage(profileName);
         sendMessage(client, hello);
 
         // Receive WELCOME
@@ -155,8 +155,8 @@ class TcpChatServerTest {
         // Setup two valid profiles
         String key1 = "key-player1";
         String key2 = "key-player2";
-        setupValidProfile("Player1", key1);
-        setupValidProfile("Player2", key2);
+        setupValidProfile("Player1");
+        setupValidProfile("Player2");
 
         // Start server
         setupServer();
@@ -166,8 +166,8 @@ class TcpChatServerTest {
         SocketChannel client2 = connectClient();
 
         // Both send HELLO
-        sendMessage(client1, createHelloMessage("Player1", key1));
-        sendMessage(client2, createHelloMessage("Player2", key2));
+        sendMessage(client1, createHelloMessage("Player1"));
+        sendMessage(client2, createHelloMessage("Player2"));
 
         // Read WELCOME messages
         receiveMessage(client1); // WELCOME for client1
@@ -203,7 +203,7 @@ class TcpChatServerTest {
     void testConnectionLostDetection() throws Exception {
         // Setup valid profile
         String key = "key-player1";
-        setupValidProfile("Player1", key);
+        setupValidProfile("Player1");
 
         // Start server and connect second client to observe
         setupServer();
@@ -211,9 +211,9 @@ class TcpChatServerTest {
         SocketChannel client2 = connectClient();
 
         // Both connect
-        sendMessage(client1, createHelloMessage("Player1", key));
-        setupValidProfile("Player2", "key-player2");
-        sendMessage(client2, createHelloMessage("Player2", "key-player2"));
+        sendMessage(client1, createHelloMessage("Player1"));
+        setupValidProfile("Player2");
+        sendMessage(client2, createHelloMessage("Player2"));
 
         // Clear welcome messages
         receiveMessage(client1); // WELCOME
@@ -242,14 +242,14 @@ class TcpChatServerTest {
         // Setup valid profile
         String key = "key-player1";
         String profile = "Player1";
-        setupValidProfile(profile, key);
+        setupValidProfile(profile);
 
         // Start server
         setupServer();
 
         // Connect, hello, disconnect
         SocketChannel client1 = connectClient();
-        sendMessage(client1, createHelloMessage(profile, key));
+        sendMessage(client1, createHelloMessage(profile));
         receiveMessage(client1); // WELCOME
         client1.close();
 
@@ -258,7 +258,7 @@ class TcpChatServerTest {
 
         // Reconnect with same profile
         SocketChannel client2 = connectClient();
-        sendMessage(client2, createHelloMessage(profile, key));
+        sendMessage(client2, createHelloMessage(profile));
 
         // Should receive fresh WELCOME
         Peer2PeerMessage welcome = receiveMessage(client2);
@@ -276,9 +276,9 @@ class TcpChatServerTest {
     @Test
     void testReceivePlayerList() throws Exception {
         // Setup three valid profiles
-        setupValidProfile("Alice", "key-alice");
-        setupValidProfile("Bob", "key-bob");
-        setupValidProfile("Carol", "key-carol");
+        setupValidProfile("Alice");
+        setupValidProfile("Bob");
+        setupValidProfile("Carol");
 
         // Start server
         setupServer();
@@ -286,8 +286,8 @@ class TcpChatServerTest {
         // Connect Alice and Bob first
         SocketChannel alice = connectClient();
         SocketChannel bob = connectClient();
-        sendMessage(alice, createHelloMessage("Alice", "key-alice"));
-        sendMessage(bob, createHelloMessage("Bob", "key-bob"));
+        sendMessage(alice, createHelloMessage("Alice"));
+        sendMessage(bob, createHelloMessage("Bob"));
 
         // Clear their welcomes
         receiveMessage(alice); // WELCOME
@@ -296,7 +296,7 @@ class TcpChatServerTest {
 
         // Carol connects
         SocketChannel carol = connectClient();
-        sendMessage(carol, createHelloMessage("Carol", "key-carol"));
+        sendMessage(carol, createHelloMessage("Carol"));
 
         // Carol receives WELCOME with player list containing Alice and Bob
         Peer2PeerMessage welcome = receiveMessage(carol);
@@ -321,9 +321,9 @@ class TcpChatServerTest {
     @Test
     void testBroadcastDoesNotBlockOnSlowClient() throws Exception {
         // Setup profiles
-        setupValidProfile("FastClient", "key-fast");
-        setupValidProfile("SlowClient", "key-slow");
-        setupValidProfile("Sender", "key-sender");
+        setupValidProfile("FastClient");
+        setupValidProfile("SlowClient");
+        setupValidProfile("Sender");
 
         // Start server
         setupServer();
@@ -334,9 +334,9 @@ class TcpChatServerTest {
         SocketChannel sender = connectClient();
 
         // All send HELLO
-        sendMessage(fast, createHelloMessage("FastClient", "key-fast"));
-        sendMessage(slow, createHelloMessage("SlowClient", "key-slow"));
-        sendMessage(sender, createHelloMessage("Sender", "key-sender"));
+        sendMessage(fast, createHelloMessage("FastClient"));
+        sendMessage(slow, createHelloMessage("SlowClient"));
+        sendMessage(sender, createHelloMessage("Sender"));
 
         // Clear welcome messages for fast and sender
         receiveMessage(fast); // WELCOME
@@ -379,7 +379,7 @@ class TcpChatServerTest {
     void testConcurrentConnectDisconnect() throws Exception {
         // Setup multiple profiles
         for (int i = 0; i < 10; i++) {
-            setupValidProfile("Player" + i, "key-player" + i);
+            setupValidProfile("Player" + i);
         }
 
         // Start server
@@ -402,7 +402,7 @@ class TcpChatServerTest {
                         clientChannels.add(client);
                     }
 
-                    sendMessage(client, createHelloMessage("Player" + playerId, "key-player" + playerId));
+                    sendMessage(client, createHelloMessage("Player" + playerId));
                     receiveMessage(client); // WELCOME
 
                     OnlineMessage chat = new OnlineMessage(OnlineMessage.CAT_CHAT);
@@ -440,14 +440,14 @@ class TcpChatServerTest {
     @Test
     void testMessageSizeValidation() throws Exception {
         // Setup valid profile
-        setupValidProfile("Player1", "key-player1");
+        setupValidProfile("Player1");
 
         // Start server
         setupServer();
 
         // Connect
         SocketChannel client = connectClient();
-        sendMessage(client, createHelloMessage("Player1", "key-player1"));
+        sendMessage(client, createHelloMessage("Player1"));
         receiveMessage(client); // WELCOME
 
         // Send chat message exceeding 500KB limit (Peer2PeerMessage limit)
@@ -487,20 +487,20 @@ class TcpChatServerTest {
     void testDuplicateKeyRejection() throws Exception {
         // Setup valid profile
         String sharedKey = "shared-key-123";
-        setupValidProfile("Player1", sharedKey);
-        setupValidProfile("Player2", sharedKey); // Same key, different profile
+        setupValidProfile("Player1");
+        setupValidProfile("Player2"); // Same key, different profile
 
         // Start server
         setupServer();
 
         // Client1 connects with key
         SocketChannel client1 = connectClient();
-        sendMessage(client1, createHelloMessage("Player1", sharedKey));
+        sendMessage(client1, createHelloMessage("Player1"));
         receiveMessage(client1); // WELCOME
 
         // Client2 tries to connect with same key
         SocketChannel client2 = connectClient();
-        sendMessage(client2, createHelloMessage("Player2", sharedKey));
+        sendMessage(client2, createHelloMessage("Player2"));
 
         // Client2 should receive error and be disconnected
         Peer2PeerMessage response = receiveMessage(client2);
@@ -527,20 +527,20 @@ class TcpChatServerTest {
     void testDuplicateProfileRejection() throws Exception {
         // Setup same profile with different keys
         String profileName = "DuplicateProfile";
-        setupValidProfile(profileName, "key-first");
-        setupValidProfile(profileName, "key-second");
+        setupValidProfile(profileName);
+        setupValidProfile(profileName);
 
         // Start server
         setupServer();
 
         // Client1 connects
         SocketChannel client1 = connectClient();
-        sendMessage(client1, createHelloMessage(profileName, "key-first"));
+        sendMessage(client1, createHelloMessage(profileName));
         receiveMessage(client1); // WELCOME
 
         // Client2 tries to connect with same profile name but different key
         SocketChannel client2 = connectClient();
-        sendMessage(client2, createHelloMessage(profileName, "key-second"));
+        sendMessage(client2, createHelloMessage(profileName));
 
         // Client2 should receive error
         Peer2PeerMessage response = receiveMessage(client2);
@@ -568,7 +568,7 @@ class TcpChatServerTest {
 
         // Connect with invalid key
         SocketChannel client = connectClient();
-        OnlineMessage hello = createHelloMessage("TestPlayer", "invalid-key-format");
+        OnlineMessage hello = createHelloMessage("TestPlayer");
         sendMessage(client, hello);
 
         // Should receive error
@@ -590,7 +590,7 @@ class TcpChatServerTest {
     void testBannedKeyRejected() throws Exception {
         // Setup banned key
         String bannedKey = "banned-key-666";
-        setupValidProfile("BannedPlayer", bannedKey);
+        setupValidProfile("BannedPlayer");
         when(mockBannedKeyService.isBanned(bannedKey)).thenReturn(true);
 
         // Start server
@@ -598,7 +598,7 @@ class TcpChatServerTest {
 
         // Connect with banned key
         SocketChannel client = connectClient();
-        sendMessage(client, createHelloMessage("BannedPlayer", bannedKey));
+        sendMessage(client, createHelloMessage("BannedPlayer"));
 
         // Should receive error
         Peer2PeerMessage response = receiveMessage(client);
@@ -618,14 +618,14 @@ class TcpChatServerTest {
     @Test
     void testRateLimit() throws Exception {
         // Setup valid profile
-        setupValidProfile("Spammer", "key-spammer");
+        setupValidProfile("Spammer");
 
         // Start server
         setupServer();
 
         // Connect
         SocketChannel client = connectClient();
-        sendMessage(client, createHelloMessage("Spammer", "key-spammer"));
+        sendMessage(client, createHelloMessage("Spammer"));
         receiveMessage(client); // WELCOME
 
         // Send messages rapidly (31 messages in quick succession)
@@ -698,7 +698,7 @@ class TcpChatServerTest {
     /**
      * Setup a valid profile in the mock service
      */
-    private void setupValidProfile(String name, String key) {
+    private void setupValidProfile(String name) {
         OnlineProfile profile = new OnlineProfile();
         profile.setName(name);
         profile.setPassword("hashed-password-" + name);
@@ -712,7 +712,7 @@ class TcpChatServerTest {
     /**
      * Create a HELLO message with auth credentials
      */
-    private OnlineMessage createHelloMessage(String profileName, String licenseKey) {
+    private OnlineMessage createHelloMessage(String profileName) {
         OnlineMessage hello = new OnlineMessage(OnlineMessage.CAT_CHAT_HELLO);
 
         // Create auth data
