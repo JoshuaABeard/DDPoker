@@ -157,12 +157,10 @@ class PlayerIdentityEdgeCasesTest {
         try {
             PlayerIdentity.setConfigDirectoryForTesting(configDir.toString());
 
-            // Should still generate a UUID even if can't save
-            String playerId = PlayerIdentity.loadOrCreate();
-
-            assertThat(playerId)
-                .isNotNull()
-                .matches("[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
+            // Should throw since directory is read-only and save fails
+            assertThatThrownBy(PlayerIdentity::loadOrCreate)
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Failed to save player ID");
         } finally {
             // Restore permissions for cleanup
             perms.add(PosixFilePermission.OWNER_WRITE);
