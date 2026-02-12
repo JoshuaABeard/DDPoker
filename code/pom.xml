@@ -62,6 +62,7 @@
     <module>poker</module>
     <module>pokerserver</module>
     <module>pokerwicket</module>
+    <module>api</module>
     <module>proto</module>
   </modules>
 
