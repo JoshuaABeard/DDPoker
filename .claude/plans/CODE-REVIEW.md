@@ -196,10 +196,11 @@ Comprehensive code review of DDPoker's server-side and shared infrastructure mod
 
 ---
 
-### DEBT-2: Externalize Hardcoded Values
+### ✅ DEBT-2: Externalize Hardcoded Values (COMPLETED)
 **Files:** `EngineServlet.java` (lines 1121-1125), `LanManager.java` (lines 55-59)
 **Issue:** Timing constants and poll settings hardcoded.
 **Fix:** Move to properties files.
+**Completed:** Feb 12, 2026 (commit f43ba46) - Externalized 8 settings to properties files (poll.wait.*, lan.alive.*)
 
 ---
 
