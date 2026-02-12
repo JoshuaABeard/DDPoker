@@ -147,10 +147,11 @@ private String ddMessage = null;  // Should be volatile
 
 ## P2: Medium Fixes (moderate effort)
 
-### MF-1: Fix resource leaks in `DatabaseQuery`
-**File:** `code/db/.../DatabaseQuery.java`
+### ✅ MF-1: Fix resource leaks in `DatabaseQuery` (COMPLETED)
+**File:** `code/db/.../DatabaseQuery.java`, `ResultMap.java`
 **Issue:** Class-level `@SuppressWarnings("JDBCResourceOpenedButNotSafelyClosed")` at line 46. `close()` method (line 588) closes `PreparedStatement` and `Connection` but not `ResultSet`. Relies on implicit close which isn't guaranteed by all JDBC drivers.
 **Fix:** Track `ResultSet` as instance field, close explicitly in `close()` before closing the statement.
+**Completed:** Feb 12, 2026 (commit 343a9ea) - Added ResultSet cleanup in ResultMap.close()
 **Verify:** `mvn test -pl db`
 
 ---
