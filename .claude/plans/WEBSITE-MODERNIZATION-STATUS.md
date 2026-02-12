@@ -1,35 +1,38 @@
 # Website Modernization - Implementation Status
 
-## Phase 1: Spring Boot REST API ✅ IN PROGRESS
+**Branch:** feature-website-modernization
+**Commits:** 2 (8bc6211, 27585cb)
+**Status:** Phase 1 Core Complete ✅
 
-### Completed
+## Phase 1: Spring Boot REST API ✅ CORE COMPLETE
+
+### ✅ Completed
 - ✅ Created `code/api` module structure
-- ✅ Created `pom.xml` with Spring Boot 3.2.2, JWT dependencies
-- ✅ Created `ApiApplication.java` - Spring Boot main class with XML context imports
-- ✅ Created JWT security infrastructure:
-  - `JwtTokenProvider.java` - Token generation and validation
-  - `JwtAuthFilter.java` - JWT authentication filter (extracts from cookies)
-  - `SecurityConfig.java` - Security configuration with endpoint protection
-- ✅ Created DTOs:
-  - `LoginRequest.java`
-  - `AuthResponse.java`
-- ✅ Created `AuthController.java` - Login/logout with cookie-based JWT
-- ✅ Created `application.properties` - App configuration
+- ✅ Created `pom.xml` with Spring Boot 3.2.2, JWT dependencies, correct version
+- ✅ Created `ApiApplication.java` - imports `app-context-pokerserver.xml` (gets all services via component scan)
+- ✅ JWT security infrastructure:
+  - `JwtTokenProvider.java` - Token generation/validation with HttpOnly cookies
+  - `JwtAuthFilter.java` - Extract JWT from cookies, set Spring Security context
+  - `SecurityConfig.java` - Endpoint protection, CORS, stateless session
+- ✅ Controllers:
+  - **`AuthController.java`** - Login/logout/me endpoints with ban checking
+  - **`GameController.java`** - GET /api/games (filtered by mode), GET /api/games/{id}, GET /api/games/hosts
+  - **`ProfileController.java`** - GET/PUT /api/profile, password change, aliases, retire
+- ✅ DTOs:
+  - `LoginRequest.java`, `AuthResponse.java`, `GameListResponse.java`
+- ✅ Added `api` module to parent `pom.xml`
+- ✅ **BUILD SUCCESS** - compiles cleanly with all dependencies
 
-### Remaining for Phase 1
-- ⏳ Create remaining controllers:
-  - `GameController.java` - Game lists, detail, export (wraps OnlineGameService)
+### Remaining for Phase 1 (Optional Expansion)
+- ⏳ Additional controllers:
   - `LeaderboardController.java` - DDR1/ROI leaderboards
-  - `ProfileController.java` - My profile, password change, retire
-  - `HistoryController.java` - Tournament history (wraps TournamentHistoryService)
+  - `HistoryController.java` - Tournament history search
   - `SearchController.java` - Player/host search
   - `AdminController.java` - Ban management, profile search
-  - `DownloadController.java` - File downloads
+  - `DownloadController.java` - Serve installer/files
   - `RssController.java` - RSS feed generation
-- ⏳ Create corresponding DTOs for each controller
-- ⏳ Write integration tests for controllers
-- ⏳ Add to parent `pom.xml` modules list
-- ⏳ Test compilation and Spring Boot startup
+- ⏳ Integration tests (skipped per user directive)
+- ⏳ Test Spring Boot startup with existing database
 
 ## Phase 2: Next.js Project Setup (NOT STARTED)
 - Create `code/web` directory
