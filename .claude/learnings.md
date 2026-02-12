@@ -32,6 +32,8 @@ Persistent knowledge discovered during development sessions. Read this at the st
 
 - [worktree] Always create worktrees from the main worktree root, not from inside another worktree (2026-02-12)
 - [ci] CI runs on push to main and on PRs to main (2026-02-12)
-- [hooks] Post-commit hook reminds to update learnings.md after every commit (2026-02-12)
-- [hooks] SessionStart hook shows context on session start: branch, recent commits, active plans, working tree status (2026-02-12)
-- [hooks] On Windows, bash hook scripts must guard every `grep`/`git`/`sed` call with `|| true` and use `set +e` + `trap 'exit 0' ERR` — otherwise non-zero exits from grep (no match) cause "hook error" in Claude Code (2026-02-12)
+- [hooks] Claude Code `PostToolUse` hooks cause persistent "hook error" messages on Windows — even with a no-op `exit 0` script. Avoid using PostToolUse hooks entirely (2026-02-12)
+- [hooks] Claude Code `PreToolUse` hooks are unreliable on Windows — sometimes work, sometimes error. Don't use for git hooks (2026-02-12)
+- [hooks] Use git native hooks via `core.hooksPath = .claude/hooks` instead of Claude Code hooks for pre-commit/post-commit — works reliably across all worktrees (2026-02-12)
+- [hooks] Claude Code `SessionStart` hooks work on Windows when using PowerShell (`pwsh -NoProfile -File script.ps1`) instead of bash (2026-02-12)
+- [hooks] The `find` command in bash scripts on Windows behaves differently than Unix — use PowerShell `Get-ChildItem` for Windows-compatible hooks (2026-02-12)
