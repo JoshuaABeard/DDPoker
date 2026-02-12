@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -54,11 +54,10 @@ import java.util.*;
 
 /**
  *
- * @author  Doug Donohoe
+ * @author Doug Donohoe
  */
 @SuppressWarnings({"JDBCExecuteWithNonConstantString"})
-public class RegAnalyzer
-{
+public class RegAnalyzer {
     // logging
     private static Logger logger = LogManager.getLogger(RegAnalyzer.class);
 
@@ -102,10 +101,8 @@ public class RegAnalyzer
     /**
      * Implements command line application interface.
      */
-    private static class RegAnalyzerApp extends BaseCommandLineApp
-    {
-        private RegAnalyzerApp(String sConfigName, String[] args)
-        {
+    private static class RegAnalyzerApp extends BaseCommandLineApp {
+        private RegAnalyzerApp(String sConfigName, String[] args) {
             // init app (this parses the args)
             super(sConfigName, args);
         }
@@ -113,8 +110,7 @@ public class RegAnalyzer
         /**
          * our specific options
          */
-        protected void setupApplicationCommandLineOptions()
-        {
+        protected void setupApplicationCommandLineOptions() {
             CommandLine.addStringOption(OPTION_GAME, null);
             CommandLine.setDescription(OPTION_GAME, "game to analyze (e.g., war-aoi or poker)", "name");
             CommandLine.setRequired(OPTION_GAME);
@@ -140,10 +136,8 @@ public class RegAnalyzer
     /**
      * Run analyzer
      */
-    public static void main(String[] args) 
-    {
-        try
-        {
+    public static void main(String[] args) {
+        try {
             // Create app to parse command line options
             RegAnalyzerApp info = new RegAnalyzerApp("servertools", args);
 
@@ -155,35 +149,27 @@ public class RegAnalyzer
             // get the analyzer bean and run it
             RegAnalyzer app = (RegAnalyzer) ctx.getBean("regAnalyzer");
             app.initAndRun(info.getCommandLineOptions());
-        }
-        catch (ApplicationError ae)
-        {
+        } catch (ApplicationError ae) {
             logger.error("RegAnalyzer ending due to ApplicationError: " + ae.toString(), ae);
-        }
-        catch (java.lang.OutOfMemoryError nomem)
-        {
+        } catch (java.lang.OutOfMemoryError nomem) {
             logger.error("Out of memory", nomem);
-        }
-        catch (Throwable t)
-        {
+        } catch (Throwable t) {
             logger.error("RegAnalyzer ending due to unexpected error", t);
         }
-        
+
         System.exit(0);
     }
 
     /**
      * Create an instance called from other applications (e.g., the website).
      */
-    public RegAnalyzer()
-    {
+    public RegAnalyzer() {
     }
 
     /**
      * Initialize options and then run the analyzer
      */
-    public void initAndRun(TypedHashMap htOptions)
-    {
+    public void initAndRun(TypedHashMap htOptions) {
         // get params
         setOptions(htOptions);
 
@@ -193,8 +179,7 @@ public class RegAnalyzer
         logger.debug("Elapsed time: " + (System.currentTimeMillis() - time));
     }
 
-    private void setOptions(TypedHashMap htOptions)
-    {
+    private void setOptions(TypedHashMap htOptions) {
         sGame_ = htOptions.getString(OPTION_GAME);
 
         String value = htOptions.getString(OPTION_OUT);
@@ -206,144 +191,126 @@ public class RegAnalyzer
         keyStart = htOptions.getString(OPTION_KEY_START, null);
     }
 
-    public BannedKeyService getBannedService()
-    {
+    public BannedKeyService getBannedService() {
         return bannedService;
     }
 
     @Autowired
-    public void setBannedService(BannedKeyService bannedService)
-    {
+    public void setBannedService(BannedKeyService bannedService) {
         this.bannedService = bannedService;
     }
 
-    public RegistrationService getRegService()
-    {
+    public RegistrationService getRegService() {
         return regService;
     }
 
     @Autowired
-    public void setRegService(RegistrationService regService)
-    {
+    public void setRegService(RegistrationService regService) {
         this.regService = regService;
     }
 
     /**
      * Get key start
      */
-    public String getKeyStart()
-    {
+    public String getKeyStart() {
         return keyStart;
     }
 
     /**
      * get list of banned RegInfo
      */
-    public List<RegInfo> getBannedKeys()
-    {
+    public List<RegInfo> getBannedKeys() {
         return bannedKeys_;
     }
 
     /**
      * get list of suspect RegInfo
      */
-    public List<RegInfo> getSuspectKeys()
-    {
+    public List<RegInfo> getSuspectKeys() {
         return suspectKeys_;
     }
 
-    public int getTotalRegistrations()
-    {
+    public int getTotalRegistrations() {
         return totalRegistrations;
     }
 
-    public int getNumActivations()
-    {
+    public int getNumActivations() {
         return numActivations;
     }
 
-    public int getNumPatches()
-    {
+    public int getNumPatches() {
         return numPatches;
     }
 
-    public int getNumRegistrations()
-    {
+    public int getNumRegistrations() {
         return numRegistrations;
     }
 
-    public int getNumMac()
-    {
+    public int getNumMac() {
         return numMac;
     }
 
-    public int getNumWindows()
-    {
+    public int getNumWindows() {
         return numWindows;
     }
 
-    public int getNumLinux()
-    {
+    public int getNumLinux() {
         return numLinux;
     }
 
     /**
      * Get array of DayCnt
      */
-    public List<Counter> getDayCount()
-    {
+    public List<Counter> getDayCount() {
         return dayCnt_;
     }
 
     /**
      * Get month count
      */
-    public List<Counter> getMonthCount()
-    {
+    public List<Counter> getMonthCount() {
         return monthCnt_;
     }
 
     /**
      * Get week count
      */
-    public List<Counter> getWeekCount()
-    {
+    public List<Counter> getWeekCount() {
         return weekCnt_;
     }
 
     /**
      * Get hour count
      */
-    public int[] getHourCount()
-    {
+    public int[] getHourCount() {
         return hourCnt_;
     }
 
     /**
      * Get game name as passed on command line
      */
-    public String getGame()
-    {
+    public String getGame() {
         return sGame_;
     }
 
     /**
      * Process all years in save directory
      */
-	private void doAnalyze()
-	{
+    private void doAnalyze() {
         // load each file's registrations
         logger.debug("RUNNING: scanning registration records in " + sGame_);
 
         // query values - banned keys are required; all other values are options
         doBannedKeys();
-        if (bDoSuspect_) doSuspectKeys();
-        if (bDoCounts_) doCounts();
-        if (bDoTimes_) doTimes();
+        if (bDoSuspect_)
+            doSuspectKeys();
+        if (bDoCounts_)
+            doCounts();
+        if (bDoTimes_)
+            doTimes();
 
         // generate HTML if output file specified
-        if (output_ != null)
-        {
+        if (output_ != null) {
             JspFile jsp = new JspFile("regstats", null, this);
             jsp.executeJSP(output_);
         }
@@ -352,24 +319,21 @@ public class RegAnalyzer
     /**
      * retrieve the banned keys
      */
-    private void doBannedKeys()
-    {
+    private void doBannedKeys() {
         bannedKeys_ = regService.getBannedKeys(keyStart);
     }
 
     /**
      * retrieve the suspect keys
      */
-    private void doSuspectKeys()
-    {
+    private void doSuspectKeys() {
         suspectKeys_ = regService.getSuspectKeys(keyStart, 5);
     }
 
     /**
      * retrieve the registration counts
      */
-    private void doCounts()
-    {
+    private void doCounts() {
         numRegistrations = regService.countRegistrationType(keyStart, Registration.Type.REGISTRATION);
         numActivations = regService.countRegistrationType(keyStart, Registration.Type.ACTIVATION);
         numPatches = regService.countRegistrationType(keyStart, Registration.Type.PATCH);
@@ -382,8 +346,7 @@ public class RegAnalyzer
     /**
      * retrieve the time values
      */
-    private void doTimes()
-    {
+    private void doTimes() {
         Calendar c = Calendar.getInstance();
         int dayofyear = 0;
         int month = 0;
@@ -395,8 +358,7 @@ public class RegAnalyzer
         List<RegDayOfYearCount> results = regService.countByDayOfYear(keyStart);
 
         // loop through results and query tally
-        for (RegDayOfYearCount row : results)
-        {
+        for (RegDayOfYearCount row : results) {
             count = row.getCount();
             dayofyear = row.getDay();
             year = row.getYear();
@@ -406,15 +368,28 @@ public class RegAnalyzer
 
             month = c.get(Calendar.MONTH);
 
-            switch(c.get(Calendar.DAY_OF_WEEK))
-            {
-                case Calendar.MONDAY: dayname = "M"; break;
-                case Calendar.TUESDAY: dayname = "T"; break;
-                case Calendar.WEDNESDAY: dayname = "W"; break;
-                case Calendar.THURSDAY: dayname = "T"; break;
-                case Calendar.FRIDAY: dayname = "F"; break;
-                case Calendar.SATURDAY: dayname = "S"; break;
-                case Calendar.SUNDAY: dayname = "S"; break;
+            switch (c.get(Calendar.DAY_OF_WEEK)) {
+                case Calendar.MONDAY :
+                    dayname = "M";
+                    break;
+                case Calendar.TUESDAY :
+                    dayname = "T";
+                    break;
+                case Calendar.WEDNESDAY :
+                    dayname = "W";
+                    break;
+                case Calendar.THURSDAY :
+                    dayname = "T";
+                    break;
+                case Calendar.FRIDAY :
+                    dayname = "F";
+                    break;
+                case Calendar.SATURDAY :
+                    dayname = "S";
+                    break;
+                case Calendar.SUNDAY :
+                    dayname = "S";
+                    break;
             }
 
             record(dayCnt_, year, dayofyear, count, dayname);
@@ -423,91 +398,77 @@ public class RegAnalyzer
         }
 
         List<RegHourCount> results2 = regService.countByHour(keyStart);
-        for (RegHourCount row : results2)
-        {
+        for (RegHourCount row : results2) {
             hourCnt_[row.getHour()] = row.getCount();
         }
     }
 
     @SuppressWarnings({"PublicInnerClass"})
-    public static class Counter
-    {
+    public static class Counter {
         private int year;
         private int sub;
         private int count;
         private String comment;
-        
-        public Counter(int nYear, int nSub, String sComment)
-        {
+
+        public Counter(int nYear, int nSub, String sComment) {
             this.year = nYear;
             this.sub = nSub;
             this.comment = sComment;
         }
-        
-        public boolean equals(Object o)
-        {
-            if (!(o instanceof Counter)) return false;
+
+        public boolean equals(Object o) {
+            if (!(o instanceof Counter))
+                return false;
             Counter c = (Counter) o;
             return year == c.year && sub == c.sub;
         }
 
-        public int hashCode()
-        {
+        public int hashCode() {
             return 31 * year + sub;
         }
 
-        public int getYear()
-        {
+        public int getYear() {
             return year;
         }
 
-        public int getSub()
-        {
+        public int getSub() {
             return sub;
         }
 
-        public int getCount()
-        {
+        public int getCount() {
             return count;
         }
 
-        public String getComment()
-        {
+        public String getComment() {
             return comment;
         }
     }
-    
-    private Counter cLookup = new Counter(0,0,null);
-    private void record(List<Counter> a, int nYear, int nSub, int nCnt, String sComment)
-    {
+
+    private Counter cLookup = new Counter(0, 0, null);
+    private void record(List<Counter> a, int nYear, int nSub, int nCnt, String sComment) {
         Counter c;
         cLookup.year = nYear;
         cLookup.sub = nSub;
-        
+
         int nIndex = a.indexOf(cLookup);
-        if (nIndex == -1)
-        {
+        if (nIndex == -1) {
             c = new Counter(nYear, nSub, sComment);
             c.count = nCnt;
             a.add(c);
-        }
-        else
-        {
+        } else {
             c = a.get(nIndex);
             c.count += nCnt;
         }
     }
-    
-    private void recordWeek(List<Counter> a, Calendar c, int nCnt)
-    {
+
+    private void recordWeek(List<Counter> a, Calendar c, int nCnt) {
         int nDay = c.get(Calendar.DAY_OF_WEEK);
-        if (nDay < Calendar.SATURDAY)
-        {
+        if (nDay < Calendar.SATURDAY) {
             c.add(Calendar.DATE, Calendar.SATURDAY - nDay);
         }
-        
+
         String sComment = "" + (c.get(Calendar.MONTH) + 1) + "/" + c.get(Calendar.DAY_OF_MONTH);
-        
+
         record(a, c.get(Calendar.YEAR), c.get(Calendar.DAY_OF_YEAR), nCnt, sComment);
     }
 }

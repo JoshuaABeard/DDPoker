@@ -28,8 +28,8 @@ import java.util.Date;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for Registration stub class.
- * Verifies backward compatibility after license tracking removal.
+ * Tests for Registration stub class. Verifies backward compatibility after
+ * license tracking removal.
  */
 class RegistrationStubTest {
 

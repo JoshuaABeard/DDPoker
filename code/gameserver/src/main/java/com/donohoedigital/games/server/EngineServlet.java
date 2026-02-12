@@ -2,31 +2,31 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * 
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images, 
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
  * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials) 
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets 
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
  * without explicit written permission for any uses not covered by this License.
  * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
  * in the root directory of this project.
- * 
- * For inquiries regarding commercial licensing of this source code or 
- * the use of names, logos, images, text, or other assets, please contact 
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
@@ -37,7 +37,6 @@
  */
 
 package com.donohoedigital.games.server;
-
 
 import com.donohoedigital.base.*;
 import com.donohoedigital.comms.DDMessage;
@@ -81,8 +80,7 @@ import static com.donohoedigital.config.DebugConfig.TESTING;
  * @author donohoe
  */
 @SuppressWarnings("unchecked")
-public abstract class EngineServlet extends BaseServlet
-{
+public abstract class EngineServlet extends BaseServlet {
     public static final String EMAIL_PARAM_VERSION = "version";
     public static final String EMAIL_PARAM_NAME = "name";
 
@@ -111,8 +109,7 @@ public abstract class EngineServlet extends BaseServlet
      * Call super class method and then does other needed init
      */
     @Override
-    public void afterConfigInit()
-    {
+    public void afterConfigInit() {
         super.afterConfigInit();
 
         // init various engine stuff
@@ -121,8 +118,7 @@ public abstract class EngineServlet extends BaseServlet
         handler_ = getActionHandler();
 
         // if this is null, then we have a basic server
-        if (handler_ != null)
-        {
+        if (handler_ != null) {
             handler_.init();
         }
         postalService.addErrorHandler(ConfigManager.getAppName(), new EngineMailErrorHandler(this));
@@ -160,8 +156,7 @@ public abstract class EngineServlet extends BaseServlet
      * Return our subclass of DDMessage
      */
     @Override
-    public DDMessage createNewMessage()
-    {
+    public DDMessage createNewMessage() {
         return new EngineMessage();
     }
 
@@ -169,13 +164,11 @@ public abstract class EngineServlet extends BaseServlet
     /// DEBUGGING
     private static final AtomicInteger SEQ = new AtomicInteger(0);
 
-    private int nextSEQ()
-    {
+    private int nextSEQ() {
         return SEQ.incrementAndGet();
     }
 
-    private void log(int seq, String sMethod, String sMsg)
-    {
+    private void log(int seq, String sMethod, String sMsg) {
         logger.debug(sMethod + " [" + seq + "] " + (sMsg == null ? "" : sMsg));
     }
 
@@ -183,8 +176,7 @@ public abstract class EngineServlet extends BaseServlet
      * debugging
      */
     @Override
-    public boolean isDebugOn()
-    {
+    public boolean isDebugOn() {
         return TESTING(EngineConstants.TESTING_SERVLET);
     }
     ///
@@ -194,19 +186,15 @@ public abstract class EngineServlet extends BaseServlet
      * Wrapper
      */
     @Override
-    public void doGet(HttpServletRequest request,
-                      HttpServletResponse response)
-            throws IOException, ServletException
-    {
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         int seq = nextSEQ();
-        try
-        {
-            if (TESTING(EngineConstants.TESTING_SERVLET)) log(seq, "doGet()", "begin");
+        try {
+            if (TESTING(EngineConstants.TESTING_SERVLET))
+                log(seq, "doGet()", "begin");
             super.doGet(request, response);
-        }
-        finally
-        {
-            if (TESTING(EngineConstants.TESTING_SERVLET)) log(seq, "doGet()", "end");
+        } finally {
+            if (TESTING(EngineConstants.TESTING_SERVLET))
+                log(seq, "doGet()", "end");
         }
     }
 
@@ -214,18 +202,15 @@ public abstract class EngineServlet extends BaseServlet
      * Wrapper
      */
     @Override
-    protected void returnMessage(HttpServletResponse response, DDMessage ret)
-            throws IOException
-    {
+    protected void returnMessage(HttpServletResponse response, DDMessage ret) throws IOException {
         int seq = nextSEQ();
-        try
-        {
-            if (TESTING(EngineConstants.TESTING_SERVLET)) log(seq, "returnMessage()", "begin");
+        try {
+            if (TESTING(EngineConstants.TESTING_SERVLET))
+                log(seq, "returnMessage()", "begin");
             super.returnMessage(response, ret);
-        }
-        finally
-        {
-            if (TESTING(EngineConstants.TESTING_SERVLET)) log(seq, "returnMessage()", "end");
+        } finally {
+            if (TESTING(EngineConstants.TESTING_SERVLET))
+                log(seq, "returnMessage()", "end");
         }
 
     }
@@ -234,84 +219,81 @@ public abstract class EngineServlet extends BaseServlet
      * wrapper around process message
      */
     @Override
-    public DDMessage processMessage(HttpServletRequest request, HttpServletResponse response, DDMessage ddreceived) throws IOException
-    {
+    public DDMessage processMessage(HttpServletRequest request, HttpServletResponse response, DDMessage ddreceived)
+            throws IOException {
         int seq = nextSEQ();
-        try
-        {
+        try {
             EngineMessage received = (EngineMessage) ddreceived;
             if (TESTING(EngineConstants.TESTING_SERVLET))
                 log(seq, "processMessage()", "begin " + received.getDebugInfoShort());
             return _processMessage(request, response, ddreceived);
-        }
-        finally
-        {
-            if (TESTING(EngineConstants.TESTING_SERVLET)) log(seq, "processMessage()", "end");
+        } finally {
+            if (TESTING(EngineConstants.TESTING_SERVLET))
+                log(seq, "processMessage()", "end");
         }
     }
 
     /**
      * process the received message and return a response
      */
-    private DDMessage _processMessage(HttpServletRequest request, HttpServletResponse response, DDMessage ddreceived) throws IOException
-    {
+    private DDMessage _processMessage(HttpServletRequest request, HttpServletResponse response, DDMessage ddreceived)
+            throws IOException {
         // validate license key and version
         EngineMessage received = (EngineMessage) ddreceived;
         EngineMessage ret = validateKeyAndVersion(received, request.getRemoteAddr());
 
         // if we have a banned key during a verify/registration attempt, log it
-        if (ret != null && ret.getBoolean(EngineMessage.PARAM_BANNED_KEY, false) &&
-            (received.getCategory() == EngineMessage.CAT_VERIFY_KEY ||
-             received.getCategory() == EngineMessage.CAT_USER_REG))
-        {
+        if (ret != null && ret.getBoolean(EngineMessage.PARAM_BANNED_KEY, false)
+                && (received.getCategory() == EngineMessage.CAT_VERIFY_KEY
+                        || received.getCategory() == EngineMessage.CAT_USER_REG)) {
             processUserRegistration(request, received, true);
         }
 
         // non-null return means something is invalid about this request
-        if (ret != null) return ret;
+        if (ret != null)
+            return ret;
 
         // process message
         int nCat = received.getCategory();
-        switch (nCat)
-        {
+        switch (nCat) {
             // Testing message used for perf/other things
-            case DDMessage.CAT_TESTING:
+            case DDMessage.CAT_TESTING :
                 return new DDMessage(DDMessage.CAT_TESTING, (String) null);
 
             // no message category set
-            case DDMessage.CAT_NONE:
-                throw new ApplicationError(ErrorCodes.ERROR_SERVER_INVALID_MESSAGE,
-                                           "Message category not defined",
-                                           "Specify a message category");
+            case DDMessage.CAT_NONE :
+                throw new ApplicationError(ErrorCodes.ERROR_SERVER_INVALID_MESSAGE, "Message category not defined",
+                        "Specify a message category");
 
-                // send back empty message (key is verified by virtue of getting here)
-            case EngineMessage.CAT_VERIFY_KEY:
-            case EngineMessage.CAT_USER_REG:
+            // send back empty message (key is verified by virtue of getting here)
+            case EngineMessage.CAT_VERIFY_KEY :
+            case EngineMessage.CAT_USER_REG :
                 return processUserRegistration(request, received, false);
 
             // server query - return URL that client should go to
-            case EngineMessage.CAT_SERVER_QUERY:
+            case EngineMessage.CAT_SERVER_QUERY :
                 return getServerQuery();
 
             // new online game
-            case EngineMessage.CAT_NEW_GAME:
+            case EngineMessage.CAT_NEW_GAME :
                 ServerSideGame game = ServerSideGame.newServerSideGame(received, handler_);
                 return getGameData(game, game.getEmailAt(0));
 
-            case EngineMessage.CAT_STATUS:
+            case EngineMessage.CAT_STATUS :
                 return getOnlineStatus(received);
 
-            case EngineMessage.CAT_PUBLIC_IP:
+            case EngineMessage.CAT_PUBLIC_IP :
                 return getPublicIP(request);
 
-            case EngineMessage.CAT_CHECK_DDMSG:
+            case EngineMessage.CAT_CHECK_DDMSG :
                 return checkDDmsg(received);
 
             // default - if a subclass says they'll handle the category, then
-            // let them.  Otherwise, assume it is for an existing traditional
+            // let them. Otherwise, assume it is for an existing traditional
             // online game and handle it that way.
-            default:
-                if (isSubclassHandling(nCat)) return subclassProcessMessage(request, response, ddreceived);
+            default :
+                if (isSubclassHandling(nCat))
+                    return subclassProcessMessage(request, response, ddreceived);
                 break;
         }
 
@@ -319,88 +301,75 @@ public abstract class EngineServlet extends BaseServlet
     }
 
     /**
-     * validate license key and version set in this EngineMessage - return an EngineMessage with
-     * application error message set if there was a problem; null if no problem.
+     * validate license key and version set in this EngineMessage - return an
+     * EngineMessage with application error message set if there was a problem; null
+     * if no problem.
      */
-    private EngineMessage validateKeyAndVersion(EngineMessage received, String sFromForLogging)
-    {
-        return validateKeyAndVersion(received, sFromForLogging,
-                                     bannedKeyService,
-                                     version_,
-                                     getKeyStart(received.getVersion()),
-                                     isCategoryValidated(received),
-                                     isDatabaseRequired(received.getCategory()),
-                                     isResetClientOnBadKey());
+    private EngineMessage validateKeyAndVersion(EngineMessage received, String sFromForLogging) {
+        return validateKeyAndVersion(received, sFromForLogging, bannedKeyService, version_,
+                getKeyStart(received.getVersion()), isCategoryValidated(received),
+                isDatabaseRequired(received.getCategory()), isResetClientOnBadKey());
     }
 
     /**
      * For subclass to change this behavior
      */
-    protected boolean isResetClientOnBadKey()
-    {
+    protected boolean isResetClientOnBadKey() {
         return true;
     }
 
     /**
-     * validate license key and version set in this EngineMessage - return an EngineMessage with
-     * application error message set if there was a problem; null if no problem.
+     * validate license key and version set in this EngineMessage - return an
+     * EngineMessage with application error message set if there was a problem; null
+     * if no problem.
      */
     public static EngineMessage validateKeyAndVersion(EngineMessage received, String sFromForLogging,
-                                                      BannedKeyService banService,
-                                                      Version serverVersion,
-                                                      int receivedKeyStart,
-                                                      boolean bCategoryValidated,
-                                                      boolean bDatabaseRequired,
-                                                      boolean setFlagToResetClient)
-    {
+            BannedKeyService banService, Version serverVersion, int receivedKeyStart, boolean bCategoryValidated,
+            boolean bDatabaseRequired, boolean setFlagToResetClient) {
         EngineMessage ret;
         String locale = received.getLocale();
         Version version = received.getVersion();
 
         // check version
-        if (version == null)
-        {
-            ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED,
-                                    EngineMessage.PLAYER_SERVER,
-                                    EngineMessage.CAT_APPL_ERROR);
+        if (version == null) {
+            ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED, EngineMessage.PLAYER_SERVER,
+                    EngineMessage.CAT_APPL_ERROR);
 
             ret.setApplicationErrorMessage(PropertyConfig.getLocalizedMessage("msg.noversion", locale));
             return ret;
         }
 
         // check alpha
-        if (version.isAlpha() && version.isBefore(serverVersion))
-        {
-            ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED,
-                                    EngineMessage.PLAYER_SERVER,
-                                    EngineMessage.CAT_APPL_ERROR);
+        if (version.isAlpha() && version.isBefore(serverVersion)) {
+            ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED, EngineMessage.PLAYER_SERVER,
+                    EngineMessage.CAT_APPL_ERROR);
 
-            ret.setApplicationErrorMessage(PropertyConfig.getLocalizedMessage("msg.wrongversion.alpha", locale, version));
+            ret.setApplicationErrorMessage(
+                    PropertyConfig.getLocalizedMessage("msg.wrongversion.alpha", locale, version));
             return ret;
         }
 
         // check beta
-        if (version.isBeta() && version.isMajorMinorBefore(serverVersion))
-        {
-            ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED,
-                                    EngineMessage.PLAYER_SERVER,
-                                    EngineMessage.CAT_APPL_ERROR);
+        if (version.isBeta() && version.isMajorMinorBefore(serverVersion)) {
+            ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED, EngineMessage.PLAYER_SERVER,
+                    EngineMessage.CAT_APPL_ERROR);
 
-            ret.setApplicationErrorMessage(PropertyConfig.getLocalizedMessage("msg.wrongversion.beta", locale, version));
+            ret.setApplicationErrorMessage(
+                    PropertyConfig.getLocalizedMessage("msg.wrongversion.beta", locale, version));
             return ret;
         }
 
         // Demo mode removed
 
-        // License key validation removed in open source version - always valid in Community Edition
+        // License key validation removed in open source version - always valid in
+        // Community Edition
         String sKey = received.getKey();
 
-        // check database if required by the given category, see if undergoing maintenance
-        if (bDatabaseRequired && PropertyConfig.getBooleanProperty("settings.db.maintenance", false))
-        {
-            ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED,
-                                    EngineMessage.PLAYER_SERVER,
-                                    EngineMessage.CAT_APPL_ERROR);
+        // check database if required by the given category, see if undergoing
+        // maintenance
+        if (bDatabaseRequired && PropertyConfig.getBooleanProperty("settings.db.maintenance", false)) {
+            ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED, EngineMessage.PLAYER_SERVER,
+                    EngineMessage.CAT_APPL_ERROR);
             ret.setApplicationErrorMessage(PropertyConfig.getLocalizedMessage("msg.db.maintenance", locale));
 
             return ret;
@@ -408,37 +377,34 @@ public abstract class EngineServlet extends BaseServlet
 
         // check if banned license key (requires DB)
         BannedKey banMsg = banService.getIfBanned(sKey);
-        if (banMsg != null)
-        {
-            ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED,
-                                    EngineMessage.PLAYER_SERVER,
-                                    EngineMessage.CAT_APPL_ERROR);
+        if (banMsg != null) {
+            ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED, EngineMessage.PLAYER_SERVER,
+                    EngineMessage.CAT_APPL_ERROR);
 
-            if (setFlagToResetClient) ret.setBoolean(EngineMessage.PARAM_BANNED_KEY, Boolean.TRUE);
-            ret.setApplicationErrorMessage(getAndLogBanMessage(banMsg, sKey + " from " + sFromForLogging + ", msg: " + received.getDebugInfo()));
+            if (setFlagToResetClient)
+                ret.setBoolean(EngineMessage.PARAM_BANNED_KEY, Boolean.TRUE);
+            ret.setApplicationErrorMessage(getAndLogBanMessage(banMsg,
+                    sKey + " from " + sFromForLogging + ", msg: " + received.getDebugInfo()));
             return ret;
         }
 
         return null;
     }
 
-
     /**
      * Ban message and logging
      */
-    protected static String getAndLogBanMessage(BannedKey ban, Object thing)
-    {
+    protected static String getAndLogBanMessage(BannedKey ban, Object thing) {
         DateFormat sf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
         logger.warn("Banned rejection: " + thing + " (ban: " + ban + ")");
         return PropertyConfig.getMessage("msg.banned", sf.format(ban.getUntil()));
     }
 
     /**
-     * return true if message with given category should be
-     * checked for a valid key.  Demo mode removed - always validate.
+     * return true if message with given category should be checked for a valid key.
+     * Demo mode removed - always validate.
      */
-    protected boolean isCategoryValidated(EngineMessage received)
-    {
+    protected boolean isCategoryValidated(EngineMessage received) {
         // Demo mode removed - always validate all categories
         return true;
     }
@@ -446,30 +412,27 @@ public abstract class EngineServlet extends BaseServlet
     /**
      * ask if can process given category
      */
-    protected boolean isSubclassHandling(int nCategory)
-    {
+    protected boolean isSubclassHandling(int nCategory) {
         return false;
     }
 
     /**
      * is isSubclassHandling returned true, then this is called
      */
-    protected DDMessage subclassProcessMessage(HttpServletRequest request, HttpServletResponse response, DDMessage ddreceived)
-    {
+    protected DDMessage subclassProcessMessage(HttpServletRequest request, HttpServletResponse response,
+            DDMessage ddreceived) {
         return null;
     }
 
     /**
-     * Process a message from an existing game.  Done using a lock around the
-     * GameID, so that one thing happens at a time.  We return the message
-     * explicitly, so it is done within a lock (important because files pointers
-     * are used to return message data, and the files aren't read until the
-     * message is written to the stream, so we need to write the message within
-     * the lock)
+     * Process a message from an existing game. Done using a lock around the GameID,
+     * so that one thing happens at a time. We return the message explicitly, so it
+     * is done within a lock (important because files pointers are used to return
+     * message data, and the files aren't read until the message is written to the
+     * stream, so we need to write the message within the lock)
      */
-    private EngineMessage processExistingGameMessage(HttpServletResponse response,
-                                                     EngineMessage received) throws IOException
-    {
+    private EngineMessage processExistingGameMessage(HttpServletResponse response, EngineMessage received)
+            throws IOException {
         DDByteArrayOutputStream retdata;
         EngineMessage ret; // okay to return null message (client can handle it)
 
@@ -477,55 +440,43 @@ public abstract class EngineServlet extends BaseServlet
         // game at the same time.
         String sGameID = received.getGameID();
         ObjectLock lock = GameConfigUtils.getGameLockingObject(sGameID);
-        try
-        {
-            synchronized (lock)
-            {
+        try {
+            synchronized (lock) {
                 // load game
-                try
-                {
+                try {
                     ServerSideGame game = ServerSideGame.loadServerSideGame(received, handler_);
                     ret = processExistingGameMessageLocked(game, received);
-                }
-                catch (ApplicationError ae)
-                {
-                    if (ae.getErrorCode() == ErrorCodes.ERROR_FILE_NOT_FOUND)
-                    {
-                        if (received.getCategory() == EngineMessage.CAT_JOIN_GAME)
-                        {
+                } catch (ApplicationError ae) {
+                    if (ae.getErrorCode() == ErrorCodes.ERROR_FILE_NOT_FOUND) {
+                        if (received.getCategory() == EngineMessage.CAT_JOIN_GAME) {
                             ret = getErrorMessage(null,
-                                                  PropertyConfig.getLocalizedMessage("msg.joinfailed", received.getLocale()),
-                                                  "Invalid join (no such game): " +
-                                                  received.getDebugInfo());
-                        }
-                        else
-                        {
-                            ret = new EngineMessage(sGameID,
-                                                    EngineMessage.PLAYER_SERVER,
-                                                    EngineMessage.CAT_APPL_ERROR);
+                                    PropertyConfig.getLocalizedMessage("msg.joinfailed", received.getLocale()),
+                                    "Invalid join (no such game): " + received.getDebugInfo());
+                        } else {
+                            ret = new EngineMessage(sGameID, EngineMessage.PLAYER_SERVER, EngineMessage.CAT_APPL_ERROR);
 
                             ret.setBoolean(EngineMessage.PARAM_GAME_DELETED, Boolean.TRUE);
-                            ret.setApplicationErrorMessage(PropertyConfig.getLocalizedMessage("msg.missing", received.getLocale(), sGameID));
+                            ret.setApplicationErrorMessage(
+                                    PropertyConfig.getLocalizedMessage("msg.missing", received.getLocale(), sGameID));
                         }
-                    }
-                    else throw ae;
+                    } else
+                        throw ae;
                 }
             }
         }
         // in finally block so this is always done
-        finally
-        {
+        finally {
             GameConfigUtils.removeGameLockingObject(lock);
         }
 
         // Patch 3 - serialize message outside lock to improve concurrency
-        // message data is immutable once created, so safe to serialize after lock release
+        // message data is immutable once created, so safe to serialize after lock
+        // release
         retdata = new DDByteArrayOutputStream();
         ret.write(retdata);
 
         // we process the message here using retdata
-        if (response != null)
-        {
+        if (response != null) {
             returnMessage(response, retdata);
         }
 
@@ -536,8 +487,8 @@ public abstract class EngineServlet extends BaseServlet
     /**
      * Assume game lock exists, used to re-enter this method w/out reacquiring lock
      */
-    private EngineMessage processExistingGameMessageLocked(ServerSideGame game, EngineMessage received) throws IOException
-    {
+    private EngineMessage processExistingGameMessageLocked(ServerSideGame game, EngineMessage received)
+            throws IOException {
         EngineMessage ret = null;
         PlayerQueue queue;
         int nNum, id;
@@ -549,15 +500,12 @@ public abstract class EngineServlet extends BaseServlet
         long last, now;
 
         // Patch 2 - use sequence id for comparisons instead
-        //           this if is to retain backwards compatability with War! 1.2 and prior
+        // this if is to retain backwards compatability with War! 1.2 and prior
         long seq = received.getSeqID();
-        if (seq > 0)
-        {
+        if (seq > 0) {
             last = game.getLastSeqID(key);
             now = seq;
-        }
-        else
-        {
+        } else {
             last = game.getLastTimeStamp(key);
             now = received.getCreateTimeStampLong();
         }
@@ -567,56 +515,55 @@ public abstract class EngineServlet extends BaseServlet
         // ignore this on join game messages
         //
         // Always allow poll and join game messages to go through
-        if (key != null && received.getCategory() != EngineMessage.CAT_JOIN_GAME &&
-            received.getCategory() != EngineMessage.CAT_POLL_UPDATES)
-        {
-            //logger.debug(key + " - " + received.getDebugCat() + " - " + received.get(EngineMessage.PARAM_RESULT) + ",  now: " + now + " last: " + last + " diff: " + (now - last));
-            if (now <= last)
-            {
+        if (key != null && received.getCategory() != EngineMessage.CAT_JOIN_GAME
+                && received.getCategory() != EngineMessage.CAT_POLL_UPDATES) {
+            // logger.debug(key + " - " + received.getDebugCat() + " - " +
+            // received.get(EngineMessage.PARAM_RESULT) + ", now: " + now + " last: " + last
+            // + " diff: " + (now - last));
+            if (now <= last) {
                 bSkipProcessing = true;
-                logger.warn(game.getGameID() + ": skipping duplicate message (last=" + last + ", now=" + now + "): " + received.getDebugInfo());
+                logger.warn(game.getGameID() + ": skipping duplicate message (last=" + last + ", now=" + now + "): "
+                        + received.getDebugInfo());
             }
         }
 
         // process message
-        if (!bSkipProcessing)
-        {
+        if (!bSkipProcessing) {
             boolean bSkipLastTime = false;
             boolean bSaveGame = false;
 
-            switch (received.getCategory())
-            {
+            switch (received.getCategory()) {
                 // join online game
-                case EngineMessage.CAT_JOIN_GAME:
+                case EngineMessage.CAT_JOIN_GAME :
                     return joinOnlineGame(game, received);
 
-                case EngineMessage.CAT_POLL_UPDATES:
+                case EngineMessage.CAT_POLL_UPDATES :
                     ret = verifyPassword(game, received);
-                    if (ret != null) break;
+                    if (ret != null)
+                        break;
 
                     // BUG 6 - message chaining
                     // loop through any attached messages
-                    // and process them.  I assume that none of the 
+                    // and process them. I assume that none of the
                     // attached messages require a response, which
-                    // is true since I wrote them all.  Look below.
+                    // is true since I wrote them all. Look below.
                     EngineMessage att;
                     int nNumChunks = received.getNumData();
                     byte[] bdata;
                     ByteArrayInputStream in;
-                    for (int i = 0; i < nNumChunks; i++)
-                    {
+                    for (int i = 0; i < nNumChunks; i++) {
                         bdata = received.getDataAt(i);
                         in = new ByteArrayInputStream(bdata);
                         att = new EngineMessage();
                         att.read(in, bdata.length);
                         // if something returned, we have an error
                         ret = processExistingGameMessageLocked(game, att);
-                        if (ret != null) break;
+                        if (ret != null)
+                            break;
                     }
 
                     // return client update
-                    if (ret == null)
-                    {
+                    if (ret == null) {
                         ret = getClientUpdate(game, received);
                     }
 
@@ -625,81 +572,81 @@ public abstract class EngineServlet extends BaseServlet
 
                     break;
 
-                case EngineMessage.CAT_ERROR_BAD_EMAIL:
+                case EngineMessage.CAT_ERROR_BAD_EMAIL :
                     // don't verify password here (sent from server)
                     bSkipLastTime = true;
                     break;
 
-                case EngineMessage.CAT_GAME_UPDATE:
-                case EngineMessage.CAT_INFO:
-                case EngineMessage.CAT_CHAT:
+                case EngineMessage.CAT_GAME_UPDATE :
+                case EngineMessage.CAT_INFO :
+                case EngineMessage.CAT_CHAT :
                     ret = verifyPassword(game, received);
-                    if (ret != null) break;
+                    if (ret != null)
+                        break;
                     toIDs = (DMArrayList<Integer>) received.getList(EngineMessage.PARAM_PLAYER_IDS);
                     ApplicationError.assertNotNull(toIDs, "No ids to send message to");
                     received.setCreateTimeStamp(); // update to server time
                     nNum = toIDs.size();
                     File file;
                     long lasttime;
-                    for (int i = 0; i < nNum; i++)
-                    {
+                    for (int i = 0; i < nNum; i++) {
                         id = toIDs.get(i);
                         queue = game.getPlayerQueue(id);
                         queue.addMessage(received);
 
-                        // WAR PATCH 2 
+                        // WAR PATCH 2
                         // preserve last modified time stamp so
                         // "last online" in client is correct
                         file = queue.getFile();
                         lasttime = file.lastModified();
                         queue.save();
-                        //noinspection ResultOfMethodCallIgnored
+                        // noinspection ResultOfMethodCallIgnored
                         file.setLastModified(lasttime);
                     }
                     break;
 
-                case EngineMessage.CAT_ACTION_DONE:
+                case EngineMessage.CAT_ACTION_DONE :
                     ret = verifyPassword(game, received);
-                    if (ret != null) break;
+                    if (ret != null)
+                        break;
                     game.processActionDone(received);
                     bSaveGame = true;
                     break;
 
-                case EngineMessage.CAT_ACTION_REQUEST:
+                case EngineMessage.CAT_ACTION_REQUEST :
                     ret = verifyPassword(game, received);
-                    if (ret != null) break;
+                    if (ret != null)
+                        break;
                     game.processActionRequest(received);
                     bSaveGame = true;
                     break;
 
-                case EngineMessage.CAT_PLAYER_UPDATE:
+                case EngineMessage.CAT_PLAYER_UPDATE :
                     ret = verifyPassword(game, received, true);
-                    if (ret != null) break;
+                    if (ret != null)
+                        break;
                     game.processPlayerUpdate(received);
                     bSaveGame = true;
                     break;
 
-                default:
+                default :
                     ret = new EngineMessage(game.getGameID(), EngineMessage.PLAYER_SERVER, EngineMessage.CAT_ERROR,
-                                            "Message category unknown: " + received.getCategory());
+                            "Message category unknown: " + received.getCategory());
             }
 
             // BUG 199 - store time stamp of message just processed
-            if (!bSkipLastTime)
-            {
+            if (!bSkipLastTime) {
                 // Patch 2 - use seq id instead
-                if (seq > 0)
-                {
+                if (seq > 0) {
                     game.setLastSeqID(key, now);
-                }
-                else
-                {
+                } else {
                     game.setLastTimeStamp(key, now);
                 }
                 bSaveGame = true;
             }
 
-            if (bSaveGame) game.save();
+            if (bSaveGame)
+                game.save();
         }
 
         return ret;
@@ -708,15 +655,14 @@ public abstract class EngineServlet extends BaseServlet
     /**
      * return whether database is required to handle category
      */
-    private boolean isDatabaseRequired(int nCategory)
-    {
-        switch (nCategory)
-        {
-            case EngineMessage.CAT_VERIFY_KEY:
-            case EngineMessage.CAT_USER_REG:
+    private boolean isDatabaseRequired(int nCategory) {
+        switch (nCategory) {
+            case EngineMessage.CAT_VERIFY_KEY :
+            case EngineMessage.CAT_USER_REG :
                 return true;
-            default:
-                if (isSubclassHandling(nCategory)) return subclassIsDatabaseRequired(nCategory);
+            default :
+                if (isSubclassHandling(nCategory))
+                    return subclassIsDatabaseRequired(nCategory);
                 break;
         }
         return false;
@@ -725,30 +671,26 @@ public abstract class EngineServlet extends BaseServlet
     /**
      * subclass callout to see if database is required to handle category
      */
-    protected boolean subclassIsDatabaseRequired(int nCategory)
-    {
+    protected boolean subclassIsDatabaseRequired(int nCategory) {
         return false;
     }
 
     /**
      * verify password
      */
-    private EngineMessage verifyPassword(ServerSideGame game, EngineMessage received)
-    {
+    private EngineMessage verifyPassword(ServerSideGame game, EngineMessage received) {
         return verifyPassword(game, received, false);
     }
 
     /**
      * Verify password received in a regular message from client
      */
-    private EngineMessage verifyPassword(ServerSideGame game, EngineMessage received, boolean bSearchAll)
-    {
+    private EngineMessage verifyPassword(ServerSideGame game, EngineMessage received, boolean bSearchAll) {
         String sPass = received.getString(EngineMessage.PARAM_PASSWORD);
         int nID = received.getFromPlayerID();
 
         // if group, get 1st id in list
-        if (nID == EngineMessage.PLAYER_GROUP)
-        {
+        if (nID == EngineMessage.PLAYER_GROUP) {
             DMArrayList<Integer> ids = (DMArrayList<Integer>) received.getList(EngineMessage.PARAM_PLAYER_IDS);
             ApplicationError.assertNotNull(ids, "ID list null", received);
             ApplicationError.assertTrue(!ids.isEmpty(), "ID list empty", received);
@@ -758,12 +700,9 @@ public abstract class EngineServlet extends BaseServlet
         // to verify password against any player, like we
         // do for status update
         // also if we want to search all ids anyway (bSearchAll)
-        else if (bSearchAll || nID == EngineMessage.PLAYER_SERVER)
-        {
+        else if (bSearchAll || nID == EngineMessage.PLAYER_SERVER) {
             nID = EngineMessage.PLAYER_GROUP;
-        }
-        else if (nID < 0)
-        {
+        } else if (nID < 0) {
             throw new ApplicationError(ErrorCodes.ERROR_CODE_ERROR, "Verify password for invalid id", "ID=" + nID);
         }
 
@@ -773,38 +712,33 @@ public abstract class EngineServlet extends BaseServlet
     /**
      * verify player(nID)'s password matches that in game.
      */
-    private EngineMessage verifyPassword(ServerSideGame game, int nID, String sPass, EngineMessage received)
-    {
+    private EngineMessage verifyPassword(ServerSideGame game, int nID, String sPass, EngineMessage received) {
         boolean bMatch = false;
 
-        // passing EngineMessage.PLAYER_GROUP means we have to loop through all players (used
+        // passing EngineMessage.PLAYER_GROUP means we have to loop through all players
+        // (used
         // when getting online status)
-        if (nID == EngineMessage.PLAYER_GROUP)
-        {
-            for (int i = 0; i < game.getNumPlayers(); i++)
-            {
-                if (game.getPasswordAt(i).equalsIgnoreCase(sPass))
-                {
+        if (nID == EngineMessage.PLAYER_GROUP) {
+            for (int i = 0; i < game.getNumPlayers(); i++) {
+                if (game.getPasswordAt(i).equalsIgnoreCase(sPass)) {
                     bMatch = true;
                     break;
                 }
             }
         }
         // otherwise, just look at given id
-        else
-        {
-            if (game.getPasswordAt(nID).equalsIgnoreCase(sPass))
-            {
+        else {
+            if (game.getPasswordAt(nID).equalsIgnoreCase(sPass)) {
                 bMatch = true;
             }
         }
 
         // if password for id doesn't match what the game thinks it should be
-        // then send back an error message and log a warning    
-        if (!bMatch)
-        {
-            return getErrorMessage(null, PropertyConfig.getLocalizedMessage("msg.badpass", received.getLocale(), game.getGameID()),
-                                   "PASSWORD MISMATCH: " + received.getDebugInfo());
+        // then send back an error message and log a warning
+        if (!bMatch) {
+            return getErrorMessage(null,
+                    PropertyConfig.getLocalizedMessage("msg.badpass", received.getLocale(), game.getGameID()),
+                    "PASSWORD MISMATCH: " + received.getDebugInfo());
         }
 
         return null;
@@ -813,14 +747,12 @@ public abstract class EngineServlet extends BaseServlet
     /**
      * get update (set of messages not yet received)
      */
-    private EngineMessage getClientUpdate(ServerSideGame game, EngineMessage received)
-    {
+    private EngineMessage getClientUpdate(ServerSideGame game, EngineMessage received) {
         int nID = received.getFromPlayerID();
-        if (nID != EngineMessage.PLAYER_GROUP)
-        {
+        if (nID != EngineMessage.PLAYER_GROUP) {
             logger.warn("Get client update requires PLAYER_GROUP id.  Received instead: " + nID);
-            return new EngineMessage(game.getGameID(), EngineMessage.PLAYER_SERVER,
-                                     EngineMessage.CAT_EMPTY, (byte[]) null);
+            return new EngineMessage(game.getGameID(), EngineMessage.PLAYER_SERVER, EngineMessage.CAT_EMPTY,
+                    (byte[]) null);
         }
 
         // get ids
@@ -835,13 +767,12 @@ public abstract class EngineServlet extends BaseServlet
         ApplicationError.assertTrue(stamps.size() == nNum, "Timestamp list not same size as id list");
 
         // create list of player queue files for each id (player) the client is
-        // representing.  Remove messages already received
+        // representing. Remove messages already received
         File[] files = new File[nNum];
         int id;
         long timestamp;
         PlayerQueue queue;
-        for (int i = 0; i < nNum; i++)
-        {
+        for (int i = 0; i < nNum; i++) {
             id = ids.get(i);
             timestamp = stamps.get(i);
             queue = game.getPlayerQueue(id);
@@ -860,10 +791,8 @@ public abstract class EngineServlet extends BaseServlet
 
         // create the message
         EngineMessage ret = new EngineMessage(game.getGameID(), EngineMessage.PLAYER_SERVER,
-                                              EngineMessage.CAT_COMPOSITE_MESSAGE,
-                                              files);
-        if (last != null)
-        {
+                EngineMessage.CAT_COMPOSITE_MESSAGE, files);
+        if (last != null) {
             ret.setObject(EngineMessage.PARAM_ACTION, last);
         }
 
@@ -872,8 +801,7 @@ public abstract class EngineServlet extends BaseServlet
 
         // BUG 42: insert array representing time each player last acted
         DMArrayList<Long> list = new DMArrayList<>();
-        for (int i = 0; i < game.getNumPlayers(); i++)
-        {
+        for (int i = 0; i < game.getNumPlayers(); i++) {
             list.add(game.getPlayerQueueFile(i).lastModified());
         }
         ret.setList(EngineMessage.PARAM_PLAYER_TIMESTAMPS, list);
@@ -884,8 +812,7 @@ public abstract class EngineServlet extends BaseServlet
     /**
      * Return status of online games in list
      */
-    private EngineMessage getOnlineStatus(EngineMessage received)
-    {
+    private EngineMessage getOnlineStatus(EngineMessage received) {
         EngineMessage message;
         DMTypedHashMap status = new DMTypedHashMap();
         DMArrayList<String> ids = (DMArrayList<String>) received.getList(EngineMessage.PARAM_GAME_IDS);
@@ -897,129 +824,112 @@ public abstract class EngineServlet extends BaseServlet
         String id, pass;
 
         // loop through each game and get status info
-        for (int i = 0; i < nNum; i++)
-        {
+        for (int i = 0; i < nNum; i++) {
             id = ids.get(i);
             pass = passs.get(i);
 
             ObjectLock lock = GameConfigUtils.getGameLockingObject(id);
-            try
-            {
-                synchronized (lock)
-                {
+            try {
+                synchronized (lock) {
                     // load game
                     ServerSideGame game = null;
                     ActionItem last;
 
-                    try
-                    {
+                    try {
                         game = ServerSideGame.loadServerSideGame(id, handler_);
-                    }
-                    catch (ApplicationError ae)
-                    {
+                    } catch (ApplicationError ae) {
                         // rethrow if other than file not found (game not on server)
-                        if (ae.getErrorCode() != ErrorCodes.ERROR_FILE_NOT_FOUND)
-                        {
+                        if (ae.getErrorCode() != ErrorCodes.ERROR_FILE_NOT_FOUND) {
                             throw ae;
                         }
                     }
 
                     // if game not found, send back action item indicating
 
-                    if (game == null)
-                    {
+                    if (game == null) {
                         last = getMissingGameAction();
-                    }
-                    else
-                    {
+                    } else {
                         // verify password
                         message = verifyPassword(game, EngineMessage.PLAYER_GROUP, pass, received);
-                        if (message != null) return message;
+                        if (message != null)
+                            return message;
 
                         // get last action as status
                         last = game.getLastActionItem();
                     }
                     status.setObject(id, last);
                 }
-            }
-            catch (Exception t)
-            {
+            } catch (Exception t) {
                 throw new ApplicationError(t);
             }
             // in finally block so this is always done
-            finally
-            {
+            finally {
                 GameConfigUtils.removeGameLockingObject(lock);
             }
         }
 
-        message = new EngineMessage(EngineMessage.GAME_NOTDEFINED, EngineMessage.PLAYER_SERVER, EngineMessage.CAT_STATUS);
+        message = new EngineMessage(EngineMessage.GAME_NOTDEFINED, EngineMessage.PLAYER_SERVER,
+                EngineMessage.CAT_STATUS);
         message.setObject(EngineMessage.PARAM_STATUS, status);
         return message;
     }
 
     /**
-     * Validate that the given "join" message corresponds to an
-     * actual online game.  Return null if it does not.
+     * Validate that the given "join" message corresponds to an actual online game.
+     * Return null if it does not.
      */
-    public EngineMessage joinOnlineGame(ServerSideGame game, EngineMessage message)
-    {
+    public EngineMessage joinOnlineGame(ServerSideGame game, EngineMessage message) {
         // get password, email and activation key from message
         String sJoinPassword = message.getString(EngineMessage.PARAM_PASSWORD);
-        if (sJoinPassword == null) return getErrorMessage(game,
-                                                          PropertyConfig.getLocalizedMessage("msg.joinfailed", message.getLocale()),
-                                                          "Missing password " + message.getDebugInfo());
+        if (sJoinPassword == null)
+            return getErrorMessage(game, PropertyConfig.getLocalizedMessage("msg.joinfailed", message.getLocale()),
+                    "Missing password " + message.getDebugInfo());
 
         String sJoinEmail = message.getString(EngineMessage.PARAM_EMAIL);
-        if (sJoinEmail == null) return getErrorMessage(game,
-                                                       PropertyConfig.getLocalizedMessage("msg.joinfailed", message.getLocale()),
-                                                       "Missing email " + message.getDebugInfo());
+        if (sJoinEmail == null)
+            return getErrorMessage(game, PropertyConfig.getLocalizedMessage("msg.joinfailed", message.getLocale()),
+                    "Missing email " + message.getDebugInfo());
 
         // Validate email format (SEC-2)
-        if (!InputValidator.isValidEmail(sJoinEmail))
-        {
-            return getErrorMessage(game,
-                                  PropertyConfig.getLocalizedMessage("msg.joinfailed", message.getLocale()),
-                                  "Invalid email format " + message.getDebugInfo());
+        if (!InputValidator.isValidEmail(sJoinEmail)) {
+            return getErrorMessage(game, PropertyConfig.getLocalizedMessage("msg.joinfailed", message.getLocale()),
+                    "Invalid email format " + message.getDebugInfo());
         }
 
         String sKey = message.getKey();
-        if (sKey == null) return getErrorMessage(game,
-                                                 PropertyConfig.getLocalizedMessage("msg.joinfailed", message.getLocale()),
-                                                 "Missing key " + message.getDebugInfo());
+        if (sKey == null)
+            return getErrorMessage(game, PropertyConfig.getLocalizedMessage("msg.joinfailed", message.getLocale()),
+                    "Missing key " + message.getDebugInfo());
 
         // now verify password
         String sEmail, sPassword;
-        for (int i = 0; i < game.getNumPlayers(); i++)
-        {
+        for (int i = 0; i < game.getNumPlayers(); i++) {
             sEmail = game.getEmailAtLower(i);
             sPassword = game.getPasswordAt(i);
 
             // if password and email match, we are cool
-            if (sEmail.equalsIgnoreCase(sJoinEmail) &&
-                sPassword.equalsIgnoreCase(sJoinPassword))
-            {
+            if (sEmail.equalsIgnoreCase(sJoinEmail) && sPassword.equalsIgnoreCase(sJoinPassword)) {
                 DMTypedHashMap keys = game.getKeys();
                 DMTypedHashMap locales = game.getLocales();
 
                 Iterator<String> iter = keys.keySet().iterator();
                 String sExistEmail, sExistKey;
-                while (iter.hasNext())
-                {
+                while (iter.hasNext()) {
                     sExistEmail = iter.next();
                     sExistKey = (String) keys.get(sExistEmail);
-                    if (sExistEmail.equalsIgnoreCase(sJoinEmail))
-                    {
+                    if (sExistEmail.equalsIgnoreCase(sJoinEmail)) {
                         return getErrorMessage(game,
-                                               PropertyConfig.getLocalizedMessage("msg.joinagain", message.getLocale(), game.getGameID(), i),
-                                               "Joining again (already joined): " + sJoinEmail + " for game " + game.getGameID());
+                                PropertyConfig.getLocalizedMessage("msg.joinagain", message.getLocale(),
+                                        game.getGameID(), i),
+                                "Joining again (already joined): " + sJoinEmail + " for game " + game.getGameID());
                     }
 
-                    if (!TESTING(EngineConstants.TESTING_SKIP_DUP_KEY_CHECK) && sExistKey.equals(sKey))
-                    {
+                    if (!TESTING(EngineConstants.TESTING_SKIP_DUP_KEY_CHECK) && sExistKey.equals(sKey)) {
                         return getErrorMessage(game,
-                                               PropertyConfig.getLocalizedMessage("msg.dupkey", message.getLocale(), game.getGameID(), sExistKey, sExistEmail),
-                                               "Invalid join (duplicate key of player " + sExistEmail + "): " + message.getDebugInfo());
+                                PropertyConfig.getLocalizedMessage("msg.dupkey", message.getLocale(), game.getGameID(),
+                                        sExistKey, sExistEmail),
+                                "Invalid join (duplicate key of player " + sExistEmail + "): "
+                                        + message.getDebugInfo());
                     }
                 }
 
@@ -1034,20 +944,17 @@ public abstract class EngineServlet extends BaseServlet
         }
 
         // if we got here, no match - bad password or email
-        return getErrorMessage(game,
-                               PropertyConfig.getLocalizedMessage("msg.joinfailed", message.getLocale()),
-                               "Invalid join (bad password): " + message.getDebugInfo());
+        return getErrorMessage(game, PropertyConfig.getLocalizedMessage("msg.joinfailed", message.getLocale()),
+                "Invalid join (bad password): " + message.getDebugInfo());
     }
 
     /**
      * Little function to return an error message and log something
      */
-    private EngineMessage getErrorMessage(ServerSideGame game, String sMsg, String sLog)
-    {
+    private EngineMessage getErrorMessage(ServerSideGame game, String sMsg, String sLog) {
         logger.warn(sLog);
         EngineMessage ret = new EngineMessage(game != null ? game.getGameID() : EngineMessage.GAME_NOTDEFINED,
-                                              EngineMessage.PLAYER_SERVER,
-                                              EngineMessage.CAT_APPL_ERROR);
+                EngineMessage.PLAYER_SERVER, EngineMessage.CAT_APPL_ERROR);
 
         ret.setApplicationErrorMessage(sMsg);
         return ret;
@@ -1056,19 +963,16 @@ public abstract class EngineServlet extends BaseServlet
     /**
      * Return game data to new game/join game.
      */
-    private EngineMessage getGameData(ServerSideGame game, String sEmail)
-    {
+    private EngineMessage getGameData(ServerSideGame game, String sEmail) {
         // return game data file
         EngineMessage msg = new EngineMessage(game.getGameID(), EngineMessage.PLAYER_SERVER,
-                                              EngineMessage.CAT_GAME_DATA, game.getGameDataFile());
+                EngineMessage.CAT_GAME_DATA, game.getGameDataFile());
         // include array list of armies this player is controlling
         DMArrayList<Integer> ids = new DMArrayList<>();
         int nNum = game.getNumPlayers();
         String sPass = null;
-        for (int i = 0; i < nNum; i++)
-        {
-            if (sEmail.equalsIgnoreCase(game.getEmailAt(i)))
-            {
+        for (int i = 0; i < nNum; i++) {
+            if (sEmail.equalsIgnoreCase(game.getEmailAt(i))) {
                 ids.add(i);
                 sPass = game.getPasswordAt(i);
             }
@@ -1079,29 +983,26 @@ public abstract class EngineServlet extends BaseServlet
     }
 
     /**
-     * Returns action used by client to indicate a
-     * game is missing on server
+     * Returns action used by client to indicate a game is missing on server
      */
     protected abstract ActionItem getMissingGameAction();
 
     /**
-     * Server query - used (in future) to route traffic to
-     * different URLs and to specify wait times
+     * Server query - used (in future) to route traffic to different URLs and to
+     * specify wait times
      */
-    private EngineMessage getServerQuery()
-    {
-        EngineMessage ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED,
-                                              EngineMessage.PLAYER_NOTDEFINED,
-                                              EngineMessage.CAT_SERVER_QUERY);
+    private EngineMessage getServerQuery() {
+        EngineMessage ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED, EngineMessage.PLAYER_NOTDEFINED,
+                EngineMessage.CAT_SERVER_QUERY);
         // TODO: should we need to do load balancing, new server URLs
         // can be set here
-        //ret.setString(EngineMessage.PARAM_URL, "http://games.donohoedigital.com:8764/war-aoi/servlet/");
+        // ret.setString(EngineMessage.PARAM_URL,
+        // "http://games.donohoedigital.com:8764/war-aoi/servlet/");
         updatePollSettings(ret);
         return ret;
     }
 
-    private void updatePollSettings(EngineMessage ret)
-    {
+    private void updatePollSettings(EngineMessage ret) {
         ret.setInteger(EngineMessage.PARAM_WAIT_MIN, POLL_WAIT_MIN);
         ret.setInteger(EngineMessage.PARAM_WAIT_ADD, POLL_WAIT_ADD);
         ret.setInteger(EngineMessage.PARAM_WAIT_ADD_PER, POLL_WAIT_ADD_PER);
@@ -1117,17 +1018,18 @@ public abstract class EngineServlet extends BaseServlet
     /**
      * Process a user's registration
      */
-    private synchronized EngineMessage processUserRegistration(HttpServletRequest request,
-                                                               EngineMessage eng, boolean bBanAttempt)
-    {
+    private synchronized EngineMessage processUserRegistration(HttpServletRequest request, EngineMessage eng,
+            boolean bBanAttempt) {
         // get a usable object
         RegistrationMessage msg = new RegistrationMessage(eng);
         Registration reg = new Registration();
 
         // determine type
         Registration.Type type = Registration.Type.REGISTRATION; // default
-        if (msg.isPatch()) type = Registration.Type.PATCH; // 1.x use only
-        else if (msg.isActivation()) type = Registration.Type.ACTIVATION;
+        if (msg.isPatch())
+            type = Registration.Type.PATCH; // 1.x use only
+        else if (msg.isActivation())
+            type = Registration.Type.ACTIVATION;
         reg.setType(type);
 
         reg.setName(msg.getName());
@@ -1151,36 +1053,32 @@ public abstract class EngineServlet extends BaseServlet
         reg.setBanAttempt(bBanAttempt);
 
         // testing errors
-        if ("__ERROR__".equals(reg.getName()))
-        {
+        if ("__ERROR__".equals(reg.getName())) {
             throw new ApplicationError("TESTING ERROR");
         }
 
         // save to database
-        try
-        {
-            if (DatabaseManager.isInitialized())
-            {
+        try {
+            if (DatabaseManager.isInitialized()) {
                 registrationService.saveRegistration(reg);
             }
-        }
-        catch (Throwable t)
-        {
+        } catch (Throwable t) {
             logger.error("Error saving registration to database: " + Utils.formatExceptionText(t));
         }
 
         // log to a file
-        if (!bBanAttempt) logger.info("Registration: " + reg);
+        if (!bBanAttempt)
+            logger.info("Registration: " + reg);
         writeUserRegistrationFile(reg);
 
         // send email if not a registration with a banned key
-        if (!bBanAttempt)
-        {
+        if (!bBanAttempt) {
             sendEmail(reg.getEmail(), reg.getName(), msg.getLocale(), msg.getVersion());
         }
 
         // if ban attempt return null
-        if (bBanAttempt) return null;
+        if (bBanAttempt)
+            return null;
 
         // return OK
         return new EngineMessage(EngineMessage.GAME_NOTDEFINED, EngineMessage.PLAYER_NOTDEFINED, EngineMessage.CAT_OK);
@@ -1189,8 +1087,7 @@ public abstract class EngineServlet extends BaseServlet
     /**
      * Write the given registration record to the log file
      */
-    private void writeUserRegistrationFile(Registration reg)
-    {
+    private void writeUserRegistrationFile(Registration reg) {
         Date now = reg.getServerTime();
         String sNow = formatter2_.format(now);
 
@@ -1199,18 +1096,14 @@ public abstract class EngineServlet extends BaseServlet
         ConfigUtils.verifyNewDirectory(regdir);
         File regfile = new File(regdir, REGFILE_PREFIX + formatter_.format(now) + ".log");
         FileOutputStream logout = ConfigUtils.getFileOutputStream(regfile, true);
-        try
-        {
+        try {
             logout.write(Utils.encode(REGLINE_PREFIX + sNow + " ---]\n"));
-            logout.write(Utils.encode(ToStringBuilder.reflectionToString(reg, RegistrationFileStringStyle.STYLE, false)));
+            logout.write(
+                    Utils.encode(ToStringBuilder.reflectionToString(reg, RegistrationFileStringStyle.STYLE, false)));
             logout.write(Utils.encode("\n"));
-        }
-        catch (IOException io)
-        {
+        } catch (IOException io) {
             throw new ApplicationError(io);
-        }
-        finally
-        {
+        } finally {
             ConfigUtils.close(logout);
         }
     }
@@ -1218,13 +1111,12 @@ public abstract class EngineServlet extends BaseServlet
     /**
      * Send email to user who registered
      */
-    private void sendEmail(String sTo, String sName, String sLocale, Version version)
-    {
-        if (sTo == null) return; // null for key verification so skip email
+    private void sendEmail(String sTo, String sName, String sLocale, Version version) {
+        if (sTo == null)
+            return; // null for key verification so skip email
 
         // testing/debug
-        if (TESTING(EngineConstants.TESTING_SKIP_EMAIL))
-        {
+        if (TESTING(EngineConstants.TESTING_SKIP_EMAIL)) {
             logger.info("SKIP EMAIL to " + sTo);
             return;
         }
@@ -1236,10 +1128,8 @@ public abstract class EngineServlet extends BaseServlet
         email.executeJSP();
 
         // get results and send email
-        postalService.sendMail(sTo, PropertyConfig.getRequiredStringProperty("settings.server.regfrom"),
-                               null, email.getSubject(),
-                               email.getPlain(), email.getHtml(),
-                               null, null);
+        postalService.sendMail(sTo, PropertyConfig.getRequiredStringProperty("settings.server.regfrom"), null,
+                email.getSubject(), email.getPlain(), email.getHtml(), null, null);
     }
 
     private static final SimpleDateFormat formatter_ = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
@@ -1253,11 +1143,9 @@ public abstract class EngineServlet extends BaseServlet
     /**
      * Return the IP the request is coming from (public IP of the user)
      */
-    private EngineMessage getPublicIP(HttpServletRequest request)
-    {
-        EngineMessage ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED,
-                                              EngineMessage.PLAYER_SERVER,
-                                              EngineMessage.CAT_PUBLIC_IP);
+    private EngineMessage getPublicIP(HttpServletRequest request) {
+        EngineMessage ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED, EngineMessage.PLAYER_SERVER,
+                EngineMessage.CAT_PUBLIC_IP);
         ret.setString(EngineMessage.PARAM_IP, request.getRemoteAddr());
         return ret;
     }
@@ -1275,28 +1163,23 @@ public abstract class EngineServlet extends BaseServlet
     /**
      * Return the current dd message if not seen by user
      */
-    private EngineMessage checkDDmsg(DDMessage ddreceived)
-    {
-        EngineMessage ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED,
-                                              EngineMessage.PLAYER_SERVER,
-                                              EngineMessage.CAT_CHECK_DDMSG);
+    private EngineMessage checkDDmsg(DDMessage ddreceived) {
+        EngineMessage ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED, EngineMessage.PLAYER_SERVER,
+                EngineMessage.CAT_CHECK_DDMSG);
 
         String os = ddreceived.getString(EngineMessage.PARAM_PATCH_OS);
         long last = ddreceived.getLong(EngineMessage.PARAM_DDMSG_ID, 0);
         String player = ddreceived.getString(EngineMessage.PARAM_DDPROFILE);
         Version version = ddreceived.getVersion();
 
-        logger.info("Message check from " + player + " (" + ddreceived.getKey() + ") on version " +
-                    version + " for " + os + " (" + last + " last check)");
+        logger.info("Message check from " + player + " (" + ddreceived.getKey() + ") on version " + version + " for "
+                + os + " (" + last + " last check)");
 
         // if no version available, always send upgrade message back
-        if (version.isBefore(getLatestClientVersion(os)))
-        {
+        if (version.isBefore(getLatestClientVersion(os))) {
             // if message file changed, load it
-            synchronized (MSG_FILE_SYNC)
-            {
-                if (upgradeFile.lastModified() > lastUpgradeUpdate)
-                {
+            synchronized (MSG_FILE_SYNC) {
+                if (upgradeFile.lastModified() > lastUpgradeUpdate) {
                     lastUpgradeUpdate = upgradeFile.lastModified();
                     upMessage = ConfigUtils.readFile(upgradeFile);
                 }
@@ -1304,22 +1187,17 @@ public abstract class EngineServlet extends BaseServlet
 
             ret.setString(EngineMessage.PARAM_DDMSG, upMessage);
             ret.setLong(EngineMessage.PARAM_DDMSG_ID, last);
-        }
-        else
-        {
+        } else {
 
             // if message file changed, load it
-            synchronized (MSG_FILE_SYNC)
-            {
-                if (messageFile.lastModified() > lastUpdate)
-                {
+            synchronized (MSG_FILE_SYNC) {
+                if (messageFile.lastModified() > lastUpdate) {
                     lastUpdate = messageFile.lastModified();
                     ddMessage = ConfigUtils.readFile(messageFile);
                 }
             }
 
-            if (last < lastUpdate)
-            {
+            if (last < lastUpdate) {
                 ret.setString(EngineMessage.PARAM_DDMSG, ddMessage);
                 ret.setLong(EngineMessage.PARAM_DDMSG_ID, lastUpdate);
             }

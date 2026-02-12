@@ -3,8 +3,8 @@
  * Copyright (c) 2003-2026 Doug Donohoe
  * Licensed under GPL-3.0
  *
- * Stub class for backward compatibility.
- * Registration tracking removed in Community Edition (open source).
+ * Registration tracking model for user activations and patches.
+ * Tracks license key usage, system information, and registration metadata.
  */
 package com.donohoedigital.games.server.model;
 
@@ -13,21 +13,20 @@ import com.donohoedigital.db.model.BaseModel;
 import java.util.Date;
 
 /**
- * @deprecated Registration tracking removed in open source version.
- * This stub exists only for compilation compatibility.
+ * Registration tracking model for DD Poker license activations. Stores user
+ * information, system details, and registration metadata for analytics and
+ * support purposes.
  */
-@Deprecated
 public class Registration implements BaseModel<Long> {
 
     /**
-     * @deprecated Registration Type enum stub for compilation
+     * Registration type enum for tracking different activation types.
      */
-    @Deprecated
     public enum Type {
         UNKNOWN, RETAIL, ONLINE, DEMO, REGISTRATION, PATCH, ACTIVATION
     }
 
-    // Stub fields
+    // Model fields
     private Long id;
     private Type type = Type.UNKNOWN;
     private String name;
@@ -49,71 +48,159 @@ public class Registration implements BaseModel<Long> {
     private boolean banAttempt;
     private boolean duplicate;
 
-    // Stub methods for compilation compatibility
-    public Type getType() { return type; }
-    public void setType(Type type) { this.type = type; }
+    // Getter and setter methods
+    public Type getType() {
+        return type;
+    }
+    public void setType(Type type) {
+        this.type = type;
+    }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public String getName() {
+        return name;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public String getEmail() {
+        return email;
+    }
+    public void setEmail(String email) {
+        this.email = email;
+    }
 
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
+    public String getAddress() {
+        return address;
+    }
+    public void setAddress(String address) {
+        this.address = address;
+    }
 
-    public String getCity() { return city; }
-    public void setCity(String city) { this.city = city; }
+    public String getCity() {
+        return city;
+    }
+    public void setCity(String city) {
+        this.city = city;
+    }
 
-    public String getState() { return state; }
-    public void setState(String state) { this.state = state; }
+    public String getState() {
+        return state;
+    }
+    public void setState(String state) {
+        this.state = state;
+    }
 
-    public String getCountry() { return country; }
-    public void setCountry(String country) { this.country = country; }
+    public String getCountry() {
+        return country;
+    }
+    public void setCountry(String country) {
+        this.country = country;
+    }
 
-    public String getPostal() { return postal; }
-    public void setPostal(String postal) { this.postal = postal; }
+    public String getPostal() {
+        return postal;
+    }
+    public void setPostal(String postal) {
+        this.postal = postal;
+    }
 
-    public String getOperatingSystem() { return operatingSystem; }
-    public void setOperatingSystem(String os) { this.operatingSystem = os; }
+    public String getOperatingSystem() {
+        return operatingSystem;
+    }
+    public void setOperatingSystem(String os) {
+        this.operatingSystem = os;
+    }
 
-    public String getJavaVersion() { return javaVersion; }
-    public void setJavaVersion(String version) { this.javaVersion = version; }
+    public String getJavaVersion() {
+        return javaVersion;
+    }
+    public void setJavaVersion(String version) {
+        this.javaVersion = version;
+    }
 
-    public String getLicenseKey() { return licenseKey; }
-    public void setLicenseKey(String key) { this.licenseKey = key; }
+    public String getLicenseKey() {
+        return licenseKey;
+    }
+    public void setLicenseKey(String key) {
+        this.licenseKey = key;
+    }
 
-    public String getVersion() { return version; }
-    public void setVersion(String version) { this.version = version; }
-    public void setVersion(Version version) { this.version = version != null ? version.toString() : null; }
+    public String getVersion() {
+        return version;
+    }
+    public void setVersion(String version) {
+        this.version = version;
+    }
+    public void setVersion(Version version) {
+        this.version = version != null ? version.toString() : null;
+    }
 
-    public Date getServerTime() { return serverTime; }
-    public void setServerTime(Date time) { this.serverTime = time; }
+    public Date getServerTime() {
+        return serverTime;
+    }
+    public void setServerTime(Date time) {
+        this.serverTime = time;
+    }
 
-    public String getIp() { return ip; }
-    public void setIp(String ip) { this.ip = ip; }
+    public String getIp() {
+        return ip;
+    }
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
 
-    public Integer getPort() { return port; }
-    public void setPort(Integer port) { this.port = port; }
+    public Integer getPort() {
+        return port;
+    }
+    public void setPort(Integer port) {
+        this.port = port;
+    }
 
-    public String getHostName() { return hostName; }
-    public void setHostName(String name) { this.hostName = name; }
+    public String getHostName() {
+        return hostName;
+    }
+    public void setHostName(String name) {
+        this.hostName = name;
+    }
 
-    public String getHostNameModified() { return hostNameModified; }
-    public void setHostNameModified(String name) { this.hostNameModified = name; }
+    public String getHostNameModified() {
+        return hostNameModified;
+    }
+    public void setHostNameModified(String name) {
+        this.hostNameModified = name;
+    }
 
-    public boolean isBanAttempt() { return banAttempt; }
-    public void setBanAttempt(boolean ban) { this.banAttempt = ban; }
+    public boolean isBanAttempt() {
+        return banAttempt;
+    }
+    public void setBanAttempt(boolean ban) {
+        this.banAttempt = ban;
+    }
 
-    public boolean isDuplicate() { return duplicate; }
-    public void setDuplicate(boolean dup) { this.duplicate = dup; }
+    public boolean isDuplicate() {
+        return duplicate;
+    }
+    public void setDuplicate(boolean dup) {
+        this.duplicate = dup;
+    }
 
-    public boolean isRegistration() { return type == Type.REGISTRATION; }
-    public boolean isActivation() { return type == Type.ACTIVATION; }
-    public boolean isPatch() { return type == Type.PATCH; }
+    public boolean isRegistration() {
+        return type == Type.REGISTRATION;
+    }
+    public boolean isActivation() {
+        return type == Type.ACTIVATION;
+    }
+    public boolean isPatch() {
+        return type == Type.PATCH;
+    }
 
     public long getServerTimeMillis() {
         return serverTime != null ? serverTime.getTime() : 0L;
@@ -132,7 +219,8 @@ public class Registration implements BaseModel<Long> {
     }
 
     /**
-     * Utility method for generifying hostname (stub implementation)
+     * Utility method for generifying hostname.
+     * Currently returns hostname unchanged - can be enhanced for privacy.
      */
     public static String generifyHostName(String hostname) {
         return hostname;
