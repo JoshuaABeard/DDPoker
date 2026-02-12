@@ -188,10 +188,11 @@ Comprehensive code review of DDPoker's server-side and shared infrastructure mod
 
 ## P2: Technical Debt
 
-### DEBT-1: Replace System.out/err with Logging
+### ✅ DEBT-1: Replace System.out/err with Logging (COMPLETED)
 **Files:** `Ban.java`, `RegAnalyzer.java`, `OnlineGamePurger.java`, `OnlineProfilePurger.java`
 **Issue:** Direct `System.out/err` in command-line tools instead of log4j2.
 **Fix:** Use logging framework.
+**Completed:** Feb 12, 2026 (commit 5adc4fe) - Replaced 10 instances with logger.error/info, removed @SuppressWarnings
 
 ---
 
