@@ -129,20 +129,22 @@ Comprehensive code review of DDPoker's server-side and shared infrastructure mod
 
 ## P1: Quick Fixes — Resource Leaks
 
-### QF-8: Fix resource leaks in `ConfigUtils.copyFile()`
-**File:** `code/common/.../ConfigUtils.java` lines 459-473
+### ✅ QF-8: Fix resource leaks in `ConfigUtils.copyFile()` (COMPLETED)
+**File:** `code/common/.../ConfigUtils.java` lines 461-464
 **Issue:** Creates `FileInputStream`/`FileOutputStream`, gets channels, transfers data, closes only the channels. The underlying streams are never closed, leaking file descriptors.
 **Fix:** Use try-with-resources wrapping both streams and channels.
+**Completed:** Previously completed - already using try-with-resources for both streams and channels
 **Verify:** `mvn test -pl common`
 
 ---
 
 ## P1: Quick Fixes — Code Clarity
 
-### QF-9: Fix `DDPostalServiceImpl` misleading mail send loop
-**File:** `code/mail/.../DDPostalServiceImpl.java` lines 337-345
+### ✅ QF-9: Fix `DDPostalServiceImpl` misleading mail send loop (COMPLETED)
+**File:** `code/mail/.../DDPostalServiceImpl.java` line 337
 **Issue:** Loop iterates `nNum - 1` down to `0`, but each iteration calls `list.get(0)` / `list.remove(0)`. Works correctly but the loop variable `i` is unused and misleading.
 **Fix:** Replace with `while (!list.isEmpty())`.
+**Completed:** Previously completed - already using while loop
 **Verify:** `mvn test -pl mail`
 
 ---
