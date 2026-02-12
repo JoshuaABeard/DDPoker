@@ -43,12 +43,11 @@ import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 import com.donohoedigital.games.poker.service.OnlineProfileService;
 import com.donohoedigital.games.server.EngineServer;
-import com.donohoedigital.udp.*;
+import com.donohoedigital.games.server.service.BannedKeyService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -56,34 +55,37 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 
-import static com.donohoedigital.config.DebugConfig.TESTING;
-
 /**
  *
  * @author  donohoe
  */
-public class PokerServer extends EngineServer implements UDPLinkHandler, UDPManagerMonitor
+public class PokerServer extends EngineServer
 {
     private static final Logger logger = LogManager.getLogger(PokerServer.class);
     private static final String ADMIN_PASSWORD_FILE = "admin-password.txt";
 
-    // udp server for test connections and chat
-    private UDPServer udp_;
-    private ChatServer chat_;
+    // TCP chat server
+    private TcpChatServer tcpChatServer_;
 
     @Autowired
     private OnlineProfileService onlineProfileService;
 
+    @Autowired
+    private BannedKeyService bannedKeyService;
+
     /**
-     * Initialize, start UDP and run
+     * Initialize, start TCP chat server and run
      */
     @Override
     public void init()
     {
         super.init();
         initializeAdminProfile();
-        udp_.manager().addMonitor(this);
-        udp_.start();
+        if (tcpChatServer_ != null)
+        {
+            tcpChatServer_.init();
+            tcpChatServer_.start();
+        }
         start();
     }
 
@@ -222,71 +224,23 @@ public class PokerServer extends EngineServer implements UDPLinkHandler, UDPMana
     }
 
     /**
-     * Set UDP
+     * Set TCP chat server
      */
-    public void setUDPServer(UDPServer udp)
+    public void setTcpChatServer(TcpChatServer tcpChatServer)
     {
-        udp_ = udp;
+        tcpChatServer_ = tcpChatServer;
     }
 
     /**
-     * Get UDP
+     * Shutdown TCP chat server
      */
-    public UDPServer getUDPServer()
+    @Override
+    protected void shutdown(boolean immediate)
     {
-        return udp_;
-    }
-
-    /**
-     * Set chat server
-     */
-    public void setChatServer(ChatServer chat)
-    {
-        chat_ = chat;
-    }
-
-    ////
-    //// UDPManagerMonitor
-    ////
-
-    public void monitorEvent(UDPManagerEvent event)
-    {
-        UDPLink link = event.getLink();
-        if (chat_.isChat(link)) chat_.monitorEvent(event);
-        else switch(event.getType())
+        if (tcpChatServer_ != null)
         {
-            case CREATED:
-                if (TESTING(UDPServer.TESTING_UDP))
-                    logger.debug("PublicTest Created: {}", Utils.getAddressPort(link.getRemoteIP()));
-                break;
-
-            case DESTROYED:
-                if (TESTING(UDPServer.TESTING_UDP))
-                    logger.debug("PublicTest Destroyed: {}", Utils.getAddressPort(link.getRemoteIP()));
-                break;
+            tcpChatServer_.shutdown();
         }
-        //logger.debug("Event: "+ event + " on " + Utils.getAddressPort(event.getLink().getLocalIP()));
-    }
-
-    ////
-    //// UDPLinkHandler interface
-    ////
-
-    public int getTimeout(UDPLink link)
-    {
-        if (chat_.isChat(link)) return chat_.getTimeout(link);
-        return UDPLink.DEFAULT_TIMEOUT; // Timeout for TestConnection
-    }
-
-    public int getPossibleTimeoutNotificationInterval(UDPLink link)
-    {
-        if (chat_.isChat(link)) return chat_.getPossibleTimeoutNotificationInterval(link);
-        return getTimeout(link);
-    }
-
-    public int getPossibleTimeoutNotificationStart(UDPLink link)
-    {
-        if (chat_.isChat(link)) return chat_.getPossibleTimeoutNotificationStart(link);
-        return getTimeout(link);
+        super.shutdown(immediate);
     }
 }

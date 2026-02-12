@@ -381,27 +381,16 @@ public class PokerServlet extends EngineServlet
         PokerURL url = omsg.getConnectURL();
         ApplicationError.assertNotNull(url, "Missing connect URL");
 
-        // test it
+        // test it (TCP only - all game P2P now uses TCP)
         try
         {
-            OnlineMessage oreply;
-            if (url.isUDP())
-            {
-                PokerConnect conn = new PokerConnect(((PokerServer) getServer()).getUDPServer(), url, omsg.getUPDID(), null);
-                conn.connect(omsg);
-                conn.close();
-                oreply = conn.getReply();
-            }
-            else
-            {
-                Peer2PeerMessage p2p = new Peer2PeerMessage(Peer2PeerMessage.P2P_MSG, omsg.getData());
-                Peer2PeerClient p2pClient = new Peer2PeerClient(url, null, null);
-                p2pClient.connect();
-                Peer2PeerMessage reply = p2pClient.sendGetReply(p2p);
-                p2pClient.close();
+            Peer2PeerMessage p2p = new Peer2PeerMessage(Peer2PeerMessage.P2P_MSG, omsg.getData());
+            Peer2PeerClient p2pClient = new Peer2PeerClient(url, null, null);
+            p2pClient.connect();
+            Peer2PeerMessage reply = p2pClient.sendGetReply(p2p);
+            p2pClient.close();
 
-                oreply = new OnlineMessage(reply.getMessage());
-            }
+            OnlineMessage oreply = new OnlineMessage(reply.getMessage());
 
             if (oreply.getCategory() == DDMessage.CAT_APPL_ERROR)
             {

@@ -54,8 +54,8 @@ import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.donohoedigital.games.poker.network.OnlineMessage;
 import com.donohoedigital.games.poker.network.PokerConnection;
 import com.donohoedigital.games.poker.network.PokerConnectionServer;
-import com.donohoedigital.games.poker.network.PokerUDPTransporter;
 import com.donohoedigital.games.poker.online.ChatHandler;
+import com.donohoedigital.games.poker.online.ChatLobbyManager;
 import com.donohoedigital.games.poker.online.ListGames;
 import com.donohoedigital.games.poker.online.OnlineManager;
 import com.donohoedigital.gui.DDHtmlEditorKit;
@@ -550,7 +550,7 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
     private PokerConnectionServer p2p_;
     private PokerUDPServer udp_;
     private PokerTCPServer tcp_;
-    private PokerUDPServer chat_;
+    private TcpChatClientAdapter chat_;
     private LanManager lan_;
 
     public synchronized void initP2P()
@@ -630,13 +630,17 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
     }
 
     /**
-     * get chat server
+     * get chat server - returns TCP-based chat client
      */
-    public PokerUDPServer getChatServer()
+    public ChatLobbyManager getChatServer()
     {
         if (chat_ == null)
         {
-            chat_ = getCreateUDPServer();
+            // Get chat server address from configuration
+            String chatHost = PropertyConfig.getStringProperty("settings.host.chathost", "lobby.ddpoker.com");
+            int chatPort = PropertyConfig.getIntegerProperty("settings.tcp.chat.port", 11886);
+
+            chat_ = new TcpChatClientAdapter(chatHost, chatPort);
         }
         return chat_;
     }
@@ -667,7 +671,11 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
      */
     public void shutdownChatServer()
     {
-        chat_ = null;
+        if (chat_ != null)
+        {
+            chat_.disconnect();
+            chat_ = null;
+        }
         shutdownUDP();
     }
 
@@ -681,6 +689,100 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
             udp_.shutdown();
             udp_ = null;
             UDPStatus.setUDPServer(null);
+        }
+    }
+
+    /**
+     * Adapter for TcpChatClient that implements ChatLobbyManager.
+     * Uses reflection to avoid circular module dependencies.
+     */
+    private class TcpChatClientAdapter implements ChatLobbyManager
+    {
+        private final Object client; // TcpChatClient instance
+
+        TcpChatClientAdapter(String host, int port)
+        {
+            try
+            {
+                // Create InetSocketAddress
+                java.net.InetSocketAddress address = new java.net.InetSocketAddress(host, port);
+
+                // Load TcpChatClient via reflection
+                Class<?> clientClass = Class.forName("com.donohoedigital.games.poker.network.TcpChatClient");
+                this.client = clientClass.getConstructor(java.net.InetSocketAddress.class).newInstance(address);
+            }
+            catch (Exception e)
+            {
+                throw new ApplicationError("Failed to create TcpChatClient", e);
+            }
+        }
+
+        @Override
+        public void sendChat(PlayerProfile profile, String sMessage)
+        {
+            try
+            {
+                // Special case: null message means send HELLO (from OnlineLobby.start())
+                if (sMessage == null)
+                {
+                    // Check if connected: client.isConnected()
+                    Boolean isConnected = (Boolean) client.getClass().getMethod("isConnected").invoke(client);
+
+                    if (!isConnected)
+                    {
+                        // Connect: client.connect()
+                        client.getClass().getMethod("connect").invoke(client);
+                    }
+
+                    // Send HELLO: client.sendHello(profile, playerId)
+                    client.getClass().getMethod("sendHello", Object.class, String.class)
+                          .invoke(client, profile, getPlayerId());
+                }
+                else
+                {
+                    // Send chat: client.sendChat(profile, message)
+                    client.getClass().getMethod("sendChat", Object.class, String.class)
+                          .invoke(client, profile, sMessage);
+                }
+            }
+            catch (Exception e)
+            {
+                logger.error("Failed to send chat message", e);
+                // Notify handler of error
+                if (chatHandler_ != null)
+                {
+                    OnlineMessage omsg = new OnlineMessage(OnlineMessage.CAT_CHAT_ADMIN);
+                    omsg.setChat(PropertyConfig.getMessage("msg.chat.lobby.unavail",
+                            "Failed to send: " + e.getMessage(), ""));
+                    chatHandler_.chatReceived(omsg);
+                }
+            }
+        }
+
+        void setHandler(ChatHandler handler)
+        {
+            try
+            {
+                // client.setHandler(handler)
+                client.getClass().getMethod("setHandler", Object.class).invoke(client, handler);
+            }
+            catch (Exception e)
+            {
+                logger.error("Failed to set chat handler", e);
+            }
+        }
+
+        void disconnect()
+        {
+            try
+            {
+                // client.disconnect()
+                client.getClass().getMethod("disconnect").invoke(client);
+            }
+            catch (Exception e)
+            {
+                logger.error("Failed to disconnect from chat server", e);
+            }
         }
     }
 
@@ -824,7 +926,8 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
     {
         UDPLink link = event.getLink();
 
-        // Only handle UDP events for chat links
+        // UDP no longer used for chat (now TCP-based)
+        // This method remains for any legacy UDP handling if needed
         switch (event.getType())
         {
             case CREATED:
@@ -848,11 +951,11 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
 
     public void monitorEvent(UDPLinkEvent event)
     {
-        PokerUDPTransporter msg;
+        // UDP no longer used for chat (now TCP-based)
+        // This method remains for any legacy UDP handling if needed
 
         UDPLink link = event.getLink();
         long elapsed = event.getElapsed();
-        UDPData data = event.getData();
 
         switch (event.getType())
         {
@@ -862,12 +965,10 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
 
             case CLOSING:
                 if (TESTING(UDPServer.TESTING_UDP)) logger.debug("POKER Closing: {}", link.toStringNameIP());
-                // No game connection handling - chat only
                 break;
 
             case CLOSED:
                 if (TESTING(UDPServer.TESTING_UDP)) logger.debug("POKER Closed: {}", link.toStringNameIP());
-                // No game connection handling - chat only
                 break;
 
             case POSSIBLE_TIMEOUT:
@@ -876,79 +977,23 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
                 break;
 
             case TIMEOUT:
-                // Only handle chat link timeouts
-                if (link == udp_.getChatLink())
-                {
-                    notifyTimeout();
-                }
+                if (TESTING(UDPServer.TESTING_UDP)) logger.debug("POKER Timeout: {}", link.toStringNameIP());
                 break;
 
             case RESEND_FAILURE:
-                // Only handle chat link resend failures
-                if (link == udp_.getChatLink())
-                {
-                    notifyTimeout();
-                }
+                if (TESTING(UDPServer.TESTING_UDP)) logger.debug("POKER Resend failure: {}", link.toStringNameIP());
                 break;
 
             case SESSION_CHANGED:
                 if (TESTING(UDPServer.TESTING_UDP)) logger.debug("POKER session-changed: {}", link.toStringNameIP());
-
-                // Only handle chat link session changes
-                if (link == udp_.getChatLink())
-                {
-                    notifyTimeout(); // this notifies user of disco
-                    udp_.nullChatLink(); // this forces new hello
-                }
                 break;
 
             case RECEIVED:
-                // Only process chat messages
-                if (data.getType() == UDPData.Type.MESSAGE)
-                {
-                    msg = new PokerUDPTransporter(data);
-
-                    // DEBUG
-                    if (TESTING(EngineConstants.TESTING_UDP_APP))
-                    {
-                        OnlineMessage om = new OnlineMessage(msg.getMessage());
-                        String sMsg = " {" + om.toStringCategory() + '}';
-                        logger.debug("POKER msg from {}: {}", link.toStringNameIP(), data.toStringShort() + sMsg);
-                    }
-
-                    // Only handle chat messages
-                    if (data.getUserType() == PokerConstants.USERTYPE_CHAT)
-                    {
-                        if (chatHandler_ != null) chatHandler_.chatReceived(new OnlineMessage(msg.getMessage()));
-                    }
-                }
-                else
-                {
-                    if (TESTING(EngineConstants.TESTING_UDP_APP))
-                        logger.debug("POKER msg ({}) from {}: {}", data.getType(), link.toStringNameIP(), data.toStringShort());
-                }
+                if (TESTING(UDPServer.TESTING_UDP)) logger.debug("POKER Received: {}", link.toStringNameIP());
                 break;
         }
     }
 
-    /**
-     * notify of timeout to chat server
-     */
-    protected void notifyTimeout()
-    {
-        if (chatHandler_ != null)
-        {
-            String sInfo = PropertyConfig.getMessage(!udp_.isBound() ? "msg.chat.lobby.notbound" :
-                                                     udp_.getChatLink().isEstablished() ? "msg.chat.lobby.lost" :
-                                                     "msg.chat.lobby.timeout");
-            OnlineMessage omsg = new OnlineMessage(OnlineMessage.CAT_CHAT_ADMIN);
-            omsg.setChat(PropertyConfig.getMessage("msg.chat.lobby.unavail", sInfo,
-                                                   udp_.getChatLink() != null ?
-                                                   "" + udp_.getChatLink().getRemoteIP().getPort() :
-                                                   udp_.getConfigPort()));
-            chatHandler_.chatReceived(omsg);
-        }
-    }
 
     ////
     //// UDPLinkHandler interface
@@ -984,10 +1029,14 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
     {
         chatHandler_ = mgr;
 
-        // if no chat handler, close link to chat server
-        if (chatHandler_ == null && udp_ != null)
+        // if no chat handler, close connection to chat server
+        if (chatHandler_ == null && chat_ != null)
         {
-            udp_.closeChatLink();
+            chat_.disconnect();
+        }
+        else if (chatHandler_ != null && chat_ != null)
+        {
+            chat_.setHandler(chatHandler_);
         }
     }
 
