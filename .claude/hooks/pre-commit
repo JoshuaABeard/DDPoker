@@ -1,0 +1,86 @@
+#!/bin/bash
+# Pre-commit hook for git (works across all worktrees via core.hooksPath)
+# Enforces worktree workflow and scans for secrets before commits
+
+set -e
+
+# Check 1: Block code commits to main/master
+# Allow .claude/, .gitignore, .md files, etc. Only block actual code files.
+BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
+    STAGED=$(git diff --cached --name-only 2>/dev/null || echo "")
+    CODE_FILES=$(echo "$STAGED" | grep -vE '^\.claude/|^\.git(ignore|attributes)$|\.md$|^LICENSE|^README|^SECURITY' | grep -v '^$' || true)
+    if [ -n "$CODE_FILES" ]; then
+        echo "" >&2
+        echo "ERROR: Cannot commit code files directly to $BRANCH branch." >&2
+        echo "Please use a worktree for development:" >&2
+        echo "  git worktree add -b feature-name ../DDPoker-feature-name" >&2
+        echo "" >&2
+        echo "Blocked files:" >&2
+        echo "$CODE_FILES" | sed 's/^/  - /' >&2
+        echo "" >&2
+        exit 1
+    fi
+fi
+
+# Check 2: Scan for secrets in staged changes
+STAGED_DIFF=$(git diff --cached 2>/dev/null || echo "")
+if [ -n "$STAGED_DIFF" ]; then
+    ADDED_LINES=$(echo "$STAGED_DIFF" | grep -E '^\+[^+]' || true)
+
+    # Private IPs
+    IP_MATCHES=$(echo "$ADDED_LINES" | grep -oE '192\.168\.[0-9]+\.[0-9]+' 2>/dev/null | head -5 || true)
+    if [ -z "$IP_MATCHES" ]; then
+        IP_MATCHES=$(echo "$ADDED_LINES" | grep -oE '10\.[0-9]+\.[0-9]+\.[0-9]+' 2>/dev/null | \
+            grep -vE '^10\.[0-2]\.[0-9]+\.[0-9]+$' | head -5 || true)
+    fi
+    if [ -n "$IP_MATCHES" ]; then
+        echo "WARNING: Private IP addresses found in staged changes: $IP_MATCHES" >&2
+        echo "Review before committing to public repo." >&2
+    fi
+
+    # API keys/tokens
+    KEY_MATCHES=$(echo "$ADDED_LINES" | grep -iE 'api[_-]?(key|secret)\s*[:=]\s*"?[a-zA-Z0-9]{16,}' 2>/dev/null | head -3 || true)
+    if [ -n "$KEY_MATCHES" ]; then
+        echo "" >&2
+        echo "ERROR: Possible API keys/tokens found in staged changes!" >&2
+        echo "This would expose secrets in the public repository." >&2
+        exit 1
+    fi
+
+    # Hardcoded passwords
+    PW_MATCHES=$(echo "$ADDED_LINES" | grep -iE '(password|passwd|pwd)\s*[:=]\s*"[^"]{4,}"' 2>/dev/null | \
+        grep -viE 'placeholder|example|YOUR_|test|mock|fake|dummy|sample' | head -3 || true)
+    if [ -n "$PW_MATCHES" ]; then
+        echo "" >&2
+        echo "ERROR: Possible hardcoded passwords found in staged changes!" >&2
+        exit 1
+    fi
+
+    # User-specific paths
+    PATH_MATCHES=$(echo "$ADDED_LINES" | grep -iE '(C:\\\\Users\\\\[a-zA-Z]+|/home/[a-zA-Z]+|/Users/[a-zA-Z]+)' 2>/dev/null | head -3 || true)
+    if [ -n "$PATH_MATCHES" ]; then
+        echo "" >&2
+        echo "ERROR: User-specific file paths found in staged changes!" >&2
+        echo "Use relative paths or environment variables instead." >&2
+        exit 1
+    fi
+
+    # Certificates/key files
+    CERT_FILES=$(git diff --cached --name-only 2>/dev/null | grep -iE '\.(pem|key|pfx|p12|cert|crt|jks|keystore)$' | head -5 || true)
+    if [ -n "$CERT_FILES" ]; then
+        echo "" >&2
+        echo "ERROR: Certificate/key files being committed: $CERT_FILES" >&2
+        exit 1
+    fi
+
+    # .env files
+    ENV_FILES=$(git diff --cached --name-only 2>/dev/null | grep -iE '\.env$' | head -5 || true)
+    if [ -n "$ENV_FILES" ]; then
+        echo "" >&2
+        echo "ERROR: .env file being committed: $ENV_FILES" >&2
+        exit 1
+    fi
+fi
+
+exit 0
