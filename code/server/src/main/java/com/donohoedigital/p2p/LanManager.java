@@ -40,6 +40,7 @@ package com.donohoedigital.p2p;
 
 import com.donohoedigital.base.*;
 import com.donohoedigital.comms.*;
+import com.donohoedigital.config.*;
 import org.apache.logging.log4j.*;
 
 import java.net.*;
@@ -54,9 +55,10 @@ public class LanManager implements DDMessageListener
 
     private static final boolean DEBUG = false;
 
-    private static final int ALIVE_SECONDS = 5;
-    private static final int ALIVE_REFRESH_CNT = 10;
-    private static final int ALIVE_INIT_CNT = 10;
+    // LAN discovery timing settings - configurable via properties
+    private static final int ALIVE_SECONDS = PropertyConfig.getIntegerProperty("lan.alive.seconds", 5);
+    private static final int ALIVE_REFRESH_CNT = PropertyConfig.getIntegerProperty("lan.alive.refresh.count", 10);
+    private static final int ALIVE_INIT_CNT = PropertyConfig.getIntegerProperty("lan.alive.init.count", 10);
 
     private Peer2PeerMulticast multi_;
     private Alive alive_;

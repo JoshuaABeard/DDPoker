@@ -86,6 +86,13 @@ public abstract class EngineServlet extends BaseServlet
     public static final String EMAIL_PARAM_VERSION = "version";
     public static final String EMAIL_PARAM_NAME = "name";
 
+    // Poll settings (seconds) - configurable via properties
+    private static final int POLL_WAIT_MIN = PropertyConfig.getIntegerProperty("poll.wait.min", 3);
+    private static final int POLL_WAIT_ADD = PropertyConfig.getIntegerProperty("poll.wait.add", 3);
+    private static final int POLL_WAIT_ADD_PER = PropertyConfig.getIntegerProperty("poll.wait.add.per", 120);
+    private static final int POLL_WAIT_MAX = PropertyConfig.getIntegerProperty("poll.wait.max", 180);
+    private static final int POLL_WAIT_ERROR = PropertyConfig.getIntegerProperty("poll.wait.error", 10);
+
     @Autowired
     private RegistrationService registrationService;
 
@@ -1095,11 +1102,11 @@ public abstract class EngineServlet extends BaseServlet
 
     private void updatePollSettings(EngineMessage ret)
     {
-        ret.setInteger(EngineMessage.PARAM_WAIT_MIN, 3);       // default is 3
-        ret.setInteger(EngineMessage.PARAM_WAIT_ADD, 3);       // default is 2
-        ret.setInteger(EngineMessage.PARAM_WAIT_ADD_PER, 120);   // default is 120
-        ret.setInteger(EngineMessage.PARAM_WAIT_MAX, 180);       // default is 120
-        ret.setInteger(EngineMessage.PARAM_WAIT_ERROR, 10);     // default is 10
+        ret.setInteger(EngineMessage.PARAM_WAIT_MIN, POLL_WAIT_MIN);
+        ret.setInteger(EngineMessage.PARAM_WAIT_ADD, POLL_WAIT_ADD);
+        ret.setInteger(EngineMessage.PARAM_WAIT_ADD_PER, POLL_WAIT_ADD_PER);
+        ret.setInteger(EngineMessage.PARAM_WAIT_MAX, POLL_WAIT_MAX);
+        ret.setInteger(EngineMessage.PARAM_WAIT_ERROR, POLL_WAIT_ERROR);
     }
 
     // registration file constants
