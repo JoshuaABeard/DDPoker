@@ -48,6 +48,12 @@ Priorities (highest to lowest):
 
 **If genuinely stuck:** Stop and ask. Don't guess.
 
+### When Things Break
+
+- Build fails: Read the error. Fix the root cause, don't suppress warnings or skip checks.
+- Tests fail: Investigate before re-running. If flaky, note it — don't ignore it.
+- Blocked by environment/dependency: State what's broken and what you tried. Don't work around it silently.
+
 ## 3. Simplicity & Surgical Changes
 
 **Minimum code that solves the problem. Touch only what you must.**
@@ -74,7 +80,7 @@ When your changes create orphans:
 After implementing, verify:
 - All new tests pass
 - All existing tests still pass
-- Code coverage meets thresholds (65% minimum)
+- Code coverage meets thresholds (see testing guide)
 - Build completes with zero warnings
 
 See `.claude/guides/testing-guide.md` for test-first practices, test types, and when tests can wait.
