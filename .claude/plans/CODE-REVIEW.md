@@ -156,10 +156,11 @@ private String ddMessage = null;  // Should be volatile
 
 ---
 
-### MF-2: Fix resource leaks in `PokerDatabase`
+### ✅ MF-2: Fix resource leaks in `PokerDatabase` (COMPLETED)
 **File:** `code/poker/.../PokerDatabase.java`
-**Issue:** Multiple methods close `ResultSet` and `PreparedStatement` in the try block body (not in `finally`). If an exception occurs between creating the resource and the close call, the resource leaks.
-**Fix:** Convert to try-with-resources for `Connection`, `PreparedStatement`, and `ResultSet`.
+**Issue:** Multiple methods close `ResultSet` and `PreparedStatement` in the try block body (not in `finally`). If an exception occurs between creating the resource and the close call, the resource leaks. Two critical leaks found where Statement objects were never closed.
+**Fix:** Convert to try-with-resources for `Connection`, `PreparedStatement`, and `ResultSet`. All 28 methods modernized.
+**Completed:** Feb 12, 2026 (commits 66cab52, f37ed19, 4d939c9) - Modernized all database resource management
 **Verify:** `mvn test -pl poker`
 
 ---
