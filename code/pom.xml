@@ -47,7 +47,6 @@
     <module>mail</module>
     <module>gui</module>
     <module>db</module>
-    <module>wicket</module>
     <module>jsp</module>
     <module>server</module>
     <module>udp</module>
@@ -61,7 +60,6 @@
     <module>pokernetwork</module>
     <module>poker</module>
     <module>pokerserver</module>
-    <module>pokerwicket</module>
     <module>api</module>
     <module>proto</module>
   </modules>
@@ -76,8 +74,6 @@
     <hibernate.version>6.6.42.Final</hibernate.version>
     <jetty.version>12.1.6</jetty.version>
     <junit.version>4.13.2</junit.version>
-    <wicket.version>10.8.0</wicket.version>
-    <wicket.jquery.ui.version>10.0.0-M1</wicket.jquery.ui.version>
     <dependency.classpath.outputFile>target/classpath.txt</dependency.classpath.outputFile>
     <!-- Property for JaCoCo argLine (set by prepare-agent goal) -->
     <argLine></argLine>
