@@ -52,12 +52,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             Profile Search
           </Link>
           <Link
-            href="/admin/reg-search"
-            className="block px-4 py-2 rounded hover:bg-gray-700 transition-colors"
-          >
-            Registration Search
-          </Link>
-          <Link
             href="/admin/ban-list"
             className="block px-4 py-2 rounded hover:bg-gray-700 transition-colors"
           >

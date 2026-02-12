@@ -16,9 +16,9 @@ import { toBackendPage, buildPaginationResult } from '@/lib/pagination'
 interface BannedKey {
   id: number
   key: string
-  reason?: string
-  bannedAt: string
-  expiresAt?: string
+  comment?: string
+  createDate: string
+  until?: string
 }
 
 export default function BanListPage() {
@@ -34,8 +34,8 @@ export default function BanListPage() {
 
   // Add ban form state
   const [newBanKey, setNewBanKey] = useState('')
-  const [newBanReason, setNewBanReason] = useState('')
-  const [newBanExpires, setNewBanExpires] = useState('')
+  const [newBanComment, setNewBanComment] = useState('')
+  const [newBanUntil, setNewBanUntil] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -46,19 +46,21 @@ export default function BanListPage() {
     try {
       setIsLoading(true)
       setError(null)
-      const backendPage = toBackendPage(currentPage)
-      const { bans: bansData, total } = await adminApi.getBans(backendPage, 50)
+      const { bans: bansData, total } = await adminApi.getBans()
       const mapped = bansData.map((b: any) => ({
         id: b.id,
-        key: b.key || b.keyHash || 'Unknown',
-        reason: b.reason,
-        bannedAt: b.bannedAt || b.createDate || new Date().toISOString(),
-        expiresAt: b.expiresAt || b.expireDate,
+        key: b.key,
+        comment: b.comment,
+        createDate: b.createDate,
+        until: b.until,
       }))
-      const result = buildPaginationResult(mapped, total, currentPage, 50)
-      setBans(result.data)
-      setTotalPages(result.totalPages)
-      setTotalItems(result.totalItems)
+      // Client-side pagination since backend returns all bans
+      const startIndex = (currentPage - 1) * 50
+      const endIndex = startIndex + 50
+      const paginatedBans = mapped.slice(startIndex, endIndex)
+      setBans(paginatedBans)
+      setTotalPages(Math.ceil(total / 50))
+      setTotalItems(total)
     } catch (err) {
       console.error('Failed to load bans:', err)
       setError('Failed to load ban list. Please try again.')
@@ -81,12 +83,12 @@ export default function BanListPage() {
       setIsSubmitting(true)
       await adminApi.addBan({
         key: newBanKey.trim(),
-        reason: newBanReason.trim() || undefined,
-        expiresAt: newBanExpires || undefined,
+        comment: newBanComment.trim() || undefined,
+        until: newBanUntil || undefined,
       })
       setNewBanKey('')
-      setNewBanReason('')
-      setNewBanExpires('')
+      setNewBanComment('')
+      setNewBanUntil('')
       await loadBans()
     } catch (err) {
       console.error('Failed to add ban:', err)
@@ -96,13 +98,13 @@ export default function BanListPage() {
     }
   }
 
-  async function handleRemoveBan(banId: number) {
+  async function handleRemoveBan(key: string) {
     if (!confirm('Are you sure you want to remove this ban?')) {
       return
     }
 
     try {
-      await adminApi.removeBan(banId)
+      await adminApi.removeBan(key)
       await loadBans()
     } catch (err) {
       console.error('Failed to remove ban:', err)
@@ -127,24 +129,24 @@ export default function BanListPage() {
       ),
     },
     {
-      key: 'reason',
-      header: 'Reason',
-      render: (ban: BannedKey) => ban.reason || '-',
+      key: 'comment',
+      header: 'Comment',
+      render: (ban: BannedKey) => ban.comment || '-',
     },
     {
-      key: 'bannedAt',
+      key: 'createDate',
       header: 'Banned On',
       render: (ban: BannedKey) => {
-        const date = new Date(ban.bannedAt)
+        const date = new Date(ban.createDate)
         return isNaN(date.getTime()) ? 'Unknown' : date.toLocaleDateString()
       },
     },
     {
-      key: 'expiresAt',
+      key: 'until',
       header: 'Expires',
       render: (ban: BannedKey) => {
-        if (!ban.expiresAt) return 'Never'
-        const date = new Date(ban.expiresAt)
+        if (!ban.until) return 'Never'
+        const date = new Date(ban.until)
         return isNaN(date.getTime()) ? 'Unknown' : date.toLocaleDateString()
       },
     },
@@ -153,7 +155,7 @@ export default function BanListPage() {
       header: 'Actions',
       render: (ban: BannedKey) => (
         <button
-          onClick={() => handleRemoveBan(ban.id)}
+          onClick={() => handleRemoveBan(ban.key)}
           className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
         >
           Remove
@@ -192,31 +194,31 @@ export default function BanListPage() {
             </div>
 
             <div>
-              <label htmlFor="banReason" className="block text-sm font-medium mb-1">
-                Reason (optional)
+              <label htmlFor="banComment" className="block text-sm font-medium mb-1">
+                Comment (optional)
               </label>
               <input
                 type="text"
-                id="banReason"
-                value={newBanReason}
-                onChange={(e) => setNewBanReason(e.target.value)}
+                id="banComment"
+                value={newBanComment}
+                onChange={(e) => setNewBanComment(e.target.value)}
                 placeholder="e.g., Cheating, spam, etc."
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <div>
-              <label htmlFor="banExpires" className="block text-sm font-medium mb-1">
-                Expiration Date (optional)
+              <label htmlFor="banUntil" className="block text-sm font-medium mb-1">
+                Expires On (optional)
               </label>
               <input
                 type="date"
-                id="banExpires"
-                value={newBanExpires}
-                onChange={(e) => setNewBanExpires(e.target.value)}
+                id="banUntil"
+                value={newBanUntil}
+                onChange={(e) => setNewBanUntil(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <div className="text-xs text-gray-500 mt-1">Leave empty for permanent ban</div>
+              <div className="text-xs text-gray-500 mt-1">Leave empty for permanent ban (2099-12-31)</div>
             </div>
           </div>
 

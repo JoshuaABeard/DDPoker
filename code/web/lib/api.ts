@@ -373,49 +373,21 @@ export const adminApi = {
   },
 
   /**
-   * Search registrations
+   * Get banned keys list (unpaginated - backend returns all bans)
    */
-  searchRegistrations: async (filters?: {
-    name?: string
-    email?: string
-    from?: string
-    to?: string
-    page?: number
-    pageSize?: number
-  }): Promise<{ registrations: any[]; total: number }> => {
-    const params = new URLSearchParams()
-    if (filters?.name) params.append('name', filters.name)
-    if (filters?.email) params.append('email', filters.email)
-    if (filters?.from) params.append('from', filters.from)
-    if (filters?.to) params.append('to', filters.to)
-    if (filters?.page !== undefined) params.append('page', filters.page.toString())
-    if (filters?.pageSize) params.append('pageSize', filters.pageSize.toString())
-
-    const response = await apiFetch<{ registrations: any[]; total: number }>(
-      `/api/admin/registrations?${params}`
-    )
-    return response.data
-  },
-
-  /**
-   * Get banned keys list
-   */
-  getBans: async (page = 0, pageSize = 50): Promise<{ bans: any[]; total: number }> => {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      pageSize: pageSize.toString(),
-    })
-    const response = await apiFetch<{ bans: any[]; total: number }>(`/api/admin/bans?${params}`)
-    return response.data
+  getBans: async (): Promise<{ bans: any[]; total: number }> => {
+    const response = await apiFetch<any[]>('/api/admin/bans')
+    return { bans: response.data, total: response.data.length }
   },
 
   /**
    * Add a new ban
+   * Backend expects: { key: string, until?: Date, comment?: string }
    */
   addBan: async (banData: {
     key: string
-    reason?: string
-    expiresAt?: string
+    comment?: string
+    until?: string
   }): Promise<any> => {
     const response = await apiFetch<any>('/api/admin/bans', {
       method: 'POST',
@@ -425,10 +397,10 @@ export const adminApi = {
   },
 
   /**
-   * Remove a ban
+   * Remove a ban by key string (not numeric ID)
    */
-  removeBan: async (banId: number): Promise<void> => {
-    await apiFetch<void>(`/api/admin/bans/${banId}`, {
+  removeBan: async (key: string): Promise<void> => {
+    await apiFetch<void>(`/api/admin/bans/${encodeURIComponent(key)}`, {
       method: 'DELETE',
     })
   },
