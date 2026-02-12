@@ -113,7 +113,31 @@ After implementing:
 - Upon completion, document a summary of changes made in the plan.
 - After user approval, move the plan to `.claude/plans/completed/` right before the final commit of the feature.
 
-## 7. Private Information Check Before Committing
+## 7. Git Worktree Workflow
+
+**NEVER work directly on main. All development happens in worktrees.**
+
+### Creating Worktrees
+```bash
+# From main worktree: C:\Repos\DDPoker
+git worktree add -b feature-name ../DDPoker-feature-<description>
+```
+
+**Naming:** `DDPoker-feature-*`, `DDPoker-fix-*`, `DDPoker-refactor-*`
+
+### Workflow
+1. Create worktree and work there
+2. Commit and test normally
+3. When complete, STOP and request code review (no PRs)
+4. After approval: merge to main, push, remove worktree
+
+### Rules
+- ❌ **Never work directly on main** - Main only receives merges
+- ✅ **One worktree per feature** - Sibling directories
+- ✅ **Clean up after merge** - `git worktree remove` + `git branch -d`
+- ✅ **Plans/backlog** - Can be managed in main
+
+## 8. Private Information Check Before Committing
 
 **ALWAYS review files for private information before committing to the public repository.**
 
