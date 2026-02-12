@@ -6,10 +6,21 @@
 # Ensure we don't fail on any unexpected error
 set +e
 
-INPUT=$(cat 2>/dev/null || true)
+# Read input with timeout to prevent hanging
+INPUT=$(timeout 1s cat 2>/dev/null || true)
+
+# Exit silently if no input available
+if [ -z "$INPUT" ]; then
+    exit 0
+fi
 
 # Parse command from JSON without jq dependency
 COMMAND=$(echo "$INPUT" | grep -oE '"command"\s*:\s*"[^"]*"' 2>/dev/null | head -1 | sed 's/"command"\s*:\s*"//;s/"$//' 2>/dev/null || true)
+
+# Exit silently if command cannot be parsed
+if [ -z "$COMMAND" ]; then
+    exit 0
+fi
 
 # Only remind after git commit commands
 if echo "$COMMAND" | grep -qE '^\s*git\s+commit' 2>/dev/null; then
