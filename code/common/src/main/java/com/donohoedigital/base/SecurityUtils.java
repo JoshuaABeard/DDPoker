@@ -36,6 +36,7 @@ import javax.crypto.*;
 import java.io.*;
 import java.security.*;
 import java.security.spec.*;
+import java.util.Base64;
 
 /**
  * Provides security related utility methods.  Base64 is used for all encoding.
@@ -68,7 +69,7 @@ public class SecurityUtils
     public static String hash(InputStream stream, byte[] key, String algorithm) throws IOException
     {
         byte[] raw = hashRaw(stream, key, algorithm);
-        return Base64.encodeBytes(raw);
+        return Base64.getEncoder().encodeToString(raw);
     }
 
     /**
@@ -124,7 +125,7 @@ public class SecurityUtils
     public static String hash(byte[] value, byte[] key, String algorithm)
     {
         byte[] raw = hashRaw(value, key, algorithm);
-        return Base64.encodeBytes(raw);
+        return Base64.getEncoder().encodeToString(raw);
     }
 
     /**
@@ -170,7 +171,7 @@ public class SecurityUtils
     public static String encrypt(byte[] value, byte[] key)
     {
         byte[] raw = encryptRaw(value, key);
-        return Base64.encodeBytes(raw);
+        return Base64.getEncoder().encodeToString(raw);
     }
 
     /**
@@ -207,7 +208,7 @@ public class SecurityUtils
      */
     public static byte[] decrypt(String value, byte[] key)
     {
-        byte[] raw = Base64.decode(value);
+        byte[] raw = Base64.getDecoder().decode(value);
         return decryptRaw(raw, key);
     }
 

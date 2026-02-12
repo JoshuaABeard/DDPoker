@@ -39,7 +39,6 @@
 package com.donohoedigital.comms;
 
 import com.donohoedigital.base.*;
-import com.donohoedigital.base.Base64;
 import com.donohoedigital.config.*;
 import org.apache.logging.log4j.*;
 
@@ -47,6 +46,7 @@ import java.io.*;
 import java.net.*;
 import java.nio.channels.*;
 import java.util.*;
+import java.util.Base64;
 
 /**
  * Simple client to use in messaging architecture, handles DNS timeout
@@ -289,7 +289,7 @@ public class DDHttpClient
             if (options_.sUsername != null && options_.sPassword != null)
             {
                 String sEncode = options_.sUsername + ':' + options_.sPassword;
-                sEncode = Base64.encodeBytes(sEncode.getBytes());
+                sEncode = Base64.getEncoder().encodeToString(sEncode.getBytes());
                 sb.append("Authorization: Basic ").append(sEncode).append(CRLF);
             }
 
