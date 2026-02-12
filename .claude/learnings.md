@@ -34,3 +34,4 @@ Persistent knowledge discovered during development sessions. Read this at the st
 - [ci] CI runs on push to main and on PRs to main (2026-02-12)
 - [hooks] Post-commit hook reminds to update learnings.md after every commit (2026-02-12)
 - [hooks] SessionStart hook shows context on session start: branch, recent commits, active plans, working tree status (2026-02-12)
+- [hooks] On Windows, bash hook scripts must guard every `grep`/`git`/`sed` call with `|| true` and use `set +e` + `trap 'exit 0' ERR` — otherwise non-zero exits from grep (no match) cause "hook error" in Claude Code (2026-02-12)
