@@ -70,7 +70,7 @@ mkdir -p "$DOWNLOADS_DIR"
 REQUIRED_FILES=(
     "DDPokerCE-3.3.0.msi"
     "DDPokerCE-3.3.0.dmg"
-    "ddpoker-ce_3.3.0-1_amd64.deb"
+    "ddpoker-ce_3.3.0_amd64.deb"
     "ddpoker-ce-3.3.0-1.x86_64.rpm"
 )
 
