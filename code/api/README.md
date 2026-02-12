@@ -4,11 +4,13 @@ Spring Boot REST API for DD Poker online features.
 
 ## Required Environment Variables
 
-### JWT_SECRET (Required)
+### JWT_SECRET (Auto-generated)
 - **Purpose:** Secret key for JWT token signing (HMAC-SHA256)
-- **Requirements:** Minimum 32 characters (256 bits)
-- **Example:** `JWT_SECRET=your-secure-random-secret-key-here-at-least-32-characters`
-- **Generation:** Use a cryptographically secure random string generator
+- **Default Behavior:** Auto-generated on first startup and saved to `$WORK/jwt.secret` (or `./data/jwt.secret`)
+- **Persistence:** Stored in Docker volume, survives container restarts
+- **Manual Override:** Set `JWT_SECRET` environment variable (min 32 characters)
+- **Generation:** `JWT_SECRET=$(openssl rand -base64 32)`
+- **Security:** Uses `SecureRandom` for cryptographically secure generation
 
 ### SERVER_HOST (Auto-configured in Docker)
 - **Purpose:** The hostname/domain where the application is accessible
@@ -34,19 +36,26 @@ Spring Boot REST API for DD Poker online features.
 ## Running
 
 ### In Docker (Recommended)
-CORS is automatically configured using `SERVER_HOST` from docker-compose.yml:
+Zero configuration required! Both CORS and JWT are auto-configured:
 
 ```bash
-# Set in docker-compose.yml or .env file
+# Optional: Set custom domain (defaults to localhost)
 SERVER_HOST=poker.example.com
-JWT_SECRET=your-secure-random-secret-key-here-at-least-32-characters
+
+# Optional: Set custom JWT secret (auto-generated if not set)
+# JWT_SECRET=$(openssl rand -base64 32)
 ```
+
+On first startup, the API will:
+1. Auto-generate a secure JWT secret
+2. Save it to `/data/jwt.secret` (persisted in Docker volume)
+3. Configure CORS based on `SERVER_HOST`
 
 ### Standalone (Development)
 ```bash
-# Set required environment variables
-export JWT_SECRET="your-secure-random-secret-key-here-at-least-32-characters"
+# Optional environment variables
 export SERVER_HOST="localhost"
+# JWT_SECRET auto-generated to ./data/jwt.secret if not set
 
 # Run the API
 cd code/api
@@ -55,11 +64,12 @@ mvn spring-boot:run
 
 ## Security Notes
 
-1. **Never commit JWT_SECRET to version control**
-2. **Always set CORS_ALLOWED_ORIGINS for production** - default is localhost only
-3. Cookies use `SameSite=Strict` for CSRF protection
-4. Password hashes are never exposed in API responses
-5. HTTPS recommended for production (set `secure=true` on cookies in AuthController)
+1. **JWT Secret Auto-Generation** - Secure 256-bit secret auto-generated on first run and persisted to volume
+2. **Never commit jwt.secret file to version control** - Added to `.gitignore` automatically
+3. **CORS Auto-Configuration** - Uses `SERVER_HOST` from docker-compose, supports custom domains/IPs
+4. **Cookies use `SameSite=Strict`** - CSRF protection for cookie-based JWT
+5. **Password hashes never exposed** - `@JsonIgnore` prevents API exposure
+6. **HTTPS recommended for production** - Set `secure=true` on cookies in AuthController for HTTPS deployments
 
 ## Endpoints
 
