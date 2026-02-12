@@ -102,6 +102,7 @@ public class TournamentProfileDialog extends OptionMenuDialog implements Propert
     private DDTabbedPane tabs_;
     private OpponentMixPanel oppmix_;
     private LevelsTab leveltab_;
+    private DDLabel depthLabel_;
 
 
     /**
@@ -843,6 +844,7 @@ public class TournamentProfileDialog extends OptionMenuDialog implements Propert
             otMinutes = dialog.createText(TournamentProfile.PARAM_MINUTES, sStyle, 3, 60, i, "msg.header.time", "^[0-9]*$");
             minutes = otMinutes.getTextField();
             minutes.addFocusListener(dialog);
+            minutes.setToolTipText(PropertyConfig.getMessage("msg.header.time.tooltip"));
             add(otMinutes);
             if (bDisplayOnly)
             {
@@ -916,6 +918,11 @@ public class TournamentProfileDialog extends OptionMenuDialog implements Propert
         oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_BUYIN, STYLE, dummy_, null, 1, TournamentProfile.MAX_BUY, 70, true), buyin, BorderLayout.WEST);
         buyinCost_ = oi.getSpinner();
         oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_BUYINCHIPS, STYLE, dummy_, null, 1, TournamentProfile.MAX_CHIPS, 70, true), buyin, BorderLayout.CENTER);
+
+        // starting depth display
+        depthLabel_ = new DDLabel(GuiManager.DEFAULT, STYLE);
+        buyin.add(depthLabel_, BorderLayout.EAST);
+        updateStartingDepth();
 
         return buyin;
     }
@@ -1627,9 +1634,29 @@ public class TournamentProfileDialog extends OptionMenuDialog implements Propert
             bUpdating_ = false;
         }
 
+        // update starting depth display
+        updateStartingDepth();
+
         // we do valid check automatically
         boolean bValid = tabs_.doValidCheck();
         if (defaultButton_ != null) defaultButton_.setEnabled(bValid);
+    }
+
+    /**
+     * Update starting depth label (buyin chips / level 1 big blind)
+     */
+    private void updateStartingDepth()
+    {
+        if (depthLabel_ == null) return;
+        int depth = profile_.getStartingDepthBBs();
+        if (depth < 0)
+        {
+            depthLabel_.setText(PropertyConfig.getMessage("msg.startingdepth.none"));
+        }
+        else
+        {
+            depthLabel_.setText(PropertyConfig.getMessage("msg.startingdepth", depth));
+        }
     }
 
     /**

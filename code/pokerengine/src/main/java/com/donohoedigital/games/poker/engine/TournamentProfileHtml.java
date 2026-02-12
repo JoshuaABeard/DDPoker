@@ -199,6 +199,10 @@ public class TournamentProfileHtml
             params[13] = "";
         }
 
+        // starting depth
+        int depth = profile.getStartingDepthBBs();
+        params[14] = depth >= 0 ? Integer.toString(depth) : "\u2014";
+
         // get message
         htmlSummaryCache_ = PropertyConfig.getMessage("msg.tournamentsummary", params);
         htmlSummaryMode_ = bListMode;

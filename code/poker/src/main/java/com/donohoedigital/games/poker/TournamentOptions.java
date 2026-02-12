@@ -51,7 +51,9 @@ import org.apache.logging.log4j.*;
 
 import javax.swing.*;
 import javax.swing.event.*;
+import javax.swing.filechooser.*;
 import java.awt.*;
+import java.io.*;
 import java.util.*;
 import java.util.List;
 
@@ -144,6 +146,11 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
      */
     private class TournamentProfileList extends ProfileList
     {
+        private static final String DDPROFILE_EXT = "ddprofile";
+
+        private GlassButton buttonExport_;
+        private GlassButton buttonImport_;
+
         private TournamentProfileList(GameEngine engine, List<BaseProfile> profiles,
                                       String sStyle,
                                       String sMsgName,
@@ -152,6 +159,20 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
                                       boolean bUseCopyButton)
         {
             super(engine, context_, profiles, sStyle, sMsgName, sPanelName, sIconName, bUseCopyButton);
+
+            // add export/import buttons
+            DDPanel buttons = getButtonPanel();
+            buttons.setLayout(new GridLayout(2, 3, 10, 5));
+
+            buttonExport_ = new GlassButton("exportprofile." + sMsgName, "Glass");
+            buttonExport_.setBorderGap(3, 5, 3, 4);
+            buttonExport_.addActionListener(e -> exportProfile());
+            buttons.add(buttonExport_);
+
+            buttonImport_ = new GlassButton("importprofile." + sMsgName, "Glass");
+            buttonImport_.setBorderGap(3, 5, 3, 4);
+            buttonImport_.addActionListener(e -> importProfile());
+            buttons.add(buttonImport_);
         }
 
         /**
@@ -174,6 +195,79 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
             TournamentProfile tp = (TournamentProfile) profile;
             String sName = bForEdit ? tp.getName() : PropertyConfig.getMessage("msg.copy", tp.getName());
             return new TournamentProfile(tp, sName);
+        }
+
+        /**
+         * Export selected profile to a .ddprofile file
+         */
+        private void exportProfile()
+        {
+            BaseProfile selected = getSelectedProfile();
+            if (selected == null) return;
+
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle(PropertyConfig.getMessage("msg.export.filechooser.title"));
+            chooser.setFileFilter(new FileNameExtensionFilter(
+                    PropertyConfig.getMessage("msg.filechooser.ddprofile"), DDPROFILE_EXT));
+            chooser.setSelectedFile(new File(selected.getName() + "." + DDPROFILE_EXT));
+
+            if (chooser.showSaveDialog(TournamentProfileList.this) != JFileChooser.APPROVE_OPTION) return;
+
+            File file = chooser.getSelectedFile();
+            if (!file.getName().endsWith("." + DDPROFILE_EXT))
+            {
+                file = new File(file.getAbsolutePath() + "." + DDPROFILE_EXT);
+            }
+
+            try (Writer writer = new FileWriter(file))
+            {
+                selected.write(writer);
+            }
+            catch (IOException ex)
+            {
+                EngineUtils.displayInformationDialog(context_,
+                        PropertyConfig.getMessage("msg.export.error", ex.getMessage()));
+            }
+        }
+
+        /**
+         * Import a profile from a .ddprofile file
+         */
+        private void importProfile()
+        {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle(PropertyConfig.getMessage("msg.import.filechooser.title"));
+            chooser.setFileFilter(new FileNameExtensionFilter(
+                    PropertyConfig.getMessage("msg.filechooser.ddprofile"), DDPROFILE_EXT));
+
+            if (chooser.showOpenDialog(TournamentProfileList.this) != JFileChooser.APPROVE_OPTION) return;
+
+            File file = chooser.getSelectedFile();
+
+            try (Reader reader = new FileReader(file))
+            {
+                TournamentProfile imported = new TournamentProfile();
+                imported.read(reader, false);
+
+                // handle duplicate names
+                String name = imported.getName();
+                for (BaseProfile existing : getProfiles())
+                {
+                    if (existing.getName().equals(name))
+                    {
+                        name = name + " (imported)";
+                        break;
+                    }
+                }
+                imported.setName(name);
+
+                addProfile(imported);
+            }
+            catch (Exception ex)
+            {
+                EngineUtils.displayInformationDialog(context_,
+                        PropertyConfig.getMessage("msg.import.error", ex.getMessage()));
+            }
         }
     }
 

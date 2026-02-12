@@ -73,12 +73,12 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     // note on max players - if this changes above 6000, need to change
     // ids for territories in gameboard.xml and adjust PokerInit starting IDs
     public static final int MAX_PLAYERS = 5625;
-    public static final int MAX_ONLINE_PLAYERS = 30; // limit online to 3 tables; TODO: is this too few?
-    public static final int MAX_OBSERVERS = 10;
+    public static final int MAX_ONLINE_PLAYERS = 90; // 9 tables of 10
+    public static final int MAX_OBSERVERS = 30;
 
-    public static final int MAX_CHIPS = TESTING(PokerConstants.TESTING_LEVELS) ? 10000000 : 50000;
+    public static final int MAX_CHIPS = TESTING(PokerConstants.TESTING_LEVELS) ? 10000000 : 1000000;
     public static final int MAX_REBUY_CHIPS = TESTING(PokerConstants.TESTING_LEVELS) ? 10000000 : 1000000;
-    public static final int MAX_BUY = TESTING(PokerConstants.TESTING_LEVELS) ? 10000000 : 50000;
+    public static final int MAX_BUY = TESTING(PokerConstants.TESTING_LEVELS) ? 10000000 : 1000000;
     public static final int MAX_BLINDANTE = 100000000;
     public static final int MAX_MINUTES = 120;
     public static final int MAX_HOUSE_PERC = 25;
@@ -89,8 +89,8 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public static final int MAX_AI_RAISES = 4;
     public static final int BREAK_ANTE_VALUE = -1;
     public static final int MIN_TIMEOUT = 5;
-    public static final int MAX_TIMEOUT = 60; // stored in poker player, absolute max is 214
-    public static final int MAX_THINKBANK = 60; // stored in poker player, absolute max is 999
+    public static final int MAX_TIMEOUT = 120; // stored in poker player, absolute max is 214
+    public static final int MAX_THINKBANK = 120; // stored in poker player, absolute max is 999
     public static final int MAX_BOOT_HANDS = 100;
     public static final int MIN_BOOT_HANDS = 5;
     public static final int ROUND_MULT = 1000; // 3 decimal places
@@ -464,6 +464,17 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public void setBuyinChips(int n)
     {
         map_.setInteger(PARAM_BUYINCHIPS, n);
+    }
+
+    /**
+     * Get starting depth in big blinds (buyin chips / level 1 big blind).
+     * Returns -1 if big blind at level 1 is zero or no levels are defined.
+     */
+    public int getStartingDepthBBs()
+    {
+        int bigBlind = getBigBlind(1);
+        if (bigBlind <= 0) return -1;
+        return getBuyinChips() / bigBlind;
     }
 
     /**
@@ -1539,7 +1550,6 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      */
     public int getMaxObservers()
     {
-        if (DebugConfig.isTestingOn()) return 30;
         return map_.getInteger(PARAM_MAX_OBSERVERS, 5, 0, MAX_OBSERVERS);
     }
 

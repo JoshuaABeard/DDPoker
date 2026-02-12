@@ -271,6 +271,13 @@ public abstract class ProfileList extends DDPanel implements AWTEventListener, F
     }
     
     /**
+     * Get button panel for subclass customization
+     */
+    protected DDPanel getButtonPanel() {
+        return buttons_;
+    }
+
+    /**
      * Remove button
      */
     public void removeButton(DDButton button) {
