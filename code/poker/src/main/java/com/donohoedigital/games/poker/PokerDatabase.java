@@ -324,26 +324,14 @@ public class PokerDatabase
 
     private static int identity(Connection conn) throws SQLException
     {
-        Statement stmt = conn.createStatement();
-
-        try
+        try (Statement stmt = conn.createStatement())
         {
-            ResultSet rs = stmt.executeQuery("CALL IDENTITY()");
-
-            try
+            try (ResultSet rs = stmt.executeQuery("CALL IDENTITY()"))
             {
                 rs.next();
 
                 return rs.getInt(1);
             }
-            finally
-            {
-                rs.close();
-            }
-        }
-        finally
-        {
-            stmt.close();
         }
     }
 
@@ -445,8 +433,6 @@ public class PokerDatabase
 
         try
         {
-            PreparedStatement pstmt;
-
             int tournamentID = storeTournament(conn, game);
 
             if (game.isDeleteHandsAfterSaveDate())
@@ -455,55 +441,37 @@ public class PokerDatabase
 
                 if (lastHand != 0)
                 {
-                    pstmt = conn.prepareStatement(
+                    try (PreparedStatement pstmt = conn.prepareStatement(
                             "DELETE FROM PLAYER_ACTION\n" +
                             "WHERE ACT_HAND_ID > ?\n" +
                             "AND EXISTS (SELECT * FROM HAND WHERE HND_ID=ACT_HAND_ID AND HND_TOURNAMENT_ID=?)"
-                    );
-
-                    try
+                    ))
                     {
                         pstmt.setInt(1, lastHand);
                         pstmt.setInt(2, tournamentID);
                         pstmt.executeUpdate();
                     }
-                    finally
-                    {
-                        pstmt.close();
-                    }
 
-                    pstmt = conn.prepareStatement(
+                    try (PreparedStatement pstmt = conn.prepareStatement(
                             "DELETE FROM PLAYER_HAND\n" +
                             "WHERE PLH_HAND_ID > ?\n" +
                             "AND PLH_PLAYER_ID IN (SELECT TPL_ID FROM TOURNAMENT_PLAYER WHERE TPL_TOURNAMENT_ID=?)"
-                    );
-
-                    try
+                    ))
                     {
                         pstmt.setInt(1, lastHand);
                         pstmt.setInt(2, tournamentID);
                         pstmt.executeUpdate();
                     }
-                    finally
-                    {
-                        pstmt.close();
-                    }
 
-                    pstmt = conn.prepareStatement(
+                    try (PreparedStatement pstmt = conn.prepareStatement(
                             "DELETE FROM HAND\n" +
                             "WHERE HND_ID > ?\n" +
                             "AND HND_TOURNAMENT_ID=?"
-                    );
-
-                    try
+                    ))
                     {
                         pstmt.setInt(1, lastHand);
                         pstmt.setInt(2, tournamentID);
                         pstmt.executeUpdate();
-                    }
-                    finally
-                    {
-                        pstmt.close();
                     }
                 }
 
@@ -516,7 +484,7 @@ public class PokerDatabase
 
             // insert hand info
 
-            pstmt = conn.prepareStatement(
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "INSERT INTO HAND (\n" +
                     "HND_NUMBER,\n" +
                     "HND_TABLE,\n" +
@@ -534,9 +502,7 @@ public class PokerDatabase
                     "HND_COMMUNITY_CARD_3,\n" +
                     "HND_COMMUNITY_CARD_4,\n" +
                     "HND_COMMUNITY_CARD_5\n" +
-                    ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-
-            try
+                    ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"))
             {
                 pstmt.setString(1, Integer.toString(hhand.getTable().getHandNum()));
                 pstmt.setString(2, Integer.toString(hhand.getTable().getNumber()));
@@ -582,16 +548,14 @@ public class PokerDatabase
 
                 pstmt.executeUpdate();
             }
-            finally
-            {
-                pstmt.close();
-            }
 
             int handID = identity(conn);
 
             // insert hand info
 
-            pstmt = conn.prepareStatement(
+            int[] playerID = new int[PokerConstants.SEATS];
+
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "INSERT INTO PLAYER_HAND (\n" +
                     "PLH_HAND_ID,\n" +
                     "PLH_PLAYER_ID,\n" +
@@ -607,11 +571,7 @@ public class PokerDatabase
                     "PLH_TURN_ACTIONS,\n" +
                     "PLH_RIVER_ACTIONS,\n" +
                     "PLH_CARDS_EXPOSED\n" +
-                    ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-
-            int[] playerID = new int[PokerConstants.SEATS];
-
-            try
+                    ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"))
             {
                 // since players at table may not have been in hand.  I
                 // added the pocket == null check to catch this, so current
@@ -644,12 +604,8 @@ public class PokerDatabase
                     pstmt.executeUpdate();
                 }
             }
-            finally
-            {
-                pstmt.close();
-            }
 
-            pstmt = conn.prepareStatement(
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "INSERT INTO PLAYER_ACTION (\n" +
                     "ACT_HAND_ID,\n" +
                     "ACT_PLAYER_ID,\n" +
@@ -660,9 +616,7 @@ public class PokerDatabase
                     "ACT_SUB_AMOUNT,\n" +
                     "ACT_ALL_IN,\n" +
                     "ACT_INTENT\n" +
-                    ") VALUES (?,?,?,?,?,?,?,?,?)");
-
-            try
+                    ") VALUES (?,?,?,?,?,?,?,?,?)"))
             {
                 for (int i = 0; i < history.size(); ++i)
                 {
@@ -688,10 +642,6 @@ public class PokerDatabase
 
                     pstmt.executeUpdate();
                 }
-            }
-            finally
-            {
-                pstmt.close();
             }
 
             game.setLastHandSaved(handID);
@@ -745,45 +695,31 @@ public class PokerDatabase
 
         // insert tournament info
 
-        PreparedStatement pstmt = conn.prepareStatement(
+        try (PreparedStatement pstmt = conn.prepareStatement(
                 "SELECT TRN_ID FROM TOURNAMENT\n" +
                 "WHERE TRN_START_DATE=?"
-        );
-
-        try
+        ))
         {
             pstmt.setTimestamp(1, new Timestamp(game.getStartDate()));
 
-            ResultSet rs = pstmt.executeQuery();
-
-            try
+            try (ResultSet rs = pstmt.executeQuery())
             {
                 if (rs.next())
                 {
                     tournamentID = rs.getInt(1);
                 }
             }
-            finally
-            {
-                rs.close();
-            }
-        }
-        finally
-        {
-            pstmt.close();
         }
 
         if (tournamentID == -1)
         {
-            pstmt = conn.prepareStatement(
+            try (PreparedStatement pstmt = conn.prepareStatement(
                     "INSERT INTO TOURNAMENT (\n" +
                     "TRN_TYPE,\n" +
                     "TRN_NAME,\n" +
                     "TRN_TOTAL_PLAYERS,\n" +
                     "TRN_START_DATE\n" +
-                    ") VALUES (?,?,?,?)");
-
-            try
+                    ") VALUES (?,?,?,?)"))
             {
                 pstmt.setString(1, game.isOnlineGame() ? "ONLINE" : "PRACTICE");
                 pstmt.setString(2, game.getProfile().getName());
@@ -791,10 +727,6 @@ public class PokerDatabase
                 pstmt.setTimestamp(4, new Timestamp(game.getStartDate()));
 
                 pstmt.executeUpdate();
-            }
-            finally
-            {
-                pstmt.close();
             }
 
             tournamentID = identity(conn);
@@ -834,28 +766,20 @@ public class PokerDatabase
 
         int finishID = -1;
 
-        PreparedStatement pstmt;
-
         // delete pre-existing row
-        pstmt = conn.prepareStatement(
+        try (PreparedStatement pstmt = conn.prepareStatement(
                 "DELETE FROM TOURNAMENT_FINISH\n" +
                 "WHERE TRF_PROFILE_CREATE_DATE=? AND\n" +
                 "TRF_TOURNAMENT_ID IN (SELECT TRN_ID FROM TOURNAMENT WHERE TRN_START_DATE=?)"
-        );
-
-        try
+        ))
         {
             pstmt.setTimestamp(1, new Timestamp(player.getProfile().getCreateDate()));
             pstmt.setTimestamp(2, new Timestamp(game.getStartDate()));
 
             pstmt.executeUpdate();
         }
-        finally
-        {
-            pstmt.close();
-        }
 
-        pstmt = conn.prepareStatement(
+        try (PreparedStatement pstmt = conn.prepareStatement(
                 "INSERT INTO TOURNAMENT_FINISH (\n" +
                 "TRF_PROFILE_CREATE_DATE,\n" +
                 "TRF_TOURNAMENT_ID,\n" +
@@ -866,9 +790,7 @@ public class PokerDatabase
                 "TRF_TOTAL_REBUY,\n" +
                 "TRF_TOTAL_ADD_ON,\n" +
                 "TRF_PLAYERS_REMAINING\n" +
-                ") VALUES (?,?,?,?,?,?,?,?,?)");
-
-        try
+                ") VALUES (?,?,?,?,?,?,?,?,?)"))
         {
             pstmt.setTimestamp(1, new Timestamp(player.getProfile().getCreateDate()));
             pstmt.setInt(2, tournamentID);
@@ -881,10 +803,6 @@ public class PokerDatabase
             pstmt.setInt(9, game.getNumPlayers() - game.getNumPlayersOut());
 
             pstmt.executeUpdate();
-        }
-        finally
-        {
-            pstmt.close();
         }
 
         finishID = identity(conn);
@@ -919,104 +837,66 @@ public class PokerDatabase
 
     private static void deleteTournament(Connection conn, TournamentHistory hist) throws SQLException
     {
-        PreparedStatement pstmt;
-
         // delete player actions
-        pstmt = conn.prepareStatement(
+        try (PreparedStatement pstmt = conn.prepareStatement(
                 "DELETE FROM PLAYER_ACTION\n" +
                 "WHERE ACT_PLAYER_ID IN (SELECT TPL_ID FROM TOURNAMENT_PLAYER WHERE TPL_TOURNAMENT_ID=?)"
-        );
-
-        try
+        ))
         {
             pstmt.setLong(1, hist.getGameId());
             pstmt.executeUpdate();
-        }
-        finally
-        {
-            pstmt.close();
         }
 
         // delete player hands
-        pstmt = conn.prepareStatement(
+        try (PreparedStatement pstmt = conn.prepareStatement(
                 "DELETE FROM PLAYER_HAND\n" +
                 "WHERE PLH_PLAYER_ID IN (SELECT TPL_ID FROM TOURNAMENT_PLAYER WHERE TPL_TOURNAMENT_ID=?)"
-        );
-
-        try
+        ))
         {
             pstmt.setLong(1, hist.getGameId());
             pstmt.executeUpdate();
-        }
-        finally
-        {
-            pstmt.close();
         }
 
         // delete hands
-        pstmt = conn.prepareStatement(
+        try (PreparedStatement pstmt = conn.prepareStatement(
                 "DELETE FROM HAND\n" +
                 "WHERE HND_TOURNAMENT_ID=?"
-        );
-
-        try
+        ))
         {
             pstmt.setLong(1, hist.getGameId());
             pstmt.executeUpdate();
-        }
-        finally
-        {
-            pstmt.close();
         }
 
         // delete players
-        pstmt = conn.prepareStatement(
+        try (PreparedStatement pstmt = conn.prepareStatement(
                 "DELETE FROM TOURNAMENT_PLAYER\n" +
                 "WHERE TPL_TOURNAMENT_ID=?"
-        );
-
-        try
+        ))
         {
             pstmt.setLong(1, hist.getGameId());
             pstmt.executeUpdate();
-        }
-        finally
-        {
-            pstmt.close();
         }
 
         // delete tournament finishes
-        pstmt = conn.prepareStatement(
+        try (PreparedStatement pstmt = conn.prepareStatement(
                 "DELETE FROM TOURNAMENT_FINISH\n" +
                 "WHERE TRF_TOURNAMENT_ID=?"
-        );
-
-        try
+        ))
         {
             pstmt.setLong(1, hist.getGameId());
 
             pstmt.executeUpdate();
-        }
-        finally
-        {
-            pstmt.close();
         }
 
         // delete tournament
-        pstmt = conn.prepareStatement(
+        try (PreparedStatement pstmt = conn.prepareStatement(
                 "DELETE FROM TOURNAMENT\n" +
                 "WHERE TRN_ID=?"
-        );
-
-        try
+        ))
         {
             pstmt.setLong(1, hist.getGameId());
 
             pstmt.executeUpdate();
-        }
-        finally
-        {
-            pstmt.close();
         }
     }
 
@@ -1047,9 +927,7 @@ public class PokerDatabase
 
     private static void deleteAllTournaments(Connection conn, PlayerProfile profile) throws SQLException
     {
-        Statement stmt = conn.createStatement();
-
-        try
+        try (Statement stmt = conn.createStatement())
         {
             stmt.executeUpdate("DELETE FROM PLAYER_ACTION");
             stmt.executeUpdate("DELETE FROM PLAYER_HAND");
@@ -1057,10 +935,6 @@ public class PokerDatabase
             stmt.executeUpdate("DELETE FROM TOURNAMENT_PLAYER");
             stmt.executeUpdate("DELETE FROM TOURNAMENT_FINISH");
             stmt.executeUpdate("DELETE FROM TOURNAMENT");
-        }
-        finally
-        {
-            stmt.close();
         }
     }
 
@@ -2548,18 +2422,20 @@ public class PokerDatabase
         Connection conn = getDatabase().getConnection();
         try
         {
-            Statement stmt = conn.createStatement();
-            if (!DebugConfig.isTestingOn())
+            try (Statement stmt = conn.createStatement())
             {
-                stmt.executeUpdate("SET SCRIPTFORMAT COMPRESSED");
+                if (!DebugConfig.isTestingOn())
+                {
+                    stmt.executeUpdate("SET SCRIPTFORMAT COMPRESSED");
+                }
+                else
+                {
+                    stmt.executeUpdate("SET SCRIPTFORMAT TEXT");
+                }
+                stmt.executeUpdate("SET WRITE_DELAY false");
+                stmt.executeUpdate("SET PROPERTY \"sql.enforce_strict_size\" true");
+                stmt.executeUpdate("SET PROPERTY \"hsqldb.cache_scale\" 10");
             }
-            else
-            {
-                stmt.executeUpdate("SET SCRIPTFORMAT TEXT");
-            }
-            stmt.executeUpdate("SET WRITE_DELAY false");
-            stmt.executeUpdate("SET PROPERTY \"sql.enforce_strict_size\" true");
-            stmt.executeUpdate("SET PROPERTY \"hsqldb.cache_scale\" 10");
         }
         catch (SQLException e)
         {
