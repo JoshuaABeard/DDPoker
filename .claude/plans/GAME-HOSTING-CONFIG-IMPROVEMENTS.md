@@ -16,28 +16,40 @@ The host's tournament configuration options (via `TournamentProfile` and `Tourna
 
 ## Improvements Catalog
 
-### P1 — Quick Wins (very low effort, high confidence)
+### ✅ P1 — Quick Wins (COMPLETED Feb 12, 2026 — commit 797d5a1)
 
-#### 1. Raise MAX_ONLINE_PLAYERS (30 → 90)
+#### ✅ 1. Raise MAX_ONLINE_PLAYERS (30 → 90)
 - **Why**: The existing code comment says `// TODO: is this too few?`. 30 players (3 tables) is very limiting. The table assignment/balancing logic already handles arbitrary table counts.
-- **Change**: `TournamentProfile.java` line ~76: change `MAX_ONLINE_PLAYERS = 30` to `90`
+- **Change**: `TournamentProfile.java` line 75: changed `MAX_ONLINE_PLAYERS = 30` to `90`
 - **Risk**: Network performance at higher counts needs testing
 
-#### 2. Raise MAX_CHIPS (50,000 → 1,000,000)
+#### ✅ 2. Raise MAX_CHIPS (50,000 → 1,000,000)
 - **Why**: Modern deep-stack tournaments use 100K+ starting chips. `MAX_REBUY_CHIPS` is already 1M, so the engine handles large values.
-- **Change**: `TournamentProfile.java` line ~79: change `MAX_CHIPS` constant
+- **Change**: `TournamentProfile.java` line 78: changed `MAX_CHIPS` constant to 1,000,000
 
-#### 3. Display Starting Depth (big blinds)
+#### ✅ 3. Display Starting Depth (big blinds)
 - **Why**: "Starting stack: 1,500 / BB: 30 = 50 BBs deep" is the most important structure metric. Hosts currently do this math manually.
-- **Change**: Add a calculated label in `TournamentProfileDialog.java` (levels or details tab) showing `buyinChips / bigBlind[level0]`
+- **Change**: Added calculated label in `TournamentProfileDialog.java` buy-in section showing `buyinChips / bigBlind[level0]`, plus display in HTML summary
 
-#### 4. Profile Import/Export
+#### ✅ 4. Profile Import/Export
 - **Why**: Hosts can't share tournament structures. Profiles already serialize via `marshal()`/`demarshal()`.
-- **Change**: Add Import/Export buttons to `TournamentOptions.java` / `ProfileList` using `JFileChooser` + existing serialization
+- **Change**: Added Import/Export buttons to `TournamentOptions.java` / `ProfileList` using `JFileChooser` + `.ddprofile` extension
 
-#### 5. Per-Level Duration Clarity
+#### ✅ 5. Per-Level Duration Clarity
 - **Why**: Each level can already have its own minutes override, but the UI doesn't make this obvious.
-- **Change**: Add tooltip/help text on the minutes column header in the levels tab
+- **Change**: Shortened header to "Mins", added tooltip, updated help text to mention blank fields use default
+
+#### ✅ 8. Raise MAX_OBSERVERS (10 → 30)
+- **Why**: 10 observers is restrictive for community events. The testing constant is already 30.
+- **Change**: `TournamentProfile.java` line 76: changed `MAX_OBSERVERS = 10` to `30`
+
+#### ✅ 10. Increase Think Bank Max (60 → 120s)
+- **Why**: 60 seconds of total think bank time is very tight for multi-hour tournaments.
+- **Change**: `TournamentProfile.java` line 92: changed `MAX_THINKBANK` to `120`
+
+#### ✅ 16. Raise MAX_TIMEOUT (60 → 120s)
+- **Why**: 60s max can feel tight for complex tournament decisions.
+- **Change**: `TournamentProfile.java` line 91: changed `MAX_TIMEOUT` to `120`
 
 ---
 
@@ -55,19 +67,11 @@ The host's tournament configuration options (via `TournamentProfile` and `Tourna
 - **UI**: Date/time input + min-players spinner in Online tab
 - **Engine**: `TournamentDirector` checks `currentTime >= startTime && players >= minPlayers` in registration phase loop
 
-#### 8. Raise MAX_OBSERVERS (10 → 30)
-- **Why**: 10 observers is restrictive for community events. The testing constant is already 30.
-- **Change**: `TournamentProfile.java`: change `MAX_OBSERVERS = 10` to `30`
-
 #### 9. Per-Street Action Timeouts
 - **Why**: Players need less time pre-flop, more time on river. Many platforms offer this.
 - **New params**: `PARAM_TIMEOUT_PREFLOP`, `PARAM_TIMEOUT_FLOP`, `PARAM_TIMEOUT_TURN`, `PARAM_TIMEOUT_RIVER` — all optional, default to `PARAM_TIMEOUT`
 - **UI**: Collapsible "Advanced Timeout" section in Online tab
 - **Engine**: Timeout lookup checks current round and uses the appropriate per-street value
-
-#### 10. Increase Think Bank Max (60 → 120s)
-- **Why**: 60 seconds of total think bank time is very tight for multi-hour tournaments.
-- **Change**: `TournamentProfile.java`: change `MAX_THINKBANK` to `120`
 
 ---
 
@@ -103,10 +107,6 @@ The host's tournament configuration options (via `TournamentProfile` and `Tourna
 - **Why**: In offline play, minutes-per-level depends on hands/hour settings. Hands-per-level is more consistent.
 - **New params**: `PARAM_LEVEL_ADVANCE_MODE` ("time"/"hands"), `PARAM_HANDS_PER_LEVEL` (int)
 - **Engine**: Parallel code path in `PokerGame` level transition logic
-
-#### 16. Raise MAX_TIMEOUT (60 → 120s)
-- **Why**: 60s max can feel tight for complex tournament decisions.
-- **Change**: `TournamentProfile.java`: change `MAX_TIMEOUT` to `120`
 
 #### 17. Configurable Table Size Default
 - **Why**: 6-max and short-handed formats are popular. Table seats is configurable (2-9) but defaults to 10 which seems wrong (profile default). Making the default more prominent or adding format presets (Full Ring/6-Max/Heads-Up) would help.
