@@ -41,6 +41,8 @@ package com.donohoedigital.games.poker.server;
 
 import com.donohoedigital.base.ApplicationError;
 import com.donohoedigital.base.ErrorCodes;
+import com.donohoedigital.base.InputValidator;
+import com.donohoedigital.base.RateLimiter;
 import com.donohoedigital.base.Utils;
 import com.donohoedigital.comms.*;
 import com.donohoedigital.config.PropertyConfig;
@@ -92,6 +94,9 @@ public class PokerServlet extends EngineServlet
     private OnlineGameService onlineGameService;
     @Autowired
     private OnlineProfileService onlineProfileService;
+
+    // Rate limiter for preventing DoS attacks (SEC-3)
+    private final RateLimiter profileRateLimiter = new RateLimiter();
 
     /**
      * init from gameserver
@@ -250,7 +255,7 @@ public class PokerServlet extends EngineServlet
                 return testP2pConnect(request, ddreceived);
 
             case OnlineMessage.CAT_WAN_GAME_ADD:
-                return addWanGame(ddreceived);
+                return addWanGame(request, ddreceived);
 
             case OnlineMessage.CAT_WAN_GAME_UPDATE:
                 return updateWanGame(ddreceived, false);
@@ -271,7 +276,7 @@ public class PokerServlet extends EngineServlet
                 return endWanGame(ddreceived);
 
             case OnlineMessage.CAT_WAN_PROFILE_ADD:
-                return addOnlineProfile(ddreceived);
+                return addOnlineProfile(request, ddreceived);
 
             case OnlineMessage.CAT_WAN_PROFILE_RESET:
                 return resetOnlineProfile(ddreceived);
@@ -476,7 +481,7 @@ public class PokerServlet extends EngineServlet
      * then it is replaced with the given game.  This request should only be received from
      * the host player.
      */
-    private DDMessage addWanGame(DDMessage ddreceived)
+    private DDMessage addWanGame(HttpServletRequest request, DDMessage ddreceived)
     {
         // Wrap everything in useable interfaces.
         Version version = ddreceived.getVersion();
@@ -484,6 +489,23 @@ public class PokerServlet extends EngineServlet
         OnlineGame game = new OnlineGame(reqMsg.getWanGame());
         OnlineMessage resMsg = null;
         OnlineProfile profile = null;
+
+        // Validate input (SEC-2)
+        if (game.getHostPlayer() != null && !InputValidator.isValidProfileName(game.getHostPlayer()))
+        {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Invalid host player name");
+            return resMsg.getData();
+        }
+
+        // Rate limiting (SEC-3): 10 requests per minute per IP
+        String clientIp = request.getRemoteAddr();
+        if (!profileRateLimiter.allowRequest(clientIp, 10, 60000))
+        {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Too many game creation requests. Please try again later.");
+            return resMsg.getData();
+        }
 
         // ban check
         resMsg = banCheck(profile);
@@ -692,12 +714,35 @@ public class PokerServlet extends EngineServlet
     /**
      * Add a WAN profile.  If one already exists for the given name, an error indicator is returned.
      */
-    private DDMessage addOnlineProfile(DDMessage ddreceived)
+    private DDMessage addOnlineProfile(HttpServletRequest request, DDMessage ddreceived)
     {
         // Wrap everything in useable interfaces.
         OnlineMessage reqMsg = new OnlineMessage(ddreceived);
         OnlineProfile profile = new OnlineProfile(reqMsg.getOnlineProfileData()); // sets name
         OnlineMessage resMsg = null;
+
+        // Validate input (SEC-2)
+        if (!InputValidator.isValidProfileName(profile.getName()))
+        {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Profile name must be 1-50 characters");
+            return resMsg.getData();
+        }
+        if (!InputValidator.isValidEmail(profile.getEmail()))
+        {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Invalid email format");
+            return resMsg.getData();
+        }
+
+        // Rate limiting (SEC-3): 5 requests per minute per IP
+        String clientIp = request.getRemoteAddr();
+        if (!profileRateLimiter.allowRequest(clientIp, 5, 60000))
+        {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Too many profile creation requests. Please try again later.");
+            return resMsg.getData();
+        }
 
         // ban check - ignore name
         OnlineProfile banCheck = new OnlineProfile();

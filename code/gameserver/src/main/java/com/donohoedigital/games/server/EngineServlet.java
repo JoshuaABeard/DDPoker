@@ -970,6 +970,14 @@ public abstract class EngineServlet extends BaseServlet
                                                        PropertyConfig.getLocalizedMessage("msg.joinfailed", message.getLocale()),
                                                        "Missing email " + message.getDebugInfo());
 
+        // Validate email format (SEC-2)
+        if (!InputValidator.isValidEmail(sJoinEmail))
+        {
+            return getErrorMessage(game,
+                                  PropertyConfig.getLocalizedMessage("msg.joinfailed", message.getLocale()),
+                                  "Invalid email format " + message.getDebugInfo());
+        }
+
         String sKey = message.getKey();
         if (sKey == null) return getErrorMessage(game,
                                                  PropertyConfig.getLocalizedMessage("msg.joinfailed", message.getLocale()),
