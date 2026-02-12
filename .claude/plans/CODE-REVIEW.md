@@ -212,10 +212,11 @@ Comprehensive code review of DDPoker's server-side and shared infrastructure mod
 
 ---
 
-### DEBT-4: Add Query Result Caching
+### ✅ DEBT-4: Add Query Result Caching (COMPLETED)
 **File:** `RegistrationServiceImpl.java` (lines 128-155)
 **Issue:** Fetches ALL banned keys into memory each time.
 **Fix:** Add pagination or cache banned key list with TTL.
+**Completed:** Feb 12, 2026 (commit 5431a96) - Added 10-minute TTL cache with automatic invalidation on banned key modifications
 
 ---
 
