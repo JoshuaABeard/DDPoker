@@ -59,7 +59,7 @@ export default async function AvailableGamesPage({
   searchParams: Promise<{ page?: string }>
 }) {
   const params = await searchParams
-  const currentPage = parseInt(params.page || '1')
+  const currentPage = parseInt(params.page || '1', 10) || 1
   const { games, totalPages, totalItems } = await getAvailableGames(currentPage)
 
   const columns = [
@@ -93,7 +93,10 @@ export default async function AvailableGamesPage({
     {
       key: 'created',
       header: 'Created',
-      render: (game: AvailableGame) => new Date(game.created).toLocaleDateString(),
+      render: (game: AvailableGame) => {
+        const date = new Date(game.created)
+        return isNaN(date.getTime()) ? 'Unknown' : date.toLocaleDateString()
+      },
     },
   ]
 

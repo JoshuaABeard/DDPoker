@@ -77,7 +77,7 @@ export default async function LeaderboardPage({
 }) {
   const params = await searchParams
   const type = params.type || 'ddr1'
-  const currentPage = parseInt(params.page || '1')
+  const currentPage = parseInt(params.page || '1', 10) || 1
   const filters = {
     name: params.name,
     begin: params.begin,

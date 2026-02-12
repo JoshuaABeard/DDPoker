@@ -69,7 +69,7 @@ export default async function CompletedGamesPage({
   searchParams: Promise<{ page?: string; begin?: string; end?: string }>
 }) {
   const params = await searchParams
-  const currentPage = parseInt(params.page || '1')
+  const currentPage = parseInt(params.page || '1', 10) || 1
   const filters = {
     begin: params.begin,
     end: params.end,
@@ -117,7 +117,10 @@ export default async function CompletedGamesPage({
     {
       key: 'completed',
       header: 'Completed',
-      render: (game: CompletedGame) => new Date(game.completed).toLocaleDateString(),
+      render: (game: CompletedGame) => {
+        const date = new Date(game.completed)
+        return isNaN(date.getTime()) ? 'Unknown' : date.toLocaleDateString()
+      },
     },
   ]
 

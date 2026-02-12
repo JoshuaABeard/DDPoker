@@ -91,7 +91,7 @@ export default async function TournamentHistoryPage({
 }) {
   const params = await searchParams
   const playerName = params.name || ''
-  const currentPage = parseInt(params.page || '1')
+  const currentPage = parseInt(params.page || '1', 10) || 1
   const filters = {
     begin: params.begin,
     end: params.end,
@@ -160,7 +160,10 @@ export default async function TournamentHistoryPage({
     {
       key: 'date',
       header: 'Date',
-      render: (entry: TournamentEntry) => new Date(entry.date).toLocaleDateString(),
+      render: (entry: TournamentEntry) => {
+        const date = new Date(entry.date)
+        return isNaN(date.getTime()) ? 'Unknown' : date.toLocaleDateString()
+      },
     },
   ]
 

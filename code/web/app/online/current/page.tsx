@@ -59,7 +59,7 @@ export default async function CurrentGamesPage({
   searchParams: Promise<{ page?: string }>
 }) {
   const params = await searchParams
-  const currentPage = parseInt(params.page || '1')
+  const currentPage = parseInt(params.page || '1', 10) || 1
   const { games, totalPages, totalItems } = await getCurrentGames(currentPage)
 
   const columns = [
@@ -92,7 +92,10 @@ export default async function CurrentGamesPage({
     {
       key: 'started',
       header: 'Started',
-      render: (game: CurrentGame) => new Date(game.started).toLocaleString(),
+      render: (game: CurrentGame) => {
+        const date = new Date(game.started)
+        return isNaN(date.getTime()) ? 'Unknown' : date.toLocaleString()
+      },
     },
   ]
 

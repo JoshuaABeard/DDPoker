@@ -21,7 +21,6 @@ interface HostInfo {
   name: string
   lastHosted: string
   totalGamesHosted: number
-  ipAddress: string
 }
 
 async function getHosts(
@@ -45,7 +44,6 @@ async function getHosts(
       name: h.playerName,
       lastHosted: h.lastHosted || 'Unknown',
       totalGamesHosted: h.gamesHosted,
-      ipAddress: 'N/A',
     }))
     const result = buildPaginationResult(mapped, total, page, 50)
     return {
@@ -69,7 +67,7 @@ export default async function HostsPage({
   searchParams: Promise<{ page?: string; name?: string; begin?: string; end?: string }>
 }) {
   const params = await searchParams
-  const currentPage = parseInt(params.page || '1')
+  const currentPage = parseInt(params.page || '1', 10) || 1
   const filters = {
     name: params.name,
     begin: params.begin,
@@ -97,11 +95,6 @@ export default async function HostsPage({
       header: 'Total Games Hosted',
       render: (host: HostInfo) => host.totalGamesHosted.toLocaleString(),
       align: 'right' as const,
-    },
-    {
-      key: 'ipAddress',
-      header: 'IP Address',
-      render: (host: HostInfo) => host.ipAddress,
     },
   ]
 

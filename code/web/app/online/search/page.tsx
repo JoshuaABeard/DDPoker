@@ -42,6 +42,8 @@ async function searchPlayers(
       lastPlayed: p.lastPlayed || p.lastSeen || new Date().toISOString(),
       rank: p.rank,
     }))
+    // LIMITATION: Uses mapped.length as total (backend search API doesn't return total count)
+    // This means pagination will show at most 1 page. Backend should return { results, total }.
     const result = buildPaginationResult(mapped, mapped.length, page, 50)
     return {
       results: result.data,
@@ -65,7 +67,7 @@ export default async function SearchPage({
 }) {
   const params = await searchParams
   const searchTerm = params.name || ''
-  const currentPage = parseInt(params.page || '1')
+  const currentPage = parseInt(params.page || '1', 10) || 1
 
   const { results, totalPages, totalItems } = searchTerm
     ? await searchPlayers(searchTerm, currentPage)
@@ -93,7 +95,10 @@ export default async function SearchPage({
     {
       key: 'lastPlayed',
       header: 'Last Played',
-      render: (player: PlayerSearchResult) => new Date(player.lastPlayed).toLocaleDateString(),
+      render: (player: PlayerSearchResult) => {
+        const date = new Date(player.lastPlayed)
+        return isNaN(date.getTime()) ? 'Unknown' : date.toLocaleDateString()
+      },
     },
     {
       key: 'rank',

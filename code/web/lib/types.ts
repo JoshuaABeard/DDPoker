@@ -181,6 +181,9 @@ export interface TournamentStats {
 
 /**
  * Game list response from backend
+ * TODO: Define proper backend DTO interfaces to replace 'any[]' types
+ * This applies to GameListResponse, LeaderboardEntry, TournamentHistoryEntry,
+ * and all mapper function parameters. Currently using 'any' with runtime null checks.
  */
 export interface GameListResponse {
   games: any[]
