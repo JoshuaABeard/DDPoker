@@ -32,9 +32,8 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * TCP-based chat client for lobby chat.
- * Replaces PokerUDPServer.chatLink_ functionality.
- * Uses Peer2PeerMessage TCP wire protocol for all I/O.
+ * TCP-based chat client for lobby chat. Replaces PokerUDPServer.chatLink_
+ * functionality. Uses Peer2PeerMessage TCP wire protocol for all I/O.
  *
  * Note: This class uses generic Object types for profile and handler to avoid
  * circular dependencies between pokernetwork and poker modules. The actual
@@ -57,7 +56,8 @@ public class TcpChatClient {
     /**
      * Create a new TcpChatClient
      *
-     * @param serverAddress Server address to connect to
+     * @param serverAddress
+     *            Server address to connect to
      */
     public TcpChatClient(InetSocketAddress serverAddress) {
         this.serverAddress = serverAddress;
@@ -66,7 +66,8 @@ public class TcpChatClient {
     /**
      * Set the chat handler for receiving messages
      *
-     * @param handler Handler to receive messages (ChatHandler from poker module)
+     * @param handler
+     *            Handler to receive messages (ChatHandler from poker module)
      */
     public void setHandler(Object handler) {
         this.handler = handler;
@@ -75,7 +76,8 @@ public class TcpChatClient {
     /**
      * Enable or disable automatic reconnection
      *
-     * @param enabled Whether to enable reconnection
+     * @param enabled
+     *            Whether to enable reconnection
      */
     public void setReconnectEnabled(boolean enabled) {
         this.reconnectEnabled = enabled;
@@ -84,7 +86,8 @@ public class TcpChatClient {
     /**
      * Set the delay between reconnection attempts
      *
-     * @param delayMs Delay in milliseconds
+     * @param delayMs
+     *            Delay in milliseconds
      */
     public void setReconnectDelayMs(long delayMs) {
         this.reconnectDelayMs = delayMs;
@@ -93,7 +96,8 @@ public class TcpChatClient {
     /**
      * Connect to the chat server
      *
-     * @throws IOException If connection fails
+     * @throws IOException
+     *             If connection fails
      */
     public void connect() throws IOException {
         lock.lock();
@@ -171,9 +175,12 @@ public class TcpChatClient {
     /**
      * Send HELLO message with player profile authentication
      *
-     * @param profile Player profile (PlayerProfile from poker module)
-     * @param playerId Player ID
-     * @throws IOException If not connected or send fails
+     * @param profile
+     *            Player profile (PlayerProfile from poker module)
+     * @param playerId
+     *            Player ID
+     * @throws IOException
+     *             If not connected or send fails
      */
     public void sendHello(Object profile, String playerId) throws IOException {
         if (!isConnected()) {
@@ -209,8 +216,10 @@ public class TcpChatClient {
     /**
      * Send a chat message
      *
-     * @param profile Player profile (PlayerProfile from poker module)
-     * @param message Message text
+     * @param profile
+     *            Player profile (PlayerProfile from poker module)
+     * @param message
+     *            Message text
      */
     public void sendChat(Object profile, String message) {
         // Allow null messages (no-op per PokerUDPServer behavior)
@@ -274,8 +283,10 @@ public class TcpChatClient {
     /**
      * Send a message to the server
      *
-     * @param msg Message to send
-     * @throws IOException If send fails
+     * @param msg
+     *            Message to send
+     * @throws IOException
+     *             If send fails
      */
     private void sendMessage(OnlineMessage msg) throws IOException {
         lock.lock();
@@ -342,7 +353,8 @@ public class TcpChatClient {
     /**
      * Process incoming message
      *
-     * @param msg Message to process
+     * @param msg
+     *            Message to process
      */
     private void processMessage(OnlineMessage msg) {
         if (handler == null) {
@@ -354,8 +366,8 @@ public class TcpChatClient {
 
         try {
             // Handle error messages specially - disconnect after notifying handler
-            if (msg.getCategory() == OnlineMessage.CAT_CHAT_ADMIN &&
-                msg.getChatType() == PokerConstants.CHAT_ADMIN_ERROR) {
+            if (msg.getCategory() == OnlineMessage.CAT_CHAT_ADMIN
+                    && msg.getChatType() == PokerConstants.CHAT_ADMIN_ERROR) {
                 // Call handler.chatReceived(msg) via reflection
                 handler.getClass().getMethod("chatReceived", OnlineMessage.class).invoke(handler, msg);
                 disconnect();
@@ -372,7 +384,8 @@ public class TcpChatClient {
     /**
      * Handle connection error
      *
-     * @param message Error message
+     * @param message
+     *            Error message
      */
     private void handleConnectionError(String message) {
         // Notify handler

@@ -60,7 +60,6 @@ import com.donohoedigital.games.poker.online.ListGames;
 import com.donohoedigital.games.poker.online.OnlineManager;
 import com.donohoedigital.gui.DDHtmlEditorKit;
 import com.donohoedigital.p2p.*;
-import com.donohoedigital.udp.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -79,13 +78,7 @@ import static com.donohoedigital.config.DebugConfig.TESTING;
 /**
  * @author Doug Donohoe
  */
-public class PokerMain extends GameEngine
-        implements
-            Peer2PeerControllerInterface,
-            LanControllerInterface,
-            UDPLinkHandler,
-            UDPManagerMonitor,
-            UDPLinkMonitor {
+public class PokerMain extends GameEngine implements Peer2PeerControllerInterface, LanControllerInterface {
     private static final Logger logger;
 
     private static final String APP_NAME = "poker";
@@ -491,7 +484,6 @@ public class PokerMain extends GameEngine
     ////
 
     private PokerConnectionServer p2p_;
-    private PokerUDPServer udp_;
     private PokerTCPServer tcp_;
     private TcpChatClientAdapter chat_;
     private LanManager lan_;
@@ -509,30 +501,6 @@ public class PokerMain extends GameEngine
      */
     public LanManager getLanManager() {
         return lan_;
-    }
-
-    /**
-     * Get udp server
-     */
-    @Override
-    public UDPServer getUDPServer() {
-        return udp_;
-    }
-
-    /**
-     * Get udp server - used for chat/games
-     */
-    private PokerUDPServer getCreateUDPServer() {
-        if (udp_ == null) {
-            udp_ = new PokerUDPServer(this);
-            udp_.init();
-            udp_.manager().addMonitor(this);
-            // notify OnlineLobby
-            UDPStatus.setUDPServer(udp_);
-            if (udp_.isBound())
-                udp_.start();
-        }
-        return udp_;
     }
 
     /**
@@ -589,8 +557,6 @@ public class PokerMain extends GameEngine
         if (p2p == tcp_) {
             tcp_.shutdown();
             tcp_ = null;
-        } else {
-            shutdownUDP();
         }
     }
 
@@ -601,18 +567,6 @@ public class PokerMain extends GameEngine
         if (chat_ != null) {
             chat_.disconnect();
             chat_ = null;
-        }
-        shutdownUDP();
-    }
-
-    /**
-     * shutdown UDP server
-     */
-    private void shutdownUDP() {
-        if (chat_ == null && (p2p_ == null || p2p_ == tcp_)) {
-            udp_.shutdown();
-            udp_ = null;
-            UDPStatus.setUDPServer(null);
         }
     }
 
@@ -801,102 +755,6 @@ public class PokerMain extends GameEngine
      */
     public void socketClosing(SocketChannel channel) {
         connectionClosing(new PokerConnection(channel));
-    }
-
-    ////
-    //// UDPManagerMonitor
-    ////
-
-    public void monitorEvent(UDPManagerEvent event) {
-        UDPLink link = event.getLink();
-
-        // UDP no longer used for chat (now TCP-based)
-        // This method remains for any legacy UDP handling if needed
-        switch (event.getType()) {
-            case CREATED :
-                if (TESTING(UDPServer.TESTING_UDP))
-                    logger.debug("POKER Created: {}", Utils.getAddressPort(link.getRemoteIP()));
-                link.addMonitor(this);
-                break;
-
-            case DESTROYED :
-                if (TESTING(UDPServer.TESTING_UDP))
-                    logger.debug("POKER Destroyed: {} stats: {}", Utils.getAddressPort(link.getRemoteIP()),
-                            link.getStats());
-                link.removeMonitor(this);
-                break;
-        }
-    }
-
-    ////
-    //// UDPLinkMonitor (UDP)
-    ////
-
-    public void monitorEvent(UDPLinkEvent event) {
-        // UDP no longer used for chat (now TCP-based)
-        // This method remains for any legacy UDP handling if needed
-
-        UDPLink link = event.getLink();
-        long elapsed = event.getElapsed();
-
-        switch (event.getType()) {
-            case ESTABLISHED :
-                if (TESTING(UDPServer.TESTING_UDP))
-                    logger.debug("POKER Established: {}", link.toStringNameIP());
-                break;
-
-            case CLOSING :
-                if (TESTING(UDPServer.TESTING_UDP))
-                    logger.debug("POKER Closing: {}", link.toStringNameIP());
-                break;
-
-            case CLOSED :
-                if (TESTING(UDPServer.TESTING_UDP))
-                    logger.debug("POKER Closed: {}", link.toStringNameIP());
-                break;
-
-            case POSSIBLE_TIMEOUT :
-                if (TESTING(UDPServer.TESTING_UDP))
-                    logger.debug("POKER Possible timeout on {} (no message in last {} millis)", link.toStringNameIP(),
-                            elapsed);
-                break;
-
-            case TIMEOUT :
-                if (TESTING(UDPServer.TESTING_UDP))
-                    logger.debug("POKER Timeout: {}", link.toStringNameIP());
-                break;
-
-            case RESEND_FAILURE :
-                if (TESTING(UDPServer.TESTING_UDP))
-                    logger.debug("POKER Resend failure: {}", link.toStringNameIP());
-                break;
-
-            case SESSION_CHANGED :
-                if (TESTING(UDPServer.TESTING_UDP))
-                    logger.debug("POKER session-changed: {}", link.toStringNameIP());
-                break;
-
-            case RECEIVED :
-                if (TESTING(UDPServer.TESTING_UDP))
-                    logger.debug("POKER Received: {}", link.toStringNameIP());
-                break;
-        }
-    }
-
-    ////
-    //// UDPLinkHandler interface
-    ////
-
-    public int getTimeout(UDPLink link) {
-        return UDPLink.DEFAULT_TIMEOUT;
-    }
-
-    public int getPossibleTimeoutNotificationInterval(UDPLink link) {
-        return getTimeout(link); // we don't ues this in poker
-    }
-
-    public int getPossibleTimeoutNotificationStart(UDPLink link) {
-        return getTimeout(link); // we don't ues this in poker
     }
 
     ////

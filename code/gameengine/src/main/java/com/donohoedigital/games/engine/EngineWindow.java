@@ -38,7 +38,6 @@ import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
-import com.donohoedigital.udp.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -158,14 +157,6 @@ public class EngineWindow extends BaseFrame {
         GuiUtils.addKeyAction(base_, JComponent.WHEN_IN_FOCUSED_WINDOW, "debug", new DumpAction(), KeyEvent.VK_D,
                 Utils.ISMAC ? KeyEvent.META_DOWN_MASK : KeyEvent.CTRL_DOWN_MASK);
 
-        // debug udp flag action
-        GuiUtils.addKeyAction(base_, JComponent.WHEN_IN_FOCUSED_WINDOW, "udpdebug", new UDPAction(), KeyEvent.VK_F12,
-                Utils.ISMAC ? KeyEvent.META_DOWN_MASK : KeyEvent.CTRL_DOWN_MASK);
-
-        // debug udp app flag action
-        GuiUtils.addKeyAction(base_, JComponent.WHEN_IN_FOCUSED_WINDOW, "udpdebug2", new UDPAction2(), KeyEvent.VK_F11,
-                Utils.ISMAC ? KeyEvent.META_DOWN_MASK : KeyEvent.CTRL_DOWN_MASK);
-
         // Help action
         GuiUtils.addKeyAction(base_, JComponent.WHEN_IN_FOCUSED_WINDOW, "help", new HelpAction(), KeyEvent.VK_SLASH,
                 Utils.ISMAC ? KeyEvent.META_DOWN_MASK : KeyEvent.CTRL_DOWN_MASK);
@@ -263,27 +254,6 @@ public class EngineWindow extends BaseFrame {
     private class DumpAction extends AbstractAction {
         public void actionPerformed(ActionEvent e) {
             logger.debug(Utils.getAllStacktraces());
-        }
-    }
-
-    /**
-     * UDP debugging action
-     */
-    private class UDPAction extends AbstractAction {
-        public void actionPerformed(ActionEvent e) {
-            TOGGLE(UDPServer.TESTING_UDP);
-            logger.debug("UDP flags turned " + (TESTING(UDPServer.TESTING_UDP) ? "on" : "off"));
-            UDPServer.setDebugFlags();
-        }
-    }
-
-    /**
-     * UDP debugging action
-     */
-    private class UDPAction2 extends AbstractAction {
-        public void actionPerformed(ActionEvent e) {
-            TOGGLE(EngineConstants.TESTING_UDP_APP);
-            logger.debug("UDP APP flags turned " + (TESTING(EngineConstants.TESTING_UDP_APP) ? "on" : "off"));
         }
     }
 

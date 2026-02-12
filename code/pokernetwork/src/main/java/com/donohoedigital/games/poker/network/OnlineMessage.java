@@ -41,7 +41,6 @@ package com.donohoedigital.games.poker.network;
 import com.donohoedigital.base.*;
 import com.donohoedigital.comms.*;
 import com.donohoedigital.games.poker.engine.*;
-import com.donohoedigital.udp.*;
 
 import java.util.*;
 
@@ -447,17 +446,6 @@ public class OnlineMessage {
         if (url == null)
             return;
         data_.setString(ON_CONNECTION_URL, url.toString());
-    }
-
-    public UDPID getUPDID() {
-        String id = data_.getString(ON_UDPID);
-        return (id == null) ? null : new UDPID(id);
-    }
-
-    public void setUPDID(UDPID id) {
-        if (id == null)
-            return;
-        data_.setString(ON_UDPID, id.toString());
     }
 
     public int getMessageID() {

@@ -76,7 +76,6 @@ class PokerConnectionTcpTest {
         PokerConnection conn = new PokerConnection(clientChannel);
 
         assertThat(conn.isTCP()).isTrue();
-        assertThat(conn.isUDP()).isFalse();
     }
 
     @Test
@@ -84,13 +83,6 @@ class PokerConnectionTcpTest {
         PokerConnection conn = new PokerConnection(clientChannel);
 
         assertThat(conn.getSocket()).isEqualTo(clientChannel);
-    }
-
-    @Test
-    void should_ReturnNullForUDPID_When_CreatedWithSocketChannel() {
-        PokerConnection conn = new PokerConnection(clientChannel);
-
-        assertThat(conn.getUDPID()).isNull();
     }
 
     // =================================================================

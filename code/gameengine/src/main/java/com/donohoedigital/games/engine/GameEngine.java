@@ -44,7 +44,6 @@ import com.donohoedigital.config.*;
 import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.gui.*;
-import com.donohoedigital.udp.*;
 import org.apache.logging.log4j.*;
 
 import javax.swing.*;
@@ -459,13 +458,6 @@ public abstract class GameEngine extends BaseApp {
      */
     protected Dimension getStartingSize() {
         return new Dimension(DESIRED_MIN_WIDTH, DESIRED_MIN_HEIGHT);
-    }
-
-    /**
-     * return UDP server in use (default returns null; should be overridden)
-     */
-    public UDPServer getUDPServer() {
-        return null;
     }
 
     /**

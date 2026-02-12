@@ -19,7 +19,6 @@
  */
 package com.donohoedigital.games.poker.network;
 
-import com.donohoedigital.comms.DDMessage;
 import com.donohoedigital.comms.DMTypedHashMap;
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.PropertyConfig;
@@ -44,8 +43,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for TcpChatClient - TCP-based chat client for lobby chat.
- * Tests the client-side chat functionality replacing PokerUDPServer.chatLink_.
+ * Tests for TcpChatClient - TCP-based chat client for lobby chat. Tests the
+ * client-side chat functionality replacing PokerUDPServer.chatLink_.
  */
 @Timeout(value = 10, unit = TimeUnit.SECONDS)
 class TcpChatClientTest {
@@ -118,8 +117,7 @@ class TcpChatClientTest {
         client = createClient(badAddr);
 
         // When/Then: Connect should fail
-        assertThatThrownBy(() -> client.connect())
-                .isInstanceOf(IOException.class);
+        assertThatThrownBy(() -> client.connect()).isInstanceOf(IOException.class);
     }
 
     @Test
@@ -171,8 +169,7 @@ class TcpChatClientTest {
         client = createClient(new InetSocketAddress("127.0.0.1", serverPort));
 
         // When/Then: Sending HELLO before connect should fail
-        assertThatThrownBy(() -> client.sendHello(testProfile, "test-id"))
-                .isInstanceOf(IllegalStateException.class)
+        assertThatThrownBy(() -> client.sendHello(testProfile, "test-id")).isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Not connected");
     }
 
@@ -217,8 +214,8 @@ class TcpChatClientTest {
         OnlineMessage received = handler.receivedMessages.get(0);
         assertThat(received.getCategory()).isEqualTo(OnlineMessage.CAT_CHAT_ADMIN);
         assertThat(received.getChatType()).isEqualTo(OnlineMessage.CHAT_ADMIN_JOIN);
-        assertThat(received.getPlayerList()).extracting(OnlinePlayerInfo::getName)
-                .containsExactly("Player1", "Player2", "Player3");
+        assertThat(received.getPlayerList()).extracting(OnlinePlayerInfo::getName).containsExactly("Player1", "Player2",
+                "Player3");
     }
 
     // =================================================================
@@ -362,8 +359,7 @@ class TcpChatClientTest {
 
         // When: Sending empty message
         // Then: Should be rejected
-        assertThatThrownBy(() -> client.sendChat(testProfile, ""))
-                .isInstanceOf(IllegalArgumentException.class)
+        assertThatThrownBy(() -> client.sendChat(testProfile, "")).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("empty");
     }
 
@@ -382,8 +378,7 @@ class TcpChatClientTest {
 
         // Then: Should be rejected
         assertThatThrownBy(() -> client.sendChat(testProfile, huge.toString()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("large");
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("large");
     }
 
     // =================================================================
@@ -668,7 +663,8 @@ class TcpChatClientTest {
                 }
             }
             if (receivedMessages.size() < count) {
-                throw new AssertionError("Timeout waiting for " + count + " messages. Received: " + receivedMessages.size());
+                throw new AssertionError(
+                        "Timeout waiting for " + count + " messages. Received: " + receivedMessages.size());
             }
         }
     }
@@ -678,8 +674,8 @@ class TcpChatClientTest {
     // =================================================================
 
     /**
-     * Test stub for PlayerProfile from poker module.
-     * Provides just enough functionality for TcpChatClient to work via reflection.
+     * Test stub for PlayerProfile from poker module. Provides just enough
+     * functionality for TcpChatClient to work via reflection.
      */
     private static class PlayerProfile {
         private final String name;
@@ -709,8 +705,8 @@ class TcpChatClientTest {
     }
 
     /**
-     * Test stub for ChatHandler interface from poker module.
-     * TcpChatClient calls chatReceived via reflection.
+     * Test stub for ChatHandler interface from poker module. TcpChatClient calls
+     * chatReceived via reflection.
      */
     private interface ChatHandler {
         void chatReceived(OnlineMessage omsg);
