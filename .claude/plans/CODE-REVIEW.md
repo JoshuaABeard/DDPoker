@@ -316,17 +316,17 @@ Comprehensive code review of DDPoker's server-side and shared infrastructure mod
 
 ## P3: Minor Cleanup
 
-### CLEANUP-1: Replace Unprofessional Comment
+### ✅ CLEANUP-1: Replace Unprofessional Comment (ALREADY COMPLETED)
 **File:** `Utils.java` (line 89)
 **Issue:** Comment says "GAH! this code is crap".
-**Fix:** Replace with a specific issue description or delete.
+**Status:** Comment no longer exists in codebase - already removed in previous work.
 
 ---
 
-### CLEANUP-2: CSV Parser Error Handling
+### ✅ CLEANUP-2: CSV Parser Error Handling (ALREADY COMPLETED)
 **File:** `CSVParser.java` (line 110)
 **Issue:** TODO says "ERROR CONDITION - what to do?"
-**Fix:** Implement proper error handling (throw exception or log).
+**Status:** TODO comment no longer exists in codebase - already addressed in previous work.
 
 ---
 
@@ -337,10 +337,11 @@ Comprehensive code review of DDPoker's server-side and shared infrastructure mod
 
 ---
 
-### CLEANUP-4: Tab Focus in Help Table
-**File:** `Help.java` (line 153)
+### ✅ CLEANUP-4: Tab Focus in Help Table (COMPLETED)
+**File:** `Help.java` (line 143)
 **Issue:** Tab key doesn't change focus between UI elements in help table. Minor accessibility issue.
-**Fix:** Implement proper focus traversal.
+**Fix:** Configure table to use Tab/Shift+Tab for component focus traversal instead of cell navigation.
+**Completed:** Feb 12, 2026 (commit 2aa1a68) - Set default focus traversal keys on help topics table
 
 ---
 
