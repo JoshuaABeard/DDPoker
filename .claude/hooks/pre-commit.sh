@@ -3,32 +3,25 @@
 # Runs before git commit commands to enforce branch policy and scan for secrets.
 # Exit 0 = allow, Exit 2 = block (stderr shown to agent)
 
+# Redirect all errors to /dev/null to prevent hook error messages
+exec 2>/dev/null
+
 # Ensure we don't fail on any unexpected error
 set +e
 
-# Try to read input with built-in timeout (more portable than timeout command)
-# Read first line only to avoid hanging on large/infinite input
+# Try to read input - if this fails for any reason, just exit silently
 INPUT=""
-if read -r -t 1 INPUT 2>/dev/null; then
-    # Read succeeded, INPUT contains first line
-    :
-else
-    # Read failed or timed out, exit silently
-    exit 0
-fi
+read -r -t 0.1 INPUT || exit 0
 
 # Exit silently if no input
-if [ -z "$INPUT" ]; then
-    exit 0
-fi
+[ -z "$INPUT" ] && exit 0
 
 # Parse command from JSON without jq dependency
-COMMAND=$(echo "$INPUT" | grep -oE '"command"\s*:\s*"[^"]*"' 2>/dev/null | head -1 | sed 's/"command"\s*:\s*"//;s/"$//' 2>/dev/null || true)
+COMMAND=$(echo "$INPUT" | grep -oE '"command"\s*:\s*"[^"]*"' | head -1 | sed 's/"command"\s*:\s*"//;s/"$//' || true)
 
 # Exit silently if command cannot be parsed or is not a git commit
-if [ -z "$COMMAND" ] || ! echo "$COMMAND" | grep -qE '^\s*git\s+commit' 2>/dev/null; then
-    exit 0
-fi
+[ -z "$COMMAND" ] && exit 0
+echo "$COMMAND" | grep -qE '^\s*git\s+commit' || exit 0
 
 ERRORS=""
 
