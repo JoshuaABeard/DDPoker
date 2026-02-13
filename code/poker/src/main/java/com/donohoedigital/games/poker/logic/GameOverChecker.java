@@ -163,46 +163,4 @@ public class GameOverChecker {
         nAdd -= nAdd % tableMinChip; // Round down to multiple of min chip
         return nAdd;
     }
-
-    /**
-     * Result of game-over check with context. Immutable value object.
-     */
-    public static class GameOverCheckResult {
-        private final GameOverResult result;
-        private final boolean isGameOver;
-        private final int playersRemaining;
-
-        public GameOverCheckResult(GameOverResult result, boolean isGameOver, int playersRemaining) {
-            this.result = result;
-            this.isGameOver = isGameOver;
-            this.playersRemaining = playersRemaining;
-        }
-
-        /**
-         * Get the game-over result state.
-         *
-         * @return result enum
-         */
-        public GameOverResult getResult() {
-            return result;
-        }
-
-        /**
-         * Check if game is over for the human player.
-         *
-         * @return true if game over
-         */
-        public boolean isGameOver() {
-            return isGameOver;
-        }
-
-        /**
-         * Get number of players remaining with chips.
-         *
-         * @return player count
-         */
-        public int getPlayersRemaining() {
-            return playersRemaining;
-        }
-    }
 }

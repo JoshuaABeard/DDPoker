@@ -52,7 +52,6 @@ import org.apache.logging.log4j.*;
 import java.awt.*;
 import java.awt.image.*;
 import java.io.*;
-import java.math.*;
 import java.util.*;
 import java.util.List;
 
@@ -611,9 +610,6 @@ public class PokerUtils extends EngineUtils {
         return PokerLogicUtils.roundAmountMinChip(table, chips);
     }
 
-    /**
-     * Is cheat option on? If there is an online game going on, always return false;
-     */
     /**
      * Is cheat option on, specify default
      */

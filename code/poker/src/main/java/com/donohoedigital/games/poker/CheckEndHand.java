@@ -95,7 +95,25 @@ public class CheckEndHand extends ChainPhase {
                     if (!NewLevelActions.rebuy(game, ShowTournamentTable.REBUY_BROKE, table.getLevel())) {
                         // Double check in case of overlapping dialogs (rare)
                         if (GameOverChecker.isHumanBroke(human)) {
-                            bGameOver = true;
+                            // Check if never-broke cheat should activate after rebuy declined
+                            if (neverBrokeCheatActive && !bOnline) {
+                                // Transfer chips from leader (same as NEVER_BROKE_ACTIVE case below)
+                                List<PokerPlayer> rank = game.getPlayersByRank();
+                                PokerPlayer lead = rank.get(0);
+                                int nAdd = GameOverChecker.calculateNeverBrokeTransfer(lead.getChipCount(),
+                                        table.getMinChip());
+                                human.setChipCount(nAdd);
+                                lead.setChipCount(lead.getChipCount() - nAdd);
+                                if (!TESTING(PokerConstants.TESTING_AUTOPILOT)) {
+                                    EngineUtils.displayInformationDialog(game.getGameContext(),
+                                            PropertyConfig.getMessage("msg.neverbroke.info", nAdd,
+                                                    Utils.encodeHTML(lead.getName()), lead.getTable().getName()),
+                                            "msg.neverbroke.title", "neverbroke");
+                                }
+                                bGameOver = false;
+                            } else {
+                                bGameOver = true;
+                            }
                         }
                     }
                 }
