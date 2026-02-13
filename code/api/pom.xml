@@ -19,7 +19,7 @@
     <description>Spring Boot REST API for DD Poker web portal</description>
 
     <properties>
-        <spring-boot.version>3.3.9</spring-boot.version>
+        <spring-boot.version>3.5.8</spring-boot.version>
         <jjwt.version>0.12.5</jjwt.version>
     </properties>
 
@@ -93,6 +93,12 @@
             <artifactId>jjwt-jackson</artifactId>
             <version>${jjwt.version}</version>
             <scope>runtime</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Testing -->
@@ -105,32 +111,11 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
-            <version>6.4.2</version>
+            <!-- Hardcoded version: parent POM doesn't provide dependency management for spring-security-test.
+                 Must match Spring Security version used by Spring Boot 3.5.8 (currently 6.5.7).
+                 Update this when upgrading Spring Boot. -->
+            <version>6.5.7</version>
             <scope>test</scope>
-        </dependency>
-        <!-- ByteBuddy 1.17.7+ required for Java 25 support -->
-        <dependency>
-            <groupId>net.bytebuddy</groupId>
-            <artifactId>byte-buddy</artifactId>
-            <version>1.17.7</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.bytebuddy</groupId>
-            <artifactId>byte-buddy-agent</artifactId>
-            <version>1.17.7</version>
-            <scope>test</scope>
-        </dependency>
-        <!-- ASM 9.8+ required for Java 25 bytecode support -->
-        <dependency>
-            <groupId>org.ow2.asm</groupId>
-            <artifactId>asm</artifactId>
-            <version>9.8</version>
-        </dependency>
-        <dependency>
-            <groupId>org.ow2.asm</groupId>
-            <artifactId>asm-commons</artifactId>
-            <version>9.8</version>
         </dependency>
     </dependencies>
 
