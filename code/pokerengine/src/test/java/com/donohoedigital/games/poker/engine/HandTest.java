@@ -491,7 +491,10 @@ public class HandTest {
 
     @Test
     public void testCardsChanged() {
-        Hand hand = new Hand(SPADES_A, HEARTS_K);
+        Hand hand = new Hand();
+        // Create non-constant cards to avoid modifying static constants
+        hand.addCard(new Card(CardSuit.SPADES, ACE));
+        hand.addCard(new Card(CardSuit.HEARTS, KING));
         long fingerprint1 = hand.fingerprint();
 
         // Modify a card directly (bypassing add/remove)
