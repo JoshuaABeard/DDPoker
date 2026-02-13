@@ -56,6 +56,9 @@ public class OnlineProfileServiceImpl implements OnlineProfileService {
     private OnlineProfileDao dao;
 
     @Autowired
+    private PasswordResetTokenDao passwordResetTokenDao;
+
+    @Autowired
     private PasswordHashingService passwordHashingService;
 
     private DisallowedManager disallowed = new DisallowedManager();
@@ -170,6 +173,66 @@ public class OnlineProfileServiceImpl implements OnlineProfileService {
     public void hashAndSetPassword(OnlineProfile profile, String plaintext) {
         String hash = passwordHashingService.hashPassword(plaintext);
         profile.setPasswordHash(hash);
+    }
+
+    @Override
+    @Transactional
+    public PasswordResetToken generatePasswordResetToken(OnlineProfile profile) {
+        if (profile == null || profile.getId() == null) {
+            throw new IllegalArgumentException("Profile must be saved before generating reset token");
+        }
+
+        // Invalidate any existing unused tokens for this profile
+        passwordResetTokenDao.invalidateTokensForProfile(profile.getId());
+
+        // Create and save new token
+        PasswordResetToken token = new PasswordResetToken(profile.getId(), PasswordResetToken.DEFAULT_EXPIRY_MS);
+        passwordResetTokenDao.save(token);
+
+        return token;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PasswordResetToken validatePasswordResetToken(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            return null;
+        }
+
+        PasswordResetToken resetToken = passwordResetTokenDao.findByToken(token);
+
+        // Check if token exists and is valid (not expired, not used)
+        if (resetToken != null && resetToken.isValid()) {
+            return resetToken;
+        }
+
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public boolean resetPasswordWithToken(String token, String newPassword) {
+        // Validate the token
+        PasswordResetToken resetToken = validatePasswordResetToken(token);
+        if (resetToken == null) {
+            return false;
+        }
+
+        // Get the profile
+        OnlineProfile profile = dao.get(resetToken.getProfileId());
+        if (profile == null) {
+            return false;
+        }
+
+        // Update the password
+        hashAndSetPassword(profile, newPassword);
+        dao.update(profile);
+
+        // Mark token as used
+        resetToken.markAsUsed();
+        passwordResetTokenDao.update(resetToken);
+
+        return true;
     }
 
     ///

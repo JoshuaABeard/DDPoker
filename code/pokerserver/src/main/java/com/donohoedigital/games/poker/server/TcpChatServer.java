@@ -394,19 +394,23 @@ public class TcpChatServer extends GameServer {
             OnlineProfile auth = new OnlineProfile(authData);
             String profileName = auth.getName();
 
-            // Get profile from database
-            OnlineProfile user = chatServer_.onlineProfileService.getOnlineProfileByName(profileName);
+            // Authenticate using service (uses bcrypt password hashing)
+            OnlineProfile authRequest = new OnlineProfile();
+            authRequest.setName(auth.getName());
+            authRequest.setPassword(auth.getPassword());
+
+            OnlineProfile user = chatServer_.onlineProfileService.authenticateOnlineProfile(authRequest);
+
+            // Verify profile exists and credentials match
+            if (user == null) {
+                sendError(channel, PropertyConfig.getMessage("msg.wanprofile.unavailable"));
+                return;
+            }
 
             // Check for ban via profile
             String banCheck = PokerServlet.banCheck(chatServer_.bannedKeyService, user);
             if (banCheck != null) {
                 sendError(channel, banCheck);
-                return;
-            }
-
-            // Verify profile exists and credentials match
-            if (user == null || !user.getPassword().equals(auth.getPassword())) {
-                sendError(channel, PropertyConfig.getMessage("msg.wanprofile.unavailable"));
                 return;
             }
 
@@ -481,15 +485,6 @@ public class TcpChatServer extends GameServer {
             // Rate limit check (30 messages per 60 seconds)
             if (!chatServer_.chatRateLimiter.allowRequest(playerName, 30, 60000)) {
                 sendError(channel, "Too many chat messages. Please slow down.");
-                return;
-            }
-
-            // Handle debug commands
-            if (chatText.startsWith("./stats")) {
-                sendMessage(channel, chatServer_.getStatusHTML());
-                return;
-            } else if (chatText.startsWith("./dump")) {
-                sendMessage(channel, "<PRE>" + Utils.getAllStacktraces() + "</PRE>");
                 return;
             }
 
