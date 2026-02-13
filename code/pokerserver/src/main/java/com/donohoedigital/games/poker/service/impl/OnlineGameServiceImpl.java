@@ -106,6 +106,11 @@ public class OnlineGameServiceImpl implements OnlineGameService {
     }
 
     @Transactional(readOnly = true)
+    public OnlineGame getOnlineGameByUrl(String url) {
+        return gameDao.getByUrl(url);
+    }
+
+    @Transactional(readOnly = true)
     public OnlineGame getOnlineGameByTournamentHistoryId(Long id) {
         return gameDao.getByTournamentHistoryId(id);
     }
