@@ -198,7 +198,6 @@ body {
 }
 
 .sidebar-link.active {
-  color: #d97706 !important;
   border-left-color: #d97706 !important;
   font-weight: 500 !important;
   background: rgba(217, 119, 6, 0.05) !important;
