@@ -1467,57 +1467,69 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     ////
 
     public void encodeXML(SimpleXMLEncoder encoder) {
-        encoder.setCurrentObject(this, "tournamentFormat");
-        encoder.addAllTagsExcept("map", "fileNum", "file", "dir", "fileName", "lastModified", "createDate",
-                "updateDate", "invitees", "players");
+        serializer().encodeXML(encoder, this);
+    }
 
-        // levels
-        encoder.setCurrentObject("levels");
-        for (int i = 1; i <= getLastLevel(); i++) {
-            encoder.setCurrentObject("level");
-
-            encoder.addTag("number", i);
-            encoder.addTag("minutes", getMinutes(i));
-
-            if (isBreak(i)) {
-                encoder.addTag("break", true);
-            } else {
-                encoder.addTag("gameType", getGameTypeString(i));
-                encoder.addTag("ante", getAnte(i));
-                encoder.addTag("small", getBigBlind(i));
-                encoder.addTag("big", getSmallBlind(i));
+    /**
+     * Helper method to create ProfileXMLSerializer with this profile as data
+     * source.
+     */
+    private ProfileXMLSerializer serializer() {
+        return new ProfileXMLSerializer(new ProfileXMLSerializer.ProfileDataProvider() {
+            @Override
+            public int getLastLevel() {
+                return TournamentProfile.this.getLastLevel();
             }
 
-            encoder.finishCurrentObject();
-        }
-        encoder.finishCurrentObject(); // levels
+            @Override
+            public int getMinutes(int level) {
+                return TournamentProfile.this.getMinutes(level);
+            }
 
-        // payouts
-        encoder.setCurrentObject("prizes");
-        for (int i = 1; i <= getNumSpots(); i++) {
-            encoder.setCurrentObject("prize");
+            @Override
+            public boolean isBreak(int level) {
+                return TournamentProfile.this.isBreak(level);
+            }
 
-            encoder.addTag("place", i);
-            encoder.addTag("amount", getSpotAsString(i));
+            @Override
+            public String getGameTypeString(int level) {
+                return TournamentProfile.this.getGameTypeString(level);
+            }
 
-            encoder.finishCurrentObject(); // prize
-        }
-        encoder.finishCurrentObject(); // prizes
+            @Override
+            public int getAnte(int level) {
+                return TournamentProfile.this.getAnte(level);
+            }
 
-        // invitees
-        encoder.setCurrentObject("invitees");
-        for (AbstractPlayerList.PlayerInfo player : getInvitees()) {
-            encoder.addTag("player", player.getName());
-        }
-        encoder.finishCurrentObject(); // invitees
+            @Override
+            public int getBigBlind(int level) {
+                return TournamentProfile.this.getBigBlind(level);
+            }
 
-        // players
-        encoder.setCurrentObject("players");
-        for (String player : getPlayers()) {
-            encoder.addTag("player", player);
-        }
-        encoder.finishCurrentObject(); // players
+            @Override
+            public int getSmallBlind(int level) {
+                return TournamentProfile.this.getSmallBlind(level);
+            }
 
-        encoder.finishCurrentObject(); // tournament
+            @Override
+            public int getNumSpots() {
+                return TournamentProfile.this.getNumSpots();
+            }
+
+            @Override
+            public String getSpotAsString(int spot) {
+                return TournamentProfile.this.getSpotAsString(spot);
+            }
+
+            @Override
+            public List<AbstractPlayerList.PlayerInfo> getInvitees() {
+                return TournamentProfile.this.getInvitees();
+            }
+
+            @Override
+            public List<String> getPlayers() {
+                return TournamentProfile.this.getPlayers();
+            }
+        });
     }
 }
