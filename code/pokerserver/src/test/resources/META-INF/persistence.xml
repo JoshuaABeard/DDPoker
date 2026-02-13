@@ -59,6 +59,7 @@
 
     <!-- specify each class since the auto-detection is a pain -->
     <class>com.donohoedigital.games.poker.model.OnlineProfile</class>
+    <class>com.donohoedigital.games.poker.model.PasswordResetToken</class>
     <properties>
       <!--<property name="hibernate.archive.autodetection" value="class, hbm"/>-->
       <property name="hibernate.show_sql" value="true"/>
