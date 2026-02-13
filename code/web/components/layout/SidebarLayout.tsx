@@ -13,19 +13,17 @@ import { SidebarSection } from '@/lib/sidebarData'
 interface SidebarLayoutProps {
   sections: SidebarSection[]
   title: string
-  variant?: 'default' | 'admin'
   children: React.ReactNode
 }
 
 export default function SidebarLayout({
   sections,
   title,
-  variant = 'default',
   children,
 }: SidebarLayoutProps) {
   return (
     <div className="sidebar-layout">
-      <Sidebar sections={sections} title={title} variant={variant} />
+      <Sidebar sections={sections} title={title} />
       <div className="sidebar-content-wrapper">
         <main className="sidebar-content">{children}</main>
         <Footer />

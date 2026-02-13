@@ -17,10 +17,9 @@ import { SidebarSection, SidebarItem } from '@/lib/sidebarData'
 interface SidebarProps {
   sections: SidebarSection[]
   title?: string
-  variant?: 'default' | 'admin'
 }
 
-export default function Sidebar({ sections, title = 'Navigation', variant = 'default' }: SidebarProps) {
+export default function Sidebar({ sections, title = 'Navigation' }: SidebarProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 

@@ -13,6 +13,7 @@ import { Pagination } from '@/components/data/Pagination'
 import { Dialog } from '@/components/ui/Dialog'
 import { adminApi } from '@/lib/api'
 import { toBackendPage, buildPaginationResult } from '@/lib/pagination'
+import type { BannedKeyDto } from '@/lib/types'
 
 interface BannedKey {
   id: number
@@ -57,7 +58,7 @@ export default function BanListPage() {
       setIsLoading(true)
       setError(null)
       const { bans: bansData, total } = await adminApi.getBans()
-      const mapped = bansData.map((b: any) => ({
+      const mapped = bansData.map((b: BannedKeyDto) => ({
         id: b.id,
         key: b.key,
         comment: b.comment,

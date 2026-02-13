@@ -39,7 +39,7 @@ async function searchPlayers(
   try {
     const backendPage = toBackendPage(page)
     const data = await searchApi.searchPlayers(name, backendPage, 50)
-    const mapped = data.map((p: any) => ({
+    const mapped = data.map((p) => ({
       playerName: p.playerName || p.name || 'Unknown',
       gamesPlayed: p.gamesPlayed || 0,
       lastPlayed: p.lastPlayed || p.lastSeen || new Date().toISOString(),
