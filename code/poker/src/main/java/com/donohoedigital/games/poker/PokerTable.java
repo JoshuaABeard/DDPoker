@@ -1347,8 +1347,9 @@ public class PokerTable implements ObjectID {
         // increment hands in level for hands-based advancement
         game.incrementHandsInLevel();
 
-        // check if level should advance by hands
-        if (game.shouldAdvanceLevelByHands()) {
+        // check if level should advance by hands (skip check during breaks for
+        // efficiency)
+        if (!game.getProfile().isBreak(game.getLevel()) && game.shouldAdvanceLevelByHands()) {
             game.nextLevel();
         }
 

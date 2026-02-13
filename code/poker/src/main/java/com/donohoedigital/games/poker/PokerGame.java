@@ -114,6 +114,8 @@ public class PokerGame extends Game implements PlayerActionListener {
     private int nLastMinChipIdx_ = 0;
     private int nExtraChips_ = 0;
     private int nClockCash_ = 0;
+    // @GuardedBy("game thread") - accessed only from single-threaded game logic per
+    // table
     private int nHandsInLevel_ = 0; // tracks hands played in current level for HANDS mode
 
     // online game and other info added for 2.0
@@ -814,7 +816,9 @@ public class PokerGame extends Game implements PlayerActionListener {
     public void changeLevel(int n) {
         int nOld = nLevel_;
         nLevel_ += n;
-        nHandsInLevel_ = 0; // reset hands counter for new level
+        // Reset hands counter for new level (after level incremented but before clock
+        // set)
+        nHandsInLevel_ = 0;
         clock_.setSecondsRemaining(getSecondsInLevel(nLevel_));
         firePropertyChange(PROP_CURRENT_LEVEL, nOld, nLevel_);
     }

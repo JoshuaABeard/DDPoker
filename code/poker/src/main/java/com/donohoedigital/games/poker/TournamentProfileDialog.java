@@ -786,6 +786,15 @@ public class TournamentProfileDialog extends OptionMenuDialog
                 radioTimeMode.setSelected(true);
                 handsPerLevel.setEnabled(false);
             }
+
+            // Disable mode selection if tournament is running to prevent unexpected
+            // behavior
+            boolean tournamentRunning = game_ != null && game_.getLevel() > 0;
+            if (tournamentRunning) {
+                radioTimeMode.setEnabled(false);
+                radioHandsMode.setEnabled(false);
+                handsPerLevel.setEnabled(false);
+            }
         }
 
         private void saveLevelAdvanceMode() {
@@ -1891,7 +1900,9 @@ public class TournamentProfileDialog extends OptionMenuDialog
     }
 
     /**
-     * Update starting depth label (buyin chips / level 1 big blind)
+     * Update starting depth label (buyin chips / level 1 big blind). This
+     * measurement is in big blinds and applies to both TIME and HANDS level
+     * advancement modes.
      */
     private void updateStartingDepth() {
         if (depthLabel_ == null)
