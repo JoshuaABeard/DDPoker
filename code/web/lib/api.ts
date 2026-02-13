@@ -413,8 +413,8 @@ export const adminApi = {
     key: string
     comment?: string
     until?: string
-  }): Promise<any> => {
-    const response = await apiFetch<any>('/api/admin/bans', {
+  }): Promise<BannedKeyDto> => {
+    const response = await apiFetch<BannedKeyDto>('/api/admin/bans', {
       method: 'POST',
       body: JSON.stringify(banData),
     })
