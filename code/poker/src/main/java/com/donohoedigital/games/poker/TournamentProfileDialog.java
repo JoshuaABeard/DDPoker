@@ -705,6 +705,10 @@ public class TournamentProfileDialog extends OptionMenuDialog
             verify.addActionListener(this);
             buttonpanel.add(verify);
 
+            GlassButton quicksetup = new GlassButton("quicksetup", "Glass");
+            quicksetup.addActionListener(this);
+            buttonpanel.add(quicksetup);
+
             // init display
             levelsList.setSelectedIndex(0);
             checkButtons();
@@ -743,6 +747,9 @@ public class TournamentProfileDialog extends OptionMenuDialog
                 delete();
             else if (button == verify)
                 verify();
+            else if (e.getSource() instanceof GlassButton
+                    && ((GlassButton) e.getSource()).getName().equals("quicksetup"))
+                quickSetup();
         }
 
         private void insertLevel() {
@@ -812,6 +819,23 @@ public class TournamentProfileDialog extends OptionMenuDialog
             levelsList.setSelectedIndex(nOldSelectedIndex);
             tab.processUI();
             repaint();
+        }
+
+        private void quickSetup() {
+            // Prepare parameters for BlindQuickSetupDialog
+            TypedHashMap params = new TypedHashMap();
+            params.setObject(BlindQuickSetupDialog.PARAM_PROFILE, profile_);
+
+            // Show dialog
+            context_.processPhaseNow("BlindQuickSetup", params);
+
+            // If user clicked OK and applied a template, refresh the levels
+            if (params.getBoolean("applied", false)) {
+                tab.cleanUI();
+                createLevels();
+                tab.processUI();
+                repaint();
+            }
         }
     }
 

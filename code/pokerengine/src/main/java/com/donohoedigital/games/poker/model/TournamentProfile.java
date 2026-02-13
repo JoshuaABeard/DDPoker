@@ -491,6 +491,36 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     }
 
     /**
+     * Clear all blind levels from the profile.
+     */
+    public void clearAllLevels() {
+        for (int i = 1; i <= MAX_LEVELS; i++) {
+            clearLevel(i);
+        }
+    }
+
+    /**
+     * Set blind level with ante, small blind, big blind, and minutes.
+     *
+     * @param nLevel
+     *            Level number (1-based)
+     * @param ante
+     *            Ante amount
+     * @param small
+     *            Small blind amount
+     * @param big
+     *            Big blind amount
+     * @param minutes
+     *            Minutes for this level
+     */
+    public void setLevel(int nLevel, int ante, int small, int big, int minutes) {
+        map_.setString(PARAM_ANTE + nLevel, String.valueOf(ante));
+        map_.setString(PARAM_SMALL + nLevel, String.valueOf(small));
+        map_.setString(PARAM_BIG + nLevel, String.valueOf(big));
+        map_.setString(PARAM_MINUTES + nLevel, String.valueOf(minutes));
+    }
+
+    /**
      * Get BlindStructure wrapper for blind/ante access.
      */
     private BlindStructure blinds() {
