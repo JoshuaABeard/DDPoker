@@ -73,7 +73,6 @@ export default function Sidebar({ sections, title = 'Navigation', variant = 'def
         <div
           className="mobile-backdrop"
           onClick={() => setMobileOpen(false)}
-          aria-label="Close sidebar menu"
         />
       )}
 

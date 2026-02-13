@@ -28,7 +28,7 @@ export function LoginForm() {
     if (success) {
       // Validate returnUrl to prevent open redirect attacks
       const raw = searchParams.get('returnUrl') || '/online'
-      const returnUrl = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/online'
+      const returnUrl = raw.startsWith('/') && !raw.startsWith('//') && !raw.startsWith('/\\') ? raw : '/online'
       router.push(returnUrl)
     }
   }

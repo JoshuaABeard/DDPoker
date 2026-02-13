@@ -31,7 +31,7 @@ export default function Navigation() {
     setOpenDropdown(null)
   }, [pathname])
 
-  // Close dropdowns when clicking outside
+  // Close dropdowns when clicking outside or pressing Escape
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement
@@ -43,12 +43,6 @@ export default function Navigation() {
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [openDropdown])
-
-  // Handle Escape key to close dropdowns
-  useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && openDropdown) {
         setOpenDropdown(null)
@@ -56,8 +50,13 @@ export default function Navigation() {
       }
     }
 
+    document.addEventListener('mousedown', handleClickOutside)
     document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
   }, [openDropdown])
 
   const isActive = (link: string) => {
@@ -150,17 +149,18 @@ export default function Navigation() {
     }
 
     // Desktop navigation
-    // Initialize dropdown link refs array
-    if (!dropdownLinkRefs.current[key]) {
-      dropdownLinkRefs.current[key] = []
-    }
-
     return (
       <li
         key={key}
         className="nav-item"
         ref={(el) => {
-          if (el) dropdownRefs.current[key] = el
+          if (el) {
+            dropdownRefs.current[key] = el
+            // Initialize dropdown link refs array if needed
+            if (!dropdownLinkRefs.current[key]) {
+              dropdownLinkRefs.current[key] = []
+            }
+          }
         }}
       >
         <Link
