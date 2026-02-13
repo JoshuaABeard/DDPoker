@@ -232,4 +232,132 @@ public class TournamentProfileTest {
         assertEquals("Cutoff level should match", 3, imported.getLateRegUntilLevel());
         assertEquals("Chip mode should match", PokerConstants.LATE_REG_CHIPS_AVERAGE, imported.getLateRegChips());
     }
+
+    // ========== Phase 4: Edge Cases and Integration Tests ==========
+
+    // ========== Max Payout Constraints Tests ==========
+
+    @Test
+    public void should_CalculateMaxPayoutSpots_ForSmallTournament() {
+        TournamentProfile profile = new TournamentProfile("test");
+        // For 10 players, max payout spots should be limited
+        int maxSpots = profile.getMaxPayoutSpots(10);
+        assertTrue("Max spots should be positive", maxSpots > 0);
+        assertTrue("Max spots should not exceed player count", maxSpots <= 10);
+    }
+
+    @Test
+    public void should_CalculateMaxPayoutSpots_ForLargeTournament() {
+        TournamentProfile profile = new TournamentProfile("test");
+        // For 100 players, max payout spots should scale appropriately
+        int maxSpots = profile.getMaxPayoutSpots(100);
+        assertTrue("Max spots should be positive", maxSpots > 0);
+        assertTrue("Max spots should not exceed player count", maxSpots <= 100);
+        assertTrue("Max spots should be reasonable percentage", maxSpots >= 10);
+    }
+
+    @Test
+    public void should_CalculateMaxPayoutPercent_ForSmallTournament() {
+        TournamentProfile profile = new TournamentProfile("test");
+        // For 10 players, max percent should be constrained
+        int maxPercent = profile.getMaxPayoutPercent(10);
+        assertTrue("Max percent should be positive", maxPercent > 0);
+        assertTrue("Max percent should be reasonable", maxPercent <= 100);
+    }
+
+    @Test
+    public void should_CalculateMaxPayoutPercent_ForLargeTournament() {
+        TournamentProfile profile = new TournamentProfile("test");
+        // For 100 players, max percent should be lower
+        int maxPercent = profile.getMaxPayoutPercent(100);
+        assertTrue("Max percent should be positive", maxPercent > 0);
+        assertTrue("Max percent should be reasonable", maxPercent <= 100);
+    }
+
+    // ========== Edge Cases: Zero and Boundary Values ==========
+
+    @Test
+    public void should_HandleZeroPlayers_Gracefully() {
+        TournamentProfile profile = new TournamentProfile("test");
+        int maxSpots = profile.getMaxPayoutSpots(0);
+        assertTrue("Should handle zero players without error", maxSpots >= 0);
+    }
+
+    @Test
+    public void should_HandleSinglePlayer_Tournament() {
+        TournamentProfile profile = new TournamentProfile("test");
+        int maxSpots = profile.getMaxPayoutSpots(1);
+        assertEquals("Single player should allow max 1 spot", 1, maxSpots);
+    }
+
+    // ========== Prize Pool and Payout Integration Tests ==========
+
+    @Test
+    public void should_HavePositivePrizePool_WithDefaultSettings() {
+        TournamentProfile profile = new TournamentProfile("test");
+        int prizePool = profile.getPrizePool();
+        assertTrue("Default profile should have positive prize pool", prizePool > 0);
+    }
+
+    @Test
+    public void should_HavePositiveTrueBuyin_WithDefaultSettings() {
+        TournamentProfile profile = new TournamentProfile("test");
+        int trueBuyin = profile.getTrueBuyin();
+        assertTrue("True buyin should be positive", trueBuyin > 0);
+    }
+
+    @Test
+    public void should_HaveAtLeastOnePayoutSpot_WithDefaultSettings() {
+        TournamentProfile profile = new TournamentProfile("test");
+        int spots = profile.getNumSpots();
+        assertTrue("Should have at least 1 payout spot", spots >= 1);
+    }
+
+    // ========== Integration: Serialization of Payout Settings ==========
+
+    @Test
+    public void should_PreservePayoutCalculatorIntegration_WhenRoundTripped() throws IOException {
+        // Given: a default profile (which uses PayoutCalculator internally)
+        TournamentProfile original = new TournamentProfile("Payout Test");
+
+        // When: write to string and read back
+        StringWriter sw = new StringWriter();
+        original.write(sw);
+
+        TournamentProfile imported = new TournamentProfile();
+        imported.read(new StringReader(sw.toString()), false);
+
+        // Then: payout calculations should work identically
+        assertEquals("Num spots should match", original.getNumSpots(), imported.getNumSpots());
+        assertEquals("Prize pool should match", original.getPrizePool(), imported.getPrizePool());
+        assertEquals("True buyin should match", original.getTrueBuyin(), imported.getTrueBuyin());
+    }
+
+    @Test
+    public void should_IntegrateExtractedComponents_WithoutRegression() {
+        // Integration test: verify that all three extracted components work together
+        // PayoutCalculator, BlindStructure, and PayoutDistributionCalculator
+        TournamentProfile profile = new TournamentProfile("Integration Test");
+
+        // Verify PayoutCalculator integration (getNumSpots, getPrizePool)
+        int spots = profile.getNumSpots();
+        int prizePool = profile.getPrizePool();
+
+        // Verify BlindStructure integration (getBigBlind, getSmallBlind)
+        int bigBlind = profile.getBigBlind(1);
+        int smallBlind = profile.getSmallBlind(1);
+
+        // Verify starting depth calculation (uses BlindStructure)
+        int startingDepth = profile.getStartingDepthBBs();
+
+        // All should be positive and reasonable
+        assertTrue("Spots should be positive", spots > 0);
+        assertTrue("Prize pool should be positive", prizePool > 0);
+        assertTrue("Big blind should be positive", bigBlind > 0);
+        assertTrue("Small blind should be positive", smallBlind > 0);
+        assertTrue("Starting depth should be positive", startingDepth > 0);
+
+        // Blind relationship should hold
+        assertEquals("Big blind should be 2x small blind", bigBlind, smallBlind * 2);
+    }
 }
