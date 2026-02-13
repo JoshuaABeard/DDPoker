@@ -484,24 +484,31 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     }
 
     /**
+     * Get BlindStructure wrapper for blind/ante access.
+     */
+    private BlindStructure blinds() {
+        return new BlindStructure(map_);
+    }
+
+    /**
      * Get small blind
      */
     public int getSmallBlind(int nLevel) {
-        return getAmount(PARAM_SMALL, nLevel);
+        return blinds().getSmallBlind(nLevel);
     }
 
     /**
      * Get big blind
      */
     public int getBigBlind(int nLevel) {
-        return getAmount(PARAM_BIG, nLevel);
+        return blinds().getBigBlind(nLevel);
     }
 
     /**
      * Get ante
      */
     public int getAnte(int nLevel) {
-        return getAmount(PARAM_ANTE, nLevel);
+        return blinds().getAnte(nLevel);
     }
 
     /**
@@ -509,10 +516,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * non-break level
      */
     public int getLastSmallBlind(int nLevel) {
-        while (isBreak(nLevel) && nLevel > 0) {
-            nLevel--;
-        }
-        return getSmallBlind(nLevel);
+        return blinds().getLastSmallBlind(nLevel);
     }
 
     /**
@@ -520,10 +524,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * non-break level
      */
     public int getLastBigBlind(int nLevel) {
-        while (isBreak(nLevel) && nLevel > 0) {
-            nLevel--;
-        }
-        return getBigBlind(nLevel);
+        return blinds().getLastBigBlind(nLevel);
     }
 
     /**
@@ -616,7 +617,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * is given level a break?
      */
     public boolean isBreak(int nLevel) {
-        return getAmountFromString(PARAM_ANTE + nLevel, true) == BREAK_ANTE_VALUE;
+        return blinds().isBreak(nLevel);
     }
 
     /**
@@ -650,41 +651,6 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      */
     public boolean isRaiseCapIgnoredHeadsUp() {
         return map_.getBoolean(PARAM_MAXRAISES_NONE_HEADSUP, true);
-    }
-
-    /**
-     * Get level amount
-     */
-    private int getAmount(String sName, int nLevel) {
-        ApplicationError.assertTrue(!isBreak(nLevel), "Attempting to get value for a break level", sName);
-        int nAmount;
-        int nLast = getLastLevel();
-        if (nLevel > nLast) {
-            while (isBreak(nLast) && nLast > 0) {
-                nLast--;
-                nLevel--;
-            }
-            nAmount = getAmountFromString(sName + nLast, false);
-            if (isDoubleAfterLastLevel()) {
-                // old clever way before we had to check for max int
-                // nAmount *= Math.pow(2, (nLevel - nLast));
-
-                // double until we go over MAX int
-                long l = nAmount;
-                for (int i = 0; i < (nLevel - nLast); i++) {
-                    l *= 2;
-                    if (l >= MAX_BLINDANTE) {
-                        l /= 2;
-                        break;
-                    }
-                }
-                nAmount = (int) l;
-
-            }
-            return round(nAmount);
-        } else {
-            return getAmountFromString(sName + nLevel, false);
-        }
     }
 
     /**
