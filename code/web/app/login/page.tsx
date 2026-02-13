@@ -5,6 +5,7 @@
  */
 
 import { Suspense } from 'react'
+import Link from 'next/link'
 import { LoginForm } from '@/components/auth/LoginForm'
 import Footer from '@/components/layout/Footer'
 
@@ -22,19 +23,19 @@ function LoginContent() {
         <h3 className="text-lg font-semibold mb-3">Need Help?</h3>
         <ul className="space-y-2 text-sm">
           <li>
-            <a href="/forgot" className="text-green-600 hover:underline">
+            <Link href="/forgot" className="text-green-600 hover:underline">
               Forgot your password?
-            </a>
+            </Link>
           </li>
           <li>
-            <a href="/support" className="text-green-600 hover:underline">
+            <Link href="/support" className="text-green-600 hover:underline">
               Contact Support
-            </a>
+            </Link>
           </li>
           <li>
-            <a href="/support/selfhelp" className="text-green-600 hover:underline">
+            <Link href="/support/selfhelp" className="text-green-600 hover:underline">
               Self-Help Guide
-            </a>
+            </Link>
           </li>
         </ul>
       </div>
