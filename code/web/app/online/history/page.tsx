@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   description: 'View tournament history and statistics',
 }
 
+export const dynamic = 'force-dynamic'
+
 interface TournamentEntry {
   id: number
   gameName: string

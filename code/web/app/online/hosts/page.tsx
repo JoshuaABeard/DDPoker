@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: 'View game host information',
 }
 
+export const dynamic = 'force-dynamic'
+
 interface HostInfo {
   name: string
   lastHosted: string

@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   description: 'View games currently in progress',
 }
 
+export const dynamic = 'force-dynamic'
+
 interface CurrentGame {
   id: number
   name: string

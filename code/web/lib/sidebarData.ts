@@ -11,6 +11,7 @@ export interface SidebarItem {
   title: string
   link: string
   icon?: string
+  exactMatch?: boolean // If true, link must match exactly (no startsWith)
 }
 
 export interface SidebarSection {
@@ -48,7 +49,7 @@ export const adminSidebarData: SidebarSection[] = [
   {
     title: 'Administration',
     items: [
-      { title: 'Dashboard', link: '/admin', icon: '⚙️' },
+      { title: 'Dashboard', link: '/admin', icon: '⚙️', exactMatch: true },
       { title: 'Profile Search', link: '/admin/online-profile-search', icon: '👥' },
       { title: 'Registration Search', link: '/admin/reg-search', icon: '📝' },
       { title: 'Ban List', link: '/admin/ban-list', icon: '🚫' },
@@ -60,7 +61,7 @@ export const aboutSidebarData: SidebarSection[] = [
   {
     title: 'About',
     items: [
-      { title: 'Overview', link: '/about', icon: '📖' },
+      { title: 'Overview', link: '/about', icon: '📖', exactMatch: true },
       { title: 'Practice', link: '/about/practice', icon: '🎯' },
       { title: 'Online', link: '/about/online', icon: '🌐' },
       { title: 'Analysis', link: '/about/analysis', icon: '📊' },
@@ -75,7 +76,7 @@ export const supportSidebarData: SidebarSection[] = [
   {
     title: 'Support',
     items: [
-      { title: 'Overview', link: '/support', icon: '🆘' },
+      { title: 'Overview', link: '/support', icon: '🆘', exactMatch: true },
       { title: 'Self Help', link: '/support/selfhelp', icon: '🔧' },
       { title: 'Password Help', link: '/support/passwords', icon: '🔑' },
     ],
