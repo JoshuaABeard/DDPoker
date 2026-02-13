@@ -77,12 +77,14 @@ public class TournamentProfileDialog extends OptionMenuDialog
     private TypedHashMap orig_;
     private ArrayList rebuyOptions_ = new ArrayList();
     private ArrayList addonOptions_ = new ArrayList();
+    private ArrayList bountyOptions_ = new ArrayList();
     private DDPanel base_;
     private DDTextField name_;
     private DDNumberSpinner numPlayers_;
     private DDNumberSpinner buyinCost_;
     private DDCheckBox rebuys_;
     private DDCheckBox addons_;
+    private DDCheckBox bounties_;
     private DDLabelBorder payout_;
     private DDNumberSpinner houseAmount_;
     private DDNumberSpinner spotPerc_;
@@ -569,6 +571,11 @@ public class TournamentProfileDialog extends OptionMenuDialog
             left.add(addon);
             addon.add(createAddon(), BorderLayout.CENTER);
 
+            // bounty
+            DDLabelBorder bounty = new DDLabelBorder("bounties", STYLE);
+            left.add(bounty);
+            bounty.add(createBounty(), BorderLayout.CENTER);
+
             // payout/alloc
             DDPanel payalloc = new DDPanel();
             payalloc.setBorderLayoutGap(10, 0);
@@ -585,6 +592,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
             buyin.setPreferredWidth(ps.width);
             rebuy.setPreferredWidth(ps.width);
             addon.setPreferredWidth(ps.width);
+            bounty.setPreferredWidth(ps.width);
 
             // allocation
             DDPanel format = new DDPanel();
@@ -599,6 +607,14 @@ public class TournamentProfileDialog extends OptionMenuDialog
          * subclass can chime in on validity
          */
         protected boolean isValidCheck() {
+            // Run validation to check for warnings (doesn't block, just logs for now)
+            ValidationResult warnings = profile_.validateProfile();
+            if (warnings.hasWarnings()) {
+                logger.debug("Profile validation warnings: {}", warnings.getWarnings());
+                // TODO: Display warnings in UI (tooltip, status text, or warning icon)
+            }
+
+            // Hard validation still blocks
             return isTotalCorrect(getTotal());
         }
     }
@@ -697,6 +713,10 @@ public class TournamentProfileDialog extends OptionMenuDialog
             verify.addActionListener(this);
             buttonpanel.add(verify);
 
+            GlassButton quicksetup = new GlassButton("quicksetup", "Glass");
+            quicksetup.addActionListener(this);
+            buttonpanel.add(quicksetup);
+
             // init display
             levelsList.setSelectedIndex(0);
             checkButtons();
@@ -735,6 +755,9 @@ public class TournamentProfileDialog extends OptionMenuDialog
                 delete();
             else if (button == verify)
                 verify();
+            else if (e.getSource() instanceof GlassButton
+                    && ((GlassButton) e.getSource()).getName().equals("quicksetup"))
+                quickSetup();
         }
 
         private void insertLevel() {
@@ -804,6 +827,23 @@ public class TournamentProfileDialog extends OptionMenuDialog
             levelsList.setSelectedIndex(nOldSelectedIndex);
             tab.processUI();
             repaint();
+        }
+
+        private void quickSetup() {
+            // Prepare parameters for BlindQuickSetupDialog
+            TypedHashMap params = new TypedHashMap();
+            params.setObject(BlindQuickSetupDialog.PARAM_PROFILE, profile_);
+
+            // Show dialog
+            context_.processPhaseNow("BlindQuickSetup", params);
+
+            // If user clicked OK and applied a template, refresh the levels
+            if (params.getBoolean("applied", false)) {
+                tab.cleanUI();
+                createLevels();
+                tab.processUI();
+                repaint();
+            }
         }
     }
 
@@ -1104,6 +1144,33 @@ public class TournamentProfileDialog extends OptionMenuDialog
     }
 
     /**
+     * Bounty panel
+     */
+    private JComponent createBounty() {
+        OptionInteger oi;
+        OptionBoolean ob;
+
+        // bounties
+        DDPanel bounty = new DDPanel();
+        bounty.setBorderLayoutGap(2, 0);
+
+        ob = OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_BOUNTY, STYLE, dummy_, false), bounty,
+                BorderLayout.NORTH);
+        bounties_ = ob.getCheckBox();
+        bounties_.addActionListener(this);
+
+        DDPanel bountydata = new DDPanel();
+        bountydata.setBorderLayoutGap(0, 5);
+        bountydata.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
+        bounty.add(GuiUtils.WEST(bountydata), BorderLayout.CENTER);
+        oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_BOUNTY_AMOUNT, STYLE, dummy_, null, 1,
+                TournamentProfile.MAX_BOUNTY, 70, true), bountydata, BorderLayout.WEST);
+        bountyOptions_.add(oi);
+
+        return bounty;
+    }
+
+    /**
      * Payout panel
      */
     private JComponent createPayout() {
@@ -1192,6 +1259,31 @@ public class TournamentProfileDialog extends OptionMenuDialog
                 buttonGroup_, PokerConstants.ALLOC_AMOUNT, null), allocbase);
         buttonAmount_ = radio.getRadioButton();
 
+        // payout preset dropdown
+        DDPanel presetPanel = new DDPanel();
+        presetPanel.setBorderLayoutGap(2, 5);
+        presetPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+        left.add(presetPanel, BorderLayout.NORTH);
+
+        DDLabel presetLabel = new DDLabel("msg.payout.preset", STYLE);
+        presetPanel.add(presetLabel, BorderLayout.WEST);
+
+        DDComboBox presetCombo = new DDComboBox("payoutpreset", STYLE);
+        presetCombo.setPreferredSize(new Dimension(200, 25));
+        // Add preset items
+        for (PayoutPreset preset : PayoutPreset.values()) {
+            presetCombo.addItem(preset);
+        }
+        presetCombo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                PayoutPreset selected = (PayoutPreset) presetCombo.getSelectedItem();
+                if (selected != null && selected != PayoutPreset.CUSTOM) {
+                    applyPayoutPreset(selected);
+                }
+            }
+        });
+        presetPanel.add(presetCombo, BorderLayout.CENTER);
+
         // clear button
         clear_ = new GlassButton("clear", "Glass");
         left.add(GuiUtils.NORTH(GuiUtils.CENTER(clear_)), BorderLayout.CENTER);
@@ -1251,6 +1343,31 @@ public class TournamentProfileDialog extends OptionMenuDialog
 
             sp.spot.setText("");
         }
+    }
+
+    /**
+     * Apply a payout preset to the current profile
+     */
+    private void applyPayoutPreset(PayoutPreset preset) {
+        // Apply preset to profile (sets spot percentages)
+        int numSpots = profile_.getNumSpots();
+        preset.applyToProfile(profile_, numSpots);
+
+        // Update UI to show new values
+        // Set to percentage mode
+        buttonPerc_.setSelected(true);
+
+        // Refresh spot UI fields
+        for (int i = 0; i < spots_.length && i < numSpots; i++) {
+            SpotPanel sp = spots_[i];
+            if (sp != null && sp.otspot != null) {
+                sp.otspot.resetToMap();
+            }
+        }
+
+        // Update spots display and total
+        updateSpots();
+        updateTotal();
     }
 
     /**
@@ -1731,6 +1848,9 @@ public class TournamentProfileDialog extends OptionMenuDialog
         } else if (o == rebuys_) {
             list = rebuyOptions_;
             bOn = rebuys_.isSelected();
+        } else if (o == bounties_) {
+            list = bountyOptions_;
+            bOn = bounties_.isSelected();
         }
 
         if (list == null)
@@ -1748,7 +1868,16 @@ public class TournamentProfileDialog extends OptionMenuDialog
      * Set prize pool text
      */
     private void displayPrizePool() {
-        payout_.setText(PropertyConfig.getMessage("labelborder.payout.label", profile_.getPrizePool()));
+        int basePool = profile_.getPrizePool();
+
+        // If bounties enabled, show base pool + bounty pool separately
+        if (profile_.isBountyEnabled()) {
+            int bountyPool = profile_.getNumPlayers() * profile_.getBountyAmount();
+            payout_.setText(PropertyConfig.getMessage("labelborder.payout.bounty", basePool, bountyPool));
+        } else {
+            payout_.setText(PropertyConfig.getMessage("labelborder.payout.label", basePool));
+        }
+
         payout_.repaint();
     }
 

@@ -477,6 +477,18 @@
     </paramlist>
   </phase>
 
+  <phase name="BlindQuickSetup" extends="DisplayInfoMessage"
+         class="com.donohoedigital.games.poker.BlindQuickSetupDialog" transient="true">
+    <param name="style" strvalue="OptionsDialog"/>
+    <param name="dialog-windowtitle-prop" strvalue="msg.blind.quicksetup.title"/>
+    <param name="dialog-window-close-activates-button" strvalue="cancelpref"/>
+    <param name="default-button" strvalue="okay"/>
+    <paramlist name="buttons">
+      <strvalue>okay</strvalue>
+      <strvalue>cancelpref</strvalue>
+    </paramlist>
+  </phase>
+
   <phase name="ChangePasswordDialog" extends="DisplayInfoMessage"
          class="com.donohoedigital.games.poker.ChangePasswordDialog" transient="true">
     <param name="style" strvalue="OptionsDialog"/>

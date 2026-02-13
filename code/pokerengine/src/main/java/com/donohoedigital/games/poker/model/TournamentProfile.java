@@ -79,6 +79,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public static final int MAX_REBUY_CHIPS = TESTING(PokerConstants.TESTING_LEVELS) ? 10000000 : 1000000;
     public static final int MAX_BUY = TESTING(PokerConstants.TESTING_LEVELS) ? 10000000 : 1000000;
     public static final int MAX_BLINDANTE = 100000000;
+    public static final int MAX_BOUNTY = 10000;
     public static final int MAX_MINUTES = 120;
     public static final int MAX_HOUSE_PERC = 25;
     public static final int MAX_HOUSE_AMOUNT = 9999;
@@ -132,6 +133,8 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public static final String PARAM_ADDONCOST = "addoncost";
     public static final String PARAM_ADDONCHIPS = "addonchips";
     public static final String PARAM_ADDONLEVEL = "addonlevel";
+    public static final String PARAM_BOUNTY = "bounty";
+    public static final String PARAM_BOUNTY_AMOUNT = "bountyamount";
     public static final String PARAM_LASTLEVEL = "lastlevel";
     public static final String PARAM_MIX = "mix:";
     public static final String PARAM_REBUYEXPR = "rebuyexpr";
@@ -491,6 +494,36 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     }
 
     /**
+     * Clear all blind levels from the profile.
+     */
+    public void clearAllLevels() {
+        for (int i = 1; i <= MAX_LEVELS; i++) {
+            clearLevel(i);
+        }
+    }
+
+    /**
+     * Set blind level with ante, small blind, big blind, and minutes.
+     *
+     * @param nLevel
+     *            Level number (1-based)
+     * @param ante
+     *            Ante amount
+     * @param small
+     *            Small blind amount
+     * @param big
+     *            Big blind amount
+     * @param minutes
+     *            Minutes for this level
+     */
+    public void setLevel(int nLevel, int ante, int small, int big, int minutes) {
+        map_.setString(PARAM_ANTE + nLevel, String.valueOf(ante));
+        map_.setString(PARAM_SMALL + nLevel, String.valueOf(small));
+        map_.setString(PARAM_BIG + nLevel, String.valueOf(big));
+        map_.setString(PARAM_MINUTES + nLevel, String.valueOf(minutes));
+    }
+
+    /**
      * Get BlindStructure wrapper for blind/ante access.
      */
     private BlindStructure blinds() {
@@ -559,6 +592,20 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
                 return TournamentProfile.this.getSpot(position);
             }
         });
+    }
+
+    /**
+     * Validate tournament profile settings and return any warnings.
+     *
+     * <p>
+     * Checks for common configuration issues that don't prevent profile creation
+     * but may lead to unexpected behavior.
+     *
+     * @return ValidationResult containing any warnings found
+     * @see ProfileValidator#validateProfile()
+     */
+    public ValidationResult validateProfile() {
+        return validator().validateProfile();
     }
 
     /**
@@ -942,6 +989,13 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     }
 
     /**
+     * Set value of payout spot (as percentage)
+     */
+    public void setSpot(int nNum, double percentage) {
+        map_.setString(PARAM_SPOTAMOUNT + nNum, String.valueOf(percentage));
+    }
+
+    /**
      * Get value of payout spot as string
      */
     public String getSpotAsString(int nNum) {
@@ -1226,6 +1280,39 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      */
     public int getAddonLevel() {
         return map_.getInteger(PARAM_ADDONLEVEL, 0, 1, MAX_LEVELS);
+    }
+
+    /**
+     * Get whether bounties are enabled
+     */
+    public boolean isBountyEnabled() {
+        return map_.getBoolean(PARAM_BOUNTY, false);
+    }
+
+    /**
+     * Set whether bounties are enabled
+     */
+    public void setBountyEnabled(boolean b) {
+        map_.setBoolean(PARAM_BOUNTY, b ? Boolean.TRUE : Boolean.FALSE);
+    }
+
+    /**
+     * Get bounty amount per knockout
+     */
+    public int getBountyAmount() {
+        return map_.getInteger(PARAM_BOUNTY_AMOUNT, 0, 0, MAX_BOUNTY);
+    }
+
+    /**
+     * Set bounty amount per knockout
+     *
+     * @param amount
+     *            Bounty amount (will be clamped to [0, MAX_BOUNTY])
+     */
+    public void setBountyAmount(int amount) {
+        // Clamp to valid range to match getter behavior
+        int clamped = Math.max(0, Math.min(amount, MAX_BOUNTY));
+        map_.setInteger(PARAM_BOUNTY_AMOUNT, clamped);
     }
 
     /**

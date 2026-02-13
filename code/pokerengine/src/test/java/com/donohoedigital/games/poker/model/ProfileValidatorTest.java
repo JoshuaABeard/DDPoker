@@ -381,4 +381,262 @@ public class ProfileValidatorTest {
             return spotValues[position - 1];
         }
     }
+
+    // ========== validateProfile() Tests ==========
+
+    @Test
+    public void should_WarnAboutUnreachableLevels_WhenRebuyEndsBeforeLastLevel() {
+        // Given: tournament with 10 levels, rebuys until level 5
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("lastlevel", 10);
+        map.setInteger("rebuyuntil", 5);
+        map.setBoolean("rebuys", true);
+
+        TestCallbacks callbacks = new TestCallbacks();
+        ProfileValidator validator = new ProfileValidator(map, callbacks);
+
+        // When: validate profile
+        ValidationResult result = validator.validateProfile();
+
+        // Then: should warn about unreachable levels
+        assertTrue("Should warn about unreachable levels", result.hasWarnings());
+        assertTrue("Should contain UNREACHABLE_LEVELS warning",
+                result.getWarnings().contains(ValidationWarning.UNREACHABLE_LEVELS));
+    }
+
+    @Test
+    public void should_NotWarnAboutUnreachableLevels_WhenRebuyReachesLastLevel() {
+        // Given: tournament with 10 levels, rebuys until level 10
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("lastlevel", 10);
+        map.setInteger("rebuyuntil", 10);
+        map.setBoolean("rebuys", true);
+
+        TestCallbacks callbacks = new TestCallbacks();
+        ProfileValidator validator = new ProfileValidator(map, callbacks);
+
+        // When: validate profile
+        ValidationResult result = validator.validateProfile();
+
+        // Then: should not warn about unreachable levels
+        assertFalse("Should not warn when rebuy reaches last level",
+                result.getWarnings().contains(ValidationWarning.UNREACHABLE_LEVELS));
+    }
+
+    @Test
+    public void should_NotWarnAboutUnreachableLevels_WhenRebuysDisabled() {
+        // Given: tournament with no rebuys
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("lastlevel", 10);
+        map.setBoolean("rebuys", false);
+
+        TestCallbacks callbacks = new TestCallbacks();
+        ProfileValidator validator = new ProfileValidator(map, callbacks);
+
+        // When: validate profile
+        ValidationResult result = validator.validateProfile();
+
+        // Then: should not warn (rebuys not enabled)
+        assertFalse("Should not warn when rebuys disabled",
+                result.getWarnings().contains(ValidationWarning.UNREACHABLE_LEVELS));
+    }
+
+    @Test
+    public void should_WarnAboutTooManyPayoutSpots_WhenSpotsExceedPlayers() {
+        // Given: 5 payout spots but only 4 players
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("payout", PokerConstants.PAYOUT_SPOTS);
+        map.setInteger("payoutspots", 5);
+        map.setInteger("numplayers", 4);
+
+        TestCallbacks callbacks = new TestCallbacks();
+        callbacks.numSpots = 5;
+
+        ProfileValidator validator = new ProfileValidator(map, callbacks);
+
+        // When: validate profile
+        ValidationResult result = validator.validateProfile();
+
+        // Then: should warn about too many spots
+        assertTrue("Should warn about too many payout spots",
+                result.getWarnings().contains(ValidationWarning.TOO_MANY_PAYOUT_SPOTS));
+    }
+
+    @Test
+    public void should_NotWarnAboutPayoutSpots_WhenWithinPlayerCount() {
+        // Given: 3 payout spots with 10 players
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("payout", PokerConstants.PAYOUT_SPOTS);
+        map.setInteger("payoutspots", 3);
+        map.setInteger("numplayers", 10);
+
+        TestCallbacks callbacks = new TestCallbacks();
+        callbacks.numSpots = 3;
+
+        ProfileValidator validator = new ProfileValidator(map, callbacks);
+
+        // When: validate profile
+        ValidationResult result = validator.validateProfile();
+
+        // Then: should not warn
+        assertFalse("Should not warn when spots within player count",
+                result.getWarnings().contains(ValidationWarning.TOO_MANY_PAYOUT_SPOTS));
+    }
+
+    @Test
+    public void should_WarnAboutShallowDepth_WhenLessThan10BB() {
+        // Given: 1500 starting chips, 200 big blind at level 1 (7.5 BB depth)
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("buyinchips", 1500);
+        map.setString("big1", "200");
+
+        TestCallbacks callbacks = new TestCallbacks();
+        ProfileValidator validator = new ProfileValidator(map, callbacks);
+
+        // When: validate profile
+        ValidationResult result = validator.validateProfile();
+
+        // Then: should warn about shallow depth
+        assertTrue("Should warn about shallow starting depth",
+                result.getWarnings().contains(ValidationWarning.SHALLOW_STARTING_DEPTH));
+    }
+
+    @Test
+    public void should_NotWarnAboutShallowDepth_When10BBOrMore() {
+        // Given: 2000 starting chips, 100 big blind at level 1 (20 BB depth)
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("buyinchips", 2000);
+        map.setString("big1", "100");
+
+        TestCallbacks callbacks = new TestCallbacks();
+        ProfileValidator validator = new ProfileValidator(map, callbacks);
+
+        // When: validate profile
+        ValidationResult result = validator.validateProfile();
+
+        // Then: should not warn
+        assertFalse("Should not warn when depth >= 10BB",
+                result.getWarnings().contains(ValidationWarning.SHALLOW_STARTING_DEPTH));
+    }
+
+    @Test
+    public void should_NotWarnAboutShallowDepth_WhenBigBlindIsZero() {
+        // Given: no big blind defined (edge case)
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("buyinchips", 1500);
+        map.setString("big1", "0");
+
+        TestCallbacks callbacks = new TestCallbacks();
+        ProfileValidator validator = new ProfileValidator(map, callbacks);
+
+        // When: validate profile
+        ValidationResult result = validator.validateProfile();
+
+        // Then: should not warn (can't calculate depth)
+        assertFalse("Should not warn when big blind is zero",
+                result.getWarnings().contains(ValidationWarning.SHALLOW_STARTING_DEPTH));
+    }
+
+    @Test
+    public void should_WarnAboutExcessiveHouseTake_WhenOver20Percent() {
+        // Given: 25% house take
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("house", PokerConstants.HOUSE_PERC);
+        map.setInteger("houseperc", 25);
+
+        TestCallbacks callbacks = new TestCallbacks();
+        ProfileValidator validator = new ProfileValidator(map, callbacks);
+
+        // When: validate profile
+        ValidationResult result = validator.validateProfile();
+
+        // Then: should warn about excessive house take
+        assertTrue("Should warn about excessive house take",
+                result.getWarnings().contains(ValidationWarning.EXCESSIVE_HOUSE_TAKE));
+    }
+
+    @Test
+    public void should_NotWarnAboutHouseTake_When20PercentOrLess() {
+        // Given: 15% house take
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("house", PokerConstants.HOUSE_PERC);
+        map.setInteger("houseperc", 15);
+
+        TestCallbacks callbacks = new TestCallbacks();
+        ProfileValidator validator = new ProfileValidator(map, callbacks);
+
+        // When: validate profile
+        ValidationResult result = validator.validateProfile();
+
+        // Then: should not warn
+        assertFalse("Should not warn when house take <= 20%",
+                result.getWarnings().contains(ValidationWarning.EXCESSIVE_HOUSE_TAKE));
+    }
+
+    @Test
+    public void should_CheckHouseTakeAsPercentOfBuyin_WhenUsingAmountMode() {
+        // Given: $100 buyin with $25 house amount (25%)
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("house", PokerConstants.HOUSE_AMOUNT);
+        map.setInteger("houseamount", 25);
+        map.setInteger("buyin", 100);
+
+        TestCallbacks callbacks = new TestCallbacks();
+        ProfileValidator validator = new ProfileValidator(map, callbacks);
+
+        // When: validate profile
+        ValidationResult result = validator.validateProfile();
+
+        // Then: should warn (25% is over threshold)
+        assertTrue("Should warn about excessive house amount",
+                result.getWarnings().contains(ValidationWarning.EXCESSIVE_HOUSE_TAKE));
+    }
+
+    @Test
+    public void should_NotWarnAboutHouseAmount_WhenBelow20Percent() {
+        // Given: $100 buyin with $15 house amount (15%)
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("house", PokerConstants.HOUSE_AMOUNT);
+        map.setInteger("houseamount", 15);
+        map.setInteger("buyin", 100);
+
+        TestCallbacks callbacks = new TestCallbacks();
+        ProfileValidator validator = new ProfileValidator(map, callbacks);
+
+        // When: validate profile
+        ValidationResult result = validator.validateProfile();
+
+        // Then: should not warn
+        assertFalse("Should not warn when house amount < 20% of buyin",
+                result.getWarnings().contains(ValidationWarning.EXCESSIVE_HOUSE_TAKE));
+    }
+
+    @Test
+    public void should_ReturnMultipleWarnings_WhenMultipleIssuesExist() {
+        // Given: profile with multiple issues
+        DMTypedHashMap map = new DMTypedHashMap();
+        // Too many payout spots
+        map.setInteger("payout", PokerConstants.PAYOUT_SPOTS);
+        map.setInteger("payoutspots", 10);
+        map.setInteger("numplayers", 5);
+        // Excessive house take
+        map.setInteger("house", PokerConstants.HOUSE_PERC);
+        map.setInteger("houseperc", 25);
+
+        TestCallbacks callbacks = new TestCallbacks();
+        callbacks.numSpots = 10;
+
+        ProfileValidator validator = new ProfileValidator(map, callbacks);
+
+        // When: validate profile
+        ValidationResult result = validator.validateProfile();
+
+        // Then: should return both warnings
+        assertTrue("Should have warnings", result.hasWarnings());
+        assertEquals("Should have 2 warnings", 2, result.getWarnings().size());
+        assertTrue("Should warn about payout spots",
+                result.getWarnings().contains(ValidationWarning.TOO_MANY_PAYOUT_SPOTS));
+        assertTrue("Should warn about house take",
+                result.getWarnings().contains(ValidationWarning.EXCESSIVE_HOUSE_TAKE));
+    }
 }
