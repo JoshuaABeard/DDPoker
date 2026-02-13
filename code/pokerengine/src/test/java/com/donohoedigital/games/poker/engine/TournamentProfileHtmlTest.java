@@ -30,23 +30,23 @@ public class TournamentProfileHtmlTest {
 
     @Test
     public void should_DisplayFullRing_ForTenSeats() {
-        assertEquals("10 - Full Ring", TournamentProfileHtml.getTableFormatDisplay(10));
+        assertEquals("Full Ring, 10 per table", TournamentProfileHtml.getTableFormatDisplay(10));
     }
 
     @Test
     public void should_Display6Max_ForSixSeats() {
-        assertEquals("6 - 6-Max", TournamentProfileHtml.getTableFormatDisplay(6));
+        assertEquals("6-Max, 6 per table", TournamentProfileHtml.getTableFormatDisplay(6));
     }
 
     @Test
     public void should_DisplayHeadsUp_ForTwoSeats() {
-        assertEquals("2 - Heads-Up", TournamentProfileHtml.getTableFormatDisplay(2));
+        assertEquals("Heads-Up", TournamentProfileHtml.getTableFormatDisplay(2));
     }
 
     @Test
-    public void should_DisplayRawNumber_ForNonStandardSeats() {
-        assertEquals("8", TournamentProfileHtml.getTableFormatDisplay(8));
-        assertEquals("5", TournamentProfileHtml.getTableFormatDisplay(5));
-        assertEquals("9", TournamentProfileHtml.getTableFormatDisplay(9));
+    public void should_DisplayPerTable_ForNonStandardSeats() {
+        assertEquals("8 per table", TournamentProfileHtml.getTableFormatDisplay(8));
+        assertEquals("5 per table", TournamentProfileHtml.getTableFormatDisplay(5));
+        assertEquals("9 per table", TournamentProfileHtml.getTableFormatDisplay(9));
     }
 }

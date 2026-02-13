@@ -406,10 +406,10 @@ public class TournamentProfileHtml {
      */
     static String getTableFormatDisplay(int seats) {
         return switch (seats) {
-            case PokerConstants.SEATS_FULL_RING -> "10 - Full Ring";
-            case PokerConstants.SEATS_6MAX -> "6 - 6-Max";
-            case PokerConstants.SEATS_HEADS_UP -> "2 - Heads-Up";
-            default -> String.valueOf(seats);
+            case PokerConstants.SEATS_FULL_RING -> "Full Ring, 10 per table";
+            case PokerConstants.SEATS_6MAX -> "6-Max, 6 per table";
+            case PokerConstants.SEATS_HEADS_UP -> "Heads-Up";
+            default -> seats + " per table";
         };
     }
 
