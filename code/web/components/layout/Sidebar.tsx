@@ -36,10 +36,8 @@ export default function Sidebar({ sections, title = 'Navigation', variant = 'def
   }
 
   // Wood and leather brown gradients for all sidebars
-  const bgGradient = variant === 'admin'
-    ? 'linear-gradient(180deg, #57534e 0%, #292524 100%)'
-    : 'linear-gradient(180deg, #57534e 0%, #292524 100%)'
-  const accentColor = variant === 'admin' ? '#d97706' : '#d97706'
+  const bgGradient = 'linear-gradient(180deg, #57534e 0%, #292524 100%)'
+  const accentColor = '#d97706'
   const borderColor = 'rgba(217, 119, 6, 0.4)'
 
   // Handle Escape key to close sidebar on mobile

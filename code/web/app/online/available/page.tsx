@@ -3,7 +3,6 @@
  * DD Poker - Available Games Page
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-export const dynamic = 'force-static'
 
 import { Metadata } from 'next'
 import { DataTable } from '@/components/data/DataTable'

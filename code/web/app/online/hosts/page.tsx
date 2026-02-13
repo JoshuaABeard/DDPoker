@@ -3,7 +3,6 @@
  * DD Poker - Game Hosts Page
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-export const dynamic = 'force-static'
 
 import { Metadata } from 'next'
 import { DataTable } from '@/components/data/DataTable'
