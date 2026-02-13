@@ -114,7 +114,7 @@ export default async function SearchPage({
       <h1 className="text-3xl font-bold mb-6">Player Search</h1>
 
       <p className="mb-6 text-gray-700">
-        Search for players by name. Use the = prefix for exact matches (e.g., =JohnDoe).
+        Search for players by name.
       </p>
 
       <FilterForm showNameSearch />
