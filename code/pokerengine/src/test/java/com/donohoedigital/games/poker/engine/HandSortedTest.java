@@ -349,8 +349,17 @@ public class HandSortedTest {
         HandSorted hand = new HandSorted();
         assertFalse(hand.hasPair());
         // Note: hasStraightDraw() throws IndexOutOfBoundsException on empty hand -
-        // production code bug
+        // production code bug (tested explicitly in testEmptyHandStraightDrawBug)
         assertEquals(0, hand.getHighestPair());
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testEmptyHandStraightDrawBug() {
+        // Production bug: hasStraightDraw() throws IndexOutOfBoundsException on empty
+        // hands
+        // This test pins down the buggy behavior as a regression marker
+        HandSorted hand = new HandSorted();
+        hand.hasStraightDraw(); // Should check size > 0 before accessing getCard(nSize - 1)
     }
 
     @Test

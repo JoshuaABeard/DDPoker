@@ -210,7 +210,7 @@ public class OnlineGameTest {
 
         assertEquals("url2", game1.getUrl());
         // Start date should be preserved (game2 didn't set it)
-        assertNotNull(game1.getStartDate());
+        assertEquals(startDate, game1.getStartDate());
     }
 
     // ===== equals() and hashCode() Tests =====

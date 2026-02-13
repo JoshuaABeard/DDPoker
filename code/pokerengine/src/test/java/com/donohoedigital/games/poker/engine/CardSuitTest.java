@@ -100,7 +100,10 @@ public class CardSuitTest {
         String abbr1 = CardSuit.CLUBS.getAbbr();
         // Second call should return cached value
         String abbr2 = CardSuit.CLUBS.getAbbr();
-        assertSame(abbr1, abbr2); // Same instance (cached)
+        // Use assertSame (not assertEquals) to verify exact same String instance is
+        // returned
+        // This tests that the caching mechanism stores the instance, not just the value
+        assertSame(abbr1, abbr2);
     }
 
     // ===== forRank() Tests =====

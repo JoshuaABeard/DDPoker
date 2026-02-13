@@ -244,12 +244,13 @@ public class HandTest {
     @Test
     public void testIsConnectors() {
         Hand connectors = new Hand(SPADES_9, HEARTS_T);
-        assertTrue(connectors.isConnectors(2, ACE));
+        // isConnectors(handSize, minRank) - checks if hand has consecutive ranks
+        assertTrue(connectors.isConnectors(2, ACE)); // 2-card hand, Ace is highest allowed rank
 
         Hand notConnectors = new Hand(SPADES_9, HEARTS_J);
-        assertFalse(notConnectors.isConnectors(2, ACE));
+        assertFalse(notConnectors.isConnectors(2, ACE)); // 9-J has gap
 
-        // Out of range
+        // Out of range - highest card (T) is below minimum rank (EIGHT)
         assertFalse(connectors.isConnectors(TWO, EIGHT));
     }
 
