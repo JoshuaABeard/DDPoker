@@ -63,18 +63,19 @@ import java.util.*;
 public class LevelValidator {
 
     /**
-     * Represents a single blind level's data.
+     * Represents a single blind level's data. Package-private fields since this is
+     * only used within the model package.
      */
     public static class LevelData {
-        public int levelNum;
-        public int ante;
-        public int smallBlind;
-        public int bigBlind;
-        public int minutes;
-        public String gameType;
-        public boolean isBreak;
+        int levelNum;
+        int ante;
+        int smallBlind;
+        int bigBlind;
+        int minutes;
+        String gameType;
+        boolean isBreak;
 
-        public LevelData(int levelNum) {
+        LevelData(int levelNum) {
             this.levelNum = levelNum;
         }
 
@@ -127,6 +128,13 @@ public class LevelValidator {
 
     /**
      * Parse raw level data from string map into LevelData objects.
+     *
+     * <p>
+     * Note: This includes levels with any non-empty parameter (including
+     * minutes-only or gametype-only). The original fixLevels() only included levels
+     * with at least one non-zero ante/small/big value. In practice this edge case
+     * is unlikely since the UI always populates blind fields, and the safety net
+     * (createDefaultLevel) handles missing data.
      */
     private List<LevelData> parseRawLevels(Map<String, String> rawData) {
         Map<Integer, LevelData> levelMap = new HashMap<>();
