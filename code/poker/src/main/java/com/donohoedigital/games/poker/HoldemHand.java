@@ -2674,6 +2674,30 @@ public class HoldemHand implements DataMarshal {
             }
         }
 
+        // Award bounties if enabled and any players were eliminated by this pot
+        TournamentProfile profile = table_.getGame().getProfile();
+        if (profile != null && profile.isBountyEnabled()) {
+            int bountyAmount = profile.getBountyAmount();
+            if (bountyAmount > 0) {
+                // Check each player who was in this pot to see if they're now eliminated
+                for (int i = 0; i < nNum; i++) {
+                    player = getPlayerAt(i);
+                    if (player.isFolded())
+                        continue;
+                    if (!pot.isInPot(player))
+                        continue;
+
+                    // If this player lost and is now broke (eliminated), award bounty to winner(s)
+                    if (!winners.contains(player) && player.getChipCount() == 0) {
+                        // Award bounty to each winner (split if multiple winners)
+                        for (PokerPlayer winner : winners) {
+                            winner.addBounty(bountyAmount / nWinners);
+                        }
+                    }
+                }
+            }
+        }
+
         // verify we allocated the entire pot
         if (nTotalCheck != nPot) {
             logger.warn("Amount awarded ({}) != pot amount ({})", nTotalCheck, nPot);
