@@ -80,12 +80,20 @@ public class TcpChatServer extends GameServer {
     }
 
     /**
-     * Override init to set thread class if not configured
+     * Override init to set thread class if not configured.
+     *
+     * CLEANUP-BACKEND-3: Sets global system property as a side effect. Only sets if
+     * not already configured to minimize interference with other server instances.
+     * TODO: Refactor to pass thread class through constructor instead of system
+     * properties.
      */
     @Override
     public void init() {
-        // Set thread class to use our custom ChatSocketThread
-        System.setProperty("settings.server.thread.class", ChatSocketThread.class.getName());
+        // Set thread class to use our custom ChatSocketThread (only if not already set)
+        String existingThreadClass = System.getProperty("settings.server.thread.class");
+        if (existingThreadClass == null || existingThreadClass.isEmpty()) {
+            System.setProperty("settings.server.thread.class", ChatSocketThread.class.getName());
+        }
         super.init();
     }
 

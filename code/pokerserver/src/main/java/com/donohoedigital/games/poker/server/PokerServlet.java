@@ -258,8 +258,6 @@ public class PokerServlet extends EngineServlet {
                 return updateWanGame(ddreceived, true);
 
             case OnlineMessage.CAT_WAN_GAME_STOP :
-                return endWanGame(ddreceived);
-
             case OnlineMessage.CAT_WAN_GAME_END :
                 return endWanGame(ddreceived);
 
@@ -342,13 +340,6 @@ public class PokerServlet extends EngineServlet {
     }
 
     /**
-     * DESIGN NOTE: I thought about validating this for DD Poker 3, but decided not
-     * to bother. Our auth logic is kind of a pain and needs a redesign. We should
-     * always be sending down the current player (like we do with version/key). FIX:
-     * make this better in 3.0++
-     */
-
-    /**
      * Test connection to the provided connect URL
      */
     private DDMessage testP2pConnect(HttpServletRequest request, DDMessage ddreceived) {
@@ -420,16 +411,6 @@ public class PokerServlet extends EngineServlet {
 
         return ret;
     }
-
-    /***
-     * DESIGN NOTE TO FUTURE FORGETFUL DOUG:
-     *
-     * Added host post auth in DD Poker 3. It is slightly different than what
-     * happens in getWanGames. In this case, we just refuse to post and return a
-     * message. In getWanGames, we return the list and then actually disable the
-     * client profile (in FindGames.getWanList()), forcing them to re-enter a
-     * password.
-     */
 
     /**
      * Add a WAN game to the list. If one already exists for the given key/URL
@@ -538,7 +519,7 @@ public class PokerServlet extends EngineServlet {
 
         // game could be null because of bug in OnlineManager.processQuit()
         if (game == null) {
-            // logger.info("Did not update: " + ddreceived);
+            // Null is expected in this case - see OnlineGameServiceImpl.updateOnlineGame()
         }
 
         // Send an empty response.
@@ -593,8 +574,6 @@ public class PokerServlet extends EngineServlet {
 
         // if game is null, then we didn't save, log an error so we know how often this
         // happens
-        // FIX: make this end-game stuff more robust. Should send down everything from
-        // the client so we can deal with this
         if (game == null) {
             logger.error("Unable to save ended game because it didn't exist in database: " + game + ";   histories:  "
                     + histories);
@@ -727,8 +706,6 @@ public class PokerServlet extends EngineServlet {
             // profile
             authenticatedProfile.setPassword(null);
             resMsg.setWanAuth(authenticatedProfile.getData());
-        } else {
-            // missing - handled in FindGames.validateProfile()
         }
 
         return resMsg.getData();
@@ -1111,10 +1088,9 @@ public class PokerServlet extends EngineServlet {
         email.getSession().setAttribute(OnlineProfile.PROFILE_PASSWORD, sPassword);
         email.executeJSP();
 
-        // only send the html message to Hotmail users since the multipart message gets
-        // mangled
-        boolean isHotmail = sTo.toLowerCase().endsWith("@hotmail.com");
-        String sPlainText = (isHotmail) ? null : email.getPlain();
+        // CLEANUP-BACKEND-4: Removed obsolete Hotmail workaround (multipart emails work
+        // correctly now)
+        String sPlainText = email.getPlain();
         String sHtmlText = email.getHtml();
 
         // get results and send email

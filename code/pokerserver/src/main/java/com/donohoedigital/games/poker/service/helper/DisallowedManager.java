@@ -62,15 +62,16 @@ public class DisallowedManager {
         String contents = ConfigUtils.readURL(url);
 
         // Add offensive words.
-        try {
-            BufferedReader reader = new BufferedReader(new StringReader(contents));
+        // LEAK-BACKEND-2: Use try-with-resources to ensure BufferedReader is closed
+        try (BufferedReader reader = new BufferedReader(new StringReader(contents))) {
             String line = null;
             Pattern pattern = null;
 
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
 
-                if (line.startsWith("\\s*#"))
+                // BUG-2: Fix comment detection (line already trimmed, just check for #)
+                if (line.startsWith("#"))
                     continue; // comment
                 line = line.replaceAll("\\s*#.*", ""); // trailing comment
                 if (line.length() == 0)

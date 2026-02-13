@@ -147,7 +147,7 @@ public class OnlineProfileImplJpa extends JpaBaseDao<OnlineProfile, Long> implem
         if (profile == null) {
             profile = new OnlineProfile(dummy.getName());
             profile.setUuid(java.util.UUID.randomUUID().toString());
-            profile.setPassword("!!DUMMY!!");
+            // DEBT-BACKEND-1: Only set passwordHash, not transient password field
             profile.setPasswordHash(BCrypt.hashpw("!!DUMMY!!", BCrypt.gensalt()));
             profile.setEmail("dummy-profile-" + dummy.ordinal() + "@example.com");
 
