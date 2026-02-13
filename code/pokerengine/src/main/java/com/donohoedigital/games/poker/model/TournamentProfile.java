@@ -498,6 +498,63 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     }
 
     /**
+     * Get ProfileValidator wrapper for validation and normalization.
+     */
+    private ProfileValidator validator() {
+        return new ProfileValidator(map_, new ProfileValidator.ValidationCallbacks() {
+            @Override
+            public int getMaxPayoutSpots(int numPlayers) {
+                return TournamentProfile.this.getMaxPayoutSpots(numPlayers);
+            }
+
+            @Override
+            public int getMaxPayoutPercent(int numPlayers) {
+                return TournamentProfile.this.getMaxPayoutPercent(numPlayers);
+            }
+
+            @Override
+            public boolean isAllocAuto() {
+                return TournamentProfile.this.isAllocAuto();
+            }
+
+            @Override
+            public boolean isAllocFixed() {
+                return TournamentProfile.this.isAllocFixed();
+            }
+
+            @Override
+            public boolean isAllocPercent() {
+                return TournamentProfile.this.isAllocPercent();
+            }
+
+            @Override
+            public boolean isAllocSatellite() {
+                return TournamentProfile.this.isAllocSatellite();
+            }
+
+            @Override
+            public void setAutoSpots() {
+                TournamentProfile.this.setAutoSpots();
+            }
+
+            @Override
+            public void fixLevels() {
+                TournamentProfile.this.fixLevels();
+            }
+
+            @Override
+            public int getNumSpots() {
+                return TournamentProfile.this.getNumSpots();
+            }
+
+            @Override
+            public double getSpot(int position) {
+                return TournamentProfile.this.getSpot(position);
+            }
+        });
+    }
+
+    /**
      * Get small blind
      */
     public int getSmallBlind(int nLevel) {
@@ -707,45 +764,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Update num players, adjust payout if necessary
      */
     public void updateNumPlayers(int nNumPlayers) {
-        boolean bChange = false;
-
-        int nType = getPayoutType();
-        if (nType == PokerConstants.PAYOUT_PERC) {
-            int spot = getPayoutPercent();
-            int max = getMaxPayoutPercent(nNumPlayers);
-            if (spot > max) {
-                bChange = true;
-                setPayoutPercent(max);
-            }
-        } else if (nType == PokerConstants.PAYOUT_SPOTS) {
-            int spot = getPayoutSpots();
-            int max = getMaxPayoutSpots(nNumPlayers);
-            if (spot > max) {
-                bChange = true;
-                setPayoutSpots(max);
-            }
-        } else // PokerConstants.PAYOUT_SATELLITE
-        {
-            // no need to update if num players change
-        }
-
-        // store new num players
-        setNumPlayers(nNumPlayers);
-
-        // if a change in payout spots occurred, update
-        if (bChange) {
-            if (isAllocFixed() || isAllocPercent()) {
-                setAlloc(PokerConstants.ALLOC_AUTO);
-            }
-        }
-
-        // if auto alloc, update spots
-        if (isAllocAuto()) {
-            setAutoSpots();
-        }
-
-        // fix all (html may have changed, remove old spots)
-        fixAll();
+        validator().updateNumPlayers(nNumPlayers);
     }
 
     /**
@@ -1314,25 +1333,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Clean up alloc entries
      */
     private void fixAllocs() {
-        int nNumSpots = getNumSpots();
-        if (isAllocSatellite())
-            nNumSpots = 1; // only need 1 entry for satellite
-        double d;
-        String s;
-        for (int i = 1; i <= nNumSpots; i++) {
-            d = getSpot(i);
-            if (isAllocPercent()) {
-                s = FORMAT_PERC.format(new Object[]{d});
-            } else {
-                s = FORMAT_AMOUNT.format(new Object[]{(int) d});
-            }
-            map_.setString(PARAM_SPOTAMOUNT + i, s);
-        }
-
-        // BUG 315 - clear out other spots
-        for (int i = nNumSpots + 1; i <= MAX_SPOTS; i++) {
-            map_.removeString(PARAM_SPOTAMOUNT + i);
-        }
+        validator().fixAllocs();
     }
 
     /**
@@ -1417,13 +1418,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * fixstuff
      */
     public void fixAll() {
-        fixLevels();
-        fixAllocs();
-
-        // rebuys if < 0, change to <=
-        if (getRebuyExpressionType() == PokerConstants.REBUY_LT && getRebuyChipCount() == 0) {
-            setRebuyExpression(PokerConstants.REBUY_LTE);
-        }
+        validator().fixAll();
     }
 
     /**
