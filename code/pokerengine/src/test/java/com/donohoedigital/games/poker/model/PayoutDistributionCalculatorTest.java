@@ -47,7 +47,7 @@ public class PayoutDistributionCalculatorTest {
         PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
         // When: calculate payouts
-        int[] payouts = calc.calculatePayouts(10, 10000, 100, 0);
+        int[] payouts = calc.calculatePayouts(10, 10000, 100, 0, 100, 100, 9000);
 
         // Then: should have 10 entries
         assertEquals("Should have 10 payout amounts", 10, payouts.length);
@@ -59,7 +59,7 @@ public class PayoutDistributionCalculatorTest {
         PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
         // When: calculate payouts for 10 spots
-        int[] payouts = calc.calculatePayouts(10, 10000, 100, 0);
+        int[] payouts = calc.calculatePayouts(10, 10000, 100, 0, 100, 100, 9000);
 
         // Then: sum should equal or be very close to pool (within rounding tolerance)
         int sum = 0;
@@ -76,7 +76,7 @@ public class PayoutDistributionCalculatorTest {
         PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
         // When: calculate payouts
-        int[] payouts = calc.calculatePayouts(10, 10000, 100, 0);
+        int[] payouts = calc.calculatePayouts(10, 10000, 100, 0, 100, 100, 9000);
 
         // Then: last place (index 0) should be >= buyin
         assertTrue("Last place should cover buyin", payouts[0] >= 100);
@@ -88,7 +88,7 @@ public class PayoutDistributionCalculatorTest {
         PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
         // When: calculate payouts
-        int[] payouts = calc.calculatePayouts(10, 10000, 100, 0);
+        int[] payouts = calc.calculatePayouts(10, 10000, 100, 0, 100, 100, 9000);
 
         // Then: first place (last index) should be the highest
         int firstPlace = payouts[payouts.length - 1];
@@ -103,7 +103,7 @@ public class PayoutDistributionCalculatorTest {
         PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
         // When: calculate payouts
-        int[] payouts = calc.calculatePayouts(20, 20000, 100, 0);
+        int[] payouts = calc.calculatePayouts(20, 20000, 100, 0, 200, 100, 18000);
 
         // Then: each position should pay more than the one below (or equal due to
         // rounding)
@@ -120,7 +120,7 @@ public class PayoutDistributionCalculatorTest {
         PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
         // When: calculate for 1 spot
-        int[] payouts = calc.calculatePayouts(1, 5000, 50, 0);
+        int[] payouts = calc.calculatePayouts(1, 5000, 50, 0, 100, 50, 4500);
 
         // Then: single winner gets entire pool
         assertEquals("Should have 1 payout", 1, payouts.length);
@@ -133,7 +133,7 @@ public class PayoutDistributionCalculatorTest {
         PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
         // When: calculate for 2 spots
-        int[] payouts = calc.calculatePayouts(2, 5000, 50, 0);
+        int[] payouts = calc.calculatePayouts(2, 5000, 50, 0, 100, 50, 4500);
 
         // Then: should have 2 payouts, first place higher
         assertEquals("Should have 2 payouts", 2, payouts.length);
@@ -147,7 +147,7 @@ public class PayoutDistributionCalculatorTest {
         PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
         // When: calculate for MAX_SPOTS
-        int[] payouts = calc.calculatePayouts(TournamentProfile.MAX_SPOTS, 1000000, 100, 0);
+        int[] payouts = calc.calculatePayouts(TournamentProfile.MAX_SPOTS, 1000000, 100, 0, 5625, 100, 506250);
 
         // Then: should distribute across all spots
         assertEquals("Should have MAX_SPOTS payouts", TournamentProfile.MAX_SPOTS, payouts.length);
@@ -162,11 +162,11 @@ public class PayoutDistributionCalculatorTest {
         PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
         // When: calculate without rebuys
-        int[] withoutRebuys = calc.calculatePayouts(10, 20000, 100, 0);
+        int[] withoutRebuys = calc.calculatePayouts(10, 20000, 100, 0, 200, 100, 18000);
 
         // When: calculate with rebuys (same pool, but rebuy cost is 100)
         // The pool check: 20000 >= (10*100) + (10*100) = true, so rebuy added to min
-        int[] withRebuys = calc.calculatePayouts(10, 20000, 100, 100);
+        int[] withRebuys = calc.calculatePayouts(10, 20000, 100, 100, 200, 100, 18000);
 
         // Then: minimum should be higher with rebuys
         assertTrue("Minimum payout should increase when rebuys are factored in", withRebuys[0] >= withoutRebuys[0]);
@@ -180,7 +180,7 @@ public class PayoutDistributionCalculatorTest {
         PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
         // When: calculate payouts
-        int[] payouts = calc.calculatePayouts(5, 500, 10, 0);
+        int[] payouts = calc.calculatePayouts(5, 500, 10, 0, 50, 10, 450);
 
         // Then: payouts should be exact dollars (no fractional amounts exist in int)
         for (int payout : payouts) {
@@ -194,7 +194,7 @@ public class PayoutDistributionCalculatorTest {
         PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
         // When: calculate payouts
-        int[] payouts = calc.calculatePayouts(10, 20000, 200, 0);
+        int[] payouts = calc.calculatePayouts(10, 20000, 200, 0, 100, 200, 18000);
 
         // Then: most payouts should be multiples of 10 (algorithm rounds to 10)
         int multiplesOf10 = 0;
@@ -212,7 +212,7 @@ public class PayoutDistributionCalculatorTest {
         PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
         // When: calculate payouts
-        int[] payouts = calc.calculatePayouts(10, 100000, 1000, 0);
+        int[] payouts = calc.calculatePayouts(10, 100000, 1000, 0, 100, 1000, 90000);
 
         // Then: payouts should be multiples of 100
         int multiplesOf100 = 0;
@@ -237,7 +237,7 @@ public class PayoutDistributionCalculatorTest {
         PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
         // When: calculate with values that might cause swap
-        int[] payouts = calc.calculatePayouts(2, 100, 10, 0);
+        int[] payouts = calc.calculatePayouts(2, 100, 10, 0, 10, 10, 90);
 
         // Then: first should always be >= second
         assertTrue("First place should be >= second place", payouts[1] >= payouts[0]);
@@ -254,7 +254,7 @@ public class PayoutDistributionCalculatorTest {
         PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
         // When: calculate for 15 spots (5 non-final + 10 final)
-        int[] payouts = calc.calculatePayouts(15, 100000, 500, 0);
+        int[] payouts = calc.calculatePayouts(15, 100000, 500, 0, 200, 500, 90000);
 
         // Then: growth rate should be higher in top 10 than bottom 5
         // Calculate percentage increases
@@ -272,16 +272,20 @@ public class PayoutDistributionCalculatorTest {
         // Property: sum of payouts should equal prize pool (within rounding tolerance)
         PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
-        int[][] testCases = {{5, 5000, 100, 0}, {10, 10000, 100, 0}, {20, 50000, 500, 0}, {50, 100000, 200, 0},
-                {100, 1000000, 1000, 0}};
+        int[][] testCases = {{5, 5000, 100, 0, 50, 100, 4500}, {10, 10000, 100, 0, 100, 100, 9000},
+                {20, 50000, 500, 0, 100, 500, 45000}, {50, 100000, 200, 0, 250, 200, 45000},
+                {100, 1000000, 1000, 0, 1000, 1000, 900000}};
 
         for (int[] testCase : testCases) {
             int spots = testCase[0];
             int pool = testCase[1];
             int buyin = testCase[2];
             int rebuy = testCase[3];
+            int numPlayers = testCase[4];
+            int buyinCost = testCase[5];
+            int poolAfterHouseTake = testCase[6];
 
-            int[] payouts = calc.calculatePayouts(spots, pool, buyin, rebuy);
+            int[] payouts = calc.calculatePayouts(spots, pool, buyin, rebuy, numPlayers, buyinCost, poolAfterHouseTake);
 
             int sum = 0;
             for (int payout : payouts) {
@@ -300,7 +304,7 @@ public class PayoutDistributionCalculatorTest {
         // Property: all payouts must be positive
         PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
-        int[] payouts = calc.calculatePayouts(50, 100000, 500, 0);
+        int[] payouts = calc.calculatePayouts(50, 100000, 500, 0, 200, 500, 90000);
 
         for (int i = 0; i < payouts.length; i++) {
             assertTrue(String.format("Payout at position %d should be positive", i + 1), payouts[i] > 0);
@@ -314,8 +318,8 @@ public class PayoutDistributionCalculatorTest {
         // due to minimum payout floors and rounding)
         PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
-        int[] basePayouts = calc.calculatePayouts(10, 10000, 100, 0);
-        int[] largerPayouts = calc.calculatePayouts(10, 20000, 100, 0);
+        int[] basePayouts = calc.calculatePayouts(10, 10000, 100, 0, 100, 100, 9000);
+        int[] largerPayouts = calc.calculatePayouts(10, 20000, 100, 0, 100, 100, 9000);
 
         // Check that larger pool produces larger (or equal) payouts at all positions
         for (int i = 0; i < basePayouts.length; i++) {

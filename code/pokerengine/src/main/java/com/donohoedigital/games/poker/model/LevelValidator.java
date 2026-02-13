@@ -269,6 +269,7 @@ public class LevelValidator {
      */
     private void normalizeLevels(List<LevelData> levels, int defaultMinutes, String defaultGameType) {
         LevelData previous = null;
+        int previousNonZeroAnte = 0; // Track last non-zero ante for monotonic enforcement
 
         for (LevelData level : levels) {
             if (level.isBreak) {
@@ -286,8 +287,9 @@ public class LevelValidator {
 
             // Enforce monotonic increasing (except ante can go to 0)
             if (previous != null && !previous.isBreak) {
-                if (level.ante < previous.ante && level.ante != 0) {
-                    level.ante = previous.ante;
+                // For ante: compare against last non-zero ante, unless this one is 0
+                if (level.ante < previousNonZeroAnte && level.ante != 0) {
+                    level.ante = previousNonZeroAnte;
                 }
                 if (level.smallBlind < previous.smallBlind) {
                     level.smallBlind = previous.smallBlind;
@@ -327,6 +329,10 @@ public class LevelValidator {
                 level.gameType = null;
             }
 
+            // Update tracking: preserve last non-zero ante
+            if (level.ante != 0) {
+                previousNonZeroAnte = level.ante;
+            }
             previous = level;
         }
     }
@@ -368,12 +374,12 @@ public class LevelValidator {
             increment = 100000;
         }
 
-        // Round up to nearest increment
+        // Round to nearest increment (round half up)
         int remainder = amount % increment;
-        if (remainder == 0) {
-            return amount;
-        } else {
-            return amount - remainder + increment;
+        int rounded = amount - remainder;
+        if (increment > 1 && remainder >= (increment / 2)) {
+            rounded += increment;
         }
+        return rounded;
     }
 }

@@ -86,13 +86,21 @@ public class PayoutDistributionCalculator {
      *            Buyin amount less house take (sets minimum payout baseline)
      * @param rebuyCost
      *            Cost of a single rebuy (added to minimum if pool supports it)
+     * @param numPlayers
+     *            Total number of players in tournament (for non-final range
+     *            scaling)
+     * @param buyinCost
+     *            Buyin cost per player (for rebuy check calculation)
+     * @param poolAfterHouseTakeForPlayers
+     *            Pool after house take for all players (for rebuy check)
      * @return Array of payout amounts, index 0 = last place, index n-1 = 1st place
      */
-    public int[] calculatePayouts(int numSpots, int prizePool, int trueBuyin, int rebuyCost) {
+    public int[] calculatePayouts(int numSpots, int prizePool, int trueBuyin, int rebuyCost, int numPlayers,
+            int buyinCost, int poolAfterHouseTakeForPlayers) {
         int[] amounts = new int[numSpots];
 
         // Calculate minimum payout (may include rebuy)
-        int minPayout = calculateMinimumPayout(numSpots, prizePool, trueBuyin, rebuyCost);
+        int minPayout = calculateMinimumPayout(numSpots, prizePool, trueBuyin, rebuyCost, poolAfterHouseTakeForPlayers);
 
         // Determine rounding increment based on minimum payout size
         int roundingIncrement = determineRoundingIncrement(minPayout);
@@ -101,18 +109,20 @@ public class PayoutDistributionCalculator {
         int allocatedPool = 0;
         int index = 0;
         int numNonFinal = numSpots - FINAL_SPOTS;
+        double nonFinalMultiplier = 1.0d;
 
         if (numNonFinal > 0) {
-            double multiplier = calculateNonFinalMultiplier(numSpots, prizePool, minPayout, numNonFinal);
+            nonFinalMultiplier = calculateNonFinalMultiplier(numPlayers, prizePool, minPayout, numNonFinal);
 
-            allocatedPool = allocateNonFinalPayouts(amounts, index, numNonFinal, minPayout, multiplier,
+            allocatedPool = allocateNonFinalPayouts(amounts, index, numNonFinal, minPayout, nonFinalMultiplier,
                     roundingIncrement);
             index += numNonFinal;
         }
 
         // Calculate final table (top 10) payouts using Fibonacci
+        // Pass the exact multiplier to avoid precision loss
         allocateFinalTablePayouts(amounts, index, numSpots - index, prizePool, allocatedPool, minPayout,
-                roundingIncrement);
+                roundingIncrement, nonFinalMultiplier);
 
         // Ensure first place is always highest (handle rounding edge cases)
         ensureFirstPlaceIsHighest(amounts);
@@ -127,16 +137,15 @@ public class PayoutDistributionCalculator {
      * Rebuy is added to minimum if the prize pool has had enough rebuys to cover
      * each payout spot (as suggested by "Tex" in original implementation).
      */
-    private int calculateMinimumPayout(int numSpots, int prizePool, int trueBuyin, int rebuyCost) {
+    private int calculateMinimumPayout(int numSpots, int prizePool, int trueBuyin, int rebuyCost,
+            int poolAfterHouseTakeForPlayers) {
         int minPayout = trueBuyin;
 
-        // The pool check estimates: base pool + (spots * rebuy cost)
-        // If actual pool >= this, we can safely add rebuy to minimum
-        // Note: This is a heuristic - it doesn't track actual rebuys
+        // Original logic: if pool >= base pool (after house take) + (spots * rebuy
+        // cost),
+        // then add rebuy to minimum payout
         if (rebuyCost > 0) {
-            // Estimate base pool as current pool minus potential rebuy contribution
-            // If pool is big enough to cover buyin for all spots plus a rebuy for each spot
-            int estimatedBasePlusRebuys = (trueBuyin * numSpots) + (numSpots * rebuyCost);
+            int estimatedBasePlusRebuys = poolAfterHouseTakeForPlayers + (numSpots * rebuyCost);
             if (prizePool >= estimatedBasePlusRebuys) {
                 minPayout += rebuyCost;
             }
@@ -169,7 +178,7 @@ public class PayoutDistributionCalculator {
      * increment size that keeps the non-final pool within an acceptable range
      * (1-33% of total pool).
      */
-    private double calculateNonFinalMultiplier(int numSpots, int prizePool, int minPayout, int numNonFinal) {
+    private double calculateNonFinalMultiplier(int numPlayers, int prizePool, int minPayout, int numNonFinal) {
         // Calculate target range for non-final pool as percentage of total pool
         int minBottom = (int) (FINAL_SPOTS / TournamentProfile.MAX_SPOTS_PERCENT);
         double lowRange = 0.01d;
@@ -177,7 +186,7 @@ public class PayoutDistributionCalculator {
 
         // Scale range based on player count (more players = higher percentage to
         // non-final)
-        double targetRange = lowRange + ((highRange - lowRange) * (numSpots - minBottom)
+        double targetRange = lowRange + ((highRange - lowRange) * (numPlayers - minBottom)
                 / (double) (TournamentProfile.MAX_PLAYERS - minBottom));
 
         // Ensure we can at least pay minimum to all non-final spots
@@ -260,7 +269,7 @@ public class PayoutDistributionCalculator {
      * gets the remaining pool to ensure exact distribution.
      */
     private void allocateFinalTablePayouts(int[] amounts, int startIndex, int numFinalSpots, int prizePool,
-            int alreadyAllocated, int minPayout, int roundingIncrement) {
+            int alreadyAllocated, int minPayout, int roundingIncrement, double nonFinalMultiplier) {
 
         if (numFinalSpots == 0)
             return;
@@ -276,11 +285,9 @@ public class PayoutDistributionCalculator {
         int poolRemaining = prizePool - alreadyAllocated;
 
         // Adjust minimum and rounding for final table
-        double multiplierAdjustment = 1.0d;
-        if (startIndex > 0) {
-            // If there were non-final spots, use their multiplier as baseline
-            multiplierAdjustment = amounts[startIndex - 1] / (double) minPayout;
-        }
+        // Use the exact non-final multiplier (not reverse-engineered from rounded
+        // amount)
+        double multiplierAdjustment = nonFinalMultiplier;
 
         int adjustedMin = (int) (minPayout * multiplierAdjustment);
         int split = poolRemaining / numFinalSpots;

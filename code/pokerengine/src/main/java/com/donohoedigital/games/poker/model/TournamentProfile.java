@@ -966,7 +966,8 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
         PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
         // Calculate payout amounts using extracted algorithm
-        int[] amounts = calc.calculatePayouts(getNumSpots(), getPrizePool(), getTrueBuyin(), getRebuyCost());
+        int[] amounts = calc.calculatePayouts(getNumSpots(), getPrizePool(), getTrueBuyin(), getRebuyCost(),
+                getNumPlayers(), getBuyinCost(), getPoolAfterHouseTake(getBuyinCost() * getNumPlayers()));
 
         // Write amounts back to map (indexed from last place to first)
         for (int i = 0; i < MAX_SPOTS; i++) {
@@ -1288,9 +1289,6 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
         return map_.getInteger(PARAM_MAX_OBSERVERS, 5, 0, MAX_OBSERVERS);
     }
 
-    /**
-     * Fix levels, eliminating missing rows, filling in missing blinds
-     */
     /**
      * Validate and normalize tournament blind level structure.
      *
