@@ -491,6 +491,13 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     }
 
     /**
+     * Get PayoutCalculator wrapper for payout calculations.
+     */
+    private PayoutCalculator payouts() {
+        return new PayoutCalculator(map_);
+    }
+
+    /**
      * Get small blind
      */
     public int getSmallBlind(int nLevel) {
@@ -745,32 +752,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Return number of payout spots
      */
     public int getNumSpots() {
-        int nRet;
-        int nType = getPayoutType();
-        if (nType == PokerConstants.PAYOUT_PERC) {
-            int spot = getPayoutPercent();
-            nRet = (int) Math.ceil((((double) spot) / 100d) * (double) getNumPlayers());
-        } else if (nType == PokerConstants.PAYOUT_SPOTS) {
-            nRet = getPayoutSpots();
-        } else // PokerConstants.PAYOUT_SATELLITE
-        {
-            int nPrize = getPrizePool();
-            int nAmount = getSatellitePayout();
-            if (nAmount == 0) {
-                nRet = 1;
-            } else {
-                nRet = nPrize / nAmount;
-                int nExtra = nPrize % nAmount;
-                if (nExtra > 0)
-                    nRet++;
-            }
-        }
-
-        // always ensure 1 spot paid out
-        if (nRet == 0)
-            nRet = 1;
-
-        return nRet;
+        return payouts().getNumSpots();
     }
 
     /**
@@ -848,14 +830,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Get house take
      */
     public int getPoolAfterHouseTake(int nPool) {
-        int nNumPlayers = getNumPlayers();
-        if (getHouseCutType() == PokerConstants.HOUSE_PERC) {
-            nPool -= (((double) getHousePercent()) / 100d) * (double) nPool;
-        } else {
-            nPool -= getHouseAmount() * nNumPlayers;
-        }
-
-        return nPool;
+        return payouts().getPoolAfterHouseTake(nPool);
     }
 
     /**
@@ -964,51 +939,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Get payout based on spot
      */
     public int getPayout(int nNum) {
-        // safety check
-        int nNumSpots = getNumSpots();
-        if (nNum < 0 || nNum > nNumSpots)
-            return 0; // BUG 315
-
-        // prize pool
-        int nPrizePool = getPrizePool();
-
-        // satellite alloc
-        if (isAllocSatellite()) {
-            int nSatSpot = getSatellitePayout();
-
-            // last spot gets any remaining amount
-            int nExtra = nPrizePool % nSatSpot;
-            if (nNum == nNumSpots && nExtra != 0) {
-                return nExtra;
-            }
-
-            if (nPrizePool < nSatSpot) {
-                nSatSpot = nPrizePool;
-            }
-
-            // TODO: possible minor bug: left over amounts if rebuy period continues after
-            // payouts started
-            return nSatSpot;
-        } else {
-            double spot = getSpot(nNum);
-            if (isAllocPercent()) {
-                // top spot gets prize pool less amount paid to other
-                // spots to account for rounding/fractional error
-                if (nNum == 1) {
-                    int nTotal = 0;
-                    for (int i = 2; i <= nNumSpots; i++) {
-                        nTotal += getPayout(i);
-                    }
-
-                    // TODO: possible minor bug: incorrect amounts if rebuy period continues after
-                    // payout started
-                    return nPrizePool - nTotal;
-                }
-                return (int) (nPrizePool * spot / 100);
-            } else {
-                return (int) spot;
-            }
-        }
+        return payouts().getPayout(nNum, getNumSpots(), getPrizePool());
     }
 
     /**
