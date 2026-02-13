@@ -272,6 +272,7 @@ public class PokerConstants {
 
     // online
     public static final int MAX_PROFILES_PER_EMAIL = 3;
+    public static final int MIN_SCHEDULED_START_PLAYERS = 2;
     public static final String ONLINE_GAME_PREFIX_TCP = "n-";
     public static final String ONLINE_GAME_PREFIX_UDP = "u-";
     public static final String URL_START = "poker" + P2PURL.PROTOCOL_DELIM;

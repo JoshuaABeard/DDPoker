@@ -59,11 +59,9 @@ The host's tournament configuration options (via `TournamentProfile` and `Tourna
 - **Why**: Standard on every modern platform. Without it, all players must be present before the game starts.
 - **Change**: Added PARAM_LATE_REG, PARAM_LATE_REG_UNTIL, PARAM_LATE_REG_CHIPS with UI controls in Online tab and server logic in TournamentDirector.
 
-#### 7. Scheduled Start Time
+#### ✅ 7. Scheduled Start Time (COMPLETED)
 - **Why**: Currently host must manually click "Start". A scheduled time lets players join at their leisure.
-- **New params**: `PARAM_SCHEDULED_START` (boolean), `PARAM_START_TIME` (long millis), `PARAM_MIN_PLAYERS` (int, default 2)
-- **UI**: Date/time input + min-players spinner in Online tab
-- **Engine**: `TournamentDirector` checks `currentTime >= startTime && players >= minPlayers` in registration phase loop
+- **Change**: Added PARAM_SCHEDULED_START (boolean), PARAM_START_TIME (long millis), PARAM_MIN_PLAYERS_START (int, default 2) with "hours from now" UI control in Online tab. TournamentDirector auto-starts when time and player conditions are met.
 
 #### 9. Per-Street Action Timeouts
 - **Why**: Players need less time pre-flop, more time on river. Many platforms offer this.

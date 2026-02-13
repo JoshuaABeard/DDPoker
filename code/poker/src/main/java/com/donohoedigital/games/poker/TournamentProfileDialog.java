@@ -138,6 +138,15 @@ public class TournamentProfileDialog extends OptionMenuDialog
         orig_ = new DMTypedHashMap();
         orig_.putAll(profile_.getMap());
 
+        // Convert absolute start time to hours from now for UI display
+        long startTime = profile_.getStartTime();
+        if (startTime > 0) {
+            long hoursFromNow = Math.max(1, (startTime - System.currentTimeMillis()) / 3600000);
+            dummy_.setInteger("scheduledstart.hours", (int) hoursFromNow);
+        } else {
+            dummy_.setInteger("scheduledstart.hours", 1);
+        }
+
         // init pool so it accepts changes in user input
         profile.setPrizePool(-1, false);
 
@@ -368,6 +377,39 @@ public class TournamentProfileDialog extends OptionMenuDialog
 
             OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_LATE_REG, STYLE, dummy_, true, lateregDummy),
                     latereg);
+
+            ///
+            /// scheduled start
+            ///
+
+            DDLabelBorder scheduledStart = new DDLabelBorder("scheduledstart", STYLE);
+            scheduledStart.setLayout(new GridLayout(0, 1, 0, -4));
+            left.add(scheduledStart);
+
+            // Hours from now spinner (we'll convert to absolute time on save)
+            OptionInteger hoursFromNow = new OptionInteger(null, "scheduledstart.hours", STYLE, dummy_, null, 1, 24,
+                    60);
+            hoursFromNow.setEditable(true);
+
+            // Minimum players spinner
+            OptionInteger minPlayers = new OptionInteger(null, TournamentProfile.PARAM_MIN_PLAYERS_START, STYLE, dummy_,
+                    null, 2, TournamentProfile.MAX_ONLINE_PLAYERS, 60);
+            minPlayers.setEditable(true);
+
+            // Panel for nested controls
+            DDPanel scheduledPanel = new DDPanel();
+            scheduledPanel.setLayout(new GridLayout(2, 1, 0, -4));
+            scheduledPanel.setBorder(BorderFactory.createEmptyBorder(2, 20, 3, 0));
+            scheduledPanel.add(hoursFromNow);
+            scheduledPanel.add(minPlayers);
+
+            // Add checkbox with nested controls
+            OptionDummy scheduledDummy = new OptionDummy(scheduledPanel);
+            scheduledDummy.setBorder(BorderFactory.createEmptyBorder(2, 5, 3, 0));
+            scheduledDummy.setBorderLayoutGap(0, 5);
+
+            OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_SCHEDULED_START, STYLE, dummy_, true,
+                    scheduledDummy), scheduledStart);
         }
     }
 
@@ -1499,6 +1541,13 @@ public class TournamentProfileDialog extends OptionMenuDialog
      * Okay button press
      */
     protected void okayButton() {
+        // Convert hours from now to absolute timestamp for scheduled start
+        if (profile_.isScheduledStartEnabled()) {
+            int hoursFromNow = dummy_.getInteger("scheduledstart.hours", 1);
+            long startTime = System.currentTimeMillis() + (hoursFromNow * 3600000L);
+            profile_.setStartTime(startTime);
+        }
+
         oppmix_.processOkay();
         name_.removePropertyChangeListener(this);
         String sText = name_.getText();

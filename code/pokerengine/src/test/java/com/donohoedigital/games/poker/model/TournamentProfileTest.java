@@ -232,4 +232,87 @@ public class TournamentProfileTest {
         assertEquals("Cutoff level should match", 3, imported.getLateRegUntilLevel());
         assertEquals("Chip mode should match", PokerConstants.LATE_REG_CHIPS_AVERAGE, imported.getLateRegChips());
     }
+
+    // ========== Scheduled Start Tests ==========
+
+    @Test
+    public void should_DefaultToScheduledStartDisabled() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertFalse("Scheduled start should be disabled by default", profile.isScheduledStartEnabled());
+    }
+
+    @Test
+    public void should_DefaultToZeroStartTime() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertEquals("Default start time should be 0", 0L, profile.getStartTime());
+    }
+
+    @Test
+    public void should_DefaultToMinimumPlayers() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertEquals("Default minimum players should be MIN_SCHEDULED_START_PLAYERS",
+                PokerConstants.MIN_SCHEDULED_START_PLAYERS, profile.getMinPlayersForStart());
+    }
+
+    @Test
+    public void should_EnableAndDisableScheduledStart() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setScheduledStartEnabled(true);
+        assertTrue("Scheduled start should be enabled", profile.isScheduledStartEnabled());
+
+        profile.setScheduledStartEnabled(false);
+        assertFalse("Scheduled start should be disabled", profile.isScheduledStartEnabled());
+    }
+
+    @Test
+    public void should_SetStartTime() {
+        TournamentProfile profile = new TournamentProfile("test");
+        long targetTime = System.currentTimeMillis() + 3600000; // 1 hour from now
+        profile.setStartTime(targetTime);
+        assertEquals("Start time should match", targetTime, profile.getStartTime());
+    }
+
+    @Test
+    public void should_SetMinPlayersForStart() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setMinPlayersForStart(5);
+        assertEquals("Min players should be 5", 5, profile.getMinPlayersForStart());
+    }
+
+    @Test
+    public void should_EnforceMinPlayersMinimum() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setMinPlayersForStart(1);
+        assertEquals("Min players should be clamped to 2", 2, profile.getMinPlayersForStart());
+    }
+
+    @Test
+    public void should_EnforceMinPlayersMaximum() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setMinPlayersForStart(100); // Exceeds MAX_ONLINE_PLAYERS (90)
+        assertEquals("Min players should be clamped to MAX_ONLINE_PLAYERS", TournamentProfile.MAX_ONLINE_PLAYERS,
+                profile.getMinPlayersForStart());
+    }
+
+    @Test
+    public void should_RoundTripScheduledStartSettings() throws IOException {
+        // Given: a profile with scheduled start enabled
+        TournamentProfile original = new TournamentProfile("Scheduled Start Test");
+        long targetTime = System.currentTimeMillis() + 7200000; // 2 hours from now
+        original.setScheduledStartEnabled(true);
+        original.setStartTime(targetTime);
+        original.setMinPlayersForStart(4);
+
+        // When: write to string and read back
+        StringWriter sw = new StringWriter();
+        original.write(sw);
+
+        TournamentProfile imported = new TournamentProfile();
+        imported.read(new StringReader(sw.toString()), false);
+
+        // Then: scheduled start settings should match
+        assertTrue("Scheduled start should be enabled", imported.isScheduledStartEnabled());
+        assertEquals("Start time should match", targetTime, imported.getStartTime());
+        assertEquals("Min players should match", 4, imported.getMinPlayersForStart());
+    }
 }

@@ -160,6 +160,9 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public static final String PARAM_LATE_REG = "latereg";
     public static final String PARAM_LATE_REG_UNTIL = "latereguntil";
     public static final String PARAM_LATE_REG_CHIPS = "lateregchips";
+    public static final String PARAM_SCHEDULED_START = "scheduledstart";
+    public static final String PARAM_START_TIME = "starttime";
+    public static final String PARAM_MIN_PLAYERS_START = "minplayersstart";
 
     /**
      * Empty constructor for loading from data
@@ -1327,6 +1330,49 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      */
     public void setLateRegChips(int mode) {
         map_.setInteger(PARAM_LATE_REG_CHIPS, mode);
+    }
+
+    /**
+     * Get whether scheduled start is enabled
+     */
+    public boolean isScheduledStartEnabled() {
+        return map_.getBoolean(PARAM_SCHEDULED_START, false);
+    }
+
+    /**
+     * Set whether scheduled start is enabled
+     */
+    public void setScheduledStartEnabled(boolean enabled) {
+        map_.setBoolean(PARAM_SCHEDULED_START, enabled);
+    }
+
+    /**
+     * Get the scheduled start time (milliseconds since epoch)
+     */
+    public long getStartTime() {
+        return map_.getLong(PARAM_START_TIME, 0L);
+    }
+
+    /**
+     * Set the scheduled start time (milliseconds since epoch)
+     */
+    public void setStartTime(long timeMillis) {
+        map_.setLong(PARAM_START_TIME, timeMillis);
+    }
+
+    /**
+     * Get minimum number of players required for scheduled start
+     */
+    public int getMinPlayersForStart() {
+        return map_.getInteger(PARAM_MIN_PLAYERS_START, PokerConstants.MIN_SCHEDULED_START_PLAYERS, 2,
+                MAX_ONLINE_PLAYERS);
+    }
+
+    /**
+     * Set minimum number of players required for scheduled start
+     */
+    public void setMinPlayersForStart(int minPlayers) {
+        map_.setInteger(PARAM_MIN_PLAYERS_START, minPlayers);
     }
 
     /**
