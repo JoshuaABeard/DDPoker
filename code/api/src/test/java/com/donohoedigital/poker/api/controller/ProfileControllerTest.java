@@ -35,7 +35,6 @@ package com.donohoedigital.poker.api.controller;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 import com.donohoedigital.games.poker.service.OnlineProfileService;
 import com.donohoedigital.poker.api.service.EmailService;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -51,15 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Tests for ProfileController.
- *
- * TODO: Currently disabled due to Java 25 / Spring Boot 3.3.9 incompatibility.
- * Spring Boot 3.3.9 uses Spring Framework 6.1.x which embeds ASM 9.7 that
- * doesn't support Java 25 bytecode (class file version 69). Options to fix: 1.
- * Wait for Spring Boot 3.4.x with Spring Framework 6.2.x (includes ASM 9.8) 2.
- * Upgrade to Spring Boot 4.0+ with Spring Framework 7.0 (native Java 25
- * support) 3. Downgrade to Java 21 LTS
  */
-@Disabled("Java 25 incompatibility with Spring Boot 3.3.9 - see class javadoc")
 @SpringBootTest
 @AutoConfigureMockMvc
 class ProfileControllerTest {
