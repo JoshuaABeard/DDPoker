@@ -79,10 +79,14 @@ The host's tournament configuration options (via `TournamentProfile` and `Tourna
 - **Logic**: Generate levels following standard ~1.5-2x progression, populate existing level params
 - **No data model changes** — generated levels use existing storage
 
-#### 12. Standard Payout Presets
+#### ✅ 12. Standard Payout Presets (COMPLETED)
 - **Why**: Current "Auto (Fibonacci)" is a single algorithm. Platforms offer top-heavy, standard, and flat distributions.
-- **UI**: "Presets" dropdown next to allocation radio buttons: Top-Heavy (~50% to winner), Standard (~25-30%), Flat (~15-20%)
-- **No data model changes** — presets populate existing spot percentage fields
+- **Implemented**:
+  - `PayoutPreset` enum with 4 presets: CUSTOM, TOP_HEAVY (50/30/20), STANDARD (40/25/17.5/12.5/5), FLAT (25/20/15/12.5/10/7.5/5/5)
+  - UI dropdown in allocation section of DetailsTab
+  - `applyPayoutPreset()` method updates profile and refreshes UI
+  - Bug fix: Added `setAlloc(ALLOC_PERC)` to properly set allocation mode
+  - All 19 preset tests passing, 1536 total tests passing
 
 #### 13. Bounty/Knockout Tournament Support
 - **Why**: Extremely popular format. Purely a payout-side feature — doesn't change hand gameplay.
