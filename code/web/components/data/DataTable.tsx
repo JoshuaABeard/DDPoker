@@ -4,6 +4,12 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
+const ALIGN_CLASSES = {
+  left: 'text-left',
+  center: 'text-center',
+  right: 'text-right',
+} as const
+
 interface Column<T> {
   key: string
   header: string
@@ -42,7 +48,7 @@ export function DataTable<T>({
             {columns.map((column) => (
               <th
                 key={column.key}
-                className={`px-4 py-2 border border-white text-${column.align || 'left'}`}
+                className={`px-4 py-2 border border-white ${ALIGN_CLASSES[column.align || 'left']}`}
               >
                 {column.header}
               </th>
@@ -64,7 +70,7 @@ export function DataTable<T>({
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className={`px-4 py-2 border border-white text-${column.align || 'left'}`}
+                    className={`px-4 py-2 border border-white ${ALIGN_CLASSES[column.align || 'left']}`}
                   >
                     {column.render(item)}
                   </td>

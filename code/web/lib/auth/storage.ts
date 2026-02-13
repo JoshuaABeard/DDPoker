@@ -6,7 +6,6 @@
 
 export interface StoredAuthUser {
   username: string
-  isAdmin: boolean
 }
 
 const AUTH_USER_KEY = 'ddpoker_auth_user'
