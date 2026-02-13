@@ -277,7 +277,7 @@ public class PokerServlet extends EngineServlet {
                 return validateProfile(ddreceived);
 
             case OnlineMessage.CAT_WAN_PROFILE_SEND_PASSWORD :
-                return sendOnlineProfilePassword(ddreceived);
+                return sendOnlineProfilePassword(request, ddreceived);
 
             case OnlineMessage.CAT_WAN_PROFILE_CHANGE_PASSWORD :
                 return changeOnlineProfilePassword(ddreceived);
@@ -920,7 +920,16 @@ public class PokerServlet extends EngineServlet {
      * Instead, we generate a new password, hash it, update the profile, and email
      * the new password.
      */
-    private DDMessage sendOnlineProfilePassword(DDMessage ddreceived) {
+    private DDMessage sendOnlineProfilePassword(HttpServletRequest request, DDMessage ddreceived) {
+        // Rate limiting (SEC-BACKEND-3): 3 requests per 5 minutes per IP to prevent
+        // password reset abuse
+        String clientIp = request.getRemoteAddr();
+        if (!profileRateLimiter.allowRequest(clientIp, 3, 300000)) {
+            OnlineMessage resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Too many password reset requests. Please try again later.");
+            return resMsg.getData();
+        }
+
         // Wrap everything in useable interfaces.
         OnlineMessage reqMsg = new OnlineMessage(ddreceived);
         DMTypedHashMap onlineProfileData = reqMsg.getOnlineProfileData();
