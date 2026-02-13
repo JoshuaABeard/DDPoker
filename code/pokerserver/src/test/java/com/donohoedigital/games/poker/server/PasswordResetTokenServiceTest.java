@@ -305,7 +305,8 @@ class PasswordResetTokenServiceTest {
 
         // Verify password is still the first new password
         OnlineProfile updatedProfile = profileService.getOnlineProfileById(profile.getId());
-        assertThat(passwordHashingService.checkPassword("firstTestPassword", updatedProfile.getPasswordHash())).isTrue();
+        assertThat(passwordHashingService.checkPassword("firstTestPassword", updatedProfile.getPasswordHash()))
+                .isTrue();
         assertThat(passwordHashingService.checkPassword("secondTestPassword", updatedProfile.getPasswordHash()))
                 .isFalse();
     }

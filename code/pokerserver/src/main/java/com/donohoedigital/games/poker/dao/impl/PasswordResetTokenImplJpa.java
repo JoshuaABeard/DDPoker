@@ -83,6 +83,12 @@ public class PasswordResetTokenImplJpa extends JpaBaseDao<PasswordResetToken, Lo
                 + "where t.profileId = :profileId and t.used = false");
         query.setParameter("profileId", profileId);
 
-        return query.executeUpdate();
+        int result = query.executeUpdate();
+
+        // Clear persistence context to ensure subsequent queries see the updated state
+        entityManager.flush();
+        entityManager.clear();
+
+        return result;
     }
 }
