@@ -377,10 +377,121 @@ class HandActionTest {
     }
 
     // ========== Serialization Tests ==========
-    // Note: Serialization tests with MsgState mocking are skipped due to Mockito
-    // limitations on Java 25.
-    // These could be tested with integration tests or real MsgState objects in the
-    // future.
+
+    @Test
+    void should_MarshalAndDemarshal_BasicAction() {
+        HandAction original = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_BET, 100);
+
+        MsgState state = new MsgState();
+        String marshaled = original.marshal(state);
+
+        HandAction restored = new HandAction();
+        restored.demarshal(state, marshaled);
+
+        assertThat(restored.getRound()).isEqualTo(original.getRound());
+        assertThat(restored.getAction()).isEqualTo(original.getAction());
+        assertThat(restored.getPlayer()).isEqualTo(original.getPlayer());
+        assertThat(restored.getAmount()).isEqualTo(original.getAmount());
+        assertThat(restored.getSubAmount()).isEqualTo(original.getSubAmount());
+        assertThat(restored.isAllIn()).isEqualTo(original.isAllIn());
+    }
+
+    @Test
+    void should_MarshalAndDemarshal_RaiseWithSubAmount() {
+        HandAction original = new HandAction(player, HoldemHand.ROUND_TURN, HandAction.ACTION_RAISE, 200, 50,
+                "raise debug");
+
+        MsgState state = new MsgState();
+        String marshaled = original.marshal(state);
+
+        HandAction restored = new HandAction();
+        restored.demarshal(state, marshaled);
+
+        assertThat(restored.getRound()).isEqualTo(HoldemHand.ROUND_TURN);
+        assertThat(restored.getAction()).isEqualTo(HandAction.ACTION_RAISE);
+        assertThat(restored.getAmount()).isEqualTo(200);
+        assertThat(restored.getSubAmount()).isEqualTo(50);
+        assertThat(restored.getDebug()).isEqualTo("raise debug");
+    }
+
+    @Test
+    void should_MarshalAndDemarshal_AllInAction() {
+        player.setChipCount(0);
+        HandAction original = new HandAction(player, HoldemHand.ROUND_RIVER, HandAction.ACTION_CALL, 500);
+
+        assertThat(original.isAllIn()).isTrue();
+
+        MsgState state = new MsgState();
+        String marshaled = original.marshal(state);
+
+        HandAction restored = new HandAction();
+        restored.demarshal(state, marshaled);
+
+        assertThat(restored.isAllIn()).isTrue();
+        assertThat(restored.getAmount()).isEqualTo(500);
+    }
+
+    @Test
+    void should_MarshalAndDemarshal_FoldWithType() {
+        HandAction original = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_FOLD, 0,
+                HandAction.FOLD_FORCED, null);
+
+        MsgState state = new MsgState();
+        String marshaled = original.marshal(state);
+
+        HandAction restored = new HandAction();
+        restored.demarshal(state, marshaled);
+
+        assertThat(restored.getAction()).isEqualTo(HandAction.ACTION_FOLD);
+        assertThat(restored.getSubAmount()).isEqualTo(HandAction.FOLD_FORCED);
+    }
+
+    @Test
+    void should_MarshalAndDemarshal_WinWithPotNumber() {
+        HandAction original = new HandAction(player, HoldemHand.ROUND_SHOWDOWN, HandAction.ACTION_WIN, 1000, 2, null);
+
+        MsgState state = new MsgState();
+        String marshaled = original.marshal(state);
+
+        HandAction restored = new HandAction();
+        restored.demarshal(state, marshaled);
+
+        assertThat(restored.getAction()).isEqualTo(HandAction.ACTION_WIN);
+        assertThat(restored.getAmount()).isEqualTo(1000);
+        assertThat(restored.getSubAmount()).isEqualTo(2); // Pot number
+    }
+
+    @Test
+    void should_MarshalAndDemarshal_WithNullDebug() {
+        HandAction original = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_CHECK, 0, 0, null);
+
+        MsgState state = new MsgState();
+        String marshaled = original.marshal(state);
+
+        HandAction restored = new HandAction();
+        restored.demarshal(state, marshaled);
+
+        assertThat(restored.getDebug()).isNull();
+    }
+
+    @Test
+    void should_MarshalAndDemarshal_AllActionTypes() {
+        int[] actionTypes = {HandAction.ACTION_FOLD, HandAction.ACTION_CHECK, HandAction.ACTION_CALL,
+                HandAction.ACTION_BET, HandAction.ACTION_RAISE, HandAction.ACTION_BLIND_SM, HandAction.ACTION_BLIND_BIG,
+                HandAction.ACTION_ANTE, HandAction.ACTION_WIN, HandAction.ACTION_OVERBET, HandAction.ACTION_LOSE};
+
+        for (int actionType : actionTypes) {
+            HandAction original = new HandAction(player, HoldemHand.ROUND_FLOP, actionType, 100);
+
+            MsgState state = new MsgState();
+            String marshaled = original.marshal(state);
+
+            HandAction restored = new HandAction();
+            restored.demarshal(state, marshaled);
+
+            assertThat(restored.getAction()).isEqualTo(actionType);
+        }
+    }
 
     // ========== Helper Methods ==========
 
