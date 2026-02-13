@@ -967,6 +967,20 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
      * Handle table in pending state
      */
     private void doPending(PokerTable table) {
+        // Check for scheduled start time
+        if (!bClient_ && game_.getProfile().isScheduledStartEnabled()) {
+            long currentTime = System.currentTimeMillis();
+            long startTime = game_.getProfile().getStartTime();
+            int minPlayers = game_.getProfile().getMinPlayersForStart();
+            int currentPlayers = game_.getNumPlayers();
+
+            if (currentTime >= startTime && currentPlayers >= minPlayers) {
+                // Auto-start: remove all from wait list
+                table.removeWaitAll();
+                mgr_.sendDirectorChat(PropertyConfig.getMessage("msg.chat.scheduledstart"), null);
+            }
+        }
+
         // look to see if we have waited to long for
         // an action
         if (table.getWaitSize() > 0) {

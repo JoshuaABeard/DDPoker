@@ -354,11 +354,21 @@ public class TournamentProfileHtml {
             sInviteOnly = PropertyConfig.getMessage("msg.inviteonly." + profile.isInviteObserversPublic(),
                     profile.getInvitees().toCSV());
 
+        String sScheduledStart;
+        if (!profile.isScheduledStartEnabled()) {
+            sScheduledStart = PropertyConfig.getYesNo(false);
+        } else {
+            String formattedTime = PropertyConfig.getDateFormat("en")
+                    .format(new java.util.Date(profile.getStartTime()));
+            sScheduledStart = PropertyConfig.getMessage("msg.scheduledstart.enabled", formattedTime,
+                    profile.getMinPlayersForStart());
+        }
+
         return PropertyConfig.getMessage("msg.tournamentonline", PropertyConfig.getYesNo(profile.isAllowDash()),
                 PropertyConfig.getYesNo(profile.isFillComputer()), profile.getMaxObservers(),
                 profile.getTimeoutSeconds(), profile.getThinkBankSeconds(), sBootDis, sBootSit, sInviteOnly,
                 PropertyConfig.getYesNo(profile.isAllowAdvisor()),
-                PropertyConfig.getYesNo(profile.isOnlineActivatedPlayersOnly()));
+                PropertyConfig.getYesNo(profile.isOnlineActivatedPlayersOnly()), sScheduledStart);
     }
 
     /**
