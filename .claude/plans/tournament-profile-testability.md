@@ -54,6 +54,12 @@ Use the **Facade Pattern** - TournamentProfile remains the public API and delega
   - All 89 tests passing
   - Maintains 100% backward compatibility
 
+- ✅ **Phase 3 Complete** (2026-02-13): PayoutCalculator extracted
+  - 16 new tests added
+  - Removed 82 lines of complex payout logic from TournamentProfile
+  - All 105 tests passing
+  - Maintains 100% backward compatibility
+
 ## Phases
 
 ### Phase 1: Extract Complex Algorithms ✅ COMPLETE
@@ -93,9 +99,26 @@ Extracted blind/ante access logic with automatic doubling:
 
 ---
 
-### Phase 3: Extract PayoutCalculator (PLANNED)
+### Phase 3: Extract PayoutCalculator ✅ COMPLETE
 
-See plan details in original plan document for Phase 3 and 4 specifications.
+**Coverage Gain:** 65-70% → 75-80% (+10-15%) (not yet measured)
+**Effort:** 1 session
+**Risk:** Medium (complex conditionals) - mitigated by comprehensive tests
+
+Extracted payout calculation logic across all modes:
+- Created PayoutCalculator with 16 comprehensive tests
+- Centralizes getNumSpots(), getPayout(), getPoolAfterHouseTake()
+- Handles SPOTS, PERC, and SATELLITE modes
+- Satellite remainder logic, percent first-place adjustment, house take modes
+- Integrated into TournamentProfile (payouts() helper method)
+- Removed 82 lines of complex payout logic
+- All 105 tests passing
+
+---
+
+### Phase 4: Consolidate and Achieve 80% (PLANNED)
+
+See original plan document for Phase 4 specifications.
 
 ## Critical Files
 
@@ -109,16 +132,20 @@ See plan details in original plan document for Phase 3 and 4 specifications.
 - `code/pokerengine/src/main/java/com/donohoedigital/games/poker/model/BlindStructure.java`
 - `code/pokerengine/src/test/java/com/donohoedigital/games/poker/model/BlindStructureTest.java`
 
-**Modified in Phases 1-2:**
+**Created in Phase 3:**
+- `code/pokerengine/src/main/java/com/donohoedigital/games/poker/model/PayoutCalculator.java`
+- `code/pokerengine/src/test/java/com/donohoedigital/games/poker/model/PayoutCalculatorTest.java`
+
+**Modified in Phases 1-3:**
 - `code/pokerengine/src/main/java/com/donohoedigital/games/poker/model/TournamentProfile.java`
 
 ## Success Metrics
 
-| Metric | Baseline | Phase 1 Actual | Phase 2 Actual | Phase 3 Target | Phase 4 Target |
+| Metric | Baseline | Phase 1 Actual | Phase 2 Actual | Phase 3 Actual | Phase 4 Target |
 |--------|----------|----------------|----------------|----------------|----------------|
-| **Coverage** | 30% | ~50% | TBD | 75-80% | 80-85% |
-| **Test Count** | ~22 | 59 | 75 (16 BlindStructure + 59 from Phase 1) | ~105 | ~140 |
-| **TournamentProfile Lines** | 1,926 | 1,580 | 1,610 | 1,200 | 1,000 |
+| **Coverage** | 30% | ~50% | TBD | TBD | 80-85% |
+| **Test Count** | ~22 | 59 | 75 | 91 (16 PayoutCalculator + 75 from Phase 2) | ~140 |
+| **TournamentProfile Lines** | 1,926 | 1,580 | 1,610 | ~1,530 | 1,000 |
 
 ## Rollback Plan
 
