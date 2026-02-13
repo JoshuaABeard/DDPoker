@@ -141,31 +141,34 @@ public class BlindQuickSetupDialog extends DialogPhase implements ActionListener
         StringBuilder preview = new StringBuilder("<html>");
         preview.append("<b>First ").append(numLevels).append(" levels:</b><br>");
 
-        int displayLevel = 1;
-        for (int i = 1; i <= numLevels + (includeBreaks ? numLevels / breakFreq : 0)
-                && displayLevel <= numLevels * 2; i++) {
-            if (temp.isBreak(i)) {
-                preview.append("Level ").append(i).append(": <i>Break (15 min)</i><br>");
-            } else if (temp.getBigBlind(i) > 0) {
-                int ante = temp.getAnte(i);
-                int small = temp.getSmallBlind(i);
-                int big = temp.getBigBlind(i);
-                int mins = temp.getMinutes(i);
+        // Iterate through all generated levels, showing first 5 blind levels
+        int blindLevelsShown = 0;
+        int maxLevel = TournamentProfile.MAX_LEVELS;
 
-                preview.append("Level ").append(i).append(": ");
+        for (int level = 1; level <= maxLevel && blindLevelsShown < numLevels; level++) {
+            if (temp.isBreak(level)) {
+                // Show breaks but don't count toward limit
+                preview.append("Level ").append(level).append(": <i>Break (15 min)</i><br>");
+            } else if (temp.getBigBlind(level) > 0) {
+                // Show blind level
+                int ante = temp.getAnte(level);
+                int small = temp.getSmallBlind(level);
+                int big = temp.getBigBlind(level);
+                int mins = temp.getMinutes(level);
+
+                preview.append("Level ").append(level).append(": ");
                 if (ante > 0) {
                     preview.append(ante).append("/");
                 }
                 preview.append(small).append("/").append(big);
                 preview.append(" (").append(mins).append(" min)<br>");
 
-                if (++displayLevel > 5)
-                    break;
+                blindLevelsShown++;
             }
         }
 
-        if (numLevels > 5) {
-            preview.append("<i>... and ").append(numLevels - 5).append(" more levels</i>");
+        if (numLevelsSpinner_.getValue() > 5) {
+            preview.append("<i>... and ").append(numLevelsSpinner_.getValue() - 5).append(" more levels</i>");
         }
 
         preview.append("</html>");

@@ -97,4 +97,19 @@ public class BountyTest {
         // Amount should still be set even when disabled
         assertEquals(500, profile.getBountyAmount());
     }
+
+    @Test
+    public void should_ClampNegativeBountyAmount_ToZero() {
+        TournamentProfile profile = new TournamentProfile("Test");
+        profile.setBountyAmount(-100);
+        assertEquals("Negative bounty should be clamped to 0", 0, profile.getBountyAmount());
+    }
+
+    @Test
+    public void should_ClampExcessiveBountyAmount_ToMax() {
+        TournamentProfile profile = new TournamentProfile("Test");
+        profile.setBountyAmount(99999);
+        assertEquals("Excessive bounty should be clamped to MAX_BOUNTY", TournamentProfile.MAX_BOUNTY,
+                profile.getBountyAmount());
+    }
 }

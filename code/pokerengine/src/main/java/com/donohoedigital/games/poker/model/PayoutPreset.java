@@ -141,13 +141,60 @@ public enum PayoutPreset {
      * @return The matching preset, or CUSTOM if no match
      */
     public static PayoutPreset fromFirstSpot(double firstSpotPercent) {
-        // Simple matching based on first spot percentage with tolerance
+        // Match based on first spot percentage with tolerance
+        // Current presets have distinct values (25%, 40%, 50%) so no collision
         for (PayoutPreset preset : values()) {
             if (preset.hasDistribution() && Math.abs(preset.percentages[0] - firstSpotPercent) < 0.1) {
                 return preset;
             }
         }
         return CUSTOM;
+    }
+
+    /**
+     * Find the preset that exactly matches the given payout distribution.
+     *
+     * <p>
+     * More robust matching that compares all spots, not just the first. Use this
+     * when you have a full distribution and want to identify which preset it
+     * matches.
+     *
+     * @param distribution
+     *            Array of payout percentages
+     * @return The matching preset, or CUSTOM if no exact match
+     */
+    public static PayoutPreset fromDistribution(double[] distribution) {
+        if (distribution == null || distribution.length == 0) {
+            return CUSTOM;
+        }
+
+        // Check each preset for exact match
+        for (PayoutPreset preset : values()) {
+            if (preset.hasDistribution() && preset.matchesDistribution(distribution)) {
+                return preset;
+            }
+        }
+        return CUSTOM;
+    }
+
+    /**
+     * Check if this preset's distribution matches the given distribution.
+     *
+     * @param distribution
+     *            Array to compare against
+     * @return true if distributions match within 0.1% tolerance
+     */
+    private boolean matchesDistribution(double[] distribution) {
+        if (percentages.length != distribution.length) {
+            return false;
+        }
+
+        for (int i = 0; i < percentages.length; i++) {
+            if (Math.abs(percentages[i] - distribution[i]) >= 0.1) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

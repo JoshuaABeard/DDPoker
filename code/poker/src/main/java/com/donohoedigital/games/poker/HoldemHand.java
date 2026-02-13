@@ -2688,6 +2688,8 @@ public class HoldemHand implements DataMarshal {
                         continue;
 
                     // If this player lost and is now broke (eliminated), award bounty to winner(s)
+                    // Note: A player eliminated in the main pot won't be in side pots, so this
+                    // should only execute once per eliminated player across all pots in a hand
                     if (!winners.contains(player) && player.getChipCount() == 0) {
                         // Split bounty among winners, with remainder going to first winner
                         int share = bountyAmount / nWinners;

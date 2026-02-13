@@ -1305,9 +1305,14 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
 
     /**
      * Set bounty amount per knockout
+     *
+     * @param amount
+     *            Bounty amount (will be clamped to [0, MAX_BOUNTY])
      */
     public void setBountyAmount(int amount) {
-        map_.setInteger(PARAM_BOUNTY_AMOUNT, amount);
+        // Clamp to valid range to match getter behavior
+        int clamped = Math.max(0, Math.min(amount, MAX_BOUNTY));
+        map_.setInteger(PARAM_BOUNTY_AMOUNT, clamped);
     }
 
     /**

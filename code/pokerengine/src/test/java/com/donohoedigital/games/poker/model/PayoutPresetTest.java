@@ -196,6 +196,28 @@ public class PayoutPresetTest {
     }
 
     @Test
+    public void should_MatchPreset_FromFullDistribution() {
+        // Exact matches
+        assertEquals(PayoutPreset.TOP_HEAVY, PayoutPreset.fromDistribution(new double[]{50.0, 30.0, 20.0}));
+        assertEquals(PayoutPreset.STANDARD, PayoutPreset.fromDistribution(new double[]{40.0, 25.0, 17.5, 12.5, 5.0}));
+        assertEquals(PayoutPreset.FLAT,
+                PayoutPreset.fromDistribution(new double[]{25.0, 20.0, 15.0, 12.5, 10.0, 7.5, 5.0, 5.0}));
+
+        // Tolerance matching (within 0.1%)
+        assertEquals(PayoutPreset.TOP_HEAVY, PayoutPreset.fromDistribution(new double[]{50.05, 30.03, 19.92}));
+
+        // Wrong length returns CUSTOM
+        assertEquals(PayoutPreset.CUSTOM, PayoutPreset.fromDistribution(new double[]{50.0, 30.0}));
+
+        // Wrong values return CUSTOM
+        assertEquals(PayoutPreset.CUSTOM, PayoutPreset.fromDistribution(new double[]{45.0, 30.0, 25.0}));
+
+        // Null/empty returns CUSTOM
+        assertEquals(PayoutPreset.CUSTOM, PayoutPreset.fromDistribution(null));
+        assertEquals(PayoutPreset.CUSTOM, PayoutPreset.fromDistribution(new double[]{}));
+    }
+
+    @Test
     public void should_UseDisplayName_ForToString() {
         assertEquals("Custom", PayoutPreset.CUSTOM.toString());
         assertEquals("Top-Heavy (~50% winner)", PayoutPreset.TOP_HEAVY.toString());
