@@ -21,7 +21,9 @@ export default function Navigation() {
   const { user, isAuthenticated } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const [focusedIndex, setFocusedIndex] = useState<number>(-1)
   const dropdownRefs = useRef<Record<string, HTMLLIElement | null>>({})
+  const dropdownLinkRefs = useRef<Record<string, HTMLAnchorElement[]>>({})
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -36,12 +38,26 @@ export default function Navigation() {
       if (openDropdown && dropdownRefs.current[openDropdown]) {
         if (!dropdownRefs.current[openDropdown]?.contains(target)) {
           setOpenDropdown(null)
+          setFocusedIndex(-1)
         }
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [openDropdown])
+
+  // Handle Escape key to close dropdowns
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && openDropdown) {
+        setOpenDropdown(null)
+        setFocusedIndex(-1)
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
   }, [openDropdown])
 
   const isActive = (link: string) => {
@@ -51,6 +67,46 @@ export default function Navigation() {
 
   const toggleDropdown = (key: string) => {
     setOpenDropdown(openDropdown === key ? null : key)
+    setFocusedIndex(-1)
+  }
+
+  const handleDropdownKeyDown = (e: React.KeyboardEvent, key: string, hasDropdown: boolean) => {
+    if (!hasDropdown) return
+
+    const item = navData[key]
+    const itemCount = item.subPages?.length || 0
+
+    switch (e.key) {
+      case 'Enter':
+      case ' ':
+        e.preventDefault()
+        toggleDropdown(key)
+        break
+      case 'ArrowDown':
+        e.preventDefault()
+        if (openDropdown === key) {
+          // Navigate within open dropdown
+          const nextIndex = focusedIndex < itemCount - 1 ? focusedIndex + 1 : 0
+          setFocusedIndex(nextIndex)
+          dropdownLinkRefs.current[key]?.[nextIndex]?.focus()
+        } else {
+          // Open dropdown and focus first item
+          setOpenDropdown(key)
+          setFocusedIndex(0)
+          setTimeout(() => {
+            dropdownLinkRefs.current[key]?.[0]?.focus()
+          }, 0)
+        }
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        if (openDropdown === key) {
+          const prevIndex = focusedIndex > 0 ? focusedIndex - 1 : itemCount - 1
+          setFocusedIndex(prevIndex)
+          dropdownLinkRefs.current[key]?.[prevIndex]?.focus()
+        }
+        break
+    }
   }
 
   const renderNavItem = (key: string, mobile = false) => {
@@ -94,6 +150,11 @@ export default function Navigation() {
     }
 
     // Desktop navigation
+    // Initialize dropdown link refs array
+    if (!dropdownLinkRefs.current[key]) {
+      dropdownLinkRefs.current[key] = []
+    }
+
     return (
       <li
         key={key}
@@ -111,19 +172,28 @@ export default function Navigation() {
               toggleDropdown(key)
             }
           }}
+          onKeyDown={(e) => handleDropdownKeyDown(e, key, !!hasDropdown)}
+          role={hasDropdown ? 'button' : undefined}
+          aria-haspopup={hasDropdown ? 'true' : undefined}
+          aria-expanded={hasDropdown ? openDropdown === key : undefined}
         >
           {item.title}
           {hasDropdown && <span className="dropdown-arrow"> ▼</span>}
         </Link>
         {hasDropdown && openDropdown === key && (
-          <ul className="dropdown-menu">
-            {item.subPages?.map((subPage) => (
-              <li key={subPage.link}>
+          <ul className="dropdown-menu" role="menu">
+            {item.subPages?.map((subPage, index) => (
+              <li key={subPage.link} role="none">
                 <Link
                   href={subPage.link}
                   className={`dropdown-link ${
                     pathname === subPage.link ? 'active' : ''
                   }`}
+                  role="menuitem"
+                  ref={(el) => {
+                    if (el) dropdownLinkRefs.current[key][index] = el
+                  }}
+                  tabIndex={focusedIndex === index ? 0 : -1}
                 >
                   {subPage.title}
                 </Link>
