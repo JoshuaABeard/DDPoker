@@ -22,6 +22,7 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.gui.*;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.*;
@@ -39,6 +40,37 @@ class HoldemSimulatorTest {
         // Initialize config for each test. Note: loadGuiConfig() is NOT called
         // as it's not needed and may cause issues in CI environments.
         new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
+    }
+
+    /**
+     * Simple progress feedback for tests - allows simulation to proceed without
+     * depending on HandGroup file loading.
+     */
+    private static class TestProgressFeedback implements DDProgressFeedback {
+        @Override
+        public boolean isStopRequested() {
+            return false; // Never stop
+        }
+
+        @Override
+        public void setMessage(String sMessage) {
+            // No-op for tests
+        }
+
+        @Override
+        public void setPercentDone(int n) {
+            // No-op for tests
+        }
+
+        @Override
+        public void setFinalResult(Object oResult) {
+            // No-op for tests
+        }
+
+        @Override
+        public void setIntermediateResult(Object oResult) {
+            // No-op for tests
+        }
     }
 
     // ========== getInterval() Tests (via reflection) ==========
@@ -225,59 +257,49 @@ class HoldemSimulatorTest {
 
     // ========== Basic Simulation Tests ==========
 
-    // TODO: These tests fail in CI due to HandGroup file loading issues in parallel
-    // test execution.
-    // HandGroup.getProfileList() returns empty list in CI, causing simulate() to
-    // return size=0.
-    // Tests pass locally but fail in CI. Need to either:
-    // 1. Mock HandGroup loading for unit tests
-    // 2. Fix resource loading in parallel CI environment
-    // 3. Convert to integration tests with proper setup
-    // See: https://github.com/JoshuaABeard/DDPoker/issues/XXX
-
     @Test
-    @Disabled("Fails in CI - HandGroup file loading issue in parallel test execution")
     void should_ReturnNonNullResult_WhenSimulatingPocketAces() {
         Hand hole = new Hand(Card.SPADES_A, Card.HEARTS_A);
         Hand community = new Hand();
+        DDProgressFeedback progress = new TestProgressFeedback();
 
-        StatResults results = HoldemSimulator.simulate(hole, community, null);
+        StatResults results = HoldemSimulator.simulate(hole, community, progress);
 
         assertThat(results).isNotNull();
         assertThat(results.size()).isGreaterThan(0); // Should have some results
     }
 
     @Test
-    @Disabled("Fails in CI - HandGroup file loading issue in parallel test execution")
     void should_ReturnNonNullResult_WhenSimulatingWithFlop() {
         Hand hole = new Hand(Card.SPADES_A, Card.HEARTS_K);
         Hand community = new Hand(Card.CLUBS_A, Card.DIAMONDS_K, Card.SPADES_2);
+        DDProgressFeedback progress = new TestProgressFeedback();
 
-        StatResults results = HoldemSimulator.simulate(hole, community, null);
+        StatResults results = HoldemSimulator.simulate(hole, community, progress);
 
         assertThat(results).isNotNull();
         assertThat(results.size()).isGreaterThan(0);
     }
 
     @Test
-    @Disabled("Fails in CI - HandGroup file loading issue in parallel test execution")
     void should_ReturnNonNullResult_WhenSimulatingWithTurn() {
         Hand hole = new Hand(Card.SPADES_A, Card.HEARTS_K);
         Hand community = new Hand(Card.CLUBS_A, Card.DIAMONDS_K, Card.SPADES_2, Card.HEARTS_3);
+        DDProgressFeedback progress = new TestProgressFeedback();
 
-        StatResults results = HoldemSimulator.simulate(hole, community, null);
+        StatResults results = HoldemSimulator.simulate(hole, community, progress);
 
         assertThat(results).isNotNull();
         assertThat(results.size()).isGreaterThan(0);
     }
 
     @Test
-    @Disabled("Fails in CI - HandGroup file loading issue in parallel test execution")
     void should_ReturnNonNullResult_WhenSimulatingWithRiver() {
         Hand hole = new Hand(Card.SPADES_A, Card.HEARTS_K);
         Hand community = new Hand(Card.CLUBS_A, Card.DIAMONDS_K, Card.SPADES_2, Card.HEARTS_3, Card.CLUBS_4);
+        DDProgressFeedback progress = new TestProgressFeedback();
 
-        StatResults results = HoldemSimulator.simulate(hole, community, null);
+        StatResults results = HoldemSimulator.simulate(hole, community, progress);
 
         assertThat(results).isNotNull();
         assertThat(results.size()).isGreaterThan(0);
