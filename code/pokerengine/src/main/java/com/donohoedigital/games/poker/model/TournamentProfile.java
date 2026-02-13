@@ -79,6 +79,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public static final int MAX_REBUY_CHIPS = TESTING(PokerConstants.TESTING_LEVELS) ? 10000000 : 1000000;
     public static final int MAX_BUY = TESTING(PokerConstants.TESTING_LEVELS) ? 10000000 : 1000000;
     public static final int MAX_BLINDANTE = 100000000;
+    public static final int MAX_BOUNTY = 10000;
     public static final int MAX_MINUTES = 120;
     public static final int MAX_HOUSE_PERC = 25;
     public static final int MAX_HOUSE_AMOUNT = 9999;
@@ -132,6 +133,8 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public static final String PARAM_ADDONCOST = "addoncost";
     public static final String PARAM_ADDONCHIPS = "addonchips";
     public static final String PARAM_ADDONLEVEL = "addonlevel";
+    public static final String PARAM_BOUNTY = "bounty";
+    public static final String PARAM_BOUNTY_AMOUNT = "bountyamount";
     public static final String PARAM_LASTLEVEL = "lastlevel";
     public static final String PARAM_MIX = "mix:";
     public static final String PARAM_REBUYEXPR = "rebuyexpr";
@@ -1277,6 +1280,34 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      */
     public int getAddonLevel() {
         return map_.getInteger(PARAM_ADDONLEVEL, 0, 1, MAX_LEVELS);
+    }
+
+    /**
+     * Get whether bounties are enabled
+     */
+    public boolean isBountyEnabled() {
+        return map_.getBoolean(PARAM_BOUNTY, false);
+    }
+
+    /**
+     * Set whether bounties are enabled
+     */
+    public void setBountyEnabled(boolean b) {
+        map_.setBoolean(PARAM_BOUNTY, b ? Boolean.TRUE : Boolean.FALSE);
+    }
+
+    /**
+     * Get bounty amount per knockout
+     */
+    public int getBountyAmount() {
+        return map_.getInteger(PARAM_BOUNTY_AMOUNT, 0, 0, MAX_BOUNTY);
+    }
+
+    /**
+     * Set bounty amount per knockout
+     */
+    public void setBountyAmount(int amount) {
+        map_.setInteger(PARAM_BOUNTY_AMOUNT, amount);
     }
 
     /**

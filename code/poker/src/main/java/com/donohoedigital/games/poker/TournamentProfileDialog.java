@@ -77,12 +77,14 @@ public class TournamentProfileDialog extends OptionMenuDialog
     private TypedHashMap orig_;
     private ArrayList rebuyOptions_ = new ArrayList();
     private ArrayList addonOptions_ = new ArrayList();
+    private ArrayList bountyOptions_ = new ArrayList();
     private DDPanel base_;
     private DDTextField name_;
     private DDNumberSpinner numPlayers_;
     private DDNumberSpinner buyinCost_;
     private DDCheckBox rebuys_;
     private DDCheckBox addons_;
+    private DDCheckBox bounties_;
     private DDLabelBorder payout_;
     private DDNumberSpinner houseAmount_;
     private DDNumberSpinner spotPerc_;
@@ -569,6 +571,11 @@ public class TournamentProfileDialog extends OptionMenuDialog
             left.add(addon);
             addon.add(createAddon(), BorderLayout.CENTER);
 
+            // bounty
+            DDLabelBorder bounty = new DDLabelBorder("bounties", STYLE);
+            left.add(bounty);
+            bounty.add(createBounty(), BorderLayout.CENTER);
+
             // payout/alloc
             DDPanel payalloc = new DDPanel();
             payalloc.setBorderLayoutGap(10, 0);
@@ -585,6 +592,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
             buyin.setPreferredWidth(ps.width);
             rebuy.setPreferredWidth(ps.width);
             addon.setPreferredWidth(ps.width);
+            bounty.setPreferredWidth(ps.width);
 
             // allocation
             DDPanel format = new DDPanel();
@@ -1133,6 +1141,33 @@ public class TournamentProfileDialog extends OptionMenuDialog
         addonOptions_.add(oi);
 
         return addon;
+    }
+
+    /**
+     * Bounty panel
+     */
+    private JComponent createBounty() {
+        OptionInteger oi;
+        OptionBoolean ob;
+
+        // bounties
+        DDPanel bounty = new DDPanel();
+        bounty.setBorderLayoutGap(2, 0);
+
+        ob = OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_BOUNTY, STYLE, dummy_, false), bounty,
+                BorderLayout.NORTH);
+        bounties_ = ob.getCheckBox();
+        bounties_.addActionListener(this);
+
+        DDPanel bountydata = new DDPanel();
+        bountydata.setBorderLayoutGap(0, 5);
+        bountydata.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
+        bounty.add(GuiUtils.WEST(bountydata), BorderLayout.CENTER);
+        oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_BOUNTY_AMOUNT, STYLE, dummy_, null, 1,
+                TournamentProfile.MAX_BOUNTY, 70, true), bountydata, BorderLayout.WEST);
+        bountyOptions_.add(oi);
+
+        return bounty;
     }
 
     /**
@@ -1813,6 +1848,9 @@ public class TournamentProfileDialog extends OptionMenuDialog
         } else if (o == rebuys_) {
             list = rebuyOptions_;
             bOn = rebuys_.isSelected();
+        } else if (o == bounties_) {
+            list = bountyOptions_;
+            bOn = bounties_.isSelected();
         }
 
         if (list == null)
