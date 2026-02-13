@@ -1732,8 +1732,6 @@ public class PokerPlayer extends GamePlayer {
         entry.addToken(nAddon_);
         entry.addToken(nRebuy_);
         entry.addToken(nNumRebuy_);
-        entry.addToken(nBountyCollected_);
-        entry.addToken(nBountyCount_);
         entry.addToken(nPendingRebuyAmount_);
         entry.addToken(nPendingRebuyChips_);
         entry.addToken(nPendingRebuyCnt_);
@@ -1776,6 +1774,10 @@ public class PokerPlayer extends GamePlayer {
         entry.addToken(nHandsDisconnected_);
         entry.addToken(nHandsSitout_);
         entry.addToken(bBooted_);
+
+        // Community Edition 3.3.0 - Bounty support
+        entry.addToken(nBountyCollected_);
+        entry.addToken(nBountyCount_);
     }
 
     /**
@@ -1800,8 +1802,6 @@ public class PokerPlayer extends GamePlayer {
         nAddon_ = entry.removeIntToken();
         nRebuy_ = entry.removeIntToken();
         nNumRebuy_ = entry.removeIntToken();
-        nBountyCollected_ = entry.removeIntToken();
-        nBountyCount_ = entry.removeIntToken();
         nPendingRebuyAmount_ = entry.removeIntToken();
         nPendingRebuyChips_ = entry.removeIntToken();
         nPendingRebuyCnt_ = entry.removeIntToken();
@@ -1846,6 +1846,12 @@ public class PokerPlayer extends GamePlayer {
                 nHandsDisconnected_ = entry.removeIntToken();
                 nHandsSitout_ = entry.removeIntToken();
                 bBooted_ = entry.removeBooleanToken();
+
+                // Community Edition 3.3.0 - Bounty support
+                if (entry.hasMoreTokens()) {
+                    nBountyCollected_ = entry.removeIntToken();
+                    nBountyCount_ = entry.removeIntToken();
+                }
             }
         }
 
