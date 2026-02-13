@@ -73,11 +73,15 @@ The host's tournament configuration options (via `TournamentProfile` and `Tourna
 
 ### P3 — Tournament Structure (medium effort)
 
-#### 11. Blind Level Quick Setup / Templates
+#### ✅ 11. Blind Level Quick Setup / Templates (COMPLETED)
 - **Why**: Manually entering up to 40 levels is the most tedious part of tournament setup.
-- **UI**: "Quick Setup" button opens a dialog with: starting blinds, speed preset (Slow/Standard/Turbo/Hyper), include antes checkbox, include breaks checkbox
-- **Logic**: Generate levels following standard ~1.5-2x progression, populate existing level params
-- **No data model changes** — generated levels use existing storage
+- **Implemented**:
+  - `BlindTemplate` enum with 4 templates: SLOW (1.5x, 20min), STANDARD (2x, 15min), TURBO (2x, 10min), HYPER (2x, 5min)
+  - `BlindQuickSetupDialog` with template selection, num levels (1-40), include breaks, break frequency
+  - Preview display showing first few generated levels
+  - "Quick Setup" button integrated in TournamentProfileDialog Levels tab
+  - `generateLevels()` method with progressive blind structure and optional breaks
+  - All 17 template tests passing, 1536 total tests passing
 
 #### ✅ 12. Standard Payout Presets (COMPLETED)
 - **Why**: Current "Auto (Fibonacci)" is a single algorithm. Platforms offer top-heavy, standard, and flat distributions.
