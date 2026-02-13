@@ -5,7 +5,6 @@
  */
 
 import { Metadata } from 'next'
-import Footer from '@/components/layout/Footer'
 
 export const metadata: Metadata = {
   title: 'Download - DD Poker Community Edition',
@@ -186,7 +185,6 @@ export default function Download() {
           </li>
         </ul>
       </div>
-      <Footer />
     </div>
   )
 }

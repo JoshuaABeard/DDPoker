@@ -7,7 +7,6 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { LoginForm } from '@/components/auth/LoginForm'
-import Footer from '@/components/layout/Footer'
 
 export const metadata = {
   title: 'Login - DD Poker',
@@ -49,7 +48,6 @@ export default function LoginPage() {
       <Suspense fallback={<div className="container mx-auto px-4 py-12 text-center">Loading...</div>}>
         <LoginContent />
       </Suspense>
-      <Footer />
     </>
   )
 }

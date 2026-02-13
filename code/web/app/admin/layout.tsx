@@ -48,7 +48,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="admin-layout">
       <Sidebar sections={adminSidebarData} />
-      <main className="admin-content">{children}</main>
+      <div className="admin-content">{children}</div>
 
       <style jsx>{`
         .admin-layout {

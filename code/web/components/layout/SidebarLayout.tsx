@@ -7,7 +7,6 @@
  */
 
 import Sidebar from '@/components/layout/Sidebar'
-import Footer from '@/components/layout/Footer'
 import { SidebarSection } from '@/lib/sidebarData'
 
 interface SidebarLayoutProps {
@@ -23,8 +22,7 @@ export default function SidebarLayout({
     <div className="sidebar-layout">
       <Sidebar sections={sections} />
       <div className="sidebar-content-wrapper">
-        <main className="sidebar-content">{children}</main>
-        <Footer />
+        <div className="sidebar-content">{children}</div>
       </div>
 
       <style jsx>{`
