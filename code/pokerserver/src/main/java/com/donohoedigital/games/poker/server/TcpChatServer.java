@@ -394,19 +394,23 @@ public class TcpChatServer extends GameServer {
             OnlineProfile auth = new OnlineProfile(authData);
             String profileName = auth.getName();
 
-            // Get profile from database
-            OnlineProfile user = chatServer_.onlineProfileService.getOnlineProfileByName(profileName);
+            // Authenticate using service (uses bcrypt password hashing)
+            OnlineProfile authRequest = new OnlineProfile();
+            authRequest.setName(auth.getName());
+            authRequest.setPassword(auth.getPassword());
+
+            OnlineProfile user = chatServer_.onlineProfileService.authenticateOnlineProfile(authRequest);
+
+            // Verify profile exists and credentials match
+            if (user == null) {
+                sendError(channel, PropertyConfig.getMessage("msg.wanprofile.unavailable"));
+                return;
+            }
 
             // Check for ban via profile
             String banCheck = PokerServlet.banCheck(chatServer_.bannedKeyService, user);
             if (banCheck != null) {
                 sendError(channel, banCheck);
-                return;
-            }
-
-            // Verify profile exists and credentials match
-            if (user == null || !user.getPassword().equals(auth.getPassword())) {
-                sendError(channel, PropertyConfig.getMessage("msg.wanprofile.unavailable"));
                 return;
             }
 
