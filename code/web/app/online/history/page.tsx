@@ -62,7 +62,7 @@ async function getTournamentHistory(
     const mapped = history.map(mapTournamentEntry)
     // LIMITATION: Stats calculated from current page only, not full history
     // TODO: Backend should return aggregate stats, or fetch all history (page=0, pageSize=total)
-    const stats = calculateTournamentStats(mapped)
+    const stats = calculateTournamentStats(history)
     const result = buildPaginationResult(mapped, total, page, 50)
     return {
       entries: result.data,

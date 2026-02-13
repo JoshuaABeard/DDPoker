@@ -3,7 +3,7 @@
  * DD Poker - Admin Online Profile Search
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-export const dynamic = 'force-static'
+export const dynamic = 'force-dynamic'
 
 import { Metadata } from 'next'
 import { Suspense } from 'react'
@@ -43,7 +43,7 @@ async function searchProfiles(
       page: backendPage,
       pageSize: 50,
     })
-    const mapped = profiles.map((p: any) => ({
+    const mapped = profiles.map((p) => ({
       id: p.id,
       name: p.name || p.playerName || 'Unknown',
       email: p.email || 'N/A',

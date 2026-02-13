@@ -29,10 +29,12 @@ export function Dialog({
   confirmText = 'OK',
   cancelText = 'Cancel',
 }: DialogProps) {
-  // Handle Escape key
+  // Handle Escape key (S8: only register listener when dialog is open)
   useEffect(() => {
+    if (!isOpen) return
+
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape') {
         onClose()
       }
     }
@@ -40,6 +42,36 @@ export function Dialog({
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
   }, [isOpen, onClose])
+
+  // S2: Focus trap - trap focus within dialog
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleTabKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+
+      const focusableElements = document.querySelectorAll(
+        '.dialog-content button, .dialog-content [href], .dialog-content input, .dialog-content select, .dialog-content textarea, .dialog-content [tabindex]:not([tabindex="-1"])'
+      )
+      const firstElement = focusableElements[0] as HTMLElement
+      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          lastElement?.focus()
+          e.preventDefault()
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          firstElement?.focus()
+          e.preventDefault()
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleTabKey)
+    return () => document.removeEventListener('keydown', handleTabKey)
+  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -49,14 +81,23 @@ export function Dialog({
   }
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
+    <div
+      className="dialog-overlay"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dialog-title"
+      aria-describedby="dialog-message"
+    >
       <div className="dialog-content" onClick={(e) => e.stopPropagation()}>
         <div className="dialog-header">
-          <h3 className="dialog-title">{title}</h3>
+          <h3 id="dialog-title" className="dialog-title">
+            {title}
+          </h3>
         </div>
 
         <div className="dialog-body">
-          <p>{message}</p>
+          <p id="dialog-message">{message}</p>
         </div>
 
         <div className="dialog-actions">
