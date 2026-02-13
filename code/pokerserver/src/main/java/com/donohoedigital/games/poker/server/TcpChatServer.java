@@ -187,8 +187,18 @@ public class TcpChatServer extends GameServer {
                     continue;
 
                 try {
-                    // Queue message for async send
-                    conn.writeQueue.offer(p2p);
+                    // DOS-1: Check if queue is full before offering
+                    if (!conn.writeQueue.offer(p2p)) {
+                        // Queue is full - slow consumer, disconnect to prevent memory exhaustion
+                        logger.warn(
+                                "Write queue full for " + conn.playerInfo.getName() + " - disconnecting slow client");
+                        try {
+                            conn.channel.close();
+                        } catch (IOException e) {
+                            logger.warn("Error closing slow client channel: " + Utils.formatExceptionText(e));
+                        }
+                        continue;
+                    }
 
                     // Try to send immediately if possible
                     sendQueuedMessages(conn);
@@ -555,7 +565,8 @@ public class TcpChatServer extends GameServer {
         ChatConnection(SocketChannel channel, OnlinePlayerInfo playerInfo) {
             this.channel = channel;
             this.playerInfo = playerInfo;
-            this.writeQueue = new LinkedBlockingQueue<>();
+            // DOS-1: Limit queue capacity to prevent memory exhaustion
+            this.writeQueue = new LinkedBlockingQueue<>(100);
         }
     }
 }
