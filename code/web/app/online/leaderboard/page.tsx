@@ -5,6 +5,7 @@
  */
 
 import { Metadata } from 'next'
+import { Suspense } from 'react'
 import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
 import { PlayerLink } from '@/components/online/PlayerLink'
@@ -153,11 +154,13 @@ export default async function LeaderboardPage({
       />
 
       {totalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalItems={totalItems}
-          itemsPerPage={50}
-        />
+        <Suspense fallback={<div className="text-center text-gray-500">Loading...</div>}>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalItems}
+            itemsPerPage={50}
+          />
+        </Suspense>
       )}
     </div>
   )

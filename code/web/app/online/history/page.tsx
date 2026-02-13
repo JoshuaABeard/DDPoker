@@ -6,6 +6,7 @@
 
 import { Metadata } from 'next'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
 import { FilterForm } from '@/components/filters/FilterForm'
@@ -211,11 +212,13 @@ export default async function TournamentHistoryPage({
       />
 
       {totalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalItems={totalItems}
-          itemsPerPage={50}
-        />
+        <Suspense fallback={<div className="text-center text-gray-500">Loading...</div>}>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalItems}
+            itemsPerPage={50}
+          />
+        </Suspense>
       )}
     </div>
   )
