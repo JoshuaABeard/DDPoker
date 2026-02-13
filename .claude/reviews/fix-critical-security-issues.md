@@ -134,3 +134,76 @@ All 10 fixes completed across 7 commits:
 - **Build:** Frontend build (`npm run build`) reported clean per handoff document. Backend build status unknown for the downgraded Spring Boot version.
 - **Privacy:** The web code changes (Phase 1 and Phase 2 fixes) contain no secrets or PII. However, the `.gitignore` change (R1) creates a future risk of accidentally committing the JWT signing key.
 - **Security:** The core security fixes (open redirect, isAdmin storage removal, backend admin authorization verification) are correct and effective. The `.gitignore` change (R1) and Spring Boot downgrade (R3) introduce security regressions that must be addressed before merging.
+
+---
+
+## Final Review (Post-Improvement)
+
+**Status:** APPROVED
+
+**Reviewed by:** Claude Opus 4.6 (Review Agent)
+**Date:** 2026-02-13
+**Commit reviewed:** 16208da ("refactor: Apply code review suggestions (S1-S6)")
+
+### Previous Blocking Issues (R1-R4) Resolution
+
+All 4 blocking issues from the initial review have been resolved (these were fixed in earlier commits before the improvement commit):
+
+1. **R1 (`.gitignore` jwt.secret):** RESOLVED. The `.gitignore` now contains `code/api/data/jwt.secret` -- the exclusion is present and will protect against accidental secret commits.
+
+2. **R2 (CI hardcoded version):** RESOLVED. Both `build-installers.yml` and `publish-docker.yml` now use dynamic version extraction from `github.ref_name` with proper `v` prefix stripping. All filenames in release notes and Docker verification use `${{ steps.version.outputs.version }}` interpolation.
+
+3. **R3 (Spring Boot downgrade):** RESOLVED. `code/api/pom.xml` is at Spring Boot 3.3.9 with ByteBuddy 1.17.7, ASM 9.8, spring-security-test 6.4.2, and the Logback-to-Log4j2 configuration is in place.
+
+4. **R4 (Undocumented files):** RESOLVED. The backend changes are now consistent with the branch scope (CI fixes and backend dependency management are properly versioned).
+
+### Suggestion Implementation Verification
+
+All 5 applicable suggestions (S1-S4, S6) have been correctly implemented. S5 and S7 were correctly skipped as pre-existing code outside the branch scope.
+
+#### S1: ALIGN_CLASSES module constant -- VERIFIED
+
+- **File:** `code/web/components/data/DataTable.tsx` (lines 7-11)
+- **Implementation:** `ALIGN_CLASSES` extracted as a module-level `const` with `as const` type assertion. Both the `<thead>` map (line 51) and the `<tbody>` map (line 73) reference the shared constant. The two duplicate inline object literals have been removed.
+- **Correctness:** The `as const` assertion ensures type narrowing works correctly with the `column.align || 'left'` indexing. No functional change in behavior; strictly a performance and clarity improvement.
+- **Regression risk:** None.
+
+#### S2: Merged event handlers -- VERIFIED
+
+- **File:** `code/web/components/layout/Navigation.tsx` (lines 34-60)
+- **Implementation:** The two separate `useEffect` hooks (click-outside and Escape key) have been combined into a single `useEffect`. Both `handleClickOutside` and `handleEscape` are defined inside the same effect, both listeners are registered together, and the cleanup function removes both listeners.
+- **Correctness:** Both handlers share the same dependency (`[openDropdown]`), so combining them into one effect is semantically equivalent. The cleanup function correctly removes both listeners. Listener count reduced from 2 effects to 1 effect.
+- **Regression risk:** None. The behavior is identical.
+
+#### S3: Removed invalid aria-label -- VERIFIED
+
+- **File:** `code/web/components/layout/Sidebar.tsx` (lines 72-76)
+- **Implementation:** The `aria-label="Close sidebar menu"` attribute has been removed from the backdrop `<div>`. The div now has only `className` and `onClick`.
+- **Correctness:** The removal is correct. The backdrop is a visual-only interaction target. Accessible close mechanisms remain available via the hamburger button (`aria-label="Toggle sidebar menu"`) and the Escape key handler. Placing `aria-label` on a non-interactive `<div>` without a semantic role is invalid HTML.
+- **Regression risk:** None. No change to visual or interactive behavior.
+
+#### S4: Fixed refs initialization -- VERIFIED
+
+- **File:** `code/web/components/layout/Navigation.tsx` (lines 156-163)
+- **Implementation:** The `dropdownLinkRefs.current[key]` initialization has been moved from the render body (which ran on every render) into the `ref` callback of the `<li>` element, guarded by `if (el)`. The initialization now runs only once per element mount.
+- **Correctness:** The `ref` callback fires when the element mounts (`el` is the DOM node) and when it unmounts (`el` is `null`). The guard `if (el)` ensures initialization only happens on mount, not on unmount. Since the `<li>` container mounts once and persists, the array is created once. Individual dropdown link refs (line 194) are populated when the dropdown opens and its children mount. This is correct and slightly more efficient than the previous approach.
+- **Regression risk:** None. The `if (!dropdownLinkRefs.current[key])` guard prevents re-initialization if the ref callback fires more than once.
+
+#### S6: Enhanced open redirect validation -- VERIFIED
+
+- **File:** `code/web/components/auth/LoginForm.tsx` (line 31)
+- **Implementation:** Added `&& !raw.startsWith('/\\')` to the redirect validation chain. The full check is now: `raw.startsWith('/') && !raw.startsWith('//') && !raw.startsWith('/\\')`.
+- **Correctness:** The JavaScript string `'/\\'` represents the two-character string `/\`, which correctly matches URLs like `/\evil.com`. This is a standard defense-in-depth measure against older browser behavior where backslash could be treated as a path separator in URL resolution.
+- **Regression risk:** None. Legitimate internal URLs never start with `/\`.
+
+### Build Verification
+
+- **TypeScript:** `npx tsc --noEmit` completes with zero errors.
+- **Next.js build:** `npx next build` completes successfully. All 26 pages prerender without errors.
+- **No new warnings or issues introduced.**
+
+### Final Assessment
+
+The improvement commit (16208da) is clean and well-scoped. Each change is minimal, correct, and introduces no regressions. The commit message thoroughly documents all 5 changes with file references. The decision to skip S5 and S7 (pre-existing code) is correct per the branch scope.
+
+Combined with the resolution of all 4 blocking issues (R1-R4), the branch is now in a clean state for merge. No remaining concerns.

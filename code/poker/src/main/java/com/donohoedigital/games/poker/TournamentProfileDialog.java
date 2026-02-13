@@ -337,6 +337,49 @@ public class TournamentProfileDialog extends OptionMenuDialog
                     TournamentProfile.MAX_THINKBANK, 50, true), base);
 
             ///
+            /// advanced timeout (per-street)
+            ///
+
+            DDLabelBorder advancedTimeout = new DDLabelBorder("advancedtimeout", STYLE);
+            advancedTimeout.setLayout(new GridLayout(0, 1, 0, -4));
+            left.add(advancedTimeout);
+
+            // Pre-flop timeout spinner
+            OptionInteger timeoutPreflop = new OptionInteger(null, TournamentProfile.PARAM_TIMEOUT_PREFLOP, STYLE,
+                    dummy_, null, 0, TournamentProfile.MAX_TIMEOUT, 50, true);
+
+            // Flop timeout spinner
+            OptionInteger timeoutFlop = new OptionInteger(null, TournamentProfile.PARAM_TIMEOUT_FLOP, STYLE, dummy_,
+                    null, 0, TournamentProfile.MAX_TIMEOUT, 50, true);
+
+            // Turn timeout spinner
+            OptionInteger timeoutTurn = new OptionInteger(null, TournamentProfile.PARAM_TIMEOUT_TURN, STYLE, dummy_,
+                    null, 0, TournamentProfile.MAX_TIMEOUT, 50, true);
+
+            // River timeout spinner
+            OptionInteger timeoutRiver = new OptionInteger(null, TournamentProfile.PARAM_TIMEOUT_RIVER, STYLE, dummy_,
+                    null, 0, TournamentProfile.MAX_TIMEOUT, 50, true);
+
+            // Panel for nested controls
+            DDPanel advancedPanel = new DDPanel();
+            advancedPanel.setLayout(new GridLayout(4, 1, 0, -4));
+            advancedPanel.setBorder(BorderFactory.createEmptyBorder(2, 20, 3, 0));
+            advancedPanel.add(timeoutPreflop);
+            advancedPanel.add(timeoutFlop);
+            advancedPanel.add(timeoutTurn);
+            advancedPanel.add(timeoutRiver);
+
+            // Make it collapsible (initially disabled)
+            OptionDummy advancedDummy = new OptionDummy(advancedPanel);
+            advancedDummy.setBorder(BorderFactory.createEmptyBorder(2, 5, 3, 0));
+            advancedDummy.setBorderLayoutGap(0, 5);
+
+            // Add checkbox to expand/collapse
+            OptionBoolean showAdvanced = new OptionBoolean("advancedtimeout.show", null, STYLE, dummy_, true,
+                    advancedDummy);
+            OptionMenu.add(showAdvanced, advancedTimeout);
+
+            ///
             /// boot disconnect/sitout
             ///
 

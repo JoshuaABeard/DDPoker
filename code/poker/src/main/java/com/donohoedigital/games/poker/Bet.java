@@ -45,6 +45,7 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.games.poker.dashboard.*;
 import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.logic.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
@@ -170,15 +171,9 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
             int nToCall = hhand_.getCall(player_);
             int nBet = hhand_.getBet();
 
-            if (nToCall == 0) {
-                if (nBet == 0) {
-                    game_.setInputMode(PokerTableInput.MODE_CHECK_BET, hhand_, player_);
-                } else {
-                    game_.setInputMode(PokerTableInput.MODE_CHECK_RAISE, hhand_, player_);
-                }
-            } else {
-                game_.setInputMode(PokerTableInput.MODE_CALL_RAISE, hhand_, player_);
-            }
+            // Determine input mode based on betting state (extracted to BetValidator)
+            int inputMode = BetValidator.determineInputMode(nToCall, nBet);
+            game_.setInputMode(inputMode, hhand_, player_);
         }
         // Computer controlled player at active table
         else {
@@ -400,8 +395,10 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
     private HandAction betRaise(int nAmount) {
         // bet/raise by appropriate amount (in case user typed in value not
         // a multiple of min chip)
-        int nNewAmount = PokerUtils.roundAmountMinChip(table_, nAmount);
-        if (nNewAmount != nAmount) {
+        BetValidator.BetValidationResult validation = BetValidator.validateBetAmount(table_, nAmount);
+
+        if (validation.needsRounding()) {
+            int nNewAmount = validation.getRoundedAmount();
             String sMsg = PropertyConfig.getMessage("msg.betodd", table_.getMinChip(), nAmount, nNewAmount);
             if (EngineUtils.displayConfirmationDialog(context_, sMsg, "msg.windowtitle.betodd", "betodd", "betodd")) {
                 nAmount = nNewAmount;

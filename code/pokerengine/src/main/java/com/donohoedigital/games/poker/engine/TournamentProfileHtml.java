@@ -364,11 +364,38 @@ public class TournamentProfileHtml {
                     profile.getMinPlayersForStart());
         }
 
+        // Build per-street timeout display if any are customized
+        StringBuilder perStreetTimeouts = new StringBuilder();
+        if (profile.getTimeoutPreflop() > 0) {
+            if (perStreetTimeouts.length() > 0)
+                perStreetTimeouts.append(" ");
+            perStreetTimeouts.append("Pre-flop: ").append(profile.getTimeoutPreflop()).append("s");
+        }
+        if (profile.getTimeoutFlop() > 0) {
+            if (perStreetTimeouts.length() > 0)
+                perStreetTimeouts.append(" ");
+            perStreetTimeouts.append("Flop: ").append(profile.getTimeoutFlop()).append("s");
+        }
+        if (profile.getTimeoutTurn() > 0) {
+            if (perStreetTimeouts.length() > 0)
+                perStreetTimeouts.append(" ");
+            perStreetTimeouts.append("Turn: ").append(profile.getTimeoutTurn()).append("s");
+        }
+        if (profile.getTimeoutRiver() > 0) {
+            if (perStreetTimeouts.length() > 0)
+                perStreetTimeouts.append(" ");
+            perStreetTimeouts.append("River: ").append(profile.getTimeoutRiver()).append("s");
+        }
+
+        String sPerStreetTimeouts = perStreetTimeouts.length() > 0
+                ? perStreetTimeouts.toString()
+                : PropertyConfig.getMessage("msg.perstreettimeout.none");
+
         return PropertyConfig.getMessage("msg.tournamentonline", PropertyConfig.getYesNo(profile.isAllowDash()),
                 PropertyConfig.getYesNo(profile.isFillComputer()), profile.getMaxObservers(),
                 profile.getTimeoutSeconds(), profile.getThinkBankSeconds(), sBootDis, sBootSit, sInviteOnly,
                 PropertyConfig.getYesNo(profile.isAllowAdvisor()),
-                PropertyConfig.getYesNo(profile.isOnlineActivatedPlayersOnly()), sScheduledStart);
+                PropertyConfig.getYesNo(profile.isOnlineActivatedPlayersOnly()), sScheduledStart, sPerStreetTimeouts);
     }
 
     /**

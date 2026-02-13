@@ -1057,7 +1057,10 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
         if (!player.isHumanControlled())
             return;
 
-        int nTimeoutSecs = game_.getProfile().getTimeoutSeconds();
+        // Get current betting round and use round-specific timeout
+        HoldemHand hhand = table.getHoldemHand();
+        int currentRound = (hhand != null) ? hhand.getRound() : HoldemHand.ROUND_PRE_FLOP;
+        int nTimeoutSecs = game_.getProfile().getTimeoutForRound(currentRound);
         long nTimeout = nTimeoutSecs * 1000 + SLEEP_MILLIS; // pad time out a bit (allows 15 second message if timeout
                                                             // is 15)
         long nDiff = nTimeout - wait;
