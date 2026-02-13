@@ -6,7 +6,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
@@ -248,7 +248,9 @@ export default function BanListPage() {
           <DataTable data={bans} columns={columns} emptyMessage="No bans found" />
 
           {totalPages > 1 && (
-            <Pagination currentPage={currentPage} totalItems={totalItems} itemsPerPage={50} />
+            <Suspense fallback={<div className="text-center text-gray-500">Loading...</div>}>
+              <Pagination currentPage={currentPage} totalItems={totalItems} itemsPerPage={50} />
+            </Suspense>
           )}
         </>
       )}

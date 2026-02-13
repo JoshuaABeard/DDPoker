@@ -6,6 +6,7 @@
 export const dynamic = 'force-static'
 
 import { Metadata } from 'next'
+import { Suspense } from 'react'
 import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
 import { AdminSearchForm } from './AdminSearchForm'
@@ -169,7 +170,9 @@ export default async function OnlineProfileSearchPage({
           />
 
           {totalPages > 1 && (
-            <Pagination currentPage={currentPage} totalItems={totalItems} itemsPerPage={50} />
+            <Suspense fallback={<div className="text-center text-gray-500">Loading...</div>}>
+              <Pagination currentPage={currentPage} totalItems={totalItems} itemsPerPage={50} />
+            </Suspense>
           )}
         </>
       ) : (
