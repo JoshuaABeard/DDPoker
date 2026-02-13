@@ -92,11 +92,17 @@ The host's tournament configuration options (via `TournamentProfile` and `Tourna
   - Bug fix: Added `setAlloc(ALLOC_PERC)` to properly set allocation mode
   - All 19 preset tests passing, 1536 total tests passing
 
-#### 13. Bounty/Knockout Tournament Support
+#### ✅ 13. Bounty/Knockout Tournament Support (COMPLETED)
 - **Why**: Extremely popular format. Purely a payout-side feature — doesn't change hand gameplay.
-- **New params**: `PARAM_BOUNTY` (boolean), `PARAM_BOUNTY_AMOUNT` (int, ≤ buyin cost)
-- **UI**: Bounty checkbox + amount spinner in Details tab payout section
-- **Engine**: On elimination in `HoldemHand`/`PokerGame`, award bounty to eliminating player. `PokerPlayer` gets `bountyWon` field. Prize pool label shows "Prize Pool: $X (after $Y in bounties)".
+- **Implemented**:
+  - `MAX_BOUNTY = 10000` constant in TournamentProfile
+  - `PARAM_BOUNTY` (boolean) and `PARAM_BOUNTY_AMOUNT` (int) parameters
+  - `PokerPlayer` fields: `nBountyCollected_` and `nBountyCount_`
+  - `addBounty()` method in PokerPlayer (adds to prize total)
+  - Bounty UI in DetailsTab with checkbox and amount spinner
+  - Bounty awarding logic in HoldemHand.java on elimination
+  - Full serialization support for bounty data
+  - All 1536 tests passing
 
 #### ✅ 14. Profile Validation Warnings (COMPLETED)
 - **Why**: "Verify" button only normalizes data. Doesn't warn about strategically questionable structures.
