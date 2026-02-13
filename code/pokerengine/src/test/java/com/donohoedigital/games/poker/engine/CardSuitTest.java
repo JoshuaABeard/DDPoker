@@ -20,7 +20,6 @@
 package com.donohoedigital.games.poker.engine;
 
 import com.donohoedigital.config.ConfigTestHelper;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -34,11 +33,6 @@ public class CardSuitTest {
     @BeforeClass
     public static void setupConfig() {
         ConfigTestHelper.initializeForTesting("poker");
-    }
-
-    @AfterClass
-    public static void cleanupConfig() {
-        ConfigTestHelper.resetForTesting();
     }
 
     // ===== Constants Tests =====
