@@ -19,7 +19,6 @@ interface AliasManagementProps {
 }
 
 export function AliasManagement({ aliases }: AliasManagementProps) {
-  const [retireAlias, setRetireAlias] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
@@ -44,7 +43,6 @@ export function AliasManagement({ aliases }: AliasManagementProps) {
       })
     } finally {
       setIsLoading(false)
-      setRetireAlias(null)
     }
   }
 
