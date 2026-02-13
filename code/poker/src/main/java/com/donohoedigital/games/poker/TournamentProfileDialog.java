@@ -263,8 +263,19 @@ public class TournamentProfileDialog extends OptionMenuDialog
      * Levels tab
      */
     private class LevelsTab extends OptionTab {
+        private LevelsPanel levelsPanel;
+
         protected void createUILocal() {
-            add(new LevelsPanel(this), BorderLayout.WEST);
+            levelsPanel = new LevelsPanel(this);
+            add(levelsPanel, BorderLayout.WEST);
+        }
+
+        @Override
+        protected void processUI() {
+            super.processUI();
+            if (levelsPanel != null) {
+                levelsPanel.saveLevelAdvanceMode();
+            }
         }
 
         public void reset() {
@@ -629,6 +640,9 @@ public class TournamentProfileDialog extends OptionMenuDialog
         private GlassButton verify;
         private ListPanel levelsList;
         private LevelsTab tab;
+        private DDRadioButton radioTimeMode;
+        private DDRadioButton radioHandsMode;
+        private OptionInteger handsPerLevel;
 
         public LevelsPanel(LevelsTab tab) {
             DDPanel base = this;
@@ -657,6 +671,45 @@ public class TournamentProfileDialog extends OptionMenuDialog
 
             OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_MAXRAISES_NONE_HEADSUP, STYLE, dummy_, true),
                     controls);
+
+            // Level advancement mode
+            DDPanel advancePanel = new DDPanel();
+            advancePanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 5, VerticalFlowLayout.LEFT));
+            advancePanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+
+            DDLabel advanceLabel = new DDLabel(GuiManager.DEFAULT, STYLE);
+            advanceLabel.setText(PropertyConfig.getMessage("msg.levels.advance"));
+            advancePanel.add(advanceLabel);
+
+            // Radio buttons for TIME/HANDS mode
+            radioTimeMode = new DDRadioButton("time", STYLE);
+            radioHandsMode = new DDRadioButton("hands", STYLE);
+            ButtonGroup advanceGroup = new ButtonGroup();
+            advanceGroup.add(radioTimeMode);
+            advanceGroup.add(radioHandsMode);
+
+            radioTimeMode.addActionListener(e -> {
+                if (handsPerLevel != null) {
+                    handsPerLevel.setEnabled(false);
+                }
+            });
+
+            radioHandsMode.addActionListener(e -> {
+                if (handsPerLevel != null) {
+                    handsPerLevel.setEnabled(true);
+                }
+            });
+
+            advancePanel.add(radioTimeMode);
+            advancePanel.add(radioHandsMode);
+
+            // Hands per level spinner (indented, conditional)
+            handsPerLevel = new OptionInteger(null, TournamentProfile.PARAM_HANDS_PER_LEVEL, STYLE, dummy_, null,
+                    TournamentProfile.MIN_HANDS_PER_LEVEL, TournamentProfile.MAX_HANDS_PER_LEVEL, 50, true, true);
+            handsPerLevel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0)); // indent
+            advancePanel.add(handsPerLevel);
+
+            controls.add(advancePanel);
 
             GuiUtils.setDDOptionLabelWidths(controls);
 
@@ -720,6 +773,28 @@ public class TournamentProfileDialog extends OptionMenuDialog
             // init display
             levelsList.setSelectedIndex(0);
             checkButtons();
+            initLevelAdvanceMode();
+        }
+
+        private void initLevelAdvanceMode() {
+            // Load level advance mode from profile
+            LevelAdvanceMode mode = profile_.getLevelAdvanceMode();
+            if (mode == LevelAdvanceMode.HANDS) {
+                radioHandsMode.setSelected(true);
+                handsPerLevel.setEnabled(true);
+            } else {
+                radioTimeMode.setSelected(true);
+                handsPerLevel.setEnabled(false);
+            }
+        }
+
+        private void saveLevelAdvanceMode() {
+            // Save level advance mode to profile
+            if (radioHandsMode.isSelected()) {
+                profile_.setLevelAdvanceMode(LevelAdvanceMode.HANDS);
+            } else {
+                profile_.setLevelAdvanceMode(LevelAdvanceMode.TIME);
+            }
         }
 
         private void createLevels() {
