@@ -81,7 +81,7 @@ public class TournamentProfileHtml {
         params[0] = DataElement.getDisplayValue(DATA_ELEMENT_GAMETYPE, profile.getDefaultGameTypeString());
         params[1] = Utils.encodeHTML(profile.getDescription());
         params[2] = PropertyConfig.getMessage("msg.numplayers", profile.getMap().get(PARAM_NUM_PLAYERS),
-                profile.getSeats());
+                getTableFormatDisplay(profile.getSeats()));
         params[3] = profile.getMap().get(PARAM_BUYIN);
         params[4] = profile.getMap().get(PARAM_BUYINCHIPS);
 
@@ -192,7 +192,7 @@ public class TournamentProfileHtml {
         params[0] = Utils.encodeHTML(profile.getName());
         params[1] = sDate;
         params[2] = PropertyConfig.getMessage("msg.numplayers", profile.getMap().get(PARAM_NUM_PLAYERS),
-                profile.getSeats());
+                getTableFormatDisplay(profile.getSeats()));
         params[3] = profile.getMap().get(PARAM_BUYIN);
         params[4] = profile.getMap().get(PARAM_BUYINCHIPS);
 
@@ -399,6 +399,18 @@ public class TournamentProfileHtml {
             sAmount = PropertyConfig.getMessage("msg.allocnum" + sExtraKey, payout);
         }
         return sAmount;
+    }
+
+    /**
+     * Get display string for table format based on seat count.
+     */
+    static String getTableFormatDisplay(int seats) {
+        return switch (seats) {
+            case PokerConstants.SEATS_FULL_RING -> "Full Ring, 10 per table";
+            case PokerConstants.SEATS_6MAX -> "6-Max, 6 per table";
+            case PokerConstants.SEATS_HEADS_UP -> "Heads-Up";
+            default -> seats + " per table";
+        };
     }
 
     public String getBlindsText(String prefix, int nLevel, boolean briefAmounts) {
