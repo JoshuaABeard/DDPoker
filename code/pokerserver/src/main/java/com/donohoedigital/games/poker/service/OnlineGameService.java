@@ -62,6 +62,9 @@ public interface OnlineGameService {
     OnlineGame getOnlineGameById(Long id);
 
     @Transactional(readOnly = true)
+    OnlineGame getOnlineGameByUrl(String url);
+
+    @Transactional(readOnly = true)
     OnlineGame getOnlineGameByTournamentHistoryId(Long id);
 
     @Transactional(readOnly = true)

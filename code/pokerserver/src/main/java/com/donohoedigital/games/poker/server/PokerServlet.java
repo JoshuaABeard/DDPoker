@@ -497,7 +497,36 @@ public class PokerServlet extends EngineServlet {
      */
     private DDMessage updateWanGame(DDMessage ddreceived, boolean setStartDate) {
         // Wrap everything in useable interfaces.
-        OnlineGame game = new OnlineGame(new OnlineMessage(ddreceived).getWanGame());
+        OnlineMessage reqMsg = new OnlineMessage(ddreceived);
+        OnlineGame game = new OnlineGame(reqMsg.getWanGame());
+        OnlineMessage resMsg = null;
+
+        // AUTH-1: Authenticate user
+        OnlineProfile auth = new OnlineProfile(reqMsg.getWanAuth());
+        OnlineProfile profile = onlineProfileService.authenticateOnlineProfile(auth);
+
+        if (profile == null) {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Authentication failed");
+            return resMsg.getData();
+        }
+
+        // AUTH-1: Get game from database (don't trust client data for host
+        // verification)
+        OnlineGame dbGame = onlineGameService.getOnlineGameByUrl(game.getUrl());
+
+        if (dbGame == null) {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Game not found");
+            return resMsg.getData();
+        }
+
+        // AUTH-1: Verify authenticated user is the game host
+        if (!profile.getName().equals(dbGame.getHostPlayer())) {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Only the game host can update this game");
+            return resMsg.getData();
+        }
 
         // don't rely on client date
         if (setStartDate)
@@ -512,7 +541,7 @@ public class PokerServlet extends EngineServlet {
         }
 
         // Send an empty response.
-        OnlineMessage resMsg = new OnlineMessage(ddreceived.getCategory());
+        resMsg = new OnlineMessage(ddreceived.getCategory());
         return resMsg.getData();
     }
 
@@ -525,6 +554,34 @@ public class PokerServlet extends EngineServlet {
         // Wrap everything in useable interfaces.
         OnlineMessage reqMsg = new OnlineMessage(ddreceived);
         OnlineGame game = new OnlineGame(reqMsg.getWanGame());
+        OnlineMessage resMsg = null;
+
+        // AUTH-1: Authenticate user
+        OnlineProfile auth = new OnlineProfile(reqMsg.getWanAuth());
+        OnlineProfile profile = onlineProfileService.authenticateOnlineProfile(auth);
+
+        if (profile == null) {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Authentication failed");
+            return resMsg.getData();
+        }
+
+        // AUTH-1: Get game from database (don't trust client data for host
+        // verification)
+        OnlineGame dbGame = onlineGameService.getOnlineGameByUrl(game.getUrl());
+
+        if (dbGame == null) {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Game not found");
+            return resMsg.getData();
+        }
+
+        // AUTH-1: Verify authenticated user is the game host
+        if (!profile.getName().equals(dbGame.getHostPlayer())) {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Only the game host can end this game");
+            return resMsg.getData();
+        }
 
         // don't rely on date sent from client
         game.setEndDate(new Date());
@@ -543,7 +600,7 @@ public class PokerServlet extends EngineServlet {
         }
 
         // Send an empty response.
-        OnlineMessage resMsg = new OnlineMessage(ddreceived.getCategory());
+        resMsg = new OnlineMessage(ddreceived.getCategory());
         return resMsg.getData();
     }
 
@@ -553,13 +610,42 @@ public class PokerServlet extends EngineServlet {
      */
     private DDMessage deleteWanGame(DDMessage ddreceived) {
         // Wrap everything in useable interfaces.
-        OnlineGame game = new OnlineGame(new OnlineMessage(ddreceived).getWanGame());
+        OnlineMessage reqMsg = new OnlineMessage(ddreceived);
+        OnlineGame game = new OnlineGame(reqMsg.getWanGame());
+        OnlineMessage resMsg = null;
+
+        // AUTH-1: Authenticate user
+        OnlineProfile auth = new OnlineProfile(reqMsg.getWanAuth());
+        OnlineProfile profile = onlineProfileService.authenticateOnlineProfile(auth);
+
+        if (profile == null) {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Authentication failed");
+            return resMsg.getData();
+        }
+
+        // AUTH-1: Get game from database (don't trust client data for host
+        // verification)
+        OnlineGame dbGame = onlineGameService.getOnlineGameByUrl(game.getUrl());
+
+        if (dbGame == null) {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Game not found");
+            return resMsg.getData();
+        }
+
+        // AUTH-1: Verify authenticated user is the game host
+        if (!profile.getName().equals(dbGame.getHostPlayer())) {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Only the game host can delete this game");
+            return resMsg.getData();
+        }
 
         // Delete from the database.
         onlineGameService.deleteOnlineGame(game);
 
         // Send an empty response.
-        OnlineMessage resMsg = new OnlineMessage(ddreceived.getCategory());
+        resMsg = new OnlineMessage(ddreceived.getCategory());
         return resMsg.getData();
     }
 
