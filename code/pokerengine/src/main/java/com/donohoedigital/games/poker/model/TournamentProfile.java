@@ -293,7 +293,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Get num online players - minimum of getNumPlayers() and MAX_ONLINE_PLAYERS
      */
     public int getMaxOnlinePlayers() {
-        return Math.min(getNumPlayers(), MAX_ONLINE_PLAYERS);
+        return constraints().getMaxOnlinePlayers(getNumPlayers());
     }
 
     /**
@@ -504,12 +504,12 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
         return new ProfileValidator(map_, new ProfileValidator.ValidationCallbacks() {
             @Override
             public int getMaxPayoutSpots(int numPlayers) {
-                return TournamentProfile.this.getMaxPayoutSpots(numPlayers);
+                return constraints().getMaxPayoutSpots(numPlayers);
             }
 
             @Override
             public int getMaxPayoutPercent(int numPlayers) {
-                return TournamentProfile.this.getMaxPayoutPercent(numPlayers);
+                return constraints().getMaxPayoutPercent(numPlayers);
             }
 
             @Override
@@ -552,6 +552,13 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
                 return TournamentProfile.this.getSpot(position);
             }
         });
+    }
+
+    /**
+     * Get ParameterConstraints wrapper for constraint calculations.
+     */
+    private ParameterConstraints constraints() {
+        return new ParameterConstraints(map_);
     }
 
     /**
@@ -699,15 +706,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Get max raises
      */
     public int getMaxRaises(int nNumWithCards, boolean isComputer) {
-        if (nNumWithCards <= 2 && isRaiseCapIgnoredHeadsUp()) {
-            // cap ai players at 4 so they don't raise each other indefinitely
-            if (isComputer)
-                return MAX_AI_RAISES;
-            return Integer.MAX_VALUE;
-        }
-
-        int nMax = (isComputer) ? MAX_AI_RAISES : MAX_MAX_RAISES;
-        return map_.getInteger(PARAM_MAXRAISES, 3, 1, nMax);
+        return constraints().getMaxRaises(nNumWithCards, isComputer, isRaiseCapIgnoredHeadsUp());
     }
 
     /**
@@ -891,26 +890,14 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Get max number of spots for given number of players
      */
     public int getMaxPayoutSpots(int nNumPlayers) {
-        int nMax = (int) (nNumPlayers * MAX_SPOTS_PERCENT);
-        nMax = Math.min(nMax, MAX_SPOTS);
-        if (nMax < MIN_SPOTS)
-            nMax = MIN_SPOTS;
-        if (nMax > nNumPlayers)
-            nMax = nNumPlayers;
-
-        return nMax;
+        return constraints().getMaxPayoutSpots(nNumPlayers);
     }
 
     /**
      * Get max percetage of spots
      */
     public int getMaxPayoutPercent(int nNumPlayers) {
-        int nMax = 0;
-        if (nNumPlayers > 0) {
-            nMax = (Math.min(MAX_SPOTS, getMaxPayoutSpots(nNumPlayers))) * 100 / nNumPlayers;
-        }
-
-        return nMax;
+        return constraints().getMaxPayoutPercent(nNumPlayers);
     }
 
     /**
@@ -1146,7 +1133,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Get max rebuys
      */
     public int getMaxRebuys() {
-        return map_.getInteger(PARAM_MAXREBUYS, 0, 0, MAX_REBUYS);
+        return constraints().getMaxRebuys();
     }
 
     /**
@@ -1202,7 +1189,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * get maximum number of observers
      */
     public int getMaxObservers() {
-        return map_.getInteger(PARAM_MAX_OBSERVERS, 5, 0, MAX_OBSERVERS);
+        return constraints().getMaxObservers();
     }
 
     /**
