@@ -125,6 +125,15 @@ jobs:
       - name: Display downloaded files
         run: ls -R installers/
 
+      - name: Extract version from tag
+        id: version
+        run: |
+          # Remove 'v' prefix from tag (e.g., v3.3.0 -> 3.3.0)
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Extracted version: ${VERSION}"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -144,25 +153,25 @@ jobs:
             ## Downloads
 
             ### Windows
-            - **MSI Installer** (recommended): `DDPokerCE-3.3.0.msi`
+            - **MSI Installer** (recommended): `DDPokerCE-${{ steps.version.outputs.version }}.msi`
             - Requires: Windows 10 or later
             - Installation: Double-click and follow the wizard
 
             ### macOS
-            - **DMG Installer** (recommended): `DDPokerCE-3.3.0.dmg`
+            - **DMG Installer** (recommended): `DDPokerCE-${{ steps.version.outputs.version }}.dmg`
             - Requires: macOS 11.0 (Big Sur) or later
             - Installation: Open DMG, drag to Applications folder
             - **Note**: Right-click > Open to bypass Gatekeeper (unsigned app)
 
             ### Linux
-            - **DEB Package** (Debian/Ubuntu): `ddpoker-ce_3.3.0-1_amd64.deb`
-              - Install: `sudo dpkg -i ddpoker-ce_3.3.0-1_amd64.deb`
-            - **RPM Package** (Fedora/RHEL): `ddpoker-ce-3.3.0-1.x86_64.rpm`
-              - Install: `sudo dnf install ddpoker-ce-3.3.0-1.x86_64.rpm`
+            - **DEB Package** (Debian/Ubuntu): `ddpoker-ce_${{ steps.version.outputs.version }}-1_amd64.deb`
+              - Install: `sudo dpkg -i ddpoker-ce_${{ steps.version.outputs.version }}-1_amd64.deb`
+            - **RPM Package** (Fedora/RHEL): `ddpoker-ce-${{ steps.version.outputs.version }}-1.x86_64.rpm`
+              - Install: `sudo dnf install ddpoker-ce-${{ steps.version.outputs.version }}-1.x86_64.rpm`
 
             ### Universal JAR
-            - **All Platforms** (requires Java 25+): `DDPokerCE-3.3.0.jar`
-            - Run: `java -jar DDPokerCE-3.3.0.jar`
+            - **All Platforms** (requires Java 25+): `DDPokerCE-${{ steps.version.outputs.version }}.jar`
+            - Run: `java -jar DDPokerCE-${{ steps.version.outputs.version }}.jar`
 
             ## What's New
 

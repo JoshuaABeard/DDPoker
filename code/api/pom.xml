@@ -19,7 +19,7 @@
     <description>Spring Boot REST API for DD Poker web portal</description>
 
     <properties>
-        <spring-boot.version>3.2.2</spring-boot.version>
+        <spring-boot.version>3.3.9</spring-boot.version>
         <jjwt.version>0.12.5</jjwt.version>
     </properties>
 
@@ -51,6 +51,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
             <version>${spring-boot.version}</version>
+            <exclusions>
+                <!-- Exclude default Logback logging -->
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -60,6 +67,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
+            <version>${spring-boot.version}</version>
+        </dependency>
+        <!-- Use Log4j2 instead of Logback -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-log4j2</artifactId>
             <version>${spring-boot.version}</version>
         </dependency>
 
@@ -92,8 +105,32 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
-            <version>6.2.1</version>
+            <version>6.4.2</version>
             <scope>test</scope>
+        </dependency>
+        <!-- ByteBuddy 1.17.7+ required for Java 25 support -->
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+            <version>1.17.7</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy-agent</artifactId>
+            <version>1.17.7</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- ASM 9.8+ required for Java 25 bytecode support -->
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>9.8</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-commons</artifactId>
+            <version>9.8</version>
         </dependency>
     </dependencies>
 
