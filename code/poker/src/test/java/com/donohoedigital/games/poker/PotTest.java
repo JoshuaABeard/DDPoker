@@ -256,6 +256,19 @@ class PotTest {
     }
 
     @Test
+    void should_ResetToBaseChips_When_AdvancedRound() {
+        pot.addChips(createTestPlayer("Player1"), 100);
+        pot.advanceRound(); // Sets base to 100
+
+        pot.addChips(createTestPlayer("Player1"), 50);
+        assertThat(pot.getChipCount()).isEqualTo(150);
+
+        pot.reset();
+
+        assertThat(pot.getChipCount()).isEqualTo(100); // Back to base, not zero
+    }
+
+    @Test
     void should_PreservePlayers_When_Reset() {
         pot.addChips(createTestPlayer("Player1"), 100);
         pot.addChips(createTestPlayer("Player2"), 50);
@@ -275,6 +288,74 @@ class PotTest {
 
         // Winners stay set when resetting (only chips are reset)
         assertThat(pot.getWinners()).hasSize(1);
+    }
+
+    // =================================================================
+    // Overbet Tests
+    // =================================================================
+
+    @Test
+    void should_BeOverbet_When_OnlyOnePlayer() {
+        pot.addChips(createTestPlayer("Player1"), 100);
+
+        assertThat(pot.isOverbet()).isTrue();
+    }
+
+    @Test
+    void should_NotBeOverbet_When_MultiplePlayers() {
+        pot.addChips(createTestPlayer("Player1"), 100);
+        pot.addChips(createTestPlayer("Player2"), 100);
+
+        assertThat(pot.isOverbet()).isFalse();
+    }
+
+    @Test
+    void should_NotBeOverbet_When_NoPlayers() {
+        assertThat(pot.isOverbet()).isFalse();
+    }
+
+    // =================================================================
+    // All-In Detection Tests
+    // =================================================================
+
+    @Test
+    void should_DetectBaseAllIn_When_AllInPlayerAtRoundAdvance() {
+        PokerPlayer player = createTestPlayer("Player1");
+        player.setChipCount(0); // Player is all-in
+
+        pot.addChips(player, 100);
+        pot.advanceRound();
+
+        assertThat(pot.hasBaseAllIn()).isTrue();
+    }
+
+    @Test
+    void should_NotDetectBaseAllIn_When_NoAllInPlayers() {
+        PokerPlayer player = createTestPlayer("Player1");
+        player.setChipCount(500); // Player has chips remaining
+
+        pot.addChips(player, 100);
+        pot.advanceRound();
+
+        assertThat(pot.hasBaseAllIn()).isFalse();
+    }
+
+    @Test
+    void should_DetectBaseAllIn_When_AnyPlayerAllIn() {
+        PokerPlayer player1 = createTestPlayer("Player1");
+        PokerPlayer player2 = createTestPlayer("Player2");
+        PokerPlayer player3 = createTestPlayer("Player3");
+
+        player1.setChipCount(500); // Not all-in
+        player2.setChipCount(0); // All-in
+        player3.setChipCount(300); // Not all-in
+
+        pot.addChips(player1, 100);
+        pot.addChips(player2, 100);
+        pot.addChips(player3, 100);
+        pot.advanceRound();
+
+        assertThat(pot.hasBaseAllIn()).isTrue();
     }
 
     // =================================================================
