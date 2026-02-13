@@ -60,3 +60,5 @@ package-lock.json
 playwright-report/
 test-results/
 *-snapshots/
+# JWT secrets (auto-generated during tests)
+code/api/data/jwt.secret

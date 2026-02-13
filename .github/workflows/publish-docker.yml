@@ -42,6 +42,10 @@ jobs:
           echo "Downloading installers from release ${{ inputs.version }}"
           cd docker/downloads
 
+          # Extract version without 'v' prefix for filename matching
+          VERSION="${{ inputs.version }}"
+          VERSION="${VERSION#v}"
+
           # Download all installer files
           gh release download ${{ inputs.version }} \
             --pattern "*.msi" \
@@ -53,12 +57,12 @@ jobs:
           echo "Downloaded files:"
           ls -lh
 
-          # Verify required files exist
+          # Verify required files exist (using dynamic version)
           required_files=(
-            "DDPokerCE-3.3.0.msi"
-            "DDPokerCE-3.3.0.dmg"
-            "ddpoker-ce_3.3.0-1_amd64.deb"
-            "ddpoker-ce-3.3.0-1.x86_64.rpm"
+            "DDPokerCE-${VERSION}.msi"
+            "DDPokerCE-${VERSION}.dmg"
+            "ddpoker-ce_${VERSION}-1_amd64.deb"
+            "ddpoker-ce-${VERSION}-1.x86_64.rpm"
           )
 
           missing_files=()
