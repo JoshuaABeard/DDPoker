@@ -51,6 +51,7 @@ import com.donohoedigital.games.comms.EngineMessage;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.model.OnlineGame;
 import com.donohoedigital.games.poker.model.OnlineProfile;
+import com.donohoedigital.games.poker.model.PasswordResetToken;
 import com.donohoedigital.games.poker.model.TournamentHistory;
 import com.donohoedigital.games.poker.model.util.OnlineGameList;
 import com.donohoedigital.games.poker.model.util.TournamentHistoryList;
@@ -219,6 +220,7 @@ public class PokerServlet extends EngineServlet {
             case OnlineMessage.CAT_WAN_PROFILE_SEND_PASSWORD :
             case OnlineMessage.CAT_WAN_PROFILE_CHANGE_PASSWORD :
             case OnlineMessage.CAT_WAN_PROFILE_SYNC_PASSWORD :
+            case OnlineMessage.CAT_WAN_PROFILE_COMPLETE_RESET :
                 return true;
             default :
                 return false;
@@ -285,6 +287,9 @@ public class PokerServlet extends EngineServlet {
             case OnlineMessage.CAT_WAN_PROFILE_SYNC_PASSWORD :
                 return syncOnlineProfilePassword(ddreceived);
 
+            case OnlineMessage.CAT_WAN_PROFILE_COMPLETE_RESET :
+                return completePasswordReset(request, ddreceived);
+
             default :
                 throw new ApplicationError(ErrorCodes.ERROR_UNSUPPORTED,
                         "PokerServlet does not handle this category: " + ddreceived.getCategory(), null);
@@ -321,6 +326,7 @@ public class PokerServlet extends EngineServlet {
             case OnlineMessage.CAT_WAN_PROFILE_SEND_PASSWORD :
             case OnlineMessage.CAT_WAN_PROFILE_CHANGE_PASSWORD :
             case OnlineMessage.CAT_WAN_PROFILE_SYNC_PASSWORD :
+            case OnlineMessage.CAT_WAN_PROFILE_COMPLETE_RESET :
                 return true;
             default :
                 return false;
@@ -915,10 +921,10 @@ public class PokerServlet extends EngineServlet {
     }
 
     /**
-     * Reset and send a WAN profile password (at user request, from client). Since
-     * passwords are hashed with bcrypt, we cannot retrieve the original password.
-     * Instead, we generate a new password, hash it, update the profile, and email
-     * the new password.
+     * Request password reset (at user request, from client). Generates a secure
+     * reset token and emails it to the user. The token expires after 1 hour and can
+     * only be used once. This is the first step in the two-step password reset flow
+     * (SEC-BACKEND-3).
      */
     private DDMessage sendOnlineProfilePassword(HttpServletRequest request, DDMessage ddreceived) {
         // Rate limiting (SEC-BACKEND-3): 3 requests per 5 minutes per IP to prevent
@@ -939,21 +945,55 @@ public class PokerServlet extends EngineServlet {
         // Retrieve the full profile information.
         profile = onlineProfileService.getOnlineProfileByName(profile.getName());
         if (profile != null) {
-            // Generate new password, hash it, and update the profile
-            String newPassword = onlineProfileService.generatePassword();
-            onlineProfileService.hashAndSetPassword(profile, newPassword);
-            onlineProfileService.updateOnlineProfile(profile);
+            // Generate password reset token
+            PasswordResetToken token = onlineProfileService.generatePasswordResetToken(profile);
 
-            // Email the new password.
-            sendProfileEmail(postalService, "profile", profile.getEmail(), profile.getName(), newPassword, null);
+            // Email the reset token link (using "profile-reset" email template)
+            // Note: The token is passed in the password field for now to reuse existing
+            // email infrastructure
+            // TODO: Create dedicated password-reset email template with proper reset link
+            sendProfileEmail(postalService, "profile-reset", profile.getEmail(), profile.getName(), token.getToken(),
+                    null);
 
-            // Profile information is valid, so report success.
+            // Report success
             resMsg = new OnlineMessage(ddreceived.getCategory());
-            resMsg.setApplicationStatusMessage(PropertyConfig.getStringProperty("msg.wanprofile.send"));
+            resMsg.setApplicationStatusMessage(
+                    "Password reset email sent. Please check your email for the reset link.");
         } else {
-            // Login information is invalid, so report an error.
+            // Profile not found - return generic error to prevent username enumeration
+            resMsg = new OnlineMessage(ddreceived.getCategory());
+            resMsg.setApplicationStatusMessage("If the profile exists, a password reset email has been sent.");
+        }
+
+        return resMsg.getData();
+    }
+
+    /**
+     * Complete password reset using a valid token. This is the second step in the
+     * two-step password reset flow (SEC-BACKEND-3).
+     */
+    private DDMessage completePasswordReset(HttpServletRequest request, DDMessage ddreceived) {
+        OnlineMessage reqMsg = new OnlineMessage(ddreceived);
+        DMTypedHashMap data = reqMsg.getOnlineProfileData();
+        String token = data.getString("reset-token");
+        String newPassword = data.getString("new-password");
+        OnlineMessage resMsg;
+
+        if (token == null || newPassword == null || newPassword.trim().isEmpty()) {
             resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
-            resMsg.setApplicationErrorMessage(PropertyConfig.getStringProperty("msg.wanprofile.missing"));
+            resMsg.setApplicationErrorMessage("Invalid request. Token and new password are required.");
+            return resMsg.getData();
+        }
+
+        // Validate and use the token to reset password
+        boolean success = onlineProfileService.resetPasswordWithToken(token, newPassword);
+
+        if (success) {
+            resMsg = new OnlineMessage(ddreceived.getCategory());
+            resMsg.setApplicationStatusMessage("Password reset successful. You can now log in with your new password.");
+        } else {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Password reset failed. The token may be invalid or expired.");
         }
 
         return resMsg.getData();
