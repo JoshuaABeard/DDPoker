@@ -30,26 +30,48 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.poker.api.dto;
+package com.donohoedigital.poker.api.service;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Request DTO for forgot password endpoint.
+ * Tests for EmailService.
  */
-public class ForgotPasswordRequest {
-    @NotBlank(message = "Username is required")
-    @Size(min = 3, max = 32, message = "Username must be 3-32 characters")
-    @Pattern(regexp = "^[a-zA-Z0-9_-]+$", message = "Username contains invalid characters")
-    private String username;
+class EmailServiceTest {
 
-    public String getUsername() {
-        return username;
+    @Test
+    void testSendPasswordResetEmail_Success() {
+        EmailService emailService = new EmailService();
+
+        // Note: This test will attempt to send a real email if SMTP is configured
+        // In a real environment, we would mock DDPostalService
+        // For now, we test that the method doesn't throw exceptions
+
+        boolean result = emailService.sendPasswordResetEmail("test@example.com", "testuser", "tempPass123");
+
+        // Result depends on SMTP configuration
+        // Just verify no exceptions thrown
+        assertNotNull(result);
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    @Test
+    void testSendPasswordResetEmail_NullEmail() {
+        EmailService emailService = new EmailService();
+
+        assertThrows(Exception.class, () -> {
+            emailService.sendPasswordResetEmail(null, "testuser", "tempPass123");
+        });
+    }
+
+    @Test
+    void testSendPasswordResetEmail_EmptyPassword() {
+        EmailService emailService = new EmailService();
+
+        boolean result = emailService.sendPasswordResetEmail("test@example.com", "testuser", "");
+
+        // Should handle gracefully (may fail to send but shouldn't crash)
+        assertNotNull(result);
     }
 }

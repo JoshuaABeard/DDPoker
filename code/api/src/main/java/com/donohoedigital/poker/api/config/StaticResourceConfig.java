@@ -71,8 +71,8 @@ public class StaticResourceConfig implements WebMvcConfigurer {
                         // e.g., "online/available/" -> "online/available/index.html"
                         if (resourcePath.endsWith("/") || !resourcePath.contains(".")) {
                             String indexPath = resourcePath.endsWith("/")
-                                ? resourcePath + "index.html"
-                                : resourcePath + "/index.html";
+                                    ? resourcePath + "index.html"
+                                    : resourcePath + "/index.html";
                             Resource indexResource = location.createRelative(indexPath);
                             if (indexResource.exists() && indexResource.isReadable()) {
                                 return indexResource;

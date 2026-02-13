@@ -49,16 +49,19 @@ public class EmailService {
     private final String fromEmail;
 
     public EmailService() {
-        this.postalService = new DDPostalServiceImpl();
+        this.postalService = new DDPostalServiceImpl(false);
         this.fromEmail = PropertyConfig.getStringProperty("settings.email.from", "noreply@ddpoker.com", false);
     }
 
     /**
      * Send password reset email to user.
      *
-     * @param toEmail recipient email address
-     * @param username user's profile name
-     * @param password user's password
+     * @param toEmail
+     *            recipient email address
+     * @param username
+     *            user's profile name
+     * @param password
+     *            user's password
      * @return true if email sent successfully
      */
     public boolean sendPasswordResetEmail(String toEmail, String username, String password) {
@@ -67,23 +70,22 @@ public class EmailService {
 
         try {
             logger.info("Sending password reset email to {} for user {}", toEmail, username);
-            postalService.sendMessage(fromEmail, toEmail, subject, body, null);
+            postalService.sendMail(toEmail, fromEmail, fromEmail, subject, body, null, null, null);
             logger.info("Password reset email sent successfully to {}", toEmail);
             return true;
         } catch (Exception e) {
-            logger.error("Failed to send password reset email to {}: {}", toEmail, e.getMessage(), e);
+            logger.error("Failed to send password reset email to {}: {}", toEmail, e.getMessage());
+            logger.debug("Email send error details", e);
             return false;
         }
     }
 
     private String buildPasswordResetEmailBody(String username, String password) {
-        return String.format(
-                "Hello %s,\n\n" +
-                        "You requested a password reset for your DD Poker account.\n\n" +
-                        "Your password is: %s\n\n" +
-                        "If you did not request this, please contact support immediately.\n\n" +
-                        "Thanks,\n" +
-                        "The DD Poker Team",
-                username, password);
+        return String.format("Hello %s,\n\n" + "You requested a password reset for your DD Poker account.\n\n"
+                + "Your temporary password is: %s\n\n"
+                + "Please log in with this temporary password and change it immediately "
+                + "in your profile settings.\n\n"
+                + "If you did not request this, please contact support immediately.\n\n" + "Thanks,\n"
+                + "The DD Poker Team", username, password);
     }
 }

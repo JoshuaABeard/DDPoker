@@ -132,7 +132,8 @@ public class ProfileController {
     }
 
     /**
-     * Forgot password - send password to user's email.
+     * Forgot password - generate temporary password and send to user's email. TODO:
+     * Add rate limiting (max 3 requests per username per hour) to prevent abuse
      */
     @PostMapping("/forgot-password")
     public ResponseEntity<Map<String, Object>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
@@ -144,41 +145,40 @@ public class ProfileController {
         // Look up profile
         OnlineProfile profile = profileService.getOnlineProfileByName(username);
 
+        // Use generic error message to prevent username enumeration
+        String genericError = "If this username exists and has an email on file, a password reset email has been sent.";
+
         // Check if profile exists
         if (profile == null || profile.isRetired()) {
-            logger.info("Password reset failed: profile not found or retired for {}", username);
-            response.put("success", false);
-            response.put("message", "Profile not found");
+            logger.info("Password reset: profile not found or retired for {}", username);
+            response.put("success", true);
+            response.put("message", genericError);
             return ResponseEntity.ok(response);
         }
 
         // Check if profile has email
         String email = profile.getEmail();
         if (email == null || email.trim().isEmpty()) {
-            logger.info("Password reset failed: no email on file for {}", username);
-            response.put("success", false);
-            response.put("message", "No email address on file for this profile");
+            logger.info("Password reset: no email on file for {}", username);
+            response.put("success", true);
+            response.put("message", genericError);
             return ResponseEntity.ok(response);
         }
 
-        // Get plaintext password (password is stored hashed, but we need original)
-        // Note: This is a limitation - we can only send if password was stored in plaintext
-        // or if we generate a temporary password
-        String password = profile.getPassword();
-        if (password == null || password.trim().isEmpty()) {
-            logger.error("Password reset failed: no plaintext password available for {}", username);
-            response.put("success", false);
-            response.put("message", "Unable to retrieve password. Please contact support.");
-            return ResponseEntity.ok(response);
-        }
+        // Generate temporary password (8 chars: letters and numbers)
+        String tempPassword = generateTemporaryPassword();
 
-        // Send email
-        boolean emailSent = emailService.sendPasswordResetEmail(email, username, password);
+        // Hash and save temporary password
+        profileService.hashAndSetPassword(profile, tempPassword);
+        profileService.saveOnlineProfile(profile);
+
+        // Send email with temporary password
+        boolean emailSent = emailService.sendPasswordResetEmail(email, username, tempPassword);
 
         if (emailSent) {
             logger.info("Password reset email sent successfully to {} for user {}", email, username);
             response.put("success", true);
-            response.put("message", "Password has been sent to your email address");
+            response.put("message", "A temporary password has been sent to your email address");
         } else {
             logger.error("Password reset failed: could not send email to {} for user {}", email, username);
             response.put("success", false);
@@ -186,5 +186,20 @@ public class ProfileController {
         }
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Generate a random 8-character temporary password.
+     */
+    private String generateTemporaryPassword() {
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+        StringBuilder password = new StringBuilder();
+        java.security.SecureRandom random = new java.security.SecureRandom();
+
+        for (int i = 0; i < 8; i++) {
+            password.append(chars.charAt(random.nextInt(chars.length())));
+        }
+
+        return password.toString();
     }
 }
