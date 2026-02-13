@@ -26,7 +26,9 @@ export function LoginForm() {
 
     // Only redirect if login was successful
     if (success) {
-      const returnUrl = searchParams.get('returnUrl') || '/online'
+      // Validate returnUrl to prevent open redirect attacks
+      const raw = searchParams.get('returnUrl') || '/online'
+      const returnUrl = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/online'
       router.push(returnUrl)
     }
   }
