@@ -34,22 +34,22 @@ package com.donohoedigital.games.poker.server;
 
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.service.helper.*;
-import junit.framework.*;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 import java.net.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 /**
- * Created by IntelliJ IDEA. User: donohoe Date: Jan 4, 2009 Time: 10:57:08 AM
- * To change this template use File | Settings | File Templates.
+ * TEST-3: Migrated from JUnit 3 to JUnit 5
  */
 @Tag("slow")
-public class DisallowedManagerTest extends TestCase {
-    // private static final Logger logger =
-    // LogManager.getLogger(DisallowedManagerTest.class);
+public class DisallowedManagerTest {
 
     DisallowedManager manager = new DisallowedManager();
 
+    @Test
     public void testInvalid() {
         assertTrue(manager.isNameValid("Dexter"));
         assertTrue(manager.isNameValid(".Foo"));
@@ -67,6 +67,7 @@ public class DisallowedManagerTest extends TestCase {
 
     }
 
+    @Test
     public void testUTF8() {
         verifyFile("greek.utf8.txt");
         verifyFile("russian.utf8.txt");

@@ -67,7 +67,7 @@ public class OnlineGameServiceImpl implements OnlineGameService {
     }
 
     @Autowired
-    public void setOnlineGameDao(OnlineProfileDao dao) {
+    public void setOnlineProfileDao(OnlineProfileDao dao) {
         profileDao = dao;
     }
 
