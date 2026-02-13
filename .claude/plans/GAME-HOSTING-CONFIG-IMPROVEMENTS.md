@@ -99,10 +99,15 @@ The host's tournament configuration options (via `TournamentProfile` and `Tourna
 
 ### P4 — Nice to Have (lower priority)
 
-#### 15. Hands-Per-Level Advancement
+#### ✅ 15. Hands-Per-Level Advancement (COMPLETED)
 - **Why**: In offline play, minutes-per-level depends on hands/hour settings. Hands-per-level is more consistent.
-- **New params**: `PARAM_LEVEL_ADVANCE_MODE` ("time"/"hands"), `PARAM_HANDS_PER_LEVEL` (int)
-- **Engine**: Parallel code path in `PokerGame` level transition logic
+- **Implemented**:
+  - Created `LevelAdvanceMode` enum (TIME/HANDS)
+  - Added `PARAM_LEVEL_ADVANCE_MODE` and `PARAM_HANDS_PER_LEVEL` to TournamentProfile
+  - Track hands played in current level in PokerGame
+  - Auto-advance levels when hand count reached in HANDS mode
+  - Added UI controls in Levels tab: radio buttons for mode selection, conditional spinner for hands per level
+  - All 1509 tests passing
 
 #### ✅ 17. Configurable Table Size Default
 - **Why**: 6-max and short-handed formats are popular. Table seats is configurable (2-9) but defaults to 10 which seems wrong (profile default). Making the default more prominent or adding format presets (Full Ring/6-Max/Heads-Up) would help.
