@@ -8,13 +8,14 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRequireAuth } from '@/lib/auth/useRequireAuth'
+import { useAuth } from '@/lib/auth/useAuth'
+import { LoginForm } from '@/components/auth/LoginForm'
 import { PasswordChangeForm } from '@/components/profile/PasswordChangeForm'
 import { AliasManagement } from '@/components/profile/AliasManagement'
 import { profileApi } from '@/lib/api'
 
 export default function MyProfilePage() {
-  const { user, isLoading } = useRequireAuth()
+  const { user, isLoading, isAuthenticated } = useAuth()
   const [aliases, setAliases] = useState<
     Array<{ name: string; createdDate: string; retiredDate?: string }>
   >([])
@@ -47,8 +48,18 @@ export default function MyProfilePage() {
     )
   }
 
-  if (!user) {
-    return null // useRequireAuth will redirect to login
+  if (!isAuthenticated) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <h1 className="text-3xl font-bold mb-6">My Profile</h1>
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+          <p className="text-yellow-800">
+            Please log in to view your profile and manage your account.
+          </p>
+        </div>
+        <LoginForm />
+      </div>
+    )
   }
 
   return (

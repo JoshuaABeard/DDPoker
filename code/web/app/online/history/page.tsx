@@ -3,6 +3,7 @@
  * DD Poker - Tournament History Page
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
+export const dynamic = 'force-static'
 
 import { Metadata } from 'next'
 import Link from 'next/link'

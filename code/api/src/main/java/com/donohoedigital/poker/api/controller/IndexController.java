@@ -30,52 +30,38 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
+package com.donohoedigital.poker.api.controller;
 
-export interface NavSubPage {
-  title: string
-  link: string
-}
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 
-export interface NavItem {
-  title: string
-  link: string
-  subPages?: NavSubPage[]
-  admin?: boolean
-}
+import java.io.IOException;
 
-export const navData: Record<string, NavItem> = {
-  home: {
-    title: 'Home',
-    link: '/',
-  },
-  about: {
-    title: 'About',
-    link: '/about',
-    // No dropdown - uses left sidebar navigation instead
-  },
-  download: {
-    title: 'Download',
-    link: '/download',
-  },
-  support: {
-    title: 'Support',
-    link: '/support',
-    // No dropdown - uses left sidebar navigation instead
-  },
-  online: {
-    title: 'Online',
-    link: '/online/available',
-    // No dropdown - goes directly to Available Games, uses left sidebar navigation
-  },
-  admin: {
-    admin: true,
-    title: 'Admin',
-    link: '/admin',
-    subPages: [
-      { title: 'Admin', link: '/admin' },
-      { title: 'Profile Search', link: '/admin/online-profile-search' },
-      { title: 'Reg Search', link: '/admin/reg-search' },
-      { title: 'Ban List', link: '/admin/ban-list' },
-    ],
-  },
+/**
+ * Controller to serve Next.js index.html for root path.
+ */
+@Controller
+public class IndexController {
+
+    @GetMapping(value = "/", produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<Resource> index() throws IOException {
+        // Try Docker location first
+        FileSystemResource dockerResource = new FileSystemResource("/app/webapp/index.html");
+        if (dockerResource.exists()) {
+            return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(dockerResource);
+        }
+
+        // Fall back to classpath for local dev
+        ClassPathResource classpathResource = new ClassPathResource("static/index.html");
+        if (classpathResource.exists()) {
+            return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(classpathResource);
+        }
+
+        return ResponseEntity.notFound().build();
+    }
 }

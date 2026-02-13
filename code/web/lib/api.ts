@@ -35,9 +35,14 @@ async function apiFetch<T>(
     'Content-Type': 'application/json',
   }
 
+  // Add timeout for build-time API calls (5 seconds)
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 5000)
+
   const fetchOptions: RequestInit = {
     credentials: 'include', // Always send cookies (JWT in HttpOnly cookie)
     ...options,
+    signal: controller.signal,
     headers: {
       ...defaultHeaders,
       ...options.headers,
@@ -46,6 +51,7 @@ async function apiFetch<T>(
 
   try {
     const response = await fetch(url, fetchOptions)
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       const errorData: ApiError = await response.json().catch(() => ({
@@ -60,6 +66,7 @@ async function apiFetch<T>(
       timestamp: new Date().toISOString(),
     }
   } catch (error) {
+    clearTimeout(timeoutId)
     console.error('API fetch error:', error)
     throw error
   }
@@ -111,6 +118,17 @@ export const authApi = {
       console.error('Failed to get current user:', error)
       return null
     }
+  },
+
+  /**
+   * Request password reset - sends password to registered email
+   */
+  forgotPassword: async (username: string): Promise<{ success: boolean; message: string }> => {
+    const response = await apiFetch<{ success: boolean; message: string }>('/api/profile/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ username }),
+    })
+    return response.data
   },
 }
 

@@ -184,8 +184,9 @@ export default function Navigation() {
       <style jsx>{`
         /* Desktop Navigation */
         .header {
-          background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 50%, #3a3a3a 100%);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+          background: linear-gradient(180deg, #451a03 0%, #292524 100%);
+          box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+          border-bottom: 1px solid rgba(217, 119, 6, 0.3);
           position: sticky;
           top: 0;
           z-index: 1000;
@@ -211,7 +212,7 @@ export default function Navigation() {
 
         .main-nav {
           display: flex;
-          gap: 0;
+          gap: 1rem;
           list-style: none;
           margin: 0;
           padding: 0;
@@ -224,20 +225,24 @@ export default function Navigation() {
 
         .login-link {
           display: block;
-          padding: 0.5rem 1rem;
-          color: white;
+          padding: 0.75rem 1.5rem;
+          color: #ffffff !important;
           text-decoration: none;
           font-family: "Delius", cursive;
           font-variant: small-caps;
           font-size: 1.1rem;
           font-weight: 500;
-          background-color: rgba(255, 255, 255, 0.1);
-          border-radius: 4px;
-          transition: background-color 0.2s;
+          background: rgba(0, 0, 0, 0.2) !important;
+          border: 1px solid rgba(217, 119, 6, 0.3) !important;
+          border-radius: 4px !important;
+          transition: all 0.2s;
         }
 
         .login-link:hover {
-          background-color: rgba(255, 255, 255, 0.2);
+          background: rgba(217, 119, 6, 0.3);
+          border-color: rgba(217, 119, 6, 0.6);
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .nav-item {
@@ -246,20 +251,31 @@ export default function Navigation() {
 
         .nav-link {
           display: block;
-          padding: 0.75rem 1.25rem;
-          color: white;
+          padding: 0.75rem 1.5rem;
+          color: #ffffff !important;
           text-decoration: none;
           font-family: "Delius", cursive;
           font-variant: small-caps;
           font-size: 1.2rem;
           font-weight: 500;
-          transition: background-color 0.2s;
+          background: rgba(0, 0, 0, 0.2) !important;
+          border: 1px solid rgba(217, 119, 6, 0.3) !important;
+          border-radius: 4px !important;
+          transition: all 0.2s;
           cursor: pointer;
+          margin: 0 0.25rem;
         }
 
-        .nav-link:hover,
+        .nav-link:hover {
+          background: rgba(217, 119, 6, 0.3);
+          border-color: rgba(217, 119, 6, 0.6);
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
         .nav-link.active {
-          background-color: rgba(255, 255, 255, 0.1);
+          background: rgba(217, 119, 6, 0.4);
+          border-color: rgba(217, 119, 6, 0.7);
         }
 
         .dropdown-arrow {
@@ -271,19 +287,20 @@ export default function Navigation() {
           position: absolute;
           top: 100%;
           left: 0;
-          background: #2a2a2a;
+          background: linear-gradient(180deg, #292524 0%, #1c1917 100%);
           min-width: 200px;
           list-style: none;
           margin: 0;
           padding: 0.5rem 0;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
           border-radius: 0 0 4px 4px;
+          border: 1px solid rgba(217, 119, 6, 0.4);
         }
 
         .dropdown-link {
           display: block;
           padding: 0.5rem 1.25rem;
-          color: white;
+          color: #ffffff !important;
           text-decoration: none;
           font-size: 1rem;
           transition: background-color 0.2s;
@@ -339,8 +356,9 @@ export default function Navigation() {
             top: 100%;
             left: 0;
             right: 0;
-            background: #2a2a2a;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(180deg, #292524 0%, #1c1917 100%);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(217, 119, 6, 0.3);
           }
 
           .mobile-nav-list {

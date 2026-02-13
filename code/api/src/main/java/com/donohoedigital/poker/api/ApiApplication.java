@@ -34,14 +34,15 @@ package com.donohoedigital.poker.api;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ImportResource;
 
 /**
  * Spring Boot application for DD Poker REST API. Imports existing Spring
  * contexts from pokerserver module.
  */
 @SpringBootApplication(scanBasePackages = {"com.donohoedigital.poker.api"})
-@ImportResource({"classpath:app-context-pokerserver.xml"})
+// TEMPORARY: Disabled for Docker testing - re-enable when integrating with game
+// server
+// @ImportResource({"classpath:app-context-pokerserver.xml"})
 public class ApiApplication {
     public static void main(String[] args) {
         SpringApplication.run(ApiApplication.class, args);

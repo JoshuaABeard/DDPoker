@@ -41,40 +41,51 @@ import org.springframework.web.servlet.resource.PathResourceResolver;
 import java.io.IOException;
 
 /**
- * Web MVC configuration for serving Next.js static export and handling
- * client-side routing fallback to index.html (SPA support).
- * <p>
- * This configuration: - Serves static files (HTML, CSS, JS, images) from
- * /app/webapp/ - Handles client-side routing by falling back to index.html for
- * missing resources - Excludes /api/* paths from fallback to let API 404s
- * happen normally
+ * Configuration for serving Next.js static export files. Serves files from
+ * /app/webapp/ (Docker) or classpath (local dev).
  */
 @Configuration
-public class WebConfig implements WebMvcConfigurer {
+public class StaticResourceConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Serve Next.js static files from /app/webapp/
-        // Fallback to index.html for client-side routing (SPA)
-        registry.addResourceHandler("/**").addResourceLocations("file:/app/webapp/").resourceChain(true)
-                .addResolver(new PathResourceResolver() {
+        // Serve Next.js static files from /app/webapp/ (Docker deployment)
+        // Skip /api paths to avoid interfering with REST endpoints
+        registry.addResourceHandler("/**").addResourceLocations("file:/app/webapp/")
+                .addResourceLocations("classpath:/static/").addResourceLocations("classpath:/public/")
+                .resourceChain(true).addResolver(new PathResourceResolver() {
                     @Override
                     protected Resource getResource(String resourcePath, Resource location) throws IOException {
-                        Resource requestedResource = location.createRelative(resourcePath);
-
-                        // If resource exists, serve it
-                        if (requestedResource.exists() && requestedResource.isReadable()) {
-                            return requestedResource;
+                        Resource resource = location.createRelative(resourcePath);
+                        // If file exists, serve it
+                        if (resource.exists() && resource.isReadable()) {
+                            return resource;
                         }
 
-                        // Don't fallback for /api/* requests (let API 404s happen)
+                        // Skip API paths
                         if (resourcePath.startsWith("api/")) {
                             return null;
                         }
 
-                        // Fallback to index.html for client-side routing
-                        Resource indexHtml = location.createRelative("index.html");
-                        return (indexHtml.exists() && indexHtml.isReadable()) ? indexHtml : null;
+                        // For Next.js static export: try appending index.html to the path
+                        // e.g., "online/available/" -> "online/available/index.html"
+                        if (resourcePath.endsWith("/") || !resourcePath.contains(".")) {
+                            String indexPath = resourcePath.endsWith("/")
+                                ? resourcePath + "index.html"
+                                : resourcePath + "/index.html";
+                            Resource indexResource = location.createRelative(indexPath);
+                            if (indexResource.exists() && indexResource.isReadable()) {
+                                return indexResource;
+                            }
+                        }
+
+                        // Final fallback: root index.html for SPA routing
+                        Resource rootIndex = location.createRelative("index.html");
+                        if (rootIndex.exists() && rootIndex.isReadable()) {
+                            return rootIndex;
+                        }
+
+                        return null;
                     }
                 });
     }

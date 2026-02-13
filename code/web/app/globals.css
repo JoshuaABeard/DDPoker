@@ -147,3 +147,64 @@ body {
 .extra-top-padding {
   padding-top: var(--spacing-md);
 }
+
+/* ========================================================================
+   Navigation Overrides
+   ======================================================================== */
+
+.nav-link,
+.login-link,
+.dropdown-link,
+.mobile-nav-link,
+.mobile-submenu-link {
+  color: #ffffff !important;
+}
+
+.nav-link,
+.login-link {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  padding: 0.75rem 1.25rem !important;
+}
+
+.nav-link:hover,
+.login-link:hover {
+  border-bottom-color: #d97706 !important;
+  background: rgba(217, 119, 6, 0.1) !important;
+}
+
+.nav-link.active {
+  border-bottom-color: #d97706 !important;
+  font-weight: 600 !important;
+}
+
+/* ========================================================================
+   Sidebar Overrides
+   ======================================================================== */
+
+.sidebar-nav {
+  padding: 1.5rem 0 !important;
+}
+
+.sidebar-link {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  padding: 0.25rem 1rem !important;
+  font-size: 0.9375rem !important;
+  border-left: 3px solid transparent !important;
+}
+
+.sidebar-link.active {
+  color: #d97706 !important;
+  border-left-color: #d97706 !important;
+  font-weight: 500 !important;
+  background: rgba(217, 119, 6, 0.05) !important;
+}
+
+.section-title {
+  padding: 0.25rem 1rem !important;
+  font-size: 1rem !important;
+}

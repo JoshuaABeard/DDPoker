@@ -93,7 +93,23 @@ RUN rm -f /app/lib/pokerserver-*.jar \
     /app/lib/wicket-3.0.jar \
     /app/lib/jsp-*.jar \
     /app/lib/server-*.jar \
-    /app/lib/udp-*.jar
+    /app/lib/udp-*.jar \
+    /app/lib/slf4j-api-1.7.*.jar \
+    /app/lib/slf4j-simple-*.jar \
+    /app/lib/slf4j-nop-*.jar \
+    /app/lib/log4j-slf4j-impl-*.jar \
+    /app/lib/log4j-slf4j2-impl-*.jar \
+    /app/lib/log4j-to-slf4j-*.jar \
+    /app/lib/log4j-1.*.jar \
+    /app/lib/spring-core-6.1.*.jar \
+    /app/lib/spring-beans-6.1.*.jar \
+    /app/lib/spring-context-6.1.*.jar \
+    /app/lib/spring-web-6.1.*.jar \
+    /app/lib/spring-aop-6.1.*.jar \
+    /app/lib/spring-expression-6.1.*.jar \
+    /app/lib/spring-jdbc-6.1.*.jar \
+    /app/lib/spring-tx-6.1.*.jar \
+    /app/lib/spring-orm-6.1.*.jar
 
 # ============================================================
 # COPY NEXT.JS STATIC EXPORT
