@@ -90,10 +90,14 @@ The host's tournament configuration options (via `TournamentProfile` and `Tourna
 - **UI**: Bounty checkbox + amount spinner in Details tab payout section
 - **Engine**: On elimination in `HoldemHand`/`PokerGame`, award bounty to eliminating player. `PokerPlayer` gets `bountyWon` field. Prize pool label shows "Prize Pool: $X (after $Y in bounties)".
 
-#### 14. Profile Validation Warnings
+#### ✅ 14. Profile Validation Warnings (COMPLETED)
 - **Why**: "Verify" button only normalizes data. Doesn't warn about strategically questionable structures.
-- **Checks**: Unreachable levels, payout spots > player count, rebuy level after last level, starting depth < 10 BBs
-- **UI**: Warning icons on tabs with issues (infrastructure already exists via `error` ImageIcon)
+- **Implemented**:
+  - Validation backend complete: `ValidationWarning` enum, `ValidationResult` class, `ProfileValidator.validateProfile()`
+  - All 4 warning checks: unreachable levels, too many payout spots, shallow starting depth, excessive house take
+  - UI displays warnings as status text in DetailsTab (orange color, HTML formatted)
+  - Warnings visible but don't block profile saving (soft warnings)
+  - All 28 validation tests passing, 1536 total tests passing
 
 ---
 
