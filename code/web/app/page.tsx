@@ -74,10 +74,11 @@ export default function Home() {
           </div>
 
           <div className="text-center mt-8">
-            <Link href="/download">
-              <button className="text-xl px-6 py-3 bg-[var(--color-poker-green)] text-white border-none rounded cursor-pointer font-bold transition-colors hover:bg-[var(--color-poker-green-dark)]">
-                Download DD Poker Community Edition
-              </button>
+            <Link
+              href="/download"
+              className="inline-block text-xl px-6 py-3 bg-[var(--color-poker-green)] text-white border-none rounded cursor-pointer font-bold transition-colors hover:bg-[var(--color-poker-green-dark)] no-underline"
+            >
+              Download DD Poker Community Edition
             </Link>
           </div>
         </div>

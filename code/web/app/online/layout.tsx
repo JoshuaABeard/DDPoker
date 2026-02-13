@@ -9,7 +9,7 @@ import { onlineSidebarData } from '@/lib/sidebarData'
 
 export default function OnlineLayout({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarLayout sections={onlineSidebarData} title="Online Portal">
+    <SidebarLayout sections={onlineSidebarData}>
       {children}
     </SidebarLayout>
   )

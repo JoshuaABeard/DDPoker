@@ -9,7 +9,7 @@ import { aboutSidebarData } from '@/lib/sidebarData'
 
 export default function AboutLayout({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarLayout sections={aboutSidebarData} title="About">
+    <SidebarLayout sections={aboutSidebarData}>
       {children}
     </SidebarLayout>
   )

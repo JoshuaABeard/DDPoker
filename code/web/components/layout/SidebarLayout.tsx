@@ -12,18 +12,16 @@ import { SidebarSection } from '@/lib/sidebarData'
 
 interface SidebarLayoutProps {
   sections: SidebarSection[]
-  title: string
   children: React.ReactNode
 }
 
 export default function SidebarLayout({
   sections,
-  title,
   children,
 }: SidebarLayoutProps) {
   return (
     <div className="sidebar-layout">
-      <Sidebar sections={sections} title={title} />
+      <Sidebar sections={sections} />
       <div className="sidebar-content-wrapper">
         <main className="sidebar-content">{children}</main>
         <Footer />

@@ -9,7 +9,7 @@ import { supportSidebarData } from '@/lib/sidebarData'
 
 export default function SupportLayout({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarLayout sections={supportSidebarData} title="Support">
+    <SidebarLayout sections={supportSidebarData}>
       {children}
     </SidebarLayout>
   )
