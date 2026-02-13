@@ -217,3 +217,104 @@ All four P3 features are **production-ready**:
 1. Add regression test for allocation mode fix (HIGH priority)
 2. Adjust UNREACHABLE_LEVELS threshold (medium priority)
 
+---
+
+## Resolution
+
+**Status:** ✅ ALL ITEMS ADDRESSED
+**Resolved by:** Claude Sonnet 4.5
+**Date:** 2026-02-13
+**Commit:** 7ea6909
+
+### Changes Made
+
+#### 1. Regression Test for Allocation Mode (HIGH Priority) ✅ COMPLETE
+**File:** `code/pokerengine/src/test/java/com/donohoedigital/games/poker/model/PayoutPresetTest.java`
+**Change:** Added `should_SetAllocPercMode_WhenApplyingPreset()` test
+
+```java
+@Test
+public void should_SetAllocPercMode_WhenApplyingPreset() {
+    TournamentProfile profile = new TournamentProfile("Test");
+
+    // Default allocation mode should be Auto
+    assertTrue("Default allocation should be Auto", profile.isAllocAuto());
+    assertFalse("Should not be in Percent mode initially", profile.isAllocPercent());
+
+    // Apply preset
+    PayoutPreset.TOP_HEAVY.applyToProfile(profile, 3);
+
+    // Verify allocation mode was set to Percent
+    assertTrue("Should switch to Percent allocation mode", profile.isAllocPercent());
+    assertFalse("Should no longer be in Auto mode", profile.isAllocAuto());
+}
+```
+
+**Rationale:** Ensures `applyToProfile()` correctly sets allocation mode to ALLOC_PERC, preventing regression of the critical bug discovered during feature implementation.
+
+#### 2. UNREACHABLE_LEVELS Threshold Adjustment (MEDIUM Priority) ✅ COMPLETE
+**File:** `code/pokerengine/src/main/java/com/donohoedigital/games/poker/model/ProfileValidator.java`
+**Change:** Adjusted threshold from `rebuyUntilLevel < lastLevel` to `rebuyPortion < 0.25`
+
+**Before:**
+```java
+if (lastLevel > 0 && rebuyUntilLevel > 0 && rebuyUntilLevel < lastLevel) {
+    result.addWarning(ValidationWarning.UNREACHABLE_LEVELS, ...);
+}
+```
+
+**After:**
+```java
+if (lastLevel > 0 && rebuyUntilLevel > 0) {
+    double rebuyPortion = (double) rebuyUntilLevel / lastLevel;
+    if (rebuyPortion < 0.25) {
+        result.addWarning(
+            ValidationWarning.UNREACHABLE_LEVELS,
+            "Rebuy period ends very early at level " + rebuyUntilLevel +
+            " (" + String.format("%.0f", rebuyPortion * 100) + "% of " +
+            lastLevel + " total levels)");
+    }
+}
+```
+
+**Rationale:**
+- Normal tournaments (20 levels with rebuys until level 4 = 20%) no longer trigger false positives
+- Only warns when rebuy period ends **very** early (< 25% of total levels)
+- Example: 20 levels with rebuys until level 2 (10%) → warning
+- Example: 20 levels with rebuys until level 4 (20%) → no warning
+
+**Tests Updated:** `code/pokerengine/src/test/java/com/donohoedigital/games/poker/model/ProfileValidatorTest.java`
+- Added `should_NotWarnAboutUnreachableLevels_WhenRebuyPeriodNormal()` - verifies 20% doesn't warn
+- Updated `should_WarnAboutUnreachableLevels_WhenRebuyEndsVeryEarly()` - verifies 10% does warn
+
+#### 3. Unicode Emoji Removal (LOW Priority) ✅ COMPLETE
+**File:** `code/poker/src/main/resources/config/poker/client.properties`
+**Change:** Removed `\u26a0` emoji from warning header
+
+**Before:**
+```properties
+msg.profile.warnings.header=	\u26a0 <b>Profile Configuration Warnings:</b>
+```
+
+**After:**
+```properties
+msg.profile.warnings.header=	<b>Profile Configuration Warnings:</b>
+```
+
+**Rationale:** Avoids potential rendering issues on older JRE versions, maintains consistency with rest of codebase (no emoji usage in properties files).
+
+### Verification Results
+
+- **Tests:** 1536/1536 passed (all tests passing)
+- **Build:** Clean compilation with `mvn clean install -P dev`
+- **Integration:** Merged to main and pushed (commit 7ea6909)
+
+### Summary
+
+All three review items successfully addressed:
+- ✅ HIGH priority regression test added
+- ✅ MEDIUM priority threshold adjusted to eliminate false positives
+- ✅ LOW priority emoji removed
+
+**Final Status:** P3 features (#14, #12, #11, #13) are production-ready with all review feedback incorporated.
+
