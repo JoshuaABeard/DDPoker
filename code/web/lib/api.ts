@@ -110,9 +110,9 @@ export const authApi = {
   /**
    * Get the current user's profile
    */
-  getCurrentUser: async (): Promise<PlayerProfile | null> => {
+  getCurrentUser: async (): Promise<AuthResponse | null> => {
     try {
-      const response = await apiFetch<PlayerProfile>('/api/auth/me')
+      const response = await apiFetch<AuthResponse>('/api/auth/me')
       return response.data
     } catch (error) {
       console.error('Failed to get current user:', error)
