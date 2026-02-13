@@ -386,7 +386,8 @@ public class ProfileValidatorTest {
 
     @Test
     public void should_WarnAboutUnreachableLevels_WhenRebuyEndsVeryEarly() {
-        // Given: tournament with 20 levels, rebuys until level 2 (10% - below 25% threshold)
+        // Given: tournament with 20 levels, rebuys until level 2 (10% - below 25%
+        // threshold)
         DMTypedHashMap map = new DMTypedHashMap();
         map.setInteger("lastlevel", 20);
         map.setInteger("rebuyuntil", 2);
@@ -406,10 +407,11 @@ public class ProfileValidatorTest {
 
     @Test
     public void should_NotWarnAboutUnreachableLevels_WhenRebuyPeriodNormal() {
-        // Given: tournament with 20 levels, rebuys until level 4 (20% - normal configuration)
+        // Given: tournament with 20 levels, rebuys until level 5 (25% - normal
+        // configuration)
         DMTypedHashMap map = new DMTypedHashMap();
         map.setInteger("lastlevel", 20);
-        map.setInteger("rebuyuntil", 4);
+        map.setInteger("rebuyuntil", 5);
         map.setBoolean("rebuys", true);
 
         TestCallbacks callbacks = new TestCallbacks();

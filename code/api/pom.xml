@@ -117,6 +117,30 @@
             <version>6.5.7</version>
             <scope>test</scope>
         </dependency>
+        <!-- ByteBuddy 1.17.7+ required for Java 25 support -->
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+            <version>1.17.7</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy-agent</artifactId>
+            <version>1.17.7</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- ASM 9.8+ required for Java 25 bytecode support -->
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>9.8</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-commons</artifactId>
+            <version>9.8</version>
+        </dependency>
     </dependencies>
 
     <build>

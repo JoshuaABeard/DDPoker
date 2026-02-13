@@ -259,20 +259,14 @@ public class ProfileValidator {
         int rebuyUntilLevel = map.getInteger(PARAM_REBUY_UNTIL, 0);
 
         // Only warn if rebuy period ends very early (< 25% of total levels)
-        // Example: 20 levels with rebuys until level 4 = 20%, no warning
-        //          20 levels with rebuys until level 2 = 10%, warning
+        // Example: 20 levels with rebuys until level 5 = 25%, no warning
+        // 20 levels with rebuys until level 2 = 10%, warning
         if (lastLevel > 0 && rebuyUntilLevel > 0) {
             double rebuyPortion = (double) rebuyUntilLevel / lastLevel;
             if (rebuyPortion < 0.25) {
-                result.addWarning(
-                        ValidationWarning.UNREACHABLE_LEVELS,
-                        "Rebuy period ends very early at level "
-                                + rebuyUntilLevel
-                                + " ("
-                                + String.format("%.0f", rebuyPortion * 100)
-                                + "% of "
-                                + lastLevel
-                                + " total levels)");
+                result.addWarning(ValidationWarning.UNREACHABLE_LEVELS,
+                        "Rebuy period ends very early at level " + rebuyUntilLevel + " ("
+                                + String.format("%.0f", rebuyPortion * 100) + "% of " + lastLevel + " total levels)");
             }
         }
     }
