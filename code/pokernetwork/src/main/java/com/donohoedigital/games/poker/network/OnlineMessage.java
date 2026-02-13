@@ -87,6 +87,7 @@ public class OnlineMessage {
     public static final int CAT_CHAT_HELLO = 20030;
     public static final int CAT_CHAT_ADMIN = 20031;
     public static final int CAT_WAN_PROFILE_SYNC_PASSWORD = 20032;
+    public static final int CAT_WAN_PROFILE_COMPLETE_RESET = 20033;
 
     // Chat admin types (from PokerConstants for convenience)
     public static final int CHAT_ADMIN_JOIN = 1;
@@ -160,6 +161,8 @@ public class OnlineMessage {
                 return "wan-profile-change-password";
             case CAT_WAN_PROFILE_SYNC_PASSWORD :
                 return "wan-profile-sync-password";
+            case CAT_WAN_PROFILE_COMPLETE_RESET :
+                return "wan-profile-complete-reset";
             case CAT_CONNECTION :
                 return "connection-status";
             case CAT_CHANGE_TABLE :

@@ -39,6 +39,7 @@
     <class>com.donohoedigital.games.poker.model.OnlineProfile</class>
     <class>com.donohoedigital.games.poker.model.OnlineGame</class>
     <class>com.donohoedigital.games.poker.model.TournamentHistory</class>
+    <class>com.donohoedigital.games.poker.model.PasswordResetToken</class>
     <class>com.donohoedigital.games.server.model.BannedKey</class>
     <class>com.donohoedigital.games.server.model.UpgradedKey</class>
     <class>com.donohoedigital.games.server.model.Registration</class>

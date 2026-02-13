@@ -484,15 +484,6 @@ public class TcpChatServer extends GameServer {
                 return;
             }
 
-            // Handle debug commands
-            if (chatText.startsWith("./stats")) {
-                sendMessage(channel, chatServer_.getStatusHTML());
-                return;
-            } else if (chatText.startsWith("./dump")) {
-                sendMessage(channel, "<PRE>" + Utils.getAllStacktraces() + "</PRE>");
-                return;
-            }
-
             // Broadcast to others (not sender)
             chatServer_.broadcastMessage(msg, channel);
         }

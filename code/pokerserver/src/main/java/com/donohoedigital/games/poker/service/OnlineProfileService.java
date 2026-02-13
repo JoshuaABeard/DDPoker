@@ -97,4 +97,37 @@ public interface OnlineProfileService {
      *            the plaintext password to hash and set
      */
     void hashAndSetPassword(OnlineProfile profile, String plaintext);
+
+    /**
+     * Generate a password reset token for a profile. Invalidates any existing
+     * unused tokens for the profile.
+     *
+     * @param profile
+     *            the profile to generate a reset token for
+     * @return the generated PasswordResetToken
+     */
+    @Transactional
+    PasswordResetToken generatePasswordResetToken(OnlineProfile profile);
+
+    /**
+     * Validate a password reset token.
+     *
+     * @param token
+     *            the token string to validate
+     * @return the PasswordResetToken if valid, null otherwise
+     */
+    @Transactional(readOnly = true)
+    PasswordResetToken validatePasswordResetToken(String token);
+
+    /**
+     * Complete password reset using a valid token.
+     *
+     * @param token
+     *            the token string
+     * @param newPassword
+     *            the new plaintext password
+     * @return true if reset was successful, false otherwise
+     */
+    @Transactional
+    boolean resetPasswordWithToken(String token, String newPassword);
 }
