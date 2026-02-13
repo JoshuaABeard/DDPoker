@@ -47,6 +47,7 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.model.*;
+import com.donohoedigital.games.poker.model.LevelAdvanceMode;
 import com.donohoedigital.games.poker.network.*;
 import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.p2p.*;
@@ -113,6 +114,7 @@ public class PokerGame extends Game implements PlayerActionListener {
     private int nLastMinChipIdx_ = 0;
     private int nExtraChips_ = 0;
     private int nClockCash_ = 0;
+    private int nHandsInLevel_ = 0; // tracks hands played in current level for HANDS mode
 
     // online game and other info added for 2.0
     private String sLocalIP_;
@@ -812,6 +814,7 @@ public class PokerGame extends Game implements PlayerActionListener {
     public void changeLevel(int n) {
         int nOld = nLevel_;
         nLevel_ += n;
+        nHandsInLevel_ = 0; // reset hands counter for new level
         clock_.setSecondsRemaining(getSecondsInLevel(nLevel_));
         firePropertyChange(PROP_CURRENT_LEVEL, nOld, nLevel_);
     }
@@ -835,6 +838,35 @@ public class PokerGame extends Game implements PlayerActionListener {
         }
 
         changeLevel(+1);
+    }
+
+    /**
+     * Increment the count of hands played in the current level. Used for
+     * hands-based level advancement.
+     */
+    public void incrementHandsInLevel() {
+        nHandsInLevel_++;
+    }
+
+    /**
+     * Get the number of hands played in the current level
+     *
+     * @return hands played in current level
+     */
+    public int getHandsInLevel() {
+        return nHandsInLevel_;
+    }
+
+    /**
+     * Check if level should advance based on hands played (when in HANDS mode)
+     *
+     * @return true if level should advance
+     */
+    public boolean shouldAdvanceLevelByHands() {
+        if (profile_ == null || profile_.getLevelAdvanceMode() != LevelAdvanceMode.HANDS) {
+            return false;
+        }
+        return nHandsInLevel_ >= profile_.getHandsPerLevel();
     }
 
     /**

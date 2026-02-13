@@ -170,6 +170,13 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public static final String PARAM_SCHEDULED_START = "scheduledstart";
     public static final String PARAM_START_TIME = "starttime";
     public static final String PARAM_MIN_PLAYERS_START = "minplayersstart";
+    public static final String PARAM_LEVEL_ADVANCE_MODE = "leveladvancemode";
+    public static final String PARAM_HANDS_PER_LEVEL = "handsperlevel";
+
+    // Hands per level constraints
+    public static final int MIN_HANDS_PER_LEVEL = 1;
+    public static final int MAX_HANDS_PER_LEVEL = 100;
+    public static final int DEFAULT_HANDS_PER_LEVEL = 10;
 
     /**
      * Empty constructor for loading from data
@@ -1313,6 +1320,52 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
         // Clamp to valid range to match getter behavior
         int clamped = Math.max(0, Math.min(amount, MAX_BOUNTY));
         map_.setInteger(PARAM_BOUNTY_AMOUNT, clamped);
+    }
+
+    /**
+     * Get level advancement mode (time-based or hands-based)
+     *
+     * @return level advance mode
+     */
+    public LevelAdvanceMode getLevelAdvanceMode() {
+        String mode = map_.getString(PARAM_LEVEL_ADVANCE_MODE, LevelAdvanceMode.TIME.name());
+        return LevelAdvanceMode.fromString(mode);
+    }
+
+    /**
+     * Set level advancement mode
+     *
+     * @param mode
+     *            level advance mode (null defaults to TIME)
+     */
+    public void setLevelAdvanceMode(LevelAdvanceMode mode) {
+        if (mode == null) {
+            mode = LevelAdvanceMode.TIME;
+        }
+        map_.setString(PARAM_LEVEL_ADVANCE_MODE, mode.name());
+    }
+
+    /**
+     * Get number of hands to play before advancing to next level (when in HANDS
+     * mode)
+     *
+     * @return hands per level
+     */
+    public int getHandsPerLevel() {
+        return map_.getInteger(PARAM_HANDS_PER_LEVEL, DEFAULT_HANDS_PER_LEVEL, MIN_HANDS_PER_LEVEL,
+                MAX_HANDS_PER_LEVEL);
+    }
+
+    /**
+     * Set number of hands to play before advancing to next level
+     *
+     * @param hands
+     *            hands per level (will be clamped to [MIN_HANDS_PER_LEVEL,
+     *            MAX_HANDS_PER_LEVEL])
+     */
+    public void setHandsPerLevel(int hands) {
+        int clamped = Math.max(MIN_HANDS_PER_LEVEL, Math.min(hands, MAX_HANDS_PER_LEVEL));
+        map_.setInteger(PARAM_HANDS_PER_LEVEL, clamped);
     }
 
     /**
