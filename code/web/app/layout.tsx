@@ -6,10 +6,13 @@
  */
 
 import type { Metadata } from 'next'
+import { Delius } from 'next/font/google'
 import Navigation from '@/components/layout/Navigation'
 import Footer from '@/components/layout/Footer'
 import { AuthProvider } from '@/lib/auth/AuthContext'
 import './globals.css'
+
+const delius = Delius({ weight: '400', subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'DD Poker Community Edition - Free Texas Hold\'em Simulator',
@@ -32,15 +35,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Delius&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="en" className={delius.className}>
       <body>
         <AuthProvider>
           <Navigation />

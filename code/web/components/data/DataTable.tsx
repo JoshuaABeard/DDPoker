@@ -23,6 +23,7 @@ interface DataTableProps<T> {
   currentUser?: string | null
   highlightField?: keyof T
   emptyMessage?: string
+  keyField?: keyof T
 }
 
 export function DataTable<T>({
@@ -31,6 +32,7 @@ export function DataTable<T>({
   currentUser,
   highlightField,
   emptyMessage = 'No data available',
+  keyField,
 }: DataTableProps<T>) {
   if (data.length === 0) {
     return (
@@ -65,8 +67,9 @@ export function DataTable<T>({
                 ? 'bg-[var(--color-gray-light)]'
                 : 'bg-[var(--color-gray-medium)]'
 
+            const rowKey = keyField ? String(item[keyField]) : index
             return (
-              <tr key={index} className={`${rowClass} border border-white`}>
+              <tr key={rowKey} className={`${rowClass} border border-white`}>
                 {columns.map((column) => (
                   <td
                     key={column.key}
