@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   description: 'View player rankings and statistics',
 }
 
+export const dynamic = 'force-dynamic'
+
 interface LeaderboardEntry {
   rank: number
   playerName: string

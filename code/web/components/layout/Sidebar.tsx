@@ -12,7 +12,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { SidebarSection } from '@/lib/sidebarData'
+import { SidebarSection, SidebarItem } from '@/lib/sidebarData'
 
 interface SidebarProps {
   sections: SidebarSection[]
@@ -24,12 +24,13 @@ export default function Sidebar({ sections, title = 'Navigation', variant = 'def
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const isActive = (link: string) => {
+  const isActive = (item: SidebarItem) => {
     // Normalize paths by removing trailing slashes for comparison
     const normalizedPathname = pathname.replace(/\/$/, '') || '/'
-    const normalizedLink = link.replace(/\/$/, '') || '/'
+    const normalizedLink = item.link.replace(/\/$/, '') || '/'
 
-    if (normalizedLink === '/online' || normalizedLink === '/admin' || normalizedLink === '/' || normalizedLink === '/about' || normalizedLink === '/support') {
+    // Use exactMatch property if specified, otherwise default to startsWith for sub-pages
+    if (item.exactMatch) {
       return normalizedPathname === normalizedLink
     }
     return normalizedPathname.startsWith(normalizedLink)
@@ -89,7 +90,7 @@ export default function Sidebar({ sections, title = 'Navigation', variant = 'def
                   <li key={item.link}>
                     <Link
                       href={item.link}
-                      className={`sidebar-link ${isActive(item.link) ? 'active' : ''}`}
+                      className={`sidebar-link ${isActive(item) ? 'active' : ''}`}
                       onClick={() => setMobileOpen(false)}
                     >
                       {item.icon && <span className="icon">{item.icon}</span>}

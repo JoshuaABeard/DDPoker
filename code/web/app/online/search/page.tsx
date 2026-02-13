@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   description: 'Search for players and view their profiles',
 }
 
+export const dynamic = 'force-dynamic'
+
 interface PlayerSearchResult {
   playerName: string
   gamesPlayed: number

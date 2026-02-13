@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: 'View available games waiting for players',
 }
 
+export const dynamic = 'force-dynamic'
+
 interface AvailableGame {
   id: number
   name: string

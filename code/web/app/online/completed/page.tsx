@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   description: 'View recently completed games',
 }
 
+export const dynamic = 'force-dynamic'
+
 interface CompletedGame {
   id: number
   name: string
