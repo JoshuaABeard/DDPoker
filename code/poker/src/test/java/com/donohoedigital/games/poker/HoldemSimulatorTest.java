@@ -34,16 +34,11 @@ import static org.assertj.core.api.Assertions.*;
  */
 class HoldemSimulatorTest {
 
-    private static ConfigManager configMgr;
-
-    @BeforeAll
-    static void setUpClass() {
-        // Initialize config BEFORE any tests run to ensure HoldemSimulator's static
-        // fields
-        // (which call PropertyConfig.getMessage()) are initialized correctly.
-        // This is critical for CI where tests may run in parallel.
-        configMgr = new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
-        configMgr.loadGuiConfig();
+    @BeforeEach
+    void setUp() {
+        // Initialize config for each test. Note: loadGuiConfig() is NOT called
+        // as it's not needed and may cause issues in CI environments.
+        new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
     }
 
     // ========== getInterval() Tests (via reflection) ==========
