@@ -55,11 +55,9 @@ The host's tournament configuration options (via `TournamentProfile` and `Tourna
 
 ### P2 — Online Experience (medium effort, high impact)
 
-#### 6. Late Registration
+#### ✅ 6. Late Registration (COMPLETED — commit 6780456)
 - **Why**: Standard on every modern platform. Without it, all players must be present before the game starts.
-- **New params**: `PARAM_LATE_REG` (boolean), `PARAM_LATE_REG_UNTIL` (level number), `PARAM_LATE_REG_CHIPS` ("starting" or "average")
-- **UI**: New section in Online tab with enable checkbox, until-level spinner, chip mode radio
-- **Engine**: `TournamentDirector` accepts join messages after tournament start up to cutoff level. New player gets assigned to a table with an empty seat. Prize pool recalculates dynamically (already does via `getTotalSpent()`).
+- **Change**: Added PARAM_LATE_REG, PARAM_LATE_REG_UNTIL, PARAM_LATE_REG_CHIPS with UI controls in Online tab and server logic in TournamentDirector.
 
 #### 7. Scheduled Start Time
 - **Why**: Currently host must manually click "Start". A scheduled time lets players join at their leisure.
@@ -108,9 +106,9 @@ The host's tournament configuration options (via `TournamentProfile` and `Tourna
 - **New params**: `PARAM_LEVEL_ADVANCE_MODE` ("time"/"hands"), `PARAM_HANDS_PER_LEVEL` (int)
 - **Engine**: Parallel code path in `PokerGame` level transition logic
 
-#### 17. Configurable Table Size Default
+#### ✅ 17. Configurable Table Size Default
 - **Why**: 6-max and short-handed formats are popular. Table seats is configurable (2-9) but defaults to 10 which seems wrong (profile default). Making the default more prominent or adding format presets (Full Ring/6-Max/Heads-Up) would help.
-- **UI**: Radio group or dropdown for format in Details tab, sets table seats automatically
+- **Change**: Replaced spinner with 3 radio buttons (Full Ring 10 / 6-Max 6 / Heads-Up 2) in Details tab. Updated HTML summary to show format name.
 
 ---
 

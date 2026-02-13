@@ -456,9 +456,18 @@ public class TournamentProfileDialog extends OptionMenuDialog
             oi.getSpinner().setUseBigStep(true);
             numPlayers_ = oi.getSpinner();
 
-            // max at table
-            oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_TABLE_SEATS, STYLE, dummy_, null, 2,
-                    PokerConstants.SEATS, 40, true), quantity, BorderLayout.CENTER);
+            // table format
+            ButtonGroup tableFormatGroup = new ButtonGroup();
+            DDPanel tableFormatPanel = new DDPanel();
+            tableFormatPanel.setLayout(new GridLayout(3, 1, 0, -4));
+
+            OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_TABLE_SEATS, STYLE, dummy_,
+                    "tableformat.fullring", tableFormatGroup, PokerConstants.SEATS_FULL_RING), tableFormatPanel);
+            OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_TABLE_SEATS, STYLE, dummy_, "tableformat.6max",
+                    tableFormatGroup, PokerConstants.SEATS_6MAX), tableFormatPanel);
+            OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_TABLE_SEATS, STYLE, dummy_,
+                    "tableformat.headsup", tableFormatGroup, PokerConstants.SEATS_HEADS_UP), tableFormatPanel);
+            quantity.add(tableFormatPanel, BorderLayout.CENTER);
 
             // buyin
             DDLabelBorder buyin = new DDLabelBorder("buyin", STYLE);

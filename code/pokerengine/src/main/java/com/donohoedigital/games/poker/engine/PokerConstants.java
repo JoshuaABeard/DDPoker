@@ -259,6 +259,11 @@ public class PokerConstants {
     // default number of seats in a table
     public static final int SEATS = 10;
 
+    // table format presets
+    public static final int SEATS_FULL_RING = 10;
+    public static final int SEATS_6MAX = 6;
+    public static final int SEATS_HEADS_UP = 2;
+
     // pot actions
     public static final int NO_POT_ACTION = 0;
     public static final int CALLED_POT = 1;
