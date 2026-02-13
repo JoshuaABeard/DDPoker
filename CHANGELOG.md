@@ -5,6 +5,17 @@ All notable changes to DD Poker Community Edition will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Internal Improvements
+- **Testability Refactoring (Waves 2-3)**
+  - Extracted business logic from TournamentDirector into 8 testable classes (2,915 lines)
+  - New `com.donohoedigital.games.poker.logic` package with zero UI dependencies
+  - Added 123 comprehensive tests (100% pass rate)
+  - Classes: TableManager, HandOrchestrator, TournamentClock, OnlineCoordinator, ColorUpLogic, LevelTransitionLogic, DealingRules, ShowdownCalculator
+  - Bug fix: TableManager.selectNewTable() now correctly skips removed tables
+  - Foundation for Phase integration and increased test coverage
+
 ## [3.3.0-community] - 2026-02-09
 
 ### 🎉 Major Changes
