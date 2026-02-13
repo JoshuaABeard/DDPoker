@@ -54,11 +54,13 @@ import static org.mockito.Mockito.*;
  * TDD tests for TcpChatServer - TCP-based chat server for lobby. Tests written
  * before implementation per TDD approach.
  *
- * NOTE: Disabled due to Mockito incompatibility with Java 25. ByteBuddy (used
- * by Mockito) officially supports up to Java 24. Tests will be re-enabled when
- * Mockito/ByteBuddy add Java 25 support.
+ * TEST-2: Tests remain disabled due to genuine Java 25 incompatibility.
+ * Mockito's inline mock maker cannot modify interfaces on Java 25. Requires
+ * either: - Mockito/ByteBuddy upgrade when Java 25 support is added - Rewrite
+ * tests to use real implementations instead of mocks - Downgrade to Java 21 LTS
+ * for testing
  */
-@Disabled("Java 25 incompatibility with Mockito/ByteBuddy")
+@Disabled("Java 25 incompatibility - Mockito cannot mock interfaces. See TEST-2 for options.")
 @Timeout(value = 10, unit = TimeUnit.SECONDS)
 class TcpChatServerTest {
 
