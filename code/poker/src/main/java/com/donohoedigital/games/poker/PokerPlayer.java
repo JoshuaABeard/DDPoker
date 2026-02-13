@@ -75,6 +75,8 @@ public class PokerPlayer extends GamePlayer {
     private int nAddon_;
     private int nRebuy_;
     private int nNumRebuy_;
+    private int nBountyCollected_;
+    private int nBountyCount_;
     private int nPendingRebuyChips_;
     private int nPendingRebuyAmount_;
     private int nPendingRebuyCnt_;
@@ -612,6 +614,29 @@ public class PokerPlayer extends GamePlayer {
      */
     public int getPlace() {
         return nPlace_;
+    }
+
+    /**
+     * Add bounty to this player's total. Bounty also adds to prize winnings.
+     */
+    public void addBounty(int amount) {
+        nBountyCollected_ += amount;
+        nBountyCount_++;
+        nPrize_ += amount; // Bounty adds to total prize
+    }
+
+    /**
+     * Get total bounties collected
+     */
+    public int getBountyCollected() {
+        return nBountyCollected_;
+    }
+
+    /**
+     * Get number of knockouts (bounties earned)
+     */
+    public int getBountyCount() {
+        return nBountyCount_;
     }
 
     /**
@@ -1707,6 +1732,8 @@ public class PokerPlayer extends GamePlayer {
         entry.addToken(nAddon_);
         entry.addToken(nRebuy_);
         entry.addToken(nNumRebuy_);
+        entry.addToken(nBountyCollected_);
+        entry.addToken(nBountyCount_);
         entry.addToken(nPendingRebuyAmount_);
         entry.addToken(nPendingRebuyChips_);
         entry.addToken(nPendingRebuyCnt_);
@@ -1773,6 +1800,8 @@ public class PokerPlayer extends GamePlayer {
         nAddon_ = entry.removeIntToken();
         nRebuy_ = entry.removeIntToken();
         nNumRebuy_ = entry.removeIntToken();
+        nBountyCollected_ = entry.removeIntToken();
+        nBountyCount_ = entry.removeIntToken();
         nPendingRebuyAmount_ = entry.removeIntToken();
         nPendingRebuyChips_ = entry.removeIntToken();
         nPendingRebuyCnt_ = entry.removeIntToken();

@@ -1868,7 +1868,16 @@ public class TournamentProfileDialog extends OptionMenuDialog
      * Set prize pool text
      */
     private void displayPrizePool() {
-        payout_.setText(PropertyConfig.getMessage("labelborder.payout.label", profile_.getPrizePool()));
+        int basePool = profile_.getPrizePool();
+
+        // If bounties enabled, show base pool + bounty pool separately
+        if (profile_.isBountyEnabled()) {
+            int bountyPool = profile_.getNumPlayers() * profile_.getBountyAmount();
+            payout_.setText(PropertyConfig.getMessage("labelborder.payout.bounty", basePool, bountyPool));
+        } else {
+            payout_.setText(PropertyConfig.getMessage("labelborder.payout.label", basePool));
+        }
+
         payout_.repaint();
     }
 
