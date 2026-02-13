@@ -7,6 +7,7 @@
  */
 
 import { useState, FormEvent } from 'react'
+import { playerApi } from '@/lib/api'
 
 export function PasswordChangeForm() {
   const [currentPassword, setCurrentPassword] = useState('')
@@ -32,8 +33,7 @@ export function PasswordChangeForm() {
     setIsLoading(true)
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await playerApi.changePassword(currentPassword, newPassword)
+      await playerApi.changePassword(currentPassword, newPassword)
 
       setMessage({ type: 'success', text: 'Password changed successfully' })
       setCurrentPassword('')
@@ -60,6 +60,7 @@ export function PasswordChangeForm() {
               ? 'bg-green-100 border border-green-400 text-green-700'
               : 'bg-red-100 border border-red-400 text-red-700'
           }`}
+          role={message.type === 'success' ? 'status' : 'alert'}
         >
           {message.text}
         </div>

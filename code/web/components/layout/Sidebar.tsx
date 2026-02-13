@@ -11,39 +11,68 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
-import { SidebarSection } from '@/lib/sidebarData'
+import { useState, useEffect } from 'react'
+import { SidebarSection, SidebarItem } from '@/lib/sidebarData'
 
 interface SidebarProps {
   sections: SidebarSection[]
-  title?: string
-  variant?: 'default' | 'admin'
 }
 
-export default function Sidebar({ sections, title = 'Navigation', variant = 'default' }: SidebarProps) {
+export default function Sidebar({ sections }: SidebarProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const isActive = (link: string) => {
+  const isActive = (item: SidebarItem) => {
     // Normalize paths by removing trailing slashes for comparison
     const normalizedPathname = pathname.replace(/\/$/, '') || '/'
-    const normalizedLink = link.replace(/\/$/, '') || '/'
+    const normalizedLink = item.link.replace(/\/$/, '') || '/'
 
-    if (normalizedLink === '/online' || normalizedLink === '/admin' || normalizedLink === '/' || normalizedLink === '/about' || normalizedLink === '/support') {
+    // Use exactMatch property if specified, otherwise default to startsWith for sub-pages
+    if (item.exactMatch) {
       return normalizedPathname === normalizedLink
     }
     return normalizedPathname.startsWith(normalizedLink)
   }
 
   // Wood and leather brown gradients for all sidebars
-  const bgGradient = variant === 'admin'
-    ? 'linear-gradient(180deg, #57534e 0%, #292524 100%)'
-    : 'linear-gradient(180deg, #57534e 0%, #292524 100%)'
-  const accentColor = variant === 'admin' ? '#d97706' : '#d97706'
+  const bgGradient = 'linear-gradient(180deg, #57534e 0%, #292524 100%)'
+  const accentColor = '#d97706'
   const borderColor = 'rgba(217, 119, 6, 0.4)'
+
+  // Handle Escape key to close sidebar on mobile
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && mobileOpen) {
+        setMobileOpen(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [mobileOpen])
 
   return (
     <>
+      {/* Mobile Hamburger Button */}
+      <button
+        className="mobile-hamburger"
+        onClick={() => setMobileOpen(!mobileOpen)}
+        aria-label="Toggle sidebar menu"
+        aria-expanded={mobileOpen}
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      {/* Mobile Backdrop/Overlay */}
+      {mobileOpen && (
+        <div
+          className="mobile-backdrop"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
         <nav className="sidebar-nav">
@@ -59,7 +88,7 @@ export default function Sidebar({ sections, title = 'Navigation', variant = 'def
                   <li key={item.link}>
                     <Link
                       href={item.link}
-                      className={`sidebar-link ${isActive(item.link) ? 'active' : ''}`}
+                      className={`sidebar-link ${isActive(item) ? 'active' : ''}`}
                       onClick={() => setMobileOpen(false)}
                     >
                       {item.icon && <span className="icon">{item.icon}</span>}
@@ -145,10 +174,58 @@ export default function Sidebar({ sections, title = 'Navigation', variant = 'def
             flex: 1;
           }
 
+          /* Mobile Hamburger Button */
+          .mobile-hamburger {
+            display: none;
+            position: fixed;
+            top: 70px;
+            left: 10px;
+            z-index: 1000;
+            background: ${accentColor};
+            border: none;
+            border-radius: 4px;
+            width: 40px;
+            height: 40px;
+            padding: 8px;
+            cursor: pointer;
+            flex-direction: column;
+            justify-content: space-around;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          }
+
+          .mobile-hamburger span {
+            display: block;
+            width: 100%;
+            height: 3px;
+            background: white;
+            border-radius: 2px;
+            transition: all 0.3s;
+          }
+
+          .mobile-hamburger:hover {
+            background: #b45309;
+          }
+
+          /* Mobile Backdrop */
+          .mobile-backdrop {
+            display: none;
+          }
+
           /* Mobile Styles */
           @media (max-width: 768px) {
-            .mobile-sidebar-toggle {
+            .mobile-hamburger {
+              display: flex;
+            }
+
+            .mobile-backdrop {
               display: block;
+              position: fixed;
+              top: 60px;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: rgba(0, 0, 0, 0.5);
+              z-index: 997;
             }
 
             .sidebar {

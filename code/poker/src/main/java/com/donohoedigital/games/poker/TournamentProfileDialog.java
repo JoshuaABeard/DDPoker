@@ -77,12 +77,14 @@ public class TournamentProfileDialog extends OptionMenuDialog
     private TypedHashMap orig_;
     private ArrayList rebuyOptions_ = new ArrayList();
     private ArrayList addonOptions_ = new ArrayList();
+    private ArrayList bountyOptions_ = new ArrayList();
     private DDPanel base_;
     private DDTextField name_;
     private DDNumberSpinner numPlayers_;
     private DDNumberSpinner buyinCost_;
     private DDCheckBox rebuys_;
     private DDCheckBox addons_;
+    private DDCheckBox bounties_;
     private DDLabelBorder payout_;
     private DDNumberSpinner houseAmount_;
     private DDNumberSpinner spotPerc_;
@@ -261,8 +263,19 @@ public class TournamentProfileDialog extends OptionMenuDialog
      * Levels tab
      */
     private class LevelsTab extends OptionTab {
+        private LevelsPanel levelsPanel;
+
         protected void createUILocal() {
-            add(new LevelsPanel(this), BorderLayout.WEST);
+            levelsPanel = new LevelsPanel(this);
+            add(levelsPanel, BorderLayout.WEST);
+        }
+
+        @Override
+        protected void processUI() {
+            super.processUI();
+            if (levelsPanel != null) {
+                levelsPanel.saveLevelAdvanceMode();
+            }
         }
 
         public void reset() {
@@ -335,6 +348,49 @@ public class TournamentProfileDialog extends OptionMenuDialog
                     TournamentProfile.MIN_TIMEOUT, TournamentProfile.MAX_TIMEOUT, 50, true), base);
             OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_THINKBANK, STYLE, dummy_, null, 0,
                     TournamentProfile.MAX_THINKBANK, 50, true), base);
+
+            ///
+            /// advanced timeout (per-street)
+            ///
+
+            DDLabelBorder advancedTimeout = new DDLabelBorder("advancedtimeout", STYLE);
+            advancedTimeout.setLayout(new GridLayout(0, 1, 0, -4));
+            left.add(advancedTimeout);
+
+            // Pre-flop timeout spinner
+            OptionInteger timeoutPreflop = new OptionInteger(null, TournamentProfile.PARAM_TIMEOUT_PREFLOP, STYLE,
+                    dummy_, null, 0, TournamentProfile.MAX_TIMEOUT, 50, true);
+
+            // Flop timeout spinner
+            OptionInteger timeoutFlop = new OptionInteger(null, TournamentProfile.PARAM_TIMEOUT_FLOP, STYLE, dummy_,
+                    null, 0, TournamentProfile.MAX_TIMEOUT, 50, true);
+
+            // Turn timeout spinner
+            OptionInteger timeoutTurn = new OptionInteger(null, TournamentProfile.PARAM_TIMEOUT_TURN, STYLE, dummy_,
+                    null, 0, TournamentProfile.MAX_TIMEOUT, 50, true);
+
+            // River timeout spinner
+            OptionInteger timeoutRiver = new OptionInteger(null, TournamentProfile.PARAM_TIMEOUT_RIVER, STYLE, dummy_,
+                    null, 0, TournamentProfile.MAX_TIMEOUT, 50, true);
+
+            // Panel for nested controls
+            DDPanel advancedPanel = new DDPanel();
+            advancedPanel.setLayout(new GridLayout(4, 1, 0, -4));
+            advancedPanel.setBorder(BorderFactory.createEmptyBorder(2, 20, 3, 0));
+            advancedPanel.add(timeoutPreflop);
+            advancedPanel.add(timeoutFlop);
+            advancedPanel.add(timeoutTurn);
+            advancedPanel.add(timeoutRiver);
+
+            // Make it collapsible (initially disabled)
+            OptionDummy advancedDummy = new OptionDummy(advancedPanel);
+            advancedDummy.setBorder(BorderFactory.createEmptyBorder(2, 5, 3, 0));
+            advancedDummy.setBorderLayoutGap(0, 5);
+
+            // Add checkbox to expand/collapse
+            OptionBoolean showAdvanced = new OptionBoolean("advancedtimeout.show", null, STYLE, dummy_, true,
+                    advancedDummy);
+            OptionMenu.add(showAdvanced, advancedTimeout);
 
             ///
             /// boot disconnect/sitout
@@ -465,6 +521,8 @@ public class TournamentProfileDialog extends OptionMenuDialog
      * money tab
      */
     private class DetailsTab extends OptionTab {
+        private DDLabel warningLabel_;
+
         protected void createUI() {
             super.createUI();
 
@@ -482,6 +540,14 @@ public class TournamentProfileDialog extends OptionMenuDialog
             DDPanel left = new DDPanel();
             left.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 5, VerticalFlowLayout.LEFT));
             add(left, BorderLayout.WEST);
+
+            // validation warnings display
+            warningLabel_ = new DDLabel(GuiManager.DEFAULT, STYLE);
+            warningLabel_.setText("");
+            warningLabel_.setForeground(new Color(180, 100, 0)); // Orange color for warnings
+            warningLabel_.setBorder(BorderFactory.createEmptyBorder(0, 5, 10, 5));
+            warningLabel_.setVisible(false);
+            left.add(warningLabel_);
 
             // num players / max at table
             DDPanel quantity = new DDPanel();
@@ -526,6 +592,11 @@ public class TournamentProfileDialog extends OptionMenuDialog
             left.add(addon);
             addon.add(createAddon(), BorderLayout.CENTER);
 
+            // bounty
+            DDLabelBorder bounty = new DDLabelBorder("bounties", STYLE);
+            left.add(bounty);
+            bounty.add(createBounty(), BorderLayout.CENTER);
+
             // payout/alloc
             DDPanel payalloc = new DDPanel();
             payalloc.setBorderLayoutGap(10, 0);
@@ -542,6 +613,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
             buyin.setPreferredWidth(ps.width);
             rebuy.setPreferredWidth(ps.width);
             addon.setPreferredWidth(ps.width);
+            bounty.setPreferredWidth(ps.width);
 
             // allocation
             DDPanel format = new DDPanel();
@@ -556,6 +628,26 @@ public class TournamentProfileDialog extends OptionMenuDialog
          * subclass can chime in on validity
          */
         protected boolean isValidCheck() {
+            // Run validation to check for warnings (doesn't block, just displays in UI)
+            ValidationResult warnings = profile_.validateProfile();
+            if (warnings.hasWarnings()) {
+                // Build warning message from all warnings
+                StringBuilder warningText = new StringBuilder("<html>");
+                warningText.append(PropertyConfig.getMessage("msg.profile.warnings.header"));
+                warningText.append("<ul>");
+                for (ValidationWarning warning : warnings.getWarnings()) {
+                    warningText.append("<li>").append(warnings.getMessage(warning)).append("</li>");
+                }
+                warningText.append("</ul></html>");
+
+                warningLabel_.setText(warningText.toString());
+                warningLabel_.setVisible(true);
+                logger.debug("Profile validation warnings: {}", warnings.getWarnings());
+            } else {
+                warningLabel_.setVisible(false);
+            }
+
+            // Hard validation still blocks
             return isTotalCorrect(getTotal());
         }
     }
@@ -570,6 +662,9 @@ public class TournamentProfileDialog extends OptionMenuDialog
         private GlassButton verify;
         private ListPanel levelsList;
         private LevelsTab tab;
+        private DDRadioButton radioTimeMode;
+        private DDRadioButton radioHandsMode;
+        private OptionInteger handsPerLevel;
 
         public LevelsPanel(LevelsTab tab) {
             DDPanel base = this;
@@ -598,6 +693,45 @@ public class TournamentProfileDialog extends OptionMenuDialog
 
             OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_MAXRAISES_NONE_HEADSUP, STYLE, dummy_, true),
                     controls);
+
+            // Level advancement mode
+            DDPanel advancePanel = new DDPanel();
+            advancePanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 5, VerticalFlowLayout.LEFT));
+            advancePanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+
+            DDLabel advanceLabel = new DDLabel(GuiManager.DEFAULT, STYLE);
+            advanceLabel.setText(PropertyConfig.getMessage("msg.levels.advance"));
+            advancePanel.add(advanceLabel);
+
+            // Radio buttons for TIME/HANDS mode
+            radioTimeMode = new DDRadioButton("time", STYLE);
+            radioHandsMode = new DDRadioButton("hands", STYLE);
+            ButtonGroup advanceGroup = new ButtonGroup();
+            advanceGroup.add(radioTimeMode);
+            advanceGroup.add(radioHandsMode);
+
+            radioTimeMode.addActionListener(e -> {
+                if (handsPerLevel != null) {
+                    handsPerLevel.setEnabled(false);
+                }
+            });
+
+            radioHandsMode.addActionListener(e -> {
+                if (handsPerLevel != null) {
+                    handsPerLevel.setEnabled(true);
+                }
+            });
+
+            advancePanel.add(radioTimeMode);
+            advancePanel.add(radioHandsMode);
+
+            // Hands per level spinner (indented, conditional)
+            handsPerLevel = new OptionInteger(null, TournamentProfile.PARAM_HANDS_PER_LEVEL, STYLE, dummy_, null,
+                    TournamentProfile.MIN_HANDS_PER_LEVEL, TournamentProfile.MAX_HANDS_PER_LEVEL, 50, true, true);
+            handsPerLevel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0)); // indent
+            advancePanel.add(handsPerLevel);
+
+            controls.add(advancePanel);
 
             GuiUtils.setDDOptionLabelWidths(controls);
 
@@ -654,9 +788,44 @@ public class TournamentProfileDialog extends OptionMenuDialog
             verify.addActionListener(this);
             buttonpanel.add(verify);
 
+            GlassButton quicksetup = new GlassButton("quicksetup", "Glass");
+            quicksetup.addActionListener(this);
+            buttonpanel.add(quicksetup);
+
             // init display
             levelsList.setSelectedIndex(0);
             checkButtons();
+            initLevelAdvanceMode();
+        }
+
+        private void initLevelAdvanceMode() {
+            // Load level advance mode from profile
+            LevelAdvanceMode mode = profile_.getLevelAdvanceMode();
+            if (mode == LevelAdvanceMode.HANDS) {
+                radioHandsMode.setSelected(true);
+                handsPerLevel.setEnabled(true);
+            } else {
+                radioTimeMode.setSelected(true);
+                handsPerLevel.setEnabled(false);
+            }
+
+            // Disable mode selection if tournament is running to prevent unexpected
+            // behavior
+            boolean tournamentRunning = game_ != null && game_.getLevel() > 0;
+            if (tournamentRunning) {
+                radioTimeMode.setEnabled(false);
+                radioHandsMode.setEnabled(false);
+                handsPerLevel.setEnabled(false);
+            }
+        }
+
+        private void saveLevelAdvanceMode() {
+            // Save level advance mode to profile
+            if (radioHandsMode.isSelected()) {
+                profile_.setLevelAdvanceMode(LevelAdvanceMode.HANDS);
+            } else {
+                profile_.setLevelAdvanceMode(LevelAdvanceMode.TIME);
+            }
         }
 
         private void createLevels() {
@@ -692,6 +861,9 @@ public class TournamentProfileDialog extends OptionMenuDialog
                 delete();
             else if (button == verify)
                 verify();
+            else if (e.getSource() instanceof GlassButton
+                    && ((GlassButton) e.getSource()).getName().equals("quicksetup"))
+                quickSetup();
         }
 
         private void insertLevel() {
@@ -761,6 +933,23 @@ public class TournamentProfileDialog extends OptionMenuDialog
             levelsList.setSelectedIndex(nOldSelectedIndex);
             tab.processUI();
             repaint();
+        }
+
+        private void quickSetup() {
+            // Prepare parameters for BlindQuickSetupDialog
+            TypedHashMap params = new TypedHashMap();
+            params.setObject(BlindQuickSetupDialog.PARAM_PROFILE, profile_);
+
+            // Show dialog
+            context_.processPhaseNow("BlindQuickSetup", params);
+
+            // If user clicked OK and applied a template, refresh the levels
+            if (params.getBoolean("applied", false)) {
+                tab.cleanUI();
+                createLevels();
+                tab.processUI();
+                repaint();
+            }
         }
     }
 
@@ -1061,6 +1250,33 @@ public class TournamentProfileDialog extends OptionMenuDialog
     }
 
     /**
+     * Bounty panel
+     */
+    private JComponent createBounty() {
+        OptionInteger oi;
+        OptionBoolean ob;
+
+        // bounties
+        DDPanel bounty = new DDPanel();
+        bounty.setBorderLayoutGap(2, 0);
+
+        ob = OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_BOUNTY, STYLE, dummy_, false), bounty,
+                BorderLayout.NORTH);
+        bounties_ = ob.getCheckBox();
+        bounties_.addActionListener(this);
+
+        DDPanel bountydata = new DDPanel();
+        bountydata.setBorderLayoutGap(0, 5);
+        bountydata.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
+        bounty.add(GuiUtils.WEST(bountydata), BorderLayout.CENTER);
+        oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_BOUNTY_AMOUNT, STYLE, dummy_, null, 1,
+                TournamentProfile.MAX_BOUNTY, 70, true), bountydata, BorderLayout.WEST);
+        bountyOptions_.add(oi);
+
+        return bounty;
+    }
+
+    /**
      * Payout panel
      */
     private JComponent createPayout() {
@@ -1149,6 +1365,31 @@ public class TournamentProfileDialog extends OptionMenuDialog
                 buttonGroup_, PokerConstants.ALLOC_AMOUNT, null), allocbase);
         buttonAmount_ = radio.getRadioButton();
 
+        // payout preset dropdown
+        DDPanel presetPanel = new DDPanel();
+        presetPanel.setBorderLayoutGap(2, 5);
+        presetPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+        left.add(presetPanel, BorderLayout.NORTH);
+
+        DDLabel presetLabel = new DDLabel("msg.payout.preset", STYLE);
+        presetPanel.add(presetLabel, BorderLayout.WEST);
+
+        DDComboBox presetCombo = new DDComboBox("payoutpreset", STYLE);
+        presetCombo.setPreferredSize(new Dimension(200, 25));
+        // Add preset items
+        for (PayoutPreset preset : PayoutPreset.values()) {
+            presetCombo.addItem(preset);
+        }
+        presetCombo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                PayoutPreset selected = (PayoutPreset) presetCombo.getSelectedItem();
+                if (selected != null && selected != PayoutPreset.CUSTOM) {
+                    applyPayoutPreset(selected);
+                }
+            }
+        });
+        presetPanel.add(presetCombo, BorderLayout.CENTER);
+
         // clear button
         clear_ = new GlassButton("clear", "Glass");
         left.add(GuiUtils.NORTH(GuiUtils.CENTER(clear_)), BorderLayout.CENTER);
@@ -1208,6 +1449,31 @@ public class TournamentProfileDialog extends OptionMenuDialog
 
             sp.spot.setText("");
         }
+    }
+
+    /**
+     * Apply a payout preset to the current profile
+     */
+    private void applyPayoutPreset(PayoutPreset preset) {
+        // Apply preset to profile (sets spot percentages)
+        int numSpots = profile_.getNumSpots();
+        preset.applyToProfile(profile_, numSpots);
+
+        // Update UI to show new values
+        // Set to percentage mode
+        buttonPerc_.setSelected(true);
+
+        // Refresh spot UI fields
+        for (int i = 0; i < spots_.length && i < numSpots; i++) {
+            SpotPanel sp = spots_[i];
+            if (sp != null && sp.otspot != null) {
+                sp.otspot.resetToMap();
+            }
+        }
+
+        // Update spots display and total
+        updateSpots();
+        updateTotal();
     }
 
     /**
@@ -1656,7 +1922,9 @@ public class TournamentProfileDialog extends OptionMenuDialog
     }
 
     /**
-     * Update starting depth label (buyin chips / level 1 big blind)
+     * Update starting depth label (buyin chips / level 1 big blind). This
+     * measurement is in big blinds and applies to both TIME and HANDS level
+     * advancement modes.
      */
     private void updateStartingDepth() {
         if (depthLabel_ == null)
@@ -1688,6 +1956,9 @@ public class TournamentProfileDialog extends OptionMenuDialog
         } else if (o == rebuys_) {
             list = rebuyOptions_;
             bOn = rebuys_.isSelected();
+        } else if (o == bounties_) {
+            list = bountyOptions_;
+            bOn = bounties_.isSelected();
         }
 
         if (list == null)
@@ -1705,7 +1976,16 @@ public class TournamentProfileDialog extends OptionMenuDialog
      * Set prize pool text
      */
     private void displayPrizePool() {
-        payout_.setText(PropertyConfig.getMessage("labelborder.payout.label", profile_.getPrizePool()));
+        int basePool = profile_.getPrizePool();
+
+        // If bounties enabled, show base pool + bounty pool separately
+        if (profile_.isBountyEnabled()) {
+            int bountyPool = profile_.getNumPlayers() * profile_.getBountyAmount();
+            payout_.setText(PropertyConfig.getMessage("labelborder.payout.bounty", basePool, bountyPool));
+        } else {
+            payout_.setText(PropertyConfig.getMessage("labelborder.payout.label", basePool));
+        }
+
         payout_.repaint();
     }
 

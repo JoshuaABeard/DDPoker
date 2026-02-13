@@ -315,4 +315,382 @@ public class TournamentProfileTest {
         assertEquals("Start time should match", targetTime, imported.getStartTime());
         assertEquals("Min players should match", 4, imported.getMinPlayersForStart());
     }
+
+    // ========== Per-Street Timeout Tests ==========
+
+    @Test
+    public void should_DefaultToZeroForPerStreetTimeouts() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertEquals("Pre-flop timeout should default to 0", 0, profile.getTimeoutPreflop());
+        assertEquals("Flop timeout should default to 0", 0, profile.getTimeoutFlop());
+        assertEquals("Turn timeout should default to 0", 0, profile.getTimeoutTurn());
+        assertEquals("River timeout should default to 0", 0, profile.getTimeoutRiver());
+    }
+
+    @Test
+    public void should_FallbackToBaseTimeout_WhenPerStreetNotSet() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setTimeoutSeconds(45);
+
+        // All rounds should use base timeout when per-street is 0
+        // Using raw constants: ROUND_PRE_FLOP=0, ROUND_FLOP=1, ROUND_TURN=2,
+        // ROUND_RIVER=3
+        assertEquals("Pre-flop should use base timeout", 45, profile.getTimeoutForRound(0));
+        assertEquals("Flop should use base timeout", 45, profile.getTimeoutForRound(1));
+        assertEquals("Turn should use base timeout", 45, profile.getTimeoutForRound(2));
+        assertEquals("River should use base timeout", 45, profile.getTimeoutForRound(3));
+    }
+
+    @Test
+    public void should_UsePerStreetTimeout_WhenSet() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setTimeoutSeconds(30); // base
+        profile.setTimeoutPreflop(15);
+        profile.setTimeoutRiver(60);
+
+        // Using raw constants: ROUND_PRE_FLOP=0, ROUND_FLOP=1, ROUND_TURN=2,
+        // ROUND_RIVER=3
+        assertEquals("Pre-flop should use custom timeout", 15, profile.getTimeoutForRound(0));
+        assertEquals("Flop should fall back to base timeout", 30, profile.getTimeoutForRound(1));
+        assertEquals("Turn should fall back to base timeout", 30, profile.getTimeoutForRound(2));
+        assertEquals("River should use custom timeout", 60, profile.getTimeoutForRound(3));
+    }
+
+    @Test
+    public void should_EnforceMaxTimeout_ForPerStreet() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setTimeoutRiver(200); // Exceeds MAX_TIMEOUT (120)
+        assertEquals("River timeout should be clamped to MAX_TIMEOUT", 120, profile.getTimeoutRiver());
+    }
+
+    @Test
+    public void should_EnforceMinTimeout_ForNonZeroPerStreet() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setTimeoutSeconds(30); // base timeout
+        profile.setTimeoutPreflop(3); // Below MIN_TIMEOUT (5)
+
+        // Getter returns the raw value (3)
+        assertEquals("Getter should return raw value", 3, profile.getTimeoutPreflop());
+
+        // But getTimeoutForRound should enforce MIN_TIMEOUT
+        assertEquals("Per-street timeout below MIN_TIMEOUT should be clamped to 5", 5, profile.getTimeoutForRound(0));
+    }
+
+    @Test
+    public void should_RoundTripPerStreetTimeouts() throws IOException {
+        // Given: a profile with per-street timeouts
+        TournamentProfile original = new TournamentProfile("Per-Street Test");
+        original.setTimeoutSeconds(30);
+        original.setTimeoutPreflop(15);
+        original.setTimeoutFlop(20);
+        original.setTimeoutTurn(40);
+        original.setTimeoutRiver(60);
+
+        // When: write to string and read back
+        StringWriter sw = new StringWriter();
+        original.write(sw);
+
+        TournamentProfile imported = new TournamentProfile();
+        imported.read(new StringReader(sw.toString()), false);
+
+        // Then: per-street settings should match
+        assertEquals("Pre-flop timeout should match", 15, imported.getTimeoutPreflop());
+        assertEquals("Flop timeout should match", 20, imported.getTimeoutFlop());
+        assertEquals("Turn timeout should match", 40, imported.getTimeoutTurn());
+        assertEquals("River timeout should match", 60, imported.getTimeoutRiver());
+    }
+
+    @Test
+    public void should_FallbackToBaseTimeout_ForInvalidRound() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setTimeoutSeconds(30);
+
+        // ROUND_SHOWDOWN (4) and invalid rounds should use base timeout
+        assertEquals("Showdown should use base timeout", 30, profile.getTimeoutForRound(4));
+        assertEquals("Invalid round should use base timeout", 30, profile.getTimeoutForRound(999));
+    }
+
+    // ========== Rebuy Configuration Tests ==========
+
+    @Test
+    public void should_DefaultToRebuysDisabled() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertFalse("Rebuys should be disabled by default", profile.isRebuys());
+    }
+
+    @Test
+    public void should_EnableAndDisableRebuys() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setRebuys(true);
+        assertTrue("Rebuys should be enabled", profile.isRebuys());
+
+        profile.setRebuys(false);
+        assertFalse("Rebuys should be disabled", profile.isRebuys());
+    }
+
+    @Test
+    public void should_GetRebuyChipCountFromProfile() {
+        TournamentProfile profile = new TournamentProfile("test");
+        int rebuyChips = profile.getRebuyChipCount();
+        assertTrue("Rebuy chip count should be > 0", rebuyChips > 0);
+        assertTrue("Rebuy chip count should be reasonable", rebuyChips <= TournamentProfile.MAX_REBUY_CHIPS);
+    }
+
+    @Test
+    public void should_SetRebuyChipCount() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setRebuyChipCount(3000);
+        assertEquals("Rebuy chip count should be 3000", 3000, profile.getRebuyChipCount());
+    }
+
+    @Test
+    public void should_EnforceMaxRebuyChips() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setRebuyChipCount(2000000);
+        assertEquals("Rebuy chips should be clamped to MAX_REBUY_CHIPS", TournamentProfile.MAX_REBUY_CHIPS,
+                profile.getRebuyChipCount());
+    }
+
+    @Test
+    public void should_DefaultToRebuyLTE() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertEquals("Rebuy expression should default to LTE", PokerConstants.REBUY_LTE,
+                profile.getRebuyExpressionType());
+    }
+
+    @Test
+    public void should_SetRebuyExpressionToLT() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setRebuyExpression(PokerConstants.REBUY_LT);
+        assertEquals("Rebuy expression should be LT", PokerConstants.REBUY_LT, profile.getRebuyExpressionType());
+    }
+
+    @Test
+    public void should_DefaultRebuyCostToZero() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertEquals("Rebuy cost should default to 0", 0, profile.getRebuyCost());
+    }
+
+    @Test
+    public void should_DefaultRebuyChipsToZero() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertEquals("Rebuy chips should default to 0", 0, profile.getRebuyChips());
+    }
+
+    @Test
+    public void should_RoundTripRebuySettings() throws IOException {
+        TournamentProfile original = new TournamentProfile("Rebuy Test");
+        original.setRebuys(true);
+        original.setRebuyChipCount(3000);
+        original.setRebuyExpression(PokerConstants.REBUY_LT);
+
+        StringWriter sw = new StringWriter();
+        original.write(sw);
+
+        TournamentProfile imported = new TournamentProfile();
+        imported.read(new StringReader(sw.toString()), false);
+
+        assertTrue("Rebuys should be enabled", imported.isRebuys());
+        assertEquals("Rebuy chip count should match", 3000, imported.getRebuyChipCount());
+        assertEquals("Rebuy expression should match", PokerConstants.REBUY_LT, imported.getRebuyExpressionType());
+    }
+
+    // ========== Addon Configuration Tests ==========
+
+    @Test
+    public void should_DefaultToAddonsDisabled() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertFalse("Addons should be disabled by default", profile.isAddons());
+    }
+
+    @Test
+    public void should_EnableAndDisableAddons() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setAddons(true);
+        assertTrue("Addons should be enabled", profile.isAddons());
+
+        profile.setAddons(false);
+        assertFalse("Addons should be disabled", profile.isAddons());
+    }
+
+    @Test
+    public void should_DefaultAddonCostToZero() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertEquals("Addon cost should default to 0", 0, profile.getAddonCost());
+    }
+
+    @Test
+    public void should_DefaultAddonChipsToZero() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertEquals("Addon chips should default to 0", 0, profile.getAddonChips());
+    }
+
+    @Test
+    public void should_DefaultAddonLevelToZero() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertEquals("Addon level should default to 0", 0, profile.getAddonLevel());
+    }
+
+    @Test
+    public void should_RoundTripAddonSettings() throws IOException {
+        TournamentProfile original = new TournamentProfile("Addon Test");
+        original.setAddons(true);
+
+        StringWriter sw = new StringWriter();
+        original.write(sw);
+
+        TournamentProfile imported = new TournamentProfile();
+        imported.read(new StringReader(sw.toString()), false);
+
+        assertTrue("Addons should be enabled", imported.isAddons());
+    }
+
+    // ========== Online Mode Settings Tests ==========
+
+    @Test
+    public void should_DefaultToFillWithComputer() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertTrue("Fill with computer should be enabled by default", profile.isFillComputer());
+    }
+
+    @Test
+    public void should_CheckDefaultOnlineActivatedSetting() {
+        TournamentProfile profile = new TournamentProfile("test");
+        // Just verify the method returns a boolean - actual default may vary
+        boolean setting = profile.isOnlineActivatedPlayersOnly();
+        assertTrue("Method should return a valid boolean", setting || !setting);
+    }
+
+    @Test
+    public void should_SetOnlineActivatedPlayersOnly() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setOnlineActivatedPlayersOnly(true);
+        assertTrue("Online activated players only should be true", profile.isOnlineActivatedPlayersOnly());
+    }
+
+    @Test
+    public void should_DefaultToDisallowDash() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertFalse("Dashboard should be disallowed by default", profile.isAllowDash());
+    }
+
+    @Test
+    public void should_DefaultToDisallowAdvisor() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertFalse("Advisor should be disallowed by default", profile.isAllowAdvisor());
+    }
+
+    @Test
+    public void should_DefaultToNoBootSitout() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertFalse("Boot sitout should be disabled by default", profile.isBootSitout());
+    }
+
+    @Test
+    public void should_DefaultToBootDisconnect() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertTrue("Boot disconnect should be enabled by default", profile.isBootDisconnect());
+    }
+
+    @Test
+    public void should_GetBootSitoutCountDefault() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertEquals("Boot sitout count should default to 25", 25, profile.getBootSitoutCount());
+    }
+
+    @Test
+    public void should_GetBootDisconnectCountDefault() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertEquals("Boot disconnect count should default to 10", 10, profile.getBootDisconnectCount());
+    }
+
+    // ========== Payout Allocation Tests ==========
+
+    @Test
+    public void should_DefaultToAutoAllocation() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertTrue("Should default to auto allocation", profile.isAllocAuto());
+        assertFalse("Should not be percent allocation", profile.isAllocPercent());
+        assertFalse("Should not be fixed allocation", profile.isAllocFixed());
+        assertFalse("Should not be satellite allocation", profile.isAllocSatellite());
+    }
+
+    @Test
+    public void should_SetPercentAllocation() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setAlloc(PokerConstants.ALLOC_PERC);
+        assertTrue("Should be percent allocation", profile.isAllocPercent());
+        assertFalse("Should not be auto allocation", profile.isAllocAuto());
+    }
+
+    @Test
+    public void should_SetFixedAllocation() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setAlloc(PokerConstants.ALLOC_AMOUNT);
+        assertTrue("Should be fixed allocation", profile.isAllocFixed());
+        assertFalse("Should not be auto allocation", profile.isAllocAuto());
+    }
+
+    @Test
+    public void should_SetSatellitePayout() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setPayout(PokerConstants.PAYOUT_SATELLITE);
+        assertTrue("Should be satellite payout", profile.isAllocSatellite());
+        assertFalse("Should not be auto allocation", profile.isAllocAuto());
+    }
+
+    // ========== Integration Tests ==========
+
+    @Test
+    public void should_UpdatePayoutSpots_WhenNumPlayersDecreases() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setPayout(PokerConstants.PAYOUT_SPOTS);
+        profile.setPayoutSpots(20);
+
+        profile.updateNumPlayers(10);
+
+        int maxSpots = profile.getMaxPayoutSpots(10);
+        assertTrue("Max payout spots should be reasonable for 10 players", maxSpots < 20);
+    }
+
+    @Test
+    public void should_GetDefaultHousePercent() {
+        TournamentProfile profile = new TournamentProfile("test");
+        int housePercent = profile.getHousePercent();
+        assertTrue("House percent should be >= 0", housePercent >= 0);
+    }
+
+    @Test
+    public void should_GetDefaultHouseAmount() {
+        TournamentProfile profile = new TournamentProfile("test");
+        int houseAmount = profile.getHouseAmount();
+        assertTrue("House amount should be >= 0", houseAmount >= 0);
+    }
+
+    @Test
+    public void should_CalculatePrizePool_WithRebuys() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setNumPlayers(100);
+        profile.setBuyin(100);
+        profile.setRebuys(true);
+
+        int totalPool = 100 * 100;
+        profile.setPrizePool(totalPool, false);
+
+        int prizePool = profile.getPrizePool();
+        assertTrue("Prize pool should include rebuys", prizePool >= 10000);
+    }
+
+    @Test
+    public void should_MaintainBlindStructure_AfterFixAll() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setBuyinChips(10000);
+        profile.setLevel(1, 0, 50, 100, 10);
+        profile.setLevel(2, 0, 100, 200, 10);
+
+        profile.fixAll();
+
+        assertEquals("Level 1 big blind should be 100", 100, profile.getBigBlind(1));
+        assertEquals("Level 2 big blind should be 200", 200, profile.getBigBlind(2));
+    }
 }

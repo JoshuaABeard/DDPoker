@@ -1,5 +1,4 @@
 'use client'
-export const dynamic = 'force-static'
 
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -7,12 +6,14 @@ export const dynamic = 'force-static'
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
+import { Dialog } from '@/components/ui/Dialog'
 import { adminApi } from '@/lib/api'
 import { toBackendPage, buildPaginationResult } from '@/lib/pagination'
+import type { BannedKeyDto } from '@/lib/types'
 
 interface BannedKey {
   id: number
@@ -39,6 +40,15 @@ export default function BanListPage() {
   const [newBanUntil, setNewBanUntil] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Dialog state
+  const [dialogState, setDialogState] = useState<{
+    isOpen: boolean
+    type: 'alert' | 'confirm'
+    title: string
+    message: string
+    onConfirm?: () => void
+  }>({ isOpen: false, type: 'alert', title: '', message: '' })
+
   useEffect(() => {
     loadBans()
   }, [currentPage])
@@ -48,7 +58,7 @@ export default function BanListPage() {
       setIsLoading(true)
       setError(null)
       const { bans: bansData, total } = await adminApi.getBans()
-      const mapped = bansData.map((b: any) => ({
+      const mapped = bansData.map((b: BannedKeyDto) => ({
         id: b.id,
         key: b.key,
         comment: b.comment,
@@ -76,7 +86,12 @@ export default function BanListPage() {
   async function handleAddBan(e: React.FormEvent) {
     e.preventDefault()
     if (!newBanKey.trim()) {
-      alert('Key is required')
+      setDialogState({
+        isOpen: true,
+        type: 'alert',
+        title: 'Validation Error',
+        message: 'Key is required',
+      })
       return
     }
 
@@ -93,23 +108,39 @@ export default function BanListPage() {
       await loadBans()
     } catch (err) {
       console.error('Failed to add ban:', err)
-      alert('Failed to add ban. Please try again.')
+      setDialogState({
+        isOpen: true,
+        type: 'alert',
+        title: 'Error',
+        message: 'Failed to add ban. Please try again.',
+      })
     } finally {
       setIsSubmitting(false)
     }
   }
 
   async function handleRemoveBan(key: string) {
-    if (!confirm('Are you sure you want to remove this ban?')) {
-      return
-    }
+    setDialogState({
+      isOpen: true,
+      type: 'confirm',
+      title: 'Remove Ban',
+      message: 'Are you sure you want to remove this ban?',
+      onConfirm: () => confirmRemoveBan(key),
+    })
+  }
 
+  async function confirmRemoveBan(key: string) {
     try {
       await adminApi.removeBan(key)
       await loadBans()
     } catch (err) {
       console.error('Failed to remove ban:', err)
-      alert('Failed to remove ban. Please try again.')
+      setDialogState({
+        isOpen: true,
+        type: 'alert',
+        title: 'Error',
+        message: 'Failed to remove ban. Please try again.',
+      })
     }
   }
 
@@ -237,7 +268,7 @@ export default function BanListPage() {
 
       {/* Ban List */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700" role="alert">
           {error}
         </div>
       )}
@@ -249,10 +280,21 @@ export default function BanListPage() {
           <DataTable data={bans} columns={columns} emptyMessage="No bans found" />
 
           {totalPages > 1 && (
-            <Pagination currentPage={currentPage} totalItems={totalItems} itemsPerPage={50} />
+            <Suspense fallback={<div className="text-center text-gray-500">Loading...</div>}>
+              <Pagination currentPage={currentPage} totalItems={totalItems} itemsPerPage={50} />
+            </Suspense>
           )}
         </>
       )}
+
+      <Dialog
+        isOpen={dialogState.isOpen}
+        onClose={() => setDialogState({ ...dialogState, isOpen: false })}
+        onConfirm={dialogState.onConfirm}
+        title={dialogState.title}
+        message={dialogState.message}
+        type={dialogState.type}
+      />
     </div>
   )
 }

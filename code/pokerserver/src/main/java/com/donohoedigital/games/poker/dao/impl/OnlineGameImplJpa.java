@@ -155,6 +155,39 @@ public class OnlineGameImplJpa extends JpaBaseDao<OnlineGame, Long> implements O
         return list;
     }
 
+    @SuppressWarnings({"unchecked", "JpaQlInspection"})
+    public OnlineGameList getByModeWithHistories(Integer[] modes, Date begin, Date end) {
+        // always use dates to take advantage of index on dates
+        if (begin == null)
+            begin = BEGINNING_OF_TIME;
+        if (end == null)
+            end = END_OF_TIME;
+
+        String sModes = getModes(modes);
+        String dateColumn = getDateColumn(modes);
+        String sOrderBy = getOrderByClause(modes, false);
+
+        // PERF-1: Use JOIN FETCH to eagerly load histories in single query (fixes N+1)
+        Query query = entityManager.createQuery("select distinct o from OnlineGame o " + "left join fetch o.histories "
+                + "where o.mode in (" + sModes + ") " + "and o." + dateColumn + " between :begin and :end " + sOrderBy);
+
+        // specify params
+        for (int i = 0; i < modes.length; i++) {
+            query.setParameter(i + 1, modes[i]);
+        }
+        query.setParameter("begin", begin);
+        query.setParameter("end", end);
+
+        // run the query
+        List<OnlineGame> results = (List<OnlineGame>) query.getResultList();
+
+        // build results
+        OnlineGameList list = new OnlineGameList();
+        list.addAll(results);
+        list.setTotalSize(results.size());
+        return list;
+    }
+
     /**
      * find earliest type of mode (in the lifecycle of a game)
      */

@@ -3,9 +3,9 @@
  * DD Poker - Current Games Page
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-export const dynamic = 'force-static'
 
 import { Metadata } from 'next'
+import { Suspense } from 'react'
 import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
 import { PlayerLink } from '@/components/online/PlayerLink'
@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   title: 'Current Games - DD Poker',
   description: 'View games currently in progress',
 }
+
+export const dynamic = 'force-dynamic'
 
 interface CurrentGame {
   id: number
@@ -115,11 +117,13 @@ export default async function CurrentGamesPage({
       />
 
       {totalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalItems={totalItems}
-          itemsPerPage={20}
-        />
+        <Suspense fallback={<div className="text-center text-gray-500">Loading...</div>}>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalItems}
+            itemsPerPage={20}
+          />
+        </Suspense>
       )}
     </div>
   )

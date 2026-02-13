@@ -44,6 +44,7 @@ import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.logic.*;
 import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
@@ -51,7 +52,6 @@ import org.apache.logging.log4j.*;
 import java.awt.*;
 import java.awt.image.*;
 import java.io.*;
-import java.math.*;
 import java.util.*;
 import java.util.List;
 
@@ -61,18 +61,8 @@ import java.util.List;
 public class PokerUtils extends EngineUtils {
     private static final Logger logger = LogManager.getLogger(PokerUtils.class);
 
-    private static final BigInteger factorial_[] = new BigInteger[53];
-
     static Territory tPot_ = null;
     static Territory tFlop_ = null;
-
-    static {
-        factorial_[0] = new BigInteger("1");
-
-        for (int i = 1; i < 53; ++i) {
-            factorial_[i] = factorial_[i - 1].multiply(new BigInteger(Integer.toString(i)));
-        }
-    }
 
     /**
      * Set gameboard
@@ -532,11 +522,18 @@ public class PokerUtils extends EngineUtils {
     ///// MISC
     /////
 
+    /**
+     * Calculate integer power (n^p). Delegates to
+     * {@link PokerLogicUtils#pow(int, int)}.
+     *
+     * @param n
+     *            base
+     * @param p
+     *            exponent
+     * @return n raised to the power p
+     */
     public static int pow(int n, int p) {
-        int res = 1;
-        while (p-- > 0)
-            res *= n;
-        return res;
+        return PokerLogicUtils.pow(n, p);
     }
 
     public static String getTimeString(PokerGame game) {
@@ -600,25 +597,19 @@ public class PokerUtils extends EngineUtils {
     }
 
     /**
-     * Round chips to be a multiple of the min chip on the table
+     * Round chips to be a multiple of the min chip on the table. Delegates to
+     * {@link PokerLogicUtils#roundAmountMinChip(PokerTable, int)}.
+     *
+     * @param table
+     *            poker table with min chip setting
+     * @param chips
+     *            amount to round
+     * @return chips rounded to nearest multiple of table min chip
      */
     public static int roundAmountMinChip(PokerTable table, int chips) {
-        int nNewAmount = chips;
-        int nMinChip = table.getMinChip();
-        int nOdd = chips % nMinChip;
-        if (nOdd != 0) {
-            nNewAmount = chips - nOdd;
-            if ((float) nOdd >= (nMinChip / 2.0f)) {
-                nNewAmount += nMinChip;
-            }
-        }
-
-        return nNewAmount;
+        return PokerLogicUtils.roundAmountMinChip(table, chips);
     }
 
-    /**
-     * Is cheat option on? If there is an online game going on, always return false;
-     */
     /**
      * Is cheat option on, specify default
      */
@@ -693,8 +684,18 @@ public class PokerUtils extends EngineUtils {
      *            Number of choices.
      * @return Non-ordered combinations possible.
      */
+    /**
+     * Calculate n choose k (binomial coefficient). Delegates to
+     * {@link PokerLogicUtils#nChooseK(int, int)}.
+     *
+     * @param n
+     *            total items
+     * @param k
+     *            items to choose
+     * @return number of ways to choose k items from n
+     */
     public static long nChooseK(int n, int k) {
-        return factorial_[n].divide(factorial_[k]).divide(factorial_[n - k]).longValue();
+        return PokerLogicUtils.nChooseK(n, k);
     }
 
     /**

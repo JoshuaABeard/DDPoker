@@ -4,6 +4,12 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
+const ALIGN_CLASSES = {
+  left: 'text-left',
+  center: 'text-center',
+  right: 'text-right',
+} as const
+
 interface Column<T> {
   key: string
   header: string
@@ -17,6 +23,7 @@ interface DataTableProps<T> {
   currentUser?: string | null
   highlightField?: keyof T
   emptyMessage?: string
+  keyField?: keyof T
 }
 
 export function DataTable<T>({
@@ -25,6 +32,7 @@ export function DataTable<T>({
   currentUser,
   highlightField,
   emptyMessage = 'No data available',
+  keyField,
 }: DataTableProps<T>) {
   if (data.length === 0) {
     return (
@@ -42,7 +50,7 @@ export function DataTable<T>({
             {columns.map((column) => (
               <th
                 key={column.key}
-                className={`px-4 py-2 border border-white text-${column.align || 'left'}`}
+                className={`px-4 py-2 border border-white ${ALIGN_CLASSES[column.align || 'left']}`}
               >
                 {column.header}
               </th>
@@ -59,12 +67,13 @@ export function DataTable<T>({
                 ? 'bg-[var(--color-gray-light)]'
                 : 'bg-[var(--color-gray-medium)]'
 
+            const rowKey = keyField ? String(item[keyField]) : index
             return (
-              <tr key={index} className={`${rowClass} border border-white`}>
+              <tr key={rowKey} className={`${rowClass} border border-white`}>
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className={`px-4 py-2 border border-white text-${column.align || 'left'}`}
+                    className={`px-4 py-2 border border-white ${ALIGN_CLASSES[column.align || 'left']}`}
                   >
                     {column.render(item)}
                   </td>

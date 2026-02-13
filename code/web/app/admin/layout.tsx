@@ -4,6 +4,17 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Admin Section Layout
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+ *
+ * SECURITY NOTE: This layout provides client-side admin protection only.
+ *
+ * Due to localStorage-based authentication, this cannot be a server component
+ * with true server-side protection. The admin check happens AFTER page HTML
+ * is delivered to the client.
+ *
+ * CRITICAL: Backend Java servlets MUST independently verify admin authorization.
+ * This frontend check is for UX only - NOT a security boundary.
+ *
+ * See: .claude/docs/ADMIN-AUTH-ARCHITECTURE.md for details and recommendations.
  */
 
 import { useRequireAuth } from '@/lib/auth/useRequireAuth'
@@ -36,8 +47,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="admin-layout">
-      <Sidebar sections={adminSidebarData} title="Administration" variant="admin" />
-      <main className="admin-content">{children}</main>
+      <Sidebar sections={adminSidebarData} />
+      <div className="admin-content">{children}</div>
 
       <style jsx>{`
         .admin-layout {

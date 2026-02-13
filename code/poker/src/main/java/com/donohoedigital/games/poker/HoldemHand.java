@@ -2674,6 +2674,41 @@ public class HoldemHand implements DataMarshal {
             }
         }
 
+        // Award bounties if enabled and any players were eliminated by this pot
+        TournamentProfile profile = table_.getGame().getProfile();
+        if (profile != null && profile.isBountyEnabled()) {
+            int bountyAmount = profile.getBountyAmount();
+            if (bountyAmount > 0) {
+                // Check each player who was in this pot to see if they're now eliminated
+                for (int i = 0; i < nNum; i++) {
+                    player = getPlayerAt(i);
+                    if (player.isFolded())
+                        continue;
+                    if (!pot.isInPot(player))
+                        continue;
+
+                    // If this player lost and is now broke (eliminated), award bounty to winner(s)
+                    // Note: A player eliminated in the main pot won't be in side pots, so this
+                    // should only execute once per eliminated player across all pots in a hand
+                    if (!winners.contains(player) && player.getChipCount() == 0) {
+                        // Split bounty among winners, with remainder going to first winner
+                        int share = bountyAmount / nWinners;
+                        int remainder = bountyAmount % nWinners;
+
+                        for (int j = 0; j < nWinners; j++) {
+                            PokerPlayer winner = winners.get(j);
+                            int amount = share;
+                            // First winner gets the remainder (if any)
+                            if (j == 0) {
+                                amount += remainder;
+                            }
+                            winner.addBounty(amount);
+                        }
+                    }
+                }
+            }
+        }
+
         // verify we allocated the entire pot
         if (nTotalCheck != nPot) {
             logger.warn("Amount awarded ({}) != pot amount ({})", nTotalCheck, nPot);

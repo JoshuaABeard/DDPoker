@@ -3,9 +3,9 @@
  * DD Poker - Player Search Page
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-export const dynamic = 'force-static'
 
 import { Metadata } from 'next'
+import { Suspense } from 'react'
 import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
 import { FilterForm } from '@/components/filters/FilterForm'
@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   title: 'Player Search - DD Poker',
   description: 'Search for players and view their profiles',
 }
+
+export const dynamic = 'force-dynamic'
 
 interface PlayerSearchResult {
   playerName: string
@@ -37,7 +39,7 @@ async function searchPlayers(
   try {
     const backendPage = toBackendPage(page)
     const data = await searchApi.searchPlayers(name, backendPage, 50)
-    const mapped = data.map((p: any) => ({
+    const mapped = data.map((p) => ({
       playerName: p.playerName || p.name || 'Unknown',
       gamesPlayed: p.gamesPlayed || 0,
       lastPlayed: p.lastPlayed || p.lastSeen || new Date().toISOString(),
@@ -132,11 +134,13 @@ export default async function SearchPage({
           />
 
           {totalPages > 1 && (
-            <Pagination
-              currentPage={currentPage}
-              totalItems={totalItems}
-              itemsPerPage={50}
-            />
+            <Suspense fallback={<div className="text-center text-gray-500">Loading...</div>}>
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                itemsPerPage={50}
+              />
+            </Suspense>
           )}
         </>
       ) : (

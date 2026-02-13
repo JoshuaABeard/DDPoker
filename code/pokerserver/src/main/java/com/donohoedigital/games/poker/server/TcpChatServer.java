@@ -21,6 +21,7 @@ package com.donohoedigital.games.poker.server;
 
 import com.donohoedigital.base.ApplicationError;
 import com.donohoedigital.base.ErrorCodes;
+import com.donohoedigital.base.InputValidator;
 import com.donohoedigital.base.RateLimiter;
 import com.donohoedigital.base.Utils;
 import com.donohoedigital.comms.DMArrayList;
@@ -79,12 +80,20 @@ public class TcpChatServer extends GameServer {
     }
 
     /**
-     * Override init to set thread class if not configured
+     * Override init to set thread class if not configured.
+     *
+     * CLEANUP-BACKEND-3: Sets global system property as a side effect. Only sets if
+     * not already configured to minimize interference with other server instances.
+     * TODO: Refactor to pass thread class through constructor instead of system
+     * properties.
      */
     @Override
     public void init() {
-        // Set thread class to use our custom ChatSocketThread
-        System.setProperty("settings.server.thread.class", ChatSocketThread.class.getName());
+        // Set thread class to use our custom ChatSocketThread (only if not already set)
+        String existingThreadClass = System.getProperty("settings.server.thread.class");
+        if (existingThreadClass == null || existingThreadClass.isEmpty()) {
+            System.setProperty("settings.server.thread.class", ChatSocketThread.class.getName());
+        }
         super.init();
     }
 
@@ -187,8 +196,18 @@ public class TcpChatServer extends GameServer {
                     continue;
 
                 try {
-                    // Queue message for async send
-                    conn.writeQueue.offer(p2p);
+                    // DOS-1: Check if queue is full before offering
+                    if (!conn.writeQueue.offer(p2p)) {
+                        // Queue is full - slow consumer, disconnect to prevent memory exhaustion
+                        logger.warn(
+                                "Write queue full for " + conn.playerInfo.getName() + " - disconnecting slow client");
+                        try {
+                            conn.channel.close();
+                        } catch (IOException e) {
+                            logger.warn("Error closing slow client channel: " + Utils.formatExceptionText(e));
+                        }
+                        continue;
+                    }
 
                     // Try to send immediately if possible
                     sendQueuedMessages(conn);
@@ -394,19 +413,23 @@ public class TcpChatServer extends GameServer {
             OnlineProfile auth = new OnlineProfile(authData);
             String profileName = auth.getName();
 
-            // Get profile from database
-            OnlineProfile user = chatServer_.onlineProfileService.getOnlineProfileByName(profileName);
+            // Authenticate using service (uses bcrypt password hashing)
+            OnlineProfile authRequest = new OnlineProfile();
+            authRequest.setName(auth.getName());
+            authRequest.setPassword(auth.getPassword());
+
+            OnlineProfile user = chatServer_.onlineProfileService.authenticateOnlineProfile(authRequest);
+
+            // Verify profile exists and credentials match
+            if (user == null) {
+                sendError(channel, PropertyConfig.getMessage("msg.wanprofile.unavailable"));
+                return;
+            }
 
             // Check for ban via profile
             String banCheck = PokerServlet.banCheck(chatServer_.bannedKeyService, user);
             if (banCheck != null) {
                 sendError(channel, banCheck);
-                return;
-            }
-
-            // Verify profile exists and credentials match
-            if (user == null || !user.getPassword().equals(auth.getPassword())) {
-                sendError(channel, PropertyConfig.getMessage("msg.wanprofile.unavailable"));
                 return;
             }
 
@@ -478,20 +501,20 @@ public class TcpChatServer extends GameServer {
 
             logger.debug(playerName + " said \"" + chatText + "\"");
 
+            // SEC-BACKEND-6: Validate chat message length (1-500 chars)
+            if (!InputValidator.isValidChatMessage(chatText)) {
+                sendError(channel, "Chat message must be between 1 and 500 characters.");
+                return;
+            }
+
             // Rate limit check (30 messages per 60 seconds)
             if (!chatServer_.chatRateLimiter.allowRequest(playerName, 30, 60000)) {
                 sendError(channel, "Too many chat messages. Please slow down.");
                 return;
             }
 
-            // Handle debug commands
-            if (chatText.startsWith("./stats")) {
-                sendMessage(channel, chatServer_.getStatusHTML());
-                return;
-            } else if (chatText.startsWith("./dump")) {
-                sendMessage(channel, "<PRE>" + Utils.getAllStacktraces() + "</PRE>");
-                return;
-            }
+            // SEC-BACKEND-6: Sanitize chat text to prevent XSS
+            msg.setChat(Utils.encodeHTML(chatText));
 
             // Broadcast to others (not sender)
             chatServer_.broadcastMessage(msg, channel);
@@ -560,7 +583,8 @@ public class TcpChatServer extends GameServer {
         ChatConnection(SocketChannel channel, OnlinePlayerInfo playerInfo) {
             this.channel = channel;
             this.playerInfo = playerInfo;
-            this.writeQueue = new LinkedBlockingQueue<>();
+            // DOS-1: Limit queue capacity to prevent memory exhaustion
+            this.writeQueue = new LinkedBlockingQueue<>(100);
         }
     }
 }

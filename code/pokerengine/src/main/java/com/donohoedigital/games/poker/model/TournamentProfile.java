@@ -79,6 +79,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public static final int MAX_REBUY_CHIPS = TESTING(PokerConstants.TESTING_LEVELS) ? 10000000 : 1000000;
     public static final int MAX_BUY = TESTING(PokerConstants.TESTING_LEVELS) ? 10000000 : 1000000;
     public static final int MAX_BLINDANTE = 100000000;
+    public static final int MAX_BOUNTY = 10000;
     public static final int MAX_MINUTES = 120;
     public static final int MAX_HOUSE_PERC = 25;
     public static final int MAX_HOUSE_AMOUNT = 9999;
@@ -132,6 +133,8 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public static final String PARAM_ADDONCOST = "addoncost";
     public static final String PARAM_ADDONCHIPS = "addonchips";
     public static final String PARAM_ADDONLEVEL = "addonlevel";
+    public static final String PARAM_BOUNTY = "bounty";
+    public static final String PARAM_BOUNTY_AMOUNT = "bountyamount";
     public static final String PARAM_LASTLEVEL = "lastlevel";
     public static final String PARAM_MIX = "mix:";
     public static final String PARAM_REBUYEXPR = "rebuyexpr";
@@ -139,6 +142,10 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public static final String PARAM_MAXRAISES = "maxraises";
     public static final String PARAM_MAXRAISES_NONE_HEADSUP = "maxheadsup";
     public static final String PARAM_TIMEOUT = "timeout";
+    public static final String PARAM_TIMEOUT_PREFLOP = "timeoutpreflop";
+    public static final String PARAM_TIMEOUT_FLOP = "timeoutflop";
+    public static final String PARAM_TIMEOUT_TURN = "timeoutturn";
+    public static final String PARAM_TIMEOUT_RIVER = "timeoutriver";
     public static final String PARAM_FILL_COMPUTER = "fillai";
     public static final String PARAM_ALLOW_DASH = "allowdash";
     public static final String PARAM_ALLOW_ADVISOR = "allowadvisor";
@@ -163,6 +170,13 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public static final String PARAM_SCHEDULED_START = "scheduledstart";
     public static final String PARAM_START_TIME = "starttime";
     public static final String PARAM_MIN_PLAYERS_START = "minplayersstart";
+    public static final String PARAM_LEVEL_ADVANCE_MODE = "leveladvancemode";
+    public static final String PARAM_HANDS_PER_LEVEL = "handsperlevel";
+
+    // Hands per level constraints
+    public static final int MIN_HANDS_PER_LEVEL = 1;
+    public static final int MAX_HANDS_PER_LEVEL = 100;
+    public static final int DEFAULT_HANDS_PER_LEVEL = 10;
 
     /**
      * Empty constructor for loading from data
@@ -296,7 +310,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Get num online players - minimum of getNumPlayers() and MAX_ONLINE_PLAYERS
      */
     public int getMaxOnlinePlayers() {
-        return Math.min(getNumPlayers(), MAX_ONLINE_PLAYERS);
+        return constraints().getMaxOnlinePlayers(getNumPlayers());
     }
 
     /**
@@ -487,24 +501,146 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     }
 
     /**
+     * Clear all blind levels from the profile.
+     */
+    public void clearAllLevels() {
+        for (int i = 1; i <= MAX_LEVELS; i++) {
+            clearLevel(i);
+        }
+    }
+
+    /**
+     * Set blind level with ante, small blind, big blind, and minutes.
+     *
+     * @param nLevel
+     *            Level number (1-based)
+     * @param ante
+     *            Ante amount
+     * @param small
+     *            Small blind amount
+     * @param big
+     *            Big blind amount
+     * @param minutes
+     *            Minutes for this level
+     */
+    public void setLevel(int nLevel, int ante, int small, int big, int minutes) {
+        map_.setString(PARAM_ANTE + nLevel, String.valueOf(ante));
+        map_.setString(PARAM_SMALL + nLevel, String.valueOf(small));
+        map_.setString(PARAM_BIG + nLevel, String.valueOf(big));
+        map_.setString(PARAM_MINUTES + nLevel, String.valueOf(minutes));
+    }
+
+    /**
+     * Get BlindStructure wrapper for blind/ante access.
+     */
+    private BlindStructure blinds() {
+        return new BlindStructure(map_);
+    }
+
+    /**
+     * Get PayoutCalculator wrapper for payout calculations.
+     */
+    private PayoutCalculator payouts() {
+        return new PayoutCalculator(map_);
+    }
+
+    /**
+     * Get ProfileValidator wrapper for validation and normalization.
+     */
+    private ProfileValidator validator() {
+        return new ProfileValidator(map_, new ProfileValidator.ValidationCallbacks() {
+            @Override
+            public int getMaxPayoutSpots(int numPlayers) {
+                return constraints().getMaxPayoutSpots(numPlayers);
+            }
+
+            @Override
+            public int getMaxPayoutPercent(int numPlayers) {
+                return constraints().getMaxPayoutPercent(numPlayers);
+            }
+
+            @Override
+            public boolean isAllocAuto() {
+                return TournamentProfile.this.isAllocAuto();
+            }
+
+            @Override
+            public boolean isAllocFixed() {
+                return TournamentProfile.this.isAllocFixed();
+            }
+
+            @Override
+            public boolean isAllocPercent() {
+                return TournamentProfile.this.isAllocPercent();
+            }
+
+            @Override
+            public boolean isAllocSatellite() {
+                return TournamentProfile.this.isAllocSatellite();
+            }
+
+            @Override
+            public void setAutoSpots() {
+                TournamentProfile.this.setAutoSpots();
+            }
+
+            @Override
+            public void fixLevels() {
+                TournamentProfile.this.fixLevels();
+            }
+
+            @Override
+            public int getNumSpots() {
+                return TournamentProfile.this.getNumSpots();
+            }
+
+            @Override
+            public double getSpot(int position) {
+                return TournamentProfile.this.getSpot(position);
+            }
+        });
+    }
+
+    /**
+     * Validate tournament profile settings and return any warnings.
+     *
+     * <p>
+     * Checks for common configuration issues that don't prevent profile creation
+     * but may lead to unexpected behavior.
+     *
+     * @return ValidationResult containing any warnings found
+     * @see ProfileValidator#validateProfile()
+     */
+    public ValidationResult validateProfile() {
+        return validator().validateProfile();
+    }
+
+    /**
+     * Get ParameterConstraints wrapper for constraint calculations.
+     */
+    private ParameterConstraints constraints() {
+        return new ParameterConstraints(map_);
+    }
+
+    /**
      * Get small blind
      */
     public int getSmallBlind(int nLevel) {
-        return getAmount(PARAM_SMALL, nLevel);
+        return blinds().getSmallBlind(nLevel);
     }
 
     /**
      * Get big blind
      */
     public int getBigBlind(int nLevel) {
-        return getAmount(PARAM_BIG, nLevel);
+        return blinds().getBigBlind(nLevel);
     }
 
     /**
      * Get ante
      */
     public int getAnte(int nLevel) {
-        return getAmount(PARAM_ANTE, nLevel);
+        return blinds().getAnte(nLevel);
     }
 
     /**
@@ -512,10 +648,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * non-break level
      */
     public int getLastSmallBlind(int nLevel) {
-        while (isBreak(nLevel) && nLevel > 0) {
-            nLevel--;
-        }
-        return getSmallBlind(nLevel);
+        return blinds().getLastSmallBlind(nLevel);
     }
 
     /**
@@ -523,10 +656,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * non-break level
      */
     public int getLastBigBlind(int nLevel) {
-        while (isBreak(nLevel) && nLevel > 0) {
-            nLevel--;
-        }
-        return getBigBlind(nLevel);
+        return blinds().getLastBigBlind(nLevel);
     }
 
     /**
@@ -619,7 +749,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * is given level a break?
      */
     public boolean isBreak(int nLevel) {
-        return getAmountFromString(PARAM_ANTE + nLevel, true) == BREAK_ANTE_VALUE;
+        return blinds().isBreak(nLevel);
     }
 
     /**
@@ -637,15 +767,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Get max raises
      */
     public int getMaxRaises(int nNumWithCards, boolean isComputer) {
-        if (nNumWithCards <= 2 && isRaiseCapIgnoredHeadsUp()) {
-            // cap ai players at 4 so they don't raise each other indefinitely
-            if (isComputer)
-                return MAX_AI_RAISES;
-            return Integer.MAX_VALUE;
-        }
-
-        int nMax = (isComputer) ? MAX_AI_RAISES : MAX_MAX_RAISES;
-        return map_.getInteger(PARAM_MAXRAISES, 3, 1, nMax);
+        return constraints().getMaxRaises(nNumWithCards, isComputer, isRaiseCapIgnoredHeadsUp());
     }
 
     /**
@@ -653,41 +775,6 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      */
     public boolean isRaiseCapIgnoredHeadsUp() {
         return map_.getBoolean(PARAM_MAXRAISES_NONE_HEADSUP, true);
-    }
-
-    /**
-     * Get level amount
-     */
-    private int getAmount(String sName, int nLevel) {
-        ApplicationError.assertTrue(!isBreak(nLevel), "Attempting to get value for a break level", sName);
-        int nAmount;
-        int nLast = getLastLevel();
-        if (nLevel > nLast) {
-            while (isBreak(nLast) && nLast > 0) {
-                nLast--;
-                nLevel--;
-            }
-            nAmount = getAmountFromString(sName + nLast, false);
-            if (isDoubleAfterLastLevel()) {
-                // old clever way before we had to check for max int
-                // nAmount *= Math.pow(2, (nLevel - nLast));
-
-                // double until we go over MAX int
-                long l = nAmount;
-                for (int i = 0; i < (nLevel - nLast); i++) {
-                    l *= 2;
-                    if (l >= MAX_BLINDANTE) {
-                        l /= 2;
-                        break;
-                    }
-                }
-                nAmount = (int) l;
-
-            }
-            return round(nAmount);
-        } else {
-            return getAmountFromString(sName + nLevel, false);
-        }
     }
 
     /**
@@ -737,77 +824,14 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Update num players, adjust payout if necessary
      */
     public void updateNumPlayers(int nNumPlayers) {
-        boolean bChange = false;
-
-        int nType = getPayoutType();
-        if (nType == PokerConstants.PAYOUT_PERC) {
-            int spot = getPayoutPercent();
-            int max = getMaxPayoutPercent(nNumPlayers);
-            if (spot > max) {
-                bChange = true;
-                setPayoutPercent(max);
-            }
-        } else if (nType == PokerConstants.PAYOUT_SPOTS) {
-            int spot = getPayoutSpots();
-            int max = getMaxPayoutSpots(nNumPlayers);
-            if (spot > max) {
-                bChange = true;
-                setPayoutSpots(max);
-            }
-        } else // PokerConstants.PAYOUT_SATELLITE
-        {
-            // no need to update if num players change
-        }
-
-        // store new num players
-        setNumPlayers(nNumPlayers);
-
-        // if a change in payout spots occurred, update
-        if (bChange) {
-            if (isAllocFixed() || isAllocPercent()) {
-                setAlloc(PokerConstants.ALLOC_AUTO);
-            }
-        }
-
-        // if auto alloc, update spots
-        if (isAllocAuto()) {
-            setAutoSpots();
-        }
-
-        // fix all (html may have changed, remove old spots)
-        fixAll();
+        validator().updateNumPlayers(nNumPlayers);
     }
 
     /**
      * Return number of payout spots
      */
     public int getNumSpots() {
-        int nRet;
-        int nType = getPayoutType();
-        if (nType == PokerConstants.PAYOUT_PERC) {
-            int spot = getPayoutPercent();
-            nRet = (int) Math.ceil((((double) spot) / 100d) * (double) getNumPlayers());
-        } else if (nType == PokerConstants.PAYOUT_SPOTS) {
-            nRet = getPayoutSpots();
-        } else // PokerConstants.PAYOUT_SATELLITE
-        {
-            int nPrize = getPrizePool();
-            int nAmount = getSatellitePayout();
-            if (nAmount == 0) {
-                nRet = 1;
-            } else {
-                nRet = nPrize / nAmount;
-                int nExtra = nPrize % nAmount;
-                if (nExtra > 0)
-                    nRet++;
-            }
-        }
-
-        // always ensure 1 spot paid out
-        if (nRet == 0)
-            nRet = 1;
-
-        return nRet;
+        return payouts().getNumSpots();
     }
 
     /**
@@ -885,14 +909,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Get house take
      */
     public int getPoolAfterHouseTake(int nPool) {
-        int nNumPlayers = getNumPlayers();
-        if (getHouseCutType() == PokerConstants.HOUSE_PERC) {
-            nPool -= (((double) getHousePercent()) / 100d) * (double) nPool;
-        } else {
-            nPool -= getHouseAmount() * nNumPlayers;
-        }
-
-        return nPool;
+        return payouts().getPoolAfterHouseTake(nPool);
     }
 
     /**
@@ -934,195 +951,38 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Get max number of spots for given number of players
      */
     public int getMaxPayoutSpots(int nNumPlayers) {
-        int nMax = (int) (nNumPlayers * MAX_SPOTS_PERCENT);
-        nMax = Math.min(nMax, MAX_SPOTS);
-        if (nMax < MIN_SPOTS)
-            nMax = MIN_SPOTS;
-        if (nMax > nNumPlayers)
-            nMax = nNumPlayers;
-
-        return nMax;
+        return constraints().getMaxPayoutSpots(nNumPlayers);
     }
 
     /**
      * Get max percetage of spots
      */
     public int getMaxPayoutPercent(int nNumPlayers) {
-        int nMax = 0;
-        if (nNumPlayers > 0) {
-            nMax = (Math.min(MAX_SPOTS, getMaxPayoutSpots(nNumPlayers))) * 100 / nNumPlayers;
-        }
-
-        return nMax;
+        return constraints().getMaxPayoutPercent(nNumPlayers);
     }
 
     /**
-     * Set automatic spot percentages
+     * Set automatic spot percentages using Fibonacci-based payout distribution.
+     *
+     * <p>
+     * Delegates to {@link PayoutDistributionCalculator} for the complex algorithm,
+     * then writes the results back to the internal map.
+     *
+     * @see PayoutDistributionCalculator#calculatePayouts(int, int, int, int)
      */
     public void setAutoSpots() {
-        int nFinalSpots = 10; // top ten finishers use fibbo math
+        PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
-        int nPool = getPrizePool();
-        int nNumSpots = getNumSpots();
-        int nNonFinal = nNumSpots - nFinalSpots;
-        int amount[] = new int[nNumSpots];
+        // Calculate payout amounts using extracted algorithm
+        int[] amounts = calc.calculatePayouts(getNumSpots(), getPrizePool(), getTrueBuyin(), getRebuyCost(),
+                getNumPlayers(), getBuyinCost(), getPoolAfterHouseTake(getBuyinCost() * getNumPlayers()));
 
-        int nMin = getTrueBuyin();
-        // add a rebuy to min in actual tournament calculation
-        // as suggested by "Tex" - we do this if the
-        // pool has had enough rebuys to cover each spot
-        if (nPool >= (getPoolAfterHouseTake(getBuyinCost() * getNumPlayers()) + (nNumSpots * getRebuyCost()))) {
-            nMin += getRebuyCost();
-        }
-
-        int nAllocdPool = 0;
-        int nIndex = 0;
-        int nAlloc;
-
-        int nRound;
-        if (nMin < 100)
-            nRound = 1;
-        else if (nMin < 500)
-            nRound = 10;
-        else if (nMin <= 1000)
-            nRound = 100;
-        else if (nMin <= 5000)
-            nRound = 500;
-        else if (nMin <= 10000)
-            nRound = 1000;
-        else
-            nRound = 5000;
-
-        double inc = .5d;
-        double mult;
-        if (nNonFinal > 0) {
-            // estimate total pool - if non-final payouts are too
-            // high, lower increment paid until total is in desired
-            // range
-            int nMinBottom = (int) (nFinalSpots / MAX_SPOTS_PERCENT); // based on max percentange
-            // we won't be in here unless at 30+ players
-            double dLow = .01d;
-            double dHigh = .33d;
-            // range for non-final portion of the pool is 1% at 30 players to 33% at max
-            // players
-            double dRange = dLow
-                    + ((dHigh - dLow) * (getNumPlayers() - nMinBottom) / (double) (MAX_PLAYERS - nMinBottom));
-            double dMinRange = ((nMin * nNonFinal) / (double) nPool);
-            if (dRange < dMinRange)
-                dRange = dMinRange;
-
-            // logger.debug("Range: " + (dRange* 100));
-            while (true) {
-                int nFull = nNonFinal / PokerConstants.SEATS;
-                int nExtra = nNonFinal % PokerConstants.SEATS;
-                int nInc = (int) (nMin * inc);
-                if (nInc == 0)
-                    nInc = 1;
-                // this formula:
-                //
-                // #seats (10) * num full tables * min payout (buyin) +
-                // #seats (10) * sum (1 .. full) * incremental payout
-                double nEst = (PokerConstants.SEATS * nFull * nMin)
-                        + (PokerConstants.SEATS * ((nFull * (nFull + 1)) / 2) * nInc);
-                int nFinalInc = (int) (nMin * (inc * (nFull + 1)));
-
-                // add payout to extra players
-                nEst += nExtra * (nMin + nFinalInc);
-                if (nEst / nPool <= dRange) {
-                    break;
-                } else {
-                    inc -= .05d;
-                    if (inc <= 0) {
-                        inc = 0;
-                        break;
-                    }
-                }
-            }
-
-            mult = 1.0d + inc;
-
-            while (nNonFinal > 0) {
-                nAlloc = (int) (nMin * mult);
-                if ((nAlloc % nRound) > 0) {
-                    nAlloc = nAlloc - (nAlloc % nRound) + nRound;
-                }
-                amount[nIndex] = nAlloc;
-                nAllocdPool += nAlloc;
-                nIndex++;
-                nNonFinal--;
-
-                if (nIndex % PokerConstants.SEATS == 0 && nNonFinal > 0) {
-                    mult += inc;
-                }
-            }
-        } else {
-            mult = 1.0d;
-        }
-        int nLeft = nNumSpots - nIndex;
-        int sum;
-        int fibo[] = new int[Math.max(2, nNumSpots)];
-
-        // STEP 1: do fibonnaci sequence
-        fibo[0] = 2;
-        fibo[1] = 3;
-        sum = fibo[0] + fibo[1];
-        for (int i = 2; i < nLeft; i++) {
-            fibo[i] = fibo[i - 1] + fibo[i - 2];
-            sum += fibo[i];
-        }
-
-        // STEP 2: compute percentage
-        int nPoolLeft = nPool - nAllocdPool;
-        nMin *= mult;
-        int nSplit = nPoolLeft / nLeft;
-        if (nMin >= (nSplit * .8))
-            nMin = 0;
-        if (nMin == 0)
-            nRound = 1;
-
-        // logger.debug("min: " + nMin + " round: " + nRound + " nSplit: " + nSplit + "
-        // nPoolLeft: " + nPoolLeft + " nLeft: " + nLeft + " mult: " + mult);
-
-        if ((nMin % nRound) > 0) {
-            nMin = nMin - (nMin % nRound) + nRound;
-        }
-
-        // logger.debug("min: "+ nMin);
-
-        double perc;
-        for (int i = 0; i < nLeft - 1; i++) {
-            perc = (double) fibo[i] / (double) sum;
-            nAlloc = (int) (nPoolLeft * perc);
-
-            if (nAlloc < nMin) {
-                nAlloc = nMin;
-            } else {
-                if ((nAlloc % nRound) > 0) {
-                    nAlloc = nAlloc - (nAlloc % nRound) + nRound;
-                }
-            }
-
-            amount[nIndex] = nAlloc;
-            nAllocdPool += nAlloc;
-            nIndex++;
-
-        }
-        amount[nNumSpots - 1] = nPool - nAllocdPool;
-
-        // odd case where #1 is less than #2 - swap
-        if (nNumSpots > 1 && amount[nNumSpots - 1] < amount[nNumSpots - 2]) {
-            int swap = amount[nNumSpots - 1];
-            amount[nNumSpots - 1] = amount[nNumSpots - 2];
-            amount[nNumSpots - 2] = swap;
-        }
-
-        // set values
-        String text;
+        // Write amounts back to map (indexed from last place to first)
         for (int i = 0; i < MAX_SPOTS; i++) {
-            if (i >= nNumSpots) {
+            if (i >= amounts.length) {
                 map_.removeString(PARAM_SPOTAMOUNT + (i + 1));
             } else {
-                text = FORMAT_AMOUNT.format(new Object[]{amount[amount.length - i - 1]});
+                String text = FORMAT_AMOUNT.format(new Object[]{amounts[amounts.length - i - 1]});
                 map_.setString(PARAM_SPOTAMOUNT + (i + 1), text);
             }
         }
@@ -1136,6 +996,13 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     }
 
     /**
+     * Set value of payout spot (as percentage)
+     */
+    public void setSpot(int nNum, double percentage) {
+        map_.setString(PARAM_SPOTAMOUNT + nNum, String.valueOf(percentage));
+    }
+
+    /**
      * Get value of payout spot as string
      */
     public String getSpotAsString(int nNum) {
@@ -1146,51 +1013,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Get payout based on spot
      */
     public int getPayout(int nNum) {
-        // safety check
-        int nNumSpots = getNumSpots();
-        if (nNum < 0 || nNum > nNumSpots)
-            return 0; // BUG 315
-
-        // prize pool
-        int nPrizePool = getPrizePool();
-
-        // satellite alloc
-        if (isAllocSatellite()) {
-            int nSatSpot = getSatellitePayout();
-
-            // last spot gets any remaining amount
-            int nExtra = nPrizePool % nSatSpot;
-            if (nNum == nNumSpots && nExtra != 0) {
-                return nExtra;
-            }
-
-            if (nPrizePool < nSatSpot) {
-                nSatSpot = nPrizePool;
-            }
-
-            // TODO: possible minor bug: left over amounts if rebuy period continues after
-            // payouts started
-            return nSatSpot;
-        } else {
-            double spot = getSpot(nNum);
-            if (isAllocPercent()) {
-                // top spot gets prize pool less amount paid to other
-                // spots to account for rounding/fractional error
-                if (nNum == 1) {
-                    int nTotal = 0;
-                    for (int i = 2; i <= nNumSpots; i++) {
-                        nTotal += getPayout(i);
-                    }
-
-                    // TODO: possible minor bug: incorrect amounts if rebuy period continues after
-                    // payout started
-                    return nPrizePool - nTotal;
-                }
-                return (int) (nPrizePool * spot / 100);
-            } else {
-                return (int) spot;
-            }
-        }
+        return payouts().getPayout(nNum, getNumSpots(), getPrizePool());
     }
 
     /**
@@ -1418,10 +1241,17 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     }
 
     /**
+     * Set last rebuy level
+     */
+    public void setLastRebuyLevel(int n) {
+        map_.setInteger(PARAM_REBUY_UNTIL, n);
+    }
+
+    /**
      * Get max rebuys
      */
     public int getMaxRebuys() {
-        return map_.getInteger(PARAM_MAXREBUYS, 0, 0, MAX_REBUYS);
+        return constraints().getMaxRebuys();
     }
 
     /**
@@ -1460,10 +1290,189 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     }
 
     /**
+     * Get whether bounties are enabled
+     */
+    public boolean isBountyEnabled() {
+        return map_.getBoolean(PARAM_BOUNTY, false);
+    }
+
+    /**
+     * Set whether bounties are enabled
+     */
+    public void setBountyEnabled(boolean b) {
+        map_.setBoolean(PARAM_BOUNTY, b ? Boolean.TRUE : Boolean.FALSE);
+    }
+
+    /**
+     * Get bounty amount per knockout
+     */
+    public int getBountyAmount() {
+        return map_.getInteger(PARAM_BOUNTY_AMOUNT, 0, 0, MAX_BOUNTY);
+    }
+
+    /**
+     * Set bounty amount per knockout
+     *
+     * @param amount
+     *            Bounty amount (will be clamped to [0, MAX_BOUNTY])
+     */
+    public void setBountyAmount(int amount) {
+        // Clamp to valid range to match getter behavior
+        int clamped = Math.max(0, Math.min(amount, MAX_BOUNTY));
+        map_.setInteger(PARAM_BOUNTY_AMOUNT, clamped);
+    }
+
+    /**
+     * Get level advancement mode (time-based or hands-based)
+     *
+     * @return level advance mode
+     */
+    public LevelAdvanceMode getLevelAdvanceMode() {
+        String mode = map_.getString(PARAM_LEVEL_ADVANCE_MODE, LevelAdvanceMode.TIME.name());
+        return LevelAdvanceMode.fromString(mode);
+    }
+
+    /**
+     * Set level advancement mode
+     *
+     * @param mode
+     *            level advance mode (null defaults to TIME)
+     */
+    public void setLevelAdvanceMode(LevelAdvanceMode mode) {
+        if (mode == null) {
+            mode = LevelAdvanceMode.TIME;
+        }
+        map_.setString(PARAM_LEVEL_ADVANCE_MODE, mode.name());
+    }
+
+    /**
+     * Get number of hands to play before advancing to next level (when in HANDS
+     * mode)
+     *
+     * @return hands per level
+     */
+    public int getHandsPerLevel() {
+        return map_.getInteger(PARAM_HANDS_PER_LEVEL, DEFAULT_HANDS_PER_LEVEL, MIN_HANDS_PER_LEVEL,
+                MAX_HANDS_PER_LEVEL);
+    }
+
+    /**
+     * Set number of hands to play before advancing to next level
+     *
+     * @param hands
+     *            hands per level (will be clamped to [MIN_HANDS_PER_LEVEL,
+     *            MAX_HANDS_PER_LEVEL])
+     */
+    public void setHandsPerLevel(int hands) {
+        int clamped = Math.max(MIN_HANDS_PER_LEVEL, Math.min(hands, MAX_HANDS_PER_LEVEL));
+        map_.setInteger(PARAM_HANDS_PER_LEVEL, clamped);
+    }
+
+    /**
      * get online player timeout for acting
      */
     public int getTimeoutSeconds() {
         return map_.getInteger(PARAM_TIMEOUT, 30, MIN_TIMEOUT, MAX_TIMEOUT);
+    }
+
+    /**
+     * set online player timeout for acting
+     */
+    public void setTimeoutSeconds(int seconds) {
+        map_.setInteger(PARAM_TIMEOUT, seconds);
+    }
+
+    /**
+     * Get timeout for a specific betting round, falling back to base timeout if not
+     * set
+     */
+    public int getTimeoutForRound(int round) {
+        String param = getTimeoutParamForRound(round);
+        if (param == null) {
+            return getTimeoutSeconds(); // Fallback for ROUND_SHOWDOWN or invalid
+        }
+
+        int roundTimeout = map_.getInteger(param, 0, 0, MAX_TIMEOUT);
+        if (roundTimeout > 0 && roundTimeout < MIN_TIMEOUT) {
+            roundTimeout = MIN_TIMEOUT; // Enforce minimum when non-zero
+        }
+        return (roundTimeout > 0) ? roundTimeout : getTimeoutSeconds();
+    }
+
+    /**
+     * Get the parameter name for a specific round
+     */
+    private String getTimeoutParamForRound(int round) {
+        // Using raw constants to avoid module dependency on poker
+        // ROUND_PRE_FLOP = 0, ROUND_FLOP = 1, ROUND_TURN = 2, ROUND_RIVER = 3
+        switch (round) {
+            case 0 : // ROUND_PRE_FLOP
+                return PARAM_TIMEOUT_PREFLOP;
+            case 1 : // ROUND_FLOP
+                return PARAM_TIMEOUT_FLOP;
+            case 2 : // ROUND_TURN
+                return PARAM_TIMEOUT_TURN;
+            case 3 : // ROUND_RIVER
+                return PARAM_TIMEOUT_RIVER;
+            default :
+                return null;
+        }
+    }
+
+    /**
+     * get pre-flop timeout
+     */
+    public int getTimeoutPreflop() {
+        return map_.getInteger(PARAM_TIMEOUT_PREFLOP, 0, 0, MAX_TIMEOUT);
+    }
+
+    /**
+     * set pre-flop timeout
+     */
+    public void setTimeoutPreflop(int seconds) {
+        map_.setInteger(PARAM_TIMEOUT_PREFLOP, seconds);
+    }
+
+    /**
+     * get flop timeout
+     */
+    public int getTimeoutFlop() {
+        return map_.getInteger(PARAM_TIMEOUT_FLOP, 0, 0, MAX_TIMEOUT);
+    }
+
+    /**
+     * set flop timeout
+     */
+    public void setTimeoutFlop(int seconds) {
+        map_.setInteger(PARAM_TIMEOUT_FLOP, seconds);
+    }
+
+    /**
+     * get turn timeout
+     */
+    public int getTimeoutTurn() {
+        return map_.getInteger(PARAM_TIMEOUT_TURN, 0, 0, MAX_TIMEOUT);
+    }
+
+    /**
+     * set turn timeout
+     */
+    public void setTimeoutTurn(int seconds) {
+        map_.setInteger(PARAM_TIMEOUT_TURN, seconds);
+    }
+
+    /**
+     * get river timeout
+     */
+    public int getTimeoutRiver() {
+        return map_.getInteger(PARAM_TIMEOUT_RIVER, 0, 0, MAX_TIMEOUT);
+    }
+
+    /**
+     * set river timeout
+     */
+    public void setTimeoutRiver(int seconds) {
+        map_.setInteger(PARAM_TIMEOUT_RIVER, seconds);
     }
 
     /**
@@ -1477,240 +1486,103 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * get maximum number of observers
      */
     public int getMaxObservers() {
-        return map_.getInteger(PARAM_MAX_OBSERVERS, 5, 0, MAX_OBSERVERS);
+        return constraints().getMaxObservers();
     }
 
     /**
-     * Fix levels, eliminating missing rows, filling in missing blinds
+     * Validate and normalize tournament blind level structure.
+     *
+     * <p>
+     * Delegates to {@link LevelValidator} for complex validation logic: gap
+     * consolidation, blind fill-in, monotonic enforcement, ante bounds, rounding,
+     * break handling, and default propagation.
+     *
+     * @see LevelValidator#validateAndNormalize(Map, int, String)
      */
     public void fixLevels() {
-        int nLevel = 0;
-        int nNonBreakLevel = 0;
-        int nAnte, nSmall, nBig, nMinutes;
-        String sAnte, sSmall, sBig, sMinutes, sType;
-        String sSmallL = null, sBigL = null;
-        String a, s, b, m, g;
-        boolean bUpdate;
-        boolean bBreak;
+        LevelValidator validator = new LevelValidator();
 
+        // Extract raw level data from map
+        Map<String, String> rawLevelData = extractLevelStrings();
+
+        // Validate and normalize using extracted algorithm
+        List<LevelValidator.LevelData> normalizedLevels = validator.validateAndNormalize(rawLevelData,
+                getDefaultMinutesPerLevel(), getDefaultGameTypeString());
+
+        // Clear all existing level data
         for (int i = 1; i <= MAX_LEVELS; i++) {
-            bUpdate = false;
-            a = PARAM_ANTE + i;
-            s = PARAM_SMALL + i;
-            b = PARAM_BIG + i;
-            m = PARAM_MINUTES + i;
-            g = PARAM_GAMETYPE + i;
-            sAnte = map_.getString(a, "");
-            sSmall = map_.getString(s, "");
-            sBig = map_.getString(b, "");
-            sMinutes = map_.getString(m, "");
-            sType = map_.getString(g, "");
-            bBreak = false;
-
-            try {
-                nAnte = Integer.parseInt(sAnte);
-                if (nAnte == 0) {
-                    sAnte = "";
-                    map_.setString(a, "");
-                }
-                if (nAnte == BREAK_ANTE_VALUE)
-                    bBreak = true;
-            } catch (NumberFormatException ignored) {
-                sAnte = "";
-                map_.setString(a, "");
-            }
-            try {
-                nSmall = Integer.parseInt(sSmall);
-                if (nSmall == 0) {
-                    sSmall = "";
-                    map_.setString(s, "");
-                }
-            } catch (NumberFormatException ignored) {
-                sSmall = "";
-                map_.setString(s, "");
-            }
-            try {
-                nBig = Integer.parseInt(sBig);
-                if (nBig == 0) {
-                    sBig = "";
-                    map_.setString(b, "");
-                }
-            } catch (NumberFormatException ignored) {
-                sBig = "";
-                map_.setString(b, "");
-            }
-            try {
-                nMinutes = Integer.parseInt(sMinutes);
-                if (nMinutes == 0) {
-                    sMinutes = "";
-                    map_.setString(m, "");
-                }
-            } catch (NumberFormatException ignored) {
-                sMinutes = "";
-                map_.setString(m, "");
-            }
-
-            if (sAnte.length() == 0 && sSmall.length() == 0 && sBig.length() == 0)
-                continue;
-
-            // increment level (we have a valid level)
-            nLevel++;
-            if (!bBreak)
-                nNonBreakLevel++;
-
-            if (sBig.length() == 0 && sBigL != null && !bBreak) {
-                sBig = sBigL;
-                bUpdate = true;
-            }
-
-            if (sSmall.length() == 0 && sSmallL != null && !bBreak) {
-                sSmall = sSmallL;
-                bUpdate = true;
-            }
-
-            if (nLevel != i) {
-                map_.setString(PARAM_ANTE + nLevel, sAnte);
-                map_.setString(PARAM_MINUTES + nLevel, sMinutes);
-
-                if (bBreak) {
-                    map_.remove(PARAM_SMALL + nLevel);
-                    map_.remove(PARAM_BIG + nLevel);
-                    map_.remove(PARAM_GAMETYPE + nLevel);
-                } else {
-                    map_.setString(PARAM_SMALL + nLevel, sSmall);
-                    map_.setString(PARAM_BIG + nLevel, sBig);
-                    map_.setString(PARAM_GAMETYPE + nLevel, sType);
-                }
-                map_.setString(a, "");
-                map_.setString(s, "");
-                map_.setString(b, "");
-                map_.setString(m, "");
-                map_.setString(g, "");
-            } else if (bUpdate) {
-                map_.setString(s, sSmall);
-                map_.setString(b, sBig);
-            }
-
-            if (!bBreak) {
-                sSmallL = sSmall;
-                sBigL = sBig;
-            }
-        }
-
-        // if user defined no levels, set level 1
-        if (nNonBreakLevel == 0) {
-            nLevel++;
-            map_.setString(PARAM_SMALL + (nLevel), "1");
-            map_.setString(PARAM_BIG + (nLevel), "2");
-        }
-
-        // record (needed in getAnte() et al)
-        map_.setInteger(PARAM_LASTLEVEL, nLevel);
-
-        // now verify amounts and cleanup
-        int nAnteP = 0, nSmallP = 0, nBigP = 0;
-        int nFrac;
-        int minutesPerLevel = getDefaultMinutesPerLevel();
-        String sGameTypeDefault = getDefaultGameTypeString();
-        for (int i = 1; i <= nLevel; i++) {
-            if (isBreak(i)) {
-                // always leave minutes for break
-                // leave ante value as is
-                continue;
-            }
-
-            nAnte = getAnte(i);
-            nSmall = getSmallBlind(i);
-            nBig = getBigBlind(i);
-            sType = getGameTypeString(i);
-            nMinutes = getMinutes(i);
-            if (nMinutes == minutesPerLevel)
-                nMinutes = 0; // equals default, so don't save
-            if (sType.equals(sGameTypeDefault))
-                sType = null; // equals default, so don't save
-
-            if (i == 1) {
-                if (nSmall == 0) {
-                    if (nBig > 2)
-                        nSmall = nBig / 2;
-                    else
-                        nSmall = 1;
-                }
-                if (nBig == 0)
-                    nBig = nSmall * 2;
-            }
-
-            // adjust if non-zero
-            if (nAnte != 0 || nSmall != 0 || nBig != 0) {
-                // big should be bigger than small
-                if (nBig < nSmall)
-                    nBig = nSmall;
-
-                // validate it is >= last round
-                // (except ante, which can go back to 0)
-                if (i > 1) {
-                    if (nAnte < nAnteP && nAnte != 0)
-                        nAnte = nAnteP;
-                    if (nSmall < nSmallP)
-                        nSmall = nSmallP;
-                    if (nBig < nBigP)
-                        nBig = nBigP;
-                }
-
-                // ante should be at least 5% of small blind
-                // but not bigger than the small blind
-                nFrac = (int) (nSmall * .05f);
-                if (nAnte != 0) {
-                    if (nAnte < nFrac)
-                        nAnte = nFrac;
-                    if (nAnte > nSmall)
-                        nAnte = nSmall;
-                }
-
-                // round
-                nAnte = round(nAnte);
-                nSmall = round(nSmall);
-                nBig = round(nBig);
-            }
-
-            if (nMinutes > MAX_MINUTES)
-                nMinutes = MAX_MINUTES;
-
-            // update - set new value or remove completely if 0
-            if (nAnte > 0)
-                map_.setString(PARAM_ANTE + i, "" + nAnte);
-            else
-                map_.removeString(PARAM_ANTE + i);
-            if (nSmall > 0)
-                map_.setString(PARAM_SMALL + i, "" + nSmall);
-            else
-                map_.removeString(PARAM_SMALL + i);
-            if (nBig > 0)
-                map_.setString(PARAM_BIG + i, "" + nBig);
-            else
-                map_.removeString(PARAM_BIG + i);
-            if (nMinutes > 0)
-                map_.setString(PARAM_MINUTES + i, "" + nMinutes);
-            else
-                map_.removeString(PARAM_MINUTES + i);
-            if (sType != null)
-                map_.setString(PARAM_GAMETYPE + i, sType);
-            else
-                map_.removeString(PARAM_GAMETYPE + i);
-
-            nAnteP = (nAnte == 0 ? nAnteP : nAnte); // don't store ante if its set to 0 (keep at last value)
-            nSmallP = nSmall;
-            nBigP = nBig;
-        }
-
-        // cleanup remaining levels
-        for (int i = nLevel + 1; i <= MAX_LEVELS; i++) {
             map_.removeString(PARAM_ANTE + i);
             map_.removeString(PARAM_SMALL + i);
             map_.removeString(PARAM_BIG + i);
             map_.removeString(PARAM_MINUTES + i);
             map_.removeString(PARAM_GAMETYPE + i);
         }
+
+        // Write normalized levels back to map
+        for (LevelValidator.LevelData level : normalizedLevels) {
+            int levelNum = level.levelNum;
+
+            if (level.isBreak) {
+                // Break levels only have ante (=-1) and minutes
+                map_.setString(PARAM_ANTE + levelNum, "" + BREAK_ANTE_VALUE);
+                if (level.minutes > 0) {
+                    map_.setString(PARAM_MINUTES + levelNum, "" + level.minutes);
+                }
+            } else {
+                // Regular levels
+                if (level.ante > 0) {
+                    map_.setString(PARAM_ANTE + levelNum, "" + level.ante);
+                }
+                if (level.smallBlind > 0) {
+                    map_.setString(PARAM_SMALL + levelNum, "" + level.smallBlind);
+                }
+                if (level.bigBlind > 0) {
+                    map_.setString(PARAM_BIG + levelNum, "" + level.bigBlind);
+                }
+                if (level.minutes > 0) {
+                    map_.setString(PARAM_MINUTES + levelNum, "" + level.minutes);
+                }
+                if (level.gameType != null) {
+                    map_.setString(PARAM_GAMETYPE + levelNum, level.gameType);
+                }
+            }
+        }
+
+        // Record last level number
+        map_.setInteger(PARAM_LASTLEVEL, normalizedLevels.size());
+    }
+
+    /**
+     * Extract level strings from map for validation.
+     */
+    private Map<String, String> extractLevelStrings() {
+        Map<String, String> rawData = new HashMap<>();
+
+        for (int i = 1; i <= MAX_LEVELS; i++) {
+            String ante = map_.getString(PARAM_ANTE + i);
+            String small = map_.getString(PARAM_SMALL + i);
+            String big = map_.getString(PARAM_BIG + i);
+            String minutes = map_.getString(PARAM_MINUTES + i);
+            String gameType = map_.getString(PARAM_GAMETYPE + i);
+
+            if (ante != null && !ante.isEmpty()) {
+                rawData.put("ante" + i, ante);
+            }
+            if (small != null && !small.isEmpty()) {
+                rawData.put("small" + i, small);
+            }
+            if (big != null && !big.isEmpty()) {
+                rawData.put("big" + i, big);
+            }
+            if (minutes != null && !minutes.isEmpty()) {
+                rawData.put("minutes" + i, minutes);
+            }
+            if (gameType != null && !gameType.isEmpty()) {
+                rawData.put("gametype" + i, gameType);
+            }
+        }
+
+        return rawData;
     }
 
     /**
@@ -1745,25 +1617,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * Clean up alloc entries
      */
     private void fixAllocs() {
-        int nNumSpots = getNumSpots();
-        if (isAllocSatellite())
-            nNumSpots = 1; // only need 1 entry for satellite
-        double d;
-        String s;
-        for (int i = 1; i <= nNumSpots; i++) {
-            d = getSpot(i);
-            if (isAllocPercent()) {
-                s = FORMAT_PERC.format(new Object[]{d});
-            } else {
-                s = FORMAT_AMOUNT.format(new Object[]{(int) d});
-            }
-            map_.setString(PARAM_SPOTAMOUNT + i, s);
-        }
-
-        // BUG 315 - clear out other spots
-        for (int i = nNumSpots + 1; i <= MAX_SPOTS; i++) {
-            map_.removeString(PARAM_SPOTAMOUNT + i);
-        }
+        validator().fixAllocs();
     }
 
     /**
@@ -1848,13 +1702,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      * fixstuff
      */
     public void fixAll() {
-        fixLevels();
-        fixAllocs();
-
-        // rebuys if < 0, change to <=
-        if (getRebuyExpressionType() == PokerConstants.REBUY_LT && getRebuyChipCount() == 0) {
-            setRebuyExpression(PokerConstants.REBUY_LTE);
-        }
+        validator().fixAll();
     }
 
     /**
@@ -1916,57 +1764,69 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     ////
 
     public void encodeXML(SimpleXMLEncoder encoder) {
-        encoder.setCurrentObject(this, "tournamentFormat");
-        encoder.addAllTagsExcept("map", "fileNum", "file", "dir", "fileName", "lastModified", "createDate",
-                "updateDate", "invitees", "players");
+        serializer().encodeXML(encoder, this);
+    }
 
-        // levels
-        encoder.setCurrentObject("levels");
-        for (int i = 1; i <= getLastLevel(); i++) {
-            encoder.setCurrentObject("level");
-
-            encoder.addTag("number", i);
-            encoder.addTag("minutes", getMinutes(i));
-
-            if (isBreak(i)) {
-                encoder.addTag("break", true);
-            } else {
-                encoder.addTag("gameType", getGameTypeString(i));
-                encoder.addTag("ante", getAnte(i));
-                encoder.addTag("small", getBigBlind(i));
-                encoder.addTag("big", getSmallBlind(i));
+    /**
+     * Helper method to create ProfileXMLSerializer with this profile as data
+     * source.
+     */
+    private ProfileXMLSerializer serializer() {
+        return new ProfileXMLSerializer(new ProfileXMLSerializer.ProfileDataProvider() {
+            @Override
+            public int getLastLevel() {
+                return TournamentProfile.this.getLastLevel();
             }
 
-            encoder.finishCurrentObject();
-        }
-        encoder.finishCurrentObject(); // levels
+            @Override
+            public int getMinutes(int level) {
+                return TournamentProfile.this.getMinutes(level);
+            }
 
-        // payouts
-        encoder.setCurrentObject("prizes");
-        for (int i = 1; i <= getNumSpots(); i++) {
-            encoder.setCurrentObject("prize");
+            @Override
+            public boolean isBreak(int level) {
+                return TournamentProfile.this.isBreak(level);
+            }
 
-            encoder.addTag("place", i);
-            encoder.addTag("amount", getSpotAsString(i));
+            @Override
+            public String getGameTypeString(int level) {
+                return TournamentProfile.this.getGameTypeString(level);
+            }
 
-            encoder.finishCurrentObject(); // prize
-        }
-        encoder.finishCurrentObject(); // prizes
+            @Override
+            public int getAnte(int level) {
+                return TournamentProfile.this.getAnte(level);
+            }
 
-        // invitees
-        encoder.setCurrentObject("invitees");
-        for (AbstractPlayerList.PlayerInfo player : getInvitees()) {
-            encoder.addTag("player", player.getName());
-        }
-        encoder.finishCurrentObject(); // invitees
+            @Override
+            public int getBigBlind(int level) {
+                return TournamentProfile.this.getBigBlind(level);
+            }
 
-        // players
-        encoder.setCurrentObject("players");
-        for (String player : getPlayers()) {
-            encoder.addTag("player", player);
-        }
-        encoder.finishCurrentObject(); // players
+            @Override
+            public int getSmallBlind(int level) {
+                return TournamentProfile.this.getSmallBlind(level);
+            }
 
-        encoder.finishCurrentObject(); // tournament
+            @Override
+            public int getNumSpots() {
+                return TournamentProfile.this.getNumSpots();
+            }
+
+            @Override
+            public String getSpotAsString(int spot) {
+                return TournamentProfile.this.getSpotAsString(spot);
+            }
+
+            @Override
+            public List<AbstractPlayerList.PlayerInfo> getInvitees() {
+                return TournamentProfile.this.getInvitees();
+            }
+
+            @Override
+            public List<String> getPlayers() {
+                return TournamentProfile.this.getPlayers();
+            }
+        });
     }
 }

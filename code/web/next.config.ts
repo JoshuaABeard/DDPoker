@@ -1,22 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Static export configuration for Docker deployment
-  output: 'export',
+  // Enable server-side rendering for dynamic data fetching
+  // (Static export disabled to support API integration with fresh data)
 
-  // Add trailing slashes to URLs for static hosting compatibility
-  trailingSlash: true,
-
-  // Disable image optimization (not available in static export)
+  // Disable image optimization for development
   images: {
     unoptimized: true,
   },
-
-  // Base path (empty for root deployment)
-  basePath: '',
-
-  // Asset prefix (empty for same-origin serving)
-  assetPrefix: '',
 };
 
 export default nextConfig;

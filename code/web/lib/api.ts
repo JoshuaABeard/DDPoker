@@ -9,16 +9,21 @@ import type {
   ApiError,
   ApiResponse,
   AuthResponse,
+  BannedKeyDto,
   Game,
   GameDetails,
   GameListResponse,
   HostSummary,
   LeaderboardEntry,
+  LeaderboardEntryDto,
   LoginRequest,
+  OnlineProfileDto,
   PaginatedResponse,
   PlayerProfile,
+  PlayerSearchDto,
   ProfileAlias,
   RegisterRequest,
+  TournamentHistoryDto,
   TournamentHistoryEntry,
 } from './types'
 
@@ -110,9 +115,9 @@ export const authApi = {
   /**
    * Get the current user's profile
    */
-  getCurrentUser: async (): Promise<PlayerProfile | null> => {
+  getCurrentUser: async (): Promise<AuthResponse | null> => {
     try {
-      const response = await apiFetch<PlayerProfile>('/api/auth/me')
+      const response = await apiFetch<AuthResponse>('/api/auth/me')
       return response.data
     } catch (error) {
       console.error('Failed to get current user:', error)
@@ -263,7 +268,7 @@ export const leaderboardApi = {
       to?: string
       games?: number
     }
-  ): Promise<{ entries: any[]; total: number }> => {
+  ): Promise<{ entries: LeaderboardEntryDto[]; total: number }> => {
     const params = new URLSearchParams({
       mode,
       page: page.toString(),
@@ -273,7 +278,7 @@ export const leaderboardApi = {
     if (filters?.from) params.append('from', filters.from)
     if (filters?.to) params.append('to', filters.to)
     if (filters?.games) params.append('gamesLimit', filters.games.toString())
-    const response = await apiFetch<{ entries: any[]; total: number }>(
+    const response = await apiFetch<{ entries: LeaderboardEntryDto[]; total: number }>(
       `/api/leaderboard?${params}`
     )
     return response.data
@@ -301,7 +306,7 @@ export const tournamentApi = {
     pageSize = 50,
     from?: string,
     to?: string
-  ): Promise<{ history: any[]; total: number }> => {
+  ): Promise<{ history: TournamentHistoryDto[]; total: number }> => {
     const params = new URLSearchParams({
       name: playerName,
       page: page.toString(),
@@ -309,7 +314,9 @@ export const tournamentApi = {
     })
     if (from) params.append('from', from)
     if (to) params.append('to', to)
-    const response = await apiFetch<{ history: any[]; total: number }>(`/api/history?${params}`)
+    const response = await apiFetch<{ history: TournamentHistoryDto[]; total: number }>(
+      `/api/history?${params}`
+    )
     return response.data
   },
 
@@ -329,13 +336,13 @@ export const searchApi = {
   /**
    * Search for players by name
    */
-  searchPlayers: async (name: string, page = 0, pageSize = 50): Promise<any[]> => {
+  searchPlayers: async (name: string, page = 0, pageSize = 50): Promise<PlayerSearchDto[]> => {
     const params = new URLSearchParams({
       name,
       page: page.toString(),
       pageSize: pageSize.toString(),
     })
-    const response = await apiFetch<any[]>(`/api/search?${params}`)
+    const response = await apiFetch<PlayerSearchDto[]>(`/api/search?${params}`)
     return response.data
   },
 }
@@ -377,14 +384,14 @@ export const adminApi = {
     email?: string
     page?: number
     pageSize?: number
-  }): Promise<{ profiles: any[]; total: number }> => {
+  }): Promise<{ profiles: OnlineProfileDto[]; total: number }> => {
     const params = new URLSearchParams()
     if (filters?.name) params.append('name', filters.name)
     if (filters?.email) params.append('email', filters.email)
     if (filters?.page !== undefined) params.append('page', filters.page.toString())
     if (filters?.pageSize) params.append('pageSize', filters.pageSize.toString())
 
-    const response = await apiFetch<{ profiles: any[]; total: number }>(
+    const response = await apiFetch<{ profiles: OnlineProfileDto[]; total: number }>(
       `/api/admin/profiles?${params}`
     )
     return response.data
@@ -393,8 +400,8 @@ export const adminApi = {
   /**
    * Get banned keys list (unpaginated - backend returns all bans)
    */
-  getBans: async (): Promise<{ bans: any[]; total: number }> => {
-    const response = await apiFetch<any[]>('/api/admin/bans')
+  getBans: async (): Promise<{ bans: BannedKeyDto[]; total: number }> => {
+    const response = await apiFetch<BannedKeyDto[]>('/api/admin/bans')
     return { bans: response.data, total: response.data.length }
   },
 
@@ -406,8 +413,8 @@ export const adminApi = {
     key: string
     comment?: string
     until?: string
-  }): Promise<any> => {
-    const response = await apiFetch<any>('/api/admin/bans', {
+  }): Promise<BannedKeyDto> => {
+    const response = await apiFetch<BannedKeyDto>('/api/admin/bans', {
       method: 'POST',
       body: JSON.stringify(banData),
     })

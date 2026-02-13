@@ -3,10 +3,10 @@
  * DD Poker - Tournament History Page
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-export const dynamic = 'force-static'
 
 import { Metadata } from 'next'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
 import { FilterForm } from '@/components/filters/FilterForm'
@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   title: 'Tournament History - DD Poker',
   description: 'View tournament history and statistics',
 }
+
+export const dynamic = 'force-dynamic'
 
 interface TournamentEntry {
   id: number
@@ -60,7 +62,7 @@ async function getTournamentHistory(
     const mapped = history.map(mapTournamentEntry)
     // LIMITATION: Stats calculated from current page only, not full history
     // TODO: Backend should return aggregate stats, or fetch all history (page=0, pageSize=total)
-    const stats = calculateTournamentStats(mapped)
+    const stats = calculateTournamentStats(history)
     const result = buildPaginationResult(mapped, total, page, 50)
     return {
       entries: result.data,
@@ -210,11 +212,13 @@ export default async function TournamentHistoryPage({
       />
 
       {totalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalItems={totalItems}
-          itemsPerPage={50}
-        />
+        <Suspense fallback={<div className="text-center text-gray-500">Loading...</div>}>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalItems}
+            itemsPerPage={50}
+          />
+        </Suspense>
       )}
     </div>
   )

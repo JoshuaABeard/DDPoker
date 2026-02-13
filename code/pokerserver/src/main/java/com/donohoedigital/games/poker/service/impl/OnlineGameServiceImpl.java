@@ -67,7 +67,7 @@ public class OnlineGameServiceImpl implements OnlineGameService {
     }
 
     @Autowired
-    public void setOnlineGameDao(OnlineProfileDao dao) {
+    public void setOnlineProfileDao(OnlineProfileDao dao) {
         profileDao = dao;
     }
 
@@ -90,19 +90,18 @@ public class OnlineGameServiceImpl implements OnlineGameService {
 
     @Transactional(readOnly = true)
     public OnlineGameList getOnlineGamesAndHistoriesForDay(Integer[] modes, Date begin, Date end) {
-        OnlineGameList list = gameDao.getByMode(null, 0, 10000, modes, null, begin, end, false);
-
-        // make sure histories are loaded (need to invoke a method on them to be sure)
-        for (OnlineGame game : list) {
-            game.getHistories().size();
-        }
-
-        return list;
+        // PERF-1: Use JOIN FETCH query to avoid N+1 problem
+        return gameDao.getByModeWithHistories(modes, begin, end);
     }
 
     @Transactional(readOnly = true)
     public OnlineGame getOnlineGameById(Long id) {
         return gameDao.get(id);
+    }
+
+    @Transactional(readOnly = true)
+    public OnlineGame getOnlineGameByUrl(String url) {
+        return gameDao.getByUrl(url);
     }
 
     @Transactional(readOnly = true)

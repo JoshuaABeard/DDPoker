@@ -30,40 +30,37 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.server;
+package com.donohoedigital.games.poker.dao;
 
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-import org.springframework.transaction.annotation.Transactional;
+import com.donohoedigital.db.dao.BaseDao;
+import com.donohoedigital.games.poker.model.PasswordResetToken;
 
 /**
- * Test dummy profile behavior (currently disabled due to caching issues).
+ * PasswordResetToken DAO
  */
-@Tag("slow")
-@SpringJUnitConfig(locations = {"/app-context-pokerservertests.xml"})
-@Transactional
-class OnlineProfileServiceDummyTest {
+public interface PasswordResetTokenDao extends BaseDao<PasswordResetToken, Long> {
     /**
-     * Do in own test since rollback invalidates the dummy's (and they aren't
-     * reloaded since cached)
+     * Find a password reset token by its token string
+     *
+     * @param token
+     *            The token string
+     * @return The PasswordResetToken, or null if not found
      */
-    @SuppressWarnings("CommentedOutCode")
-    @Test
-    @Rollback
-    void should_LoadDummyProfiles_When_Requested() {
-        // FIX: doesn't work when run with other tests due to caching issue. Figure this
-        // out!
-        // OnlineProfile aibest =
-        // service.getOnlineProfileByName(OnlineProfile.Dummy.AI_BEST.getName());
-        // OnlineProfile airest =
-        // service.getOnlineProfileByName(OnlineProfile.Dummy.AI_REST.getName());
-        // OnlineProfile human =
-        // service.getOnlineProfileByName(OnlineProfile.Dummy.HUMAN.getName());
-        //
-        // assertThat(aibest).isNotNull();
-        // assertThat(airest).isNotNull();
-        // assertThat(human).isNotNull();
-    }
+    PasswordResetToken findByToken(String token);
+
+    /**
+     * Delete all expired and used tokens (cleanup)
+     *
+     * @return Number of tokens deleted
+     */
+    int deleteExpiredAndUsedTokens();
+
+    /**
+     * Invalidate (mark as used) all existing tokens for a given profile
+     *
+     * @param profileId
+     *            The profile ID
+     * @return Number of tokens invalidated
+     */
+    int invalidateTokensForProfile(Long profileId);
 }

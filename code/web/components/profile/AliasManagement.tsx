@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react'
+import { Dialog } from '@/components/ui/Dialog'
 
 interface Alias {
   name: string
@@ -19,14 +20,19 @@ interface AliasManagementProps {
 }
 
 export function AliasManagement({ aliases }: AliasManagementProps) {
-  const [retireAlias, setRetireAlias] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [dialogState, setDialogState] = useState<{
+    isOpen: boolean
+    aliasName: string
+  }>({ isOpen: false, aliasName: '' })
 
   const handleRetire = async (aliasName: string) => {
-    if (!confirm(`Are you sure you want to retire the alias "${aliasName}"? This cannot be undone.`)) {
-      return
-    }
+    setDialogState({ isOpen: true, aliasName })
+  }
+
+  const confirmRetire = async () => {
+    const aliasName = dialogState.aliasName
 
     setIsLoading(true)
     setMessage(null)
@@ -44,7 +50,6 @@ export function AliasManagement({ aliases }: AliasManagementProps) {
       })
     } finally {
       setIsLoading(false)
-      setRetireAlias(null)
     }
   }
 
@@ -62,6 +67,7 @@ export function AliasManagement({ aliases }: AliasManagementProps) {
               ? 'bg-green-100 border border-green-400 text-green-700'
               : 'bg-red-100 border border-red-400 text-red-700'
           }`}
+          role={message.type === 'success' ? 'status' : 'alert'}
         >
           {message.text}
         </div>
@@ -112,6 +118,17 @@ export function AliasManagement({ aliases }: AliasManagementProps) {
           </div>
         </div>
       )}
+
+      <Dialog
+        isOpen={dialogState.isOpen}
+        onClose={() => setDialogState({ isOpen: false, aliasName: '' })}
+        onConfirm={confirmRetire}
+        title="Retire Alias"
+        message={`Are you sure you want to retire the alias "${dialogState.aliasName}"? This cannot be undone.`}
+        type="confirm"
+        confirmText="Retire"
+        cancelText="Cancel"
+      />
     </div>
   )
 }

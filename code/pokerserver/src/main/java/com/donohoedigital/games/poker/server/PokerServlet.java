@@ -51,6 +51,7 @@ import com.donohoedigital.games.comms.EngineMessage;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.model.OnlineGame;
 import com.donohoedigital.games.poker.model.OnlineProfile;
+import com.donohoedigital.games.poker.model.PasswordResetToken;
 import com.donohoedigital.games.poker.model.TournamentHistory;
 import com.donohoedigital.games.poker.model.util.OnlineGameList;
 import com.donohoedigital.games.poker.model.util.TournamentHistoryList;
@@ -219,6 +220,7 @@ public class PokerServlet extends EngineServlet {
             case OnlineMessage.CAT_WAN_PROFILE_SEND_PASSWORD :
             case OnlineMessage.CAT_WAN_PROFILE_CHANGE_PASSWORD :
             case OnlineMessage.CAT_WAN_PROFILE_SYNC_PASSWORD :
+            case OnlineMessage.CAT_WAN_PROFILE_COMPLETE_RESET :
                 return true;
             default :
                 return false;
@@ -256,8 +258,6 @@ public class PokerServlet extends EngineServlet {
                 return updateWanGame(ddreceived, true);
 
             case OnlineMessage.CAT_WAN_GAME_STOP :
-                return endWanGame(ddreceived);
-
             case OnlineMessage.CAT_WAN_GAME_END :
                 return endWanGame(ddreceived);
 
@@ -277,13 +277,16 @@ public class PokerServlet extends EngineServlet {
                 return validateProfile(ddreceived);
 
             case OnlineMessage.CAT_WAN_PROFILE_SEND_PASSWORD :
-                return sendOnlineProfilePassword(ddreceived);
+                return sendOnlineProfilePassword(request, ddreceived);
 
             case OnlineMessage.CAT_WAN_PROFILE_CHANGE_PASSWORD :
                 return changeOnlineProfilePassword(ddreceived);
 
             case OnlineMessage.CAT_WAN_PROFILE_SYNC_PASSWORD :
                 return syncOnlineProfilePassword(ddreceived);
+
+            case OnlineMessage.CAT_WAN_PROFILE_COMPLETE_RESET :
+                return completePasswordReset(request, ddreceived);
 
             default :
                 throw new ApplicationError(ErrorCodes.ERROR_UNSUPPORTED,
@@ -321,6 +324,7 @@ public class PokerServlet extends EngineServlet {
             case OnlineMessage.CAT_WAN_PROFILE_SEND_PASSWORD :
             case OnlineMessage.CAT_WAN_PROFILE_CHANGE_PASSWORD :
             case OnlineMessage.CAT_WAN_PROFILE_SYNC_PASSWORD :
+            case OnlineMessage.CAT_WAN_PROFILE_COMPLETE_RESET :
                 return true;
             default :
                 return false;
@@ -334,13 +338,6 @@ public class PokerServlet extends EngineServlet {
     protected boolean isResetClientOnBadKey() {
         return false;
     }
-
-    /**
-     * DESIGN NOTE: I thought about validating this for DD Poker 3, but decided not
-     * to bother. Our auth logic is kind of a pain and needs a redesign. We should
-     * always be sending down the current player (like we do with version/key). FIX:
-     * make this better in 3.0++
-     */
 
     /**
      * Test connection to the provided connect URL
@@ -415,16 +412,6 @@ public class PokerServlet extends EngineServlet {
         return ret;
     }
 
-    /***
-     * DESIGN NOTE TO FUTURE FORGETFUL DOUG:
-     *
-     * Added host post auth in DD Poker 3. It is slightly different than what
-     * happens in getWanGames. In this case, we just refuse to post and return a
-     * message. In getWanGames, we return the list and then actually disable the
-     * client profile (in FindGames.getWanList()), forcing them to re-enter a
-     * password.
-     */
-
     /**
      * Add a WAN game to the list. If one already exists for the given key/URL
      * combination, then it is replaced with the given game. This request should
@@ -453,11 +440,6 @@ public class PokerServlet extends EngineServlet {
             return resMsg.getData();
         }
 
-        // ban check
-        resMsg = banCheck(profile);
-        if (resMsg != null)
-            return resMsg.getData();
-
         // Prior to version 3, we didn't send down auth credentials, so just get the
         // profile (we make sure it is activated below)
         boolean before3 = version.isBefore(PokerConstants.VERSION_HOST_CHECK_ADDED);
@@ -477,6 +459,12 @@ public class PokerServlet extends EngineServlet {
             resMsg.setApplicationErrorMessage(PropertyConfig
                     .getStringProperty(before3 ? "msg.wanprofile.missing" : "msg.wanprofile.authfailed3"));
         } else {
+            // BUG-1: Ban check must happen after profile is resolved (was checking null
+            // profile)
+            resMsg = banCheck(profile);
+            if (resMsg != null)
+                return resMsg.getData();
+
             onlineGameService.saveOnlineGame(game);
 
             // Send an empty response.
@@ -491,7 +479,36 @@ public class PokerServlet extends EngineServlet {
      */
     private DDMessage updateWanGame(DDMessage ddreceived, boolean setStartDate) {
         // Wrap everything in useable interfaces.
-        OnlineGame game = new OnlineGame(new OnlineMessage(ddreceived).getWanGame());
+        OnlineMessage reqMsg = new OnlineMessage(ddreceived);
+        OnlineGame game = new OnlineGame(reqMsg.getWanGame());
+        OnlineMessage resMsg = null;
+
+        // AUTH-1: Authenticate user
+        OnlineProfile auth = new OnlineProfile(reqMsg.getWanAuth());
+        OnlineProfile profile = onlineProfileService.authenticateOnlineProfile(auth);
+
+        if (profile == null) {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Authentication failed");
+            return resMsg.getData();
+        }
+
+        // AUTH-1: Get game from database (don't trust client data for host
+        // verification)
+        OnlineGame dbGame = onlineGameService.getOnlineGameByUrl(game.getUrl());
+
+        if (dbGame == null) {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Game not found");
+            return resMsg.getData();
+        }
+
+        // AUTH-1: Verify authenticated user is the game host
+        if (!profile.getName().equals(dbGame.getHostPlayer())) {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Only the game host can update this game");
+            return resMsg.getData();
+        }
 
         // don't rely on client date
         if (setStartDate)
@@ -502,11 +519,11 @@ public class PokerServlet extends EngineServlet {
 
         // game could be null because of bug in OnlineManager.processQuit()
         if (game == null) {
-            // logger.info("Did not update: " + ddreceived);
+            // Null is expected in this case - see OnlineGameServiceImpl.updateOnlineGame()
         }
 
         // Send an empty response.
-        OnlineMessage resMsg = new OnlineMessage(ddreceived.getCategory());
+        resMsg = new OnlineMessage(ddreceived.getCategory());
         return resMsg.getData();
     }
 
@@ -519,6 +536,34 @@ public class PokerServlet extends EngineServlet {
         // Wrap everything in useable interfaces.
         OnlineMessage reqMsg = new OnlineMessage(ddreceived);
         OnlineGame game = new OnlineGame(reqMsg.getWanGame());
+        OnlineMessage resMsg = null;
+
+        // AUTH-1: Authenticate user
+        OnlineProfile auth = new OnlineProfile(reqMsg.getWanAuth());
+        OnlineProfile profile = onlineProfileService.authenticateOnlineProfile(auth);
+
+        if (profile == null) {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Authentication failed");
+            return resMsg.getData();
+        }
+
+        // AUTH-1: Get game from database (don't trust client data for host
+        // verification)
+        OnlineGame dbGame = onlineGameService.getOnlineGameByUrl(game.getUrl());
+
+        if (dbGame == null) {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Game not found");
+            return resMsg.getData();
+        }
+
+        // AUTH-1: Verify authenticated user is the game host
+        if (!profile.getName().equals(dbGame.getHostPlayer())) {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Only the game host can end this game");
+            return resMsg.getData();
+        }
 
         // don't rely on date sent from client
         game.setEndDate(new Date());
@@ -529,15 +574,13 @@ public class PokerServlet extends EngineServlet {
 
         // if game is null, then we didn't save, log an error so we know how often this
         // happens
-        // FIX: make this end-game stuff more robust. Should send down everything from
-        // the client so we can deal with this
         if (game == null) {
             logger.error("Unable to save ended game because it didn't exist in database: " + game + ";   histories:  "
                     + histories);
         }
 
         // Send an empty response.
-        OnlineMessage resMsg = new OnlineMessage(ddreceived.getCategory());
+        resMsg = new OnlineMessage(ddreceived.getCategory());
         return resMsg.getData();
     }
 
@@ -547,13 +590,42 @@ public class PokerServlet extends EngineServlet {
      */
     private DDMessage deleteWanGame(DDMessage ddreceived) {
         // Wrap everything in useable interfaces.
-        OnlineGame game = new OnlineGame(new OnlineMessage(ddreceived).getWanGame());
+        OnlineMessage reqMsg = new OnlineMessage(ddreceived);
+        OnlineGame game = new OnlineGame(reqMsg.getWanGame());
+        OnlineMessage resMsg = null;
+
+        // AUTH-1: Authenticate user
+        OnlineProfile auth = new OnlineProfile(reqMsg.getWanAuth());
+        OnlineProfile profile = onlineProfileService.authenticateOnlineProfile(auth);
+
+        if (profile == null) {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Authentication failed");
+            return resMsg.getData();
+        }
+
+        // AUTH-1: Get game from database (don't trust client data for host
+        // verification)
+        OnlineGame dbGame = onlineGameService.getOnlineGameByUrl(game.getUrl());
+
+        if (dbGame == null) {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Game not found");
+            return resMsg.getData();
+        }
+
+        // AUTH-1: Verify authenticated user is the game host
+        if (!profile.getName().equals(dbGame.getHostPlayer())) {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Only the game host can delete this game");
+            return resMsg.getData();
+        }
 
         // Delete from the database.
         onlineGameService.deleteOnlineGame(game);
 
         // Send an empty response.
-        OnlineMessage resMsg = new OnlineMessage(ddreceived.getCategory());
+        resMsg = new OnlineMessage(ddreceived.getCategory());
         return resMsg.getData();
     }
 
@@ -634,8 +706,6 @@ public class PokerServlet extends EngineServlet {
             // profile
             authenticatedProfile.setPassword(null);
             resMsg.setWanAuth(authenticatedProfile.getData());
-        } else {
-            // missing - handled in FindGames.validateProfile()
         }
 
         return resMsg.getData();
@@ -683,7 +753,7 @@ public class PokerServlet extends EngineServlet {
             // count existing profiles for email
             int count = onlineProfileService.getMatchingOnlineProfilesCount(null,
                     DBUtils.sqlExactMatch(profile.getEmail()), null, false);
-            if (count >= PokerConstants.MAX_PROFILES_PER_EMAIL && !(profile.getEmail().endsWith("donohoe.info"))) {
+            if (count >= PokerConstants.MAX_PROFILES_PER_EMAIL) {
                 // at max profiles
                 resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
                 resMsg.setApplicationErrorMessage(PropertyConfig.getMessage("msg.wanprofile.maxemail",
@@ -763,7 +833,7 @@ public class PokerServlet extends EngineServlet {
             // make sure we are exceeding profiles for email
             int count = onlineProfileService.getMatchingOnlineProfilesCount(null,
                     DBUtils.sqlExactMatch(profile.getEmail()), null, false);
-            if (count >= PokerConstants.MAX_PROFILES_PER_EMAIL && !(profile.getEmail().endsWith("donohoe.info"))) {
+            if (count >= PokerConstants.MAX_PROFILES_PER_EMAIL) {
                 // at max profiles
                 resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
                 resMsg.setApplicationErrorMessage(PropertyConfig.getMessage("msg.wanprofile.maxemail",
@@ -915,12 +985,21 @@ public class PokerServlet extends EngineServlet {
     }
 
     /**
-     * Reset and send a WAN profile password (at user request, from client). Since
-     * passwords are hashed with bcrypt, we cannot retrieve the original password.
-     * Instead, we generate a new password, hash it, update the profile, and email
-     * the new password.
+     * Request password reset (at user request, from client). Generates a secure
+     * reset token and emails it to the user. The token expires after 1 hour and can
+     * only be used once. This is the first step in the two-step password reset flow
+     * (SEC-BACKEND-3).
      */
-    private DDMessage sendOnlineProfilePassword(DDMessage ddreceived) {
+    private DDMessage sendOnlineProfilePassword(HttpServletRequest request, DDMessage ddreceived) {
+        // Rate limiting (SEC-BACKEND-3): 3 requests per 5 minutes per IP to prevent
+        // password reset abuse
+        String clientIp = request.getRemoteAddr();
+        if (!profileRateLimiter.allowRequest(clientIp, 3, 300000)) {
+            OnlineMessage resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Too many password reset requests. Please try again later.");
+            return resMsg.getData();
+        }
+
         // Wrap everything in useable interfaces.
         OnlineMessage reqMsg = new OnlineMessage(ddreceived);
         DMTypedHashMap onlineProfileData = reqMsg.getOnlineProfileData();
@@ -930,21 +1009,55 @@ public class PokerServlet extends EngineServlet {
         // Retrieve the full profile information.
         profile = onlineProfileService.getOnlineProfileByName(profile.getName());
         if (profile != null) {
-            // Generate new password, hash it, and update the profile
-            String newPassword = onlineProfileService.generatePassword();
-            onlineProfileService.hashAndSetPassword(profile, newPassword);
-            onlineProfileService.updateOnlineProfile(profile);
+            // Generate password reset token
+            PasswordResetToken token = onlineProfileService.generatePasswordResetToken(profile);
 
-            // Email the new password.
-            sendProfileEmail(postalService, "profile", profile.getEmail(), profile.getName(), newPassword, null);
+            // Email the reset token link (using "profile-reset" email template)
+            // Note: The token is passed in the password field for now to reuse existing
+            // email infrastructure
+            // TODO: Create dedicated password-reset email template with proper reset link
+            sendProfileEmail(postalService, "profile-reset", profile.getEmail(), profile.getName(), token.getToken(),
+                    null);
 
-            // Profile information is valid, so report success.
+            // Report success
             resMsg = new OnlineMessage(ddreceived.getCategory());
-            resMsg.setApplicationStatusMessage(PropertyConfig.getStringProperty("msg.wanprofile.send"));
+            resMsg.setApplicationStatusMessage(
+                    "Password reset email sent. Please check your email for the reset link.");
         } else {
-            // Login information is invalid, so report an error.
+            // Profile not found - return generic error to prevent username enumeration
+            resMsg = new OnlineMessage(ddreceived.getCategory());
+            resMsg.setApplicationStatusMessage("If the profile exists, a password reset email has been sent.");
+        }
+
+        return resMsg.getData();
+    }
+
+    /**
+     * Complete password reset using a valid token. This is the second step in the
+     * two-step password reset flow (SEC-BACKEND-3).
+     */
+    private DDMessage completePasswordReset(HttpServletRequest request, DDMessage ddreceived) {
+        OnlineMessage reqMsg = new OnlineMessage(ddreceived);
+        DMTypedHashMap data = reqMsg.getOnlineProfileData();
+        String token = data.getString("reset-token");
+        String newPassword = data.getString("new-password");
+        OnlineMessage resMsg;
+
+        if (token == null || newPassword == null || newPassword.trim().isEmpty()) {
             resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
-            resMsg.setApplicationErrorMessage(PropertyConfig.getStringProperty("msg.wanprofile.missing"));
+            resMsg.setApplicationErrorMessage("Invalid request. Token and new password are required.");
+            return resMsg.getData();
+        }
+
+        // Validate and use the token to reset password
+        boolean success = onlineProfileService.resetPasswordWithToken(token, newPassword);
+
+        if (success) {
+            resMsg = new OnlineMessage(ddreceived.getCategory());
+            resMsg.setApplicationStatusMessage("Password reset successful. You can now log in with your new password.");
+        } else {
+            resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
+            resMsg.setApplicationErrorMessage("Password reset failed. The token may be invalid or expired.");
         }
 
         return resMsg.getData();
@@ -975,10 +1088,9 @@ public class PokerServlet extends EngineServlet {
         email.getSession().setAttribute(OnlineProfile.PROFILE_PASSWORD, sPassword);
         email.executeJSP();
 
-        // only send the html message to Hotmail users since the multipart message gets
-        // mangled
-        boolean isHotmail = sTo.toLowerCase().endsWith("@hotmail.com");
-        String sPlainText = (isHotmail) ? null : email.getPlain();
+        // CLEANUP-BACKEND-4: Removed obsolete Hotmail workaround (multipart emails work
+        // correctly now)
+        String sPlainText = email.getPlain();
         String sHtmlText = email.getHtml();
 
         // get results and send email

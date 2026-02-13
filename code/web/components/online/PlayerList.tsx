@@ -19,7 +19,7 @@ export function PlayerList({ players, separator = ', ' }: PlayerListProps) {
   return (
     <>
       {players.map((player, index) => (
-        <span key={player}>
+        <span key={`${player}-${index}`}>
           <PlayerLink playerName={player} />
           {index < players.length - 1 && separator}
         </span>

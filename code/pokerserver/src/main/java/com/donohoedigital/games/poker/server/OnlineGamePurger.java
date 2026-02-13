@@ -40,6 +40,8 @@ import org.apache.logging.log4j.*;
 import org.springframework.context.support.*;
 
 import java.text.*;
+import java.time.*;
+import java.time.format.*;
 import java.util.*;
 
 /**
@@ -49,7 +51,9 @@ public class OnlineGamePurger extends BaseCommandLineApp {
     private static Logger logger = LogManager.getLogger(OnlineGamePurger.class);
 
     private static final int DEFAULT_PERIOD_SECS = (60 * 60 * 24 * 7); // one week
-    private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+    // CONCURRENCY-2: Use DateTimeFormatter instead of SimpleDateFormat
+    // (thread-safe)
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.US);
     private Date date_ = null;
     private Integer mode_ = null;
     private OnlineGameService service;
@@ -80,8 +84,10 @@ public class OnlineGamePurger extends BaseCommandLineApp {
 
         if (date != null) {
             try {
-                date_ = DATE_FORMATTER.parse(date);
-            } catch (ParseException e) {
+                // CONCURRENCY-2: Convert LocalDate to Date
+                LocalDate localDate = LocalDate.parse(date, DATE_FORMATTER);
+                date_ = Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+            } catch (DateTimeParseException e) {
                 CommandLine.exitWithError("Unable to parse date: " + date_);
             }
         } else {

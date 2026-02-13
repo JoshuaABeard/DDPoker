@@ -11,8 +11,13 @@ import { authApi } from '../api'
 import type { AuthResponse } from '../types'
 import { clearAuthUser, getAuthUser, setAuthUser, type StoredAuthUser } from './storage'
 
+interface AuthUser {
+  username: string
+  isAdmin: boolean
+}
+
 interface AuthState {
-  user: StoredAuthUser | null
+  user: AuthUser | null
   isAuthenticated: boolean
   isLoading: boolean
   error: string | null
@@ -48,11 +53,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const storedUser = getAuthUser()
       if (storedUser) {
-        // Verify the session is still valid by calling the API
-        const currentUser = await authApi.getCurrentUser()
-        if (currentUser) {
+        // Verify the session is still valid and get current admin status from API
+        const authResponse = await authApi.getCurrentUser()
+        if (authResponse && authResponse.success && authResponse.username) {
           setState({
-            user: { username: storedUser.username, isAdmin: storedUser.isAdmin },
+            user: {
+              username: authResponse.username,
+              isAdmin: authResponse.admin || false
+            },
             isAuthenticated: true,
             isLoading: false,
             error: null,
@@ -95,12 +103,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       })
 
       if (response.success && response.username) {
-        const user: StoredAuthUser = {
+        // Store only username in localStorage/sessionStorage (not isAdmin)
+        const storedUser: StoredAuthUser = {
+          username: response.username,
+        }
+        setAuthUser(storedUser, rememberMe)
+
+        // Set full user info in state (including isAdmin from API response)
+        const user: AuthUser = {
           username: response.username,
           isAdmin: response.admin || false,
         }
-
-        setAuthUser(user, rememberMe)
 
         setState({
           user,

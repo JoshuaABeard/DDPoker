@@ -47,24 +47,31 @@ import java.util.regex.*;
 public class DisallowedManager {
 
     private static final String DISALLOWED_PATTERN_PREFIX = ":";
-    private static final List<String> disallowedContains = new ArrayList<String>();
-    private static final List<Pattern> disallowedPatterns = new ArrayList<Pattern>();
+    // CONCURRENCY-1: Use static initializer to load once, then make unmodifiable
+    private static final List<String> disallowedContains;
+    private static final List<Pattern> disallowedPatterns;
 
-    public DisallowedManager() {
+    // CONCURRENCY-1: Load disallowed list in static initializer (thread-safe, loads
+    // once)
+    static {
+        List<String> contains = new ArrayList<>();
+        List<Pattern> patterns = new ArrayList<>();
+
         // Load the list of invalid names.
         URL url = new MatchingResources("classpath*:config/poker/disallowed.txt").getSingleRequiredResourceURL();
         String contents = ConfigUtils.readURL(url);
 
         // Add offensive words.
-        try {
-            BufferedReader reader = new BufferedReader(new StringReader(contents));
+        // LEAK-BACKEND-2: Use try-with-resources to ensure BufferedReader is closed
+        try (BufferedReader reader = new BufferedReader(new StringReader(contents))) {
             String line = null;
             Pattern pattern = null;
 
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
 
-                if (line.startsWith("\\s*#"))
+                // BUG-2: Fix comment detection (line already trimmed, just check for #)
+                if (line.startsWith("#"))
                     continue; // comment
                 line = line.replaceAll("\\s*#.*", ""); // trailing comment
                 if (line.length() == 0)
@@ -73,15 +80,23 @@ public class DisallowedManager {
                 if (line.startsWith(DISALLOWED_PATTERN_PREFIX)) {
                     line = line.substring(1);
                     pattern = Pattern.compile(line, Pattern.CASE_INSENSITIVE);
-                    disallowedPatterns.add(pattern);
+                    patterns.add(pattern);
                 } else {
                     line = line.toLowerCase();
-                    disallowedContains.add(line);
+                    contains.add(line);
                 }
             }
         } catch (IOException e) {
             throw new ApplicationError(e);
         }
+
+        // Make lists unmodifiable for thread safety
+        disallowedContains = Collections.unmodifiableList(contains);
+        disallowedPatterns = Collections.unmodifiableList(patterns);
+    }
+
+    public DisallowedManager() {
+        // CONCURRENCY-1: Initialization moved to static block - no longer needed here
     }
 
     public boolean isNameValid(String sName) {

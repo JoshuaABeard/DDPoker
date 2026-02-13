@@ -3,9 +3,9 @@
  * DD Poker - Game Hosts Page
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-export const dynamic = 'force-static'
 
 import { Metadata } from 'next'
+import { Suspense } from 'react'
 import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
 import { FilterForm } from '@/components/filters/FilterForm'
@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   title: 'Game Hosts - DD Poker',
   description: 'View game host information',
 }
+
+export const dynamic = 'force-dynamic'
 
 interface HostInfo {
   name: string
@@ -117,11 +119,13 @@ export default async function HostsPage({
       />
 
       {totalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalItems={totalItems}
-          itemsPerPage={50}
-        />
+        <Suspense fallback={<div className="text-center text-gray-500">Loading...</div>}>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalItems}
+            itemsPerPage={50}
+          />
+        </Suspense>
       )}
     </div>
   )

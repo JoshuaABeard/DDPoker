@@ -63,7 +63,7 @@ The host's tournament configuration options (via `TournamentProfile` and `Tourna
 - **Why**: Currently host must manually click "Start". A scheduled time lets players join at their leisure.
 - **Change**: Added PARAM_SCHEDULED_START (boolean), PARAM_START_TIME (long millis), PARAM_MIN_PLAYERS_START (int, default 2) with "hours from now" UI control in Online tab. TournamentDirector auto-starts when time and player conditions are met.
 
-#### 9. Per-Street Action Timeouts
+#### ✅ 9. Per-Street Action Timeouts (COMPLETED)
 - **Why**: Players need less time pre-flop, more time on river. Many platforms offer this.
 - **New params**: `PARAM_TIMEOUT_PREFLOP`, `PARAM_TIMEOUT_FLOP`, `PARAM_TIMEOUT_TURN`, `PARAM_TIMEOUT_RIVER` — all optional, default to `PARAM_TIMEOUT`
 - **UI**: Collapsible "Advanced Timeout" section in Online tab
@@ -73,36 +73,59 @@ The host's tournament configuration options (via `TournamentProfile` and `Tourna
 
 ### P3 — Tournament Structure (medium effort)
 
-#### 11. Blind Level Quick Setup / Templates
+#### ✅ 11. Blind Level Quick Setup / Templates (COMPLETED)
 - **Why**: Manually entering up to 40 levels is the most tedious part of tournament setup.
-- **UI**: "Quick Setup" button opens a dialog with: starting blinds, speed preset (Slow/Standard/Turbo/Hyper), include antes checkbox, include breaks checkbox
-- **Logic**: Generate levels following standard ~1.5-2x progression, populate existing level params
-- **No data model changes** — generated levels use existing storage
+- **Implemented**:
+  - `BlindTemplate` enum with 4 templates: SLOW (1.5x, 20min), STANDARD (2x, 15min), TURBO (2x, 10min), HYPER (2x, 5min)
+  - `BlindQuickSetupDialog` with template selection, num levels (1-40), include breaks, break frequency
+  - Preview display showing first few generated levels
+  - "Quick Setup" button integrated in TournamentProfileDialog Levels tab
+  - `generateLevels()` method with progressive blind structure and optional breaks
+  - All 17 template tests passing, 1536 total tests passing
 
-#### 12. Standard Payout Presets
+#### ✅ 12. Standard Payout Presets (COMPLETED)
 - **Why**: Current "Auto (Fibonacci)" is a single algorithm. Platforms offer top-heavy, standard, and flat distributions.
-- **UI**: "Presets" dropdown next to allocation radio buttons: Top-Heavy (~50% to winner), Standard (~25-30%), Flat (~15-20%)
-- **No data model changes** — presets populate existing spot percentage fields
+- **Implemented**:
+  - `PayoutPreset` enum with 4 presets: CUSTOM, TOP_HEAVY (50/30/20), STANDARD (40/25/17.5/12.5/5), FLAT (25/20/15/12.5/10/7.5/5/5)
+  - UI dropdown in allocation section of DetailsTab
+  - `applyPayoutPreset()` method updates profile and refreshes UI
+  - Bug fix: Added `setAlloc(ALLOC_PERC)` to properly set allocation mode
+  - All 19 preset tests passing, 1536 total tests passing
 
-#### 13. Bounty/Knockout Tournament Support
+#### ✅ 13. Bounty/Knockout Tournament Support (COMPLETED)
 - **Why**: Extremely popular format. Purely a payout-side feature — doesn't change hand gameplay.
-- **New params**: `PARAM_BOUNTY` (boolean), `PARAM_BOUNTY_AMOUNT` (int, ≤ buyin cost)
-- **UI**: Bounty checkbox + amount spinner in Details tab payout section
-- **Engine**: On elimination in `HoldemHand`/`PokerGame`, award bounty to eliminating player. `PokerPlayer` gets `bountyWon` field. Prize pool label shows "Prize Pool: $X (after $Y in bounties)".
+- **Implemented**:
+  - `MAX_BOUNTY = 10000` constant in TournamentProfile
+  - `PARAM_BOUNTY` (boolean) and `PARAM_BOUNTY_AMOUNT` (int) parameters
+  - `PokerPlayer` fields: `nBountyCollected_` and `nBountyCount_`
+  - `addBounty()` method in PokerPlayer (adds to prize total)
+  - Bounty UI in DetailsTab with checkbox and amount spinner
+  - Bounty awarding logic in HoldemHand.java on elimination
+  - Full serialization support for bounty data
+  - All 1536 tests passing
 
-#### 14. Profile Validation Warnings
+#### ✅ 14. Profile Validation Warnings (COMPLETED)
 - **Why**: "Verify" button only normalizes data. Doesn't warn about strategically questionable structures.
-- **Checks**: Unreachable levels, payout spots > player count, rebuy level after last level, starting depth < 10 BBs
-- **UI**: Warning icons on tabs with issues (infrastructure already exists via `error` ImageIcon)
+- **Implemented**:
+  - Validation backend complete: `ValidationWarning` enum, `ValidationResult` class, `ProfileValidator.validateProfile()`
+  - All 4 warning checks: unreachable levels, too many payout spots, shallow starting depth, excessive house take
+  - UI displays warnings as status text in DetailsTab (orange color, HTML formatted)
+  - Warnings visible but don't block profile saving (soft warnings)
+  - All 28 validation tests passing, 1536 total tests passing
 
 ---
 
 ### P4 — Nice to Have (lower priority)
 
-#### 15. Hands-Per-Level Advancement
+#### ✅ 15. Hands-Per-Level Advancement (COMPLETED)
 - **Why**: In offline play, minutes-per-level depends on hands/hour settings. Hands-per-level is more consistent.
-- **New params**: `PARAM_LEVEL_ADVANCE_MODE` ("time"/"hands"), `PARAM_HANDS_PER_LEVEL` (int)
-- **Engine**: Parallel code path in `PokerGame` level transition logic
+- **Implemented**:
+  - Created `LevelAdvanceMode` enum (TIME/HANDS)
+  - Added `PARAM_LEVEL_ADVANCE_MODE` and `PARAM_HANDS_PER_LEVEL` to TournamentProfile
+  - Track hands played in current level in PokerGame
+  - Auto-advance levels when hand count reached in HANDS mode
+  - Added UI controls in Levels tab: radio buttons for mode selection, conditional spinner for hands per level
+  - All 1509 tests passing
 
 #### ✅ 17. Configurable Table Size Default
 - **Why**: 6-max and short-handed formats are popular. Table seats is configurable (2-9) but defaults to 10 which seems wrong (profile default). Making the default more prominent or adding format presets (Full Ring/6-Max/Heads-Up) would help.

@@ -7,6 +7,7 @@
  */
 
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { useState, FormEvent } from 'react'
 import { useAuth } from '@/lib/auth/useAuth'
 
@@ -26,7 +27,9 @@ export function LoginForm() {
 
     // Only redirect if login was successful
     if (success) {
-      const returnUrl = searchParams.get('returnUrl') || '/online'
+      // Validate returnUrl to prevent open redirect attacks
+      const raw = searchParams.get('returnUrl') || '/online'
+      const returnUrl = raw.startsWith('/') && !raw.startsWith('//') && !raw.startsWith('/\\') ? raw : '/online'
       router.push(returnUrl)
     }
   }
@@ -36,7 +39,7 @@ export function LoginForm() {
       <h2 className="text-2xl font-bold mb-6 text-center">Login to DD Poker</h2>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded" role="alert">
           {error}
         </div>
       )}
@@ -95,9 +98,9 @@ export function LoginForm() {
       </form>
 
       <div className="mt-4 text-center text-sm">
-        <a href="/forgot" className="text-green-600 hover:underline">
+        <Link href="/forgot" className="text-green-600 hover:underline">
           Forgot your password?
-        </a>
+        </Link>
       </div>
     </div>
   )
