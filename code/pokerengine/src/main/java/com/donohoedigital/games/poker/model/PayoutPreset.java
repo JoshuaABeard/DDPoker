@@ -118,6 +118,9 @@ public enum PayoutPreset {
             throw new IllegalStateException("Cannot apply CUSTOM preset - no distribution defined");
         }
 
+        // Set allocation mode to percentage
+        profile.setAlloc(com.donohoedigital.games.poker.engine.PokerConstants.ALLOC_PERC);
+
         int spotsToSet = Math.min(numSpots, percentages.length);
 
         for (int i = 1; i <= spotsToSet; i++) {
