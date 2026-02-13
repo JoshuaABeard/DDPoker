@@ -6,9 +6,15 @@ DD Poker has 135 test files across 788 source files (~17% file coverage). While 
 
 ---
 
-## Phase 1: Poker Engine Primitives (`pokerengine`)
+## Phase 1: Poker Engine Primitives (`pokerengine`) ✅ COMPLETE
 
-**Current state:** 20 source files, 4 tests, 2% coverage threshold
+**Status:** ✅ **COMPLETE** (2026-02-13)
+- 7 test files created: CardTest, HandTest, CardSuitTest, HandSortedTest, DeckTest, OnlineGameTest, TournamentHistoryTest
+- 240 new tests added (total: 476 tests in pokerengine module)
+- **Coverage: 65%** (far exceeds 40% target)
+- All tests passing in parallel execution
+
+**Original state:** 20 source files, 4 tests, 2% coverage threshold
 
 **Goal:** Comprehensive tests for the core poker data types that everything else builds on.
 
@@ -360,3 +366,52 @@ For each phase:
 3. `mvn verify -P coverage -pl <module>` — coverage meets new threshold
 4. Update the module's `pom.xml` coverage threshold to the new baseline
 5. `mvn test` — full test suite passes with zero warnings
+
+---
+
+## Status Tracking
+
+### Phase 1: Poker Engine Primitives ✅ COMPLETE
+**Completed:** 2026-02-13
+**Branch:** test-poker-engine-primitives
+**Coverage:** 65% (target: 40%)
+**Tests:** 476 total (240 new)
+
+**Files Created:**
+- `CardTest.java` (39 tests) — Card construction, comparison, serialization, static lookups
+- `HandTest.java` (53 tests) — Hand construction, poker queries, fingerprinting
+- `CardSuitTest.java` (15 tests) — Suit constants, comparisons, display
+- `HandSortedTest.java` (37 tests) — Sorted insertion, poker-specific queries
+- `DeckTest.java` (29 tests) — Dealing, removing, sorting, bug-specific decks
+- `OnlineGameTest.java` (29 tests) — JPA entity, mode lifecycle, merge, equals/hashCode
+- `TournamentHistoryTest.java` (49 tests) — Entity fields, business logic, serialization
+
+**Production Bugs Discovered:**
+- HandSorted.hasStraightDraw() throws IndexOutOfBoundsException on empty hands
+- OnlineGame.hashCode() violates equals/hashCode contract (includes super.hashCode())
+
+**Key Learnings:**
+- NEVER call setValue() on static Card constants (SPADES_A, etc.) — they are shared singletons
+- PropertyConfig is a global singleton — removed @AfterClass cleanup to fix parallel execution
+
+**Commits:**
+- 6ee967e test: Add comprehensive tests for OnlineGame and TournamentHistory
+- 14329ea docs: Document OnlineGame hashCode() bug in learnings
+- (previous commits for CardTest, HandTest, CardSuitTest, HandSortedTest, DeckTest)
+
+---
+
+### Phase 2: Core Poker Logic
+**Status:** Not started
+
+### Phase 3: Game State & Common Infrastructure
+**Status:** Not started
+
+### Phase 4: Utility Layer
+**Status:** Not started
+
+### Phase 5: Game Engine Refactoring
+**Status:** Not started
+
+### Phase 6: Server Services
+**Status:** Not started

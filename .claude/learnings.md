@@ -22,6 +22,8 @@ Persistent knowledge discovered during development sessions. Read this at the st
 ## Testing
 
 - [pokerengine] AIStrategyNode tests depend on PropertyConfig state; tests must be resilient to initialization order (2026-02-12)
+- [pokerengine] NEVER call setValue() on static Card constants (SPADES_A, etc.) in tests — they are shared singletons and modifications pollute all other tests. Create new Card instances instead (2026-02-13)
+- [pokerengine] OnlineGame.hashCode() violates equals/hashCode contract by including super.hashCode() — equal objects (same URL) have different hash codes (2026-02-13)
 - [db] ResultSet must be explicitly closed in ResultMap to prevent resource leaks (2026-02-12)
 
 ## Configuration
