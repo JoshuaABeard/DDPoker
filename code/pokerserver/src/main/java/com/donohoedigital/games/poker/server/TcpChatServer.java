@@ -21,6 +21,7 @@ package com.donohoedigital.games.poker.server;
 
 import com.donohoedigital.base.ApplicationError;
 import com.donohoedigital.base.ErrorCodes;
+import com.donohoedigital.base.InputValidator;
 import com.donohoedigital.base.RateLimiter;
 import com.donohoedigital.base.Utils;
 import com.donohoedigital.comms.DMArrayList;
@@ -492,11 +493,20 @@ public class TcpChatServer extends GameServer {
 
             logger.debug(playerName + " said \"" + chatText + "\"");
 
+            // SEC-BACKEND-6: Validate chat message length (1-500 chars)
+            if (!InputValidator.isValidChatMessage(chatText)) {
+                sendError(channel, "Chat message must be between 1 and 500 characters.");
+                return;
+            }
+
             // Rate limit check (30 messages per 60 seconds)
             if (!chatServer_.chatRateLimiter.allowRequest(playerName, 30, 60000)) {
                 sendError(channel, "Too many chat messages. Please slow down.");
                 return;
             }
+
+            // SEC-BACKEND-6: Sanitize chat text to prevent XSS
+            msg.setChat(Utils.encodeHTML(chatText));
 
             // Broadcast to others (not sender)
             chatServer_.broadcastMessage(msg, channel);

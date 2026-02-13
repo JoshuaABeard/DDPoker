@@ -148,4 +148,15 @@ public class InputValidator {
     public static boolean isValidChatMessage(String message) {
         return isValidLength(message, 1, 500);
     }
+
+    /**
+     * Validates password (8-128 characters).
+     *
+     * @param password
+     *            the password to validate
+     * @return true if valid, false otherwise
+     */
+    public static boolean isValidPassword(String password) {
+        return isValidLength(password, 8, 128);
+    }
 }
