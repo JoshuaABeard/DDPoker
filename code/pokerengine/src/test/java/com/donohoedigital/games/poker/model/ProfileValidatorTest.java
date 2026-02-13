@@ -385,11 +385,11 @@ public class ProfileValidatorTest {
     // ========== validateProfile() Tests ==========
 
     @Test
-    public void should_WarnAboutUnreachableLevels_WhenRebuyEndsBeforeLastLevel() {
-        // Given: tournament with 10 levels, rebuys until level 5
+    public void should_WarnAboutUnreachableLevels_WhenRebuyEndsVeryEarly() {
+        // Given: tournament with 20 levels, rebuys until level 2 (10% - below 25% threshold)
         DMTypedHashMap map = new DMTypedHashMap();
-        map.setInteger("lastlevel", 10);
-        map.setInteger("rebuyuntil", 5);
+        map.setInteger("lastlevel", 20);
+        map.setInteger("rebuyuntil", 2);
         map.setBoolean("rebuys", true);
 
         TestCallbacks callbacks = new TestCallbacks();
@@ -399,8 +399,27 @@ public class ProfileValidatorTest {
         ValidationResult result = validator.validateProfile();
 
         // Then: should warn about unreachable levels
-        assertTrue("Should warn about unreachable levels", result.hasWarnings());
+        assertTrue("Should warn when rebuy period ends very early", result.hasWarnings());
         assertTrue("Should contain UNREACHABLE_LEVELS warning",
+                result.getWarnings().contains(ValidationWarning.UNREACHABLE_LEVELS));
+    }
+
+    @Test
+    public void should_NotWarnAboutUnreachableLevels_WhenRebuyPeriodNormal() {
+        // Given: tournament with 20 levels, rebuys until level 4 (20% - normal configuration)
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("lastlevel", 20);
+        map.setInteger("rebuyuntil", 4);
+        map.setBoolean("rebuys", true);
+
+        TestCallbacks callbacks = new TestCallbacks();
+        ProfileValidator validator = new ProfileValidator(map, callbacks);
+
+        // When: validate profile
+        ValidationResult result = validator.validateProfile();
+
+        // Then: should not warn for normal rebuy period (>= 25% threshold)
+        assertFalse("Should not warn for normal rebuy period",
                 result.getWarnings().contains(ValidationWarning.UNREACHABLE_LEVELS));
     }
 

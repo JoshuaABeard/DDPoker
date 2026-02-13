@@ -242,7 +242,12 @@ public class ProfileValidator {
     }
 
     /**
-     * Check if rebuy period ends before all blind levels are reached.
+     * Check if rebuy period ends very early relative to total blind levels.
+     *
+     * <p>
+     * Warns only if the rebuy period ends before 25% of the total levels, which
+     * suggests the tournament structure may have many unused levels. Normal
+     * tournaments typically have rebuys for the first 20-40% of levels.
      */
     private void checkUnreachableLevels(ValidationResult result) {
         boolean rebuysEnabled = map.getBoolean(PARAM_REBUYS, false);
@@ -253,9 +258,22 @@ public class ProfileValidator {
         int lastLevel = map.getInteger(PARAM_LASTLEVEL, 0);
         int rebuyUntilLevel = map.getInteger(PARAM_REBUY_UNTIL, 0);
 
-        if (lastLevel > 0 && rebuyUntilLevel > 0 && rebuyUntilLevel < lastLevel) {
-            result.addWarning(ValidationWarning.UNREACHABLE_LEVELS,
-                    "Rebuy period ends at level " + rebuyUntilLevel + " but last level is " + lastLevel);
+        // Only warn if rebuy period ends very early (< 25% of total levels)
+        // Example: 20 levels with rebuys until level 4 = 20%, no warning
+        //          20 levels with rebuys until level 2 = 10%, warning
+        if (lastLevel > 0 && rebuyUntilLevel > 0) {
+            double rebuyPortion = (double) rebuyUntilLevel / lastLevel;
+            if (rebuyPortion < 0.25) {
+                result.addWarning(
+                        ValidationWarning.UNREACHABLE_LEVELS,
+                        "Rebuy period ends very early at level "
+                                + rebuyUntilLevel
+                                + " ("
+                                + String.format("%.0f", rebuyPortion * 100)
+                                + "% of "
+                                + lastLevel
+                                + " total levels)");
+            }
         }
     }
 

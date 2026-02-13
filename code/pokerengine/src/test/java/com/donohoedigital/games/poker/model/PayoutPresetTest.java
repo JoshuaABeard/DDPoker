@@ -153,6 +153,22 @@ public class PayoutPresetTest {
     }
 
     @Test
+    public void should_SetAllocPercMode_WhenApplyingPreset() {
+        TournamentProfile profile = new TournamentProfile("Test");
+
+        // Default allocation mode should be Auto
+        assertTrue("Default allocation should be Auto", profile.isAllocAuto());
+        assertFalse("Should not be in Percent mode initially", profile.isAllocPercent());
+
+        // Apply preset
+        PayoutPreset.TOP_HEAVY.applyToProfile(profile, 3);
+
+        // Verify allocation mode was set to Percent
+        assertTrue("Should switch to Percent allocation mode", profile.isAllocPercent());
+        assertFalse("Should no longer be in Auto mode", profile.isAllocAuto());
+    }
+
+    @Test
     public void should_ApplyAllPresetSpots_WhenMoreSpotsRequested() {
         TournamentProfile profile = new TournamentProfile("Test");
 
