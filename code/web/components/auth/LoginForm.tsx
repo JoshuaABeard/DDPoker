@@ -7,6 +7,7 @@
  */
 
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { useState, FormEvent } from 'react'
 import { useAuth } from '@/lib/auth/useAuth'
 
@@ -97,9 +98,9 @@ export function LoginForm() {
       </form>
 
       <div className="mt-4 text-center text-sm">
-        <a href="/forgot" className="text-green-600 hover:underline">
+        <Link href="/forgot" className="text-green-600 hover:underline">
           Forgot your password?
-        </a>
+        </Link>
       </div>
     </div>
   )
