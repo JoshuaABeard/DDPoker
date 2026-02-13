@@ -26,8 +26,8 @@ package com.donohoedigital.games.poker.model;
  * Provides quick-apply payout structures that match common tournament formats:
  * <ul>
  * <li>TOP_HEAVY: Winner takes ~50%, runners-up split remainder
- * <li>STANDARD: Winner takes ~25-30%, more gradual distribution
- * <li>FLAT: Winner takes ~15-20%, very even distribution
+ * <li>STANDARD: Winner takes ~40%, more gradual distribution
+ * <li>FLAT: Winner takes ~25%, very even distribution
  * <li>CUSTOM: User-defined distribution (no preset)
  * </ul>
  */
@@ -43,14 +43,14 @@ public enum PayoutPreset {
     TOP_HEAVY("Top-Heavy (~50% winner)", new double[]{50.0, 30.0, 20.0}),
 
     /**
-     * Standard distribution: ~25-30% to winner, gradual taper.
+     * Standard distribution: ~40% to winner, gradual taper.
      */
-    STANDARD("Standard (~25-30% winner)", new double[]{40.0, 25.0, 17.5, 12.5, 5.0}),
+    STANDARD("Standard (~40% winner)", new double[]{40.0, 25.0, 17.5, 12.5, 5.0}),
 
     /**
-     * Flat distribution: ~15-20% to winner, very even payouts.
+     * Flat distribution: ~25% to winner, very even payouts.
      */
-    FLAT("Flat (~15-20% winner)", new double[]{25.0, 20.0, 15.0, 12.5, 10.0, 7.5, 5.0, 5.0});
+    FLAT("Flat (~25% winner)", new double[]{25.0, 20.0, 15.0, 12.5, 10.0, 7.5, 5.0, 5.0});
 
     private final String displayName;
     private final double[] percentages;
@@ -72,10 +72,11 @@ public enum PayoutPreset {
     /**
      * Get the percentage distribution for this preset.
      *
-     * @return Array of percentages for each payout spot, or null for CUSTOM
+     * @return Defensive copy of percentages array for each payout spot, or null for
+     *         CUSTOM
      */
     public double[] getPercentages() {
-        return percentages;
+        return percentages == null ? null : percentages.clone();
     }
 
     /**

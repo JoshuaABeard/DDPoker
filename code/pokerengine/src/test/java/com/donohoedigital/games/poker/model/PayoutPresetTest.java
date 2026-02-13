@@ -32,8 +32,8 @@ public class PayoutPresetTest {
     public void should_HaveCorrectDisplayNamesForAllPresets() {
         assertEquals("Custom", PayoutPreset.CUSTOM.getDisplayName());
         assertEquals("Top-Heavy (~50% winner)", PayoutPreset.TOP_HEAVY.getDisplayName());
-        assertEquals("Standard (~25-30% winner)", PayoutPreset.STANDARD.getDisplayName());
-        assertEquals("Flat (~15-20% winner)", PayoutPreset.FLAT.getDisplayName());
+        assertEquals("Standard (~40% winner)", PayoutPreset.STANDARD.getDisplayName());
+        assertEquals("Flat (~25% winner)", PayoutPreset.FLAT.getDisplayName());
     }
 
     @Test
@@ -199,7 +199,7 @@ public class PayoutPresetTest {
     public void should_UseDisplayName_ForToString() {
         assertEquals("Custom", PayoutPreset.CUSTOM.toString());
         assertEquals("Top-Heavy (~50% winner)", PayoutPreset.TOP_HEAVY.toString());
-        assertEquals("Standard (~25-30% winner)", PayoutPreset.STANDARD.toString());
-        assertEquals("Flat (~15-20% winner)", PayoutPreset.FLAT.toString());
+        assertEquals("Standard (~40% winner)", PayoutPreset.STANDARD.toString());
+        assertEquals("Flat (~25% winner)", PayoutPreset.FLAT.toString());
     }
 }

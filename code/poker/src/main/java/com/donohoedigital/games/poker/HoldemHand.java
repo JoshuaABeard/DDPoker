@@ -2689,9 +2689,18 @@ public class HoldemHand implements DataMarshal {
 
                     // If this player lost and is now broke (eliminated), award bounty to winner(s)
                     if (!winners.contains(player) && player.getChipCount() == 0) {
-                        // Award bounty to each winner (split if multiple winners)
-                        for (PokerPlayer winner : winners) {
-                            winner.addBounty(bountyAmount / nWinners);
+                        // Split bounty among winners, with remainder going to first winner
+                        int share = bountyAmount / nWinners;
+                        int remainder = bountyAmount % nWinners;
+
+                        for (int j = 0; j < nWinners; j++) {
+                            PokerPlayer winner = winners.get(j);
+                            int amount = share;
+                            // First winner gets the remainder (if any)
+                            if (j == 0) {
+                                amount += remainder;
+                            }
+                            winner.addBounty(amount);
                         }
                     }
                 }
