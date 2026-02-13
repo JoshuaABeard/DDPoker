@@ -60,28 +60,6 @@ The `./dump` command exposes internal thread states, class names, and memory lay
 
 ---
 
-### SEC-BACKEND-2: Admin Password Written to Plaintext File and Logged
-**File:** `PokerServer.java:108-111, 140-144, 150-153, 162-174`
-**Issue:** Admin password is logged at WARN level in multiple code paths and written to plaintext file `admin-password.txt`.
-
-```java
-logger.warn("  Password: {}", adminPassword);
-...
-Files.write(adminPasswordFile.toPath(), adminPassword.getBytes(), StandardOpenOption.CREATE_NEW);
-```
-
-This persists credentials in log files and on the filesystem in cleartext.
-
-**Fix:**
-- Never log passwords
-- Set restrictive file permissions on password file (600)
-- Consider using a secrets manager
-- Only log that admin was created, not the password
-
-**Priority:** Critical - Credential exposure
-
----
-
 ### SEC-BACKEND-3: Password Reset Without Authentication
 **File:** `PokerServlet.java:923-951`
 **Issue:** Anyone who knows a profile name can trigger a password reset (`sendOnlineProfilePassword`).
@@ -95,12 +73,11 @@ if (profile != null) {
     sendProfileEmail(..., newPassword, null);
 ```
 
-No CAPTCHA, no email verification step, no confirmation token, and no rate limiting on this specific endpoint. Attacker can enumerate profile names and reset arbitrary passwords.
+no email verification step, no confirmation token, and no rate limiting on this specific endpoint. Attacker can enumerate profile names and reset arbitrary passwords.
 
 **Fix:**
 - Add rate limiting to this endpoint
 - Require email verification before resetting
-- Consider CAPTCHA for reset requests
 - Generate reset token instead of new password
 
 **Priority:** Critical - Account takeover vulnerability
