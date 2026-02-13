@@ -73,12 +73,13 @@ public class OnlineProfilePurger extends BaseCommandLineApp {
     public OnlineProfilePurger(String configName, String[] args) {
         super(configName, args);
 
-        // get the service from spring
-        ApplicationContext ctx = new ClassPathXmlApplicationContext("app-context-pokertools.xml");
-        service = (OnlineProfileService) ctx.getBean("onlineProfileService");
+        // LEAK-BACKEND-1: Use try-with-resources to ensure ApplicationContext is closed
+        try (ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("app-context-pokertools.xml")) {
+            service = (OnlineProfileService) ctx.getBean("onlineProfileService");
 
-        // Do the work.
-        doPurge();
+            // Do the work.
+            doPurge();
+        }
     }
 
     /**

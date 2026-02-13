@@ -459,11 +459,6 @@ public class PokerServlet extends EngineServlet {
             return resMsg.getData();
         }
 
-        // ban check
-        resMsg = banCheck(profile);
-        if (resMsg != null)
-            return resMsg.getData();
-
         // Prior to version 3, we didn't send down auth credentials, so just get the
         // profile (we make sure it is activated below)
         boolean before3 = version.isBefore(PokerConstants.VERSION_HOST_CHECK_ADDED);
@@ -483,6 +478,12 @@ public class PokerServlet extends EngineServlet {
             resMsg.setApplicationErrorMessage(PropertyConfig
                     .getStringProperty(before3 ? "msg.wanprofile.missing" : "msg.wanprofile.authfailed3"));
         } else {
+            // BUG-1: Ban check must happen after profile is resolved (was checking null
+            // profile)
+            resMsg = banCheck(profile);
+            if (resMsg != null)
+                return resMsg.getData();
+
             onlineGameService.saveOnlineGame(game);
 
             // Send an empty response.
@@ -775,7 +776,7 @@ public class PokerServlet extends EngineServlet {
             // count existing profiles for email
             int count = onlineProfileService.getMatchingOnlineProfilesCount(null,
                     DBUtils.sqlExactMatch(profile.getEmail()), null, false);
-            if (count >= PokerConstants.MAX_PROFILES_PER_EMAIL && !(profile.getEmail().endsWith("donohoe.info"))) {
+            if (count >= PokerConstants.MAX_PROFILES_PER_EMAIL) {
                 // at max profiles
                 resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
                 resMsg.setApplicationErrorMessage(PropertyConfig.getMessage("msg.wanprofile.maxemail",
@@ -855,7 +856,7 @@ public class PokerServlet extends EngineServlet {
             // make sure we are exceeding profiles for email
             int count = onlineProfileService.getMatchingOnlineProfilesCount(null,
                     DBUtils.sqlExactMatch(profile.getEmail()), null, false);
-            if (count >= PokerConstants.MAX_PROFILES_PER_EMAIL && !(profile.getEmail().endsWith("donohoe.info"))) {
+            if (count >= PokerConstants.MAX_PROFILES_PER_EMAIL) {
                 // at max profiles
                 resMsg = new OnlineMessage(DDMessage.CAT_APPL_ERROR);
                 resMsg.setApplicationErrorMessage(PropertyConfig.getMessage("msg.wanprofile.maxemail",

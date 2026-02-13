@@ -53,6 +53,8 @@ public interface OnlineGameDao extends BaseDao<OnlineGame, Long> {
     OnlineGameList getByMode(Integer count, int offset, int pagesize, Integer[] modes, String nameSearch, Date begin,
             Date end, boolean bOrderByModeName);
 
+    OnlineGameList getByModeWithHistories(Integer[] modes, Date begin, Date end);
+
     int getHostSummaryCount(String nameSearch, Date begin, Date end);
 
     PagedList<HostSummary> getHostSummary(Integer count, int offset, int pagesize, String nameSearch, Date begin,
