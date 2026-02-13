@@ -139,6 +139,10 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public static final String PARAM_MAXRAISES = "maxraises";
     public static final String PARAM_MAXRAISES_NONE_HEADSUP = "maxheadsup";
     public static final String PARAM_TIMEOUT = "timeout";
+    public static final String PARAM_TIMEOUT_PREFLOP = "timeoutpreflop";
+    public static final String PARAM_TIMEOUT_FLOP = "timeoutflop";
+    public static final String PARAM_TIMEOUT_TURN = "timeoutturn";
+    public static final String PARAM_TIMEOUT_RIVER = "timeoutriver";
     public static final String PARAM_FILL_COMPUTER = "fillai";
     public static final String PARAM_ALLOW_DASH = "allowdash";
     public static final String PARAM_ALLOW_ADVISOR = "allowadvisor";
@@ -1176,6 +1180,13 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     }
 
     /**
+     * Set last rebuy level
+     */
+    public void setLastRebuyLevel(int n) {
+        map_.setInteger(PARAM_REBUY_UNTIL, n);
+    }
+
+    /**
      * Get max rebuys
      */
     public int getMaxRebuys() {
@@ -1222,6 +1233,106 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      */
     public int getTimeoutSeconds() {
         return map_.getInteger(PARAM_TIMEOUT, 30, MIN_TIMEOUT, MAX_TIMEOUT);
+    }
+
+    /**
+     * set online player timeout for acting
+     */
+    public void setTimeoutSeconds(int seconds) {
+        map_.setInteger(PARAM_TIMEOUT, seconds);
+    }
+
+    /**
+     * Get timeout for a specific betting round, falling back to base timeout if not
+     * set
+     */
+    public int getTimeoutForRound(int round) {
+        String param = getTimeoutParamForRound(round);
+        if (param == null) {
+            return getTimeoutSeconds(); // Fallback for ROUND_SHOWDOWN or invalid
+        }
+
+        int roundTimeout = map_.getInteger(param, 0, 0, MAX_TIMEOUT);
+        if (roundTimeout > 0 && roundTimeout < MIN_TIMEOUT) {
+            roundTimeout = MIN_TIMEOUT; // Enforce minimum when non-zero
+        }
+        return (roundTimeout > 0) ? roundTimeout : getTimeoutSeconds();
+    }
+
+    /**
+     * Get the parameter name for a specific round
+     */
+    private String getTimeoutParamForRound(int round) {
+        // Using raw constants to avoid module dependency on poker
+        // ROUND_PRE_FLOP = 0, ROUND_FLOP = 1, ROUND_TURN = 2, ROUND_RIVER = 3
+        switch (round) {
+            case 0 : // ROUND_PRE_FLOP
+                return PARAM_TIMEOUT_PREFLOP;
+            case 1 : // ROUND_FLOP
+                return PARAM_TIMEOUT_FLOP;
+            case 2 : // ROUND_TURN
+                return PARAM_TIMEOUT_TURN;
+            case 3 : // ROUND_RIVER
+                return PARAM_TIMEOUT_RIVER;
+            default :
+                return null;
+        }
+    }
+
+    /**
+     * get pre-flop timeout
+     */
+    public int getTimeoutPreflop() {
+        return map_.getInteger(PARAM_TIMEOUT_PREFLOP, 0, 0, MAX_TIMEOUT);
+    }
+
+    /**
+     * set pre-flop timeout
+     */
+    public void setTimeoutPreflop(int seconds) {
+        map_.setInteger(PARAM_TIMEOUT_PREFLOP, seconds);
+    }
+
+    /**
+     * get flop timeout
+     */
+    public int getTimeoutFlop() {
+        return map_.getInteger(PARAM_TIMEOUT_FLOP, 0, 0, MAX_TIMEOUT);
+    }
+
+    /**
+     * set flop timeout
+     */
+    public void setTimeoutFlop(int seconds) {
+        map_.setInteger(PARAM_TIMEOUT_FLOP, seconds);
+    }
+
+    /**
+     * get turn timeout
+     */
+    public int getTimeoutTurn() {
+        return map_.getInteger(PARAM_TIMEOUT_TURN, 0, 0, MAX_TIMEOUT);
+    }
+
+    /**
+     * set turn timeout
+     */
+    public void setTimeoutTurn(int seconds) {
+        map_.setInteger(PARAM_TIMEOUT_TURN, seconds);
+    }
+
+    /**
+     * get river timeout
+     */
+    public int getTimeoutRiver() {
+        return map_.getInteger(PARAM_TIMEOUT_RIVER, 0, 0, MAX_TIMEOUT);
+    }
+
+    /**
+     * set river timeout
+     */
+    public void setTimeoutRiver(int seconds) {
+        map_.setInteger(PARAM_TIMEOUT_RIVER, seconds);
     }
 
     /**

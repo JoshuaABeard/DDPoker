@@ -41,6 +41,8 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.config.*;
 import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.engine.*;
+import com.donohoedigital.games.poker.logic.GameOverChecker;
+import com.donohoedigital.games.poker.logic.GameOverChecker.GameOverResult;
 import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.config.*;
@@ -79,32 +81,36 @@ public class CheckEndHand extends ChainPhase {
 
         boolean bGameOver = false;
         boolean bOnline = game.isOnlineGame();
+        boolean neverBrokeCheatActive = PokerUtils.isCheatOn(game.getGameContext(),
+                PokerConstants.OPTION_CHEAT_NEVERBROKE);
 
-        // if human player has no more chips, tournament is over
-        if (human.getChipCount() == 0 && !human.isObserver()) {
-            // if player can rebuy, given them chance to
-            if (bDoRebuyAndCleanup && table.isRebuyAllowed(human)) {
-                // if they didn't rebuy, game is over
-                if (!NewLevelActions.rebuy(game, ShowTournamentTable.REBUY_BROKE, table.getLevel())) {
-                    // double check in case of overlapping dialogs (rare)
-                    if (human.getChipCount() == 0)
-                        bGameOver = true;
+        // Delegate game-over logic to GameOverChecker
+        GameOverResult result = GameOverChecker.checkGameOverStatus(game, human, table, neverBrokeCheatActive);
+
+        // Handle each result with appropriate UI actions
+        switch (result) {
+            case REBUY_OFFERED :
+                // Offer rebuy to human player
+                if (bDoRebuyAndCleanup) {
+                    if (!NewLevelActions.rebuy(game, ShowTournamentTable.REBUY_BROKE, table.getLevel())) {
+                        // Double check in case of overlapping dialogs (rare)
+                        if (GameOverChecker.isHumanBroke(human)) {
+                            bGameOver = true;
+                        }
+                    }
                 }
-            }
-            // online game over handled by TD due to multiple humans
-            else if (!bOnline) {
-                bGameOver = true;
-            }
+                break;
 
-            // never go broke option - human gets amount equal to chip leader
-            if (bGameOver && !bOnline
-                    && PokerUtils.isCheatOn(game.getGameContext(), PokerConstants.OPTION_CHEAT_NEVERBROKE)) {
-                // only transfer if done from normal mode
+            case GAME_OVER :
+                bGameOver = true;
+                break;
+
+            case NEVER_BROKE_ACTIVE :
+                // Transfer chips from leader to human
                 if (bDoRebuyAndCleanup) {
                     List<PokerPlayer> rank = game.getPlayersByRank();
                     PokerPlayer lead = rank.get(0);
-                    int nAdd = lead.getChipCount() / 2;
-                    nAdd -= nAdd % table.getMinChip();
+                    int nAdd = GameOverChecker.calculateNeverBrokeTransfer(lead.getChipCount(), table.getMinChip());
                     human.setChipCount(nAdd);
                     lead.setChipCount(lead.getChipCount() - nAdd);
                     if (!TESTING(PokerConstants.TESTING_AUTOPILOT)) {
@@ -115,19 +121,23 @@ public class CheckEndHand extends ChainPhase {
                     }
                 }
                 bGameOver = false;
-            }
+                break;
+
+            case TOURNAMENT_WON :
+                bGameOver = true;
+                break;
+
+            case CONTINUE :
+                // Game continues
+                break;
         }
 
         // AI rebuys
         if (bDoRebuyAndCleanup && !bGameOver)
             PokerUtils.showComputerBuys(game.getGameContext(), game, table.getRebuyList(), "rebuy");
 
-        // see if only one player left
-        int nNumWithChips = 0;
-        if (!bGameOver && game.isOnePlayerLeft()) {
-            bGameOver = true;
-            nNumWithChips = 1;
-        }
+        // Track if only one player left for cleanup logic below
+        int nNumWithChips = (result == GameOverResult.TOURNAMENT_WON) ? 1 : 0;
 
         // if practice mode, and game is over for human, do cleanup
         // so the place/prize is recorded correctly and displayed

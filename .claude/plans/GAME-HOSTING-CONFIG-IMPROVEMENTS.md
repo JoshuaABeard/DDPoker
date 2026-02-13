@@ -63,7 +63,7 @@ The host's tournament configuration options (via `TournamentProfile` and `Tourna
 - **Why**: Currently host must manually click "Start". A scheduled time lets players join at their leisure.
 - **Change**: Added PARAM_SCHEDULED_START (boolean), PARAM_START_TIME (long millis), PARAM_MIN_PLAYERS_START (int, default 2) with "hours from now" UI control in Online tab. TournamentDirector auto-starts when time and player conditions are met.
 
-#### 9. Per-Street Action Timeouts
+#### ✅ 9. Per-Street Action Timeouts (COMPLETED)
 - **Why**: Players need less time pre-flop, more time on river. Many platforms offer this.
 - **New params**: `PARAM_TIMEOUT_PREFLOP`, `PARAM_TIMEOUT_FLOP`, `PARAM_TIMEOUT_TURN`, `PARAM_TIMEOUT_RIVER` — all optional, default to `PARAM_TIMEOUT`
 - **UI**: Collapsible "Advanced Timeout" section in Online tab

@@ -315,4 +315,98 @@ public class TournamentProfileTest {
         assertEquals("Start time should match", targetTime, imported.getStartTime());
         assertEquals("Min players should match", 4, imported.getMinPlayersForStart());
     }
+
+    // ========== Per-Street Timeout Tests ==========
+
+    @Test
+    public void should_DefaultToZeroForPerStreetTimeouts() {
+        TournamentProfile profile = new TournamentProfile("test");
+        assertEquals("Pre-flop timeout should default to 0", 0, profile.getTimeoutPreflop());
+        assertEquals("Flop timeout should default to 0", 0, profile.getTimeoutFlop());
+        assertEquals("Turn timeout should default to 0", 0, profile.getTimeoutTurn());
+        assertEquals("River timeout should default to 0", 0, profile.getTimeoutRiver());
+    }
+
+    @Test
+    public void should_FallbackToBaseTimeout_WhenPerStreetNotSet() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setTimeoutSeconds(45);
+
+        // All rounds should use base timeout when per-street is 0
+        // Using raw constants: ROUND_PRE_FLOP=0, ROUND_FLOP=1, ROUND_TURN=2,
+        // ROUND_RIVER=3
+        assertEquals("Pre-flop should use base timeout", 45, profile.getTimeoutForRound(0));
+        assertEquals("Flop should use base timeout", 45, profile.getTimeoutForRound(1));
+        assertEquals("Turn should use base timeout", 45, profile.getTimeoutForRound(2));
+        assertEquals("River should use base timeout", 45, profile.getTimeoutForRound(3));
+    }
+
+    @Test
+    public void should_UsePerStreetTimeout_WhenSet() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setTimeoutSeconds(30); // base
+        profile.setTimeoutPreflop(15);
+        profile.setTimeoutRiver(60);
+
+        // Using raw constants: ROUND_PRE_FLOP=0, ROUND_FLOP=1, ROUND_TURN=2,
+        // ROUND_RIVER=3
+        assertEquals("Pre-flop should use custom timeout", 15, profile.getTimeoutForRound(0));
+        assertEquals("Flop should fall back to base timeout", 30, profile.getTimeoutForRound(1));
+        assertEquals("Turn should fall back to base timeout", 30, profile.getTimeoutForRound(2));
+        assertEquals("River should use custom timeout", 60, profile.getTimeoutForRound(3));
+    }
+
+    @Test
+    public void should_EnforceMaxTimeout_ForPerStreet() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setTimeoutRiver(200); // Exceeds MAX_TIMEOUT (120)
+        assertEquals("River timeout should be clamped to MAX_TIMEOUT", 120, profile.getTimeoutRiver());
+    }
+
+    @Test
+    public void should_EnforceMinTimeout_ForNonZeroPerStreet() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setTimeoutSeconds(30); // base timeout
+        profile.setTimeoutPreflop(3); // Below MIN_TIMEOUT (5)
+
+        // Getter returns the raw value (3)
+        assertEquals("Getter should return raw value", 3, profile.getTimeoutPreflop());
+
+        // But getTimeoutForRound should enforce MIN_TIMEOUT
+        assertEquals("Per-street timeout below MIN_TIMEOUT should be clamped to 5", 5, profile.getTimeoutForRound(0));
+    }
+
+    @Test
+    public void should_RoundTripPerStreetTimeouts() throws IOException {
+        // Given: a profile with per-street timeouts
+        TournamentProfile original = new TournamentProfile("Per-Street Test");
+        original.setTimeoutSeconds(30);
+        original.setTimeoutPreflop(15);
+        original.setTimeoutFlop(20);
+        original.setTimeoutTurn(40);
+        original.setTimeoutRiver(60);
+
+        // When: write to string and read back
+        StringWriter sw = new StringWriter();
+        original.write(sw);
+
+        TournamentProfile imported = new TournamentProfile();
+        imported.read(new StringReader(sw.toString()), false);
+
+        // Then: per-street settings should match
+        assertEquals("Pre-flop timeout should match", 15, imported.getTimeoutPreflop());
+        assertEquals("Flop timeout should match", 20, imported.getTimeoutFlop());
+        assertEquals("Turn timeout should match", 40, imported.getTimeoutTurn());
+        assertEquals("River timeout should match", 60, imported.getTimeoutRiver());
+    }
+
+    @Test
+    public void should_FallbackToBaseTimeout_ForInvalidRound() {
+        TournamentProfile profile = new TournamentProfile("test");
+        profile.setTimeoutSeconds(30);
+
+        // ROUND_SHOWDOWN (4) and invalid rounds should use base timeout
+        assertEquals("Showdown should use base timeout", 30, profile.getTimeoutForRound(4));
+        assertEquals("Invalid round should use base timeout", 30, profile.getTimeoutForRound(999));
+    }
 }
