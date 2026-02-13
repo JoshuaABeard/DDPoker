@@ -180,12 +180,106 @@ export interface TournamentStats {
 }
 
 /**
+ * Backend DTO Interfaces - Match actual API responses from Spring Boot backend
+ */
+
+export interface TournamentProfileDto {
+  name: string
+  gameType: string
+  buyIn: number
+  maxPlayers: number
+}
+
+export interface GamePlayerDto {
+  name?: string
+  playerName?: string
+}
+
+export interface OnlineGameDto {
+  id: number
+  tournamentProfile?: TournamentProfileDto
+  hostPlayer?: string
+  numPlayers?: number
+  createDate?: string
+  startDate?: string
+  endDate?: string
+  currentBlindLevel?: number
+  players?: GamePlayerDto[]
+  winner?: string
+  finishTable?: Array<{ playerName?: string }>
+}
+
+export interface LeaderboardEntryDto {
+  rank: number
+  playerName: string
+  ddr1?: number
+  gamesPlayed: number
+  wins?: number
+  totalBuyin?: number
+  totalAddon?: number
+  totalRebuys?: number
+  totalPrizes?: number
+}
+
+export interface TournamentHistoryDto {
+  id: number
+  name: string
+  placement: number
+  place?: number
+  totalPlayers?: number
+  buyIn?: number
+  prize?: number
+  date?: string
+  endDate?: string
+  gameType?: string
+}
+
+export interface OnlineProfileDto {
+  id: number
+  name?: string
+  playerName?: string
+  email?: string
+  createdAt?: string
+  createDate?: string
+  lastLogin?: string
+  isActive?: boolean
+}
+
+export interface BannedKeyDto {
+  id: number
+  key: string
+  comment?: string
+  createDate: string
+  until?: string
+}
+
+export interface HostSummaryDto {
+  name?: string
+  playerName?: string
+  lastHosted?: string
+  lastSeen?: string
+  totalGamesHosted: number
+}
+
+export interface PlayerSearchDto {
+  name?: string
+  playerName?: string
+  gamesPlayed?: number
+  lastPlayed?: string
+  lastSeen?: string
+  rank?: number
+}
+
+export interface ProfileAliasDto {
+  name: string
+  createDate: string
+  retireDate?: string
+}
+
+/**
  * Game list response from backend
- * TODO: Define proper backend DTO interfaces to replace 'any[]' types
- * This applies to GameListResponse, LeaderboardEntry, TournamentHistoryEntry,
- * and all mapper function parameters. Currently using 'any' with runtime null checks.
  */
 export interface GameListResponse {
-  games: any[]
+  games: OnlineGameDto[]
   total: number
 }
