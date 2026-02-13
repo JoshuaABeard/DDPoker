@@ -25,14 +25,17 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * TEST-1: Basic unit tests for PokerServlet security-critical validation logic.
- * Focuses on input validation utilities that were added in P2 fixes
- * (VALIDATION-1).
+ * TEST-1: Validation contract tests from the servlet's perspective. Verifies
+ * the input validation rules that PokerServlet relies on (added in P2 fixes
+ * VALIDATION-1).
  *
- * Note: Full servlet testing with Spring context would require extensive setup.
- * These tests verify the validation logic that the servlet uses.
+ * <p>
+ * Note: InputValidator has comprehensive tests in the common module
+ * (InputValidatorTest with 13 tests). These tests serve as validation contract
+ * verification for servlet-specific usage. Full servlet integration testing
+ * would require extensive Spring context setup and is beyond scope.
  */
-class PokerServletTest {
+class PokerServletValidationTest {
 
     // ========================================
     // Input Validation Tests (VALIDATION-1)
@@ -109,5 +112,15 @@ class PokerServletTest {
         assertThat(InputValidator.isValidInt(10, 1, 10)).isTrue();
         assertThat(InputValidator.isValidInt(0, 1, 10)).isFalse();
         assertThat(InputValidator.isValidInt(11, 1, 10)).isFalse();
+    }
+
+    @Test
+    void should_RejectNullInputs_ForAllValidators() {
+        // Verify null handling for domain-specific validators
+        assertThat(InputValidator.isValidProfileName(null)).isFalse();
+        assertThat(InputValidator.isValidEmail(null)).isFalse();
+        assertThat(InputValidator.isValidPassword(null)).isFalse();
+        assertThat(InputValidator.isValidChatMessage(null)).isFalse();
+        assertThat(InputValidator.isValidGameName(null)).isFalse();
     }
 }
