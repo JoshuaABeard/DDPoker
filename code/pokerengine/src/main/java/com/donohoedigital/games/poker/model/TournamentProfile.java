@@ -562,6 +562,20 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     }
 
     /**
+     * Validate tournament profile settings and return any warnings.
+     *
+     * <p>
+     * Checks for common configuration issues that don't prevent profile creation
+     * but may lead to unexpected behavior.
+     *
+     * @return ValidationResult containing any warnings found
+     * @see ProfileValidator#validateProfile()
+     */
+    public ValidationResult validateProfile() {
+        return validator().validateProfile();
+    }
+
+    /**
      * Get ParameterConstraints wrapper for constraint calculations.
      */
     private ParameterConstraints constraints() {

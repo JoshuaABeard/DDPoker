@@ -599,6 +599,14 @@ public class TournamentProfileDialog extends OptionMenuDialog
          * subclass can chime in on validity
          */
         protected boolean isValidCheck() {
+            // Run validation to check for warnings (doesn't block, just logs for now)
+            ValidationResult warnings = profile_.validateProfile();
+            if (warnings.hasWarnings()) {
+                logger.debug("Profile validation warnings: {}", warnings.getWarnings());
+                // TODO: Display warnings in UI (tooltip, status text, or warning icon)
+            }
+
+            // Hard validation still blocks
             return isTotalCorrect(getTotal());
         }
     }
