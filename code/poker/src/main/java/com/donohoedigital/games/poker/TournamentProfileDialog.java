@@ -521,6 +521,8 @@ public class TournamentProfileDialog extends OptionMenuDialog
      * money tab
      */
     private class DetailsTab extends OptionTab {
+        private DDLabel warningLabel_;
+
         protected void createUI() {
             super.createUI();
 
@@ -538,6 +540,14 @@ public class TournamentProfileDialog extends OptionMenuDialog
             DDPanel left = new DDPanel();
             left.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 5, VerticalFlowLayout.LEFT));
             add(left, BorderLayout.WEST);
+
+            // validation warnings display
+            warningLabel_ = new DDLabel(GuiManager.DEFAULT, STYLE);
+            warningLabel_.setText("");
+            warningLabel_.setForeground(new Color(180, 100, 0)); // Orange color for warnings
+            warningLabel_.setBorder(BorderFactory.createEmptyBorder(0, 5, 10, 5));
+            warningLabel_.setVisible(false);
+            left.add(warningLabel_);
 
             // num players / max at table
             DDPanel quantity = new DDPanel();
@@ -618,11 +628,23 @@ public class TournamentProfileDialog extends OptionMenuDialog
          * subclass can chime in on validity
          */
         protected boolean isValidCheck() {
-            // Run validation to check for warnings (doesn't block, just logs for now)
+            // Run validation to check for warnings (doesn't block, just displays in UI)
             ValidationResult warnings = profile_.validateProfile();
             if (warnings.hasWarnings()) {
+                // Build warning message from all warnings
+                StringBuilder warningText = new StringBuilder("<html>");
+                warningText.append(PropertyConfig.getMessage("msg.profile.warnings.header"));
+                warningText.append("<ul>");
+                for (ValidationWarning warning : warnings.getWarnings()) {
+                    warningText.append("<li>").append(warnings.getMessage(warning)).append("</li>");
+                }
+                warningText.append("</ul></html>");
+
+                warningLabel_.setText(warningText.toString());
+                warningLabel_.setVisible(true);
                 logger.debug("Profile validation warnings: {}", warnings.getWarnings());
-                // TODO: Display warnings in UI (tooltip, status text, or warning icon)
+            } else {
+                warningLabel_.setVisible(false);
             }
 
             // Hard validation still blocks
