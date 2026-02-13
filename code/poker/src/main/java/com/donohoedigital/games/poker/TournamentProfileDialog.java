@@ -1200,6 +1200,31 @@ public class TournamentProfileDialog extends OptionMenuDialog
                 buttonGroup_, PokerConstants.ALLOC_AMOUNT, null), allocbase);
         buttonAmount_ = radio.getRadioButton();
 
+        // payout preset dropdown
+        DDPanel presetPanel = new DDPanel();
+        presetPanel.setBorderLayoutGap(2, 5);
+        presetPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+        left.add(presetPanel, BorderLayout.NORTH);
+
+        DDLabel presetLabel = new DDLabel("msg.payout.preset", STYLE);
+        presetPanel.add(presetLabel, BorderLayout.WEST);
+
+        DDComboBox presetCombo = new DDComboBox("payoutpreset", STYLE);
+        presetCombo.setPreferredSize(new Dimension(200, 25));
+        // Add preset items
+        for (PayoutPreset preset : PayoutPreset.values()) {
+            presetCombo.addItem(preset);
+        }
+        presetCombo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                PayoutPreset selected = (PayoutPreset) presetCombo.getSelectedItem();
+                if (selected != null && selected != PayoutPreset.CUSTOM) {
+                    applyPayoutPreset(selected);
+                }
+            }
+        });
+        presetPanel.add(presetCombo, BorderLayout.CENTER);
+
         // clear button
         clear_ = new GlassButton("clear", "Glass");
         left.add(GuiUtils.NORTH(GuiUtils.CENTER(clear_)), BorderLayout.CENTER);
@@ -1259,6 +1284,31 @@ public class TournamentProfileDialog extends OptionMenuDialog
 
             sp.spot.setText("");
         }
+    }
+
+    /**
+     * Apply a payout preset to the current profile
+     */
+    private void applyPayoutPreset(PayoutPreset preset) {
+        // Apply preset to profile (sets spot percentages)
+        int numSpots = profile_.getNumSpots();
+        preset.applyToProfile(profile_, numSpots);
+
+        // Update UI to show new values
+        // Set to percentage mode
+        buttonPerc_.setSelected(true);
+
+        // Refresh spot UI fields
+        for (int i = 0; i < spots_.length && i < numSpots; i++) {
+            SpotPanel sp = spots_[i];
+            if (sp != null && sp.otspot != null) {
+                sp.otspot.resetToMap();
+            }
+        }
+
+        // Update spots display and total
+        updateSpots();
+        updateTotal();
     }
 
     /**

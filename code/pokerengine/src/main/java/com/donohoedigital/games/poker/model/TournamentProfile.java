@@ -956,6 +956,13 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     }
 
     /**
+     * Set value of payout spot (as percentage)
+     */
+    public void setSpot(int nNum, double percentage) {
+        map_.setString(PARAM_SPOTAMOUNT + nNum, String.valueOf(percentage));
+    }
+
+    /**
      * Get value of payout spot as string
      */
     public String getSpotAsString(int nNum) {
