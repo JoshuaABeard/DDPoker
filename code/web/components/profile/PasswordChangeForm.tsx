@@ -60,6 +60,7 @@ export function PasswordChangeForm() {
               ? 'bg-green-100 border border-green-400 text-green-700'
               : 'bg-red-100 border border-red-400 text-red-700'
           }`}
+          role={message.type === 'success' ? 'status' : 'alert'}
         >
           {message.text}
         </div>

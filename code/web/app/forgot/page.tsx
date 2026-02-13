@@ -79,6 +79,7 @@ export default function ForgotPassword() {
                   ? 'bg-green-50 border border-green-400 text-green-800'
                   : 'bg-red-50 border border-red-400 text-red-800'
               }`}
+              role={result.success ? 'status' : 'alert'}
             >
               {result.message}
             </div>

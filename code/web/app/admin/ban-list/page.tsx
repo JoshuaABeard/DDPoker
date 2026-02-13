@@ -236,7 +236,7 @@ export default function BanListPage() {
 
       {/* Ban List */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700" role="alert">
           {error}
         </div>
       )}
