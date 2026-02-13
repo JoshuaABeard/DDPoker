@@ -10,6 +10,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
+import { Dialog } from '@/components/ui/Dialog'
 import { adminApi } from '@/lib/api'
 import { toBackendPage, buildPaginationResult } from '@/lib/pagination'
 
@@ -37,6 +38,15 @@ export default function BanListPage() {
   const [newBanComment, setNewBanComment] = useState('')
   const [newBanUntil, setNewBanUntil] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Dialog state
+  const [dialogState, setDialogState] = useState<{
+    isOpen: boolean
+    type: 'alert' | 'confirm'
+    title: string
+    message: string
+    onConfirm?: () => void
+  }>({ isOpen: false, type: 'alert', title: '', message: '' })
 
   useEffect(() => {
     loadBans()
@@ -75,7 +85,12 @@ export default function BanListPage() {
   async function handleAddBan(e: React.FormEvent) {
     e.preventDefault()
     if (!newBanKey.trim()) {
-      alert('Key is required')
+      setDialogState({
+        isOpen: true,
+        type: 'alert',
+        title: 'Validation Error',
+        message: 'Key is required',
+      })
       return
     }
 
@@ -92,23 +107,39 @@ export default function BanListPage() {
       await loadBans()
     } catch (err) {
       console.error('Failed to add ban:', err)
-      alert('Failed to add ban. Please try again.')
+      setDialogState({
+        isOpen: true,
+        type: 'alert',
+        title: 'Error',
+        message: 'Failed to add ban. Please try again.',
+      })
     } finally {
       setIsSubmitting(false)
     }
   }
 
   async function handleRemoveBan(key: string) {
-    if (!confirm('Are you sure you want to remove this ban?')) {
-      return
-    }
+    setDialogState({
+      isOpen: true,
+      type: 'confirm',
+      title: 'Remove Ban',
+      message: 'Are you sure you want to remove this ban?',
+      onConfirm: () => confirmRemoveBan(key),
+    })
+  }
 
+  async function confirmRemoveBan(key: string) {
     try {
       await adminApi.removeBan(key)
       await loadBans()
     } catch (err) {
       console.error('Failed to remove ban:', err)
-      alert('Failed to remove ban. Please try again.')
+      setDialogState({
+        isOpen: true,
+        type: 'alert',
+        title: 'Error',
+        message: 'Failed to remove ban. Please try again.',
+      })
     }
   }
 
@@ -254,6 +285,15 @@ export default function BanListPage() {
           )}
         </>
       )}
+
+      <Dialog
+        isOpen={dialogState.isOpen}
+        onClose={() => setDialogState({ ...dialogState, isOpen: false })}
+        onConfirm={dialogState.onConfirm}
+        title={dialogState.title}
+        message={dialogState.message}
+        type={dialogState.type}
+      />
     </div>
   )
 }
