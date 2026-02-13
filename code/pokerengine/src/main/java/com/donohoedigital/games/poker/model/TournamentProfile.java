@@ -954,172 +954,26 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     }
 
     /**
-     * Set automatic spot percentages
+     * Set automatic spot percentages using Fibonacci-based payout distribution.
+     *
+     * <p>
+     * Delegates to {@link PayoutDistributionCalculator} for the complex algorithm,
+     * then writes the results back to the internal map.
+     *
+     * @see PayoutDistributionCalculator#calculatePayouts(int, int, int, int)
      */
     public void setAutoSpots() {
-        int nFinalSpots = 10; // top ten finishers use fibbo math
+        PayoutDistributionCalculator calc = new PayoutDistributionCalculator();
 
-        int nPool = getPrizePool();
-        int nNumSpots = getNumSpots();
-        int nNonFinal = nNumSpots - nFinalSpots;
-        int amount[] = new int[nNumSpots];
+        // Calculate payout amounts using extracted algorithm
+        int[] amounts = calc.calculatePayouts(getNumSpots(), getPrizePool(), getTrueBuyin(), getRebuyCost());
 
-        int nMin = getTrueBuyin();
-        // add a rebuy to min in actual tournament calculation
-        // as suggested by "Tex" - we do this if the
-        // pool has had enough rebuys to cover each spot
-        if (nPool >= (getPoolAfterHouseTake(getBuyinCost() * getNumPlayers()) + (nNumSpots * getRebuyCost()))) {
-            nMin += getRebuyCost();
-        }
-
-        int nAllocdPool = 0;
-        int nIndex = 0;
-        int nAlloc;
-
-        int nRound;
-        if (nMin < 100)
-            nRound = 1;
-        else if (nMin < 500)
-            nRound = 10;
-        else if (nMin <= 1000)
-            nRound = 100;
-        else if (nMin <= 5000)
-            nRound = 500;
-        else if (nMin <= 10000)
-            nRound = 1000;
-        else
-            nRound = 5000;
-
-        double inc = .5d;
-        double mult;
-        if (nNonFinal > 0) {
-            // estimate total pool - if non-final payouts are too
-            // high, lower increment paid until total is in desired
-            // range
-            int nMinBottom = (int) (nFinalSpots / MAX_SPOTS_PERCENT); // based on max percentange
-            // we won't be in here unless at 30+ players
-            double dLow = .01d;
-            double dHigh = .33d;
-            // range for non-final portion of the pool is 1% at 30 players to 33% at max
-            // players
-            double dRange = dLow
-                    + ((dHigh - dLow) * (getNumPlayers() - nMinBottom) / (double) (MAX_PLAYERS - nMinBottom));
-            double dMinRange = ((nMin * nNonFinal) / (double) nPool);
-            if (dRange < dMinRange)
-                dRange = dMinRange;
-
-            // logger.debug("Range: " + (dRange* 100));
-            while (true) {
-                int nFull = nNonFinal / PokerConstants.SEATS;
-                int nExtra = nNonFinal % PokerConstants.SEATS;
-                int nInc = (int) (nMin * inc);
-                if (nInc == 0)
-                    nInc = 1;
-                // this formula:
-                //
-                // #seats (10) * num full tables * min payout (buyin) +
-                // #seats (10) * sum (1 .. full) * incremental payout
-                double nEst = (PokerConstants.SEATS * nFull * nMin)
-                        + (PokerConstants.SEATS * ((nFull * (nFull + 1)) / 2) * nInc);
-                int nFinalInc = (int) (nMin * (inc * (nFull + 1)));
-
-                // add payout to extra players
-                nEst += nExtra * (nMin + nFinalInc);
-                if (nEst / nPool <= dRange) {
-                    break;
-                } else {
-                    inc -= .05d;
-                    if (inc <= 0) {
-                        inc = 0;
-                        break;
-                    }
-                }
-            }
-
-            mult = 1.0d + inc;
-
-            while (nNonFinal > 0) {
-                nAlloc = (int) (nMin * mult);
-                if ((nAlloc % nRound) > 0) {
-                    nAlloc = nAlloc - (nAlloc % nRound) + nRound;
-                }
-                amount[nIndex] = nAlloc;
-                nAllocdPool += nAlloc;
-                nIndex++;
-                nNonFinal--;
-
-                if (nIndex % PokerConstants.SEATS == 0 && nNonFinal > 0) {
-                    mult += inc;
-                }
-            }
-        } else {
-            mult = 1.0d;
-        }
-        int nLeft = nNumSpots - nIndex;
-        int sum;
-        int fibo[] = new int[Math.max(2, nNumSpots)];
-
-        // STEP 1: do fibonnaci sequence
-        fibo[0] = 2;
-        fibo[1] = 3;
-        sum = fibo[0] + fibo[1];
-        for (int i = 2; i < nLeft; i++) {
-            fibo[i] = fibo[i - 1] + fibo[i - 2];
-            sum += fibo[i];
-        }
-
-        // STEP 2: compute percentage
-        int nPoolLeft = nPool - nAllocdPool;
-        nMin *= mult;
-        int nSplit = nPoolLeft / nLeft;
-        if (nMin >= (nSplit * .8))
-            nMin = 0;
-        if (nMin == 0)
-            nRound = 1;
-
-        // logger.debug("min: " + nMin + " round: " + nRound + " nSplit: " + nSplit + "
-        // nPoolLeft: " + nPoolLeft + " nLeft: " + nLeft + " mult: " + mult);
-
-        if ((nMin % nRound) > 0) {
-            nMin = nMin - (nMin % nRound) + nRound;
-        }
-
-        // logger.debug("min: "+ nMin);
-
-        double perc;
-        for (int i = 0; i < nLeft - 1; i++) {
-            perc = (double) fibo[i] / (double) sum;
-            nAlloc = (int) (nPoolLeft * perc);
-
-            if (nAlloc < nMin) {
-                nAlloc = nMin;
-            } else {
-                if ((nAlloc % nRound) > 0) {
-                    nAlloc = nAlloc - (nAlloc % nRound) + nRound;
-                }
-            }
-
-            amount[nIndex] = nAlloc;
-            nAllocdPool += nAlloc;
-            nIndex++;
-
-        }
-        amount[nNumSpots - 1] = nPool - nAllocdPool;
-
-        // odd case where #1 is less than #2 - swap
-        if (nNumSpots > 1 && amount[nNumSpots - 1] < amount[nNumSpots - 2]) {
-            int swap = amount[nNumSpots - 1];
-            amount[nNumSpots - 1] = amount[nNumSpots - 2];
-            amount[nNumSpots - 2] = swap;
-        }
-
-        // set values
-        String text;
+        // Write amounts back to map (indexed from last place to first)
         for (int i = 0; i < MAX_SPOTS; i++) {
-            if (i >= nNumSpots) {
+            if (i >= amounts.length) {
                 map_.removeString(PARAM_SPOTAMOUNT + (i + 1));
             } else {
-                text = FORMAT_AMOUNT.format(new Object[]{amount[amount.length - i - 1]});
+                String text = FORMAT_AMOUNT.format(new Object[]{amounts[amounts.length - i - 1]});
                 map_.setString(PARAM_SPOTAMOUNT + (i + 1), text);
             }
         }
@@ -1437,234 +1291,100 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     /**
      * Fix levels, eliminating missing rows, filling in missing blinds
      */
+    /**
+     * Validate and normalize tournament blind level structure.
+     *
+     * <p>
+     * Delegates to {@link LevelValidator} for complex validation logic: gap
+     * consolidation, blind fill-in, monotonic enforcement, ante bounds, rounding,
+     * break handling, and default propagation.
+     *
+     * @see LevelValidator#validateAndNormalize(Map, int, String)
+     */
     public void fixLevels() {
-        int nLevel = 0;
-        int nNonBreakLevel = 0;
-        int nAnte, nSmall, nBig, nMinutes;
-        String sAnte, sSmall, sBig, sMinutes, sType;
-        String sSmallL = null, sBigL = null;
-        String a, s, b, m, g;
-        boolean bUpdate;
-        boolean bBreak;
+        LevelValidator validator = new LevelValidator();
 
+        // Extract raw level data from map
+        Map<String, String> rawLevelData = extractLevelStrings();
+
+        // Validate and normalize using extracted algorithm
+        List<LevelValidator.LevelData> normalizedLevels = validator.validateAndNormalize(rawLevelData,
+                getDefaultMinutesPerLevel(), getDefaultGameTypeString());
+
+        // Clear all existing level data
         for (int i = 1; i <= MAX_LEVELS; i++) {
-            bUpdate = false;
-            a = PARAM_ANTE + i;
-            s = PARAM_SMALL + i;
-            b = PARAM_BIG + i;
-            m = PARAM_MINUTES + i;
-            g = PARAM_GAMETYPE + i;
-            sAnte = map_.getString(a, "");
-            sSmall = map_.getString(s, "");
-            sBig = map_.getString(b, "");
-            sMinutes = map_.getString(m, "");
-            sType = map_.getString(g, "");
-            bBreak = false;
-
-            try {
-                nAnte = Integer.parseInt(sAnte);
-                if (nAnte == 0) {
-                    sAnte = "";
-                    map_.setString(a, "");
-                }
-                if (nAnte == BREAK_ANTE_VALUE)
-                    bBreak = true;
-            } catch (NumberFormatException ignored) {
-                sAnte = "";
-                map_.setString(a, "");
-            }
-            try {
-                nSmall = Integer.parseInt(sSmall);
-                if (nSmall == 0) {
-                    sSmall = "";
-                    map_.setString(s, "");
-                }
-            } catch (NumberFormatException ignored) {
-                sSmall = "";
-                map_.setString(s, "");
-            }
-            try {
-                nBig = Integer.parseInt(sBig);
-                if (nBig == 0) {
-                    sBig = "";
-                    map_.setString(b, "");
-                }
-            } catch (NumberFormatException ignored) {
-                sBig = "";
-                map_.setString(b, "");
-            }
-            try {
-                nMinutes = Integer.parseInt(sMinutes);
-                if (nMinutes == 0) {
-                    sMinutes = "";
-                    map_.setString(m, "");
-                }
-            } catch (NumberFormatException ignored) {
-                sMinutes = "";
-                map_.setString(m, "");
-            }
-
-            if (sAnte.length() == 0 && sSmall.length() == 0 && sBig.length() == 0)
-                continue;
-
-            // increment level (we have a valid level)
-            nLevel++;
-            if (!bBreak)
-                nNonBreakLevel++;
-
-            if (sBig.length() == 0 && sBigL != null && !bBreak) {
-                sBig = sBigL;
-                bUpdate = true;
-            }
-
-            if (sSmall.length() == 0 && sSmallL != null && !bBreak) {
-                sSmall = sSmallL;
-                bUpdate = true;
-            }
-
-            if (nLevel != i) {
-                map_.setString(PARAM_ANTE + nLevel, sAnte);
-                map_.setString(PARAM_MINUTES + nLevel, sMinutes);
-
-                if (bBreak) {
-                    map_.remove(PARAM_SMALL + nLevel);
-                    map_.remove(PARAM_BIG + nLevel);
-                    map_.remove(PARAM_GAMETYPE + nLevel);
-                } else {
-                    map_.setString(PARAM_SMALL + nLevel, sSmall);
-                    map_.setString(PARAM_BIG + nLevel, sBig);
-                    map_.setString(PARAM_GAMETYPE + nLevel, sType);
-                }
-                map_.setString(a, "");
-                map_.setString(s, "");
-                map_.setString(b, "");
-                map_.setString(m, "");
-                map_.setString(g, "");
-            } else if (bUpdate) {
-                map_.setString(s, sSmall);
-                map_.setString(b, sBig);
-            }
-
-            if (!bBreak) {
-                sSmallL = sSmall;
-                sBigL = sBig;
-            }
-        }
-
-        // if user defined no levels, set level 1
-        if (nNonBreakLevel == 0) {
-            nLevel++;
-            map_.setString(PARAM_SMALL + (nLevel), "1");
-            map_.setString(PARAM_BIG + (nLevel), "2");
-        }
-
-        // record (needed in getAnte() et al)
-        map_.setInteger(PARAM_LASTLEVEL, nLevel);
-
-        // now verify amounts and cleanup
-        int nAnteP = 0, nSmallP = 0, nBigP = 0;
-        int nFrac;
-        int minutesPerLevel = getDefaultMinutesPerLevel();
-        String sGameTypeDefault = getDefaultGameTypeString();
-        for (int i = 1; i <= nLevel; i++) {
-            if (isBreak(i)) {
-                // always leave minutes for break
-                // leave ante value as is
-                continue;
-            }
-
-            nAnte = getAnte(i);
-            nSmall = getSmallBlind(i);
-            nBig = getBigBlind(i);
-            sType = getGameTypeString(i);
-            nMinutes = getMinutes(i);
-            if (nMinutes == minutesPerLevel)
-                nMinutes = 0; // equals default, so don't save
-            if (sType.equals(sGameTypeDefault))
-                sType = null; // equals default, so don't save
-
-            if (i == 1) {
-                if (nSmall == 0) {
-                    if (nBig > 2)
-                        nSmall = nBig / 2;
-                    else
-                        nSmall = 1;
-                }
-                if (nBig == 0)
-                    nBig = nSmall * 2;
-            }
-
-            // adjust if non-zero
-            if (nAnte != 0 || nSmall != 0 || nBig != 0) {
-                // big should be bigger than small
-                if (nBig < nSmall)
-                    nBig = nSmall;
-
-                // validate it is >= last round
-                // (except ante, which can go back to 0)
-                if (i > 1) {
-                    if (nAnte < nAnteP && nAnte != 0)
-                        nAnte = nAnteP;
-                    if (nSmall < nSmallP)
-                        nSmall = nSmallP;
-                    if (nBig < nBigP)
-                        nBig = nBigP;
-                }
-
-                // ante should be at least 5% of small blind
-                // but not bigger than the small blind
-                nFrac = (int) (nSmall * .05f);
-                if (nAnte != 0) {
-                    if (nAnte < nFrac)
-                        nAnte = nFrac;
-                    if (nAnte > nSmall)
-                        nAnte = nSmall;
-                }
-
-                // round
-                nAnte = round(nAnte);
-                nSmall = round(nSmall);
-                nBig = round(nBig);
-            }
-
-            if (nMinutes > MAX_MINUTES)
-                nMinutes = MAX_MINUTES;
-
-            // update - set new value or remove completely if 0
-            if (nAnte > 0)
-                map_.setString(PARAM_ANTE + i, "" + nAnte);
-            else
-                map_.removeString(PARAM_ANTE + i);
-            if (nSmall > 0)
-                map_.setString(PARAM_SMALL + i, "" + nSmall);
-            else
-                map_.removeString(PARAM_SMALL + i);
-            if (nBig > 0)
-                map_.setString(PARAM_BIG + i, "" + nBig);
-            else
-                map_.removeString(PARAM_BIG + i);
-            if (nMinutes > 0)
-                map_.setString(PARAM_MINUTES + i, "" + nMinutes);
-            else
-                map_.removeString(PARAM_MINUTES + i);
-            if (sType != null)
-                map_.setString(PARAM_GAMETYPE + i, sType);
-            else
-                map_.removeString(PARAM_GAMETYPE + i);
-
-            nAnteP = (nAnte == 0 ? nAnteP : nAnte); // don't store ante if its set to 0 (keep at last value)
-            nSmallP = nSmall;
-            nBigP = nBig;
-        }
-
-        // cleanup remaining levels
-        for (int i = nLevel + 1; i <= MAX_LEVELS; i++) {
             map_.removeString(PARAM_ANTE + i);
             map_.removeString(PARAM_SMALL + i);
             map_.removeString(PARAM_BIG + i);
             map_.removeString(PARAM_MINUTES + i);
             map_.removeString(PARAM_GAMETYPE + i);
         }
+
+        // Write normalized levels back to map
+        for (LevelValidator.LevelData level : normalizedLevels) {
+            int levelNum = level.levelNum;
+
+            if (level.isBreak) {
+                // Break levels only have ante (=-1) and minutes
+                map_.setString(PARAM_ANTE + levelNum, "" + BREAK_ANTE_VALUE);
+                if (level.minutes > 0) {
+                    map_.setString(PARAM_MINUTES + levelNum, "" + level.minutes);
+                }
+            } else {
+                // Regular levels
+                if (level.ante > 0) {
+                    map_.setString(PARAM_ANTE + levelNum, "" + level.ante);
+                }
+                if (level.smallBlind > 0) {
+                    map_.setString(PARAM_SMALL + levelNum, "" + level.smallBlind);
+                }
+                if (level.bigBlind > 0) {
+                    map_.setString(PARAM_BIG + levelNum, "" + level.bigBlind);
+                }
+                if (level.minutes > 0) {
+                    map_.setString(PARAM_MINUTES + levelNum, "" + level.minutes);
+                }
+                if (level.gameType != null) {
+                    map_.setString(PARAM_GAMETYPE + levelNum, level.gameType);
+                }
+            }
+        }
+
+        // Record last level number
+        map_.setInteger(PARAM_LASTLEVEL, normalizedLevels.size());
+    }
+
+    /**
+     * Extract level strings from map for validation.
+     */
+    private Map<String, String> extractLevelStrings() {
+        Map<String, String> rawData = new HashMap<>();
+
+        for (int i = 1; i <= MAX_LEVELS; i++) {
+            String ante = map_.getString(PARAM_ANTE + i);
+            String small = map_.getString(PARAM_SMALL + i);
+            String big = map_.getString(PARAM_BIG + i);
+            String minutes = map_.getString(PARAM_MINUTES + i);
+            String gameType = map_.getString(PARAM_GAMETYPE + i);
+
+            if (ante != null && !ante.isEmpty()) {
+                rawData.put("ante" + i, ante);
+            }
+            if (small != null && !small.isEmpty()) {
+                rawData.put("small" + i, small);
+            }
+            if (big != null && !big.isEmpty()) {
+                rawData.put("big" + i, big);
+            }
+            if (minutes != null && !minutes.isEmpty()) {
+                rawData.put("minutes" + i, minutes);
+            }
+            if (gameType != null && !gameType.isEmpty()) {
+                rawData.put("gametype" + i, gameType);
+            }
+        }
+
+        return rawData;
     }
 
     /**
