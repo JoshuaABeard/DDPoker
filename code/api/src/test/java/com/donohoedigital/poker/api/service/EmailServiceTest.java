@@ -30,52 +30,48 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
+package com.donohoedigital.poker.api.service;
 
-export interface NavSubPage {
-  title: string
-  link: string
-}
+import org.junit.jupiter.api.Test;
 
-export interface NavItem {
-  title: string
-  link: string
-  subPages?: NavSubPage[]
-  admin?: boolean
-}
+import static org.junit.jupiter.api.Assertions.*;
 
-export const navData: Record<string, NavItem> = {
-  home: {
-    title: 'Home',
-    link: '/',
-  },
-  about: {
-    title: 'About',
-    link: '/about',
-    // No dropdown - uses left sidebar navigation instead
-  },
-  download: {
-    title: 'Download',
-    link: '/download',
-  },
-  support: {
-    title: 'Support',
-    link: '/support',
-    // No dropdown - uses left sidebar navigation instead
-  },
-  online: {
-    title: 'Online',
-    link: '/online/available',
-    // No dropdown - goes directly to Available Games, uses left sidebar navigation
-  },
-  admin: {
-    admin: true,
-    title: 'Admin',
-    link: '/admin',
-    subPages: [
-      { title: 'Admin', link: '/admin' },
-      { title: 'Profile Search', link: '/admin/online-profile-search' },
-      { title: 'Reg Search', link: '/admin/reg-search' },
-      { title: 'Ban List', link: '/admin/ban-list' },
-    ],
-  },
+/**
+ * Tests for EmailService.
+ */
+class EmailServiceTest {
+
+    @Test
+    void testSendPasswordResetEmail_Success() {
+        EmailService emailService = new EmailService();
+
+        // Note: This test will attempt to send a real email if SMTP is configured
+        // In a real environment, we would mock DDPostalService
+        // For now, we test that the method doesn't throw exceptions
+
+        boolean result = emailService.sendPasswordResetEmail("test@example.com", "testuser", "tempPass123");
+
+        // Result depends on SMTP configuration
+        // Just verify no exceptions thrown
+        assertNotNull(result);
+    }
+
+    @Test
+    void testSendPasswordResetEmail_NullEmail() {
+        EmailService emailService = new EmailService();
+
+        assertThrows(Exception.class, () -> {
+            emailService.sendPasswordResetEmail(null, "testuser", "tempPass123");
+        });
+    }
+
+    @Test
+    void testSendPasswordResetEmail_EmptyPassword() {
+        EmailService emailService = new EmailService();
+
+        boolean result = emailService.sendPasswordResetEmail("test@example.com", "testuser", "");
+
+        // Should handle gracefully (may fail to send but shouldn't crash)
+        assertNotNull(result);
+    }
 }

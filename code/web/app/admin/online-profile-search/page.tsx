@@ -3,6 +3,7 @@
  * DD Poker - Admin Online Profile Search
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
+export const dynamic = 'force-static'
 
 import { Metadata } from 'next'
 import { DataTable } from '@/components/data/DataTable'

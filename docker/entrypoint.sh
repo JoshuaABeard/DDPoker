@@ -74,16 +74,20 @@ echo "  SMTP Host: ${SMTP_HOST:-127.0.0.1}:${SMTP_PORT:-587}"
 echo "  Admin User: ${ADMIN_USERNAME:-not configured}"
 echo "============================================"
 
-# Start pokerserver (background)
-echo "[entrypoint] Starting pokerserver..."
-java $JAVA_OPTS -Xms24m -Xmx96m \
-  -cp "$CLASSPATH" \
-  com.donohoedigital.games.poker.server.PokerServerMain &
-SERVER_PID=$!
-echo "[entrypoint] pokerserver PID: $SERVER_PID"
-
-# Brief pause to let server initialize Spring context first
-sleep 3
+# Start pokerserver (background) - optional via SKIP_GAMESERVER env var
+if [ "$SKIP_GAMESERVER" != "true" ]; then
+  echo "[entrypoint] Starting pokerserver..."
+  java $JAVA_OPTS -Xms24m -Xmx96m \
+    -cp "$CLASSPATH" \
+    com.donohoedigital.games.poker.server.PokerServerMain &
+  SERVER_PID=$!
+  echo "[entrypoint] pokerserver PID: $SERVER_PID"
+  # Brief pause to let server initialize Spring context first
+  sleep 3
+else
+  echo "[entrypoint] Skipping pokerserver (SKIP_GAMESERVER=true)"
+  SERVER_PID=0
+fi
 
 # Start API via Spring Boot (background)
 echo "[entrypoint] Starting API (Spring Boot + Next.js)..."
@@ -93,13 +97,22 @@ java $JAVA_OPTS -Xms24m -Xmx96m \
 WEB_PID=$!
 echo "[entrypoint] API PID: $WEB_PID"
 
-echo "[entrypoint] Both processes started. Waiting..."
+if [ "$SKIP_GAMESERVER" != "true" ]; then
+  echo "[entrypoint] Both processes started. Waiting..."
+else
+  echo "[entrypoint] API started. Waiting..."
+fi
 
 # Trap signals for graceful shutdown
 shutdown() {
   echo "[entrypoint] Shutting down..."
-  kill $SERVER_PID $WEB_PID 2>/dev/null
-  wait $SERVER_PID $WEB_PID 2>/dev/null
+  if [ "$SKIP_GAMESERVER" != "true" ]; then
+    kill $SERVER_PID $WEB_PID 2>/dev/null
+    wait $SERVER_PID $WEB_PID 2>/dev/null
+  else
+    kill $WEB_PID 2>/dev/null
+    wait $WEB_PID 2>/dev/null
+  fi
   echo "[entrypoint] Shutdown complete."
   exit 0
 }
@@ -107,9 +120,15 @@ trap shutdown SIGTERM SIGINT
 
 # Wait for either process to exit
 # If one dies, stop the other and exit
-wait -n $SERVER_PID $WEB_PID
-EXIT_CODE=$?
-echo "[entrypoint] A process exited with code $EXIT_CODE. Stopping remaining..."
-kill $SERVER_PID $WEB_PID 2>/dev/null
-wait $SERVER_PID $WEB_PID 2>/dev/null
+if [ "$SKIP_GAMESERVER" != "true" ]; then
+  wait -n $SERVER_PID $WEB_PID
+  EXIT_CODE=$?
+  echo "[entrypoint] A process exited with code $EXIT_CODE. Stopping remaining..."
+  kill $SERVER_PID $WEB_PID 2>/dev/null
+  wait $SERVER_PID $WEB_PID 2>/dev/null
+else
+  wait $WEB_PID
+  EXIT_CODE=$?
+  echo "[entrypoint] API exited with code $EXIT_CODE."
+fi
 exit $EXIT_CODE

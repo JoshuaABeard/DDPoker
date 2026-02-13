@@ -9,10 +9,10 @@
 
 export default function Footer() {
   return (
-    <footer className="mt-12 py-8 px-4 border-t border-[var(--color-gray-light)] bg-[var(--bg-light-gray)]">
-      <div className="text-center text-[var(--color-gray-dark)] text-sm leading-relaxed">
-        <p className="my-1">DD Poker Community Edition</p>
-        <p className="my-1">
+    <footer className="mt-12 py-4 px-4 border-t border-[var(--color-gray-light)] bg-[var(--bg-light-gray)]">
+      <div className="text-center text-[var(--color-gray-dark)] text-sm leading-normal">
+        <p className="my-0.5">DD Poker Community Edition</p>
+        <p className="my-0.5">
           Originally created by{' '}
           <a
             href="https://www.ddpoker.com"
@@ -23,7 +23,7 @@ export default function Footer() {
             Doug Donohoe
           </a>
         </p>
-        <p className="my-1">DD Poker™ is a trademark of Donohoe Digital LLC</p>
+        <p className="my-0.5">DD Poker™ is a trademark of Donohoe Digital LLC</p>
       </div>
     </footer>
   )

@@ -30,52 +30,26 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
+package com.donohoedigital.poker.api.dto;
 
-export interface NavSubPage {
-  title: string
-  link: string
-}
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
-export interface NavItem {
-  title: string
-  link: string
-  subPages?: NavSubPage[]
-  admin?: boolean
-}
+/**
+ * Request DTO for forgot password endpoint.
+ */
+public class ForgotPasswordRequest {
+    @NotBlank(message = "Username is required")
+    @Size(min = 3, max = 32, message = "Username must be 3-32 characters")
+    @Pattern(regexp = "^[a-zA-Z0-9_-]+$", message = "Username contains invalid characters")
+    private String username;
 
-export const navData: Record<string, NavItem> = {
-  home: {
-    title: 'Home',
-    link: '/',
-  },
-  about: {
-    title: 'About',
-    link: '/about',
-    // No dropdown - uses left sidebar navigation instead
-  },
-  download: {
-    title: 'Download',
-    link: '/download',
-  },
-  support: {
-    title: 'Support',
-    link: '/support',
-    // No dropdown - uses left sidebar navigation instead
-  },
-  online: {
-    title: 'Online',
-    link: '/online/available',
-    // No dropdown - goes directly to Available Games, uses left sidebar navigation
-  },
-  admin: {
-    admin: true,
-    title: 'Admin',
-    link: '/admin',
-    subPages: [
-      { title: 'Admin', link: '/admin' },
-      { title: 'Profile Search', link: '/admin/online-profile-search' },
-      { title: 'Reg Search', link: '/admin/reg-search' },
-      { title: 'Ban List', link: '/admin/ban-list' },
-    ],
-  },
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
 }
