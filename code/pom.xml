@@ -57,6 +57,7 @@
     <module>gametools</module>
     <module>ddpoker</module>
     <module>pokerengine</module>
+    <module>pokergamecore</module>
     <module>pokernetwork</module>
     <module>poker</module>
     <module>pokerserver</module>
