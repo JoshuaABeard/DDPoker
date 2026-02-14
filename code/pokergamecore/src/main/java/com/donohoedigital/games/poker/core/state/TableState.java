@@ -43,12 +43,21 @@ public enum TableState {
 
     private final int legacyValue;
 
+    // O(1) lookup array: legacy values range from 0 to 18
+    private static final TableState[] LOOKUP = new TableState[19];
+
+    static {
+        for (TableState ts : values()) {
+            LOOKUP[ts.legacyValue] = ts;
+        }
+    }
+
     TableState(int legacyValue) {
         this.legacyValue = legacyValue;
     }
 
     /**
-     * Convert from legacy integer constant to enum.
+     * Convert from legacy integer constant to enum (O(1) lookup).
      *
      * @param state
      *            legacy integer value (e.g., PokerTable.STATE_BETTING)
@@ -57,12 +66,10 @@ public enum TableState {
      *             if state value is unknown
      */
     public static TableState fromLegacy(int state) {
-        for (TableState ts : values()) {
-            if (ts.legacyValue == state) {
-                return ts;
-            }
+        if (state < 0 || state >= LOOKUP.length || LOOKUP[state] == null) {
+            throw new IllegalArgumentException("Unknown table state: " + state);
         }
-        throw new IllegalArgumentException("Unknown table state: " + state);
+        return LOOKUP[state];
     }
 
     /**

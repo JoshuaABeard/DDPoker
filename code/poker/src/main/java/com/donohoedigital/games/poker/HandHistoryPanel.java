@@ -46,6 +46,7 @@ import java.awt.event.*;
 import java.sql.*;
 import java.util.*;
 import java.util.List;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 public class HandHistoryPanel extends DDPanel {
 
@@ -313,17 +314,17 @@ public class HandHistoryPanel extends DDPanel {
         StringBuilder sb = new StringBuilder();
 
         if (hhand_.getAnte() > 0) {
-            sb.append(getHist(hist, HoldemHand.ROUND_PRE_FLOP, hhand_, true));
+            sb.append(getHist(hist, BettingRound.PRE_FLOP.toLegacy(), hhand_, true));
         }
-        sb.append(getHist(hist, HoldemHand.ROUND_PRE_FLOP, hhand_, false));
-        sb.append(getHist(hist, HoldemHand.ROUND_FLOP, hhand_, false));
-        sb.append(getHist(hist, HoldemHand.ROUND_TURN, hhand_, false));
-        sb.append(getHist(hist, HoldemHand.ROUND_RIVER, hhand_, false));
+        sb.append(getHist(hist, BettingRound.PRE_FLOP.toLegacy(), hhand_, false));
+        sb.append(getHist(hist, BettingRound.FLOP.toLegacy(), hhand_, false));
+        sb.append(getHist(hist, BettingRound.TURN.toLegacy(), hhand_, false));
+        sb.append(getHist(hist, BettingRound.RIVER.toLegacy(), hhand_, false));
 
         // I don't believe this will ever happen as it is now, but perhaps in the future
         // when not every hand is stored in the database, or more precisely when you can
         // view history for hands that aren't stored, for whatever reason.
-        if (hhand_.getRound() == HoldemHand.ROUND_SHOWDOWN) {
+        if (hhand_.getRound() == BettingRound.SHOWDOWN) {
             PokerDatabase.appendShowdown(sb, hhand_.getHistoryCopy(), hhand_.getCommunity(), showAll());
         }
 
@@ -340,11 +341,11 @@ public class HandHistoryPanel extends DDPanel {
 
         Hand community = hhand.getCommunity();
 
-        if (nRound == HoldemHand.ROUND_PRE_FLOP) {
+        if (nRound == BettingRound.PRE_FLOP.toLegacy()) {
             community = new Hand();
-        } else if ((nRound == HoldemHand.ROUND_FLOP) && (community.size() > 3)) {
+        } else if ((nRound == BettingRound.FLOP.toLegacy()) && (community.size() > 3)) {
             community = new Hand(community.getCard(0), community.getCard(1), community.getCard(2));
-        } else if ((nRound == HoldemHand.ROUND_TURN) && (community.size() > 4)) {
+        } else if ((nRound == BettingRound.TURN.toLegacy()) && (community.size() > 4)) {
             community = new Hand(community.getCard(0), community.getCard(1), community.getCard(2),
                     community.getCard(3));
         }

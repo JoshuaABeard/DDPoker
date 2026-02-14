@@ -136,7 +136,7 @@ public class AITest {
 
             HoldemHand hhand = player.getHoldemHand();
 
-            int round = hhand.getRound();
+            int round = hhand.getRound().toLegacy();
 
             int numPlayers = hhand.getTable().getNumOccupiedSeats();
 

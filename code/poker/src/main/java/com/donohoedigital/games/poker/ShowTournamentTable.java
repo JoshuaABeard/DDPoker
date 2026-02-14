@@ -42,6 +42,7 @@ import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.PlayerType;
 import com.donohoedigital.games.poker.ai.PokerAI;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.dashboard.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
@@ -595,7 +596,7 @@ public class ShowTournamentTable extends ShowPokerTable
         updateMinChip(false);
         if (hhand != null) {
             // if showdown, redisplay in case options changed regarding what to display
-            if (hhand.getRound() == HoldemHand.ROUND_SHOWDOWN) {
+            if (hhand.getRound() == BettingRound.SHOWDOWN) {
                 Showdown.displayShowdown(engine_, context_, hhand);
             }
         }
@@ -889,7 +890,7 @@ public class ShowTournamentTable extends ShowPokerTable
             case PokerTableEvent.TYPE_BUTTON_MOVED :
                 // if button moved while dealing for button, ignore since it will
                 // be moved via a specific phase, along with the cards display
-                if (table.getTableState() == PokerTable.STATE_DEAL_FOR_BUTTON)
+                if (table.getTableStateInt() == PokerTable.STATE_DEAL_FOR_BUTTON)
                     break;
                 GuiUtils.invoke(new SwingIt(table, SWING_DISPLAY_BUTTON));
                 break;
@@ -1248,8 +1249,7 @@ public class ShowTournamentTable extends ShowPokerTable
             // BUG 420 - don't allow rebuy when broke at showdown
             // since the user will be auto-prompted
             HoldemHand hhand = table.getHoldemHand();
-            if (bEnable && human.getChipCount() == 0 && hhand != null
-                    && hhand.getRound() == HoldemHand.ROUND_SHOWDOWN) {
+            if (bEnable && human.getChipCount() == 0 && hhand != null && hhand.getRound() == BettingRound.SHOWDOWN) {
                 bEnable = false;
             }
         }
@@ -1738,7 +1738,7 @@ public class ShowTournamentTable extends ShowPokerTable
             String sStyle = "PokerTable";
             PokerPlayer p = PokerUtils.getPokerPlayer(context_, t);
             HoldemHand hhand = table_.getHoldemHand();
-            boolean bInHand = hhand != null && hhand.getRound() != HoldemHand.ROUND_SHOWDOWN;
+            boolean bInHand = hhand != null && hhand.getRound() != BettingRound.SHOWDOWN;
 
             if (PokerUtils.isPot(t) || PokerUtils.isFlop(t) || p == null) {
                 // TODO: deal when auto-deal on?
@@ -1761,7 +1761,7 @@ public class ShowTournamentTable extends ShowPokerTable
                         // AND THE SHEER SIZE OF THE MENU, SO IT'S JUST IMPLEMENTED FOR TESTING PURPOSES
                         // RIGHT NOW
                         if (TESTING(PokerConstants.TESTING_ALLOW_CHANGE_LEVEL) && (table_.getHoldemHand() == null
-                                || table_.getHoldemHand().getRound() == HoldemHand.ROUND_SHOWDOWN)) {
+                                || table_.getHoldemHand().getRound() == BettingRound.SHOWDOWN)) {
                             menu.add(new ChangeBlinds(sStyle, point));
                         }
                     }
@@ -1828,7 +1828,7 @@ public class ShowTournamentTable extends ShowPokerTable
                     menu.add(new MoveButton(sStyle, t, table_.getButton() != nSeat));
 
                     if (p.isComputer() && (table_.getHoldemHand() == null
-                            || table_.getHoldemHand().getRound() == HoldemHand.ROUND_SHOWDOWN)) {
+                            || table_.getHoldemHand().getRound() == BettingRound.SHOWDOWN)) {
                         menu.add(new RemovePlayer(sStyle, t));
                     }
                 }
@@ -2295,7 +2295,7 @@ public class ShowTournamentTable extends ShowPokerTable
             // next hand starts because player likely wanted button
             // to start there for next hand
             HoldemHand hhand = table_.getHoldemHand();
-            if (hhand != null && hhand.getRound() == HoldemHand.ROUND_SHOWDOWN) {
+            if (hhand != null && hhand.getRound() == BettingRound.SHOWDOWN) {
                 table_.setSkipNextButtonMove(true);
             }
         }

@@ -68,6 +68,7 @@ import java.util.Collections;
 import java.util.Comparator;
 
 import static com.donohoedigital.config.DebugConfig.TESTING;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 public class AdvisorInfoDialog extends DialogPhase {
     static Logger logger = LogManager.getLogger(AdvisorInfoDialog.class);
@@ -305,7 +306,7 @@ public class AdvisorInfoDialog extends DialogPhase {
             gridBorder.add(GuiUtils.CENTER(grid_), BorderLayout.CENTER);
             slidersPanel_.add(gridBorder, BorderLayout.EAST);
 
-            grid_.setPreFlop(ai.getRound() == HoldemHand.ROUND_PRE_FLOP);
+            grid_.setPreFlop(ai.getRound() == BettingRound.PRE_FLOP.toLegacy());
 
             progressBar_ = new DDProgressBar(GuiManager.DEFAULT, "PokerStats", false);
             // progressBar_.setBackground(Color.BLACK);
@@ -436,7 +437,7 @@ public class AdvisorInfoDialog extends DialogPhase {
             Hand pocket = p.getHand();
             Hand backup = new Hand(pocket);
 
-            if (ai.getRound() == HoldemHand.ROUND_PRE_FLOP) {
+            if (ai.getRound() == BettingRound.PRE_FLOP.toLegacy()) {
                 boolean suited;
 
                 for (int rank1 = Card.TWO; rank1 <= Card.ACE; ++rank1) {

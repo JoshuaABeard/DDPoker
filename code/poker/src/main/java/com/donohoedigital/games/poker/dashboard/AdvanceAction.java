@@ -47,6 +47,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Jun 20, 2005 Time: 9:18:45 PM
@@ -230,7 +231,7 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
 
         // get basic info
         boolean bNoAction = human.isFolded() || human.isAllIn() || bHumanActing_
-                || hhand.getRound() == HoldemHand.ROUND_SHOWDOWN || hhand.getNumWithCards() == 1;
+                || hhand.getRound() == BettingRound.SHOWDOWN || hhand.getNumWithCards() == 1;
         int nToCall = 0;
         int nBet = 0;
         int nMaxRaise = 0;
@@ -342,7 +343,7 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
     private HandAction _getAdvanceAction() {
         PokerTable table = game_.getCurrentTable();
         HoldemHand hhand = table.getHoldemHand();
-        int nRound = hhand.getRound();
+        int nRound = hhand.getRound().toLegacy();
         PokerPlayer human = game_.getHumanPlayer();
         int nAction;
         int nAmount = 0;

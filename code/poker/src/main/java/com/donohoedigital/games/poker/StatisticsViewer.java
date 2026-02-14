@@ -47,6 +47,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
 import java.util.List;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 public class StatisticsViewer extends BasePhase implements ActionListener {
     public static final String COL_FINISH = "finish";
@@ -164,13 +165,13 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
         tabs_.addTab(PropertyConfig.getMessage("msg.handhistory.overall"), ic, new OverallPanel(), null);
         tabs_.addTab(PropertyConfig.getMessage("msg.handhistory.byhand"), ic, new ByHandPanel(), null);
         tabs_.addTab(PropertyConfig.getMessage("msg.handhistory.preflop"), ic,
-                new ByRoundPanel(HoldemHand.ROUND_PRE_FLOP), null);
-        tabs_.addTab(PropertyConfig.getMessage("msg.handhistory.flop"), ic, new ByRoundPanel(HoldemHand.ROUND_FLOP),
-                null);
-        tabs_.addTab(PropertyConfig.getMessage("msg.handhistory.turn"), ic, new ByRoundPanel(HoldemHand.ROUND_TURN),
-                null);
-        tabs_.addTab(PropertyConfig.getMessage("msg.handhistory.river"), ic, new ByRoundPanel(HoldemHand.ROUND_RIVER),
-                null);
+                new ByRoundPanel(BettingRound.PRE_FLOP.toLegacy()), null);
+        tabs_.addTab(PropertyConfig.getMessage("msg.handhistory.flop"), ic,
+                new ByRoundPanel(BettingRound.FLOP.toLegacy()), null);
+        tabs_.addTab(PropertyConfig.getMessage("msg.handhistory.turn"), ic,
+                new ByRoundPanel(BettingRound.TURN.toLegacy()), null);
+        tabs_.addTab(PropertyConfig.getMessage("msg.handhistory.river"), ic,
+                new ByRoundPanel(BettingRound.RIVER.toLegacy()), null);
 
         finishTable_.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
@@ -591,7 +592,7 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
                     "SELECT \"com.donohoedigital.games.poker.PokerDatabaseProcs.getHandClass\"(PLH_CARD_1, PLH_CARD_2),"
                             + "COUNT(*),\n" + "CONCAT(SUM(CASE WHEN BITAND(" + getRoundColumn(nRound) + ','
                             + PokerDatabase.BIT_CHECK + ") > 0 THEN 1 ELSE 0 END) * 100 / COUNT(*),'%'),\n"
-                            + ((nRound == HoldemHand.ROUND_PRE_FLOP)
+                            + ((nRound == BettingRound.PRE_FLOP.toLegacy())
                                     ? ""
                                     : "CONCAT(SUM(CASE WHEN BITAND(" + getRoundColumn(nRound) + ','
                                             + PokerDatabase.BIT_CHECK + ") > 0 AND BITAND(" + getRoundColumn(nRound)
@@ -779,8 +780,8 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
         @Override
         public void createUI() {
             DDScrollTable scrollTable = new DDScrollTable("stats", "PokerPrefsPlayerList", "BrushedMetal",
-                    (nRound_ == HoldemHand.ROUND_PRE_FLOP) ? byRoundPreFlopColNames_ : byRoundColNames_,
-                    (nRound_ == HoldemHand.ROUND_PRE_FLOP)
+                    (nRound_ == BettingRound.PRE_FLOP.toLegacy()) ? byRoundPreFlopColNames_ : byRoundColNames_,
+                    (nRound_ == BettingRound.PRE_FLOP.toLegacy())
                             ? new int[]{30, 30, 40, 40, 40, 40, 40, 40, 40}
                             : new int[]{30, 30, 40, 40, 40, 40, 40, 40, 40, 40});
 

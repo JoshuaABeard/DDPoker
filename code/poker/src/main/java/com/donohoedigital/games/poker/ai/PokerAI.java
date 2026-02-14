@@ -53,6 +53,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 // TODO: provide APIs for logging that don't require DDLogger
 // TODO: provide generic idiot-proof marshal/demarshal interface
@@ -76,10 +77,10 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
     public static final int POSITION_SMALL = 4;
     public static final int POSITION_BIG = 5;
 
-    public static final int PRE_FLOP = HoldemHand.ROUND_PRE_FLOP;
-    public static final int FLOP = HoldemHand.ROUND_FLOP;
-    public static final int TURN = HoldemHand.ROUND_TURN;
-    public static final int RIVER = HoldemHand.ROUND_RIVER;
+    public static final int PRE_FLOP = BettingRound.PRE_FLOP.toLegacy();
+    public static final int FLOP = BettingRound.FLOP.toLegacy();
+    public static final int TURN = BettingRound.TURN.toLegacy();
+    public static final int RIVER = BettingRound.RIVER.toLegacy();
 
     private DMTypedHashMap map_;
 
@@ -223,7 +224,7 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
         HoldemHand hand = player.getHoldemHand();
 
         int call = hand.getCall(player);
-        int round = hand.getRound();
+        int round = hand.getRound().toLegacy();
         int playerchips = player.getChipCount();
         int minraise = hand.getMinRaise();
 
@@ -257,7 +258,7 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
                 }
             }
 
-            if ((call == 0) && (round != HoldemHand.ROUND_PRE_FLOP)) {
+            if ((call == 0) && (round != BettingRound.PRE_FLOP.toLegacy())) {
                 return new HandAction(player, round, HandAction.ACTION_BET, amount, action.getReason());
             } else if (amount <= call) {
                 return new HandAction(player, round, HandAction.ACTION_CALL, amount, action.getReason());
@@ -664,7 +665,7 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
      * @return PRE_FLOP, FLOP, TURN, or RIVER.
      */
     public int getBettingRound() {
-        return getPokerPlayer().getHoldemHand().getRound();
+        return getPokerPlayer().getHoldemHand().getRound().toLegacy();
     }
 
     /**
@@ -724,9 +725,9 @@ public class PokerAI extends EngineGameAI implements PokerTableListener, Propert
         HoldemHand hhand = getPokerPlayer().getHoldemHand();
 
         if (hhand == null) {
-            return HoldemHand.ROUND_NONE;
+            return BettingRound.NONE.toLegacy();
         } else {
-            return hhand.getRound();
+            return hhand.getRound().toLegacy();
         }
     }
 

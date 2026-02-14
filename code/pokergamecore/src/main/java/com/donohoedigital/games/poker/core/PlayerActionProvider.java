@@ -54,7 +54,8 @@ public interface PlayerActionProvider {
      *            the player who must act
      * @param options
      *            available actions and constraints
-     * @return the player's decision (never null)
+     * @return the player's decision, or null if delegating to existing code path
+     *         (Phase 2: null return triggers fallback; Phase 3: never null)
      */
     PlayerAction getAction(GamePlayerInfo player, ActionOptions options);
 }

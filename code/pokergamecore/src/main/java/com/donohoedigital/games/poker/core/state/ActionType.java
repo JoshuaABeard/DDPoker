@@ -42,12 +42,21 @@ public enum ActionType {
 
     private final int legacyValue;
 
+    // O(1) lookup array: legacy values range from -1 to 11
+    private static final ActionType[] LOOKUP = new ActionType[13];
+
+    static {
+        for (ActionType at : values()) {
+            LOOKUP[at.legacyValue + 1] = at; // offset by 1 to handle -1
+        }
+    }
+
     ActionType(int legacyValue) {
         this.legacyValue = legacyValue;
     }
 
     /**
-     * Convert from legacy integer constant to enum.
+     * Convert from legacy integer constant to enum (O(1) lookup).
      *
      * @param action
      *            legacy integer value (e.g., HandAction.ACTION_FOLD)
@@ -56,12 +65,11 @@ public enum ActionType {
      *             if action value is unknown
      */
     public static ActionType fromLegacy(int action) {
-        for (ActionType at : values()) {
-            if (at.legacyValue == action) {
-                return at;
-            }
+        int index = action + 1; // offset by 1 to handle -1
+        if (index < 0 || index >= LOOKUP.length || LOOKUP[index] == null) {
+            throw new IllegalArgumentException("Unknown action type: " + action);
         }
-        throw new IllegalArgumentException("Unknown action type: " + action);
+        return LOOKUP[index];
     }
 
     /**

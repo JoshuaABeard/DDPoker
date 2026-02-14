@@ -214,7 +214,7 @@ public class DealDisplay extends ChainPhase implements Runnable {
             HoldemHand hhand = table_.getHoldemHand();
             if (hhand != null) {
                 // just makes sure the player list is set
-                hhand.getCurrentPlayerInitIndex();
+                hhand.getCurrentPlayerWithInit();
             }
 
             // notify tournament director that cards have the player has

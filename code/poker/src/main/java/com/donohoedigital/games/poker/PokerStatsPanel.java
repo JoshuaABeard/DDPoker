@@ -41,6 +41,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 public class PokerStatsPanel extends DDTabPanel {
     static Logger logger = LogManager.getLogger(PokerStatsPanel.class);
@@ -254,13 +255,13 @@ public class PokerStatsPanel extends DDTabPanel {
                 public void run() {
                     switch (mode_) {
                         case FLOP :
-                            htmlArea_.setText(potential_.toHTML(HoldemHand.ROUND_FLOP));
+                            htmlArea_.setText(potential_.toHTML(BettingRound.FLOP.toLegacy()));
                             break;
                         case TURN :
-                            htmlArea_.setText(potential_.toHTML(HoldemHand.ROUND_TURN));
+                            htmlArea_.setText(potential_.toHTML(BettingRound.TURN.toLegacy()));
                             break;
                         case RIVER :
-                            htmlArea_.setText(potential_.toHTML(HoldemHand.ROUND_RIVER));
+                            htmlArea_.setText(potential_.toHTML(BettingRound.RIVER.toLegacy()));
                             break;
                         case LADDER :
                             htmlArea_.setText(ladder_.toHTML());

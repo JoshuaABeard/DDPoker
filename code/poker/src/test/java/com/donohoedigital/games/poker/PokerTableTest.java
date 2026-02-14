@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
+import com.donohoedigital.games.poker.core.state.TableState;
 
 /**
  * Tests for PokerTable - table setup, seat management, player management,
@@ -201,14 +202,14 @@ class PokerTableTest {
 
     @Test
     void should_HaveNoneState_When_TableCreated() {
-        assertThat(table.getTableState()).isEqualTo(PokerTable.STATE_NONE);
+        assertThat(table.getTableState()).isEqualTo(TableState.NONE);
     }
 
     @Test
     void should_SetTableState_When_StateSet() {
         table.setTableState(PokerTable.STATE_START_HAND);
 
-        assertThat(table.getTableState()).isEqualTo(PokerTable.STATE_START_HAND);
+        assertThat(table.getTableState()).isEqualTo(TableState.START_HAND);
     }
 
     @Test
@@ -216,7 +217,7 @@ class PokerTableTest {
         table.setTableState(PokerTable.STATE_START_HAND);
         table.setTableState(PokerTable.STATE_BEGIN);
 
-        assertThat(table.getPreviousTableState()).isEqualTo(PokerTable.STATE_START_HAND);
+        assertThat(table.getPreviousTableState()).isEqualTo(TableState.START_HAND);
     }
 
     @Test

@@ -49,6 +49,7 @@ import com.donohoedigital.games.poker.engine.*;
 import org.apache.logging.log4j.*;
 
 import javax.swing.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  *
@@ -79,7 +80,7 @@ public class DealCommunity extends ChainPhase implements PlayerActionListener {
         hhand_ = table_.getHoldemHand();
         community_ = hhand_.getCommunity();
         nNumWithCards_ = hhand_.getNumWithCards();
-        nRound_ = hhand_.getRound();
+        nRound_ = hhand_.getRound().toLegacy();
 
         // if only one player with cards left, don't show
         // more community cards unless the option is on
@@ -239,7 +240,7 @@ public class DealCommunity extends ChainPhase implements PlayerActionListener {
         // start pause (puts into pause mode, so processTable() isn't
         // called when this player is removed from the wait list)
         if (PokerUtils.isCheatOn(context_, PokerConstants.OPTION_CHEAT_PAUSECARDS)
-                && (!hhand_.isAllInShowdown() || hhand_.getRound() == HoldemHand.ROUND_RIVER) && !table_.isZipMode()) {
+                && (!hhand_.isAllInShowdown() || hhand_.getRound() == BettingRound.RIVER) && !table_.isZipMode()) {
             PokerUtils.TDPAUSER(context_).pause();
         }
 
@@ -250,7 +251,7 @@ public class DealCommunity extends ChainPhase implements PlayerActionListener {
         // may get a hand action before they get the updated HoldemHand
         // (due to the way doBetting() works). Thus, we do this check here
         // primarily for user-displayed tables (host and remote).
-        hhand_.getCurrentPlayerInitIndex();
+        hhand_.getCurrentPlayerWithInit();
 
         // notify tournament director that cards have the player has
         // seen the cards dealt
@@ -289,13 +290,13 @@ public class DealCommunity extends ChainPhase implements PlayerActionListener {
         switch (nRound) {
             case HoldemHand.ROUND_SHOWDOWN :
             case HoldemHand.ROUND_RIVER :
-                bCardDealt = nLastBettingRound >= HoldemHand.ROUND_RIVER;
+                bCardDealt = nLastBettingRound >= BettingRound.RIVER.toLegacy();
                 addCard(table, CardPiece.POINT_FLOP5, 4, bDrawnNormal || bCardDealt, bDrawn || bCardDealt, false);
             case HoldemHand.ROUND_TURN :
-                bCardDealt = nLastBettingRound >= HoldemHand.ROUND_TURN;
+                bCardDealt = nLastBettingRound >= BettingRound.TURN.toLegacy();
                 addCard(table, CardPiece.POINT_FLOP4, 3, bDrawnNormal || bCardDealt, bDrawn || bCardDealt, false);
             case HoldemHand.ROUND_FLOP :
-                bCardDealt = nLastBettingRound >= HoldemHand.ROUND_FLOP;
+                bCardDealt = nLastBettingRound >= BettingRound.FLOP.toLegacy();
                 addCard(table, CardPiece.POINT_FLOP3, 2, bDrawnNormal || bCardDealt, bDrawn || bCardDealt, false);
                 addCard(table, CardPiece.POINT_FLOP2, 1, bDrawnNormal || bCardDealt, bDrawn || bCardDealt, false);
                 addCard(table, CardPiece.POINT_FLOP1, 0, bDrawnNormal || bCardDealt, bDrawn || bCardDealt, false);

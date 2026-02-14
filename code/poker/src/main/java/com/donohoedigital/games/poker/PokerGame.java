@@ -56,11 +56,13 @@ import org.apache.logging.log4j.*;
 import java.io.*;
 import java.security.*;
 import java.util.*;
+import com.donohoedigital.games.poker.core.GameContext;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  * @author donohoe
  */
-public class PokerGame extends Game implements PlayerActionListener {
+public class PokerGame extends Game implements PlayerActionListener, GameContext {
     static Logger logger = LogManager.getLogger(PokerGame.class);
 
     public static final int ACTION_FOLD = 1;
@@ -1355,7 +1357,7 @@ public class PokerGame extends Game implements PlayerActionListener {
 
                 // if in showdown, pot has already been allocated to players
                 // and this would result in extra chips
-                if (hhand.getRound() == HoldemHand.ROUND_SHOWDOWN)
+                if (hhand.getRound() == BettingRound.SHOWDOWN)
                     continue;
 
                 nChips += hhand.getTotalPotChipCount();

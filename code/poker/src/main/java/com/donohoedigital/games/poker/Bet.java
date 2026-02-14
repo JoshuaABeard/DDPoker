@@ -52,6 +52,7 @@ import org.apache.logging.log4j.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  *
@@ -85,7 +86,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
         table_ = game_.getCurrentTable();
         hhand_ = table_.getHoldemHand();
         player_ = hhand_.getCurrentPlayer();
-        nRound_ = hhand_.getRound();
+        nRound_ = hhand_.getRound().toLegacy();
 
         // logger.debug("BET started for " + player_.getName() + " round: " +
         // hhand_.getRoundName(hhand_.getRound()));
@@ -117,7 +118,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
         // allows saving via 'S' key at any time without having to go
         // into save menu
         if (TESTING(PokerConstants.TESTING_FAST_SAVE)) {
-            if (hhand_.getRound() == HoldemHand.ROUND_PRE_FLOP) {
+            if (hhand_.getRound() == BettingRound.PRE_FLOP) {
                 if (!((PokerContext) context_).isFastSaveTest()) {
                     fastSave();
                     ((PokerContext) context_).setFastSaveTest(true);
@@ -197,8 +198,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
                 // encore idea - have ai pause to increase drama after human has bet - to
                 // make it appear like ai is "thinking" ... even if no delay is set
                 // TODO: off for now - need to think more about this, maybe make an option
-                if (false && !table_.isZipMode() && !game_.isOnlineGame()
-                        && hhand_.getRound() == HoldemHand.ROUND_RIVER) {
+                if (false && !table_.isZipMode() && !game_.isOnlineGame() && hhand_.getRound() == BettingRound.RIVER) {
                     PokerPlayer human = game_.getHumanPlayer();
                     int action = hhand_.getLastActionThisRound(human);
                     if (action == HandAction.ACTION_BET || action == HandAction.ACTION_RAISE) {

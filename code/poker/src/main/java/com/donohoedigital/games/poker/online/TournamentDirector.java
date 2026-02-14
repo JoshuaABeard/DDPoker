@@ -45,6 +45,9 @@ import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
+import com.donohoedigital.games.poker.core.*;
+import com.donohoedigital.games.poker.core.event.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.poker.model.*;
@@ -104,6 +107,9 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
     // two variables to make code easier to read in places
     private boolean bClient_; // online client
     private boolean bHost_; // online host (also true if practice mode)
+
+    // Phase 2: pokergamecore engine
+    private TournamentEngine engine_; // pokergamecore engine
 
     /**
      * Phase start
@@ -197,6 +203,12 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
 
             startWanGame();
             setStartPause();
+
+            // Phase 2: Initialize pokergamecore engine
+            GameEventBus eventBus = new SwingEventBus(null); // TODO: pass actual table in Step 9
+            PlayerActionProvider actionProvider = new SwingPlayerActionProvider(this);
+            engine_ = new TournamentEngine(eventBus, actionProvider);
+
             // noinspection AssignmentToStaticFieldFromInstanceMethod
             thread_ = new Thread(this, "TournamentDirector-" + (nThreadSeq_++));
             thread_.start();
@@ -221,8 +233,8 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
      */
     private void setStartPause() {
         if (bOnline_) {
-            int tableState = game_.getHost().getTable().getTableState();
-            int pendingState = game_.getHost().getTable().getPendingTableState();
+            int tableState = game_.getHost().getTable().getTableStateInt();
+            int pendingState = game_.getHost().getTable().getPendingTableStateInt();
 
             boolean bHostTableDealForButton = tableState == PokerTable.STATE_DEAL_FOR_BUTTON
                     || pendingState == PokerTable.STATE_DEAL_FOR_BUTTON;
@@ -673,12 +685,12 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
 
     private void _processTable(PokerTable table) {
         // DEBUG
-        if (DEBUG && table.nDebugLast_ != table.getTableState()) {
+        if (DEBUG && table.nDebugLast_ != table.getTableStateInt()) {
             String sPending = "";
-            if (table.getPendingTableState() != PokerTable.STATE_NONE)
-                sPending = ", pending to do " + PokerTable.getStringForState(table.getPendingTableState());
+            if (table.getPendingTableStateInt() != PokerTable.STATE_NONE)
+                sPending = ", pending to do " + PokerTable.getStringForState(table.getPendingTableStateInt());
             logger.debug("=========> " + table.getName() + " at state " + table.toStringTableState() + sPending);
-            table.nDebugLast_ = table.getTableState();
+            table.nDebugLast_ = table.getTableStateInt();
         }
 
         // handle rejoin
@@ -688,7 +700,7 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
         int nNext;
         boolean bWait;
         HoldemHand hhand;
-        switch (table.getTableState()) {
+        switch (table.getTableStateInt()) {
             case PokerTable.STATE_PENDING_LOAD :
                 ret_.setTableState(PokerTable.STATE_PENDING);
 
@@ -756,8 +768,8 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
             case PokerTable.STATE_CLEAN :
                 bWait = doClean(table);
                 nNext = PokerTable.STATE_NEW_LEVEL_CHECK;
-                if (table.getTableState() != PokerTable.STATE_ON_HOLD
-                        && table.getTableState() != PokerTable.STATE_GAME_OVER) {
+                if (table.getTableStateInt() != PokerTable.STATE_ON_HOLD
+                        && table.getTableStateInt() != PokerTable.STATE_GAME_OVER) {
                     if (bWait) {
                         ret_.setPendingTableState(nNext);
                     } else {
@@ -846,7 +858,7 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
                 }
                 // else hand is done, go to next community card or showdown
                 else {
-                    ret_.setTableState(hhand.getRound() == HoldemHand.ROUND_RIVER
+                    ret_.setTableState(hhand.getRound() == BettingRound.RIVER
                             ? PokerTable.STATE_PRE_SHOWDOWN
                             : PokerTable.STATE_COMMUNITY);
                     ret_.setSleep(false);
@@ -928,10 +940,10 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
                 // correct state to be passed along and run on the client
                 if (DEBUG_REJOIN)
                     logger.debug("Sending rejoin table update to " + player.getName() + ", prev state: "
-                            + PokerTable.getStringForState(table.getPreviousTableState()));
+                            + PokerTable.getStringForState(table.getPreviousTableStateInt()));
                 player.setRejoining(false);
-                mgr_.sendTableUpdate(table, player, null, table.getPreviousTableState(), true, null, false, null, null,
-                        null);
+                mgr_.sendTableUpdate(table, player, null, table.getPreviousTableStateInt(), true, null, false, null,
+                        null, null);
             }
         }
 
@@ -949,7 +961,7 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
         // if doing a full save, tweak the state saved to allow
         // proper reloading
         if (pdetails.getSaveTables() == SaveDetails.SAVE_ALL) {
-            switch (table.getTableState()) {
+            switch (table.getTableStateInt()) {
                 case PokerTable.STATE_BEGIN_WAIT :
                     return PokerTable.STATE_BEGIN;
 
@@ -960,7 +972,7 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
             return pdetails.getOverrideState();
         }
 
-        return table.getTableState();
+        return table.getTableStateInt();
     }
 
     /**
@@ -997,12 +1009,12 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
             // we enter BEGIN state from PENDING only after dealing
             // high card for button. If auto deal is on, we need
             // to put in the pause here (matches STATE_DONE handling below).
-            if (!bClient_ && table.getPendingTableState() == PokerTable.STATE_BEGIN && isAutoDeal(table)) {
+            if (!bClient_ && table.getPendingTableStateInt() == PokerTable.STATE_BEGIN && isAutoDeal(table)) {
                 // Note - we don't do full pause for online since each client
                 // has to respond to a dialog which causes a pause
                 table.setPause(bOnline_ ? 1000 : getAutoDealDelay(table));
             }
-            ret_.setTableState(table.getPendingTableState());
+            ret_.setTableState(table.getPendingTableStateInt());
             ret_.setSleep(false);
 
             // This was set to true in my initial implementation because
@@ -1017,7 +1029,7 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
         // if pending on betting, and if in zip mode or
         // waiting on computer, don't sleep. In online games,
         // we still sleep so as not to overrun clients with AI actions
-        if (table.getPendingTableState() == PokerTable.STATE_BETTING
+        if (table.getPendingTableStateInt() == PokerTable.STATE_BETTING
                 && (table.isZipMode() || (!table.getWaitPlayer(0).isHumanControlled() && !bOnline_))) {
             ret_.setSleep(false);
         }
@@ -1032,7 +1044,7 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
         if (!bOnline_)
             return;
 
-        int nLastState = table.getPreviousTableState();
+        int nLastState = table.getPreviousTableStateInt();
         long wait = table.getMillisSinceLastStateChange();
         if (nLastState == PokerTable.STATE_BETTING) {
             doBettingTimeoutCheck(table, wait);
@@ -1059,7 +1071,7 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
 
         // Get current betting round and use round-specific timeout
         HoldemHand hhand = table.getHoldemHand();
-        int currentRound = (hhand != null) ? hhand.getRound() : HoldemHand.ROUND_PRE_FLOP;
+        int currentRound = (hhand != null) ? hhand.getRound().toLegacy() : BettingRound.PRE_FLOP.toLegacy();
         int nTimeoutSecs = game_.getProfile().getTimeoutForRound(currentRound);
         long nTimeout = nTimeoutSecs * 1000 + SLEEP_MILLIS; // pad time out a bit (allows 15 second message if timeout
                                                             // is 15)
@@ -1126,7 +1138,7 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
         player.setSittingOut(true);
 
         // no more time - fold
-        HandAction fold = new HandAction(player, table.getHoldemHand().getRound(), HandAction.ACTION_FOLD, 0,
+        HandAction fold = new HandAction(player, table.getHoldemHand().getRound().toLegacy(), HandAction.ACTION_FOLD, 0,
                 HandAction.FOLD_FORCED, "timeout");
         doHandAction(fold, true, false, false);
 
@@ -1661,7 +1673,7 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
                 // so that user doesn't have to press 'deal' twice
                 // TODO: do this online if allow dealer-controlled dealing
                 // TODO: do this when TESTING_ONLINE_AUTO_DEAL_OFF on
-                if (bCleanDoneLogic && !bOnline_ && current.getTableState() == PokerTable.STATE_DONE) {
+                if (bCleanDoneLogic && !bOnline_ && current.getTableStateInt() == PokerTable.STATE_DONE) {
                     current.setTableState(getTableStateStartDeal());
                 }
             }
@@ -1989,12 +2001,12 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
 
             if (table.isAllComputer() && !table.isCurrent()) {
                 // if not required to be on hold anymore, change state
-                if (table.getTableState() == PokerTable.STATE_ON_HOLD && table.getNumOccupiedSeats() > 1) {
+                if (table.getTableStateInt() == PokerTable.STATE_ON_HOLD && table.getNumOccupiedSeats() > 1) {
                     table.setTableState(PokerTable.STATE_DONE);
                 }
 
                 // don't process on-hold tables
-                if (table.getTableState() != PokerTable.STATE_ON_HOLD) {
+                if (table.getTableStateInt() != PokerTable.STATE_ON_HOLD) {
                     table.setTableState(PokerTable.STATE_BETTING);
                 }
             }
@@ -2019,7 +2031,7 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
             // betting. This was moved here from
             // HoldemHand.deal() so that the current player
             // isn't highlighted during the dealing of cards
-            PokerPlayer current = hhand.getCurrentPlayerInitIndex();
+            PokerPlayer current = hhand.getCurrentPlayerWithInit();
 
             // reset timeout message indicator
             if (bHost_) {
@@ -2029,8 +2041,8 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
 
             // if player sitting out, fold
             if (current.isSittingOut()) {
-                HandAction fold = new HandAction(current, table.getHoldemHand().getRound(), HandAction.ACTION_FOLD, 0,
-                        HandAction.FOLD_SITTING_OUT, "sittingout");
+                HandAction fold = new HandAction(current, table.getHoldemHand().getRound().toLegacy(),
+                        HandAction.ACTION_FOLD, 0, HandAction.FOLD_SITTING_OUT, "sittingout");
                 doHandAction(fold, false, false, false);
                 ret_.setTableState(nNext);
                 current.setSittingOut(true); // make sure it is set, for case of demo user being done
@@ -2092,7 +2104,7 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
             if (table.isAllComputer() && !table.isCurrent()) {
                 // shortcut for subsequent calls through here after we
                 // have already bet (so this isn't done over and over)
-                if (table.getTableState() != PokerTable.STATE_BETTING)
+                if (table.getTableStateInt() != PokerTable.STATE_BETTING)
                     return;
 
                 // do quick AI bet
@@ -2112,8 +2124,8 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
         if (!bDone)
             return PokerTable.STATE_BETTING;
 
-        int nRound = hhand.getRound();
-        if (nRound == HoldemHand.ROUND_RIVER)
+        int nRound = hhand.getRound().toLegacy();
+        if (nRound == BettingRound.RIVER.toLegacy())
             return PokerTable.STATE_PRE_SHOWDOWN;
 
         return PokerTable.STATE_COMMUNITY;
@@ -2220,7 +2232,7 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
         HoldemHand hhand = table.getHoldemHand();
 
         // BUG 462 - don't re-run logic if already run (safety check)
-        if (bHost_ && hhand.getRound() != HoldemHand.ROUND_SHOWDOWN) {
+        if (bHost_ && hhand.getRound() != BettingRound.SHOWDOWN) {
             // record events to send to client
             ret_.startListening(table);
 
@@ -2324,8 +2336,8 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
         if (!p.isObserver() && table.isWaitListMember(p)) {
             // if we are waiting on deal for button, then this is the start
             // of the tournament, so remove the player from the wait list
-            if (table.getTableState() == PokerTable.STATE_PENDING
-                    && table.getPendingTableState() == PokerTable.STATE_DEAL_FOR_BUTTON) {
+            if (table.getTableStateInt() == PokerTable.STATE_PENDING
+                    && table.getPendingTableStateInt() == PokerTable.STATE_DEAL_FOR_BUTTON) {
                 if (DEBUG_REJOIN)
                     logger.debug(p.getName() + " ready for deal for button");
                 table.removeWait(p);
@@ -2397,8 +2409,8 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
         // current state must be pending and last state must be betting
         // for it to make sense to process this action from remote client
         if (bValidateRemote) {
-            int nState = table.getTableState();
-            int nLastState = table.getPreviousTableState();
+            int nState = table.getTableStateInt();
+            int nLastState = table.getPreviousTableStateInt();
             if (nState != PokerTable.STATE_PENDING && nLastState != PokerTable.STATE_BETTING) {
                 logger.warn("Current state: " + PokerTable.getStringForState(nState) + ", last state: "
                         + PokerTable.getStringForState(nLastState) + "; incorrect for handling: " + action);
@@ -2475,7 +2487,7 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
         // in observers (can receive hand action prior to
         // those finishing because host doesn't wait on
         // observers to acknowledge they finished action)
-        action.getPlayer().getHoldemHand().getCurrentPlayerInitIndex();
+        action.getPlayer().getHoldemHand().getCurrentPlayerWithInit();
 
         // do normal processing
         storeHandAction(action, false);

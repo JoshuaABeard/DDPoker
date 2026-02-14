@@ -46,6 +46,7 @@ import com.donohoedigital.games.poker.engine.*;
 import org.apache.logging.log4j.*;
 
 import java.util.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  *
@@ -104,7 +105,7 @@ public class Showdown extends ChainPhase {
         boolean bShowMuck = PokerUtils.isCheatOn(context, PokerConstants.OPTION_CHEAT_SHOW_MUCKED);
         boolean bHumanUp = !PokerUtils.isOptionOn(PokerConstants.OPTION_HOLE_CARDS_DOWN);
         boolean bAIFaceUp = PokerUtils.isCheatOn(context, PokerConstants.OPTION_CHEAT_AIFACEUP);
-        boolean bSeenRiver = hhand.isActionInRound(HoldemHand.ROUND_RIVER);
+        boolean bSeenRiver = hhand.isActionInRound(BettingRound.RIVER.toLegacy());
         boolean bShowCards;
         boolean bShowHandType = !bUncontested || ((bShowRiver || bSeenRiver) && bShowWin);
         boolean bShowHandTypeFold = !bUncontested || bShowRiver || bSeenRiver;
@@ -127,9 +128,9 @@ public class Showdown extends ChainPhase {
             piece = PokerGameboard.getTerritoryInfo(t).resultpiece;
 
             // all-in showdown, just show current hand
-            if (hhand.getRound() < HoldemHand.ROUND_SHOWDOWN) {
+            if (hhand.getRound().toLegacy() < BettingRound.SHOWDOWN.toLegacy()) {
                 if (!player.isFolded()) {
-                    if (hhand.getRound() == HoldemHand.ROUND_PRE_FLOP) {
+                    if (hhand.getRound() == BettingRound.PRE_FLOP) {
                         piece.setResult(ResultsPiece.ALLIN,
                                 PropertyConfig.getMessage("msg.hand.allin", player.getHand().toStringRank()));
                     } else {
@@ -276,7 +277,7 @@ public class Showdown extends ChainPhase {
 
             if (!player.isFolded()) {
                 // when this is called, round has advanced already
-                if (hhand.getRound() == HoldemHand.ROUND_FLOP) {
+                if (hhand.getRound() == BettingRound.FLOP) {
                     piece.setResult(nResult, PropertyConfig.getMessage("msg.hand.allin.pre", player.getAllInPerc(),
                             player.getHand().toStringRank()));
                 } else {

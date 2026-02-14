@@ -43,6 +43,7 @@ import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.config.*;
 
 import java.util.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 @DataCoder('1')
 public class V1Player extends PokerAI {
@@ -286,12 +287,12 @@ public class V1Player extends PokerAI {
 
         // flop/turn/river
         _nLastRoundBet = _hhand.getBet(getBettingRound() - 1);
-        _bettorPre = _hhand.getLastActionAI(_bettor, HoldemHand.ROUND_PRE_FLOP);
-        _raiserPre = _hhand.getLastActionAI(_raiser, HoldemHand.ROUND_PRE_FLOP);
-        _bettorFlop = _hhand.getLastActionAI(_bettor, HoldemHand.ROUND_FLOP);
-        _raiserFlop = _hhand.getLastActionAI(_raiser, HoldemHand.ROUND_FLOP);
-        _bettorTurn = _hhand.getLastActionAI(_bettor, HoldemHand.ROUND_TURN);
-        _raiserTurn = _hhand.getLastActionAI(_raiser, HoldemHand.ROUND_TURN);
+        _bettorPre = _hhand.getLastActionAI(_bettor, BettingRound.PRE_FLOP.toLegacy());
+        _raiserPre = _hhand.getLastActionAI(_raiser, BettingRound.PRE_FLOP.toLegacy());
+        _bettorFlop = _hhand.getLastActionAI(_bettor, BettingRound.FLOP.toLegacy());
+        _raiserFlop = _hhand.getLastActionAI(_raiser, BettingRound.FLOP.toLegacy());
+        _bettorTurn = _hhand.getLastActionAI(_bettor, BettingRound.TURN.toLegacy());
+        _raiserTurn = _hhand.getLastActionAI(_raiser, BettingRound.TURN.toLegacy());
 
         return getPostFlop();
     }

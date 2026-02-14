@@ -19,7 +19,7 @@
  */
 package com.donohoedigital.games.poker.logic;
 
-import com.donohoedigital.games.poker.HoldemHand;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  * Texas Hold'em dealing and card visibility rules extracted from
@@ -126,11 +126,11 @@ public class DealingRules {
      */
     public static int getCardRound(int cardIndex) {
         if (cardIndex <= 2) {
-            return HoldemHand.ROUND_FLOP;
+            return BettingRound.FLOP.toLegacy();
         } else if (cardIndex == 3) {
-            return HoldemHand.ROUND_TURN;
+            return BettingRound.TURN.toLegacy();
         } else {
-            return HoldemHand.ROUND_RIVER;
+            return BettingRound.RIVER.toLegacy();
         }
     }
 
@@ -145,11 +145,11 @@ public class DealingRules {
      * @return number of cards dealt in that round
      */
     public static int getCardsDealtInRound(int round) {
-        if (round == HoldemHand.ROUND_FLOP) {
+        if (round == BettingRound.FLOP.toLegacy()) {
             return 3;
-        } else if (round == HoldemHand.ROUND_TURN) {
+        } else if (round == BettingRound.TURN.toLegacy()) {
             return 1;
-        } else if (round == HoldemHand.ROUND_RIVER) {
+        } else if (round == BettingRound.RIVER.toLegacy()) {
             return 1;
         }
         return 0;
@@ -166,13 +166,13 @@ public class DealingRules {
      * @return total cards visible by end of round
      */
     public static int getTotalCardsVisibleByRound(int round) {
-        if (round >= HoldemHand.ROUND_SHOWDOWN) {
+        if (round >= BettingRound.SHOWDOWN.toLegacy()) {
             return 5;
-        } else if (round >= HoldemHand.ROUND_RIVER) {
+        } else if (round >= BettingRound.RIVER.toLegacy()) {
             return 5;
-        } else if (round >= HoldemHand.ROUND_TURN) {
+        } else if (round >= BettingRound.TURN.toLegacy()) {
             return 4;
-        } else if (round >= HoldemHand.ROUND_FLOP) {
+        } else if (round >= BettingRound.FLOP.toLegacy()) {
             return 3;
         }
         return 0;

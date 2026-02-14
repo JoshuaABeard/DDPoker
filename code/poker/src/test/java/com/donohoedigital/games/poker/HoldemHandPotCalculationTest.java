@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  * Tests for HoldemHand pot calculation methods. Critical money-tracking
@@ -149,7 +150,7 @@ class HoldemHandPotCalculationTest extends IntegrationTestBase {
 
         // Should have a pot (main pot)
         assertThat(currentPot).isNotNull();
-        assertThat(currentPot.getRound()).isEqualTo(HoldemHand.ROUND_PRE_FLOP);
+        assertThat(currentPot.getRound()).isEqualTo(BettingRound.PRE_FLOP.toLegacy());
     }
 
     @Test

@@ -34,6 +34,7 @@ package com.donohoedigital.games.poker;
 
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.online.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  * listener for un-pausing TD
@@ -59,7 +60,7 @@ public class TournamentDirectorPauser implements PlayerActionListener {
         td_.setPaused(true);
         nLastInputMode_ = game_.getInputMode();
 
-        if (hhand_ != null && hhand_.getRound() == HoldemHand.ROUND_PRE_FLOP) {
+        if (hhand_ != null && hhand_.getRound() == BettingRound.PRE_FLOP) {
             game_.setInputMode(PokerTableInput.MODE_CONTINUE);
         } else {
             game_.setInputMode(PokerTableInput.MODE_CONTINUE_LOWER);

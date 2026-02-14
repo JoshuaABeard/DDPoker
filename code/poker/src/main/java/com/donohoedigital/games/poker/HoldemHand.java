@@ -45,6 +45,8 @@ import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.*;
+import com.donohoedigital.games.poker.core.GameHand;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.poker.model.*;
@@ -57,7 +59,7 @@ import java.util.*;
  */
 @SuppressWarnings({"SynchronizeOnNonFinalField"})
 @DataCoder('*')
-public class HoldemHand implements DataMarshal {
+public class HoldemHand implements DataMarshal, GameHand {
     // DESIGN NOTE: added synchronized around any pots_/history_ to avoid concurrent
     // modification
     // error when drawing UI (for v3.0p1). Sigh. This whole poker engine needs a
@@ -86,15 +88,15 @@ public class HoldemHand implements DataMarshal {
      */
     public static String getRoundName(int n) {
         switch (n) {
-            case HoldemHand.ROUND_PRE_FLOP :
+            case ROUND_PRE_FLOP :
                 return "preflop";
-            case HoldemHand.ROUND_FLOP :
+            case ROUND_FLOP :
                 return "flop";
-            case HoldemHand.ROUND_TURN :
+            case ROUND_TURN :
                 return "turn";
-            case HoldemHand.ROUND_RIVER :
+            case ROUND_RIVER :
                 return "river";
-            case HoldemHand.ROUND_SHOWDOWN :
+            case ROUND_SHOWDOWN :
                 return "show";
             default :
                 return "none: " + n;
@@ -340,7 +342,7 @@ public class HoldemHand implements DataMarshal {
             nNum = 500;
 
         // get order of players based on button
-        HoldemHand.setPlayerOrder(table, sORDER, HoldemHand.ROUND_PRE_FLOP, false);
+        HoldemHand.setPlayerOrder(table, sORDER, BettingRound.PRE_FLOP.toLegacy(), false);
 
         // bet size
         TournamentProfile tp = table.getProfile();
@@ -946,17 +948,51 @@ public class HoldemHand implements DataMarshal {
     }
 
     /**
-     * Return round
+     * Return round (GameHand interface - returns enum).
+     *
+     * @return current betting round as BettingRound enum
      */
-    public int getRound() {
+    @Override
+    public BettingRound getRound() {
+        return BettingRound.fromLegacy(nRound_);
+    }
+
+    /**
+     * Set round (GameHand interface - accepts enum).
+     *
+     * @param round
+     *            new betting round
+     */
+    @Override
+    public void setRound(BettingRound round) {
+        nRound_ = round.toLegacy();
+    }
+
+    /**
+     * Return round as int (legacy method). For new code, use {@link #getRound()}
+     * which returns BettingRound enum.
+     *
+     * @return current round as int
+     */
+    public int getRoundInt() {
         return nRound_;
     }
 
     /**
-     * Advance round - deal community cards
+     * Advance round - deal community cards (GameHand interface).
+     */
+    @Override
+    public void advanceRound() {
+        advanceRoundInt();
+    }
+
+    /**
+     * Advance round - deal community cards (legacy int-based method).
+     *
+     * @return new round value
      */
     @SuppressWarnings("UnusedReturnValue")
-    public int advanceRound() {
+    public int advanceRoundInt() {
         nRound_++;
         // logger.debug("ROUND now " + getRoundName(nRound_));
         getCurrentPot().advanceRound();
@@ -1128,14 +1164,27 @@ public class HoldemHand implements DataMarshal {
     }
 
     /**
+     * Get current player index for betting order (GameHand interface).
+     *
+     * @return index of current player
+     */
+    @Override
+    public int getCurrentPlayerInitIndex() {
+        return getCurrentPlayerIndex();
+    }
+
+    /**
      * Returns current player. If that isn't set, initializes player order (special
      * case use - if you aren't sure you should be using this, you probably
      * shouldn't). This method is synchronized because on clients in online games,
      * could be called from different threads (e.g., DealDisplay and
-     * TournamentDirector.storeHandAction())
+     * TournamentDirector.storeHandAction()).
+     *
+     * Renamed from getCurrentPlayerInitIndex() to avoid conflict with GameHand
+     * interface.
      */
     // TODO: remove sync if decide to wait for observers in TD wait list
-    public synchronized PokerPlayer getCurrentPlayerInitIndex() {
+    public synchronized PokerPlayer getCurrentPlayerWithInit() {
         PokerPlayer current = getCurrentPlayer();
 
         // if current player is not defined, then this is the
@@ -2057,7 +2106,7 @@ public class HoldemHand implements DataMarshal {
                 // the early exit below (x) - they aren't noted
                 // as having acted above because they went all in
                 // on the forced bet (hasPlayerActed() ignores antes/blinds)
-                if (nRound_ == HoldemHand.ROUND_PRE_FLOP) {
+                if (nRound_ == BettingRound.PRE_FLOP.toLegacy()) {
                     nPlayersActed++;
                 } else {
                     nAllIn++;
@@ -2605,7 +2654,7 @@ public class HoldemHand implements DataMarshal {
         // we need to fetch order as of flop since it changes
         // in showdown to order of card display)
         List<PokerPlayer> order = new ArrayList<>();
-        HoldemHand.setPlayerOrder(table_, order, HoldemHand.ROUND_FLOP, true);
+        HoldemHand.setPlayerOrder(table_, order, BettingRound.FLOP.toLegacy(), true);
         for (int i = 0; i < nNum; i++) {
             player = order.get(i);
             if (player.isFolded())

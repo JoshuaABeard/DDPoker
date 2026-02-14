@@ -43,6 +43,7 @@ import com.donohoedigital.games.poker.engine.*;
 import org.apache.logging.log4j.*;
 
 import java.util.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 @SuppressWarnings({"DuplicatedCode", "CommentedOutCode", "StringConcatenationArgumentToLogCall"})
 public class HandPotential {
@@ -463,7 +464,7 @@ public class HandPotential {
      * Returns presentable HTML summarizing results.
      */
     public String toHTML() {
-        return toHTML(HoldemHand.ROUND_NONE);
+        return toHTML(BettingRound.NONE.toLegacy());
     }
 
     /**
@@ -489,7 +490,7 @@ public class HandPotential {
             }
         }
 
-        boolean twoColumns = ((stage == 1) && (round == HoldemHand.ROUND_NONE));
+        boolean twoColumns = ((stage == 1) && (round == BettingRound.NONE.toLegacy()));
 
         buf.append("<table width=\"100%\">");
 
@@ -530,7 +531,7 @@ public class HandPotential {
                 handCountA = handCounts_[i][0];
                 handCountB = handCounts_[i][1];
             } else {
-                a = ((round == HoldemHand.ROUND_RIVER) && (stage == 1)) ? 1 : 0;
+                a = ((round == BettingRound.RIVER.toLegacy()) && (stage == 1)) ? 1 : 0;
                 handCountA = handCounts_[i][a];
             }
 

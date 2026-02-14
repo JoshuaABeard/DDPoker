@@ -44,6 +44,7 @@ import javax.swing.*;
 import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Jun 21, 2005 Time: 7:40:20 PM
@@ -639,8 +640,8 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
 
             // board
             if (nType == MENU_LOAD_ALL || nType == MENU_LOAD_MY) {
-                int nRound = hhand.getRound();
-                if (nRound == HoldemHand.ROUND_SHOWDOWN) {
+                int nRound = hhand.getRound().toLegacy();
+                if (nRound == BettingRound.SHOWDOWN.toLegacy()) {
                     HandAction last = hhand.getLastAction();
                     nRound = last.getRound();
                 }

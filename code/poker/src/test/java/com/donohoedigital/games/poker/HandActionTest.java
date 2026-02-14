@@ -26,6 +26,7 @@ import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  * Tests for HandAction - core data model for all player actions.
@@ -45,9 +46,10 @@ class HandActionTest {
 
     @Test
     void should_CreateAction_WithAllParameters() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_BET, 100, 0, "test debug");
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_BET, 100, 0,
+                "test debug");
 
-        assertThat(action.getRound()).isEqualTo(HoldemHand.ROUND_FLOP);
+        assertThat(action.getRound()).isEqualTo(BettingRound.FLOP.toLegacy());
         assertThat(action.getAction()).isEqualTo(HandAction.ACTION_BET);
         assertThat(action.getPlayer()).isSameAs(player);
         assertThat(action.getAmount()).isEqualTo(100);
@@ -57,9 +59,9 @@ class HandActionTest {
 
     @Test
     void should_CreateAction_WithAmountAndDebug() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_TURN, HandAction.ACTION_RAISE, 200, "debug");
+        HandAction action = new HandAction(player, BettingRound.TURN.toLegacy(), HandAction.ACTION_RAISE, 200, "debug");
 
-        assertThat(action.getRound()).isEqualTo(HoldemHand.ROUND_TURN);
+        assertThat(action.getRound()).isEqualTo(BettingRound.TURN.toLegacy());
         assertThat(action.getAction()).isEqualTo(HandAction.ACTION_RAISE);
         assertThat(action.getAmount()).isEqualTo(200);
         assertThat(action.getSubAmount()).isEqualTo(0);
@@ -68,7 +70,7 @@ class HandActionTest {
 
     @Test
     void should_CreateAction_WithAmount() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_RIVER, HandAction.ACTION_CALL, 100);
+        HandAction action = new HandAction(player, BettingRound.RIVER.toLegacy(), HandAction.ACTION_CALL, 100);
 
         assertThat(action.getAction()).isEqualTo(HandAction.ACTION_CALL);
         assertThat(action.getAmount()).isEqualTo(100);
@@ -78,7 +80,7 @@ class HandActionTest {
 
     @Test
     void should_CreateAction_BasicConstructor() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_CHECK);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_CHECK);
 
         assertThat(action.getAction()).isEqualTo(HandAction.ACTION_CHECK);
         assertThat(action.getAmount()).isEqualTo(0);
@@ -88,7 +90,7 @@ class HandActionTest {
     @Test
     void should_DetectAllIn_WhenPlayerHasNoChipsAfterAction() {
         player.setChipCount(0);
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_BET, 1000);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_BET, 1000);
 
         assertThat(action.isAllIn()).isTrue();
     }
@@ -96,7 +98,7 @@ class HandActionTest {
     @Test
     void should_NotDetectAllIn_WhenPlayerHasChipsRemaining() {
         player.setChipCount(500);
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_BET, 100);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_BET, 100);
 
         assertThat(action.isAllIn()).isFalse();
     }
@@ -104,17 +106,17 @@ class HandActionTest {
     @Test
     void should_NotDetectAllIn_ForNonBettingActions() {
         player.setChipCount(0);
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_FOLD, 0);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_FOLD, 0);
 
         assertThat(action.isAllIn()).isFalse();
 
-        action = new HandAction(player, HoldemHand.ROUND_SHOWDOWN, HandAction.ACTION_WIN, 500);
+        action = new HandAction(player, BettingRound.SHOWDOWN.toLegacy(), HandAction.ACTION_WIN, 500);
         assertThat(action.isAllIn()).isFalse();
     }
 
     @Test
     void should_AllowSettingAllInFlag_ForDatabaseLoading() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_BET, 100);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_BET, 100);
 
         assertThat(action.isAllIn()).isFalse();
 
@@ -142,7 +144,7 @@ class HandActionTest {
 
     @Test
     void should_ReturnNull_ForUnknownActionCode() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, 999, 0);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), 999, 0);
 
         assertThat(action.getActionCode()).isNull();
     }
@@ -221,44 +223,46 @@ class HandActionTest {
 
     @Test
     void should_GetRound() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_RIVER, HandAction.ACTION_BET, 100);
-        assertThat(action.getRound()).isEqualTo(HoldemHand.ROUND_RIVER);
+        HandAction action = new HandAction(player, BettingRound.RIVER.toLegacy(), HandAction.ACTION_BET, 100);
+        assertThat(action.getRound()).isEqualTo(BettingRound.RIVER.toLegacy());
     }
 
     @Test
     void should_GetAction() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_RAISE, 100);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_RAISE, 100);
         assertThat(action.getAction()).isEqualTo(HandAction.ACTION_RAISE);
     }
 
     @Test
     void should_GetPlayer() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_CALL, 100);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_CALL, 100);
         assertThat(action.getPlayer()).isSameAs(player);
     }
 
     @Test
     void should_GetAmount() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_BET, 250);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_BET, 250);
         assertThat(action.getAmount()).isEqualTo(250);
     }
 
     @Test
     void should_GetSubAmount() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_RAISE, 200, 50, null);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_RAISE, 200, 50,
+                null);
         assertThat(action.getSubAmount()).isEqualTo(50);
     }
 
     @Test
     void should_GetAdjustedAmount_ForRaise() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_RAISE, 200, 50, null);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_RAISE, 200, 50,
+                null);
         // Adjusted amount = amount - subAmount = 200 - 50 = 150
         assertThat(action.getAdjustedAmount()).isEqualTo(150);
     }
 
     @Test
     void should_GetAdjustedAmount_ForNonRaise() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_BET, 100);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_BET, 100);
         // For non-raise, adjusted amount = amount
         assertThat(action.getAdjustedAmount()).isEqualTo(100);
     }
@@ -267,7 +271,7 @@ class HandActionTest {
 
     @Test
     void should_FormatToString_Short() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_BET, 100);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_BET, 100);
         String result = action.toString(true);
 
         assertThat(result).contains("TestPlayer").contains("bet");
@@ -275,7 +279,7 @@ class HandActionTest {
 
     @Test
     void should_FormatToString_CheckWithSpacing() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_CHECK);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_CHECK);
         String result = action.toString();
 
         assertThat(result).contains("check");
@@ -283,7 +287,8 @@ class HandActionTest {
 
     @Test
     void should_FormatToString_RaiseWithCallAmount() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_RAISE, 200, 50, null);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_RAISE, 200, 50,
+                null);
         String result = action.toString();
 
         assertThat(result).contains("raise").contains("50 call");
@@ -291,7 +296,8 @@ class HandActionTest {
 
     @Test
     void should_FormatToString_WinWithPotNumber() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_SHOWDOWN, HandAction.ACTION_WIN, 500, 1, null);
+        HandAction action = new HandAction(player, BettingRound.SHOWDOWN.toLegacy(), HandAction.ACTION_WIN, 500, 1,
+                null);
         String result = action.toString();
 
         assertThat(result).contains("win");
@@ -299,7 +305,7 @@ class HandActionTest {
 
     @Test
     void should_FormatToString_Long_WithRoundInfo() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_BET, 100, 0, "test");
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_BET, 100, 0, "test");
         String result = action.toString(false);
 
         assertThat(result).contains("TestPlayer").contains("flop").contains("bet").contains("test");
@@ -309,35 +315,38 @@ class HandActionTest {
 
     @Test
     void should_GetHTMLSnippet_ForBasicBet() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_BET, 100);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_BET, 100);
 
         assertThatCode(() -> action.getHTMLSnippet("msg.test", 0, null)).doesNotThrowAnyException();
     }
 
     @Test
     void should_GetHTMLSnippet_ForRaise_WithRaiseIcon() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_RAISE, 200, 50, null);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_RAISE, 200, 50,
+                null);
 
         assertThatCode(() -> action.getHTMLSnippet("msg.test", 0, null)).doesNotThrowAnyException();
     }
 
     @Test
     void should_GetHTMLSnippet_ForReraise() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_RAISE, 300, 100, null);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_RAISE, 300, 100,
+                null);
 
         assertThatCode(() -> action.getHTMLSnippet("msg.test", 1, null)).doesNotThrowAnyException();
     }
 
     @Test
     void should_GetHTMLSnippet_ForRereraise() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_RAISE, 400, 150, null);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_RAISE, 400, 150,
+                null);
 
         assertThatCode(() -> action.getHTMLSnippet("msg.test", 2, null)).doesNotThrowAnyException();
     }
 
     @Test
     void should_GetHTMLSnippet_ForForcedFold() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_FOLD, 0,
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_FOLD, 0,
                 HandAction.FOLD_FORCED, null);
 
         assertThatCode(() -> action.getHTMLSnippet("msg.test", 0, null)).doesNotThrowAnyException();
@@ -345,7 +354,7 @@ class HandActionTest {
 
     @Test
     void should_GetHTMLSnippet_ForSittingOutFold() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_FOLD, 0,
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_FOLD, 0,
                 HandAction.FOLD_SITTING_OUT, null);
 
         assertThatCode(() -> action.getHTMLSnippet("msg.test", 0, null)).doesNotThrowAnyException();
@@ -354,7 +363,7 @@ class HandActionTest {
     @Test
     void should_GetHTMLSnippet_ForAllIn() {
         player.setChipCount(0);
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_BET, 100);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_BET, 100);
 
         assertThat(action.isAllIn()).isTrue();
 
@@ -363,7 +372,7 @@ class HandActionTest {
 
     @Test
     void should_GetChat_WrapInTable() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_BET, 100);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_BET, 100);
         String chat = action.getChat(0, null, null);
 
         assertThat(chat).contains("<TABLE").contains("<TR>").contains("<TD>");
@@ -371,7 +380,7 @@ class HandActionTest {
 
     @Test
     void should_GetChat_WithSuffix() {
-        HandAction action = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_CALL, 50);
+        HandAction action = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_CALL, 50);
 
         assertThatCode(() -> action.getChat(0, null, "dealer")).doesNotThrowAnyException();
     }
@@ -380,7 +389,7 @@ class HandActionTest {
 
     @Test
     void should_MarshalAndDemarshal_BasicAction() {
-        HandAction original = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_BET, 100);
+        HandAction original = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_BET, 100);
 
         MsgState state = new MsgState();
         String marshaled = original.marshal(state);
@@ -398,7 +407,7 @@ class HandActionTest {
 
     @Test
     void should_MarshalAndDemarshal_RaiseWithSubAmount() {
-        HandAction original = new HandAction(player, HoldemHand.ROUND_TURN, HandAction.ACTION_RAISE, 200, 50,
+        HandAction original = new HandAction(player, BettingRound.TURN.toLegacy(), HandAction.ACTION_RAISE, 200, 50,
                 "raise debug");
 
         MsgState state = new MsgState();
@@ -407,7 +416,7 @@ class HandActionTest {
         HandAction restored = new HandAction();
         restored.demarshal(state, marshaled);
 
-        assertThat(restored.getRound()).isEqualTo(HoldemHand.ROUND_TURN);
+        assertThat(restored.getRound()).isEqualTo(BettingRound.TURN.toLegacy());
         assertThat(restored.getAction()).isEqualTo(HandAction.ACTION_RAISE);
         assertThat(restored.getAmount()).isEqualTo(200);
         assertThat(restored.getSubAmount()).isEqualTo(50);
@@ -417,7 +426,7 @@ class HandActionTest {
     @Test
     void should_MarshalAndDemarshal_AllInAction() {
         player.setChipCount(0);
-        HandAction original = new HandAction(player, HoldemHand.ROUND_RIVER, HandAction.ACTION_CALL, 500);
+        HandAction original = new HandAction(player, BettingRound.RIVER.toLegacy(), HandAction.ACTION_CALL, 500);
 
         assertThat(original.isAllIn()).isTrue();
 
@@ -433,7 +442,7 @@ class HandActionTest {
 
     @Test
     void should_MarshalAndDemarshal_FoldWithType() {
-        HandAction original = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_FOLD, 0,
+        HandAction original = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_FOLD, 0,
                 HandAction.FOLD_FORCED, null);
 
         MsgState state = new MsgState();
@@ -448,7 +457,8 @@ class HandActionTest {
 
     @Test
     void should_MarshalAndDemarshal_WinWithPotNumber() {
-        HandAction original = new HandAction(player, HoldemHand.ROUND_SHOWDOWN, HandAction.ACTION_WIN, 1000, 2, null);
+        HandAction original = new HandAction(player, BettingRound.SHOWDOWN.toLegacy(), HandAction.ACTION_WIN, 1000, 2,
+                null);
 
         MsgState state = new MsgState();
         String marshaled = original.marshal(state);
@@ -463,7 +473,7 @@ class HandActionTest {
 
     @Test
     void should_MarshalAndDemarshal_WithNullDebug() {
-        HandAction original = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_CHECK, 0, 0, null);
+        HandAction original = new HandAction(player, BettingRound.FLOP.toLegacy(), HandAction.ACTION_CHECK, 0, 0, null);
 
         MsgState state = new MsgState();
         String marshaled = original.marshal(state);
@@ -481,7 +491,7 @@ class HandActionTest {
                 HandAction.ACTION_ANTE, HandAction.ACTION_WIN, HandAction.ACTION_OVERBET, HandAction.ACTION_LOSE};
 
         for (int actionType : actionTypes) {
-            HandAction original = new HandAction(player, HoldemHand.ROUND_FLOP, actionType, 100);
+            HandAction original = new HandAction(player, BettingRound.FLOP.toLegacy(), actionType, 100);
 
             MsgState state = new MsgState();
             String marshaled = original.marshal(state);
@@ -496,6 +506,6 @@ class HandActionTest {
     // ========== Helper Methods ==========
 
     private HandAction createAction(int actionType) {
-        return new HandAction(player, HoldemHand.ROUND_FLOP, actionType, 100);
+        return new HandAction(player, BettingRound.FLOP.toLegacy(), actionType, 100);
     }
 }

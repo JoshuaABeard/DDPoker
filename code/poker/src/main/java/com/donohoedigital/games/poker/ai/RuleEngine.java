@@ -47,6 +47,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 
 import static com.donohoedigital.config.DebugConfig.TESTING;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 public class RuleEngine implements AIConstants {
     public boolean USE_CONFIDENCE = false;
@@ -244,7 +245,7 @@ public class RuleEngine implements AIConstants {
         hhand_ = self_.getHoldemHand();
 
         if (hhand_ != null) {
-            round_ = hhand_.getRound();
+            round_ = hhand_.getRound().toLegacy();
 
             nPlayersRemaining_ = hhand_.getNumWithCards();
             nPlayersAfter_ = ai_.getNumAfter();
@@ -255,16 +256,16 @@ public class RuleEngine implements AIConstants {
             bAllIn_ = (self_.getChipCount() == 0);
             bPotCommitted_ = (self_.getChipCount() <= self_.getChipCountAtStart() / 2);
 
-            bCardsToCome_ = (round_ != HoldemHand.ROUND_RIVER);
+            bCardsToCome_ = (round_ != BettingRound.RIVER.toLegacy());
 
             selfModel_ = self_.getOpponentModel();
 
             pWeights_ = PocketWeights.getInstance(hhand_);
 
-            if (hhand_.getRound() >= HoldemHand.ROUND_FLOP) {
+            if (hhand_.getRound().toLegacy() >= BettingRound.FLOP.toLegacy()) {
                 apparentStrength_ = pWeights_.getApparentStrength(seat_);
                 probableStrength_ = pWeights_.getBiasedRawHandStrength(seat_);
-                drawStrength_ = (round_ == HoldemHand.ROUND_FLOP || round_ == HoldemHand.ROUND_TURN)
+                drawStrength_ = (round_ == BettingRound.FLOP.toLegacy() || round_ == BettingRound.TURN.toLegacy())
                         ? pWeights_.getBiasedEffectiveHandStrength(seat_)
                         : probableStrength_;
             }
@@ -316,7 +317,7 @@ public class RuleEngine implements AIConstants {
                     executeFlopTurn(player);
                 }
                 break;
-            // case HoldemHand.ROUND_RIVER:
+            // case BettingRound.RIVER:
             // executeRiver(player);
             // break;
         }
@@ -418,7 +419,7 @@ public class RuleEngine implements AIConstants {
                     // no point continuation betting against a pot committed opponent,
                     // or if we don't have at least half the pot to bet
                     if (!bOpponentPotCommitted && (self_.getChipCount() > hhand_.getTotalPotChipCount() / 2)
-                            && (round_ == HoldemHand.ROUND_FLOP) && ai_.wasLastRaiserPreFlop()
+                            && (round_ == BettingRound.FLOP.toLegacy()) && ai_.wasLastRaiserPreFlop()
                             && (apparentStrength_ > 0.5f)) {
                         setEligible(OUTCOME_CONTINUATION_BET, true);
                         outcome.addTuple(AIOutcome.BET, "Continuation Bet", .35f, 0f, .65f);
@@ -529,7 +530,7 @@ public class RuleEngine implements AIConstants {
                 // no point continuation betting against a pot committed opponent,
                 // or if we don't have at least half the pot to bet
                 if (!bOpponentPotCommitted && (self_.getChipCount() > hhand_.getTotalPotChipCount() / 2)
-                        && (round_ == HoldemHand.ROUND_FLOP) && ai_.wasLastRaiserPreFlop()
+                        && (round_ == BettingRound.FLOP.toLegacy()) && ai_.wasLastRaiserPreFlop()
                         && (apparentStrength_ > 0.5f)) {
                     setEligible(OUTCOME_CONTINUATION_BET, true);
                     outcome.addTuple(AIOutcome.BET, "Continuation Bet", .35f, 0f, .65f);
@@ -706,7 +707,7 @@ public class RuleEngine implements AIConstants {
 
             bhs = pWeights_.getBiasedRawHandStrength(self_.getSeat());
 
-            if (round_ < HoldemHand.ROUND_RIVER) {
+            if (round_ < BettingRound.RIVER.toLegacy()) {
                 ehs = pWeights_.getBiasedEffectiveHandStrength(self_.getSeat());
             } else {
                 ehs = bhs;
@@ -757,13 +758,13 @@ public class RuleEngine implements AIConstants {
 
         switch (round_) {
             case HoldemHand.ROUND_RIVER :
-                if (!hhand_.getWasPotAction(HoldemHand.ROUND_TURN)) {
+                if (!hhand_.getWasPotAction(BettingRound.TURN.toLegacy())) {
                     ++roundsNoAction;
                 } else {
                     break;
                 }
             case HoldemHand.ROUND_TURN :
-                if (!hhand_.getWasPotAction(HoldemHand.ROUND_FLOP)) {
+                if (!hhand_.getWasPotAction(BettingRound.FLOP.toLegacy())) {
                     ++roundsNoAction;
                 }
                 break;
@@ -808,17 +809,17 @@ public class RuleEngine implements AIConstants {
          * hhand.getPlayerAt(i); if (opponent == ai.getPokerPlayer()) continue; if
          * (opponent.isFolded()) continue; OpponentModel om =
          * ai.getOpponentModel(opponent.getSeat()); float v; switch (round) { case
-         * HoldemHand.ROUND_FLOP: v = om.checkFoldFlop.getWeightedPercentTrue(0.8f) *
+         * BettingRound.FLOP: v = om.checkFoldFlop.getWeightedPercentTrue(0.8f) *
          * om.actFlop.getWeightedPercentTrue(0.2f); averageCheckRate += v; break; case
-         * HoldemHand.ROUND_TURN: v = om.checkFoldTurn.getWeightedPercentTrue(0.8f) *
+         * BettingRound.TURN: v = om.checkFoldTurn.getWeightedPercentTrue(0.8f) *
          * om.actTurn.getWeightedPercentTrue(0.2f); averageCheckRate += v; break; case
-         * HoldemHand.ROUND_RIVER: v = om.checkFoldRiver.getWeightedPercentTrue(0.8f) *
+         * BettingRound.RIVER: v = om.checkFoldRiver.getWeightedPercentTrue(0.8f) *
          * om.actRiver.getWeightedPercentTrue(0.2f); averageCheckRate += v; break; } }
          *
          * averageCheckRate /= (numWithCards - 1);
          */
 
-        if ((round_ == HoldemHand.ROUND_RIVER) && (potStatus != PokerConstants.NO_POT_ACTION) && (rhs == 1.0f)) {
+        if ((round_ == BettingRound.RIVER.toLegacy()) && (potStatus != PokerConstants.NO_POT_ACTION) && (rhs == 1.0f)) {
             if (playerChips > amountToCall) {
                 float allInPotRatio = (float) Math.ceil((float) (playerChips - amountToCall) / (float) potTotal);
 
@@ -888,7 +889,7 @@ public class RuleEngine implements AIConstants {
             } else {
                 // if everyone is likely to be weak, boost bet value, but less for very strong
                 // hands where we might rather check/call or check-raise
-                if ((round_ == HoldemHand.ROUND_FLOP) || (roundsNoAction > 0)) {
+                if ((round_ == BettingRound.FLOP.toLegacy()) || (roundsNoAction > 0)) {
                     adjustOutcome(OUTCOME_BET, FACTOR_STEAL_POTENTIAL,
                             xBasicsObservation * (1.0f - rhs * rhs) * allWeak * 0.50f);
                 }
@@ -924,7 +925,7 @@ public class RuleEngine implements AIConstants {
                  */
 
                 // consider continuation bet on the flop if last raiser pre-flop
-                if (ai.wasLastRaiserPreFlop() && (numWithCards < 4) && (round_ == HoldemHand.ROUND_FLOP)) {
+                if (ai.wasLastRaiserPreFlop() && (numWithCards < 4) && (round_ == BettingRound.FLOP.toLegacy())) {
                     setEligible(OUTCOME_CONTINUATION_BET, true);
 
                     int draws = pNutFlush * 3 + pNonNutFlush + pNutStraight * 2 + pNonNutStraight;
@@ -975,7 +976,7 @@ public class RuleEngine implements AIConstants {
                     }
                 } else {
                     // consider probe bet if original raiser has checked
-                    PokerPlayer firstRaiser = hhand_.getFirstBettor(HoldemHand.ROUND_PRE_FLOP, true);
+                    PokerPlayer firstRaiser = hhand_.getFirstBettor(BettingRound.PRE_FLOP.toLegacy(), true);
 
                     if (firstRaiser != null) {
                         HandAction firstRaiserAction = hhand_.getFirstVoluntaryAction(firstRaiser, round_);
@@ -1050,7 +1051,7 @@ public class RuleEngine implements AIConstants {
             // adjustOutcome(OUTCOME_CALL, FACTOR_POSITION, adjPosition);
             adjustOutcome(OUTCOME_CALL, FACTOR_STRAIGHT_DRAW, xStraightDraw * 0.075f);
             adjustOutcome(OUTCOME_CALL, FACTOR_FLUSH_DRAW, xFlushDraw * 0.05f);
-            if (round_ < HoldemHand.ROUND_RIVER) {
+            if (round_ < BettingRound.RIVER.toLegacy()) {
                 if (NEWCODE) {
                     // ehs/breakEvenPercentage = 1 at break-even
                     // bhs = chance we currently have the best hand
@@ -1095,7 +1096,7 @@ public class RuleEngine implements AIConstants {
             adjustOutcome(OUTCOME_RAISE, FACTOR_AGGRESSION, xBasicsAggression * 0.1f);
             // adjustOutcome(OUTCOME_RAISE, FACTOR_POT_ODDS, potOdds * xBasicsPotOdds *
             // 0.02f);
-            if (round_ < HoldemHand.ROUND_RIVER) {
+            if (round_ < BettingRound.RIVER.toLegacy()) {
                 if (NEWCODE) {
                     adjustOutcome(OUTCOME_RAISE, FACTOR_POT_ODDS,
                             (1.0f - ehs) * ehs / breakEvenPercentage * xBasicsPotOdds);
@@ -1506,7 +1507,7 @@ public class RuleEngine implements AIConstants {
                         -0.15f * (float) Math.pow(2 * amountToCall / playerChips, 2) * (1.0f - handStrength));
 
                 // devalue raises from players in dire straits
-                PokerPlayer raiser = hhand.getFirstBettor(HoldemHand.ROUND_PRE_FLOP, false);
+                PokerPlayer raiser = hhand.getFirstBettor(BettingRound.PRE_FLOP.toLegacy(), false);
 
                 int rZone = player.getHohZone(raiser);
 
@@ -1608,8 +1609,8 @@ public class RuleEngine implements AIConstants {
                         break;
                 }
 
-                PokerPlayer firstRaiser = hhand.getFirstBettor(HoldemHand.ROUND_PRE_FLOP, false);
-                PokerPlayer lastRaiser = hhand.getLastBettor(HoldemHand.ROUND_PRE_FLOP, false);
+                PokerPlayer firstRaiser = hhand.getFirstBettor(BettingRound.PRE_FLOP.toLegacy(), false);
+                PokerPlayer lastRaiser = hhand.getLastBettor(BettingRound.PRE_FLOP.toLegacy(), false);
 
                 // devalue raises from players in dire straits
                 int rZone = player.getHohZone(lastRaiser);
@@ -1991,13 +1992,13 @@ public class RuleEngine implements AIConstants {
 
         switch (round) {
             case HoldemHand.ROUND_RIVER :
-                if (!hhand.getWasPotAction(HoldemHand.ROUND_TURN)) {
+                if (!hhand.getWasPotAction(BettingRound.TURN.toLegacy())) {
                     ++roundsNoAction;
                 } else {
                     break;
                 }
             case HoldemHand.ROUND_TURN :
-                if (!hhand.getWasPotAction(HoldemHand.ROUND_FLOP)) {
+                if (!hhand.getWasPotAction(BettingRound.FLOP.toLegacy())) {
                     ++roundsNoAction;
                 }
                 break;
@@ -2039,17 +2040,17 @@ public class RuleEngine implements AIConstants {
          * hhand.getPlayerAt(i); if (opponent == player.getPokerPlayer()) continue; if
          * (opponent.isFolded()) continue; OpponentModel om =
          * player.getOpponentModel(opponent.getSeat()); float v; switch (round) { case
-         * HoldemHand.ROUND_FLOP: v = om.checkFoldFlop.getWeightedPercentTrue(0.8f) *
+         * BettingRound.FLOP: v = om.checkFoldFlop.getWeightedPercentTrue(0.8f) *
          * om.actFlop.getWeightedPercentTrue(0.2f); averageCheckRate += v; break; case
-         * HoldemHand.ROUND_TURN: v = om.checkFoldTurn.getWeightedPercentTrue(0.8f) *
+         * BettingRound.TURN: v = om.checkFoldTurn.getWeightedPercentTrue(0.8f) *
          * om.actTurn.getWeightedPercentTrue(0.2f); averageCheckRate += v; break; case
-         * HoldemHand.ROUND_RIVER: v = om.checkFoldRiver.getWeightedPercentTrue(0.8f) *
+         * BettingRound.RIVER: v = om.checkFoldRiver.getWeightedPercentTrue(0.8f) *
          * om.actRiver.getWeightedPercentTrue(0.2f); averageCheckRate += v; break; } }
          *
          * averageCheckRate /= (numWithCards - 1);
          */
 
-        if ((round == HoldemHand.ROUND_RIVER) && (potStatus != PokerConstants.NO_POT_ACTION) && (rhs == 1.0f)) {
+        if ((round == BettingRound.RIVER.toLegacy()) && (potStatus != PokerConstants.NO_POT_ACTION) && (rhs == 1.0f)) {
             if (playerChips > amountToCall) {
                 float allInPotRatio = (float) Math.ceil((float) (playerChips - amountToCall) / (float) potTotal);
 
@@ -2105,7 +2106,7 @@ public class RuleEngine implements AIConstants {
 
             // if everyone is likely to be weak, boost bet value, but less for very strong
             // hands where we might rather check/call or check-raise
-            if ((round == HoldemHand.ROUND_FLOP) || (roundsNoAction > 0)) {
+            if ((round == BettingRound.FLOP.toLegacy()) || (roundsNoAction > 0)) {
                 adjustOutcome(OUTCOME_BET, FACTOR_STEAL_POTENTIAL,
                         xBasicsObservation * (1.0f - rhs * rhs) * allWeak * 0.50f);
             }
@@ -2145,7 +2146,7 @@ public class RuleEngine implements AIConstants {
                  */
 
                 // consider continuation bet on the flop if last raiser pre-flop
-                if (player.wasLastRaiserPreFlop() && (numWithCards < 4) && (round == HoldemHand.ROUND_FLOP)) {
+                if (player.wasLastRaiserPreFlop() && (numWithCards < 4) && (round == BettingRound.FLOP.toLegacy())) {
                     setEligible(OUTCOME_CONTINUATION_BET, true);
 
                     int draws = pNutFlush * 3 + pNonNutFlush + pNutStraight * 2 + pNonNutStraight;
@@ -2192,7 +2193,7 @@ public class RuleEngine implements AIConstants {
                     }
                 } else {
                     // consider probe bet if original raiser has checked
-                    PokerPlayer firstRaiser = hhand.getFirstBettor(HoldemHand.ROUND_PRE_FLOP, true);
+                    PokerPlayer firstRaiser = hhand.getFirstBettor(BettingRound.PRE_FLOP.toLegacy(), true);
 
                     if (firstRaiser != null) {
                         HandAction firstRaiserAction = hhand.getFirstVoluntaryAction(firstRaiser, round);
@@ -2268,7 +2269,7 @@ public class RuleEngine implements AIConstants {
             // adjustOutcome(OUTCOME_CALL, FACTOR_POSITION, adjPosition);
             adjustOutcome(OUTCOME_CALL, FACTOR_STRAIGHT_DRAW, xStraightDraw * 0.075f);
             adjustOutcome(OUTCOME_CALL, FACTOR_FLUSH_DRAW, xFlushDraw * 0.05f);
-            if (round < HoldemHand.ROUND_RIVER) {
+            if (round < BettingRound.RIVER.toLegacy()) {
                 adjustOutcome(OUTCOME_CALL, FACTOR_HAND_POTENTIAL,
                         drawPotential * xBasicsPotOdds * (potOdds + 1.0f) / 2);
             } else {
@@ -2297,7 +2298,7 @@ public class RuleEngine implements AIConstants {
             adjustOutcome(OUTCOME_RAISE, FACTOR_AGGRESSION, xBasicsAggression * 0.1f);
             // adjustOutcome(OUTCOME_RAISE, FACTOR_POT_ODDS, potOdds * xBasicsPotOdds *
             // 0.02f);
-            if (round < HoldemHand.ROUND_RIVER) {
+            if (round < BettingRound.RIVER.toLegacy()) {
                 adjustOutcome(OUTCOME_RAISE, FACTOR_HAND_POTENTIAL,
                         drawPotential * xBasicsPotOdds * (potOdds + 1.0f) / 2);
             } else {
