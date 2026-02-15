@@ -499,4 +499,54 @@ public class LevelValidatorTest {
         // Verify monotonic blinds (excluding breaks)
         assertTrue("Level 4 big should be >= level 2 big", levels.get(3).bigBlind >= levels.get(1).bigBlind);
     }
+
+    // ========== LevelData toString() Tests ==========
+
+    @Test
+    public void should_FormatBreakLevel_InToString() {
+        // Given: a break level
+        Map<String, String> rawData = new HashMap<>();
+        rawData.put("ante1", String.valueOf(TournamentProfile.BREAK_ANTE_VALUE));
+        rawData.put("minutes1", "15");
+
+        LevelValidator validator = new LevelValidator();
+
+        // When: validate and get the level
+        List<LevelValidator.LevelData> levels = validator.validateAndNormalize(rawData, 10,
+                PokerConstants.DE_NO_LIMIT_HOLDEM);
+
+        // Then: toString should show BREAK format
+        String result = levels.get(0).toString();
+        assertNotNull("toString should not be null", result);
+        assertTrue("toString should contain 'BREAK'", result.contains("BREAK"));
+        assertTrue("toString should contain level number", result.contains("Level"));
+        assertTrue("toString should contain minutes", result.contains("15"));
+    }
+
+    @Test
+    public void should_FormatNormalLevel_InToString() {
+        // Given: a normal level with all fields
+        Map<String, String> rawData = new HashMap<>();
+        rawData.put("ante1", "5");
+        rawData.put("small1", "10");
+        rawData.put("big1", "20");
+        rawData.put("minutes1", "15");
+        rawData.put("gametype1", PokerConstants.DE_NO_LIMIT_HOLDEM);
+
+        LevelValidator validator = new LevelValidator();
+
+        // When: validate and get the level
+        List<LevelValidator.LevelData> levels = validator.validateAndNormalize(rawData, 10,
+                PokerConstants.DE_POT_LIMIT_HOLDEM);
+
+        // Then: toString should show full level details
+        String result = levels.get(0).toString();
+        assertNotNull("toString should not be null", result);
+        assertTrue("toString should contain 'Level'", result.contains("Level"));
+        assertTrue("toString should contain 'Ante'", result.contains("Ante"));
+        assertTrue("toString should contain 'Small'", result.contains("Small"));
+        assertTrue("toString should contain 'Big'", result.contains("Big"));
+        assertTrue("toString should contain 'Minutes'", result.contains("Minutes"));
+        assertTrue("toString should contain 'Type'", result.contains("Type"));
+    }
 }
