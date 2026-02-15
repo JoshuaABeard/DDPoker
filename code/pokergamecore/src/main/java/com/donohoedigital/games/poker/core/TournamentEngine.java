@@ -34,6 +34,7 @@ package com.donohoedigital.games.poker.core;
 
 import java.util.List;
 
+import com.donohoedigital.games.poker.core.event.GameEvent;
 import com.donohoedigital.games.poker.core.event.GameEventBus;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.core.state.TableState;
@@ -525,20 +526,22 @@ public class TournamentEngine {
 
         // Locally controlled player (local human or AI)
         if (currentPlayer.isLocallyControlled()) {
-            // Player on current (UI) table - run Bet phase
-            if (table.isCurrent()) {
-                if (isHost) {
-                    table.addWait(currentPlayer); // avoids warning message on client
-                }
+            // Phase 3B: Use actionProvider for all locally controlled players
+            // Create ActionOptions from current game state
+            ActionOptions options = createActionOptions(currentPlayer, hand, game);
 
-                return TableProcessResult.builder().phaseToRun("TD.Bet").shouldAddAllHumans(false)
-                        .pendingState(TableState.BETTING).build();
-            }
-            // Computer player on non-current table
-            else {
-                // Note: current.getAction(false) and doHandAction() stay in TournamentDirector
-                table.setPause(500); // AI_PAUSE_TENTHS * 100 (5 tenths)
+            // Get action from provider (blocking call - waits for human input or AI
+            // decision)
+            PlayerAction action = actionProvider.getAction(currentPlayer, options);
 
+            if (action != null) {
+                // Process the action and advance game state
+                processPlayerAction(currentPlayer, action, table, hand, game);
+                return TableProcessResult.builder().nextState(TableState.BETTING).build();
+            } else {
+                // Safety fallback: if actionProvider returns null, auto-fold
+                PlayerAction foldAction = PlayerAction.fold();
+                processPlayerAction(currentPlayer, foldAction, table, hand, game);
                 return TableProcessResult.builder().nextState(TableState.BETTING).build();
             }
         }
@@ -553,6 +556,49 @@ public class TournamentEngine {
 
         // Default: stay in BETTING
         return TableProcessResult.builder().build();
+    }
+
+    /**
+     * Create ActionOptions from current game state for a player decision.
+     */
+    private ActionOptions createActionOptions(GamePlayerInfo player, GameHand hand, TournamentContext game) {
+        // Get amounts from hand
+        int amountToCall = hand.getAmountToCall(player);
+        int chipCount = player.getChipCount();
+
+        // Determine available actions
+        boolean canCheck = (amountToCall == 0);
+        boolean canCall = (amountToCall > 0) && (chipCount > 0); // Can call for less (all-in) if short-stacked
+        boolean canBet = (amountToCall == 0) && (chipCount > 0);
+        boolean canRaise = (amountToCall > 0) && (chipCount > amountToCall);
+        boolean canFold = true;
+
+        // Get betting limits
+        int minBet = hand.getMinBet();
+        int maxBet = chipCount;
+        int minRaise = hand.getMinRaise();
+        int maxRaise = chipCount;
+
+        // Get timeout from tournament settings
+        int timeoutSeconds = game.getTimeoutForRound(hand.getRound().toLegacy());
+
+        return new ActionOptions(canCheck, canCall, canBet, canRaise, canFold, amountToCall, minBet, maxBet, minRaise,
+                maxRaise, timeoutSeconds);
+    }
+
+    /**
+     * Process a player action and update game state. Delegates to GameHand for
+     * action processing (which handles conversion to internal representation).
+     */
+    private void processPlayerAction(GamePlayerInfo player, PlayerAction action, GameTable table, GameHand hand,
+            TournamentContext game) {
+        // Delegate to hand to process action (converts to HandAction internally in
+        // poker module)
+        hand.applyPlayerAction(player, action);
+
+        // Emit event for UI/logging
+        eventBus.publish(
+                new GameEvent.PlayerActed(table.getNumber(), player.getID(), action.actionType(), action.amount()));
     }
 
     private TableState getNextBettingState(GameHand hand) {
@@ -728,7 +774,7 @@ public class TournamentEngine {
 
         // Store hand history - called here so it happens on both client and host
         GamePlayerInfo localPlayer = game.getLocalPlayer();
-        if (!localPlayer.isObserver() || isHost) {
+        if (localPlayer != null && (!localPlayer.isObserver() || isHost)) {
             hand.storeHandHistory();
         }
 
