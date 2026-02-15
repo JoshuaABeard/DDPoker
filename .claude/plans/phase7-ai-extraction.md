@@ -1,9 +1,24 @@
 # Phase 7: Extract AI to pokergamecore
 
 ## Status
-**PREREQUISITES COMPLETE** - POC validated, ready to start when Phase 3 completes
+**IN PROGRESS** - Core infrastructure and TournamentAI complete
 
 **Last Updated:** 2026-02-15
+
+### ✅ Completed (2026-02-15)
+- **Phase 7A: Core AI Infrastructure** - PurePokerAI and AIContext interfaces
+- **Phase 7E: TournamentAI** - Production implementation with M-ratio strategy
+
+### ⏳ In Progress
+- Branch: `feature-phase7-ai-extraction`
+- Commits: 2 (interfaces + TournamentAI)
+
+### 📋 Remaining
+- Phase 7B: Extract V1 Algorithm (~2-3 days)
+- Phase 7C: Extract V2 Algorithm (~2-3 days)
+- Phase 7D: Create ServerAIProvider (~1-2 days) - **Can do now with TournamentAI**
+- Comprehensive testing
+- Dependency extraction (SklankskyGroup, OpponentModel)
 
 ## Context
 
