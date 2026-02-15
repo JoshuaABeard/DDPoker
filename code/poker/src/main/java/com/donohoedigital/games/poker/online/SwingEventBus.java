@@ -44,17 +44,22 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Bridge between pokergamecore's GameEvent records and legacy PokerTableEvent
  * bitmasks. Converts new events to legacy format and dispatches on Swing EDT.
  *
- * Phase 2 Step 9: Full implementation with event conversion.
+ * Phase 2: Accepts PokerGame instead of PokerTable since one event bus serves
+ * all tables. Extracts table from event's tableId.
  */
 public class SwingEventBus extends GameEventBus {
 
-    private final PokerTable table;
     private final PokerGame game;
     private final List<PokerTableListener> legacyListeners = new CopyOnWriteArrayList<>();
 
-    public SwingEventBus(PokerTable table) {
-        this.table = table;
-        this.game = table != null ? table.getGame() : null;
+    /**
+     * Create event bus for the given game.
+     *
+     * @param game
+     *            the poker game (manages all tables)
+     */
+    public SwingEventBus(PokerGame game) {
+        this.game = game;
     }
 
     /**
@@ -66,7 +71,7 @@ public class SwingEventBus extends GameEventBus {
         super.publish(event);
 
         // Convert to legacy event and dispatch on EDT
-        if (!legacyListeners.isEmpty() && table != null) {
+        if (!legacyListeners.isEmpty() && game != null) {
             PokerTableEvent legacyEvent = convertToLegacy(event);
             if (legacyEvent != null) {
                 SwingUtilities.invokeLater(() -> {
@@ -94,8 +99,17 @@ public class SwingEventBus extends GameEventBus {
 
     /**
      * Convert GameEvent record to legacy PokerTableEvent.
+     * Extracts table from event's tableId field.
      */
     private PokerTableEvent convertToLegacy(GameEvent event) {
+        // Extract table ID from event (most events have tableId)
+        int tableId = getTableId(event);
+        PokerTable table = tableId >= 0 && game != null ? game.getTable(tableId) : null;
+
+        if (table == null) {
+            return null; // Can't convert without table
+        }
+
         return switch (event) {
             case GameEvent.HandStarted e ->
                 new PokerTableEvent(PokerTableEvent.TYPE_NEW_HAND, table);
@@ -116,12 +130,12 @@ public class SwingEventBus extends GameEventBus {
                     e.oldState().toLegacy(), e.newState().toLegacy());
 
             case GameEvent.PlayerAdded e -> {
-                PokerPlayer player = game != null ? game.getPokerPlayerFromID(e.playerId()) : null;
+                PokerPlayer player = game.getPokerPlayerFromID(e.playerId());
                 yield new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ADDED, table, player, e.seat());
             }
 
             case GameEvent.PlayerRemoved e -> {
-                PokerPlayer player = game != null ? game.getPokerPlayerFromID(e.playerId()) : null;
+                PokerPlayer player = game.getPokerPlayerFromID(e.playerId());
                 yield new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REMOVED, table, player, e.seat());
             }
 
@@ -154,14 +168,14 @@ public class SwingEventBus extends GameEventBus {
                 new PokerTableEvent(PokerTableEvent.TYPE_CURRENT_PLAYER_CHANGED, table);
 
             case GameEvent.PlayerRebuy e -> {
-                PokerPlayer player = game != null ? game.getPokerPlayerFromID(e.playerId()) : null;
+                PokerPlayer player = game.getPokerPlayerFromID(e.playerId());
                 // Rebuy needs cash, chips, pending flag - but we only have amount in event
                 yield new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REBUY, table, player,
                     e.amount(), e.amount(), false);
             }
 
             case GameEvent.PlayerAddon e -> {
-                PokerPlayer player = game != null ? game.getPokerPlayerFromID(e.playerId()) : null;
+                PokerPlayer player = game.getPokerPlayerFromID(e.playerId());
                 // Addon needs cash, chips, pending flag - but we only have amount in event
                 yield new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ADDON, table, player,
                     e.amount(), e.amount(), false);
@@ -175,6 +189,35 @@ public class SwingEventBus extends GameEventBus {
 
             case GameEvent.CleaningDone e ->
                 new PokerTableEvent(PokerTableEvent.TYPE_CLEANING_DONE, table);
+        };
+    }
+
+    /**
+     * Extract table ID from event record.
+     */
+    private int getTableId(GameEvent event) {
+        return switch (event) {
+            case GameEvent.HandStarted e -> e.tableId();
+            case GameEvent.PlayerActed e -> e.tableId();
+            case GameEvent.CommunityCardsDealt e -> e.tableId();
+            case GameEvent.HandCompleted e -> e.tableId();
+            case GameEvent.TableStateChanged e -> e.tableId();
+            case GameEvent.PlayerAdded e -> e.tableId();
+            case GameEvent.PlayerRemoved e -> e.tableId();
+            case GameEvent.ButtonMoved e -> e.tableId();
+            case GameEvent.ShowdownStarted e -> e.tableId();
+            case GameEvent.PotAwarded e -> e.tableId();
+            case GameEvent.BreakStarted e -> e.tableId();
+            case GameEvent.BreakEnded e -> e.tableId();
+            case GameEvent.ColorUpCompleted e -> e.tableId();
+            case GameEvent.CurrentPlayerChanged e -> e.tableId();
+            case GameEvent.PlayerRebuy e -> e.tableId();
+            case GameEvent.PlayerAddon e -> e.tableId();
+            case GameEvent.ObserverAdded e -> e.tableId();
+            case GameEvent.ObserverRemoved e -> e.tableId();
+            case GameEvent.CleaningDone e -> e.tableId();
+            case GameEvent.LevelChanged e -> -1; // No tableId for game-level events
+            case GameEvent.TournamentCompleted e -> -1; // No tableId for game-level events
         };
     }
 }

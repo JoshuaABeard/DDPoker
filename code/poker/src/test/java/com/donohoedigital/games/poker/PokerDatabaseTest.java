@@ -112,7 +112,7 @@ class PokerDatabaseTest {
         HoldemHand hand = createHand(game, player);
         hand.setAnte(5);
 
-        int id = hand.storeHandHistory();
+        int id = hand.storeHandHistoryDB();
         String[] html = PokerDatabase.getHandAsHTML(id, true, true);
 
         assertThat(html).isNotNull().isNotEmpty();
@@ -126,7 +126,7 @@ class PokerDatabaseTest {
         HoldemHand hand = createHand(game, player);
         hand.setAnte(10);
 
-        int id = hand.storeHandHistory();
+        int id = hand.storeHandHistoryDB();
 
         assertThat(id).isGreaterThan(0);
     }
@@ -137,7 +137,7 @@ class PokerDatabaseTest {
         PokerPlayer player = createPlayer("test-player3", game);
         HoldemHand hand = createHand(game, player);
         hand.setAnte(20);
-        int id = hand.storeHandHistory();
+        int id = hand.storeHandHistoryDB();
 
         String[] html = PokerDatabase.getHandAsHTML(id, false, false);
 
@@ -214,7 +214,7 @@ class PokerDatabaseTest {
         PokerGame game = createGame();
         PokerPlayer player = createPlayer("practice-player", game);
         HoldemHand hand = createHand(game, player);
-        int id = hand.storeHandHistory();
+        int id = hand.storeHandHistoryDB();
 
         boolean isPractice = PokerDatabase.isPracticeHand(id);
 

@@ -33,10 +33,13 @@
 package com.donohoedigital.games.poker.core;
 
 /**
- * Interface for game-level operations that the core engine needs. Implemented
- * by PokerGame in Phase 2.
+ * Interface for tournament-level operations that the core engine needs.
+ * Implemented by PokerGame in Phase 2.
+ *
+ * Renamed from GameContext to TournamentContext to avoid name collision with
+ * com.donohoedigital.games.engine.GameContext.
  */
-public interface GameContext {
+public interface TournamentContext {
     /** @return total number of tables in the tournament */
     int getNumTables();
 
@@ -69,4 +72,77 @@ public interface GameContext {
 
     /** @return true if the tournament is over */
     boolean isGameOver();
+
+    // Level and timing management
+
+    /** @return current tournament level (0-based) */
+    int getLevel();
+
+    /** Advance to the next tournament level */
+    void nextLevel();
+
+    /** @return true if the current level's time has expired */
+    boolean isLevelExpired();
+
+    /** Advance the tournament clock during a break */
+    void advanceClockBreak();
+
+    /** Start the game clock (for online games) */
+    void startGameClock();
+
+    // Chip denomination management
+
+    /** @return the previous minimum chip denomination */
+    int getLastMinChip();
+
+    /** @return the current minimum chip denomination */
+    int getMinChip();
+
+    // Clock operations
+
+    /** Advance the tournament clock (for practice games) */
+    void advanceClock();
+
+    // Tournament profile queries
+
+    /**
+     * Check if a level is a break period.
+     *
+     * @param level
+     *            the level to check
+     * @return true if the level is a break
+     */
+    boolean isBreakLevel(int level);
+
+    /** @return the local player (this client's player) */
+    GamePlayerInfo getLocalPlayer();
+
+    // Tournament profile queries
+
+    /** @return true if scheduled start is enabled */
+    boolean isScheduledStartEnabled();
+
+    /** @return scheduled start time in milliseconds since epoch */
+    long getScheduledStartTime();
+
+    /** @return minimum players required for scheduled start */
+    int getMinPlayersForScheduledStart();
+
+    /**
+     * Get timeout for a specific betting round.
+     *
+     * @param round
+     *            the betting round (legacy int value)
+     * @return timeout in seconds
+     */
+    int getTimeoutForRound(int round);
+
+    /** @return the current table (the one being displayed in UI) */
+    GameTable getCurrentTable();
+
+    /** @return default timeout in seconds for player actions */
+    int getTimeoutSeconds();
+
+    /** @return true if only one player has chips remaining */
+    boolean isOnePlayerLeft();
 }
