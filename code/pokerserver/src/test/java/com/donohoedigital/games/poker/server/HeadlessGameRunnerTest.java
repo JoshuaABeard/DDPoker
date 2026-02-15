@@ -1691,6 +1691,16 @@ class HeadlessGameRunnerTest {
         public GameTable getCurrentTable() {
             return table;
         }
+
+        @Override
+        public int getStartingChips() {
+            return 1500;
+        }
+
+        @Override
+        public boolean isRebuyPeriodActive(GamePlayerInfo player) {
+            return false; // Stub: no rebuy period in headless tests
+        }
     }
 
     /**
@@ -1851,6 +1861,16 @@ class HeadlessGameRunnerTest {
         @Override
         public GameTable getCurrentTable() {
             return tables.isEmpty() ? null : tables.get(0);
+        }
+
+        @Override
+        public int getStartingChips() {
+            return 1500;
+        }
+
+        @Override
+        public boolean isRebuyPeriodActive(GamePlayerInfo player) {
+            return false; // Stub: no rebuy period in multi-table tests
         }
     }
 
@@ -2205,6 +2225,11 @@ class HeadlessGameRunnerTest {
 
         @Override
         public void setTimeoutMessageSecondsLeft(int seconds) {
+        }
+
+        @Override
+        public int getNumRebuys() {
+            return 0;
         }
     }
 

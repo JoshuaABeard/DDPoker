@@ -174,4 +174,30 @@ public interface TournamentContext {
      * @return ante amount in chips (0 if no ante)
      */
     int getAnte(int level);
+
+    /**
+     * Get the starting chip count for the tournament.
+     * <p>
+     * This is the buy-in chip amount that players start with. Used by AI to
+     * determine addon value.
+     *
+     * @return starting chips per player
+     */
+    int getStartingChips();
+
+    /**
+     * Check if rebuy period is still active for a player.
+     * <p>
+     * During rebuy period, players can rebuy if eliminated or their stack falls
+     * below a threshold. This affects AI strategy - the AI plays looser during
+     * rebuy period (adjusts tight factor by -20).
+     * <p>
+     * Extracted from V1Player line 190:
+     * {@code !player.getTable().isRebuyDone(player)}
+     *
+     * @param player
+     *            Player to check rebuy status for
+     * @return {@code true} if rebuy period is still active for this player
+     */
+    boolean isRebuyPeriodActive(GamePlayerInfo player);
 }
