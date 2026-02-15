@@ -1,5 +1,7 @@
 # Phase 3 Unit Testing Plan: gamecommon Module
 
+**Status:** draft
+
 ## Context
 
 Phase 1 and Phase 2 of the unit testing plan have successfully added comprehensive tests for poker engine primitives (`pokerengine` module: 65% coverage, 240 tests) and core poker logic (`poker` module: 21% coverage, 47 tests). Phase 3 continues this momentum by targeting the `gamecommon` module - the shared game infrastructure layer that both client and server depend on.

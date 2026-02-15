@@ -28,7 +28,7 @@ When spawned:
    - Tests pass, coverage >= 65%, build clean (zero warnings)
    - No scope creep — changes match the plan, nothing extra
    - No over-engineering — minimum code for the problem
-   - No private info — IPs, credentials, personal data (see `SECURITY.md`)
+   - No private info — IPs, credentials, personal data (see `.claude/SECURITY.md`)
    - No security vulnerabilities — OWASP top 10 basics
    - Implementation matches plan: correct approach, all steps completed, deviations documented
 5. **Update handoff file** with findings:

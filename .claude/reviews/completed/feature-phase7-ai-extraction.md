@@ -2,7 +2,7 @@
 
 **Branch:** feature-phase7-ai-extraction
 **Worktree:** ../DDPoker-feature-phase7-ai-extraction
-**Plan:** .claude/plans/phase7-ai-extraction.md
+**Plan:** .claude/plans/PHASE7-AI-EXTRACTION.md
 **Requested:** 2026-02-15 01:10
 **Session:** .claude/sessions/2026-02-15-phase7-ai-infrastructure.md
 
@@ -22,7 +22,7 @@ Implemented Phase 7A (core AI interfaces), 7E (TournamentAI), and 7D (ServerAIPr
 - [x] `code/pokerserver/src/main/java/.../server/ServerAIContext.java` - Minimal AIContext implementation
 
 ### Documentation
-- [x] `.claude/plans/phase7-ai-extraction.md` - Updated status section
+- [x] `.claude/plans/PHASE7-AI-EXTRACTION.md` - Updated status section
 - [x] `.claude/sessions/2026-02-15-phase7-ai-infrastructure.md` - Session documentation
 
 **Privacy Check:**

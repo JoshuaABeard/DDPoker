@@ -293,7 +293,7 @@ docs: Update copyright headers for [module/area]
 Ensures proper attribution for Doug Donohoe's original work
 and community contributions per GPL-3.0 requirements.
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+Co-Authored-By: Claude Sonnet 4.5
 ```
 
 ## Attribution Best Practices

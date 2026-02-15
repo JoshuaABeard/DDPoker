@@ -1,7 +1,6 @@
 # Phase 7: Extract AI to pokergamecore
 
-## Status
-**IN PROGRESS** - Core infrastructure and TournamentAI complete
+**Status:** active — Core infrastructure and TournamentAI complete
 
 **Last Updated:** 2026-02-15
 

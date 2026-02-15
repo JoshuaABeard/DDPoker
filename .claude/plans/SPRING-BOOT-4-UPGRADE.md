@@ -1,6 +1,6 @@
 # Spring Boot 4.0 Upgrade Plan
 
-**Status:** 📋 Planning
+**Status:** paused
 **Priority:** Medium
 **Created:** 2026-02-13
 **Target:** Q2 2026 (After current sprint)

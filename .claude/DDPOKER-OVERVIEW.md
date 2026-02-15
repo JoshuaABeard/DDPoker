@@ -5,8 +5,8 @@
 DD Poker is a full-featured Texas Hold'em poker simulator originally developed by Donohoe Digital LLC (2003-2017), now open-sourced under GPLv3. It consists of three main components:
 
 1. **DD Poker Game** - Java Swing desktop application (client)
-2. **Poker Server** - Backend API + chat server (Spring-based, embedded H2 database)
-3. **Poker Web** - Apache Wicket website / "Online Portal" (embedded Jetty server)
+2. **Poker Server** - Backend game server + chat server (Spring-based, embedded H2 database)
+3. **REST API** - Spring Boot REST API for web/external access
 
 ## Tech Stack
 
@@ -15,43 +15,40 @@ DD Poker is a full-featured Texas Hold'em poker simulator originally developed b
 | Language          | Java (OpenJDK)                      | 25             |
 | Build             | Apache Maven                        | 3.9.12         |
 | Desktop UI        | Java Swing                          | (JDK built-in) |
-| Web Framework     | Apache Wicket                       | 10.8.0         |
+| REST API          | Spring Boot                         | 3.5.8          |
 | ORM               | Hibernate                           | 6.6.42.Final   |
-| App Server        | Embedded Jetty                      | 12.1.6         |
 | Database          | H2 Embedded                         | 2.3.232        |
 | Logging           | Log4j2                              | 2.25.3         |
 | Spring Framework  | Spring                              | 6.2.15         |
-| Tests             | JUnit                               | 4.13.2         |
+| Tests             | JUnit 4 + JUnit 5 (Jupiter)         | 4.13.2 / 5.x   |
 | Servlet API       | Jakarta Servlet                     | 6.1.0          |
 | Container         | Docker (eclipse-temurin:25-jre)     | Latest         |
 
 ## Module Structure
 
-The project is a Maven multi-module build with 22 modules. Build order (later modules depend on earlier ones):
+The project is a Maven multi-module build with 19 modules. Build order (later modules depend on earlier ones):
 
 | Module           | Description                                        | Artifact |
 |------------------|----------------------------------------------------|----------|
 | `common`         | Core config, logging, XML, properties, utils       | jar      |
 | `mail`           | Email sending tools                                | jar      |
 | `gui`            | GUI infrastructure extending Java Swing            | jar      |
-| `installer`      | Custom installer logic                             | jar      |
 | `db`             | Database infrastructure extending Hibernate        | jar      |
-| `wicket`         | Web infrastructure extending Apache Wicket         | jar      |
 | `jsp`            | JSP-based email/file generation                    | jar      |
 | `server`         | Core server functionality                          | jar      |
 | `udp`            | Core UDP networking                                | jar      |
+| `tools`          | Misc business tools                                | jar      |
 | `gamecommon`     | Core game utilities (shared client/server)         | jar      |
 | `gameengine`     | Core game engine                                   | jar      |
+| `gameserver`     | Core game server                                   | jar      |
+| `gametools`      | Game building tools (border/territory managers)    | jar      |
 | `ddpoker`        | Classes in `com.ddpoker` package                   | jar      |
 | `pokerengine`    | Core poker utilities (shared client/server)        | jar      |
+| `pokergamecore`  | Server-side game engine (extracted from client)    | jar      |
 | `pokernetwork`   | Poker networking infrastructure (shared)           | jar      |
 | `poker`          | DD Poker UI / desktop client                       | jar      |
-| `tools`          | Misc business tools                                | jar      |
-| `gameserver`     | Core game server                                   | jar      |
 | `pokerserver`    | DD Poker backend server                            | jar      |
-| `gametools`      | Game building tools (border/territory managers)    | jar      |
-| `pokerwicket`    | DD Poker website and Online Portal                 | war      |
-| `proto`          | Prototype / experiment code                        | jar      |
+| `api`            | REST API (Spring Boot)                             | jar      |
 
 ## Key Entry Points
 
@@ -59,7 +56,7 @@ The project is a Maven multi-module build with 22 modules. Build order (later mo
 |---------------|--------------------|---------------|
 | Poker Game    | `PokerMain`        | `poker`       |
 | Poker Server  | `PokerServerMain`  | `pokerserver` |
-| Poker Website | `PokerJetty`       | `pokerweb`    |
+| REST API      | `ApiApplication`   | —             |
 
 ## Server Dependencies
 
@@ -93,7 +90,7 @@ The project uses a layered properties system:
 ```
 ddpoker/
   .claude/                 # Project documentation and guides
-  code/                    # All Java source (Maven multi-module, 21 modules)
+  code/                    # All Java source (Maven multi-module, 19 modules)
     pom.xml                # Parent POM
   docs/                    # Technical documentation (AI whitepaper, etc.)
   images/                  # Screenshots, logos (README assets)
@@ -102,7 +99,7 @@ ddpoker/
     scripts/               # Windows PowerShell development scripts
   docker/                  # Docker deployment files
     docker-compose.yml     # Docker Compose configuration
-    Dockerfile             # Container image definition (pokerserver + pokerweb + H2)
+    Dockerfile             # Container image definition (pokerserver + api + H2)
     entrypoint.sh          # Container startup script (dual-process manager)
     README.md              # Docker usage instructions
   unraid/                  # Unraid Community App template
@@ -112,5 +109,5 @@ ddpoker/
 ## Known Quirks
 
 - **Password handling** - Server uses bcrypt hashing (migrated from legacy DES encryption). Forgot-password generates a new password and emails it.
-- **Test coverage** - Acknowledged as lacking, especially in core poker logic.
+- **Test coverage** - 65% minimum enforced by JaCoCo. Core poker logic coverage is improving but still has gaps.
 - **Embedded H2 database** - No passwords needed, automatic setup.

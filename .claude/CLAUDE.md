@@ -4,9 +4,9 @@
 
 ## 1. Project Overview
 
-**DD Poker** is a Texas Hold'em poker simulator with a Java Swing desktop client and online multiplayer via a Wicket web portal. Community-maintained fork of DD Poker by Doug Donohoe (2003-2017).
+**DD Poker** is a Texas Hold'em poker simulator with a Java Swing desktop client and online multiplayer server. Community-maintained fork of DD Poker by Doug Donohoe (2003-2017).
 
-See `DDPOKER-OVERVIEW.md` for full tech stack, module structure, and configuration details. Check `.claude/learnings.md` for known gotchas before starting non-trivial work.
+See `.claude/DDPOKER-OVERVIEW.md` for full tech stack, module structure, and configuration details. Check `.claude/learnings.md` for known gotchas before starting non-trivial work.
 
 ### Quick Reference
 
@@ -15,18 +15,16 @@ See `DDPOKER-OVERVIEW.md` for full tech stack, module structure, and configurati
 mvn test                       # Build + run all tests
 mvn test -P dev                # Fast: unit tests only, skip slow/integration, 4 threads
 mvn test -P fast               # Skip coverage, integration, javadoc
+mvn test -pl <module> -Dtest=Class  # Single test class in one module
 mvn verify -P coverage         # Full coverage aggregation
 mvn clean package -DskipTests  # Build only
-
-# Playwright E2E (from code/pokerwicket/)
-npm test                       # Run all E2E tests (server must be running)
 ```
 
 ### Key Entry Points
 
 - Desktop: `com.donohoedigital.games.poker.PokerMain`
 - Server: `com.donohoedigital.games.poker.server.PokerServerMain`
-- Web: `com.donohoedigital.poker.web.PokerJetty`
+- REST API: `com.donohoedigital.poker.api.ApiApplication`
 
 ## 2. Think Before Coding
 
@@ -40,7 +38,7 @@ npm test                       # Run all E2E tests (server must be running)
 ### When Principles Conflict
 
 Priorities (highest to lowest):
-1. **Privacy** — Never commit private data (see `SECURITY.md`)
+1. **Privacy** — Never commit private data (see `.claude/SECURITY.md`)
 2. **Correctness** — Code must work and be tested
 3. **Completeness** — Finish what you start, no TODOs or stubs
 4. **Simplicity** — Prefer simple over complex
@@ -166,11 +164,11 @@ See `.claude/guides/review-protocol.md` for the full review process.
 
 **ALWAYS review files for private information before committing to the public repository.**
 
-See `SECURITY.md` for the full checklist and commit workflow.
+See `.claude/SECURITY.md` for the full checklist and commit workflow.
 
 ## 10. Copyright & Licensing
 
-**DD Poker is a dual-copyright project: original work by Doug Donohoe (2003-2026) and community contributions (February 2026 onwards).**
+**DD Poker is a dual-copyright project: original work by Doug Donohoe (2003-2026) and community contributions (2026 onwards).**
 
 When creating or modifying files:
 - **New files you create**: Use community copyright (Template 3)
@@ -183,4 +181,4 @@ See `.claude/guides/copyright-licensing-guide.md` for:
 - GPL-3.0 compliance requirements
 - Attribution best practices
 
-**Key principle:** Doug Donohoe retains copyright on 839 original files (2003-2026). Community gets copyright on 207 new/substantially modified files (February 2026 onwards). All code licensed GPL-3.0. Trademarks/logos remain CC BY-NC-ND 4.0.
+**Key principle:** Doug Donohoe retains copyright on original files (2003-2026). Community gets copyright on new/substantially modified files (2026 onwards). All code licensed GPL-3.0. Trademarks/logos remain CC BY-NC-ND 4.0.

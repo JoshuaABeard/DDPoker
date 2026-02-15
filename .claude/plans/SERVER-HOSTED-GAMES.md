@@ -1,5 +1,6 @@
 # Server-Hosted Game Support: Options Analysis
 
+**Status:** active
 **Last Updated:** 2026-02-15
 
 ## Recent Developments
@@ -21,7 +22,7 @@
 - **Both options:** Reduced risk - architecture validated, AI feasibility proven
 
 **See:**
-- `.claude/plans/phase7-ai-extraction.md` - AI extraction roadmap
+- `.claude/plans/PHASE7-AI-EXTRACTION.md` - AI extraction roadmap
 - `.claude/sessions/2026-02-15-tournament-ai-poc.md` - POC implementation details
 - `.claude/reviews/main-tournament-ai-poc.md` - Code review (approved)
 

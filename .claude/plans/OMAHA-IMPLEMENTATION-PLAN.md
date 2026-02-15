@@ -1,5 +1,7 @@
 # Omaha Poker Implementation Plan
 
+**Status:** draft
+
 ## Context
 
 DDPoker currently supports only Texas Hold'em with three betting structures (No Limit, Pot Limit, Limit). This plan outlines adding **Pot Limit Omaha (PLO)** support as a new game variant while maintaining full backward compatibility with existing Hold'em functionality.

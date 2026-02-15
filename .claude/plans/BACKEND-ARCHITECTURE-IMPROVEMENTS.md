@@ -5,7 +5,7 @@
 This plan covers major architectural improvements to the DDPoker backend that were identified during the backend code review but require separate planning due to their scope and complexity.
 
 **Source:** Extracted from `BACKEND-CODE-REVIEW.md` (now archived)
-**Status:** Planning phase
+**Status:** draft
 **Created:** 2026-02-13
 
 ---

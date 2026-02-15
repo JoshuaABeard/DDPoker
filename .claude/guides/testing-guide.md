@@ -18,17 +18,16 @@
 - **Example tests** — Document specific behaviors with concrete inputs/outputs
 - **Property tests** — Find edge cases via randomization
 - **Component tests** — UI formatting/rendering logic
-- **E2E tests** — Critical user flows only (Playwright for web UI, run from `code/pokerwicket/`)
+- **E2E tests** — Critical user flows only
 
 ## Frameworks
 
 | Framework | Use For |
 |-----------|---------|
-| JUnit 4/5 | Unit and integration tests |
+| JUnit 5 (preferred) | Unit and integration tests. Legacy JUnit 4 tests exist but new tests should use JUnit 5. |
 | Mockito | Mocking dependencies |
 | AssertJ | Fluent assertions |
 | AssertJ Swing | Desktop UI tests |
-| Playwright | Web E2E tests |
 
 ## Running Tests
 
@@ -40,6 +39,7 @@ All commands run from `code/`.
 | `mvn test` | **Before requesting review** — Full test suite |
 | `mvn verify -P coverage` | **When coverage matters** — Full suite + JaCoCo aggregation |
 | `mvn test -pl <module>` | **Single module** — Only run tests in one module (e.g., `-pl pokerserver`) |
+| `mvn test -pl <module> -Dtest=Class` | **Single test class** — One class in one module |
 
 Use `-P dev` for fast feedback while iterating. Use `mvn test` (no profile) for final verification before review.
 

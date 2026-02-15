@@ -1,5 +1,7 @@
 # Plan: Extract `pokergamecore` Module — Shared Game Logic for Server & Web
 
+**Status:** completed
+
 ## Context
 
 DDPoker's core game classes (PokerGame, PokerTable, HoldemHand, PokerPlayer) live in the `poker` module, which depends on `gameengine` (Swing). This makes it impossible for the server or a future web client to run game logic. We need to extract pure game logic into a new `pokergamecore` module with zero Swing dependencies, enabling:

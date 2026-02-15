@@ -5,7 +5,7 @@
 This plan covers major architectural improvements to DDPoker's core infrastructure that were identified during the general code review but require separate planning due to their scope and complexity.
 
 **Source:** Extracted from `CODE-REVIEW.md` (now archived)
-**Status:** Planning phase
+**Status:** draft
 **Created:** 2026-02-13
 
 ---

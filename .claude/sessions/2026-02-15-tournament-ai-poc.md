@@ -67,7 +67,7 @@ int getAnte(int level);
 
 ### 4. Phase 7 Plan Created ✅
 
-Comprehensive plan for full AI extraction: `.claude/plans/phase7-ai-extraction.md`
+Comprehensive plan for full AI extraction: `.claude/plans/PHASE7-AI-EXTRACTION.md`
 
 **Phases:**
 - 7A: Core infrastructure (PurePokerAI interface, AIContext)
@@ -119,7 +119,7 @@ Comprehensive plan for full AI extraction: `.claude/plans/phase7-ai-extraction.m
 - `src/test/java/.../server/HeadlessGameRunnerTest.java` - Tournament AI + disabled stress tests
 
 ### .claude
-- `plans/phase7-ai-extraction.md` - NEW: Comprehensive Phase 7 plan
+- `plans/PHASE7-AI-EXTRACTION.md` - NEW: Comprehensive Phase 7 plan
 - `sessions/2026-02-15-tournament-ai-poc.md` - NEW: This summary
 
 ---

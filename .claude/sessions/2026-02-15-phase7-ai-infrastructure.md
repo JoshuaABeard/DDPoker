@@ -2,7 +2,7 @@
 
 **Date:** 2026-02-15
 **Branch:** `feature-phase7-ai-extraction`
-**Plan:** `.claude/plans/phase7-ai-extraction.md`
+**Plan:** `.claude/plans/PHASE7-AI-EXTRACTION.md`
 **Status:** ✅ Phase 7A + 7D + 7E + 7B Foundation Complete
 
 ---
@@ -99,7 +99,7 @@ Started Phase 7 (AI extraction to pokergamecore) with foundation work. Created c
 ### 4. Phase 7B Foundation: V1 Extraction Plan
 
 **File Created:**
-- `.claude/plans/phase7b-v1-extraction-plan.md` (349 lines)
+- `.claude/plans/PHASE7B-V1-EXTRACTION.md` (349 lines)
 
 **Plan Contents:**
 - V1Player analysis: 1614 lines (800 core logic, 800 support)
@@ -209,11 +209,11 @@ mvn clean compile -pl pokergamecore
 3. `code/pokergamecore/src/main/java/.../ai/TournamentAI.java`
 4. `code/pokerserver/src/main/java/.../server/ServerAIProvider.java`
 5. `code/pokerserver/src/main/java/.../server/ServerAIContext.java`
-6. `.claude/plans/phase7b-v1-extraction-plan.md`
-7. `.claude/reviews/feature-phase7-ai-extraction.md`
+6. `.claude/plans/PHASE7B-V1-EXTRACTION.md`
+7. `.claude/reviews/feature-PHASE7-AI-EXTRACTION.md`
 
 ### Modified Files (2)
-1. `.claude/plans/phase7-ai-extraction.md` - Updated status section
+1. `.claude/plans/PHASE7-AI-EXTRACTION.md` - Updated status section
 2. `.claude/sessions/2026-02-15-phase7-ai-infrastructure.md` - This file
 
 ### Commits (7)
@@ -255,7 +255,7 @@ mvn clean compile -pl pokergamecore
 
 ## Related Documents
 
-- **Plan:** `.claude/plans/phase7-ai-extraction.md`
+- **Plan:** `.claude/plans/PHASE7-AI-EXTRACTION.md`
 - **Decision:** Option C selected for server-hosted games (SERVER-NATIVE-ENGINE.md)
 - **Prerequisites:** `.claude/sessions/2026-02-15-tournament-ai-poc.md`
 

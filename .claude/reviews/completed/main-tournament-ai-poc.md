@@ -4,7 +4,7 @@
 
 **Branch:** main ⚠️ *Should have been in worktree - see notes*
 **Worktree:** C:\Repos\DDPoker (main worktree)
-**Plan:** .claude/plans/phase7-ai-extraction.md (newly created)
+**Plan:** .claude/plans/PHASE7-AI-EXTRACTION.md (newly created)
 **Session:** .claude/sessions/2026-02-15-tournament-ai-poc.md
 **Requested:** 2026-02-15 00:23
 
@@ -28,7 +28,7 @@ Implemented tournament-aware AI as proof-of-concept for Phase 7 (AI Extraction).
 - [x] `code/pokerserver/pom.xml` - Added pokergamecore dependency (5 lines) to enable headless game runner tests
 
 **Documentation:**
-- [x] `.claude/plans/phase7-ai-extraction.md` - NEW: Comprehensive Phase 7 AI extraction plan
+- [x] `.claude/plans/PHASE7-AI-EXTRACTION.md` - NEW: Comprehensive Phase 7 AI extraction plan
 - [x] `.claude/sessions/2026-02-15-tournament-ai-poc.md` - NEW: Session summary
 
 **Privacy Check:**
