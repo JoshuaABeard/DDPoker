@@ -42,9 +42,10 @@ npm test                       # Run all E2E tests (server must be running)
 Priorities (highest to lowest):
 1. **Privacy** — Never commit private data (see `SECURITY.md`)
 2. **Correctness** — Code must work and be tested
-3. **Simplicity** — Prefer simple over complex
-4. **Surgical** — Touch only what's needed
-5. **Speed** — Fast delivery, but not at expense of above
+3. **Completeness** — Finish what you start, no TODOs or stubs
+4. **Simplicity** — Prefer simple over complex
+5. **Surgical** — Touch only what's needed
+6. **Speed** — Fast delivery, but not at expense of above
 
 **If genuinely stuck:** Stop and ask. Don't guess.
 
@@ -53,21 +54,42 @@ Priorities (highest to lowest):
 - Build fails: Read the error. Fix the root cause, don't suppress warnings or skip checks.
 - Tests fail: Investigate before re-running. If flaky, note it — don't ignore it.
 - Blocked by environment/dependency: State what's broken and what you tried. Don't work around it silently.
+- **Can't complete the work:** Stop and explain why. Never leave partial implementations, TODOs, or stubs.
 
 ## 3. Simplicity & Surgical Changes
 
-**Minimum code that solves the problem. Touch only what you must.**
+**Simple, complete solutions. Touch only what you must.**
+
+### Complete, Not Minimal
+
+**"Simplicity" means simple-and-complete, not incomplete.**
+
+- Implement requested features fully. No TODOs. No stubs. No "// implement later" comments.
+- If you can't complete something, STOP and ask. Never stub it out.
+- "Minimum code" means no unnecessary abstraction — NOT partial implementation.
+- Simple-but-complete beats clever-but-partial every time.
+
+**If tempted to leave a TODO:** Stop. Either implement it now, or ask the user whether to defer it.
+
+### No Over-Engineering
+
+**But don't add features, complexity, or "flexibility" that wasn't requested.**
 
 - No features beyond what was asked. No abstractions for single-use code.
 - No "flexibility" or "configurability" that wasn't requested.
 - No error handling for impossible scenarios.
 - If you write 200 lines and it could be 50, rewrite it.
+
+### Surgical Precision
+
+**Change only what's needed to solve the problem.**
+
 - Don't "improve" adjacent code, comments, or formatting.
 - Don't refactor things that aren't broken.
 - Match existing style, even if you'd do it differently. Spotless auto-formats Java code on compile — don't manually format.
 - If you notice unrelated dead code, mention it — don't delete it.
 
-When your changes create orphans:
+**When your changes create orphans:**
 - Remove imports/variables/functions that YOUR changes made unused.
 - Don't remove pre-existing dead code unless asked.
 
