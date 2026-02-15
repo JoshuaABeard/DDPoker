@@ -4,7 +4,7 @@
 
 ## Overview
 
-DD Poker is a GPL-3.0 licensed project originally created by Doug Donohoe (2003-2024). This community fork adds substantial new features and modifications while respecting the original author's copyright and maintaining license compatibility.
+DD Poker is a GPL-3.0 licensed project originally created by Doug Donohoe (2003-2026). This community fork adds substantial new features and modifications (February 2026 onwards) while respecting the original author's copyright and maintaining license compatibility.
 
 ## Legal Framework
 
@@ -59,7 +59,7 @@ Use this for files you haven't substantially modified:
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
- * Copyright (c) 2003-2024 Doug Donohoe
+ * Copyright (c) 2003-2026 Doug Donohoe
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -98,8 +98,8 @@ Use this for files you've significantly refactored or enhanced:
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
- * Copyright (c) 2003-2024 Doug Donohoe
- * Copyright (c) 2024-2026 Joshua Beard and contributors
+ * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 Joshua Beard and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -138,7 +138,7 @@ Use this for entirely new files you created:
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
- * Copyright (c) 2024-2026 Joshua Beard and contributors
+ * Copyright (c) 2026 Joshua Beard and contributors
  *
  * This file is part of DD Poker, originally created by Doug Donohoe.
  *
@@ -173,7 +173,7 @@ Use this for entirely new files you created:
 
 ## Community Fork Contributions
 
-### Major Contributions (2024-2026)
+### Major Contributions (February 2026 onwards)
 
 These are substantial original works that warrant community copyright:
 
@@ -324,17 +324,17 @@ Ensure your README.md includes clear attribution:
 ### Source Code
 
 **Original DD Poker code:**
-Copyright (c) 2003-2024 Doug Donohoe
+Copyright (c) 2003-2026 Doug Donohoe
 
 **Community fork modifications:**
-Copyright (c) 2024-2026 Joshua Beard and contributors
+Copyright (c) 2026 Joshua Beard and contributors
 
 All source code is licensed under **GPL-3.0**. See [LICENSE.txt](LICENSE.txt).
 
 ### Creative Assets
 
 The "DD Poker" and "Donohoe Digital" names, logos, and creative assets:
-Copyright (c) 2003-2024 Doug Donohoe
+Copyright (c) 2003-2026 Doug Donohoe
 
 Licensed under **CC BY-NC-ND 4.0**. See [LICENSE-CREATIVE-COMMONS.txt](LICENSE-CREATIVE-COMMONS.txt).
 

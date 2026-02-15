@@ -148,7 +148,7 @@ See `SECURITY.md` for the full checklist and commit workflow.
 
 ## 10. Copyright & Licensing
 
-**DD Poker is a dual-copyright project: original work by Doug Donohoe (2003-2024) and community contributions (2024-2026).**
+**DD Poker is a dual-copyright project: original work by Doug Donohoe (2003-2026) and community contributions (February 2026 onwards).**
 
 When creating or modifying files:
 - **New files you create**: Use community copyright (Template 3)
@@ -161,4 +161,4 @@ See `.claude/guides/copyright-licensing-guide.md` for:
 - GPL-3.0 compliance requirements
 - Attribution best practices
 
-**Key principle:** Doug Donohoe retains copyright on 839 original files. Community gets copyright on 207 new/substantially modified files. All code licensed GPL-3.0. Trademarks/logos remain CC BY-NC-ND 4.0.
+**Key principle:** Doug Donohoe retains copyright on 839 original files (2003-2026). Community gets copyright on 207 new/substantially modified files (February 2026 onwards). All code licensed GPL-3.0. Trademarks/logos remain CC BY-NC-ND 4.0.
