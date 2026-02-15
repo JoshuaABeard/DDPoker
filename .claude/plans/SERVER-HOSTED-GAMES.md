@@ -1,5 +1,32 @@
 # Server-Hosted Game Support: Options Analysis
 
+**Last Updated:** 2026-02-15
+
+## Recent Developments
+
+### ✅ pokergamecore Module Complete (2026-02-15)
+
+**Impact on Server-Hosted Games:** The pokergamecore module extraction is now complete with Swing-free AI validated. This significantly improves the feasibility of Options B and C.
+
+**Completed Work:**
+- ✅ **pokergamecore module** - Pure game logic with zero Swing dependencies
+- ✅ **TournamentEngine** - Core game engine in pokergamecore (Swing-free)
+- ✅ **TournamentContext interface** - Extended with blind query methods for AI
+- ✅ **Tournament AI POC** - Proof-of-concept AI working in headless tests (10-50x faster than random)
+- ✅ **Phase 7 plan created** - Roadmap for extracting V1/V2 AI to pokergamecore
+
+**What This Enables:**
+- **Option B (Headless Host):** Headless mode now has working AI - can run complete games without Swing
+- **Option C (Native Engine):** Clear path to server-native AI (V1/V2 extraction planned in Phase 7)
+- **Both options:** Reduced risk - architecture validated, AI feasibility proven
+
+**See:**
+- `.claude/plans/phase7-ai-extraction.md` - AI extraction roadmap
+- `.claude/sessions/2026-02-15-tournament-ai-poc.md` - POC implementation details
+- `.claude/reviews/main-tournament-ai-poc.md` - Code review (approved)
+
+---
+
 ## Context
 
 Currently DDPoker uses a **hub-and-spoke P2P model** where one player (the "host") runs both the game client AND an embedded TCP server. All other players connect directly to the host's IP:port. This creates several problems:
@@ -59,6 +86,8 @@ The server acts as a TCP relay. Clients connect to the server instead of directl
 ### Concept
 The server spawns a headless `PokerMain` JVM process per game, running TournamentDirector + OnlineManager + PokerGame. Clients connect to the server. The game creator configures the tournament but doesn't need to stay connected.
 
+**Status Update (2026-02-15):** Headless AI now working! Tournament-aware AI POC demonstrates that intelligent poker AI can run in headless mode without Swing. This validates the feasibility of this approach.
+
 ### What Changes
 - **`ServerGameManager` in `pokerserver`** - Spawns/monitors/cleans up headless JVM processes. Assigns unique port per game from a configurable range.
 - **Headless PokerMain hardening** - `bHeadless=true` already exists but needs expansion: guard every `SwingUtilities` call, stub UI-displaying phases, accept tournament config via args/file, auto-create game and wait for players.
@@ -97,6 +126,8 @@ The `GameEngine` is a static singleton - one per JVM. Options to solve this:
 
 ### Concept
 Extract game engine logic (TD, OnlineManager, PokerGame) into a server-native module running directly in the PokerServer Spring process. No GameEngine, no GameContext, no BasePhase - pure game logic as Spring beans.
+
+**Status Update (2026-02-15):** pokergamecore module now provides Swing-free game engine (TournamentEngine). Phase 7 plan documents path to extract V1/V2 AI. This significantly reduces the implementation effort for this option.
 
 ### What Changes
 - **New module `pokergameengine`** - Extract pure game logic from `poker` module. New `ServerTournamentDirector` (not a `BasePhase`, just a `Runnable`). Uses `PokerGame`/`PokerTable`/`HoldemHand` from `pokerengine`.

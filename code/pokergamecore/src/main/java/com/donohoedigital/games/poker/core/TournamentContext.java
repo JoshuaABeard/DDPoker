@@ -145,4 +145,33 @@ public interface TournamentContext {
 
     /** @return true if only one player has chips remaining */
     boolean isOnePlayerLeft();
+
+    // Blind level queries (added for AI support in Phase 7)
+
+    /**
+     * Get the small blind amount for a specific level.
+     *
+     * @param level
+     *            the tournament level (1-based)
+     * @return small blind amount in chips
+     */
+    int getSmallBlind(int level);
+
+    /**
+     * Get the big blind amount for a specific level.
+     *
+     * @param level
+     *            the tournament level (1-based)
+     * @return big blind amount in chips
+     */
+    int getBigBlind(int level);
+
+    /**
+     * Get the ante amount for a specific level.
+     *
+     * @param level
+     *            the tournament level (1-based)
+     * @return ante amount in chips (0 if no ante)
+     */
+    int getAnte(int level);
 }

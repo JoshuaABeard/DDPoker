@@ -785,24 +785,48 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     }
 
     /**
-     * Get big blind
+     * Get big blind for current level
      */
     public int getBigBlind() {
         return profile_.getBigBlind(nLevel_);
     }
 
     /**
-     * Get small blind
+     * Get big blind for a specific level
+     */
+    @Override
+    public int getBigBlind(int level) {
+        return profile_.getBigBlind(level);
+    }
+
+    /**
+     * Get small blind for current level
      */
     public int getSmallBlind() {
         return profile_.getSmallBlind(nLevel_);
     }
 
     /**
-     * Get ante
+     * Get small blind for a specific level
+     */
+    @Override
+    public int getSmallBlind(int level) {
+        return profile_.getSmallBlind(level);
+    }
+
+    /**
+     * Get ante for current level
      */
     public int getAnte() {
         return profile_.getAnte(nLevel_);
+    }
+
+    /**
+     * Get ante for a specific level
+     */
+    @Override
+    public int getAnte(int level) {
+        return profile_.getAnte(level);
     }
 
     /**

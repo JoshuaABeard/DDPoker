@@ -60,6 +60,11 @@
       <version>3.3.0-CommunityEdition</version>
     </dependency>
     <dependency>
+      <groupId>com.donohoedigital</groupId>
+      <artifactId>pokergamecore</artifactId>
+      <version>3.3.0-CommunityEdition</version>
+    </dependency>
+    <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-web</artifactId>
       <version>${spring.version}</version>

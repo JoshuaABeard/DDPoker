@@ -1156,6 +1156,21 @@ class TournamentEngineTest {
         public GamePlayerInfo getLocalPlayer() {
             return localPlayer;
         }
+
+        @Override
+        public int getSmallBlind(int level) {
+            return 500; // Stub value for testing
+        }
+
+        @Override
+        public int getBigBlind(int level) {
+            return 1000; // Stub value for testing
+        }
+
+        @Override
+        public int getAnte(int level) {
+            return 0; // No antes in stub
+        }
     }
 
     private static class StubGameHand implements GameHand {
