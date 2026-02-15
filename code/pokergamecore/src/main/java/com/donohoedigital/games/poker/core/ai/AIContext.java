@@ -255,6 +255,92 @@ public interface AIContext {
      */
     double calculateImprovementOdds(Card[] holeCards, Card[] communityCards);
 
+    /**
+     * Get the best 5-card hand from hole cards and community cards.
+     * <p>
+     * Returns the 5 cards that form the best poker hand, ordered by rank (highest
+     * first). This is used for analyzing hand strength and determining which cards
+     * contribute to the final hand.
+     *
+     * @param holeCards
+     *            Player's hole cards (2 cards)
+     * @param communityCards
+     *            Community cards (0-5 cards)
+     * @return Array of 5 Card objects forming the best hand, ordered by rank
+     *         (highest first)
+     */
+    Card[] getBest5Cards(Card[] holeCards, Card[] communityCards);
+
+    /**
+     * Get the best 5-card hand ranks (for comparison without Card objects).
+     * <p>
+     * Returns the ranks of the 5 cards that form the best poker hand, ordered by
+     * rank (highest first). This is a lighter-weight alternative to
+     * {@link #getBest5Cards} when only rank information is needed.
+     * <p>
+     * Ranks use Card constants:
+     * <ul>
+     * <li>14 = {@link Card#ACE}</li>
+     * <li>13 = {@link Card#KING}</li>
+     * <li>12 = {@link Card#QUEEN}</li>
+     * <li>...</li>
+     * <li>2 = {@link Card#TWO}</li>
+     * </ul>
+     *
+     * @param holeCards
+     *            Player's hole cards (2 cards)
+     * @param communityCards
+     *            Community cards (0-5 cards)
+     * @return Array of 5 integers (Card.ACE, Card.KING, etc.) ordered highest first
+     */
+    int[] getBest5CardRanks(Card[] holeCards, Card[] communityCards);
+
+    /**
+     * Check if at least one hole card is part of the best 5-card hand.
+     * <p>
+     * Critical for determining hand strength when the best hand can be made from
+     * the board alone. If neither hole card is involved, the player's hand is only
+     * as strong as the board, and opponents with any hole card involvement will
+     * win.
+     * <p>
+     * For example:
+     * <ul>
+     * <li>Board: A♠ K♠ Q♠ J♠ 10♠ (royal flush on board)</li>
+     * <li>Hole: 7♣ 2♦</li>
+     * <li>Result: {@code false} - neither hole card used, tie with all players</li>
+     * </ul>
+     *
+     * @param holeCards
+     *            Player's hole cards (2 cards)
+     * @param communityCards
+     *            Community cards (0-5 cards)
+     * @return {@code true} if at least one hole card is in the best 5-card hand
+     */
+    boolean isHoleCardInvolved(Card[] holeCards, Card[] communityCards);
+
+    /**
+     * Get the major suit for flush detection.
+     * <p>
+     * Returns the suit that appears most frequently in the combined hole and
+     * community cards. This is used for detecting flush draws and determining nut
+     * flush potential.
+     * <p>
+     * Suits use Card constants:
+     * <ul>
+     * <li>0 = {@link Card#CLUBS}</li>
+     * <li>1 = {@link Card#DIAMONDS}</li>
+     * <li>2 = {@link Card#HEARTS}</li>
+     * <li>3 = {@link Card#SPADES}</li>
+     * </ul>
+     *
+     * @param holeCards
+     *            Player's hole cards (2 cards)
+     * @param communityCards
+     *            Community cards (0-5 cards)
+     * @return Suit constant (0-3), or -1 if no flush possible
+     */
+    int getMajorSuit(Card[] holeCards, Card[] communityCards);
+
     // ========== Betting Round ==========
 
     /**
@@ -271,4 +357,225 @@ public interface AIContext {
      * @return Betting round code (0-3)
      */
     int getBettingRound();
+
+    // ========== Card Access ==========
+
+    /**
+     * Get a player's hole cards.
+     * <p>
+     * Returns the private cards dealt to the player.
+     * <p>
+     * <strong>SECURITY:</strong> Implementations MUST enforce that AI can only
+     * access its own hole cards, never opponents' cards. If {@code player} is not
+     * the AI player, implementations should return {@code null}. This prevents AI
+     * cheating by seeing opponents' private cards.
+     * <p>
+     * Example enforcement:
+     *
+     * <pre>
+     * {@code
+     * public Card[] getHoleCards(GamePlayerInfo player) {
+     *     if (player != this.aiPlayer) {
+     *         return null; // Cannot see opponent cards
+     *     }
+     *     return player.getHand().getCards();
+     * }
+     * }
+     * </pre>
+     *
+     * @param player
+     *            Player whose hole cards to retrieve (must be the AI player)
+     * @return Array of 2 hole cards if {@code player} is the AI, {@code null}
+     *         otherwise
+     */
+    Card[] getHoleCards(GamePlayerInfo player);
+
+    /**
+     * Get community cards currently visible.
+     * <p>
+     * Returns cards based on current betting round:
+     * <ul>
+     * <li>Pre-flop (round 0): empty array or {@code null}</li>
+     * <li>Flop (round 1): 3 cards</li>
+     * <li>Turn (round 2): 4 cards</li>
+     * <li>River (round 3): 5 cards</li>
+     * </ul>
+     *
+     * @return Community cards, or empty array/null if none visible yet
+     */
+    Card[] getCommunityCards();
+
+    /**
+     * Get number of players who have called (but not raised) this round.
+     * <p>
+     * Used for pre-flop decision making to distinguish between limping and raising
+     * pots.
+     *
+     * @return Count of players who called
+     */
+    int getNumCallers();
+
+    // ========== Board Texture Analysis ==========
+
+    /**
+     * Check if there's a flush draw on the board.
+     * <p>
+     * Returns {@code true} if exactly 2 cards of the same suit are on the board,
+     * indicating a flush draw is possible.
+     * <p>
+     * Extracted from V1Player logic for board texture analysis.
+     *
+     * @param communityCards
+     *            Community cards to analyze
+     * @return {@code true} if 2 cards of same suit on board
+     */
+    boolean hasFlushDraw(Card[] communityCards);
+
+    /**
+     * Check if there's a straight draw possible on the board.
+     * <p>
+     * Analyzes community cards to detect if a straight draw is possible based on
+     * card connectivity.
+     * <p>
+     * Extracted from V1Player logic (Hand.hasStraightDraw).
+     *
+     * @param communityCards
+     *            Community cards to analyze
+     * @return {@code true} if straight draw is possible
+     */
+    boolean hasStraightDraw(Card[] communityCards);
+
+    /**
+     * Count number of possible straights opponents could have.
+     * <p>
+     * Analyzes board texture to determine how many different straight combinations
+     * are possible given the community cards. Used for risk assessment when holding
+     * strong hands.
+     * <p>
+     * Extracted from V1Player logic (PokerPlayer.getOppNumStraights).
+     *
+     * @param communityCards
+     *            Community cards to analyze
+     * @return Count of possible opponent straights (0+)
+     */
+    int getNumOpponentStraights(Card[] communityCards);
+
+    /**
+     * Check if tournament rebuy period is still active.
+     * <p>
+     * During rebuy period, players can rebuy if eliminated or their stack falls
+     * below a threshold. This affects AI strategy - the AI plays looser during
+     * rebuy period (taking more risks).
+     * <p>
+     * Extracted from V1Player logic - adjusts tight factor by -20 during rebuy.
+     *
+     * @return {@code true} if rebuy period is still active
+     */
+    boolean isRebuyPeriodActive();
+
+    /**
+     * Check if player has the nut flush (or close to it).
+     * <p>
+     * Analyzes whether the player holds the best possible flush given the board.
+     * The {@code nCards} parameter allows checking for "near-nut" flushes (2nd or
+     * 3rd best).
+     * <p>
+     * Extracted from V1Player logic which uses HandInfo.isNutFlush().
+     *
+     * @param holeCards
+     *            Player's hole cards (2 cards)
+     * @param communityCards
+     *            Community cards (3-5 cards)
+     * @param majorSuit
+     *            The flush suit (from getMajorSuit)
+     * @param nCards
+     *            How close to nut: 1 = nut only, 3 = nut/2nd/3rd
+     * @return {@code true} if player has nut flush or within nCards of nut
+     */
+    boolean isNutFlush(Card[] holeCards, Card[] communityCards, int majorSuit, int nCards);
+
+    /**
+     * Calculate hand strength using Monte Carlo simulation.
+     * <p>
+     * Returns win probability (0.0 to 1.0) against N random opponents by running
+     * Monte Carlo simulations. This is expensive but provides accurate strength
+     * assessment that varies within the same hand rank (e.g., pair of Aces vs pair
+     * of 2s).
+     * <p>
+     * Extracted from V1Player which uses {@code player.getHandStrength() * 100.0f}
+     * at line 712.
+     *
+     * @param holeCards
+     *            Player's hole cards (2 cards)
+     * @param communityCards
+     *            Community cards (0-5 cards)
+     * @param numOpponents
+     *            Number of opponents to simulate against
+     * @return Win probability (0.0 to 1.0)
+     */
+    double calculateHandStrength(Card[] holeCards, Card[] communityCards, int numOpponents);
+
+    // ========== Action History ==========
+
+    /**
+     * Action constants for player actions (matches HandAction constants).
+     */
+    int ACTION_NONE = 0;
+    int ACTION_FOLD = 1;
+    int ACTION_CHECK = 2;
+    int ACTION_CALL = 3;
+    int ACTION_BET = 4;
+    int ACTION_RAISE = 5;
+
+    /**
+     * Get player's last action in a specific betting round.
+     * <p>
+     * Used for limper detection in V1Player lines 1293-1349. Checks if a
+     * raiser/bettor limped (called or checked) in previous rounds to adjust fold
+     * percentages.
+     *
+     * @param player
+     *            Player to check action for
+     * @param bettingRound
+     *            Betting round to check (0=pre-flop, 1=flop, 2=turn, 3=river)
+     * @return Action constant (ACTION_NONE, ACTION_CALL, ACTION_CHECK, ACTION_BET,
+     *         ACTION_RAISE, ACTION_FOLD)
+     */
+    int getLastActionInRound(GamePlayerInfo player, int bettingRound);
+
+    // ========== Opponent Modeling ==========
+
+    /**
+     * Get opponent's raise frequency for current betting round.
+     * <p>
+     * Returns percentage (0-100) representing how often the player raises when they
+     * act. Used for bluffing decisions in V1Player lines 1479, 1488.
+     * <p>
+     * Extracted from V1Player which uses
+     * {@code player.getProfileInitCheck().getFrequency()}
+     *
+     * @param opponent
+     *            Opponent to check frequency for
+     * @param bettingRound
+     *            Betting round to check (0=pre-flop, 1=flop, 2=turn, 3=river)
+     * @return Raise frequency percentage (0-100), or 50 if unknown
+     */
+    int getOpponentRaiseFrequency(GamePlayerInfo opponent, int bettingRound);
+
+    /**
+     * Get opponent's bet frequency for current betting round.
+     * <p>
+     * Returns percentage (0-100) representing how often the player bets when they
+     * act. Used for bluffing decisions.
+     * <p>
+     * Extracted from V1Player which uses
+     * {@code player.getProfileInitCheck().getFrequency()}
+     *
+     * @param opponent
+     *            Opponent to check frequency for
+     * @param bettingRound
+     *            Betting round to check (0=pre-flop, 1=flop, 2=turn, 3=river)
+     * @return Bet frequency percentage (0-100), or 50 if unknown
+     */
+    int getOpponentBetFrequency(GamePlayerInfo opponent, int bettingRound);
 }

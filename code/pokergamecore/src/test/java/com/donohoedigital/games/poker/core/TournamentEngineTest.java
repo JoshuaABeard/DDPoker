@@ -1171,6 +1171,16 @@ class TournamentEngineTest {
         public int getAnte(int level) {
             return 0; // No antes in stub
         }
+
+        @Override
+        public int getStartingChips() {
+            return 10000; // Stub value for testing
+        }
+
+        @Override
+        public boolean isRebuyPeriodActive(GamePlayerInfo player) {
+            return false; // Stub: no rebuy period
+        }
     }
 
     private static class StubGameHand implements GameHand {
@@ -2297,6 +2307,11 @@ class TournamentEngineTest {
 
         @Override
         public void setTimeoutMessageSecondsLeft(int seconds) {
+        }
+
+        @Override
+        public int getNumRebuys() {
+            return 0; // Stub value for testing (no rebuys by default)
         }
     }
 }

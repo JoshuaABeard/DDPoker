@@ -90,4 +90,13 @@ public interface GamePlayerInfo {
      *            seconds left before warning
      */
     void setTimeoutMessageSecondsLeft(int seconds);
+
+    /**
+     * Get number of rebuys this player has taken.
+     * <p>
+     * Used by AI to determine rebuy propensity and limits.
+     *
+     * @return count of rebuys taken (0 if no rebuys)
+     */
+    int getNumRebuys();
 }

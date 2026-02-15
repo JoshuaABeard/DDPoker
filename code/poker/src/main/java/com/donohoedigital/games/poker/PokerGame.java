@@ -830,6 +830,23 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     }
 
     /**
+     * Get starting chips for the tournament (TournamentContext interface method)
+     */
+    @Override
+    public int getStartingChips() {
+        return profile_.getBuyinChips();
+    }
+
+    @Override
+    public boolean isRebuyPeriodActive(GamePlayerInfo player) {
+        if (player == null) {
+            return false;
+        }
+        PokerPlayer pokerPlayer = (PokerPlayer) player;
+        return !pokerPlayer.getTable().isRebuyDone(pokerPlayer);
+    }
+
+    /**
      * Get profile
      */
     public TournamentProfile getProfile() {
