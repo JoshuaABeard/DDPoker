@@ -47,6 +47,8 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.*;
 import com.donohoedigital.games.poker.core.GameHand;
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import com.donohoedigital.games.poker.core.PlayerAction;
+import com.donohoedigital.games.poker.core.state.ActionType;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
@@ -1978,6 +1980,7 @@ public class HoldemHand implements DataMarshal, GameHand {
      * get minimum bet (big blind in limit/pot limit, big blind or 2x big blind
      * (turn/river) in limit
      */
+    @Override
     public int getMinBet() {
         int nMin = getBigBlind();
         if (isLimit() && (nRound_ == ROUND_TURN || nRound_ == ROUND_RIVER)) {
@@ -2052,6 +2055,7 @@ public class HoldemHand implements DataMarshal, GameHand {
      * Return minimum raise, which is the big blind, if no raises yet, or the
      * largest previous bet/raise.
      */
+    @Override
     public int getMinRaise() {
         int nMin = getMinBet();
         HandAction hist;
@@ -2455,6 +2459,52 @@ public class HoldemHand implements DataMarshal, GameHand {
     @SuppressWarnings("unchecked")
     public List<GamePlayerInfo> getPreLosers() {
         return (List<GamePlayerInfo>) (List<?>) losers_;
+    }
+
+    /**
+     * Get amount player needs to call to stay in hand (GameHand interface).
+     */
+    @Override
+    public int getAmountToCall(GamePlayerInfo player) {
+        return getCall((PokerPlayer) player);
+    }
+
+    /**
+     * Process a player action from pokergamecore. Converts PlayerAction to
+     * HandAction and updates hand state (GameHand interface).
+     */
+    @Override
+    public void applyPlayerAction(GamePlayerInfo player, PlayerAction action) {
+        PokerPlayer pokerPlayer = (PokerPlayer) player;
+        int round = getRound().toLegacy();
+
+        // Convert PlayerAction to HandAction
+        HandAction handAction = switch (action.actionType()) {
+            case FOLD -> new HandAction(pokerPlayer, round, HandAction.ACTION_FOLD);
+            case CHECK -> new HandAction(pokerPlayer, round, HandAction.ACTION_CHECK);
+            case CALL -> {
+                int callAmount = getCall(pokerPlayer);
+                yield new HandAction(pokerPlayer, round, HandAction.ACTION_CALL, callAmount);
+            }
+            case BET -> new HandAction(pokerPlayer, round, HandAction.ACTION_BET, action.amount());
+            case RAISE -> {
+                // RAISE needs both total amount AND call portion (nSubAmount) so that
+                // getAdjustedAmount() returns just the raise increment (not total chips)
+                int callAmount = getCall(pokerPlayer);
+                yield new HandAction(pokerPlayer, round, HandAction.ACTION_RAISE, action.amount(), callAmount, null);
+            }
+            default -> new HandAction(pokerPlayer, round, HandAction.ACTION_FOLD); // Safety fallback
+        };
+
+        // For fold actions, mark player as folded BEFORE adding to history
+        // (matches existing PokerPlayer.fold() pattern - listeners may query isFolded
+        // during event)
+        if (action.actionType() == ActionType.FOLD) {
+            pokerPlayer.setFolded(true);
+        }
+
+        // Add to history and update pots using existing logic
+        addHistory(handAction);
     }
 
     /**

@@ -91,4 +91,38 @@ public interface GameHand {
      * @return current player to act
      */
     GamePlayerInfo getCurrentPlayerWithInit();
+
+    /**
+     * Get amount player needs to call to stay in hand.
+     *
+     * @param player
+     *            the player
+     * @return amount to call (0 if no bet to call)
+     */
+    int getAmountToCall(GamePlayerInfo player);
+
+    /**
+     * Get minimum bet amount for current round.
+     *
+     * @return minimum bet
+     */
+    int getMinBet();
+
+    /**
+     * Get minimum raise amount for current round.
+     *
+     * @return minimum raise
+     */
+    int getMinRaise();
+
+    /**
+     * Process a player action from pokergamecore. Converts PlayerAction to internal
+     * representation and updates hand state.
+     *
+     * @param player
+     *            the player taking action
+     * @param action
+     *            the action from pokergamecore
+     */
+    void applyPlayerAction(GamePlayerInfo player, PlayerAction action);
 }

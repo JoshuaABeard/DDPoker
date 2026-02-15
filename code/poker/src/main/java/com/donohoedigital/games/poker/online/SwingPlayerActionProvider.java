@@ -35,6 +35,12 @@ package com.donohoedigital.games.poker.online;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.ai.*;
 import com.donohoedigital.games.poker.core.*;
+import com.donohoedigital.games.poker.logic.BetValidator;
+
+import javax.swing.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Bridge between pokergamecore's PlayerActionProvider interface and existing
@@ -66,23 +72,189 @@ public class SwingPlayerActionProvider implements PlayerActionProvider {
     }
 
     /**
-     * Get action from human player using existing Swing UI. NOTE: In Phase 2, we
-     * don't actually invoke UI here - the existing TournamentDirector.doBetting()
-     * handles that. This is a placeholder for future full delegation.
+     * Get action from human player using existing Swing UI. This method blocks
+     * until the user makes a decision (or timeout occurs).
+     *
+     * Uses CountDownLatch to bridge the synchronous API with asynchronous Swing UI.
      */
     private PlayerAction getHumanAction(PokerPlayer player, ActionOptions options) {
-        // TODO Phase 3: Full implementation with Swing UI integration
-        // For Phase 2, return null to indicate we should use existing code path
-        return null;
+        // Get game components
+        PokerTable table = player.getTable();
+        if (table == null) {
+            return PlayerAction.fold(); // Safety: player not at table
+        }
+
+        PokerGame game = table.getGame();
+        if (game == null) {
+            return PlayerAction.fold(); // Safety: no game instance
+        }
+
+        HoldemHand hand = table.getHoldemHand();
+        if (hand == null) {
+            return PlayerAction.fold(); // Safety: no active hand
+        }
+
+        // Create synchronization primitives
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<HandAction> actionRef = new AtomicReference<>();
+
+        // Create one-time listener for this specific player action
+        PlayerActionListener listener = (action, amount) -> {
+            // Convert UI action to HandAction
+            HandAction handAction = createHandActionFromUI(player, hand, action, amount);
+            actionRef.set(handAction);
+            latch.countDown();
+        };
+
+        // Store existing listener (to restore later)
+        // NOTE: Should be null since Bet phase is no longer used (Phase 3 removed it).
+        // If non-null, setPlayerActionListener will assert. Clear it defensively.
+        PlayerActionListener existingListener = game.getPlayerActionListener();
+        if (existingListener != null) {
+            game.setPlayerActionListener(null); // Clear existing listener first
+        }
+
+        try {
+            // Register our temporary listener
+            game.setPlayerActionListener(listener);
+
+            // Show betting UI on Swing EDT
+            SwingUtilities.invokeLater(() -> showBettingUI(game, hand, player, options));
+
+            // Wait for user input (with timeout)
+            int timeoutSeconds = options.timeoutSeconds();
+            if (timeoutSeconds <= 0) {
+                timeoutSeconds = 300; // Default 5 minutes if no timeout specified
+            }
+
+            boolean completed = latch.await(timeoutSeconds, TimeUnit.SECONDS);
+
+            if (!completed) {
+                // Timeout - auto-fold
+                return PlayerAction.fold();
+            }
+
+            // Get result and convert to PlayerAction
+            HandAction result = actionRef.get();
+            if (result == null) {
+                return PlayerAction.fold(); // Safety fallback
+            }
+
+            return convertHandActionToPlayerAction(result);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return PlayerAction.fold();
+        } finally {
+            // Cleanup: restore previous listener and reset UI
+            // Clear current listener first to avoid assertion if restoring non-null
+            if (existingListener != null) {
+                game.setPlayerActionListener(null);
+            }
+            game.setPlayerActionListener(existingListener);
+            SwingUtilities.invokeLater(() -> game.setInputMode(PokerTableInput.MODE_QUITSAVE));
+        }
     }
 
     /**
      * Get action from AI player using existing AI strategy.
      */
     private PlayerAction getAIAction(PokerPlayer player, ActionOptions options) {
-        // Use existing AI strategy system
-        // For Phase 2, return null to use existing code path
-        // TODO Phase 3: Integrate AI action retrieval
-        return null;
+        // Get AI instance
+        PokerAI ai = player.getPokerAI();
+        if (ai == null) {
+            // Safety fallback: if no AI configured, fold
+            return PlayerAction.fold();
+        }
+
+        // Get AI decision using existing strategy system
+        // false = not quick mode (AI takes time to think)
+        HandAction handAction = ai.getHandAction(false);
+
+        if (handAction == null) {
+            // Safety fallback: if AI returns null, fold
+            return PlayerAction.fold();
+        }
+
+        // Convert HandAction to PlayerAction
+        return convertHandActionToPlayerAction(handAction);
+    }
+
+    /**
+     * Convert legacy HandAction to pokergamecore PlayerAction.
+     *
+     * Note: CALL action uses amount=0 in PlayerAction because the call amount is
+     * re-derived from game state in HoldemHand.applyPlayerAction() via getCall().
+     * This asymmetry (BET/RAISE preserve amount, CALL does not) is intentional - it
+     * ensures the call amount is always accurate even if game state changes between
+     * conversion points.
+     *
+     * @param handAction
+     *            the legacy HandAction from AI or UI
+     * @return equivalent PlayerAction for pokergamecore
+     */
+    private PlayerAction convertHandActionToPlayerAction(HandAction handAction) {
+        int action = handAction.getAction();
+        int amount = handAction.getAmount();
+
+        return switch (action) {
+            case HandAction.ACTION_FOLD -> PlayerAction.fold();
+            case HandAction.ACTION_CHECK -> PlayerAction.check();
+            case HandAction.ACTION_CALL -> PlayerAction.call(); // amount=0, re-derived in applyPlayerAction
+            case HandAction.ACTION_BET -> PlayerAction.bet(amount);
+            case HandAction.ACTION_RAISE -> PlayerAction.raise(amount);
+            default -> {
+                // For other actions (CHECK_RAISE, blinds, etc.), map to closest equivalent
+                // CHECK_RAISE becomes RAISE, others fold as safety
+                if (action == HandAction.ACTION_CHECK_RAISE) {
+                    yield PlayerAction.raise(amount);
+                }
+                yield PlayerAction.fold();
+            }
+        };
+    }
+
+    /**
+     * Show betting UI on Swing EDT. Sets up the table input mode to display
+     * appropriate betting buttons.
+     */
+    private void showBettingUI(PokerGame game, HoldemHand hand, PokerPlayer player, ActionOptions options) {
+        // Determine input mode based on betting situation
+        int toCall = hand.getCall(player);
+        int currentBet = hand.getBet();
+        int inputMode = BetValidator.determineInputMode(toCall, currentBet);
+
+        // Set input mode - this enables the betting buttons
+        game.setInputMode(inputMode, hand, player);
+    }
+
+    /**
+     * Create HandAction from UI button callback. Converts PokerGame.ACTION_*
+     * constants to HandAction with appropriate amounts.
+     */
+    private HandAction createHandActionFromUI(PokerPlayer player, HoldemHand hand, int uiAction, int amount) {
+        int round = hand.getRound().toLegacy();
+
+        return switch (uiAction) {
+            case PokerGame.ACTION_FOLD -> new HandAction(player, round, HandAction.ACTION_FOLD);
+            case PokerGame.ACTION_CHECK -> new HandAction(player, round, HandAction.ACTION_CHECK);
+            case PokerGame.ACTION_CALL -> {
+                int callAmount = hand.getCall(player);
+                yield new HandAction(player, round, HandAction.ACTION_CALL, callAmount);
+            }
+            case PokerGame.ACTION_BET -> new HandAction(player, round, HandAction.ACTION_BET, amount);
+            case PokerGame.ACTION_RAISE -> new HandAction(player, round, HandAction.ACTION_RAISE, amount);
+            case PokerGame.ACTION_ALL_IN -> {
+                // All-in: player bets/raises all chips
+                int chipCount = player.getChipCount();
+                int toCall = hand.getCall(player);
+                if (toCall == 0) {
+                    yield new HandAction(player, round, HandAction.ACTION_BET, chipCount);
+                } else {
+                    yield new HandAction(player, round, HandAction.ACTION_RAISE, chipCount);
+                }
+            }
+            default -> new HandAction(player, round, HandAction.ACTION_FOLD); // Safety fallback
+        };
     }
 }

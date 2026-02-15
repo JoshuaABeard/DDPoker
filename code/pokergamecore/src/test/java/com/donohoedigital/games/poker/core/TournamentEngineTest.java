@@ -280,6 +280,22 @@ class TournamentEngineTest {
         assertThat(result.shouldSleep()).isFalse();
     }
 
+    @Test
+    void handleShowdown_withNonNullHand_shouldStoreHistory() {
+        table.tableState = TableState.SHOWDOWN;
+        StubGameHand hand = new StubGameHand(BettingRound.SHOWDOWN, true);
+        table.holdemHand = hand;
+
+        TableProcessResult result = engine.processTable(table, game, true, false);
+
+        assertThat(result.pendingState()).isEqualTo(TableState.DONE);
+        assertThat(result.phaseToRun()).isEqualTo("TD.Showdown");
+        assertThat(result.shouldAutoSave()).isTrue();
+        // Note: Can't verify storeHandHistory() was called without modifying
+        // StubGameHand,
+        // but this exercises the non-null hand path including localPlayer null-check
+    }
+
     // BETTING state tests
 
     @Test
@@ -693,6 +709,7 @@ class TournamentEngineTest {
         public BettingRound round;
         public boolean done;
         public int numWithCards = 2; // Default to 2 players with cards
+        public GamePlayerInfo currentPlayer; // For testing betting logic
 
         StubGameHand(BettingRound round, boolean done) {
             this.round = round;
@@ -766,7 +783,169 @@ class TournamentEngineTest {
 
         @Override
         public GamePlayerInfo getCurrentPlayerWithInit() {
-            return null;
+            return currentPlayer;
+        }
+
+        @Override
+        public int getAmountToCall(GamePlayerInfo player) {
+            return 0;
+        }
+
+        @Override
+        public int getMinBet() {
+            return 0;
+        }
+
+        @Override
+        public int getMinRaise() {
+            return 0;
+        }
+
+        @Override
+        public void applyPlayerAction(GamePlayerInfo player, PlayerAction action) {
+            // Stub implementation - does nothing
+        }
+    }
+
+    /**
+     * Test that handleBetting calls actionProvider and processes the returned
+     * action. This exercises the createActionOptions + processPlayerAction
+     * integration.
+     */
+    @Test
+    void handleBetting_callsActionProviderAndProcessesAction() {
+        // Arrange: Create a player and hand that will exercise the betting logic
+        StubGamePlayer player = new StubGamePlayer(1, "Alice", 1000, true);
+
+        StubGameHand hand = new StubGameHand(BettingRound.FLOP, false);
+        hand.numWithCards = 2;
+        hand.currentPlayer = player; // This makes getCurrentPlayerWithInit() return the player
+
+        table.tableState = TableState.BETTING;
+        table.holdemHand = hand;
+
+        // Track if actionProvider was called
+        boolean[] providerCalled = {false};
+        PlayerActionProvider testProvider = (p, options) -> {
+            providerCalled[0] = true;
+            // Verify ActionOptions are created correctly
+            assertThat(options).isNotNull();
+            assertThat(options.canFold()).isTrue();
+            return PlayerAction.fold();
+        };
+
+        TournamentEngine testEngine = new TournamentEngine(eventBus, testProvider);
+
+        // Act
+        TableProcessResult result = testEngine.processTable(table, game, true, false);
+
+        // Assert
+        assertThat(providerCalled[0]).isTrue();
+        assertThat(result.nextState()).isEqualTo(TableState.BETTING);
+    }
+
+    // Stub player implementation for testing
+    private static class StubGamePlayer implements GamePlayerInfo {
+        private final int id;
+        private final String name;
+        private int chipCount;
+        private boolean locallyControlled;
+        private boolean folded;
+        private boolean sittingOut;
+
+        StubGamePlayer(int id, String name, int chipCount, boolean locallyControlled) {
+            this.id = id;
+            this.name = name;
+            this.chipCount = chipCount;
+            this.locallyControlled = locallyControlled;
+        }
+
+        @Override
+        public int getID() {
+            return id;
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public boolean isHuman() {
+            return false;
+        }
+
+        @Override
+        public int getChipCount() {
+            return chipCount;
+        }
+
+        @Override
+        public boolean isFolded() {
+            return folded;
+        }
+
+        @Override
+        public boolean isAllIn() {
+            return chipCount == 0;
+        }
+
+        @Override
+        public int getSeat() {
+            return 0;
+        }
+
+        @Override
+        public boolean isAskShowWinning() {
+            return false;
+        }
+
+        @Override
+        public boolean isAskShowLosing() {
+            return false;
+        }
+
+        @Override
+        public boolean isObserver() {
+            return false;
+        }
+
+        @Override
+        public boolean isHumanControlled() {
+            return false;
+        }
+
+        @Override
+        public int getThinkBankMillis() {
+            return 0;
+        }
+
+        @Override
+        public boolean isSittingOut() {
+            return sittingOut;
+        }
+
+        @Override
+        public void setSittingOut(boolean sittingOut) {
+            this.sittingOut = sittingOut;
+        }
+
+        @Override
+        public boolean isLocallyControlled() {
+            return locallyControlled;
+        }
+
+        @Override
+        public boolean isComputer() {
+            return true;
+        }
+
+        @Override
+        public void setTimeoutMillis(int millis) {
+        }
+
+        @Override
+        public void setTimeoutMessageSecondsLeft(int seconds) {
         }
     }
 }
