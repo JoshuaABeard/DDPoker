@@ -7,236 +7,203 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Internal Improvements
-- **Testability Refactoring (Waves 2-3)**
-  - Extracted business logic from TournamentDirector into 8 testable classes (2,915 lines)
-  - New `com.donohoedigital.games.poker.logic` package with zero UI dependencies
-  - Added 123 comprehensive tests (100% pass rate)
-  - Classes: TableManager, HandOrchestrator, TournamentClock, OnlineCoordinator, ColorUpLogic, LevelTransitionLogic, DealingRules, ShowdownCalculator
-  - Bug fix: TableManager.selectNewTable() now correctly skips removed tables
-  - Foundation for Phase integration and increased test coverage
+### AI Algorithm Extraction (In Progress)
+- Extracting V2 AI algorithm (~7,700 lines) from desktop client to server-compatible `pokergamecore` module
+- V2 uses a sophisticated rule-based engine with 46 decision factors, opponent modeling, and hand range weighting
+- V1 extraction complete; V2 extraction underway (Phases 1-4 of 8 complete)
+
+### Test Coverage
+- Continued expansion of test coverage across all modules
+- Added comprehensive tests for utility classes, model DTOs, and online profile handling
+
+---
 
 ## [3.3.0-community] - 2026-02-09
 
-### 🎉 Major Changes
+A major release transforming DD Poker from a legacy proprietary application into a modern, fully open-source poker platform. Includes new gameplay features, a modern web interface, overhauled networking, native installers, and extensive architectural improvements.
 
-This release includes two major architectural improvements:
+### Gameplay & Tournament Features
 
-**1. License System Removal** - Complete transition to fully open source model by removing all legacy licensing and activation systems.
+- **Tournament Hosting Overhaul** - Significantly expanded online tournament capabilities:
+  - Late registration with configurable chip mode
+  - Bounty/knockout tournament support with elimination tracking and prize pool display
+  - Hands-per-level advancement mode (alternative to time-based levels)
+  - Blind level quick setup with 4 templates (Slow, Standard, Turbo, Hyper)
+  - Standard payout presets (Top-Heavy, Standard, Flat)
+  - Per-street action timeouts (separate limits for preflop/flop/turn/river)
+  - Scheduled start times with minimum player requirements
+  - Profile import/export for sharing tournament structures
+  - Profile validation warnings displayed in UI
+  - Raised limits: max players 30 → 90, max chips 50K → 1M, max observers 10 → 30, think bank 60 → 120s
+  - Starting stack depth displayed in big blinds
 
-**2. File-Based JSON Configuration** - Replaced Java Preferences API with portable, human-readable JSON configuration files.
+- **Table Size Presets** - Replaced numeric spinner with intuitive radio buttons (Full Ring 10 / 6-Max / Heads-Up)
 
-### Added
-- **First-Time User Experience (FTUE) Wizard**
-  - Guided setup wizard for new users on first launch
-  - Streamlined onboarding flow based on play mode preference
-  - Three paths: Offline Practice, Online New Account, Link Existing Account
-  - Server configuration now appears BEFORE profile creation for online play (fixes critical UX issue)
-  - Progressive disclosure - only shows relevant steps based on user choice
-  - Real-time validation with clear error messages
-  - "Skip wizard" option creates sensible defaults
-  - "Don't show again" preference for returning users
-  - Comprehensive test coverage: 139 tests (29 unit + 19 integration + 91 edge case)
-  - See `docs/FIRST-TIME-WIZARD.md` for user guide
+- **Configurable Chat Font Size** - User-adjustable chat text size (8-24pt), persists across sessions
 
-- **UUID-based Player Identity System**
-  - Unique player IDs generated using UUID v4
-  - Stored locally in platform-specific config directory
-  - No central registration or tracking
-  - Privacy-focused design
+- **Demo Mode Removed** - All features now available to everyone; removed 500+ lines of restriction code
 
-- **PlayerIdentity API**
-  - `PlayerIdentity.generatePlayerId()` - Generate new UUID
-  - `PlayerIdentity.loadOrCreate()` - Load existing or create new ID
-  - `PlayerIdentity.save(String)` - Persist player ID
-  - Automatic directory creation and file handling
-  - Thread-safe operations with corruption recovery
+### Web Interface (New)
 
-- **Comprehensive Test Coverage (License Removal)**
-  - 65 new tests covering all license removal changes
-  - Edge case testing for file corruption, concurrent access, etc.
-  - Platform compatibility tests (Windows, macOS, Linux)
-  - Backward compatibility tests for profile migration
+- **Modern Website** - Replaced legacy Apache Wicket site with Next.js 14 + Spring Boot REST API
+  - 9 REST controllers with JWT authentication (HttpOnly cookies) and role-based access control
+  - 20+ pages: Home, About, Support, Download, Terms of Use
+  - Online portal: game browser, player profiles, leaderboard
+  - Admin panel: player search, ban management, server monitoring
+  - Password reset with email verification tokens
+  - Mobile-responsive with accessible navigation (ARIA, keyboard support)
+  - TypeScript, Tailwind CSS v4
 
-- **File-Based JSON Configuration System**
-  - Replaced Java Preferences API with JSON configuration files
-  - Platform-specific locations (Windows: APPDATA, macOS: Application Support, Linux: ~/.ddpoker)
-  - Portable config.json for easy backup and restore
-  - Automatic backup creation (config.json.bak)
-  - Corruption recovery from backup files
-  - Thread-safe operations with synchronization
-  - Zero breaking changes - complete backward compatibility
+### Networking
 
-- **FilePrefs API**
-  - `FilePrefs.getInstance()` - Get singleton configuration manager
-  - `FilePrefs.get/put/getBoolean/putBoolean/getInt/putInt/getDouble/putDouble()` - Type-safe config access
-  - `FilePrefs.getConfigDir()` - Get platform-specific config directory
-  - `Prefs.initialize()` - Initialize file-based preferences
-  - Implements `java.util.prefs.Preferences` interface via adapter pattern
-  - All existing code works without modification
+- **UDP to TCP Conversion** - Migrated all point-to-point communication from UDP to TCP, removing ~2,500 lines of custom UDP reliability code. Improves Docker compatibility and simplifies the network stack. LAN game discovery still uses UDP multicast.
 
-- **Comprehensive Test Coverage (File-Based Config)**
-  - 98 new tests covering all configuration system changes
-  - Platform detection tests (Windows/macOS/Linux)
-  - Backup and recovery scenarios
-  - Concurrent access testing (20 threads)
-  - Volume testing (5,000 keys)
-  - Special character handling (unicode, emoji)
-  - Full DDOption compatibility testing
+- **Public IP Detection Fix** - P2P game hosting now correctly detects public IP via external services (ipify.org, icanhazip.com) instead of returning private/local addresses behind NAT. Cached with 5-minute TTL.
 
-### Changed
-- **Configuration System**
-  - Preferences now stored in platform-specific JSON files instead of Java Preferences
-  - Windows: `%APPDATA%\ddpoker\config.json` (no Windows Registry usage)
-  - macOS: `~/Library/Application Support/ddpoker/config.json`
-  - Linux: `~/.ddpoker/config.json`
-  - Human-readable, editable configuration format
-  - Docker and container-friendly (no Registry dependencies)
+### Distribution & Deployment
 
-- **GameEngine API**
-  - Added `getPlayerId()` - Get unique player identifier
-  - Added `setPlayerId(String)` - Set player identifier
-  - Removed `getRealLicenseKey()` and related license methods
-  - Simplified initialization (removed activation checks)
+- **Native Installers** - Zero-dependency installers with bundled Java 25 runtime:
+  - Windows: MSI installer (~98 MB) with Start Menu integration and uninstaller
+  - macOS: DMG installer
+  - Linux: DEB and RPM packages
+  - GitHub Actions workflow for automated cross-platform builds
 
-- **Online Multiplayer**
-  - Player authentication now uses UUID instead of license keys
-  - Server validation always passes (no activation required)
-  - Old clients and new clients can coexist
+- **Docker Deployment** - Production-ready Docker Compose setup with multi-process entrypoint (poker server + REST API + H2 database). Includes Unraid app templates and SWAG reverse proxy configs.
 
-- **Profile System**
-  - `PlayerProfile.isActivated()` now always returns `true`
-  - `OnlineProfile.getLicenseKey()` now returns `null`
-  - License-related setters are now no-ops
-  - All methods marked `@Deprecated` for compatibility
+- **Configurable Admin User** - Admin credentials via environment variables (`ADMIN_USERNAME`, `ADMIN_PASSWORD`) with auto-generation on first run
 
-### Removed
-- **Activation System** (641 lines)
-  - Activation.java - License key validation logic
-  - Activate.java - Activation dialog UI
-  - VerifyActivationKey.java - Network key verification
-  - All activation checks and dialogs
+### Open Source Transition
 
-- **License Management** (234 lines)
-  - License.java - License agreement display
-  - License key generation and validation
-  - Demo vs. Retail vs. Online version distinctions
-  - Registration requirement for online play
+- **License System Removed** - Deleted ~1,950 lines of proprietary licensing/activation code. Player identity now uses locally-generated UUID v4. No phone-home, no telemetry, no central registration.
 
-- **License-Related Fields**
-  - GameEngine: Removed 8 license-related fields
-  - OnlineProfile: Removed PROFILE_LICENSE_KEY constant
-  - PlayerProfile: License validation logic removed
-  - **Total: ~1,950 lines of licensing code removed**
+- **File-Based Configuration** - Replaced Java Preferences API (Windows Registry) with portable JSON config files. Platform-specific paths with automatic backup and corruption recovery. Human-readable and container-friendly.
 
-- **Java Preferences API Usage**
-  - Removed Windows Registry dependencies
-  - Removed platform-specific preference backends
-  - Removed `java.util.prefs.Preferences` direct usage
-  - All configuration now managed by FilePrefs system
+- **First-Time User Experience** - Guided setup wizard on first launch with three paths (Offline Practice, Online New Account, Link Existing Account). Progressive disclosure with real-time validation.
 
-### Fixed
-- **Public IP Detection for P2P Game Hosting**
-  - "Test Online" feature now correctly returns public IP address instead of private/local IP
-  - Fixed NAT/router scenarios where server-side detection would return 192.168.x.x or 127.0.0.1
-  - Client now queries external IP detection services directly (ipify.org, icanhazip.com, checkip.amazonaws.com)
-  - Implements caching (5-minute TTL) to reduce external service calls
-  - Thread-safe implementation for concurrent access
-  - Falls back to server query if all external services fail
-  - Properly rejects invalid IPs: private ranges (10.x, 172.16-31.x, 192.168.x), loopback (127.x), link-local (169.254.x), broadcast (255.255.255.255), and zero address (0.0.0.0)
-  - Added 40 comprehensive unit tests covering edge cases, concurrency, IPv6 handling, and malformed responses
-  - Configurable via properties: `settings.publicip.service.url` and `settings.publicip.cache.ttl`
-- Potential file corruption during player ID persistence
-- Race conditions in concurrent player ID access
-- Platform path detection for config directory
-- Compatibility with legacy save files
-
-### Deprecated
-For backward compatibility, these methods still exist but are deprecated:
-- `OnlineProfile.getLicenseKey()` - Returns null
-- `OnlineProfile.setLicenseKey(String)` - No-op
-- `OnlineProfile.isActivated()` - Returns true
-- `OnlineProfile.setActivated(boolean)` - No-op
-- `PlayerProfile.setActivated(boolean)` - No-op
-
-### Migration Notes
-- **Automatic Migration**: No user action required!
-- Existing profiles, statistics, and save files work without modification
-- Player IDs are generated automatically on first launch
-- Old license key data is ignored during load (not deleted)
-- Configuration automatically migrates from Java Preferences on first run
-- All settings preserved and stored in new JSON format
-
-### Technical Details
-- **Player ID storage location:**
-  - Windows: `%APPDATA%\ddpoker\player.id`
-  - macOS: `~/Library/Application Support/ddpoker/player.id`
-  - Linux: `~/.ddpoker/player.id`
-  - File format: JSON with playerId and createdAt timestamp
-  - UUID format: RFC 4122 version 4 (random)
-  - See `docs/LICENSE-REMOVAL-TECHNICAL.md` for complete technical documentation
-
-- **Configuration storage location:**
-  - Windows: `%APPDATA%\ddpoker\config.json`
-  - macOS: `~/Library/Application Support/ddpoker/config.json`
-  - Linux: `~/.ddpoker/config.json`
-  - File format: JSON with dot-notation keys
-  - Automatic backup: `config.json.bak` created before each write
-  - See `docs/FILE-BASED-CONFIGURATION.md` for complete technical documentation
-
-### Performance
-- Reduced JAR size by ~2 MB (removed licensing code)
-- Faster startup (no activation checks, single config file load vs. multiple Registry/Preferences reads)
-- Reduced memory usage (no license validation caching)
-- **Configuration System:**
-  - Read operations: < 0.01ms (in-memory after load)
-  - Write operations: ~10-20ms on SSD (includes automatic backup)
-  - Load time: < 500ms for 1,000 settings
-  - 10,000+ reads/second, 20-50 writes/second
+- **Community Rebranding** - Updated product name, dialogs, and documentation to "DD Poker Community Edition" with dual copyright (original author + community) under GPL-3.0.
 
 ### Security
-- No phone-home or telemetry
-- No central registration database
-- Player IDs are locally generated and stored
-- Can be regenerated at any time by deleting player.id
+
+- **Bcrypt Password Hashing** - Migrated from reversible DES encryption to bcrypt. Password reset generates new credentials instead of revealing existing ones.
+- **Improved Deck Shuffling** - Replaced weak custom seed generator with `SecureRandom`; thread-isolated via `ThreadLocal`
+- **Input Validation & Rate Limiting** - All servlet endpoints validated; rate limits on profile creation, game creation, and chat
+- **Dangerous Chat Commands Removed** - Eliminated debug commands that could be abused
+- **Server Authentication** - Added auth and authorization checks to game mutation endpoints
+
+### Architecture & Internal
+
+- **`pokergamecore` Module** - New module extracting pure game logic with zero Swing dependencies. Enables future server-hosted games and web clients. Includes HoldemHand, 11 logic classes, event system, and tournament clock. 99% test coverage.
+
+- **AI Algorithm Extraction** - Extracted V1 AI algorithm (~1,100 lines) to `pokergamecore` with full behavioral parity. Created `PurePokerAI` and `AIContext` interfaces, `TournamentAI` with M-ratio strategy, and `ServerAIProvider` for server-side AI. Validates feasibility of intelligent server-hosted poker.
+
+- **TournamentDirector Refactoring** - Extracted business logic into 8 testable classes (TableManager, HandOrchestrator, TournamentClock, OnlineCoordinator, ColorUpLogic, LevelTransitionLogic, DealingRules, ShowdownCalculator). Fixed bug where `selectNewTable()` could select removed tables.
+
+- **Build Optimizations** - Three Maven profiles (`dev`, `fast`, `coverage`). Parallel test execution, incremental compilation. Full build ~69s, fast profile ~50s.
+
+- **Coverage Enforcement** - Module-specific JaCoCo baselines prevent regression. 1,292+ tests across all modules.
+
+- **Spring Boot Upgrade** - Upgraded from 3.3.9 to 3.5.8
+
+- **Code Formatting** - Adopted Spotless for consistent auto-formatting
+
+### Bug Fixes
+
+- Public IP detection returning private addresses behind NAT/routers
+- Tournament data column too small for large tournaments
+- Cheat detection incorrectly triggering after rebuy decline
+- `OnlineGame.hashCode()` inconsistency
+- Multiple resource leaks (ResultSet, Statement, ApplicationContext, file streams)
+- HoldemSimulator test failures in parallel CI execution
+- Tab key not working for focus traversal in Help dialog
+- Various HTML structure and accessibility issues in web interface
 
 ---
 
 ## [3.2.0-community] - 2026-01-15
 
+Initial open source release of DD Poker as a community-maintained fork.
+
 ### Added
-- Initial open source release under GPL-3.0
-- File-based configuration system (replacing Java Preferences)
+- Open source release under GPL-3.0
 - Docker deployment support with docker-compose
-- Comprehensive CI/CD pipeline
-- Unit test infrastructure (JUnit 5, AssertJ)
+- GitHub CI pipeline
+- JUnit 5 and AssertJ test infrastructure
+- Modern SMTP support for Gmail and other email providers
 
 ### Changed
-- License changed from proprietary to GPL-3.0
-- Build system modernized (Maven 3.9+)
-- Dependencies updated to latest versions
+- Upgraded to Java 25 (from Java 11)
+- Modernized Maven build (3.9+)
+- Updated all dependencies to current versions (Spring 6, Hibernate 6, Log4j2, Wicket 10, Jetty 12)
+- Migrated from MySQL to H2 embedded database (no external database setup required)
 - Code reformatted to consistent style
+- Removed Install4j dependency (replaced by jpackage in 3.3.0)
 
 ### Fixed
 - Java 17+ compatibility issues
 - Build reproducibility problems
 - Timezone handling in tests
-- Configuration path handling on different platforms
+- Various IntelliJ warnings and code quality issues
 
 ---
 
-## [3.1.x] - Historical (Pre-Open Source)
+## Historical Releases (Pre-Community Edition)
 
-Versions prior to 3.2.0 were proprietary licensed software.
-For historical release notes, see the archived documentation.
+DD Poker was originally developed by Doug Donohoe of Donohoe Digital LLC from 2003 to 2017. It was open-sourced on GitHub in August 2024. The 3.1.x releases below were made by the original author to modernize the codebase after open-sourcing.
+
+### [3.1.6] - 2026-01-08
+- Upgraded to Java 25
+- Updated Install4j to v12
+- Made Wicket website responsive
+- Ongoing dependency updates (Spring 6.2, Hibernate 6.x, Jetty 12, Log4j2)
+- Updated copyright to 2026
+
+### [3.1.5] - 2025-05-18
+- Upgraded to Java 21
+- Updated Install4j to v11
+- Added Dependabot for automated dependency updates
+- Major dependency upgrades: Spring 6.1→6.2, Hibernate 6.6, Wicket 10, Jetty 12
+
+### [3.1.4] - 2024-11-10
+- Upgraded to Java 17 with deprecation fixes
+- Set up GitHub CI action for automated testing
+- Upgraded to Wicket 9
+- Pointed Downloads page to GitHub releases
+
+### [3.1.3] - 2024-11-09
+- Upgraded to Java 11
+- Incremental Wicket upgrades (1.5 → 6 → 7 → 8)
+
+### [3.1.2] - 2024-10-20
+- Upgraded to Log4j2 (from Log4j 1.x)
+- Logging initialization improvements
+- PokerStats tool restored to working condition
+- Added HandInfo unit tests
+- macOS `.ddpokerjoin` file association
+
+### [3.1.1] - 2024-09-08
+- Windows installer via Install4j
+- Major dependency upgrade path: Spring 3.2 → 4.3 → 5.3, Hibernate 4.3 → 5.6
+- OFL fonts for cross-platform consistency
+- Fixed window centering, online tab spacing
+- Removed old marketing emails and patch installer code
+
+### [3.1] - 2024-08-29
+- Initial open source release on GitHub
+- Cross-platform installer using Install4j (macOS, Linux)
+- Online server configuration UI (#1)
+- Fixed macOS-only build issues (#2)
+- Docker support and Ubuntu instructions
+
+### Pre-3.1 (2003-2017)
+DD Poker was a commercial Texas Hold'em poker simulator sold as retail and online software. It featured AI opponents, online multiplayer tournaments, and a poker calculator. The original codebase supported Java 1.4 through Java 8.
 
 ---
 
 ## Version Number Scheme
 
-Starting with 3.2.0, DD Poker uses semantic versioning with a "-community" suffix:
+Starting with 3.2.0, DD Poker uses semantic versioning with a `-community` suffix:
 
-- **Major.Minor.Patch-community** (e.g., 3.2.1-community)
+- **Major.Minor.Patch-community** (e.g., 3.3.0-community)
 - **Major**: Breaking changes or major new features
 - **Minor**: New features, backward compatible
 - **Patch**: Bug fixes, backward compatible
@@ -246,10 +213,6 @@ Starting with 3.2.0, DD Poker uses semantic versioning with a "-community" suffi
 
 ## Links
 
-- [First-Time Wizard User Guide](docs/FIRST-TIME-WIZARD.md)
-- [License Removal Technical Documentation](docs/LICENSE-REMOVAL-TECHNICAL.md)
-- [File-Based Configuration Documentation](docs/FILE-BASED-CONFIGURATION.md)
-- [Public IP Detection Technical Documentation](docs/PUBLIC-IP-DETECTION-TECHNICAL.md)
 - [Source Repository](https://github.com/donohoedigital/DDPoker)
 - [Issue Tracker](https://github.com/donohoedigital/DDPoker/issues)
 - [License (GPL-3.0)](LICENSE.txt)
