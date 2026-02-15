@@ -122,4 +122,23 @@ class PasswordHashingServiceTest {
         assertTrue(hash.startsWith("$2a$"), "Hash should be valid bcrypt format");
         assertTrue(service.checkPassword("", hash), "Empty password should validate");
     }
+
+    @Test
+    void hashPassword_ShouldThrowException_WhenPlaintextIsNull() {
+        // When/Then: hashing null should throw IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> service.hashPassword(null),
+                "hashPassword should throw IllegalArgumentException for null plaintext");
+    }
+
+    @Test
+    void checkPassword_ShouldReturnFalse_WhenHashIsInvalid() {
+        // Given: an invalid hash format
+        String invalidHash = "not-a-valid-bcrypt-hash";
+
+        // When: checking password with invalid hash
+        boolean result = service.checkPassword("password", invalidHash);
+
+        // Then: should return false (not throw exception)
+        assertFalse(result, "checkPassword should return false for invalid hash format");
+    }
 }
