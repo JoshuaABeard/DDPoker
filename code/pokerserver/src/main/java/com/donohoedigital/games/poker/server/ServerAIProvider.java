@@ -36,9 +36,9 @@ import com.donohoedigital.games.poker.core.*;
 import com.donohoedigital.games.poker.core.ai.AIContext;
 import com.donohoedigital.games.poker.core.ai.PurePokerAI;
 import com.donohoedigital.games.poker.core.ai.TournamentAI;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * AI provider for server-hosted games.
@@ -66,7 +66,7 @@ import java.util.Map;
  */
 public class ServerAIProvider implements PlayerActionProvider {
 
-    private final Map<Integer, PurePokerAI> playerAIs = new HashMap<>();
+    private final Map<Integer, PurePokerAI> playerAIs = new ConcurrentHashMap<>();
     private final AIContext context;
 
     /**
@@ -164,8 +164,15 @@ public class ServerAIProvider implements PlayerActionProvider {
             return PlayerAction.fold();
         }
 
-        // Delegate to AI
-        return ai.getAction(player, options, context);
+        // Delegate to AI with error handling
+        try {
+            return ai.getAction(player, options, context);
+        } catch (Exception e) {
+            // If AI throws exception, fold for safety
+            // Log error for debugging but don't crash the game
+            System.err.println("AI error for player " + player.getName() + ": " + e.getMessage() + " - folding");
+            return PlayerAction.fold();
+        }
     }
 
     /**
