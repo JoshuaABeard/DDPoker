@@ -37,6 +37,7 @@ import com.donohoedigital.games.poker.engine.*;
 
 import java.text.*;
 import java.util.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 public class ImpExpParadise implements ImpExp {
     private String paradisePlayerName_ = "DD Player";
@@ -204,7 +205,7 @@ public class ImpExpParadise implements ImpExp {
             }
         }
 
-        int round = HoldemHand.ROUND_PRE_FLOP;
+        int round = BettingRound.PRE_FLOP.toLegacy();
 
         for (int i = 0; i < ieHand.hist.size(); ++i) {
             HandAction action = (HandAction) ieHand.hist.get(i);
@@ -438,7 +439,7 @@ public class ImpExpParadise implements ImpExp {
         for (int i = 0; i < ieHand.hist.size(); i++) {
             action = (HandAction) ieHand.hist.get(i);
 
-            if (action.getRound() != HoldemHand.ROUND_SHOWDOWN)
+            if (action.getRound() != BettingRound.SHOWDOWN.toLegacy())
                 continue;
             if (action.getSubAmount() != nPot)
                 continue;

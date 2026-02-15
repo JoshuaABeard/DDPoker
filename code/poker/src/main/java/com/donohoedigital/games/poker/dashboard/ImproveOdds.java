@@ -36,6 +36,7 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.engine.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Mar 18, 2005 Time: 4:40:33 PM
@@ -79,7 +80,7 @@ public class ImproveOdds extends Odds {
         nRound = hhand.getRoundForDisplay();
 
         // pre-flop
-        if (nRound == HoldemHand.ROUND_PRE_FLOP) {
+        if (nRound == BettingRound.PRE_FLOP.toLegacy()) {
             return "";
         }
 

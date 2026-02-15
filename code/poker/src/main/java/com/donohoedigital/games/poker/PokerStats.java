@@ -171,7 +171,7 @@ public class PokerStats {
 
         // deal hand
         hhand_.deal();
-        hhand_.getCurrentPlayerInitIndex();
+        hhand_.getCurrentPlayerWithInit();
 
         // do stats
         HandSorted hand;

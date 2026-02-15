@@ -45,6 +45,10 @@ import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
+import com.donohoedigital.games.poker.core.*;
+import com.donohoedigital.games.poker.core.TableProcessResult;
+import com.donohoedigital.games.poker.core.event.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.poker.model.*;
@@ -104,6 +108,9 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
     // two variables to make code easier to read in places
     private boolean bClient_; // online client
     private boolean bHost_; // online host (also true if practice mode)
+
+    // Phase 2: pokergamecore engine
+    private TournamentEngine engine_; // pokergamecore engine
 
     /**
      * Phase start
@@ -197,6 +204,12 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
 
             startWanGame();
             setStartPause();
+
+            // Phase 2: Initialize pokergamecore engine
+            GameEventBus eventBus = new SwingEventBus(game_);
+            PlayerActionProvider actionProvider = new SwingPlayerActionProvider(this);
+            engine_ = new TournamentEngine(eventBus, actionProvider);
+
             // noinspection AssignmentToStaticFieldFromInstanceMethod
             thread_ = new Thread(this, "TournamentDirector-" + (nThreadSeq_++));
             thread_.start();
@@ -221,8 +234,8 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
      */
     private void setStartPause() {
         if (bOnline_) {
-            int tableState = game_.getHost().getTable().getTableState();
-            int pendingState = game_.getHost().getTable().getPendingTableState();
+            int tableState = game_.getHost().getTable().getTableStateInt();
+            int pendingState = game_.getHost().getTable().getPendingTableStateInt();
 
             boolean bHostTableDealForButton = tableState == PokerTable.STATE_DEAL_FOR_BUTTON
                     || pendingState == PokerTable.STATE_DEAL_FOR_BUTTON;
@@ -617,7 +630,15 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
             return;
 
         synchronized (table) {
-            _processTable(table);
+            // Phase 2: Call pokergamecore engine instead of old _processTable()
+            // Set auto-deal delay before calling engine (engine needs this value)
+            table.setAutoDealDelay(getAutoDealDelay(table));
+
+            // Call engine
+            TableProcessResult engineResult = engine_.processTable(table, game_, bHost_, bOnline_);
+
+            // Copy engine result to legacy TDreturn structure
+            copyEngineResultToReturn(engineResult, ret_);
 
             // finish after processing (remove listeners)
             ret_.finish();
@@ -671,220 +692,73 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
         }
     }
 
-    private void _processTable(PokerTable table) {
-        // DEBUG
-        if (DEBUG && table.nDebugLast_ != table.getTableState()) {
-            String sPending = "";
-            if (table.getPendingTableState() != PokerTable.STATE_NONE)
-                sPending = ", pending to do " + PokerTable.getStringForState(table.getPendingTableState());
-            logger.debug("=========> " + table.getName() + " at state " + table.toStringTableState() + sPending);
-            table.nDebugLast_ = table.getTableState();
+    /**
+     * Copy TableProcessResult from pokergamecore engine to legacy TDreturn
+     * structure.
+     *
+     * <p>
+     * <b>Phase 2 Integration Bridge:</b> This method translates between the new
+     * pokergamecore module's clean data structures and the legacy TDreturn inner
+     * class. The mapping preserves all game logic decisions while maintaining
+     * backward compatibility with existing UI/network code.
+     *
+     * <p>
+     * <b>Field Mappings:</b>
+     * <ul>
+     * <li><b>State changes:</b> TableState enum → int constants via toLegacy()
+     * <li><b>Phase to run:</b> String + Map&lt;String,Object&gt; → String +
+     * DMTypedHashMap
+     * <li><b>Flags:</b> Direct copy of all boolean flags (save, autoSave, sleep,
+     * etc.)
+     * </ul>
+     *
+     * <p>
+     * <b>Event Flow:</b> Events are NOT copied from engineResult.events() to
+     * TDreturn. Instead, the TournamentEngine publishes events to SwingEventBus,
+     * which converts new GameEvent records to legacy PokerTableEvent objects and
+     * dispatches them on Swing EDT. TDreturn receives these events via
+     * startListening() registration.
+     *
+     * <p>
+     * Event flow: TournamentEngine → SwingEventBus → PokerTableEvent → TDreturn
+     * (via listener)
+     *
+     * @param engineResult
+     *            the result from TournamentEngine.processTable()
+     * @param ret
+     *            the legacy return object to populate
+     */
+    private void copyEngineResultToReturn(TableProcessResult engineResult, TDreturn ret) {
+        // Copy state changes
+        if (engineResult.nextState() != null) {
+            ret.setTableState(engineResult.nextState().toLegacy());
+        }
+        if (engineResult.pendingState() != null) {
+            ret.setPendingTableState(engineResult.pendingState().toLegacy());
         }
 
-        // handle rejoin
-        if (checkRejoin(table))
-            return;
-
-        int nNext;
-        boolean bWait;
-        HoldemHand hhand;
-        switch (table.getTableState()) {
-            case PokerTable.STATE_PENDING_LOAD :
-                ret_.setTableState(PokerTable.STATE_PENDING);
-
-                // see if any player in wait list is locally controlled
-                boolean bWaiting = false;
-                int nNumWait = table.getWaitSize();
-                PokerPlayer wait;
-                for (int i = 0; i < nNumWait; i++) {
-                    wait = table.getWaitPlayer(i);
-                    if (wait.isLocallyControlled()) {
-                        bWaiting = true;
-                        break;
-                    }
-                }
-
-                if (bWaiting) {
-                    ret_.setPhaseToRun(table.getPendingPhase(), table.getPendingPhaseParams());
-                }
-                // Don't think we need to do this for clients since if
-                // we are loading, we by definition don't have clients attached,
-                // so when they re-attach, the normal re-join code will re-run
-                // the pending phase. If we did need to run for clients, we
-                // would have to pass the pending list to processTable and
-                // only send messages to players still on the list
-                return;
-
-            case PokerTable.STATE_PENDING :
-                doPending(table);
-                return;
-
-            case PokerTable.STATE_ON_HOLD :
-                if (table.getNumOccupiedSeats() > 1) {
-                    ret_.setTableState(PokerTable.STATE_BEGIN);
-                }
-                return;
-
-            case PokerTable.STATE_DEAL_FOR_BUTTON :
-                dealForButton(table);
-                ret_.setPendingTableState(PokerTable.STATE_BEGIN);
-                return;
-
-            case PokerTable.STATE_BEGIN :
-                if (TESTING(PokerConstants.TESTING_FAST_SAVE)) {
-                    ((PokerContext) context_).setFastSaveTest(false);
-                }
-
-                if (isAutoDeal(table)) {
-                    ret_.setTableState(getTableStateStartDeal()); // use to keep in sync with doDeal()
-                } else {
-                    // start WaitForDeal phase
-                    ret_.setPhaseToRun("TD.WaitForDeal");
-                    ret_.setTableState(PokerTable.STATE_BEGIN_WAIT);
-                }
-                return;
-
-            case PokerTable.STATE_BEGIN_WAIT :
-                // state changed in doDeal(), below, when Deal pressed
-                return;
-
-            case PokerTable.STATE_CHECK_END_HAND :
-                doCheckEndHand(table);
-                ret_.setPendingTableState(PokerTable.STATE_CLEAN);
-                return;
-
-            case PokerTable.STATE_CLEAN :
-                bWait = doClean(table);
-                nNext = PokerTable.STATE_NEW_LEVEL_CHECK;
-                if (table.getTableState() != PokerTable.STATE_ON_HOLD
-                        && table.getTableState() != PokerTable.STATE_GAME_OVER) {
-                    if (bWait) {
-                        ret_.setPendingTableState(nNext);
-                    } else {
-                        ret_.setTableState(nNext);
-                        ret_.setSleep(false);
-                    }
-                }
-                return;
-
-            case PokerTable.STATE_NEW_LEVEL_CHECK :
-                bWait = doNewLevelCheck(table);
-                if (bWait) {
-                    ret_.setPhaseToRun("TD.NewLevelActions");
-                    ret_.setRunOnClient(true);
-                    ret_.setPendingTableState(PokerTable.STATE_COLOR_UP);
-                } else {
-                    ret_.setTableState(PokerTable.STATE_START_HAND);
-                    ret_.setSleep(false);
-                }
-
-                return;
-
-            case PokerTable.STATE_COLOR_UP :
-                bWait = doColorUp(table);
-                nNext = PokerTable.STATE_START_HAND;
-                if (bWait) {
-                    ret_.setPhaseToRun("TD.ColorUp");
-                    ret_.setRunOnClient(true);
-                    ret_.setPendingTableState(nNext);
-                } else {
-                    ret_.setTableState(nNext);
-                    ret_.setSleep(false);
-                }
-                return;
-
-            case PokerTable.STATE_START_HAND :
-                // for tables which aren't current on host, we need
-                // to do the colorup after the client has displayed it
-                // to make sure the actual colorup is recorded on host.
-                // note - the handling of this is kind of a special case
-                // because we want the chip display to match what is
-                // happening on the table - thus it is hard to do the
-                // colorup all at once and have the client display the
-                // colorup process after the fact
-                if (bHost_ && table.isColoringUp()) {
-                    table.colorUp();
-                    table.colorUpFinish();
-                }
-
-                // if current level is a break, don't start a hand
-                if (game_.getProfile().isBreak(game_.getLevel())) {
-                    doBreak(table);
-                    ret_.setTableState(PokerTable.STATE_BREAK);
-                    return;
-                }
-
-                doStart(table);
-                ret_.setPendingTableState(PokerTable.STATE_BETTING);
-                return;
-
-            case PokerTable.STATE_BREAK :
-                boolean bDone = doCheckEndBreak(table);
-                if (bDone) {
-                    ret_.setTableState(PokerTable.STATE_NEW_LEVEL_CHECK);
-                } else {
-                    if (bOnline_) {
-                        table.setPause(1000);
-                    }
-                }
-                break;
-
-            case PokerTable.STATE_BETTING :
-                doBetting(table);
-                if (!bOnline_)
-                    ret_.setSleep(false);
-                return;
-
-            case PokerTable.STATE_COMMUNITY :
-                bWait = doCommunity(table);
-                hhand = table.getHoldemHand();
-                // wait means we have to display cards and then do round of betting
-                if (bWait) {
-                    ret_.setPendingTableState(PokerTable.STATE_BETTING);
-                    if (table.isZipMode() || hhand.isDone())
-                        ret_.setSleep(false);
-                }
-                // else hand is done, go to next community card or showdown
-                else {
-                    ret_.setTableState(hhand.getRound() == HoldemHand.ROUND_RIVER
-                            ? PokerTable.STATE_PRE_SHOWDOWN
-                            : PokerTable.STATE_COMMUNITY);
-                    ret_.setSleep(false);
-                }
-                return;
-
-            case PokerTable.STATE_PRE_SHOWDOWN :
-                bWait = doPreShowdown(table);
-                nNext = PokerTable.STATE_SHOWDOWN;
-                if (bWait) {
-                    ret_.setPendingTableState(nNext);
-                } else {
-                    ret_.setTableState(nNext);
-                    ret_.setSleep(false);
-                }
-                return;
-
-            case PokerTable.STATE_SHOWDOWN :
-                doShowdown(table);
-                ret_.setTableState(PokerTable.STATE_DONE);
-                ret_.setAutoSave(true); // practice
-                if (table.isCurrent())
-                    ret_.setSave(true); // online
-                ret_.setSleep(false);
-                return;
-
-            case PokerTable.STATE_DONE :
-                if (isAutoDeal(table))
-                    table.setPause(getAutoDealDelay(table));
-                ret_.setTableState(PokerTable.STATE_BEGIN);
-                return;
-
-            case PokerTable.STATE_GAME_OVER :
-                // mark game over & save
-                if (!DebugConfig.isTestingOn() && !bOnline_)
-                    game_.autoSave();
-                bDone_ = true;
+        // Copy phase to run
+        if (engineResult.phaseToRun() != null) {
+            DMTypedHashMap params = null;
+            if (engineResult.phaseParams() != null) {
+                params = new DMTypedHashMap();
+                params.putAll(engineResult.phaseParams());
+            }
+            ret.setPhaseToRun(engineResult.phaseToRun(), params);
         }
+
+        // Copy flags
+        ret.setSave(engineResult.shouldSave());
+        ret.setAutoSave(engineResult.shouldAutoSave());
+        ret.setSleep(engineResult.shouldSleep());
+        ret.setRunOnClient(engineResult.shouldRunOnClient());
+        ret.setAddAllHumans(engineResult.shouldAddAllHumans());
+        ret.setOnlySendToWaitList(engineResult.shouldOnlySendToWaitList());
+
+        // Note: Events are handled via SwingEventBus, not via engineResult.events()
+        // The SwingEventBus converts new GameEvent records to legacy PokerTableEvent
+        // objects and dispatches them to listeners (including ret_ via
+        // startListening())
     }
 
     /**
@@ -928,10 +802,10 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
                 // correct state to be passed along and run on the client
                 if (DEBUG_REJOIN)
                     logger.debug("Sending rejoin table update to " + player.getName() + ", prev state: "
-                            + PokerTable.getStringForState(table.getPreviousTableState()));
+                            + PokerTable.getStringForState(table.getPreviousTableStateInt()));
                 player.setRejoining(false);
-                mgr_.sendTableUpdate(table, player, null, table.getPreviousTableState(), true, null, false, null, null,
-                        null);
+                mgr_.sendTableUpdate(table, player, null, table.getPreviousTableStateInt(), true, null, false, null,
+                        null, null);
             }
         }
 
@@ -949,7 +823,7 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
         // if doing a full save, tweak the state saved to allow
         // proper reloading
         if (pdetails.getSaveTables() == SaveDetails.SAVE_ALL) {
-            switch (table.getTableState()) {
+            switch (table.getTableStateInt()) {
                 case PokerTable.STATE_BEGIN_WAIT :
                     return PokerTable.STATE_BEGIN;
 
@@ -960,179 +834,21 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
             return pdetails.getOverrideState();
         }
 
-        return table.getTableState();
+        return table.getTableStateInt();
     }
 
     /**
      * Handle table in pending state
      */
-    private void doPending(PokerTable table) {
-        // Check for scheduled start time
-        if (!bClient_ && game_.getProfile().isScheduledStartEnabled()) {
-            long startTime = game_.getProfile().getStartTime();
-            // Guard against startTime=0 (would cause immediate auto-start)
-            if (startTime > 0) {
-                long currentTime = System.currentTimeMillis();
-                int minPlayers = game_.getProfile().getMinPlayersForStart();
-                int currentPlayers = game_.getNumPlayers();
-
-                if (currentTime >= startTime && currentPlayers >= minPlayers) {
-                    // Auto-start: remove all from wait list
-                    table.removeWaitAll();
-                    mgr_.sendDirectorChat(PropertyConfig.getMessage("msg.chat.scheduledstart"), null);
-                }
-            }
-        }
-
-        // look to see if we have waited to long for
-        // an action
-        if (table.getWaitSize() > 0) {
-            doPendingTimeoutCheck(table);
-        }
-
-        // wait list reduced by various phases when they call
-        // removeFromWaitList(), below. Next state initiated
-        // when responses from all players received
-        if (table.getWaitSize() == 0) {
-            // we enter BEGIN state from PENDING only after dealing
-            // high card for button. If auto deal is on, we need
-            // to put in the pause here (matches STATE_DONE handling below).
-            if (!bClient_ && table.getPendingTableState() == PokerTable.STATE_BEGIN && isAutoDeal(table)) {
-                // Note - we don't do full pause for online since each client
-                // has to respond to a dialog which causes a pause
-                table.setPause(bOnline_ ? 1000 : getAutoDealDelay(table));
-            }
-            ret_.setTableState(table.getPendingTableState());
-            ret_.setSleep(false);
-
-            // This was set to true in my initial implementation because
-            // we had UI stuff that triggered on change of state from
-            // PENDING to BETTING. I never liked that...and since I
-            // changed when initPlayerIndex is called in HoldemHand,
-            // that is no longer necessary, so we don't need this - JDD
-            // ret_.setRunOnClient(true);
-            return;
-        }
-
-        // if pending on betting, and if in zip mode or
-        // waiting on computer, don't sleep. In online games,
-        // we still sleep so as not to overrun clients with AI actions
-        if (table.getPendingTableState() == PokerTable.STATE_BETTING
-                && (table.isZipMode() || (!table.getWaitPlayer(0).isHumanControlled() && !bOnline_))) {
-            ret_.setSleep(false);
-        }
-    }
 
     /**
      * check to see if a pending action has been waiting to long, and if so, handle
      * it
      */
-    private void doPendingTimeoutCheck(PokerTable table) {
-        // only do this in online games
-        if (!bOnline_)
-            return;
-
-        int nLastState = table.getPreviousTableState();
-        long wait = table.getMillisSinceLastStateChange();
-        if (nLastState == PokerTable.STATE_BETTING) {
-            doBettingTimeoutCheck(table, wait);
-        } else {
-            int nTimeout = (nLastState == PokerTable.STATE_NEW_LEVEL_CHECK)
-                    ? NEWLEVEL_TIMEOUT_MILLIS
-                    : NON_BETTING_TIMEOUT_MILLIS;
-            if (wait > nTimeout) {
-                logger.info("TIMEOUT " + PokerTable.getStringForState(nLastState) + ": "
-                        + Utils.toString(table.getWaitList()));
-                sendCancel(table);
-                table.removeWaitAll();
-            }
-        }
-    }
 
     /**
      * betting timeout handling
      */
-    private void doBettingTimeoutCheck(PokerTable table, long wait) {
-        PokerPlayer player = table.getWaitPlayer();
-        if (!player.isHumanControlled())
-            return;
-
-        // Get current betting round and use round-specific timeout
-        HoldemHand hhand = table.getHoldemHand();
-        int currentRound = (hhand != null) ? hhand.getRound() : HoldemHand.ROUND_PRE_FLOP;
-        int nTimeoutSecs = game_.getProfile().getTimeoutForRound(currentRound);
-        long nTimeout = nTimeoutSecs * 1000 + SLEEP_MILLIS; // pad time out a bit (allows 15 second message if timeout
-                                                            // is 15)
-        long nDiff = nTimeout - wait;
-        int nThinkTank = player.getThinkBankMillis();
-        int nThinkTankWhole = nThinkTank / 1000;
-
-        if (nDiff > 0) {
-            // set millis left for use in countdown timer
-            player.setTimeoutMillis((int) nDiff);
-
-            // send chat at 5 seconds to act
-            int nWhole = getWholeSeconds(nDiff);
-            if (nWhole > 0 && nWhole == 5 && nWhole != player.getTimeoutMessageSecondsLeft()) {
-                player.setTimeoutMessageSecondsLeft(nWhole);
-                String sMsg = PropertyConfig.getMessage(
-                        nThinkTankWhole > 0 ? "msg.chat.timeout.tankleft" : "msg.chat.timeout.notank",
-                        Utils.encodeHTML(player.getName()), getSeconds(nWhole), getSeconds(nThinkTankWhole));
-                sendDealerChat(PokerConstants.CHAT_TIMEOUT, table, sMsg);
-            }
-
-            player.setThinkBankAccessed(0);
-            return;
-        } else {
-            player.setTimeoutMillis(0);
-        }
-
-        if (nThinkTank > 0) {
-            long nNow = System.currentTimeMillis();
-            long nLastAccess = player.getThinkBankAccessed();
-
-            int nWhole = getWholeSeconds(nThinkTank);
-            // first time through, always display time left
-            if (nLastAccess == 0) {
-                nWhole = nThinkTankWhole;
-                if (nWhole == 0)
-                    nWhole = 1;
-            }
-
-            // send chat at [starting] value and 5
-            if (nWhole > 0 && (nLastAccess == 0 || nWhole == 5) && nWhole != player.getTimeoutMessageSecondsLeft()) {
-                player.setTimeoutMessageSecondsLeft(nWhole);
-                String sMsg = PropertyConfig.getMessage("msg.chat.timeout.tank", Utils.encodeHTML(player.getName()),
-                        getSeconds(nWhole));
-                sendDealerChat(PokerConstants.CHAT_TIMEOUT, table, sMsg);
-            }
-
-            if (nLastAccess == 0)
-                nLastAccess = nNow - 1; // first time though, subtract 1 millisecond
-            int nNewThink = nThinkTank - (int) (nNow - nLastAccess);
-            if (nNewThink < 0)
-                nNewThink = 0;
-            player.setThinkBankMillis(nNewThink);
-            player.setThinkBankAccessed(nNow);
-
-            return;
-        }
-
-        // cancel player
-        sendCancel(table);
-
-        // set player as sitting out now (this is sent in an update when HandAction is
-        // sent to all players)
-        player.setSittingOut(true);
-
-        // no more time - fold
-        HandAction fold = new HandAction(player, table.getHoldemHand().getRound(), HandAction.ACTION_FOLD, 0,
-                HandAction.FOLD_FORCED, "timeout");
-        doHandAction(fold, true, false, false);
-
-        // log it
-        logger.info("TIMEOUT  betting: " + player);
-    }
 
     /**
      * Send cancel message to all players on wait list
@@ -1170,24 +886,6 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
     /**
      * deal high card for button
      */
-    private void dealForButton(PokerTable table) {
-        if (bHost_) {
-            // deal cards to assign button
-            table.setButton();
-
-            // do on all-ai tables
-            if (table.isCurrent())
-                doDealForButtonAllComputers();
-        }
-
-        // start clock when deal for button
-        if (bOnline_) {
-            game_.getGameClock().start();
-        }
-
-        ret_.setPhaseToRun("TD.DealDisplayHigh");
-        ret_.setRunOnClient(true);
-    }
 
     /**
      * initialize button on all computer tables
@@ -1206,34 +904,6 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
     /**
      * check end of hand
      */
-    private void doCheckEndHand(PokerTable table) {
-        if (bHost_) {
-            table.aiRebuy(); // note: keep in sync with doCheckHandAllComputers
-
-            if (table.isCurrent())
-                doCheckEndHandAllComputers();
-
-            // add pending rebuys
-            table.addPendingRebuys();
-
-            // boot players
-            bootPlayers(table);
-
-            // if clock expired, go to next level
-            if (game_.isLevelExpired()) {
-                game_.nextLevel();
-            }
-        }
-
-        // make sure clock is running (could be off after level change)
-        // this is an inexpensive call, so okay to do for each hand
-        if (bOnline_) {
-            game_.getGameClock().start();
-        }
-
-        ret_.setPhaseToRun("TD.CheckEndHand");
-        ret_.setRunOnClient(true);
-    }
 
     /**
      * initial all computer tables for betting
@@ -1290,39 +960,6 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
     /**
      * check end of break, return true if break over
      */
-    private boolean doCheckEndBreak(PokerTable table) {
-        boolean bEndOfBreak = false;
-
-        if (bHost_) {
-            // online - move clock
-            if (!bOnline_) {
-                game_.advanceClockBreak();
-            }
-
-            // if clock expired, go to next level
-            if (game_.isLevelExpired()) {
-                game_.nextLevel();
-            }
-
-            // for all passes through this, if the
-            // game level changed we need to proceed
-            // again
-            if (game_.getLevel() != table.getLevel()) {
-                bEndOfBreak = true;
-            }
-        }
-
-        // make sure clock is running (could be off after level change)
-        // this is an inexpensive call, so okay to do for each hand
-        if (bEndOfBreak && bOnline_) {
-            game_.getGameClock().start();
-        }
-
-        // no need to run anything on client since all we do is transition
-        // out of waiting for break to end
-
-        return bEndOfBreak;
-    }
 
     /**
      * during clean, listen to all tables and record which tables, players and
@@ -1454,129 +1091,6 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
     /**
      * clean tables, return true if need to wait for human action
      */
-    private boolean doClean(PokerTable table) {
-        if (bHost_) {
-            boolean bOneLeft = game_.isOnePlayerLeft();
-
-            // gather events
-            TDClean cleanEvents = new TDClean(table);
-
-            // clean table(s)
-            cleanTables(table, !bOneLeft);
-
-            // consolidate table(s)
-            List<PokerTable> tables;
-            if (bOnline_) {
-                // Online - see if we can break this table.
-                tables = new ArrayList<PokerTable>();
-                tables.add(table);
-
-                // if current table (on host), add all computer
-                // tables to list for possible consolidation
-                if (table.isCurrent()) {
-                    int nNumTables = game_.getNumTables();
-                    PokerTable aitable;
-                    for (int i = 0; i < nNumTables; i++) {
-                        aitable = game_.getTable(i);
-                        if (aitable.isAllComputer() && aitable != table) {
-                            tables.add(aitable);
-                        }
-                    }
-                }
-            } else {
-                // Practice - do all tables
-                tables = game_.getTables();
-            }
-            OtherTables.consolidateTables(game_, tables);
-
-            // safety check - can't have added players in addition to being removed
-            ApplicationError.assertTrue(!(table.getAddedList().size() > 0 && table.isRemoved()),
-                    "Table removed but has players added", table);
-
-            // if table was removed, we need to move observers
-            PokerTable newtable;
-            if (table.isRemoved() && table.getNumObservers() > 0) {
-                newtable = getNewTable(table);
-                moveObservers(table, newtable);
-            }
-
-            // if players were waited listed, need to make them observers
-            PokerPlayer player;
-            newtable = getNewTable(table);
-            for (int i = 0; i < cleanEvents.playersWaiting.size(); i++) {
-                player = cleanEvents.playersWaiting.get(i);
-                if (player.isComputer())
-                    continue;
-
-                // add player as an observer
-                game_.addObserver(player);
-                newtable.addObserver(player);
-
-                if (DEBUG_CLEANUP_TABLE) {
-                    logger.debug(player.getName() + " waited, added to table as observer: " + newtable.getName());
-                }
-            }
-
-            // check to see if game over
-            // if only one player has chips, game is done!
-            if (bOneLeft) {
-                PokerTable table1 = game_.getTable(0);
-                player = null;
-
-                for (int i1 = 0; i1 < PokerConstants.SEATS; i1++) {
-                    player = table1.getPlayer(i1);
-                    if (player == null || player.getChipCount() == 0)
-                        continue;
-
-                    break;
-                }
-
-                game_.playerOut(player); // give chips to last player
-
-                // chat winner (online only)
-                if (bOnline_) {
-                    sendDirectorChat(PropertyConfig.getMessage("msg.chat.finish.win",
-                            Utils.encodeHTML(player.getDisplayName(bOnline_)), player.getPrize()), null);
-                }
-
-                setGameOver();
-            }
-
-            if (DEBUG_CLEANUP_TABLE)
-                cleanEvents.debugPrint();
-
-            // instead of doing normal processing of sending
-            // table updates, we handle it ourselves
-            notifyPlayersCleanDone(table, cleanEvents);
-
-            // cleanup
-            cleanEvents.finish();
-
-            // if players were added to this table, display it and wait
-            // do this only in practice mode. In online, just send chats
-            List<PokerPlayer> list = table.getAddedList();
-            int nNum = list.size();
-            if (nNum > 0) {
-                if (!bOnline_) {
-                    ret_.setPhaseToRun("TD.DisplayTableMoves");
-                    return true;
-                } else {
-                    StringBuilder sb = new StringBuilder();
-                    for (int i = 0; i < nNum; i++) {
-                        sb.append(Utils.encodeHTML(list.get(i).getDisplayName(bOnline_)));
-                        if (i < (nNum - 1))
-                            sb.append(", ");
-                    }
-                    sendDealerChat(PokerConstants.CHAT_1, table,
-                            PokerUtils.chatInformation(PropertyConfig.getMessage(
-                                    nNum == 1 ? "msg.chat.moved.singular" : "msg.chat.moved.plural", nNum,
-                                    sb.toString())));
-                }
-            }
-        }
-
-        return false;
-    }
 
     /**
      * this version is called from cleanup - it sends cleaning done event and causes
@@ -1661,7 +1175,7 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
                 // so that user doesn't have to press 'deal' twice
                 // TODO: do this online if allow dealer-controlled dealing
                 // TODO: do this when TESTING_ONLINE_AUTO_DEAL_OFF on
-                if (bCleanDoneLogic && !bOnline_ && current.getTableState() == PokerTable.STATE_DONE) {
+                if (bCleanDoneLogic && !bOnline_ && current.getTableStateInt() == PokerTable.STATE_DONE) {
                     current.setTableState(getTableStateStartDeal());
                 }
             }
@@ -1834,24 +1348,6 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
     /**
      * do new level check, return whether need to wait
      */
-    private boolean doNewLevelCheck(PokerTable table) {
-        if (game_.getLevel() != table.getLevel()) {
-            // this is run after normal levels and after breaks
-            if (bHost_) {
-                table.aiRebuy(); // keep in sync with doLevelCheckAllComputers
-                table.aiAddOn();
-
-                if (table.isCurrent())
-                    doLevelCheckAllComputers();
-            }
-            return true;
-        } else {
-            // clear any rebuy from CheckEndHand so
-            // it is not redisplayed
-            table.getRebuyList().clear();
-            return false;
-        }
-    }
 
     /**
      * initial all computer tables for betting
@@ -1871,32 +1367,6 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
     /**
      * do colorup determination
      */
-    private boolean doColorUp(PokerTable table) {
-        // this is run after normal levels and after breaks
-        // (color ups should not occur after breaks since
-        // we skip break levels in PokerGame.getNextMinChipIndex()
-        // and would have colored up at end of phase prior to
-        // break).
-        if (bHost_) {
-            boolean bColorup = false;
-            int nMinNow = game_.getLastMinChip();
-            int nMinNext = game_.getMinChip();
-            if (nMinNext > nMinNow) {
-                // colorup determination, sets isColorUp on table if
-                // colorup needed
-                bColorup = true;
-                table.setNextMinChip(nMinNext);
-                table.doColorUpDetermination();
-                // table.colorUp() done in ColorUpFinish phase
-                // table.colorUpFinish() done in ColorUpFinish phase
-            }
-
-            if (table.isCurrent() && bColorup)
-                doColorUpAllComputers(nMinNext);
-        }
-
-        return table.isColoringUp();
-    }
 
     /**
      * initial all computer tables for betting
@@ -1920,22 +1390,6 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
     /**
      * Start break at table
      */
-    private void doBreak(PokerTable table) {
-        if (bHost_) {
-            // record events to send to client
-            ret_.startListening(table);
-
-            // advance level so table is now at a break level
-            table.startBreak();
-
-            // if current table, process all-computer tables and set them
-            // ready to do a betting sequence
-            if (table.isCurrent())
-                doBreakAllComputers();
-        }
-
-        ret_.setRunOnClient(true);
-    }
 
     /**
      * start break on all computer tables
@@ -1955,28 +1409,6 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
     /**
      * Start hand at table
      */
-    private void doStart(PokerTable table) {
-        if (bHost_) {
-            // record events to send to client
-            ret_.startListening(table);
-
-            // start new hand
-            table.startNewHand();
-
-            // if current table, process all-computer tables and set them
-            // ready to do a betting sequence
-            if (table.isCurrent())
-                doStartAllComputers();
-
-            // practice - move clock
-            if (!bOnline_) {
-                game_.advanceClock(); // Action 1 of 5 (see PokerGame)
-            }
-        }
-
-        ret_.setPhaseToRun("TD.DealDisplayHand");
-        ret_.setRunOnClient(true);
-    }
 
     /**
      * initialize all computer tables for betting
@@ -1989,12 +1421,12 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
 
             if (table.isAllComputer() && !table.isCurrent()) {
                 // if not required to be on hold anymore, change state
-                if (table.getTableState() == PokerTable.STATE_ON_HOLD && table.getNumOccupiedSeats() > 1) {
+                if (table.getTableStateInt() == PokerTable.STATE_ON_HOLD && table.getNumOccupiedSeats() > 1) {
                     table.setTableState(PokerTable.STATE_DONE);
                 }
 
                 // don't process on-hold tables
-                if (table.getTableState() != PokerTable.STATE_ON_HOLD) {
+                if (table.getTableStateInt() != PokerTable.STATE_ON_HOLD) {
                     table.setTableState(PokerTable.STATE_BETTING);
                 }
             }
@@ -2004,82 +1436,6 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
     /**
      * do betting
      */
-    private void doBetting(PokerTable table) {
-        int nNext = PokerTable.STATE_BETTING;
-
-        // nothing to do, hand is done
-        HoldemHand hhand = table.getHoldemHand();
-        if (hhand.isDone()) {
-            ret_.setTableState(nextBettingState(hhand));
-        }
-        // otherwise keep betting until done
-        else {
-            // Use getCurrentPlayerSpecial, which inits
-            // the playerOrder list on the first round of
-            // betting. This was moved here from
-            // HoldemHand.deal() so that the current player
-            // isn't highlighted during the dealing of cards
-            PokerPlayer current = hhand.getCurrentPlayerInitIndex();
-
-            // reset timeout message indicator
-            if (bHost_) {
-                current.setTimeoutMillis(game_.getProfile().getTimeoutSeconds() * 1000);
-                current.setTimeoutMessageSecondsLeft(0);
-            }
-
-            // if player sitting out, fold
-            if (current.isSittingOut()) {
-                HandAction fold = new HandAction(current, table.getHoldemHand().getRound(), HandAction.ACTION_FOLD, 0,
-                        HandAction.FOLD_SITTING_OUT, "sittingout");
-                doHandAction(fold, false, false, false);
-                ret_.setTableState(nNext);
-                current.setSittingOut(true); // make sure it is set, for case of demo user being done
-                table.setPause(SLEEP_MILLIS + 100);
-            }
-            // local player, either host or ai
-            else if (current.isLocallyControlled()) {
-                // player on UI table - use Bet phase
-                if (table.isCurrent()) {
-                    if (bHost_)
-                        table.addWait(current); // avoids warning message on client
-                    ret_.setPhaseToRun("TD.Bet");
-                    ret_.setAddAllHumans(false);
-                    ret_.setPendingTableState(nNext);
-
-                    // pause done in Bet phase (so pause is before action)
-                }
-                // computer player on other table, handle here
-                else {
-                    if (!current.isComputer()) {
-                        ApplicationError.assertTrue(current.isComputer(),
-                                table.getName() + ": locally controlled player on non-current table is not computer",
-                                current + " current table: " + game_.getCurrentTable());
-                    }
-                    HandAction action = current.getAction(false);
-                    doHandAction(action, false, false, false);
-                    ret_.setTableState(nNext);
-
-                    // this isn't an all-ai table, so we should pause a bit
-                    // so as not to overload clients with too many messages
-                    table.setPause(AI_PAUSE_TENTHS * 100);
-                }
-            }
-            // remote player
-            else if (bHost_) {
-                table.addWait(current);
-                ret_.setRunOnClient(true);
-                ret_.setOnlySendToWaitList(true);
-                ret_.setAddAllHumans(false);
-                ret_.setPendingTableState(nNext);
-            }
-        }
-
-        // if current table, process all-computer tables and have them do betting
-        // we do this to sync tables hand for hand with the human table (practice)
-        // or the host's current table (online, for all-ai tables)
-        if (bHost_ && table.isCurrent())
-            doBettingAllComputer();
-    }
 
     /**
      * all computer betting
@@ -2092,7 +1448,7 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
             if (table.isAllComputer() && !table.isCurrent()) {
                 // shortcut for subsequent calls through here after we
                 // have already bet (so this isn't done over and over)
-                if (table.getTableState() != PokerTable.STATE_BETTING)
+                if (table.getTableStateInt() != PokerTable.STATE_BETTING)
                     return;
 
                 // do quick AI bet
@@ -2112,8 +1468,8 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
         if (!bDone)
             return PokerTable.STATE_BETTING;
 
-        int nRound = hhand.getRound();
-        if (nRound == HoldemHand.ROUND_RIVER)
+        int nRound = hhand.getRound().toLegacy();
+        if (nRound == BettingRound.RIVER.toLegacy())
             return PokerTable.STATE_PRE_SHOWDOWN;
 
         return PokerTable.STATE_COMMUNITY;
@@ -2122,131 +1478,14 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
     /**
      * community card
      */
-    private boolean doCommunity(PokerTable table) {
-        HoldemHand hhand = table.getHoldemHand();
-        if (bHost_) {
-            // record events to send to client
-            ret_.startListening(table);
-
-            // flop, turn and river cards
-            hhand.advanceRound();
-
-            if (!bOnline_) {
-                game_.advanceClock(); // Action 2, 3, 4 of 5 (flop, turn, river)
-            }
-        }
-
-        // only run DealCommunity phase in practice mode (so all CardPieces are created
-        // for cheat purposes)
-        // or in online mode when there are still players left in hand
-        if (!bOnline_ || (bOnline_ && hhand.getNumWithCards() > 1)) {
-            ret_.setPhaseToRun("TD.DealCommunity");
-            ret_.setRunOnClient(true);
-            return true;
-        } else {
-            return false;
-        }
-    }
 
     /**
      * pre-showdown
      */
-    private boolean doPreShowdown(PokerTable table) {
-        HoldemHand hhand = table.getHoldemHand();
-
-        // host does pre-resolve
-        if (bHost_)
-            hhand.preResolve(bOnline_);
-
-        // client clear wait list since hosts sends it over
-        // and this avoid warning message (clients dont use wait list anyhow)
-        if (!bHost_)
-            table.removeWaitAll();
-
-        // online games, figure out if we need to run pre-showdown step
-        if (bOnline_) {
-            List<PokerPlayer> winners = hhand.getPreWinners();
-            List<PokerPlayer> losers = hhand.getPreLosers();
-
-            DMArrayList<Integer> win_ids = null;
-            PokerPlayer local = game_.getLocalPlayer();
-            PokerPlayer p;
-            boolean bLocalInList = false;
-            for (int i = winners.size() - 1; i >= 0; i--) {
-                p = winners.get(i);
-                if (p.isHuman() && p.isAskShowWinning() && hhand.isUncontested()) {
-                    table.addWait(p);
-                    if (win_ids == null)
-                        win_ids = new DMArrayList<Integer>();
-                    win_ids.add(p.getID());
-                    if (p == local)
-                        bLocalInList = true;
-                }
-            }
-            for (int i = losers.size() - 1; i >= 0; i--) {
-                p = losers.get(i);
-                if (p.isHuman() && p.isAskShowLosing()) {
-                    table.addWait(p);
-                    if (p == local)
-                        bLocalInList = true;
-                }
-            }
-
-            if (table.getWaitSize() > 0) {
-                // only run pre-showdown phase if local player is in the list
-                if (bLocalInList) {
-                    DMTypedHashMap params = new DMTypedHashMap();
-                    if (win_ids != null)
-                        params.setObject(PreShowdown.PARAM_WINNERS, win_ids);
-                    ret_.setPhaseToRun("TD.PreShowdown", params);
-                }
-
-                // run this phase only on clients in the wait list
-                ret_.setRunOnClient(true);
-                ret_.setAddAllHumans(false);
-                ret_.setOnlySendToWaitList(true);
-
-                return true;
-            }
-        }
-
-        return false;
-    }
 
     /**
      * showdown
      */
-    private void doShowdown(PokerTable table) {
-        HoldemHand hhand = table.getHoldemHand();
-
-        // BUG 462 - don't re-run logic if already run (safety check)
-        if (bHost_ && hhand.getRound() != HoldemHand.ROUND_SHOWDOWN) {
-            // record events to send to client
-            ret_.startListening(table);
-
-            // showdown
-            hhand.advanceRound();
-
-            // unset zip mode so end hand event is
-            // called outside zip mode
-            table.setZipMode(false);
-
-            // resolve
-            hhand.resolve();
-
-            if (!bOnline_) {
-                game_.advanceClock(); // Action 5 of 5
-            }
-        }
-
-        // store hand history - called here so
-        // it happens on client and host
-        if (!game_.getLocalPlayer().isObserver() || bHost_)
-            hhand.storeHandHistory();
-
-        ret_.setPhaseToRun("TD.Showdown");
-        ret_.setRunOnClient(true);
-    }
 
     /**
      * auto deal this table?
@@ -2324,8 +1563,8 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
         if (!p.isObserver() && table.isWaitListMember(p)) {
             // if we are waiting on deal for button, then this is the start
             // of the tournament, so remove the player from the wait list
-            if (table.getTableState() == PokerTable.STATE_PENDING
-                    && table.getPendingTableState() == PokerTable.STATE_DEAL_FOR_BUTTON) {
+            if (table.getTableStateInt() == PokerTable.STATE_PENDING
+                    && table.getPendingTableStateInt() == PokerTable.STATE_DEAL_FOR_BUTTON) {
                 if (DEBUG_REJOIN)
                     logger.debug(p.getName() + " ready for deal for button");
                 table.removeWait(p);
@@ -2397,8 +1636,8 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
         // current state must be pending and last state must be betting
         // for it to make sense to process this action from remote client
         if (bValidateRemote) {
-            int nState = table.getTableState();
-            int nLastState = table.getPreviousTableState();
+            int nState = table.getTableStateInt();
+            int nLastState = table.getPreviousTableStateInt();
             if (nState != PokerTable.STATE_PENDING && nLastState != PokerTable.STATE_BETTING) {
                 logger.warn("Current state: " + PokerTable.getStringForState(nState) + ", last state: "
                         + PokerTable.getStringForState(nLastState) + "; incorrect for handling: " + action);
@@ -2475,7 +1714,7 @@ public class TournamentDirector extends BasePhase implements Runnable, GameManag
         // in observers (can receive hand action prior to
         // those finishing because host doesn't wait on
         // observers to acknowledge they finished action)
-        action.getPlayer().getHoldemHand().getCurrentPlayerInitIndex();
+        action.getPlayer().getHoldemHand().getCurrentPlayerWithInit();
 
         // do normal processing
         storeHandAction(action, false);

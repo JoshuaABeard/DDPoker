@@ -50,6 +50,7 @@ import org.apache.logging.log4j.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  *
@@ -289,7 +290,7 @@ public class PokerGameboard extends Gameboard {
 
                     if (TournamentDirector.DEBUG_EVENT_DISPLAY || TESTING(EngineConstants.TESTING_DEBUG_REPAINT)) {
                         logger.debug("repaintTerritory (with hhand) for " + player.getName() + " round: "
-                                + HoldemHand.getRoundName(hhand.getRound()) + " current: "
+                                + HoldemHand.getRoundName(hhand.getRound().toLegacy()) + " current: "
                                 + player.isCurrentGamePlayer());
                     }
 
@@ -370,7 +371,7 @@ public class PokerGameboard extends Gameboard {
                         }
                     }
                     // no bet, not current player, player not acted but all in
-                    else if (player.isAllIn() && hhand.getRound() < HoldemHand.ROUND_SHOWDOWN) {
+                    else if (player.isAllIn() && hhand.getRound().toLegacy() < BettingRound.SHOWDOWN.toLegacy()) {
                         if (player.getAllInPerc() == null) {
                             sText = PropertyConfig.getMessage("msg.allin");
                             sIcon = "icon-allin";

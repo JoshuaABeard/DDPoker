@@ -36,6 +36,7 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.engine.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Mar 18, 2005 Time: 4:40:33 PM
@@ -62,7 +63,7 @@ public class PotOdds extends Odds {
 
     protected String getDisplay(int nRound, HoldemHand hhand, PokerPlayer asViewedBy, Hand hand) {
         // figure out pot odds
-        if (nRound != HoldemHand.ROUND_SHOWDOWN && hhand.getCall(asViewedBy) > 0) {
+        if (nRound != BettingRound.SHOWDOWN.toLegacy() && hhand.getCall(asViewedBy) > 0) {
             double po = hhand.getPotOdds(asViewedBy);
             double oo = (100.0d - po) / po;
             sOdds_ = PokerConstants.formatPercent(po);

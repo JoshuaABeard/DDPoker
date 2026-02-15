@@ -36,6 +36,7 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.engine.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Mar 18, 2005 Time: 4:40:33 PM
@@ -64,11 +65,11 @@ public class HandStrengthDash extends Odds {
         sStrength_ = null;
 
         // TODO: pre-flop hand strength
-        if (nRound == HoldemHand.ROUND_PRE_FLOP) {
+        if (nRound == BettingRound.PRE_FLOP.toLegacy()) {
             return "";
         }
 
-        if (nRound == HoldemHand.ROUND_SHOWDOWN) {
+        if (nRound == BettingRound.SHOWDOWN.toLegacy()) {
             return PropertyConfig.getMessage("msg.odds.hs.over");
         }
 

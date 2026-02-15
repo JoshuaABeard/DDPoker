@@ -34,6 +34,8 @@ package com.donohoedigital.games.poker.core;
 
 import com.donohoedigital.games.poker.core.state.BettingRound;
 
+import java.util.List;
+
 /**
  * Interface for hand operations that the core game engine needs. Implemented by
  * HoldemHand in Phase 2.
@@ -59,4 +61,34 @@ public interface GameHand {
 
     /** Advance to the next betting round (pre-flop -> flop -> turn -> river). */
     void advanceRound();
+
+    /**
+     * Pre-resolve the hand before showdown (determine early winners/losers).
+     *
+     * @param isOnline
+     *            true if online game
+     */
+    void preResolve(boolean isOnline);
+
+    /** Resolve the hand at showdown, determine winners and award pots */
+    void resolve();
+
+    /** Store hand history for this hand */
+    void storeHandHistory();
+
+    /** @return list of players who won (or will win if uncontested) */
+    List<GamePlayerInfo> getPreWinners();
+
+    /** @return list of players who lost (or will lose) */
+    List<GamePlayerInfo> getPreLosers();
+
+    /** @return true if only one player remains (all others folded) */
+    boolean isUncontested();
+
+    /**
+     * Get current player with initialization (sets up player order on first call).
+     *
+     * @return current player to act
+     */
+    GamePlayerInfo getCurrentPlayerWithInit();
 }

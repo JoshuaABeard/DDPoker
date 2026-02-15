@@ -32,6 +32,8 @@
  */
 package com.donohoedigital.games.poker.core;
 
+import java.util.List;
+
 import com.donohoedigital.games.poker.core.event.GameEventBus;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.core.state.TableState;
@@ -40,6 +42,16 @@ import com.donohoedigital.games.poker.core.state.TableState;
  * Core tournament state machine engine. Extracted from
  * TournamentDirector._processTable() (lines 674-888). Stateless - receives
  * collaborators via constructor, processes table state, returns result.
+ *
+ * <p>
+ * <b>Phase 2 Status:</b> EXTRACTION COMPLETE - Not yet integrated into
+ * TournamentDirector. See .claude/plans/twinkly-marinating-feigenbaum.md for
+ * integration steps.
+ *
+ * <p>
+ * Note: This engine defines minimal interfaces (GameTable, GameHand, etc.) that
+ * will be implemented by poker module classes (PokerTable, HoldemHand) in Phase
+ * 2 integration.
  */
 public class TournamentEngine {
     private final GameEventBus eventBus;
@@ -71,7 +83,7 @@ public class TournamentEngine {
      *            true if this is an online game
      * @return result with next state, phase to run, and flags
      */
-    public TableProcessResult processTable(GameTable table, GameContext game, boolean isHost, boolean isOnline) {
+    public TableProcessResult processTable(GameTable table, TournamentContext game, boolean isHost, boolean isOnline) {
         TableState state = table.getTableState();
 
         return switch (state) {
@@ -97,12 +109,16 @@ public class TournamentEngine {
         };
     }
 
-    private TableProcessResult handleNone(GameTable table, GameContext game, boolean isHost, boolean isOnline) {
-        // TODO: Implement NONE state handler
+    private TableProcessResult handleNone(GameTable table, TournamentContext game, boolean isHost, boolean isOnline) {
+        // NONE is a sentinel value meaning "no state" - used for pending state
+        // initialization
+        // A table should never actually be in NONE state during normal operation
+        // If we get here, just return empty result (no state change)
         return TableProcessResult.builder().build();
     }
 
-    private TableProcessResult handlePendingLoad(GameTable table, GameContext game, boolean isHost, boolean isOnline) {
+    private TableProcessResult handlePendingLoad(GameTable table, TournamentContext game, boolean isHost,
+            boolean isOnline) {
         // Extracted from TournamentDirector lines 692-716
         // PENDING_LOAD: Transition to PENDING, optionally run pending phase
         TableProcessResult.Builder builder = TableProcessResult.builder().nextState(TableState.PENDING);
@@ -116,14 +132,131 @@ public class TournamentEngine {
         return builder.build();
     }
 
-    private TableProcessResult handlePending(GameTable table, GameContext game, boolean isHost, boolean isOnline) {
-        // Extracted from TournamentDirector lines 718-720
-        // PENDING: Delegates to doPending which handles state transitions internally
-        // For Phase 1, return empty result (complex logic extracted in Phase 2)
-        return TableProcessResult.builder().build();
+    private TableProcessResult handlePending(GameTable table, TournamentContext game, boolean isHost,
+            boolean isOnline) {
+        // Extracted from TournamentDirector.doPending() (lines 981-1036)
+        // and _processTable PENDING case (lines 730-732)
+        // PENDING: Wait for players to respond to actions, handle timeouts
+
+        // Check for scheduled start time (host only in online games)
+        if (isHost && game.isScheduledStartEnabled()) {
+            long startTime = game.getScheduledStartTime();
+            // Guard against startTime=0 (would cause immediate auto-start)
+            if (startTime > 0) {
+                long currentTime = System.currentTimeMillis();
+                int minPlayers = game.getMinPlayersForScheduledStart();
+                int currentPlayers = game.getNumPlayers();
+
+                if (currentTime >= startTime && currentPlayers >= minPlayers) {
+                    // Auto-start: remove all from wait list
+                    table.removeWaitAll();
+                    // Note: sendDirectorChat() is UI/network-specific and stays in
+                    // TournamentDirector
+                    // The engine delegates the decision (removeWaitAll), not the communication
+                }
+            }
+        }
+
+        // Check for timeouts if there are players in the wait list
+        if (table.getWaitSize() > 0 && isOnline) {
+            handlePendingTimeouts(table, game);
+        }
+
+        // Wait list reduced by various phases when they call removeFromWaitList()
+        // Next state initiated when responses from all players received
+        if (table.getWaitSize() == 0) {
+            // We enter BEGIN state from PENDING only after dealing high card for button
+            // If auto-deal is on, we need to put in the pause here
+            if (isHost && table.getPendingTableState() == TableState.BEGIN && table.isAutoDeal()) {
+                // Note: we don't do full pause for online since each client
+                // has to respond to a dialog which causes a pause
+                int pauseMillis = isOnline ? 1000 : table.getAutoDealDelay();
+                table.setPause(pauseMillis);
+            }
+
+            // Transition to pending state
+            return TableProcessResult.builder().nextState(table.getPendingTableState()).shouldSleep(false).build();
+        }
+
+        // Still waiting - check if we should disable sleep
+        // If pending on betting, and if in zip mode or waiting on computer, don't sleep
+        // (In online games, we still sleep so as not to overrun clients with AI
+        // actions)
+        boolean shouldSleep = true;
+        if (table.getPendingTableState() == TableState.BETTING) {
+            if (table.isZipMode()) {
+                shouldSleep = false;
+            } else if (table.getWaitSize() > 0) {
+                GamePlayerInfo waitingPlayer = table.getWaitPlayer(0);
+                if (!waitingPlayer.isHumanControlled() && !isOnline) {
+                    shouldSleep = false;
+                }
+            }
+        }
+
+        return TableProcessResult.builder().shouldSleep(shouldSleep).build();
     }
 
-    private TableProcessResult handleOnHold(GameTable table, GameContext game, boolean isHost, boolean isOnline) {
+    private void handlePendingTimeouts(GameTable table, TournamentContext game) {
+        // Extracted from TournamentDirector.doPendingTimeoutCheck() (lines 1042-1062)
+        // and doBettingTimeoutCheck() (lines 1067-1145)
+
+        TableState previousState = table.getPreviousTableState();
+        long waitMillis = table.getMillisSinceLastStateChange();
+
+        if (previousState == TableState.BETTING) {
+            handleBettingTimeout(table, game, waitMillis);
+        } else {
+            // Non-betting timeout
+            int timeoutMillis = (previousState == TableState.NEW_LEVEL_CHECK)
+                    ? 30000 // NEWLEVEL_TIMEOUT_MILLIS
+                    : 5000; // NON_BETTING_TIMEOUT_MILLIS
+
+            if (waitMillis > timeoutMillis) {
+                // Note: sendCancel() is network-specific (sends message to clients) - stays in
+                // TD
+                // Note: Logging with Utils.toString() is infrastructure concern - stays in TD
+                // Engine makes the decision (timeout occurred), TD handles communication
+                table.removeWaitAll();
+            }
+        }
+    }
+
+    private void handleBettingTimeout(GameTable table, TournamentContext game, long waitMillis) {
+        // Extracted from TournamentDirector.doBettingTimeoutCheck() (lines 1067-1145)
+
+        if (table.getWaitSize() == 0) {
+            return;
+        }
+
+        GamePlayerInfo player = table.getWaitPlayer(0);
+        if (!player.isHumanControlled()) {
+            return;
+        }
+
+        // Get current betting round and use round-specific timeout
+        GameHand hand = table.getHoldemHand();
+        if (hand == null) {
+            return;
+        }
+
+        int currentRound = hand.getRound().toLegacy();
+        int timeoutSecs = game.getTimeoutForRound(currentRound);
+        long timeoutMillis = timeoutSecs * 1000 + 1000; // pad timeout a bit
+        long remainingMillis = timeoutMillis - waitMillis;
+        int thinkBankMillis = player.getThinkBankMillis();
+
+        // If timeout exceeded and no think bank remaining, player times out
+        if (remainingMillis <= 0 && thinkBankMillis <= 0) {
+            // Note: playerTimeout(table, player, TIMEOUT_ACTION) stays in
+            // TournamentDirector
+            // Note: This includes fold/check logic, UI updates, and network messages
+            table.removeWaitAll();
+        }
+        // Note: Warning messages at 10/5 second marks stay in TournamentDirector
+    }
+
+    private TableProcessResult handleOnHold(GameTable table, TournamentContext game, boolean isHost, boolean isOnline) {
         // Extracted from TournamentDirector lines 722-726
         // ON_HOLD: if >1 player, transition to BEGIN
         if (table.getNumOccupiedSeats() > 1) {
@@ -132,16 +265,31 @@ public class TournamentEngine {
         return TableProcessResult.builder().build();
     }
 
-    private TableProcessResult handleDealForButton(GameTable table, GameContext game, boolean isHost,
+    private TableProcessResult handleDealForButton(GameTable table, TournamentContext game, boolean isHost,
             boolean isOnline) {
-        // Extracted from TournamentDirector lines 728-731
-        // DEAL_FOR_BUTTON: Calls dealForButton, sets pending state to BEGIN
-        // For Phase 1, just set pending state (dealForButton logic extracted in Phase
-        // 2)
-        return TableProcessResult.builder().pendingState(TableState.BEGIN).build();
+        // Extracted from TournamentDirector.dealForButton() (lines 1185-1202)
+        // and _processTable DEAL_FOR_BUTTON case (lines 740-743)
+        // DEAL_FOR_BUTTON: Deal high card to determine button position
+
+        if (isHost) {
+            // Deal cards to assign button
+            table.setButton();
+
+            // Note: Multi-table coordination (doDealForButtonAllComputers) stays in
+            // TournamentDirector
+        }
+
+        // Start clock when dealing for button (online games only)
+        if (isOnline) {
+            game.startGameClock();
+        }
+
+        // Run DealDisplayHigh phase to show dealt cards, then go to BEGIN
+        return TableProcessResult.builder().phaseToRun("TD.DealDisplayHigh").shouldRunOnClient(true)
+                .pendingState(TableState.BEGIN).build();
     }
 
-    private TableProcessResult handleBegin(GameTable table, GameContext game, boolean isHost, boolean isOnline) {
+    private TableProcessResult handleBegin(GameTable table, TournamentContext game, boolean isHost, boolean isOnline) {
         // Extracted from TournamentDirector lines 733-745
         // BEGIN: If auto-deal, start deal; else run WaitForDeal phase
         if (table.isAutoDeal()) {
@@ -151,109 +299,495 @@ public class TournamentEngine {
         }
     }
 
-    private TableProcessResult handleBeginWait(GameTable table, GameContext game, boolean isHost, boolean isOnline) {
+    private TableProcessResult handleBeginWait(GameTable table, TournamentContext game, boolean isHost,
+            boolean isOnline) {
         // Extracted from TournamentDirector lines 747-749
         // BEGIN_WAIT: State changed in doDeal() when Deal pressed - just wait
         return TableProcessResult.builder().build();
     }
 
-    private TableProcessResult handleCheckEndHand(GameTable table, GameContext game, boolean isHost, boolean isOnline) {
-        // Extracted from TournamentDirector lines 751-754
-        // CHECK_END_HAND: Calls doCheckEndHand, sets pending state to CLEAN
-        // For Phase 1, just set pending state (doCheckEndHand logic extracted in Phase
-        // 2)
-        return TableProcessResult.builder().pendingState(TableState.CLEAN).build();
-    }
-
-    private TableProcessResult handleClean(GameTable table, GameContext game, boolean isHost, boolean isOnline) {
-        // Extracted from TournamentDirector lines 756-768
-        // CLEAN: Calls doClean, transitions to NEW_LEVEL_CHECK
-        // Complex logic in doClean (table consolidation, wait list) extracted in Phase
-        // 2
-        // For Phase 1, simple transition to NEW_LEVEL_CHECK
-        return TableProcessResult.builder().nextState(TableState.NEW_LEVEL_CHECK).shouldSleep(false).build();
-    }
-
-    private TableProcessResult handleNewLevelCheck(GameTable table, GameContext game, boolean isHost,
+    private TableProcessResult handleCheckEndHand(GameTable table, TournamentContext game, boolean isHost,
             boolean isOnline) {
-        // Extracted from TournamentDirector lines 770-782
-        // NEW_LEVEL_CHECK: Checks for level changes, color-up, breaks
-        // Complex logic in doNewLevelCheck extracted in Phase 2
-        // For Phase 1, simple transition to START_HAND
-        return TableProcessResult.builder().nextState(TableState.START_HAND).build();
+        // Extracted from TournamentDirector.doCheckEndHand() (lines 1221-1248)
+        // CHECK_END_HAND: Process end-of-hand operations, transition to CLEAN
+        // Note: Table mutations (aiRebuy, addPendingRebuys, bootPlayers, nextLevel)
+        // remain in TournamentDirector for now - engine just makes decisions
+
+        return TableProcessResult.builder().phaseToRun("TD.CheckEndHand").shouldRunOnClient(true)
+                .pendingState(TableState.CLEAN).build();
     }
 
-    private TableProcessResult handleColorUp(GameTable table, GameContext game, boolean isHost, boolean isOnline) {
-        // Extracted from TournamentDirector lines 784-797
-        // COLOR_UP: Performs color-up, transitions to START_HAND
-        // Complex logic in doColorUp extracted in Phase 2
-        return TableProcessResult.builder().nextState(TableState.START_HAND).build();
+    private TableProcessResult handleClean(GameTable table, TournamentContext game, boolean isHost, boolean isOnline) {
+        // Extracted from TournamentDirector.doClean() (lines 1469-1591)
+        // and _processTable CLEAN case (lines 768-780)
+        // CLEAN: Clean up after hand, consolidate tables, check game over
+
+        boolean shouldWaitForPhase = false;
+
+        if (isHost) {
+            // Note: Complex table cleanup and consolidation logic stays in
+            // TournamentDirector:
+            // - cleanTables(table, !bOneLeft) - removes eliminated players, processes wait
+            // list
+            // - OtherTables.consolidateTables() - multi-table consolidation algorithm (~200
+            // lines)
+            // - TDClean event gathering and tracking - requires mutable event listener
+            // infrastructure
+            // - Observer management and movement - UI-specific player visibility
+            // - Wait-listed player handling - network player queue management
+            // - Network notifications (notifyPlayersCleanDone) - broadcasts state to
+            // clients
+            // These are infrastructure concerns (UI, network, multi-table coordination),
+            // not pure game logic.
+
+            // Check for game over (only one player left)
+            if (game.isOnePlayerLeft()) {
+                // Note: Game over processing stays in TournamentDirector:
+                // - Find last player with chips
+                // - game_.playerOut(player) - awards final chips
+                // - sendDirectorChat() - announce winner
+                // - setGameOver() - marks game as complete
+
+                // After game over, table state will be GAME_OVER (set by setGameOver in TD)
+                // Engine will handle this in next iteration via handleGameOver()
+            }
+
+            // If players were added to this table, display table moves (practice only)
+            java.util.List<GamePlayerInfo> addedPlayers = table.getAddedPlayersList();
+            if (addedPlayers != null && !addedPlayers.isEmpty()) {
+                if (!isOnline) {
+                    // Practice mode: show DisplayTableMoves phase and wait
+                    shouldWaitForPhase = true;
+                } else {
+                    // Online mode: chat messages sent by TD, no phase needed
+                    // Note: sendDealerChat() calls stay in TournamentDirector
+                }
+            }
+        }
+
+        // Build result based on whether table state was changed by doClean
+        TableState currentState = table.getTableState();
+
+        // doClean may have changed state to ON_HOLD or GAME_OVER
+        if (currentState == TableState.ON_HOLD || currentState == TableState.GAME_OVER) {
+            // State already changed, don't override it
+            return TableProcessResult.builder().build();
+        }
+
+        // Normal case: transition to NEW_LEVEL_CHECK
+        if (shouldWaitForPhase) {
+            return TableProcessResult.builder().phaseToRun("TD.DisplayTableMoves")
+                    .pendingState(TableState.NEW_LEVEL_CHECK).build();
+        } else {
+            return TableProcessResult.builder().nextState(TableState.NEW_LEVEL_CHECK).shouldSleep(false).build();
+        }
     }
 
-    private TableProcessResult handleStartHand(GameTable table, GameContext game, boolean isHost, boolean isOnline) {
-        // Extracted from TournamentDirector lines 799-817
-        // START_HAND: Starts a new hand, transitions to BETTING
-        // Complex logic in doStart extracted in Phase 2
-        return TableProcessResult.builder().nextState(TableState.BETTING).build();
+    private TableProcessResult handleNewLevelCheck(GameTable table, TournamentContext game, boolean isHost,
+            boolean isOnline) {
+        // Extracted from TournamentDirector.doNewLevelCheck() (lines 1849-1866)
+        // and _processTable NEW_LEVEL_CHECK case (lines 782-793)
+        // NEW_LEVEL_CHECK: Handle level changes, AI rebuys/addons
+
+        boolean levelChanged = (game.getLevel() != table.getLevel());
+
+        if (levelChanged) {
+            // Level has changed - process AI rebuys and add-ons (host only)
+            if (isHost) {
+                table.processAIRebuys();
+                table.processAIAddOns();
+                // Note: Multi-table coordination (doLevelCheckAllComputers) stays in
+                // TournamentDirector
+            }
+
+            // Run NewLevelActions phase and transition to COLOR_UP
+            return TableProcessResult.builder().phaseToRun("TD.NewLevelActions").shouldRunOnClient(true)
+                    .pendingState(TableState.COLOR_UP).build();
+        } else {
+            // No level change - clear rebuy list and go to START_HAND
+            table.clearRebuyList();
+            return TableProcessResult.builder().nextState(TableState.START_HAND).shouldSleep(false).build();
+        }
     }
 
-    private TableProcessResult handleBetting(GameTable table, GameContext game, boolean isHost, boolean isOnline) {
-        // Extracted from TournamentDirector lines 832-836
-        // BETTING: Handles player betting rounds
-        // Very complex logic in doBetting (player actions, AI, timeouts) extracted in
-        // Phase 2
-        // For Phase 1, return result with sleep disabled for offline games
-        return TableProcessResult.builder().shouldSleep(isOnline).build();
+    private TableProcessResult handleColorUp(GameTable table, TournamentContext game, boolean isHost,
+            boolean isOnline) {
+        // Extracted from TournamentDirector.doColorUp() (lines 1886-1911)
+        // and _processTable COLOR_UP case (lines 795-806)
+        // COLOR_UP: Determine if color-up is needed, run ColorUp phase if so
+
+        if (isHost) {
+            int minNow = game.getLastMinChip();
+            int minNext = game.getMinChip();
+
+            if (minNext > minNow) {
+                // Color-up is needed - set next min chip and do determination
+                table.setNextMinChip(minNext);
+                table.doColorUpDetermination();
+                // Note: Actual colorUp() and colorUpFinish() done in ColorUpFinish phase
+                // Note: Multi-table coordination (doColorUpAllComputers) stays in
+                // TournamentDirector
+            }
+        }
+
+        // Check if color-up is needed
+        boolean needsColorUp = table.isColoringUp();
+
+        if (needsColorUp) {
+            // Run ColorUp phase on client, then transition to START_HAND
+            return TableProcessResult.builder().phaseToRun("TD.ColorUp").shouldRunOnClient(true)
+                    .pendingState(TableState.START_HAND).build();
+        } else {
+            // No color-up needed - go directly to START_HAND
+            return TableProcessResult.builder().nextState(TableState.START_HAND).shouldSleep(false).build();
+        }
     }
 
-    private TableProcessResult handleCommunity(GameTable table, GameContext game, boolean isHost, boolean isOnline) {
-        // Extracted from TournamentDirector lines 838-854
-        // COMMUNITY: Deals community cards, advances betting rounds
+    private TableProcessResult handleStartHand(GameTable table, TournamentContext game, boolean isHost,
+            boolean isOnline) {
+        // Extracted from TournamentDirector START_HAND case (lines 808-831)
+        // and doStart() (lines 1970-1991), doBreak() (lines 1935-1950)
+        // START_HAND: Handle color-up finish, check for break, or start new hand
+
+        if (isHost && table.isColoringUp()) {
+            // Complete color-up for non-current tables
+            // (current tables handle this in ColorUp phase)
+            table.colorUp();
+            table.colorUpFinish();
+        }
+
+        // Check if current level is a break period
+        if (game.isBreakLevel(game.getLevel())) {
+            // Start break period
+            if (isHost) {
+                table.startBreak();
+                // Note: Multi-table coordination (doBreakAllComputers) stays in
+                // TournamentDirector
+            }
+
+            return TableProcessResult.builder().nextState(TableState.BREAK).shouldRunOnClient(true).build();
+        }
+
+        // Start new hand
+        if (isHost) {
+            table.startNewHand();
+            // Note: Multi-table coordination (doStartAllComputers) stays in
+            // TournamentDirector
+
+            // Advance clock in practice (offline) games
+            if (!isOnline) {
+                game.advanceClock();
+            }
+        }
+
+        return TableProcessResult.builder().phaseToRun("TD.DealDisplayHand").shouldRunOnClient(true)
+                .pendingState(TableState.BETTING).build();
+    }
+
+    private TableProcessResult handleBetting(GameTable table, TournamentContext game, boolean isHost,
+            boolean isOnline) {
+        // Extracted from TournamentDirector.doBetting() (lines 2019-2094)
+        // and _processTable BETTING case (lines 844-848)
+        // BETTING: Handle player betting round - MOST COMPLEX HANDLER
+
         GameHand hand = table.getHoldemHand();
         if (hand == null) {
             return TableProcessResult.builder().build();
         }
 
-        // Complex logic in doCommunity extracted in Phase 2
-        // For Phase 1, simple state transitions based on current round
-        if (hand.getRound() == BettingRound.RIVER) {
-            return TableProcessResult.builder().nextState(TableState.PRE_SHOWDOWN).shouldSleep(false).build();
+        // If hand is done, transition to next state
+        if (hand.isDone()) {
+            TableState nextState = getNextBettingState(hand);
+            return TableProcessResult.builder().nextState(nextState).build();
+        }
+
+        // Get current player (initializes player order on first call)
+        GamePlayerInfo currentPlayer = hand.getCurrentPlayerWithInit();
+        if (currentPlayer == null) {
+            return TableProcessResult.builder().build();
+        }
+
+        // Host initializes timeout tracking for current player
+        if (isHost) {
+            currentPlayer.setTimeoutMillis(game.getTimeoutSeconds() * 1000);
+            currentPlayer.setTimeoutMessageSecondsLeft(0);
+        }
+
+        // Player sitting out - auto-fold
+        if (currentPlayer.isSittingOut()) {
+            // Note: doHandAction(fold, ...) stays in TournamentDirector
+            // Note: HandAction creation and processing stays in TD
+            currentPlayer.setSittingOut(true);
+            table.setPause(1100); // SLEEP_MILLIS + 100
+
+            return TableProcessResult.builder().nextState(TableState.BETTING).build();
+        }
+
+        // Locally controlled player (local human or AI)
+        if (currentPlayer.isLocallyControlled()) {
+            // Player on current (UI) table - run Bet phase
+            if (table.isCurrent()) {
+                if (isHost) {
+                    table.addWait(currentPlayer); // avoids warning message on client
+                }
+
+                return TableProcessResult.builder().phaseToRun("TD.Bet").shouldAddAllHumans(false)
+                        .pendingState(TableState.BETTING).build();
+            }
+            // Computer player on non-current table
+            else {
+                // Note: current.getAction(false) and doHandAction() stay in TournamentDirector
+                table.setPause(500); // AI_PAUSE_TENTHS * 100 (5 tenths)
+
+                return TableProcessResult.builder().nextState(TableState.BETTING).build();
+            }
+        }
+
+        // Remote player (host waits for their action)
+        if (isHost) {
+            table.addWait(currentPlayer);
+
+            return TableProcessResult.builder().shouldRunOnClient(true).shouldOnlySendToWaitList(true)
+                    .shouldAddAllHumans(false).pendingState(TableState.BETTING).build();
+        }
+
+        // Default: stay in BETTING
+        return TableProcessResult.builder().build();
+    }
+
+    private TableState getNextBettingState(GameHand hand) {
+        // Extracted from TournamentDirector.nextBettingState() logic
+        // Determine next state after betting round completes
+
+        BettingRound round = hand.getRound();
+
+        // After river, go to pre-showdown (or showdown if only 1 player)
+        if (round == BettingRound.RIVER) {
+            return (hand.getNumWithCards() > 1) ? TableState.PRE_SHOWDOWN : TableState.SHOWDOWN;
+        }
+
+        // After other rounds, go to deal community cards
+        return TableState.COMMUNITY;
+    }
+
+    private TableProcessResult handleCommunity(GameTable table, TournamentContext game, boolean isHost,
+            boolean isOnline) {
+        // Extracted from TournamentDirector.doCommunity() (lines 2137-2161)
+        // and _processTable COMMUNITY case (lines 850-866)
+        // COMMUNITY: Deal community cards and advance to next betting round
+
+        GameHand hand = table.getHoldemHand();
+        if (hand == null) {
+            return TableProcessResult.builder().build();
+        }
+
+        if (isHost) {
+            // Advance to next round (flop -> turn -> river) and deal cards
+            hand.advanceRound();
+
+            // Advance clock in practice (offline) games
+            if (!isOnline) {
+                game.advanceClock(); // Action 2, 3, 4 of 5 (flop, turn, river)
+            }
+        }
+
+        // Determine if we need to run DealCommunity phase
+        // In practice mode: always run
+        // In online mode: only run if multiple players still have cards
+        boolean shouldRunPhase = !isOnline || (isOnline && hand.getNumWithCards() > 1);
+
+        if (shouldRunPhase) {
+            // Run DealCommunity phase, then go to BETTING
+            boolean disableSleep = table.isZipMode() || hand.isDone();
+            return TableProcessResult.builder().phaseToRun("TD.DealCommunity").shouldRunOnClient(true)
+                    .pendingState(TableState.BETTING).shouldSleep(!disableSleep).build();
         } else {
-            return TableProcessResult.builder().nextState(TableState.COMMUNITY).shouldSleep(false).build();
+            // Skip phase - hand is done or only one player left
+            // Determine next state based on current round
+            TableState nextState = (hand.getRound() == BettingRound.RIVER)
+                    ? TableState.PRE_SHOWDOWN
+                    : TableState.COMMUNITY;
+
+            return TableProcessResult.builder().nextState(nextState).shouldSleep(false).build();
         }
     }
 
-    private TableProcessResult handlePreShowdown(GameTable table, GameContext game, boolean isHost, boolean isOnline) {
-        // Extracted from TournamentDirector lines 856-865
-        // PRE_SHOWDOWN: Prepares for showdown, transitions to SHOWDOWN
-        // Complex logic in doPreShowdown extracted in Phase 2
+    private TableProcessResult handlePreShowdown(GameTable table, TournamentContext game, boolean isHost,
+            boolean isOnline) {
+        // Extracted from TournamentDirector.doPreShowdown() (lines 2166-2226)
+        // and _processTable PRE_SHOWDOWN case (lines 868-877)
+        // PRE_SHOWDOWN: Handle pre-showdown logic, ask winners if they want to show
+        // cards
+
+        GameHand hand = table.getHoldemHand();
+        if (hand == null) {
+            return TableProcessResult.builder().nextState(TableState.SHOWDOWN).shouldSleep(false).build();
+        }
+
+        // Host does pre-resolve
+        if (isHost) {
+            hand.preResolve(isOnline);
+        }
+
+        // Client clears wait list since host sends it over
+        // (clients don't use wait list anyhow, this avoids warning message)
+        if (!isHost) {
+            table.removeWaitAll();
+        }
+
+        // Online games: figure out if we need to run pre-showdown step
+        if (isOnline) {
+            List<GamePlayerInfo> winners = hand.getPreWinners();
+            List<GamePlayerInfo> losers = hand.getPreLosers();
+
+            List<Integer> winnerIds = null;
+            GamePlayerInfo localPlayer = game.getLocalPlayer();
+            boolean isLocalInWaitList = false;
+
+            // Check winners who want to be asked about showing
+            for (GamePlayerInfo player : winners) {
+                if (player.isHuman() && player.isAskShowWinning() && hand.isUncontested()) {
+                    table.addWait(player);
+                    if (winnerIds == null) {
+                        winnerIds = new java.util.ArrayList<>();
+                    }
+                    winnerIds.add(player.getID());
+                    if (player == localPlayer) {
+                        isLocalInWaitList = true;
+                    }
+                }
+            }
+
+            // Check losers who want to be asked about showing
+            for (GamePlayerInfo player : losers) {
+                if (player.isHuman() && player.isAskShowLosing()) {
+                    table.addWait(player);
+                    if (player == localPlayer) {
+                        isLocalInWaitList = true;
+                    }
+                }
+            }
+
+            // If we have players in wait list
+            if (table.getWaitSize() > 0) {
+                // Only run pre-showdown phase if local player is in the list
+                if (isLocalInWaitList) {
+                    TableProcessResult.Builder builder = TableProcessResult.builder().phaseToRun("TD.PreShowdown");
+
+                    // Add winner IDs as phase parameter if present
+                    if (winnerIds != null) {
+                        java.util.Map<String, Object> params = new java.util.HashMap<>();
+                        params.put("PARAM_WINNERS", winnerIds);
+                        builder = builder.phaseParams(params);
+                    }
+
+                    return builder.shouldRunOnClient(true).shouldAddAllHumans(false).shouldOnlySendToWaitList(true)
+                            .pendingState(TableState.SHOWDOWN).build();
+                } else {
+                    // Not local player's turn - wait for others
+                    return TableProcessResult.builder().shouldRunOnClient(true).shouldAddAllHumans(false)
+                            .shouldOnlySendToWaitList(true).pendingState(TableState.SHOWDOWN).build();
+                }
+            }
+        }
+
+        // No pre-showdown phase needed - go directly to showdown
         return TableProcessResult.builder().nextState(TableState.SHOWDOWN).shouldSleep(false).build();
     }
 
-    private TableProcessResult handleShowdown(GameTable table, GameContext game, boolean isHost, boolean isOnline) {
-        // Extracted from TournamentDirector lines 867-874
-        // SHOWDOWN: Shows cards, awards pots, transitions to DONE
-        // Complex logic in doShowdown extracted in Phase 2
-        return TableProcessResult.builder().nextState(TableState.DONE).shouldAutoSave(true).shouldSave(true)
+    private TableProcessResult handleShowdown(GameTable table, TournamentContext game, boolean isHost,
+            boolean isOnline) {
+        // Extracted from TournamentDirector.doShowdown() (lines 2231-2261)
+        // and _processTable SHOWDOWN case (lines 879-886)
+        // SHOWDOWN: Resolve hand, show cards, award pots
+
+        GameHand hand = table.getHoldemHand();
+        if (hand == null) {
+            return TableProcessResult.builder().nextState(TableState.DONE).shouldAutoSave(true)
+                    .shouldSave(table.isCurrent()).shouldSleep(false).build();
+        }
+
+        // BUG 462 - don't re-run logic if already run (safety check)
+        if (isHost && hand.getRound() != BettingRound.SHOWDOWN) {
+            // Note: Event recording (ret_.startListening) stays in TournamentDirector
+
+            // Advance round to SHOWDOWN
+            hand.advanceRound();
+
+            // Unset zip mode so end hand event is called outside zip mode
+            table.setZipMode(false);
+
+            // Resolve the hand (determine winners, award pots)
+            hand.resolve();
+
+            // Advance clock in practice (offline) games
+            if (!isOnline) {
+                game.advanceClock(); // Action 5 of 5
+            }
+        }
+
+        // Store hand history - called here so it happens on both client and host
+        GamePlayerInfo localPlayer = game.getLocalPlayer();
+        if (!localPlayer.isObserver() || isHost) {
+            hand.storeHandHistory();
+        }
+
+        // Run showdown phase to display results, then go to DONE
+        return TableProcessResult.builder().phaseToRun("TD.Showdown").shouldRunOnClient(true)
+                .pendingState(TableState.DONE).shouldAutoSave(true) // Save practice games
+                .shouldSave(table.isCurrent()) // Save online games if current table
                 .shouldSleep(false).build();
     }
 
-    private TableProcessResult handleDone(GameTable table, GameContext game, boolean isHost, boolean isOnline) {
+    private TableProcessResult handleDone(GameTable table, TournamentContext game, boolean isHost, boolean isOnline) {
         // Extracted from TournamentDirector lines 876-880
         // DONE: transition to BEGIN to start next hand
         return TableProcessResult.builder().nextState(TableState.BEGIN).build();
     }
 
-    private TableProcessResult handleGameOver(GameTable table, GameContext game, boolean isHost, boolean isOnline) {
+    private TableProcessResult handleGameOver(GameTable table, TournamentContext game, boolean isHost,
+            boolean isOnline) {
         // Extracted from TournamentDirector lines 882-887
         // GAME_OVER: terminal state, no next state
         return TableProcessResult.builder().build();
     }
 
-    private TableProcessResult handleBreak(GameTable table, GameContext game, boolean isHost, boolean isOnline) {
-        // Extracted from TournamentDirector lines 821-830
-        // BREAK: Checks if break is done, transitions to NEW_LEVEL_CHECK
-        // Complex logic in doCheckEndBreak extracted in Phase 2
-        return TableProcessResult.builder().nextState(TableState.NEW_LEVEL_CHECK).build();
+    private TableProcessResult handleBreak(GameTable table, TournamentContext game, boolean isHost, boolean isOnline) {
+        // Extracted from TournamentDirector.doCheckEndBreak() (lines 1305-1337)
+        // and _processTable BREAK case (lines 833-842)
+        // BREAK: Check if break period is over, advance level if needed
+
+        boolean bEndOfBreak = false;
+
+        if (isHost) {
+            // In practice (offline) games, manually advance the clock during break
+            if (!isOnline) {
+                game.advanceClockBreak();
+            }
+
+            // Check if level time expired and advance if needed
+            if (game.isLevelExpired()) {
+                game.nextLevel();
+            }
+
+            // Break ends when game level changes (table level gets updated later)
+            if (game.getLevel() != table.getLevel()) {
+                bEndOfBreak = true;
+            }
+        }
+
+        // Restart clock after break ends (in online games)
+        if (bEndOfBreak && isOnline) {
+            game.startGameClock();
+        }
+
+        // Build result
+        if (bEndOfBreak) {
+            return TableProcessResult.builder().nextState(TableState.NEW_LEVEL_CHECK).build();
+        } else {
+            // Still in break - pause briefly in online mode
+            // Note: Pause handling stays in TournamentDirector
+            return TableProcessResult.builder().build();
+        }
     }
 }

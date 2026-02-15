@@ -39,6 +39,7 @@ import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Mar 18, 2005 Time: 4:40:33 PM
@@ -143,9 +144,9 @@ public abstract class Odds extends DashboardItem {
 
         // if folded or pre-flop
         Hand hand = asViewedBy.getHand();
-        int nRound = hhand.getRound();
+        int nRound = hhand.getRound().toLegacy();
         if (asViewedBy.isFolded() || asViewedBy.isObserver() || hand == null
-                || (nRound == HoldemHand.ROUND_SHOWDOWN && hhand.getNumWithCards() == 1)) {
+                || (nRound == BettingRound.SHOWDOWN.toLegacy() && hhand.getNumWithCards() == 1)) {
             return "";
         }
 

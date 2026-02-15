@@ -41,12 +41,21 @@ public enum BettingRound {
 
     private final int legacyValue;
 
+    // O(1) lookup array: legacy values range from -1 to 4
+    private static final BettingRound[] LOOKUP = new BettingRound[6];
+
+    static {
+        for (BettingRound br : values()) {
+            LOOKUP[br.legacyValue + 1] = br; // offset by 1 to handle -1
+        }
+    }
+
     BettingRound(int legacyValue) {
         this.legacyValue = legacyValue;
     }
 
     /**
-     * Convert from legacy integer constant to enum.
+     * Convert from legacy integer constant to enum (O(1) lookup).
      *
      * @param round
      *            legacy integer value (e.g., HoldemHand.ROUND_FLOP)
@@ -55,12 +64,11 @@ public enum BettingRound {
      *             if round value is unknown
      */
     public static BettingRound fromLegacy(int round) {
-        for (BettingRound br : values()) {
-            if (br.legacyValue == round) {
-                return br;
-            }
+        int index = round + 1; // offset by 1 to handle -1
+        if (index < 0 || index >= LOOKUP.length || LOOKUP[index] == null) {
+            throw new IllegalArgumentException("Unknown betting round: " + round);
         }
-        throw new IllegalArgumentException("Unknown betting round: " + round);
+        return LOOKUP[index];
     }
 
     /**

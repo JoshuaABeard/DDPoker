@@ -44,6 +44,10 @@ import com.donohoedigital.comms.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
+import com.donohoedigital.games.poker.core.GameHand;
+import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import com.donohoedigital.games.poker.core.GameTable;
+import com.donohoedigital.games.poker.core.state.TableState;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.games.poker.ai.*;
@@ -52,12 +56,13 @@ import com.donohoedigital.games.poker.engine.*;
 import org.apache.logging.log4j.*;
 
 import java.util.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  *
  * @author donohoe
  */
-public class PokerTable implements ObjectID {
+public class PokerTable implements ObjectID, GameTable {
     static Logger logger = LogManager.getLogger(PokerTable.class);
 
     // no seat
@@ -175,6 +180,7 @@ public class PokerTable implements ObjectID {
     // transient (no need to save)
     private boolean bRemoved_ = false;
     private long pauseUntil_ = 0;
+    private int autoDealDelay_ = 0;
     private boolean bAllComputer_ = false;
     private boolean bInitAllComputer_ = false;
 
@@ -248,10 +254,33 @@ public class PokerTable implements ObjectID {
     }
 
     /**
+     * Set pause time in milliseconds (GameTable interface overload)
+     */
+    @Override
+    public void setPause(int millis) {
+        setPause((long) millis);
+    }
+
+    /**
      * Get pause time
      */
     public long getPause() {
         return pauseUntil_;
+    }
+
+    /**
+     * Set auto-deal delay in milliseconds (GameTable interface method)
+     */
+    public void setAutoDealDelay(int millis) {
+        autoDealDelay_ = millis;
+    }
+
+    /**
+     * Get auto-deal delay in milliseconds (GameTable interface method)
+     */
+    @Override
+    public int getAutoDealDelay() {
+        return autoDealDelay_;
     }
 
     /**
@@ -590,16 +619,22 @@ public class PokerTable implements ObjectID {
     }
 
     /**
-     * get currrent state table is in
+     * Get current state table is in (legacy int-based method). For new code, use
+     * {@link #getTableState()} which returns TableState enum.
+     *
+     * @return current table state as int
      */
-    public int getTableState() {
+    public int getTableStateInt() {
         return nTableState_;
     }
 
     /**
-     * Get previous state table was in
+     * Get previous state table was in (legacy int-based method). For new code, use
+     * {@link #getPreviousTableState()} which returns TableState enum.
+     *
+     * @return previous table state as int
      */
-    public int getPreviousTableState() {
+    public int getPreviousTableStateInt() {
         return nPrevState_;
     }
 
@@ -668,9 +703,12 @@ public class PokerTable implements ObjectID {
     }
 
     /**
-     * Get pending state
+     * Get pending state (legacy int-based method). For new code, use
+     * {@link #getPendingTableState()} which returns TableState enum.
+     *
+     * @return pending table state as int
      */
-    public int getPendingTableState() {
+    public int getPendingTableStateInt() {
         return nPendingState_;
     }
 
@@ -679,6 +717,61 @@ public class PokerTable implements ObjectID {
      */
     public void setPendingTableState(int n) {
         nPendingState_ = n;
+    }
+
+    // ===== GameTable interface implementation (enum-based) =====
+
+    /**
+     * Get current table state (GameTable interface - returns enum).
+     *
+     * @return current table state as TableState enum
+     */
+    @Override
+    public TableState getTableState() {
+        return TableState.fromLegacy(nTableState_);
+    }
+
+    /**
+     * Set table state (GameTable interface - accepts enum). Delegates to int-based
+     * method.
+     *
+     * @param state
+     *            new table state
+     */
+    @Override
+    public void setTableState(TableState state) {
+        setTableState(state.toLegacy());
+    }
+
+    /**
+     * Get pending table state (GameTable interface - returns enum).
+     *
+     * @return pending table state as TableState enum
+     */
+    @Override
+    public TableState getPendingTableState() {
+        return nPendingState_ == -1 ? null : TableState.fromLegacy(nPendingState_);
+    }
+
+    /**
+     * Set pending table state (GameTable interface - accepts enum).
+     *
+     * @param state
+     *            pending table state
+     */
+    @Override
+    public void setPendingTableState(TableState state) {
+        setPendingTableState(state == null ? -1 : state.toLegacy());
+    }
+
+    /**
+     * Get previous table state (GameTable interface - returns enum).
+     *
+     * @return previous table state as TableState enum
+     */
+    @Override
+    public TableState getPreviousTableState() {
+        return TableState.fromLegacy(nPrevState_);
     }
 
     /**
@@ -742,6 +835,17 @@ public class PokerTable implements ObjectID {
     }
 
     /**
+     * Get list of players recently added (GameTable interface adapter).
+     *
+     * @return list of added players as GamePlayerInfo
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<GamePlayerInfo> getAddedPlayersList() {
+        return (List<GamePlayerInfo>) (List<?>) addedList_;
+    }
+
+    /**
      * Get array list of players woh recently did addon
      */
     public List<PokerPlayer> getAddonList() {
@@ -756,10 +860,25 @@ public class PokerTable implements ObjectID {
     }
 
     /**
+     * Clear the rebuy list (GameTable interface method)
+     */
+    public void clearRebuyList() {
+        rebuyList_.clear();
+    }
+
+    /**
      * Get array list of players we are waiting on
      */
     public List<PokerPlayer> getWaitList() {
         return waitList_;
+    }
+
+    /**
+     * add a player to wait list (GameTable interface overload)
+     */
+    @Override
+    public void addWait(GamePlayerInfo player) {
+        addWait((PokerPlayer) player);
     }
 
     /**
@@ -983,10 +1102,45 @@ public class PokerTable implements ObjectID {
     }
 
     /**
+     * Set hand number (GameTable interface).
+     *
+     * @param handNum
+     *            new hand number
+     */
+    @Override
+    public void setHandNum(int handNum) {
+        nHandNum_ = handNum;
+    }
+
+    /**
      * Get level this hand was started at
      */
     public int getLevel() {
         return nLevel_;
+    }
+
+    /**
+     * Set tournament level (GameTable interface).
+     *
+     * @param level
+     *            new tournament level
+     */
+    @Override
+    public void setLevel(int level) {
+        nLevel_ = level;
+    }
+
+    /**
+     * Check if table should auto-deal next hand (GameTable interface). Currently
+     * always returns true - actual auto-deal logic may be in TournamentDirector.
+     *
+     * @return true if should auto-deal
+     */
+    @Override
+    public boolean isAutoDeal() {
+        // TODO Phase 2: Determine correct source for auto-deal setting
+        // May need to check game settings or tournament profile
+        return true;
     }
 
     /**
@@ -1421,10 +1575,15 @@ public class PokerTable implements ObjectID {
 
     /**
      * Set holdem hand (called directly for testing/other usage, normal way is to
-     * startNewHand(), which calls this)
+     * startNewHand(), which calls this). Implements GameTable interface.
+     *
+     * @param hand
+     *            the game hand (accepts GameHand interface, but must be HoldemHand
+     *            instance)
      */
-    public void setHoldemHand(HoldemHand hand) {
-        hhand_ = hand;
+    @Override
+    public void setHoldemHand(GameHand hand) {
+        hhand_ = (HoldemHand) hand;
         if (hhand_ != null)
             firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_NEW_HAND, this));
     }
@@ -1499,7 +1658,7 @@ public class PokerTable implements ObjectID {
         // BUG 420 - use chip count at start of hand to determine if
         // player can rebuy during a hand. This prevents someone from
         // going all-in and then rebuying
-        if (hhand_ != null && hhand_.getRound() != HoldemHand.ROUND_SHOWDOWN) {
+        if (hhand_ != null && hhand_.getRound() != BettingRound.SHOWDOWN) {
             nChipCount += player.getChipCountAtStart();
         }
         // else use actual chip count
@@ -1640,6 +1799,20 @@ public class PokerTable implements ObjectID {
                 addonList_.add(p);
             }
         }
+    }
+
+    /**
+     * Process AI rebuys (GameTable interface method)
+     */
+    public void processAIRebuys() {
+        aiRebuy();
+    }
+
+    /**
+     * Process AI add-ons (GameTable interface method)
+     */
+    public void processAIAddOns() {
+        aiAddOn();
     }
 
     /**

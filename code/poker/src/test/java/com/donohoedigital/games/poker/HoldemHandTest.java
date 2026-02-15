@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  * Tests for HoldemHand - poker hand progression, betting rounds, player
@@ -97,7 +98,7 @@ class HoldemHandTest {
 
     @Test
     void should_InitializeWithPreflop_When_HandCreated() {
-        assertThat(hand.getRound()).isEqualTo(HoldemHand.ROUND_PRE_FLOP);
+        assertThat(hand.getRound()).isEqualTo(BettingRound.PRE_FLOP);
     }
 
     @Test
@@ -129,18 +130,18 @@ class HoldemHandTest {
 
     @Test
     void should_GetRoundName_When_RoundQueried() {
-        assertThat(HoldemHand.getRoundName(HoldemHand.ROUND_PRE_FLOP)).isEqualTo("preflop");
-        assertThat(HoldemHand.getRoundName(HoldemHand.ROUND_FLOP)).isEqualTo("flop");
-        assertThat(HoldemHand.getRoundName(HoldemHand.ROUND_TURN)).isEqualTo("turn");
-        assertThat(HoldemHand.getRoundName(HoldemHand.ROUND_RIVER)).isEqualTo("river");
-        assertThat(HoldemHand.getRoundName(HoldemHand.ROUND_SHOWDOWN)).isEqualTo("show");
+        assertThat(HoldemHand.getRoundName(BettingRound.PRE_FLOP.toLegacy())).isEqualTo("preflop");
+        assertThat(HoldemHand.getRoundName(BettingRound.FLOP.toLegacy())).isEqualTo("flop");
+        assertThat(HoldemHand.getRoundName(BettingRound.TURN.toLegacy())).isEqualTo("turn");
+        assertThat(HoldemHand.getRoundName(BettingRound.RIVER.toLegacy())).isEqualTo("river");
+        assertThat(HoldemHand.getRoundName(BettingRound.SHOWDOWN.toLegacy())).isEqualTo("show");
     }
 
     @Test
     void should_AdvanceToFlop_When_AdvanceRoundCalled() {
         hand.advanceRound();
 
-        assertThat(hand.getRound()).isEqualTo(HoldemHand.ROUND_FLOP);
+        assertThat(hand.getRound()).isEqualTo(BettingRound.FLOP);
     }
 
     @Test
@@ -148,7 +149,7 @@ class HoldemHandTest {
         hand.advanceRound(); // Flop
         hand.advanceRound(); // Turn
 
-        assertThat(hand.getRound()).isEqualTo(HoldemHand.ROUND_TURN);
+        assertThat(hand.getRound()).isEqualTo(BettingRound.TURN);
     }
 
     @Test
@@ -157,7 +158,7 @@ class HoldemHandTest {
         hand.advanceRound(); // Turn
         hand.advanceRound(); // River
 
-        assertThat(hand.getRound()).isEqualTo(HoldemHand.ROUND_RIVER);
+        assertThat(hand.getRound()).isEqualTo(BettingRound.RIVER);
     }
 
     @Test
@@ -167,7 +168,7 @@ class HoldemHandTest {
         hand.advanceRound(); // River
         hand.advanceRound(); // Showdown
 
-        assertThat(hand.getRound()).isEqualTo(HoldemHand.ROUND_SHOWDOWN);
+        assertThat(hand.getRound()).isEqualTo(BettingRound.SHOWDOWN);
     }
 
     // =================================================================

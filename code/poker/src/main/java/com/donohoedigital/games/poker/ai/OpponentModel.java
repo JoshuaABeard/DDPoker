@@ -38,6 +38,7 @@ import com.donohoedigital.games.poker.HandAction;
 import com.donohoedigital.games.poker.HoldemHand;
 import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.engine.Hand;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 public class OpponentModel {
     int handsPlayed;
@@ -187,13 +188,13 @@ public class OpponentModel {
                 : null;
 
         boolean couldLimp = hhand.couldLimp(player);
-        Boolean raisedPreFlop = hhand.betPot(player, HoldemHand.ROUND_PRE_FLOP);
-        Boolean openedFlop = hhand.betPot(player, HoldemHand.ROUND_FLOP);
-        Boolean raisedFlop = hhand.raisedPot(player, HoldemHand.ROUND_FLOP);
-        Boolean openedTurn = hhand.betPot(player, HoldemHand.ROUND_TURN);
-        Boolean raisedTurn = hhand.raisedPot(player, HoldemHand.ROUND_TURN);
-        Boolean openedRiver = hhand.betPot(player, HoldemHand.ROUND_RIVER);
-        Boolean raisedRiver = hhand.raisedPot(player, HoldemHand.ROUND_RIVER);
+        Boolean raisedPreFlop = hhand.betPot(player, BettingRound.PRE_FLOP.toLegacy());
+        Boolean openedFlop = hhand.betPot(player, BettingRound.FLOP.toLegacy());
+        Boolean raisedFlop = hhand.raisedPot(player, BettingRound.FLOP.toLegacy());
+        Boolean openedTurn = hhand.betPot(player, BettingRound.TURN.toLegacy());
+        Boolean raisedTurn = hhand.raisedPot(player, BettingRound.TURN.toLegacy());
+        Boolean openedRiver = hhand.betPot(player, BettingRound.RIVER.toLegacy());
+        Boolean raisedRiver = hhand.raisedPot(player, BettingRound.RIVER.toLegacy());
 
         handsRaisedPreFlop.addEntry(raisedPreFlop);
         openFlop.addEntry(openedFlop);
@@ -203,7 +204,7 @@ public class OpponentModel {
         openRiver.addEntry(openedRiver);
         raiseRiver.addEntry(raisedRiver);
 
-        HandAction firstAction = hhand.getFirstVoluntaryAction(player, HoldemHand.ROUND_PRE_FLOP);
+        HandAction firstAction = hhand.getFirstVoluntaryAction(player, BettingRound.PRE_FLOP.toLegacy());
         int action = (firstAction != null) ? firstAction.getAction() : HandAction.ACTION_NONE;
 
         if (firstAction != null) {
@@ -239,12 +240,12 @@ public class OpponentModel {
             handsFoldedUnraised.addEntry(action == HandAction.ACTION_FOLD);
         }
 
-        if (hhand.getLastActionAI(player, HoldemHand.ROUND_FLOP) != HandAction.ACTION_NONE) {
+        if (hhand.getLastActionAI(player, BettingRound.FLOP.toLegacy()) != HandAction.ACTION_NONE) {
             handsOverbetPotPostFlop.addEntry(overbetPotPostFlop);
         }
 
-        HandAction firstFlopAction = hhand.getFirstVoluntaryAction(player, HoldemHand.ROUND_FLOP);
-        HandAction lastFlopAction = hhand.getLastAction(player, HoldemHand.ROUND_FLOP);
+        HandAction firstFlopAction = hhand.getFirstVoluntaryAction(player, BettingRound.FLOP.toLegacy());
+        HandAction lastFlopAction = hhand.getLastAction(player, BettingRound.FLOP.toLegacy());
 
         if (lastFlopAction != null) {
             switch (lastFlopAction.getAction()) {
@@ -274,8 +275,8 @@ public class OpponentModel {
             }
         }
 
-        HandAction firstTurnAction = hhand.getFirstVoluntaryAction(player, HoldemHand.ROUND_TURN);
-        HandAction lastTurnAction = hhand.getLastAction(player, HoldemHand.ROUND_TURN);
+        HandAction firstTurnAction = hhand.getFirstVoluntaryAction(player, BettingRound.TURN.toLegacy());
+        HandAction lastTurnAction = hhand.getLastAction(player, BettingRound.TURN.toLegacy());
 
         if (lastTurnAction != null) {
             switch (lastTurnAction.getAction()) {
@@ -305,8 +306,8 @@ public class OpponentModel {
             }
         }
 
-        HandAction firstRiverAction = hhand.getFirstVoluntaryAction(player, HoldemHand.ROUND_RIVER);
-        HandAction lastRiverAction = hhand.getLastAction(player, HoldemHand.ROUND_RIVER);
+        HandAction firstRiverAction = hhand.getFirstVoluntaryAction(player, BettingRound.RIVER.toLegacy());
+        HandAction lastRiverAction = hhand.getLastAction(player, BettingRound.RIVER.toLegacy());
 
         if (lastRiverAction != null) {
             switch (lastRiverAction.getAction()) {

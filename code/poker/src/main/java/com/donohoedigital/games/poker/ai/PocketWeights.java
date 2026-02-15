@@ -38,6 +38,7 @@ import com.donohoedigital.games.poker.engine.*;
 import org.apache.logging.log4j.*;
 
 import java.util.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  * Reusable computation of relative likelihood of pocket hands given hand
@@ -86,7 +87,7 @@ public class PocketWeights {
         PocketWeights pw = hhand.getPocketWeights();
 
         String signature = Long.toString(hhand.getCommunity().fingerprint()) + ":"
-                + Integer.toString(hhand.getHistorySize()) + ":" + Integer.toString(hhand.getRound());
+                + Integer.toString(hhand.getHistorySize()) + ":" + Integer.toString(hhand.getRound().toLegacy());
 
         if ((pw == null) || !signature.equals(pw.signature_)) {
             pw = new PocketWeights(hhand);
@@ -343,10 +344,10 @@ public class PocketWeights {
         while (bookmark_ < hist.size()) {
             action = hist.get(bookmark_++);
 
-            if (action.getRound() > HoldemHand.ROUND_RIVER)
+            if (action.getRound() > BettingRound.RIVER.toLegacy())
                 break;
 
-            if (action.getRound() < HoldemHand.ROUND_FLOP) {
+            if (action.getRound() < BettingRound.FLOP.toLegacy()) {
                 processPreFlopAction(action);
 
                 switch (action.getAction()) {

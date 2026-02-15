@@ -36,6 +36,7 @@ import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
 
 import java.util.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 public class AIOutcome {
     public static final int FOLD = 0;
@@ -78,7 +79,7 @@ public class AIOutcome {
 
     public AIOutcome(HoldemHand hhand, PokerPlayer player) {
         player_ = player;
-        round_ = hhand.getRound();
+        round_ = hhand.getRound().toLegacy();
         potStatus_ = hhand.getPotStatus();
         isLimit_ = hhand.isLimit();
     }
@@ -205,7 +206,7 @@ public class AIOutcome {
 
             switch (potStatus_) {
                 case PokerConstants.NO_POT_ACTION :
-                    if (round_ == HoldemHand.ROUND_PRE_FLOP)
+                    if (round_ == BettingRound.PRE_FLOP.toLegacy())
                         buf.append("Raise");
                     else
                         buf.append("Bet");
@@ -307,7 +308,7 @@ public class AIOutcome {
         }
 
         if (potStatus == PokerConstants.NO_POT_ACTION) {
-            if (round_ == HoldemHand.ROUND_PRE_FLOP)
+            if (round_ == BettingRound.PRE_FLOP.toLegacy())
                 return RuleEngine.OUTCOME_OPEN_POT;
             else
                 return RuleEngine.OUTCOME_BET;

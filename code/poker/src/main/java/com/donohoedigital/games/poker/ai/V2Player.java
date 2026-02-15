@@ -41,6 +41,7 @@ import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
 
 import java.security.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 @DataCoder('2')
 public class V2Player extends V1Player implements AIConstants {
@@ -1052,7 +1053,7 @@ public class V2Player extends V1Player implements AIConstants {
             buf.append("In ");
         }
 
-        switch (hhand.getRound()) {
+        switch (hhand.getRound().toLegacy()) {
             case HoldemHand.ROUND_PRE_FLOP :
                 buf.append(getStartingPositionDisplay()).append(" position with a ").append(getHandStrengthDisplay())
                         .append(" hand, will act ").append(getPostFlopPositionDisplay())
@@ -1598,9 +1599,9 @@ public class V2Player extends V1Player implements AIConstants {
 
         StatResult turn = HoldemSimulator.iterate(losingHand, trial, 0, deck, winningHands, null, 0, 0);
 
-        int preflopBets = hhand.getTotalPotChipCount(HoldemHand.ROUND_PRE_FLOP);
-        int flopBets = hhand.getTotalPotChipCount(HoldemHand.ROUND_FLOP) - preflopBets;
-        int turnBets = hhand.getTotalPotChipCount(HoldemHand.ROUND_TURN) - preflopBets - flopBets;
+        int preflopBets = hhand.getTotalPotChipCount(BettingRound.PRE_FLOP.toLegacy());
+        int flopBets = hhand.getTotalPotChipCount(BettingRound.FLOP.toLegacy()) - preflopBets;
+        int turnBets = hhand.getTotalPotChipCount(BettingRound.TURN.toLegacy()) - preflopBets - flopBets;
         // int riverBets = hhand.getTotalPotChipCount() - preflopBets - flopBets -
         // turnBets;
 
@@ -1664,7 +1665,7 @@ public class V2Player extends V1Player implements AIConstants {
 
         for (int i = 0; i < numPlayers; ++i) {
             if (hhand.getPlayerAt(i) == player) {
-                if (getRound() == HoldemHand.ROUND_PRE_FLOP) {
+                if (getRound() == BettingRound.PRE_FLOP.toLegacy()) {
                     return i;
                 } else {
                     return (i + numPlayers - 2) % numPlayers;

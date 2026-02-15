@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.donohoedigital.games.poker.ai.PokerAI.*;
 import static org.assertj.core.api.Assertions.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  * Tests for OpponentModel player behavior tracking and modeling.
@@ -552,7 +553,7 @@ class OpponentModelTest {
     void should_ReturnDefaultValue_When_ActFlopNotReady() {
         model.init();
 
-        float result = model.getActPostFlop(HoldemHand.ROUND_FLOP, 0.4f);
+        float result = model.getActPostFlop(BettingRound.FLOP.toLegacy(), 0.4f);
 
         assertThat(result).isEqualTo(0.4f);
     }
@@ -566,7 +567,7 @@ class OpponentModelTest {
             model.actFlop.addEntry(i % 2 == 0); // 50% true
         }
 
-        float result = model.getActPostFlop(HoldemHand.ROUND_FLOP, 0.0f);
+        float result = model.getActPostFlop(BettingRound.FLOP.toLegacy(), 0.0f);
 
         assertThat(result).isGreaterThan(0.0f);
     }
@@ -579,7 +580,7 @@ class OpponentModelTest {
             model.actTurn.addEntry(true);
         }
 
-        float result = model.getActPostFlop(HoldemHand.ROUND_TURN, 0.0f);
+        float result = model.getActPostFlop(BettingRound.TURN.toLegacy(), 0.0f);
 
         assertThat(result).isGreaterThan(0.5f);
     }
@@ -592,7 +593,7 @@ class OpponentModelTest {
             model.actRiver.addEntry(false);
         }
 
-        float result = model.getActPostFlop(HoldemHand.ROUND_RIVER, 0.5f);
+        float result = model.getActPostFlop(BettingRound.RIVER.toLegacy(), 0.5f);
 
         assertThat(result).isLessThan(0.5f);
     }
@@ -601,7 +602,8 @@ class OpponentModelTest {
     void should_ThrowException_When_InvalidRoundForAct() {
         model.init();
 
-        assertThatThrownBy(() -> model.getActPostFlop(HoldemHand.ROUND_PRE_FLOP, 0.5f)).isInstanceOf(Exception.class);
+        assertThatThrownBy(() -> model.getActPostFlop(BettingRound.PRE_FLOP.toLegacy(), 0.5f))
+                .isInstanceOf(Exception.class);
     }
 
     // ========================================
@@ -612,7 +614,7 @@ class OpponentModelTest {
     void should_ReturnDefaultValue_When_OpenFlopNotReady() {
         model.init();
 
-        float result = model.getOpenPostFlop(HoldemHand.ROUND_FLOP, 0.3f);
+        float result = model.getOpenPostFlop(BettingRound.FLOP.toLegacy(), 0.3f);
 
         assertThat(result).isEqualTo(0.3f);
     }
@@ -625,7 +627,7 @@ class OpponentModelTest {
             model.openFlop.addEntry(true);
         }
 
-        float result = model.getOpenPostFlop(HoldemHand.ROUND_FLOP, 0.0f);
+        float result = model.getOpenPostFlop(BettingRound.FLOP.toLegacy(), 0.0f);
 
         assertThat(result).isGreaterThan(0.5f);
     }
@@ -645,7 +647,7 @@ class OpponentModelTest {
     void should_ReturnDefaultValue_When_RaiseFlopNotReady() {
         model.init();
 
-        float result = model.getRaisePostFlop(HoldemHand.ROUND_FLOP, 0.2f);
+        float result = model.getRaisePostFlop(BettingRound.FLOP.toLegacy(), 0.2f);
 
         assertThat(result).isEqualTo(0.2f);
     }
@@ -658,7 +660,7 @@ class OpponentModelTest {
             model.raiseFlop.addEntry(i < 3); // 30% true
         }
 
-        float result = model.getRaisePostFlop(HoldemHand.ROUND_FLOP, 0.0f);
+        float result = model.getRaisePostFlop(BettingRound.FLOP.toLegacy(), 0.0f);
 
         assertThat(result).isGreaterThan(0.0f);
         assertThat(result).isLessThan(0.5f);
@@ -679,7 +681,7 @@ class OpponentModelTest {
     void should_ReturnDefaultValue_When_CheckFoldFlopNotReady() {
         model.init();
 
-        float result = model.getCheckFoldPostFlop(HoldemHand.ROUND_FLOP, 0.6f);
+        float result = model.getCheckFoldPostFlop(BettingRound.FLOP.toLegacy(), 0.6f);
 
         assertThat(result).isEqualTo(0.6f);
     }
@@ -692,7 +694,7 @@ class OpponentModelTest {
             model.checkFoldFlop.addEntry(i < 7); // 70% true
         }
 
-        float result = model.getCheckFoldPostFlop(HoldemHand.ROUND_FLOP, 0.0f);
+        float result = model.getCheckFoldPostFlop(BettingRound.FLOP.toLegacy(), 0.0f);
 
         assertThat(result).isGreaterThan(0.5f);
     }

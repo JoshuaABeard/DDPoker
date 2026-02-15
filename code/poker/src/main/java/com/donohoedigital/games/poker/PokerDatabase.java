@@ -47,6 +47,7 @@ import java.math.*;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  * Represents the client database(s) for storing stats, etc.
@@ -447,10 +448,10 @@ public class PokerDatabase {
                         pstmt.setString(i + 6, toString(pocket.getCard(i)));
                     }
 
-                    pstmt.setByte(10, act[seat][HoldemHand.ROUND_PRE_FLOP]);
-                    pstmt.setByte(11, act[seat][HoldemHand.ROUND_FLOP]);
-                    pstmt.setByte(12, act[seat][HoldemHand.ROUND_TURN]);
-                    pstmt.setByte(13, act[seat][HoldemHand.ROUND_RIVER]);
+                    pstmt.setByte(10, act[seat][BettingRound.PRE_FLOP.toLegacy()]);
+                    pstmt.setByte(11, act[seat][BettingRound.FLOP.toLegacy()]);
+                    pstmt.setByte(12, act[seat][BettingRound.TURN.toLegacy()]);
+                    pstmt.setByte(13, act[seat][BettingRound.RIVER.toLegacy()]);
                     pstmt.setBoolean(14, player.isCardsExposed() || (player.isHuman() && player.isLocallyControlled()));
 
                     pstmt.executeUpdate();
@@ -1311,11 +1312,11 @@ public class PokerDatabase {
             sb2.setLength(0);
 
             if (bAnte)
-                appendHistory(details, community, hist, HoldemHand.ROUND_PRE_FLOP, true, bShowAll, bShowReason);
-            appendHistory(details, community, hist, HoldemHand.ROUND_PRE_FLOP, false, bShowAll, bShowReason);
-            appendHistory(details, community, hist, HoldemHand.ROUND_FLOP, false, bShowAll, bShowReason);
-            appendHistory(details, community, hist, HoldemHand.ROUND_TURN, false, bShowAll, bShowReason);
-            appendHistory(details, community, hist, HoldemHand.ROUND_RIVER, false, bShowAll, bShowReason);
+                appendHistory(details, community, hist, BettingRound.PRE_FLOP.toLegacy(), true, bShowAll, bShowReason);
+            appendHistory(details, community, hist, BettingRound.PRE_FLOP.toLegacy(), false, bShowAll, bShowReason);
+            appendHistory(details, community, hist, BettingRound.FLOP.toLegacy(), false, bShowAll, bShowReason);
+            appendHistory(details, community, hist, BettingRound.TURN.toLegacy(), false, bShowAll, bShowReason);
+            appendHistory(details, community, hist, BettingRound.RIVER.toLegacy(), false, bShowAll, bShowReason);
 
             appendShowdown(details, hist, community, bShowAll);
         } catch (SQLException e) {
@@ -1541,11 +1542,11 @@ public class PokerDatabase {
 
         HandInfoFast info = new HandInfoFast();
 
-        if (nRound == HoldemHand.ROUND_PRE_FLOP) {
+        if (nRound == BettingRound.PRE_FLOP.toLegacy()) {
             community = new Hand();
-        } else if ((nRound == HoldemHand.ROUND_FLOP) && (community.size() > 3)) {
+        } else if ((nRound == BettingRound.FLOP.toLegacy()) && (community.size() > 3)) {
             community = new Hand(community.getCard(0), community.getCard(1), community.getCard(2));
-        } else if ((nRound == HoldemHand.ROUND_TURN) && (community.size() > 4)) {
+        } else if ((nRound == BettingRound.TURN.toLegacy()) && (community.size() > 4)) {
             community = new Hand(community.getCard(0), community.getCard(1), community.getCard(2),
                     community.getCard(3));
         }
@@ -1765,8 +1766,7 @@ public class PokerDatabase {
         }
 
         sb.append(PropertyConfig.getMessage("msg.hand.history",
-                PropertyConfig.getMessage("msg.round." + HoldemHand.ROUND_SHOWDOWN), sb2.toString(),
-                community.toHTML()));
+                PropertyConfig.getMessage("msg.round." + BettingRound.SHOWDOWN), sb2.toString(), community.toHTML()));
     }
 
     private static void appendShowdown(StringBuilder sb, List<HandAction> hist, Hand community, boolean bShowAll,
@@ -1781,7 +1781,7 @@ public class PokerDatabase {
         for (int i = 0; i < hist.size(); i++) {
             action = (HandAction) hist.get(i);
 
-            if (action.getRound() != HoldemHand.ROUND_SHOWDOWN)
+            if (action.getRound() != BettingRound.SHOWDOWN.toLegacy())
                 continue;
             if (action.getSubAmount() != nPot)
                 continue;
@@ -1817,7 +1817,7 @@ public class PokerDatabase {
         for (int i = 0; i < hist.size(); i++) {
             action = (HandAction) hist.get(i);
 
-            if (action.getRound() != HoldemHand.ROUND_SHOWDOWN)
+            if (action.getRound() != BettingRound.SHOWDOWN.toLegacy())
                 continue;
             if (action.getSubAmount() != nPot)
                 continue;

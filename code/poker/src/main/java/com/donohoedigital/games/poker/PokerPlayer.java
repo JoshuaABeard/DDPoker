@@ -45,6 +45,8 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.*;
+import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.engine.*;
@@ -58,7 +60,7 @@ import java.util.*;
  *
  * @author Doug Donohoe
  */
-public class PokerPlayer extends GamePlayer {
+public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     // info about this player
     private boolean bHuman_;
     private PokerTable table_;
@@ -497,7 +499,7 @@ public class PokerPlayer extends GamePlayer {
             return false;
         if (isFolded())
             return false;
-        return (hhand.getRound() != HoldemHand.ROUND_SHOWDOWN);
+        return (hhand.getRound() != BettingRound.SHOWDOWN);
     }
 
     /**
@@ -1150,7 +1152,7 @@ public class PokerPlayer extends GamePlayer {
         boolean bShowFold = PokerUtils.isCheatOn(getTable().getGame().getGameContext(),
                 PokerConstants.OPTION_CHEAT_SHOWFOLD);
         HoldemHand hhand = getHoldemHand();
-        return bShowFold && hhand != null && hhand.getRound() == HoldemHand.ROUND_SHOWDOWN
+        return bShowFold && hhand != null && hhand.getRound() == BettingRound.SHOWDOWN
                 && (isHuman() || (hhand.getTotalBet(this) - hhand.getAnteSmallBlind(this)) > 0);
     }
 
@@ -1487,7 +1489,7 @@ public class PokerPlayer extends GamePlayer {
      */
     void setPosition(int n, int nRound) {
         nPosition_ = n;
-        if (nRound == HoldemHand.ROUND_PRE_FLOP) {
+        if (nRound == BettingRound.PRE_FLOP.toLegacy()) {
             nStartingPositionCat_ = getPositionCategory();
         }
     }
@@ -1606,7 +1608,7 @@ public class PokerPlayer extends GamePlayer {
     public HandAction getAction(boolean bQuick) {
         try {
             // // TODO - TESTING - make first AI to act raise all in
-            // if (getHoldemHand().getRound() == HoldemHand.ROUND_PRE_FLOP &&
+            // if (getHoldemHand().getRound() == BettingRound.PRE_FLOP &&
             // getHoldemHand().getRaiser() == null)
             // {
             // return new HandAction(this, getHoldemHand().getRound(),
@@ -1615,7 +1617,7 @@ public class PokerPlayer extends GamePlayer {
             return getPokerAI().getHandAction(bQuick);
         } catch (Throwable e) {
             logger.error("AI exception caught. Return 'fold' to keep the game going:\n" + Utils.formatExceptionText(e));
-            return new HandAction(this, getHoldemHand().getRound(), HandAction.ACTION_FOLD, "aierror");
+            return new HandAction(this, getHoldemHand().getRound().toLegacy(), HandAction.ACTION_FOLD, "aierror");
         }
     }
 
@@ -1712,8 +1714,8 @@ public class PokerPlayer extends GamePlayer {
             // + showdown and cards not exposed OR
             //
             if (hhand != null && !(hhand.isAllInShowdown() && !isFolded())
-                    && (isFolded() || hhand.getRound() != HoldemHand.ROUND_SHOWDOWN
-                            || (hhand.getRound() == HoldemHand.ROUND_SHOWDOWN && !isCardsExposed()))) {
+                    && (isFolded() || hhand.getRound() != BettingRound.SHOWDOWN
+                            || (hhand.getRound() == BettingRound.SHOWDOWN && !isCardsExposed()))) {
                 hand = new Hand(hand_.getType());
                 int i = 0;
                 while (i < hand_.size()) {
@@ -1988,8 +1990,8 @@ public class PokerPlayer extends GamePlayer {
             return -1;
 
         // only do potential after flop & turn
-        int nRound = hhand.getRound();
-        if (nRound != HoldemHand.ROUND_FLOP && nRound != HoldemHand.ROUND_TURN)
+        int nRound = hhand.getRound().toLegacy();
+        if (nRound != BettingRound.FLOP.toLegacy() && nRound != BettingRound.TURN.toLegacy())
             return -1;
 
         // if already calced this round, return it
@@ -1998,7 +2000,7 @@ public class PokerPlayer extends GamePlayer {
 
         // do calc
         nPotential_ = HandPotential.getPotential(getHandSorted(), hhand.getCommunitySorted());
-        nLastCalcPotRound_ = hhand.getRound();
+        nLastCalcPotRound_ = hhand.getRound().toLegacy();
 
         return nPotential_;
     }
@@ -2016,8 +2018,8 @@ public class PokerPlayer extends GamePlayer {
             return -1;
 
         // only do potential after flop & turn
-        int nRound = hhand.getRound();
-        if (nRound != HoldemHand.ROUND_FLOP && nRound != HoldemHand.ROUND_TURN)
+        int nRound = hhand.getRound().toLegacy();
+        if (nRound != BettingRound.FLOP.toLegacy() && nRound != BettingRound.TURN.toLegacy())
             return -1;
 
         return nPotential_;

@@ -44,6 +44,7 @@ import com.donohoedigital.gui.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 
 public class DashboardAdvisor extends DashboardItem {
     JScrollPane scroll_;
@@ -142,9 +143,9 @@ public class DashboardAdvisor extends DashboardItem {
         title_ = NOADVICETITLE;
 
         if ((hh != null) && (pp != null) && (h != null) && (ai != null) && !hh.isAllInShowdown() && !hh.isDone()
-                && (hh.getRound() != HoldemHand.ROUND_NONE) && (hh.getRound() != HoldemHand.ROUND_SHOWDOWN)
-                && !pp.isFolded() && pp.isHumanControlled()
-                && (h.getType() == Hand.TYPE_NORMAL && !h.containsCard(Card.BLANK)) && (ai instanceof V2Player)) {
+                && (hh.getRound() != BettingRound.NONE) && (hh.getRound() != BettingRound.SHOWDOWN) && !pp.isFolded()
+                && pp.isHumanControlled() && (h.getType() == Hand.TYPE_NORMAL && !h.containsCard(Card.BLANK))
+                && (ai instanceof V2Player)) {
             V2Player p = (V2Player) ai;
             // if (p.isReady())
             {
