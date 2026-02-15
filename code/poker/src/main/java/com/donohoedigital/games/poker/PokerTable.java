@@ -45,6 +45,7 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.core.GameHand;
+import com.donohoedigital.games.poker.core.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.GameTable;
 import com.donohoedigital.games.poker.core.state.TableState;
 import com.donohoedigital.games.poker.event.*;
@@ -179,6 +180,7 @@ public class PokerTable implements ObjectID, GameTable {
     // transient (no need to save)
     private boolean bRemoved_ = false;
     private long pauseUntil_ = 0;
+    private int autoDealDelay_ = 0;
     private boolean bAllComputer_ = false;
     private boolean bInitAllComputer_ = false;
 
@@ -252,10 +254,33 @@ public class PokerTable implements ObjectID, GameTable {
     }
 
     /**
+     * Set pause time in milliseconds (GameTable interface overload)
+     */
+    @Override
+    public void setPause(int millis) {
+        setPause((long) millis);
+    }
+
+    /**
      * Get pause time
      */
     public long getPause() {
         return pauseUntil_;
+    }
+
+    /**
+     * Set auto-deal delay in milliseconds (GameTable interface method)
+     */
+    public void setAutoDealDelay(int millis) {
+        autoDealDelay_ = millis;
+    }
+
+    /**
+     * Get auto-deal delay in milliseconds (GameTable interface method)
+     */
+    @Override
+    public int getAutoDealDelay() {
+        return autoDealDelay_;
     }
 
     /**
@@ -810,6 +835,17 @@ public class PokerTable implements ObjectID, GameTable {
     }
 
     /**
+     * Get list of players recently added (GameTable interface adapter).
+     *
+     * @return list of added players as GamePlayerInfo
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<GamePlayerInfo> getAddedPlayersList() {
+        return (List<GamePlayerInfo>) (List<?>) addedList_;
+    }
+
+    /**
      * Get array list of players woh recently did addon
      */
     public List<PokerPlayer> getAddonList() {
@@ -824,10 +860,25 @@ public class PokerTable implements ObjectID, GameTable {
     }
 
     /**
+     * Clear the rebuy list (GameTable interface method)
+     */
+    public void clearRebuyList() {
+        rebuyList_.clear();
+    }
+
+    /**
      * Get array list of players we are waiting on
      */
     public List<PokerPlayer> getWaitList() {
         return waitList_;
+    }
+
+    /**
+     * add a player to wait list (GameTable interface overload)
+     */
+    @Override
+    public void addWait(GamePlayerInfo player) {
+        addWait((PokerPlayer) player);
     }
 
     /**
@@ -1748,6 +1799,20 @@ public class PokerTable implements ObjectID, GameTable {
                 addonList_.add(p);
             }
         }
+    }
+
+    /**
+     * Process AI rebuys (GameTable interface method)
+     */
+    public void processAIRebuys() {
+        aiRebuy();
+    }
+
+    /**
+     * Process AI add-ons (GameTable interface method)
+     */
+    public void processAIAddOns() {
+        aiAddOn();
     }
 
     /**

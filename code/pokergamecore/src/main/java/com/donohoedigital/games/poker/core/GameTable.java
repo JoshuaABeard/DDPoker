@@ -102,6 +102,9 @@ public interface GameTable {
      */
     void setButton(int seat);
 
+    /** Deal cards to determine initial button position */
+    void setButton();
+
     /** @return next occupied seat after the button */
     int getNextSeatAfterButton();
 
@@ -150,4 +153,114 @@ public interface GameTable {
 
     /** @return true if table should auto-deal next hand */
     boolean isAutoDeal();
+
+    /** @return true if this is the current table (in UI) */
+    boolean isCurrent();
+
+    // Player management operations
+
+    /** Process AI rebuys at this table */
+    void processAIRebuys();
+
+    /** Process AI add-ons at this table */
+    void processAIAddOns();
+
+    /** Clear the pending rebuy list */
+    void clearRebuyList();
+
+    // Color-up operations
+
+    /**
+     * @param minChip
+     *            the next minimum chip denomination
+     */
+    void setNextMinChip(int minChip);
+
+    /** Determine if color-up is needed and mark table accordingly */
+    void doColorUpDetermination();
+
+    /** @return true if table is in the process of coloring up */
+    boolean isColoringUp();
+
+    /** Perform the color-up operation */
+    void colorUp();
+
+    /** Finalize the color-up operation */
+    void colorUpFinish();
+
+    // Hand operations
+
+    /** Start a break period at this table */
+    void startBreak();
+
+    /** Start a new hand at this table */
+    void startNewHand();
+
+    /** @return true if table is in zip mode (fast play) */
+    boolean isZipMode();
+
+    /**
+     * Set zip mode (fast play).
+     *
+     * @param zipMode
+     *            true to enable zip mode
+     */
+    void setZipMode(boolean zipMode);
+
+    // Wait list operations (for online showdown coordination)
+
+    /** Remove all players from wait list */
+    void removeWaitAll();
+
+    /**
+     * Add a player to the wait list.
+     *
+     * @param player
+     *            player to add to wait list
+     */
+    void addWait(GamePlayerInfo player);
+
+    /** @return number of players in wait list */
+    int getWaitSize();
+
+    /**
+     * Get player from wait list by index.
+     *
+     * @param index
+     *            index in wait list (0-based)
+     * @return player at that index
+     */
+    GamePlayerInfo getWaitPlayer(int index);
+
+    /** @return milliseconds since last table state change */
+    long getMillisSinceLastStateChange();
+
+    /**
+     * Set pause time before next state transition.
+     *
+     * @param millis
+     *            milliseconds to pause
+     */
+    void setPause(int millis);
+
+    /** @return delay in milliseconds for auto-deal pause */
+    int getAutoDealDelay();
+
+    /** Quickly simulate hand for all-AI table (skip UI phases) */
+    void simulateHand();
+
+    // Table cleanup operations
+
+    /**
+     * Get list of players added to this table during cleanup.
+     *
+     * @return list of added players
+     */
+    java.util.List<GamePlayerInfo> getAddedPlayersList();
+
+    /** @return true if this table was removed during consolidation */
+    boolean isRemoved();
+
+    /** @return true if this table has only computer players */
+    boolean isAllComputer();
 }

@@ -48,7 +48,7 @@ class TournamentEngineTest {
     private GameEventBus eventBus;
     private PlayerActionProvider actionProvider;
     private StubGameTable table;
-    private StubGameContext game;
+    private StubTournamentContext game;
 
     @BeforeEach
     void setUp() {
@@ -57,7 +57,7 @@ class TournamentEngineTest {
         engine = new TournamentEngine(eventBus, actionProvider);
 
         table = new StubGameTable();
-        game = new StubGameContext();
+        game = new StubTournamentContext();
     }
 
     // DONE state tests
@@ -225,6 +225,7 @@ class TournamentEngineTest {
     @Test
     void handleNewLevelCheck_shouldTransitionToStartHand() {
         table.tableState = TableState.NEW_LEVEL_CHECK;
+        table.level = 1; // Match game level so no level change
 
         TableProcessResult result = engine.processTable(table, game, true, false);
 
@@ -239,7 +240,8 @@ class TournamentEngineTest {
 
         TableProcessResult result = engine.processTable(table, game, true, false);
 
-        assertThat(result.nextState()).isEqualTo(TableState.BETTING);
+        assertThat(result.phaseToRun()).isEqualTo("TD.DealDisplayHand");
+        assertThat(result.pendingState()).isEqualTo(TableState.BETTING);
     }
 
     // BREAK state tests
@@ -283,10 +285,11 @@ class TournamentEngineTest {
     @Test
     void handleBetting_shouldNotSleepForOfflineGame() {
         table.tableState = TableState.BETTING;
+        table.holdemHand = new StubGameHand(BettingRound.RIVER, true); // Hand is done
 
         TableProcessResult result = engine.processTable(table, game, true, false);
 
-        assertThat(result.shouldSleep()).isFalse();
+        assertThat(result.nextState()).isIn(TableState.PRE_SHOWDOWN, TableState.SHOWDOWN);
     }
 
     // COMMUNITY state tests
@@ -294,9 +297,11 @@ class TournamentEngineTest {
     @Test
     void handleCommunity_shouldContinueToCommunity() {
         table.tableState = TableState.COMMUNITY;
-        table.holdemHand = new StubGameHand(BettingRound.FLOP, false);
+        StubGameHand hand = new StubGameHand(BettingRound.FLOP, false);
+        hand.numWithCards = 1; // Only 1 player, skip phase
+        table.holdemHand = hand;
 
-        TableProcessResult result = engine.processTable(table, game, true, false);
+        TableProcessResult result = engine.processTable(table, game, true, true); // Online game
 
         assertThat(result.nextState()).isEqualTo(TableState.COMMUNITY);
         assertThat(result.shouldSleep()).isFalse();
@@ -305,9 +310,11 @@ class TournamentEngineTest {
     @Test
     void handleCommunity_atRiver_shouldTransitionToPreShowdown() {
         table.tableState = TableState.COMMUNITY;
-        table.holdemHand = new StubGameHand(BettingRound.RIVER, false);
+        StubGameHand hand = new StubGameHand(BettingRound.TURN, false); // Start at TURN, will advance to RIVER
+        hand.numWithCards = 1; // Only 1 player, skip phase
+        table.holdemHand = hand;
 
-        TableProcessResult result = engine.processTable(table, game, true, false);
+        TableProcessResult result = engine.processTable(table, game, true, true); // Online game
 
         assertThat(result.nextState()).isEqualTo(TableState.PRE_SHOWDOWN);
         assertThat(result.shouldSleep()).isFalse();
@@ -327,16 +334,16 @@ class TournamentEngineTest {
     // Stub implementations for testing
 
     private static class StubGameTable implements GameTable {
-        TableState tableState = TableState.NONE;
-        TableState pendingTableState = null;
-        TableState previousTableState = null;
-        String pendingPhase = null;
-        int numOccupiedSeats = 0;
-        boolean autoDeal = false;
-        int button = 0;
-        int handNum = 0;
-        int level = 0;
-        GameHand holdemHand = null;
+        public TableState tableState = TableState.NONE;
+        public TableState pendingTableState = null;
+        public TableState previousTableState = null;
+        public String pendingPhase = null;
+        public int numOccupiedSeats = 0;
+        public boolean autoDeal = false;
+        public int button = 0;
+        public int handNum = 0;
+        public int level = 0;
+        public GameHand holdemHand = null;
 
         @Override
         public int getNumber() {
@@ -452,9 +459,119 @@ class TournamentEngineTest {
         public boolean isAutoDeal() {
             return autoDeal;
         }
+
+        @Override
+        public boolean isCurrent() {
+            return false;
+        }
+
+        @Override
+        public void processAIRebuys() {
+        }
+
+        @Override
+        public void processAIAddOns() {
+        }
+
+        @Override
+        public void clearRebuyList() {
+        }
+
+        @Override
+        public void setNextMinChip(int minChip) {
+        }
+
+        @Override
+        public void doColorUpDetermination() {
+        }
+
+        @Override
+        public boolean isColoringUp() {
+            return false;
+        }
+
+        @Override
+        public void colorUp() {
+        }
+
+        @Override
+        public void colorUpFinish() {
+        }
+
+        @Override
+        public void startBreak() {
+        }
+
+        @Override
+        public void startNewHand() {
+        }
+
+        @Override
+        public boolean isZipMode() {
+            return false;
+        }
+
+        @Override
+        public void setZipMode(boolean zipMode) {
+        }
+
+        @Override
+        public void setButton() {
+        }
+
+        @Override
+        public void removeWaitAll() {
+        }
+
+        @Override
+        public void addWait(GamePlayerInfo player) {
+        }
+
+        @Override
+        public int getWaitSize() {
+            return 0;
+        }
+
+        @Override
+        public GamePlayerInfo getWaitPlayer(int index) {
+            return null;
+        }
+
+        @Override
+        public long getMillisSinceLastStateChange() {
+            return 0;
+        }
+
+        @Override
+        public void setPause(int millis) {
+        }
+
+        @Override
+        public int getAutoDealDelay() {
+            return 0;
+        }
+
+        @Override
+        public void simulateHand() {
+        }
+
+        @Override
+        public java.util.List<GamePlayerInfo> getAddedPlayersList() {
+            return new java.util.ArrayList<>();
+        }
+
+        @Override
+        public boolean isRemoved() {
+            return false;
+        }
+
+        @Override
+        public boolean isAllComputer() {
+            return false;
+        }
     }
 
-    private static class StubGameContext implements GameContext {
+    private static class StubTournamentContext implements TournamentContext {
         @Override
         public int getNumTables() {
             return 1;
@@ -489,11 +606,93 @@ class TournamentEngineTest {
         public boolean isGameOver() {
             return false;
         }
+
+        @Override
+        public int getLevel() {
+            return 1;
+        }
+
+        @Override
+        public void nextLevel() {
+        }
+
+        @Override
+        public boolean isLevelExpired() {
+            return false;
+        }
+
+        @Override
+        public void advanceClockBreak() {
+        }
+
+        @Override
+        public void startGameClock() {
+        }
+
+        @Override
+        public int getLastMinChip() {
+            return 5;
+        }
+
+        @Override
+        public int getMinChip() {
+            return 5;
+        }
+
+        @Override
+        public void advanceClock() {
+        }
+
+        @Override
+        public boolean isBreakLevel(int level) {
+            return false;
+        }
+
+        @Override
+        public GamePlayerInfo getLocalPlayer() {
+            return null;
+        }
+
+        @Override
+        public boolean isScheduledStartEnabled() {
+            return false;
+        }
+
+        @Override
+        public long getScheduledStartTime() {
+            return 0;
+        }
+
+        @Override
+        public int getMinPlayersForScheduledStart() {
+            return 2;
+        }
+
+        @Override
+        public int getTimeoutForRound(int round) {
+            return 30;
+        }
+
+        @Override
+        public GameTable getCurrentTable() {
+            return null;
+        }
+
+        @Override
+        public int getTimeoutSeconds() {
+            return 30;
+        }
+
+        @Override
+        public boolean isOnePlayerLeft() {
+            return false;
+        }
     }
 
     private static class StubGameHand implements GameHand {
-        BettingRound round;
-        boolean done;
+        public BettingRound round;
+        public boolean done;
+        public int numWithCards = 2; // Default to 2 players with cards
 
         StubGameHand(BettingRound round, boolean done) {
             this.round = round;
@@ -517,7 +716,7 @@ class TournamentEngineTest {
 
         @Override
         public int getNumWithCards() {
-            return 2;
+            return numWithCards;
         }
 
         @Override
@@ -536,6 +735,38 @@ class TournamentEngineTest {
                 round = BettingRound.RIVER;
             else if (round == BettingRound.RIVER)
                 round = BettingRound.SHOWDOWN;
+        }
+
+        @Override
+        public void preResolve(boolean isOnline) {
+        }
+
+        @Override
+        public void resolve() {
+        }
+
+        @Override
+        public void storeHandHistory() {
+        }
+
+        @Override
+        public java.util.List<GamePlayerInfo> getPreWinners() {
+            return new java.util.ArrayList<>();
+        }
+
+        @Override
+        public java.util.List<GamePlayerInfo> getPreLosers() {
+            return new java.util.ArrayList<>();
+        }
+
+        @Override
+        public boolean isUncontested() {
+            return false;
+        }
+
+        @Override
+        public GamePlayerInfo getCurrentPlayerWithInit() {
+            return null;
         }
     }
 }

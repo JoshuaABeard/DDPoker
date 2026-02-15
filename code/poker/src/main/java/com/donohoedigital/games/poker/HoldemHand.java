@@ -46,6 +46,7 @@ import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.*;
 import com.donohoedigital.games.poker.core.GameHand;
+import com.donohoedigital.games.poker.core.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
@@ -2441,15 +2442,19 @@ public class HoldemHand implements DataMarshal, GameHand {
     /**
      * get list of winners calculated by preResolve()
      */
-    public List<PokerPlayer> getPreWinners() {
-        return winners_;
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<GamePlayerInfo> getPreWinners() {
+        return (List<GamePlayerInfo>) (List<?>) winners_;
     }
 
     /**
      * get list of losers calculated by preResolve()
      */
-    public List<PokerPlayer> getPreLosers() {
-        return losers_;
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<GamePlayerInfo> getPreLosers() {
+        return (List<GamePlayerInfo>) (List<?>) losers_;
     }
 
     /**
@@ -2484,9 +2489,19 @@ public class HoldemHand implements DataMarshal, GameHand {
     }
 
     /**
-     * store history for this hand in the DB
+     * store history for this hand in the DB (GameHand interface version)
      */
-    public int storeHandHistory() {
+    @Override
+    public void storeHandHistory() {
+        storeHandHistoryDB();
+    }
+
+    /**
+     * store history for this hand in the DB and return the database ID
+     *
+     * @return database ID, or -1 if not stored
+     */
+    public int storeHandHistoryDB() {
         if (!table_.isAllComputer()) {
             int id = PokerDatabase.storeHandHistory(this);
             bStoredInDatabase_ = true;

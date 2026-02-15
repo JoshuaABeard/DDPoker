@@ -57,4 +57,50 @@ public interface GamePlayerInfo {
 
     /** @return player's seat number at the table */
     int getSeat();
+
+    /** @return true if player wants to be asked before showing winning cards */
+    boolean isAskShowWinning();
+
+    /** @return true if player wants to be asked before showing losing cards */
+    boolean isAskShowLosing();
+
+    /** @return true if this player is an observer (not playing) */
+    boolean isObserver();
+
+    /** @return true if this player is currently controlled by a human */
+    boolean isHumanControlled();
+
+    /** @return think bank time remaining in milliseconds */
+    int getThinkBankMillis();
+
+    /** @return true if player is sitting out */
+    boolean isSittingOut();
+
+    /**
+     * @param sittingOut
+     *            true if player should sit out
+     */
+    void setSittingOut(boolean sittingOut);
+
+    /** @return true if this player is locally controlled (local human or AI) */
+    boolean isLocallyControlled();
+
+    /** @return true if this is a computer/AI player */
+    boolean isComputer();
+
+    /**
+     * Set timeout milliseconds for this player.
+     *
+     * @param millis
+     *            timeout in milliseconds
+     */
+    void setTimeoutMillis(int millis);
+
+    /**
+     * Set timeout message warning countdown.
+     *
+     * @param seconds
+     *            seconds left before warning
+     */
+    void setTimeoutMessageSecondsLeft(int seconds);
 }

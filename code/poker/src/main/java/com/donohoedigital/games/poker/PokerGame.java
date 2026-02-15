@@ -56,13 +56,14 @@ import org.apache.logging.log4j.*;
 import java.io.*;
 import java.security.*;
 import java.util.*;
-import com.donohoedigital.games.poker.core.GameContext;
+import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import com.donohoedigital.games.poker.core.TournamentContext;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
  * @author donohoe
  */
-public class PokerGame extends Game implements PlayerActionListener, GameContext {
+public class PokerGame extends Game implements PlayerActionListener, TournamentContext {
     static Logger logger = LogManager.getLogger(PokerGame.class);
 
     public static final int ACTION_FOLD = 1;
@@ -368,6 +369,14 @@ public class PokerGame extends Game implements PlayerActionListener, GameContext
      */
     public PokerPlayer getPokerPlayerFromID(int n) {
         return (PokerPlayer) getPlayerFromID(n, true);
+    }
+
+    /**
+     * Get player by ID (TournamentContext interface method)
+     */
+    @Override
+    public GamePlayerInfo getPlayerByID(int playerId) {
+        return getPokerPlayerFromID(playerId);
     }
 
     /**
@@ -804,6 +813,73 @@ public class PokerGame extends Game implements PlayerActionListener, GameContext
     }
 
     /**
+     * Get default timeout in seconds for player actions (TournamentContext
+     * interface method)
+     */
+    @Override
+    public int getTimeoutSeconds() {
+        return profile_ != null ? profile_.getTimeoutSeconds() : 0;
+    }
+
+    /**
+     * Get timeout for a specific betting round (TournamentContext interface method)
+     */
+    @Override
+    public int getTimeoutForRound(int round) {
+        return profile_ != null ? profile_.getTimeoutForRound(round) : 0;
+    }
+
+    /**
+     * Get minimum players required for scheduled start (TournamentContext interface
+     * method)
+     */
+    @Override
+    public int getMinPlayersForScheduledStart() {
+        return profile_ != null ? profile_.getMinPlayersForStart() : 0;
+    }
+
+    /**
+     * Get scheduled start time in milliseconds since epoch (TournamentContext
+     * interface method)
+     */
+    @Override
+    public long getScheduledStartTime() {
+        return profile_ != null ? profile_.getStartTime() : 0L;
+    }
+
+    /**
+     * Check if scheduled start is enabled (TournamentContext interface method)
+     */
+    @Override
+    public boolean isScheduledStartEnabled() {
+        return profile_ != null && profile_.isScheduledStartEnabled();
+    }
+
+    /**
+     * Check if this is a practice game (TournamentContext interface method)
+     */
+    @Override
+    public boolean isPractice() {
+        return !isOnlineGame();
+    }
+
+    /**
+     * Check if this is an online game (TournamentContext interface method)
+     */
+    @Override
+    public boolean isOnlineGame() {
+        return super.isOnlineGame();
+    }
+
+    /**
+     * Check if a level is a break period (TournamentContext interface method)
+     */
+    @Override
+    public boolean isBreakLevel(int level) {
+        return profile_ != null && profile_.isBreak(level);
+    }
+
+    /**
      * Set profile
      */
     public void setProfile(TournamentProfile profile) {
@@ -920,6 +996,15 @@ public class PokerGame extends Game implements PlayerActionListener, GameContext
      */
     public GameClock getGameClock() {
         return clock_;
+    }
+
+    /**
+     * Start the game clock (GameContext interface method)
+     */
+    public void startGameClock() {
+        if (clock_ != null) {
+            clock_.start();
+        }
     }
 
     /**
