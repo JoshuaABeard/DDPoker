@@ -367,4 +367,221 @@ public class OnlineGameTest {
         game.setMode(OnlineGame.MODE_END);
         assertEquals(OnlineGame.MODE_END, game.getMode());
     }
+
+    // ===== Tournament String Marshalling Tests =====
+
+    @Test
+    public void testGetTournamentAsString() {
+        OnlineGame game = new OnlineGame();
+        TournamentProfile tournament = new TournamentProfile();
+        tournament.setName("Test Tournament");
+
+        game.setTournament(tournament);
+
+        String tournamentString = game.getTournamentAsString();
+
+        assertNotNull("Tournament string should not be null", tournamentString);
+        assertFalse("Tournament string should not be empty", tournamentString.isEmpty());
+    }
+
+    @Test
+    public void testGetTournamentAsStringWhenNull() {
+        OnlineGame game = new OnlineGame();
+        game.setTournament(null);
+
+        String tournamentString = game.getTournamentAsString();
+
+        assertNull("Tournament string should be null when tournament is null", tournamentString);
+    }
+
+    @Test
+    public void testSetTournamentAsStringWithNull() {
+        OnlineGame game = new OnlineGame();
+
+        game.setTournamentAsString(null);
+
+        assertNull("Tournament should be null", game.getTournament());
+        assertNull("Tournament string should be null", game.getTournamentAsString());
+    }
+
+    @Test
+    public void testSetTournamentAsStringWithValidData() {
+        OnlineGame game = new OnlineGame();
+        TournamentProfile tournament = new TournamentProfile();
+        tournament.setName("Test Tournament");
+        tournament.setNumPlayers(10);
+
+        // Marshal a tournament to get valid string data
+        OnlineGame tempGame = new OnlineGame();
+        tempGame.setTournament(tournament);
+        String marshalledData = tempGame.getTournamentAsString();
+
+        // Now set it on our test game
+        game.setTournamentAsString(marshalledData);
+
+        assertNotNull("Tournament should not be null", game.getTournament());
+        assertEquals("Tournament name should match", "Test Tournament", game.getTournament().getName());
+    }
+
+    @Test
+    public void testUpdateAfterDataChangedWithNullTournament() {
+        // Test via constructor which calls updateAfterDataChanged
+        DMTypedHashMap data = new DMTypedHashMap();
+        data.setString(OnlineGame.WAN_URL, "test-url");
+        // No tournament set - should handle null gracefully
+
+        OnlineGame game = new OnlineGame(data);
+
+        // Should not throw and tournament should be null
+        assertNull("Tournament should be null", game.getTournament());
+    }
+
+    @Test
+    public void testUpdateAfterDataChangedWithTournament() {
+        // Test via constructor which calls updateAfterDataChanged
+        DMTypedHashMap data = new DMTypedHashMap();
+        data.setString(OnlineGame.WAN_URL, "test-url");
+        TournamentProfile tournament = new TournamentProfile();
+        tournament.setName("Test Tournament");
+        data.setObject(OnlineGame.WAN_TOURNAMENT, tournament);
+
+        OnlineGame game = new OnlineGame(data);
+
+        // Should have tournament and tournamentAsString set
+        assertNotNull("Tournament should not be null", game.getTournament());
+        assertNotNull("Tournament string should be set", game.getTournamentAsString());
+    }
+
+    // ===== XML Encoding Tests =====
+
+    @Test
+    public void testEncodeXMLWithHistories() {
+        OnlineGame game = new OnlineGame();
+        game.setId(1L);
+        game.setUrl("http://test.com/game/1");
+        game.setHostPlayer("TestHost");
+        game.setMode(OnlineGame.MODE_PLAY);
+        game.setStartDate(new Date());
+
+        TournamentProfile tournament = new TournamentProfile();
+        tournament.setName("Test Tournament");
+        game.setTournament(tournament);
+
+        List<TournamentHistory> histories = new ArrayList<>();
+        TournamentHistory history = new TournamentHistory();
+        histories.add(history);
+        game.setHistories(histories);
+
+        MockXMLEncoder encoder = new MockXMLEncoder();
+        game.encodeXML(encoder);
+
+        assertTrue("Should have encoded game", encoder.objectsSet.contains("game"));
+        assertTrue("Should have encoded results", encoder.objectsSet.contains("results"));
+    }
+
+    @Test
+    public void testEncodeXMLWithNullHistories() {
+        OnlineGame game = new OnlineGame();
+        game.setId(1L);
+        game.setUrl("http://test.com/game/1");
+        game.setHostPlayer("TestHost");
+        game.setMode(OnlineGame.MODE_PLAY);
+
+        TournamentProfile tournament = new TournamentProfile();
+        tournament.setName("Test Tournament");
+        game.setTournament(tournament);
+
+        game.setHistories(null);
+
+        MockXMLEncoder encoder = new MockXMLEncoder();
+        game.encodeXML(encoder);
+
+        assertTrue("Should have encoded game", encoder.objectsSet.contains("game"));
+        assertFalse("Should not have encoded results", encoder.objectsSet.contains("results"));
+    }
+
+    @Test
+    public void testEncodeXMLWithEmptyHistories() {
+        OnlineGame game = new OnlineGame();
+        game.setId(1L);
+        game.setUrl("http://test.com/game/1");
+        game.setHostPlayer("TestHost");
+        game.setMode(OnlineGame.MODE_PLAY);
+
+        TournamentProfile tournament = new TournamentProfile();
+        tournament.setName("Test Tournament");
+        game.setTournament(tournament);
+
+        game.setHistories(new ArrayList<>());
+
+        MockXMLEncoder encoder = new MockXMLEncoder();
+        game.encodeXML(encoder);
+
+        assertTrue("Should have encoded game", encoder.objectsSet.contains("game"));
+        assertFalse("Should not have encoded results for empty list", encoder.objectsSet.contains("results"));
+    }
+
+    @Test
+    public void testEncodeXMLWithMultipleHistories() {
+        OnlineGame game = new OnlineGame();
+        game.setId(1L);
+        game.setUrl("http://test.com/game/1");
+        game.setHostPlayer("TestHost");
+        game.setMode(OnlineGame.MODE_PLAY);
+
+        TournamentProfile tournament = new TournamentProfile();
+        tournament.setName("Test Tournament");
+        game.setTournament(tournament);
+
+        List<TournamentHistory> histories = new ArrayList<>();
+        histories.add(new TournamentHistory());
+        histories.add(new TournamentHistory());
+        histories.add(new TournamentHistory());
+        game.setHistories(histories);
+
+        MockXMLEncoder encoder = new MockXMLEncoder();
+        game.encodeXML(encoder);
+
+        assertTrue("Should have encoded game", encoder.objectsSet.contains("game"));
+        assertTrue("Should have encoded results", encoder.objectsSet.contains("results"));
+    }
+
+    // ===== Mock Helper Class =====
+
+    private static class MockXMLEncoder extends com.donohoedigital.xml.SimpleXMLEncoder {
+        java.util.Set<String> objectsSet = new java.util.HashSet<>();
+
+        @Override
+        public com.donohoedigital.xml.SimpleXMLEncoder setCurrentObject(Object obj, String sTag) {
+            objectsSet.add(sTag);
+            return this;
+        }
+
+        @Override
+        public com.donohoedigital.xml.SimpleXMLEncoder setCurrentObject(String sTag) {
+            objectsSet.add(sTag);
+            return this;
+        }
+
+        @Override
+        public com.donohoedigital.xml.SimpleXMLEncoder addTag(String sTag, Object value) {
+            return this;
+        }
+
+        @Override
+        public com.donohoedigital.xml.SimpleXMLEncoder addTags(String... tags) {
+            return this;
+        }
+
+        @Override
+        public com.donohoedigital.xml.SimpleXMLEncoder addAllTagsExcept(String... excludedTags) {
+            // Override to avoid calling getCurrentObject() which requires a stack
+            return this;
+        }
+
+        @Override
+        public com.donohoedigital.xml.SimpleXMLEncoder finishCurrentObject() {
+            return this;
+        }
+    }
 }
