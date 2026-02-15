@@ -15,8 +15,10 @@ git worktree add -b feature-<description> ../DDPoker-feature-<description>
 1. Pull main from remote
 2. Create worktree from main and work there
 3. Commit and test normally
-4. When complete, STOP and request agent code review (merges use squash merge, not PRs)
-5. After approval: rebase, squash merge to main, push, clean up
+4. When complete, STOP and request agent code review
+5. After approval: rebase, squash merge to main, push directly to main, clean up
+
+**Note:** This project does NOT use pull requests. All approved changes are merged directly to main and pushed.
 
 ## Merging Back
 

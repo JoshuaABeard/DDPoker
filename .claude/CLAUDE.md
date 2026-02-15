@@ -132,6 +132,8 @@ git worktree add -b feature-<description> ../DDPoker-feature-<description>
 
 **Naming:** `feature-*`, `fix-*`, `refactor-*`
 
+**Merging:** This project does NOT use pull requests. After code review approval, rebase onto main, squash merge to main, and push directly to origin/main.
+
 See `.claude/guides/worktree-workflow.md` for the full create/merge/cleanup workflow.
 
 ### Commit Message Format
