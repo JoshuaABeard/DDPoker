@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [3.3.0-community] - 2026-02-09
+## [3.3.0-CommunityEdition] - 2026-02-09
 
 A major release transforming DD Poker from a legacy proprietary application into a modern, fully open-source poker platform. Includes new gameplay features, a modern web interface, overhauled networking, native installers, and extensive architectural improvements.
 
@@ -119,12 +119,11 @@ A major release transforming DD Poker from a legacy proprietary application into
 
 ---
 
-## [3.2.0-community] - 2026-01-15
+## [3.2.0-CommunityEdition] - 2026-01-15
 
-Initial open source release of DD Poker as a community-maintained fork.
+Initial release of DD Poker as a community-maintained fork.
 
 ### Added
-- Open source release under GPL-3.0
 - Docker deployment support with docker-compose
 - GitHub CI pipeline
 - JUnit 5 and AssertJ test infrastructure
@@ -201,13 +200,13 @@ DD Poker was a commercial Texas Hold'em poker simulator sold as retail and onlin
 
 ## Version Number Scheme
 
-Starting with 3.2.0, DD Poker uses semantic versioning with a `-community` suffix:
+Starting with 3.2.0, DD Poker uses semantic versioning with a `-CommunityEdition` suffix:
 
-- **Major.Minor.Patch-community** (e.g., 3.3.0-community)
+- **Major.Minor.Patch-CommunityEdition** (e.g., 3.3.0-CommunityEdition)
 - **Major**: Breaking changes or major new features
 - **Minor**: New features, backward compatible
 - **Patch**: Bug fixes, backward compatible
-- **-community**: Denotes open source Community Edition
+- **-CommunityEdition**: Denotes the community-maintained fork
 
 ---
 
