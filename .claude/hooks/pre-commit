@@ -6,20 +6,29 @@ set -e
 
 # Check 1: Block code commits to main/master
 # Allow .claude/, .gitignore, .md files, etc. Only block actual code files.
+# Exception: Allow squash merge commits (indicated by .git/SQUASH_MSG)
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
 if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
-    STAGED=$(git diff --cached --name-only 2>/dev/null || echo "")
-    CODE_FILES=$(echo "$STAGED" | grep -vE '^\.claude/|^\.git(ignore|attributes)$|\.md$|^LICENSE|^README|^SECURITY' | grep -v '^$' || true)
-    if [ -n "$CODE_FILES" ]; then
-        echo "" >&2
-        echo "ERROR: Cannot commit code files directly to $BRANCH branch." >&2
-        echo "Please use a worktree for development:" >&2
-        echo "  git worktree add -b feature-name ../DDPoker-feature-name" >&2
-        echo "" >&2
-        echo "Blocked files:" >&2
-        echo "$CODE_FILES" | sed 's/^/  - /' >&2
-        echo "" >&2
-        exit 1
+    # Check if this is a squash merge in progress
+    GIT_DIR=$(git rev-parse --git-dir 2>/dev/null || echo ".git")
+    if [ -f "$GIT_DIR/SQUASH_MSG" ]; then
+        # Squash merge in progress - allow it
+        : # no-op, continue to other checks
+    else
+        # Not a squash merge - enforce worktree workflow
+        STAGED=$(git diff --cached --name-only 2>/dev/null || echo "")
+        CODE_FILES=$(echo "$STAGED" | grep -vE '^\.claude/|^\.git(ignore|attributes)$|\.md$|^LICENSE|^README|^SECURITY' | grep -v '^$' || true)
+        if [ -n "$CODE_FILES" ]; then
+            echo "" >&2
+            echo "ERROR: Cannot commit code files directly to $BRANCH branch." >&2
+            echo "Please use a worktree for development:" >&2
+            echo "  git worktree add -b feature-name ../DDPoker-feature-name" >&2
+            echo "" >&2
+            echo "Blocked files:" >&2
+            echo "$CODE_FILES" | sed 's/^/  - /' >&2
+            echo "" >&2
+            exit 1
+        fi
     fi
 fi
 
