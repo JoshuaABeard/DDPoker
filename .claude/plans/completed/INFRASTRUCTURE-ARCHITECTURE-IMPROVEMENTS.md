@@ -5,7 +5,11 @@
 This plan covers major architectural improvements to DDPoker's core infrastructure that were identified during the general code review but require separate planning due to their scope and complexity.
 
 **Source:** Extracted from `CODE-REVIEW.md` (now archived)
-**Status:** draft
+**Status:** SUPERSEDED by `SERVER-HOSTED-GAME-ENGINE.md` (2026-02-15)
+
+> **Note:** All five items superseded or moot — EngineServlet/ChatServer/UDP are legacy P2P code removed
+> in Milestone 7, auth redesign is covered by JWT (Phase 2.1), and database resource fixes (MF-1/MF-2)
+> are already complete with remaining work on code of declining importance.
 **Created:** 2026-02-13
 
 ---

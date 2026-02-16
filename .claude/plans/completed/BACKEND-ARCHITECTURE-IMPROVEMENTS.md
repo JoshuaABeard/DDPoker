@@ -5,7 +5,10 @@
 This plan covers major architectural improvements to the DDPoker backend that were identified during the backend code review but require separate planning due to their scope and complexity.
 
 **Source:** Extracted from `BACKEND-CODE-REVIEW.md` (now archived)
-**Status:** draft
+**Status:** SUPERSEDED by `SERVER-HOSTED-GAME-ENGINE.md` (2026-02-15)
+
+> **Note:** All three items superseded — PokerServlet gets gutted by legacy P2P removal (Milestone 7),
+> REST API migration IS Milestone 2 of the server hosting plan, and unified auth IS Phase 2.1 (JWT).
 **Created:** 2026-02-13
 
 ---

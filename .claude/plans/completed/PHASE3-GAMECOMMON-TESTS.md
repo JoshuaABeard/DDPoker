@@ -1,6 +1,11 @@
 # Phase 3 Unit Testing Plan: gamecommon Module
 
-**Status:** draft
+**Status:** SUPERSEDED by `SERVER-HOSTED-GAME-ENGINE.md` (2026-02-15)
+
+> **Note:** Target classes (Territory, GamePiece, EngineMessage, GameState, GamePhase, SaveDetails) are
+> board-game framework abstractions, old binary protocol, or old save system — all bypassed or replaced
+> by the server hosting plan. Testing effort is better directed at the new `pokergameserver` module
+> and `pokergamecore` tests.
 
 ## Context
 
