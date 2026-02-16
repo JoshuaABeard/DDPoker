@@ -115,6 +115,9 @@ public class ShowTournamentTable extends ShowPokerTable
     private DDLabel focus_;
     private static final ImageIcon focusOn_ = ImageConfig.getImageIcon("keyboardfocus-on");
     private static final ImageIcon focusOff_ = ImageConfig.getImageIcon("keyboardfocus-off");
+    private boolean awaitingPlayerFocus_ = false;
+    private Timer focusBlinkTimer_;
+    private boolean focusBlinkState_ = false;
 
     private TournamentDirector TD() {
         if (td_ == null) {
@@ -263,6 +266,7 @@ public class ShowTournamentTable extends ShowPokerTable
         focus_ = new DDLabel();
         focus_.setPreferredSize(new Dimension(25, 28));
         focus_.setIcon(focusOn_);
+        focus_.setToolTipText(PropertyConfig.getMessage("msg.keyboardfocus.tooltip"));
         focus_.addMouseWheelListener(amountText_);
         MouseAdapter listener = new MouseAdapter() {
             // exit if clicked
@@ -356,6 +360,11 @@ public class ShowTournamentTable extends ShowPokerTable
     //// Focus listener - used to change icon to indicate when we have focus
     ////
     public void focusGained(FocusEvent e) {
+        // Phase 2: Clear awaiting focus state when board gains focus
+        if (e.getSource() == board_) {
+            setAwaitingPlayerFocus(false);
+        }
+
         focus_.setIcon(focusOn_);
 
         // Windows alt-tab bug. If we get a focus gained event from amountText with no
@@ -1136,7 +1145,7 @@ public class ShowTournamentTable extends ShowPokerTable
                 bRevalidate = true;
             }
             if (amountPanel_.isVisible()) {
-                if (amount_.hasFocus())
+                if (amount_.hasFocus() && !isFocusInChat())
                     board_.requestFocus();
                 amountPanel_.setVisible(false);
                 bRevalidate = true;
@@ -1198,7 +1207,7 @@ public class ShowTournamentTable extends ShowPokerTable
 
             if (!bAllowAmount && amountPanel_.isVisible()) {
                 amountPanel_.setSoonDisabled(true);
-                if (amount_.hasFocus() && !bAllowContinueLower && !bAllowContinue) {
+                if (amount_.hasFocus() && !bAllowContinueLower && !bAllowContinue && !isFocusInChat()) {
                     board_.requestFocusDirect();
                 }
 
@@ -1212,6 +1221,11 @@ public class ShowTournamentTable extends ShowPokerTable
                 });
             }
         }
+
+        // Phase 2: Visual feedback when awaiting player focus
+        // If we're in a betting mode and chat has focus, show the awaiting indicator
+        boolean isBettingMode = nMode == MODE_CHECK_BET || nMode == MODE_CHECK_RAISE || nMode == MODE_CALL_RAISE;
+        setAwaitingPlayerFocus(isBettingMode && isFocusInChat());
     }
 
     private void updateButtonBase() {
@@ -1531,6 +1545,41 @@ public class ShowTournamentTable extends ShowPokerTable
 
     private boolean isFocusInChat() {
         return chat_.hasFocus() || OnlineLobby.hasFocus();
+    }
+
+    /**
+     * Set whether we are awaiting player focus (player's turn but chat has focus).
+     * When true, starts a blinking animation on the focus indicator to draw
+     * attention.
+     */
+    private void setAwaitingPlayerFocus(boolean awaiting) {
+        if (awaitingPlayerFocus_ == awaiting) {
+            return; // No change
+        }
+
+        awaitingPlayerFocus_ = awaiting;
+
+        if (awaiting) {
+            // Start blinking animation and update tooltip
+            focus_.setToolTipText(PropertyConfig.getMessage("msg.keyboardfocus.awaiting"));
+            if (focusBlinkTimer_ == null) {
+                focusBlinkTimer_ = new Timer(500, e -> {
+                    focusBlinkState_ = !focusBlinkState_;
+                    focus_.setIcon(focusBlinkState_ ? focusOn_ : focusOff_);
+                });
+                focusBlinkTimer_.start();
+            }
+        } else {
+            // Stop blinking animation and restore tooltip
+            focus_.setToolTipText(PropertyConfig.getMessage("msg.keyboardfocus.tooltip"));
+            if (focusBlinkTimer_ != null) {
+                focusBlinkTimer_.stop();
+                focusBlinkTimer_ = null;
+            }
+            focusBlinkState_ = false;
+            // Restore normal focus indicator state (will be updated by
+            // focusGained/focusLost)
+        }
     }
 
     /**
