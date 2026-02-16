@@ -1,23 +1,24 @@
 # Phase 7: Extract AI to pokergamecore
 
-**Status:** active — Core infrastructure and TournamentAI complete
+**Status:** active — V1/V2 extraction complete, ServerAIProvider next
 
-**Last Updated:** 2026-02-15
+**Last Updated:** 2026-02-16
 
-### ✅ Completed (2026-02-15)
+### ✅ Completed
 - **Phase 7A: Core AI Infrastructure** - PurePokerAI and AIContext interfaces
+- **Phase 7B: V1 Algorithm Extraction** - V1Algorithm in pokergamecore
+- **Phase 7C: V2 Algorithm Extraction** - V2Algorithm + PureRuleEngine in pokergamecore
 - **Phase 7E: TournamentAI** - Production implementation with M-ratio strategy
 
-### ⏳ In Progress
-- Branch: `feature-phase7-ai-extraction`
-- Commits: 2 (interfaces + TournamentAI)
-
 ### 📋 Remaining
-- Phase 7B: Extract V1 Algorithm (~2-3 days)
-- Phase 7C: Extract V2 Algorithm (~2-3 days)
-- Phase 7D: Create ServerAIProvider (~1-2 days) - **Can do now with TournamentAI**
-- Comprehensive testing
-- Dependency extraction (SklankskyGroup, OpponentModel)
+- **Phase 7D: ServerAIProvider Integration** — Detailed plan: [PHASE7D-SERVER-AI-PROVIDER.md](../PHASE7D-SERVER-AI-PROVIDER.md)
+  - Steps 1-4: Core integration (skill routing, context implementations, rebuy/addon, tests)
+  - Step 5: AI quality improvements (opponent modeling, HandPotential, PocketRanks, HandSelectionScheme)
+
+### ➡️ Next
+- **Milestone 1: Server Game Engine Foundation** — Detailed plan: [M1-SERVER-GAME-ENGINE.md](../M1-SERVER-GAME-ENGINE.md)
+  - Master plan: [SERVER-HOSTED-GAME-ENGINE.md](../SERVER-HOSTED-GAME-ENGINE.md)
+  - Depends on Phase 7D completion
 
 ## Context
 

@@ -97,27 +97,29 @@ All clients — desktop Swing UI, web browser, future mobile — speak the same 
 
 ## Prerequisites (Must Complete Before This Plan)
 
-### P1: Complete V2 AI Extraction
-- **Branch:** `v2-algorithm-extraction`
-- **Plan:** `.claude/plans/PHASE7C-V2-EXTRACTION.md`
+### P1: Complete V2 AI Extraction ✅
+- **Plan:** `.claude/plans/completed/PHASE7C-V2-EXTRACTION.md`
 - **Why:** Server-hosted games need V2Algorithm in pokergamecore (Swing-free)
-- **Status:** In progress
+- **Status:** Complete (2026-02-16)
 
 ### P2: Complete Phase 7D - ServerAIProvider Integration
-- **Plan:** `.claude/plans/PHASE7-AI-EXTRACTION.md` (Phase 7D)
+- **Plan:** `.claude/plans/PHASE7D-SERVER-AI-PROVIDER.md`
 - **Why:** Server needs a working AI provider that maps skill levels to AI implementations
-- **Depends on:** P1
+- **Status:** Plan ready, not yet started
+- **Depends on:** P1 ✅
 
-### P3: TournamentEngine Full Integration
+### P3: TournamentEngine Full Integration ✅
 - **What:** TournamentEngine (pokergamecore) must be fully integrated with TournamentDirector
-- **Current state:** Extracted but noted as "not yet integrated into TournamentDirector"
-- **Why:** Server game instances will use TournamentEngine directly, so it must handle the complete game lifecycle
+- **Status:** Complete (2026-02-16). TournamentDirector.processTable() (line 638) calls engine_.processTable() on every cycle. Old _processTable() fully replaced. SwingEventBus and SwingPlayerActionProvider bridge the interfaces.
+- **Evidence:** HeadlessGameRunnerTest proves pokergamecore runs complete single-table and multi-table tournaments without Swing.
 
 ---
 
 ## Milestone 1: Server Game Engine Foundation
 
 **Goal:** Create the server-side module that can run a complete poker game without any Swing dependencies.
+
+**Detailed Plan:** `.claude/plans/M1-SERVER-GAME-ENGINE.md`
 
 **Effort:** XL (largest single phase)
 
@@ -290,11 +292,13 @@ CREATE TABLE game_instances (
 
 ---
 
-## Milestone 2: Game API & Authentication
+## Milestone 2: Game API, Authentication & Database Persistence
 
-**Goal:** REST API endpoints for game management and JWT-based authentication.
+**Goal:** REST API endpoints for game management, JWT-based authentication, and H2 database persistence for the event store.
 
 **Effort:** L
+
+**Includes completing H2 database persistence for the event store.** M1 implements the event store with in-memory storage. M2 adds `DatabaseGameEventStore` backed by H2, enabling persistent game history, simulation analysis across sessions, and crash recovery. The H2 schema for `game_events` and `game_instances` tables (defined in Phase 1.4) is implemented here.
 
 ### Phase 2.1: JWT Authentication
 
@@ -1257,7 +1261,6 @@ game.server.enabled=true
 game.server.max-concurrent-games=50
 game.server.action-timeout-seconds=30
 game.server.reconnect-timeout-seconds=120
-game.server.event-sourcing.enabled=true
 jwt.secret=<generated>
 jwt.expiration-ms=86400000
 ```
@@ -1272,7 +1275,6 @@ spring.profiles.active=embedded
 server.port=0                              # Random available port
 game.server.max-concurrent-games=3
 game.server.action-timeout-seconds=0       # No timeout for practice
-game.server.event-sourcing.enabled=false   # Optional for practice
 game.server.auth.mode=local                # Auto-authenticate local user
 spring.datasource.url=jdbc:h2:file:~/.ddpoker/games  # File-based H2, same as server
 ```
