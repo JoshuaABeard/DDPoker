@@ -1,7 +1,8 @@
 # Phase 7D: ServerAIProvider Integration — Detailed Plan
 
-**Status:** DRAFT
+**Status:** COMPLETE
 **Created:** 2026-02-16
+**Completed:** 2026-02-16
 **Parent Plan:** `.claude/plans/completed/PHASE7-AI-EXTRACTION.md`
 **Next Step:** `.claude/plans/M1-SERVER-GAME-ENGINE.md` (Milestone 1: Server Game Engine Foundation — depends on this plan)
 
@@ -393,29 +394,26 @@ public void setCurrentHand(GameHand hand) {
 
 #### 5b. HandSelectionScheme in ServerStrategyProvider
 
-**Files:**
-- `ServerStrategyProvider.java` — replace `calculateSimplifiedHandStrength()` with HandSelectionScheme lookup
-- Uses: `poker/.../ai/HandSelectionScheme.java` (accessible since pokerserver depends on poker)
+**Status:** ✅ COMPLETE (using embedded .dat file data)
 
-**Goal:** `getHandStrength(Hand pocket, int numPlayers)` should use the actual HandSelectionScheme data files instead of simplified Sklansky rankings.
+**Decision:** Extract and embed hand strength data from HandSelectionScheme .dat files.
 
-```java
-// Replace calculateSimplifiedHandStrength() with:
-private float calculateHandStrength(Hand pocket, int numPlayers) {
-    String tableSize = numPlayers <= 2 ? "hup" :
-                       numPlayers <= 4 ? "veryshort" :
-                       numPlayers <= 6 ? "short" : "full";
-    String schemePath = strategyData.getHandSelectionScheme(tableSize);
-    if (schemePath != null) {
-        HandSelectionScheme scheme = HandSelectionScheme.load(schemePath);
-        return scheme.getHandStrength(pocket);
-    }
-    // Fallback to simplified
-    return calculateSimplifiedHandStrength(pocket);
-}
-```
+**Rationale:**
+- Provides Doug Donohoe's exact hand rankings without file I/O
+- Avoids HandSelectionScheme's desktop framework dependencies (BaseProfile, ConfigManager)
+- No runtime file access or resource path configuration needed
+- Maintains fidelity to original hand strength calculations
 
-**Dependency:** Need to verify how HandSelectionScheme loads its data (.scheme files in resources). May need resource path adjustments.
+**Implementation:**
+- Created `EmbeddedHandStrength` nested class in `ServerStrategyProvider.java`
+- Extracted data from all four .dat files:
+  - `handselection.0994.dat` - Heads-up (2 players)
+  - `handselection.1000.dat` - Very short (3-4 players)
+  - `handselection.0995.dat` - Short-handed (5-6 players)
+  - `handselection.0996.dat` - Full table (7-10 players)
+- Implemented parser for hand notation (pairs, ranges, suited/offsuit)
+- `getHandStrength()` now uses embedded data with Sklansky fallback
+- All 15 ServerStrategyProviderTest tests pass
 
 #### 5c. HandPotential draw counts in ServerV2AIContext
 
