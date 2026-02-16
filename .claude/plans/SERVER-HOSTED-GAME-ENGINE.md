@@ -102,10 +102,10 @@ All clients — desktop Swing UI, web browser, future mobile — speak the same 
 - **Why:** Server-hosted games need V2Algorithm in pokergamecore (Swing-free)
 - **Status:** Complete (2026-02-16)
 
-### P2: Complete Phase 7D - ServerAIProvider Integration
+### P2: Complete Phase 7D - ServerAIProvider Integration ✅
 - **Plan:** `.claude/plans/PHASE7D-SERVER-AI-PROVIDER.md`
 - **Why:** Server needs a working AI provider that maps skill levels to AI implementations
-- **Status:** Plan ready, not yet started
+- **Status:** Complete (2026-02-16)
 - **Depends on:** P1 ✅
 
 ### P3: TournamentEngine Full Integration ✅
@@ -120,6 +120,8 @@ All clients — desktop Swing UI, web browser, future mobile — speak the same 
 **Goal:** Create the server-side module that can run a complete poker game without any Swing dependencies.
 
 **Detailed Plan:** `.claude/plans/M1-SERVER-GAME-ENGINE.md`
+
+**Status:** COMPLETE (2026-02-16, in feature worktree `feature-m1-server-game-engine`, pending merge)
 
 **Effort:** XL (largest single phase)
 
@@ -294,163 +296,25 @@ CREATE TABLE game_instances (
 
 ## Milestone 2: Game API, Authentication & Database Persistence
 
-**Goal:** REST API endpoints for game management, JWT-based authentication, and H2 database persistence for the event store.
+**Goal:** REST API endpoints for game management, JWT-based authentication (RS256 asymmetric), profile CRUD, ban system, and H2 database persistence.
+
+**Detailed Plan:** `.claude/plans/M2-GAME-API-AUTH-PERSISTENCE.md`
+
+**Status:** DRAFT (plan complete, implementation pending)
 
 **Effort:** L
 
-**Includes completing H2 database persistence for the event store.** M1 implements the event store with in-memory storage. M2 adds `DatabaseGameEventStore` backed by H2, enabling persistent game history, simulation analysis across sessions, and crash recovery. The H2 schema for `game_events` and `game_instances` tables (defined in Phase 1.4) is implemented here.
+**What M2 delivers:**
+- **JWT authentication (RS256 asymmetric)** — WAN server signs with private key, all game servers validate with public key. Supports three auth modes: full (issuing), validate-only (community-hosted), and local (LAN/offline)
+- **Profile management API** — registration, update, password change, retire (`/api/v1/profiles`)
+- **Game management REST API** — CRUD and lifecycle at `/api/v1/games`
+- **GameConfig model** — clean server-side tournament configuration (replaces legacy TournamentProfile for server use)
+- **Ban system** — profile ID and email-based bans (no IP bans)
+- **Database persistence** — H2 + Spring Data JPA for event store, game instances, and profiles
 
-### Phase 2.1: JWT Authentication
+M1 implements the event store with in-memory storage. M2 adds `DatabaseGameEventStore` backed by H2, enabling persistent game history, simulation analysis across sessions, and crash recovery.
 
-**Extend existing auth system.** Current `OnlineProfile` has username/password (bcrypt). Add JWT token generation.
-
-**New classes:**
-- `code/pokerserver/src/main/java/com/donohoedigital/games/poker/server/auth/JwtTokenProvider.java` - Generate/validate JWT tokens
-- `code/pokerserver/src/main/java/com/donohoedigital/games/poker/server/auth/JwtAuthFilter.java` - Spring Security filter for REST endpoints
-- `code/pokerserver/src/main/java/com/donohoedigital/games/poker/server/auth/WebSocketAuthInterceptor.java` - WebSocket handshake auth
-
-**JWT claims:**
-```json
-{
-  "sub": "player-profile-id",
-  "name": "PlayerName",
-  "iat": 1708000000,
-  "exp": 1708086400,
-  "roles": ["PLAYER"]
-}
-```
-
-**Endpoints:**
-```
-POST /api/v2/auth/login        - { username, password } → { token, refreshToken, expiresAt }
-POST /api/v2/auth/refresh      - { refreshToken } → { token, expiresAt }
-POST /api/v2/auth/logout       - Invalidate refresh token
-GET  /api/v2/auth/me           - Get current profile from token
-```
-
-**Note:** The existing REST API (`code/api/`) uses Spring Boot at `/api/v1/`. New endpoints go under `/api/v2/` in the same application or colocated in `pokerserver`.
-
-**Files to modify:**
-- `code/pokerserver/pom.xml` - Add `spring-boot-starter-security`, `jjwt` dependencies
-- `code/pokerserver/src/main/java/.../server/PokerServerMain.java` - Security configuration
-
-### Phase 2.2: Game Management REST API
-
-**Endpoints:**
-
-```
-# Game CRUD
-POST   /api/v2/games                    - Create new game (with TournamentProfile)
-GET    /api/v2/games                    - List games (filters: status, hostingType, etc.)
-GET    /api/v2/games/{gameId}           - Get game details
-DELETE /api/v2/games/{gameId}           - Cancel game (owner only)
-
-# Game lifecycle
-POST   /api/v2/games/{gameId}/join      - Join a game
-POST   /api/v2/games/{gameId}/leave     - Leave a game
-POST   /api/v2/games/{gameId}/start     - Start the game (owner only)
-POST   /api/v2/games/{gameId}/pause     - Pause (owner only)
-POST   /api/v2/games/{gameId}/resume    - Resume (owner only)
-
-# Game management (owner only)
-POST   /api/v2/games/{gameId}/kick      - Kick a player { playerId }
-PUT    /api/v2/games/{gameId}/settings  - Update game settings
-GET    /api/v2/games/{gameId}/players   - List players in game
-
-# Game history
-GET    /api/v2/games/{gameId}/events    - Get game event log
-GET    /api/v2/games/{gameId}/hands     - Get hand history
-GET    /api/v2/games/{gameId}/results   - Get final results
-
-# Player
-GET    /api/v2/players/{profileId}/games - Player's game history
-GET    /api/v2/players/{profileId}/stats - Player statistics
-```
-
-**Request/response format for game creation:**
-```json
-// POST /api/v2/games
-{
-  "name": "Friday Night Poker",
-  "profile": {
-    "type": "TOURNAMENT",
-    "buyIn": 1000,
-    "startingChips": 5000,
-    "maxPlayers": 10,
-    "blindStructure": [
-      { "level": 1, "smallBlind": 25, "bigBlind": 50, "ante": 0, "minutes": 20 },
-      { "level": 2, "smallBlind": 50, "bigBlind": 100, "ante": 10, "minutes": 20 }
-    ],
-    "allowRebuys": true,
-    "rebuyMaxLevel": 3,
-    "allowAddons": true,
-    "aiPlayers": [
-      { "name": "Bot-Easy", "skillLevel": 2 },
-      { "name": "Bot-Hard", "skillLevel": 6 }
-    ]
-  },
-  "isPrivate": false,
-  "password": null
-}
-
-// Response
-{
-  "gameId": "abc123",
-  "status": "WAITING_FOR_PLAYERS",
-  "hostingType": "SERVER",
-  "owner": { "profileId": 42, "name": "PlayerName" },
-  "websocketUrl": "wss://server/ws/games/abc123",
-  "createdAt": "2026-02-15T20:00:00Z"
-}
-```
-
-**Game listing response (distinguishes server vs community-hosted):**
-```json
-{
-  "games": [
-    {
-      "gameId": "abc123",
-      "name": "Friday Night Poker",
-      "hostingType": "SERVER",          // ← Server is running this game
-      "status": "WAITING_FOR_PLAYERS",
-      "playerCount": 3,
-      "maxPlayers": 10,
-      "owner": "PlayerName",
-      "createdAt": "2026-02-15T20:00:00Z"
-    },
-    {
-      "gameId": "def456",
-      "name": "Bob's Home Game",
-      "hostingType": "COMMUNITY",       // ← Hosted on a player's desktop client
-      "status": "WAITING_FOR_PLAYERS",
-      "playerCount": 5,
-      "maxPlayers": 8,
-      "owner": "Bob",
-      "websocketUrl": "ws://bob-pc.dyndns.org:11885/ws/games/def456",
-      "createdAt": "2026-02-15T19:30:00Z"
-    }
-  ]
-}
-```
-
-**New classes:**
-- `code/pokerserver/src/main/java/.../server/controller/GameController.java`
-- `code/pokerserver/src/main/java/.../server/controller/AuthController.java`
-- `code/pokerserver/src/main/java/.../server/dto/CreateGameRequest.java`
-- `code/pokerserver/src/main/java/.../server/dto/GameResponse.java`
-- `code/pokerserver/src/main/java/.../server/dto/GameListResponse.java`
-- `code/pokerserver/src/main/java/.../server/service/GameService.java` (orchestrates GameInstanceManager + persistence)
-
-### Phase 2.3: TournamentProfile JSON Serialization
-
-Currently `TournamentProfile` uses `DataMarshal` (DD Poker's custom serialization). For the REST API, need JSON serialization.
-
-**Approach:** Add Jackson annotations to `TournamentProfile` or create a DTO that maps to/from it.
-
-**Recommended:** Create `TournamentProfileDTO` in `pokergameserver` that converts to/from `TournamentProfile`. This avoids modifying the engine class and keeps JSON concerns in the server layer.
-
-**File to create:**
-- `code/pokergameserver/src/main/java/.../gameserver/dto/TournamentProfileDTO.java`
+**See detailed plan for complete implementation steps, TDD methodology, and architecture decisions.**
 
 ---
 
