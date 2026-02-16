@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================================
+  DD Poker - Source Code
+  Copyright (c) 2003-2026  Doug Donohoe, DD Poker Community
+
+  This program is free software: you can redistribute it and/or modify it under the terms
+  of the GNU General Public License as published by the Free Software Foundation, either
+  version 3 of the License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  See the GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along with this program.
+  If not, see <http://www.gnu.org/licenses/>.
+  ============================================================================================
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.donohoedigital</groupId>
+        <artifactId>all</artifactId>
+        <version>3.3.0-CommunityEdition</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>pokergameserver</artifactId>
+    <packaging>jar</packaging>
+    <version>3.3.0-CommunityEdition</version>
+    <name>pokergameserver</name>
+    <description>Server-side game hosting for DD Poker (Spring Boot auto-configuration)</description>
+
+    <properties>
+        <spring-boot.version>3.5.8</spring-boot.version>
+        <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
+        <junit.jupiter.version>5.11.4</junit.jupiter.version>
+    </properties>
+
+    <dependencies>
+        <!-- Core game logic (Swing-free) -->
+        <dependency>
+            <groupId>com.donohoedigital</groupId>
+            <artifactId>pokergamecore</artifactId>
+            <version>3.3.0-CommunityEdition</version>
+        </dependency>
+
+        <!-- Game engine types (PokerGame, PokerTable, HoldemHand) -->
+        <dependency>
+            <groupId>com.donohoedigital</groupId>
+            <artifactId>pokerengine</artifactId>
+            <version>3.3.0-CommunityEdition</version>
+        </dependency>
+
+        <!-- Spring Boot auto-configuration -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+            <version>${spring-boot.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-to-slf4j</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <version>${spring-boot.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Maven Enforcer: Ban Swing/AWT dependencies -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven-enforcer-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>ban-swing-dependencies</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>*:poker</exclude>
+                                        <exclude>*:gameengine</exclude>
+                                        <exclude>*:gui</exclude>
+                                        <exclude>*:gameserver</exclude>
+                                        <exclude>*:*:*:*:compile:javax.swing.*</exclude>
+                                        <exclude>*:*:*:*:compile:java.awt.*</exclude>
+                                    </excludes>
+                                    <message>pokergameserver must not depend on Swing modules or classes (poker, gameengine, gui, gameserver, javax.swing.*, java.awt.*)</message>
+                                </bannedDependencies>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>extra-enforcer-rules</artifactId>
+                        <version>1.8.0</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
+</project>

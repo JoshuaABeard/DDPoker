@@ -58,6 +58,7 @@
     <module>ddpoker</module>
     <module>pokerengine</module>
     <module>pokergamecore</module>
+    <module>pokergameserver</module>
     <module>pokernetwork</module>
     <module>poker</module>
     <module>pokerserver</module>

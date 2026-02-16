@@ -594,6 +594,12 @@ public class TournamentEngine {
 
         BettingRound round = hand.getRound();
 
+        // If hand is uncontested (all but one player folded), go directly to showdown
+        // This ensures the pot is properly resolved and awarded to the remaining player
+        if (hand.isUncontested() || hand.getNumWithCards() <= 1) {
+            return TableState.SHOWDOWN;
+        }
+
         // After river, go to pre-showdown (or showdown if only 1 player)
         if (round == BettingRound.RIVER) {
             return (hand.getNumWithCards() > 1) ? TableState.PRE_SHOWDOWN : TableState.SHOWDOWN;

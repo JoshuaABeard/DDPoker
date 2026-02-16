@@ -1,0 +1,476 @@
+/*
+ * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+ * DD Poker - Source Code
+ * Copyright (c) 2003-2026  Doug Donohoe, DD Poker Community
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ *
+ * For the full License text, please see the LICENSE.txt file in the root directory
+ * of this project.
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
+ * graphics, text, and documentation found in this repository (including but not
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
+ * without explicit written permission for any uses not covered by this License.
+ * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
+ * in the root directory of this project.
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
+ * doug [at] donohoe [dot] info.
+ * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+ */
+package com.donohoedigital.games.poker.gameserver;
+
+import com.donohoedigital.games.poker.core.PlayerAction;
+import com.donohoedigital.games.poker.core.PlayerActionProvider;
+import com.donohoedigital.games.poker.core.TournamentEngine;
+import com.donohoedigital.games.poker.model.TournamentProfile;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.locks.ReentrantLock;
+
+/**
+ * Encapsulates one running game. Owns the ServerTournamentDirector, player
+ * sessions, and game state. This is the primary unit of game hosting.
+ *
+ * <p>
+ * Thread-safe for concurrent access from WebSocket handlers and game director
+ * thread.
+ */
+public class GameInstance {
+
+    private final String gameId;
+    private final long ownerProfileId;
+    private final TournamentProfile profile;
+    private final GameServerProperties properties;
+
+    // Game state
+    private volatile GameInstanceState state;
+    private ServerTournamentContext tournament;
+    private ServerTournamentDirector director;
+    private ServerPlayerActionProvider actionProvider;
+    private ServerGameEventBus eventBus;
+    private GameEventStore eventStore;
+
+    // Player tracking
+    private final Map<Long, ServerPlayerSession> playerSessions = new ConcurrentHashMap<>();
+    private final ReentrantLock stateLock = new ReentrantLock();
+
+    // Threading
+    private Future<?> directorFuture;
+
+    // Completion tracking
+    private volatile Instant completedAt;
+
+    // Private constructor - use create() factory method
+    private GameInstance(String gameId, long ownerProfileId, TournamentProfile profile,
+            GameServerProperties properties) {
+        this.gameId = gameId;
+        this.ownerProfileId = ownerProfileId;
+        this.profile = profile;
+        this.properties = properties;
+        this.state = GameInstanceState.CREATED;
+    }
+
+    /**
+     * Create a new GameInstance.
+     *
+     * @param gameId
+     *            unique game identifier
+     * @param ownerProfileId
+     *            profile ID of the game owner
+     * @param profile
+     *            tournament configuration
+     * @param properties
+     *            server properties
+     * @return new GameInstance in CREATED state
+     */
+    public static GameInstance create(String gameId, long ownerProfileId, TournamentProfile profile,
+            GameServerProperties properties) {
+        return new GameInstance(gameId, ownerProfileId, profile, properties);
+    }
+
+    // ====================================
+    // State Transitions
+    // ====================================
+
+    /** Transition from CREATED to WAITING_FOR_PLAYERS */
+    public void transitionToWaitingForPlayers() {
+        stateLock.lock();
+        try {
+            if (state != GameInstanceState.CREATED) {
+                throw new IllegalStateException("Can only transition to WAITING_FOR_PLAYERS from CREATED state");
+            }
+            state = GameInstanceState.WAITING_FOR_PLAYERS;
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    /**
+     * Start the game (WAITING_FOR_PLAYERS → IN_PROGRESS). Creates tournament
+     * context and starts director thread.
+     */
+    public void start(ExecutorService executor) {
+        stateLock.lock();
+        try {
+            if (state != GameInstanceState.WAITING_FOR_PLAYERS) {
+                throw new IllegalStateException("Cannot start game in state: " + state);
+            }
+
+            // Create player list from sessions
+            int startingChips = profile.getBuyinChips();
+            List<ServerPlayer> players = new ArrayList<>();
+            for (ServerPlayerSession session : playerSessions.values()) {
+                ServerPlayer player = new ServerPlayer((int) session.getProfileId(), session.getPlayerName(),
+                        !session.isAI(), session.getSkillLevel(), startingChips);
+                players.add(player);
+            }
+
+            // Initialize game objects
+            eventStore = new GameEventStore(gameId);
+            eventBus = new ServerGameEventBus(eventStore);
+
+            PlayerActionProvider aiProvider = createSimpleAI();
+            actionProvider = new ServerPlayerActionProvider(aiProvider, this::onActionRequest,
+                    properties.actionTimeoutSeconds());
+
+            // Determine number of tables (1 table per 10 players, minimum 1)
+            int numTables = Math.max(1, (players.size() + 9) / 10);
+
+            // Extract tournament profile configuration
+            int numLevels = profile.getLastLevel() + 1;
+            int[] smallBlinds = new int[numLevels];
+            int[] bigBlinds = new int[numLevels];
+            int[] antes = new int[numLevels];
+            int[] levelMinutes = new int[numLevels];
+            boolean[] breakLevels = new boolean[numLevels];
+
+            for (int i = 0; i < numLevels; i++) {
+                smallBlinds[i] = profile.getSmallBlind(i);
+                bigBlinds[i] = profile.getBigBlind(i);
+                antes[i] = profile.getAnte(i);
+                levelMinutes[i] = profile.getMinutes(i);
+                breakLevels[i] = profile.isBreak(i);
+            }
+
+            // Get level advancement configuration
+            com.donohoedigital.games.poker.model.LevelAdvanceMode levelAdvanceMode = profile.getLevelAdvanceMode();
+            int handsPerLevel = profile.getHandsPerLevel();
+
+            tournament = new ServerTournamentContext(players, numTables, startingChips, smallBlinds, bigBlinds, antes,
+                    levelMinutes, breakLevels, false, // practice mode
+                    profile.getMaxRebuys(), profile.getLastRebuyLevel(), profile.isAddons(),
+                    properties.actionTimeoutSeconds(), levelAdvanceMode, handsPerLevel);
+
+            TournamentEngine engine = new TournamentEngine(eventBus, actionProvider);
+            director = new ServerTournamentDirector(engine, tournament, eventBus, actionProvider, properties,
+                    this::onLifecycleEvent);
+
+            state = GameInstanceState.IN_PROGRESS;
+            directorFuture = executor.submit(director);
+
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    /** Start the game with owner authorization check */
+    public void startAsUser(long userId, ExecutorService executor) {
+        checkOwnership(userId);
+        start(executor);
+    }
+
+    /** Pause the game */
+    public void pause() {
+        stateLock.lock();
+        try {
+            if (state != GameInstanceState.IN_PROGRESS) {
+                throw new IllegalStateException("Cannot pause game in state: " + state);
+            }
+            if (director != null) {
+                director.pause();
+            }
+            state = GameInstanceState.PAUSED;
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    /** Pause the game with owner authorization check */
+    public void pauseAsUser(long userId) {
+        checkOwnership(userId);
+        pause();
+    }
+
+    /** Resume the game from paused state */
+    public void resume() {
+        stateLock.lock();
+        try {
+            if (state != GameInstanceState.PAUSED) {
+                throw new IllegalStateException("Cannot resume game in state: " + state);
+            }
+            if (director != null) {
+                director.resume();
+            }
+            state = GameInstanceState.IN_PROGRESS;
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    /** Shutdown the game (triggers graceful completion) */
+    public void shutdown() {
+        stateLock.lock();
+        try {
+            if (director != null) {
+                director.shutdown();
+            }
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    /** Cancel the game */
+    public void cancel() {
+        stateLock.lock();
+        try {
+            if (state == GameInstanceState.COMPLETED || state == GameInstanceState.CANCELLED) {
+                return; // Already finished
+            }
+            shutdown();
+            state = GameInstanceState.CANCELLED;
+            completedAt = Instant.now();
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    /** Cancel the game with owner authorization check */
+    public void cancelAsUser(long userId) {
+        checkOwnership(userId);
+        cancel();
+    }
+
+    // ====================================
+    // Player Management
+    // ====================================
+
+    /**
+     * Add a player to the game. Only allowed in WAITING_FOR_PLAYERS state.
+     *
+     * @param profileId
+     *            player's profile ID
+     * @param playerName
+     *            player's display name
+     * @param isAI
+     *            true if AI player
+     * @param skillLevel
+     *            AI skill level (0-100, ignored for human players)
+     */
+    public void addPlayer(long profileId, String playerName, boolean isAI, int skillLevel) {
+        stateLock.lock();
+        try {
+            if (state != GameInstanceState.WAITING_FOR_PLAYERS) {
+                throw new IllegalStateException("Cannot add players in state: " + state);
+            }
+
+            ServerPlayerSession session = new ServerPlayerSession(profileId, playerName, isAI, skillLevel);
+            playerSessions.put(profileId, session);
+
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    /**
+     * Remove a player from the game. If game is in progress, marks player as
+     * disconnected instead of removing.
+     */
+    public void removePlayer(long profileId) {
+        stateLock.lock();
+        try {
+            if (state == GameInstanceState.IN_PROGRESS || state == GameInstanceState.PAUSED) {
+                // Mark as disconnected, don't remove
+                ServerPlayerSession session = playerSessions.get(profileId);
+                if (session != null) {
+                    session.disconnect();
+                }
+            } else {
+                // Actually remove if game hasn't started
+                playerSessions.remove(profileId);
+            }
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    /** Reconnect a previously disconnected player */
+    public void reconnectPlayer(long profileId) {
+        ServerPlayerSession session = playerSessions.get(profileId);
+        if (session != null) {
+            session.connect();
+        }
+    }
+
+    /** Check if player is in this game */
+    public boolean hasPlayer(long profileId) {
+        return playerSessions.containsKey(profileId);
+    }
+
+    /** Check if player is disconnected */
+    public boolean isPlayerDisconnected(long profileId) {
+        ServerPlayerSession session = playerSessions.get(profileId);
+        return session != null && session.isDisconnected();
+    }
+
+    /** Get current player count */
+    public int getPlayerCount() {
+        return playerSessions.size();
+    }
+
+    // ====================================
+    // Callbacks (for ServerPlayerActionProvider and ServerTournamentDirector)
+    // ====================================
+
+    /** Called when engine needs a human player's action */
+    private void onActionRequest(ActionRequest request) {
+        ServerPlayerSession session = playerSessions.get((long) request.player().getID());
+        if (session != null && session.getMessageSender() != null) {
+            // Send action request to connected WebSocket client
+            // (MessageSender is set by WebSocket layer in Milestone 3)
+            session.getMessageSender().accept(request);
+        }
+    }
+
+    /** Called when director reports lifecycle events (STARTED, COMPLETED, etc.) */
+    private void onLifecycleEvent(GameLifecycleEvent event) {
+        if (event == GameLifecycleEvent.COMPLETED) {
+            stateLock.lock();
+            try {
+                if (state != GameInstanceState.CANCELLED) {
+                    state = GameInstanceState.COMPLETED;
+                    completedAt = Instant.now();
+                }
+            } finally {
+                stateLock.unlock();
+            }
+        }
+    }
+
+    /**
+     * Submit a player action (called by WebSocket handler).
+     *
+     * @param profileId
+     *            player's profile ID
+     * @param action
+     *            the action to submit
+     */
+    public void onPlayerAction(long profileId, com.donohoedigital.games.poker.core.PlayerAction action) {
+        if (actionProvider != null) {
+            actionProvider.submitAction((int) profileId, action);
+        }
+    }
+
+    // ====================================
+    // Accessors
+    // ====================================
+
+    public String getGameId() {
+        return gameId;
+    }
+
+    public long getOwnerProfileId() {
+        return ownerProfileId;
+    }
+
+    public GameInstanceState getState() {
+        return state;
+    }
+
+    public Instant getCompletedAt() {
+        return completedAt;
+    }
+
+    public TournamentProfile getProfile() {
+        return profile;
+    }
+
+    public ServerTournamentContext getTournament() {
+        return tournament;
+    }
+
+    public GameEventStore getEventStore() {
+        return eventStore;
+    }
+
+    // ====================================
+    // Helper Methods
+    // ====================================
+
+    private void checkOwnership(long userId) {
+        if (userId != ownerProfileId) {
+            throw new GameServerException("Only the game owner can perform this action");
+        }
+    }
+
+    /**
+     * Create a simple random AI provider for M1.
+     * <p>
+     * This implementation provides basic AI functionality sufficient for testing
+     * and validating the game engine infrastructure. It randomly selects from
+     * available actions (check, call, fold, bet, raise) without strategic
+     * decision-making.
+     * <p>
+     * <b>Future enhancement (M3):</b> Replace with ServerAIProvider from
+     * pokerserver for skill-based AI routing (TournamentAI, V1Algorithm,
+     * V2Algorithm). Currently blocked by dependency architecture - pokergameserver
+     * cannot depend on pokerserver without pulling in Swing transitive
+     * dependencies.
+     */
+    private PlayerActionProvider createSimpleAI() {
+        Random random = new Random();
+        return (player, options) -> {
+            List<PlayerAction> availableActions = new ArrayList<>();
+
+            if (options.canCheck())
+                availableActions.add(PlayerAction.check());
+            if (options.canCall())
+                availableActions.add(PlayerAction.call());
+            if (options.canFold())
+                availableActions.add(PlayerAction.fold());
+
+            if (options.canBet()) {
+                int betAmount = options.minBet()
+                        + random.nextInt(Math.max(1, (options.maxBet() - options.minBet()) / 2 + 1));
+                availableActions.add(PlayerAction.bet(betAmount));
+            }
+
+            if (options.canRaise()) {
+                int raiseAmount = options.minRaise()
+                        + random.nextInt(Math.max(1, (options.maxRaise() - options.minRaise()) / 2 + 1));
+                availableActions.add(PlayerAction.raise(raiseAmount));
+            }
+
+            return availableActions.isEmpty()
+                    ? PlayerAction.fold()
+                    : availableActions.get(random.nextInt(availableActions.size()));
+        };
+    }
+}
