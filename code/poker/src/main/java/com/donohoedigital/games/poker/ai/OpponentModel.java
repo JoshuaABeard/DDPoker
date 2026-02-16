@@ -2,6 +2,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 Joshua Beard and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,9 +39,10 @@ import com.donohoedigital.games.poker.HandAction;
 import com.donohoedigital.games.poker.HoldemHand;
 import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.engine.Hand;
+import com.donohoedigital.games.poker.core.ai.V2OpponentModel;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 
-public class OpponentModel {
+public class OpponentModel implements V2OpponentModel {
     int handsPlayed;
 
     FloatTracker tightness[] = new FloatTracker[6];
@@ -412,6 +414,46 @@ public class OpponentModel {
             default :
                 throw new ApplicationError("getCheckFoldPostFlop for invalid round " + round);
         }
+    }
+
+    @Override
+    public float getHandsPaidPercent(float defVal) {
+        return handsPaid.getPercentTrue(defVal);
+    }
+
+    @Override
+    public float getHandsLimpedPercent(float defVal) {
+        return handsLimped.getPercentTrue(defVal);
+    }
+
+    @Override
+    public float getHandsFoldedUnraisedPercent(float defVal) {
+        return handsFoldedUnraised.getPercentTrue(defVal);
+    }
+
+    @Override
+    public float getOverbetFrequency(float defVal) {
+        return handsOverbetPotPostFlop.getWeightedPercentTrue(defVal);
+    }
+
+    @Override
+    public float getBetFoldFrequency(float defVal) {
+        return handsBetFoldPostFlop.getWeightedPercentTrue(defVal);
+    }
+
+    @Override
+    public float getHandsRaisedPreFlopPercent(float defVal) {
+        return handsRaisedPreFlop.getWeightedPercentTrue(defVal);
+    }
+
+    @Override
+    public boolean isOverbetPotPostFlop() {
+        return overbetPotPostFlop;
+    }
+
+    @Override
+    public void setOverbetPotPostFlop(boolean value) {
+        overbetPotPostFlop = value;
     }
 
     private int getPreFlopPositionIndex(int position) {

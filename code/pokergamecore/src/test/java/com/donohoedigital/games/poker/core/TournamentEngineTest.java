@@ -40,6 +40,7 @@ import org.junit.jupiter.api.Test;
 import com.donohoedigital.games.poker.core.event.GameEventBus;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.core.state.TableState;
+import com.donohoedigital.games.poker.engine.Card;
 
 /** Tests for {@link TournamentEngine} state handlers. */
 class TournamentEngineTest {
@@ -1292,6 +1293,113 @@ class TournamentEngineTest {
         @Override
         public void applyPlayerAction(GamePlayerInfo player, PlayerAction action) {
             // Stub implementation - does nothing
+        }
+
+        // === V2 AI Support Methods (Stubs) ===
+
+        @Override
+        public Card[] getCommunityCards() {
+            return null;
+        }
+
+        @Override
+        public Card[] getPlayerCards(GamePlayerInfo player) {
+            return null;
+        }
+
+        @Override
+        public int getPotSize() {
+            return 0;
+        }
+
+        @Override
+        public int getPotStatus() {
+            return 0;
+        }
+
+        @Override
+        public float getPotOdds(GamePlayerInfo player) {
+            return 0.0f;
+        }
+
+        @Override
+        public boolean wasRaisedPreFlop() {
+            return false;
+        }
+
+        @Override
+        public GamePlayerInfo getFirstBettor(int round, boolean includeRaises) {
+            return null;
+        }
+
+        @Override
+        public GamePlayerInfo getLastBettor(int round, boolean includeRaises) {
+            return null;
+        }
+
+        @Override
+        public boolean wasFirstRaiserPreFlop(GamePlayerInfo player) {
+            return false;
+        }
+
+        @Override
+        public boolean wasLastRaiserPreFlop(GamePlayerInfo player) {
+            return false;
+        }
+
+        @Override
+        public boolean wasOnlyRaiserPreFlop(GamePlayerInfo player) {
+            return false;
+        }
+
+        @Override
+        public boolean wasPotAction(int round) {
+            return false;
+        }
+
+        @Override
+        public boolean paidToPlay(GamePlayerInfo player) {
+            return false;
+        }
+
+        @Override
+        public boolean couldLimp(GamePlayerInfo player) {
+            return false;
+        }
+
+        @Override
+        public boolean limped(GamePlayerInfo player) {
+            return false;
+        }
+
+        @Override
+        public boolean isBlind(GamePlayerInfo player) {
+            return false;
+        }
+
+        @Override
+        public boolean hasActedThisRound(GamePlayerInfo player) {
+            return false;
+        }
+
+        @Override
+        public int getLastActionThisRound(GamePlayerInfo player) {
+            return 0;
+        }
+
+        @Override
+        public int getFirstVoluntaryAction(GamePlayerInfo player, int round) {
+            return 0;
+        }
+
+        @Override
+        public int getNumLimpers() {
+            return 0;
+        }
+
+        @Override
+        public int getNumFoldsSinceLastBet() {
+            return 0;
         }
     }
 

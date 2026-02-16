@@ -35,6 +35,7 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
 import com.donohoedigital.games.poker.engine.Card;
+import com.donohoedigital.games.poker.engine.HandInfoFaster;
 import com.donohoedigital.games.poker.engine.HandSorted;
 import org.junit.jupiter.api.Test;
 

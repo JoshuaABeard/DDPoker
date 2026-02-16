@@ -30,56 +30,52 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.ai;
+package com.donohoedigital.games.poker.core.ai;
 
-import com.donohoedigital.base.ApplicationError;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.engine.HandInfoFaster;
 
 import java.util.HashMap;
 
 /**
- * Reusable computation of hand scores with a given board.
+ * Reusable computation of relative ranking of hands (Raw Hand Strength) with a
+ * given board.
  */
-public class PocketScores {
+public class PocketRanks {
     private static long fpFlop_ = 0;
 
     private static HashMap cache_ = new HashMap();
 
-    private PocketMatrixInt score_ = new PocketMatrixInt();
+    private PocketMatrixShort rhs_ = new PocketMatrixShort();
 
     /**
-     * PocketScores is a wrapper on PocketMatrixInt, and stores a raw hand score for
-     * each possible pocket hand, with a given board. Instances are returned only by
-     * PocketScores.getInstance() so that they can be cached (constructor is
+     * PocketRanks is a wrapper on PocketMatrixShort, and stores a ranking for each
+     * possible pocket hand, with a given board. Instances are returned only by
+     * PocketRanks.getInstance() so that they can be cached (constructor is
      * private). The cache is maintained as long as every call is for the same flop
      * cards. Even when two-card lookahead is performed, this means that while a
      * hand is in play, at most one instance is cached for the flop, one for each
      * possible turn card, and one for each possible river card, for a total of 98
      * instances.
      *
-     * When a call is made to getInstance() with a different flop, the cache is
-     * cleared.
+     * When a call is made to PocketRanks.getInstance() with a different flop, the
+     * cache is cleared.
      *
      * @param community
      *            The cards currently on the board; cannot be null or empty.
      * @return An instance of PocketRanks for the specified board.
      */
-    public static PocketScores getInstance(Hand community) {
+    public static PocketRanks getInstance(Hand community) {
         if (community == null) {
-            throw new ApplicationError("PocketScores.getInstance() called with null community hand.");
+            throw new IllegalArgumentException("PocketRanks.getInstance() called with null community hand.");
         }
 
         if (community.size() < 3) {
-            throw new ApplicationError("PocketScores.getInstance() called with pre-flop community hand.");
+            throw new IllegalArgumentException("PocketRanks.getInstance() called with pre-flop community hand.");
         }
 
         // compute fingerprint for flop - change triggers cache flush
-        long fpFlop = (community.size() == 0)
-                ? 0
-                : 1L << community.getCard(0).getIndex() | 1L << community.getCard(1).getIndex()
-                        | 1L << community.getCard(2).getIndex();
+        long fpFlop = community.fingerprint(3);
 
         if (fpFlop != fpFlop_) {
             cache_.clear();
@@ -88,44 +84,69 @@ public class PocketScores {
 
         Object key = community.fingerprint();
 
-        PocketScores scores = (PocketScores) cache_.get(key);
+        PocketRanks ranks = (PocketRanks) cache_.get(key);
 
-        if (scores == null) {
-            scores = new PocketScores(community);
-            cache_.put(key, scores);
+        if (ranks == null) {
+            // long before = System.currentTimeMillis();
+            ranks = new PocketRanks(community);
+            // long after = System.currentTimeMillis();
+            // System.out.println(
+            // "PocketRanks constructed for " + community +
+            // " in " + Long.toString(after-before) + " milliseconds.");
+            cache_.put(key, ranks);
         }
 
-        return scores;
+        return ranks;
     }
 
     /**
      * Private to force use of caching getInstance method.
      */
-    private PocketScores(Hand community) {
-        HandInfoFaster info = new HandInfoFaster();
+    private PocketRanks(Hand community) {
+        PocketScores scores = PocketScores.getInstance(community);
 
-        Card card1;
-        Card card2;
-
-        Hand pocket = new Hand(Card.BLANK, Card.BLANK);
+        int score;
+        int other;
+        int worse;
+        int equal;
+        int count;
 
         for (int i = 1; i < 52; ++i) {
             if (community.containsCard(i))
                 continue;
 
-            card1 = Card.getCard(i);
-
-            pocket.setCard(0, card1);
-
             for (int j = 0; j < i; ++j) {
                 if (community.containsCard(j))
                     continue;
 
-                card2 = Card.getCard(j);
+                score = scores.getScore(i, j);
 
-                pocket.setCard(1, card2);
+                worse = 0;
+                equal = 0;
+                count = 0;
 
-                score_.set(i, j, info.getScore(pocket, community));
+                for (int k = 1; k < 52; ++k) {
+                    if ((k == i) || (k == j) || community.containsCard(k))
+                        continue;
+
+                    for (int m = 0; m < k; ++m) {
+                        if ((m == i) || (m == j) || community.containsCard(m))
+                            continue;
+
+                        other = scores.getScore(k, m);
+
+                        if (other < score)
+                            ++worse;
+                        else if (other == score)
+                            ++equal;
+
+                        ++count;
+                    }
+                }
+
+                rhs_.set(i, j, (short) (10000.0f * (worse + equal) / count)); // full-weight ties
+                // rhs_.set(i, j, (short)(5000 * (worse*2 + equal) / count)); // half-weight
+                // ties
             }
         }
     }
@@ -133,10 +154,10 @@ public class PocketScores {
     /**
      * @param hand
      *            Pocket cards.
-     * @return The score for the specified pocket hand.
+     * @return The percentage (0.0 - 1.0) of opposing hands beat or tied.
      */
-    public int getScore(Hand hand) {
-        return score_.get(hand);
+    public float getRawHandStrength(Hand hand) {
+        return ((float) rhs_.get(hand)) / 10000.0f;
     }
 
     /**
@@ -144,20 +165,20 @@ public class PocketScores {
      *            First pocket card.
      * @param card2
      *            Second pocket card.
-     * @return The score for the specified pocket hand.
+     * @return The percentage (0.0 - 1.0) of opposing hands beat or tied.
      */
-    public int getScore(Card card1, Card card2) {
-        return score_.get(card1, card2);
+    public float getRawHandStrength(Card card1, Card card2) {
+        return ((float) rhs_.get(card1, card2)) / 10000.0f;
     }
 
     /**
      * @param card1
-     *            First pocket card.
+     *            Index of first pocket card.
      * @param card2
-     *            Second pocket card.
-     * @return The score for the specified pocket hand.
+     *            Index of second pocket card.
+     * @return The percentage (0.0 - 1.0) of opposing hands beat or tied.
      */
-    public int getScore(int card1, int card2) {
-        return score_.get(card1, card2);
+    public float getRawHandStrength(int card1, int card2) {
+        return ((float) rhs_.get(card1, card2)) / 10000.0f;
     }
 }

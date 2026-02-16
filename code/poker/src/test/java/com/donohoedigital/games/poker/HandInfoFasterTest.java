@@ -20,6 +20,7 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.games.poker.engine.Card;
+import com.donohoedigital.games.poker.engine.HandInfoFaster;
 import com.donohoedigital.games.poker.engine.Hand;
 import org.junit.jupiter.api.Test;
 

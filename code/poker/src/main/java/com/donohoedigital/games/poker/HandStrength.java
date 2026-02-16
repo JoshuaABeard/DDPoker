@@ -44,6 +44,7 @@ import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.config.EngineConstants;
 import com.donohoedigital.games.poker.engine.Deck;
 import com.donohoedigital.games.poker.engine.Hand;
+import com.donohoedigital.games.poker.engine.HandInfoFaster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

@@ -250,4 +250,56 @@ public interface GameTable {
 
     /** @return true if this table has only computer players */
     boolean isAllComputer();
+
+    // === V2 AI Support ===
+
+    /**
+     * Get maximum number of players (total seats). Alias for getSeats() for V2 AI
+     * compatibility.
+     *
+     * @return maximum players
+     */
+    default int getMaxPlayers() {
+        return getSeats();
+    }
+
+    /**
+     * Get seat number for a player (reverse lookup).
+     *
+     * @param player
+     *            the player to find
+     * @return seat number (0-based), or -1 if player not at table
+     */
+    default int getSeat(GamePlayerInfo player) {
+        for (int i = 0; i < getSeats(); i++) {
+            GamePlayerInfo p = getPlayer(i);
+            if (p != null && p.equals(player)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Get all players still in current hand (not folded), optionally excluding one
+     * player.
+     *
+     * @param excludePlayer
+     *            player to exclude from list, or null to include all
+     * @return list of remaining players
+     */
+    default java.util.List<GamePlayerInfo> getPlayersLeft(GamePlayerInfo excludePlayer) {
+        java.util.List<GamePlayerInfo> players = new java.util.ArrayList<>();
+        GameHand hand = getHoldemHand();
+        if (hand == null)
+            return players;
+
+        for (int i = 0; i < getSeats(); i++) {
+            GamePlayerInfo p = getPlayer(i);
+            if (p != null && !p.isFolded() && (excludePlayer == null || !p.equals(excludePlayer))) {
+                players.add(p);
+            }
+        }
+        return players;
+    }
 }

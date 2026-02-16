@@ -30,9 +30,8 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.ai;
+package com.donohoedigital.games.poker.core.ai;
 
-import com.donohoedigital.base.ApplicationError;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.HandInfoFaster;
@@ -68,11 +67,11 @@ public class PocketScores {
      */
     public static PocketScores getInstance(Hand community) {
         if (community == null) {
-            throw new ApplicationError("PocketScores.getInstance() called with null community hand.");
+            throw new IllegalArgumentException("PocketScores.getInstance() called with null community hand.");
         }
 
         if (community.size() < 3) {
-            throw new ApplicationError("PocketScores.getInstance() called with pre-flop community hand.");
+            throw new IllegalArgumentException("PocketScores.getInstance() called with pre-flop community hand.");
         }
 
         // compute fingerprint for flop - change triggers cache flush

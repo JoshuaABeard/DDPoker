@@ -2,6 +2,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 Joshua Beard and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,18 +31,14 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker;
-
-import com.donohoedigital.games.poker.engine.Card;
-import com.donohoedigital.games.poker.engine.CardSuit;
-import com.donohoedigital.games.poker.engine.Hand;
+package com.donohoedigital.games.poker.engine;
 
 /**
  *
  * @author donohoe
  */
 @SuppressWarnings("DuplicatedCode")
-public class HandInfoFaster {
+public class HandInfoFaster implements HandScoreConstants {
     // num cards
     private static final int NUM_CARDS = 5;
 
@@ -205,45 +202,45 @@ public class HandInfoFaster {
 
         if (bStraight && bFlush && isStraightFlush(h)) {
             if (nStraightHigh_ == Card.ACE)
-                score = HandInfo.ROYAL_FLUSH * HandInfo.BASE;
+                score = ROYAL_FLUSH * SCORE_BASE;
             else
-                score = HandInfo.STRAIGHT_FLUSH * HandInfo.BASE;
-            score += nStraightHigh_ * HandInfo.H0;
+                score = STRAIGHT_FLUSH * SCORE_BASE;
+            score += nStraightHigh_ * H0;
         } else if (nGroupings_[4] != 0) {
-            score = HandInfo.QUADS * HandInfo.BASE;
-            score += nTopGroupings_[4][0] * HandInfo.H1;
+            score = QUADS * SCORE_BASE;
+            score += nTopGroupings_[4][0] * H1;
             nTopGroupings_[4][1] = TOPGROUPINIT; // just in case 2 sets quads
-            score += getKickers(1, nTopGroupings_[4], HandInfo.H0);
+            score += getKickers(1, nTopGroupings_[4], H0);
         } else if (nGroupings_[3] >= 2) {
-            score = HandInfo.FULL_HOUSE * HandInfo.BASE;
-            score += nTopGroupings_[3][0] * HandInfo.H1;
-            score += nTopGroupings_[3][1] * HandInfo.H0;
+            score = FULL_HOUSE * SCORE_BASE;
+            score += nTopGroupings_[3][0] * H1;
+            score += nTopGroupings_[3][1] * H0;
         } else if (nGroupings_[3] == 1 && nGroupings_[2] != 0) {
-            score = HandInfo.FULL_HOUSE * HandInfo.BASE;
-            score += nTopGroupings_[3][0] * HandInfo.H1;
-            score += nTopGroupings_[2][0] * HandInfo.H0;
+            score = FULL_HOUSE * SCORE_BASE;
+            score += nTopGroupings_[3][0] * H1;
+            score += nTopGroupings_[2][0] * H0;
         } else if (bFlush) {
-            score = HandInfo.FLUSH * HandInfo.BASE;
-            score += getFlushKickers(h, 5, nBiggestSuit_, HandInfo.H4);
+            score = FLUSH * SCORE_BASE;
+            score += getFlushKickers(h, 5, nBiggestSuit_, H4);
         } else if (bStraight) {
-            score = HandInfo.STRAIGHT * HandInfo.BASE;
-            score += nStraightHigh_ * HandInfo.H0;
+            score = STRAIGHT * SCORE_BASE;
+            score += nStraightHigh_ * H0;
         } else if (nGroupings_[3] == 1) {
-            score = HandInfo.TRIPS * HandInfo.BASE;
-            score += nTopGroupings_[3][0] * HandInfo.H2;
-            score += getKickers(nMaxHandSize - 3, nTopGroupings_[3], HandInfo.H1);
+            score = TRIPS * SCORE_BASE;
+            score += nTopGroupings_[3][0] * H2;
+            score += getKickers(nMaxHandSize - 3, nTopGroupings_[3], H1);
         } else if (nGroupings_[2] >= 2) {
-            score = HandInfo.TWO_PAIR * HandInfo.BASE;
-            score += nTopGroupings_[2][0] * HandInfo.H2;
-            score += nTopGroupings_[2][1] * HandInfo.H1;
-            score += getKickers(nMaxHandSize - 4, nTopGroupings_[2], HandInfo.H0);
+            score = TWO_PAIR * SCORE_BASE;
+            score += nTopGroupings_[2][0] * H2;
+            score += nTopGroupings_[2][1] * H1;
+            score += getKickers(nMaxHandSize - 4, nTopGroupings_[2], H0);
         } else if (nGroupings_[2] == 1) {
-            score = HandInfo.PAIR * HandInfo.BASE;
-            score += nTopGroupings_[2][0] * HandInfo.H3;
-            score += getKickers(nMaxHandSize - 2, nTopGroupings_[2], HandInfo.H2);
+            score = PAIR * SCORE_BASE;
+            score += nTopGroupings_[2][0] * H3;
+            score += getKickers(nMaxHandSize - 2, nTopGroupings_[2], H2);
         } else {
-            score = HandInfo.HIGH_CARD * HandInfo.BASE;
-            score += getKickers(nMaxHandSize, nTopGroupings_[2], HandInfo.H4);
+            score = HIGH_CARD * SCORE_BASE;
+            score += getKickers(nMaxHandSize, nTopGroupings_[2], H4);
         }
         return score;
     }

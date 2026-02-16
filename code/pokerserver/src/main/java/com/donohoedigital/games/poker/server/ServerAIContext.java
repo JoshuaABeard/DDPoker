@@ -38,6 +38,7 @@ import com.donohoedigital.games.poker.core.ai.AIContext;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.CardSuit;
 import com.donohoedigital.games.poker.engine.Hand;
+import com.donohoedigital.games.poker.engine.HandInfoFaster;
 
 /**
  * Server-side implementation of AIContext for providing game state to AI.

@@ -3363,4 +3363,263 @@ public class HoldemHand implements DataMarshal, GameHand {
     public void setPocketWeights(PocketWeights pw) {
         pw_ = pw;
     }
+
+    // === GameHand Interface Implementation (V2 AI Support) ===
+
+    /**
+     * Get community cards as array (GameHand interface).
+     *
+     * @return array of community cards (0-5 cards depending on round), or null if
+     *         none dealt
+     */
+    @Override
+    public Card[] getCommunityCards() {
+        if (community_ == null || community_.size() == 0) {
+            return null;
+        }
+        Card[] cards = new Card[community_.size()];
+        for (int i = 0; i < community_.size(); i++) {
+            cards[i] = community_.getCard(i);
+        }
+        return cards;
+    }
+
+    /**
+     * Get player's hole cards as array (GameHand interface).
+     *
+     * @param player
+     *            the player
+     * @return array of 2 hole cards, or null if player folded or not in hand
+     */
+    @Override
+    public Card[] getPlayerCards(GamePlayerInfo player) {
+        if (player == null) {
+            return null;
+        }
+        PokerPlayer pokerPlayer = (PokerPlayer) player;
+        Hand hand = pokerPlayer.getHand();
+        if (hand == null || hand.size() == 0) {
+            return null;
+        }
+        Card[] cards = new Card[hand.size()];
+        for (int i = 0; i < hand.size(); i++) {
+            cards[i] = hand.getCard(i);
+        }
+        return cards;
+    }
+
+    /**
+     * Get total pot size (GameHand interface).
+     *
+     * @return total chips in pot
+     */
+    @Override
+    public int getPotSize() {
+        return getTotalPotChipCount();
+    }
+
+    /**
+     * Get pot odds for player (GameHand interface adapter).
+     *
+     * @param player
+     *            the player
+     * @return pot odds as percentage (0-100)
+     */
+    @Override
+    public float getPotOdds(GamePlayerInfo player) {
+        if (player == null) {
+            return 0.0f;
+        }
+        return getPotOdds((PokerPlayer) player);
+    }
+
+    // Note: wasRaisedPreFlop() already exists at line 2906
+    // Note: getFirstBettor(int, boolean) already exists at line 3033 (returns
+    // PokerPlayer which is
+    // GamePlayerInfo)
+    // Note: getLastBettor(int, boolean) already exists at line 3061 (returns
+    // PokerPlayer which is
+    // GamePlayerInfo)
+    /**
+     * Check if player was first raiser pre-flop (GameHand interface). Overload for
+     * GamePlayerInfo.
+     *
+     * @param player
+     *            the player
+     * @return true if player made first raise pre-flop
+     */
+    @Override
+    public boolean wasFirstRaiserPreFlop(GamePlayerInfo player) {
+        if (player == null) {
+            return false;
+        }
+        return wasFirstRaiserPreFlop((PokerPlayer) player);
+    }
+
+    /**
+     * Check if player was last raiser pre-flop (GameHand interface). Overload for
+     * GamePlayerInfo.
+     *
+     * @param player
+     *            the player
+     * @return true if player made last raise pre-flop
+     */
+    @Override
+    public boolean wasLastRaiserPreFlop(GamePlayerInfo player) {
+        if (player == null) {
+            return false;
+        }
+        return wasLastRaiserPreFlop((PokerPlayer) player);
+    }
+
+    /**
+     * Check if player was only raiser pre-flop (GameHand interface). Overload for
+     * GamePlayerInfo.
+     *
+     * @param player
+     *            the player
+     * @return true if player raised and no one else raised
+     */
+    @Override
+    public boolean wasOnlyRaiserPreFlop(GamePlayerInfo player) {
+        if (player == null) {
+            return false;
+        }
+        return wasOnlyRaiserPreFlop((PokerPlayer) player);
+    }
+
+    /**
+     * Check if there was betting action in a round (GameHand interface).
+     *
+     * @param round
+     *            the betting round
+     * @return true if there was at least one bet/raise
+     */
+    @Override
+    public boolean wasPotAction(int round) {
+        return getWasPotAction(round);
+    }
+
+    /**
+     * Check if player paid to enter hand (GameHand interface). Overload for
+     * GamePlayerInfo.
+     *
+     * @param player
+     *            the player
+     * @return true if player put money in pre-flop
+     */
+    @Override
+    public boolean paidToPlay(GamePlayerInfo player) {
+        if (player == null) {
+            return false;
+        }
+        return paidToPlay((PokerPlayer) player);
+    }
+
+    /**
+     * Check if player could have limped (GameHand interface). Overload for
+     * GamePlayerInfo.
+     *
+     * @param player
+     *            the player
+     * @return true if calling big blind was an option for first action
+     */
+    @Override
+    public boolean couldLimp(GamePlayerInfo player) {
+        if (player == null) {
+            return false;
+        }
+        return couldLimp((PokerPlayer) player);
+    }
+
+    /**
+     * Check if player limped (GameHand interface). Overload for GamePlayerInfo.
+     *
+     * @param player
+     *            the player
+     * @return true if player limped
+     */
+    @Override
+    public boolean limped(GamePlayerInfo player) {
+        if (player == null) {
+            return false;
+        }
+        return limped((PokerPlayer) player);
+    }
+
+    /**
+     * Check if player is in blind position (GameHand interface).
+     *
+     * @param player
+     *            the player
+     * @return true if player is small or big blind
+     */
+    @Override
+    public boolean isBlind(GamePlayerInfo player) {
+        if (player == null) {
+            return false;
+        }
+        PokerPlayer pokerPlayer = (PokerPlayer) player;
+        int seat = pokerPlayer.getSeat();
+        return seat == getSmallBlindSeat() || seat == getBigBlindSeat();
+    }
+
+    /**
+     * Check if player has acted in current round (GameHand interface).
+     *
+     * @param player
+     *            the player
+     * @return true if player has made a decision this round
+     */
+    @Override
+    public boolean hasActedThisRound(GamePlayerInfo player) {
+        if (player == null) {
+            return false;
+        }
+        return getLastActionThisRound(player) != HandAction.ACTION_NONE;
+    }
+
+    /**
+     * Get player's last action in current round (GameHand interface). Overload for
+     * GamePlayerInfo.
+     *
+     * @param player
+     *            the player
+     * @return action constant, or 0 if not acted
+     */
+    @Override
+    public int getLastActionThisRound(GamePlayerInfo player) {
+        if (player == null) {
+            return HandAction.ACTION_NONE;
+        }
+        return getLastActionThisRound((PokerPlayer) player);
+    }
+
+    /**
+     * Get player's first voluntary action in a round (GameHand interface adapter).
+     *
+     * @param player
+     *            the player
+     * @param round
+     *            the betting round
+     * @return action constant for first voluntary action
+     */
+    @Override
+    public int getFirstVoluntaryAction(GamePlayerInfo player, int round) {
+        if (player == null) {
+            return HandAction.ACTION_NONE;
+        }
+        HandAction action = getFirstVoluntaryAction((PokerPlayer) player, round);
+        return action != null ? action.getAction() : HandAction.ACTION_NONE;
+    }
+
+    // Note: getNumLimpers() already exists at line 2969
+    // Note: getNumFoldsSinceLastBet() already exists at line 3087
+    // Note: getCurrentPlayerWithInit() already exists at line 1190 (returns
+    // PokerPlayer which is
+    // GamePlayerInfo)
+    // Note: getAmountToCall(GamePlayerInfo) already exists at line 2468
+    // Note: getMinRaise() already exists at line 2059
+    // Note: applyPlayerAction(GamePlayerInfo, PlayerAction) already exists at line
+    // 2477
 }

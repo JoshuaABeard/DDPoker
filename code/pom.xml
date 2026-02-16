@@ -143,7 +143,7 @@
           <reuseForks>true</reuseForks>
           <!-- Memory settings (increased for better performance) -->
           <!-- JVM args for Mockito compatibility with Java 21+ -->
-          <argLine>-Xmx1024m -XX:+UseParallelGC -XX:TieredStopAtLevel=1 --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED @{argLine}</argLine>
+          <argLine>-Xmx1024m -XX:+UseParallelGC -XX:TieredStopAtLevel=1 --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -Dnet.bytebuddy.experimental=true @{argLine}</argLine>
           <!-- Optimize test execution -->
           <runOrder>hourly</runOrder>
           <trimStackTrace>false</trimStackTrace>

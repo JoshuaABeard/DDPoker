@@ -42,12 +42,19 @@ import com.donohoedigital.games.poker.engine.*;
 
 import java.security.*;
 import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.core.ActionOptions;
+import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import com.donohoedigital.games.poker.core.ai.V2Algorithm;
 
 @DataCoder('2')
 public class V2Player extends V1Player implements AIConstants {
     private StringBuilder debug_ = null;
 
     RuleEngine re;
+
+    // V2 algorithm extraction support
+    private V2Algorithm algorithm;
+    private ClientStrategyProvider strategyProvider;
 
     private float ppot_;
     private float npot_;
@@ -86,6 +93,12 @@ public class V2Player extends V1Player implements AIConstants {
         super.init();
 
         initRuleEngine();
+
+        // Initialize V2Algorithm with strategy provider
+        if (playerType_ != null) {
+            strategyProvider = new ClientStrategyProvider(playerType_);
+            algorithm = new V2Algorithm(msg -> appendDebug(msg), TESTING("ai.debug"));
+        }
     }
 
     public RuleEngine getRuleEngine() {
@@ -111,14 +124,192 @@ public class V2Player extends V1Player implements AIConstants {
     public PlayerAction getAction(boolean quick) {
         betAmount_ = 0;
 
-        // if (isPreFlop())
-        // {
-        re.execute(this);
+        // Use V2Algorithm if available, otherwise fall back to RuleEngine
+        if (algorithm != null && strategyProvider != null) {
+            return getActionViaAlgorithm();
+        }
 
+        // Legacy path: use RuleEngine directly
+        re.execute(this);
         return re.getAction();
-        /*
-         * } else { return super.getAction(quick); }
-         */
+    }
+
+    /**
+     * Get action via extracted V2Algorithm. This is the new code path that uses the
+     * Swing-free AI implementation.
+     */
+    private PlayerAction getActionViaAlgorithm() {
+        HoldemHand hhand = getPokerPlayer().getHoldemHand();
+        PokerPlayer player = getPokerPlayer();
+
+        // Build action options from current hand state
+        ActionOptions options = buildActionOptions(hhand, player);
+
+        // Create context wrapping current hand
+        ClientV2AIContext context = new ClientV2AIContext(hhand, strategyProvider);
+
+        // Adapt PokerPlayer to GamePlayerInfo
+        GamePlayerInfo playerInfo = new PokerPlayerAdapter(player);
+
+        // Get decision from V2Algorithm
+        com.donohoedigital.games.poker.core.PlayerAction coreAction = algorithm.getAction(playerInfo, options, context);
+
+        // Convert core PlayerAction to legacy PlayerAction
+        return convertToLegacyAction(coreAction);
+    }
+
+    /**
+     * Build ActionOptions from HoldemHand state.
+     */
+    private ActionOptions buildActionOptions(HoldemHand hhand, PokerPlayer player) {
+        int callAmount = hhand.getCall(player);
+        int bet = hhand.getBet();
+        int minBet = hhand.getMinBet();
+        int maxBet = hhand.getMaxBet(player);
+        int minRaise = hhand.getMinRaise();
+        int maxRaise = hhand.getMaxRaise(player);
+
+        boolean canCheck = (callAmount == 0);
+        boolean canCall = (callAmount > 0);
+        boolean canBet = (bet == 0 && maxBet > 0);
+        boolean canRaise = (bet > 0 && maxRaise >= minRaise);
+        boolean canFold = !canCheck; // Can fold if not checking
+
+        return new ActionOptions(canCheck, canCall, canBet, canRaise, canFold, callAmount, minBet, maxBet, minRaise,
+                maxRaise, 0 /* no timeout for AI */);
+    }
+
+    /**
+     * Convert core PlayerAction to legacy PlayerAction.
+     */
+    private PlayerAction convertToLegacyAction(com.donohoedigital.games.poker.core.PlayerAction coreAction) {
+        // Store amount for betAmount_ field
+        betAmount_ = coreAction.amount();
+
+        // Map core action type to legacy PlayerAction using factory methods
+        PlayerAction legacyAction = switch (coreAction.actionType()) {
+            case FOLD -> PlayerAction.fold();
+            case CHECK, CHECK_RAISE -> PlayerAction.check();
+            case CALL -> PlayerAction.call();
+            case BET, RAISE, OVERBET -> PlayerAction.raise(); // BET and RAISE both map to raise()
+            default -> {
+                // Unexpected action type - log and default to fold
+                printMessage("Unexpected action type: " + coreAction.actionType());
+                yield PlayerAction.fold();
+            }
+        };
+
+        // Add debug reason if present
+        return legacyAction.reason(coreAction.toString());
+    }
+
+    /**
+     * Adapter that wraps PokerPlayer to implement GamePlayerInfo.
+     */
+    private static class PokerPlayerAdapter implements GamePlayerInfo {
+        private final PokerPlayer player;
+
+        PokerPlayerAdapter(PokerPlayer player) {
+            this.player = player;
+        }
+
+        @Override
+        public int getID() {
+            return player.getID();
+        }
+
+        @Override
+        public String getName() {
+            return player.getName();
+        }
+
+        @Override
+        public boolean isHuman() {
+            return player.isHuman();
+        }
+
+        @Override
+        public int getChipCount() {
+            return player.getChipCount();
+        }
+
+        @Override
+        public boolean isFolded() {
+            return player.isFolded();
+        }
+
+        @Override
+        public boolean isAllIn() {
+            return player.isAllIn();
+        }
+
+        @Override
+        public int getSeat() {
+            return player.getSeat();
+        }
+
+        @Override
+        public boolean isAskShowWinning() {
+            // Default: don't ask about showing winning cards
+            return false;
+        }
+
+        @Override
+        public boolean isAskShowLosing() {
+            // Default: don't ask about showing losing cards
+            return false;
+        }
+
+        @Override
+        public boolean isObserver() {
+            return player.isObserver();
+        }
+
+        @Override
+        public boolean isHumanControlled() {
+            return player.isHumanControlled();
+        }
+
+        @Override
+        public int getThinkBankMillis() {
+            return player.getThinkBankMillis();
+        }
+
+        @Override
+        public boolean isSittingOut() {
+            return player.isSittingOut();
+        }
+
+        @Override
+        public void setSittingOut(boolean sittingOut) {
+            player.setSittingOut(sittingOut);
+        }
+
+        @Override
+        public boolean isLocallyControlled() {
+            return player.isLocallyControlled();
+        }
+
+        @Override
+        public boolean isComputer() {
+            return player.isComputer();
+        }
+
+        @Override
+        public void setTimeoutMillis(int millis) {
+            player.setTimeoutMillis(millis);
+        }
+
+        @Override
+        public void setTimeoutMessageSecondsLeft(int seconds) {
+            player.setTimeoutMessageSecondsLeft(seconds);
+        }
+
+        @Override
+        public int getNumRebuys() {
+            // Player profile doesn't track rebuy count - return 0
+            return 0;
+        }
     }
 
     public float getHandStrength() {

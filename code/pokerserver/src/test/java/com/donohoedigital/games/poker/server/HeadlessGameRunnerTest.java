@@ -22,6 +22,7 @@ package com.donohoedigital.games.poker.server;
 import com.donohoedigital.games.poker.core.*;
 import com.donohoedigital.games.poker.core.event.*;
 import com.donohoedigital.games.poker.core.state.*;
+import com.donohoedigital.games.poker.engine.Card;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -2433,6 +2434,125 @@ class HeadlessGameRunnerTest {
                     }
                 }
             }
+        }
+
+        // === V2 AI Card Access Methods ===
+
+        @Override
+        public Card[] getCommunityCards() {
+            return new Card[0]; // No community cards in headless test
+        }
+
+        @Override
+        public Card[] getPlayerCards(GamePlayerInfo player) {
+            return null; // No hole cards tracked in headless test
+        }
+
+        // === V2 AI Pot State Methods ===
+
+        @Override
+        public int getPotSize() {
+            return pot;
+        }
+
+        @Override
+        public int getPotStatus() {
+            return 0; // NO_POT_ACTION
+        }
+
+        @Override
+        public float getPotOdds(GamePlayerInfo player) {
+            int toCall = getAmountToCall(player);
+            return toCall > 0 ? (float) pot / toCall : 0.0f;
+        }
+
+        // === V2 AI Betting History Methods ===
+
+        @Override
+        public boolean wasRaisedPreFlop() {
+            return false; // Simplified - no raises tracked
+        }
+
+        @Override
+        public GamePlayerInfo getFirstBettor(int round, boolean includeRaises) {
+            return null; // No betting history tracked
+        }
+
+        @Override
+        public GamePlayerInfo getLastBettor(int round, boolean includeRaises) {
+            return null; // No betting history tracked
+        }
+
+        @Override
+        public boolean wasFirstRaiserPreFlop(GamePlayerInfo player) {
+            return false; // No raise history tracked
+        }
+
+        @Override
+        public boolean wasLastRaiserPreFlop(GamePlayerInfo player) {
+            return false; // No raise history tracked
+        }
+
+        @Override
+        public boolean wasOnlyRaiserPreFlop(GamePlayerInfo player) {
+            return false; // No raise history tracked
+        }
+
+        @Override
+        public boolean wasPotAction(int round) {
+            return false; // No action history tracked
+        }
+
+        // === V2 AI Player State Methods ===
+
+        @Override
+        public boolean paidToPlay(GamePlayerInfo player) {
+            return true; // Assume all players paid blinds
+        }
+
+        @Override
+        public boolean couldLimp(GamePlayerInfo player) {
+            return false; // Simplified - no limping tracked
+        }
+
+        @Override
+        public boolean limped(GamePlayerInfo player) {
+            return false; // No limping tracked
+        }
+
+        @Override
+        public boolean isBlind(GamePlayerInfo player) {
+            if (players.isEmpty())
+                return false;
+            // First two players are blinds
+            return player == players.get(0) || (players.size() > 1 && player == players.get(1));
+        }
+
+        @Override
+        public boolean hasActedThisRound(GamePlayerInfo player) {
+            return false; // No action tracking per round
+        }
+
+        @Override
+        public int getLastActionThisRound(GamePlayerInfo player) {
+            return 0; // No action history
+        }
+
+        @Override
+        public int getFirstVoluntaryAction(GamePlayerInfo player, int round) {
+            return 0; // No action history
+        }
+
+        // === V2 AI Count Methods ===
+
+        @Override
+        public int getNumLimpers() {
+            return 0; // No limper tracking
+        }
+
+        @Override
+        public int getNumFoldsSinceLastBet() {
+            return 0; // No fold tracking
         }
     }
 }
