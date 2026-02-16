@@ -38,6 +38,7 @@ package com.donohoedigital.games.poker.core.ai;
 import com.donohoedigital.games.poker.core.ActionOptions;
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.PlayerAction;
+import com.donohoedigital.games.poker.core.TournamentContext;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.engine.*;
 
@@ -72,6 +73,8 @@ public class V2Algorithm implements PurePokerAI, V2PlayerState, AIConstants {
     // === Configuration ===
     private final Consumer<String> debugOutput;
     private final boolean debug;
+    private final int rebuyPropensity; // 0-100 (lower = more likely to rebuy)
+    private final int addonPropensity; // 0-100 (lower = more likely to addon)
 
     // === Persistent state (across hands) ===
     private float steam = 0.0f; // tilt factor from bad beats
@@ -113,14 +116,24 @@ public class V2Algorithm implements PurePokerAI, V2PlayerState, AIConstants {
     private PocketMatrixFloat fieldMatrix = null;
 
     public V2Algorithm() {
-        this(null, false);
+        this(null, false, 50, 50); // Moderate propensity
+    }
+
+    public V2Algorithm(int rebuyPropensity, int addonPropensity) {
+        this(null, false, rebuyPropensity, addonPropensity);
     }
 
     public V2Algorithm(Consumer<String> debugOutput, boolean enableDebug) {
+        this(debugOutput, enableDebug, 50, 50); // Moderate propensity
+    }
+
+    public V2Algorithm(Consumer<String> debugOutput, boolean enableDebug, int rebuyPropensity, int addonPropensity) {
         this.ruleEngine = new PureRuleEngine();
         this.debugOutput = debugOutput != null ? debugOutput : (s -> {
         });
         this.debug = enableDebug;
+        this.rebuyPropensity = rebuyPropensity;
+        this.addonPropensity = addonPropensity;
     }
 
     // === PurePokerAI interface ===
@@ -142,14 +155,14 @@ public class V2Algorithm implements PurePokerAI, V2PlayerState, AIConstants {
 
     @Override
     public boolean wantsRebuy(GamePlayerInfo player, AIContext context) {
-        // TODO: Implement rebuy logic (delegate to base V1 logic)
-        return false;
+        return V1Algorithm.wantsRebuy(player, rebuyPropensity);
     }
 
     @Override
     public boolean wantsAddon(GamePlayerInfo player, AIContext context) {
-        // TODO: Implement addon logic (delegate to base V1 logic)
-        return false;
+        TournamentContext tournament = context.getTournament();
+        int buyinChips = tournament != null ? tournament.getStartingChips() : 0;
+        return V1Algorithm.wantsAddon(player, addonPropensity, buyinChips);
     }
 
     // === V2PlayerState interface ===

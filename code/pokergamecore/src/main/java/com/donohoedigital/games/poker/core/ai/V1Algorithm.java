@@ -1545,10 +1545,8 @@ public class V1Algorithm implements PurePokerAI {
     // ========== Helper Methods ==========
 
     /**
-     * Rebuy logic for computer players.
-     * <p>
-     * Extracted from V1Player.WantsRebuy() - static logic with no Swing
-     * dependencies.
+     * Rebuy logic for computer players. Package-private to allow V2Algorithm to
+     * reuse.
      *
      * @param player
      *            Player considering rebuy
@@ -1556,7 +1554,7 @@ public class V1Algorithm implements PurePokerAI {
      *            Rebuy propensity (0-100)
      * @return true if player should rebuy
      */
-    private static boolean wantsRebuy(GamePlayerInfo player, int rebuyPropensity) {
+    static boolean wantsRebuy(GamePlayerInfo player, int rebuyPropensity) {
         int numRebuys = player.getNumRebuys();
 
         // BUG 395: Protect players from going broke
@@ -1582,7 +1580,8 @@ public class V1Algorithm implements PurePokerAI {
     }
 
     /**
-     * Addon logic for computer players.
+     * Addon logic for computer players. Package-private to allow V2Algorithm to
+     * reuse.
      * <p>
      * Extracted from V1Player.WantsAddon() - static logic with no Swing
      * dependencies.
@@ -1595,7 +1594,7 @@ public class V1Algorithm implements PurePokerAI {
      *            Starting chip count (for comparison)
      * @return true if player should take addon
      */
-    private static boolean wantsAddon(GamePlayerInfo player, int addonPropensity, int buyinChips) {
+    static boolean wantsAddon(GamePlayerInfo player, int addonPropensity, int buyinChips) {
         if (addonPropensity < 25) {
             return true; // 25% always addon
         }

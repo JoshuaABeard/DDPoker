@@ -167,23 +167,96 @@ class V2AlgorithmTest {
     }
 
     @Test
-    void wantsRebuy_returnsDefault() {
-        V2Algorithm algorithm = new V2Algorithm();
+    void wantsRebuy_lowPropensity_wantsRebuy() {
+        V2Algorithm algorithm = new V2Algorithm(20, 50); // Low rebuy propensity
         V2AIContext context = createMockV2Context();
         GamePlayerInfo player = createMockPlayer();
+        when(player.getNumRebuys()).thenReturn(0);
 
-        // Currently returns false (TODO in implementation)
+        assertThat(algorithm.wantsRebuy(player, context)).isTrue();
+    }
+
+    @Test
+    void wantsRebuy_highPropensity_doesNotWantRebuy() {
+        V2Algorithm algorithm = new V2Algorithm(95, 50); // High rebuy propensity
+        V2AIContext context = createMockV2Context();
+        GamePlayerInfo player = createMockPlayer();
+        when(player.getNumRebuys()).thenReturn(0);
+
         assertThat(algorithm.wantsRebuy(player, context)).isFalse();
     }
 
     @Test
-    void wantsAddon_returnsDefault() {
-        V2Algorithm algorithm = new V2Algorithm();
+    void wantsRebuy_maxRebuysReached_doesNotWantRebuy() {
+        V2Algorithm algorithm = new V2Algorithm(20, 50); // Low propensity, but...
         V2AIContext context = createMockV2Context();
         GamePlayerInfo player = createMockPlayer();
+        when(player.getNumRebuys()).thenReturn(5); // Max rebuys
 
-        // Currently returns false (TODO in implementation)
+        assertThat(algorithm.wantsRebuy(player, context)).isFalse();
+    }
+
+    @Test
+    void wantsAddon_lowPropensity_wantsAddon() {
+        V2Algorithm algorithm = new V2Algorithm(50, 20); // Low addon propensity
+        V2AIContext context = createMockV2Context();
+        TournamentContext tournament = mock(TournamentContext.class);
+        when(tournament.getStartingChips()).thenReturn(1000);
+        when(context.getTournament()).thenReturn(tournament);
+
+        GamePlayerInfo player = createMockPlayer();
+        when(player.getChipCount()).thenReturn(500);
+
+        assertThat(algorithm.wantsAddon(player, context)).isTrue();
+    }
+
+    @Test
+    void wantsAddon_highPropensity_doesNotWantAddon() {
+        V2Algorithm algorithm = new V2Algorithm(50, 80); // High addon propensity
+        V2AIContext context = createMockV2Context();
+        TournamentContext tournament = mock(TournamentContext.class);
+        when(tournament.getStartingChips()).thenReturn(1000);
+        when(context.getTournament()).thenReturn(tournament);
+
+        GamePlayerInfo player = createMockPlayer();
+        when(player.getChipCount()).thenReturn(500);
+
         assertThat(algorithm.wantsAddon(player, context)).isFalse();
+    }
+
+    @Test
+    void wantsAddon_manyChips_doesNotWantAddon() {
+        V2Algorithm algorithm = new V2Algorithm(50, 40); // Moderate propensity
+        V2AIContext context = createMockV2Context();
+        TournamentContext tournament = mock(TournamentContext.class);
+        when(tournament.getStartingChips()).thenReturn(1000);
+        when(context.getTournament()).thenReturn(tournament);
+
+        GamePlayerInfo player = createMockPlayer();
+        when(player.getChipCount()).thenReturn(10000); // 10x buyin (> 3x threshold)
+
+        // With propensity 40 (25-50 range), wants addon only if chips < 3x buyin
+        // 10000 > 3000, so should not want addon
+        assertThat(algorithm.wantsAddon(player, context)).isFalse();
+    }
+
+    @Test
+    void constructor_withPropensityValues_storesValues() {
+        V2Algorithm algorithm = new V2Algorithm(30, 40);
+        V2AIContext context = createMockV2Context();
+        TournamentContext tournament = mock(TournamentContext.class);
+        when(tournament.getStartingChips()).thenReturn(1000);
+        when(context.getTournament()).thenReturn(tournament);
+
+        GamePlayerInfo player = createMockPlayer();
+        when(player.getNumRebuys()).thenReturn(0);
+        when(player.getChipCount()).thenReturn(500);
+
+        // Verify the propensity values were stored by checking behavior
+        // 30 rebuy propensity should want rebuy (in the 25-50 range)
+        assertThat(algorithm.wantsRebuy(player, context)).isTrue();
+        // 40 addon propensity should want addon when chips < 3x buyin
+        assertThat(algorithm.wantsAddon(player, context)).isTrue();
     }
 
     @Test

@@ -1,7 +1,9 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
- * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 Joshua Beard and contributors
+ *
+ * This file is part of DD Poker, originally created by Doug Donohoe.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,6 +42,9 @@ import com.donohoedigital.games.poker.engine.CardSuit;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.HandInfoFaster;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Server-side implementation of AIContext for providing game state to AI.
  * <p>
@@ -58,10 +63,16 @@ import com.donohoedigital.games.poker.engine.HandInfoFaster;
 public class ServerAIContext implements AIContext {
 
     private final GameTable table;
-    private final GameHand currentHand;
+    private GameHand currentHand; // Mutable - updated per hand
     private final TournamentContext tournament;
     private final GamePlayerInfo aiPlayer;
     private final HandInfoFaster handEvaluator;
+    protected final ServerOpponentTracker opponentTracker;
+
+    // Action tracking (per hand)
+    private final Map<Integer, int[]> playerActionsPerRound = new HashMap<>(); // [playerID][round] = action
+    private final Map<Integer, int[]> playerBetsPerRound = new HashMap<>(); // [playerID][round] = amount
+    private int lastBetAmount = 0;
 
     /**
      * Create AI context for server game.
@@ -74,14 +85,53 @@ public class ServerAIContext implements AIContext {
      *            Tournament context for blind structure
      * @param aiPlayer
      *            The AI player this context is for (used for rebuy period check)
+     * @param opponentTracker
+     *            Shared opponent tracker for behavioral statistics
      */
-    public ServerAIContext(GameTable table, GameHand currentHand, TournamentContext tournament,
-            GamePlayerInfo aiPlayer) {
+    public ServerAIContext(GameTable table, GameHand currentHand, TournamentContext tournament, GamePlayerInfo aiPlayer,
+            ServerOpponentTracker opponentTracker) {
         this.table = table;
         this.currentHand = currentHand;
         this.tournament = tournament;
         this.aiPlayer = aiPlayer;
         this.handEvaluator = new HandInfoFaster();
+        this.opponentTracker = opponentTracker;
+    }
+
+    /**
+     * Update the current hand reference. Called at the start of each hand.
+     *
+     * @param hand
+     *            The new current hand
+     */
+    public void setCurrentHand(GameHand hand) {
+        this.currentHand = hand;
+        // Reset per-hand tracking
+        playerActionsPerRound.clear();
+        playerBetsPerRound.clear();
+        lastBetAmount = 0;
+    }
+
+    /**
+     * Track player action for later queries. Called after each player acts.
+     *
+     * @param player
+     *            Player who acted
+     * @param action
+     *            Action taken (HandAction constants)
+     * @param amount
+     *            Amount bet/raised
+     * @param round
+     *            Betting round
+     */
+    public void onPlayerAction(GamePlayerInfo player, int action, int amount, int round) {
+        playerActionsPerRound.computeIfAbsent(player.getID(), k -> new int[4])[round] = action;
+
+        if (action == HandAction.ACTION_BET || action == HandAction.ACTION_RAISE) {
+            lastBetAmount = amount;
+        }
+
+        playerBetsPerRound.computeIfAbsent(player.getID(), k -> new int[4])[round] += amount;
     }
 
     /**
@@ -121,97 +171,209 @@ public class ServerAIContext implements AIContext {
         return tournament;
     }
 
-    // ========== Stub Methods (not yet needed by TournamentAI) ==========
-    // TODO: Implement these when V1/V2 algorithms are extracted
+    // ========== Game State Methods ==========
 
     @Override
     public boolean isButton(GamePlayerInfo player) {
-        // TODO: Implement for V1/V2 AI
-        return false;
+        if (player == null || table == null) {
+            return false;
+        }
+        return table.getSeat(player) == table.getButton();
     }
 
     @Override
     public boolean isSmallBlind(GamePlayerInfo player) {
-        // TODO: Implement for V1/V2 AI
-        return false;
+        if (player == null || table == null) {
+            return false;
+        }
+        int seat = table.getSeat(player);
+        int smallBlindSeat = calculateSmallBlindSeat();
+        return seat == smallBlindSeat;
     }
 
     @Override
     public boolean isBigBlind(GamePlayerInfo player) {
-        // TODO: Implement for V1/V2 AI
-        return false;
+        if (player == null || table == null) {
+            return false;
+        }
+        int seat = table.getSeat(player);
+        int bigBlindSeat = calculateBigBlindSeat();
+        return seat == bigBlindSeat;
     }
 
     @Override
     public int getPosition(GamePlayerInfo player) {
-        // TODO: Implement for V1/V2 AI
-        return 0;
+        if (player == null || table == null) {
+            return 0;
+        }
+        int seat = table.getSeat(player);
+        int button = table.getButton();
+        int numSeats = table.getSeats();
+        // Position 0 = button, increases clockwise
+        return (seat - button + numSeats) % numSeats;
+    }
+
+    /**
+     * Calculate small blind seat based on button position and number of players. In
+     * heads-up, button is small blind. Otherwise, small blind is 1 seat after
+     * button.
+     */
+    private int calculateSmallBlindSeat() {
+        int button = table.getButton();
+        int numSeats = table.getSeats();
+        int numOccupied = table.getNumOccupiedSeats();
+
+        // In heads-up, button is small blind
+        if (numOccupied == 2) {
+            return button;
+        }
+
+        // Otherwise, small blind is 1 seat after button
+        return (button + 1) % numSeats;
+    }
+
+    /**
+     * Calculate big blind seat based on button position and number of players. In
+     * heads-up, non-button is big blind. Otherwise, big blind is 2 seats after
+     * button.
+     */
+    private int calculateBigBlindSeat() {
+        int button = table.getButton();
+        int numSeats = table.getSeats();
+        int numOccupied = table.getNumOccupiedSeats();
+
+        // In heads-up, big blind is opposite of button
+        // Since button is small blind in heads-up, big blind is the other player
+        if (numOccupied == 2) {
+            // Find the first occupied seat that isn't the button
+            for (int i = 0; i < numSeats; i++) {
+                if (i != button && table.getPlayer(i) != null) {
+                    return i;
+                }
+            }
+        }
+
+        // Otherwise, big blind is 2 seats after button
+        return (button + 2) % numSeats;
     }
 
     @Override
     public int getPotSize() {
-        // TODO: Implement for V1/V2 AI
-        return 0;
+        if (currentHand == null) {
+            return 0;
+        }
+        return currentHand.getPotSize();
     }
 
     @Override
     public int getAmountToCall(GamePlayerInfo player) {
-        // TODO: Implement for V1/V2 AI
-        return 0;
+        if (currentHand == null) {
+            return 0;
+        }
+        return currentHand.getAmountToCall(player);
     }
 
     @Override
     public int getAmountBetThisRound(GamePlayerInfo player) {
-        // TODO: Implement for V1/V2 AI
-        return 0;
+        if (player == null || currentHand == null) {
+            return 0;
+        }
+        int round = currentHand.getRound().toLegacy();
+        int[] bets = playerBetsPerRound.get(player.getID());
+        return bets != null && round >= 0 && round < bets.length ? bets[round] : 0;
     }
 
     @Override
     public int getLastBetAmount() {
-        // TODO: Implement for V1/V2 AI
-        return 0;
+        return lastBetAmount;
     }
 
     @Override
     public int getNumActivePlayers() {
-        // TODO: Implement for V1/V2 AI
-        return 0;
+        if (currentHand == null) {
+            return 0;
+        }
+        return currentHand.getNumWithCards();
     }
 
     @Override
     public int getNumPlayersYetToAct(GamePlayerInfo player) {
-        // TODO: Implement for V1/V2 AI
-        return 0;
+        if (table == null || currentHand == null || player == null) {
+            return 0;
+        }
+        int count = 0;
+        int playerSeat = table.getSeat(player);
+        int numSeats = table.getSeats();
+
+        // Count players after this player who haven't acted yet
+        for (int i = 1; i < numSeats; i++) {
+            int seat = (playerSeat + i) % numSeats;
+            GamePlayerInfo p = table.getPlayer(seat);
+            if (p != null && !currentHand.hasActedThisRound(p)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     @Override
     public int getNumPlayersWhoActed(GamePlayerInfo player) {
-        // TODO: Implement for V1/V2 AI
-        return 0;
+        if (table == null || currentHand == null) {
+            return 0;
+        }
+        int count = 0;
+        int numSeats = table.getSeats();
+
+        // Count all players who have acted this round
+        for (int i = 0; i < numSeats; i++) {
+            GamePlayerInfo p = table.getPlayer(i);
+            if (p != null && currentHand.hasActedThisRound(p)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     @Override
     public boolean hasBeenBet() {
-        // TODO: Implement for V1/V2 AI
-        return false;
+        if (currentHand == null) {
+            return false;
+        }
+        int round = currentHand.getRound().toLegacy();
+        return currentHand.wasPotAction(round);
     }
 
     @Override
     public boolean hasBeenRaised() {
-        // TODO: Implement for V1/V2 AI
-        return false;
+        if (currentHand == null) {
+            return false;
+        }
+        int round = currentHand.getRound().toLegacy();
+        if (round == 0) {
+            // Pre-flop: check if there was a raise
+            return currentHand.wasRaisedPreFlop();
+        } else {
+            // Post-flop: check if there's a raiser this round
+            return currentHand.getLastBettor(round, false) != null;
+        }
     }
 
     @Override
     public GamePlayerInfo getLastBettor() {
-        // TODO: Implement for V1/V2 AI
-        return null;
+        if (currentHand == null) {
+            return null;
+        }
+        int round = currentHand.getRound().toLegacy();
+        return currentHand.getLastBettor(round, true); // true = include bets and raises
     }
 
     @Override
     public GamePlayerInfo getLastRaiser() {
-        // TODO: Implement for V1/V2 AI
-        return null;
+        if (currentHand == null) {
+            return null;
+        }
+        int round = currentHand.getRound().toLegacy();
+        return currentHand.getLastBettor(round, false); // false = raises only
     }
 
     @Override
@@ -231,29 +393,38 @@ public class ServerAIContext implements AIContext {
 
     @Override
     public int getBettingRound() {
-        // TODO: Implement for V1/V2 AI
-        return 0;
+        if (currentHand == null) {
+            return 0; // PRE_FLOP
+        }
+        return currentHand.getRound().toLegacy();
     }
 
     @Override
     public Card[] getHoleCards(GamePlayerInfo player) {
-        // TODO: Implement for V1/V2 AI
-        // SECURITY: Must enforce that player == this AI's player (no cheating by seeing
-        // opponents' cards)
-        // Example: if (player != this.aiPlayer) return null;
-        return null;
+        // SECURITY: AI can only see its own cards, not opponents' cards
+        if (player != aiPlayer) {
+            return null;
+        }
+        if (currentHand == null) {
+            return null;
+        }
+        return currentHand.getPlayerCards(player);
     }
 
     @Override
     public Card[] getCommunityCards() {
-        // TODO: Implement for V1/V2 AI
-        return null;
+        if (currentHand == null) {
+            return null;
+        }
+        return currentHand.getCommunityCards();
     }
 
     @Override
     public int getNumCallers() {
-        // TODO: Implement for V1/V2 AI
-        return 0;
+        if (currentHand == null) {
+            return 0;
+        }
+        return currentHand.getNumLimpers();
     }
 
     @Override
@@ -462,29 +633,41 @@ public class ServerAIContext implements AIContext {
 
     @Override
     public int getLastActionInRound(GamePlayerInfo player, int bettingRound) {
-        if (player == null || currentHand == null) {
+        if (player == null) {
             return ACTION_NONE;
         }
-
-        // TODO: Implement when server tracks action history per round
-        // For now, return ACTION_NONE (no limper detection on server)
-        // Desktop client can implement this using HoldemHand.getLastAction()
+        int[] actions = playerActionsPerRound.get(player.getID());
+        if (actions != null && bettingRound >= 0 && bettingRound < actions.length) {
+            return actions[bettingRound];
+        }
         return ACTION_NONE;
     }
 
     @Override
     public int getOpponentRaiseFrequency(GamePlayerInfo opponent, int bettingRound) {
-        // TODO: Implement when server has opponent modeling/profile tracking
-        // For now, return neutral assumption (50% = moderate aggression)
-        // Desktop client can implement this using TournamentProfile.getFrequency()
-        return 50;
+        if (opponent == null || opponentTracker == null) {
+            return 50; // Neutral default
+        }
+        com.donohoedigital.games.poker.core.ai.V2OpponentModel model = opponentTracker.getModel(opponent.getID());
+        if (bettingRound == 0) {
+            // Pre-flop: use raise percentage
+            float raisePercent = model.getHandsRaisedPreFlopPercent(0.5f);
+            return Math.round(raisePercent * 100);
+        } else {
+            // Post-flop: use raise frequency for the round
+            float raiseFreq = model.getRaisePostFlop(bettingRound, 0.5f);
+            return Math.round(raiseFreq * 100);
+        }
     }
 
     @Override
     public int getOpponentBetFrequency(GamePlayerInfo opponent, int bettingRound) {
-        // TODO: Implement when server has opponent modeling/profile tracking
-        // For now, return neutral assumption (50% = moderate aggression)
-        // Desktop client can implement this using TournamentProfile.getFrequency()
-        return 50;
+        if (opponent == null || opponentTracker == null || bettingRound == 0) {
+            return 50; // Neutral default (pre-flop doesn't have "bet", only raise)
+        }
+        com.donohoedigital.games.poker.core.ai.V2OpponentModel model = opponentTracker.getModel(opponent.getID());
+        // Post-flop: use open (first to act and bet) frequency
+        float openFreq = model.getOpenPostFlop(bettingRound, 0.5f);
+        return Math.round(openFreq * 100);
     }
 }

@@ -2,6 +2,9 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 Joshua Beard and contributors
+ *
+ * This file is part of DD Poker, originally created by Doug Donohoe.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,115 +36,130 @@
 package com.donohoedigital.games.poker.server;
 
 import com.donohoedigital.games.poker.core.*;
-import com.donohoedigital.games.poker.core.ai.AIContext;
-import com.donohoedigital.games.poker.core.ai.PurePokerAI;
-import com.donohoedigital.games.poker.core.ai.TournamentAI;
+import com.donohoedigital.games.poker.core.ai.*;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * AI provider for server-hosted games.
+ * AI provider for server-hosted games with skill-based routing.
  * <p>
- * Manages PurePokerAI instances for computer players and provides actions when
- * requested by the game engine. Implements PlayerActionProvider to integrate
- * with pokergamecore.
- * <p>
- * <strong>AI Selection Strategy:</strong>
+ * Manages PurePokerAI instances and per-player AIContext for computer players.
+ * Routes to different AI algorithms based on skill level:
  * <ul>
- * <li>Currently uses TournamentAI for all computer players</li>
- * <li>Future: Select V1Algorithm or V2Algorithm based on skill level</li>
+ * <li>Skill 1-2: TournamentAI (beginner)</li>
+ * <li>Skill 3-4: V1Algorithm (moderate)</li>
+ * <li>Skill 5-7: V2Algorithm (advanced)</li>
  * </ul>
- * <p>
- * <strong>Usage:</strong>
- *
- * <pre>
- * ServerAIProvider aiProvider = new ServerAIProvider(players, context);
- * TournamentEngine engine = new TournamentEngine(eventBus, aiProvider);
- * </pre>
  *
  * @see PurePokerAI
  * @see TournamentAI
+ * @see V1Algorithm
+ * @see V2Algorithm
  * @see PlayerActionProvider
  */
 public class ServerAIProvider implements PlayerActionProvider {
 
     private final Map<Integer, PurePokerAI> playerAIs = new ConcurrentHashMap<>();
-    private final AIContext context;
+    private final Map<Integer, AIContext> playerContexts = new ConcurrentHashMap<>();
+    private final GameTable table;
+    private final TournamentContext tournament;
+    private final ServerOpponentTracker opponentTracker;
+    private GameHand currentHand;
 
     /**
-     * Create AI provider for server-hosted game.
+     * Create AI provider for server-hosted game with skill-based routing.
      *
      * @param players
      *            List of all players in the game
-     * @param context
-     *            AI context for game state queries
+     * @param skillLevels
+     *            Map of player ID to skill level (1-7)
+     * @param table
+     *            Game table
+     * @param tournament
+     *            Tournament context for blinds and structure
      */
-    public ServerAIProvider(List<GamePlayerInfo> players, AIContext context) {
-        this.context = context;
-        initializeAIs(players);
+    public ServerAIProvider(List<GamePlayerInfo> players, Map<Integer, Integer> skillLevels, GameTable table,
+            TournamentContext tournament) {
+        this.table = table;
+        this.tournament = tournament;
+        this.currentHand = null;
+        this.opponentTracker = new ServerOpponentTracker();
+        initializeAIs(players, skillLevels);
     }
 
     /**
-     * Initialize AI instances for computer players.
-     * <p>
-     * Currently creates TournamentAI for all computer players. Future enhancement
-     * will select AI based on skill level:
-     * <ul>
-     * <li>Skill 1-2: TournamentAI (beginner)</li>
-     * <li>Skill 3-4: V1Algorithm (moderate)</li>
-     * <li>Skill 5-7: V2Algorithm (advanced)</li>
-     * </ul>
+     * Initialize AI instances and contexts for computer players based on skill
+     * level.
      */
-    private void initializeAIs(List<GamePlayerInfo> players) {
+    private void initializeAIs(List<GamePlayerInfo> players, Map<Integer, Integer> skillLevels) {
         for (GamePlayerInfo player : players) {
             if (!player.isHuman()) {
-                // TODO: Select AI based on skill level when V1/V2 algorithms are available
-                // For now, use TournamentAI for all computer players
-                PurePokerAI ai = createAI(player);
+                int skill = skillLevels.getOrDefault(player.getID(), 3); // Default: V1Algorithm
+                PurePokerAI ai = createAI(skill, player);
+                AIContext ctx = createContext(skill, player);
                 playerAIs.put(player.getID(), ai);
+                playerContexts.put(player.getID(), ctx);
             }
         }
     }
 
     /**
-     * Create AI instance for a player.
-     * <p>
-     * <strong>Current Implementation:</strong> Returns TournamentAI for all players
-     * <p>
-     * <strong>Future Implementation:</strong>
+     * Create AI instance based on skill level.
      *
-     * <pre>
-     * private PurePokerAI createAI(GamePlayerInfo player) {
-     * 	int skillLevel = getSkillLevel(player);
-     * 	return switch (skillLevel) {
-     * 		case 1, 2 -> new TournamentAI(); // Beginner
-     * 		case 3, 4 -> new V1Algorithm(); // Moderate
-     * 		case 5, 6, 7 -> new V2Algorithm(); // Advanced
-     * 		default -> new V1Algorithm();
-     * 	};
-     * }
-     * </pre>
-     *
+     * @param skillLevel
+     *            Skill level (1-7)
      * @param player
-     *            Player to create AI for
+     *            Player info
      * @return AI instance
      */
-    private PurePokerAI createAI(GamePlayerInfo player) {
-        // TODO: When V1/V2 algorithms are available, select based on skill level
-        // For now, TournamentAI provides:
-        // - Fast game completion for testing
-        // - Reasonable tournament-aware strategy
-        // - Zero Swing dependencies
-        return new TournamentAI();
+    private PurePokerAI createAI(int skillLevel, GamePlayerInfo player) {
+        long seed = player.getID() * 31L + System.nanoTime();
+        return switch (skillLevel) {
+            case 1, 2 -> new TournamentAI();
+            case 3 -> new V1Algorithm(seed, V1Algorithm.AI_EASY);
+            case 4 -> new V1Algorithm(seed, V1Algorithm.AI_MEDIUM);
+            case 5, 6, 7 -> new V2Algorithm();
+            default -> new V1Algorithm(seed, V1Algorithm.AI_MEDIUM);
+        };
     }
 
     /**
-     * Get player action from appropriate AI.
-     * <p>
-     * Called by TournamentEngine when a player must act. Routes the request to the
-     * player's AI instance (for computer players) or returns null for human players
-     * (server will handle separately via network).
+     * Create context based on skill level. V2 players get V2AIContext with strategy
+     * provider, others get base ServerAIContext.
+     *
+     * @param skillLevel
+     *            Skill level (1-7)
+     * @param player
+     *            Player info
+     * @return AI context
+     */
+    private AIContext createContext(int skillLevel, GamePlayerInfo player) {
+        if (skillLevel >= 5) {
+            ServerStrategyProvider strategy = new ServerStrategyProvider(String.valueOf(player.getID()));
+            return new ServerV2AIContext(table, currentHand, tournament, player, strategy, opponentTracker);
+        }
+        return new ServerAIContext(table, currentHand, tournament, player, opponentTracker);
+    }
+
+    /**
+     * Update current hand reference and propagate to all contexts. Called at the
+     * start of each hand.
+     *
+     * @param hand
+     *            New hand
+     */
+    public void onNewHand(GameHand hand) {
+        this.currentHand = hand;
+        for (AIContext ctx : playerContexts.values()) {
+            if (ctx instanceof ServerAIContext sac) {
+                sac.setCurrentHand(hand);
+            }
+        }
+    }
+
+    /**
+     * Get player action from appropriate AI using per-player context.
      *
      * @param player
      *            Player who must act
@@ -151,28 +169,54 @@ public class ServerAIProvider implements PlayerActionProvider {
      */
     @Override
     public PlayerAction getAction(GamePlayerInfo player, ActionOptions options) {
-        // Human players handled separately (via network in server-hosted games)
         if (player.isHuman()) {
-            return null; // Server will wait for network message
+            return null;
         }
 
-        // Get AI for this player
         PurePokerAI ai = playerAIs.get(player.getID());
-        if (ai == null) {
-            // Shouldn't happen - all computer players should have AI
-            // Fall back to fold for safety
+        AIContext ctx = playerContexts.get(player.getID());
+        if (ai == null || ctx == null) {
             return PlayerAction.fold();
         }
 
-        // Delegate to AI with error handling
         try {
-            return ai.getAction(player, options, context);
+            return ai.getAction(player, options, ctx);
         } catch (Exception e) {
-            // If AI throws exception, fold for safety
-            // Log error for debugging but don't crash the game
             System.err.println("AI error for player " + player.getName() + ": " + e.getMessage() + " - folding");
             return PlayerAction.fold();
         }
+    }
+
+    /**
+     * Check if player wants to rebuy.
+     *
+     * @param player
+     *            Player considering rebuy
+     * @return true if player wants to rebuy
+     */
+    public boolean wantsRebuy(GamePlayerInfo player) {
+        PurePokerAI ai = playerAIs.get(player.getID());
+        AIContext ctx = playerContexts.get(player.getID());
+        if (ai == null || ctx == null) {
+            return false;
+        }
+        return ai.wantsRebuy(player, ctx);
+    }
+
+    /**
+     * Check if player wants addon.
+     *
+     * @param player
+     *            Player considering addon
+     * @return true if player wants addon
+     */
+    public boolean wantsAddon(GamePlayerInfo player) {
+        PurePokerAI ai = playerAIs.get(player.getID());
+        AIContext ctx = playerContexts.get(player.getID());
+        if (ai == null || ctx == null) {
+            return false;
+        }
+        return ai.wantsAddon(player, ctx);
     }
 
     /**

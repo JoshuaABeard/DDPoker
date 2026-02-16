@@ -1,7 +1,9 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
- * DD Poker - Community Edition
+ * DD Poker - Source Code
  * Copyright (c) 2026 Joshua Beard and contributors
+ *
+ * This file is part of DD Poker, originally created by Doug Donohoe.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,6 +17,19 @@
  *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
+ * graphics, text, and documentation found in this repository (including but not
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
+ * without explicit written permission for any uses not covered by this License.
+ * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
+ * in the root directory of this project.
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
+ * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.server;
@@ -48,6 +63,207 @@ public class ServerStrategyProvider implements StrategyProvider {
 
     /** Loaded strategy data from PlayerType .dat file */
     private final StrategyData strategyData;
+
+    /**
+     * Embedded hand strength data extracted from HandSelectionScheme .dat files.
+     * Provides lookup tables for different table sizes without requiring file I/O.
+     */
+    private static class EmbeddedHandStrength {
+        // Parsed hand group for efficient lookup
+        private static class HandGroup {
+            final String[] hands;
+            final int strength;
+
+            HandGroup(String handsStr, int strength) {
+                this.hands = handsStr.split(",");
+                this.strength = strength;
+            }
+        }
+
+        // Heads-up (2 players) - from handselection.0994.dat
+        private static final String HEADSUP_DATA = "AA-66,AKs-A8s,KQs,KJs,AK-AT|10:"
+                + "55,A7s-A3s,KTs-K8s,QJs,QTs,A9-A7,KQ-KT,QJ|9:" + "44,A2s,K7s-K5s,Q9s,Q8s,JTs,J9s,A6-A3,K9-K7,QT|8:"
+                + "33,K4s-K2s,Q7s-Q5s,J8s,T9s,A2,K6-K4,Q9,Q8,JT,J9|7:"
+                + "22,Q4s-Q2s,J7s-J5s,T8s,T7s,98s,K3,K2,Q7-Q5,J8,T9|6:"
+                + "J4s-J2s,T6s,T5s,97s,96s,87s,Q4-Q2,J7-J5,T8,T7,98|5:"
+                + "T4s-T2s,95s,86s,85s,76s,75s,J4-J2,T6,T5,97,96,87|4:"
+                + "94s-92s,84s,83s,74s,65s,64s,54s,T4-T2,95,86,85,76|3:"
+                + "82s,73s,72s,63s,62s,53s,52s,43s,94-92,84,83,75,74,65,64,54|2:"
+                + "42s,32s,82,73,72,63,62,53,52,43,42,32|1";
+
+        // Very short-handed (3-4 players) - from handselection.1000.dat
+        private static final String VERYSHORT_DATA = "AA-QQ|10:" + "JJ,TT,AKs,AQs,AK,AQ|9:" + "99,88,AJs,AJ|8:"
+                + "77-55,ATs,KQs,AT,KQ|7:" + "44-22,A9s,A8s,KJs,A9,A8,KJ|6:" + "A7s,A6s,KTs,QJs,A7,A6,KT,QJ|5:"
+                + "A5s-A2s,K9s,QTs,A5-A2,K9,QT|4:" + "K8s,Q9s,JTs,K8,Q9,JT|3:"
+                + "K7s,Q8s,J9s,T9s,98s,87s,76s,65s,54s,43s,32s,K7,Q8,J9|2:" + "T9,98,87,76,65,54,43,32|1";
+
+        // Short-handed (5-6 players) - from handselection.0995.dat
+        private static final String SHORT_DATA = "AA-QQ|10:" + "JJ,TT,AKs,AQs|9:" + "99,88,AJs,AK,AQ|8:"
+                + "77-55,ATs,KQs,AJ|7:" + "44-22,A9s,A8s,KJs,AT,KQ|6:" + "A7s,A6s,KTs,QJs,A9,A8,KJ|5:"
+                + "A5s-A2s,K9s,QTs,A7,A6,KT,QJ|4:" + "K8s,Q9s,JTs,A5-A2,K9,QT|3:"
+                + "K7s,Q8s,J9s,T9s,98s,87s,76s,65s,54s,43s,32s,K8,Q9,JT|2:" + "K7,Q8,J9,T9,98,87,76,65,54,43,32|1";
+
+        // Full table (7-10 players) - from handselection.0996.dat
+        private static final String FULL_DATA = "AA,KK|10:" + "QQ,AKs|9:" + "JJ,AQs,AK|8:" + "TT,99,AJs,KQs,AQ|7:"
+                + "88-66,ATs,KJs,AJ,KQ|6:" + "55-22,KTs,QJs,QTs,AT,KJ|5:"
+                + "A9s-A2s,JTs,T9s,98s,87s,76s,65s,54s,43s,32s|4:" + "J9s,T8s,97s,86s,75s,64s,53s,42s,KT,QJ|3:"
+                + "A9-A2,QT|2:" + "K9s,Q9s,K9,Q9,JT|1";
+
+        // Pre-parsed data for efficient lookup (initialized on first access)
+        private static final HandGroup[] HEADSUP_GROUPS = parseData(HEADSUP_DATA);
+        private static final HandGroup[] VERYSHORT_GROUPS = parseData(VERYSHORT_DATA);
+        private static final HandGroup[] SHORT_GROUPS = parseData(SHORT_DATA);
+        private static final HandGroup[] FULL_GROUPS = parseData(FULL_DATA);
+
+        private static HandGroup[] parseData(String data) {
+            String[] groups = data.split(":");
+            HandGroup[] result = new HandGroup[groups.length];
+            for (int i = 0; i < groups.length; i++) {
+                String[] parts = groups[i].split("\\|");
+                if (parts.length == 2) {
+                    result[i] = new HandGroup(parts[0], Integer.parseInt(parts[1]));
+                }
+            }
+            return result;
+        }
+
+        /**
+         * Get hand strength for given cards and table size.
+         *
+         * @param rank1
+         *            First card rank (2-14, where 14=Ace)
+         * @param rank2
+         *            Second card rank
+         * @param suited
+         *            Whether cards are suited
+         * @param numPlayers
+         *            Number of players at table
+         * @return Strength 0.0-1.0, or -1 if not found
+         */
+        static float getStrength(int rank1, int rank2, boolean suited, int numPlayers) {
+            HandGroup[] groups;
+            if (numPlayers <= 2) {
+                groups = HEADSUP_GROUPS;
+            } else if (numPlayers <= 4) {
+                groups = VERYSHORT_GROUPS;
+            } else if (numPlayers <= 6) {
+                groups = SHORT_GROUPS;
+            } else {
+                groups = FULL_GROUPS;
+            }
+
+            return lookupStrength(rank1, rank2, suited, groups);
+        }
+
+        private static float lookupStrength(int rank1, int rank2, boolean suited, HandGroup[] groups) {
+            // Normalize: higher rank first
+            int high = Math.max(rank1, rank2);
+            int low = Math.min(rank1, rank2);
+            boolean isPair = (high == low);
+
+            // Check each pre-parsed group
+            for (HandGroup group : groups) {
+                if (group == null)
+                    continue;
+
+                // Check each hand notation in this group
+                for (String hand : group.hands) {
+                    if (matchesHand(high, low, isPair, suited, hand.trim())) {
+                        return group.strength / 10.0f; // Convert 1-10 to 0.1-1.0
+                    }
+                }
+            }
+
+            return -1; // Not found
+        }
+
+        private static boolean matchesHand(int high, int low, boolean isPair, boolean suited, String notation) {
+            // Handle suited indicator
+            boolean notationSuited = notation.endsWith("s");
+            String baseNotation = notationSuited ? notation.substring(0, notation.length() - 1) : notation;
+
+            // If notation specifies suited/offsuit, must match
+            if (notationSuited && !suited)
+                return false;
+            if (!notationSuited && !notation.contains("-") && notation.length() == 2 && suited && !isPair) {
+                // Offsuit notation (e.g., "AK" without 's') - only matches offsuit
+                return false;
+            }
+
+            // Handle ranges (e.g., "AA-66" or "A9-A2")
+            if (baseNotation.contains("-")) {
+                String[] range = baseNotation.split("-");
+                if (range.length == 2) {
+                    return matchesRange(high, low, isPair, suited, range[0], range[1], notationSuited);
+                }
+            }
+
+            // Handle specific hands (e.g., "AK", "AA", "AKs")
+            if (baseNotation.length() >= 2) {
+                int notHigh = parseRank(baseNotation.charAt(0));
+                int notLow = parseRank(baseNotation.charAt(1));
+                return (high == notHigh && low == notLow && (!notation.contains("s") || suited || isPair));
+            }
+
+            return false;
+        }
+
+        private static boolean matchesRange(int high, int low, boolean isPair, boolean suited, String start, String end,
+                boolean notationSuited) {
+            if (start.length() < 2 || end.length() < 2)
+                return false;
+
+            // Handle pair ranges (e.g., "AA-66")
+            if (start.charAt(0) == start.charAt(1) && end.charAt(0) == end.charAt(1)) {
+                if (!isPair)
+                    return false;
+                int rangeHigh = parseRank(start.charAt(0));
+                int rangeLow = parseRank(end.charAt(0));
+                return high >= rangeLow && high <= rangeHigh;
+            }
+
+            // Handle non-pair ranges (e.g., "A9-A2" or "KTs-K8s")
+            int startHigh = parseRank(start.charAt(0));
+            int startLow = parseRank(start.charAt(1));
+            int endHigh = parseRank(end.charAt(0));
+            int endLow = parseRank(end.charAt(1));
+
+            // Must match high card
+            if (high != startHigh || startHigh != endHigh)
+                return false;
+
+            // Check if low card is in range
+            boolean inRange = low >= endLow && low <= startLow;
+
+            // Check suited requirement
+            if (notationSuited && !suited)
+                return false;
+            // Offsuit ranges should not match suited hands (except pairs)
+            if (!notationSuited && suited && !isPair)
+                return false;
+
+            return inRange;
+        }
+
+        private static int parseRank(char c) {
+            return switch (c) {
+                case 'A' -> Card.ACE;
+                case 'K' -> Card.KING;
+                case 'Q' -> Card.QUEEN;
+                case 'J' -> Card.JACK;
+                case 'T' -> Card.TEN;
+                case '9' -> Card.NINE;
+                case '8' -> Card.EIGHT;
+                case '7' -> Card.SEVEN;
+                case '6' -> Card.SIX;
+                case '5' -> Card.FIVE;
+                case '4' -> Card.FOUR;
+                case '3' -> Card.THREE;
+                case '2' -> Card.TWO;
+                default -> -1;
+            };
+        }
+    }
 
     /**
      * Create strategy provider for a specific player using default strategy.
@@ -123,27 +339,26 @@ public class ServerStrategyProvider implements StrategyProvider {
             return 0.0f;
         }
 
-        // TODO: Load HandSelectionScheme data for accurate strength calculation
-        // For now, use simplified Sklansky-style hand ranking
+        // Use embedded hand strength data extracted from HandSelectionScheme .dat
+        // files.
+        // This provides Doug Donohoe's exact hand rankings for different table sizes
+        // without requiring file I/O or desktop framework dependencies.
+        Card card1 = pocket.getCard(0);
+        Card card2 = pocket.getCard(1);
 
-        // Get simplified hand strength (0.0 - 1.0)
-        float baseStrength = calculateSimplifiedHandStrength(pocket);
+        int rank1 = card1.getRank();
+        int rank2 = card2.getRank();
+        boolean suited = (card1.getSuit() == card2.getSuit());
 
-        // Adjust for table size (tighter at full tables, looser at short tables)
-        // Full table (7-10): use base strength
-        // Short table (5-6): boost by 10%
-        // Very short (3-4): boost by 20%
-        // Heads-up (2): boost by 30%
-        float adjustment = 0.0f;
-        if (numPlayers <= 2) {
-            adjustment = 0.30f;
-        } else if (numPlayers <= 4) {
-            adjustment = 0.20f;
-        } else if (numPlayers <= 6) {
-            adjustment = 0.10f;
+        float strength = EmbeddedHandStrength.getStrength(rank1, rank2, suited, numPlayers);
+
+        // Return 0.0 for hands not found in lookup table (matches original behavior)
+        // Original HandSelectionScheme returns 0.0 for unmatched hands
+        if (strength < 0) {
+            strength = 0.0f;
         }
 
-        return Math.min(baseStrength * (1.0f + adjustment), 1.0f);
+        return strength;
     }
 
     /**
@@ -207,10 +422,11 @@ public class ServerStrategyProvider implements StrategyProvider {
     }
 
     /**
-     * Calculate simplified hand strength using Sklansky-style hand rankings.
-     * Returns value 0.0 (worst) to 1.0 (best).
+     * Calculate hand strength using embedded Sklansky-style hand rankings. Returns
+     * value 0.0 (worst) to 1.0 (best).
      * <p>
-     * This is a placeholder until HandSelectionScheme data can be loaded.
+     * Uses pre-computed rankings embedded in code for server simplicity, avoiding
+     * HandSelectionScheme file loading dependencies.
      *
      * @param pocket
      *            the 2 hole cards
