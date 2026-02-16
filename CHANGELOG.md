@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Continued expansion of test coverage across all modules
 - Added comprehensive tests for utility classes, model DTOs, and online profile handling
 
+### Fixed
+- **Chat/Keyboard Shortcut Conflict** - Fixed critical UX bug where typing in chat during your turn could accidentally trigger game actions (fold, raise, all-in). Focus now remains in chat when typing, with a blinking keyboard indicator prompting users to click the table to activate shortcuts. Prevents accidental actions like typing "Red Sox" and triggering a Raise with the 'R' key.
+
 ### Changed
 - Made online player limit configurable per tournament (2-120 players, default 60)
 - Raised absolute maximum from 90 to 120 players to support larger tournaments
