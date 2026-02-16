@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Continued expansion of test coverage across all modules
 - Added comprehensive tests for utility classes, model DTOs, and online profile handling
 
+### Changed
+- Made online player limit configurable per tournament (2-120 players, default 60)
+- Raised absolute maximum from 90 to 120 players to support larger tournaments
+
 ---
 
 ## [3.3.0-CommunityEdition] - 2026-02-09

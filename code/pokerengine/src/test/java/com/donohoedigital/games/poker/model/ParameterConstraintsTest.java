@@ -131,7 +131,7 @@ public class ParameterConstraintsTest {
         DMTypedHashMap map = new DMTypedHashMap();
         ParameterConstraints constraints = new ParameterConstraints(map);
 
-        // MAX_ONLINE_PLAYERS = 90
+        // MAX_ONLINE_PLAYERS = 120
         int maxOnline = constraints.getMaxOnlinePlayers(50);
         assertEquals("Should return configured player count when below max", 50, maxOnline);
     }
@@ -141,9 +141,9 @@ public class ParameterConstraintsTest {
         DMTypedHashMap map = new DMTypedHashMap();
         ParameterConstraints constraints = new ParameterConstraints(map);
 
-        // MAX_ONLINE_PLAYERS = 90
+        // MAX_ONLINE_PLAYERS = 120
         int maxOnline = constraints.getMaxOnlinePlayers(200);
-        assertEquals("Should be capped at MAX_ONLINE_PLAYERS (90)", 90, maxOnline);
+        assertEquals("Should be capped at MAX_ONLINE_PLAYERS (120)", 120, maxOnline);
     }
 
     @Test
@@ -151,8 +151,8 @@ public class ParameterConstraintsTest {
         DMTypedHashMap map = new DMTypedHashMap();
         ParameterConstraints constraints = new ParameterConstraints(map);
 
-        int maxOnline = constraints.getMaxOnlinePlayers(90);
-        assertEquals("Should return 90 when exactly at limit", 90, maxOnline);
+        int maxOnline = constraints.getMaxOnlinePlayers(120);
+        assertEquals("Should return 120 when exactly at limit", 120, maxOnline);
     }
 
     // ========== getMaxRaises() Tests ==========

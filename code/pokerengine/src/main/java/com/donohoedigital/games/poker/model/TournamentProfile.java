@@ -72,7 +72,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     // note on max players - if this changes above 6000, need to change
     // ids for territories in gameboard.xml and adjust PokerInit starting IDs
     public static final int MAX_PLAYERS = 5625;
-    public static final int MAX_ONLINE_PLAYERS = 90; // 9 tables of 10
+    public static final int MAX_ONLINE_PLAYERS = 120; // Absolute maximum
     public static final int MAX_OBSERVERS = 30;
 
     public static final int MAX_CHIPS = TESTING(PokerConstants.TESTING_LEVELS) ? 10000000 : 1000000;
@@ -152,6 +152,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public static final String PARAM_ONLINE_ACTIVATED_ONLY = "onlineactonly";
     public static final String PARAM_THINKBANK = "thinkbank";
     public static final String PARAM_MAX_OBSERVERS = "maxobservers";
+    public static final String PARAM_MAX_ONLINE_PLAYERS = "maxonlineplayers";
     public static final String PARAM_BOOT_SITOUT = "bootsitout";
     public static final String PARAM_BOOT_SITOUT_COUNT = "bootsitoutcount";
     public static final String PARAM_BOOT_DISCONNECT = "bootdisconnect";
@@ -217,6 +218,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
         setPayout(PokerConstants.PAYOUT_SPOTS);
         setPayoutSpots(3);
         setOnlineActivatedPlayersOnly(true); // default to true for new tournaments
+        setMaxOnlinePlayers(60); // Conservative default for local hosting
         fixAll();
     }
 
@@ -307,10 +309,25 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     }
 
     /**
-     * Get num online players - minimum of getNumPlayers() and MAX_ONLINE_PLAYERS
+     * Get configured maximum online players for this tournament
+     */
+    public int getConfiguredMaxOnlinePlayers() {
+        return map_.getInteger(PARAM_MAX_ONLINE_PLAYERS, 90, 2, MAX_ONLINE_PLAYERS);
+    }
+
+    /**
+     * Set maximum online players for this tournament
+     */
+    public void setMaxOnlinePlayers(int max) {
+        map_.setInteger(PARAM_MAX_ONLINE_PLAYERS, max);
+    }
+
+    /**
+     * Get num online players - minimum of getNumPlayers() and configured max
      */
     public int getMaxOnlinePlayers() {
-        return constraints().getMaxOnlinePlayers(getNumPlayers());
+        int configuredMax = getConfiguredMaxOnlinePlayers();
+        return Math.min(getNumPlayers(), configuredMax);
     }
 
     /**

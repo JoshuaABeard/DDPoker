@@ -35,7 +35,7 @@ public class TournamentProfileTest {
 
     @Test
     public void should_AllowNinetyOnlinePlayers() {
-        assertEquals(90, TournamentProfile.MAX_ONLINE_PLAYERS);
+        assertEquals(120, TournamentProfile.MAX_ONLINE_PLAYERS);
     }
 
     @Test
@@ -72,6 +72,32 @@ public class TournamentProfileTest {
         int maxObs = profile.getMaxObservers();
         assertTrue("Max observers should be between 0 and " + TournamentProfile.MAX_OBSERVERS,
                 maxObs >= 0 && maxObs <= TournamentProfile.MAX_OBSERVERS);
+    }
+
+    // ========== Configurable Max Online Players Tests ==========
+
+    @Test
+    public void should_UseConfiguredMaxOnlinePlayers() {
+        TournamentProfile profile = new TournamentProfile("Test");
+        profile.setMaxOnlinePlayers(100);
+        profile.setNumPlayers(150);
+
+        assertEquals(100, profile.getMaxOnlinePlayers());
+    }
+
+    @Test
+    public void should_DefaultTo60Players() {
+        TournamentProfile profile = new TournamentProfile("Test");
+        assertEquals(60, profile.getConfiguredMaxOnlinePlayers());
+    }
+
+    @Test
+    public void should_CapAtConfiguredMax() {
+        TournamentProfile profile = new TournamentProfile("Test");
+        profile.setMaxOnlinePlayers(50);
+        profile.setNumPlayers(100);
+
+        assertEquals(50, profile.getMaxOnlinePlayers());
     }
 
     // ========== getStartingDepthBBs Tests ==========
@@ -289,7 +315,7 @@ public class TournamentProfileTest {
     @Test
     public void should_EnforceMinPlayersMaximum() {
         TournamentProfile profile = new TournamentProfile("test");
-        profile.setMinPlayersForStart(100); // Exceeds MAX_ONLINE_PLAYERS (90)
+        profile.setMinPlayersForStart(130); // Exceeds MAX_ONLINE_PLAYERS (120)
         assertEquals("Min players should be clamped to MAX_ONLINE_PLAYERS", TournamentProfile.MAX_ONLINE_PLAYERS,
                 profile.getMinPlayersForStart());
     }

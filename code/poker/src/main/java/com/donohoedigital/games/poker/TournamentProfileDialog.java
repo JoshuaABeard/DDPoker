@@ -81,6 +81,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
     private DDPanel base_;
     private DDTextField name_;
     private DDNumberSpinner numPlayers_;
+    private DDNumberSpinner maxOnlinePlayers_;
     private DDNumberSpinner buyinCost_;
     private DDCheckBox rebuys_;
     private DDCheckBox addons_;
@@ -330,6 +331,16 @@ public class TournamentProfileDialog extends OptionMenuDialog
             OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_ONLINE_ACTIVATED_ONLY, STYLE, dummy_, true),
                     players);
 
+            // Maximum online players
+            DDLabelBorder maxPlayers = new DDLabelBorder("maxonlineplayers", STYLE);
+            left.add(maxPlayers);
+
+            OptionInteger maxOnlineOpt = OptionMenu
+                    .add(new OptionInteger(null, TournamentProfile.PARAM_MAX_ONLINE_PLAYERS, STYLE, dummy_, null, 2,
+                            TournamentProfile.MAX_ONLINE_PLAYERS, 50, true), maxPlayers);
+            maxOnlineOpt.getSpinner().setUseBigStep(true); // Enable big step (10s)
+            maxOnlinePlayers_ = maxOnlineOpt.getSpinner();
+
             DDLabelBorder observers = new DDLabelBorder("observers", STYLE);
             left.add(observers);
 
@@ -449,7 +460,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
 
             // Minimum players spinner
             OptionInteger minPlayers = new OptionInteger(null, TournamentProfile.PARAM_MIN_PLAYERS_START, STYLE, dummy_,
-                    null, 2, TournamentProfile.MAX_ONLINE_PLAYERS, 60);
+                    null, 2, 120, 60); // Use absolute max instead of constant
             minPlayers.setEditable(true);
 
             // Panel for nested controls
@@ -556,7 +567,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
 
             // num players
             int nMax = (game_ != null && game_.isOnlineGame())
-                    ? TournamentProfile.MAX_ONLINE_PLAYERS
+                    ? 120 // Use absolute max
                     : TournamentProfile.MAX_PLAYERS;
             int nMin = (game_ != null && game_.isOnlineGame()) ? Math.max(game_.getNumPlayers(), 2) : 2;
             OptionInteger oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_NUM_PLAYERS, STYLE,
