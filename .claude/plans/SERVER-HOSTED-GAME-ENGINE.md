@@ -103,7 +103,7 @@ All clients — desktop Swing UI, web browser, future mobile — speak the same 
 - **Status:** Complete (2026-02-16)
 
 ### P2: Complete Phase 7D - ServerAIProvider Integration ✅
-- **Plan:** `.claude/plans/PHASE7D-SERVER-AI-PROVIDER.md`
+- **Plan:** `.claude/plans/completed/PHASE7D-SERVER-AI-PROVIDER.md`
 - **Why:** Server needs a working AI provider that maps skill levels to AI implementations
 - **Status:** Complete (2026-02-16)
 - **Depends on:** P1 ✅
@@ -119,7 +119,7 @@ All clients — desktop Swing UI, web browser, future mobile — speak the same 
 
 **Goal:** Create the server-side module that can run a complete poker game without any Swing dependencies.
 
-**Detailed Plan:** `.claude/plans/M1-SERVER-GAME-ENGINE.md`
+**Detailed Plan:** `.claude/plans/completed/M1-SERVER-GAME-ENGINE.md`
 
 **Status:** COMPLETE (2026-02-16, in feature worktree `feature-m1-server-game-engine`, pending merge)
 
