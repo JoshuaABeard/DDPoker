@@ -59,7 +59,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -Command \"if ($env:TELEGRAM_BOT_TOKEN -and $env:TELEGRAM_CHAT_ID) { [int64]$startTime = [DateTimeOffset]::Now.ToUnixTimeSeconds(); $startTime | Out-File -FilePath $env:USERPROFILE\\.claude\\session_start.tmp -NoNewline; $projectDir = Split-Path -Leaf (Get-Location); $now = Get-Date; $message = '🚀 <b>Claude Code Session Started</b>`n📁 Project: ' + $projectDir + '`n⏰ Time: ' + $now.ToString('HH:mm:ss') + '`n📅 Date: ' + $now.ToString('yyyy-MM-dd'); try { Invoke-RestMethod -Uri \\\"https://api.telegram.org/bot$env:TELEGRAM_BOT_TOKEN/sendMessage\\\" -Method Post -Body @{chat_id=$env:TELEGRAM_CHAT_ID; text=$message; parse_mode='HTML'} -ErrorAction SilentlyContinue | Out-Null } catch {} }\""
+            "command": "pwsh -Command \"try { if ($env:TELEGRAM_BOT_TOKEN -and $env:TELEGRAM_CHAT_ID) { $claudeDir = Join-Path $env:USERPROFILE '.claude'; if (-not (Test-Path $claudeDir)) { New-Item -ItemType Directory -Path $claudeDir -Force | Out-Null }; $startFile = Join-Path $claudeDir 'session_start.tmp'; $startTime = [DateTimeOffset]::Now.ToUnixTimeSeconds(); Set-Content -Path $startFile -Value $startTime -NoNewline -Force; $projectDir = 'DDPoker'; try { $projectDir = Split-Path -Leaf (Get-Location) } catch {}; $now = Get-Date; $message = '🚀 Claude Code Session Started - Project: ' + $projectDir + ' - Time: ' + $now.ToString('HH:mm:ss'); try { Invoke-RestMethod -Uri \\\"https://api.telegram.org/bot$env:TELEGRAM_BOT_TOKEN/sendMessage\\\" -Method Post -Body @{chat_id=$env:TELEGRAM_CHAT_ID; text=$message} -ErrorAction SilentlyContinue | Out-Null } catch {} } } catch {}; exit 0\""
           }
         ]
       }
@@ -69,7 +69,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -Command \"if ($env:TELEGRAM_BOT_TOKEN -and $env:TELEGRAM_CHAT_ID) { $endTime = [DateTimeOffset]::Now.ToUnixTimeSeconds(); $startFile = Join-Path $env:USERPROFILE '.claude\\session_start.tmp'; if (Test-Path $startFile) { [int64]$startTime = Get-Content $startFile; $duration = $endTime - $startTime; $minutes = [math]::Floor($duration / 60); $seconds = $duration % 60; $durationText = \\\"${minutes}m ${seconds}s\\\"; Remove-Item $startFile -ErrorAction SilentlyContinue } else { $durationText = 'Unknown' }; $projectDir = Split-Path -Leaf (Get-Location); $process = Get-Process -Id $PID; $memoryMB = [math]::Round($process.WorkingSet64 / 1MB); $now = Get-Date; $message = '✅ <b>Claude Code Session Completed</b>`n📁 Project: ' + $projectDir + '`n⏱️ Duration: ' + $durationText + '`n💾 Memory Used: ' + $memoryMB + 'MB`n⏰ Finished: ' + $now.ToString('HH:mm:ss') + '`n📅 Date: ' + $now.ToString('yyyy-MM-dd'); try { Invoke-RestMethod -Uri \\\"https://api.telegram.org/bot$env:TELEGRAM_BOT_TOKEN/sendMessage\\\" -Method Post -Body @{chat_id=$env:TELEGRAM_CHAT_ID; text=$message; parse_mode='HTML'} -ErrorAction SilentlyContinue | Out-Null } catch { Write-Host 'Failed to send Telegram notification' } } else { Write-Host '⚠️ Telegram notification skipped: Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID' }\""
+            "command": "pwsh -Command \"try { if ($env:TELEGRAM_BOT_TOKEN -and $env:TELEGRAM_CHAT_ID) { $claudeDir = Join-Path $env:USERPROFILE '.claude'; $startFile = Join-Path $claudeDir 'session_start.tmp'; $durationText = 'Unknown'; if (Test-Path $startFile) { try { $startTime = [int64](Get-Content $startFile -Raw); $endTime = [DateTimeOffset]::Now.ToUnixTimeSeconds(); $duration = $endTime - $startTime; $minutes = [math]::Floor($duration / 60); $seconds = $duration % 60; $durationText = \\\"${minutes}m ${seconds}s\\\" } catch { $durationText = 'Error' }; Remove-Item $startFile -Force -ErrorAction SilentlyContinue }; $projectDir = 'DDPoker'; try { $projectDir = Split-Path -Leaf (Get-Location) } catch {}; $now = Get-Date; $message = '✅ Claude Code Session Completed - Project: ' + $projectDir + ' - Duration: ' + $durationText + ' - Time: ' + $now.ToString('HH:mm:ss'); try { Invoke-RestMethod -Uri \\\"https://api.telegram.org/bot$env:TELEGRAM_BOT_TOKEN/sendMessage\\\" -Method Post -Body @{chat_id=$env:TELEGRAM_CHAT_ID; text=$message} -ErrorAction SilentlyContinue | Out-Null } catch {} } } catch {}; exit 0\""
           }
         ]
       }
@@ -80,7 +80,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -Command \"if ($env:TELEGRAM_BOT_TOKEN -and $env:TELEGRAM_CHAT_ID) { [DateTimeOffset]::Now.ToUnixTimeSeconds() | Out-File -FilePath $env:USERPROFILE\\.claude\\bash_start.tmp -NoNewline }\""
+            "command": "pwsh -Command \"try { if ($env:TELEGRAM_BOT_TOKEN -and $env:TELEGRAM_CHAT_ID) { $claudeDir = Join-Path $env:USERPROFILE '.claude'; if (-not (Test-Path $claudeDir)) { New-Item -ItemType Directory -Path $claudeDir -Force | Out-Null }; $bashStartFile = Join-Path $claudeDir 'bash_start.tmp'; $timestamp = [DateTimeOffset]::Now.ToUnixTimeSeconds(); Set-Content -Path $bashStartFile -Value $timestamp -NoNewline -Force } } catch {}; exit 0\""
           }
         ]
       }
@@ -91,7 +91,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -Command \"if ($env:TELEGRAM_BOT_TOKEN -and $env:TELEGRAM_CHAT_ID) { $startFile = Join-Path $env:USERPROFILE '.claude\\bash_start.tmp'; if (Test-Path $startFile) { [int64]$startTime = Get-Content $startFile; $endTime = [DateTimeOffset]::Now.ToUnixTimeSeconds(); $duration = $endTime - $startTime; Remove-Item $startFile -ErrorAction SilentlyContinue; if ($duration -gt 30) { $minutes = [math]::Floor($duration / 60); $seconds = $duration % 60; $projectDir = Split-Path -Leaf (Get-Location); $now = Get-Date; $message = '⚠️ <b>Long Bash Operation</b>`n⏱️ Duration: ' + $minutes + 'm ' + $seconds + 's`n📁 Project: ' + $projectDir + '`n⏰ Time: ' + $now.ToString('HH:mm:ss'); try { Invoke-RestMethod -Uri \\\"https://api.telegram.org/bot$env:TELEGRAM_BOT_TOKEN/sendMessage\\\" -Method Post -Body @{chat_id=$env:TELEGRAM_CHAT_ID; text=$message; parse_mode='HTML'} -ErrorAction SilentlyContinue | Out-Null } catch {} } } }\""
+            "command": "pwsh -Command \"try { if ($env:TELEGRAM_BOT_TOKEN -and $env:TELEGRAM_CHAT_ID) { $claudeDir = Join-Path $env:USERPROFILE '.claude'; $startFile = Join-Path $claudeDir 'bash_start.tmp'; if (Test-Path $startFile) { try { $startTime = [int64](Get-Content $startFile -Raw); $endTime = [DateTimeOffset]::Now.ToUnixTimeSeconds(); $duration = $endTime - $startTime; Remove-Item $startFile -Force -ErrorAction SilentlyContinue; if ($duration -gt 300) { $minutes = [math]::Floor($duration / 60); $seconds = $duration % 60; $projectDir = 'DDPoker'; try { $projectDir = Split-Path -Leaf (Get-Location) } catch {}; $now = Get-Date; $message = '⚠️ Long Bash Operation - Duration: ' + $minutes + 'm ' + $seconds + 's - Project: ' + $projectDir + ' - Time: ' + $now.ToString('HH:mm:ss'); try { Invoke-RestMethod -Uri \\\"https://api.telegram.org/bot$env:TELEGRAM_BOT_TOKEN/sendMessage\\\" -Method Post -Body @{chat_id=$env:TELEGRAM_CHAT_ID; text=$message} -ErrorAction SilentlyContinue | Out-Null } catch {} } } catch {} } } } catch {}; exit 0\""
           }
         ]
       }
@@ -101,7 +101,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -Command \"if ($env:TELEGRAM_BOT_TOKEN -and $env:TELEGRAM_CHAT_ID) { $projectDir = Split-Path -Leaf (Get-Location); $now = Get-Date; $message = '🔔 <b>Claude Code Notification</b>`n📁 Project: ' + $projectDir + '`n⏰ Time: ' + $now.ToString('HH:mm:ss') + '`n💬 Status: Waiting for user input or permission'; try { Invoke-RestMethod -Uri \\\"https://api.telegram.org/bot$env:TELEGRAM_BOT_TOKEN/sendMessage\\\" -Method Post -Body @{chat_id=$env:TELEGRAM_CHAT_ID; text=$message; parse_mode='HTML'} -ErrorAction SilentlyContinue | Out-Null } catch {} }\""
+            "command": "pwsh -Command \"try { if ($env:TELEGRAM_BOT_TOKEN -and $env:TELEGRAM_CHAT_ID) { $projectDir = 'DDPoker'; try { $projectDir = Split-Path -Leaf (Get-Location) } catch {}; $now = Get-Date; $message = '🔔 Claude Code Notification - Project: ' + $projectDir + ' - Time: ' + $now.ToString('HH:mm:ss') + ' - Status: Waiting for user input or permission'; try { Invoke-RestMethod -Uri \\\"https://api.telegram.org/bot$env:TELEGRAM_BOT_TOKEN/sendMessage\\\" -Method Post -Body @{chat_id=$env:TELEGRAM_CHAT_ID; text=$message} -ErrorAction SilentlyContinue | Out-Null } catch {} } } catch {}; exit 0\""
           }
         ]
       }
