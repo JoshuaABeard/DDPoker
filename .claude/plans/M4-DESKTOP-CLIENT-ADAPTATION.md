@@ -5,12 +5,13 @@
 **Parent Plan:** `.claude/plans/SERVER-HOSTED-GAME-ENGINE.md`
 **Depends On:** M1 (complete), M2 (complete), M3 (complete)
 **Effort:** XL (5-7 weeks estimated)
+**Absorbs:** M7 (Legacy P2P Removal) — old code deleted in this milestone, not deferred
 
 ---
 
 ## Context
 
-M1-M3 built the complete `pokergameserver` module: 74 production Java files, 45 test files, and all server-side infrastructure for hosting poker games. The module provides GameInstanceManager, ServerTournamentDirector, JWT auth (RS256), REST API for game CRUD, WebSocket protocol with full message types (22 server-to-client, 9 client-to-server), and card privacy enforcement.
+M1-M3 built the complete `pokergameserver` module: 74 production Java files, 45 test files, and all server-side infrastructure for hosting poker games. The module provides GameInstanceManager, ServerTournamentDirector, JWT auth (RS256), REST API for game CRUD, WebSocket protocol with 27 server-to-client message types and 9 client-to-server message types, and card privacy enforcement.
 
 The desktop client (`code/poker/`) currently runs games using a tightly coupled architecture:
 - `PokerMain` (916 lines) extends `GameEngine` (Swing singleton) and manages P2P/TCP connections via `PokerConnectionServer`
@@ -19,25 +20,73 @@ The desktop client (`code/poker/`) currently runs games using a tightly coupled 
 - `ShowTournamentTable` (2,609 lines) is the main game UI, reading directly from `PokerGame`, `PokerTable`, and `HoldemHand`
 - `PokerGame` (2,296 lines) extends `Game` and implements `TournamentContext`
 
-**What this plan does:** Embed the Spring Boot `pokergameserver` in the desktop client JVM. Replace `OnlineManager` and `TournamentDirector` with a WebSocket client that talks to the embedded server. Create adapter classes so the existing Swing UI reads game state from WebSocket messages instead of local game objects.
+**What this plan does:** Embed the Spring Boot `pokergameserver` in the desktop client JVM. Replace `OnlineManager`, `TournamentDirector`, and the `Bet` phase with a WebSocket client that talks to the embedded server. Create thin view model classes (`RemotePokerTable`, `RemoteHoldemHand`) so the existing Swing UI reads game state from WebSocket messages instead of local game objects. Delete all P2P/TCP code, game logic phases, and unused game logic from the client.
 
-**UI constraint:** The Swing client's look, feel, and workflows must remain identical. Existing users know this UI. We are changing the plumbing, not the experience.
+**UI constraint:** The Swing client's look, feel, and workflows must remain identical. We are changing the plumbing, not the experience.
 
----
-
-## Key Design Decision: Incremental Adaptation vs Full Replacement
-
-The master plan describes M4 (WebSocket adaptation) and M7 (P2P/TCP removal) as separate milestones. This plan follows that separation:
-
-**M4 scope:** Add the WebSocket path alongside the existing code. Practice mode uses the embedded server + WebSocket. The old P2P code remains but is not used for new game modes. The Swing UI continues to read from `PokerGame`/`PokerTable`/`HoldemHand` objects — but these objects are now updated by WebSocket messages rather than by the local game engine directly.
-
-**NOT in M4 scope:** Deleting `OnlineManager`, `TournamentDirector`, or the P2P infrastructure. That is M7. M4 adds the new path; M7 removes the old.
-
-**Rationale:** This reduces risk dramatically. If the WebSocket path has bugs, the old code path still exists. It also means each file change is surgical — adding new classes and modifying PokerMain's startup, not gutting 10,000+ lines of existing code simultaneously.
+**Thinness constraint:** The desktop client must contain zero game logic after M4. No betting validation, no hand evaluation, no winner determination, no blind management, no table balancing, no AI decisions. The client is purely: display what the server tells it, send actions when the user clicks buttons. All logic that was previously in the `logic/` package, the game flow phases (`Bet`, `Deal`, `Showdown`, etc.), and the game engine methods in `PokerGame` moves to — or already lives in — the server. This minimizes the untestable Swing surface area.
 
 ---
 
-## Architecture: How Embedded Server Fits
+## Key Architectural Decisions
+
+These were decided during plan review and are not open for re-evaluation:
+
+### 1. Thin View Models (Option A)
+
+Create `RemotePokerTable extends PokerTable` and `RemoteHoldemHand extends HoldemHand` that override ~30 getters each. These are pure data containers — no poker logic. Populated from WebSocket messages. The UI reads them identically to the originals.
+
+**Why:** Both classes are non-final with public constructors and non-final getters. The UI calls only getters (never mutating methods). This is the thinnest possible adaptation — no interface extraction, no adapter layer, no state synchronization.
+
+### 2. No Parallel Paths — Delete Old Code in M4
+
+The old P2P/TCP code (`OnlineManager`, `TournamentDirector`, `PokerConnectionServer`, `Bet` phase for online) is deleted as part of M4, not deferred to a separate M7 milestone. This keeps the codebase clean and avoids maintaining two code paths.
+
+**Order:** Build the new WebSocket path first (Phases 4.1-4.4), verify it works, then delete old code (Phase 4.5).
+
+### 3. Real JWT from Embedded Server
+
+No `LocalAuthProvider` bypass. The embedded server generates real JWTs using the same `JwtService` as the standalone server. The desktop client gets a JWT via an in-JVM call (`EmbeddedGameServer.getLocalUserJwt()`), then uses it for all REST + WebSocket calls. Same auth code path everywhere.
+
+### 4. Direct Action Routing — No PokerGame.playerActionPerformed Modification
+
+`WebSocketTournamentDirector` registers a `PlayerActionListener` on `PokerGame` that sends actions directly to `WebSocketGameClient.sendAction()`. The `Bet` phase is not used in remote play. `ShowTournamentTable` continues to call `game_.playerActionPerformed(action, amount)` unchanged — the listener just goes to WebSocket instead of local engine.
+
+**Action flow:**
+```
+ShowTournamentTable button click
+  → game_.playerActionPerformed(action, amount)   [unchanged]
+  → PlayerActionListener (set by WebSocketTournamentDirector)
+  → WebSocketGameClient.sendAction(action, amount)
+  → Server processes → broadcasts PLAYER_ACTED
+  → WebSocketTournamentDirector receives → updates RemotePokerTable/RemoteHoldemHand → fires events
+  → ShowTournamentTable re-renders                 [unchanged]
+```
+
+### 5. Full Multi-Table Support
+
+No descoping to single table. `WebSocketTournamentDirector` manages multiple `RemotePokerTable` instances, one per table in the `GAME_STATE` message. Table switching uses existing `PokerGame.setCurrentTable()` which fires `PROP_CURRENT_TABLE` events.
+
+### 6. Phase System Integration
+
+`WebSocketTournamentDirector extends BasePhase implements Runnable, GameManager, ChatManager` replaces `TournamentDirector` in `gamedef.xml`. The phase chain is preserved:
+
+```
+TournamentOptions → InitializeTournamentGame → BeginTournamentGame (ShowTournamentTable)
+  → WebSocketTournamentDirector (was TournamentDirector)
+```
+
+Update `gamedef.xml` line 421 to point to the new class. The phase gets `PokerGame` via `context_.getGame()`. Instead of running the poker engine locally, it connects to the WebSocket server and translates incoming messages into view model updates.
+
+### 7. Server-Side TournamentProfile Conversion
+
+The `TournamentProfileConverter` lives on the **server**, not the client. The server already depends on `pokerengine` (which has `TournamentProfile`). A new `POST /api/v1/games/practice` endpoint accepts `TournamentProfile` JSON directly, converts it to `GameConfig` internally, creates the game, adds AI players, auto-joins the caller, and returns a gameId. The client's `PracticeGameLauncher` becomes a single REST call (~30 lines).
+
+**Why:** Keeps conversion logic server-side where it's easily testable. Reduces client code. The server owns its own data model conversion.
+
+---
+
+## Architecture: How It All Fits
 
 ```
 PokerMain.init()
@@ -46,29 +95,32 @@ PokerMain.init()
   |
   +--> EmbeddedGameServer.start() (NEW - Spring Boot on random port)
   |       |
-  |       +--> GameInstanceManager
+  |       +--> GameInstanceManager, ServerTournamentDirector
   |       +--> REST API at localhost:{port}/api/v1/...
   |       +--> WebSocket at ws://localhost:{port}/ws/games/{gameId}
-  |       +--> Local auth (no JWT needed for practice mode)
+  |       +--> JWT auth (same as standalone server)
   |
-  +--> Swing UI initializes (existing flow unchanged)
+  +--> Swing UI initializes (existing flow)
   |
   +--> User creates game:
-  |       +--> PracticeGameLauncher sends REST: POST /api/v1/games
-  |       +--> WebSocketGameClient connects: ws://localhost:{port}/ws/games/{id}
-  |       +--> GameStateAdapter receives CONNECTED message with full state
-  |       +--> Adapter populates PokerGame/PokerTable/HoldemHand fields
-  |       +--> Swing UI reads from these objects as always
+  |       +--> PracticeGameLauncher sends one REST call:
+  |       |      POST /api/v1/games/practice (TournamentProfile JSON + JWT)
+  |       |      Server converts → GameConfig, creates game, adds AIs, joins caller
+  |       |      Returns gameId
+  |       +--> Phase chain starts → WebSocketTournamentDirector.start()
+  |       +--> WsTD connects WebSocket: ws://localhost:{port}/ws/games/{id}
+  |       +--> Server sends CONNECTED with full GAME_STATE
+  |       +--> WsTD creates RemotePokerTable/RemoteHoldemHand view models
+  |       +--> ShowTournamentTable reads from view models (unchanged)
   |
   +--> Game play:
-          +--> Server sends ACTION_REQUIRED to WebSocket client
-          +--> GameStateAdapter sets input mode on PokerGame (Swing EDT)
-          +--> ShowTournamentTable shows betting buttons (existing UI)
+          +--> Server sends ACTION_REQUIRED via WebSocket
+          +--> WsTD updates RemoteHoldemHand (current player = human)
+          +--> WsTD fires PokerTableEvent → ShowTournamentTable shows buttons
           +--> User clicks Fold/Call/Raise
-          +--> WebSocketGameClient sends PLAYER_ACTION to server
-          +--> Server processes, broadcasts PLAYER_ACTED
-          +--> GameStateAdapter updates PokerTable/HoldemHand, fires events
-          +--> Swing UI re-renders (existing rendering code unchanged)
+          +--> PlayerActionListener → WebSocketGameClient.sendAction()
+          +--> Server processes → broadcasts PLAYER_ACTED
+          +--> WsTD updates view models → fires events → UI re-renders
 ```
 
 ---
@@ -76,7 +128,7 @@ PokerMain.init()
 ## Phase 4.1: Embed Spring Boot in Desktop Client
 
 ### Goal
-Start the `pokergameserver` Spring Boot context inside the desktop client JVM, on a random port, with simplified auth for local play.
+Start the `pokergameserver` Spring Boot context inside the desktop client JVM, on a random port, with real JWT auth.
 
 ### New Files
 
@@ -85,185 +137,333 @@ Start the `pokergameserver` Spring Boot context inside the desktop client JVM, o
 Manages the lifecycle of an embedded Spring Boot application context:
 - Start Spring Boot programmatically on a background thread
 - Find a random available port before startup
-- Set embedded-mode properties (max 3 games, no action timeout, local auth mode, file-based H2 at `~/.ddpoker/games`)
-- Expose `getPort()`, `isRunning()`, `stop()`, and `getGameInstanceManager()` (for direct in-JVM access)
+- Set embedded-mode properties (max 3 games, no action timeout, file-based H2 at `~/.ddpoker/games`)
+- `getPort()`, `isRunning()`, `stop()`
+- `getLocalUserJwt()` — generates a real JWT for the local user via in-JVM call to `JwtService`. Creates/looks up the local profile on first call.
 
 **`code/poker/src/main/java/com/donohoedigital/games/poker/server/EmbeddedServerConfig.java`** (~80 lines)
 
 Spring Boot configuration class for embedded mode:
-- `@SpringBootApplication` scanning only `pokergameserver` packages
-- `@Bean SecurityFilterChain` that permits all requests when `game.server.auth.mode=local` (no JWT needed for practice)
+- `@SpringBootApplication` scanning `pokergameserver` packages
+- Standard `SecurityFilterChain` with JWT auth (same as standalone)
+- `@Profile("embedded")` activation
 
 **`code/poker/src/main/resources/application-embedded.properties`** (~15 lines)
 
-Spring properties activated in embedded mode:
-- `server.port=0` (random port, overridden by EmbeddedGameServer at runtime)
-- `game.server.max-concurrent-games=3`
-- `game.server.action-timeout-seconds=0` (no timeout for practice)
-- `game.server.auth.mode=local`
-- `spring.datasource.url=jdbc:h2:file:${user.home}/.ddpoker/games`
+```properties
+server.port=0
+game.server.max-concurrent-games=3
+game.server.action-timeout-seconds=0
+spring.datasource.url=jdbc:h2:file:${user.home}/.ddpoker/games
+```
 
 ### Files to Modify
 
 **`code/poker/pom.xml`**
 - Add dependency on `pokergameserver`
 - Add `spring-boot-starter-web`, `spring-boot-starter-websocket`, `spring-boot-starter-data-jpa`, `h2`
-- Verify no Jackson or Log4j2 version conflicts with existing deps
+- Verify no Jackson or Log4j2 version conflicts
 
 **`code/poker/src/main/java/com/donohoedigital/games/poker/PokerMain.java`**
 - Add `EmbeddedGameServer` field
-- After `super.init()`, start embedded server (during splash screen display)
-- On application exit, call `embeddedServer.stop()`
-- Add `getEmbeddedServer()` accessor
+- After `super.init()`, start embedded server (during splash screen)
+- On exit, call `embeddedServer.stop()`
+- `getEmbeddedServer()` accessor
 
 ### Key Risk: Spring Boot + GameEngine Coexistence
 
-`PokerMain` extends `GameEngine extends BaseApp`. `GameEngine` is a Swing singleton with static state. Spring Boot starts its own `ApplicationContext`. These must coexist:
-
-- **Thread isolation:** Spring Boot runs on its own thread pool. Swing EDT remains Swing EDT. Spring beans must NOT call `GameEngine.getGameEngine()` or any static Swing singletons.
+- **Thread isolation:** Spring Boot runs on its own thread pool. Swing EDT remains Swing EDT.
 - **Classloader:** Both share the same classloader. Spring Boot is designed for this.
-- **Logging:** Both use Log4j2. The `pokergameserver` pom already excludes `spring-boot-starter-logging`. Embedded server inherits the desktop client's Log4j2 config.
-- **Startup time:** Spring Boot 3.5 starts in ~1-2 seconds with lazy init. Acceptable during splash screen.
-- **Memory:** Spring Boot adds ~50-100MB heap. Desktop uses `-Xmx512m`. May need to increase to `-Xmx768m` in jpackage config.
+- **Logging:** Both use Log4j2. `pokergameserver` pom already excludes `spring-boot-starter-logging`.
+- **Startup time:** Spring Boot starts in ~1-2 seconds with lazy init. Acceptable during splash screen.
+- **Memory:** May need to increase from `-Xmx512m` to `-Xmx768m`.
 
-### Tests (TDD — write before implementation)
+### Tests (TDD)
 
 | Test | Description |
 |------|-------------|
-| `EmbeddedGameServerTest` | Server starts on a random port, HTTP health check responds, stops cleanly, port is released after stop |
-| `EmbeddedServerConfigTest` | Local auth mode: REST endpoint reachable without JWT, returns 200 not 401 |
+| `EmbeddedGameServerTest` | Server starts on random port, HTTP health check responds, stops cleanly, port released |
+| `EmbeddedGameServerAuthTest` | `getLocalUserJwt()` returns valid JWT; REST endpoint reachable with that JWT |
 
 ---
 
-## Phase 4.2: WebSocket Client for Desktop
+## Phase 4.2: WebSocket Client + Thin View Models
 
 ### Goal
-Create a Java WebSocket client (using JDK `java.net.http`) and a `GameStateAdapter` that bridges server messages to the Swing UI.
+Create a Java WebSocket client and thin view model classes that the Swing UI reads from transparently.
 
 ### New Files
 
 **`code/poker/src/main/java/com/donohoedigital/games/poker/online/WebSocketGameClient.java`** (~350 lines)
 
 JDK `java.net.http.HttpClient`-based WebSocket client:
-- `connect(gameId, token)` — returns `CompletableFuture<Void>`
-- `sendAction(action, amount)` with monotonic sequence numbers
+- `connect(gameId, jwt)` — returns `CompletableFuture<Void>`
+- `sendAction(action, amount)` — sends `PLAYER_ACTION` message
 - `sendChat(message, tableChat)`, `sendSitOut()`, `sendAdminPause()`, `sendAdminResume()`
 - `setMessageHandler(Consumer<ServerMessage>)` — called for each inbound message
 - Auto-reconnect with exponential backoff on unexpected disconnect
 - Inner `GameWebSocketListener implements WebSocket.Listener` that accumulates text frames and deserializes JSON
 
-**`code/poker/src/main/java/com/donohoedigital/games/poker/online/GameStateAdapter.java`** (~500 lines)
+**`code/poker/src/main/java/com/donohoedigital/games/poker/online/RemotePokerTable.java`** (~250 lines)
 
-The critical bridge class. Receives `ServerMessage` objects and updates existing `PokerGame`/`PokerTable`/`HoldemHand` state so the Swing UI sees changes without modification:
+Thin view model. Extends `PokerTable`, overrides ~15-20 getters to return simple stored fields:
+- `getHoldemHand()` → returns `RemoteHoldemHand`
+- `getNumOccupiedSeats()` → stored count
+- `getPlayer(int seat)` → stored player array
+- `getButton()` → stored button index
+- `getName()`, `getNumber()`, `getSeats()`
+- Update methods: `updateFromState(SeatData[], int button, ...)` — called by `WebSocketTournamentDirector`
+- Fires `PokerTableEvent`s when state changes (same events the UI listens to)
 
-- `onMessage(ServerMessage)` — dispatches to Swing EDT via `SwingUtilities.invokeLater`
-- Handlers for all 22 server message types:
-  - `CONNECTED` / `GAME_STATE` — full state snapshot; populate PokerGame, PokerTable, all players
-  - `HAND_STARTED` — reset hand state, set dealer/blinds, fire `TABLE_UPDATE` event
-  - `HOLE_CARDS_DEALT` — set local player's hole cards on HoldemHand
-  - `COMMUNITY_CARDS_DEALT` — update community cards on HoldemHand/PokerTable
-  - `ACTION_REQUIRED` — call `game.setInputMode(...)` with correct options
-  - `PLAYER_ACTED` — update pot, chip counts, fire events
-  - `ACTION_TIMEOUT` — apply auto-action, update state
-  - `HAND_COMPLETE` — show results, update chip counts
-  - `LEVEL_CHANGED` — update blind level display
-  - `PLAYER_ELIMINATED` — mark player eliminated, update standings
-  - `GAME_COMPLETE` — trigger results screen
-  - `POT_AWARDED`, `SHOWDOWN_STARTED` — visual feedback
-  - `PLAYER_JOINED`, `PLAYER_LEFT`, `PLAYER_DISCONNECTED` — lobby updates
-  - `GAME_PAUSED`, `GAME_RESUMED` — pause overlay
-  - `PLAYER_KICKED` — remove player
-  - `CHAT_MESSAGE` — route to chat panel
-  - `ERROR` — display error dialog
+**`code/poker/src/main/java/com/donohoedigital/games/poker/online/RemoteHoldemHand.java`** (~200 lines)
 
-**Why update existing objects, not create RemotePokerGame/RemotePokerTable?**
-
-The master plan mentions `RemotePokerGame` and `RemotePokerTable`. After analysis, the better approach is to **update existing `PokerGame`/`PokerTable`/`HoldemHand` objects directly from WebSocket messages**:
-
-1. `ShowTournamentTable` (2,609 lines) references these as concrete classes throughout — not interfaces. Creating adapters would require extracting interfaces from ~10,000 lines of existing code or extending them, both massive refactors.
-2. `PokerGame` already has public setters and fires `PropertyChangeEvent`s the UI listens to.
-3. The Swing UI is already event-driven. `GameStateAdapter` just needs to (1) update the state and (2) fire the right events. The UI code does not change.
-
-**How ACTION_REQUIRED flows:**
-1. Server sends `ACTION_REQUIRED` with `ActionOptionsData`
-2. `GameStateAdapter.handleActionRequired()` calls `game.setInputMode(mode, hand, player)` on EDT
-3. `ShowTournamentTable` sees input mode change, shows Fold/Check/Call/Raise buttons (existing code)
-4. User clicks → existing `PlayerActionListener` fires → calls `webSocketClient.sendAction(action, amount)`
-5. Server validates → broadcasts `PLAYER_ACTED` → adapter updates state → UI refreshes
-
-### Files to Modify
-
-**`code/poker/src/main/java/com/donohoedigital/games/poker/PokerGame.java`**
-- Add `setGameStateAdapter(GameStateAdapter)` method
-- In `playerActionPerformed()`, if adapter is active, route action to `webSocketClient.sendAction()` instead of local processing
-
-**`code/poker/src/main/java/com/donohoedigital/games/poker/ShowTournamentTable.java`**
-- Minimal change: if WebSocket mode active, `TD()` method returns a no-op `GameManager` stub rather than fetching from `context_.getGameManager()`
-- All event listening and rendering code unchanged
+Thin view model. Extends `HoldemHand`, overrides ~10-15 getters:
+- `getRound()` → stored round
+- `getCommunity()` → stored community cards
+- `getCurrentPlayer()` → stored current player
+- `getCurrentPlayerIndex()` → stored index
+- `getNumPlayers()` → stored count
+- `getPlayerAt(int)` → stored player order
+- `getTotalPotChipCount()` → stored pot total
+- Update methods: `updateRound(BettingRound)`, `updateCommunity(Hand)`, `updateCurrentPlayer(int)`, etc.
 
 ### Tests (TDD)
 
 | Test | Description |
 |------|-------------|
 | `WebSocketGameClientTest` | Connect, send action, receive messages, disconnect, reconnect on failure |
-| `GameStateAdapterTest` | **Most critical.** Each of 22 message types correctly updates PokerGame state |
-| `GameStateAdapter_HandFlowTest` | Full hand: HAND_STARTED → HOLE_CARDS → actions → COMMUNITY_CARDS → HAND_COMPLETE |
-| `GameStateAdapter_ActionRequiredTest` | ACTION_REQUIRED sets correct input mode; correct options for fold/check/call/raise/all-in |
+| `RemotePokerTableTest` | All overridden getters return correct stored values; events fire on update |
+| `RemoteHoldemHandTest` | All overridden getters return correct stored values; round/community update |
 
 ---
 
-## Phase 4.3: Practice Mode Integration
+## Phase 4.3: WebSocketTournamentDirector (Phase Replacement)
 
 ### Goal
-Wire up the complete flow so a user can start a practice game using the embedded server with AI opponents, connected via WebSocket. No visible change to the game creation UI.
+Create the phase that replaces `TournamentDirector` — it connects to the WebSocket server, receives messages, and populates view models for the Swing UI.
 
 ### New Files
 
-**`code/poker/src/main/java/com/donohoedigital/games/poker/server/TournamentProfileConverter.java`** (~150 lines)
+**`code/poker/src/main/java/com/donohoedigital/games/poker/online/WebSocketTournamentDirector.java`** (~600 lines)
 
-Converts `TournamentProfile` (desktop game creation) to `GameConfig` (server API):
-- Map blind structure (all levels, antes, breaks)
-- Map player count, starting chips, rebuy/addon rules
-- Map game name, description
+The critical class. Extends `BasePhase implements Runnable, GameManager, ChatManager`.
 
-**`code/poker/src/main/java/com/donohoedigital/games/poker/server/GameServerRestClient.java`** (~150 lines)
+**Lifecycle:**
+- `start()`: Get `PokerGame` via `context_.getGame()`. Connect `WebSocketGameClient` to embedded server. Register as `PlayerActionListener`. Enter message receive loop.
+- `run()`: Main loop — receive WebSocket messages, dispatch to handlers on Swing EDT.
+- `finish()`: Disconnect WebSocket, clean up.
 
-JDK `java.net.http.HttpClient` wrapper for the game server REST API:
-- `createGame(GameConfig)` → returns gameId string
-- `startGame(gameId)`
-- `joinGame(gameId)`
-- `listGames(status)` → `List<GameSummary>`
+**Message handlers (all 27 server message types):**
 
-**`code/poker/src/main/java/com/donohoedigital/games/poker/server/PracticeGameLauncher.java`** (~200 lines)
+| Message | Handler Action |
+|---------|---------------|
+| `CONNECTED` / `GAME_STATE` | Create `RemotePokerTable`/`RemoteHoldemHand` for each table. Add to `PokerGame`. Populate all player seats, chip counts, community cards, pots. |
+| `HAND_STARTED` | Create new `RemoteHoldemHand` on the table. Set dealer, blinds. Fire `TYPE_NEW_HAND` event. |
+| `HOLE_CARDS_DEALT` | Set local player's hole cards on `RemoteHoldemHand`. Fire card event. |
+| `COMMUNITY_CARDS_DEALT` | Update community cards on `RemoteHoldemHand`. Fire community card event. |
+| `ACTION_REQUIRED` | Update `RemoteHoldemHand` current player to local player. Store valid options. Fire event so UI shows buttons. |
+| `PLAYER_ACTED` | Update player chip count, pot, bet. Fire `TYPE_PLAYER_ACTION` event. |
+| `ACTION_TIMEOUT` | Apply auto-action to view model. Fire event. |
+| `HAND_COMPLETE` | Update winners, show cards if showdown. Fire `TYPE_END_HAND` event. |
+| `POT_AWARDED` | Update pot display. Fire event. |
+| `SHOWDOWN_STARTED` | Fire showdown event. |
+| `LEVEL_CHANGED` | Update blind level on `PokerGame`. Fire `PROP_CURRENT_LEVEL`. |
+| `PLAYER_ELIMINATED` | Mark player eliminated. Fire event. |
+| `GAME_COMPLETE` | Trigger results screen via phase chain. |
+| `PLAYER_JOINED` / `PLAYER_LEFT` / `PLAYER_DISCONNECTED` | Update player list on view model. Fire events. |
+| `PLAYER_REBUY` / `PLAYER_ADDON` | Update player chip count. Fire event. |
+| `GAME_PAUSED` / `GAME_RESUMED` | Update game state. Fire events for pause overlay. |
+| `PLAYER_KICKED` | Remove player from view model. Fire event. |
+| `CHAT_MESSAGE` | Route to chat panel via `ChatManager`. |
+| `ERROR` | Display error via existing dialog patterns. |
+| `TIMER_UPDATE` | Update countdown display. |
+| `REBUY_OFFERED` / `ADDON_OFFERED` | Show rebuy/addon dialog (existing UI). Send decision via WebSocket. |
 
-Orchestrates practice game creation:
-1. Convert `TournamentProfile` → `GameConfig` via `TournamentProfileConverter`
-2. Create game via REST (`POST /api/v1/games`)
-3. Connect WebSocket (`WebSocketGameClient.connect(gameId, "local")`)
-4. Wire `GameStateAdapter` as message handler
-5. Start game via REST (`POST /api/v1/games/{id}/start`)
-6. Game now runs server-side with AI players; WebSocket messages drive UI
+**PlayerActionListener implementation:**
+```java
+// Set on PokerGame in start()
+game.setPlayerActionListener((action, amount) -> {
+    String wsAction = mapActionToString(action); // ACTION_FOLD → "FOLD", etc.
+    webSocketClient.sendAction(wsAction, amount);
+});
+```
+
+**GameManager implementation:**
+- `getSaveLockObject()` → no-op object (saves handled by server)
+- `getPhaseName()` → `"WebSocketTournamentDirector"`
+- `cleanup()` → disconnect WebSocket
+
+**ChatManager implementation:**
+- Route chat messages to `WebSocketGameClient.sendChat()`
+
+**Multi-table support:**
+- `Map<Integer, RemotePokerTable>` — one per table from `GAME_STATE`
+- Table switch events update `PokerGame.setCurrentTable()` → fires `PROP_CURRENT_TABLE`
+- New tables from `PLAYER_JOINED`/state updates are added dynamically
 
 ### Files to Modify
 
-The existing practice game flow goes through phases defined in `gamedef.xml`. The key branching point is where `TournamentDirector` is launched:
+**`code/poker/src/main/resources/config/poker/gamedef.xml`** (line 421)
+- Change `TournamentDirector` phase class to `WebSocketTournamentDirector`
+- Keep `ClientTournamentDirector` variant (line 424) pointed at WebSocket version too, or remove if unused
 
-**`code/poker/src/main/java/com/donohoedigital/games/poker/NewGame.java`** (or equivalent phase)
-- If `PokerMain.getEmbeddedServer().isRunning()`, use `PracticeGameLauncher` instead of launching `TournamentDirector`
-- This is the single branch point; all other game creation UI is unchanged
+### Tests (TDD — most critical test class)
+
+| Test | Description |
+|------|-------------|
+| `WebSocketTournamentDirectorTest` | Each of 27 message types correctly updates view models |
+| `WsTD_HandFlowTest` | Full hand: HAND_STARTED → HOLE_CARDS → actions → COMMUNITY_CARDS → HAND_COMPLETE |
+| `WsTD_ActionRequiredTest` | ACTION_REQUIRED sets correct state; button click → WebSocket sendAction |
+| `WsTD_MultiTableTest` | GAME_STATE with 3 tables → 3 RemotePokerTables; table switch works |
+| `WsTD_ReconnectTest` | Disconnect + reconnect → GAME_STATE rebuilds view models correctly |
+
+---
+
+## Phase 4.4: Practice Mode Integration
+
+### Goal
+Wire the complete flow: user creates a practice game → embedded server runs it → WebSocket drives UI.
+
+### New Server Files
+
+**`code/pokergameserver/.../api/PracticeGameController.java`** (~80 lines)
+
+New REST endpoint on the server:
+- `POST /api/v1/games/practice` — accepts `TournamentProfile` JSON body + JWT auth
+- Converts `TournamentProfile` → `GameConfig` internally via `TournamentProfileConverter`
+- Creates game, adds AI players, auto-joins the caller, starts the game
+- Returns `{ "gameId": "..." }`
+
+**`code/pokergameserver/.../api/TournamentProfileConverter.java`** (~150 lines)
+
+Lives on the **server** (not client). Converts `TournamentProfile` → `GameConfig`:
+- Map blind structure (all levels, antes, breaks)
+- Map player count, starting chips, rebuy/addon rules
+- Map game name, AI player configuration
+
+### New Client Files
+
+**`code/poker/src/main/java/com/donohoedigital/games/poker/server/GameServerRestClient.java`** (~100 lines)
+
+JDK `java.net.http.HttpClient` wrapper for the game server REST API:
+- `createPracticeGame(TournamentProfile, jwt)` → gameId (single call to `POST /api/v1/games/practice`)
+- `listGames(status, jwt)` → `List<GameSummary>`
+
+**`code/poker/src/main/java/com/donohoedigital/games/poker/server/PracticeGameLauncher.java`** (~30 lines)
+
+Thin orchestrator — one REST call:
+1. Get JWT via `EmbeddedGameServer.getLocalUserJwt()`
+2. Call `restClient.createPracticeGame(profile, jwt)` → gameId
+3. Store gameId and JWT for `WebSocketTournamentDirector` to use when the phase starts
+
+### Files to Modify
+
+**`code/poker/src/main/java/com/donohoedigital/games/poker/PokerGame.java`**
+- Add `setWebSocketConfig(gameId, jwt, port)` — stores connection info for `WebSocketTournamentDirector`
+- No other changes. `playerActionPerformed()` is unchanged.
+
+**Game creation flow integration point** — The existing practice game flow goes through phases defined in `gamedef.xml`. The `InitializeTournamentGame` phase (or similar) creates the `PokerGame`. We insert `PracticeGameLauncher` here to create the game on the embedded server before the phase chain reaches `WebSocketTournamentDirector`.
 
 ### Tests (TDD)
 
 | Test | Description |
 |------|-------------|
-| `TournamentProfileConverterTest` | All TournamentProfile fields mapped correctly; blind structure round-trips |
-| `GameServerRestClientTest` | HTTP calls succeed, errors handled, response deserialized correctly |
-| `PracticeGameLauncherTest` | Full flow: TournamentProfile → GameConfig → REST create → WS connect → game starts |
-| `PracticeGameIntegrationTest` | End-to-end: embedded server + launcher + adapter, AI-only game plays to completion |
+| `TournamentProfileConverterTest` | **(Server test)** All TournamentProfile fields mapped correctly; blind structure round-trips |
+| `PracticeGameControllerTest` | **(Server test)** POST /api/v1/games/practice creates game, adds AIs, returns gameId |
+| `GameServerRestClientTest` | **(Client test)** HTTP call succeeds, errors handled, response deserialized |
+| `PracticeGameIntegrationTest` | End-to-end: embedded server + launcher + WsTD + view models, AI-only game plays to completion |
 
 ---
 
-## Phase 4.4: Save/Load via Event Sourcing
+## Phase 4.5: Legacy Code Removal & Client Gutting
+
+### Goal
+Delete all P2P/TCP code, game logic phases, the `logic/` package, and unused game logic from `PokerGame`. After this phase, the client contains zero poker logic — only UI display and WebSocket communication.
+
+### Files to Delete
+
+**P2P/TCP networking (replaced by WebSocket):**
+
+| File | Lines | Replacement |
+|------|-------|-------------|
+| `OnlineManager.java` | 2,335 | `WebSocketGameClient` |
+| `TournamentDirector.java` | 1,969 | `WebSocketTournamentDirector` |
+| `ClientTournamentDirector.java` | ~200 | `WebSocketTournamentDirector` |
+| `PokerConnectionServer` (inner class in PokerMain) | ~200 | Embedded Spring Boot server |
+| P2P classes in `code/server/.../p2p/` | varies | N/A |
+
+**Game logic phases (replaced by WsTD message handlers):**
+
+| File | Lines | Why Delete |
+|------|-------|------------|
+| `Bet.java` | ~300 | Server validates betting; WsTD registers PlayerActionListener directly |
+| `Deal.java` / `DealDisplay.java` / `DealCommunity.java` | varies | Server deals; WsTD handles HAND_STARTED/COMMUNITY_CARDS_DEALT |
+| `Showdown.java` / `PreShowdown.java` | varies | Server handles showdown; WsTD handles HAND_COMPLETE |
+| `CheckEndHand.java` | varies | Server determines hand end |
+| `ColorUp.java` / `ColorUpFinish.java` | varies | Server handles color-up |
+| `NewLevelActions.java` | varies | Server handles level changes |
+| Other game flow phases | varies | All game orchestration is server-side |
+
+**Note:** Some of these phases may have UI display helper methods used by `ShowTournamentTable` (e.g., `DealDisplay.syncCards()`, `Showdown.displayShowdown()`). If so, keep the **static display helper methods** but delete the phase logic. Determine during implementation by tracing references.
+
+**`logic/` package (all server-side now):**
+
+| File | Lines | Why Delete |
+|------|-------|------------|
+| `BetValidator.java` | varies | Server sends ACTION_REQUIRED with exact valid options |
+| `HandOrchestrator.java` | varies | Server orchestrates hand phases |
+| `ShowdownCalculator.java` | varies | Server evaluates winners |
+| `DealingRules.java` | varies | Server deals cards |
+| `GameOverChecker.java` | varies | Server determines game end |
+| `ColorUpLogic.java` | varies | Server handles color-up |
+| `LevelTransitionLogic.java` | varies | Server manages blind levels |
+| `TableManager.java` | varies | Server balances tables |
+| `OnlineCoordinator.java` | varies | Replaced by WebSocket protocol |
+
+### Files to Gut
+
+**`code/poker/src/main/java/com/donohoedigital/games/poker/PokerGame.java`** (~2,296 → ~500 lines)
+
+Remove all game logic methods that are now server-side. **Keep only:**
+- Table management: `getCurrentTable()`, `setCurrentTable()`, `getTables()`, `addTable()`, `removeTable()`, `getNumTables()`
+- Property change infrastructure: `PROP_CURRENT_TABLE`, `PROP_CURRENT_LEVEL`, `PROP_PROFILE`, etc.
+- Player action delegation: `playerActionPerformed()`, `setPlayerActionListener()`
+- Profile/settings getters: `getProfile()`, `getLevel()`, `getHumanPlayer()`, `getSeats()`, `getAnte()`, `getSmallBlind()`, `getBigBlind()`
+- WebSocket config: `setWebSocketConfig()`, `getWebSocketConfig()` (new)
+- Input mode: `setInputMode()`, `getInputMode()`
+
+**Delete from PokerGame:**
+- `initTournament()`, `setupTournament()` — server creates tournaments
+- `setupComputerPlayers()`, `fillSeats()` — server fills seats
+- `assignTables()`, `processTableBalance()` — server balances tables
+- `playerOut()` — server eliminates players
+- `changeLevel()`, `nextLevel()`, `prevLevel()` — server manages levels
+- `computeTotalChipsInPlay()` and related chip logic — server tracks chips
+- All `TournamentContext` implementation methods that involve logic
+
+### Files to Modify
+
+**`code/poker/src/main/java/com/donohoedigital/games/poker/PokerMain.java`**
+- Remove `PokerConnectionServer` inner class and TCP listener startup
+- Remove P2P-related imports and fields
+- The module becomes: Swing UI + WebSocket client + embedded server bootstrap
+
+**`code/poker/src/main/java/com/donohoedigital/games/poker/ShowTournamentTable.java`**
+- Remove direct `TournamentDirector` type cast in `TD()` — use `GameManager` interface
+- Remove any `OnlineManager` references
+
+**Other files** — Trace all references to deleted classes and update or remove. Determined during implementation by following compile errors after each deletion.
+
+### Verification
+
+- All remaining tests pass (tests for deleted classes are also deleted)
+- `mvn test -P dev` across all modules
+- Manual: launch PokerMain, create practice game, play to completion
+- Verify no game logic remains in the `poker` module (grep for engine method calls)
+
+---
+
+## Phase 4.6: Save/Load via Event Sourcing
 
 ### Goal
 Practice games auto-save via the embedded server's event store (H2 file at `~/.ddpoker/games`). In-progress games can be resumed on desktop restart.
@@ -273,77 +473,104 @@ Practice games auto-save via the embedded server's event store (H2 file at `~/.d
 **`code/poker/src/main/java/com/donohoedigital/games/poker/server/GameResumeManager.java`** (~100 lines)
 
 On desktop startup, queries embedded server for in-progress games:
-- `getResumableGames(restClient)` → `List<GameSummary>` of IN_PROGRESS games
-- `resumeGame(gameId, client, adapter)` → connect WebSocket; server sends `CONNECTED` with full state snapshot; adapter rebuilds `PokerGame` state
+- `getResumableGames(restClient, jwt)` → `List<GameSummary>` of IN_PROGRESS games
+- `resumeGame(gameId)` → connect WebSocket; server sends `CONNECTED` with full state snapshot; `WebSocketTournamentDirector` rebuilds view models
 
 ### Files to Modify
 
 **`code/poker/src/main/java/com/donohoedigital/games/poker/PokerMain.java`**
 - After embedded server starts, call `GameResumeManager.getResumableGames()`
-- If games found, show a "Resume game?" prompt using existing dialog patterns
-
-The existing save/load UI (`GameListPanel`) can surface embedded server games alongside legacy save files in a future cleanup (not M4 scope).
+- If games found, show "Resume game?" prompt using existing dialog patterns
 
 ### Tests (TDD)
 
 | Test | Description |
 |------|-------------|
-| `GameResumeManagerTest` | Queries games, skips COMPLETED games, reconnects to IN_PROGRESS |
-| `SaveLoadIntegrationTest` | Start game, play hands, shutdown embedded server, restart, resume, verify state |
+| `GameResumeManagerTest` | Queries games, skips COMPLETED, reconnects to IN_PROGRESS |
+| `SaveLoadIntegrationTest` | Start game, play hands, shutdown, restart, resume, verify state |
 
 ---
 
-## Implementation Order (TDD — tests first)
+## Implementation Order
 
 | Order | Step | Depends On | Est. Effort |
 |-------|------|------------|-------------|
-| 1 | `EmbeddedServerConfig` + `LocalAuthProvider` | — | S |
-| 2 | `EmbeddedGameServer` lifecycle | Step 1 | M |
-| 3 | `poker/pom.xml` + `PokerMain` integration | Steps 1-2 | M |
-| 4 | `WebSocketGameClient` | Step 3 | L |
-| 5 | `TournamentProfileConverter` | — (parallel) | S |
-| 6 | `GameServerRestClient` | Step 3 | M |
-| 7 | `GameStateAdapter` — all 22 message handlers | Steps 4, 6 | **XL** |
-| 8 | `PracticeGameLauncher` | Steps 4-7 | L |
-| 9 | `PokerGame` + `ShowTournamentTable` routing | Steps 7-8 | L |
-| 10 | `GameResumeManager` + save/load | Steps 3, 4, 7 | M |
-| 11 | Integration test: full practice game end-to-end | All | L |
+| 1 | `EmbeddedServerConfig` + `EmbeddedGameServer` | — | M |
+| 2 | `poker/pom.xml` + `PokerMain` embedded server startup | Step 1 | M |
+| 3 | `WebSocketGameClient` | Step 2 | L |
+| 4 | `RemotePokerTable` + `RemoteHoldemHand` | — (parallel with 3) | M |
+| 5 | `TournamentProfileConverter` + `PracticeGameController` **(server-side)** | — (parallel with 3-4) | M |
+| 6 | `GameServerRestClient` + `PracticeGameLauncher` **(client, ~130 lines total)** | Steps 2, 5 | S |
+| 7 | `WebSocketTournamentDirector` — all 27 message handlers | Steps 3, 4 | **XL** |
+| 8 | `gamedef.xml` update + integration testing | Steps 6, 7 | L |
+| 9 | Legacy code removal + client gutting (Phase 4.5) | Step 8 verified working | L |
+| 10 | `GameResumeManager` + save/load | Steps 2, 3, 7 | M |
+| 11 | Full integration test: practice game end-to-end | All | L |
 
-**Critical path:** 1 → 2 → 3 → 4 → 7 → 8 → 9 → Integration
+**Critical path:** 1 → 2 → 3 → 7 → 8 → 9 → Integration
 
-`GameStateAdapter` (Step 7) is the hardest class. It must correctly map all 22 WebSocket message types to the right `PokerGame`/`PokerTable`/`HoldemHand` state updates and fire the right `PokerTableEvent`s for the Swing UI. Study `SwingEventBus.java` and `ShowTournamentTable`'s event listeners carefully before implementing.
+`WebSocketTournamentDirector` (Step 7) is the hardest class. It must correctly map all 27 WebSocket message types to the right view model updates and fire the right `PokerTableEvent`s for the Swing UI. Study `SwingEventBus.java` and `ShowTournamentTable`'s event listeners carefully before implementing.
 
 ---
 
 ## Files Summary
 
-### New Production Files (10)
+### New Client Production Files (8)
 
-| File | Est. Lines |
-|------|-----------|
-| `poker/.../server/EmbeddedGameServer.java` | ~200 |
-| `poker/.../server/EmbeddedServerConfig.java` | ~80 |
-| `poker/.../server/LocalAuthProvider.java` | ~60 |
-| `poker/.../server/GameServerRestClient.java` | ~150 |
-| `poker/.../server/TournamentProfileConverter.java` | ~150 |
-| `poker/.../server/PracticeGameLauncher.java` | ~200 |
-| `poker/.../server/GameResumeManager.java` | ~100 |
-| `poker/.../online/WebSocketGameClient.java` | ~350 |
-| `poker/.../online/GameStateAdapter.java` | ~500 |
-| `poker/src/main/resources/application-embedded.properties` | ~15 |
+| File | Est. Lines | Role |
+|------|-----------|------|
+| `poker/.../server/EmbeddedGameServer.java` | ~200 | Spring Boot lifecycle |
+| `poker/.../server/EmbeddedServerConfig.java` | ~80 | Spring config |
+| `poker/.../server/GameServerRestClient.java` | ~100 | HTTP wrapper (one method for practice, one for listing) |
+| `poker/.../server/PracticeGameLauncher.java` | ~30 | One REST call to create practice game |
+| `poker/.../server/GameResumeManager.java` | ~100 | Resume prompt on startup |
+| `poker/.../online/WebSocketGameClient.java` | ~350 | WebSocket connection management |
+| `poker/.../online/WebSocketTournamentDirector.java` | ~600 | Message → view model → event mapping (no logic) |
+| `poker/.../online/RemotePokerTable.java` | ~250 | Thin view model — overridden getters |
+| `poker/.../online/RemoteHoldemHand.java` | ~200 | Thin view model — overridden getters |
+
+**Total new client code: ~1,910 lines** (zero game logic)
+
+### New Server Production Files (2)
+
+| File | Est. Lines | Role |
+|------|-----------|------|
+| `pokergameserver/.../api/PracticeGameController.java` | ~80 | `POST /api/v1/games/practice` endpoint |
+| `pokergameserver/.../api/TournamentProfileConverter.java` | ~150 | TournamentProfile → GameConfig conversion |
 
 ### Modified Production Files (4)
 
 | File | Change |
 |------|--------|
 | `code/poker/pom.xml` | Add `pokergameserver` + Spring Boot deps |
-| `code/poker/.../PokerMain.java` | Start/stop `EmbeddedGameServer` in init/shutdown |
-| `code/poker/.../PokerGame.java` | Route player actions to WebSocket when adapter active |
-| `code/poker/.../NewGame.java` | Branch to `PracticeGameLauncher` when embedded server running |
+| `code/poker/.../PokerMain.java` | Start/stop `EmbeddedGameServer`; remove P2P code |
+| `code/poker/.../PokerGame.java` | **Gutted**: remove ~1,800 lines of game logic; add `setWebSocketConfig()` |
+| `code/poker/.../.../gamedef.xml` | Point TournamentDirector phase to `WebSocketTournamentDirector` |
 
-### New Test Files (~12)
+### Deleted Production Files (~20+)
 
-`EmbeddedGameServerTest`, `EmbeddedServerConfigTest`, `WebSocketGameClientTest`, `TournamentProfileConverterTest`, `GameServerRestClientTest`, `GameStateAdapterTest`, `GameStateAdapter_HandFlowTest`, `GameStateAdapter_ActionRequiredTest`, `PracticeGameLauncherTest`, `GameResumeManagerTest`, `SaveLoadIntegrationTest`, `PracticeGameIntegrationTest`
+| Category | Files | Est. Lines Deleted |
+|----------|-------|-------------------|
+| P2P/TCP networking | `OnlineManager`, `TournamentDirector`, `ClientTournamentDirector`, `PokerConnectionServer`, P2P classes | ~5,000+ |
+| Game flow phases | `Bet`, `Deal`, `DealCommunity`, `Showdown`, `PreShowdown`, `CheckEndHand`, `ColorUp`, `ColorUpFinish`, `NewLevelActions`, others | ~2,000+ |
+| `logic/` package | `BetValidator`, `HandOrchestrator`, `ShowdownCalculator`, `DealingRules`, `GameOverChecker`, `ColorUpLogic`, `LevelTransitionLogic`, `TableManager`, `OnlineCoordinator` | ~1,000+ |
+| PokerGame gutting | Removed methods (in-place) | ~1,800 |
+
+**Total deleted: ~10,000+ lines of client-side game logic**
+
+### New Test Files
+
+**Client tests (~12):** `EmbeddedGameServerTest`, `EmbeddedGameServerAuthTest`, `WebSocketGameClientTest`, `RemotePokerTableTest`, `RemoteHoldemHandTest`, `GameServerRestClientTest`, `WebSocketTournamentDirectorTest`, `WsTD_HandFlowTest`, `WsTD_ActionRequiredTest`, `WsTD_MultiTableTest`, `WsTD_ReconnectTest`, `PracticeGameIntegrationTest`, `GameResumeManagerTest`, `SaveLoadIntegrationTest`
+
+**Server tests (~2):** `TournamentProfileConverterTest`, `PracticeGameControllerTest`
+
+### Net Impact
+
+| Metric | Before M4 | After M4 |
+|--------|-----------|----------|
+| Client game logic | ~10,000+ lines | **0 lines** |
+| Client new code | 0 | ~1,910 lines (all display/communication) |
+| Client responsibilities | Game engine + UI + P2P networking | **UI display + WebSocket send/receive only** |
 
 ---
 
@@ -351,47 +578,42 @@ The existing save/load UI (`GameListPanel`) can surface embedded server games al
 
 | Risk | Impact | Likelihood | Mitigation |
 |------|--------|------------|------------|
-| `GameStateAdapter` incorrectly maps WebSocket state to Swing events | **High** | Medium | TDD with exhaustive per-message tests. Compare output to `SwingEventBus` behavior. |
-| `PokerGame`/`PokerTable` public API insufficient for adapter updates | Medium | Medium | Audit all needed public setters before starting adapter. Add setters if needed (surgical). |
+| `WebSocketTournamentDirector` incorrectly maps messages to view model events | **High** | Medium | TDD with exhaustive per-message tests. Compare output to `SwingEventBus` behavior. |
+| `RemotePokerTable`/`RemoteHoldemHand` missing getter overrides (UI reads un-overridden method that hits null engine state) | **High** | Medium | Audit all getter calls in `ShowTournamentTable` before implementing. Override every accessed getter. |
+| Phase deletion removes UI display helpers that `ShowTournamentTable` still calls (e.g., `DealDisplay.syncCards()`, `Showdown.displayShowdown()`) | **High** | Medium | Trace all static method references from ShowTournamentTable before deleting any phase. Keep display helpers, delete phase logic. |
+| `PokerGame` gutting removes a method that some unchanged UI code still calls | **High** | Medium | Compile after each method removal. Follow all compile errors. Keep any getter still referenced by UI. |
 | Spring Boot + GameEngine Swing singleton conflicts | Medium | Low | Spring beans must not reference Swing singletons. Test startup in isolation first. |
 | Spring Boot startup too slow for desktop feel | Medium | Low | Start during splash screen. Use lazy bean initialization. Target < 2s. |
 | Jackson version conflict between Spring Boot and existing desktop deps | Low | Medium | Spring Boot BOM manages Jackson. Pin version if conflict occurs. |
-| Embedded H2 vs existing HSQLDB usage | Low | Low | Different databases for different data. No conflict expected. |
-| Memory pressure (Spring Boot + Swing in same JVM) | Low | Low | Increase `-Xmx` from 512m to 768m in jpackage config. Profile during testing. |
-
----
-
-## Scope Reduction Option
-
-If M4 proves too complex in full, the following minimum viable scope preserves the most value:
-
-**Minimal M4:** Practice mode only, single table, AI opponents, no save/load.
-
-Removes: Phase 4.4 (save/load), multi-table GameStateAdapter support, community-hosted mode.
-
-Keeps: Phases 4.1-4.3 — embedded server startup, WebSocket client, GameStateAdapter for single-table hands, practice game creation.
-
-Still XL effort (~3-4 weeks) but significantly lower risk.
+| Memory pressure (Spring Boot + Swing in same JVM) | Low | Low | Increase `-Xmx` from 512m to 768m in jpackage config. |
 
 ---
 
 ## What is NOT in M4
 
-1. **Community-hosted mode** — deferred to M6 (Game Discovery)
-2. **Server-hosted mode** — connecting to remote servers, deferred to M6
-3. **P2P/TCP code removal** — M7 (Legacy P2P Removal)
-4. **Deleting `OnlineManager`, `TournamentDirector`** — M7
-5. **Web client** — M5 (parallel, independent)
+1. **Community-hosted mode** — deferred to M6 (Game Discovery). M4 is practice mode only.
+2. **Server-hosted mode** — connecting to remote servers, deferred to M6.
+3. **Web client** — M5 (parallel, independent).
+4. **M7 is absorbed** — Legacy P2P removal happens in Phase 4.5 of this plan.
 
 ---
 
 ## Critical Files to Read Before Implementation
 
-- `code/poker/src/main/java/com/donohoedigital/games/poker/PokerMain.java` — central integration point
-- `code/poker/src/main/java/com/donohoedigital/games/poker/PokerGame.java` — state container the UI reads from; 2,296 lines
-- `code/poker/src/main/java/com/donohoedigital/games/poker/online/SwingEventBus.java` — reference pattern for how GameEvents map to PokerTableEvents; GameStateAdapter must fire the same events
-- `code/poker/src/main/java/com/donohoedigital/games/poker/ShowTournamentTable.java` — 2,609-line main game UI; understand its event listeners and state reads before implementing adapter
-- `code/pokergameserver/src/main/java/.../websocket/message/ServerMessageData.java` — the protocol contract; all 22 message types GameStateAdapter must handle
+**For Phase 4.2-4.3 (view models + WsTD):**
+- `code/poker/src/main/java/.../ShowTournamentTable.java` — main game UI; audit every getter call on `PokerTable`/`HoldemHand` to ensure view model coverage
+- `code/poker/src/main/java/.../online/SwingEventBus.java` — reference for how `GameEvent`s map to `PokerTableEvent`s; `WebSocketTournamentDirector` must fire the same events
+- `code/pokergameserver/.../websocket/message/ServerMessageData.java` — the protocol contract; all 27 message types WsTD handles
+- `code/poker/src/main/java/.../Bet.java` — understand the `PlayerActionListener` pattern that WsTD replaces
+
+**For Phase 4.1 + 4.4 (embedded server + practice mode):**
+- `code/poker/src/main/java/.../PokerMain.java` — central integration point
+- `code/poker/src/main/resources/config/poker/gamedef.xml` — phase chain definitions
+
+**For Phase 4.5 (gutting):**
+- `code/poker/src/main/java/.../PokerGame.java` — identify which methods are still called by UI vs which are pure game logic to delete
+- `code/poker/src/main/java/.../logic/` — entire package; verify nothing in it is called by UI before deleting
+- All game flow phases (`Bet`, `Deal*`, `Showdown`, etc.) — check for static display helper methods that `ShowTournamentTable.sync()` calls (keep helpers, delete phase logic)
 
 ---
 
@@ -399,7 +621,7 @@ Still XL effort (~3-4 weeks) but significantly lower risk.
 
 ```bash
 # After all phases:
-cd code && mvn test -pl poker -P dev           # Existing poker tests still pass
+cd code && mvn test -pl poker -P dev           # Poker module tests pass
 cd code && mvn test -pl pokergameserver -P dev  # Server tests still pass
 cd code && mvn test -P dev                      # Full regression
 
