@@ -139,7 +139,8 @@ Manages the lifecycle of an embedded Spring Boot application context:
 - Find a random available port before startup
 - Set embedded-mode properties (max 3 games, no action timeout, file-based H2 at `~/.ddpoker/games`)
 - `getPort()`, `isRunning()`, `stop()`
-- `getLocalUserJwt()` — generates a real JWT for the local user via in-JVM call to `JwtService`. Creates/looks up the local profile on first call.
+- `getLocalUserJwt()` — generates a real JWT for the local user via in-JVM call to `JwtService`. On first call: creates a user in H2 with `username = System.getProperty("user.name")` (OS login name) and a UUID player ID persisted to `~/.ddpoker/local-identity`. Subsequent calls load the existing record.
+- **Startup failure:** If Spring Boot fails to start (H2 locked, port exhausted, etc.), `start()` throws a checked exception. `PokerMain.init()` catches it, shows an error dialog using the existing `DDMessage.showError()` pattern, then calls `System.exit(1)`. No broken partial-startup state.
 
 **`code/poker/src/main/java/com/donohoedigital/games/poker/server/EmbeddedServerConfig.java`** (~80 lines)
 
@@ -154,8 +155,11 @@ Spring Boot configuration class for embedded mode:
 server.port=0
 game.server.max-concurrent-games=3
 game.server.action-timeout-seconds=0
-spring.datasource.url=jdbc:h2:file:${user.home}/.ddpoker/games
+spring.datasource.url=jdbc:h2:file:${user.home}/.ddpoker/games;FILE_LOCK=FS;AUTO_RECONNECT=TRUE
+spring.main.lazy-initialization=true
 ```
+
+`FILE_LOCK=FS` uses filesystem-level locking released immediately on crash (unlike the default socket lock that can persist). `lazy-initialization=true` ensures Spring beans that read `PropertyConfig` don't initialize before `GameEngine.init()` has loaded it.
 
 ### Files to Modify
 
@@ -177,6 +181,7 @@ spring.datasource.url=jdbc:h2:file:${user.home}/.ddpoker/games
 - **Logging:** Both use Log4j2. `pokergameserver` pom already excludes `spring-boot-starter-logging`.
 - **Startup time:** Spring Boot starts in ~1-2 seconds with lazy init. Acceptable during splash screen.
 - **Memory:** May need to increase from `-Xmx512m` to `-Xmx768m`.
+- **PropertyConfig singleton:** `PropertyConfig` is a global singleton loaded by `GameEngine.init()`. `EmbeddedGameServer.start()` is called *after* `super.init()`, so PropertyConfig is already initialized before any Spring bean accesses it. Combined with `spring.main.lazy-initialization=true`, there is no initialization race.
 
 ### Tests (TDD)
 
@@ -213,7 +218,8 @@ Thin view model. Extends `PokerTable`, overrides ~15-20 getters to return simple
 - `getButton()` → stored button index
 - `getName()`, `getNumber()`, `getSeats()`
 - Update methods: `updateFromState(SeatData[], int button, ...)` — called by `WebSocketTournamentDirector`
-- Fires `PokerTableEvent`s when state changes (same events the UI listens to)
+- Fires `PokerTableEvent`s when state changes by calling `this.firePokerTableEvent(event)` directly (`firePokerTableEvent` is `public` on `PokerTable`)
+- **Constructor:** Calls `super(game, nNum)` — safe, parent constructor only assigns 3 fields plus a `PropertyConfig` string lookup with no side effects
 
 **`code/poker/src/main/java/com/donohoedigital/games/poker/online/RemoteHoldemHand.java`** (~200 lines)
 
@@ -226,6 +232,7 @@ Thin view model. Extends `HoldemHand`, overrides ~10-15 getters:
 - `getPlayerAt(int)` → stored player order
 - `getTotalPotChipCount()` → stored pot total
 - Update methods: `updateRound(BettingRound)`, `updateCommunity(Hand)`, `updateCurrentPlayer(int)`, etc.
+- **Constructor:** Uses `super()` (no-arg, exists for deserialization) — avoids the normal constructor's wasteful creation of a `Deck`, pots list, community cards, and blind lookups that are irrelevant for a remote hand
 
 ### Tests (TDD)
 
@@ -244,14 +251,38 @@ Create the phase that replaces `TournamentDirector` — it connects to the WebSo
 
 ### New Files
 
+**`code/poker/src/main/java/com/donohoedigital/games/poker/online/PokerDirector.java`** (~15 lines)
+
+New interface extending both `GameManager` and `ChatManager`. Required because:
+- `ShowTournamentTable.TD()` calls `setPaused()` and `playerUpdate()` — not on `GameManager`
+- `ShowTournamentTable.MutePlayer` and `BanPlayer` take a `ChatManager` parameter and receive `TD()` — so `PokerDirector` must satisfy `ChatManager`
+
+```java
+public interface PokerDirector extends GameManager, ChatManager {
+    void setPaused(boolean paused);
+    void playerUpdate(PokerPlayer player, String settings);
+}
+```
+
+`WebSocketTournamentDirector` already implements `ChatManager` (routes chat via WebSocket), so implementing `PokerDirector` adds no new methods beyond `setPaused()` and `playerUpdate()`.
+
+`ShowTournamentTable` changes its `td_` field type and `TD()` return type from `TournamentDirector` to `PokerDirector`.
+
 **`code/poker/src/main/java/com/donohoedigital/games/poker/online/WebSocketTournamentDirector.java`** (~600 lines)
 
-The critical class. Extends `BasePhase implements Runnable, GameManager, ChatManager`.
+The critical class. Extends `BasePhase implements Runnable, GameManager, ChatManager, PokerDirector`.
+
+**isOnlineGame() note:** Practice games via the embedded server keep `game_.isOnlineGame() = false` (i.e., `isPractice() = true`). This preserves all existing UI guards and behavior. Consequence: `ShowTournamentTable` will call `TD().setPaused(true/false)` on right-click menus.
 
 **Lifecycle:**
 - `start()`: Get `PokerGame` via `context_.getGame()`. Connect `WebSocketGameClient` to embedded server. Register as `PlayerActionListener`. Enter message receive loop.
-- `run()`: Main loop — receive WebSocket messages, dispatch to handlers on Swing EDT.
+- `run()`: Main loop — receive WebSocket messages, dispatch to handlers on Swing EDT. **Events are fired immediately on receipt — AI action pacing/delays are controlled server-side before broadcasting.**
 - `finish()`: Disconnect WebSocket, clean up.
+
+**PokerDirector implementation:**
+- `setPaused(true)` → `webSocketClient.sendAdminPause()`
+- `setPaused(false)` → `webSocketClient.sendAdminResume()`
+- `playerUpdate(player, settings)` → WebSocket player-update message (no-op for AI-only practice games in M4)
 
 **Message handlers (all 27 server message types):**
 
@@ -303,9 +334,9 @@ game.setPlayerActionListener((action, amount) -> {
 
 ### Files to Modify
 
-**`code/poker/src/main/resources/config/poker/gamedef.xml`** (line 421)
-- Change `TournamentDirector` phase class to `WebSocketTournamentDirector`
-- Keep `ClientTournamentDirector` variant (line 424) pointed at WebSocket version too, or remove if unused
+**`code/poker/src/main/resources/config/poker/gamedef.xml`** (lines 421 and 424)
+- Both entries currently point to `com.donohoedigital.games.poker.online.TournamentDirector` (there is no separate `ClientTournamentDirector` class)
+- Update both entries to point to `WebSocketTournamentDirector`
 
 ### Tests (TDD — most critical test class)
 
@@ -419,6 +450,7 @@ Delete all P2P/TCP code, game logic phases, the `logic/` package, and unused gam
 | `LevelTransitionLogic.java` | varies | Server manages blind levels |
 | `TableManager.java` | varies | Server balances tables |
 | `OnlineCoordinator.java` | varies | Replaced by WebSocket protocol |
+| `TournamentClock.java` | varies | Dead code — utility class with private constructor, zero callers anywhere in the codebase |
 
 ### Files to Gut
 
@@ -437,9 +469,13 @@ Remove all game logic methods that are now server-side. **Keep only:**
 - `setupComputerPlayers()`, `fillSeats()` — server fills seats
 - `assignTables()`, `processTableBalance()` — server balances tables
 - `playerOut()` — server eliminates players
-- `changeLevel()`, `nextLevel()`, `prevLevel()` — server manages levels
+- `changeLevel()`, `nextLevel()`, `prevLevel()` — server manages levels (note: `nextLevel()`, `advanceClockBreak()`, `startGameClock()`, `advanceClock()` are the 4 write methods from the `TournamentContext` interface — they are deleted here)
 - `computeTotalChipsInPlay()` and related chip logic — server tracks chips
-- All `TournamentContext` implementation methods that involve logic
+- Remove `implements TournamentContext` from the class declaration. `ClientV2AIContext.java` (the only other desktop class that uses `TournamentContext` as a type) is also deleted in this phase. All ~20 read-only `TournamentContext` query methods (`getLevel()`, `getSmallBlind(int)`, `getCurrentTable()`, etc.) are **kept** as plain getters — they are no longer interface implementations but are still called by the UI.
+
+**Also in Phase 4.5:**
+- `ShowTournamentTable`: change `td_` field type and `TD()` return type from `TournamentDirector` to `PokerDirector`. **Keep `MutePlayer` and `BanPlayer` inner classes** — they remain for M6 multiplayer and are naturally dormant in M4 practice mode (guarded by `game_.isOnlineGame() && p.isHuman()`).
+- `BanPlayer` inner class: replace `OnlineManager mgr` field with `Runnable kickAction`. Change `mgr.banPlayer(player)` to `kickAction.run()`. All current call sites pass `null` (no active-kick was ever triggered — `bBanNow` is `false` everywhere). In M6, a game owner passes `() -> webSocketClient.sendAdminKick(player.getID())` instead. This eliminates the `OnlineManager` compile dependency without changing behavior.
 
 ### Files to Modify
 
@@ -487,7 +523,7 @@ On desktop startup, queries embedded server for in-progress games:
 | Test | Description |
 |------|-------------|
 | `GameResumeManagerTest` | Queries games, skips COMPLETED, reconnects to IN_PROGRESS |
-| `SaveLoadIntegrationTest` | Start game, play hands, shutdown, restart, resume, verify state |
+| `SaveLoadIntegrationTest` | Start game, play hands, shutdown, restart, resume, verify state — `@Tag("slow")` / `@Tag("integration")`, excluded from `-P dev` |
 
 ---
 
@@ -515,7 +551,7 @@ On desktop startup, queries embedded server for in-progress games:
 
 ## Files Summary
 
-### New Client Production Files (8)
+### New Client Production Files (9)
 
 | File | Est. Lines | Role |
 |------|-----------|------|
@@ -525,11 +561,12 @@ On desktop startup, queries embedded server for in-progress games:
 | `poker/.../server/PracticeGameLauncher.java` | ~30 | One REST call to create practice game |
 | `poker/.../server/GameResumeManager.java` | ~100 | Resume prompt on startup |
 | `poker/.../online/WebSocketGameClient.java` | ~350 | WebSocket connection management |
+| `poker/.../online/PokerDirector.java` | ~15 | Interface: `GameManager` + `setPaused()` + `playerUpdate()` |
 | `poker/.../online/WebSocketTournamentDirector.java` | ~600 | Message → view model → event mapping (no logic) |
 | `poker/.../online/RemotePokerTable.java` | ~250 | Thin view model — overridden getters |
 | `poker/.../online/RemoteHoldemHand.java` | ~200 | Thin view model — overridden getters |
 
-**Total new client code: ~1,910 lines** (zero game logic)
+**Total new client code: ~1,925 lines** (zero game logic)
 
 ### New Server Production Files (2)
 
@@ -538,14 +575,15 @@ On desktop startup, queries embedded server for in-progress games:
 | `pokergameserver/.../api/PracticeGameController.java` | ~80 | `POST /api/v1/games/practice` endpoint |
 | `pokergameserver/.../api/TournamentProfileConverter.java` | ~150 | TournamentProfile → GameConfig conversion |
 
-### Modified Production Files (4)
+### Modified Production Files (5)
 
 | File | Change |
 |------|--------|
 | `code/poker/pom.xml` | Add `pokergameserver` + Spring Boot deps |
 | `code/poker/.../PokerMain.java` | Start/stop `EmbeddedGameServer`; remove P2P code |
-| `code/poker/.../PokerGame.java` | **Gutted**: remove ~1,800 lines of game logic; add `setWebSocketConfig()` |
-| `code/poker/.../.../gamedef.xml` | Point TournamentDirector phase to `WebSocketTournamentDirector` |
+| `code/poker/.../PokerGame.java` | **Gutted**: remove ~1,800 lines of game logic; add `setWebSocketConfig()`; remove `implements TournamentContext`; keep read-only query methods as plain getters |
+| `code/poker/.../ShowTournamentTable.java` | Change `td_` field and `TD()` to `PokerDirector`; keep `MutePlayer`/`BanPlayer`; change `BanPlayer.mgr` from `OnlineManager` to `Runnable kickAction` |
+| `code/poker/.../.../gamedef.xml` | Update both TournamentDirector entries (lines 421+424) to `WebSocketTournamentDirector` |
 
 ### Deleted Production Files (~20+)
 
@@ -553,7 +591,7 @@ On desktop startup, queries embedded server for in-progress games:
 |----------|-------|-------------------|
 | P2P/TCP networking | `OnlineManager`, `TournamentDirector`, `ClientTournamentDirector`, `PokerConnectionServer`, P2P classes | ~5,000+ |
 | Game flow phases | `Bet`, `Deal`, `DealCommunity`, `Showdown`, `PreShowdown`, `CheckEndHand`, `ColorUp`, `ColorUpFinish`, `NewLevelActions`, others | ~2,000+ |
-| `logic/` package | `BetValidator`, `HandOrchestrator`, `ShowdownCalculator`, `DealingRules`, `GameOverChecker`, `ColorUpLogic`, `LevelTransitionLogic`, `TableManager`, `OnlineCoordinator` | ~1,000+ |
+| `logic/` package | `BetValidator`, `HandOrchestrator`, `ShowdownCalculator`, `DealingRules`, `GameOverChecker`, `ColorUpLogic`, `LevelTransitionLogic`, `TableManager`, `OnlineCoordinator`, `TournamentClock` (dead code) | ~1,000+ |
 | PokerGame gutting | Removed methods (in-place) | ~1,800 |
 
 **Total deleted: ~10,000+ lines of client-side game logic**
@@ -569,7 +607,7 @@ On desktop startup, queries embedded server for in-progress games:
 | Metric | Before M4 | After M4 |
 |--------|-----------|----------|
 | Client game logic | ~10,000+ lines | **0 lines** |
-| Client new code | 0 | ~1,910 lines (all display/communication) |
+| Client new code | 0 | ~1,925 lines (all display/communication) |
 | Client responsibilities | Game engine + UI + P2P networking | **UI display + WebSocket send/receive only** |
 
 ---
@@ -584,6 +622,9 @@ On desktop startup, queries embedded server for in-progress games:
 | `PokerGame` gutting removes a method that some unchanged UI code still calls | **High** | Medium | Compile after each method removal. Follow all compile errors. Keep any getter still referenced by UI. |
 | Spring Boot + GameEngine Swing singleton conflicts | Medium | Low | Spring beans must not reference Swing singletons. Test startup in isolation first. |
 | Spring Boot startup too slow for desktop feel | Medium | Low | Start during splash screen. Use lazy bean initialization. Target < 2s. |
+| Spring Boot startup failure (H2 locked, port exhausted) | Medium | Low | `EmbeddedGameServer.start()` throws checked exception → error dialog + `System.exit(1)`. No partial state. |
+| `PropertyConfig` singleton accessed before `GameEngine.init()` | Low | Low | `EmbeddedGameServer.start()` is called after `super.init()`, and `lazy-initialization=true` ensures no Spring bean initializes before it's used. |
+| H2 file lock persisting after abnormal shutdown | Low | Low | `FILE_LOCK=FS` in JDBC URL — filesystem locking released immediately on crash. |
 | Jackson version conflict between Spring Boot and existing desktop deps | Low | Medium | Spring Boot BOM manages Jackson. Pin version if conflict occurs. |
 | Memory pressure (Spring Boot + Swing in same JVM) | Low | Low | Increase `-Xmx` from 512m to 768m in jpackage config. |
 
@@ -595,6 +636,7 @@ On desktop startup, queries embedded server for in-progress games:
 2. **Server-hosted mode** — connecting to remote servers, deferred to M6.
 3. **Web client** — M5 (parallel, independent).
 4. **M7 is absorbed** — Legacy P2P removal happens in Phase 4.5 of this plan.
+5. **Active kick/ban wiring** — `BanPlayer`'s `kickAction` callback is `null` in M4 (no human players to kick). In M6, the host lobby wires it to `() -> webSocketClient.sendAdminKick(player.getID())`. `WebSocketGameClient.sendAdminKick(playerId)` is added in M6. Chat, mute, and ban-list features are fully functional from M4 onward.
 
 ---
 
