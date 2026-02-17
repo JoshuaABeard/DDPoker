@@ -146,7 +146,8 @@ public class ObserversDash extends DashboardItem {
                 menu.add(new ShowTournamentTable.MutePlayer("PokerTable", p,
                         muted.containsPlayer(p.getName(), p.getPlayerId()), mgr, false));
                 menu.add(new ShowTournamentTable.BanPlayer(context_, "PokerTable", p,
-                        banned.containsPlayer(p.getName(), p.getPlayerId()), mgr, mgr, false, mgr.isHost()));
+                        banned.containsPlayer(p.getName(), p.getPlayerId()), () -> mgr.banPlayer(p), mgr, false,
+                        mgr.isHost()));
             }
 
             menu.show(this, e.getX(), e.getY());

@@ -418,11 +418,10 @@
     <param name="next-phase" strvalue="InitializeOnlineGame"/>
   </phase>
 
-  <phase name="TournamentDirector" class="com.donohoedigital.games.poker.online.TournamentDirector">
+  <phase name="TournamentDirector" class="com.donohoedigital.games.poker.online.WebSocketTournamentDirector">
   </phase>
 
-  <phase name="ClientTournamentDirector" class="com.donohoedigital.games.poker.online.TournamentDirector">
-    <param name="client" boolvalue="true"/>
+  <phase name="ClientTournamentDirector" class="com.donohoedigital.games.poker.online.WebSocketTournamentDirector">
   </phase>
 
   <!-- SETUP/OPTIONS/EDIT PHASES -->

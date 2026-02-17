@@ -109,7 +109,7 @@ public class ShowTournamentTable extends ShowPokerTable
 
     // table we are monitoring
     private volatile PokerTable table_;
-    private TournamentDirector td_;
+    private PokerDirector td_;
 
     // keyboard focus indicator
     private DDLabel focus_;
@@ -119,9 +119,9 @@ public class ShowTournamentTable extends ShowPokerTable
     private Timer focusBlinkTimer_;
     private boolean focusBlinkState_ = false;
 
-    private TournamentDirector TD() {
+    private PokerDirector TD() {
         if (td_ == null) {
-            td_ = (TournamentDirector) context_.getGameManager();
+            td_ = (PokerDirector) context_.getGameManager();
         }
         return td_;
     }
@@ -2414,21 +2414,21 @@ public class ShowTournamentTable extends ShowPokerTable
     @SuppressWarnings({"PublicInnerClass"})
     public static class BanPlayer extends DDMenuItem implements ActionListener {
         GameContext context;
-        OnlineManager mgr;
+        Runnable kickAction;
         ChatManager chat;
         PokerPlayer player;
         boolean bFromLobby;
         boolean bBanned;
         boolean bBanNow;
 
-        public BanPlayer(GameContext context, String sStyle, PokerPlayer p, boolean bBanned, OnlineManager mgr,
+        public BanPlayer(GameContext context, String sStyle, PokerPlayer p, boolean bBanned, Runnable kickAction,
                 ChatManager chat, boolean bFromLobby, boolean bBanNow) {
             super(GuiManager.DEFAULT, sStyle);
             this.context = context;
             this.player = p;
             this.bBanned = bBanned;
             this.bFromLobby = bFromLobby;
-            this.mgr = mgr;
+            this.kickAction = kickAction;
             this.chat = chat;
             this.bBanNow = bBanNow;
             setDisplayMode(DDMenuItem.MODE_NORMAL);
@@ -2454,8 +2454,8 @@ public class ShowTournamentTable extends ShowPokerTable
                         Utils.encodeHTML(player.getName())),
                         bFromLobby ? OnlineMessage.CHAT_DIRECTOR_MSG_ID : OnlineMessage.CHAT_DEALER_MSG_ID);
 
-                if (bBanNow) {
-                    mgr.banPlayer(player);
+                if (bBanNow && kickAction != null) {
+                    kickAction.run();
                 }
             }
         }

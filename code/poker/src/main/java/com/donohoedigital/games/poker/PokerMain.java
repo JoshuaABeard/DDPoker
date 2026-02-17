@@ -58,6 +58,8 @@ import com.donohoedigital.games.poker.online.ChatHandler;
 import com.donohoedigital.games.poker.online.ChatLobbyManager;
 import com.donohoedigital.games.poker.online.ListGames;
 import com.donohoedigital.games.poker.online.OnlineManager;
+import com.donohoedigital.games.poker.server.EmbeddedGameServer;
+import com.donohoedigital.games.poker.server.GameSaveManager;
 import com.donohoedigital.gui.DDHtmlEditorKit;
 import com.donohoedigital.p2p.*;
 import org.apache.logging.log4j.LogManager;
@@ -84,6 +86,8 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
     private static final String APP_NAME = "poker";
     private String sFileParam_ = null;
     private final boolean bLoadNames;
+    private EmbeddedGameServer embeddedServer_;
+    private GameSaveManager gameSaveManager_;
 
     static {
         // forget why I set this
@@ -158,6 +162,21 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
     }
 
     /**
+     * Accessor for the embedded game server (for WebSocketTournamentDirector and
+     * PracticeGameLauncher).
+     */
+    public EmbeddedGameServer getEmbeddedServer() {
+        return embeddedServer_;
+    }
+
+    /**
+     * Accessor for the game save manager (for resume-game UI).
+     */
+    public GameSaveManager getGameSaveManager() {
+        return gameSaveManager_;
+    }
+
+    /**
      * init
      */
     @Override
@@ -165,6 +184,31 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
         super.init();
         if (bCheckFailed_)
             return;
+
+        // Start the embedded Spring Boot game server.
+        // Called after super.init() so PropertyConfig is already loaded.
+        // Runs synchronously; completes in ~1-2 seconds during splash screen.
+        embeddedServer_ = new EmbeddedGameServer();
+        try {
+            embeddedServer_.start();
+        } catch (EmbeddedGameServer.EmbeddedServerStartupException e) {
+            logger.error("Failed to start embedded game server", e);
+            javax.swing.JOptionPane.showMessageDialog(null,
+                    "DD Poker could not start its game server:\n" + e.getMessage()
+                            + "\n\nPlease check logs for details.",
+                    "Startup Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            System.exit(1);
+        }
+
+        gameSaveManager_ = new GameSaveManager(embeddedServer_);
+        gameSaveManager_.loadResumableGames();
+
+        // Register shutdown hook to cleanly stop the embedded server when the JVM exits
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (embeddedServer_ != null) {
+                embeddedServer_.stop();
+            }
+        }, "embedded-server-shutdown"));
 
         // init
         GameState.setDelegate(new PokerGameStateDelegate());

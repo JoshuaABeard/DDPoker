@@ -620,6 +620,34 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     }
 
     /**
+     * Sets the current blind level (called by WebSocketTournamentDirector on
+     * LEVEL_CHANGED).
+     */
+    public void setLevel(int level) {
+        nLevel_ = level;
+    }
+
+    // -------------------------------------------------------------------------
+    // WebSocket configuration (set by PracticeGameLauncher, read by WsTD)
+    // -------------------------------------------------------------------------
+
+    /** Immutable connection parameters for WebSocketTournamentDirector. */
+    public record WebSocketConfig(String gameId, String jwt, int port) {
+    }
+
+    private WebSocketConfig webSocketConfig_;
+
+    /** Stores the WebSocket connection parameters before the WsTD phase starts. */
+    public void setWebSocketConfig(String gameId, String jwt, int port) {
+        webSocketConfig_ = new WebSocketConfig(gameId, jwt, port);
+    }
+
+    /** Returns the WebSocket connection parameters, or null if not yet set. */
+    public WebSocketConfig getWebSocketConfig() {
+        return webSocketConfig_;
+    }
+
+    /**
      * init chip count over all players (and specify their buyin), init think bank
      * millis and profile
      */

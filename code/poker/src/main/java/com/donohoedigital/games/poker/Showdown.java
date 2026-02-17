@@ -30,68 +30,30 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-/*
- * Showdown.java
- *
- * Created on January 7, 2004, 12:26 PM
- */
-
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.games.poker.engine.*;
-import org.apache.logging.log4j.*;
 
 import java.util.*;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
+ * Static display helpers for rendering showdown results on the game board.
+ * Phase lifecycle (ChainPhase) removed — game logic now lives in the server.
  *
  * @author Doug Donohoe
  */
-public class Showdown extends ChainPhase {
-    static Logger logger = LogManager.getLogger(Showdown.class);
+public class Showdown {
 
-    private HoldemHand hhand_;
-    private TournamentDirector td_;
-
-    /**
-     *
-     */
-    public void process() {
-        PokerUtils.setNoFoldKey();
-        td_ = (TournamentDirector) context_.getGameManager();
-        PokerGame game = (PokerGame) context_.getGame();
-        int nMode = game.getInputMode();
-        if (nMode != PokerTableInput.MODE_QUITSAVE) {
-            game.setInputMode(PokerTableInput.MODE_QUITSAVE);
-        } else {
-            game.setInputMode(PokerTableInput.MODE_REBUY_CHECK); // BUG 420
-        }
-        PokerTable table = game.getCurrentTable();
-        hhand_ = table.getHoldemHand();
-
-        PokerPlayer human = game.getHumanPlayer();
-
-        // did human go all in and win?
-        int win = hhand_.getWin(human);
-        if (win == hhand_.getTotalPotChipCount() && human.getChipCount() == win) {
-            PokerUtils.cheerAudio();
-        }
-
-        // display
-        displayShowdown(engine_, context_, hhand_);
-
-        // chat
-        displayChat();
+    private Showdown() {
     }
 
     /**
      * Display showdown results - designed to be called multiple times, adjusting
-     * for changes in options
+     * for changes in options.
      */
     static void displayShowdown(GameEngine engine, GameContext context, HoldemHand hhand) {
         PokerGame game = (PokerGame) context.getGame();
@@ -240,8 +202,7 @@ public class Showdown extends ChainPhase {
     }
 
     /**
-     * Display showdown results - designed to be called multiple times, adjusting
-     * for changes in options
+     * Display all-in showdown percentages — called as community cards are revealed.
      */
     static void displayAllin(HoldemHand hhand, boolean bAllCardsDisplayed) {
         PokerPlayer player;
@@ -289,98 +250,5 @@ public class Showdown extends ChainPhase {
         }
 
         PokerUtils.getPokerGameboard().repaintAll();
-    }
-
-    /**
-     * Show chat for all pots
-     */
-    private void displayChat() {
-        int nNum = hhand_.getNumPots();
-        for (int i = nNum - 1; i >= 0; i--) {
-            displayChatPot(i);
-        }
-    }
-
-    private int nSide_ = 0;
-
-    /**
-     * Show chat for given pot
-     */
-    private void displayChatPot(int nPot) {
-        Pot pot = hhand_.getPot(nPot);
-        List<PokerPlayer> winners = pot.getWinners();
-        int nNum = pot.getNumPlayers();
-        HandAction action;
-        PokerPlayer player;
-
-        String sKey;
-        // overbet
-        if (nNum == 1) {
-            player = winners.get(0);
-            action = hhand_.getPotResult(player, nPot);
-            td_.sendDealerChatLocal(PokerConstants.CHAT_1, action.getChat(0, null, null));
-            return;
-        } else if (nPot == 0) {
-            sKey = "msg.chat.pot.main";
-        } else {
-            sKey = "msg.chat.pot.side";
-            nSide_++;
-        }
-
-        // header
-        String sHeader = PokerUtils.chatImportant(PropertyConfig.getMessage(sKey, nSide_, pot.getChipCount()));
-
-        StringBuilder sb = new StringBuilder();
-        HandInfoFast info = new HandInfoFast();
-        Object[] extraParams = new Object[2];
-        boolean bUncontested = hhand_.isUncontested();
-        int nAction;
-
-        // loop in order card shown
-        int nNumPlayers = hhand_.getNumPlayers();
-        for (int i = 0; i < nNumPlayers; i++) {
-            player = hhand_.getPlayerAt(i);
-            if (player.isFolded())
-                continue;
-            if (!pot.isInPot(player))
-                continue;
-
-            // don't compute score if cards not exposed (in online games,
-            // when run on client, this would cause an error cuz we
-            // don't send the cards in uncontested pots)
-            if (!player.isCardsExposed()) {
-                extraParams[0] = null;
-            } else {
-                extraParams[0] = player.getHand().toHTML();
-                if (!bUncontested) {
-                    info.getScore(player.getHand(), hhand_.getCommunity());
-                    extraParams[1] = info.toString();
-                }
-            }
-
-            // get result
-            action = hhand_.getPotResult(player, nPot);
-
-            // check for null - can be null if showdown happens in online games after next
-            // hand started
-            // (due to slow swing dispatching) TODO: remove if we modify how showdown gets
-            // the holdemhand
-            // this is mainly seen on observers who aren't waitlisted
-            if (action == null)
-                return;
-
-            nAction = action.getAction();
-            if (nAction == HandAction.ACTION_OVERBET) {
-                sb.append(action.getChat(0, null, null));
-            } else if (nAction == HandAction.ACTION_LOSE) {
-                sb.append(action.getChat(0, extraParams, !player.isCardsExposed() ? "muck" : null));
-            } else {
-                sb.append(action.getChat(0, extraParams,
-                        bUncontested ? (player.isShowWinning() ? "uncontested.show" : "uncontested") : null));
-            }
-        }
-
-        td_.sendDealerChatLocal(PokerConstants.CHAT_1,
-                PropertyConfig.getMessage("msg.chat.pot", sHeader, sb.toString()));
     }
 }
