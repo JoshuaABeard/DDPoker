@@ -93,7 +93,7 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
             }
             case GameEvent.ShowdownStarted e -> broadcast(
                 ServerMessage.of(ServerMessageType.SHOWDOWN_STARTED, gameId,
-                    new ServerMessageData.ShowdownStartedData(0))
+                    new ServerMessageData.ShowdownStartedData(e.tableId()))
             );
             case GameEvent.LevelChanged e -> broadcast(
                 ServerMessage.of(ServerMessageType.LEVEL_CHANGED, gameId,

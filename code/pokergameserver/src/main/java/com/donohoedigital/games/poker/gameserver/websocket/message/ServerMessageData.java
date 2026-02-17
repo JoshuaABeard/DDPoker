@@ -109,7 +109,7 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
     }
 
     /** Showdown phase begins (cards to be revealed). */
-    record ShowdownStartedData(int handNumber) implements ServerMessageData {
+    record ShowdownStartedData(int tableId) implements ServerMessageData {
     }
 
     /** Player purchased a rebuy. */
