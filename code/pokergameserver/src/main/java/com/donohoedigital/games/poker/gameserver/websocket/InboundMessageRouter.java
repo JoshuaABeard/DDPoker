@@ -209,31 +209,24 @@ public class InboundMessageRouter {
 
         long targetProfileId = data.playerId();
 
-        // Look up their connection to get the username for the message
+        // Single pass: find both username and connection simultaneously
         String targetUsername = "";
-        for (PlayerConnection pc : connectionManager.getConnections(connection.getGameId())) {
-            if (pc.getProfileId() == targetProfileId) {
-                targetUsername = pc.getUsername();
-                break;
-            }
-        }
-
-        // Remove from game instance
-        game.removePlayer(targetProfileId);
-
-        // Broadcast kicked message
-        ServerMessage kickedMsg = converter.createPlayerKickedMessage(connection.getGameId(), targetProfileId,
-                targetUsername, "Kicked by owner");
-        connectionManager.broadcastToGame(connection.getGameId(), kickedMsg);
-
-        // Close their WebSocket session
         PlayerConnection targetConnection = null;
         for (PlayerConnection pc : connectionManager.getConnections(connection.getGameId())) {
             if (pc.getProfileId() == targetProfileId) {
+                targetUsername = pc.getUsername();
                 targetConnection = pc;
                 break;
             }
         }
+
+        // Remove from game instance, broadcast, then close — in that order
+        game.removePlayer(targetProfileId);
+
+        ServerMessage kickedMsg = converter.createPlayerKickedMessage(connection.getGameId(), targetProfileId,
+                targetUsername, "Kicked by owner");
+        connectionManager.broadcastToGame(connection.getGameId(), kickedMsg);
+
         if (targetConnection != null) {
             connectionManager.removeConnection(connection.getGameId(), targetProfileId);
             targetConnection.close();
@@ -272,7 +265,8 @@ public class InboundMessageRouter {
             case "CALL" -> PlayerAction.call();
             case "BET" -> PlayerAction.bet(amount);
             case "RAISE" -> PlayerAction.raise(amount);
-            case "ALL_IN" -> PlayerAction.call(); // ALL_IN treated as call for now
+            // ALL_IN is not a valid client action; clients must use RAISE with the all-in
+            // amount
             default -> throw new IllegalArgumentException("Unknown action: " + actionString);
         };
     }

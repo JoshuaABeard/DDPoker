@@ -205,9 +205,16 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
                 game.removePlayer(connection.getProfileId());
             }
 
-            // Broadcast PLAYER_LEFT
-            ServerMessage leftMsg = converter.createPlayerLeftMessage(connection.getGameId(), connection.getProfileId(),
-                    connection.getUsername());
+            // Broadcast PLAYER_DISCONNECTED when game is in progress (player may
+            // reconnect),
+            // or PLAYER_LEFT when game is not in progress (player truly left).
+            GameInstanceState state = game != null ? game.getState() : null;
+            boolean reconnectable = state == GameInstanceState.IN_PROGRESS || state == GameInstanceState.PAUSED;
+            ServerMessage leftMsg = reconnectable
+                    ? converter.createPlayerDisconnectedMessage(connection.getGameId(), connection.getProfileId(),
+                            connection.getUsername())
+                    : converter.createPlayerLeftMessage(connection.getGameId(), connection.getProfileId(),
+                            connection.getUsername());
             connectionManager.broadcastToGame(connection.getGameId(), leftMsg);
 
             // Clean up per-game broadcaster when the last connection closes

@@ -69,8 +69,23 @@ public enum ServerMessageType {
     /** Player joined game */
     PLAYER_JOINED,
 
-    /** Player left/disconnected */
+    /** Player left the game intentionally */
     PLAYER_LEFT,
+
+    /** Player lost connection during game; may reconnect */
+    PLAYER_DISCONNECTED,
+
+    /** Pot won by one or more players */
+    POT_AWARDED,
+
+    /** Showdown phase begins (cards to be revealed) */
+    SHOWDOWN_STARTED,
+
+    /** Player purchased a rebuy */
+    PLAYER_REBUY,
+
+    /** Player purchased an add-on */
+    PLAYER_ADDON,
 
     /** Game paused */
     GAME_PAUSED,

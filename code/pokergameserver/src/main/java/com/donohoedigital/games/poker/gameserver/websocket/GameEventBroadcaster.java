@@ -84,14 +84,16 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 ServerMessage.of(ServerMessageType.HAND_COMPLETE, gameId,
                     new ServerMessageData.HandCompleteData(0, List.of(), List.of()))
             );
-            case GameEvent.PotAwarded e -> broadcast(
-                ServerMessage.of(ServerMessageType.PLAYER_ACTED, gameId,
-                    new ServerMessageData.PlayerActedData(
-                        e.winnerIds().length > 0 ? e.winnerIds()[0] : 0, "", "WIN", e.amount(), 0, 0, 0))
-            );
+            case GameEvent.PotAwarded e -> {
+                int[] ids = e.winnerIds();
+                long[] winnerIds = new long[ids.length];
+                for (int i = 0; i < ids.length; i++) winnerIds[i] = ids[i];
+                broadcast(ServerMessage.of(ServerMessageType.POT_AWARDED, gameId,
+                    new ServerMessageData.PotAwardedData(winnerIds, e.amount(), e.potIndex())));
+            }
             case GameEvent.ShowdownStarted e -> broadcast(
-                ServerMessage.of(ServerMessageType.HAND_COMPLETE, gameId,
-                    new ServerMessageData.HandCompleteData(0, List.of(), List.of()))
+                ServerMessage.of(ServerMessageType.SHOWDOWN_STARTED, gameId,
+                    new ServerMessageData.ShowdownStartedData(0))
             );
             case GameEvent.LevelChanged e -> broadcast(
                 ServerMessage.of(ServerMessageType.LEVEL_CHANGED, gameId,
@@ -118,12 +120,12 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                     new ServerMessageData.PlayerLeftData(e.playerId(), ""))
             );
             case GameEvent.PlayerRebuy e -> broadcast(
-                ServerMessage.of(ServerMessageType.PLAYER_JOINED, gameId,
-                    new ServerMessageData.PlayerJoinedData(e.playerId(), "", -1))
+                ServerMessage.of(ServerMessageType.PLAYER_REBUY, gameId,
+                    new ServerMessageData.PlayerRebuyData(e.playerId(), "", e.amount()))
             );
             case GameEvent.PlayerAddon e -> broadcast(
-                ServerMessage.of(ServerMessageType.PLAYER_JOINED, gameId,
-                    new ServerMessageData.PlayerJoinedData(e.playerId(), "", -1))
+                ServerMessage.of(ServerMessageType.PLAYER_ADDON, gameId,
+                    new ServerMessageData.PlayerAddonData(e.playerId(), "", e.amount()))
             );
             // Internal housekeeping events — not broadcast to clients
             case GameEvent.ButtonMoved ignored -> {}

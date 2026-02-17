@@ -205,4 +205,32 @@ class GameEventBroadcasterTest {
             return json.contains("\"type\":\"LEVEL_CHANGED\"") || json.contains("\"type\" : \"LEVEL_CHANGED\"");
         }));
     }
+
+    @Test
+    void broadcastsCorrectMessageType_potAwarded() throws Exception {
+        WebSocketSession session = mock(WebSocketSession.class);
+        when(session.isOpen()).thenReturn(true);
+        connectionManager.addConnection("game-1", 1L, new PlayerConnection(session, 1L, "p1", "game-1", objectMapper));
+
+        broadcaster.accept(new GameEvent.PotAwarded(0, 0, new int[]{1}, 500));
+
+        verify(session).sendMessage(argThat(msg -> {
+            String json = ((TextMessage) msg).getPayload();
+            return json.contains("\"type\":\"POT_AWARDED\"") || json.contains("\"type\" : \"POT_AWARDED\"");
+        }));
+    }
+
+    @Test
+    void broadcastsCorrectMessageType_showdownStarted() throws Exception {
+        WebSocketSession session = mock(WebSocketSession.class);
+        when(session.isOpen()).thenReturn(true);
+        connectionManager.addConnection("game-1", 1L, new PlayerConnection(session, 1L, "p1", "game-1", objectMapper));
+
+        broadcaster.accept(new GameEvent.ShowdownStarted(0));
+
+        verify(session).sendMessage(argThat(msg -> {
+            String json = ((TextMessage) msg).getPayload();
+            return json.contains("\"type\":\"SHOWDOWN_STARTED\"") || json.contains("\"type\" : \"SHOWDOWN_STARTED\"");
+        }));
+    }
 }

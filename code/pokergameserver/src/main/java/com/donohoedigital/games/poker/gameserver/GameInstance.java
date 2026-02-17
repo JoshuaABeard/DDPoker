@@ -454,18 +454,12 @@ public class GameInstance {
     }
 
     /**
-     * Create a simple random AI provider for M1.
+     * Create a simple random AI provider.
      * <p>
      * This implementation provides basic AI functionality sufficient for testing
      * and validating the game engine infrastructure. It randomly selects from
      * available actions (check, call, fold, bet, raise) without strategic
-     * decision-making.
-     * <p>
-     * <b>Future enhancement (M3):</b> Replace with ServerAIProvider from
-     * pokerserver for skill-based AI routing (TournamentAI, V1Algorithm,
-     * V2Algorithm). Currently blocked by dependency architecture - pokergameserver
-     * cannot depend on pokerserver without pulling in Swing transitive
-     * dependencies.
+     * decision-making. ServerAIProvider integration is a future milestone.
      */
     private PlayerActionProvider createSimpleAI() {
         Random random = new Random();

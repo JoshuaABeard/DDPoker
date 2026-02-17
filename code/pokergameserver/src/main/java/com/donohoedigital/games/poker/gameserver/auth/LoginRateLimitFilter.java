@@ -100,6 +100,10 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
     }
 
     private String getClientIp(HttpServletRequest request) {
+        // NOTE: X-Forwarded-For is trusted as-is. If deployed behind a trusted
+        // proxy (e.g., nginx), configure the proxy to strip or overwrite this
+        // header to prevent spoofing. For community/embedded mode this is
+        // acceptable risk since login rate-limiting is defence-in-depth.
         String xff = request.getHeader("X-Forwarded-For");
         if (xff != null && !xff.isEmpty()) {
             return xff.split(",")[0].trim();

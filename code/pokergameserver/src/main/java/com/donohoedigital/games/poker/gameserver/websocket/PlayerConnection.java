@@ -82,7 +82,8 @@ public class PlayerConnection {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to serialize message: " + message, e);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to send message to session " + session.getId(), e);
+            // Session closed mid-send — not an error, just discard
+            return;
         }
     }
 
@@ -102,7 +103,7 @@ public class PlayerConnection {
         try {
             session.close();
         } catch (IOException e) {
-            throw new RuntimeException("Failed to close session " + session.getId(), e);
+            // Session already closed — not an error, just discard
         }
     }
 

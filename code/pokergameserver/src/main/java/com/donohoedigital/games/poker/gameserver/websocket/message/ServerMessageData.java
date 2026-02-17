@@ -25,7 +25,7 @@ import java.util.List;
  * Each record matches the master plan JSON spec exactly, ensuring consistent
  * wire format across all client implementations (desktop, web, mobile).
  */
-public sealed interface ServerMessageData permits ServerMessageData.ConnectedData,ServerMessageData.GameStateData,ServerMessageData.HandStartedData,ServerMessageData.HoleCardsDealtData,ServerMessageData.CommunityCardsDealtData,ServerMessageData.ActionRequiredData,ServerMessageData.PlayerActedData,ServerMessageData.ActionTimeoutData,ServerMessageData.HandCompleteData,ServerMessageData.LevelChangedData,ServerMessageData.PlayerEliminatedData,ServerMessageData.RebuyOfferedData,ServerMessageData.AddonOfferedData,ServerMessageData.GameCompleteData,ServerMessageData.PlayerJoinedData,ServerMessageData.PlayerLeftData,ServerMessageData.GamePausedData,ServerMessageData.GameResumedData,ServerMessageData.PlayerKickedData,ServerMessageData.ChatMessageData,ServerMessageData.TimerUpdateData,ServerMessageData.ErrorData {
+public sealed interface ServerMessageData permits ServerMessageData.ConnectedData,ServerMessageData.GameStateData,ServerMessageData.HandStartedData,ServerMessageData.HoleCardsDealtData,ServerMessageData.CommunityCardsDealtData,ServerMessageData.ActionRequiredData,ServerMessageData.PlayerActedData,ServerMessageData.ActionTimeoutData,ServerMessageData.HandCompleteData,ServerMessageData.LevelChangedData,ServerMessageData.PlayerEliminatedData,ServerMessageData.RebuyOfferedData,ServerMessageData.AddonOfferedData,ServerMessageData.GameCompleteData,ServerMessageData.PlayerJoinedData,ServerMessageData.PlayerLeftData,ServerMessageData.PlayerDisconnectedData,ServerMessageData.PotAwardedData,ServerMessageData.ShowdownStartedData,ServerMessageData.PlayerRebuyData,ServerMessageData.PlayerAddonData,ServerMessageData.GamePausedData,ServerMessageData.GameResumedData,ServerMessageData.PlayerKickedData,ServerMessageData.ChatMessageData,ServerMessageData.TimerUpdateData,ServerMessageData.ErrorData {
 
     /**
      * Sent on successful WebSocket connection, includes full game state snapshot.
@@ -96,8 +96,28 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
     record PlayerJoinedData(long playerId, String playerName, int seatIndex) implements ServerMessageData {
     }
 
-    /** Player left or disconnected. */
+    /** Player left the game intentionally. */
     record PlayerLeftData(long playerId, String playerName) implements ServerMessageData {
+    }
+
+    /** Player lost connection during game; may reconnect. */
+    record PlayerDisconnectedData(long playerId, String playerName) implements ServerMessageData {
+    }
+
+    /** Pot won by one or more players. */
+    record PotAwardedData(long[] winnerIds, int amount, int potIndex) implements ServerMessageData {
+    }
+
+    /** Showdown phase begins (cards to be revealed). */
+    record ShowdownStartedData(int handNumber) implements ServerMessageData {
+    }
+
+    /** Player purchased a rebuy. */
+    record PlayerRebuyData(long playerId, String playerName, int addedChips) implements ServerMessageData {
+    }
+
+    /** Player purchased an add-on. */
+    record PlayerAddonData(long playerId, String playerName, int addedChips) implements ServerMessageData {
     }
 
     /** Game paused. */

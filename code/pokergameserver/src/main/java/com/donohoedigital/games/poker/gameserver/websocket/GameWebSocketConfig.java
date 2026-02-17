@@ -42,6 +42,8 @@ public class GameWebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        // Wildcard origin is intentional: JWT auth is the security boundary,
+        // not origin-based CSRF protection. Operators should document this.
         registry.addHandler(handler, "/ws/games/*").setAllowedOriginPatterns("*");
     }
 }

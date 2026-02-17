@@ -177,6 +177,23 @@ public class OutboundMessageConverter {
     }
 
     /**
+     * Creates a PLAYER_DISCONNECTED message (player lost connection; may
+     * reconnect).
+     *
+     * @param gameId
+     *            Game ID
+     * @param profileId
+     *            Player's profile ID
+     * @param playerName
+     *            Player's name
+     * @return PLAYER_DISCONNECTED message
+     */
+    public ServerMessage createPlayerDisconnectedMessage(String gameId, long profileId, String playerName) {
+        return ServerMessage.of(ServerMessageType.PLAYER_DISCONNECTED, gameId,
+                new ServerMessageData.PlayerDisconnectedData(profileId, playerName));
+    }
+
+    /**
      * Creates a PLAYER_KICKED message.
      *
      * @param gameId
