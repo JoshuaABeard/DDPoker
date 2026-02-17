@@ -1,7 +1,8 @@
 # Server-Hosted Game Engine: Comprehensive Implementation Plan
 
-**Status:** DRAFT
+**Status:** IN PROGRESS — M1 ✅ M2 ✅ M3 ✅ M4 ✅ | Next: M5 (Web Client) or M7 (Legacy P2P Removal)
 **Created:** 2026-02-15
+**Last Updated:** 2026-02-17
 **Plan:** `.claude/plans/SERVER-HOSTED-GAME-ENGINE.md`
 
 ---
@@ -685,6 +686,8 @@ All messages follow envelope format:
 ## Milestone 4: Desktop Client Adaptation
 
 **Goal:** Refactor the desktop client to embed a Spring Boot game server and use the WebSocket protocol for ALL game modes (practice, community-hosted, server-hosted).
+
+**Status:** ✅ COMPLETE (2026-02-17, commit 30c2d68c)
 
 **UI Constraint:** The desktop Swing client's look, feel, and workflows must remain as similar as possible to the current client. Existing users know this UI — we are changing the plumbing underneath, not the user experience. New options (e.g., "Server Hosted" toggle in game creation) are fine, but existing screens, button layouts, game flow, and visual style must be preserved. This constraint does NOT apply to the web client, mobile, or server — those are free to design as needed.
 
