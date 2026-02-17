@@ -1145,6 +1145,18 @@ spring.datasource.url=jdbc:h2:file:~/.ddpoker/games  # File-based H2, same as se
 
 ---
 
+## Security Concerns — Deferred
+
+The following security gaps were identified during M3 planning. They are not blocking for M3 but should be addressed before production deployment:
+
+**S1. Token Revocation** — No JTI (token ID) claim in JWT tokens and no revocation mechanism. If a token is compromised, it remains valid until expiry (1h default, 7d for remember-me). Mitigation: implement a cache-backed blacklist (in-memory or Redis) that stores revoked token IDs until expiry. Add a `/api/v1/auth/logout` endpoint that blacklists the current token.
+
+**S2. Cookie `secure=false`** — `AuthController.setAuthCookie()` has `secure(false)` with a code comment acknowledging it needs `true` in production. This allows cookie transmission over HTTP. Mitigation: make `secure` configurable via properties, enforce `true` when not in development/embedded mode. Add startup validation to warn or fail if `secure=false` in production profile.
+
+**S3. CORS Wildcard Headers** — `CorsProperties` defaults to `allowedHeaders = List.of("*")`. While CORS is disabled by default (only activated when `allowedOrigins` is configured), wildcard headers could be overpermissive in production. Mitigation: restrict to specific headers (`Authorization`, `Content-Type`, `Accept`) when CORS is enabled. Add startup validation to reject wildcard origins in production deployments.
+
+---
+
 ## Future Extensions (Not in Scope)
 
 - **Mobile app:** Same WebSocket protocol, different UI framework (React Native or Flutter)
