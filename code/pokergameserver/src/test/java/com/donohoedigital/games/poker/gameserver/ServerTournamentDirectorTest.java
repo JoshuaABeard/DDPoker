@@ -54,12 +54,12 @@ class ServerTournamentDirectorTest {
         ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
         PlayerActionProvider aiProvider = createSimpleAI(42);
         ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {
-        }, 0);
+        }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
 
         // Create director
         List<String> lifecycleEvents = new ArrayList<>();
         ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
-                tournament, eventBus, actionProvider, new GameServerProperties(50, 0, 120, 10),
+                tournament, eventBus, actionProvider, new GameServerProperties(50, 0, 120, 10, 1000, 3, 2, 5),
                 event -> lifecycleEvents.add(event.toString()));
 
         // Run in background thread
@@ -95,12 +95,12 @@ class ServerTournamentDirectorTest {
         ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
         PlayerActionProvider aiProvider = createSimpleAI(123);
         ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {
-        }, 0);
+        }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
 
         // Create director
         List<String> lifecycleEvents = new ArrayList<>();
         ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
-                tournament, eventBus, actionProvider, new GameServerProperties(50, 0, 120, 10),
+                tournament, eventBus, actionProvider, new GameServerProperties(50, 0, 120, 10, 1000, 3, 2, 5),
                 event -> lifecycleEvents.add(event.toString()));
 
         // Run in background thread
@@ -139,11 +139,11 @@ class ServerTournamentDirectorTest {
         ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
         PlayerActionProvider aiProvider = createSimpleAI(42);
         ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {
-        }, 0);
+        }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
 
         List<String> lifecycleEvents = new ArrayList<>();
         ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
-                tournament, eventBus, actionProvider, new GameServerProperties(50, 0, 120, 10),
+                tournament, eventBus, actionProvider, new GameServerProperties(50, 0, 120, 10, 1000, 3, 2, 5),
                 event -> lifecycleEvents.add(event.toString()));
 
         // Start in background
@@ -181,11 +181,12 @@ class ServerTournamentDirectorTest {
         ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
         PlayerActionProvider aiProvider = createSimpleAI(42);
         ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {
-        }, 0);
+        }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
 
         CountDownLatch shutdownLatch = new CountDownLatch(1);
         ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
-                tournament, eventBus, actionProvider, new GameServerProperties(50, 0, 120, 10), event -> {
+                tournament, eventBus, actionProvider, new GameServerProperties(50, 0, 120, 10, 1000, 3, 2, 5),
+                event -> {
                     if (event == GameLifecycleEvent.COMPLETED) {
                         shutdownLatch.countDown();
                     }
@@ -222,10 +223,11 @@ class ServerTournamentDirectorTest {
         ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
         PlayerActionProvider aiProvider = createSimpleAI(42);
         ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {
-        }, 0);
+        }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
 
         ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
-                tournament, eventBus, actionProvider, new GameServerProperties(50, 0, 120, 10), event -> {
+                tournament, eventBus, actionProvider, new GameServerProperties(50, 0, 120, 10, 1000, 3, 2, 5),
+                event -> {
                 });
 
         // Run

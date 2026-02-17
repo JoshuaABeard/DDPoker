@@ -45,10 +45,23 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *            (default 120)
  * @param threadPoolSize
  *            Size of thread pool for running game instances (default 10)
+ * @param rateLimitMillis
+ *            Minimum milliseconds between player actions to prevent spam
+ *            (default 1000)
+ * @param consecutiveTimeoutLimit
+ *            Number of consecutive timeouts before a player is auto-folded
+ *            without waiting (default 3)
+ * @param disconnectGraceTurns
+ *            Number of turns to wait with normal timeout before auto-folding
+ *            disconnected players (default 2)
+ * @param maxGamesPerUser
+ *            Maximum active games a single user can own simultaneously (default
+ *            5)
  */
 @ConfigurationProperties(prefix = "game.server")
 public record GameServerProperties(int maxConcurrentGames, int actionTimeoutSeconds, int reconnectTimeoutSeconds,
-        int threadPoolSize) {
+        int threadPoolSize, int rateLimitMillis, int consecutiveTimeoutLimit, int disconnectGraceTurns,
+        int maxGamesPerUser) {
     /**
      * Canonical constructor with validation and defaults.
      */
@@ -61,12 +74,20 @@ public record GameServerProperties(int maxConcurrentGames, int actionTimeoutSeco
             reconnectTimeoutSeconds = 120;
         if (threadPoolSize <= 0)
             threadPoolSize = 10;
+        if (rateLimitMillis <= 0)
+            rateLimitMillis = 1000;
+        if (consecutiveTimeoutLimit <= 0)
+            consecutiveTimeoutLimit = 3;
+        if (disconnectGraceTurns < 0)
+            disconnectGraceTurns = 2;
+        if (maxGamesPerUser <= 0)
+            maxGamesPerUser = 5;
     }
 
     /**
      * Default constructor for Spring.
      */
     public GameServerProperties() {
-        this(50, 30, 120, 10);
+        this(50, 30, 120, 10, 1000, 3, 2, 5);
     }
 }

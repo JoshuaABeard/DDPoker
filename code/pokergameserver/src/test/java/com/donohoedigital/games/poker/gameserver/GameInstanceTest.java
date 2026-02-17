@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.donohoedigital.games.poker.gameserver.GameConfig.*;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.junit.jupiter.api.AfterEach;
@@ -50,7 +51,7 @@ class GameInstanceTest {
 
     @BeforeEach
     void setUp() {
-        properties = new GameServerProperties(50, 0, 120, 10);
+        properties = new GameServerProperties(50, 0, 120, 10, 1000, 3, 2, 5);
         config = createTestConfig();
         executor = Executors.newSingleThreadExecutor();
     }
@@ -271,6 +272,57 @@ class GameInstanceTest {
 
         // Owner can cancel
         assertDoesNotThrow(() -> game.cancelAsUser(100L));
+    }
+
+    @Test
+    void testOnlyOwnerCanResume() throws Exception {
+        GameInstance game = GameInstance.create("test-1", 100L, config, properties);
+        game.transitionToWaitingForPlayers();
+        game.addPlayer(1, "AI-1", true, 50);
+        game.addPlayer(2, "AI-2", true, 50);
+        game.start(executor);
+
+        // Wait for game to be actively processing (or skip test if completed too
+        // quickly)
+        if (awaitState(game, state -> state == GameInstanceState.IN_PROGRESS, 100)) {
+            // Pause as owner first
+            game.pauseAsUser(100L);
+
+            if (game.getState() == GameInstanceState.PAUSED) {
+                // Non-owner cannot resume
+                assertThrows(GameServerException.class, () -> game.resumeAsUser(999L));
+
+                // Owner can resume
+                assertDoesNotThrow(() -> game.resumeAsUser(100L));
+            }
+        }
+    }
+
+    @Test
+    void testGetEventBus() throws Exception {
+        GameInstance game = GameInstance.create("test-1", 100L, config, properties);
+        game.transitionToWaitingForPlayers();
+        game.addPlayer(1, "AI-1", true, 50);
+        game.start(executor);
+
+        assertNotNull(game.getEventBus());
+    }
+
+    @Test
+    void testGetPlayerSessions() {
+        GameInstance game = GameInstance.create("test-1", 100L, config, properties);
+        game.transitionToWaitingForPlayers();
+        game.addPlayer(1, "Player1", false, 0);
+        game.addPlayer(2, "Player2", false, 0);
+
+        Map<Long, ServerPlayerSession> sessions = game.getPlayerSessions();
+        assertNotNull(sessions);
+        assertEquals(2, sessions.size());
+        assertTrue(sessions.containsKey(1L));
+        assertTrue(sessions.containsKey(2L));
+
+        // Verify map is unmodifiable
+        assertThrows(UnsupportedOperationException.class, () -> sessions.put(3L, null));
     }
 
     // ====================================

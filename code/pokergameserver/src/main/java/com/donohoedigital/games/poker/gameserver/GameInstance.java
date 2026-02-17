@@ -148,7 +148,7 @@ public class GameInstance {
 
             PlayerActionProvider aiProvider = createSimpleAI();
             actionProvider = new ServerPlayerActionProvider(aiProvider, this::onActionRequest,
-                    properties.actionTimeoutSeconds());
+                    properties.actionTimeoutSeconds(), properties.disconnectGraceTurns(), playerSessions);
 
             // Determine number of tables (1 table per 10 players, minimum 1)
             int numTables = Math.max(1, (players.size() + 9) / 10);
@@ -242,6 +242,12 @@ public class GameInstance {
         } finally {
             stateLock.unlock();
         }
+    }
+
+    /** Resume the game with owner authorization check */
+    public void resumeAsUser(long userId) {
+        checkOwnership(userId);
+        resume();
     }
 
     /** Shutdown the game (triggers graceful completion) */
@@ -427,6 +433,14 @@ public class GameInstance {
 
     public IGameEventStore getEventStore() {
         return eventStore;
+    }
+
+    public ServerGameEventBus getEventBus() {
+        return eventBus;
+    }
+
+    public Map<Long, ServerPlayerSession> getPlayerSessions() {
+        return java.util.Collections.unmodifiableMap(playerSessions);
     }
 
     // ====================================

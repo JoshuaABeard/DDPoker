@@ -32,6 +32,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import com.donohoedigital.games.poker.gameserver.GameConfig;
 import com.donohoedigital.games.poker.gameserver.auth.JwtAuthenticationFilter;
 import com.donohoedigital.games.poker.gameserver.dto.CreateGameResponse;
@@ -53,7 +55,7 @@ public class GameController {
     }
 
     @PostMapping
-    public ResponseEntity<CreateGameResponse> createGame(@RequestBody GameConfig config) {
+    public ResponseEntity<CreateGameResponse> createGame(@Valid @RequestBody GameConfig config) {
         AuthenticatedUser user = getAuthenticatedUser();
         String gameId = gameService.createGame(config, user.profileId(), user.username());
         return ResponseEntity.status(HttpStatus.CREATED).body(new CreateGameResponse(gameId));

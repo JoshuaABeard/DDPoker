@@ -2,3 +2,4 @@ com.donohoedigital.games.poker.gameserver.GameServerAutoConfiguration
 com.donohoedigital.games.poker.gameserver.GameServerWebAutoConfiguration
 com.donohoedigital.games.poker.gameserver.persistence.GameServerPersistenceAutoConfiguration
 com.donohoedigital.games.poker.gameserver.auth.GameServerSecurityAutoConfiguration
+com.donohoedigital.games.poker.gameserver.websocket.WebSocketAutoConfiguration

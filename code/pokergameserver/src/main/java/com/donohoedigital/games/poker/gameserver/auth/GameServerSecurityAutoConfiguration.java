@@ -61,8 +61,13 @@ public class GameServerSecurityAutoConfiguration {
     }
 
     @Bean
+    public LoginRateLimitFilter loginRateLimitFilter() {
+        return new LoginRateLimitFilter();
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter,
-            CorsProperties corsProperties) throws Exception {
+            LoginRateLimitFilter loginRateLimitFilter, CorsProperties corsProperties) throws Exception {
         http.csrf(csrf -> csrf.disable()) // JWT is immune to CSRF
                 .cors(cors -> {
                     if (!corsProperties.getAllowedOrigins().isEmpty()) {
@@ -73,9 +78,11 @@ public class GameServerSecurityAutoConfiguration {
                 }).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.requestMatchers("/api/v1/auth/**").permitAll() // Auth endpoints
                                                                                                     // public
+                        .requestMatchers("/ws/**").permitAll() // WebSocket auth handled in handler
                         .requestMatchers("/api/v1/**").authenticated() // All other API endpoints require auth
                         .anyRequest().permitAll() // Allow non-API requests
-                ).addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                ).addFilterBefore(loginRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

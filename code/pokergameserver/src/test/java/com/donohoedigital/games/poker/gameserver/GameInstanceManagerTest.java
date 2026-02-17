@@ -48,7 +48,7 @@ class GameInstanceManagerTest {
 
     @BeforeEach
     void setUp() {
-        properties = new GameServerProperties(5, 0, 120, 10);
+        properties = new GameServerProperties(5, 0, 120, 10, 1000, 3, 2, 5);
         manager = new GameInstanceManager(properties);
         config = createTestConfig();
     }
@@ -96,6 +96,36 @@ class GameInstanceManagerTest {
 
         // Creating one more should fail
         assertThrows(GameServerException.class, () -> manager.createGame(200L, config));
+    }
+
+    @Test
+    void testPerUserGameLimitEnforced() {
+        GameServerProperties limitedProps = new GameServerProperties(10, 0, 120, 10, 1000, 3, 2, 2);
+        GameInstanceManager limitedManager = new GameInstanceManager(limitedProps);
+        try {
+            limitedManager.createGame(100L, config); // 1st game for user 100
+            limitedManager.createGame(100L, config); // 2nd game for user 100 (at limit)
+
+            // 3rd game for same user should be rejected
+            assertThrows(GameServerException.class, () -> limitedManager.createGame(100L, config));
+        } finally {
+            limitedManager.shutdown();
+        }
+    }
+
+    @Test
+    void testPerUserLimitIsIndependentPerUser() {
+        GameServerProperties limitedProps = new GameServerProperties(10, 0, 120, 10, 1000, 3, 2, 2);
+        GameInstanceManager limitedManager = new GameInstanceManager(limitedProps);
+        try {
+            limitedManager.createGame(100L, config); // user 100: 1 game
+            limitedManager.createGame(100L, config); // user 100: 2 games (at limit)
+
+            // Different user is unaffected by user 100's limit
+            assertDoesNotThrow(() -> limitedManager.createGame(101L, config));
+        } finally {
+            limitedManager.shutdown();
+        }
     }
 
     @Test

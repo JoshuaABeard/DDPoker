@@ -117,9 +117,52 @@ public class GameStateProjection {
      * @return the game state snapshot with showdown cards revealed
      */
     public static GameStateSnapshot forShowdown(ServerGameTable table, ServerHand hand, int playerId) {
-        // For M1, showdown handling is simplified - just use the normal projection
-        // In M3 (WebSocket protocol), this will reveal all non-folded players' cards
-        return forPlayer(table, hand, playerId);
+        int tableId = table.getNumber();
+        int handNumber = table.getHandNum();
+
+        // Requesting player's own hole cards (for the myHoleCards field)
+        Card[] myHoleCards = null;
+        if (hand != null) {
+            ServerPlayer player = findPlayer(table, playerId);
+            if (player != null) {
+                myHoleCards = hand.getPlayerCards(player);
+            }
+        }
+
+        // Community cards (visible to all)
+        Card[] communityCards = null;
+        if (hand != null) {
+            communityCards = hand.getCommunityCards();
+        }
+
+        // Build player states — at showdown, reveal cards for all non-folded players
+        List<GameStateSnapshot.PlayerState> playerStates = new ArrayList<>();
+        for (int seat = 0; seat < table.getSeats(); seat++) {
+            ServerPlayer player = table.getPlayer(seat);
+            if (player != null) {
+                Card[] holeCards = null;
+                if (hand != null && !player.isFolded()) {
+                    holeCards = hand.getPlayerCards(player);
+                }
+                playerStates.add(new GameStateSnapshot.PlayerState(player.getID(), player.getName(),
+                        player.getChipCount(), seat, player.isFolded(), player.isAllIn(), holeCards));
+            }
+        }
+
+        // Build pot states
+        List<GameStateSnapshot.PotState> potStates = new ArrayList<>();
+        if (hand != null) {
+            List<ServerPot> pots = hand.getPots();
+            for (ServerPot pot : pots) {
+                List<Integer> eligiblePlayerIds = new ArrayList<>();
+                for (ServerPlayer eligible : pot.getEligiblePlayers()) {
+                    eligiblePlayerIds.add(eligible.getID());
+                }
+                potStates.add(new GameStateSnapshot.PotState(pot.getChips(), eligiblePlayerIds));
+            }
+        }
+
+        return new GameStateSnapshot(tableId, handNumber, myHoleCards, communityCards, playerStates, potStates);
     }
 
     private static ServerPlayer findPlayer(ServerGameTable table, int playerId) {

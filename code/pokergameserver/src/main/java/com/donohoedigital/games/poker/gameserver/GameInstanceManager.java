@@ -88,6 +88,16 @@ public class GameInstanceManager {
             throw new GameServerException("Maximum concurrent games reached: " + properties.maxConcurrentGames());
         }
 
+        // Check per-user game limit
+        int userGameCount = (int) games
+                .values().stream().filter(g -> g.getOwnerProfileId() == ownerProfileId
+                        && g.getState() != GameInstanceState.COMPLETED && g.getState() != GameInstanceState.CANCELLED)
+                .count();
+        if (userGameCount >= properties.maxGamesPerUser()) {
+            throw new GameServerException(
+                    "User has reached maximum active game limit: " + properties.maxGamesPerUser());
+        }
+
         String gameId = generateGameId();
         GameInstance instance = GameInstance.create(gameId, ownerProfileId, config, properties);
         games.put(gameId, instance);

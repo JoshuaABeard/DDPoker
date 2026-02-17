@@ -27,6 +27,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import com.donohoedigital.games.poker.gameserver.auth.JwtProperties;
 import com.donohoedigital.games.poker.gameserver.dto.LoginRequest;
 import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
@@ -51,7 +53,8 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<LoginResponse> register(@RequestBody RegisterRequest request, HttpServletResponse response) {
+    public ResponseEntity<LoginResponse> register(@Valid @RequestBody RegisterRequest request,
+            HttpServletResponse response) {
         LoginResponse result = authService.register(request.username(), request.password(), request.email());
 
         if (result.success()) {
@@ -63,7 +66,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request, HttpServletResponse response) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
         LoginResponse result = authService.login(request.username(), request.password(), request.rememberMe());
 
         if (result.success()) {

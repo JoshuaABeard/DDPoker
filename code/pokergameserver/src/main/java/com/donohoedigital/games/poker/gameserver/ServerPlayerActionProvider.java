@@ -59,6 +59,8 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
     private final Map<Integer, PendingAction> pendingActions;
     private final Consumer<ActionRequest> actionRequestCallback;
     private final int timeoutSeconds;
+    private final int disconnectGraceTurns;
+    private final Map<Long, ServerPlayerSession> playerSessions;
 
     /**
      * Create a new server player action provider.
@@ -70,12 +72,19 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
      *            connects this to WebSocket)
      * @param timeoutSeconds
      *            timeout in seconds for human player actions (0 = no timeout)
+     * @param disconnectGraceTurns
+     *            number of turns before disconnected player is auto-folded
+     *            immediately
+     * @param playerSessions
+     *            map of profile ID to player session for disconnect checking
      */
     public ServerPlayerActionProvider(PlayerActionProvider aiProvider, Consumer<ActionRequest> actionRequestCallback,
-            int timeoutSeconds) {
+            int timeoutSeconds, int disconnectGraceTurns, Map<Long, ServerPlayerSession> playerSessions) {
         this.aiProvider = aiProvider;
         this.actionRequestCallback = actionRequestCallback;
         this.timeoutSeconds = timeoutSeconds;
+        this.disconnectGraceTurns = disconnectGraceTurns;
+        this.playerSessions = playerSessions;
         this.pendingActions = new ConcurrentHashMap<>();
     }
 
@@ -90,6 +99,10 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
     /**
      * Get action from human player via CompletableFuture.
      *
+     * <p>
+     * If the player is disconnected and has exceeded the grace turn limit, auto
+     * fold/check immediately without waiting for a timeout.
+     *
      * @param player
      *            the human player
      * @param options
@@ -97,6 +110,17 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
      * @return the player's action, or auto-fold/check on timeout
      */
     private PlayerAction getHumanAction(GamePlayerInfo player, ActionOptions options) {
+        // Check if player is disconnected and past grace period
+        ServerPlayerSession session = playerSessions.get((long) player.getID());
+        if (session != null && session.isDisconnected()) {
+            if (session.getConsecutiveTimeouts() >= disconnectGraceTurns) {
+                // Auto-fold immediately — no timeout wait needed
+                session.incrementConsecutiveTimeouts();
+                return options.canCheck() ? PlayerAction.check() : PlayerAction.fold();
+            }
+            // else: fall through to normal timeout flow (grace period for reconnect)
+        }
+
         CompletableFuture<PlayerAction> future = new CompletableFuture<>();
         PendingAction pending = new PendingAction(future, options);
         pendingActions.put(player.getID(), pending);
@@ -112,6 +136,9 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
             return future.get();
         } catch (TimeoutException e) {
             // Auto-fold on timeout, or check if available (check is free)
+            if (session != null) {
+                session.incrementConsecutiveTimeouts();
+            }
             return options.canCheck() ? PlayerAction.check() : PlayerAction.fold();
         } catch (Exception e) {
             // Any other error — fold

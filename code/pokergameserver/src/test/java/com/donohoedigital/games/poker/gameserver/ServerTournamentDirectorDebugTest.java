@@ -51,7 +51,7 @@ class ServerTournamentDirectorDebugTest {
         ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
         PlayerActionProvider aiProvider = createSimpleAI(42);
         ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {
-        }, 0);
+        }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
 
         TournamentEngine engine = new TournamentEngine(eventBus, actionProvider);
 

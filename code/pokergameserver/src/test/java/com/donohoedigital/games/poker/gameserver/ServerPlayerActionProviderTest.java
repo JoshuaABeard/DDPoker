@@ -33,7 +33,9 @@ package com.donohoedigital.games.poker.gameserver;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -54,6 +56,7 @@ class ServerPlayerActionProviderTest {
     private ServerPlayerActionProvider provider;
     private MockAIProvider mockAI;
     private AtomicReference<ActionRequest> capturedRequest;
+    private Map<Long, ServerPlayerSession> playerSessions;
 
     private static final int TIMEOUT_SECONDS = 1; // Short timeout for testing
 
@@ -61,8 +64,9 @@ class ServerPlayerActionProviderTest {
     void setUp() {
         mockAI = new MockAIProvider();
         capturedRequest = new AtomicReference<>();
+        playerSessions = new ConcurrentHashMap<>();
 
-        provider = new ServerPlayerActionProvider(mockAI, capturedRequest::set, TIMEOUT_SECONDS);
+        provider = new ServerPlayerActionProvider(mockAI, capturedRequest::set, TIMEOUT_SECONDS, 2, playerSessions);
     }
 
     // === AI Player Actions ===
