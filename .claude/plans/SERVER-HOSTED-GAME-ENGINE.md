@@ -298,9 +298,9 @@ CREATE TABLE game_instances (
 
 **Goal:** REST API endpoints for game management, JWT-based authentication (RS256 asymmetric), profile CRUD, ban system, and H2 database persistence.
 
-**Detailed Plan:** `.claude/plans/M2-GAME-API-AUTH-PERSISTENCE.md`
+**Detailed Plan:** `.claude/plans/completed/M2-GAME-API-AUTH-PERSISTENCE.md`
 
-**Status:** DRAFT (plan complete, implementation pending)
+**Status:** ✅ COMPLETE (2026-02-16, commit d49e4577)
 
 **Effort:** L
 
