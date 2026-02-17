@@ -45,6 +45,7 @@ code/pokerserver/data/
 .vscode/
 .idea/
 *.iml
+.obsidian/
 
 # Compiled installers and binaries
 docker/downloads/
