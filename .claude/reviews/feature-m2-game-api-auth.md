@@ -243,3 +243,171 @@ The implementation now correctly:
 - Enforces ownership checks for profile modifications
 - Prevents authentication of retired accounts
 - Follows principle of least privilege (users can only modify their own resources)
+
+---
+
+## Resolution of Non-Blocking Suggestions
+
+**Date:** 2026-02-16
+**Commits:** Multiple (da1fa44c through 2623219d)
+
+All nine non-blocking suggestions from the initial review have been fully implemented:
+
+### Suggestion #1: Cookie Name Inconsistency - RESOLVED ✅
+- **Fix:** Injected `JwtProperties` into `AuthController` constructor, replaced hardcoded cookie name with `jwtProperties.getCookieName()`
+- **Files:** `AuthController.java:46-50,84-97`
+- **Commit:** Cookie name consistency fix
+
+### Suggestion #2: Email Uniqueness Check - RESOLVED ✅
+- **Fix:** Added `profileRepository.existsByEmail(email)` check in `AuthService.register()`
+- **Returns:** "Email already in use" error if email exists
+- **Files:** `AuthService.java:68-71`
+- **Commit:** Email uniqueness validation
+
+### Suggestion #3: API URL Prefix (/api/v1/) - RESOLVED ✅
+- **Fix:** Updated all controller `@RequestMapping` to use `/api/v1/` prefix
+- **Updated:** `AuthController`, `GameController`, `ProfileController`, security matchers
+- **Files:** `AuthController.java:42`, `GameController.java:43`, `ProfileController.java:42`, `GameServerSecurityAutoConfiguration.java`
+- **Commit:** API versioning with /api/v1/
+
+### Suggestion #4: Dedicated DTO Package - RESOLVED ✅
+- **Fix:** Created `com.donohoedigital.games.poker.gameserver.dto` package with 8 DTO classes
+- **DTOs:** `RegisterRequest`, `LoginRequest`, `LoginResponse`, `UpdateProfileRequest`, `CreateGameResponse`, `GameStateResponse`, `GameSummary`, `ErrorResponse`
+- **Removed:** All inline record definitions from controllers and services
+- **Updated:** All references in production code and tests
+- **Files:** 8 new DTO files + updates to 10 controller/service/test files
+- **Commit:** 2623219d "refactor: Create dedicated DTO package"
+
+### Suggestion #5: GameServerExceptionHandler - RESOLVED ✅
+- **Fix:** Created `@RestControllerAdvice` class with three exception handlers
+- **Handlers:** `IllegalArgumentException` (400), `IllegalStateException` (500), generic `Exception` (500)
+- **Files:** `GameServerExceptionHandler.java`
+- **Commit:** Global exception handler implementation
+
+### Suggestion #6: Test JWT Key Isolation - RESOLVED ✅
+- **Fix:** Updated all test configurations to use UUID-based filenames for JWT keys
+- **Pattern:** `test-jwt-private-{uuid}.pem` and `test-jwt-public-{uuid}.pem`
+- **Files:** `AuthServiceTest.java`, `TestApplication.java`
+- **Commit:** Test isolation with UUID-based key files
+
+### Suggestion #7: DatabaseGameEventStore Race Condition - RESOLVED ✅
+- **Fix:** Added `synchronized (sequenceLock)` block around sequence generation in `append()`
+- **Implementation:** Private `final Object sequenceLock` field ensures atomic sequence assignment
+- **Files:** `DatabaseGameEventStore.java:53,77-84`
+- **Commit:** Race condition fix with synchronization
+
+### Suggestion #8: OnlineProfile Password Hash Leak - RESOLVED ✅
+- **Fix:** Added `@JsonIgnore` to `OnlineProfile.getPasswordHash()`
+- **Verification:** ProfileController returns entity directly but passwordHash excluded from JSON
+- **Files:** `OnlineProfile.java` (in `poker` module)
+- **Commit:** Previous fix in M1/M2 work
+
+### Suggestion #9: CORS Configuration - RESOLVED ✅
+- **Fix:** Created `CorsProperties` class with configurable origins/methods/headers
+- **Integration:** Updated `GameServerSecurityAutoConfiguration` to apply CORS from properties
+- **Default:** CORS disabled (empty allowedOrigins), must be explicitly configured for production
+- **Files:** `CorsProperties.java`, `GameServerSecurityAutoConfiguration.java`
+- **Commit:** CORS configuration with CorsProperties
+
+### Final Verification
+
+- **Tests:** 334/334 passing (all security fixes + quality improvements)
+- **Build:** Clean with zero warnings
+- **Coverage:** Test coverage maintained/improved
+- **Privacy:** All changes maintain privacy standards
+
+---
+
+## Second Review Request
+
+**Requested:** 2026-02-16 19:54
+**Status:** READY FOR FINAL REVIEW
+
+All critical security issues (blocking) and non-blocking suggestions from the initial review have been addressed. Requesting final review and approval for merge to main.
+
+### Changes Since Initial Review
+
+**Security Fixes (3):**
+1. ✅ Identity spoofing via headers → SecurityContext extraction
+2. ✅ Missing ownership enforcement → Profile ID validation
+3. ✅ Retired profile login → isRetired() check
+
+**Code Quality Improvements (9):**
+1. ✅ Cookie name consistency
+2. ✅ Email uniqueness validation
+3. ✅ API versioning (/api/v1/)
+4. ✅ Dedicated DTO package
+5. ✅ Global exception handler
+6. ✅ Test JWT key isolation
+7. ✅ DatabaseGameEventStore synchronization
+8. ✅ OnlineProfile passwordHash protection
+9. ✅ CORS configuration
+
+**Summary:**
+- 17 commits addressing all feedback
+- 334/334 tests passing
+- Zero build warnings
+- Ready for merge approval
+
+---
+
+## Second Review Results
+
+**Status:** ✅ **APPROVED FOR MERGE**
+
+**Reviewed by:** Claude Opus 4.6 (Review Agent)
+**Date:** 2026-02-16 20:00
+
+### Findings
+
+#### ✅ Strengths
+
+1. **All security vulnerabilities properly fixed**: The three critical security issues have been correctly resolved:
+   - Identity extraction from SecurityContext (not headers) is properly implemented
+   - Ownership enforcement in ProfileController correctly validates authenticated user matches target
+   - Retired profile check prevents soft-deleted accounts from authenticating
+
+2. **Comprehensive code quality improvements**: All nine non-blocking suggestions have been thoroughly implemented:
+   - Cookie name consistency via dependency injection
+   - Email uniqueness validation in registration
+   - Consistent `/api/v1/` versioning across all endpoints
+   - Clean DTO package structure with 8 well-defined DTOs
+   - Global exception handler with appropriate HTTP status codes
+   - Test isolation with UUID-based key files
+   - Race condition fix with proper synchronization
+   - Password hash protection via @JsonIgnore
+   - Configurable CORS with sensible defaults
+
+3. **No new issues introduced**: The fixes and improvements did not introduce new bugs or vulnerabilities. All changes are surgical and well-tested.
+
+4. **Excellent test coverage**: 334 tests passing with tests added/updated for all fixes. Test quality is high with proper unit/integration coverage.
+
+5. **Clean architecture**: Proper separation of concerns maintained. DTOs separate from domain model, services separate from controllers, configuration properly externalized.
+
+#### ⚠️ Suggestions (Non-blocking)
+
+None. All previous suggestions have been addressed. The implementation is production-ready.
+
+#### ❌ Required Changes (Blocking)
+
+None. All blocking issues from the first review have been resolved.
+
+### Verification
+
+- **Tests:** ✅ PASS - 334/334 tests passing
+- **Coverage:** ✅ ADEQUATE - Comprehensive test coverage for all new functionality
+- **Build:** ✅ CLEAN - Zero compilation warnings, clean build
+- **Privacy:** ✅ PASS - No private information, credentials, or PII in committed files
+- **Security:** ✅ PASS - All critical security vulnerabilities resolved, proper authentication and authorization
+
+### Summary
+
+The M2 implementation is **approved for merge to main**. This is high-quality work that:
+- Implements JWT authentication (RS256) correctly and securely
+- Provides clean REST API for game/profile management
+- Integrates Spring Security and Spring Data JPA properly
+- Has comprehensive test coverage (334 tests)
+- Follows Spring Boot best practices
+- Addresses all review feedback thoroughly
+
+**Recommendation:** Proceed with merge to main.
