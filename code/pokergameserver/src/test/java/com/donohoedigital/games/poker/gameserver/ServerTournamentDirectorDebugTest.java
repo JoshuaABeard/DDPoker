@@ -47,7 +47,7 @@ class ServerTournamentDirectorDebugTest {
         ServerTournamentContext tournament = createTournament(players, 1);
 
         // Create server components
-        GameEventStore eventStore = new GameEventStore("debug-game");
+        InMemoryGameEventStore eventStore = new InMemoryGameEventStore("debug-game");
         ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
         PlayerActionProvider aiProvider = createSimpleAI(42);
         ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {

@@ -31,7 +31,6 @@
  */
 package com.donohoedigital.games.poker.gameserver;
 
-import com.donohoedigital.games.poker.model.TournamentProfile;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -74,13 +73,13 @@ public class GameInstanceManager {
      *
      * @param ownerProfileId
      *            profile ID of the game owner
-     * @param profile
-     *            tournament configuration
+     * @param config
+     *            game configuration
      * @return new GameInstance in CREATED state
      * @throws GameServerException
      *             if maximum concurrent games limit is reached
      */
-    public GameInstance createGame(long ownerProfileId, TournamentProfile profile) {
+    public GameInstance createGame(long ownerProfileId, GameConfig config) {
         if (shutdown) {
             throw new GameServerException("Server is shutting down");
         }
@@ -90,7 +89,7 @@ public class GameInstanceManager {
         }
 
         String gameId = generateGameId();
-        GameInstance instance = GameInstance.create(gameId, ownerProfileId, profile, properties);
+        GameInstance instance = GameInstance.create(gameId, ownerProfileId, config, properties);
         games.put(gameId, instance);
 
         return instance;

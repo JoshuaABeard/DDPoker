@@ -28,14 +28,14 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-class GameEventStoreTest {
+class InMemoryGameEventStoreTest {
 
-    private GameEventStore eventStore;
+    private InMemoryGameEventStore eventStore;
     private static final String TEST_GAME_ID = "test-game-123";
 
     @BeforeEach
     void setUp() {
-        eventStore = new GameEventStore(TEST_GAME_ID);
+        eventStore = new InMemoryGameEventStore(TEST_GAME_ID);
     }
 
     @Test

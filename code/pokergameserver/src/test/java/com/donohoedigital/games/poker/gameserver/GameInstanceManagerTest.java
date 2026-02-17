@@ -33,7 +33,7 @@ package com.donohoedigital.games.poker.gameserver;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.donohoedigital.games.poker.model.TournamentProfile;
+import com.donohoedigital.games.poker.gameserver.GameConfig.*;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,13 +44,13 @@ class GameInstanceManagerTest {
 
     private GameInstanceManager manager;
     private GameServerProperties properties;
-    private TournamentProfile profile;
+    private GameConfig config;
 
     @BeforeEach
     void setUp() {
         properties = new GameServerProperties(5, 0, 120, 10);
         manager = new GameInstanceManager(properties);
-        profile = createTestProfile();
+        config = createTestConfig();
     }
 
     @AfterEach
@@ -66,7 +66,7 @@ class GameInstanceManagerTest {
 
     @Test
     void testCreateGame() {
-        GameInstance game = manager.createGame(100L, profile);
+        GameInstance game = manager.createGame(100L, config);
 
         assertNotNull(game);
         assertNotNull(game.getGameId());
@@ -76,9 +76,9 @@ class GameInstanceManagerTest {
 
     @Test
     void testCreateMultipleGames() {
-        GameInstance game1 = manager.createGame(100L, profile);
-        GameInstance game2 = manager.createGame(101L, profile);
-        GameInstance game3 = manager.createGame(102L, profile);
+        GameInstance game1 = manager.createGame(100L, config);
+        GameInstance game2 = manager.createGame(101L, config);
+        GameInstance game3 = manager.createGame(102L, config);
 
         assertNotEquals(game1.getGameId(), game2.getGameId());
         assertNotEquals(game2.getGameId(), game3.getGameId());
@@ -91,18 +91,18 @@ class GameInstanceManagerTest {
     void testConcurrentGameLimitEnforced() {
         // Create max games (limit is 5)
         for (int i = 0; i < 5; i++) {
-            manager.createGame(100L + i, profile);
+            manager.createGame(100L + i, config);
         }
 
         // Creating one more should fail
-        assertThrows(GameServerException.class, () -> manager.createGame(200L, profile));
+        assertThrows(GameServerException.class, () -> manager.createGame(200L, config));
     }
 
     @Test
     void testGeneratedGameIdsAreUnique() {
-        GameInstance game1 = manager.createGame(100L, profile);
-        GameInstance game2 = manager.createGame(100L, profile);
-        GameInstance game3 = manager.createGame(100L, profile);
+        GameInstance game1 = manager.createGame(100L, config);
+        GameInstance game2 = manager.createGame(100L, config);
+        GameInstance game3 = manager.createGame(100L, config);
 
         assertNotEquals(game1.getGameId(), game2.getGameId());
         assertNotEquals(game2.getGameId(), game3.getGameId());
@@ -114,7 +114,7 @@ class GameInstanceManagerTest {
 
     @Test
     void testGetGame() {
-        GameInstance created = manager.createGame(100L, profile);
+        GameInstance created = manager.createGame(100L, config);
         String gameId = created.getGameId();
 
         GameInstance retrieved = manager.getGame(gameId);
@@ -135,9 +135,9 @@ class GameInstanceManagerTest {
 
     @Test
     void testListAllGames() {
-        manager.createGame(100L, profile);
-        manager.createGame(101L, profile);
-        manager.createGame(102L, profile);
+        manager.createGame(100L, config);
+        manager.createGame(101L, config);
+        manager.createGame(102L, config);
 
         List<GameInstance> allGames = manager.listGames(null);
         assertEquals(3, allGames.size());
@@ -145,9 +145,9 @@ class GameInstanceManagerTest {
 
     @Test
     void testListGamesByState() {
-        GameInstance game1 = manager.createGame(100L, profile);
-        GameInstance game2 = manager.createGame(101L, profile);
-        GameInstance game3 = manager.createGame(102L, profile);
+        GameInstance game1 = manager.createGame(100L, config);
+        GameInstance game2 = manager.createGame(101L, config);
+        GameInstance game3 = manager.createGame(102L, config);
 
         game1.transitionToWaitingForPlayers();
         game2.transitionToWaitingForPlayers();
@@ -162,8 +162,8 @@ class GameInstanceManagerTest {
 
     @Test
     void testListInProgressGames() {
-        GameInstance game1 = manager.createGame(100L, profile);
-        GameInstance game2 = manager.createGame(101L, profile);
+        GameInstance game1 = manager.createGame(100L, config);
+        GameInstance game2 = manager.createGame(101L, config);
 
         game1.transitionToWaitingForPlayers();
         game1.addPlayer(1, "AI-1", true, 50);
@@ -181,7 +181,7 @@ class GameInstanceManagerTest {
 
     @Test
     void testStartGame() {
-        GameInstance game = manager.createGame(100L, profile);
+        GameInstance game = manager.createGame(100L, config);
         game.transitionToWaitingForPlayers();
         game.addPlayer(1, "AI-1", true, 50);
         game.addPlayer(2, "AI-2", true, 50);
@@ -193,7 +193,7 @@ class GameInstanceManagerTest {
 
     @Test
     void testStartGameRequiresOwner() {
-        GameInstance game = manager.createGame(100L, profile);
+        GameInstance game = manager.createGame(100L, config);
         game.transitionToWaitingForPlayers();
         game.addPlayer(1, "AI-1", true, 50);
         game.addPlayer(2, "AI-2", true, 50);
@@ -213,8 +213,8 @@ class GameInstanceManagerTest {
 
     @Test
     void testCleanupRemovesOldCompletedGames() throws Exception {
-        GameInstance game1 = manager.createGame(100L, profile);
-        GameInstance game2 = manager.createGame(101L, profile);
+        GameInstance game1 = manager.createGame(100L, config);
+        GameInstance game2 = manager.createGame(101L, config);
 
         // Mark game1 as completed over an hour ago (simulate by setting completed time)
         game1.cancel(); // Sets state to CANCELLED and completedAt
@@ -235,8 +235,8 @@ class GameInstanceManagerTest {
 
     @Test
     void testCleanupDoesNotRemoveActiveGames() {
-        GameInstance game1 = manager.createGame(100L, profile);
-        GameInstance game2 = manager.createGame(101L, profile);
+        GameInstance game1 = manager.createGame(100L, config);
+        GameInstance game2 = manager.createGame(101L, config);
 
         game1.transitionToWaitingForPlayers();
         game1.addPlayer(1, "AI-1", true, 50);
@@ -255,15 +255,15 @@ class GameInstanceManagerTest {
 
     @Test
     void testShutdown() {
-        manager.createGame(100L, profile);
-        manager.createGame(101L, profile);
+        manager.createGame(100L, config);
+        manager.createGame(101L, config);
 
         assertDoesNotThrow(() -> manager.shutdown());
     }
 
     @Test
     void testShutdownStopsAllGames() throws Exception {
-        GameInstance game = manager.createGame(100L, profile);
+        GameInstance game = manager.createGame(100L, config);
         game.transitionToWaitingForPlayers();
         game.addPlayer(1, "AI-1", true, 50);
         game.addPlayer(2, "AI-2", true, 50);
@@ -280,22 +280,18 @@ class GameInstanceManagerTest {
     // Helper Methods
     // ====================================
 
-    private TournamentProfile createTestProfile() {
-        TournamentProfile profile = new TournamentProfile();
-        profile.setName("Test Tournament");
-        profile.setBuyinChips(500);
-        profile.setNumPlayers(10);
+    private GameConfig createTestConfig() {
+        List<BlindLevel> blinds = List.of(new BlindLevel(25, 50, 100, 1, false, "NOLIMIT_HOLDEM"),
+                new BlindLevel(25, 100, 200, 1, false, "NOLIMIT_HOLDEM"),
+                new BlindLevel(50, 150, 300, 1, false, "NOLIMIT_HOLDEM"),
+                new BlindLevel(50, 200, 400, 1, false, "NOLIMIT_HOLDEM"),
+                new BlindLevel(75, 300, 600, 1, false, "NOLIMIT_HOLDEM"),
+                new BlindLevel(100, 400, 800, 1, false, "NOLIMIT_HOLDEM"));
 
-        profile.setLevel(0, 25, 50, 100, 1);
-        profile.setLevel(1, 25, 100, 200, 1);
-        profile.setLevel(2, 50, 150, 300, 1);
-        profile.setLevel(3, 50, 200, 400, 1);
-        profile.setLevel(4, 75, 300, 600, 1);
-        profile.setLevel(5, 100, 400, 800, 1);
-
-        profile.setLevelAdvanceMode(com.donohoedigital.games.poker.model.LevelAdvanceMode.HANDS);
-        profile.setHandsPerLevel(2);
-
-        return profile;
+        return new GameConfig("Test Tournament", "Test description", "Welcome!", 10, 90, true, 1000, 500, blinds, true,
+                "NOLIMIT_HOLDEM", LevelAdvanceMode.HANDS, 2, 20, null, null,
+                new PayoutConfig("SPOTS", 3, 0, 0, "AUTO", List.of()), null, null,
+                new TimeoutConfig(30, 0, 0, 0, 0, 15), new BootConfig(true, 25, true, 10), null, null,
+                new InviteConfig(false, List.of(), true), new BettingConfig(0, true), true, false, false, List.of());
     }
 }

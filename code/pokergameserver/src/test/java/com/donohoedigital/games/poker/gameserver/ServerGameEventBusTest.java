@@ -34,13 +34,13 @@ import java.util.List;
 class ServerGameEventBusTest {
 
     private ServerGameEventBus eventBus;
-    private GameEventStore eventStore;
+    private InMemoryGameEventStore eventStore;
     private List<GameEvent> broadcastedEvents;
     private List<GameEvent> listenerReceivedEvents;
 
     @BeforeEach
     void setUp() {
-        eventStore = new GameEventStore("test-game");
+        eventStore = new InMemoryGameEventStore("test-game");
         eventBus = new ServerGameEventBus(eventStore);
         broadcastedEvents = new ArrayList<>();
         listenerReceivedEvents = new ArrayList<>();
@@ -109,7 +109,7 @@ class ServerGameEventBusTest {
         List<String> operations = new ArrayList<>();
 
         // Set up event store wrapper that tracks appends
-        GameEventStore trackingStore = new GameEventStore("test") {
+        InMemoryGameEventStore trackingStore = new InMemoryGameEventStore("test") {
             @Override
             public synchronized void append(GameEvent event) {
                 operations.add("store");

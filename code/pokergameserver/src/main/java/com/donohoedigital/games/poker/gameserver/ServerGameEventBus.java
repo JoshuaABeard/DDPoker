@@ -33,7 +33,7 @@ import java.util.function.Consumer;
  * notified → Broadcast to WebSocket clients
  */
 public class ServerGameEventBus extends GameEventBus {
-    private final GameEventStore eventStore;
+    private final IGameEventStore eventStore;
     private volatile Consumer<GameEvent> broadcastCallback;
 
     /**
@@ -42,7 +42,7 @@ public class ServerGameEventBus extends GameEventBus {
      * @param eventStore
      *            the event store for persistence (required)
      */
-    public ServerGameEventBus(GameEventStore eventStore) {
+    public ServerGameEventBus(IGameEventStore eventStore) {
         if (eventStore == null) {
             throw new IllegalArgumentException("Event store cannot be null");
         }
@@ -105,7 +105,7 @@ public class ServerGameEventBus extends GameEventBus {
      *
      * @return the event store
      */
-    public GameEventStore getEventStore() {
+    public IGameEventStore getEventStore() {
         return eventStore;
     }
 }

@@ -33,7 +33,8 @@ package com.donohoedigital.games.poker.gameserver;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.donohoedigital.games.poker.model.TournamentProfile;
+import com.donohoedigital.games.poker.gameserver.GameConfig.*;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.junit.jupiter.api.AfterEach;
@@ -44,13 +45,13 @@ import org.junit.jupiter.api.Test;
 class GameInstanceTest {
 
     private GameServerProperties properties;
-    private TournamentProfile profile;
+    private GameConfig config;
     private ExecutorService executor;
 
     @BeforeEach
     void setUp() {
         properties = new GameServerProperties(50, 0, 120, 10);
-        profile = createTestProfile();
+        config = createTestConfig();
         executor = Executors.newSingleThreadExecutor();
     }
 
@@ -67,7 +68,7 @@ class GameInstanceTest {
 
     @Test
     void testInitialState() {
-        GameInstance game = GameInstance.create("test-1", 100L, profile, properties);
+        GameInstance game = GameInstance.create("test-1", 100L, config, properties);
 
         assertEquals("test-1", game.getGameId());
         assertEquals(100L, game.getOwnerProfileId());
@@ -77,7 +78,7 @@ class GameInstanceTest {
 
     @Test
     void testTransitionToWaitingForPlayers() {
-        GameInstance game = GameInstance.create("test-1", 100L, profile, properties);
+        GameInstance game = GameInstance.create("test-1", 100L, config, properties);
         game.transitionToWaitingForPlayers();
 
         assertEquals(GameInstanceState.WAITING_FOR_PLAYERS, game.getState());
@@ -85,7 +86,7 @@ class GameInstanceTest {
 
     @Test
     void testLifecycleProgression() throws Exception {
-        GameInstance game = GameInstance.create("test-1", 100L, profile, properties);
+        GameInstance game = GameInstance.create("test-1", 100L, config, properties);
 
         // CREATED → WAITING_FOR_PLAYERS
         game.transitionToWaitingForPlayers();
@@ -122,7 +123,7 @@ class GameInstanceTest {
 
     @Test
     void testCancel() {
-        GameInstance game = GameInstance.create("test-1", 100L, profile, properties);
+        GameInstance game = GameInstance.create("test-1", 100L, config, properties);
         game.transitionToWaitingForPlayers();
         game.cancel();
 
@@ -136,7 +137,7 @@ class GameInstanceTest {
 
     @Test
     void testAddPlayer() {
-        GameInstance game = GameInstance.create("test-1", 100L, profile, properties);
+        GameInstance game = GameInstance.create("test-1", 100L, config, properties);
         game.transitionToWaitingForPlayers();
 
         game.addPlayer(200L, "Player1", false, 0);
@@ -147,7 +148,7 @@ class GameInstanceTest {
 
     @Test
     void testAddMultiplePlayers() {
-        GameInstance game = GameInstance.create("test-1", 100L, profile, properties);
+        GameInstance game = GameInstance.create("test-1", 100L, config, properties);
         game.transitionToWaitingForPlayers();
 
         game.addPlayer(200L, "Player1", false, 0);
@@ -159,14 +160,14 @@ class GameInstanceTest {
 
     @Test
     void testCannotAddPlayersInCreatedState() {
-        GameInstance game = GameInstance.create("test-1", 100L, profile, properties);
+        GameInstance game = GameInstance.create("test-1", 100L, config, properties);
 
         assertThrows(IllegalStateException.class, () -> game.addPlayer(200L, "Player1", false, 0));
     }
 
     @Test
     void testCannotAddPlayersAfterGameStarts() {
-        GameInstance game = GameInstance.create("test-1", 100L, profile, properties);
+        GameInstance game = GameInstance.create("test-1", 100L, config, properties);
         game.transitionToWaitingForPlayers();
         game.addPlayer(1, "AI-1", true, 50);
         game.addPlayer(2, "AI-2", true, 50);
@@ -177,7 +178,7 @@ class GameInstanceTest {
 
     @Test
     void testRemovePlayerBeforeStart() {
-        GameInstance game = GameInstance.create("test-1", 100L, profile, properties);
+        GameInstance game = GameInstance.create("test-1", 100L, config, properties);
         game.transitionToWaitingForPlayers();
         game.addPlayer(200L, "Player1", false, 0);
 
@@ -191,7 +192,7 @@ class GameInstanceTest {
 
     @Test
     void testRemovePlayerAfterStartMarksDisconnected() {
-        GameInstance game = GameInstance.create("test-1", 100L, profile, properties);
+        GameInstance game = GameInstance.create("test-1", 100L, config, properties);
         game.transitionToWaitingForPlayers();
         game.addPlayer(200L, "Player1", false, 0);
         game.addPlayer(1, "AI-1", true, 50);
@@ -210,7 +211,7 @@ class GameInstanceTest {
 
     @Test
     void testPlayerReconnect() {
-        GameInstance game = GameInstance.create("test-1", 100L, profile, properties);
+        GameInstance game = GameInstance.create("test-1", 100L, config, properties);
         game.transitionToWaitingForPlayers();
         game.addPlayer(200L, "Player1", false, 0);
         game.addPlayer(1, "AI-1", true, 50);
@@ -229,7 +230,7 @@ class GameInstanceTest {
 
     @Test
     void testOnlyOwnerCanStart() {
-        GameInstance game = GameInstance.create("test-1", 100L, profile, properties);
+        GameInstance game = GameInstance.create("test-1", 100L, config, properties);
         game.transitionToWaitingForPlayers();
         game.addPlayer(1, "AI-1", true, 50);
         game.addPlayer(2, "AI-2", true, 50);
@@ -243,7 +244,7 @@ class GameInstanceTest {
 
     @Test
     void testOnlyOwnerCanPause() throws Exception {
-        GameInstance game = GameInstance.create("test-1", 100L, profile, properties);
+        GameInstance game = GameInstance.create("test-1", 100L, config, properties);
         game.transitionToWaitingForPlayers();
         game.addPlayer(1, "AI-1", true, 50);
         game.addPlayer(2, "AI-2", true, 50);
@@ -262,7 +263,7 @@ class GameInstanceTest {
 
     @Test
     void testOnlyOwnerCanCancel() {
-        GameInstance game = GameInstance.create("test-1", 100L, profile, properties);
+        GameInstance game = GameInstance.create("test-1", 100L, config, properties);
         game.transitionToWaitingForPlayers();
 
         // Non-owner cannot cancel
@@ -278,7 +279,7 @@ class GameInstanceTest {
 
     @Test
     void testAIOnlyGameRunsToCompletion() throws Exception {
-        GameInstance game = GameInstance.create("test-1", 100L, profile, properties);
+        GameInstance game = GameInstance.create("test-1", 100L, config, properties);
         game.transitionToWaitingForPlayers();
 
         // Add 4 AI players
@@ -300,25 +301,35 @@ class GameInstanceTest {
     // Helper Methods
     // ====================================
 
-    private TournamentProfile createTestProfile() {
-        TournamentProfile profile = new TournamentProfile();
-        profile.setName("Test Tournament");
-        profile.setBuyinChips(500);
-        profile.setNumPlayers(10);
-
+    private GameConfig createTestConfig() {
         // 6 blind levels for hands-based testing
-        profile.setLevel(0, 25, 50, 100, 1);
-        profile.setLevel(1, 25, 100, 200, 1);
-        profile.setLevel(2, 50, 150, 300, 1);
-        profile.setLevel(3, 50, 200, 400, 1);
-        profile.setLevel(4, 75, 300, 600, 1);
-        profile.setLevel(5, 100, 400, 800, 1);
+        // Old setLevel(level, smallBlind, bigBlind, ante, minutes)
+        List<BlindLevel> blinds = List.of(new BlindLevel(25, 50, 100, 1, false, "NOLIMIT_HOLDEM"),
+                new BlindLevel(25, 100, 200, 1, false, "NOLIMIT_HOLDEM"),
+                new BlindLevel(50, 150, 300, 1, false, "NOLIMIT_HOLDEM"),
+                new BlindLevel(50, 200, 400, 1, false, "NOLIMIT_HOLDEM"),
+                new BlindLevel(75, 300, 600, 1, false, "NOLIMIT_HOLDEM"),
+                new BlindLevel(100, 400, 800, 1, false, "NOLIMIT_HOLDEM"));
 
-        // Hands-based advancement (2 hands per level)
-        profile.setLevelAdvanceMode(com.donohoedigital.games.poker.model.LevelAdvanceMode.HANDS);
-        profile.setHandsPerLevel(2);
-
-        return profile;
+        return new GameConfig("Test Tournament", "Test tournament description", "Welcome!", 10, // maxPlayers
+                90, // maxOnlinePlayers
+                true, // fillComputer
+                1000, // buyIn (not used in tests, but required)
+                500, // startingChips
+                blinds, true, // doubleAfterLastLevel
+                "NOLIMIT_HOLDEM", LevelAdvanceMode.HANDS, // Hands-based advancement
+                2, // handsPerLevel (2 hands per level)
+                20, // defaultMinutesPerLevel
+                null, // rebuys disabled
+                null, // addons disabled
+                new PayoutConfig("SPOTS", 3, 0, 0, "AUTO", List.of()), null, // house
+                null, // bounty
+                new TimeoutConfig(30, 0, 0, 0, 0, 15), new BootConfig(true, 25, true, 10), null, // late registration
+                null, // scheduled start
+                new InviteConfig(false, List.of(), true), new BettingConfig(0, true), true, // onlineActivatedOnly
+                false, // allowDash
+                false, // allowAdvisor
+                List.of());
     }
 
     /**

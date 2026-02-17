@@ -34,7 +34,7 @@ package com.donohoedigital.games.poker.gameserver;
 import com.donohoedigital.games.poker.core.PlayerAction;
 import com.donohoedigital.games.poker.core.PlayerActionProvider;
 import com.donohoedigital.games.poker.core.TournamentEngine;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+import com.donohoedigital.games.poker.gameserver.GameConfig.BlindLevel;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +57,7 @@ public class GameInstance {
 
     private final String gameId;
     private final long ownerProfileId;
-    private final TournamentProfile profile;
+    private final GameConfig config;
     private final GameServerProperties properties;
 
     // Game state
@@ -66,7 +66,7 @@ public class GameInstance {
     private ServerTournamentDirector director;
     private ServerPlayerActionProvider actionProvider;
     private ServerGameEventBus eventBus;
-    private GameEventStore eventStore;
+    private IGameEventStore eventStore;
 
     // Player tracking
     private final Map<Long, ServerPlayerSession> playerSessions = new ConcurrentHashMap<>();
@@ -79,11 +79,10 @@ public class GameInstance {
     private volatile Instant completedAt;
 
     // Private constructor - use create() factory method
-    private GameInstance(String gameId, long ownerProfileId, TournamentProfile profile,
-            GameServerProperties properties) {
+    private GameInstance(String gameId, long ownerProfileId, GameConfig config, GameServerProperties properties) {
         this.gameId = gameId;
         this.ownerProfileId = ownerProfileId;
-        this.profile = profile;
+        this.config = config;
         this.properties = properties;
         this.state = GameInstanceState.CREATED;
     }
@@ -95,15 +94,15 @@ public class GameInstance {
      *            unique game identifier
      * @param ownerProfileId
      *            profile ID of the game owner
-     * @param profile
-     *            tournament configuration
+     * @param config
+     *            game configuration
      * @param properties
      *            server properties
      * @return new GameInstance in CREATED state
      */
-    public static GameInstance create(String gameId, long ownerProfileId, TournamentProfile profile,
+    public static GameInstance create(String gameId, long ownerProfileId, GameConfig config,
             GameServerProperties properties) {
-        return new GameInstance(gameId, ownerProfileId, profile, properties);
+        return new GameInstance(gameId, ownerProfileId, config, properties);
     }
 
     // ====================================
@@ -135,7 +134,7 @@ public class GameInstance {
             }
 
             // Create player list from sessions
-            int startingChips = profile.getBuyinChips();
+            int startingChips = config.startingChips();
             List<ServerPlayer> players = new ArrayList<>();
             for (ServerPlayerSession session : playerSessions.values()) {
                 ServerPlayer player = new ServerPlayer((int) session.getProfileId(), session.getPlayerName(),
@@ -144,7 +143,7 @@ public class GameInstance {
             }
 
             // Initialize game objects
-            eventStore = new GameEventStore(gameId);
+            eventStore = new InMemoryGameEventStore(gameId);
             eventBus = new ServerGameEventBus(eventStore);
 
             PlayerActionProvider aiProvider = createSimpleAI();
@@ -154,8 +153,9 @@ public class GameInstance {
             // Determine number of tables (1 table per 10 players, minimum 1)
             int numTables = Math.max(1, (players.size() + 9) / 10);
 
-            // Extract tournament profile configuration
-            int numLevels = profile.getLastLevel() + 1;
+            // Extract game configuration
+            List<BlindLevel> blindStructure = config.blindStructure();
+            int numLevels = blindStructure.size();
             int[] smallBlinds = new int[numLevels];
             int[] bigBlinds = new int[numLevels];
             int[] antes = new int[numLevels];
@@ -163,21 +163,30 @@ public class GameInstance {
             boolean[] breakLevels = new boolean[numLevels];
 
             for (int i = 0; i < numLevels; i++) {
-                smallBlinds[i] = profile.getSmallBlind(i);
-                bigBlinds[i] = profile.getBigBlind(i);
-                antes[i] = profile.getAnte(i);
-                levelMinutes[i] = profile.getMinutes(i);
-                breakLevels[i] = profile.isBreak(i);
+                BlindLevel level = blindStructure.get(i);
+                smallBlinds[i] = level.smallBlind();
+                bigBlinds[i] = level.bigBlind();
+                antes[i] = level.ante();
+                levelMinutes[i] = level.minutes();
+                breakLevels[i] = level.isBreak();
             }
 
             // Get level advancement configuration
-            com.donohoedigital.games.poker.model.LevelAdvanceMode levelAdvanceMode = profile.getLevelAdvanceMode();
-            int handsPerLevel = profile.getHandsPerLevel();
+            com.donohoedigital.games.poker.model.LevelAdvanceMode levelAdvanceMode = config
+                    .levelAdvanceMode() == GameConfig.LevelAdvanceMode.TIME
+                            ? com.donohoedigital.games.poker.model.LevelAdvanceMode.TIME
+                            : com.donohoedigital.games.poker.model.LevelAdvanceMode.HANDS;
+            int handsPerLevel = config.handsPerLevel();
+
+            // Extract rebuy/addon configuration
+            int maxRebuys = config.rebuys() != null && config.rebuys().enabled() ? config.rebuys().maxRebuys() : 0;
+            int lastRebuyLevel = config.rebuys() != null && config.rebuys().enabled() ? config.rebuys().lastLevel() : 0;
+            boolean addons = config.addons() != null && config.addons().enabled();
 
             tournament = new ServerTournamentContext(players, numTables, startingChips, smallBlinds, bigBlinds, antes,
                     levelMinutes, breakLevels, false, // practice mode
-                    profile.getMaxRebuys(), profile.getLastRebuyLevel(), profile.isAddons(),
-                    properties.actionTimeoutSeconds(), levelAdvanceMode, handsPerLevel);
+                    maxRebuys, lastRebuyLevel, addons, properties.actionTimeoutSeconds(), levelAdvanceMode,
+                    handsPerLevel);
 
             TournamentEngine engine = new TournamentEngine(eventBus, actionProvider);
             director = new ServerTournamentDirector(engine, tournament, eventBus, actionProvider, properties,
@@ -408,15 +417,15 @@ public class GameInstance {
         return completedAt;
     }
 
-    public TournamentProfile getProfile() {
-        return profile;
+    public GameConfig getConfig() {
+        return config;
     }
 
     public ServerTournamentContext getTournament() {
         return tournament;
     }
 
-    public GameEventStore getEventStore() {
+    public IGameEventStore getEventStore() {
         return eventStore;
     }
 

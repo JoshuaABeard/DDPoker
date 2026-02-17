@@ -50,7 +50,7 @@ class ServerTournamentDirectorTest {
         ServerTournamentContext tournament = createTournament(players, 1);
 
         // Create server components
-        GameEventStore eventStore = new GameEventStore("test-game");
+        InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-game");
         ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
         PlayerActionProvider aiProvider = createSimpleAI(42);
         ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {
@@ -91,7 +91,7 @@ class ServerTournamentDirectorTest {
         ServerTournamentContext tournament = createTournament(players, 2);
 
         // Create server components
-        GameEventStore eventStore = new GameEventStore("test-game-multi");
+        InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-game-multi");
         ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
         PlayerActionProvider aiProvider = createSimpleAI(123);
         ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {
@@ -135,7 +135,7 @@ class ServerTournamentDirectorTest {
         List<ServerPlayer> players = createPlayers(4, 500);
         ServerTournamentContext tournament = createTournament(players, 1);
 
-        GameEventStore eventStore = new GameEventStore("test-pause");
+        InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-pause");
         ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
         PlayerActionProvider aiProvider = createSimpleAI(42);
         ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {
@@ -177,7 +177,7 @@ class ServerTournamentDirectorTest {
         List<ServerPlayer> players = createPlayers(4, 500);
         ServerTournamentContext tournament = createTournament(players, 1);
 
-        GameEventStore eventStore = new GameEventStore("test-shutdown");
+        InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-shutdown");
         ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
         PlayerActionProvider aiProvider = createSimpleAI(42);
         ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {
@@ -218,7 +218,7 @@ class ServerTournamentDirectorTest {
         int totalChips = players.stream().mapToInt(ServerPlayer::getChipCount).sum();
         assertThat(totalChips).isEqualTo(3000); // 6 * 500
 
-        GameEventStore eventStore = new GameEventStore("test-chips");
+        InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-chips");
         ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
         PlayerActionProvider aiProvider = createSimpleAI(42);
         ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {

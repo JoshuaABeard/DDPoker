@@ -28,15 +28,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Append-only event log for game events. The event store is the authoritative
- * record of every game action, enabling crash recovery, game replay, and
- * simulation analysis.
+ * In-memory implementation of {@link IGameEventStore}.
  *
  * <p>
- * M1 implementation uses in-memory storage. M2 will add database persistence
- * with the same interface.
+ * Uses CopyOnWriteArrayList for thread-safe concurrent access. Suitable for M1
+ * single-server deployments. M2 adds DatabaseGameEventStore for persistence
+ * across restarts.
  */
-public class GameEventStore {
+public class InMemoryGameEventStore implements IGameEventStore {
     private final String gameId;
     private final AtomicLong sequenceNumber;
     private final List<StoredEvent> events;
@@ -47,7 +46,7 @@ public class GameEventStore {
      * @param gameId
      *            unique identifier for the game
      */
-    public GameEventStore(String gameId) {
+    public InMemoryGameEventStore(String gameId) {
         if (gameId == null || gameId.isBlank()) {
             throw new IllegalArgumentException("Game ID cannot be null or blank");
         }
@@ -56,14 +55,7 @@ public class GameEventStore {
         this.events = new CopyOnWriteArrayList<>();
     }
 
-    /**
-     * Append an event to the store.
-     * <p>
-     * Thread-safe: CopyOnWriteArrayList ensures safe concurrent access.
-     *
-     * @param event
-     *            the event to append
-     */
+    @Override
     public void append(GameEvent event) {
         if (event == null) {
             throw new IllegalArgumentException("Event cannot be null");
@@ -75,52 +67,28 @@ public class GameEventStore {
         events.add(stored);
     }
 
-    /**
-     * Get all events in this store.
-     *
-     * @return unmodifiable list of all stored events in sequence order
-     */
+    @Override
     public List<StoredEvent> getEvents() {
         return Collections.unmodifiableList(events);
     }
 
-    /**
-     * Get events after a specific sequence number.
-     *
-     * @param afterSequence
-     *            the sequence number to start after
-     * @return unmodifiable list of events with sequence numbers greater than the
-     *         specified value
-     */
+    @Override
     public List<StoredEvent> getEventsSince(long afterSequence) {
         return events.stream().filter(e -> e.sequenceNumber() > afterSequence).toList();
     }
 
-    /**
-     * Get the game ID for this event store.
-     *
-     * @return the game ID
-     */
+    @Override
     public String getGameId() {
         return gameId;
     }
 
-    /**
-     * Clear all events from the store and reset the sequence number.
-     * <p>
-     * Thread-safe: CopyOnWriteArrayList ensures safe concurrent access. Used
-     * primarily for testing or game reset scenarios.
-     */
+    @Override
     public void clear() {
         events.clear();
         sequenceNumber.set(0);
     }
 
-    /**
-     * Get the current sequence number (number of events stored).
-     *
-     * @return the current sequence number
-     */
+    @Override
     public long getCurrentSequenceNumber() {
         return sequenceNumber.get();
     }
