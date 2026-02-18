@@ -1,6 +1,6 @@
 # M6: Game Discovery & Management
 
-**Status:** PLANNED
+**Status:** COMPLETE (2026-02-17) — all phases implemented, reviewed (APPROVED), and merged. Review suggestions resolved in follow-up commit `cf5a7e2a`.
 **Created:** 2026-02-17
 **Parent Plan:** `.claude/plans/SERVER-HOSTED-GAME-ENGINE.md`
 **Depends On:** M1 ✅, M2 ✅, M3 ✅, M4 ✅
