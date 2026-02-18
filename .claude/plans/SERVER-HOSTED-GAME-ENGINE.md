@@ -1,6 +1,6 @@
 # Server-Hosted Game Engine: Comprehensive Implementation Plan
 
-**Status:** IN PROGRESS — M1 ✅ M2 ✅ M3 ✅ M4 ✅ | Next: M5 (Web Client) or M7 (Legacy P2P Removal)
+**Status:** IN PROGRESS — M1 ✅ M2 ✅ M3 ✅ M4 ✅ M6 ✅ | Next: M7 (Legacy P2P Removal) or M5 (Web Client)
 **Created:** 2026-02-15
 **Last Updated:** 2026-02-17
 **Plan:** `.claude/plans/SERVER-HOSTED-GAME-ENGINE.md`
@@ -1016,36 +1016,21 @@ Milestone 4: Desktop Adaptation              Milestone 5: Web Client
 
 ---
 
-## Milestone 7: Legacy P2P/TCP Code Removal
+## Milestone 7: Legacy P2P/TCP Code Removal & Client Modernization
 
-**Goal:** Remove all P2P/TCP networking code that is replaced by the WebSocket protocol. No existing user base means no backward compatibility needed.
+**Goal:** Remove all P2P/TCP networking code replaced by WebSocket, migrate profile management from legacy WAN protocol to REST, build replacement community hosting configuration UI, modernize client settings, and simplify the desktop client.
 
-**Effort:** M
+**Detailed Plan:** `.claude/plans/M7-LEGACY-P2P-REMOVAL.md`
 
-### Phase 7.1: Remove P2P Game Hosting Code
+**Status:** APPROVED
 
-**Delete or gut the following:**
-- `OnlineManager` - P2P message routing hub (entire class, replaced by `WebSocketGameClient`)
-- `PokerConnectionServer` (inner class of `PokerMain`) - TCP listener for P2P connections
-- `TournamentDirector` - The Swing-dependent game engine (replaced by `ServerTournamentDirector`)
-- P2P connection classes in `code/server/src/main/java/com/donohoedigital/p2p/`
-- TCP-specific message handling in `code/poker/src/main/java/.../poker/online/`
+**Effort:** L (3–4 weeks)
 
-### Phase 7.2: Clean Up Networking Infrastructure
+**Scope:** ~50 files deleted (~12,000+ lines), ~30 files modified. Includes profile REST migration (add missing auth endpoints, update desktop dialogs), dedicated WebSocket lobby chat (social feature — chat without being in a game), community hosting config UI replacement (preserves IP detection/port config UX backed by REST/WebSocket), GamePrefsPanel modernization (single server URL), P2P game hosting code removal, networking infrastructure deletion (entire `server/p2p/` package), core game class refactoring (TournamentDirector references → PokerDirector interface), and PokerMain/PokerGame cleanup.
 
-- Remove `PokerConnectionServer` / `Peer2PeerServer` / related TCP server code
-- Remove P2P-specific message types from `OnlineMessage` (keep types used by WAN server communication if still needed for game registration)
-- Remove `bHost_` flag and all host-vs-client branching in the desktop client
-- Clean up `PokerMain` to remove TCP server startup code
+**Key decisions:** Keep `PublicIPDetector` (pure utility, no P2P deps — needed for community hosting). Keep server URL configurable in preferences. Lobby chat is a dedicated WebSocket social feature. `EmbeddedGameServer` gets configurable port for community hosting.
 
-### Phase 7.3: Simplify Desktop Client
-
-- `PokerMain` becomes: start embedded Spring Boot server + launch Swing UI
-- Remove all game logic from the `poker` module that now lives in `pokergameserver`
-- The `poker` module becomes purely: Swing UI + WebSocket client + embedded server bootstrap
-- Remove direct dependencies on `TournamentDirector`, `OnlineManager` from UI classes
-
-**Risk:** Must ensure ALL functionality is covered by the WebSocket path before deleting old code. Run full test suite and manual testing of all game modes before cleanup.
+**See detailed plan for 7 phases, file-by-file deletion/modification lists, risk register, and testing strategy.**
 
 ---
 
@@ -1060,7 +1045,7 @@ Milestone 4: Desktop Adaptation              Milestone 5: Web Client
 | M4: Desktop Adaptation | XL | 5-7 weeks | High (embedded server + Swing adapter + mode unification) |
 | M5: Web Client | XL | 4-6 weeks | Medium (new UI, but well-defined protocol) |
 | M6: Game Discovery | M | 1-2 weeks | Low (extends existing infrastructure) |
-| M7: Legacy P2P Removal | M | 2-3 weeks | Medium (must verify all paths covered first) |
+| M7: Legacy P2P Removal + Profile Migration | L | 3-4 weeks | Medium (must verify all paths covered first) |
 | **Total** | | **~23-35 weeks** | |
 
 ---
