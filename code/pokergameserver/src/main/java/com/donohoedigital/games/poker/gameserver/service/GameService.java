@@ -21,36 +21,111 @@ package com.donohoedigital.games.poker.gameserver.service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.mindrot.jbcrypt.BCrypt;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.annotation.PostConstruct;
+
 import com.donohoedigital.games.poker.gameserver.GameConfig;
+import com.donohoedigital.games.poker.gameserver.GameInstance;
+import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.GameInstanceState;
-import com.donohoedigital.games.poker.gameserver.dto.GameStateResponse;
+import com.donohoedigital.games.poker.gameserver.GameServerException;
+import com.donohoedigital.games.poker.gameserver.GameServerProperties;
+import com.donohoedigital.games.poker.gameserver.GameServerException.ErrorCode;
+import com.donohoedigital.games.poker.gameserver.dto.CommunityGameRegisterRequest;
+import com.donohoedigital.games.poker.gameserver.dto.GameJoinResponse;
+import com.donohoedigital.games.poker.gameserver.dto.GameListResponse;
+import com.donohoedigital.games.poker.gameserver.dto.GameSettingsRequest;
 import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
+import com.donohoedigital.games.poker.gameserver.dto.GameSummary.BlindsSummary;
 import com.donohoedigital.games.poker.gameserver.persistence.entity.GameInstanceEntity;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.GameEventRepository;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.GameInstanceRepository;
+import com.donohoedigital.games.poker.gameserver.websocket.LobbyBroadcaster;
+import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData.LobbyPlayerData;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Service for game management operations.
+ * Service for game management and discovery operations.
  */
 @Service
 @Transactional
 public class GameService {
 
+    private static final Logger logger = LogManager.getLogger(GameService.class);
+
     private final GameInstanceRepository gameInstanceRepository;
     private final GameEventRepository gameEventRepository;
+    private final ObjectMapper objectMapper;
+
+    /**
+     * Set by WebSocketAutoConfiguration post-construction; null when running in
+     * test/non-web contexts.
+     */
+    @Autowired(required = false)
+    private LobbyBroadcaster lobbyBroadcaster;
+
+    /**
+     * Set by GameServerAutoConfiguration post-construction; null when running in
+     * test contexts.
+     */
+    @Autowired(required = false)
+    private GameInstanceManager gameInstanceManager;
+
+    /**
+     * Null in non-web/test contexts; used in @PostConstruct to seed serverBaseUrl
+     * from config.
+     */
+    @Autowired(required = false)
+    private GameServerProperties gameServerProperties;
+
+    /**
+     * Server base URL used to build ws_url for SERVER-hosted games. Injected by
+     * EmbeddedGameServer post-startup or by @PostConstruct in standalone mode.
+     */
+    private volatile String serverBaseUrl = "ws://localhost";
 
     public GameService(GameInstanceRepository gameInstanceRepository, GameEventRepository gameEventRepository) {
         this.gameInstanceRepository = gameInstanceRepository;
         this.gameEventRepository = gameEventRepository;
+        this.objectMapper = new ObjectMapper();
+    }
+
+    @PostConstruct
+    public void init() {
+        if (gameServerProperties != null) {
+            this.serverBaseUrl = gameServerProperties.serverBaseUrl();
+        }
     }
 
     /**
-     * Create a new game.
+     * Sets the server base URL used to build ws_url for SERVER-hosted games. Called
+     * by EmbeddedGameServer after the embedded Spring context starts (to get the
+     * actual port), or by a @PostConstruct in standalone mode (from
+     * GameServerProperties.serverBaseUrl).
+     */
+    public void setServerBaseUrl(String serverBaseUrl) {
+        this.serverBaseUrl = serverBaseUrl;
+    }
+
+    public String getServerBaseUrl() {
+        return serverBaseUrl;
+    }
+
+    // =========================================================================
+    // Game creation
+    // =========================================================================
+
+    /**
+     * Create a new SERVER-hosted game.
      *
      * @param config
      *            game configuration
@@ -62,92 +137,387 @@ public class GameService {
      */
     public String createGame(GameConfig config, Long ownerProfileId, String ownerName) {
         String gameId = UUID.randomUUID().toString();
+        String wsUrl = serverBaseUrl + "/ws/games/" + gameId;
 
-        // Create database entity
         GameInstanceEntity entity = new GameInstanceEntity();
         entity.setGameId(gameId);
         entity.setName(config.name());
         entity.setOwnerProfileId(ownerProfileId);
         entity.setOwnerName(ownerName);
         entity.setMaxPlayers(config.maxPlayers());
-        entity.setPlayerCount(1);
+        entity.setPlayerCount(0);
         entity.setStatus(GameInstanceState.WAITING_FOR_PLAYERS);
         entity.setHostingType("SERVER");
-        entity.setProfileData("{}");
+        entity.setWsUrl(wsUrl);
+        entity.setProfileData(serializeConfig(config));
         entity.setCreatedAt(Instant.now());
 
         gameInstanceRepository.save(entity);
-
         return gameId;
     }
 
     /**
-     * Join an existing game.
-     *
-     * @param gameId
-     *            game ID
-     * @param profileId
-     *            player's profile ID
-     * @param playerName
-     *            player's username
-     * @return true if joined successfully
+     * Register a community-hosted game.
      */
-    public boolean joinGame(String gameId, Long profileId, String playerName) {
-        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElse(null);
-        if (entity == null) {
-            return false;
+    public GameSummary registerCommunityGame(Long ownerProfileId, String ownerName,
+            CommunityGameRegisterRequest request) {
+        String gameId = UUID.randomUUID().toString();
+
+        GameInstanceEntity entity = new GameInstanceEntity();
+        entity.setGameId(gameId);
+        entity.setName(request.name());
+        entity.setOwnerProfileId(ownerProfileId);
+        entity.setOwnerName(ownerName);
+        entity.setMaxPlayers(request.profile() != null ? request.profile().maxPlayers() : 9);
+        entity.setPlayerCount(0);
+        entity.setStatus(GameInstanceState.WAITING_FOR_PLAYERS);
+        entity.setHostingType("COMMUNITY");
+        entity.setWsUrl(request.wsUrl());
+        entity.setProfileData(serializeConfig(request.profile()));
+        entity.setCreatedAt(Instant.now());
+        entity.setLastHeartbeat(Instant.now());
+
+        if (request.password() != null && !request.password().isEmpty()) {
+            entity.setPasswordHash(BCrypt.hashpw(request.password(), BCrypt.gensalt()));
         }
 
-        entity.setPlayerCount(entity.getPlayerCount() + 1);
         gameInstanceRepository.save(entity);
+        return toSummary(entity);
+    }
 
-        return true;
+    // =========================================================================
+    // Game listing
+    // =========================================================================
+
+    /**
+     * Paginated game listing with optional filters.
+     *
+     * @param statuses
+     *            status names to include (default: WAITING_FOR_PLAYERS,
+     *            IN_PROGRESS)
+     * @param hostingType
+     *            "SERVER", "COMMUNITY", or null for all
+     * @param search
+     *            case-insensitive substring match against name and ownerName
+     * @param page
+     *            zero-based page index
+     * @param pageSize
+     *            items per page (max 100)
+     */
+    @Transactional(readOnly = true)
+    public GameListResponse listGames(List<GameInstanceState> statuses, String hostingType, String search, int page,
+            int pageSize) {
+        if (statuses == null || statuses.isEmpty()) {
+            statuses = List.of(GameInstanceState.WAITING_FOR_PLAYERS, GameInstanceState.IN_PROGRESS);
+        }
+        pageSize = Math.min(pageSize, 100);
+
+        List<GameInstanceEntity> all = gameInstanceRepository.findAll();
+        final List<GameInstanceState> finalStatuses = statuses;
+        final String searchLower = search != null ? search.toLowerCase(Locale.ROOT) : null;
+
+        List<GameSummary> filtered = all.stream().filter(e -> finalStatuses.contains(e.getStatus()))
+                .filter(e -> hostingType == null || hostingType.equals(e.getHostingType()))
+                .filter(e -> searchLower == null || e.getName().toLowerCase(Locale.ROOT).contains(searchLower)
+                        || e.getOwnerName().toLowerCase(Locale.ROOT).contains(searchLower))
+                .map(this::toSummary).toList();
+
+        int total = filtered.size();
+        int fromIndex = page * pageSize;
+        if (fromIndex >= total) {
+            return new GameListResponse(List.of(), total, page, pageSize);
+        }
+        int toIndex = Math.min(fromIndex + pageSize, total);
+        return new GameListResponse(filtered.subList(fromIndex, toIndex), total, page, pageSize);
     }
 
     /**
-     * Start a game.
-     *
-     * @param gameId
-     *            game ID
-     * @return true if started successfully
+     * Get a single game summary by ID.
      */
+    @Transactional(readOnly = true)
+    public GameSummary getGameSummary(String gameId) {
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElse(null);
+        if (entity == null) {
+            return null;
+        }
+        return toSummary(entity);
+    }
+
+    // =========================================================================
+    // Join gatekeeper
+    // =========================================================================
+
+    /**
+     * Join gate: validates password (if private) and returns the WebSocket URL.
+     * Does NOT increment playerCount.
+     */
+    public GameJoinResponse joinGame(String gameId, String password) {
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId)
+                .orElseThrow(() -> new GameServerException(ErrorCode.GAME_NOT_FOUND, "Game not found: " + gameId));
+
+        if (entity.getStatus() != GameInstanceState.WAITING_FOR_PLAYERS) {
+            throw new GameServerException(ErrorCode.GAME_NOT_JOINABLE,
+                    "Game is not accepting players (status: " + entity.getStatus() + ")");
+        }
+
+        if (entity.getPasswordHash() != null) {
+            if (password == null || !BCrypt.checkpw(password, entity.getPasswordHash())) {
+                throw new GameServerException(ErrorCode.WRONG_PASSWORD, "Incorrect password");
+            }
+        }
+
+        return new GameJoinResponse(entity.getWsUrl(), gameId);
+    }
+
+    // =========================================================================
+    // Heartbeat
+    // =========================================================================
+
+    /**
+     * Record a heartbeat from the community host.
+     */
+    public void heartbeat(String gameId, Long requesterProfileId) {
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId)
+                .orElseThrow(() -> new GameServerException(ErrorCode.GAME_NOT_FOUND, "Game not found: " + gameId));
+
+        if (!"COMMUNITY".equals(entity.getHostingType())) {
+            throw new GameServerException(ErrorCode.WRONG_HOSTING_TYPE, "Heartbeat is only for COMMUNITY games");
+        }
+        if (!entity.getOwnerProfileId().equals(requesterProfileId)) {
+            throw new GameServerException(ErrorCode.NOT_GAME_OWNER, "Only the game owner can send heartbeats");
+        }
+
+        gameInstanceRepository.updateHeartbeat(gameId, Instant.now());
+    }
+
+    // =========================================================================
+    // Game lifecycle
+    // =========================================================================
+
+    /**
+     * Start the game (WAITING_FOR_PLAYERS → IN_PROGRESS).
+     */
+    public GameSummary startGame(String gameId, Long requesterProfileId) {
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId)
+                .orElseThrow(() -> new GameServerException(ErrorCode.GAME_NOT_FOUND, "Game not found: " + gameId));
+
+        if (!entity.getOwnerProfileId().equals(requesterProfileId)) {
+            throw new GameServerException(ErrorCode.NOT_GAME_OWNER, "Only the game owner can start the game");
+        }
+        if (entity.getStatus() != GameInstanceState.WAITING_FOR_PLAYERS) {
+            throw new GameServerException(ErrorCode.GAME_ALREADY_STARTED,
+                    "Game has already started (status: " + entity.getStatus() + ")");
+        }
+
+        if ("SERVER".equals(entity.getHostingType()) && gameInstanceManager != null) {
+            GameInstance game = gameInstanceManager.getGame(gameId);
+            if (game != null) {
+                // In-memory game director exists (created via GameInstanceManager) —
+                // start it BEFORE updating DB so a failure leaves DB at WAITING_FOR_PLAYERS.
+                gameInstanceManager.startGame(gameId, requesterProfileId);
+            }
+            // If game is null, the game was created via REST API only (no in-memory
+            // director yet). DB update proceeds normally.
+        }
+
+        gameInstanceRepository.updateStatusWithStartTime(gameId, GameInstanceState.IN_PROGRESS, Instant.now());
+
+        if ("SERVER".equals(entity.getHostingType()) && lobbyBroadcaster != null) {
+            // Broadcast countdown to lobby clients after successful start
+            lobbyBroadcaster.broadcastLobbyGameStarting(gameId, 3);
+        }
+        // COMMUNITY: DB status update only (no WS broadcast — community clients connect
+        // to host's WS)
+
+        return toSummary(gameInstanceRepository.findById(gameId).orElseThrow());
+    }
+
+    /**
+     * Update pre-game settings. SERVER games only.
+     */
+    public GameSummary updateSettings(String gameId, Long requesterProfileId, GameSettingsRequest request) {
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId)
+                .orElseThrow(() -> new GameServerException(ErrorCode.GAME_NOT_FOUND, "Game not found: " + gameId));
+
+        if ("COMMUNITY".equals(entity.getHostingType())) {
+            throw new GameServerException(ErrorCode.NOT_APPLICABLE,
+                    "Settings update is not applicable for COMMUNITY games");
+        }
+        if (!entity.getOwnerProfileId().equals(requesterProfileId)) {
+            throw new GameServerException(ErrorCode.NOT_GAME_OWNER, "Only the game owner can update settings");
+        }
+        if (entity.getStatus() != GameInstanceState.WAITING_FOR_PLAYERS) {
+            throw new GameServerException(ErrorCode.GAME_NOT_IN_LOBBY, "Settings can only be changed in lobby");
+        }
+
+        if (request.name() != null) {
+            entity.setName(request.name());
+        }
+        if (request.maxPlayers() != null) {
+            entity.setMaxPlayers(request.maxPlayers());
+        }
+        if (request.profile() != null) {
+            entity.setProfileData(serializeConfig(request.profile()));
+        }
+        if (request.password() != null) {
+            if (request.password().isEmpty()) {
+                entity.setPasswordHash(null);
+            } else {
+                entity.setPasswordHash(BCrypt.hashpw(request.password(), BCrypt.gensalt()));
+            }
+        }
+
+        gameInstanceRepository.save(entity);
+        GameSummary updated = toSummary(entity);
+
+        if (lobbyBroadcaster != null) {
+            lobbyBroadcaster.broadcastLobbySettingsChanged(gameId, updated);
+        }
+
+        return updated;
+    }
+
+    /**
+     * Kick a player from the lobby (pre-game). SERVER games only.
+     */
+    public void kickFromLobby(String gameId, Long requesterProfileId, Long targetProfileId) {
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId)
+                .orElseThrow(() -> new GameServerException(ErrorCode.GAME_NOT_FOUND, "Game not found: " + gameId));
+
+        if ("COMMUNITY".equals(entity.getHostingType())) {
+            throw new GameServerException(ErrorCode.NOT_APPLICABLE, "Kick is not applicable for COMMUNITY games");
+        }
+        if (!entity.getOwnerProfileId().equals(requesterProfileId)) {
+            throw new GameServerException(ErrorCode.NOT_GAME_OWNER, "Only the game owner can kick players");
+        }
+        if (entity.getStatus() != GameInstanceState.WAITING_FOR_PLAYERS) {
+            throw new GameServerException(ErrorCode.GAME_NOT_IN_LOBBY, "Kick is only available in lobby");
+        }
+
+        // Remove player from in-memory game instance
+        if (gameInstanceManager != null) {
+            GameInstance game = gameInstanceManager.getGame(gameId);
+            if (game != null && !game.hasPlayer(targetProfileId)) {
+                throw new GameServerException(ErrorCode.PLAYER_NOT_FOUND, "Player not in lobby: " + targetProfileId);
+            }
+            if (game != null) {
+                game.removePlayer(targetProfileId);
+            }
+        }
+
+        // Update DB player count
+        int newCount = Math.max(0, entity.getPlayerCount() - 1);
+        gameInstanceRepository.updatePlayerCount(gameId, newCount);
+
+        if (lobbyBroadcaster != null) {
+            lobbyBroadcaster.broadcastLobbyPlayerKicked(gameId,
+                    new LobbyPlayerData(targetProfileId, "", false, false, null));
+        }
+    }
+
+    /**
+     * Cancel a game. Valid at any point before COMPLETED.
+     */
+    public void cancelGame(String gameId, Long requesterProfileId) {
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId)
+                .orElseThrow(() -> new GameServerException(ErrorCode.GAME_NOT_FOUND, "Game not found: " + gameId));
+
+        if (!entity.getOwnerProfileId().equals(requesterProfileId)) {
+            throw new GameServerException(ErrorCode.NOT_GAME_OWNER, "Only the game owner can cancel the game");
+        }
+        if (entity.getStatus() == GameInstanceState.COMPLETED || entity.getStatus() == GameInstanceState.CANCELLED) {
+            throw new GameServerException(ErrorCode.GAME_COMPLETED,
+                    "Game is already in terminal state: " + entity.getStatus());
+        }
+
+        gameInstanceRepository.updateStatusWithCompletionTime(gameId, GameInstanceState.CANCELLED, Instant.now());
+
+        if ("SERVER".equals(entity.getHostingType()) && lobbyBroadcaster != null) {
+            lobbyBroadcaster.broadcastGameCancelled(gameId, "Game cancelled by owner");
+        }
+    }
+
+    // =========================================================================
+    // Legacy / internal helpers
+    // =========================================================================
+
+    /**
+     * Internal join used by WebSocketHandler when a player connects to a
+     * WAITING_FOR_PLAYERS game. Increments DB player count. Not exposed via REST.
+     */
+    public void incrementPlayerCount(String gameId) {
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElse(null);
+        if (entity != null) {
+            gameInstanceRepository.updatePlayerCount(gameId, entity.getPlayerCount() + 1);
+        }
+    }
+
+    /**
+     * Internal decrement used by WebSocketHandler when a player disconnects from a
+     * WAITING_FOR_PLAYERS game.
+     */
+    public void decrementPlayerCount(String gameId) {
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElse(null);
+        if (entity != null) {
+            int newCount = Math.max(0, entity.getPlayerCount() - 1);
+            gameInstanceRepository.updatePlayerCount(gameId, newCount);
+        }
+    }
+
+    /**
+     * Start a game with no auth check (used internally, e.g. from tests or
+     * migration).
+     *
+     * @deprecated Use {@link #startGame(String, Long)} for authenticated calls.
+     */
+    @Deprecated
     public boolean startGame(String gameId) {
         GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElse(null);
         if (entity == null) {
             return false;
         }
-
         entity.setStatus(GameInstanceState.IN_PROGRESS);
         entity.setStartedAt(Instant.now());
         gameInstanceRepository.save(entity);
-
         return true;
     }
 
-    /**
-     * Get game state.
-     *
-     * @param gameId
-     *            game ID
-     * @return game state or null if not found
-     */
-    public GameStateResponse getGameState(String gameId) {
-        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElse(null);
-        if (entity == null) {
-            return null;
-        }
+    // =========================================================================
+    // DTO mapping
+    // =========================================================================
 
-        return new GameStateResponse(gameId, entity.getName(), entity.getStatus().name(), entity.getPlayerCount(),
-                entity.getMaxPlayers());
+    GameSummary toSummary(GameInstanceEntity e) {
+        boolean isPrivate = e.getPasswordHash() != null;
+        String wsUrl = isPrivate ? null : e.getWsUrl();
+        BlindsSummary blinds = parseBlinds(e.getProfileData());
+        return new GameSummary(e.getGameId(), e.getName(), e.getHostingType(), e.getStatus().name(), e.getOwnerName(),
+                e.getPlayerCount(), e.getMaxPlayers(), isPrivate, wsUrl, blinds, e.getCreatedAt(), e.getStartedAt());
     }
 
-    /**
-     * List all games.
-     *
-     * @return list of game summaries
-     */
-    public List<GameSummary> listGames() {
-        return gameInstanceRepository.findAll().stream().map(e -> new GameSummary(e.getGameId(), e.getName(),
-                e.getOwnerName(), e.getPlayerCount(), e.getMaxPlayers(), e.getStatus().name())).toList();
+    private BlindsSummary parseBlinds(String profileData) {
+        if (profileData == null || profileData.isBlank() || "{}".equals(profileData.trim())) {
+            return new BlindsSummary(0, 0, 0);
+        }
+        try {
+            GameConfig config = objectMapper.readValue(profileData, GameConfig.class);
+            if (config.blindStructure() != null && !config.blindStructure().isEmpty()) {
+                GameConfig.BlindLevel level = config.blindStructure().get(0);
+                return new BlindsSummary(level.smallBlind(), level.bigBlind(), level.ante());
+            }
+        } catch (Exception ignored) {
+            // Malformed profileData — return zeros
+        }
+        return new BlindsSummary(0, 0, 0);
+    }
+
+    private String serializeConfig(GameConfig config) {
+        if (config == null) {
+            return "{}";
+        }
+        try {
+            return objectMapper.writeValueAsString(config);
+        } catch (Exception e) {
+            return "{}";
+        }
     }
 }

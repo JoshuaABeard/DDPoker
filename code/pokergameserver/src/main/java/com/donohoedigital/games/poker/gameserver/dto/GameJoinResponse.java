@@ -19,22 +19,8 @@
  */
 package com.donohoedigital.games.poker.gameserver.dto;
 
-import java.time.Instant;
-
 /**
- * Public game summary returned by the lobby listing API.
- *
- * <p>
- * wsUrl is null for private games in list view; returned in GameJoinResponse
- * after successful join.
- * </p>
+ * Returned after a successful join. Contains the WebSocket URL to connect to.
  */
-public record GameSummary(String gameId, String name, String hostingType, // "SERVER" | "COMMUNITY"
-        String status, // GameInstanceState name
-        String ownerName, int playerCount, int maxPlayers, boolean isPrivate, // true if passwordHash is non-null
-        String wsUrl, // null for private games in list view
-        BlindsSummary blinds, Instant createdAt, Instant startedAt) {
-    /** Blind level amounts extracted from the game profile. */
-    public record BlindsSummary(int smallBlind, int bigBlind, int ante) {
-    }
+public record GameJoinResponse(String wsUrl, String gameId) {
 }

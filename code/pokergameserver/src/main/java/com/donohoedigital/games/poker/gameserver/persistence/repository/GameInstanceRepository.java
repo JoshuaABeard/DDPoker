@@ -127,4 +127,36 @@ public interface GameInstanceRepository extends JpaRepository<GameInstanceEntity
     @Modifying(clearAutomatically = true)
     @Query("UPDATE GameInstanceEntity g SET g.playerCount = :count WHERE g.gameId = :gameId")
     void updatePlayerCount(@Param("gameId") String gameId, @Param("count") int count);
+
+    /**
+     * Find COMMUNITY games whose last heartbeat is older than the given cutoff, or
+     * that have never sent a heartbeat (null). Used for stale-game cleanup.
+     */
+    @Query("SELECT g FROM GameInstanceEntity g WHERE g.hostingType = 'COMMUNITY' "
+            + "AND g.status IN ('WAITING_FOR_PLAYERS', 'IN_PROGRESS') "
+            + "AND (g.lastHeartbeat IS NULL OR g.lastHeartbeat < :cutoff)")
+    List<GameInstanceEntity> findStaleCommunityGames(@Param("cutoff") Instant cutoff);
+
+    /**
+     * Find SERVER games that have been in WAITING_FOR_PLAYERS longer than the given
+     * cutoff (abandoned lobbies).
+     */
+    @Query("SELECT g FROM GameInstanceEntity g WHERE g.hostingType = 'SERVER' "
+            + "AND g.status = 'WAITING_FOR_PLAYERS' AND g.createdAt < :cutoff")
+    List<GameInstanceEntity> findAbandonedServerLobbies(@Param("cutoff") Instant cutoff);
+
+    /**
+     * Find games in terminal states (COMPLETED, CANCELLED) older than the retention
+     * cutoff.
+     */
+    @Query("SELECT g FROM GameInstanceEntity g WHERE g.status IN ('COMPLETED', 'CANCELLED') "
+            + "AND g.completedAt < :cutoff")
+    List<GameInstanceEntity> findExpiredGames(@Param("cutoff") Instant cutoff);
+
+    /**
+     * Update the last_heartbeat timestamp for a community-hosted game.
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE GameInstanceEntity g SET g.lastHeartbeat = :now WHERE g.gameId = :gameId")
+    void updateHeartbeat(@Param("gameId") String gameId, @Param("now") Instant now);
 }

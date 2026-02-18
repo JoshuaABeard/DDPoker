@@ -32,15 +32,36 @@
 package com.donohoedigital.games.poker.gameserver;
 
 /**
- * Runtime exception for game server errors.
+ * Runtime exception for game server errors. Carries a typed {@link ErrorCode}
+ * for HTTP mapping.
  */
 public class GameServerException extends RuntimeException {
 
+    /**
+     * Typed error codes mapped to HTTP status codes in GameServerExceptionHandler.
+     */
+    public enum ErrorCode {
+        GAME_NOT_FOUND, GAME_FULL, WRONG_PASSWORD, GAME_NOT_JOINABLE, NOT_GAME_OWNER, WRONG_HOSTING_TYPE, GAME_ALREADY_STARTED, GAME_NOT_IN_LOBBY, PLAYER_NOT_FOUND, GAME_COMPLETED, NOT_APPLICABLE
+    }
+
+    private final ErrorCode errorCode;
+
+    public GameServerException(ErrorCode errorCode, String message) {
+        super(message);
+        this.errorCode = errorCode;
+    }
+
     public GameServerException(String message) {
         super(message);
+        this.errorCode = null;
     }
 
     public GameServerException(String message, Throwable cause) {
         super(message, cause);
+        this.errorCode = null;
+    }
+
+    public ErrorCode getErrorCode() {
+        return errorCode;
     }
 }

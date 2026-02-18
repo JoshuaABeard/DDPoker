@@ -57,11 +57,25 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param maxGamesPerUser
  *            Maximum active games a single user can own simultaneously (default
  *            5)
+ * @param communityHeartbeatTimeoutMinutes
+ *            Minutes before a COMMUNITY game with no heartbeat is cancelled
+ *            (default 5)
+ * @param lobbyTimeoutHours
+ *            Hours before a SERVER lobby stuck in WAITING_FOR_PLAYERS is
+ *            cancelled (default 24)
+ * @param completedGameRetentionDays
+ *            Days to retain COMPLETED/CANCELLED game records before deletion
+ *            (default 7)
+ * @param serverBaseUrl
+ *            Base URL used to build ws_url for SERVER-hosted games. For
+ *            embedded server this is overridden at runtime with the actual
+ *            port. (default "ws://localhost")
  */
 @ConfigurationProperties(prefix = "game.server")
 public record GameServerProperties(int maxConcurrentGames, int actionTimeoutSeconds, int reconnectTimeoutSeconds,
         int threadPoolSize, int rateLimitMillis, int consecutiveTimeoutLimit, int disconnectGraceTurns,
-        int maxGamesPerUser) {
+        int maxGamesPerUser, int communityHeartbeatTimeoutMinutes, int lobbyTimeoutHours,
+        int completedGameRetentionDays, String serverBaseUrl) {
     /**
      * Canonical constructor with validation and defaults.
      */
@@ -82,12 +96,20 @@ public record GameServerProperties(int maxConcurrentGames, int actionTimeoutSeco
             disconnectGraceTurns = 2;
         if (maxGamesPerUser <= 0)
             maxGamesPerUser = 5;
+        if (communityHeartbeatTimeoutMinutes <= 0)
+            communityHeartbeatTimeoutMinutes = 5;
+        if (lobbyTimeoutHours <= 0)
+            lobbyTimeoutHours = 24;
+        if (completedGameRetentionDays <= 0)
+            completedGameRetentionDays = 7;
+        if (serverBaseUrl == null || serverBaseUrl.isBlank())
+            serverBaseUrl = "ws://localhost";
     }
 
     /**
      * Default constructor for Spring.
      */
     public GameServerProperties() {
-        this(50, 30, 120, 10, 1000, 3, 2, 5);
+        this(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost");
     }
 }

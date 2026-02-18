@@ -111,20 +111,24 @@ class EndToEndIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.gameId").value(gameId))
                 .andExpect(jsonPath("$.name").value("Test Tournament"))
                 .andExpect(jsonPath("$.status").value("WAITING_FOR_PLAYERS"))
-                .andExpect(jsonPath("$.playerCount").value(1)).andExpect(jsonPath("$.maxPlayers").value(9));
+                .andExpect(jsonPath("$.playerCount").value(0)).andExpect(jsonPath("$.maxPlayers").value(9));
 
-        // 6. List games (should show our game)
+        // 6. List games (should show our game) — response is GameListResponse{games,
+        // total, page, pageSize}
         mockMvc.perform(get("/api/v1/games").header("Authorization", "Bearer " + token1)).andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1)).andExpect(jsonPath("$[0].gameId").value(gameId))
-                .andExpect(jsonPath("$[0].ownerName").value("player1"));
+                .andExpect(jsonPath("$.games.length()").value(1)).andExpect(jsonPath("$.games[0].gameId").value(gameId))
+                .andExpect(jsonPath("$.games[0].ownerName").value("player1"));
 
-        // 7. Second player joins the game
+        // 7. Second player gets WS URL to join the game — playerCount is managed by
+        // WebSocket connections
         mockMvc.perform(post("/api/v1/games/" + gameId + "/join").header("Authorization", "Bearer " + token2))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk()).andExpect(jsonPath("$.wsUrl").exists())
+                .andExpect(jsonPath("$.gameId").value(gameId));
 
-        // 8. Verify player count increased
+        // 8. Player count is still 0 — actual count increments when players connect via
+        // WebSocket
         mockMvc.perform(get("/api/v1/games/" + gameId).header("Authorization", "Bearer " + token1))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.playerCount").value(2));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.playerCount").value(0));
 
         // 9. Start the game
         mockMvc.perform(post("/api/v1/games/" + gameId + "/start").header("Authorization", "Bearer " + token1))

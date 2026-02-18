@@ -23,6 +23,7 @@ import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.GameServerAutoConfiguration;
 import com.donohoedigital.games.poker.gameserver.GameServerProperties;
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
+import com.donohoedigital.games.poker.gameserver.service.GameService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -75,12 +76,17 @@ public class WebSocketAutoConfiguration {
     }
 
     @Bean
+    public LobbyBroadcaster lobbyBroadcaster(GameConnectionManager gameConnectionManager) {
+        return new LobbyBroadcaster(gameConnectionManager);
+    }
+
+    @Bean
     public GameWebSocketHandler gameWebSocketHandler(JwtTokenProvider jwtTokenProvider,
             GameInstanceManager gameInstanceManager, GameConnectionManager gameConnectionManager,
             InboundMessageRouter inboundMessageRouter, OutboundMessageConverter outboundMessageConverter,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper, GameService gameService) {
         return new GameWebSocketHandler(jwtTokenProvider, gameInstanceManager, gameConnectionManager,
-                inboundMessageRouter, outboundMessageConverter, objectMapper);
+                inboundMessageRouter, outboundMessageConverter, objectMapper, gameService);
     }
 
     @Bean

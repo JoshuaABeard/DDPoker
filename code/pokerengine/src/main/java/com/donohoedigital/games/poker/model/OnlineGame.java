@@ -234,6 +234,18 @@ public class OnlineGame implements BaseModel<Long>, SimpleXMLEncodable {
         }
     }
 
+    /** Transient hosting type populated from REST API response — not persisted. */
+    private transient String hostingType;
+
+    @Transient
+    public String getHostingType() {
+        return hostingType;
+    }
+
+    public void setHostingType(String hostingType) {
+        this.hostingType = hostingType;
+    }
+
     private List<TournamentHistory> histories;
 
     /**

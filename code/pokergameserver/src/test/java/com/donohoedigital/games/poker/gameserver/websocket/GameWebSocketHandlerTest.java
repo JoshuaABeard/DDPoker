@@ -34,6 +34,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
+import com.donohoedigital.games.poker.gameserver.service.GameService;
 
 /**
  * Unit tests for GameWebSocketHandler.
@@ -49,6 +50,7 @@ class GameWebSocketHandlerTest {
     private InboundMessageRouter inboundMessageRouter;
     private OutboundMessageConverter converter;
     private ObjectMapper objectMapper;
+    private GameService gameService;
     private GameWebSocketHandler handler;
 
     private WebSocketSession session;
@@ -69,9 +71,10 @@ class GameWebSocketHandlerTest {
         converter = new OutboundMessageConverter();
         objectMapper = new ObjectMapper();
         objectMapper.findAndRegisterModules();
+        gameService = mock(GameService.class);
 
         handler = new GameWebSocketHandler(jwtTokenProvider, gameInstanceManager, connectionManager,
-                inboundMessageRouter, converter, objectMapper);
+                inboundMessageRouter, converter, objectMapper, gameService);
 
         // Set up JWT provider defaults
         when(jwtTokenProvider.validateToken(VALID_TOKEN)).thenReturn(true);

@@ -27,6 +27,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -79,6 +80,9 @@ public class GameServerSecurityAutoConfiguration {
                 .authorizeHttpRequests(auth -> auth.requestMatchers("/api/v1/auth/**").permitAll() // Auth endpoints
                                                                                                     // public
                         .requestMatchers("/ws/**").permitAll() // WebSocket auth handled in handler
+                        .requestMatchers(HttpMethod.GET, "/api/v1/games", "/api/v1/games/*").permitAll() // Game
+                                                                                                            // discovery
+                                                                                                            // public
                         .requestMatchers("/api/v1/**").authenticated() // All other API endpoints require auth
                         .anyRequest().permitAll() // Allow non-API requests
                 ).addFilterBefore(loginRateLimitFilter, UsernamePasswordAuthenticationFilter.class)

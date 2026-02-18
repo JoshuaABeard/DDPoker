@@ -35,6 +35,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Spring Boot auto-configuration for the poker game server. Activated when
@@ -43,6 +44,7 @@ import org.springframework.context.annotation.Bean;
 @AutoConfiguration
 @EnableConfigurationProperties(GameServerProperties.class)
 @ConditionalOnProperty(name = "game.server.enabled", havingValue = "true", matchIfMissing = true)
+@EnableScheduling
 public class GameServerAutoConfiguration {
 
     /**

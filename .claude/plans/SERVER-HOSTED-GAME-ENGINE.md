@@ -915,9 +915,11 @@ app/
 
 ---
 
-## Milestone 6: Game Discovery & Management
+## Milestone 6: Game Discovery & Management ✅
 
 **Goal:** Unified game discovery that categorizes server-hosted vs community-hosted games.
+
+**Status:** Complete (2026-02-17). Detailed plan: `.claude/plans/M6-GAME-DISCOVERY-MANAGEMENT.md`
 
 **Effort:** M
 

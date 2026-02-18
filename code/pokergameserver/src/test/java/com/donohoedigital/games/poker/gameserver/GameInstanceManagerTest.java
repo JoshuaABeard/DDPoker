@@ -48,7 +48,7 @@ class GameInstanceManagerTest {
 
     @BeforeEach
     void setUp() {
-        properties = new GameServerProperties(5, 0, 120, 10, 1000, 3, 2, 5);
+        properties = new GameServerProperties(5, 0, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost");
         manager = new GameInstanceManager(properties);
         config = createTestConfig();
     }
@@ -100,7 +100,8 @@ class GameInstanceManagerTest {
 
     @Test
     void testPerUserGameLimitEnforced() {
-        GameServerProperties limitedProps = new GameServerProperties(10, 0, 120, 10, 1000, 3, 2, 2);
+        GameServerProperties limitedProps = new GameServerProperties(10, 0, 120, 10, 1000, 3, 2, 2, 5, 24, 7,
+                "ws://localhost");
         GameInstanceManager limitedManager = new GameInstanceManager(limitedProps);
         try {
             limitedManager.createGame(100L, config); // 1st game for user 100
@@ -115,7 +116,8 @@ class GameInstanceManagerTest {
 
     @Test
     void testPerUserLimitIsIndependentPerUser() {
-        GameServerProperties limitedProps = new GameServerProperties(10, 0, 120, 10, 1000, 3, 2, 2);
+        GameServerProperties limitedProps = new GameServerProperties(10, 0, 120, 10, 1000, 3, 2, 2, 5, 24, 7,
+                "ws://localhost");
         GameInstanceManager limitedManager = new GameInstanceManager(limitedProps);
         try {
             limitedManager.createGame(100L, config); // user 100: 1 game

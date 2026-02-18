@@ -19,13 +19,15 @@ package com.donohoedigital.games.poker.gameserver.websocket.message;
 
 import java.util.List;
 
+import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
+
 /**
  * Sealed interface hierarchy for server-to-client message payloads.
  *
  * Each record matches the master plan JSON spec exactly, ensuring consistent
  * wire format across all client implementations (desktop, web, mobile).
  */
-public sealed interface ServerMessageData permits ServerMessageData.ConnectedData,ServerMessageData.GameStateData,ServerMessageData.HandStartedData,ServerMessageData.HoleCardsDealtData,ServerMessageData.CommunityCardsDealtData,ServerMessageData.ActionRequiredData,ServerMessageData.PlayerActedData,ServerMessageData.ActionTimeoutData,ServerMessageData.HandCompleteData,ServerMessageData.LevelChangedData,ServerMessageData.PlayerEliminatedData,ServerMessageData.RebuyOfferedData,ServerMessageData.AddonOfferedData,ServerMessageData.GameCompleteData,ServerMessageData.PlayerJoinedData,ServerMessageData.PlayerLeftData,ServerMessageData.PlayerDisconnectedData,ServerMessageData.PotAwardedData,ServerMessageData.ShowdownStartedData,ServerMessageData.PlayerRebuyData,ServerMessageData.PlayerAddonData,ServerMessageData.GamePausedData,ServerMessageData.GameResumedData,ServerMessageData.PlayerKickedData,ServerMessageData.ChatMessageData,ServerMessageData.TimerUpdateData,ServerMessageData.ErrorData {
+public sealed interface ServerMessageData permits ServerMessageData.ConnectedData,ServerMessageData.GameStateData,ServerMessageData.HandStartedData,ServerMessageData.HoleCardsDealtData,ServerMessageData.CommunityCardsDealtData,ServerMessageData.ActionRequiredData,ServerMessageData.PlayerActedData,ServerMessageData.ActionTimeoutData,ServerMessageData.HandCompleteData,ServerMessageData.LevelChangedData,ServerMessageData.PlayerEliminatedData,ServerMessageData.RebuyOfferedData,ServerMessageData.AddonOfferedData,ServerMessageData.GameCompleteData,ServerMessageData.PlayerJoinedData,ServerMessageData.PlayerLeftData,ServerMessageData.PlayerDisconnectedData,ServerMessageData.PotAwardedData,ServerMessageData.ShowdownStartedData,ServerMessageData.PlayerRebuyData,ServerMessageData.PlayerAddonData,ServerMessageData.GamePausedData,ServerMessageData.GameResumedData,ServerMessageData.PlayerKickedData,ServerMessageData.ChatMessageData,ServerMessageData.TimerUpdateData,ServerMessageData.ErrorData,ServerMessageData.LobbyStateData,ServerMessageData.LobbyPlayerJoinedData,ServerMessageData.LobbyPlayerLeftData,ServerMessageData.LobbyPlayerKickedData,ServerMessageData.LobbySettingsChangedData,ServerMessageData.LobbyGameStartingData,ServerMessageData.GameCancelledData {
 
     /**
      * Sent on successful WebSocket connection, includes full game state snapshot.
@@ -191,5 +193,50 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
 
     /** Final standings entry. */
     record StandingData(int position, long playerId, String playerName, int prize) {
+    }
+
+    // ====================================
+    // Lobby phase data types
+    // ====================================
+
+    /**
+     * Single player entry for lobby messages. Used inside {@link LobbyStateData}
+     * and as the payload for {@link LobbyPlayerJoinedData},
+     * {@link LobbyPlayerLeftData}, and {@link LobbyPlayerKickedData}.
+     */
+    record LobbyPlayerData(long profileId, String name, boolean isOwner, boolean isAI, String aiSkillLevel) {
+    }
+
+    /**
+     * Full lobby snapshot sent to players connecting while the game is in
+     * WAITING_FOR_PLAYERS state.
+     */
+    record LobbyStateData(String gameId, String name, String hostingType, String ownerName, long ownerProfileId,
+            int maxPlayers, boolean isPrivate, List<LobbyPlayerData> players,
+            GameSummary.BlindsSummary blinds) implements ServerMessageData {
+    }
+
+    /** A player joined the lobby. Broadcast to all existing lobby connections. */
+    record LobbyPlayerJoinedData(LobbyPlayerData player) implements ServerMessageData {
+    }
+
+    /** A player left the lobby voluntarily. Broadcast to all lobby connections. */
+    record LobbyPlayerLeftData(LobbyPlayerData player) implements ServerMessageData {
+    }
+
+    /** A player was kicked from the lobby by the owner. Broadcast to all. */
+    record LobbyPlayerKickedData(LobbyPlayerData player) implements ServerMessageData {
+    }
+
+    /** Owner updated game settings. Broadcast to all lobby connections. */
+    record LobbySettingsChangedData(GameSummary updatedSettings) implements ServerMessageData {
+    }
+
+    /** Owner started the game; lobby transitions to active gameplay. */
+    record LobbyGameStartingData(int startingInSeconds) implements ServerMessageData {
+    }
+
+    /** Game was cancelled by owner or cleanup job. Broadcast to all connections. */
+    record GameCancelledData(String reason) implements ServerMessageData {
     }
 }

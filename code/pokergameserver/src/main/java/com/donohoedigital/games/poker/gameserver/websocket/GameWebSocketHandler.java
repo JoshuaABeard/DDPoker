@@ -17,21 +17,28 @@
  */
 package com.donohoedigital.games.poker.gameserver.websocket;
 
+import java.net.URI;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.handler.TextWebSocketHandler;
+
 import com.donohoedigital.games.poker.gameserver.ActionRequest;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
 import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.GameInstanceState;
 import com.donohoedigital.games.poker.gameserver.ServerPlayerSession;
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
+import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
+import com.donohoedigital.games.poker.gameserver.service.GameService;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage;
+import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData;
+import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData.LobbyPlayerData;
+import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.web.socket.CloseStatus;
-import org.springframework.web.socket.TextMessage;
-import org.springframework.web.socket.WebSocketSession;
-import org.springframework.web.socket.handler.TextWebSocketHandler;
-
-import java.net.URI;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * WebSocket handler for game connections.
@@ -55,6 +62,7 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
     private final InboundMessageRouter inboundMessageRouter;
     private final OutboundMessageConverter converter;
     private final ObjectMapper objectMapper;
+    private final GameService gameService;
 
     /** Maps WebSocket session ID → PlayerConnection */
     private final ConcurrentHashMap<String, PlayerConnection> sessionConnections = new ConcurrentHashMap<>();
@@ -83,13 +91,14 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
      */
     public GameWebSocketHandler(JwtTokenProvider jwtTokenProvider, GameInstanceManager gameInstanceManager,
             GameConnectionManager connectionManager, InboundMessageRouter inboundMessageRouter,
-            OutboundMessageConverter converter, ObjectMapper objectMapper) {
+            OutboundMessageConverter converter, ObjectMapper objectMapper, GameService gameService) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.gameInstanceManager = gameInstanceManager;
         this.connectionManager = connectionManager;
         this.inboundMessageRouter = inboundMessageRouter;
         this.converter = converter;
         this.objectMapper = objectMapper;
+        this.gameService = gameService;
     }
 
     @Override
@@ -180,9 +189,20 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
         ServerMessage connectedMsg = converter.createConnectedMessage(gameId, profileId, null);
         playerConnection.sendMessage(connectedMsg);
 
-        // Broadcast PLAYER_JOINED to other players
-        ServerMessage joinedMsg = converter.createPlayerJoinedMessage(gameId, profileId, username, -1);
-        connectionManager.broadcastToGame(gameId, joinedMsg, profileId);
+        if (state == GameInstanceState.WAITING_FOR_PLAYERS) {
+            // Lobby phase: send lobby state snapshot to the joining player...
+            sendLobbyState(playerConnection, game);
+            // ...and broadcast LOBBY_PLAYER_JOINED to all other lobby connections
+            LobbyPlayerData playerData = new LobbyPlayerData(profileId, username, profileId == game.getOwnerProfileId(),
+                    false, null);
+            ServerMessage joinedMsg = ServerMessage.of(ServerMessageType.LOBBY_PLAYER_JOINED, gameId,
+                    new ServerMessageData.LobbyPlayerJoinedData(playerData));
+            connectionManager.broadcastToGame(gameId, joinedMsg, profileId);
+        } else {
+            // In-game: existing behavior — broadcast PLAYER_JOINED
+            ServerMessage joinedMsg = converter.createPlayerJoinedMessage(gameId, profileId, username, -1);
+            connectionManager.broadcastToGame(gameId, joinedMsg, profileId);
+        }
     }
 
     @Override
@@ -205,16 +225,23 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
                 game.removePlayer(connection.getProfileId());
             }
 
-            // Broadcast PLAYER_DISCONNECTED when game is in progress (player may
-            // reconnect),
-            // or PLAYER_LEFT when game is not in progress (player truly left).
+            // Broadcast the appropriate leave message based on game phase.
             GameInstanceState state = game != null ? game.getState() : null;
-            boolean reconnectable = state == GameInstanceState.IN_PROGRESS || state == GameInstanceState.PAUSED;
-            ServerMessage leftMsg = reconnectable
-                    ? converter.createPlayerDisconnectedMessage(connection.getGameId(), connection.getProfileId(),
-                            connection.getUsername())
-                    : converter.createPlayerLeftMessage(connection.getGameId(), connection.getProfileId(),
-                            connection.getUsername());
+            final ServerMessage leftMsg;
+            if (state == GameInstanceState.WAITING_FOR_PLAYERS) {
+                // Lobby phase: LOBBY_PLAYER_LEFT
+                LobbyPlayerData playerData = new LobbyPlayerData(connection.getProfileId(), connection.getUsername(),
+                        false, false, null);
+                leftMsg = ServerMessage.of(ServerMessageType.LOBBY_PLAYER_LEFT, connection.getGameId(),
+                        new ServerMessageData.LobbyPlayerLeftData(playerData));
+            } else {
+                boolean reconnectable = state == GameInstanceState.IN_PROGRESS || state == GameInstanceState.PAUSED;
+                leftMsg = reconnectable
+                        ? converter.createPlayerDisconnectedMessage(connection.getGameId(), connection.getProfileId(),
+                                connection.getUsername())
+                        : converter.createPlayerLeftMessage(connection.getGameId(), connection.getProfileId(),
+                                connection.getUsername());
+            }
             connectionManager.broadcastToGame(connection.getGameId(), leftMsg);
 
             // Clean up per-game broadcaster when the last connection closes
@@ -226,6 +253,30 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
 
     private PlayerConnection findConnection(WebSocketSession session) {
         return sessionConnections.get(session.getId());
+    }
+
+    /**
+     * Sends a {@link ServerMessageType#LOBBY_STATE} snapshot to a newly connected
+     * player when the game is in {@link GameInstanceState#WAITING_FOR_PLAYERS}.
+     */
+    private void sendLobbyState(PlayerConnection connection, GameInstance game) {
+        String gameId = connection.getGameId();
+        GameSummary summary = gameService != null ? gameService.getGameSummary(gameId) : null;
+        if (summary == null) {
+            return;
+        }
+
+        long ownerProfileId = game.getOwnerProfileId();
+        List<LobbyPlayerData> players = game.getPlayerSessions().values().stream()
+                .map(s -> new LobbyPlayerData(s.getProfileId(), s.getPlayerName(), s.getProfileId() == ownerProfileId,
+                        s.isAI(), s.isAI() ? String.valueOf(s.getSkillLevel()) : null))
+                .toList();
+
+        ServerMessageData.LobbyStateData data = new ServerMessageData.LobbyStateData(gameId, summary.name(),
+                summary.hostingType(), summary.ownerName(), ownerProfileId, summary.maxPlayers(), summary.isPrivate(),
+                players, summary.blinds());
+
+        connection.sendMessage(ServerMessage.of(ServerMessageType.LOBBY_STATE, gameId, data));
     }
 
     /**

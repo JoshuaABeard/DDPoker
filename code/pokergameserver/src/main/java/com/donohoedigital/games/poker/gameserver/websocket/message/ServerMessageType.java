@@ -103,5 +103,31 @@ public enum ServerMessageType {
     TIMER_UPDATE,
 
     /** Error occurred */
-    ERROR
+    ERROR,
+
+    // ---- Lobby messages (pre-game, WAITING_FOR_PLAYERS phase) ----
+
+    /**
+     * Lobby state snapshot sent on WebSocket connect when game is
+     * WAITING_FOR_PLAYERS
+     */
+    LOBBY_STATE,
+
+    /** A player joined the lobby (broadcast to all lobby connections) */
+    LOBBY_PLAYER_JOINED,
+
+    /** A player left the lobby voluntarily (broadcast to all lobby connections) */
+    LOBBY_PLAYER_LEFT,
+
+    /** Owner updated game settings (broadcast to all lobby connections) */
+    LOBBY_SETTINGS_CHANGED,
+
+    /** Owner started the game; lobby transitions to active gameplay */
+    LOBBY_GAME_STARTING,
+
+    /** A player was kicked from the lobby by the owner */
+    LOBBY_PLAYER_KICKED,
+
+    /** Game was cancelled by owner or cleanup job */
+    GAME_CANCELLED
 }

@@ -92,6 +92,24 @@ public class GameInstanceEntity {
     @Column(name = "completed_at")
     private Instant completedAt;
 
+    /**
+     * WebSocket URL. SERVER games: derived from server base URL + gameId. COMMUNITY
+     * games: supplied by host.
+     */
+    @Column(name = "ws_url", length = 255)
+    private String wsUrl;
+
+    /** BCrypt hash of the join password. Null if the game is public. */
+    @Column(name = "password_hash", length = 255)
+    private String passwordHash;
+
+    /**
+     * Timestamp of last heartbeat. Null for SERVER games. COMMUNITY games must send
+     * every ≤60 s.
+     */
+    @Column(name = "last_heartbeat")
+    private Instant lastHeartbeat;
+
     // Getters and setters
 
     public String getGameId() {
@@ -188,5 +206,29 @@ public class GameInstanceEntity {
 
     public void setCompletedAt(Instant completedAt) {
         this.completedAt = completedAt;
+    }
+
+    public String getWsUrl() {
+        return wsUrl;
+    }
+
+    public void setWsUrl(String wsUrl) {
+        this.wsUrl = wsUrl;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public Instant getLastHeartbeat() {
+        return lastHeartbeat;
+    }
+
+    public void setLastHeartbeat(Instant lastHeartbeat) {
+        this.lastHeartbeat = lastHeartbeat;
     }
 }
