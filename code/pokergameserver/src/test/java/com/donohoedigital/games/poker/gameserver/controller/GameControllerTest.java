@@ -98,6 +98,16 @@ class GameControllerTest {
     }
 
     @Test
+    void testJoinGame_withPassword() throws Exception {
+        when(gameService.joinGame(eq("game-123"), eq("secret")))
+                .thenReturn(new GameJoinResponse("ws://localhost/ws/games/game-123", "game-123"));
+
+        mockMvc.perform(post("/api/v1/games/game-123/join").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"password\":\"secret\"}")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.wsUrl").value("ws://localhost/ws/games/game-123"));
+    }
+
+    @Test
     void testJoinGameNotFound() throws Exception {
         when(gameService.joinGame(eq("nonexistent"), any()))
                 .thenThrow(new GameServerException(ErrorCode.GAME_NOT_FOUND, "Game not found"));

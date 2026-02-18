@@ -117,7 +117,8 @@ public interface GameInstanceRepository extends JpaRepository<GameInstanceEntity
     void updateStatus(@Param("gameId") String gameId, @Param("status") GameInstanceState status);
 
     /**
-     * Update player count.
+     * Update player count (absolute value). Prefer the atomic increment/decrement
+     * methods for concurrent updates.
      *
      * @param gameId
      *            the game ID
@@ -127,6 +128,35 @@ public interface GameInstanceRepository extends JpaRepository<GameInstanceEntity
     @Modifying(clearAutomatically = true)
     @Query("UPDATE GameInstanceEntity g SET g.playerCount = :count WHERE g.gameId = :gameId")
     void updatePlayerCount(@Param("gameId") String gameId, @Param("count") int count);
+
+    /**
+     * Atomically increment player count by 1.
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE GameInstanceEntity g SET g.playerCount = g.playerCount + 1 WHERE g.gameId = :gameId")
+    void incrementPlayerCount(@Param("gameId") String gameId);
+
+    /**
+     * Atomically decrement player count by 1, clamped to 0.
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE GameInstanceEntity g "
+            + "SET g.playerCount = CASE WHEN g.playerCount > 0 THEN g.playerCount - 1 ELSE 0 END "
+            + "WHERE g.gameId = :gameId")
+    void decrementPlayerCount(@Param("gameId") String gameId);
+
+    /**
+     * Find games filtered by status, hosting type, and name/owner search term.
+     * Status filter is required; hosting type and search pattern are optional (pass
+     * {@code null} to skip). Search pattern should use SQL LIKE syntax (e.g.
+     * {@code "%term%"}) and is matched case-insensitively.
+     */
+    @Query("SELECT g FROM GameInstanceEntity g WHERE g.status IN :statuses "
+            + "AND (:hostingType IS NULL OR g.hostingType = :hostingType) "
+            + "AND (:searchPattern IS NULL OR LOWER(g.name) LIKE :searchPattern "
+            + "     OR LOWER(g.ownerName) LIKE :searchPattern) " + "ORDER BY g.createdAt DESC")
+    List<GameInstanceEntity> findGamesFiltered(@Param("statuses") List<GameInstanceState> statuses,
+            @Param("hostingType") String hostingType, @Param("searchPattern") String searchPattern);
 
     /**
      * Find COMMUNITY games whose last heartbeat is older than the given cutoff, or

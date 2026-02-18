@@ -96,7 +96,7 @@ public class GameInstanceEntity {
      * WebSocket URL. SERVER games: derived from server base URL + gameId. COMMUNITY
      * games: supplied by host.
      */
-    @Column(name = "ws_url", length = 255)
+    @Column(name = "ws_url", length = 512)
     private String wsUrl;
 
     /** BCrypt hash of the join password. Null if the game is public. */

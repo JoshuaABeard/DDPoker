@@ -58,6 +58,7 @@ public class FindGames extends ListGames {
     static Logger logger = LogManager.getLogger(FindGames.class);
 
     private OnlineGame selected_;
+    private RestGameClient restClient_;
 
     /**
      * Creates a new instance of FindGames.
@@ -390,11 +391,19 @@ public class FindGames extends ListGames {
 
         String baseUrl = "http://localhost:" + embeddedServer.getPort();
         String jwt = embeddedServer.getLocalUserJwt();
-        RestGameClient restClient = new RestGameClient(baseUrl, jwt);
+
+        // Cache the RestGameClient so HttpClient's connection pool is reused across
+        // refreshes; update the JWT each time in case it changed.
+        if (restClient_ == null) {
+            restClient_ = new RestGameClient(baseUrl, jwt);
+        } else {
+            restClient_.setJwt(jwt);
+        }
+
         String serverHost = "localhost:" + embeddedServer.getPort();
         GameSummaryConverter converter = new GameSummaryConverter(serverHost);
 
-        List<com.donohoedigital.games.poker.gameserver.dto.GameSummary> summaries = restClient.listGames();
+        List<com.donohoedigital.games.poker.gameserver.dto.GameSummary> summaries = restClient_.listGames();
         return converter.convertAll(summaries);
     }
 }

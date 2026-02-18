@@ -24,6 +24,7 @@ import java.io.IOException;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -47,6 +48,7 @@ public class TestSecurityConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(name = "jwtTokenProvider")
+    @Profile("!restricted-security")
     public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable()).authorizeHttpRequests(auth -> auth.anyRequest().permitAll()).addFilterBefore(
                 new TestAuthenticationFilter(),

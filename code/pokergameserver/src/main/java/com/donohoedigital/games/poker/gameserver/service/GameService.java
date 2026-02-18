@@ -212,15 +212,10 @@ public class GameService {
         }
         pageSize = Math.min(pageSize, 100);
 
-        List<GameInstanceEntity> all = gameInstanceRepository.findAll();
-        final List<GameInstanceState> finalStatuses = statuses;
-        final String searchLower = search != null ? search.toLowerCase(Locale.ROOT) : null;
+        String searchPattern = search != null ? "%" + search.toLowerCase(Locale.ROOT) + "%" : null;
+        List<GameInstanceEntity> all = gameInstanceRepository.findGamesFiltered(statuses, hostingType, searchPattern);
 
-        List<GameSummary> filtered = all.stream().filter(e -> finalStatuses.contains(e.getStatus()))
-                .filter(e -> hostingType == null || hostingType.equals(e.getHostingType()))
-                .filter(e -> searchLower == null || e.getName().toLowerCase(Locale.ROOT).contains(searchLower)
-                        || e.getOwnerName().toLowerCase(Locale.ROOT).contains(searchLower))
-                .map(this::toSummary).toList();
+        List<GameSummary> filtered = all.stream().map(this::toSummary).toList();
 
         int total = filtered.size();
         int fromIndex = page * pageSize;
@@ -320,7 +315,8 @@ public class GameService {
             // director yet). DB update proceeds normally.
         }
 
-        gameInstanceRepository.updateStatusWithStartTime(gameId, GameInstanceState.IN_PROGRESS, Instant.now());
+        Instant now = Instant.now();
+        gameInstanceRepository.updateStatusWithStartTime(gameId, GameInstanceState.IN_PROGRESS, now);
 
         if ("SERVER".equals(entity.getHostingType()) && lobbyBroadcaster != null) {
             // Broadcast countdown to lobby clients after successful start
@@ -329,7 +325,9 @@ public class GameService {
         // COMMUNITY: DB status update only (no WS broadcast — community clients connect
         // to host's WS)
 
-        return toSummary(gameInstanceRepository.findById(gameId).orElseThrow());
+        entity.setStatus(GameInstanceState.IN_PROGRESS);
+        entity.setStartedAt(now);
+        return toSummary(entity);
     }
 
     /**
@@ -397,17 +395,17 @@ public class GameService {
         // Remove player from in-memory game instance
         if (gameInstanceManager != null) {
             GameInstance game = gameInstanceManager.getGame(gameId);
-            if (game != null && !game.hasPlayer(targetProfileId)) {
-                throw new GameServerException(ErrorCode.PLAYER_NOT_FOUND, "Player not in lobby: " + targetProfileId);
-            }
             if (game != null) {
+                if (!game.hasPlayer(targetProfileId)) {
+                    throw new GameServerException(ErrorCode.PLAYER_NOT_FOUND,
+                            "Player not in lobby: " + targetProfileId);
+                }
                 game.removePlayer(targetProfileId);
             }
         }
 
-        // Update DB player count
-        int newCount = Math.max(0, entity.getPlayerCount() - 1);
-        gameInstanceRepository.updatePlayerCount(gameId, newCount);
+        // Update DB player count (atomic decrement, clamped to 0)
+        gameInstanceRepository.decrementPlayerCount(gameId);
 
         if (lobbyBroadcaster != null) {
             lobbyBroadcaster.broadcastLobbyPlayerKicked(gameId,
@@ -443,43 +441,19 @@ public class GameService {
 
     /**
      * Internal join used by WebSocketHandler when a player connects to a
-     * WAITING_FOR_PLAYERS game. Increments DB player count. Not exposed via REST.
+     * WAITING_FOR_PLAYERS game. Increments DB player count atomically. Not exposed
+     * via REST.
      */
     public void incrementPlayerCount(String gameId) {
-        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElse(null);
-        if (entity != null) {
-            gameInstanceRepository.updatePlayerCount(gameId, entity.getPlayerCount() + 1);
-        }
+        gameInstanceRepository.incrementPlayerCount(gameId);
     }
 
     /**
      * Internal decrement used by WebSocketHandler when a player disconnects from a
-     * WAITING_FOR_PLAYERS game.
+     * WAITING_FOR_PLAYERS game. Atomic, clamped to 0.
      */
     public void decrementPlayerCount(String gameId) {
-        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElse(null);
-        if (entity != null) {
-            int newCount = Math.max(0, entity.getPlayerCount() - 1);
-            gameInstanceRepository.updatePlayerCount(gameId, newCount);
-        }
-    }
-
-    /**
-     * Start a game with no auth check (used internally, e.g. from tests or
-     * migration).
-     *
-     * @deprecated Use {@link #startGame(String, Long)} for authenticated calls.
-     */
-    @Deprecated
-    public boolean startGame(String gameId) {
-        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElse(null);
-        if (entity == null) {
-            return false;
-        }
-        entity.setStatus(GameInstanceState.IN_PROGRESS);
-        entity.setStartedAt(Instant.now());
-        gameInstanceRepository.save(entity);
-        return true;
+        gameInstanceRepository.decrementPlayerCount(gameId);
     }
 
     // =========================================================================

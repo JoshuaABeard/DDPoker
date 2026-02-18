@@ -22,9 +22,11 @@ package com.donohoedigital.games.poker.gameserver.dto;
 import com.donohoedigital.games.poker.gameserver.GameConfig;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 
 /** Request body for POST /api/v1/games/community. */
-public record CommunityGameRegisterRequest(@NotBlank String name, @NotBlank String wsUrl, @Valid GameConfig profile,
-        String password // null = public game
+public record CommunityGameRegisterRequest(@NotBlank String name,
+        @NotBlank @Pattern(regexp = "wss?://.+", message = "wsUrl must be a valid WebSocket URL (ws:// or wss://)") String wsUrl,
+        @Valid GameConfig profile, String password // null = public game
 ) {
 }
