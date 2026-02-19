@@ -59,7 +59,7 @@ public class DealCommunity {
 
         // get last betting round and current round
         HandAction last = hhand.getLastAction();
-        int nLastBettingRound = last.getRound();
+        int nLastBettingRound = last != null ? last.getRound() : HoldemHand.ROUND_PRE_FLOP;
 
         // these flags match above
         int nNumWithCards = hhand.getNumWithCards();

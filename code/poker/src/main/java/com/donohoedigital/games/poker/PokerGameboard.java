@@ -355,6 +355,10 @@ public class PokerGameboard extends Gameboard {
                                     sText = PropertyConfig.getMessage("msg.bet.small", NBET);
                                     break;
 
+                                case HandAction.ACTION_NONE :
+                                    // No recorded action (e.g. remote game before history is populated)
+                                    break;
+
                                 default :
                                     ApplicationError.assertTrue(false, "Unhandled last action: " + nLast);
                             }
