@@ -148,8 +148,9 @@ public class V2Player extends V1Player implements AIConstants {
         // Create context wrapping current hand
         ClientV2AIContext context = new ClientV2AIContext(hhand, strategyProvider);
 
-        // Adapt PokerPlayer to GamePlayerInfo
-        GamePlayerInfo playerInfo = new PokerPlayerAdapter(player);
+        // Adapt PokerPlayer to GamePlayerInfo (use ClientV2AIContext's adapter
+        // so adaptPlayer() can unwrap it back to PokerPlayer)
+        GamePlayerInfo playerInfo = new ClientV2AIContext.PokerPlayerAdapter(player);
 
         // Get decision from V2Algorithm
         com.donohoedigital.games.poker.core.PlayerAction coreAction = algorithm.getAction(playerInfo, options, context);
@@ -201,115 +202,6 @@ public class V2Player extends V1Player implements AIConstants {
 
         // Add debug reason if present
         return legacyAction.reason(coreAction.toString());
-    }
-
-    /**
-     * Adapter that wraps PokerPlayer to implement GamePlayerInfo.
-     */
-    private static class PokerPlayerAdapter implements GamePlayerInfo {
-        private final PokerPlayer player;
-
-        PokerPlayerAdapter(PokerPlayer player) {
-            this.player = player;
-        }
-
-        @Override
-        public int getID() {
-            return player.getID();
-        }
-
-        @Override
-        public String getName() {
-            return player.getName();
-        }
-
-        @Override
-        public boolean isHuman() {
-            return player.isHuman();
-        }
-
-        @Override
-        public int getChipCount() {
-            return player.getChipCount();
-        }
-
-        @Override
-        public boolean isFolded() {
-            return player.isFolded();
-        }
-
-        @Override
-        public boolean isAllIn() {
-            return player.isAllIn();
-        }
-
-        @Override
-        public int getSeat() {
-            return player.getSeat();
-        }
-
-        @Override
-        public boolean isAskShowWinning() {
-            // Default: don't ask about showing winning cards
-            return false;
-        }
-
-        @Override
-        public boolean isAskShowLosing() {
-            // Default: don't ask about showing losing cards
-            return false;
-        }
-
-        @Override
-        public boolean isObserver() {
-            return player.isObserver();
-        }
-
-        @Override
-        public boolean isHumanControlled() {
-            return player.isHumanControlled();
-        }
-
-        @Override
-        public int getThinkBankMillis() {
-            return player.getThinkBankMillis();
-        }
-
-        @Override
-        public boolean isSittingOut() {
-            return player.isSittingOut();
-        }
-
-        @Override
-        public void setSittingOut(boolean sittingOut) {
-            player.setSittingOut(sittingOut);
-        }
-
-        @Override
-        public boolean isLocallyControlled() {
-            return player.isLocallyControlled();
-        }
-
-        @Override
-        public boolean isComputer() {
-            return player.isComputer();
-        }
-
-        @Override
-        public void setTimeoutMillis(int millis) {
-            player.setTimeoutMillis(millis);
-        }
-
-        @Override
-        public void setTimeoutMessageSecondsLeft(int seconds) {
-            player.setTimeoutMessageSecondsLeft(seconds);
-        }
-
-        @Override
-        public int getNumRebuys() {
-            // Player profile doesn't track rebuy count - return 0
-            return 0;
-        }
     }
 
     public float getHandStrength() {

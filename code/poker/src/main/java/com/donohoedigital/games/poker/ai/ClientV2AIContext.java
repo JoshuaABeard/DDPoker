@@ -762,7 +762,7 @@ public class ClientV2AIContext implements V2AIContext {
     /**
      * Adapter that wraps PokerPlayer to implement GamePlayerInfo.
      */
-    private static class PokerPlayerAdapter implements GamePlayerInfo {
+    static class PokerPlayerAdapter implements GamePlayerInfo {
         private final PokerPlayer player;
 
         PokerPlayerAdapter(PokerPlayer player) {
