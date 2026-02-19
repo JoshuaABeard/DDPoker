@@ -17,6 +17,7 @@
  */
 package com.donohoedigital.games.poker.online;
 
+import com.donohoedigital.games.poker.HandAction;
 import com.donohoedigital.games.poker.HoldemHand;
 import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.core.state.BettingRound;
@@ -128,5 +129,25 @@ class RemoteHoldemHandTest {
         hand.updatePlayerOrder(List.of(alice));
 
         assertThat(hand.getCurrentPlayerIndex()).isEqualTo(HoldemHand.NO_CURRENT_PLAYER);
+    }
+
+    @Test
+    void hasPlayerActedReturnsFalseWithoutNpe() {
+        // history_ is null in no-arg constructor — must not throw NPE
+        PokerPlayer alice = new PokerPlayer(1, "Alice", true);
+        assertThat(hand.hasPlayerActed(alice)).isFalse();
+    }
+
+    @Test
+    void getHistoryCopyReturnsEmptyListWithoutNpe() {
+        // history_ is null in no-arg constructor — must not throw NPE
+        List<HandAction> copy = hand.getHistoryCopy();
+        assertThat(copy).isNotNull().isEmpty();
+    }
+
+    @Test
+    void getHistorySizeReturnsZeroWithoutNpe() {
+        // history_ is null in no-arg constructor — must not throw NPE
+        assertThat(hand.getHistorySize()).isEqualTo(0);
     }
 }

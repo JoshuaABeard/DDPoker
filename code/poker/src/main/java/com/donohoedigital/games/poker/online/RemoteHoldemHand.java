@@ -17,12 +17,15 @@
  */
 package com.donohoedigital.games.poker.online;
 
+import com.donohoedigital.games.poker.HandAction;
 import com.donohoedigital.games.poker.HoldemHand;
 import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData.ActionOptionsData;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -51,6 +54,7 @@ public class RemoteHoldemHand extends HoldemHand {
     private List<PokerPlayer> remotePlayers_ = new ArrayList<>();
     private int remoteCurrentPlayerIndex_ = NO_CURRENT_PLAYER;
     private int remotePotTotal_;
+    private ActionOptionsData remoteOptions_;
 
     /**
      * Creates a remote hand with no-arg parent constructor. The no-arg HoldemHand
@@ -64,6 +68,73 @@ public class RemoteHoldemHand extends HoldemHand {
     // -------------------------------------------------------------------------
     // Overridden getters (return remote-state values)
     // -------------------------------------------------------------------------
+
+    /**
+     * Returns 0 — the remote hand does not track per-player bet history. Overrides
+     * to avoid NPE from {@code synchronized(history_)} in the parent; the no-arg
+     * HoldemHand constructor leaves {@code history_} null.
+     */
+    @Override
+    public int getBet(PokerPlayer player, int nRound) {
+        return 0;
+    }
+
+    /** Returns the server-provided min bet, or 0 if no options are stored. */
+    @Override
+    public int getMinBet() {
+        return remoteOptions_ != null ? remoteOptions_.minBet() : 0;
+    }
+
+    /** Returns the server-provided min raise, or 0 if no options are stored. */
+    @Override
+    public int getMinRaise() {
+        return remoteOptions_ != null ? remoteOptions_.minRaise() : 0;
+    }
+
+    /**
+     * Returns the server-provided max bet for a player, or 0 if no options are
+     * stored.
+     */
+    @Override
+    public int getMaxBet(PokerPlayer player) {
+        return remoteOptions_ != null ? remoteOptions_.maxBet() : 0;
+    }
+
+    /**
+     * Returns the server-provided max raise for a player, or 0 if no options are
+     * stored.
+     */
+    @Override
+    public int getMaxRaise(PokerPlayer player) {
+        return remoteOptions_ != null ? remoteOptions_.maxRaise() : 0;
+    }
+
+    /**
+     * Returns {@code false} — the remote hand has no action history. Overrides to
+     * avoid NPE from {@code synchronized(history_)} in the parent.
+     */
+    @Override
+    public boolean hasPlayerActed(PokerPlayer player) {
+        return false;
+    }
+
+    /**
+     * Returns an empty list — the remote hand has no action history. Overrides to
+     * avoid NPE from {@code synchronized(history_)} in the parent.
+     */
+    @Override
+    public List<HandAction> getHistoryCopy() {
+        return Collections.emptyList();
+    }
+
+    /**
+     * Returns 0 — the remote hand has no action history. Overrides to avoid NPE
+     * from {@code synchronized(history_)} in the parent.
+     */
+    @Override
+    public int getHistorySize() {
+        return 0;
+    }
 
     @Override
     public BettingRound getRound() {
@@ -144,5 +215,15 @@ public class RemoteHoldemHand extends HoldemHand {
     /** Updates the total pot chip count. */
     public void updatePot(int totalPot) {
         this.remotePotTotal_ = totalPot;
+    }
+
+    /**
+     * Stores the current action options from the server. Used by
+     * {@link #getMinBet()}, {@link #getMinRaise()},
+     * {@link #getMaxBet(PokerPlayer)}, and {@link #getMaxRaise(PokerPlayer)} to
+     * provide correct bet/raise amounts to the Swing input UI.
+     */
+    public void updateActionOptions(ActionOptionsData opts) {
+        this.remoteOptions_ = opts;
     }
 }
