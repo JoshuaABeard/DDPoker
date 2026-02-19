@@ -96,8 +96,8 @@ public class CardImageCreator extends BaseCommandLineApp {
      */
     private void writeCards() {
         CardThumbnail piece = new OutputCard();
-        Rectangle rect = new Rectangle(20, 26);
-        int border = 1;
+        Rectangle rect = new Rectangle(200, 280);
+        int border = 2;
 
         Deck deck = new Deck(false);
         deck.add(Card.BLANK);
