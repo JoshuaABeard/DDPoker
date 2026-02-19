@@ -118,8 +118,17 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                         }
                     }
                 }
+                // Look up dealer seat from the tournament table so the client can position
+                // the dealer button correctly. Falls back to -1 if unavailable.
+                int dealerSeat = -1;
+                if (game != null && game.getTournament() != null) {
+                    int tableId = e.tableId();
+                    if (tableId >= 0 && tableId < game.getTournament().getNumTables()) {
+                        dealerSeat = game.getTournament().getTable(tableId).getButton();
+                    }
+                }
                 broadcast(ServerMessage.of(ServerMessageType.HAND_STARTED, gameId,
-                        new ServerMessageData.HandStartedData(e.handNumber(), -1, -1, -1, List.of())));
+                        new ServerMessageData.HandStartedData(e.handNumber(), dealerSeat, -1, -1, List.of())));
             }
             case GameEvent.PlayerActed e -> broadcast(
                 ServerMessage.of(ServerMessageType.PLAYER_ACTED, gameId,

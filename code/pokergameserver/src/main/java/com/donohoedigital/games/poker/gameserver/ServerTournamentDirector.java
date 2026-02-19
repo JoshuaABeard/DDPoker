@@ -204,6 +204,14 @@ public class ServerTournamentDirector implements Runnable {
         // 2. Handle "phases" server-side (no Swing UI)
         // Phases may override the state based on phase type and pendingState
         if (result.phaseToRun() != null) {
+            // When DealDisplayHand fires, cards have been dealt and a new hand is starting.
+            // Publish HandStarted so the broadcaster can push GAME_STATE snapshots to
+            // clients before HAND_STARTED, giving them table context before any
+            // ACTION_REQUIRED arrives.
+            if ("TD.DealDisplayHand".equals(result.phaseToRun())) {
+                eventBus.publish(
+                        new com.donohoedigital.games.poker.core.event.GameEvent.HandStarted(table.getNumber(), -1));
+            }
             handleServerPhase(table, result.phaseToRun(), result.pendingState());
         }
 
