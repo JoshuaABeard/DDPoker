@@ -396,18 +396,6 @@
     </paramlist>
   </phase>
 
-  <phase name="SyncPasswordDialog" extends="DisplayInfoMessage"
-         class="com.donohoedigital.games.poker.SyncPasswordDialog" transient="true">
-    <param name="style" strvalue="OptionsDialog"/>
-    <param name="dialog-windowtitle-prop" strvalue="msg.windowtitle.syncPassword"/>
-    <param name="dialog-window-close-activates-button" strvalue="cancelpref"/>
-    <param name="default-button" strvalue="okay"/>
-    <paramlist name="buttons">
-      <strvalue>okay</strvalue>
-      <strvalue>cancelpref</strvalue>
-    </paramlist>
-  </phase>
-
   <phase name="NewProfile.player" extends="DisplayInfoMessage"
          class="com.donohoedigital.games.poker.PlayerProfileDialog" transient="true">
     <param name="style" strvalue="OptionsDialog"/>
@@ -900,37 +888,6 @@
     </paramlist>
   </phase>
 
-  <phase name="ChangeTableDialog" class="com.donohoedigital.games.poker.online.ChangeTableDialog" cache="false"
-         transient="true">
-    <param name="style" strvalue="DisplayMessage"/>
-    <param name="dialog-windowtitle-image" strvalue="pokerbannerwintitle"/>
-    <param name="dialog-windowtitle-prop" strvalue="msg.windowtitle.changetable"/>
-    <param name="dialog-style" strvalue="PokerStandardDialog"/>
-    <param name="dialog-modal" boolvalue="true"/>
-    <param name="dialog-help-name" strvalue="empty"/>
-    <param name="dialog-background-image" strvalue="pokerdialog"/>
-    <param name="default-button" strvalue="okay"/>
-    <paramlist name="buttons">
-      <strvalue>okay</strvalue>
-      <strvalue>cancel</strvalue>
-    </paramlist>
-  </phase>
-
-  <phase name="HostPauseDialog" class="com.donohoedigital.games.poker.online.HostPauseDialog" cache="true"
-         transient="true">
-    <param name="style" strvalue="DisplayMessage"/>
-    <param name="dialog-windowtitle-image" strvalue="pokerbannerwintitle"/>
-    <param name="dialog-windowtitle-prop" strvalue="msg.windowtitle.hostpause"/>
-    <param name="dialog-style" strvalue="PokerStandardDialog"/>
-    <param name="dialog-modal" boolvalue="false"/>
-    <param name="dialog-help-name" strvalue="empty"/>
-    <param name="dialog-background-image" strvalue="pokerdialog"/>
-    <param name="dialog-window-close-activates-button" strvalue="okayresume"/>
-    <param name="default-button" strvalue="okayresume"/>
-    <paramlist name="buttons">
-      <strvalue>okayresume</strvalue>
-    </paramlist>
-  </phase>
 
   <phase name="AdvisorInfoDialog" class="com.donohoedigital.games.poker.ai.gui.AdvisorInfoDialog" cache="false"
          transient="true">
@@ -1008,24 +965,6 @@
   </phase>
 
   <phase name="LoadSavedGame" class="com.donohoedigital.games.engine.LoadSavedGame"/>
-
-  <phase name="License" class="com.donohoedigital.games.engine.License" cache="false" transient="true">
-    <param name="style" strvalue="PokerStandardDialog"/>
-    <param name="dialog-windowtitle-image" strvalue="pokerbannerwintitle"/>
-    <param name="dialog-windowtitle-prop" strvalue="msg.windowtitle.license"/>
-    <param name="dialog-style" strvalue="PokerStandardDialog"/>
-    <param name="dialog-modal" boolvalue="true"/>
-    <param name="dialog-iconifiable" boolvalue="false"/>
-    <param name="dialog-help-name" strvalue="empty"/>
-    <param name="dialog-minwidth" intvalue="300"/>
-    <param name="dialog-background-image" strvalue="pokerdialog"/>
-    <param name="dialog-window-close-activates-button" strvalue="noReject"/>
-    <param name="default-button" strvalue="yesAccept"/>
-    <paramlist name="buttons">
-      <strvalue>yesAccept</strvalue>
-      <strvalue>noReject</strvalue>
-    </paramlist>
-  </phase>
 
   <phase name="ExportTable" extends="DisplayInfoMessage" class="com.donohoedigital.games.engine.FileChooserDialog"
          transient="true">
