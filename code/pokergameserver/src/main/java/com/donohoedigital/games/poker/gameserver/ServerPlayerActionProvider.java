@@ -64,6 +64,16 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
     private final int timeoutSeconds;
     private final int disconnectGraceTurns;
     private final Map<Long, ServerPlayerSession> playerSessions;
+    private final int aiActionDelayMs;
+
+    /**
+     * Create a new server player action provider with no AI delay. Used by tests
+     * and contexts that don't need pacing.
+     */
+    public ServerPlayerActionProvider(PlayerActionProvider aiProvider, Consumer<ActionRequest> actionRequestCallback,
+            int timeoutSeconds, int disconnectGraceTurns, Map<Long, ServerPlayerSession> playerSessions) {
+        this(aiProvider, actionRequestCallback, timeoutSeconds, disconnectGraceTurns, playerSessions, 0);
+    }
 
     /**
      * Create a new server player action provider.
@@ -80,21 +90,34 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
      *            immediately
      * @param playerSessions
      *            map of profile ID to player session for disconnect checking
+     * @param aiActionDelayMs
+     *            milliseconds to sleep after each AI action so humans can observe
+     *            the game progressing (0 = no delay)
      */
     public ServerPlayerActionProvider(PlayerActionProvider aiProvider, Consumer<ActionRequest> actionRequestCallback,
-            int timeoutSeconds, int disconnectGraceTurns, Map<Long, ServerPlayerSession> playerSessions) {
+            int timeoutSeconds, int disconnectGraceTurns, Map<Long, ServerPlayerSession> playerSessions,
+            int aiActionDelayMs) {
         this.aiProvider = aiProvider;
         this.actionRequestCallback = actionRequestCallback;
         this.timeoutSeconds = timeoutSeconds;
         this.disconnectGraceTurns = disconnectGraceTurns;
         this.playerSessions = playerSessions;
         this.pendingActions = new ConcurrentHashMap<>();
+        this.aiActionDelayMs = aiActionDelayMs;
     }
 
     @Override
     public PlayerAction getAction(GamePlayerInfo player, ActionOptions options) {
         if (player.isComputer()) {
-            return aiProvider.getAction(player, options);
+            PlayerAction action = aiProvider.getAction(player, options);
+            if (aiActionDelayMs > 0) {
+                try {
+                    Thread.sleep(aiActionDelayMs);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            return action;
         }
         return getHumanAction(player, options);
     }

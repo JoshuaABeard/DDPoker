@@ -48,7 +48,7 @@ class StaleGameCleanupJobTest {
      */
     private static final GameServerProperties PROPS = new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5,
             /* communityHeartbeatTimeoutMinutes */ 1, /* lobbyTimeoutHours */ 1, /* completedGameRetentionDays */ 1,
-            "ws://localhost");
+            "ws://localhost", 0);
 
     @Autowired
     private StaleGameCleanupJob cleanupJob;

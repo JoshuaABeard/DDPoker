@@ -180,7 +180,8 @@ public class GameInstance {
 
             PlayerActionProvider aiProvider = createSimpleAI();
             actionProvider = new ServerPlayerActionProvider(aiProvider, this::onActionRequest,
-                    properties.actionTimeoutSeconds(), properties.disconnectGraceTurns(), playerSessions);
+                    properties.actionTimeoutSeconds(), properties.disconnectGraceTurns(), playerSessions,
+                    properties.aiActionDelayMs());
 
             // Determine number of tables (1 table per 10 players, minimum 1)
             int numTables = Math.max(1, (players.size() + 9) / 10);

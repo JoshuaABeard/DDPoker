@@ -119,7 +119,15 @@ public class RemotePokerTable extends PokerTable {
      *            dealer button seat index
      */
     public void updateFromState(PokerPlayer[] players, int button) {
-        System.arraycopy(players, 0, remotePlayers_, 0, Math.min(players.length, remotePlayers_.length));
+        int len = Math.min(players.length, remotePlayers_.length);
+        for (int i = 0; i < len; i++) {
+            remotePlayers_[i] = players[i];
+            if (players[i] != null && players[i].getTable() == null) {
+                // Required so DealDisplay.displayCard() can call player.getTable()
+                // without NPE in PokerUtils.getTerritoryForTableSeat.
+                players[i].setTable(this, i);
+            }
+        }
         remoteButton_ = button;
     }
 

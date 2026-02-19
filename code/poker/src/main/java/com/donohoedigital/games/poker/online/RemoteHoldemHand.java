@@ -60,12 +60,14 @@ public class RemoteHoldemHand extends HoldemHand {
     private final Map<Integer, Integer> remoteBets_ = new HashMap<>();
 
     /**
-     * Creates a remote hand with no-arg parent constructor. The no-arg HoldemHand
-     * constructor (used for deserialization) does not create a Deck or pots —
-     * appropriate for a remote view model.
+     * Creates a remote hand with no-arg parent constructor. Calls
+     * {@code initHandLists()} so that any {@code synchronized(pots_)} or
+     * {@code synchronized(history_)} methods in the parent that are not overridden
+     * here operate on non-null lists rather than NPE.
      */
     public RemoteHoldemHand() {
         super();
+        initHandLists();
     }
 
     // -------------------------------------------------------------------------

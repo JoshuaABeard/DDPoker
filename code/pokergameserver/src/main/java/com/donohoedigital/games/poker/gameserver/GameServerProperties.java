@@ -70,12 +70,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *            Base URL used to build ws_url for SERVER-hosted games. For
  *            embedded server this is overridden at runtime with the actual
  *            port. (default "ws://localhost")
+ * @param aiActionDelayMs
+ *            Milliseconds to pause after each AI player action so humans can
+ *            observe the game progressing (default 0 = no delay, embedded mode
+ *            sets this to ~400 ms)
  */
 @ConfigurationProperties(prefix = "game.server")
 public record GameServerProperties(int maxConcurrentGames, int actionTimeoutSeconds, int reconnectTimeoutSeconds,
         int threadPoolSize, int rateLimitMillis, int consecutiveTimeoutLimit, int disconnectGraceTurns,
         int maxGamesPerUser, int communityHeartbeatTimeoutMinutes, int lobbyTimeoutHours,
-        int completedGameRetentionDays, String serverBaseUrl) {
+        int completedGameRetentionDays, String serverBaseUrl, int aiActionDelayMs) {
     /**
      * Canonical constructor with validation and defaults.
      */
@@ -104,12 +108,14 @@ public record GameServerProperties(int maxConcurrentGames, int actionTimeoutSeco
             completedGameRetentionDays = 7;
         if (serverBaseUrl == null || serverBaseUrl.isBlank())
             serverBaseUrl = "ws://localhost";
+        if (aiActionDelayMs < 0)
+            aiActionDelayMs = 0;
     }
 
     /**
      * Default constructor for Spring.
      */
     public GameServerProperties() {
-        this(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost");
+        this(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0);
     }
 }

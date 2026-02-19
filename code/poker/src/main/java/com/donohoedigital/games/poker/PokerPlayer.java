@@ -769,7 +769,7 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     /**
      * Set the table we are at (done from PokerTable)
      */
-    void setTable(PokerTable table, int nSeat) {
+    public void setTable(PokerTable table, int nSeat) {
         if (table == null) {
             setPokerAI(null);
             table_ = null;

@@ -143,6 +143,20 @@ public class HoldemHand implements DataMarshal, GameHand {
     }
 
     /**
+     * Initializes {@code pots_} and {@code history_} for subclasses that use the
+     * no-arg constructor. The normal {@link #HoldemHand(PokerTable)} constructor
+     * initializes these inline; subclasses (e.g. {@code RemoteHoldemHand}) that
+     * skip the table-taking constructor must call this to avoid NPEs in any
+     * {@code synchronized(pots_)} or {@code synchronized(history_)} blocks they do
+     * not override.
+     */
+    protected void initHandLists() {
+        pots_ = new DMArrayList<>();
+        pots_.add(new Pot(ROUND_PRE_FLOP, 0));
+        history_ = new DMArrayList<>();
+    }
+
+    /**
      * Creates a new instance of HoldemHand
      */
     @SuppressWarnings("CommentedOutCode")
