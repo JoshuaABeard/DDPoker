@@ -18,6 +18,7 @@ Persistent knowledge discovered during development sessions. Read this at the st
 - [build] CI uses `-P dev` profile, not the full test suite (2026-02-12)
 - [coverage] Coverage threshold is 65% enforced by JaCoCo; use `mvn verify -P coverage` to check (2026-02-12)
 - [format] Spotless auto-formats Java code on compile — don't manually format, just run `mvn compile` (2026-02-12)
+- [format] Spotless also reformats XML resource files (gamedef.xml, etc.) during `mvn compile`/`package`, reverting uncommitted edits to match git HEAD. Always commit XML edits before building, or they will be lost (2026-02-19)
 
 - [build] Running `mvn test -pl <module>` in isolation uses installed JARs from `~/.m2` for upstream modules — if those JARs are stale (not reinstalled after changes), tests that depend on new classes in upstream modules will fail with `ClassNotFoundException`. Fix: run full `mvn clean test` from root, or `mvn install -pl <upstream> -DskipTests` first (2026-02-18)
 - [pokerserver] `jjwt-jackson:0.12.5` forces `jackson-databind:2.12.7.1` which conflicts with `jackson-datatype-jsr310:2.19.x` pulled in by Spring Boot. Fixed in `pokerserver/pom.xml` via `<dependencyManagement>` pinning all three core Jackson artifacts to `2.19.4` (2026-02-18)
@@ -28,6 +29,12 @@ Persistent knowledge discovered during development sessions. Read this at the st
 - [pokerengine] NEVER call setValue() on static Card constants (SPADES_A, etc.) in tests — they are shared singletons and modifications pollute all other tests. Create new Card instances instead (2026-02-13)
 - [pokerengine] OnlineGame.hashCode() violates equals/hashCode contract by including super.hashCode() — equal objects (same URL) have different hash codes (2026-02-13)
 - [db] ResultSet must be explicitly closed in ResultMap to prevent resource leaks (2026-02-12)
+
+## Game Engine
+
+- [pokerengine] `TournamentProfile.setLevel()` sets blind/ante values but does NOT set `PARAM_LASTLEVEL`. Without it, `BlindStructure` defaults `lastlevel` to 0 and returns 0 for all blinds/antes. Fix: call `profile.getMap().setInteger(TournamentProfile.PARAM_LASTLEVEL, N)` after defining levels (2026-02-18)
+- [poker] AI code (`AIOutcome`, `BetRange`, `ClientStrategyProvider`) uses `Math.random()` — not `DiceRoller` — so `DiceRoller.setSeed()` does not guarantee deterministic AI behavior (2026-02-18)
+- [poker] For all-AI tables, `PokerTable.createPokerAI()` only runs when `(!isAllComputer() || isCurrent()) && !isSimulation()`. Call `game.setCurrentTable(table)` to trigger AI initialization (2026-02-18)
 
 ## Configuration
 

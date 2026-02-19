@@ -1,6 +1,6 @@
 # Omaha Poker Implementation Plan
 
-**Status:** draft
+**Status:** draft (v3 — updated 2026-02-18)
 
 ## Context
 
@@ -9,74 +9,110 @@ DDPoker currently supports only Texas Hold'em with three betting structures (No 
 **Why this change**: Pot Limit Omaha is the second most popular poker variant worldwide. Adding PLO support would significantly expand DDPoker's appeal and provide players with variety in tournament formats.
 
 **Current state**:
-- Zero Omaha references in codebase - exclusively Hold'em
+- Zero Omaha references in codebase — exclusively Hold'em
 - Hand evaluation hardcoded for 2 hole cards + 5 community cards
 - AI system built around 169 Hold'em starting hand combinations
-- UI layout designed for 2-card display
+- UI layout displays 2 hole cards per player
+- Two separate hand evaluation paths: client (`poker` module) and server (`pokergameserver` module)
 
 **Goal state**:
 - Support Pot Limit Omaha (4 hole cards, must use exactly 2+3 rule)
 - Maintain 100% backward compatibility with Hold'em
 - Provide competent (not expert) Omaha AI
-- Allow mixed-game tournaments (Hold'em + Omaha)
+- PLO works for both local/practice games AND online server-hosted games
+
+---
+
+## Decisions (Resolved)
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Online scope | Both local and online | Full PLO support across all play modes |
+| Core algorithm placement | `pokerengine` (shared module) | Both `poker` and `pokergameserver` need it; server can't depend on `poker` |
+| UI variants | PLO only | Constants for NLO/Limit Omaha defined but hidden in v1 UI |
+| Mixed-game tournaments | Single game type per tournament | Infrastructure exists for mixed-game but deferred to v2 |
+
+---
 
 ## Architecture Overview
 
-**Strategy Pattern for Hand Evaluation**:
-```
-HandEvaluator (interface)
-    ├── HoldemHandEvaluator (existing logic, 2 hole + 5 board)
-    └── OmahaHandEvaluator (new logic, exactly 2 from 4 hole + 3 from 5 board)
+### Module Dependency Constraint
 
-HandEvaluatorFactory.getEvaluator(gameType) → dispatches to correct evaluator
+```
+pokergameserver ──depends──> pokergamecore ──depends──> pokerengine
+poker ──────────depends──────────────────────────────> pokerengine
+
+pokergameserver CANNOT depend on poker (enforced in pom.xml)
 ```
 
-**Game Type Dispatch Pattern**:
+### Where Omaha Logic Lives
+
+**`pokerengine` module (shared)** — Core algorithm:
+```
+OmahaScorer (NEW)
+    ├── bestScore(Hand holeCards, Hand community) → int
+    └── bestHand(Hand holeCards, Hand community) → Hand (best 5 cards)
+    Uses HandInfoFaster internally for 5-card scoring
+```
+
+**`poker` module (client)** — Client-side wrappers:
+```
+PokerPlayer.getHandInfo()
+    └── For Omaha: calls OmahaScorer.bestHand(), wraps in HandInfo(player, bestFive, null)
+    └── For Hold'em: existing HandInfo(player, sorted, community) path
+```
+
+**`pokergameserver` module (server)** — Server-side wrappers:
+```
+ServerHandEvaluator.getScore(holeCards, community, gameType)
+    └── For Omaha: calls OmahaScorer.bestScore() via Hand adapter
+    └── For Hold'em: existing evaluateHand() path
+
+ServerHand
+    └── Deals 4 cards for Omaha, 2 for Hold'em
+    └── Passes gameType to evaluateHand()
+```
+
+### Game Type Dispatch Pattern
+
 - All game-specific logic checks `PokerConstants.isOmaha(gameType)` vs `isHoldem(gameType)`
 - Default behavior preserved for Hold'em (backward compatibility)
 - New code paths only activated when gameType == TYPE_POT_LIMIT_OMAHA
 
-**Key Insight**: Much of the codebase is already generic:
-- ✅ Hand class supports variable card counts
-- ✅ DealDisplay animation iterates hand.size()
-- ✅ Network protocol serializes any Hand size
-- ✅ Pot limit calculation already game-agnostic
-- ❌ Hand evaluation assumes 2 hole cards (BLOCKER)
-- ❌ AI uses 13x13 Hold'em starting hand matrix (BLOCKER)
-- ❌ UI layout only defines 2 hole card positions (BLOCKER)
+### What's Already Generic (No Changes Needed)
 
-## TDD Methodology (CRITICAL)
+- ✅ `Hand` class supports variable card counts
+- ✅ `DealDisplay.syncCards()` iterates `hand.size()` (line 67)
+- ✅ Hand serialization (marshal/demarshal) handles any card count
+- ✅ Pot limit calculation is game-agnostic (`getMaxBet()`, `getMaxRaise()`)
+- ✅ Side pot logic is independent of hole card count
+- ✅ `TournamentProfile` supports per-level game types
+- ✅ `HoldemHand.getGameType()` exists (line 227)
+- ✅ `HoldemHand.dealCards(int)` is parameterized (line 496)
+- ✅ Card thumbnail mode already handles 4 cards in a 2x2 grid (CardPiece lines 366-411)
+
+### What Needs Building
+
+- ❌ `OmahaScorer` in `pokerengine` — core 60-combination algorithm (BLOCKER)
+- ❌ `PokerPlayer.getHandInfo()` dispatch by game type (BLOCKER)
+- ❌ `ServerHandEvaluator` Omaha support (BLOCKER for online)
+- ❌ `ServerHand` dealing and showdown for Omaha (BLOCKER for online)
+- ❌ AI pre-flop strategy for 4-card hands — both client (`V1Player`) and server (`V1Algorithm`)
+- ❌ UI card spacing for 4 cards in normal play mode
+- ❌ Omaha game type constants in `PokerConstants`
+
+---
+
+## TDD Methodology
 
 **Following CLAUDE.md guidelines**: All implementation MUST follow strict Test-Driven Development.
 
 ### TDD Workflow (RED-GREEN-REFACTOR)
 
-**For EVERY feature in EVERY phase**:
-
-1. **🔴 RED**: Write a failing test FIRST
-   - Test defines expected behavior
-   - Run test → verify it fails (no implementation yet)
-   - Commit the failing test: `git commit -m "RED: Add test for [feature]"`
-
-2. **🟢 GREEN**: Write minimal code to pass
-   - Implement just enough to make test pass
-   - No extra features, no speculation
-   - Run test → verify it passes
-   - Commit passing implementation: `git commit -m "GREEN: Implement [feature]"`
-
-3. **♻️ REFACTOR**: Clean up while keeping tests green
-   - Simplify, remove duplication, improve readability
-   - Run tests after each refactor → verify still passing
-   - Commit refactoring: `git commit -m "REFACTOR: Simplify [component]"`
-
-4. **🔁 REPEAT**: Next requirement, back to RED
-
-### TDD Benefits for This Project
-
-- **Hand evaluation correctness**: Tests define correct Omaha rules before implementation
-- **Regression prevention**: Hold'em tests ensure backward compatibility
-- **Incremental development**: Each test is a small, verifiable step
-- **Documentation**: Tests serve as executable specification
+1. **RED**: Write a failing test FIRST — test defines expected behavior
+2. **GREEN**: Write minimal code to pass — no extra features
+3. **REFACTOR**: Clean up while keeping tests green
+4. **REPEAT**: Next requirement, back to RED
 
 ### Test Coverage Requirements
 
@@ -84,70 +120,37 @@ HandEvaluatorFactory.getEvaluator(gameType) → dispatches to correct evaluator
 |-------|-----------------|-------|
 | Phase 1 | 100% | Simple utility methods |
 | Phase 2 | 95% | Hand evaluation logic (CRITICAL) |
-| Phase 3 | 85% | Game flow integration |
-| Phase 4 | Visual verification | UI layout correctness |
-| Phase 5 | 80% | AI decision making |
-| Phase 6 | Full E2E | Complete game simulation |
+| Phase 3 | 85% | Client game flow |
+| Phase 4 | 85% | Server game flow |
+| Phase 5 | Visual verification | UI layout correctness |
+| Phase 6 | 80% | AI decision making |
+| Phase 7 | Full E2E | Complete game simulation |
 
-**Enforce**: `mvn clean install` must pass with coverage thresholds before proceeding to next phase.
+### Test Conventions
+
+- **File naming**: `*Test.java` (unit), `*IntegrationTest.java` (integration)
+- **Method naming**: `should_<ExpectedBehavior>_When_<Condition>()`
+- **Structure**: Given-When-Then comments
+- **Card instances**: Always create fresh Card instances (see learnings.md)
+- **PropertyConfig**: Ensure initialized before tests that need it
 
 ---
 
 ## Implementation Phases
 
-### Phase 1: Foundation - Game Type Infrastructure (2-3 days, LOW risk)
+### Phase 1: Foundation — Game Type Infrastructure (1-2 days, LOW risk)
 
 **Goal**: Add Omaha constants and utility methods without breaking existing functionality.
 
-**Critical Files**:
-- `C:\Repos\DDPoker\code\pokerengine\src\main\java\com\donohoedigital\games\poker\engine\PokerConstants.java`
+**Module**: `pokerengine`
 
----
+#### Steps
 
-#### TDD Workflow for Phase 1
+**Step 1.1: RED/GREEN — PokerConstants utility methods**
 
-**Step 1.1: 🔴 RED - Write test for isOmaha()**
-
-**NEW FILE**: `C:\Repos\DDPoker\code\pokerengine\src\test\java\com\donohoedigital\games\poker\engine\PokerConstantsTest.java`
-
+Add to `PokerConstants.java`:
 ```java
-@Test
-void should_ReturnTrue_When_CheckingPotLimitOmaha() {
-    // Given: Pot Limit Omaha game type
-    int gameType = PokerConstants.TYPE_POT_LIMIT_OMAHA;
-
-    // When: Checking if it's Omaha
-    boolean isOmaha = PokerConstants.isOmaha(gameType);
-
-    // Then: Should return true
-    assertTrue(isOmaha);
-}
-
-@Test
-void should_ReturnFalse_When_CheckingHoldemAsOmaha() {
-    // Given: No Limit Hold'em game type
-    int gameType = PokerConstants.TYPE_NO_LIMIT_HOLDEM;
-
-    // When: Checking if it's Omaha
-    boolean isOmaha = PokerConstants.isOmaha(gameType);
-
-    // Then: Should return false
-    assertFalse(isOmaha);
-}
-```
-
-**Run test**: `mvn test -Dtest=PokerConstantsTest` → **FAILS** (method doesn't exist yet)
-
-**Commit**: `git commit -m "RED: Add test for PokerConstants.isOmaha()"`
-
----
-
-**Step 1.2: 🟢 GREEN - Implement isOmaha()**
-
-**MODIFY**: `PokerConstants.java`
-
-```java
-// Add constants first (tests will reference them)
+// Game type constants (existing: 1=NLH, 2=PLH, 3=LH)
 public static final int TYPE_POT_LIMIT_OMAHA = 4;
 public static final int TYPE_NO_LIMIT_OMAHA = 5;
 public static final int TYPE_LIMIT_OMAHA = 6;
@@ -156,1140 +159,554 @@ public static final String DE_POT_LIMIT_OMAHA = "potlimitomaha";
 public static final String DE_NO_LIMIT_OMAHA = "nolimitomaha";
 public static final String DE_LIMIT_OMAHA = "limitomaha";
 
-// Implement method
 public static boolean isOmaha(int gameType) {
     return gameType == TYPE_POT_LIMIT_OMAHA ||
            gameType == TYPE_NO_LIMIT_OMAHA ||
            gameType == TYPE_LIMIT_OMAHA;
 }
-```
 
-**Run test**: `mvn test -Dtest=PokerConstantsTest` → **PASSES**
-
-**Commit**: `git commit -m "GREEN: Implement PokerConstants.isOmaha()"`
-
----
-
-**Step 1.3: 🔴 RED - Write test for isHoldem()**
-
-**ADD TO**: `PokerConstantsTest.java`
-
-```java
-@Test
-void should_ReturnTrue_When_CheckingNoLimitHoldem() {
-    assertTrue(PokerConstants.isHoldem(PokerConstants.TYPE_NO_LIMIT_HOLDEM));
-}
-
-@Test
-void should_ReturnFalse_When_CheckingOmahaAsHoldem() {
-    assertFalse(PokerConstants.isHoldem(PokerConstants.TYPE_POT_LIMIT_OMAHA));
-}
-```
-
-**Run test** → **FAILS**
-
-**Commit**: `git commit -m "RED: Add test for PokerConstants.isHoldem()"`
-
----
-
-**Step 1.4: 🟢 GREEN - Implement isHoldem()**
-
-```java
 public static boolean isHoldem(int gameType) {
     return gameType == TYPE_NO_LIMIT_HOLDEM ||
            gameType == TYPE_POT_LIMIT_HOLDEM ||
            gameType == TYPE_LIMIT_HOLDEM;
 }
-```
 
-**Run test** → **PASSES**
-
-**Commit**: `git commit -m "GREEN: Implement PokerConstants.isHoldem()"`
-
----
-
-**Step 1.5: 🔴 RED - Write test for getHoleCardCount()**
-
-```java
-@Test
-void should_ReturnFour_When_GetHoleCardCountForOmaha() {
-    assertEquals(4, PokerConstants.getHoleCardCount(PokerConstants.TYPE_POT_LIMIT_OMAHA));
-    assertEquals(4, PokerConstants.getHoleCardCount(PokerConstants.TYPE_NO_LIMIT_OMAHA));
-    assertEquals(4, PokerConstants.getHoleCardCount(PokerConstants.TYPE_LIMIT_OMAHA));
-}
-
-@Test
-void should_ReturnTwo_When_GetHoleCardCountForHoldem() {
-    assertEquals(2, PokerConstants.getHoleCardCount(PokerConstants.TYPE_NO_LIMIT_HOLDEM));
-    assertEquals(2, PokerConstants.getHoleCardCount(PokerConstants.TYPE_POT_LIMIT_HOLDEM));
-    assertEquals(2, PokerConstants.getHoleCardCount(PokerConstants.TYPE_LIMIT_HOLDEM));
-}
-```
-
-**Run test** → **FAILS**
-
-**Commit**: `git commit -m "RED: Add test for PokerConstants.getHoleCardCount()"`
-
----
-
-**Step 1.6: 🟢 GREEN - Implement getHoleCardCount()**
-
-```java
 public static int getHoleCardCount(int gameType) {
     return isOmaha(gameType) ? 4 : 2;
 }
 ```
 
-**Run test** → **PASSES**
+Tests: `PokerConstantsTest.java` — cover all constants, utility methods, edge cases.
 
-**Commit**: `git commit -m "GREEN: Implement PokerConstants.getHoleCardCount()"`
+**Step 1.2: RED/GREEN — TournamentProfile string mapping**
 
----
+Update `TournamentProfile.getGameType(int nLevel)` to map `"potlimitomaha"` → `TYPE_POT_LIMIT_OMAHA` (and similar for NLO, LO). The per-level storage infrastructure already exists.
 
-**Step 1.7: ♻️ REFACTOR - Review and clean up**
-
-- Check for duplication (none found - methods are minimal)
-- Ensure consistent naming (verified)
-- Run all tests → **PASSES**
-
-**No refactoring needed** - code is already minimal per TDD principles.
-
----
-
-**Phase 1 Verification Checklist**:
-- ✅ All new tests pass (100% coverage of new code)
+**Phase 1 Verification**:
+- ✅ All new tests pass (100% coverage)
 - ✅ All existing tests pass (zero regression)
-- ✅ `mvn clean install` succeeds
-- ✅ Code coverage report shows 100% for PokerConstants new methods
-
-**Phase 3 Verification Checklist**:
-- ✅ All dealing tests pass (Omaha deals 4, Hold'em deals 2)
-- ✅ All existing Hold'em tests pass (zero regression)
-- ✅ `mvn clean install` succeeds
-- ✅ TournamentProfile properly stores and retrieves game type
-
-**Completion Criteria**: Cannot proceed to Phase 4 until all tests are green
+- ✅ `mvn test -P dev` succeeds
 
 ---
 
-### Phase 2: Hand Evaluation Core - Omaha Evaluator (8-10 days, HIGH risk)
+### Phase 2: Hand Evaluation Core — OmahaScorer (6-8 days, HIGH risk)
 
-**Goal**: Implement Omaha hand evaluation with "exactly 2 hole + 3 board" rule.
+**Goal**: Implement Omaha hand evaluation in the shared `pokerengine` module.
 
-**Critical Algorithm**: Omaha requires evaluating C(4,2) × C(5,3) = 6 × 10 = 60 possible 5-card combinations per player, then selecting the best.
+**Module**: `pokerengine` (accessible by both `poker` and `pokergameserver`)
 
-**TDD CRITICAL**: This is the highest-risk phase. Every test must be written BEFORE implementation. Hand evaluation bugs are catastrophic.
+**Critical Algorithm**: Evaluate C(4,2) × C(5,3) = 6 × 10 = 60 combinations, select best.
 
----
+**TDD CRITICAL**: This is the highest-risk phase. Every test must be written BEFORE implementation.
 
-#### TDD Workflow for Phase 2 (Detailed)
+#### Architecture
 
-**Step 2.1: 🔴 RED - Define HandEvaluator interface with test**
-
-**NEW FILE**: `C:\Repos\DDPoker\code\poker\src\test\java\com\donohoedigital\games\poker\HandEvaluatorTest.java`
+`OmahaScorer` lives in `pokerengine` and uses `HandInfoFaster` for 5-card scoring:
 
 ```java
-@Test
-void should_EvaluateHandInfo_When_CallingEvaluate() {
-    // Given: A hand evaluator and test cards
-    HandEvaluator evaluator = new MockHandEvaluator();
-    Hand holeCards = createTestHand(HEARTS_A, HEARTS_K);
-    Hand community = createTestHand(HEARTS_Q, HEARTS_J, HEARTS_T, SPADES_2, CLUBS_3);
+package com.donohoedigital.games.poker.engine;
 
-    // When: Evaluating the hand
-    HandInfo result = evaluator.evaluate(null, holeCards, community);
-
-    // Then: Should return non-null HandInfo
-    assertNotNull(result);
-}
-```
-
-**Run test** → **FAILS** (HandEvaluator doesn't exist yet)
-
-**Commit**: `git commit -m "RED: Add test for HandEvaluator interface"`
-
----
-
-**Step 2.2: 🟢 GREEN - Create HandEvaluator interface**
-
-**NEW FILE**: `C:\Repos\DDPoker\code\poker\src\main\java\com\donohoedigital\games\poker\HandEvaluator.java`
-
-```java
-public interface HandEvaluator {
+public class OmahaScorer {
     /**
-     * Evaluate best 5-card poker hand from hole cards and community cards.
-     * Implementation depends on game variant rules.
+     * Find the best score from all valid Omaha combinations.
+     * Evaluates C(4,2) × C(N,3) combos where N = community.size().
      */
-    HandInfo evaluate(PokerPlayer player, Hand holeCards, Hand community);
+    public static int bestScore(Hand holeCards, Hand community) { ... }
 
     /**
-     * Get score for hand combination (for comparison)
+     * Find the best 5-card hand from all valid Omaha combinations.
      */
-    int getScore(Hand holeCards, Hand community);
-
-    /**
-     * Future Hi-Lo support: Evaluate best qualifying low hand.
-     * Returns null if no qualifying low exists or variant doesn't support low.
-     */
-    default HandInfo evaluateLow(PokerPlayer player, Hand holeCards, Hand community) {
-        return null; // No low hand by default
-    }
-
-    /**
-     * Returns true if this evaluator supports low hand evaluation (for Hi-Lo variants)
-     */
-    default boolean supportsLowHand() {
-        return false;
-    }
+    public static Hand bestHand(Hand holeCards, Hand community) { ... }
 }
 ```
 
-**Create MockHandEvaluator** for test:
-```java
-class MockHandEvaluator implements HandEvaluator {
-    public HandInfo evaluate(PokerPlayer player, Hand hole, Hand community) {
-        return new HandInfo(player, new Hand(), 0);
-    }
-    public int getScore(Hand hole, Hand community) { return 0; }
-}
-```
+#### Steps
 
-**Run test** → **PASSES**
+**Step 2.1: RED — Critical Omaha rule tests (write ALL before implementation)**
 
-**Commit**: `git commit -m "GREEN: Create HandEvaluator interface with Hi-Lo abstraction"`
-
-**Note**: Added `evaluateLow()` and `supportsLowHand()` methods with default implementations for future Omaha Hi-Lo support (as discussed).
-
-**Step 2.2: Refactor Existing HandInfo**
-
-**Strategy**: Keep `HandInfo` as facade for backward compatibility, extract core logic into `HoldemHandEvaluator`.
-
-**NEW FILE**: `C:\Repos\DDPoker\code\poker\src\main\java\com\donohoedigital\games\poker\HoldemHandEvaluator.java`
-- Copy existing `HandInfo.categorize()` method (lines 156-292)
-- Keep current scoring logic (already works for 2+5=7 cards)
-- HandInfo delegates to HoldemHandEvaluator internally
-
-**Step 2.3: 🔴 RED - Write critical Omaha rule tests FIRST**
-
-**NEW FILE**: `C:\Repos\DDPoker\code\poker\src\test\java\com\donohoedigital\games\poker\OmahaHandEvaluatorTest.java`
-
-**CRITICAL TEST 1: Board-only flush must NOT count**
+**NEW FILE**: `OmahaScorerTest.java` in `pokerengine/src/test/`
 
 ```java
+// CRITICAL TEST 1: Board-only flush must NOT count
 @Test
-void should_IgnoreBoardOnlyFlush_When_PlayerHasOnlyOneCardOfSuit() {
-    // Given: Player has only 1 spade in hole cards
-    Hand holeCards = createHand(
-        SPADES_A,   // Only 1 spade
-        HEARTS_K,
-        DIAMONDS_Q,
-        CLUBS_J
-    );
-
-    // Board has 4 spades (flush on board)
-    Hand community = createHand(
-        SPADES_9,
-        SPADES_8,
-        SPADES_7,
-        SPADES_6,
-        HEARTS_2
-    );
-
-    OmahaHandEvaluator evaluator = new OmahaHandEvaluator();
-
-    // When: Evaluating the hand
-    HandInfo result = evaluator.evaluate(null, holeCards, community);
-
-    // Then: Should NOT be a flush (must use exactly 2 hole cards)
-    // Best hand is ACE HIGH (A-K-9-8-7) not flush
-    assertTrue(result.getScore() < HandInfo.FLUSH * HandInfo.BASE,
-        "Board-only flush must not count in Omaha");
+void should_NotBeFlush_When_PlayerHasOnlyOneCardOfFlushSuit() {
+    // Player has 1 spade; board has 4 spades
+    // Cannot make flush — needs exactly 2 suited hole cards
 }
-```
 
-**CRITICAL TEST 2: Must use exactly 2 hole cards**
-
-```java
+// CRITICAL TEST 2: Must use exactly 2 hole cards
 @Test
-void should_UseExactlyTwoHoleCards_When_Evaluating() {
-    // Given: Board has royal flush available
-    Hand holeCards = createHand(
-        SPADES_A,
-        SPADES_K,
-        HEARTS_2,
-        CLUBS_3
-    );
-
-    Hand community = createHand(
-        SPADES_Q,
-        SPADES_J,
-        SPADES_T,
-        HEARTS_5,
-        DIAMONDS_7
-    );
-
-    OmahaHandEvaluator evaluator = new OmahaHandEvaluator();
-
-    // When: Evaluating
-    HandInfo result = evaluator.evaluate(null, holeCards, community);
-
-    // Then: Should be ROYAL FLUSH (using A♠ K♠ from hole + Q♠ J♠ T♠ from board)
-    assertEquals(HandInfo.ROYAL_FLUSH, result.getHandType());
+void should_FindRoyalFlush_When_TwoSuitedHoleCardsPlusBoardMakeIt() {
+    // A♠ K♠ in hole + Q♠ J♠ T♠ on board
 }
-```
 
-**CRITICAL TEST 3: Cannot use 1 or 3 hole cards**
-
-```java
+// CRITICAL TEST 3: Board-only straight must NOT count
 @Test
-void should_IgnoreBoardOnlyStraight_When_PlayerCannotUseExactlyTwo() {
-    // Given: Board makes straight without player's help
-    Hand holeCards = createHand(
-        HEARTS_A,   // High card
-        HEARTS_K,   // High card
-        CLUBS_2,    // Low card (can't help straight)
-        CLUBS_3     // Low card (can't help straight)
-    );
-
-    Hand community = createHand(
-        SPADES_9,
-        HEARTS_8,
-        DIAMONDS_7,
-        CLUBS_6,
-        SPADES_5   // 9-8-7-6-5 straight on board
-    );
-
-    OmahaHandEvaluator evaluator = new OmahaHandEvaluator();
-
-    // When: Evaluating
-    HandInfo result = evaluator.evaluate(null, holeCards, community);
-
-    // Then: Should be ACE HIGH (not straight - can't use board alone)
-    assertEquals(HandInfo.HIGH_CARD, result.getHandType());
+void should_NotBeStraight_When_NoTwoHoleCardsContribute() {
+    // Board: 9-8-7-6-5; Hole: A-K-2-3 → high card only
 }
+
+// CRITICAL TEST 4: Four of same rank in hole
+@Test
+void should_BeTwoPair_When_FourAcesInHoleAndPairOnBoard() {
+    // AAAA hole, KK on board → AA + KK (can only use 2 aces)
+}
+
+// CRITICAL TEST 5: All hand types work
+// Royal flush, straight flush, quads, full house, flush,
+// straight, trips, two pair, pair, high card
+
+// CRITICAL TEST 6: Pre-flop (3 community) and turn (4 community) work
+@Test
+void should_EvaluateCorrectly_When_OnlyThreeCommunityCards()
+@Test
+void should_EvaluateCorrectly_When_FourCommunityCards()
+
+// CRITICAL TEST 7: Performance
+@Test
+void should_Complete60Evaluations_InUnder5ms()
+
+// CRITICAL TEST 8: Score consistency
+@Test
+void should_ProduceSameScoreAs_HandInfoFaster_When_GivenSameFiveCards()
 ```
 
-**Run tests** → **FAIL** (OmahaHandEvaluator doesn't exist yet)
+**Step 2.2: GREEN — Implement OmahaScorer**
 
-**Commit**: `git commit -m "RED: Add critical Omaha rule tests (exactly 2+3)"`
-
----
-
-**Step 2.4: 🟢 GREEN - Implement OmahaHandEvaluator**
-
-**NEW FILE**: `C:\Repos\DDPoker\code\poker\src\main\java\com\donohoedigital\games\poker\OmahaHandEvaluator.java`
-
-**Minimal implementation to pass tests**:
 ```java
-public class OmahaHandEvaluator implements HandEvaluator {
+public static int bestScore(Hand holeCards, Hand community) {
+    ApplicationError.assertTrue(holeCards.size() == 4, "Omaha requires 4 hole cards");
+    ApplicationError.assertTrue(community.size() >= 3, "Need at least 3 community cards");
 
-    @Override
-    public HandInfo evaluate(PokerPlayer player, Hand holeCards, Hand community) {
-        // Validate Omaha requirements
-        ApplicationError.assertTrue(holeCards.size() == 4,
-            "Omaha requires exactly 4 hole cards");
-        ApplicationError.assertTrue(community.size() >= 3 && community.size() <= 5,
-            "Community must have 3-5 cards");
+    int best = 0;
+    HandInfoFaster evaluator = new HandInfoFaster();
 
-        int bestScore = 0;
-        Hand bestHand = null;
+    // C(4,2) hole card combos
+    for (int h1 = 0; h1 < 4; h1++) {
+        for (int h2 = h1 + 1; h2 < 4; h2++) {
+            // C(N,3) community card combos
+            for (int c1 = 0; c1 < community.size(); c1++) {
+                for (int c2 = c1 + 1; c2 < community.size(); c2++) {
+                    for (int c3 = c2 + 1; c3 < community.size(); c3++) {
+                        HandSorted candidate = new HandSorted();
+                        candidate.addCard(holeCards.getCard(h1));
+                        candidate.addCard(holeCards.getCard(h2));
+                        candidate.addCard(community.getCard(c1));
+                        candidate.addCard(community.getCard(c2));
+                        candidate.addCard(community.getCard(c3));
 
-        // Generate C(4,2) = 6 combinations of hole cards
-        for (int h1 = 0; h1 < 4; h1++) {
-            for (int h2 = h1 + 1; h2 < 4; h2++) {
-
-                // Generate C(5,3) = 10 combinations of community cards
-                for (int c1 = 0; c1 < community.size(); c1++) {
-                    for (int c2 = c1 + 1; c2 < community.size(); c2++) {
-                        for (int c3 = c2 + 1; c3 < community.size(); c3++) {
-
-                            // Create 5-card hand: exactly 2 hole + exactly 3 board
-                            Hand candidate = new Hand();
-                            candidate.addCard(holeCards.getCard(h1));
-                            candidate.addCard(holeCards.getCard(h2));
-                            candidate.addCard(community.getCard(c1));
-                            candidate.addCard(community.getCard(c2));
-                            candidate.addCard(community.getCard(c3));
-
-                            // Evaluate using existing 5-card scoring
-                            int score = evaluateFiveCardHand(candidate);
-                            if (score > bestScore) {
-                                bestScore = score;
-                                bestHand = candidate;
-                            }
+                        int score = evaluator.getScore(candidate);
+                        if (score > best) {
+                            best = score;
                         }
                     }
                 }
             }
         }
-
-        return new HandInfo(player, bestHand, bestScore);
     }
-
-    private int evaluateFiveCardHand(Hand fiveCards) {
-        // Reuse HandInfoFaster for 5-card evaluation
-        // Already optimized and tested
-    }
+    return best;
 }
 ```
 
-**Step 2.4: Factory Pattern**
+**Step 2.3: Integration — PokerPlayer.getHandInfo() (client-side)**
 
-**NEW FILE**: `C:\Repos\DDPoker\code\poker\src\main\java\com\donohoedigital\games\poker\HandEvaluatorFactory.java`
+**MODIFY**: `PokerPlayer.java` line 1399
+
 ```java
-public class HandEvaluatorFactory {
-    private static final HoldemHandEvaluator holdemEvaluator = new HoldemHandEvaluator();
-    private static final OmahaHandEvaluator omahaEvaluator = new OmahaHandEvaluator();
-
-    public static HandEvaluator getEvaluator(int gameType) {
-        if (PokerConstants.isOmaha(gameType)) {
-            return omahaEvaluator;
-        } else {
-            return holdemEvaluator;
+public HandInfo getHandInfo() {
+    if (handInfo_ == null) {
+        HandSorted sorted = getHandSorted();
+        HoldemHand hhand = getHoldemHand();
+        if (sorted != null && hhand != null) {
+            int gameType = hhand.getGameType();
+            if (PokerConstants.isOmaha(gameType)) {
+                Hand bestFive = OmahaScorer.bestHand(getHand(), hhand.getCommunity());
+                handInfo_ = new HandInfo(this, new HandSorted(bestFive), null);
+            } else {
+                handInfo_ = new HandInfo(this, sorted, hhand.getCommunitySorted());
+            }
         }
     }
+    return handInfo_;
 }
 ```
 
-**Step 2.5: Integration Point**
+All downstream code (`HoldemHand.preResolvePot()`, `resolvePot()`, `Showdown`, `PokerStats`) automatically gets correct Omaha evaluation without changes.
 
-**MODIFY**: `C:\Repos\DDPoker\code\poker\src\main\java\com\donohoedigital\games\poker\HoldemHand.java`
-
-**At showdown logic** (around lines 2863-2895):
-```java
-// OLD:
-info = player.getHandInfo(); // implicitly uses HandInfo with 2+5
-
-// NEW:
-int gameType = getGameType();
-HandEvaluator evaluator = HandEvaluatorFactory.getEvaluator(gameType);
-info = evaluator.evaluate(player, player.getHand(), getCommunity());
-player.setHandInfo(info);
-```
-
-**Step 2.5: 🔴 RED - Add more comprehensive test cases**
-
-**ADD TO**: `OmahaHandEvaluatorTest.java`
-
-**Test all hand rankings work in Omaha**:
-
-```java
-@Test
-void should_EvaluateNutFlush_When_TwoSuitedHoleCardsAndThreeBoardSuited() {
-    Hand holeCards = createHand(SPADES_A, SPADES_K, HEARTS_2, CLUBS_3);
-    Hand community = createHand(SPADES_Q, SPADES_J, SPADES_T, HEARTS_5, DIAMONDS_7);
-
-    HandInfo result = new OmahaHandEvaluator().evaluate(null, holeCards, community);
-
-    assertEquals(HandInfo.ROYAL_FLUSH, result.getHandType());
-}
-
-@Test
-void should_EvaluateStraight_When_TwoConnectedHoleCardsAndThreeBoardConnected() {
-    Hand holeCards = createHand(HEARTS_9, DIAMONDS_8, CLUBS_2, SPADES_3);
-    Hand community = createHand(SPADES_7, HEARTS_6, DIAMONDS_5, CLUBS_K, HEARTS_A);
-
-    HandInfo result = new OmahaHandEvaluator().evaluate(null, holeCards, community);
-
-    assertEquals(HandInfo.STRAIGHT, result.getHandType());
-}
-
-@Test
-void should_EvaluateFullHouse_When_PocketPairAndTripsOnBoard() {
-    Hand holeCards = createHand(HEARTS_A, DIAMONDS_A, CLUBS_2, SPADES_3);
-    Hand community = createHand(SPADES_A, HEARTS_K, DIAMONDS_K, CLUBS_K, HEARTS_Q);
-
-    HandInfo result = new OmahaHandEvaluator().evaluate(null, holeCards, community);
-
-    assertEquals(HandInfo.FULL_HOUSE, result.getHandType());
-}
-```
-
-**Edge cases**:
-
-```java
-@Test
-void should_HandleFourOfSameRankInHole_When_TwoOfRankOnBoard() {
-    // Given: Player has AAAA in hole
-    Hand holeCards = createHand(HEARTS_A, DIAMONDS_A, CLUBS_A, SPADES_A);
-    Hand community = createHand(HEARTS_K, DIAMONDS_K, CLUBS_Q, SPADES_J, HEARTS_T);
-
-    // When: Evaluating (can only use 2 aces from hole)
-    HandInfo result = new OmahaHandEvaluator().evaluate(null, holeCards, community);
-
-    // Then: Should be TWO_PAIR (AA from hole + KK from board)
-    assertEquals(HandInfo.TWO_PAIR, result.getHandType());
-}
-
-@Test
-void should_HandleAllCombinations_When_FourHoleCardsFiveBoardCards() {
-    Hand holeCards = createHand(HEARTS_A, DIAMONDS_K, CLUBS_Q, SPADES_J);
-    Hand community = createHand(HEARTS_T, DIAMONDS_9, CLUBS_8, SPADES_7, HEARTS_6);
-
-    // Should evaluate all C(4,2) × C(5,3) = 60 combinations
-    HandInfo result = new OmahaHandEvaluator().evaluate(null, holeCards, community);
-
-    assertNotNull(result);
-    assertTrue(result.getScore() > 0);
-}
-```
-
-**Performance benchmark**:
-
-```java
-@Test
-void should_Complete60Evaluations_InUnder5ms() {
-    Hand holeCards = createHand(HEARTS_A, DIAMONDS_K, CLUBS_Q, SPADES_J);
-    Hand community = createHand(HEARTS_T, DIAMONDS_9, CLUBS_8, SPADES_7, HEARTS_6);
-
-    OmahaHandEvaluator evaluator = new OmahaHandEvaluator();
-
-    long startTime = System.currentTimeMillis();
-    evaluator.evaluate(null, holeCards, community);
-    long endTime = System.currentTimeMillis();
-
-    long duration = endTime - startTime;
-    assertTrue(duration < 5, "Evaluation took " + duration + "ms, expected <5ms");
-}
-```
-
-**Run tests** → Some **PASS** (from Step 2.4 implementation), others **FAIL** (edge cases not handled yet)
-
-**Commit**: `git commit -m "RED: Add comprehensive Omaha hand evaluation tests"`
+**Phase 2 Verification**:
+- ✅ All 60 combinations evaluated correctly for every test case
+- ✅ "Exactly 2+3" rule enforced (board-only hands rejected)
+- ✅ No regression in Hold'em evaluation
+- ✅ Performance: <5ms per Omaha hand evaluation
+- ✅ Score consistency with HandInfoFaster for same 5 cards
+- ✅ `mvn test -P dev` succeeds
 
 ---
 
-**Step 2.6: 🟢 GREEN - Complete OmahaHandEvaluator implementation**
+### Phase 3: Client Game Logic — Deal 4 Cards (2-3 days, LOW risk)
 
-**Ensure all 60 combinations are evaluated correctly** - refine implementation to pass all tests.
+**Goal**: Modify client-side dealing logic to deal 4 hole cards for Omaha.
 
-**Run all tests** → **PASSES**
+**Module**: `poker`
 
-**Commit**: `git commit -m "GREEN: Complete OmahaHandEvaluator with all edge cases"`
+#### Steps
 
----
-
-**Step 2.7: ♻️ REFACTOR - Optimize and clean up**
-
-Extract combination generation to separate methods for clarity:
-
-```java
-private List<Hand> generateTwoCardCombos(Hand fourCards) {
-    // Returns C(4,2) = 6 combinations
-}
-
-private List<Hand> generateThreeCardCombos(Hand fiveCards) {
-    // Returns C(5,3) = 10 combinations
-}
-```
-
-**Run tests after refactoring** → **PASSES**
-
-**Commit**: `git commit -m "REFACTOR: Extract combination generation methods"`
-
-**Verification**:
-- All 60 Omaha combinations evaluated correctly
-- Omaha-specific rules enforced (exactly 2+3)
-- No regression in Hold'em evaluation (all existing HandInfoTest cases pass)
-- Performance target: <5ms per Omaha hand evaluation
-
----
-
-### Phase 3: Game Logic - Deal 4 Cards for Omaha (3-4 days, MEDIUM risk)
-
-**Goal**: Modify dealing logic to deal 4 hole cards for Omaha, 2 for Hold'em.
-
-**TDD Emphasis**: Write tests for dealing behavior BEFORE modifying game logic.
-
----
-
-#### TDD Workflow for Phase 3
-
-**Step 3.1: 🔴 RED - Test tournament profile stores game type**
-
-**NEW FILE**: `TournamentProfileTest.java` (or add to existing)
+**Step 3.1: RED — Test dealing behavior**
 
 ```java
 @Test
-void should_StorePotLimitOmaha_When_SetGameType() {
-    TournamentProfile profile = new TournamentProfile();
-
-    profile.setGameType(PokerConstants.TYPE_POT_LIMIT_OMAHA);
-
-    assertEquals(PokerConstants.TYPE_POT_LIMIT_OMAHA, profile.getGameType());
-}
-
+void should_DealFourCards_When_GameTypeIsOmaha()
 @Test
-void should_DefaultToNoLimitHoldem_When_NewProfile() {
-    TournamentProfile profile = new TournamentProfile();
-
-    assertEquals(PokerConstants.TYPE_NO_LIMIT_HOLDEM, profile.getGameType());
-}
+void should_DealTwoCards_When_GameTypeIsHoldem()  // regression
 ```
 
-**Run test** → **FAILS**
+**Step 3.2: GREEN — Modify dealing logic**
 
-**Commit**: `git commit -m "RED: Add test for TournamentProfile game type storage"`
+**MODIFY**: `HoldemHand.java` line 260
 
----
+Currently: `dealCards(2);`
 
-**Step 3.2: 🟢 GREEN - Add gameType to TournamentProfile**
-
-**MODIFY**: `C:\Repos\DDPoker\code\pokerengine\src\main\java\com\donohoedigital\games\poker\model\TournamentProfile.java`
-
-```java
-private int gameType_ = PokerConstants.TYPE_NO_LIMIT_HOLDEM; // default for backward compatibility
-
-public int getGameType() { return gameType_; }
-public void setGameType(int type) { gameType_ = type; }
-
-// Add to serialization methods (DataMarshal)
-```
-
-**Run test** → **PASSES**
-
-**Commit**: `git commit -m "GREEN: Add gameType field to TournamentProfile"`
-
----
-
-**Step 3.3: 🔴 RED - Test dealing behavior**
-
-**NEW FILE**: `HoldemHandDealingTest.java` (or add to existing)
-
-```java
-@Test
-void should_DealTwoCards_When_GameTypeIsHoldem() {
-    // Given: No Limit Hold'em game
-    HoldemHand hand = createHoldemHandWithGameType(PokerConstants.TYPE_NO_LIMIT_HOLDEM);
-
-    // When: Dealing hole cards
-    hand.dealHoleCards();
-
-    // Then: Each player should have 2 cards
-    for (PokerPlayer player : hand.getPlayers()) {
-        assertEquals(2, player.getHand().size());
-    }
-}
-
-@Test
-void should_DealFourCards_When_GameTypeIsOmaha() {
-    // Given: Pot Limit Omaha game
-    HoldemHand hand = createHoldemHandWithGameType(PokerConstants.TYPE_POT_LIMIT_OMAHA);
-
-    // When: Dealing hole cards
-    hand.dealHoleCards();
-
-    // Then: Each player should have 4 cards
-    for (PokerPlayer player : hand.getPlayers()) {
-        assertEquals(4, player.getHand().size());
-    }
-}
-
-@Test
-void should_DealCorrectNumberToAllPlayers_When_TenPlayerOmaha() {
-    // Given: 10-player Omaha game
-    HoldemHand hand = createHoldemHandWithGameType(PokerConstants.TYPE_POT_LIMIT_OMAHA);
-    hand.addPlayers(10); // Add 10 players
-
-    // When: Dealing
-    hand.dealHoleCards();
-
-    // Then: All 10 players should have 4 cards each
-    assertEquals(10, hand.getPlayers().size());
-    for (PokerPlayer player : hand.getPlayers()) {
-        assertEquals(4, player.getHand().size());
-    }
-}
-```
-
-**Run tests** → **FAIL** (still dealing 2 cards for all game types)
-
-**Commit**: `git commit -m "RED: Add tests for Omaha dealing (4 cards)"`
-
----
-
-**Step 3.4: 🟢 GREEN - Modify dealing logic**
-
-**MODIFY**: `C:\Repos\DDPoker\code\poker\src\main\java\com\donohoedigital\games\poker\HoldemHand.java`
-
-**Line 304 currently**: `dealCards(2);`
-
-**Change to**:
+Change to:
 ```java
 int numHoleCards = PokerConstants.getHoleCardCount(getGameType());
 dealCards(numHoleCards);
 ```
 
-**Verify** `dealCards(int)` method (line 546) already handles variable counts generically.
+**Deck capacity check**: 10 players × 4 + 5 community + 3 burn = 48 of 52. Safe.
 
-**Run tests** → **PASSES**
-
-**Commit**: `git commit -m "GREEN: Modify dealing to support Omaha 4-card hands"`
-
----
-
-**Step 3.5: ♻️ REFACTOR - Verify backward compatibility**
-
-**Run ALL existing tests**: `mvn test`
-
-**Expected**: All Hold'em tests still pass (no regression)
-
-**If any tests fail**: Fix immediately before proceeding
-
-**Commit**: `git commit -m "REFACTOR: Verify backward compatibility with Hold'em"`
-
-**Verification**:
-- Omaha games deal 4 cards per player
-- Hold'em games still deal 2 cards
-- All existing Hold'em tests pass
+**Phase 3 Verification**:
+- ✅ Omaha deals 4 cards per player
+- ✅ Hold'em still deals 2 cards
+- ✅ All existing tests pass
 
 ---
 
-### Phase 4: UI Layout - Display 4 Hole Cards (4-5 days, MEDIUM risk)
+### Phase 4: Server Game Logic — ServerHand Omaha Support (3-5 days, MEDIUM risk)
 
-**Goal**: Update gameboard and card display to show 4 hole cards for Omaha.
+**Goal**: Enable Omaha for online server-hosted games.
 
-**Step 4.1: Update Gameboard XML**
+**Modules**: `pokergameserver`, `pokergamecore`
 
-**MODIFY**: `C:\Repos\DDPoker\code\poker\src\main\resources\config\poker\gameboard.xml`
+#### Steps
 
-**Current** (Seat 1, lines 63-69):
-```xml
-<territory id="6002" name="Seat 1" area="table" type="land" scaleimages="40">
-    <point x="834" y="195" type="hole1"/>
-    ...
-</territory>
-```
+**Step 4.1: ServerHandEvaluator — Omaha scoring**
 
-**Add for each of 10 seats**:
-```xml
-<point x="864" y="195" type="hole2"/>  <!-- +30px offset -->
-<point x="894" y="195" type="hole3"/>  <!-- +60px offset -->
-<point x="924" y="195" type="hole4"/>  <!-- +90px offset -->
-```
+**MODIFY**: `ServerHandEvaluator.java`
 
-**Note**: Card width ~88px at scaleimages="40". May need visual adjustment after testing.
+Current `getScore()` (line 73) combines all cards into `new Card[7]` and evaluates best-5-from-7. This is wrong for Omaha.
 
-**Step 4.2: Update CardPiece Constants**
-
-**MODIFY**: `C:\Repos\DDPoker\code\poker\src\main\java\com\donohoedigital\games\poker\CardPiece.java`
-
-**Add after line 63**:
+Option A (recommended): Add game-type-aware method:
 ```java
-public static final String POINT_HOLE2 = "hole2";
-public static final String POINT_HOLE3 = "hole3";
-public static final String POINT_HOLE4 = "hole4";
-```
-
-**Step 4.3: Verify DealDisplay Logic**
-
-**CHECK**: `C:\Repos\DDPoker\code\poker\src\main\java\com\donohoedigital\games\poker\DealDisplay.java`
-
-**Current code** (lines 284-289) already iterates `hand.size()`:
-```java
-for (c = 0; c < nCnt; c++)
-{
-    displayCard(context_, player, c, true, nCardDelay_);
+public int getScore(List<Card> holeCards, List<Card> communityCards, int gameType) {
+    if (PokerConstants.isOmaha(gameType)) {
+        // Convert List<Card> to Hand for OmahaScorer
+        Hand hole = toHand(holeCards);
+        Hand community = toHand(communityCards);
+        return OmahaScorer.bestScore(hole, community);
+    }
+    return getScore(holeCards, communityCards); // existing Hold'em path
 }
 ```
 
-**Should already work** for 4 cards if `displayCard()` maps index to point names generically.
+Keep the existing `getScore(List<Card>, List<Card>)` for backward compatibility.
 
-**Investigate**: Verify `displayCard()` uses dynamic point mapping like `"hole" + (cardIndex + 1)`.
+**Step 4.2: ServerHand — Deal 4 cards and pass game type**
 
-**Tests** (Manual/Visual):
-- Create Omaha game, verify 4 cards display at all 10 seats
-- Verify no visual overlap
-- Verify deal animation works smoothly
-- Test card positioning at different seats (especially seats 2, 5, 8 which may have different angles)
+**MODIFY**: `ServerHand.java`
 
-**Verification**:
-- 4 hole cards display for Omaha at all seats
-- 2 hole cards still display for Hold'em
-- No overlap or misalignment
-- Deal animation correct for both variants
+- Add `gameType` field (passed from tournament config)
+- Update dealing logic to deal `PokerConstants.getHoleCardCount(gameType)` cards
+- Fix `Card[7]` hardcoding if present elsewhere
+- Pass `gameType` to `ServerHandEvaluator.getScore()` at showdown (line 750)
+
+**Step 4.3: ServerTournamentDirector — Game type propagation**
+
+Verify that game type flows from `TournamentProfile` → `ServerTournamentDirector` → `ServerHand`. May need to thread `gameType` through the construction chain.
+
+**Step 4.4: pokergamecore AI awareness**
+
+Check if `V1Algorithm` and `V2Algorithm` in `pokergamecore` need Omaha pre-flop dispatch. If they use `HandInfoFast`/`PureHandPotential`, they likely need the same kind of game-type dispatch as client-side V1Player.
+
+**Phase 4 Verification**:
+- ✅ `ServerHandEvaluator` returns correct scores for Omaha hands
+- ✅ `ServerHand` deals 4 cards for Omaha
+- ✅ Showdown uses 2+3 rule on server
+- ✅ No regression for Hold'em server games
+- ✅ `ServerHandEvaluatorTest` covers Omaha cases
 
 ---
 
-### Phase 5: AI Foundation - Omaha Pre-Flop Evaluation (8-10 days, HIGH risk)
+### Phase 5: UI Layout — Display 4 Hole Cards (3-4 days, MEDIUM risk)
 
-**Goal**: Implement competent Omaha AI using hand class grouping system.
+**Goal**: Update card display to show 4 hole cards for Omaha.
 
-**Challenge**: Texas Hold'em has 169 starting hands (13×13 matrix), Omaha has 270,725 combinations (52 choose 4).
+**Module**: `poker`
 
-**Solution**: Use **hand class grouping** based on Hutchison Point Count system instead of enumeration.
+#### How Card Display Works
 
-**Step 5.1: Omaha Hand Strength System**
+All hole cards are placed at a single `POINT_HOLE1` territory point. Multiple `CardPiece` instances are spaced automatically via `getXAdjust()` (55px normal, 82px large). No "hole2/3/4" territory points exist or are needed.
 
-**NEW FILE**: `C:\Repos\DDPoker\code\poker\src\main\java\com\donohoedigital\games\poker\ai\OmahaHandStrength.java`
+- 2-card width: ~155px (card + 55px offset)
+- 4-card width: ~265px (card + 3 × 55px)
 
-**Hand Classes** (percentile-based):
+#### Steps
+
+**Step 5.1: Visual test with 4 cards**
+
+Before changing any code, deal 4 cards in a test game and observe. The system may already work since `DealDisplay.syncCards()` iterates `hand.size()`.
+
+**Step 5.2: Adjust card spacing if needed**
+
+If 4 cards overflow at edge seats, modify `CardPiece.getXAdjust()`:
+
+```java
+@Override
+public int getXAdjust() {
+    int numCards = getNumCards();
+    if (isLarge()) {
+        return numCards > 2 ? 60 : 82;
+    }
+    return numCards > 2 ? 40 : 55;
+}
+```
+
+**Step 5.3: Verify all display modes**
+
+- Normal mode at all 10 seats
+- Large card mode
+- Thumbnail/chip-race mode (already handles 4 cards in 2x2 grid)
+- Card mouse-over and selection
+
+**Phase 5 Verification**:
+- ✅ 4 cards display at all seats without overlap
+- ✅ Hold'em 2-card display unchanged
+- ✅ All display modes work
+
+---
+
+### Phase 6: AI Foundation — Omaha Pre-Flop (6-8 days, HIGH risk)
+
+**Goal**: Implement competent Omaha AI for both client and server.
+
+**Modules**: `poker` (V1Player), `pokergamecore` (V1Algorithm, V2Algorithm)
+
+#### Steps
+
+**Step 6.1: OmahaHandStrength scoring system**
+
+**NEW FILE**: `OmahaHandStrength.java` in `pokerengine` (shared, so both client and server AI can use it)
+
+Hand Classes (Hutchison Point Count):
 1. **Premium**: AAxx with suited/connected cards (top 5%)
-2. **Strong High Cards**: AKQJ combinations, double-suited (top 15%)
-3. **Rundowns**: Connected like 9876, JT98 with suit potential (top 25%)
-4. **Medium Pairs**: QQxx, JJxx with good support (top 35%)
-5. **Speculative**: Any two >T with flush draw potential (top 50%)
+2. **Strong**: AKQJ, double-suited (top 15%)
+3. **Rundowns**: 9876, JT98 with suit potential (top 25%)
+4. **Medium Pairs**: QQxx, JJxx with support (top 35%)
+5. **Speculative**: Two >T with flush draw potential (top 50%)
 6. **Trash**: Everything else (fold pre-flop)
 
-**Method**:
 ```java
 public static int getOmahaHandStrength(Hand fourCardHole) {
-    // Returns 1-100 score (higher = better)
     int score = 0;
-
-    // Add points for pairs (AA=+20, KK=+16, QQ=+12, etc.)
-    // Add points for high cards (A=+8, K=+6, Q=+4)
-    // Add points for suitedness (double-suited=+6, single=+3)
-    // Add points for connectedness (4-card straight=+4, 3-card=+2)
-    // Subtract points for danglers (-5 per low unconnected card)
-
+    // +points for pairs, high cards, suitedness, connectedness
+    // -points for danglers (low unconnected cards)
     return Math.min(100, score);
 }
 ```
 
-**Step 5.2: Modify V1Player Pre-Flop**
+**Step 6.2: Client AI dispatch — V1Player**
 
-**MODIFY**: `C:\Repos\DDPoker\code\poker\src\main\java\com\donohoedigital\games\poker\ai\V1Player.java`
+**MODIFY**: `V1Player.java` line 433
 
-**Current** (line 433): `int sklanskyRank = HoldemExpert.getSklanskyRank(_hole);`
-
-**Add dispatch**:
 ```java
 int handStrength;
 if (PokerConstants.isOmaha(getGameType())) {
     handStrength = OmahaHandStrength.getOmahaHandStrength(_hole);
 } else {
     int sklanskyRank = HoldemExpert.getSklanskyRank(_hole);
-    handStrength = convertSklanskyToStrength(sklanskyRank); // map to 1-100
+    handStrength = convertSklanskyToStrength(sklanskyRank);
 }
-
-// Continue with unified decision logic using handStrength
 ```
 
-**Step 5.3: Post-Flop AI (Simplified)**
+**Step 6.3: Server AI dispatch — V1Algorithm / V2Algorithm**
 
-**Strategy**: Reuse existing post-flop logic initially, but use `OmahaHandEvaluator` for strength calculation.
+Similar dispatch in `pokergamecore` AI classes. Since `OmahaHandStrength` is in `pokerengine`, both client and server AI can access it.
 
-**Rationale**:
-- Pot odds calculations already game-agnostic
-- Outs counting similar between variants
-- Main difference is hand evaluation (already handled by Phase 2)
+**Step 6.4: Post-flop AI (simplified)**
 
-**No major changes needed** if hand evaluation uses `HandEvaluatorFactory.getEvaluator(gameType)`.
+Reuse existing post-flop logic. Made hand evaluation is already correct via `PokerPlayer.getHandInfo()` (client) and `ServerHandEvaluator` (server) dispatches from Phase 2/4.
 
-**Tests** (`OmahaHandStrengthTest.java` - NEW FILE):
-- `should_RankAAKKDoublesuited_AsStrongest()`
-- `should_RankAAxx_StrongerThan_KKxx()`
-- `should_RankDanglers_AsWeakHands()` (e.g., AA72 rainbow)
-- `should_RankRundowns_AsSpeculativeHands()` (e.g., 9876 suited)
+**Known limitation**: Outs/drawing calculations in `HandPotential` / `PureHandPotential` assume Hold'em. AI draw decisions will be approximate for Omaha v1.
 
-**Integration Test** (`OmahaAIIntegrationTest.java` - NEW FILE):
-- `should_FoldTrashHands_PreFlop()`
-- `should_RaisePremiumHands_PreFlop()`
-- `should_NotChaseBoardOnlyFlush_PostFlop()` (CRITICAL Omaha mistake)
+**Tests**:
+```java
+should_RankAAKKDoubleSuited_AsStrongest()
+should_RankDanglers_AsWeakHands()
+should_FoldTrashHands_PreFlop()
+should_RaisePremiumHands_PreFlop()
+should_NotChaseBoardOnlyFlush_PostFlop()
+```
 
-**Verification**:
-- AI plays reasonable pre-flop strategy (doesn't fold AA, doesn't call with trash)
-- AI correctly evaluates post-flop (uses Omaha evaluator)
-- No regression in Hold'em AI
+**Phase 6 Verification**:
+- ✅ AI plays reasonable pre-flop
+- ✅ Correct post-flop evaluation
+- ✅ No regression in Hold'em AI
+- ✅ Both client and server AI work
 
 ---
 
-### Phase 6: Integration & Polish (3-4 days, LOW risk)
+### Phase 7: Integration & Polish (3-4 days, LOW risk)
 
-**Goal**: Wire everything together, add UI controls, comprehensive end-to-end testing.
+**Goal**: Wire everything together, add UI controls, comprehensive testing.
 
-**Step 6.1: Tournament Setup UI**
+#### Steps
 
-**MODIFY**: Tournament creation dialog (file TBD - needs investigation)
+**Step 7.1: Tournament Setup UI**
 
-**Add to game type dropdown**:
+Add PLO to game type dropdown (single game type for entire tournament):
 ```
 Game Type: [No Limit Hold'em ▼]
            [Pot Limit Hold'em]
            [Limit Hold'em]
-           [Pot Limit Omaha]    <-- NEW
+           [Pot Limit Omaha]    ← NEW
 ```
 
-**Persist to** `TournamentProfile.gameType_` field.
+NLO and Limit Omaha constants defined but not exposed in v1 UI.
 
-**Step 6.2: Display Labels**
+**Step 7.2: Display Labels**
 
-**Update UI** to show game variant:
-- Tournament info panel: "Pot Limit Omaha" or "No Limit Hold'em"
-- Hand history: Indicate game type per hand
+- Tournament info panel: "Pot Limit Omaha"
+- Hand history: Show 4 hole cards
 
-**Step 6.3: Integration Tests**
+**Step 7.3: Network Protocol**
 
-**NEW FILE**: `C:\Repos\DDPoker\code\poker\src\test\java\com\donohoedigital\games\poker\integration\OmahaIntegrationTest.java`
+Verify Omaha games work over WebSocket:
+- Game type transmitted in game state
+- 4-card hands serialize/deserialize correctly
+- Server evaluates with OmahaScorer, client displays correctly
 
-**Full game simulation**:
+**Step 7.4: Save/Load Compatibility**
+
+- Old Hold'em saves load correctly (default game type = Hold'em)
+- New Omaha saves load correctly
+
+**Step 7.5: End-to-End Tests**
+
 ```java
-@Test
-void should_CompleteFullOmahaHand_When_RunningFromDealToShowdown() {
-    TournamentProfile profile = new TournamentProfile();
-    profile.setGameType(PokerConstants.TYPE_POT_LIMIT_OMAHA);
-
-    // Create table, deal cards, simulate betting rounds
-    // Verify showdown uses Omaha evaluation
-    // Verify correct winner determination
-}
+should_CompleteFullOmahaHand_LocalGame()
+should_CompleteFullOmahaHand_ServerHostedGame()
+should_MaintainHoldemBackwardCompatibility()
 ```
 
-**Step 6.4: Backward Compatibility Testing**
+**Step 7.6: Backward Compatibility Suite**
 
-**Verify**:
-- All existing Hold'em tests pass (zero regression)
-- Saved Hold'em tournaments load correctly (default gameType)
-- Online games with Hold'em clients still work
-- Mixed-game tournaments (Hold'em level 1, Omaha level 2) function correctly
+- All existing Hold'em tests pass
+- `mvn test -P dev` succeeds
+- `mvn verify -P coverage` meets thresholds
 
-**Step 6.5: Documentation**
+---
 
-**NEW FILE**: `C:\Repos\DDPoker\docs\OMAHA-SUPPORT.md`
+## Edge Cases & Risk Analysis
 
-**Contents**:
-- Overview of Omaha rules (4 hole cards, exactly 2+3 rule)
-- How to create an Omaha tournament
-- AI strategy notes and limitations
-- Known limitations (no 5-card Omaha, no Omaha Hi-Lo yet)
+### CRITICAL: Hand Evaluation Correctness
 
-**Verification**:
-- Complete Omaha hand playable from deal to showdown
-- Tournament setup includes Omaha option
-- All existing tests pass
-- Documentation complete
+**Risk**: Omaha's "exactly 2+3" rule is the #1 source of bugs.
+
+**Mitigations**:
+- Write "known bad" tests BEFORE implementation
+- Cross-validate with online Omaha calculators
+- Property-based testing with random hands
+- 95% test coverage for Phase 2
+- Single algorithm (`OmahaScorer`) used by both client and server — no dual-implementation drift
+
+### CRITICAL: Client/Server Evaluation Consistency
+
+**Risk**: Client and server use different evaluation paths. If they produce different scores, game state becomes inconsistent.
+
+**Mitigation**: Both use `OmahaScorer` from `pokerengine`. The core algorithm is in one place. `PokerPlayer.getHandInfo()` and `ServerHandEvaluator` are thin wrappers around the same `OmahaScorer.bestScore()`.
+
+### CRITICAL: ServerHandEvaluator Card Array Size
+
+**Risk**: `ServerHandEvaluator.getScore()` allocates `new Card[7]` (line 77). Passing 4 hole cards would overflow.
+
+**Mitigation**: The new game-type-aware overload dispatches to `OmahaScorer` before reaching the Card[7] allocation. The existing Hold'em path is unchanged.
+
+### MEDIUM: PokerPlayer.getHandInfo() Integration
+
+**Risk**: `getHandInfo()` is called from many places. If the Omaha dispatch is wrong, incorrect hands could win.
+
+**Callers identified**:
+- `HoldemHand.preResolvePot()` line 2653
+- `HoldemHand.resolvePot()` lines 2691, 2729
+- `Showdown.java` line 162
+- `PokerStats.java` line 230
+
+**Mitigation**: Single integration point means all callers automatically get correct evaluation.
+
+### MEDIUM: HandPotential / Outs Calculation
+
+**Risk**: `HandPotential` and `PureHandPotential` calculate drawing odds assuming Hold'em rules. Omaha outs calculation is fundamentally different (6 two-card combos × remaining cards).
+
+**Mitigation**: Accept approximate outs for v1. AI still plays reasonably because made-hand evaluation is correct. Follow-up task for Omaha-specific outs.
+
+### MEDIUM: HandInfo.isOurHandInvolved()
+
+**Risk**: Used for display highlighting (which cards contribute to best hand). Assumes 2 hole cards.
+
+**Mitigation**: May produce incorrect highlights for Omaha but won't affect game correctness. Defer to v2.
+
+### MEDIUM: UI Card Overflow
+
+**Risk**: 4 cards at 55px spacing may overflow at edge seats.
+
+**Mitigations**:
+- Visual test first — may already fit
+- Reduce `getXAdjust()` for 4-card hands
+- Thumbnail mode already handles 4 cards
+
+### LOW: Deck Exhaustion
+
+10 × 4 + 5 + 3 burn = 48 from 52. Safe.
+
+### LOW: Pot Limit / Side Pots
+
+Verified game-agnostic. No changes needed.
+
+### LOW: Serialization
+
+`Hand.marshal()` handles any card count. Verified safe.
 
 ---
 
 ## Critical Files Summary
 
-**Phase 2 (HIGHEST PRIORITY) - Hand Evaluation**:
-- `HandInfo.java` - Understand existing scoring, refactor to HoldemHandEvaluator
-- `HandInfoFaster.java` - Reuse for 5-card evaluation in Omaha
-- `OmahaHandEvaluator.java` - NEW: Core 60-combination algorithm
-- `HandEvaluatorFactory.java` - NEW: Game type dispatch
+### Phase 1 (Foundation) — `pokerengine`
+- `PokerConstants.java` — Add Omaha constants and utility methods
+- `TournamentProfile.java` — Add Omaha string→constant mapping
 
-**Phase 3 - Game Logic**:
-- `HoldemHand.java` - Modify dealCards (line 304) and showdown (lines 2863+)
-- `TournamentProfile.java` - Add gameType field
+### Phase 2 (Hand Evaluation) — `pokerengine` + `poker`
+- **`OmahaScorer.java`** — **NEW** in `pokerengine`: Core 60-combination algorithm
+- `PokerPlayer.java` line 1399 — Modify `getHandInfo()` to dispatch by game type
 
-**Phase 5 - AI**:
-- `V1Player.java` - Dispatch pre-flop logic (line 433)
-- `OmahaHandStrength.java` - NEW: Hutchison-based hand strength
+### Phase 3 (Client Dealing) — `poker`
+- `HoldemHand.java` line 260 — Change `dealCards(2)` to use `getHoleCardCount()`
 
-**Phase 1 - Foundation**:
-- `PokerConstants.java` - Add Omaha constants and utilities
+### Phase 4 (Server Logic) — `pokergameserver` + `pokergamecore`
+- `ServerHandEvaluator.java` — Add game-type-aware scoring method
+- `ServerHand.java` — Deal 4 cards, pass game type to evaluation
+- `ServerTournamentDirector.java` — Thread game type through
 
-**Phase 4 - UI**:
-- `gameboard.xml` - Add hole2/3/4 points for all 10 seats
-- `CardPiece.java` - Add POINT_HOLE2/3/4 constants
+### Phase 5 (UI) — `poker`
+- `CardPiece.java` — Potentially adjust `getXAdjust()` for 4-card hands
 
----
+### Phase 6 (AI) — `pokerengine` + `poker` + `pokergamecore`
+- **`OmahaHandStrength.java`** — **NEW** in `pokerengine`: Hutchison-based scoring
+- `V1Player.java` line 433 — Client AI pre-flop dispatch
+- `V1Algorithm.java` / `V2Algorithm.java` — Server AI pre-flop dispatch
 
-## Testing Strategy
-
-**TDD Workflow** (per CLAUDE.md):
-1. **RED**: Write failing test for next feature
-2. **GREEN**: Implement minimal code to pass
-3. **REFACTOR**: Clean up while keeping tests green
-4. **REPEAT**: Next requirement
-
-**Coverage Targets**:
-| Phase | Test Type | Priority | Target |
-|-------|-----------|----------|--------|
-| Phase 1 | Unit | HIGH | 100% |
-| Phase 2 | Unit + Property | CRITICAL | 95% |
-| Phase 3 | Unit + Integration | HIGH | 85% |
-| Phase 4 | Manual + Integration | MEDIUM | Visual |
-| Phase 5 | Unit + Integration | HIGH | 80% |
-| Phase 6 | Integration + E2E | HIGH | Full sim |
-
-**Property-Based Testing** (Phase 2):
-- Verify all 60 combinations explored for each hand
-- Cross-reference with PokerStove/Equilab results
-- Test with random 4-card hands (100+ iterations)
-
----
-
-## TDD Discipline Summary
-
-### Non-Negotiable Rules
-
-**NEVER write production code without a failing test first**:
-- ❌ BAD: "I'll just quickly add this method and test it later"
-- ✅ GOOD: Write test → watch it fail → implement → watch it pass
-
-**Tests define the contract**:
-- Tests are the specification of what code should do
-- If behavior isn't tested, it doesn't exist
-- Omaha "exactly 2+3 rule" MUST have tests proving it works
-
-**Refactor only when green**:
-- Never refactor while tests are red
-- Run tests after every refactoring step
-- If tests fail during refactoring, revert immediately
-
-**Commit discipline**:
-- RED commits: Failing test only (no implementation)
-- GREEN commits: Minimal implementation to pass
-- REFACTOR commits: Code cleanup while tests stay green
-- This creates a clear audit trail of TDD process
-
-### Phase-Specific TDD Requirements
-
-**Phase 1 (Foundation)**:
-- Every utility method gets 2+ tests (happy path + edge case)
-- 100% coverage required (simple code, easy to test)
-- Tests must run in < 1 second (fast feedback)
-
-**Phase 2 (Hand Evaluation) - MOST CRITICAL**:
-- Write Omaha rule tests BEFORE any implementation
-- Test suite must include "known bad" tests (board-only flush must fail)
-- Cross-validation: Compare results with online Omaha calculators
-- Performance tests: Ensure <5ms evaluation time
-- Minimum 95% coverage (core algorithm is safety-critical)
-
-**Phase 3 (Game Logic)**:
-- Test dealing behavior for both Hold'em and Omaha
-- Regression tests: Ensure Hold'em still works (backward compatibility)
-- Integration tests: Full game setup → deal → verify
-
-**Phase 4 (UI Layout)**:
-- Manual testing required (visual verification)
-- Automated tests for card positioning logic where possible
-- Screenshot comparisons for regression (if tooling available)
-
-**Phase 5 (AI)**:
-- Test hand strength calculations with known hands
-- Test AI doesn't make obvious mistakes (fold AA, call with trash)
-- Property-based tests: AI decisions should be deterministic given same inputs
-
-**Phase 6 (Integration)**:
-- End-to-end test: Full Omaha hand from deal to showdown
-- Backward compatibility suite: All existing Hold'em tests pass
-- Mixed-game test: Tournament with both Hold'em and Omaha levels
-
-### Test Organization
-
-**File naming convention**:
-- `*Test.java` for unit tests
-- `*IntegrationTest.java` for integration tests
-- `*E2ETest.java` for end-to-end tests
-
-**Test method naming**:
-- Format: `should_<ExpectedBehavior>_When_<Condition>()`
-- Example: `should_IgnoreBoardOnlyFlush_When_PlayerHasOnlyOneCardOfSuit()`
-- Makes test failures self-documenting
-
-**Test structure** (Given-When-Then):
-```java
-@Test
-void should_DealFourCards_When_GameTypeIsOmaha() {
-    // Given: Pot Limit Omaha game
-    HoldemHand hand = createOmahaGame();
-
-    // When: Dealing hole cards
-    hand.dealHoleCards();
-
-    // Then: Each player should have 4 cards
-    assertEquals(4, hand.getPlayer(0).getHand().size());
-}
-```
-
-### Continuous Integration
-
-**After every commit**:
-1. Run: `mvn clean test`
-2. Verify: All tests pass
-3. Check: Coverage thresholds met
-4. If any fail: Fix immediately (don't commit broken code)
-
-**Before proceeding to next phase**:
-1. Run: `mvn clean install`
-2. Verify: Build succeeds with zero warnings
-3. Check: Coverage report meets phase targets
-4. Review: All TDD commits follow RED-GREEN-REFACTOR pattern
-
-### What TDD Prevents
-
-**Bugs prevented by TDD in this project**:
-- ✅ Board-only flush counting in Omaha (caught by test before implementation)
-- ✅ Using 1 or 3 hole cards instead of exactly 2 (caught by test)
-- ✅ Dealing wrong number of cards for game type (caught by test)
-- ✅ Regression in Hold'em when adding Omaha (caught by existing tests)
-- ✅ AI making illogical decisions (caught by decision tests)
-- ✅ Performance degradation (caught by benchmark tests)
-
-**Without TDD, these bugs would likely reach production** and be discovered by users, damaging trust and requiring emergency fixes.
-
-### Success Metrics
-
-**TDD is working if**:
-- Every feature has tests written first
-- Test failures are caught immediately (not in production)
-- Refactoring is safe (tests prevent regressions)
-- Coverage targets are met for each phase
-- Code is simple (minimal code to pass tests)
-
-**TDD is failing if**:
-- Tests are written after implementation
-- Coverage is below targets
-- Tests are green but bugs are found later
-- Refactoring breaks tests frequently
-- Commits don't follow RED-GREEN-REFACTOR pattern
-
----
-
-## Verification Strategy
-
-**End-to-End Verification**:
-1. Create Pot Limit Omaha tournament
-2. Start game with 6 AI players + 1 human
-3. Deal hand - verify 4 cards to each player
-4. Play through flop, turn, river
-5. At showdown, verify:
-   - Correct hand evaluation (exactly 2+3 rule)
-   - Correct winner determination
-   - Pot awarded correctly
-6. Verify AI makes reasonable decisions:
-   - Doesn't fold premium hands (AA)
-   - Doesn't call with trash (2345 rainbow)
-   - Doesn't chase board-only flushes post-flop
-
-**Regression Testing**:
-- Run full Hold'em test suite after each phase
-- Verify backward compatibility: `mvn clean install -Dtest=*Holdem*`
-- Test saved tournament files from older versions load correctly
-
-**Performance Benchmarks**:
-- Hand evaluation: <5ms per Omaha hand (target)
-- Game flow: No noticeable lag during deal or showdown
-- Memory: No leaks during extended play sessions
-
----
-
-## Risk Mitigation
-
-**High Risk: Hand Evaluation Correctness**
-- **Mitigation**: Extensive unit tests with known outcomes
-- Cross-reference with online calculators
-- Property-based testing for exhaustive coverage
-
-**Medium Risk: Performance (60 combinations)**
-- **Mitigation**: Benchmark early in Phase 2
-- Optimize hot path using HandInfoFaster
-- Consider caching if needed (unlikely)
-
-**Medium Risk: UI Layout (4 cards don't fit)**
-- **Mitigation**: Test early with mock data
-- May need to reduce card size for Omaha
-- Option: stagger cards vertically
-
-**Low Risk: AI Quality**
-- **Mitigation**: Start conservative (fold more, call less)
-- Reuse existing pot odds logic
-- Incremental improvement in future releases
+### Phase 7 (Integration) — all modules
+- Tournament creation dialog — Add PLO option
+- UI labels — Show game variant name
+- E2E tests — Both local and online
 
 ---
 
@@ -1297,42 +714,64 @@ void should_DealFourCards_When_GameTypeIsOmaha() {
 
 | Phase | Complexity | Days | Dependencies |
 |-------|------------|------|--------------|
-| Phase 1 | LOW | 2-3 | None |
-| Phase 2 | HIGH | 8-10 | Phase 1 |
-| Phase 3 | MEDIUM | 3-4 | Phase 1, 2 |
-| Phase 4 | MEDIUM | 4-5 | Phase 3 |
-| Phase 5 | HIGH | 8-10 | Phase 2 |
-| Phase 6 | LOW | 3-4 | All |
-| **Total** | | **28-36** | **(4-6 weeks)** |
+| Phase 1: Foundation | LOW | 1-2 | None |
+| Phase 2: Hand Evaluation | HIGH | 6-8 | Phase 1 |
+| Phase 3: Client Dealing | LOW | 2-3 | Phase 1 |
+| Phase 4: Server Logic | MEDIUM | 3-5 | Phase 1, 2 |
+| Phase 5: UI Layout | MEDIUM | 3-4 | Phase 3 |
+| Phase 6: AI | HIGH | 6-8 | Phase 2 |
+| Phase 7: Integration | LOW | 3-4 | All |
+| **Total** | | **24-34** | **(4-6 weeks)** |
 
-**Critical Path**: Phase 1 → Phase 2 → Phase 3 → Phase 6 (minimal working Omaha)
+**Critical Path**: Phase 1 → Phase 2 → Phase 4 → Phase 7
 
-**Parallel Options**: Phase 4 (UI) can develop alongside Phase 5 (AI) after Phase 3 completes.
+**Parallel Options**:
+- Phase 3 (client dealing) can start after Phase 1 (parallel with Phase 2)
+- Phase 5 (UI) can start after Phase 3 (parallel with Phase 4, 6)
+- Phase 6 (AI) can start after Phase 2 (parallel with Phase 4, 5)
 
-**Recommended Order**: Sequential (1→2→3→4→5→6) to minimize integration issues.
+```
+Phase 1 ──> Phase 2 ──> Phase 4 ──> Phase 7
+         └──> Phase 3 ──> Phase 5 ──┘
+              Phase 2 ──> Phase 6 ──┘
+```
 
 ---
 
 ## Success Criteria
 
-✅ **Functional**:
-- Pot Limit Omaha tournament playable from start to finish
-- Correct 4-card dealing
-- Correct hand evaluation (exactly 2+3 rule enforced)
-- Competent AI (doesn't make egregious mistakes)
+**Functional**:
+- ✅ PLO tournament playable from start to finish (local AND online)
+- ✅ Correct 4-card dealing
+- ✅ Correct hand evaluation (exactly 2+3 rule enforced)
+- ✅ Competent AI (doesn't make egregious mistakes)
 
-✅ **Quality**:
-- Zero regression in Hold'em functionality
-- All existing tests pass
-- New test coverage meets targets (95%+ for Phase 2)
-- Performance targets met (<5ms hand evaluation)
+**Quality**:
+- ✅ Zero regression in Hold'em
+- ✅ All existing tests pass
+- ✅ 95%+ coverage for Phase 2 (OmahaScorer)
+- ✅ Performance: <5ms hand evaluation
+- ✅ Client and server produce identical scores for same hands
 
-✅ **User Experience**:
-- UI displays 4 cards clearly at all seats
-- Game type selection obvious in tournament setup
-- Mixed-game tournaments supported
+**User Experience**:
+- ✅ 4 cards display clearly at all seats
+- ✅ PLO selectable in tournament setup
+- ✅ Works for both practice and online games
 
-✅ **Maintainability**:
-- Clean separation between Hold'em and Omaha logic
-- Strategy pattern allows future game variants
-- Comprehensive documentation for future developers
+**Maintainability**:
+- ✅ Core algorithm (`OmahaScorer`) in shared `pokerengine` module
+- ✅ Strategy pattern allows future variants (Omaha Hi-Lo, 5-Card Omaha)
+- ✅ No code duplication between client and server evaluation
+
+---
+
+## Known Limitations (v1)
+
+Intentionally deferred:
+
+1. **Omaha Hi-Lo**: Not supported. Architecture allows it (add `evaluateLow()` to `OmahaScorer`).
+2. **5-Card Omaha (PLO5)**: Not supported. Change `getHoleCardCount()` to 5 when ready.
+3. **NLO / Limit Omaha**: Constants defined but not exposed in UI. Just a UI toggle away.
+4. **Mixed-game tournaments**: Infrastructure exists in `TournamentProfile` but UI not exposed.
+5. **Omaha-specific outs calculation**: `HandPotential` / `PureHandPotential` use Hold'em logic. AI draws approximate.
+6. **Hand highlight accuracy**: `isOurHandInvolved()` may highlight wrong hole cards in Omaha.
