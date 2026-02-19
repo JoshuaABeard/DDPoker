@@ -49,46 +49,9 @@ import java.awt.event.*;
 public class StartMenu extends MenuPhase {
     // static Logger logger = LogManager.getLogger(StartMenu.class);
 
-    static final String PARAM_EXPIRED = "expired";
-
-    protected boolean bExpired_ = false;
-
-    /**
-     * if expired, show expired message
-     */
-    @Override
-    protected void addButtons(DDPanel parent) {
-        bExpired_ = gamephase_.getBoolean(PARAM_EXPIRED, false);
-
-        // put buttons in the menubox_
-        if (!bExpired_) {
-            super.addButtons(parent);
-        } else {
-            // expired message - just exit button
-            DDButton exit = new GlassButton("exit", "GlassBig");
-            parent.add(GuiUtils.CENTER(exit), BorderLayout.SOUTH);
-            exit.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    System.exit(0);
-                }
-            });
-        }
-    }
-
     @Override
     public void start() {
-
-        if (!bExpired_) {
-
-        }
-
         super.start();
-
-        // set help text
-        if (bExpired_) {
-            context_.getWindow().setHelpTextWidget(null);
-            helptext_.setText(engine_.getExpiredMessage());
-        }
     }
 
     /**

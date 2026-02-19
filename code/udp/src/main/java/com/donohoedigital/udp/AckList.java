@@ -335,33 +335,22 @@ public class AckList {
     //// TESTING
     ////
     public void ackTest(boolean bShortTest, int size, float iters) {
-        if (false) {
-            int acks[] = {200, 201, 202, 205, 204, 203, 197, 195, 196, 198, 199, 180, 185, 190, 192, 193, 195, 194, 183,
-                    196, 197, 201, 184, 182, 189, 186, 188, 187, 181, 191, 182};
-
-            for (int i = 0; i < acks.length; i++) {
-                ack(acks[i]);
-                logger.debug("Added " + acks[i] + ": " + this);
-            }
-        } else {
-            int hits[] = new int[size + 1];
-            MersenneTwisterFast random_ = new MersenneTwisterFast();
-            for (int i = 0; i < size * iters; i++) {
-                int nNum = random_.nextInt(size) + 1;
-                hits[nNum] = 1;
-                ack(nNum);
-                // logger.debug("Added " + nNum + ": "+ list);
-            }
-            logger.debug("After " + size + ": " + this);
-            StringBuilder missed = new StringBuilder();
-            for (int i = 1; i < (size + 1); i++) {
-                if (hits[i] == 0) {
-                    if (missed.length() > 0)
-                        missed.append(", ");
-                    missed.append(i);
-                }
-            }
-            logger.debug("Missed: " + missed);
+        int hits[] = new int[size + 1];
+        MersenneTwisterFast random_ = new MersenneTwisterFast();
+        for (int i = 0; i < size * iters; i++) {
+            int nNum = random_.nextInt(size) + 1;
+            hits[nNum] = 1;
+            ack(nNum);
         }
+        logger.debug("After " + size + ": " + this);
+        StringBuilder missed = new StringBuilder();
+        for (int i = 1; i < (size + 1); i++) {
+            if (hits[i] == 0) {
+                if (missed.length() > 0)
+                    missed.append(", ");
+                missed.append(i);
+            }
+        }
+        logger.debug("Missed: " + missed);
     }
 }

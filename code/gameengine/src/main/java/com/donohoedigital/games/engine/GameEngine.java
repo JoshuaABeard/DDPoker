@@ -75,7 +75,6 @@ public abstract class GameEngine extends BaseApp {
 
     // shared by GameContext
     GameboardConfig gameconfig_;
-    boolean bExpired_ = false;
 
     // other private stuff
     private String playerId_;
@@ -140,21 +139,8 @@ public abstract class GameEngine extends BaseApp {
         logger.info("Player ID initialized: " + playerId);
 
         // Handle headless mode
-        boolean bAlphaBeta = v.isBeta() || v.isAlpha();
         if (bHeadless_) {
             setHeadless();
-        }
-
-        // expired?
-        if (bAlphaBeta) {
-            int YEAR = 2010;
-            int MONTH = 1;
-            int DAY = 1; // January 1, 2010
-            long expire = new GregorianCalendar(YEAR, MONTH - 1, DAY).getTime().getTime();
-            long now = System.currentTimeMillis();
-            if (now > expire) {
-                bExpired_ = true;
-            }
         }
 
         // check prereqs
@@ -543,13 +529,6 @@ public abstract class GameEngine extends BaseApp {
 
         // display the frame
         displayMainWindow();
-    }
-
-    /**
-     * Subclass should override
-     */
-    protected String getExpiredMessage() {
-        return "Version " + getVersion() + " has expired.";
     }
 
     /**

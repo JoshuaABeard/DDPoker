@@ -49,6 +49,7 @@ import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.event.PokerTableListener;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.donohoedigital.games.poker.online.*;
+import com.donohoedigital.games.poker.server.PracticeGameLauncher;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
@@ -627,6 +628,14 @@ public class ShowTournamentTable extends ShowPokerTable
      * startup after drawing - start TD, init chat
      */
     private void poststart() {
+        // For practice games, register the tournament with the embedded server
+        // so WebSocketTournamentDirector has a non-null WebSocketConfig to connect with.
+        if (!game_.isOnlineGame()) {
+            PokerMain pokerMain = (PokerMain) GameEngine.getGameEngine();
+            PracticeGameLauncher launcher = new PracticeGameLauncher(pokerMain.getEmbeddedServer());
+            launcher.launch(game_.getProfile(), game_);
+        }
+
         // start TournamentDirector so we can tell chat what it is
         nextPhaseNow();
 

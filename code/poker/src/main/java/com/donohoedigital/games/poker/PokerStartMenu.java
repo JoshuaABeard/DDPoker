@@ -182,16 +182,10 @@ public class PokerStartMenu extends StartMenu {
     }
 
     /**
-     * we override to do nothing
+     * we override to do nothing — control buttons are added directly in subclassInit
      */
     @Override
     protected void addButtons(DDPanel parent) {
-        // if expired or regular menu, let super handle
-        if (bExpired_) {
-            super.addButtons(parent);
-        }
-
-        // otherwise we don't use the standard MenuPhase button positions
     }
 
     /**

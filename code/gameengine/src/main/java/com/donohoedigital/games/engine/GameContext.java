@@ -363,14 +363,6 @@ public class GameContext {
      */
     private Phase _processPhase(String sPhaseName, TypedHashMap params, boolean bHistory) {
         try {
-            // force startmenu params to load (class is hardcoded below to prevent
-            // tampering with gamedef.xml file)
-            if (engine_.bExpired_) {
-                sPhaseName = "StartMenu";
-                params = new TypedHashMap();
-                params.setBoolean(StartMenu.PARAM_EXPIRED, Boolean.TRUE);
-            }
-
             GamePhase phase = engine_.getGamedefconfig().getGamePhases().get(sPhaseName);
             ApplicationError.assertNotNull(phase, "GamePhase not found", sPhaseName);
 
@@ -762,12 +754,6 @@ public class GameContext {
             String sClass = gamephase.getClassName();
             try {
                 Class<? extends Phase> cClass = gamephase.getClassObject();
-
-                // force startmenu to load if expired (matches above)
-                if (engine_.bExpired_) {
-                    sClass = "com.donohoedigital.games.engine.StartMenu";
-                    cClass = StartMenu.class;
-                }
 
                 if (cClass == null) {
                     throw new ApplicationError(ErrorCodes.ERROR_CLASS_NOT_FOUND,

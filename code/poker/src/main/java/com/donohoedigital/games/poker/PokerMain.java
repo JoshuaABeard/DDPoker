@@ -424,15 +424,6 @@ public class PokerMain extends GameEngine {
     }
 
     /**
-     * Message for expired copies
-     */
-    @Override
-    protected String getExpiredMessage() {
-        return "<font color=\"white\"> Version " + getVersion() + "</font>"
-                + " of DD Poker has expired.  Please contact Donohoe Digital to get the " + " most recent version.";
-    }
-
-    /**
      * Get starting size - we set proportional to 800x600, but at a size 200 less
      * than screen height
      */

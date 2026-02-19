@@ -431,25 +431,9 @@ public class Border {
      * String representation of border for debugging
      */
     public String toString() {
-        // noinspection ConstantIfStatement
-        if (true)
-            return shortDesc(); // DEBUG
-
-        String sNum = "";
-        if (getNumber() > 1)
-            sNum = " (#" + getNumber() + ")";
-        StringBuilder sbBuffer = new StringBuilder();
-        sbBuffer.append("[").append(getTerritory1().toString()).append(" - ").append(getTerritory2().toString())
-                .append(sNum).append(" : enclosed=").append(isEnclosed()).append(", wrapped=").append(isWrapAround())
-                .append("] points:");
-        int nSize = size();
-        BorderPoint point;
-        for (int i = 0; i < nSize; i++) {
-            point = getBorderPoint(i);
-            sbBuffer.append(" ").append(point.toString());
-        }
-        return sbBuffer.toString();
+        return shortDesc();
     }
+
 
     /**
      * Display string
