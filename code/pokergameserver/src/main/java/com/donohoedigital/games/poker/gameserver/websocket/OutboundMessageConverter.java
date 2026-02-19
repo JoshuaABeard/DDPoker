@@ -272,7 +272,7 @@ public class OutboundMessageConverter {
         // Build seats from player states
         List<ServerMessageData.SeatData> seats = snapshot.players().stream()
                 .map(p -> new ServerMessageData.SeatData(p.seat(), p.playerId(), p.playerName(), p.chipCount(),
-                        p.folded() ? "FOLDED" : (p.allIn() ? "ALL_IN" : "ACTIVE"), false, false, false, 0,
+                        p.folded() ? "FOLDED" : (p.allIn() ? "ALL_IN" : "ACTIVE"), false, false, false, p.currentBet(),
                         cardsToList(p.holeCards()), false))
                 .collect(Collectors.toList());
 

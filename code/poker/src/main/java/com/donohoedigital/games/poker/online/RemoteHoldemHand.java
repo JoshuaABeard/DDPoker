@@ -26,7 +26,9 @@ import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Thin view model for a poker hand driven by WebSocket state updates.
@@ -55,6 +57,7 @@ public class RemoteHoldemHand extends HoldemHand {
     private int remoteCurrentPlayerIndex_ = NO_CURRENT_PLAYER;
     private int remotePotTotal_;
     private ActionOptionsData remoteOptions_;
+    private final Map<Integer, Integer> remoteBets_ = new HashMap<>();
 
     /**
      * Creates a remote hand with no-arg parent constructor. The no-arg HoldemHand
@@ -70,13 +73,13 @@ public class RemoteHoldemHand extends HoldemHand {
     // -------------------------------------------------------------------------
 
     /**
-     * Returns 0 — the remote hand does not track per-player bet history. Overrides
-     * to avoid NPE from {@code synchronized(history_)} in the parent; the no-arg
-     * HoldemHand constructor leaves {@code history_} null.
+     * Returns the server-provided bet for this player in the current round.
+     * Overrides to avoid NPE from {@code synchronized(history_)} in the parent; the
+     * no-arg HoldemHand constructor leaves {@code history_} null.
      */
     @Override
     public int getBet(PokerPlayer player, int nRound) {
-        return 0;
+        return remoteBets_.getOrDefault(player.getID(), 0);
     }
 
     /** Returns the server-provided min bet, or 0 if no options are stored. */
@@ -225,5 +228,29 @@ public class RemoteHoldemHand extends HoldemHand {
      */
     public void updateActionOptions(ActionOptionsData opts) {
         this.remoteOptions_ = opts;
+    }
+
+    /**
+     * Updates the current-round bet total for a specific player.
+     *
+     * @param playerId
+     *            player ID
+     * @param totalBet
+     *            the player's total bet this round (0 clears the entry)
+     */
+    public void updatePlayerBet(int playerId, int totalBet) {
+        if (totalBet > 0) {
+            remoteBets_.put(playerId, totalBet);
+        } else {
+            remoteBets_.remove(playerId);
+        }
+    }
+
+    /**
+     * Clears all per-player bets. Called when a new betting round starts (flop,
+     * turn, river) so the display resets to zero.
+     */
+    public void clearBets() {
+        remoteBets_.clear();
     }
 }

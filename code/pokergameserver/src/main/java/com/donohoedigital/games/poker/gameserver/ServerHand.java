@@ -1228,6 +1228,27 @@ public class ServerHand implements GameHand {
     }
 
     /**
+     * Get the total amount bet by a specific player in the current betting round.
+     *
+     * @param playerId
+     *            the player ID to look up
+     * @return the player's total bet this round, or 0 if they haven't bet
+     */
+    public int getPlayerBet(int playerId) {
+        return playerBets.getOrDefault(playerId, 0);
+    }
+
+    /**
+     * Get the total of all pending bets for the current round (chips that have been
+     * placed but not yet moved to a pot via calcPots).
+     *
+     * @return total pending bet amount across all players
+     */
+    public int getPendingBetTotal() {
+        return playerBets.values().stream().mapToInt(Integer::intValue).sum();
+    }
+
+    /**
      * Minimal table interface required by ServerHand.
      * <p>
      * ServerGameTable implements this interface to provide hand logic with access

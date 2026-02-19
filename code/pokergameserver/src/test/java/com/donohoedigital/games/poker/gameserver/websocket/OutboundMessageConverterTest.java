@@ -157,8 +157,8 @@ class OutboundMessageConverterTest {
         Card[] communityCards = {Card.SPADES_J, Card.CLUBS_T};
 
         List<GameStateSnapshot.PlayerState> players = List.of(
-                new GameStateSnapshot.PlayerState(1, "Player1", 1000, 0, false, false, holeCards),
-                new GameStateSnapshot.PlayerState(2, "Player2", 2000, 1, false, false, null));
+                new GameStateSnapshot.PlayerState(1, "Player1", 1000, 0, false, false, holeCards, 100),
+                new GameStateSnapshot.PlayerState(2, "Player2", 2000, 1, false, false, null, 0));
         List<GameStateSnapshot.PotState> pots = List.of(new GameStateSnapshot.PotState(500, List.of(1, 2)));
         GameStateSnapshot snapshot = new GameStateSnapshot(0, 3, holeCards, communityCards, players, pots);
 
@@ -184,5 +184,9 @@ class OutboundMessageConverterTest {
         // Other player's hole cards should NOT be included
         ServerMessageData.SeatData seat1 = table.seats().get(1);
         assertTrue(seat1.holeCards() == null || seat1.holeCards().isEmpty());
+
+        // Current bet should be passed through from the snapshot
+        assertEquals(100, seat0.currentBet());
+        assertEquals(0, seat1.currentBet());
     }
 }

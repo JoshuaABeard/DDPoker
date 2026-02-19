@@ -66,9 +66,11 @@ public record GameStateSnapshot(int tableId, int handNumber, Card[] myHoleCards,
      * @param holeCards
      *            hole cards (only included for the requesting player or at
      *            showdown)
+     * @param currentBet
+     *            total amount bet by this player in the current betting round
      */
     public record PlayerState(int playerId, String playerName, int chipCount, int seat, boolean folded, boolean allIn,
-            Card[] holeCards) {
+            Card[] holeCards, int currentBet) {
     }
 
     /**

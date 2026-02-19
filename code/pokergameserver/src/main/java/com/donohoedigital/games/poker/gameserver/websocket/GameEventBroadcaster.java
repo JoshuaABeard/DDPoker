@@ -20,6 +20,9 @@ package com.donohoedigital.games.poker.gameserver.websocket;
 import com.donohoedigital.games.poker.core.event.GameEvent;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
 import com.donohoedigital.games.poker.gameserver.GameStateSnapshot;
+import com.donohoedigital.games.poker.gameserver.ServerGameTable;
+import com.donohoedigital.games.poker.gameserver.ServerHand;
+import com.donohoedigital.games.poker.gameserver.ServerPlayer;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
@@ -132,10 +135,31 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                             new ServerMessageData.HandStartedData(e.handNumber(), -1, -1, -1, List.of())));
                 }
             }
-            case GameEvent.PlayerActed e -> broadcast(
-                ServerMessage.of(ServerMessageType.PLAYER_ACTED, gameId,
-                    new ServerMessageData.PlayerActedData(e.playerId(), "", e.action().name(), e.amount(), 0, 0, 0))
-            );
+            case GameEvent.PlayerActed e -> {
+                int chipCount = 0;
+                int totalBet = 0;
+                int potTotal = 0;
+                if (game != null && game.getTournament() != null) {
+                    Object gt = game.getTournament().getTable(e.tableId());
+                    if (gt instanceof ServerGameTable sgt) {
+                        ServerHand hand = (ServerHand) sgt.getHoldemHand();
+                        if (hand != null) {
+                            totalBet = hand.getPlayerBet(e.playerId());
+                            potTotal = hand.getPotSize();
+                        }
+                        for (int s = 0; s < sgt.getNumSeats(); s++) {
+                            ServerPlayer sp = sgt.getPlayer(s);
+                            if (sp != null && sp.getID() == e.playerId()) {
+                                chipCount = sp.getChipCount();
+                                break;
+                            }
+                        }
+                    }
+                }
+                broadcast(ServerMessage.of(ServerMessageType.PLAYER_ACTED, gameId,
+                    new ServerMessageData.PlayerActedData(e.playerId(), "", e.action().name(), e.amount(),
+                        totalBet, chipCount, potTotal)));
+            }
             case GameEvent.CommunityCardsDealt e -> broadcast(
                 ServerMessage.of(ServerMessageType.COMMUNITY_CARDS_DEALT, gameId,
                     new ServerMessageData.CommunityCardsDealtData(e.round().name(), List.of(), List.of()))

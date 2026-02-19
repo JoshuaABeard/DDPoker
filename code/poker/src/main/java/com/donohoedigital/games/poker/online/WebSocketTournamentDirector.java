@@ -374,7 +374,13 @@ public class WebSocketTournamentDirector extends BasePhase
                 return;
             }
 
-            RemoteHoldemHand hand = new RemoteHoldemHand();
+            // Reuse the existing hand from the preceding GAME_STATE snapshot if available
+            // so that bets (blinds/antes) set in applyTableData() are preserved.
+            RemoteHoldemHand hand = table.getRemoteHand();
+            if (hand == null) {
+                hand = new RemoteHoldemHand();
+                table.setRemoteHand(hand);
+            }
             hand.updateRound(BettingRound.PRE_FLOP);
 
             // Reconstruct player order from seated players (seat order for the hand)
@@ -382,13 +388,14 @@ public class WebSocketTournamentDirector extends BasePhase
             hand.updatePlayerOrder(handPlayers);
             hand.updateCurrentPlayer(HoldemHand.NO_CURRENT_PLAYER);
 
-            table.setRemoteHand(hand);
-
             // Move button to dealer seat
             int oldButton = table.getButton();
             table.setRemoteButton(d.dealerSeat());
             table.fireEvent(PokerTableEvent.TYPE_BUTTON_MOVED, oldButton);
             table.fireEvent(PokerTableEvent.TYPE_NEW_HAND);
+            // Re-trigger card display: TYPE_NEW_HAND may reset card slots; this ensures
+            // the local player's hole cards and opponents' face-down cards are rendered.
+            table.fireEvent(PokerTableEvent.TYPE_DEALER_ACTION);
         });
     }
 
@@ -436,6 +443,8 @@ public class WebSocketTournamentDirector extends BasePhase
             BettingRound round = BettingRound.valueOf(d.round());
             hand.updateRound(round);
             hand.updateCommunity(parseCards(d.allCommunityCards()));
+            // New street — clear current-round bets so no stale chips are shown
+            hand.clearBets();
 
             table.fireEvent(PokerTableEvent.TYPE_DEALER_ACTION, round.toLegacy());
         });
@@ -506,12 +515,26 @@ public class WebSocketTournamentDirector extends BasePhase
             if (hand == null)
                 return;
 
-            // Update chip counts and pot
+            // Update chip count and pot from server-provided post-action values
             PokerPlayer player = findPlayer(d.playerId());
             if (player != null) {
-                player.setChipCount(d.chipCount());
+                if (d.chipCount() > 0 || "FOLD".equalsIgnoreCase(d.action())) {
+                    // Only update chipCount when we have a real value (> 0) or on fold
+                    // (where chip count doesn't change anyway)
+                    player.setChipCount(d.chipCount());
+                }
+                if ("FOLD".equalsIgnoreCase(d.action())) {
+                    player.setFolded(true);
+                }
             }
-            hand.updatePot(d.potTotal());
+            if (d.potTotal() > 0) {
+                hand.updatePot(d.potTotal());
+            }
+
+            // Update the acting player's current-round bet
+            if (player != null && d.totalBet() > 0) {
+                hand.updatePlayerBet(player.getID(), d.totalBet());
+            }
 
             // Advance current player (server will send ACTION_REQUIRED for next actor)
             hand.updateCurrentPlayer(HoldemHand.NO_CURRENT_PLAYER);
@@ -934,8 +957,13 @@ public class WebSocketTournamentDirector extends BasePhase
             // Integer.MAX_VALUE (e.g., high-volume server deployment in M6+).
             PokerPlayer p = new PokerPlayer((int) sd.playerId(), sd.playerName(), sd.playerId() == localPlayerId_);
             p.setChipCount(sd.chipCount());
-            // Apply hole cards from snapshot (only provided for the local player)
+            // Apply folded status from snapshot (all-in is derived from chipCount == 0)
+            if ("FOLDED".equals(sd.status())) {
+                p.setFolded(true);
+            }
+            // Apply hole cards from snapshot
             if (sd.holeCards() != null && !sd.holeCards().isEmpty()) {
+                // Local player: actual cards (face-up)
                 logger.debug("[applyTableData] player={} seat={} holeCards={}", sd.playerName(), sd.seatIndex(),
                         sd.holeCards());
                 for (String c : sd.holeCards()) {
@@ -946,9 +974,13 @@ public class WebSocketTournamentDirector extends BasePhase
                 if (sd.playerId() == localPlayerId_) {
                     localPlayerHasCards = true;
                 }
+            } else if (sd.playerId() != localPlayerId_ && !"FOLDED".equals(sd.status())) {
+                // Opponent in hand: add blank cards so face-down images are rendered
+                p.getHand().addCard(Card.BLANK);
+                p.getHand().addCard(Card.BLANK);
             }
-            logger.debug("[applyTableData] seat={} player={} chips={} isLocal={} holeCards={}", sd.seatIndex(),
-                    sd.playerName(), sd.chipCount(), sd.playerId() == localPlayerId_,
+            logger.debug("[applyTableData] seat={} player={} chips={} status={} isLocal={} holeCards={}",
+                    sd.seatIndex(), sd.playerName(), sd.chipCount(), sd.status(), sd.playerId() == localPlayerId_,
                     sd.holeCards() != null ? sd.holeCards().size() : 0);
             players[sd.seatIndex()] = p;
             if (sd.isDealer())
@@ -977,6 +1009,15 @@ public class WebSocketTournamentDirector extends BasePhase
 
             List<PokerPlayer> handPlayers = seatedPlayersFrom(table);
             hand.updatePlayerOrder(handPlayers);
+
+            // Apply per-player current-round bets from snapshot
+            hand.clearBets();
+            for (SeatData sd : td.seats()) {
+                if (sd.currentBet() > 0) {
+                    hand.updatePlayerBet((int) sd.playerId(), sd.currentBet());
+                }
+            }
+
             logger.debug("[applyTableData] hand ready: round={} potTotal={} handPlayers={}", round, potTotal,
                     handPlayers.size());
         }

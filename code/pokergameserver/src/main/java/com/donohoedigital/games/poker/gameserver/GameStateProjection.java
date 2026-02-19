@@ -80,8 +80,9 @@ public class GameStateProjection {
                     holeCards = hand.getPlayerCards(player);
                 }
 
+                int currentBet = (hand != null) ? hand.getPlayerBet(player.getID()) : 0;
                 playerStates.add(new GameStateSnapshot.PlayerState(player.getID(), player.getName(),
-                        player.getChipCount(), seat, player.isFolded(), player.isAllIn(), holeCards));
+                        player.getChipCount(), seat, player.isFolded(), player.isAllIn(), holeCards, currentBet));
             }
         }
 
@@ -95,6 +96,11 @@ public class GameStateProjection {
                     eligiblePlayerIds.add(eligible.getID());
                 }
                 potStates.add(new GameStateSnapshot.PotState(pot.getChips(), eligiblePlayerIds));
+            }
+            // Include pending bets (blinds/antes not yet moved to a pot via calcPots)
+            int pendingBets = hand.getPendingBetTotal();
+            if (pendingBets > 0) {
+                potStates.add(new GameStateSnapshot.PotState(pendingBets, List.of()));
             }
         }
 
@@ -144,8 +150,9 @@ public class GameStateProjection {
                 if (hand != null && !player.isFolded()) {
                     holeCards = hand.getPlayerCards(player);
                 }
+                // At showdown all bets have been committed to pots
                 playerStates.add(new GameStateSnapshot.PlayerState(player.getID(), player.getName(),
-                        player.getChipCount(), seat, player.isFolded(), player.isAllIn(), holeCards));
+                        player.getChipCount(), seat, player.isFolded(), player.isAllIn(), holeCards, 0));
             }
         }
 
