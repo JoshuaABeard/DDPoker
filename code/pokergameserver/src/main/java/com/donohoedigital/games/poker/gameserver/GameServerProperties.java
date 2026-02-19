@@ -81,7 +81,10 @@ public record GameServerProperties(int maxConcurrentGames, int actionTimeoutSeco
         int maxGamesPerUser, int communityHeartbeatTimeoutMinutes, int lobbyTimeoutHours,
         int completedGameRetentionDays, String serverBaseUrl, int aiActionDelayMs) {
     /**
-     * Canonical constructor with validation and defaults.
+     * Compact canonical constructor — validates and normalises values injected by
+     * Spring {@code @ConfigurationProperties}. The no-arg constructor has been
+     * intentionally removed: its presence caused Spring Boot 3.x to fall back to
+     * JavaBean binding, silently ignoring all property values.
      */
     public GameServerProperties {
         if (maxConcurrentGames <= 0)
@@ -110,12 +113,5 @@ public record GameServerProperties(int maxConcurrentGames, int actionTimeoutSeco
             serverBaseUrl = "ws://localhost";
         if (aiActionDelayMs < 0)
             aiActionDelayMs = 0;
-    }
-
-    /**
-     * Default constructor for Spring.
-     */
-    public GameServerProperties() {
-        this(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0);
     }
 }

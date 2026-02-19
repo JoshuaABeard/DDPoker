@@ -59,7 +59,8 @@ class ServerTournamentDirectorTest {
         // Create director
         List<String> lifecycleEvents = new ArrayList<>();
         ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
-                tournament, eventBus, actionProvider, new GameServerProperties(),
+                tournament, eventBus, actionProvider,
+                new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0),
                 event -> lifecycleEvents.add(event.toString()));
 
         // Run in background thread
@@ -100,7 +101,8 @@ class ServerTournamentDirectorTest {
         // Create director
         List<String> lifecycleEvents = new ArrayList<>();
         ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
-                tournament, eventBus, actionProvider, new GameServerProperties(),
+                tournament, eventBus, actionProvider,
+                new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0),
                 event -> lifecycleEvents.add(event.toString()));
 
         // Run in background thread
@@ -143,7 +145,8 @@ class ServerTournamentDirectorTest {
 
         List<String> lifecycleEvents = new ArrayList<>();
         ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
-                tournament, eventBus, actionProvider, new GameServerProperties(),
+                tournament, eventBus, actionProvider,
+                new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0),
                 event -> lifecycleEvents.add(event.toString()));
 
         // Start in background
@@ -185,7 +188,8 @@ class ServerTournamentDirectorTest {
 
         CountDownLatch shutdownLatch = new CountDownLatch(1);
         ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
-                tournament, eventBus, actionProvider, new GameServerProperties(), event -> {
+                tournament, eventBus, actionProvider,
+                new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0), event -> {
                     if (event == GameLifecycleEvent.COMPLETED) {
                         shutdownLatch.countDown();
                     }
@@ -225,7 +229,8 @@ class ServerTournamentDirectorTest {
         }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
 
         ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
-                tournament, eventBus, actionProvider, new GameServerProperties(), event -> {
+                tournament, eventBus, actionProvider,
+                new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0), event -> {
                 });
 
         // Run

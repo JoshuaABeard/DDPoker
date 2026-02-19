@@ -51,7 +51,7 @@ class GameInstanceTest {
 
     @BeforeEach
     void setUp() {
-        properties = new GameServerProperties();
+        properties = new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0);
         config = createTestConfig();
         executor = Executors.newSingleThreadExecutor();
     }
