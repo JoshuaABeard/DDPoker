@@ -121,7 +121,7 @@ public class ClientV2AIContext implements V2AIContext {
 
     @Override
     public int getAmountToCall(GamePlayerInfo player) {
-        return hand.getAmountToCall(player);
+        return hand.getCall(adaptPlayer(player));
     }
 
     @Override

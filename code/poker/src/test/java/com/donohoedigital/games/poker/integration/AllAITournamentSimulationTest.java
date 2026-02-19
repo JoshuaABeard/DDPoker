@@ -301,7 +301,7 @@ class AllAITournamentSimulationTest extends IntegrationTestBase {
                 }
 
                 HandAction action = current.getAction(false);
-                applyAction(hand, current, action);
+                applyAction(current, action);
 
                 actionCount++;
                 if (actionCount > MAX_ACTIONS_PER_HAND) {
@@ -325,32 +325,14 @@ class AllAITournamentSimulationTest extends IntegrationTestBase {
         }
     }
 
-    private void applyAction(HoldemHand hand, PokerPlayer player, HandAction action) {
-        switch (action.getAction()) {
-            case HandAction.ACTION_FOLD :
-                hand.fold(player, action.getDebug(), HandAction.FOLD_NORMAL);
-                break;
-            case HandAction.ACTION_CHECK :
-            case HandAction.ACTION_CHECK_RAISE :
-                hand.check(player, action.getDebug());
-                nonFoldActions++;
-                break;
-            case HandAction.ACTION_CALL :
-                hand.call(player, action.getAmount(), action.getDebug());
-                nonFoldActions++;
-                break;
-            case HandAction.ACTION_BET :
-                hand.bet(player, action.getAmount(), action.getDebug());
-                nonFoldActions++;
-                break;
-            case HandAction.ACTION_RAISE :
-                hand.raise(player, action.getSubAmount(), action.getAdjustedAmount(), action.getDebug());
-                nonFoldActions++;
-                break;
-            default :
-                // Safety: treat unknown actions as fold
-                hand.fold(player, "unknown-action-" + action.getAction(), HandAction.FOLD_NORMAL);
-                break;
+    private void applyAction(PokerPlayer player, HandAction action) {
+        // Route through PokerPlayer so chips are properly deducted before the
+        // hand history entry is recorded. Calling HoldemHand methods directly
+        // skips the chip deduction and breaks chip conservation invariants.
+        boolean isFold = action.getAction() == HandAction.ACTION_FOLD;
+        player.processAction(action);
+        if (!isFold) {
+            nonFoldActions++;
         }
     }
 

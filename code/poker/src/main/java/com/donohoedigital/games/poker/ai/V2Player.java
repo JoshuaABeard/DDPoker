@@ -1073,7 +1073,8 @@ public class V2Player extends V1Player implements AIConstants {
 
     public int getBetAmount() {
         BetRange range = re.getBetRange();
-
+        if (range == null)
+            return 0;
         return range.chooseBetAmount(getPokerPlayer()) + getAmountToCall();
     }
 
