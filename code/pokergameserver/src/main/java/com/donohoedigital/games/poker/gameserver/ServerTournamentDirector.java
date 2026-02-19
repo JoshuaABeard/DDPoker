@@ -198,6 +198,13 @@ public class ServerTournamentDirector implements Runnable {
             // Increment hands played when hand completes (transitions to CLEAN state)
             if (result.nextState() == TableState.CLEAN && tournament instanceof ServerTournamentContext) {
                 ((ServerTournamentContext) tournament).incrementHandsPlayed();
+                // Pause between hands so clients can observe the outcome. This is
+                // essential for all-AI scenarios where hand.isDone() causes the entire
+                // betting round to be skipped — without this delay, hands race in
+                // milliseconds with no visible pause.
+                if (properties.aiActionDelayMs() > 0) {
+                    sleepMillis(properties.aiActionDelayMs());
+                }
             }
         }
 
@@ -463,16 +470,21 @@ public class ServerTournamentDirector implements Runnable {
     }
 
     /**
-     * Sleep for the specified number of milliseconds, ignoring interrupts.
+     * Sleep for the specified number of milliseconds, ignoring interrupts. The
+     * interrupt flag is cleared (not re-set) so that a single interrupt does not
+     * cascade and skip all future sleeps.
      *
      * @param millis
      *            milliseconds to sleep
      */
     private void sleepMillis(int millis) {
+        // Clear any pending interrupt before sleeping so it does not cause the
+        // sleep to return immediately without waiting.
+        Thread.interrupted();
         try {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            // Ignore — this method is documented as "ignoring interrupts"
         }
     }
 }
