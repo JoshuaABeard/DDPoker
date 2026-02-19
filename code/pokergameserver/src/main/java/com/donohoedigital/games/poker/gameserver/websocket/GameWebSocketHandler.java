@@ -40,6 +40,8 @@ import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData.LobbyPlayerData;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * WebSocket handler for game connections.
@@ -55,6 +57,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class GameWebSocketHandler extends TextWebSocketHandler {
 
+    private static final Logger logger = LoggerFactory.getLogger(GameWebSocketHandler.class);
     private static final int SESSION_MAX_TEXT_BUFFER_SIZE = 8192;
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -136,6 +139,8 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
 
         GameInstanceState state = game.getState();
         boolean alreadyInGame = game.hasPlayer(profileId);
+        logger.debug("[WS-CONNECT] player={} profileId={} gameId={} state={} alreadyInGame={}", username, profileId,
+                gameId, state, alreadyInGame);
 
         if (state == GameInstanceState.WAITING_FOR_PLAYERS && !alreadyInGame) {
             // Auto-join player
@@ -143,6 +148,7 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
         } else if ((state == GameInstanceState.IN_PROGRESS || state == GameInstanceState.PAUSED) && alreadyInGame) {
             // Reconnect existing player — handled below
         } else if (!alreadyInGame) {
+            logger.debug("[WS-CONNECT] rejecting player={} not in game gameId={}", username, gameId);
             session.close(new CloseStatus(4003, "Not in game"));
             return;
         }
@@ -212,11 +218,17 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             // Sync reconnecting player to current game state so they see the table,
             // players, and cards without waiting for the next event to fire.
             GameStateSnapshot snapshot = game.getGameStateSnapshot(profileId);
+            logger.debug("[WS-CONNECT] in-game reconnect player={} snapshot={}", username,
+                    snapshot != null
+                            ? "tableId=" + snapshot.tableId() + " players=" + snapshot.players().size()
+                            : "null");
             if (snapshot != null) {
                 playerConnection.sendMessage(converter.createGameStateMessage(gameId, snapshot));
+                logger.debug("[WS-CONNECT] sent GAME_STATE to player={}", username);
             }
             // Re-send ACTION_REQUIRED if the game was already waiting for this player.
             game.resendPendingActionIfAny(profileId);
+            logger.debug("[WS-CONNECT] resendPendingActionIfAny called for player={}", username);
         }
     }
 
