@@ -328,9 +328,6 @@ public class TournamentProfileDialog extends OptionMenuDialog
                     players);
             OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_FILL_COMPUTER, STYLE, dummy_, true),
                     players);
-            OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_ONLINE_ACTIVATED_ONLY, STYLE, dummy_, true),
-                    players);
-
             // Maximum online players
             DDLabelBorder maxPlayers = new DDLabelBorder("maxonlineplayers", STYLE);
             left.add(maxPlayers);

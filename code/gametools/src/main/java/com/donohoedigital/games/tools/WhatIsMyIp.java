@@ -58,7 +58,6 @@ public class WhatIsMyIp implements DDMessageListener {
      * Init
      */
     private void init() {
-        DDMessage.setDefaultRealKey("2100-0005-5596-3554");
         DDMessage.setDefaultVersion(new Version(1, 2, 0, true));
         String MOD = "";
 

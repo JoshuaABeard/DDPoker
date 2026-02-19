@@ -244,12 +244,10 @@ class EngineMessageTest {
     @Test
     void should_ReturnShortInfo_When_GetDebugInfoShortCalled() {
         EngineMessage msg = new EngineMessage("game", 1, EngineMessage.CAT_CHAT);
-        msg.setKey("testKey");
 
         String info = msg.getDebugInfoShort();
 
         assertThat(info).contains("chat");
-        assertThat(info).contains("testKey");
     }
 
     @Test

@@ -102,24 +102,6 @@ public class PokerConstants {
     // Was 2.1.1 until introduced profile validation
     public static final Version VERSION_LAST_COMPAT = new Version(3, 0, 4, true);
 
-    // get start of license keys
-    public static int getKeyStart() {
-        return getKeyStart(VERSION);
-    }
-
-    // get start
-    public static int getKeyStart(Version version) {
-        if (version.isBeta() || version.isAlpha())
-            return 22; // Poker Beta 1.0 used 20; Poker Alpha/Beta 2.0 used 19; Poker 3.0 didn't use
-                        // alpha/beta
-        else if (version.getMajor() == 1)
-            return 21; // POKER (2nd game), Version 1
-        else if (version.getMajor() == 2)
-            return 22; // POKER (2nd game), Version 2
-        else
-            return 23; // POKER (2nd game), Version 3
-    }
-
     // change start id for new objects
     // because poker can have 1000's of players (up to 5600+),
     // territories start at 6000 (see gameboard.xml),

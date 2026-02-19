@@ -394,8 +394,7 @@ public class TournamentProfileHtml {
         return PropertyConfig.getMessage("msg.tournamentonline", PropertyConfig.getYesNo(profile.isAllowDash()),
                 PropertyConfig.getYesNo(profile.isFillComputer()), profile.getMaxObservers(),
                 profile.getTimeoutSeconds(), profile.getThinkBankSeconds(), sBootDis, sBootSit, sInviteOnly,
-                PropertyConfig.getYesNo(profile.isAllowAdvisor()),
-                PropertyConfig.getYesNo(profile.isOnlineActivatedPlayersOnly()), sScheduledStart, sPerStreetTimeouts);
+                PropertyConfig.getYesNo(profile.isAllowAdvisor()), sScheduledStart, sPerStreetTimeouts);
     }
 
     /**

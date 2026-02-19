@@ -44,34 +44,21 @@ import com.donohoedigital.comms.DMArrayList;
 import com.donohoedigital.comms.DMTypedHashMap;
 import com.donohoedigital.comms.Version;
 import com.donohoedigital.config.*;
-import com.donohoedigital.db.DatabaseManager;
 import com.donohoedigital.games.comms.ActionItem;
 import com.donohoedigital.games.comms.EngineMessage;
-import com.donohoedigital.games.comms.RegistrationMessage;
 import com.donohoedigital.games.config.EngineConstants;
 import com.donohoedigital.games.config.GameConfigUtils;
-import com.donohoedigital.games.server.model.BannedKey;
-import com.donohoedigital.games.server.model.Registration;
-import com.donohoedigital.games.server.service.BannedKeyService;
-import com.donohoedigital.games.server.service.RegistrationService;
-import com.donohoedigital.jsp.JspEmail;
 import com.donohoedigital.mail.DDPostalService;
 import com.donohoedigital.server.BaseServlet;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.donohoedigital.config.DebugConfig.TESTING;
@@ -81,8 +68,6 @@ import static com.donohoedigital.config.DebugConfig.TESTING;
  */
 @SuppressWarnings("unchecked")
 public abstract class EngineServlet extends BaseServlet {
-    public static final String EMAIL_PARAM_VERSION = "version";
-    public static final String EMAIL_PARAM_NAME = "name";
 
     // Poll settings (seconds) - configurable via properties
     private static final int POLL_WAIT_MIN = PropertyConfig.getIntegerProperty("poll.wait.min", 3);
@@ -90,12 +75,6 @@ public abstract class EngineServlet extends BaseServlet {
     private static final int POLL_WAIT_ADD_PER = PropertyConfig.getIntegerProperty("poll.wait.add.per", 120);
     private static final int POLL_WAIT_MAX = PropertyConfig.getIntegerProperty("poll.wait.max", 180);
     private static final int POLL_WAIT_ERROR = PropertyConfig.getIntegerProperty("poll.wait.error", 10);
-
-    @Autowired
-    private RegistrationService registrationService;
-
-    @Autowired
-    protected BannedKeyService bannedKeyService;
 
     @Autowired
     protected DDPostalService postalService;
@@ -146,11 +125,6 @@ public abstract class EngineServlet extends BaseServlet {
      * Get latest version of client given an os string
      */
     public abstract Version getLatestClientVersion(String os);
-
-    /**
-     * Get start of license key
-     */
-    public abstract int getKeyStart(Version received);
 
     /**
      * Return our subclass of DDMessage
@@ -242,13 +216,6 @@ public abstract class EngineServlet extends BaseServlet {
         EngineMessage received = (EngineMessage) ddreceived;
         EngineMessage ret = validateKeyAndVersion(received, request.getRemoteAddr());
 
-        // if we have a banned key during a verify/registration attempt, log it
-        if (ret != null && ret.getBoolean(EngineMessage.PARAM_BANNED_KEY, false)
-                && (received.getCategory() == EngineMessage.CAT_VERIFY_KEY
-                        || received.getCategory() == EngineMessage.CAT_USER_REG)) {
-            processUserRegistration(request, received, true);
-        }
-
         // non-null return means something is invalid about this request
         if (ret != null)
             return ret;
@@ -264,11 +231,6 @@ public abstract class EngineServlet extends BaseServlet {
             case DDMessage.CAT_NONE :
                 throw new ApplicationError(ErrorCodes.ERROR_SERVER_INVALID_MESSAGE, "Message category not defined",
                         "Specify a message category");
-
-            // send back empty message (key is verified by virtue of getting here)
-            case EngineMessage.CAT_VERIFY_KEY :
-            case EngineMessage.CAT_USER_REG :
-                return processUserRegistration(request, received, false);
 
             // server query - return URL that client should go to
             case EngineMessage.CAT_SERVER_QUERY :
@@ -301,31 +263,20 @@ public abstract class EngineServlet extends BaseServlet {
     }
 
     /**
-     * validate license key and version set in this EngineMessage - return an
-     * EngineMessage with application error message set if there was a problem; null
-     * if no problem.
+     * validate version set in this EngineMessage - return an EngineMessage with
+     * application error message set if there was a problem; null if no problem.
      */
     private EngineMessage validateKeyAndVersion(EngineMessage received, String sFromForLogging) {
-        return validateKeyAndVersion(received, sFromForLogging, bannedKeyService, version_,
-                getKeyStart(received.getVersion()), isCategoryValidated(received),
-                isDatabaseRequired(received.getCategory()), isResetClientOnBadKey());
+        return validateKeyAndVersion(received, sFromForLogging, version_, isCategoryValidated(received),
+                isDatabaseRequired(received.getCategory()));
     }
 
     /**
-     * For subclass to change this behavior
-     */
-    protected boolean isResetClientOnBadKey() {
-        return true;
-    }
-
-    /**
-     * validate license key and version set in this EngineMessage - return an
-     * EngineMessage with application error message set if there was a problem; null
-     * if no problem.
+     * validate version set in this EngineMessage - return an EngineMessage with
+     * application error message set if there was a problem; null if no problem.
      */
     public static EngineMessage validateKeyAndVersion(EngineMessage received, String sFromForLogging,
-            BannedKeyService banService, Version serverVersion, int receivedKeyStart, boolean bCategoryValidated,
-            boolean bDatabaseRequired, boolean setFlagToResetClient) {
+            Version serverVersion, boolean bCategoryValidated, boolean bDatabaseRequired) {
         EngineMessage ret;
         String locale = received.getLocale();
         Version version = received.getVersion();
@@ -359,12 +310,6 @@ public abstract class EngineServlet extends BaseServlet {
             return ret;
         }
 
-        // Demo mode removed
-
-        // License key validation removed in open source version - always valid in
-        // Community Edition
-        String sKey = received.getKey();
-
         // check database if required by the given category, see if undergoing
         // maintenance
         if (bDatabaseRequired && PropertyConfig.getBooleanProperty("settings.db.maintenance", false)) {
@@ -375,29 +320,7 @@ public abstract class EngineServlet extends BaseServlet {
             return ret;
         }
 
-        // check if banned license key (requires DB)
-        BannedKey banMsg = banService.getIfBanned(sKey);
-        if (banMsg != null) {
-            ret = new EngineMessage(EngineMessage.GAME_NOTDEFINED, EngineMessage.PLAYER_SERVER,
-                    EngineMessage.CAT_APPL_ERROR);
-
-            if (setFlagToResetClient)
-                ret.setBoolean(EngineMessage.PARAM_BANNED_KEY, Boolean.TRUE);
-            ret.setApplicationErrorMessage(getAndLogBanMessage(banMsg,
-                    sKey + " from " + sFromForLogging + ", msg: " + received.getDebugInfo()));
-            return ret;
-        }
-
         return null;
-    }
-
-    /**
-     * Ban message and logging
-     */
-    protected static String getAndLogBanMessage(BannedKey ban, Object thing) {
-        DateFormat sf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-        logger.warn("Banned rejection: " + thing + " (ban: " + ban + ")");
-        return PropertyConfig.getMessage("msg.banned", sf.format(ban.getUntil()));
     }
 
     /**
@@ -495,7 +418,7 @@ public abstract class EngineServlet extends BaseServlet {
         DMArrayList<Integer> toIDs;
 
         // BUG 199 - store last time stamp and skip previously seen messages
-        String key = received.getKey();
+        String key = received.getString(EngineMessage.PARAM_FROM_PLAYER_ID);
         boolean bSkipProcessing = false;
         long last, now;
 
@@ -657,9 +580,6 @@ public abstract class EngineServlet extends BaseServlet {
      */
     private boolean isDatabaseRequired(int nCategory) {
         switch (nCategory) {
-            case EngineMessage.CAT_VERIFY_KEY :
-            case EngineMessage.CAT_USER_REG :
-                return true;
             default :
                 if (isSubclassHandling(nCategory))
                     return subclassIsDatabaseRequired(nCategory);
@@ -896,10 +816,10 @@ public abstract class EngineServlet extends BaseServlet {
                     "Invalid email format " + message.getDebugInfo());
         }
 
-        String sKey = message.getKey();
-        if (sKey == null)
+        String sPlayerId = message.getString(EngineMessage.PARAM_FROM_PLAYER_ID);
+        if (sPlayerId == null)
             return getErrorMessage(game, PropertyConfig.getLocalizedMessage("msg.joinfailed", message.getLocale()),
-                    "Missing key " + message.getDebugInfo());
+                    "Missing player ID " + message.getDebugInfo());
 
         // now verify password
         String sEmail, sPassword;
@@ -909,14 +829,14 @@ public abstract class EngineServlet extends BaseServlet {
 
             // if password and email match, we are cool
             if (sEmail.equalsIgnoreCase(sJoinEmail) && sPassword.equalsIgnoreCase(sJoinPassword)) {
-                DMTypedHashMap keys = game.getKeys();
+                DMTypedHashMap playerIds = game.getPlayerIds();
                 DMTypedHashMap locales = game.getLocales();
 
-                Iterator<String> iter = keys.keySet().iterator();
-                String sExistEmail, sExistKey;
+                Iterator<String> iter = playerIds.keySet().iterator();
+                String sExistEmail, sExistPlayerId;
                 while (iter.hasNext()) {
                     sExistEmail = iter.next();
-                    sExistKey = (String) keys.get(sExistEmail);
+                    sExistPlayerId = (String) playerIds.get(sExistEmail);
                     if (sExistEmail.equalsIgnoreCase(sJoinEmail)) {
                         return getErrorMessage(game,
                                 PropertyConfig.getLocalizedMessage("msg.joinagain", message.getLocale(),
@@ -924,17 +844,17 @@ public abstract class EngineServlet extends BaseServlet {
                                 "Joining again (already joined): " + sJoinEmail + " for game " + game.getGameID());
                     }
 
-                    if (!TESTING(EngineConstants.TESTING_SKIP_DUP_KEY_CHECK) && sExistKey.equals(sKey)) {
+                    if (!TESTING(EngineConstants.TESTING_SKIP_DUP_KEY_CHECK) && sExistPlayerId.equals(sPlayerId)) {
                         return getErrorMessage(game,
                                 PropertyConfig.getLocalizedMessage("msg.dupkey", message.getLocale(), game.getGameID(),
-                                        sExistKey, sExistEmail),
-                                "Invalid join (duplicate key of player " + sExistEmail + "): "
+                                        sExistPlayerId, sExistEmail),
+                                "Invalid join (duplicate player ID of player " + sExistEmail + "): "
                                         + message.getDebugInfo());
                     }
                 }
 
-                // store this key and locale, then save game
-                keys.put(sEmail, sKey); // email is lowercase
+                // store this player ID and locale, then save game
+                playerIds.put(sEmail, sPlayerId); // email is lowercase
                 locales.put(sEmail, message.getLocale());
                 game.save();
 
@@ -1010,132 +930,6 @@ public abstract class EngineServlet extends BaseServlet {
         ret.setInteger(EngineMessage.PARAM_WAIT_ERROR, POLL_WAIT_ERROR);
     }
 
-    // registration file constants
-    public static final String REGDIR_PREFIX = "reg-";
-    public static final String REGFILE_PREFIX = "usrreg.";
-    public static final String REGLINE_PREFIX = "[--- ";
-
-    /**
-     * Process a user's registration
-     */
-    private synchronized EngineMessage processUserRegistration(HttpServletRequest request, EngineMessage eng,
-            boolean bBanAttempt) {
-        // get a usable object
-        RegistrationMessage msg = new RegistrationMessage(eng);
-        Registration reg = new Registration();
-
-        // determine type
-        Registration.Type type = Registration.Type.REGISTRATION; // default
-        if (msg.isPatch())
-            type = Registration.Type.PATCH; // 1.x use only
-        else if (msg.isActivation())
-            type = Registration.Type.ACTIVATION;
-        reg.setType(type);
-
-        reg.setName(msg.getName());
-        reg.setEmail(msg.getEmail());
-        reg.setAddress(msg.getAddress());
-        reg.setCity(msg.getCity());
-        reg.setState(msg.getState());
-        reg.setCountry(msg.getCountry());
-        reg.setPostal(msg.getPostal());
-
-        reg.setOperatingSystem(msg.getOS());
-        reg.setJavaVersion(msg.getJava());
-        reg.setLicenseKey(msg.getKey());
-        reg.setVersion(msg.getVersion());
-
-        reg.setServerTime(new Date());
-        reg.setIp(request.getRemoteAddr());
-        reg.setPort(request.getServerPort());
-        reg.setHostName(Utils.getHostForIP(reg.getIp()));
-        reg.setHostNameModified(Registration.generifyHostName(reg.getHostName()));
-        reg.setBanAttempt(bBanAttempt);
-
-        // testing errors
-        if ("__ERROR__".equals(reg.getName())) {
-            throw new ApplicationError("TESTING ERROR");
-        }
-
-        // save to database
-        try {
-            if (DatabaseManager.isInitialized()) {
-                registrationService.saveRegistration(reg);
-            }
-        } catch (Throwable t) {
-            logger.error("Error saving registration to database: " + Utils.formatExceptionText(t));
-        }
-
-        // log to a file
-        if (!bBanAttempt)
-            logger.info("Registration: " + reg);
-        writeUserRegistrationFile(reg);
-
-        // send email if not a registration with a banned key
-        if (!bBanAttempt) {
-            sendEmail(reg.getEmail(), reg.getName(), msg.getLocale(), msg.getVersion());
-        }
-
-        // if ban attempt return null
-        if (bBanAttempt)
-            return null;
-
-        // return OK
-        return new EngineMessage(EngineMessage.GAME_NOTDEFINED, EngineMessage.PLAYER_NOTDEFINED, EngineMessage.CAT_OK);
-    }
-
-    /**
-     * Write the given registration record to the log file
-     */
-    private void writeUserRegistrationFile(Registration reg) {
-        Date now = reg.getServerTime();
-        String sNow = formatter2_.format(now);
-
-        File logdir = new File(new DefaultRuntimeDirectory().getServerHome(), "log");
-        File regdir = new File(logdir, REGDIR_PREFIX + getServer().getAppName());
-        ConfigUtils.verifyNewDirectory(regdir);
-        File regfile = new File(regdir, REGFILE_PREFIX + formatter_.format(now) + ".log");
-        FileOutputStream logout = ConfigUtils.getFileOutputStream(regfile, true);
-        try {
-            logout.write(Utils.encode(REGLINE_PREFIX + sNow + " ---]\n"));
-            logout.write(
-                    Utils.encode(ToStringBuilder.reflectionToString(reg, RegistrationFileStringStyle.STYLE, false)));
-            logout.write(Utils.encode("\n"));
-        } catch (IOException io) {
-            throw new ApplicationError(io);
-        } finally {
-            ConfigUtils.close(logout);
-        }
-    }
-
-    /**
-     * Send email to user who registered
-     */
-    private void sendEmail(String sTo, String sName, String sLocale, Version version) {
-        if (sTo == null)
-            return; // null for key verification so skip email
-
-        // testing/debug
-        if (TESTING(EngineConstants.TESTING_SKIP_EMAIL)) {
-            logger.info("SKIP EMAIL to " + sTo);
-            return;
-        }
-
-        // create and run jsp
-        JspEmail email = new JspEmail("reg", sLocale, null);
-        email.getSession().setAttribute(EMAIL_PARAM_NAME, sName);
-        email.getSession().setAttribute(EMAIL_PARAM_VERSION, version);
-        email.executeJSP();
-
-        // get results and send email
-        postalService.sendMail(sTo, PropertyConfig.getRequiredStringProperty("settings.server.regfrom"), null,
-                email.getSubject(), email.getPlain(), email.getHtml(), null, null);
-    }
-
-    private static final SimpleDateFormat formatter_ = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-    // no need to localize, this is for DD eyes only
-    private static final SimpleDateFormat formatter2_ = new SimpleDateFormat("MMMMM dd, yyyy 'at' HH:mm:ss", Locale.US);
-
     ///
     /// P2P additions (generic)
     ///
@@ -1172,8 +966,8 @@ public abstract class EngineServlet extends BaseServlet {
         String player = ddreceived.getString(EngineMessage.PARAM_DDPROFILE);
         Version version = ddreceived.getVersion();
 
-        logger.info("Message check from " + player + " (" + ddreceived.getKey() + ") on version " + version + " for "
-                + os + " (" + last + " last check)");
+        logger.info("Message check from " + player + " on version " + version + " for " + os + " (" + last
+                + " last check)");
 
         // if no version available, always send upgrade message back
         if (version.isBefore(getLatestClientVersion(os))) {

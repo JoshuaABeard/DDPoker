@@ -87,14 +87,14 @@ public class ServerSideGame extends ServerDataFile implements GameInfo {
     private DMArrayList names_; // name of each player
     private DMArrayList emails_; // email address for each player
     private DMArrayList pass_; // player passwords
-    private DMTypedHashMap keys_; // activation keys (indexed by email)
+    private DMTypedHashMap playerIds_; // player UUIDs (indexed by email)
     private DMTypedHashMap locales_;// locale per player (indexed by email)
     private DMArrayList colors_; // army color
     private DMArrayList actionList_; // list of items we are waiting on
     private DMArrayList elim_; // whether player is eliminated or not
     private DMTypedHashMap options_; // game options
     private ActionHandler handler_; // handler to get actions
-    private DMTypedHashMap timestamps_; // activation key mapped to time stamp of last message processed
+    private DMTypedHashMap timestamps_; // player ID mapped to time stamp of last message processed
 
     /**
      * Create new online game from the message
@@ -174,8 +174,8 @@ public class ServerSideGame extends ServerDataFile implements GameInfo {
         options_ = (DMTypedHashMap) message.getObject(EngineMessage.PARAM_GAME_OPTIONS);
         ApplicationError.assertNotNull(options_, "Game options not defined");
 
-        // key for host
-        String sKey = message.getKey();
+        // player UUID for host
+        String sPlayerId = message.getString(EngineMessage.PARAM_FROM_PLAYER_ID);
 
         // order (initially order is same as id sequence)
         order_ = new DMArrayList(nNumPlayers_);
@@ -185,10 +185,10 @@ public class ServerSideGame extends ServerDataFile implements GameInfo {
             elim_.add(Boolean.FALSE);
         }
 
-        // new wait list and passwords and keys
+        // new wait list and passwords and player IDs
         actionList_ = new DMArrayList();
         pass_ = new DMArrayList(nNumPlayers_);
-        keys_ = new DMTypedHashMap();
+        playerIds_ = new DMTypedHashMap();
         timestamps_ = new DMTypedHashMap();
         locales_ = new DMTypedHashMap();
 
@@ -240,10 +240,10 @@ public class ServerSideGame extends ServerDataFile implements GameInfo {
             // get email
             sEmail = getEmailAtLower(i);
 
-            // store activation key
+            // store player UUID
             if (i == 0) {
-                keys_.put(sEmail, sKey); // email is lowercase
-                logger.info("  Key for host " + sEmail + " is " + sKey);
+                playerIds_.put(sEmail, sPlayerId); // email is lowercase
+                logger.info("  Player ID for host " + sEmail + " is " + sPlayerId);
             }
 
             // set locale for all players to host
@@ -286,10 +286,10 @@ public class ServerSideGame extends ServerDataFile implements GameInfo {
     }
 
     /**
-     * Return hash of emails to activation key
+     * Return hash of emails to player UUIDs
      */
-    public DMTypedHashMap getKeys() {
-        return keys_;
+    public DMTypedHashMap getPlayerIds() {
+        return playerIds_;
     }
 
     /**
@@ -871,8 +871,8 @@ public class ServerSideGame extends ServerDataFile implements GameInfo {
         writer.write(pass_.marshal(null));
         writeEndEntry(writer);
 
-        // keys
-        writer.write(keys_.marshal(null));
+        // player IDs (was: activation keys)
+        writer.write(playerIds_.marshal(null));
         writeEndEntry(writer);
 
         // emails
@@ -927,9 +927,9 @@ public class ServerSideGame extends ServerDataFile implements GameInfo {
         pass_ = new DMArrayList(nNumPlayers_);
         pass_.demarshal(null, buf.readLine());
 
-        // keys
-        keys_ = new DMTypedHashMap();
-        keys_.demarshal(null, buf.readLine());
+        // player IDs (was: activation keys)
+        playerIds_ = new DMTypedHashMap();
+        playerIds_.demarshal(null, buf.readLine());
 
         // emails
         emails_ = new DMArrayList(nNumPlayers_);

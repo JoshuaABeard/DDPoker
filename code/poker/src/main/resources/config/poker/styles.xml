@@ -270,10 +270,6 @@
 	<color name="Activation.htmlarea.bg" copy="ignored"/>
 	 <font name="Activation.htmlarea" fontname="Inter-VariableFont_opsz,wght.ttf" pointsize="14"/>
 
-	<color name="Registration.htmlarea.fg" copy="primaryfont"/>
-	<color name="Registration.htmlarea.bg" copy="ignored"/>
-	 <font name="Registration.htmlarea" fontname="Inter-VariableFont_opsz,wght.ttf" pointsize="16"/>
-        
 	<color name="UpdateInfo.htmlarea.fg" copy="primaryfont"/>
 	<color name="UpdateInfo.htmlarea.bg" copy="ignored"/>
 	 <font name="UpdateInfo.htmlarea" fontname="Inter-VariableFont_opsz,wght.ttf" pointsize="18"/>

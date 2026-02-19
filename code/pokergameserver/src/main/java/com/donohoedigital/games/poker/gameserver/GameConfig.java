@@ -110,8 +110,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  *            Invite/observer configuration
  * @param betting
  *            Betting rules configuration
- * @param onlineActivatedOnly
- *            Require activated profiles (default: true)
  * @param allowDash
  *            Allow dashboard during play (default: false)
  * @param allowAdvisor
@@ -125,8 +123,8 @@ public record GameConfig(String name, String description, String greeting, int m
         boolean doubleAfterLastLevel, String defaultGameType, LevelAdvanceMode levelAdvanceMode, int handsPerLevel,
         int defaultMinutesPerLevel, RebuyConfig rebuys, AddonConfig addons, PayoutConfig payout, HouseConfig house,
         BountyConfig bounty, TimeoutConfig timeouts, BootConfig boot, LateRegistrationConfig lateRegistration,
-        ScheduledStartConfig scheduledStart, InviteConfig invite, BettingConfig betting, boolean onlineActivatedOnly,
-        boolean allowDash, boolean allowAdvisor, List<AIPlayerConfig> aiPlayers) {
+        ScheduledStartConfig scheduledStart, InviteConfig invite, BettingConfig betting, boolean allowDash,
+        boolean allowAdvisor, List<AIPlayerConfig> aiPlayers) {
 
     /**
      * Validate this configuration.
@@ -373,8 +371,7 @@ public record GameConfig(String name, String description, String greeting, int m
         return new GameConfig(name, description, greeting, maxPlayers, maxOnlinePlayers, fillComputer, buyIn,
                 startingChips, newBlindStructure, doubleAfterLastLevel, defaultGameType, levelAdvanceMode,
                 handsPerLevel, defaultMinutesPerLevel, rebuys, addons, payout, house, bounty, timeouts, boot,
-                lateRegistration, scheduledStart, invite, betting, onlineActivatedOnly, allowDash, allowAdvisor,
-                aiPlayers);
+                lateRegistration, scheduledStart, invite, betting, allowDash, allowAdvisor, aiPlayers);
     }
 
     /**
@@ -385,7 +382,7 @@ public record GameConfig(String name, String description, String greeting, int m
         return new GameConfig(name, description, greeting, newMaxPlayers, maxOnlinePlayers, fillComputer, buyIn,
                 startingChips, blindStructure, doubleAfterLastLevel, defaultGameType, levelAdvanceMode, handsPerLevel,
                 defaultMinutesPerLevel, rebuys, addons, payout, house, bounty, timeouts, boot, lateRegistration,
-                scheduledStart, invite, betting, onlineActivatedOnly, allowDash, allowAdvisor, aiPlayers);
+                scheduledStart, invite, betting, allowDash, allowAdvisor, aiPlayers);
     }
 
     /**
@@ -396,6 +393,6 @@ public record GameConfig(String name, String description, String greeting, int m
         return new GameConfig(name, description, greeting, maxPlayers, maxOnlinePlayers, fillComputer, buyIn,
                 startingChips, blindStructure, doubleAfterLastLevel, defaultGameType, levelAdvanceMode, handsPerLevel,
                 defaultMinutesPerLevel, rebuys, addons, payout, house, bounty, timeouts, boot, lateRegistration,
-                scheduledStart, invite, betting, onlineActivatedOnly, allowDash, allowAdvisor, newAiPlayers);
+                scheduledStart, invite, betting, allowDash, allowAdvisor, newAiPlayers);
     }
 }

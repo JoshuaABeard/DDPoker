@@ -176,11 +176,6 @@
   <image name="button.quit.down" location="button-quit-down.png"/>
   <image name="button.quit.disable" location="button-quit-disable.png"/>
 
-  <image name="button.order.over" location="button-order-over.png"/>
-  <image name="button.order.up" location="button-order-up.png"/>
-  <image name="button.order.down" location="button-order-down.png"/>
-  <image name="button.order.disable" location="button-order-disable.png"/>
-
   <image name="button.info.over" location="button-info-over.png"/>
   <image name="button.info.up" location="button-info-up.png"/>
   <image name="button.info.down" location="button-info-down.png"/>
@@ -195,11 +190,6 @@
   <image name="button.options.up" location="button-options-up.png"/>
   <image name="button.options.down" location="button-options-down.png"/>
   <image name="button.options.disable" location="button-options-disable.png"/>
-
-  <image name="button.register.over" location="button-register-over.png"/>
-  <image name="button.register.up" location="button-register-up.png"/>
-  <image name="button.register.down" location="button-register-down.png"/>
-  <image name="button.register.disable" location="button-register-disable.png"/>
 
   <image name="button.calc.over" location="button-calc-over.png"/>
   <image name="button.calc.up" location="button-calc-up.png"/>

@@ -94,8 +94,7 @@ class EndToEndIntegrationTest {
                 + "\"buyIn\":0,\"startingChips\":1500,"
                 + "\"blindStructure\":[{\"smallBlind\":10,\"bigBlind\":20,\"ante\":0,\"minutes\":15,\"isBreak\":false,\"gameType\":\"NOLIMIT_HOLDEM\"}],"
                 + "\"doubleAfterLastLevel\":true,\"defaultGameType\":\"NOLIMIT_HOLDEM\",\"levelAdvanceMode\":\"TIME\","
-                + "\"handsPerLevel\":10,\"defaultMinutesPerLevel\":15,\"onlineActivatedOnly\":true,"
-                + "\"allowDash\":false,\"allowAdvisor\":false}";
+                + "\"handsPerLevel\":10,\"defaultMinutesPerLevel\":15," + "\"allowDash\":false,\"allowAdvisor\":false}";
 
         MvcResult createGameResult = mockMvc
                 .perform(post("/api/v1/games").contentType(MediaType.APPLICATION_JSON).content(gameConfigJson)

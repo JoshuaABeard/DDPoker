@@ -59,7 +59,7 @@ class PracticeGameControllerTest {
             + "\"blindStructure\":" + BLIND_STRUCTURE
             + ",\"doubleAfterLastLevel\":true,\"defaultGameType\":\"NOLIMIT_HOLDEM\","
             + "\"levelAdvanceMode\":\"TIME\",\"handsPerLevel\":10,\"defaultMinutesPerLevel\":15,"
-            + "\"onlineActivatedOnly\":false,\"allowDash\":false,\"allowAdvisor\":false";
+            + "\"allowDash\":false,\"allowAdvisor\":false";
 
     private static final String MINIMAL_GAME_CONFIG = "{\"name\":\"Practice\"," + COMMON_FIELDS
             + ",\"aiPlayers\":[{\"name\":\"Computer 1\",\"skillLevel\":4}]}";

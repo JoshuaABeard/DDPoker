@@ -85,7 +85,7 @@ class GameControllerSecurityTest {
                         + "\"maxOnlinePlayers\":90,\"fillComputer\":true,\"buyIn\":0,\"startingChips\":1000,"
                         + "\"blindStructure\":[],\"doubleAfterLastLevel\":true,\"defaultGameType\":\"NOLIMIT_HOLDEM\","
                         + "\"levelAdvanceMode\":\"TIME\",\"handsPerLevel\":10,\"defaultMinutesPerLevel\":15,"
-                        + "\"onlineActivatedOnly\":true,\"allowDash\":false,\"allowAdvisor\":false}"))
+                        + "\"allowDash\":false,\"allowAdvisor\":false}"))
                 .andExpect(status().isUnauthorized());
     }
 

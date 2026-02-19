@@ -32,55 +32,9 @@
  */
 package com.donohoedigital.games.server;
 
-import com.donohoedigital.comms.*;
-import com.donohoedigital.games.server.model.*;
-
-import java.util.*;
-
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Mar 16, 2008 Time: 12:24:43 PM
  * To change this template use File | Settings | File Templates.
  */
 public class ServerTestData {
-
-    public static Registration createRegistration(String sName, String sKey) {
-        Registration reg = new Registration();
-        reg.setAddress("123 Test Street");
-        reg.setBanAttempt(false);
-        reg.setCity("Wayzata");
-        reg.setCountry("US");
-        reg.setDuplicate(false);
-        reg.setEmail("test@example.com");
-        reg.setHostName("dexter.example.com");
-        reg.setHostNameModified("zorro.example.com");
-        reg.setIp("192.168.1.1");
-        reg.setJavaVersion("1.5.0.03-b07");
-        reg.setLicenseKey(sKey);
-        reg.setName(sName);
-        reg.setOperatingSystem("MacOS 10.5");
-        reg.setPort(80);
-        reg.setPostal("90210");
-        reg.setType(Registration.Type.REGISTRATION);
-        reg.setServerTime(new Date());
-        reg.setState("MN");
-        reg.setVersion(new Version(2, 5, 3, true));
-
-        return reg;
-    }
-
-    public static BannedKey createBannedKey(String sKey) {
-        BannedKey key = new BannedKey();
-        key.setComment("Test ban comment");
-        key.setKey(sKey);
-
-        return key;
-    }
-
-    public static UpgradedKey createUpgradedKey(String sKey) {
-        UpgradedKey key = new UpgradedKey();
-        key.setCount(11);
-        key.setLicenseKey(sKey);
-
-        return key;
-    }
 }

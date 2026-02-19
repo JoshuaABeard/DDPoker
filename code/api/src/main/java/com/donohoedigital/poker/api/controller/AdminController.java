@@ -21,69 +21,24 @@ package com.donohoedigital.poker.api.controller;
 
 import com.donohoedigital.games.poker.model.OnlineProfile;
 import com.donohoedigital.games.poker.service.OnlineProfileService;
-import com.donohoedigital.games.server.model.BannedKey;
-import com.donohoedigital.games.server.service.BannedKeyService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Admin endpoints - ban management, profile search. All endpoints require
- * ROLE_ADMIN.
+ * Admin endpoints - profile search. All endpoints require ROLE_ADMIN.
  */
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
 
     @Autowired
-    private BannedKeyService bannedKeyService;
-
-    @Autowired
     private OnlineProfileService profileService;
-
-    /**
-     * Get all bans.
-     */
-    @GetMapping("/bans")
-    public ResponseEntity<List<BannedKey>> getBans() {
-        return ResponseEntity.ok(bannedKeyService.getAllBannedKeys());
-    }
-
-    /**
-     * Add a new ban.
-     */
-    @PostMapping("/bans")
-    public ResponseEntity<Map<String, Object>> addBan(@RequestBody BanRequest request) {
-        BannedKey ban = new BannedKey();
-        ban.setKey(request.getKey());
-        ban.setUntil(request.getUntil());
-        ban.setComment(request.getComment());
-
-        bannedKeyService.saveBannedKey(ban);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "Ban added successfully");
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Delete a ban by key.
-     */
-    @DeleteMapping("/bans/{key}")
-    public ResponseEntity<Map<String, Object>> deleteBan(@PathVariable String key) {
-        bannedKeyService.deleteBannedKey(key);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "Ban deleted successfully");
-        return ResponseEntity.ok(response);
-    }
 
     /**
      * Search profiles (admin).
@@ -107,38 +62,5 @@ public class AdminController {
         response.put("pageSize", pageSize);
 
         return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Request DTO for creating bans.
-     */
-    public static class BanRequest {
-        private String key;
-        private Date until;
-        private String comment;
-
-        public String getKey() {
-            return key;
-        }
-
-        public void setKey(String key) {
-            this.key = key;
-        }
-
-        public Date getUntil() {
-            return until;
-        }
-
-        public void setUntil(Date until) {
-            this.until = until;
-        }
-
-        public String getComment() {
-            return comment;
-        }
-
-        public void setComment(String comment) {
-            this.comment = comment;
-        }
     }
 }

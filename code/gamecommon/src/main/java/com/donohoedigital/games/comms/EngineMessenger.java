@@ -94,8 +94,6 @@ public class EngineMessenger extends DDMessenger {
             sb_.append(msg.getVersion());
             sb_.append("/cat.");
             sb_.append(msg.getCategory());
-            sb_.append("/key.");
-            sb_.append(msg.getKey());
             url = new URL(sb_.toString());
         } catch (MalformedURLException me) {
             throw new ApplicationError(me);

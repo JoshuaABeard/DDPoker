@@ -506,13 +506,6 @@ public class PokerMain extends GameEngine {
      * return whether key in message is valid
      */
     public boolean isValid(DDMessage msg) {
-        // look for key
-        String sKey = msg.getKey();
-        if (sKey == null) {
-            logger.warn("Message has no key: {}", msg);
-            return false;
-        }
-
         // Get version
         Version version = msg.getVersion();
         if (version == null) {

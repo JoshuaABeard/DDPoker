@@ -79,8 +79,7 @@ public class DeckDialog extends DialogPhase implements PropertyChangeListener {
         layout.setVgap(5);
         base.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-        // Poker 1.2 - allow choosing deck regardless if user registered
-        bRegistered_ = true; // UserRegistration.isRegistered();
+        bRegistered_ = true;
         if (!false && bRegistered_) {
             DDLabel name = new DDLabel("deckimage", STYLE);
             name.setHorizontalAlignment(SwingConstants.CENTER);

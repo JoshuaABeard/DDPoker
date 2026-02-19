@@ -397,8 +397,7 @@ class GameInstanceTest {
                 null, // bounty
                 new TimeoutConfig(30, 0, 0, 0, 0, 15), new BootConfig(true, 25, true, 10), null, // late registration
                 null, // scheduled start
-                new InviteConfig(false, List.of(), true), new BettingConfig(0, true), true, // onlineActivatedOnly
-                false, // allowDash
+                new InviteConfig(false, List.of(), true), new BettingConfig(0, true), false, // allowDash
                 false, // allowAdvisor
                 List.of());
     }

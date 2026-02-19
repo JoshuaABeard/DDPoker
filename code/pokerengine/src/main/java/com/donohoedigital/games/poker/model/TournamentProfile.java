@@ -149,7 +149,6 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public static final String PARAM_FILL_COMPUTER = "fillai";
     public static final String PARAM_ALLOW_DASH = "allowdash";
     public static final String PARAM_ALLOW_ADVISOR = "allowadvisor";
-    public static final String PARAM_ONLINE_ACTIVATED_ONLY = "onlineactonly";
     public static final String PARAM_THINKBANK = "thinkbank";
     public static final String PARAM_MAX_OBSERVERS = "maxobservers";
     public static final String PARAM_MAX_ONLINE_PLAYERS = "maxonlineplayers";
@@ -217,7 +216,6 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
         setAddons(false);
         setPayout(PokerConstants.PAYOUT_SPOTS);
         setPayoutSpots(3);
-        setOnlineActivatedPlayersOnly(true); // default to true for new tournaments
         setMaxOnlinePlayers(60); // Conservative default for local hosting
         fixAll();
     }
@@ -1071,21 +1069,6 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
      */
     public boolean isFillComputer() {
         return map_.getBoolean(PARAM_FILL_COMPUTER, true);
-    }
-
-    /**
-     * Get whether an online game only allows online activated players
-     */
-    public boolean isOnlineActivatedPlayersOnly() {
-        // Added 3.0p3 - defaults to false since new option
-        return map_.getBoolean(PARAM_ONLINE_ACTIVATED_ONLY, false);
-    }
-
-    /**
-     * set online activated
-     */
-    public void setOnlineActivatedPlayersOnly(boolean onlineActivatedPlayersOnly) {
-        map_.setBoolean(PARAM_ONLINE_ACTIVATED_ONLY, onlineActivatedPlayersOnly);
     }
 
     /**

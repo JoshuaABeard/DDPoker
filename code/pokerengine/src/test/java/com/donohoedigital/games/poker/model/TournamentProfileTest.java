@@ -580,21 +580,6 @@ public class TournamentProfileTest {
     }
 
     @Test
-    public void should_CheckDefaultOnlineActivatedSetting() {
-        TournamentProfile profile = new TournamentProfile("test");
-        // Just verify the method returns a boolean - actual default may vary
-        boolean setting = profile.isOnlineActivatedPlayersOnly();
-        assertTrue("Method should return a valid boolean", setting || !setting);
-    }
-
-    @Test
-    public void should_SetOnlineActivatedPlayersOnly() {
-        TournamentProfile profile = new TournamentProfile("test");
-        profile.setOnlineActivatedPlayersOnly(true);
-        assertTrue("Online activated players only should be true", profile.isOnlineActivatedPlayersOnly());
-    }
-
-    @Test
     public void should_DefaultToDisallowDash() {
         TournamentProfile profile = new TournamentProfile("test");
         assertFalse("Dashboard should be disallowed by default", profile.isAllowDash());

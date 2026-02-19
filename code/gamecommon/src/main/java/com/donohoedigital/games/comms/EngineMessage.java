@@ -67,8 +67,6 @@ public class EngineMessage extends DDMessage {
     public static final int CAT_ACTION_REQUEST = 8;
     public static final int CAT_PLAYER_UPDATE = 9;
     public static final int CAT_STATUS = 10;
-    public static final int CAT_USER_REG = 11;
-    public static final int CAT_VERIFY_KEY = 12;
     public static final int CAT_PUBLIC_IP = 13;
     // deprecated - public static final int CAT_CHECK_PATCH = 14;
     public static final int CAT_CHECK_DDMSG = 15;
@@ -114,10 +112,6 @@ public class EngineMessage extends DDMessage {
                 return "player update";
             case CAT_STATUS :
                 return "status";
-            case CAT_USER_REG :
-                return "user registration";
-            case CAT_VERIFY_KEY :
-                return "verify key";
             case CAT_PUBLIC_IP :
                 return "public ip";
             case CAT_CHECK_DDMSG :
@@ -175,8 +169,6 @@ public class EngineMessage extends DDMessage {
     public static final String PARAM_GAME_IDS = "gids"; // ids for status query
     public static final String PARAM_PASSWORDS = "passes"; // passwords for status query
     public static final String PARAM_STATUS = "status"; // status data returned
-    public static final String PARAM_BAD_KEY = "badkey"; // boolean to indicate bad registration number
-    public static final String PARAM_BANNED_KEY = "bannedkey"; // boolean to indicate banned registration
     public static final String PARAM_URL = "url"; // URL for redirects (server query)
     public static final String PARAM_DDMSG = "ddmsg"; // message to user
     public static final String PARAM_DDMSG_ID = "ddmsgid"; // message id (to track what user has seen)
@@ -301,7 +293,6 @@ public class EngineMessage extends DDMessage {
         StringBuilder sb = new StringBuilder();
         sb.append("CAT: [").append(getDebugCat()).append("]");
         sb.append(", time=").append(getLong(PARAM_TIME));
-        sb.append(", key=").append(getKey());
         return sb.toString();
     }
 

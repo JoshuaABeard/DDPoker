@@ -139,13 +139,6 @@ public abstract class GameEngine extends BaseApp {
         String playerId = getPlayerId();
         logger.info("Player ID initialized: " + playerId);
 
-        // For online games, UUID comes from the online profile (set during
-        // login/validation)
-        // For offline/local games, the auto-generated player ID is sufficient
-        // Online profile login will override with profile-specific UUID
-        DDMessage.setDefaultRealKey(null); // Will be set during profile validation
-        DDMessage.setDefaultKey(null); // Will be set during profile validation
-
         // Handle headless mode
         boolean bAlphaBeta = v.isBeta() || v.isAlpha();
         if (bHeadless_) {

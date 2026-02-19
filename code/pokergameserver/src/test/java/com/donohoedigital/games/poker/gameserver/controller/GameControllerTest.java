@@ -65,7 +65,7 @@ class GameControllerTest {
                         + "\"maxOnlinePlayers\":90,\"fillComputer\":true,\"buyIn\":0,\"startingChips\":1000,"
                         + "\"blindStructure\":[{\"smallBlind\":10,\"bigBlind\":20,\"ante\":0,\"minutes\":15,\"isBreak\":false,\"gameType\":\"NOLIMIT_HOLDEM\"}],"
                         + "\"doubleAfterLastLevel\":true,\"defaultGameType\":\"NOLIMIT_HOLDEM\",\"levelAdvanceMode\":\"TIME\","
-                        + "\"handsPerLevel\":10,\"defaultMinutesPerLevel\":15,\"onlineActivatedOnly\":true,\"allowDash\":false,\"allowAdvisor\":false}"))
+                        + "\"handsPerLevel\":10,\"defaultMinutesPerLevel\":15,\"allowDash\":false,\"allowAdvisor\":false}"))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.gameId").value("game-123"));
     }
 

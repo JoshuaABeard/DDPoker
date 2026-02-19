@@ -317,7 +317,7 @@ class GameServiceTest {
         return new GameConfig(name, "Test description", "Welcome!", 9, 90, true, 0, 1000,
                 List.of(new GameConfig.BlindLevel(10, 20, 0, 15, false, "NOLIMIT_HOLDEM")), true, "NOLIMIT_HOLDEM",
                 GameConfig.LevelAdvanceMode.TIME, 10, 15, null, null, null, null, null, null, null, null, null, null,
-                null, true, false, false, null);
+                null, false, false, null);
     }
 
     private GameConfig createTestConfig() {

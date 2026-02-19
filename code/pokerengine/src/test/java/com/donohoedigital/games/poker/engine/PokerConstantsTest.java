@@ -36,8 +36,6 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import com.donohoedigital.comms.Version;
-
 /**
  * Tests for PokerConstants.
  */
@@ -65,40 +63,6 @@ public class PokerConstantsTest {
         assertNotNull(PokerConstants.VERSION_COUNTDOWN_CHANGED);
         assertNotNull(PokerConstants.VERSION_HOST_CHECK_ADDED);
         assertNotNull(PokerConstants.VERSION_LAST_COMPAT);
-    }
-
-    @Test
-    public void testGetKeyStartNoArgs() {
-        int key = PokerConstants.getKeyStart();
-        assertTrue(key > 0);
-        assertEquals(23, key); // Version 3.x uses 23
-    }
-
-    @Test
-    public void testGetKeyStartWithCurrentVersion() {
-        int key = PokerConstants.getKeyStart(PokerConstants.VERSION);
-        assertEquals(23, key); // Version 3.x uses 23
-    }
-
-    @Test
-    public void testGetKeyStartWithVersion1() {
-        Version v1 = new Version(1, 0, 0, true);
-        int key = PokerConstants.getKeyStart(v1);
-        assertEquals(21, key); // Version 1.x uses 21
-    }
-
-    @Test
-    public void testGetKeyStartWithVersion2() {
-        Version v2 = new Version(2, 5, 0, true);
-        int key = PokerConstants.getKeyStart(v2);
-        assertEquals(22, key); // Version 2.x uses 22
-    }
-
-    @Test
-    public void testGetKeyStartWithBeta() {
-        Version beta = new Version(Version.TYPE_BETA, 2, 0, 1, 0, true);
-        int key = PokerConstants.getKeyStart(beta);
-        assertEquals(22, key); // Beta uses 22
     }
 
     @Test

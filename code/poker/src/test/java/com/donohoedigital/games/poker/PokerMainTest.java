@@ -101,7 +101,6 @@ class PokerMainTest {
     void should_ReturnTrue_WhenMessageIsValid() {
         DDMessage message = new DDMessage(0);
         message.setVersion(PokerConstants.VERSION);
-        message.setKey("testKey");
 
         boolean valid = pokerMain.isValid(message);
 
@@ -109,21 +108,9 @@ class PokerMainTest {
     }
 
     @Test
-    void should_ReturnFalse_WhenMessageHasNoKey() {
-        DDMessage message = new DDMessage(0);
-        message.setVersion(PokerConstants.VERSION);
-        // No key set
-
-        boolean valid = pokerMain.isValid(message);
-
-        assertThat(valid).isFalse();
-    }
-
-    @Test
     void should_ReturnFalse_WhenMessageHasNullVersion() {
         DDMessage message = new DDMessage(0);
         message.setVersion(null);
-        message.setKey("testKey");
 
         boolean valid = pokerMain.isValid(message);
 

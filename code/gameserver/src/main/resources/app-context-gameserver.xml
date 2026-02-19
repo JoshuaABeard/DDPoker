@@ -120,7 +120,5 @@
   <bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor" depends-on="loggingConfig"/>
 
   <!-- common beans -->
-  <bean name="regAnalyzer" class="com.donohoedigital.games.server.RegAnalyzer" lazy-init="true"/>
-  <bean name="banApp" class="com.donohoedigital.games.server.Ban" lazy-init="true"/>
 
 </beans>

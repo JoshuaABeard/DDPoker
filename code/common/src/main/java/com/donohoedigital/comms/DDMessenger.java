@@ -123,15 +123,6 @@ public class DDMessenger {
      * is not null, it is notified of the message
      */
     public DDMessage sendMessage(URL url, DDMessage send, DDMessageListener listener) {
-        // For online games, use the UUID from the online profile
-        // This is set when user validates/logs in with their profile
-        String key = DDMessage.getDefaultRealKey();
-        if (key == null || key.isEmpty()) {
-            // No profile logged in - use empty string
-            // Server will reject if profile is required for the operation
-            key = "";
-        }
-        send.setKey(key);
         DDMessage ret = createNewMessage();
         int nStatus = DDMessageListener.STATUS_OK;
 

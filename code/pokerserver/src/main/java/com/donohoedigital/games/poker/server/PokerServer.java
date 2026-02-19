@@ -42,7 +42,7 @@ import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 import com.donohoedigital.games.poker.service.OnlineProfileService;
 import com.donohoedigital.games.server.EngineServer;
-import com.donohoedigital.games.server.service.BannedKeyService;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,9 +64,6 @@ public class PokerServer extends EngineServer {
 
     @Autowired
     private OnlineProfileService onlineProfileService;
-
-    @Autowired
-    private BannedKeyService bannedKeyService;
 
     /**
      * Initialize and run

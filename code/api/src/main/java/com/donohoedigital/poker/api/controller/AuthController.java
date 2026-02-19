@@ -26,8 +26,7 @@ import com.donohoedigital.poker.api.security.JwtTokenProvider;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 import com.donohoedigital.games.poker.service.OnlineProfileService;
 import com.donohoedigital.games.poker.service.PasswordHashingService;
-import com.donohoedigital.games.server.model.BannedKey;
-import com.donohoedigital.games.server.service.BannedKeyService;
+
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseCookie;
 import jakarta.validation.Valid;
@@ -55,9 +54,6 @@ public class AuthController {
     private PasswordHashingService passwordHashingService;
 
     @Autowired
-    private BannedKeyService bannedKeyService;
-
-    @Autowired
     private JwtTokenProvider tokenProvider;
 
     /**
@@ -76,13 +72,6 @@ public class AuthController {
         if (profile == null || profile.isRetired()) {
             logger.info("Login failed for {}: profile not found or not accessible", username);
             return ResponseEntity.ok(new AuthResponse(false, "Invalid username or password"));
-        }
-
-        // Check if banned
-        BannedKey ban = bannedKeyService.getIfBanned(profile.getEmail(), profile.getName());
-        if (ban != null) {
-            logger.info("Login failed for {}: user is banned until {}", username, ban.getUntil());
-            return ResponseEntity.ok(new AuthResponse(false, "This account has been banned"));
         }
 
         // Verify password

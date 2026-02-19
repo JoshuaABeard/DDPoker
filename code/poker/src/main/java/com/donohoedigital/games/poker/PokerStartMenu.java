@@ -122,11 +122,6 @@ public class PokerStartMenu extends StartMenu {
         addControlButton(ctrlbuttonbase, "exit");
         addControlButton(ctrlbuttonbase, "calc");
         addControlButton(ctrlbuttonbase, "options");
-        if (!false) {
-            addControlButton(ctrlbuttonbase, "register");
-        } else {
-            addControlButton(ctrlbuttonbase, "order");
-        }
         addControlButton(ctrlbuttonbase, "support");
         addControlButton(ctrlbuttonbase, "help");
 

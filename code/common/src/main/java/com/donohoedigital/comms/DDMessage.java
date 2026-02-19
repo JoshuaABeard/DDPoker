@@ -103,11 +103,6 @@ public class DDMessage extends TypedHashMap implements PostWriter, PostReader, D
     public static final String PARAM_VERSION = "version";
 
     /**
-     * RESERVED - param "key"
-     */
-    public static final String PARAM_KEY = "key";
-
-    /**
      * RESERVED - param "fromip"
      */
     public static final String PARAM_FROM_IP = "fromip";
@@ -176,7 +171,6 @@ public class DDMessage extends TypedHashMap implements PostWriter, PostReader, D
      */
     public DDMessage() {
         setVersion(getDefaultVersion());
-        setKey(getDefaultKey());
         setCreateTimeStamp();
     }
 
@@ -249,20 +243,6 @@ public class DDMessage extends TypedHashMap implements PostWriter, PostReader, D
             return null;
         else
             return v.getLocale();
-    }
-
-    /**
-     * Get license key of software
-     */
-    public String getKey() {
-        return getString(PARAM_KEY);
-    }
-
-    /**
-     * Set key of software
-     */
-    public void setKey(String s) {
-        setString(PARAM_KEY, s);
     }
 
     /**
@@ -790,48 +770,6 @@ public class DDMessage extends TypedHashMap implements PostWriter, PostReader, D
      */
     public static Version getDefaultVersion() {
         return version_;
-    }
-
-    /////
-    ///// License
-    /////
-
-    /**
-     * software key for public viewing
-     */
-    private static String key_ = null;
-
-    /**
-     * Store key for sending in public message
-     */
-    public static void setDefaultKey(String key) {
-        key_ = key;
-    }
-
-    /**
-     * Get key
-     */
-    public static String getDefaultKey() {
-        return key_;
-    }
-
-    /**
-     * software key
-     */
-    private static String realkey_ = null;
-
-    /**
-     * Store key for sending in server message
-     */
-    public static void setDefaultRealKey(String key) {
-        realkey_ = key;
-    }
-
-    /**
-     * Get key
-     */
-    public static String getDefaultRealKey() {
-        return realkey_;
     }
 
     /////
