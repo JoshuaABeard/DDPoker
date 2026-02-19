@@ -187,6 +187,9 @@ public class WebSocketGameClient {
                     this.webSocket = ws;
                     this.connected = true;
                     logger.debug("WebSocket connected to {}", wsUrl);
+                }).exceptionally(ex -> {
+                    logger.error("WebSocket connection failed to {}: {}", wsUrl, ex.getMessage());
+                    return null;
                 });
     }
 
@@ -273,6 +276,13 @@ public class WebSocketGameClient {
         private final StringBuilder textAccumulator = new StringBuilder();
 
         @Override
+        public void onOpen(WebSocket webSocket) {
+            // Request the first message — required by the Java WebSocket API before
+            // any onText/onBinary/onPing/onPong calls are delivered.
+            webSocket.request(1);
+        }
+
+        @Override
         public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
             textAccumulator.append(data);
             if (last) {
@@ -305,6 +315,7 @@ public class WebSocketGameClient {
                 String typeName = root.path("type").asText();
                 String gameId = root.path("gameId").asText();
                 JsonNode data = root.path("data");
+                logger.debug("[WS-RAW] type={} gameId={}", typeName, gameId);
 
                 ServerMessageType type = ServerMessageType.valueOf(typeName);
                 messageHandler.accept(new InboundMessage(type, gameId, data));

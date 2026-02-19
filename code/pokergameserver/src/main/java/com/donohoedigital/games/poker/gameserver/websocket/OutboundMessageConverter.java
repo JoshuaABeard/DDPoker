@@ -284,7 +284,7 @@ public class OutboundMessageConverter {
 
         // Build table data
         ServerMessageData.TableData tableData = new ServerMessageData.TableData(snapshot.tableId(), seats,
-                cardsToList(snapshot.communityCards()), pots, "PREFLOP", snapshot.handNumber());
+                cardsToList(snapshot.communityCards()), pots, "PRE_FLOP", snapshot.handNumber());
 
         // Build summary player list
         List<ServerMessageData.PlayerSummaryData> playerSummaries = snapshot.players().stream()

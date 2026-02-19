@@ -282,6 +282,8 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
      * is ai used for this player in this game?
      */
     private boolean isAIUsed() {
+        if (table_ == null)
+            return false;
         PokerGame game = table_.getGame();
         TournamentProfile profile = game.getProfile();
         return !(game.isOnlineGame() && ((!profile.isFillComputer() && !profile.isAllowAdvisor())

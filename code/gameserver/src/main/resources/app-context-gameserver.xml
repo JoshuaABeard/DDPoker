@@ -50,7 +50,11 @@
   <tx:annotation-driven/>
 
   <!-- Turn on auto scanning for DAOs (@Repository, @Service annotations) -->
-  <context:component-scan base-package="com.donohoedigital"/>
+  <!-- Exclude API module package to avoid bean name conflicts in Docker
+       where all module classes share a single classpath -->
+  <context:component-scan base-package="com.donohoedigital">
+    <context:exclude-filter type="regex" expression="com\.donohoedigital\.poker\.api\..*"/>
+  </context:component-scan>
 
   <!-- application properties -->
   <context:property-placeholder location="classpath:application.properties"/>

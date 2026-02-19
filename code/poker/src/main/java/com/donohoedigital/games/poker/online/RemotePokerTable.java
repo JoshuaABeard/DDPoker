@@ -23,6 +23,8 @@ import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.PokerTable;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Thin view model for a poker table driven by WebSocket state updates.
@@ -43,6 +45,8 @@ import com.donohoedigital.games.poker.event.PokerTableEvent;
  * {@code WebSocketTournamentDirector}) after state is fully updated.
  */
 public class RemotePokerTable extends PokerTable {
+
+    private static final Logger logger = LogManager.getLogger(RemotePokerTable.class);
 
     /** Remote-state storage — never null after construction. */
     private final PokerPlayer[] remotePlayers_ = new PokerPlayer[PokerConstants.SEATS];
@@ -166,6 +170,7 @@ public class RemotePokerTable extends PokerTable {
      *            one of the {@code PokerTableEvent.TYPE_*} constants
      */
     public void fireEvent(int eventType) {
+        logger.debug("[RemotePokerTable] table={} fireEvent type={}", getNumber(), eventType);
         firePokerTableEvent(new PokerTableEvent(eventType, this));
     }
 
@@ -178,6 +183,7 @@ public class RemotePokerTable extends PokerTable {
      *            event-specific int value
      */
     public void fireEvent(int eventType, int value) {
+        logger.debug("[RemotePokerTable] table={} fireEvent type={} value={}", getNumber(), eventType, value);
         firePokerTableEvent(new PokerTableEvent(eventType, this, value));
     }
 }

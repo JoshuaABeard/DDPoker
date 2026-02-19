@@ -434,7 +434,6 @@ public class Border {
         return shortDesc();
     }
 
-
     /**
      * Display string
      */

@@ -433,7 +433,8 @@ public class GameInstance {
 
     /**
      * Build a game state snapshot for a specific player (for reconnect state sync).
-     * Returns null if the tournament hasn't started or the player's table isn't found.
+     * Returns null if the tournament hasn't started or the player's table isn't
+     * found.
      */
     public GameStateSnapshot getGameStateSnapshot(long profileId) {
         if (tournament == null)
@@ -453,8 +454,9 @@ public class GameInstance {
 
     /**
      * Re-sends the ACTION_REQUIRED message if the game is currently waiting for
-     * this player's action. Called by the WebSocket handler when a player reconnects
-     * so they receive the action prompt even if it fired before they connected.
+     * this player's action. Called by the WebSocket handler when a player
+     * reconnects so they receive the action prompt even if it fired before they
+     * connected.
      */
     public void resendPendingActionIfAny(long profileId) {
         if (actionProvider == null)

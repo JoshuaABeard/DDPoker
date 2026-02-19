@@ -21,6 +21,8 @@ import com.donohoedigital.games.poker.core.event.GameEvent;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -43,6 +45,8 @@ import java.util.function.Consumer;
  * </ul>
  */
 public class GameEventBroadcaster implements Consumer<GameEvent> {
+
+    private static final Logger logger = LoggerFactory.getLogger(GameEventBroadcaster.class);
 
     private final String gameId;
     private final GameConnectionManager connectionManager;
@@ -67,6 +71,7 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
 
     @Override
     public void accept(GameEvent event) {
+        logger.debug("[BROADCAST] gameId={} event={}", gameId, event.getClass().getSimpleName());
         switch (event) {
             case GameEvent.HandStarted e -> broadcast(
                 ServerMessage.of(ServerMessageType.HAND_STARTED, gameId,

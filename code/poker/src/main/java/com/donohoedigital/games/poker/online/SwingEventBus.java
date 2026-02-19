@@ -35,6 +35,8 @@ package com.donohoedigital.games.poker.online;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.core.event.*;
 import com.donohoedigital.games.poker.event.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.util.*;
@@ -48,6 +50,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * all tables. Extracts table from event's tableId.
  */
 public class SwingEventBus extends GameEventBus {
+
+    private static final Logger logger = LogManager.getLogger(SwingEventBus.class);
 
     private final PokerGame game;
     private final List<PokerTableListener> legacyListeners = new CopyOnWriteArrayList<>();
@@ -67,12 +71,16 @@ public class SwingEventBus extends GameEventBus {
      */
     @Override
     public void publish(GameEvent event) {
+        logger.debug("[SwingEventBus] publish event={} listeners={}", event.getClass().getSimpleName(),
+                legacyListeners.size());
         // Call parent to notify pokergamecore listeners
         super.publish(event);
 
         // Convert to legacy event and dispatch on EDT
         if (!legacyListeners.isEmpty() && game != null) {
             PokerTableEvent legacyEvent = convertToLegacy(event);
+            logger.debug("[SwingEventBus] converted to legacy={}",
+                    legacyEvent != null ? legacyEvent.getTypeAsString() : "null");
             if (legacyEvent != null) {
                 SwingUtilities.invokeLater(() -> {
                     for (PokerTableListener listener : legacyListeners) {

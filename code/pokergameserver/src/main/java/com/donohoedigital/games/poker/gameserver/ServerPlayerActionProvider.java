@@ -42,6 +42,8 @@ import com.donohoedigital.games.poker.core.ActionOptions;
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.PlayerAction;
 import com.donohoedigital.games.poker.core.PlayerActionProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Server-side player action provider. Routes action requests to AI (via AI
@@ -55,6 +57,7 @@ import com.donohoedigital.games.poker.core.PlayerActionProvider;
  * on a CountDownLatch).
  */
 public class ServerPlayerActionProvider implements PlayerActionProvider {
+    private static final Logger logger = LoggerFactory.getLogger(ServerPlayerActionProvider.class);
     private final PlayerActionProvider aiProvider;
     private final Map<Integer, PendingAction> pendingActions;
     private final Consumer<ActionRequest> actionRequestCallback;
@@ -110,11 +113,13 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
      * @return the player's action, or auto-fold/check on timeout
      */
     private PlayerAction getHumanAction(GamePlayerInfo player, ActionOptions options) {
+        logger.debug("[ACTION-HUMAN] player={} id={}", player.getName(), player.getID());
         // Check if player is disconnected and past grace period
         ServerPlayerSession session = playerSessions.get((long) player.getID());
         if (session != null && session.isDisconnected()) {
             if (session.getConsecutiveTimeouts() >= disconnectGraceTurns) {
                 // Auto-fold immediately — no timeout wait needed
+                logger.debug("[ACTION-HUMAN] player={} disconnected past grace, auto-folding", player.getName());
                 session.incrementConsecutiveTimeouts();
                 return options.canCheck() ? PlayerAction.check() : PlayerAction.fold();
             }
@@ -126,6 +131,8 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
         pendingActions.put(player.getID(), pending);
 
         // Notify via callback (GameInstance sends WebSocket ACTION_REQUIRED)
+        logger.debug("[ACTION-HUMAN] calling actionRequestCallback for player={} messageSender={}", player.getName(),
+                session != null && session.getMessageSender() != null ? "present" : "null");
         actionRequestCallback.accept(new ActionRequest((ServerPlayer) player, options));
 
         try {
@@ -219,7 +226,8 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
 
     /**
      * Returns the pending action request for a player, or null if none is waiting.
-     * Used by the WebSocket handler to re-send ACTION_REQUIRED when a player reconnects.
+     * Used by the WebSocket handler to re-send ACTION_REQUIRED when a player
+     * reconnects.
      */
     public ActionRequest getPendingActionRequest(int playerId) {
         PendingAction pending = pendingActions.get(playerId);
@@ -229,7 +237,6 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
     /**
      * Pending action tracking.
      */
-    private record PendingAction(CompletableFuture<PlayerAction> future, ActionOptions options,
-            GamePlayerInfo player) {
+    private record PendingAction(CompletableFuture<PlayerAction> future, ActionOptions options, GamePlayerInfo player) {
     }
 }

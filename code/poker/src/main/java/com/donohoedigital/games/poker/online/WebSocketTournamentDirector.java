@@ -113,8 +113,9 @@ public class WebSocketTournamentDirector extends BasePhase
         wsClient_.setMessageHandler(this::onMessage);
         wsClient_.connect(serverPort_, gameId_, jwt_);
 
-        // Route player UI actions to WebSocket
+        // Route player UI actions to WebSocket; hide buttons immediately on click
         game_.setPlayerActionListener((action, amount) -> {
+            game_.setInputMode(PokerTableInput.MODE_QUITSAVE);
             String wsAction = mapActionToWsString(action);
             wsClient_.sendAction(wsAction, amount);
         });
@@ -198,6 +199,7 @@ public class WebSocketTournamentDirector extends BasePhase
     void onMessage(WebSocketGameClient.InboundMessage msg) {
         ServerMessageType type = msg.type();
         JsonNode data = msg.data();
+        logger.debug("[WS-IN] type={}", type);
         try {
             switch (type) {
                 case CONNECTED -> {
@@ -320,13 +322,17 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onConnected(ConnectedData d) {
         localPlayerId_ = d.playerId();
+        logger.debug("[CONNECTED] playerId={} hasGameState={}", d.playerId(), d.gameState() != null);
         if (d.gameState() != null) {
             onGameState(d.gameState());
         }
     }
 
     private void onGameState(GameStateData d) {
+        logger.debug("[GAME_STATE] status={} level={} tables={} players={}", d.status(), d.level(),
+                d.tables() != null ? d.tables().size() : 0, d.players() != null ? d.players().size() : 0);
         SwingUtilities.invokeLater(() -> {
+            logger.debug("[GAME_STATE EDT] applying {} tables", d.tables() != null ? d.tables().size() : 0);
             // Update level immediately — independent of table creation
             game_.setLevel(d.level());
 
@@ -358,12 +364,15 @@ public class WebSocketTournamentDirector extends BasePhase
     }
 
     private void onHandStarted(HandStartedData d) {
+        logger.debug("[HAND_STARTED] dealer={}", d.dealerSeat());
         SwingUtilities.invokeLater(() -> {
             // Apply to all tables (HAND_STARTED is per-table; we apply to the current
             // table)
             RemotePokerTable table = currentTable();
-            if (table == null)
+            if (table == null) {
+                logger.debug("[HAND_STARTED EDT] currentTable=null, skipping");
                 return;
+            }
 
             RemoteHoldemHand hand = new RemoteHoldemHand();
             hand.updateRound(BettingRound.PRE_FLOP);
@@ -384,18 +393,25 @@ public class WebSocketTournamentDirector extends BasePhase
     }
 
     private void onHoleCardsDealt(HoleCardsDealtData d) {
+        logger.debug("[HOLE_CARDS_DEALT] cards={}", d.cards());
         SwingUtilities.invokeLater(() -> {
             RemotePokerTable table = currentTable();
-            if (table == null)
+            if (table == null) {
+                logger.debug("[HOLE_CARDS_DEALT EDT] currentTable=null, skipping");
                 return;
+            }
             RemoteHoldemHand hand = table.getRemoteHand();
-            if (hand == null)
+            if (hand == null) {
+                logger.debug("[HOLE_CARDS_DEALT EDT] remoteHand=null on table={}, skipping", table.getNumber());
                 return;
+            }
 
             // Hole cards are sent privately only to the card owner
             PokerPlayer localPlayer = findPlayer(localPlayerId_);
-            if (localPlayer == null)
+            if (localPlayer == null) {
+                logger.debug("[HOLE_CARDS_DEALT EDT] localPlayer={} not found, skipping", localPlayerId_);
                 return;
+            }
 
             Hand playerHand = localPlayer.getHand();
             for (String c : d.cards()) {
@@ -426,22 +442,59 @@ public class WebSocketTournamentDirector extends BasePhase
     }
 
     private void onActionRequired(ActionRequiredData d) {
+        logger.debug("[ACTION_REQUIRED] timeout={}s canCheck={} canCall={} callAmt={} canBet={} canRaise={}",
+                d.timeoutSeconds(), d.options() != null && d.options().canCheck(),
+                d.options() != null && d.options().canCall(), d.options() != null ? d.options().callAmount() : 0,
+                d.options() != null && d.options().canBet(), d.options() != null && d.options().canRaise());
         SwingUtilities.invokeLater(() -> {
             currentOptions_ = d.options();
 
             RemotePokerTable table = currentTable();
-            if (table == null)
+            if (table == null) {
+                logger.debug("[ACTION_REQUIRED EDT] currentTable=null, cannot show action buttons");
                 return;
+            }
             RemoteHoldemHand hand = table.getRemoteHand();
-            if (hand == null)
+            if (hand == null) {
+                logger.debug("[ACTION_REQUIRED EDT] remoteHand=null on table={}, cannot show action buttons",
+                        table.getNumber());
                 return;
+            }
 
             // The local player is the current actor
             int playerIndex = indexOfPlayer(hand, localPlayerId_);
+            logger.debug("[ACTION_REQUIRED EDT] localPlayer={} playerIndex={} in hand with {} players", localPlayerId_,
+                    playerIndex, hand.getNumPlayers());
             hand.updateCurrentPlayer(playerIndex);
 
+            // Store server-provided bet/raise amounts so the Swing UI can populate
+            // the bet spinner and enable/disable the raise button correctly.
+            if (d.options() != null) {
+                hand.updateActionOptions(d.options());
+            }
+
+            // Determine input mode from server options and show action buttons.
+            int inputMode = determineInputMode(d.options());
+            PokerPlayer localPlayer = hand.getCurrentPlayer();
+            logger.debug("[ACTION_REQUIRED EDT] firing TYPE_CURRENT_PLAYER_CHANGED, then setInputMode mode={}",
+                    inputMode);
             table.fireEvent(PokerTableEvent.TYPE_CURRENT_PLAYER_CHANGED);
+            game_.setInputMode(inputMode, hand, localPlayer);
         });
+    }
+
+    /**
+     * Maps server-provided {@link ActionOptionsData} to the Swing input mode
+     * constant that controls which action buttons are shown.
+     */
+    private int determineInputMode(ActionOptionsData opts) {
+        if (opts == null)
+            return PokerTableInput.MODE_QUITSAVE;
+        if (opts.canCall())
+            return PokerTableInput.MODE_CALL_RAISE;
+        if (opts.canRaise())
+            return PokerTableInput.MODE_CHECK_RAISE;
+        return PokerTableInput.MODE_CHECK_BET;
     }
 
     private void onPlayerActed(PlayerActedData d) {
@@ -843,14 +896,22 @@ public class WebSocketTournamentDirector extends BasePhase
      */
     private void selectLocalPlayerTable() {
         for (RemotePokerTable table : tables_.values()) {
-            if (findSeat(table, localPlayerId_) >= 0) {
+            int seat = findSeat(table, localPlayerId_);
+            if (seat >= 0) {
+                logger.debug("[selectLocalPlayerTable] localPlayer={} found at table={} seat={}", localPlayerId_,
+                        table.getNumber(), seat);
                 game_.setCurrentTable(table);
                 return;
             }
         }
         // Fall back to first table
         if (!tables_.isEmpty()) {
-            game_.setCurrentTable(tables_.values().iterator().next());
+            RemotePokerTable first = tables_.values().iterator().next();
+            logger.debug("[selectLocalPlayerTable] localPlayer={} not found in any table, falling back to table={}",
+                    localPlayerId_, first.getNumber());
+            game_.setCurrentTable(first);
+        } else {
+            logger.debug("[selectLocalPlayerTable] no tables available");
         }
     }
 
@@ -859,8 +920,11 @@ public class WebSocketTournamentDirector extends BasePhase
      * Rebuilds the player array, button position, community cards, and pot total.
      */
     private void applyTableData(RemotePokerTable table, TableData td) {
+        logger.debug("[applyTableData] table={} seats={} round={} community={} pots={}", td.tableId(),
+                td.seats() != null ? td.seats().size() : 0, td.currentRound(), td.communityCards(), td.pots());
         PokerPlayer[] players = new PokerPlayer[PokerConstants.SEATS];
         int dealerSeat = PokerTable.NO_SEAT;
+        boolean localPlayerHasCards = false;
 
         for (SeatData sd : td.seats()) {
             if (sd.seatIndex() < 0 || sd.seatIndex() >= PokerConstants.SEATS)
@@ -872,12 +936,20 @@ public class WebSocketTournamentDirector extends BasePhase
             p.setChipCount(sd.chipCount());
             // Apply hole cards from snapshot (only provided for the local player)
             if (sd.holeCards() != null && !sd.holeCards().isEmpty()) {
+                logger.debug("[applyTableData] player={} seat={} holeCards={}", sd.playerName(), sd.seatIndex(),
+                        sd.holeCards());
                 for (String c : sd.holeCards()) {
                     Card card = Card.getCard(c);
                     if (card != null)
                         p.getHand().addCard(card);
                 }
+                if (sd.playerId() == localPlayerId_) {
+                    localPlayerHasCards = true;
+                }
             }
+            logger.debug("[applyTableData] seat={} player={} chips={} isLocal={} holeCards={}", sd.seatIndex(),
+                    sd.playerName(), sd.chipCount(), sd.playerId() == localPlayerId_,
+                    sd.holeCards() != null ? sd.holeCards().size() : 0);
             players[sd.seatIndex()] = p;
             if (sd.isDealer())
                 dealerSeat = sd.seatIndex();
@@ -891,6 +963,7 @@ public class WebSocketTournamentDirector extends BasePhase
             if (hand == null) {
                 hand = new RemoteHoldemHand();
                 table.setRemoteHand(hand);
+                logger.debug("[applyTableData] created new RemoteHoldemHand for table={}", td.tableId());
             }
             BettingRound round = parseBettingRound(td.currentRound());
             hand.updateRound(round);
@@ -902,11 +975,27 @@ public class WebSocketTournamentDirector extends BasePhase
             int potTotal = td.pots() == null ? 0 : td.pots().stream().mapToInt(PotData::amount).sum();
             hand.updatePot(potTotal);
 
-            hand.updatePlayerOrder(seatedPlayersFrom(table));
+            List<PokerPlayer> handPlayers = seatedPlayersFrom(table);
+            hand.updatePlayerOrder(handPlayers);
+            logger.debug("[applyTableData] hand ready: round={} potTotal={} handPlayers={}", round, potTotal,
+                    handPlayers.size());
         }
 
         // Fire table-level events to refresh the UI
+        logger.debug("[applyTableData] firing TYPE_NEW_PLAYERS_LOADED");
         table.fireEvent(PokerTableEvent.TYPE_NEW_PLAYERS_LOADED);
+
+        if (td.currentRound() != null) {
+            // Simulate HAND_STARTED: put the table into "hand in progress" mode so the
+            // action-button area and card areas become visible.
+            logger.debug("[applyTableData] firing TYPE_NEW_HAND (hand in progress)");
+            table.fireEvent(PokerTableEvent.TYPE_NEW_HAND);
+
+            // Simulate HOLE_CARDS_DEALT: trigger card rendering for any hole cards that
+            // were loaded from the snapshot into the local player's Hand object.
+            logger.debug("[applyTableData] firing TYPE_DEALER_ACTION (localPlayerHasCards={})", localPlayerHasCards);
+            table.fireEvent(PokerTableEvent.TYPE_DEALER_ACTION);
+        }
     }
 
     /** Finds a player by server-assigned ID across all seated tables. */
