@@ -302,6 +302,17 @@ public class EngineWindow extends BaseFrame {
         private Point location_ = new Point();
         private Dimension size_ = new Dimension();
 
+        // Debounce timers: defer config.json writes until 300ms after movement/resize
+        // stops. Without debouncing, every pixel of a window drag triggers a backup
+        // copy + full JSON rewrite via FilePrefs.flush().
+        private final Timer savePositionTimer = new Timer(300, e -> savePosition());
+        private final Timer saveSizeTimer = new Timer(300, e -> saveSize());
+
+        EngineWindowAdapter() {
+            savePositionTimer.setRepeats(false);
+            saveSizeTimer.setRepeats(false);
+        }
+
         /**
          * allow us to store user's preference
          */
@@ -329,13 +340,7 @@ public class EngineWindow extends BaseFrame {
                     || (TESTING(EngineConstants.TESTING_CHANGE_STARTING_SIZE) && getName().equals("main")))
                 return;
             getContentPane().getSize(size_);
-
-            // logger.debug("Window size changed: "+ size_+ " is Max: "+ isMaximized());
-
-            // save
-            EnginePrefs prefs = engine_.getPrefsNode();
-            prefs.putInt(EngineConstants.PREF_W + "-" + getName(), size_.width);
-            prefs.putInt(EngineConstants.PREF_H + "-" + getName(), size_.height);
+            saveSizeTimer.restart();
         }
 
         /**
@@ -348,11 +353,10 @@ public class EngineWindow extends BaseFrame {
             getLocation(location_);
             if (prevLocation_.equals(location_))
                 return;
+            savePositionTimer.restart();
+        }
 
-            // logger.debug("Window position changed: "+ location_+ " is Max: "+
-            // isMaximized());
-
-            // save
+        private void savePosition() {
             DisplayMode mode = getDisplayMode();
             EnginePrefs prefs = engine_.getPrefsNode();
             // store if top corner is visible (more or less) and it isn't too far off-screen
@@ -361,6 +365,12 @@ public class EngineWindow extends BaseFrame {
                 prefs.putInt(EngineConstants.PREF_X + "-" + getName(), location_.x);
             if (location_.y >= -50 && location_.y < (mode.getHeight() - (DESIRED_MIN_HEIGHT / 2)))
                 prefs.putInt(EngineConstants.PREF_Y + "-" + getName(), location_.y);
+        }
+
+        private void saveSize() {
+            EnginePrefs prefs = engine_.getPrefsNode();
+            prefs.putInt(EngineConstants.PREF_W + "-" + getName(), size_.width);
+            prefs.putInt(EngineConstants.PREF_H + "-" + getName(), size_.height);
         }
 
         /** NOT USED */
