@@ -62,9 +62,6 @@ public class PokerServer extends EngineServer {
     private static final Logger logger = LogManager.getLogger(PokerServer.class);
     private static final String ADMIN_PASSWORD_FILE = "admin-password.txt";
 
-    // TCP chat server
-    private TcpChatServer tcpChatServer_;
-
     @Autowired
     private OnlineProfileService onlineProfileService;
 
@@ -72,16 +69,12 @@ public class PokerServer extends EngineServer {
     private BannedKeyService bannedKeyService;
 
     /**
-     * Initialize, start TCP chat server and run
+     * Initialize and run
      */
     @Override
     public void init() {
         super.init();
         initializeAdminProfile();
-        if (tcpChatServer_ != null) {
-            tcpChatServer_.init();
-            tcpChatServer_.start();
-        }
         start();
     }
 
@@ -195,20 +188,10 @@ public class PokerServer extends EngineServer {
     }
 
     /**
-     * Set TCP chat server
-     */
-    public void setTcpChatServer(TcpChatServer tcpChatServer) {
-        tcpChatServer_ = tcpChatServer;
-    }
-
-    /**
-     * Shutdown TCP chat server
+     * Shutdown
      */
     @Override
     protected void shutdown(boolean immediate) {
-        if (tcpChatServer_ != null) {
-            tcpChatServer_.shutdown();
-        }
         super.shutdown(immediate);
     }
 }

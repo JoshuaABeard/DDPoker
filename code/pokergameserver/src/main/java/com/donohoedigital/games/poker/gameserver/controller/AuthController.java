@@ -19,23 +19,32 @@
  */
 package com.donohoedigital.games.poker.gameserver.controller;
 
+import java.util.Map;
+
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
+import com.donohoedigital.games.poker.gameserver.auth.JwtAuthenticationFilter;
 import com.donohoedigital.games.poker.gameserver.auth.JwtProperties;
+import com.donohoedigital.games.poker.gameserver.dto.ForgotPasswordRequest;
 import com.donohoedigital.games.poker.gameserver.dto.LoginRequest;
 import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
+import com.donohoedigital.games.poker.gameserver.dto.ProfileResponse;
 import com.donohoedigital.games.poker.gameserver.dto.RegisterRequest;
+import com.donohoedigital.games.poker.gameserver.dto.ResetPasswordRequest;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
-
-import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * REST controller for authentication operations.
@@ -46,10 +55,12 @@ public class AuthController {
 
     private final AuthService authService;
     private final String cookieName;
+    private final Environment environment;
 
-    public AuthController(AuthService authService, JwtProperties jwtProperties) {
+    public AuthController(AuthService authService, JwtProperties jwtProperties, Environment environment) {
         this.authService = authService;
         this.cookieName = jwtProperties.getCookieName();
+        this.environment = environment;
     }
 
     @PostMapping("/register")
@@ -83,20 +94,97 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
-    private void setAuthCookie(HttpServletResponse response, String token) {
-        ResponseCookie cookie = ResponseCookie.from(cookieName, token).httpOnly(true).secure(false) // Set to true in
-                                                                                                    // production with
-                                                                                                    // HTTPS
-                .path("/").maxAge(7 * 24 * 60 * 60) // 7 days
-                .sameSite("Strict").build();
+    /**
+     * Returns the current authenticated user's profile data.
+     */
+    @GetMapping("/me")
+    public ResponseEntity<ProfileResponse> me() {
+        Long profileId = getAuthenticatedProfileId();
+        ProfileResponse profile = authService.getCurrentUser(profileId);
+        if (profile == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(profile);
+    }
 
+    /**
+     * Initiates a password reset for the given email address.
+     *
+     * <p>
+     * Always returns 200 to avoid leaking whether the email is registered or rate
+     * limiting was triggered. In dev/embedded mode (or when no Spring profile is
+     * active), the reset token is returned in the response body for use in the
+     * desktop UI. Other profiles return 503 since email delivery is not configured.
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+
+        if (!isDevOrEmbedded()) {
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Map.of("message", "Email delivery not configured. Contact your server administrator."));
+        }
+
+        String token = authService.forgotPassword(request.email());
+        if (token != null) {
+            return ResponseEntity.ok(Map.of("resetToken", token));
+        }
+        return ResponseEntity.ok(Map.of());
+    }
+
+    /**
+     * Completes a password reset using a one-time token.
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        try {
+            authService.resetPassword(request.token(), request.newPassword());
+            return ResponseEntity.ok(Map.of());
+        } catch (AuthService.InvalidResetTokenException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    private Long getAuthenticatedProfileId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication instanceof JwtAuthenticationFilter.JwtAuthenticationToken jwtAuth) {
+            return jwtAuth.getProfileId();
+        }
+        throw new IllegalStateException("No authenticated user found");
+    }
+
+    /**
+     * Returns true if the application is in dev or embedded mode.
+     *
+     * <p>
+     * No active profiles (typical in tests and local development) is treated as dev
+     * mode. Explicit "dev" or "embedded" Spring profiles also qualify.
+     */
+    private boolean isDevOrEmbedded() {
+        String[] activeProfiles = environment.getActiveProfiles();
+        if (activeProfiles.length == 0) {
+            return true;
+        }
+        for (String profile : activeProfiles) {
+            if ("dev".equals(profile) || "embedded".equals(profile)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void setAuthCookie(HttpServletResponse response, String token) {
+        ResponseCookie cookie = ResponseCookie.from(cookieName, token).httpOnly(true).secure(false).path("/")
+                .maxAge(7 * 24 * 60 * 60).sameSite("Strict").build();
         response.addHeader("Set-Cookie", cookie.toString());
     }
 
     private void clearAuthCookie(HttpServletResponse response) {
         ResponseCookie cookie = ResponseCookie.from(cookieName, "").httpOnly(true).secure(false).path("/").maxAge(0)
                 .sameSite("Strict").build();
-
         response.addHeader("Set-Cookie", cookie.toString());
     }
 }

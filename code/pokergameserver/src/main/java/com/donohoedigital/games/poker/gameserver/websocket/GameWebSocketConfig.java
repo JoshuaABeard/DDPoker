@@ -24,8 +24,14 @@ import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
 /**
- * Spring WebSocket configuration. Registers the game WebSocket handler at
- * /ws/games/*.
+ * Spring WebSocket configuration. Registers game and lobby WebSocket handlers.
+ *
+ * <ul>
+ * <li>{@code /ws/games/*} — per-game real-time updates (
+ * {@link GameWebSocketHandler})</li>
+ * <li>{@code /ws/lobby} — lobby chat and presence (
+ * {@link LobbyWebSocketHandler})</li>
+ * </ul>
  *
  * <p>
  * WebSocket infrastructure is enabled by {@code @EnableWebSocket} on
@@ -34,16 +40,19 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @Configuration
 public class GameWebSocketConfig implements WebSocketConfigurer {
 
-    private final GameWebSocketHandler handler;
+    private final GameWebSocketHandler gameHandler;
+    private final LobbyWebSocketHandler lobbyHandler;
 
-    public GameWebSocketConfig(GameWebSocketHandler handler) {
-        this.handler = handler;
+    public GameWebSocketConfig(GameWebSocketHandler gameHandler, LobbyWebSocketHandler lobbyHandler) {
+        this.gameHandler = gameHandler;
+        this.lobbyHandler = lobbyHandler;
     }
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         // Wildcard origin is intentional: JWT auth is the security boundary,
         // not origin-based CSRF protection. Operators should document this.
-        registry.addHandler(handler, "/ws/games/*").setAllowedOriginPatterns("*");
+        registry.addHandler(gameHandler, "/ws/games/*").setAllowedOriginPatterns("*");
+        registry.addHandler(lobbyHandler, "/ws/lobby").setAllowedOriginPatterns("*");
     }
 }

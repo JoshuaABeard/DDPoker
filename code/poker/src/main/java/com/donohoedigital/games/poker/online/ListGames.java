@@ -33,15 +33,12 @@
 package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.base.*;
-import com.donohoedigital.comms.*;
 import com.donohoedigital.config.*;
-import com.donohoedigital.games.comms.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.model.*;
-import com.donohoedigital.games.poker.network.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
@@ -53,8 +50,9 @@ import java.awt.event.*;
 import java.beans.*;
 
 /**
- * Created by IntelliJ IDEA. User: zak Date: Mar 3, 2005 Time: 1:49:42 PM To
- * change this template use File | Settings | File Templates.
+ * Abstract base class providing the UI scaffolding for listing and joining
+ * online games. Concrete subclasses supply the table model and column
+ * definitions; the join/observe action is handled in subclasses.
  */
 public abstract class ListGames extends BasePhase implements PropertyChangeListener, ListSelectionListener {
     static Logger logger = LogManager.getLogger(ListGames.class);
@@ -81,7 +79,6 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
     public static final String PARAM_URL = "_url_";
 
     protected static final String OKAY_OBSERVE = "okayobserve";
-    protected static final String OKAY_JOIN = "okayjoin";
 
     @Override
     public void init(GameEngine engine, GameContext context, GamePhase gamephase) {
@@ -95,7 +92,6 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
 
         // Create base panel which holds everything
         menu_ = new MenuBackground(gamephase);
-        // menu_.addAncestorListener(this);
         menubox_ = menu_.getMenuBox();
         String sHelpName = menu_.getHelpName();
 
@@ -115,7 +111,7 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
         DDPanel iptop = new DDPanel();
         data.add(iptop, BorderLayout.NORTH);
 
-        // **// Game URL
+        // Game URL
         DDLabelBorder ipborder = new DDLabelBorder("join." + getListName(), STYLE);
         iptop.add(ipborder, BorderLayout.NORTH);
         DDPanel ippanel = new DDPanel();
@@ -212,27 +208,11 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
             middle.setBorderLayoutGap(10, 10);
         }
 
-        // Help text (center part part of 'middle')
+        // Help text (center part of 'middle')
         text_ = new DDHtmlArea(GuiManager.DEFAULT, STYLE);
         text_.setDisplayOnly(true);
         text_.setBorder(EngineUtils.getStandardMenuLowerTextBorder());
         bottom.add(text_, BorderLayout.CENTER);
-
-        // default
-        String sDefault = gamephase_.getString(PARAM_URL);
-        if (sDefault != null) {
-            boolean bDefaultIsObs = false;
-            if (sDefault.endsWith(PokerConstants.JOIN_OBSERVER_QUERY)) {
-                sDefault = sDefault.substring(0, sDefault.length() - PokerConstants.JOIN_OBSERVER_QUERY.length());
-                bDefaultIsObs = true;
-            }
-            connectText_.setText(sDefault);
-            if (connectText_.isValidData()) {
-                DDButton button = bDefaultIsObs ? obs_ : start_;
-                button.setEnabled(false);
-                new Thread(new AutoJoin(button), "AutoJoin").start();
-            }
-        }
     }
 
     /**
@@ -243,27 +223,6 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
     }
 
     /**
-     * Auto join - sleep to let ui show then click start
-     */
-    private class AutoJoin implements Runnable {
-        DDButton button;
-
-        private AutoJoin(DDButton button) {
-            this.button = button;
-        }
-
-        public void run() {
-            Utils.sleepMillis(500);
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    button.setEnabled(true);
-                    button.doClick();
-                }
-            });
-        }
-    }
-
-    /**
      * Extra component for bottom
      */
     protected JComponent getExtra() {
@@ -271,7 +230,7 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
     }
 
     /**
-     * conveinence method to add ip label/txt
+     * convenience method to add ip label/txt
      */
     private Widgets addIPText(String sName, JComponent parent, Object layout, boolean bUseLastButton) {
         Widgets w = new Widgets();
@@ -281,7 +240,6 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
 
         DDLabel label = new DDLabel(sName, STYLE);
         final DDTextField text = new DDTextField(sName, STYLE, "BrushedMetal");
-        text.setRegExp(PokerConstants.REGEXP_GAME_URL);
         panel.add(label, BorderLayout.WEST);
         panel.add(text, BorderLayout.CENTER);
 
@@ -298,24 +256,6 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
                 GuiUtils.copyToClipboard(text.getText());
             }
         });
-
-        if (bUseLastButton) {
-            final String sLast = engine_.getPrefsNode().getString(PokerConstants.PREF_LAST_JOIN, null);
-            DDButton uselast = new GlassButton("uselast", "Glass");
-            buttons.add(uselast, BorderLayout.EAST);
-            if (sLast != null && sLast.length() > 0) {
-                uselast.addActionListener(new ActionListener() {
-                    DDTextField _text = text;
-                    String _sLast = sLast;
-
-                    public void actionPerformed(ActionEvent e) {
-                        text.setText(sLast);
-                    }
-                });
-            } else {
-                uselast.setEnabled(false);
-            }
-        }
 
         w.label = label;
         w.text = text;
@@ -347,67 +287,6 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
     public void finish() {
     }
 
-    boolean bProcessing_ = false;
-
-    /**
-     * Returns true
-     */
-    @Override
-    public boolean processButton(GameButton button) {
-        String sName = button.getName();
-        boolean bJoin = sName.equals(OKAY_JOIN);
-        boolean bObs = sName.equals(OKAY_OBSERVE);
-        if ((bJoin || bObs) && !bProcessing_) {
-            bProcessing_ = true; // prevent multiple join attempts
-
-            // validate profile first
-            if (!validateProfile()) {
-                EngineUtils.displayInformationDialog(context_, PropertyConfig
-                        .getMessage("msg.playerprofile.cantvalidate", Utils.encodeHTML(profile_.getName())));
-                bProcessing_ = false;
-                return false;
-            }
-
-            // get connect url and player name
-            String sConnect = connectText_.getText().trim();
-            PokerURL url = new PokerURL(sConnect);
-
-            // create game
-            PokerGame game = new PokerGame(context_);
-            game.setOnlineGameID(url.getGameID());
-            game.setOnlinePassword(url.getPassword());
-
-            // temp player with connect URL provided by user
-            PokerPlayer ptemp = new PokerPlayer(engine_.getPlayerId(), PokerConstants.PLAYER_ID_TEMP, profile_, true);
-            ptemp.setConnectURL(url);
-            if (bJoin) {
-                game.addPlayer(ptemp);
-            } else {
-                game.addObserver(ptemp);
-            }
-
-            // init to client mode and save game
-            game.initOnline(PokerGame.MODE_CLIENT);
-            context_.setGame(game);
-
-            // log it
-            logger.info("Joining game " + sConnect + "...");
-
-            // have online manager do join, which returns true
-            // if successful (in which case it places the game into
-            // the engine and invokes the phase returned)
-            Object o = game.getOnlineManager().joinGame(bObs, false, false);
-            if (o != Boolean.TRUE) {
-                context_.setGame(null);
-                bProcessing_ = false;
-                return false;
-            }
-            engine_.getPrefsNode().put(PokerConstants.PREF_LAST_JOIN, sConnect);
-        }
-
-        return true;
-    }
-
     /**
      * set buttons enabled/disabled based on selection
      */
@@ -415,6 +294,14 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
         boolean bValid = connectText_.isValidData();
         start_.setEnabled(bValid);
         obs_.setEnabled(bValid);
+    }
+
+    /**
+     * Returns true — subclasses override to handle join/observe actions.
+     */
+    @Override
+    public boolean processButton(GameButton button) {
+        return true;
     }
 
     /**
@@ -449,7 +336,7 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
     public abstract int[] getListColumnWidths();
 
     /**
-     * Get the number of rows to show within the table. Return a number less that
+     * Get the number of rows to show within the table. Return a number less than
      * zero to disable paging.
      */
     public abstract int getListRowCount();
@@ -463,58 +350,4 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
      * display the use last button?
      */
     public abstract boolean isDisplayUseLastButton();
-
-    /**
-     * Validate profile with server. Return true if valid. I know I'm copy and
-     * pasting. So what.
-     */
-    private boolean validateProfile() {
-        // if profile was manually changed, the password won't decrypt
-        try {
-            profile_.getPassword();
-        } catch (Throwable e) {
-            logger.info("Unable to get password for profile: " + profile_.getName());
-            resetProfile();
-            return false;
-        }
-
-        boolean faceless = false; // for testing
-
-        // Send a message requesting that the game be added
-        TypedHashMap hmParams = new TypedHashMap();
-        hmParams.setBoolean(SendMessageDialog.PARAM_FACELESS, faceless);
-        OnlineProfile auth = new OnlineProfile(profile_.getName());
-        auth.setPassword(profile_.getPassword());
-        hmParams.setObject(ValidateProfile.PARAM_AUTH, auth);
-
-        SendMessageDialog dialog = (SendMessageDialog) context_.processPhaseNow("ValidateProfile", hmParams);
-
-        if (dialog.getStatus() == DDMessageListener.STATUS_OK) {
-            EngineMessage resEngineMsg = dialog.getReturnMessage();
-            OnlineMessage resOnlineMsg = new OnlineMessage(resEngineMsg);
-
-            // see PokerServlet.validateProfile()
-            if (resOnlineMsg.getWanAuth() == null) {
-                // Authentication failed, so reset the local profile.
-                resetProfile();
-                return false;
-            }
-        } else {
-            // if error returned and this flag set (reusing old War-AOI flag),
-            // then also reset profile
-            EngineMessage regEngineMsg = dialog.getReturnMessage();
-            if (regEngineMsg != null && regEngineMsg.getBoolean(EngineMessage.PARAM_ELIMINATED, false)) {
-                resetProfile();
-                return false;
-            }
-        }
-
-        return true;
-
-    }
-
-    protected void resetProfile() {
-        profile_.setPassword(null);
-        profile_.save();
-    }
 }

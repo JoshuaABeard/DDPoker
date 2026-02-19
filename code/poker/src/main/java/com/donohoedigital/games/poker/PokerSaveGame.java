@@ -41,10 +41,10 @@ import com.donohoedigital.games.poker.online.*;
  * Subclass to allow TD pausing
  */
 public class PokerSaveGame extends SaveGame {
-    TournamentDirector td_;
+    PokerDirector td_;
 
     public void start() {
-        td_ = (TournamentDirector) context_.getGameManager();
+        td_ = (PokerDirector) context_.getGameManager();
 
         if (td_ != null) {
             td_.setPaused(true);

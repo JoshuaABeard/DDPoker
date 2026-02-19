@@ -43,7 +43,6 @@ import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.network.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.gui.*;
@@ -264,10 +263,6 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
 
             buttonbase.add(clear);
 
-            if (game_ != null) {
-                addLobbyButton(buttonbase);
-            }
-
             if (TESTING(PokerConstants.TESTING_CHAT_PERF) || TESTING(EngineConstants.TESTING_PERFORMANCE)) {
                 startTest_ = new GlassButton(GuiManager.DEFAULT, "Glass");
                 startTest_.setText("Start");
@@ -306,7 +301,6 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
             buttonbase.setLayout(new GridLayout(0, 1, 0, 4));// new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 5));
             buttonbase.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
             buttonbase.add(clear);
-            addLobbyButton(buttonbase);
 
             // JDD 2019
             add(GuiUtils.setDDPanelDebug(GuiUtils.NORTH(buttonbase), false), BorderLayout.EAST);
@@ -314,19 +308,6 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
 
         // init
         checkButtons();
-    }
-
-    private void addLobbyButton(DDPanel buttonbase) {
-        GlassButton lobby = new GlassButton("chat.lobby", "Glass");
-        lobby.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (OnlineLobby.showLobby(GameEngine.getGameEngine(), context_,
-                        PlayerProfileOptions.getDefaultProfile())) {
-                    context_.processPhase("OnlineLobby");
-                }
-            }
-        });
-        buttonbase.add(lobby);
     }
 
     /**
@@ -516,19 +497,14 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
     }
 
     /**
-     * OnlineMessage received.
+     * Chat message received.
      */
-    public void chatReceived(OnlineMessage omsg) {
-        // calls to this are synchronized through the OnlineManager
-        final String sMsg = omsg.getChat();
-        final int nFrom = omsg.getFromPlayerID();
-        final int nType = omsg.getChatType();
-
+    public void chatReceived(int fromPlayerID, int chatType, String message) {
         // need to update from Swing thread
         SwingUtilities.invokeLater(new Runnable() {
-            String _sMsg = sMsg;
-            int _nFrom = nFrom;
-            int _nType = nType;
+            String _sMsg = message;
+            int _nFrom = fromPlayerID;
+            int _nType = chatType;
             public void run() {
                 displayMessage(_nFrom, _nType, _sMsg, false);
             }
@@ -545,11 +521,11 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
         String sKey;
         ChatListPanel list = chatList_[0];
 
-        if (nFrom == OnlineMessage.CHAT_DIRECTOR_MSG_ID || sMsg.startsWith("tahoezorro")) {
+        if (nFrom == PokerConstants.CHAT_DIRECTOR_MSG_ID || sMsg.startsWith("tahoezorro")) {
             chatColor = cDirector_;
             bgColor = cDirectorBG_;
             sKey = "msg.chat.director";
-        } else if (nFrom == OnlineMessage.CHAT_DEALER_MSG_ID || sMsg.startsWith("lemongulch")) {
+        } else if (nFrom == PokerConstants.CHAT_DEALER_MSG_ID || sMsg.startsWith("lemongulch")) {
             chatColor = cDealer_;
             bgColor = cDealerBG_;
             sKey = "msg.chat.dealer";

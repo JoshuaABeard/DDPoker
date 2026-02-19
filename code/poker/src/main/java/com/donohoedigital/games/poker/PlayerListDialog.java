@@ -42,7 +42,6 @@ import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
-import com.donohoedigital.p2p.*;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -332,7 +331,7 @@ public class PlayerListDialog extends DialogPhase implements PropertyChangeListe
 
     // client table info
     private static final int[] COLUMN_WIDTHS = new int[]{282};
-    private static final String[] COLUMN_NAMES = new String[]{LanClientInfo.LAN_PLAYER_NAME};
+    private static final String[] COLUMN_NAMES = new String[]{"playername"};
 
     /**
      * Used by table to display players in game
@@ -368,7 +367,7 @@ public class PlayerListDialog extends DialogPhase implements PropertyChangeListe
         }
 
         public Object getValueAt(int rowIndex, int colIndex) {
-            if (COLUMN_NAMES[colIndex].equals(LanClientInfo.LAN_PLAYER_NAME)) {
+            if (COLUMN_NAMES[colIndex].equals("playername")) {
                 return getPlayerName(rowIndex);
             }
             return "[bad column]";

@@ -97,9 +97,6 @@ public class PokerContext extends GameContext {
                 boolean bResizable) {
             super.init(gamephase, bMain, size, bFull, sTitle, bResizable);
 
-            GuiUtils.addKeyAction((JComponent) getContentPane(), JComponent.WHEN_IN_FOCUSED_WINDOW, "onlinelobby",
-                    new LobbyAction(), KeyEvent.VK_L, Utils.ISMAC ? KeyEvent.META_DOWN_MASK : KeyEvent.CTRL_DOWN_MASK);
-
             GuiUtils.addKeyAction((JComponent) getContentPane(), JComponent.WHEN_IN_FOCUSED_WINDOW, "calctool",
                     new CalcAction(), KeyEvent.VK_T, Utils.ISMAC ? KeyEvent.META_DOWN_MASK : KeyEvent.CTRL_DOWN_MASK);
 
@@ -111,18 +108,6 @@ public class PokerContext extends GameContext {
             // "testing", new TestingAction(),
             // KeyEvent.VK_EQUALS, KeyEvent.CTRL_DOWN_MASK | KeyEvent.ALT_DOWN_MASK |
             // KeyEvent.SHIFT_DOWN_MASK);
-        }
-    }
-
-    /**
-     * Lobby action
-     */
-    private class LobbyAction extends AbstractAction {
-        public void actionPerformed(ActionEvent e) {
-            if (OnlineLobby.showLobby(GameEngine.getGameEngine(), PokerContext.this,
-                    PlayerProfileOptions.getDefaultProfile())) {
-                processPhase("OnlineLobby");
-            }
         }
     }
 

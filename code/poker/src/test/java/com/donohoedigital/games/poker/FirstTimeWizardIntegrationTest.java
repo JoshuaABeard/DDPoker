@@ -238,10 +238,11 @@ class FirstTimeWizardIntegrationTest {
         // When: User enters profile information
         wizard.setPlayerName("OnlineUser");
         wizard.setPlayerEmail("test@example.com");
-        wizard.nextStep(); // Would trigger profile creation
+        wizard.createOnlineProfile();
 
-        // Then: Should move to email sent step
-        assertThat(wizard.getCurrentStepType()).isEqualTo(FirstTimeWizard.STEP_TYPE_EMAIL_SENT);
+        // Then: Should move directly to complete step (REST registration done by
+        // handleNext)
+        assertThat(wizard.getCurrentStepType()).isEqualTo(FirstTimeWizard.STEP_TYPE_COMPLETE);
     }
 
     // =================================================================
@@ -518,15 +519,8 @@ class FirstTimeWizardIntegrationTest {
         wizard.setPlayerEmail("test@example.com");
         wizard.createOnlineProfile();
 
-        // Step 4: Email sent step
-        assertThat(wizard.getCurrentStepType()).isEqualTo(FirstTimeWizard.STEP_TYPE_EMAIL_SENT);
-        wizard.setReceivedPassword("testpass123");
-        wizard.nextStep();
-
-        // Step 5: Password entry step (would validate with server in real scenario)
-        wizard.nextStep();
-
-        // Step 6: Complete
+        // Step 4: Complete (REST registration is done by handleNext before
+        // createOnlineProfile)
         assertThat(wizard.getCurrentStepType()).isEqualTo(FirstTimeWizard.STEP_TYPE_COMPLETE);
 
         // Complete wizard

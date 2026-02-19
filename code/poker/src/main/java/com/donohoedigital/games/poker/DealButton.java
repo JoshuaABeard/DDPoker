@@ -47,7 +47,7 @@ import com.donohoedigital.games.poker.online.*;
  */
 public class DealButton extends ChainPhase {
     public void process() {
-        TournamentDirector td = (TournamentDirector) context_.getGameManager();
+        PokerDirector td = (PokerDirector) context_.getGameManager();
         PokerGame game = (PokerGame) context_.getGame();
         game.setInputMode(PokerTableInput.MODE_QUITSAVE);
         td.doDeal(game.getCurrentTable());

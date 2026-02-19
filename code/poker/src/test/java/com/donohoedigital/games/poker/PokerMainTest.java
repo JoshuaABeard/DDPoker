@@ -130,24 +130,6 @@ class PokerMainTest {
         assertThat(valid).isFalse();
     }
 
-    // ========== Network Configuration Tests ==========
-
-    @Test
-    void should_ReturnZero_WhenP2PNotInitialized() {
-        // P2P is not initialized in headless test mode
-        int port = pokerMain.getPort();
-
-        assertThat(port).isEqualTo(0);
-    }
-
-    @Test
-    void should_ReturnLocalhost_WhenP2PNotInitialized() {
-        // P2P is not initialized in headless test mode
-        String ip = pokerMain.getIP();
-
-        assertThat(ip).isEqualTo("127.0.0.1");
-    }
-
     // ========== Online Game Comparison Tests ==========
 
     @Test

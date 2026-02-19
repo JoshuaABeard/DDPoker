@@ -52,7 +52,7 @@ import com.donohoedigital.base.*;
  */
 public class NewLevelActions extends ChainPhase implements CancelablePhase {
     private PokerGame game_;
-    private TournamentDirector td_;
+    private PokerDirector td_;
     private boolean bCanceled_ = false;
 
     public void process() {
@@ -60,7 +60,7 @@ public class NewLevelActions extends ChainPhase implements CancelablePhase {
 
         game_ = (PokerGame) context_.getGame();
         PokerTable table = game_.getCurrentTable();
-        td_ = (TournamentDirector) context_.getGameManager();
+        td_ = (PokerDirector) context_.getGameManager();
 
         TournamentProfile profile = game_.getProfile();
         int nThisLevel = table.getLevel();
@@ -86,36 +86,16 @@ public class NewLevelActions extends ChainPhase implements CancelablePhase {
         if (!TESTING(PokerConstants.TESTING_AUTOPILOT)) {
             String sMsg;
             if (profile.isBreak(nNextLevel)) {
-                String sKey = game_.isOnlineGame() ? "msg.chat.break" : "msg.dialog.break";
-                sMsg = PropertyConfig.getMessage(sKey, nNextLevel, profile.getMinutes(nNextLevel));
-
-                if (game_.isOnlineGame()) {
-                    td_.sendDealerChatLocal(PokerConstants.CHAT_1, PokerUtils.chatInformation(sMsg));
-                } else {
-                    EngineUtils.displayInformationDialog(context_, sMsg, "msg.windowtitle.break", "newbreak",
-                            "nobreak");
-                }
-
+                sMsg = PropertyConfig.getMessage("msg.dialog.break", nNextLevel, profile.getMinutes(nNextLevel));
+                EngineUtils.displayInformationDialog(context_, sMsg, "msg.windowtitle.break", "newbreak", "nobreak");
             } else {
                 int nAnte = profile.getAnte(nNextLevel);
                 int nBig = profile.getBigBlind(nNextLevel);
                 int nSmall = profile.getSmallBlind(nNextLevel);
-
-                String sKey = null;
-                if (game_.isOnlineGame()) {
-                    sKey = nAnte > 0 ? "msg.chat.next.ante" : "msg.chat.next";
-                } else {
-                    sKey = nAnte > 0 ? "msg.dialog.next.ante" : "msg.dialog.next";
-                }
-
+                String sKey = nAnte > 0 ? "msg.dialog.next.ante" : "msg.dialog.next";
                 sMsg = PropertyConfig.getMessage(sKey, nNextLevel, nSmall, nBig, nAnte);
-
-                if (game_.isOnlineGame()) {
-                    td_.sendDealerChatLocal(PokerConstants.CHAT_1, PokerUtils.chatInformation(sMsg));
-                } else {
-                    EngineUtils.displayInformationDialog(context_, Utils.fixHtmlTextFor15(sMsg),
-                            "msg.windowtitle.level", "newlevel", "nolevel");
-                }
+                EngineUtils.displayInformationDialog(context_, Utils.fixHtmlTextFor15(sMsg), "msg.windowtitle.level",
+                        "newlevel", "nolevel");
             }
         }
     }
@@ -138,10 +118,6 @@ public class NewLevelActions extends ChainPhase implements CancelablePhase {
         if (bCanceled_)
             return;
 
-        // notify tournament director that cards have the player has
-        // done the new level actions
-        td_.removeFromWaitList(game_.getHumanPlayer());
-
         super.nextPhase();
     }
 
@@ -157,7 +133,7 @@ public class NewLevelActions extends ChainPhase implements CancelablePhase {
             return false;
 
         TournamentProfile prof = game.getProfile();
-        TournamentDirector td = (TournamentDirector) game.getGameContext().getGameManager();
+        PokerDirector td = (PokerDirector) game.getGameContext().getGameManager();
         int nCost = prof.getRebuyCost();
         int nChips = prof.getRebuyChips();
         boolean bPending = player.isInHand();
@@ -187,7 +163,7 @@ public class NewLevelActions extends ChainPhase implements CancelablePhase {
      */
     private void addon() {
         TournamentProfile prof = game_.getProfile();
-        TournamentDirector td = (TournamentDirector) context_.getGameManager();
+        PokerDirector td = (PokerDirector) context_.getGameManager();
         int nCost = prof.getAddonCost();
         int nChips = prof.getAddonChips();
 

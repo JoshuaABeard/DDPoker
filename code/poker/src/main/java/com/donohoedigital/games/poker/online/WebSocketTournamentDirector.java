@@ -761,6 +761,35 @@ public class WebSocketTournamentDirector extends BasePhase
         // In M6 multiplayer, this sends a player-settings update to the server.
     }
 
+    @Override
+    public void doHandAction(HandAction action, boolean bRemote) {
+        String wsAction = mapActionToWsString(action.getAction());
+        wsClient_.sendAction(wsAction, action.getAmount());
+    }
+
+    @Override
+    public void setGameOver() {
+        // Game-over is driven by the server's GAME_COMPLETE message; no client-side
+        // state to update.
+    }
+
+    @Override
+    public void doDeal(PokerTable table) {
+        // Server controls dealing — no-op on the client side.
+    }
+
+    @Override
+    public void doRebuy(PokerPlayer player, int nLevel, int nAmount, int nChips, boolean bPending) {
+        player.addRebuy(nAmount, nChips, bPending);
+        wsClient_.sendRebuyDecision(true);
+    }
+
+    @Override
+    public void doAddon(PokerPlayer player, int nAmount, int nChips) {
+        player.addAddon(nAmount, nChips);
+        wsClient_.sendAddonDecision(true);
+    }
+
     // -------------------------------------------------------------------------
     // ChatManager
     // -------------------------------------------------------------------------

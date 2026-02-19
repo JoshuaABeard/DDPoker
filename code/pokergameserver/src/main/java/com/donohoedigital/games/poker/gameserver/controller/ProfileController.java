@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
 import com.donohoedigital.games.poker.gameserver.auth.JwtAuthenticationFilter;
+import com.donohoedigital.games.poker.gameserver.dto.ChangePasswordRequest;
 import com.donohoedigital.games.poker.gameserver.dto.UpdateProfileRequest;
 import com.donohoedigital.games.poker.gameserver.service.ProfileService;
 import com.donohoedigital.games.poker.model.OnlineProfile;
@@ -87,6 +88,29 @@ public class ProfileController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    /**
+     * Change the authenticated user's password.
+     *
+     * <p>
+     * The JWT profile ID must match the path {id}. Returns 403 if they differ or if
+     * the old password is incorrect, to avoid revealing profile existence.
+     */
+    @PutMapping("/{id}/password")
+    public ResponseEntity<Void> changePassword(@PathVariable("id") Long id,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        Long authenticatedProfileId = getAuthenticatedProfileId();
+        if (!authenticatedProfileId.equals(id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try {
+            profileService.changePassword(id, request.oldPassword(), request.newPassword());
+            return ResponseEntity.ok().build();
+        } catch (ProfileService.InvalidPasswordException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
     }
 
     private Long getAuthenticatedProfileId() {

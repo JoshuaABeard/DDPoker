@@ -241,10 +241,10 @@ public class FindGames extends ListGames {
                 int nMode = game.getMode();
                 switch (nMode) {
                     case OnlineGame.MODE_REG :
-                        sValue = JoinGame.GAME_REG;
+                        sValue = PropertyConfig.getMessage("msg.mode.reg");
                         break;
                     case OnlineGame.MODE_PLAY :
-                        sValue = JoinGame.GAME_PLAYING;
+                        sValue = PropertyConfig.getMessage("msg.mode.play");
                         break;
                     default :
                         sValue = "";

@@ -1985,7 +1985,7 @@ public class PokerTable implements ObjectID, GameTable {
         entry.addToken(bColoringUpDisplay_);
         entry.addToken(nHandNum_);
         entry.addToken(hhand_);
-        entry.addToken(TournamentDirector.getStateForSave(state, this));
+        entry.addToken(getStateForSave(state, this));
         entry.addToken(nPrevState_);
         entry.addToken(nPendingState_);
         entry.addToken(sPendingPhase_);
@@ -2010,6 +2010,25 @@ public class PokerTable implements ObjectID, GameTable {
         addPlayerList(state, entry, observers_);
 
         return entry;
+    }
+
+    /**
+     * Determine what table state to persist when saving. Migrated from
+     * TournamentDirector (Phase 7.5).
+     */
+    private static int getStateForSave(GameState state, PokerTable table) {
+        PokerSaveDetails pdetails = (PokerSaveDetails) state.getSaveDetails().getCustomInfo();
+        if (pdetails.getSaveTables() == SaveDetails.SAVE_ALL) {
+            switch (table.getTableStateInt()) {
+                case PokerTable.STATE_BEGIN_WAIT :
+                    return PokerTable.STATE_BEGIN;
+                case PokerTable.STATE_PENDING :
+                    return PokerTable.STATE_PENDING_LOAD;
+            }
+        } else if (pdetails.getOverrideState() != PokerSaveDetails.NO_OVERRIDE) {
+            return pdetails.getOverrideState();
+        }
+        return table.getTableStateInt();
     }
 
     /**

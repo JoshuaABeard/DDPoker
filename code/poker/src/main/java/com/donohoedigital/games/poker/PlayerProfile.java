@@ -62,6 +62,10 @@ public class PlayerProfile extends BaseProfile {
     private String sEmail_;
     private String sPassword_;
 
+    // in-memory only (not serialized): REST session state
+    private transient String jwt_;
+    private transient Long profileId_;
+
     // stats on hands seen and other stuff. package private for quicker access
     int nWins_;
     int nActionCnt_;
@@ -244,6 +248,36 @@ public class PlayerProfile extends BaseProfile {
     public void setPassword(String sPassword) {
         if (sPassword != null)
             sPassword_ = SecurityUtils.encrypt(Utils.encode(sPassword), k());
+    }
+
+    /**
+     * Get the in-memory JWT from the most recent REST login/register. Not persisted
+     * to disk.
+     */
+    public String getJwt() {
+        return jwt_;
+    }
+
+    /**
+     * Set the in-memory JWT after a successful REST login/register.
+     */
+    public void setJwt(String jwt) {
+        jwt_ = jwt;
+    }
+
+    /**
+     * Get the server-side profile ID from the most recent REST login/register. Not
+     * persisted to disk.
+     */
+    public Long getProfileId() {
+        return profileId_;
+    }
+
+    /**
+     * Set the server-side profile ID after a successful REST login/register.
+     */
+    public void setProfileId(Long profileId) {
+        profileId_ = profileId;
     }
 
     /**

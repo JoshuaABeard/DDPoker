@@ -119,7 +119,7 @@ public class Rank extends DashboardItem {
             GameState state = (GameState) evt.getOldValue();
             PokerSaveDetails pdetails = (PokerSaveDetails) state.getSaveDetails().getCustomInfo();
             if (pdetails.isOtherTableUpdate()) {
-                if (TournamentDirector.DEBUG_CLEANUP_TABLE)
+                if (PokerConstants.DEBUG_CLEANUP_TABLE)
                     logger.debug("Update display on other table update");
                 updateInfo();
             }

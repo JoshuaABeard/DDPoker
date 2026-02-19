@@ -19,16 +19,26 @@
  */
 package com.donohoedigital.games.poker.gameserver.service;
 
+import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 
 import com.donohoedigital.games.poker.gameserver.persistence.repository.OnlineProfileRepository;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 
 /**
- * Service for profile management operations (CRUD).
+ * Service for profile management operations (CRUD, password change).
  */
 @Service
 public class ProfileService {
+
+    /**
+     * Thrown when the supplied current password does not match the stored hash.
+     */
+    public static class InvalidPasswordException extends RuntimeException {
+        public InvalidPasswordException() {
+            super("Incorrect current password");
+        }
+    }
 
     private final OnlineProfileRepository profileRepository;
 
@@ -83,5 +93,35 @@ public class ProfileService {
         profile.setRetired(true);
         profileRepository.save(profile);
         return true;
+    }
+
+    /**
+     * Change an authenticated user's password.
+     *
+     * <p>
+     * The JWT must already match {@code profileId} (enforced by the controller).
+     * This method verifies the old password before updating.
+     *
+     * @param profileId
+     *            the authenticated profile's ID
+     * @param oldPassword
+     *            the current password to verify
+     * @param newPassword
+     *            the new password (plain text; will be BCrypt hashed)
+     * @throws InvalidPasswordException
+     *             if {@code oldPassword} does not match the stored hash
+     * @throws IllegalArgumentException
+     *             if the profile is not found (should not happen in normal flow)
+     */
+    public void changePassword(Long profileId, String oldPassword, String newPassword) {
+        OnlineProfile profile = profileRepository.findById(profileId)
+                .orElseThrow(() -> new IllegalArgumentException("Profile not found: " + profileId));
+
+        if (!BCrypt.checkpw(oldPassword, profile.getPasswordHash())) {
+            throw new InvalidPasswordException();
+        }
+
+        profile.setPasswordHash(BCrypt.hashpw(newPassword, BCrypt.gensalt()));
+        profileRepository.save(profile);
     }
 }

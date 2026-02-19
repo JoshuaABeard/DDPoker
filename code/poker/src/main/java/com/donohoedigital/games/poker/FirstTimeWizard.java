@@ -20,11 +20,13 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.comms.DMTypedHashMap;
+import com.donohoedigital.games.config.EngineConstants;
 import com.donohoedigital.config.Prefs;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.engine.DialogPhase;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.GameEngine;
+import com.donohoedigital.games.poker.online.RestAuthClient;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,22 +58,21 @@ public class FirstTimeWizard extends DialogPhase {
     public static final String STEP_TYPE_PLAY_MODE = "play_mode";
     public static final String STEP_TYPE_PROFILE = "profile";
     public static final String STEP_TYPE_SERVER_CONFIG = "server_config";
-    public static final String STEP_TYPE_EMAIL_SENT = "email_sent";
     public static final String STEP_TYPE_LINK_PROFILE = "link_profile";
     public static final String STEP_TYPE_COMPLETE = "complete";
 
-    // Wizard steps - Note: steps are context-dependent based on selected mode
+    // Wizard steps
     private static final int STEP_WELCOME = 0;
     private static final int STEP_PLAY_MODE = 1;
     // Offline path steps
     private static final int STEP_OFFLINE_PROFILE = 2;
     private static final int STEP_OFFLINE_COMPLETE = 3;
-    // Online path steps (reuses step numbers in different contexts)
+    // Online new profile path (email-activation step removed — registration is
+    // immediate)
     private static final int STEP_SERVER_CONFIG_NUM = 2;
     private static final int STEP_ONLINE_PROFILE_NUM = 3;
-    private static final int STEP_EMAIL_SENT_NUM = 4;
-    private static final int STEP_PASSWORD_ENTRY_NUM = 5;
-    private static final int STEP_ONLINE_COMPLETE_NUM = 6;
+    private static final int STEP_ONLINE_COMPLETE_NUM = 4;
+    // Online link path
     private static final int STEP_LINK_PROFILE_NUM = 3;
     private static final int STEP_LINK_COMPLETE_NUM = 4;
 
@@ -99,9 +100,14 @@ public class FirstTimeWizard extends DialogPhase {
     private String playerEmail = "";
     private String playerPassword = "";
     private String gameServer = "localhost:8877";
-    private String chatServer = "localhost:11886";
-    private String receivedPassword = "";
     private String validationError = "";
+
+    // REST registration/login result — set by handleNext() before state transition
+    private String registrationJwt = null;
+    private Long registrationProfileId = null;
+
+    // REST client — injectable for tests
+    private RestAuthClient restAuthClient_ = RestAuthClient.getInstance();
 
     // Created profile
     private PlayerProfile createdProfile;
@@ -116,7 +122,6 @@ public class FirstTimeWizard extends DialogPhase {
     private DDTextField emailField;
     private DDTextField passwordField;
     private DDTextField gameServerField;
-    private DDTextField chatServerField;
     private DDRadioButton offlineRadio;
     private DDRadioButton onlineNewRadio;
     private DDRadioButton onlineLinkRadio;
@@ -131,6 +136,10 @@ public class FirstTimeWizard extends DialogPhase {
     // Status/error display
     private DDLabel errorLabel;
     private DDLabel statusLabel;
+
+    // =================================================================
+    // Initialisation
+    // =================================================================
 
     /**
      * Initialize the wizard
@@ -155,6 +164,11 @@ public class FirstTimeWizard extends DialogPhase {
      */
     public boolean isWizardInitialized() {
         return initialized;
+    }
+
+    /** Package-private: inject a custom RestAuthClient for unit tests. */
+    void setRestAuthClientForTest(RestAuthClient client) {
+        this.restAuthClient_ = client;
     }
 
     // =================================================================
@@ -188,7 +202,7 @@ public class FirstTimeWizard extends DialogPhase {
     }
 
     /**
-     * Set player password (for linking existing profiles)
+     * Set player password (for registration or linking existing profiles)
      */
     public void setPlayerPassword(String password) {
         this.playerPassword = password != null ? password : "";
@@ -250,10 +264,12 @@ public class FirstTimeWizard extends DialogPhase {
     }
 
     /**
-     * Set chat server address
+     * No-op: chat server is no longer separate — lobby chat uses the same game
+     * server URL.
      */
     public void setChatServer(String server) {
-        this.chatServer = server != null ? server : "";
+        // Intentionally empty: all communication (REST, WebSocket, lobby chat) uses
+        // gameServer.
     }
 
     /**
@@ -269,7 +285,8 @@ public class FirstTimeWizard extends DialogPhase {
     }
 
     /**
-     * Test server connection (stub - would actually connect to server)
+     * Test server connection (stub - validates format; actual connect attempt is
+     * deferred to REST calls)
      */
     public void testServerConnection() {
         logger.debug("Testing connection to server: {}", gameServer);
@@ -326,42 +343,25 @@ public class FirstTimeWizard extends DialogPhase {
     // =================================================================
 
     /**
-     * Create online profile (sends request to server)
+     * Advance the wizard to the online registration complete step. The REST
+     * register call has already succeeded when this is invoked from
+     * {@link #handleNext()}. Callable directly in unit tests to verify the
+     * state-machine transition without a real server.
      */
     public void createOnlineProfile() {
-        logger.debug("Creating online profile for: {} ({})", playerName, playerEmail);
-
-        // Move to email sent step
-        currentStep = STEP_EMAIL_SENT_NUM;
-
-        // Actual implementation would send CAT_WAN_PROFILE_ADD message to server
+        logger.debug("Online profile created for: {} ({})", playerName, playerEmail);
+        currentStep = STEP_ONLINE_COMPLETE_NUM;
     }
 
     /**
-     * Set received password from email
-     */
-    public void setReceivedPassword(String password) {
-        this.receivedPassword = password != null ? password : "";
-    }
-
-    /**
-     * Validate password
-     */
-    public boolean validatePassword() {
-        // For testing purposes, any non-empty password is valid
-        return receivedPassword != null && !receivedPassword.isEmpty();
-    }
-
-    /**
-     * Link to existing online profile
+     * Mark the profile as successfully linked and advance to the complete step. The
+     * REST login call has already succeeded when this is invoked from
+     * {@link #handleNext()}. Callable directly in unit tests.
      */
     public void linkExistingProfile() {
-        logger.debug("Linking to existing profile: {}", playerName);
-
-        // Actual implementation would send CAT_WAN_PROFILE_LINK message to server
-        // with username and password for authentication
-
+        logger.debug("Existing profile linked: {}", playerName);
         profileLinked = true;
+        currentStep = STEP_LINK_COMPLETE_NUM;
     }
 
     /**
@@ -410,13 +410,9 @@ public class FirstTimeWizard extends DialogPhase {
             currentStep = STEP_SERVER_CONFIG_NUM;
         } else if (currentStep == STEP_SERVER_CONFIG_NUM && serverConfigComplete) {
             currentStep = STEP_ONLINE_PROFILE_NUM;
-        } else if (currentStep == STEP_ONLINE_PROFILE_NUM) {
-            currentStep = STEP_EMAIL_SENT_NUM;
-        } else if (currentStep == STEP_EMAIL_SENT_NUM) {
-            currentStep = STEP_PASSWORD_ENTRY_NUM;
-        } else if (currentStep == STEP_PASSWORD_ENTRY_NUM) {
-            currentStep = STEP_ONLINE_COMPLETE_NUM;
         }
+        // ONLINE_PROFILE_NUM → COMPLETE transition is handled by createOnlineProfile()
+        // after successful REST registration in handleNext().
     }
 
     private void handleOnlineLinkNextStep() {
@@ -426,9 +422,9 @@ public class FirstTimeWizard extends DialogPhase {
             currentStep = STEP_SERVER_CONFIG_NUM;
         } else if (currentStep == STEP_SERVER_CONFIG_NUM && serverConfigComplete) {
             currentStep = STEP_LINK_PROFILE_NUM;
-        } else if (currentStep == STEP_LINK_PROFILE_NUM) {
-            currentStep = STEP_LINK_COMPLETE_NUM;
         }
+        // LINK_PROFILE_NUM → COMPLETE transition is handled by linkExistingProfile()
+        // after successful REST login in handleNext().
     }
 
     /**
@@ -496,8 +492,6 @@ public class FirstTimeWizard extends DialogPhase {
                 return STEP_TYPE_SERVER_CONFIG;
             } else if (currentStep == STEP_ONLINE_PROFILE_NUM) {
                 return STEP_TYPE_PROFILE;
-            } else if (currentStep == STEP_EMAIL_SENT_NUM || currentStep == STEP_PASSWORD_ENTRY_NUM) {
-                return STEP_TYPE_EMAIL_SENT;
             } else if (currentStep == STEP_ONLINE_COMPLETE_NUM) {
                 return STEP_TYPE_COMPLETE;
             }
@@ -528,17 +522,15 @@ public class FirstTimeWizard extends DialogPhase {
         createdProfile = new PlayerProfile(playerName != null && !playerName.isEmpty() ? playerName : "Player");
 
         if (selectedMode == MODE_OFFLINE) {
-            // Local profile - no email
+            // Local profile — no email or online state
             createdProfile.setEmail(null);
         } else {
-            // Online profile
+            // Online profile — email and password set during registration/login
             createdProfile.setEmail(playerEmail);
-            if (selectedMode == MODE_ONLINE_LINK) {
-                // Store password for linked profile
-                createdProfile.setPassword(playerPassword);
-            } else {
-                // Store received password for new profile
-                createdProfile.setPassword(receivedPassword);
+            createdProfile.setPassword(playerPassword);
+            if (registrationJwt != null) {
+                createdProfile.setJwt(registrationJwt);
+                createdProfile.setProfileId(registrationProfileId);
             }
         }
 
@@ -641,9 +633,6 @@ public class FirstTimeWizard extends DialogPhase {
                 break;
             case STEP_TYPE_SERVER_CONFIG :
                 panel = createServerConfigPanel();
-                break;
-            case STEP_TYPE_EMAIL_SENT :
-                panel = createEmailSentPanel();
                 break;
             case STEP_TYPE_LINK_PROFILE :
                 panel = createLinkProfilePanel();
@@ -779,7 +768,7 @@ public class FirstTimeWizard extends DialogPhase {
         panel.add(title, BorderLayout.NORTH);
 
         DDPanel fieldsPanel = new DDPanel();
-        fieldsPanel.setLayout(new GridLayout(3, 1, 5, 10));
+        fieldsPanel.setLayout(new GridLayout(2, 1, 5, 10));
 
         // Game server field
         DDPanel gamePanel = new DDPanel();
@@ -796,22 +785,6 @@ public class FirstTimeWizard extends DialogPhase {
         });
         gamePanel.add(gameServerField, BorderLayout.CENTER);
         fieldsPanel.add(gamePanel);
-
-        // Chat server field
-        DDPanel chatPanel = new DDPanel();
-        chatPanel.setLayout(new BorderLayout(5, 0));
-        DDLabel chatLabel = new DDLabel("ftue.server.chat", STYLE);
-        chatPanel.add(chatLabel, BorderLayout.WEST);
-        chatServerField = new DDTextField(GuiManager.DEFAULT, STYLE);
-        chatServerField.setText(chatServer);
-        chatServerField.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyReleased(java.awt.event.KeyEvent evt) {
-                chatServer = chatServerField.getText();
-                updateButtonStates();
-            }
-        });
-        chatPanel.add(chatServerField, BorderLayout.CENTER);
-        fieldsPanel.add(chatPanel);
 
         // Test button and status
         DDPanel testPanel = new DDPanel();
@@ -833,7 +806,8 @@ public class FirstTimeWizard extends DialogPhase {
     }
 
     /**
-     * Create online profile creation panel
+     * Create online profile creation panel (name + email + password for
+     * registration)
      */
     private JComponent createOnlineProfilePanel() {
         DDPanel panel = new DDPanel();
@@ -844,7 +818,7 @@ public class FirstTimeWizard extends DialogPhase {
         panel.add(title, BorderLayout.NORTH);
 
         DDPanel fieldsPanel = new DDPanel();
-        fieldsPanel.setLayout(new GridLayout(2, 1, 5, 10));
+        fieldsPanel.setLayout(new GridLayout(3, 1, 5, 10));
 
         // Name field
         DDPanel namePanel = new DDPanel();
@@ -878,6 +852,21 @@ public class FirstTimeWizard extends DialogPhase {
         emailPanel.add(emailField, BorderLayout.CENTER);
         fieldsPanel.add(emailPanel);
 
+        // Password field (user chooses their own password — no activation email needed)
+        DDPanel passPanel = new DDPanel();
+        passPanel.setLayout(new BorderLayout(5, 0));
+        DDLabel passLabel = new DDLabel("ftue.profile.password", STYLE);
+        passPanel.add(passLabel, BorderLayout.WEST);
+        passwordField = new DDTextField(GuiManager.DEFAULT, STYLE);
+        passwordField.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                playerPassword = passwordField.getText();
+                updateButtonStates();
+            }
+        });
+        passPanel.add(passwordField, BorderLayout.CENTER);
+        fieldsPanel.add(passPanel);
+
         panel.add(fieldsPanel, BorderLayout.CENTER);
 
         // Note
@@ -889,7 +878,7 @@ public class FirstTimeWizard extends DialogPhase {
     }
 
     /**
-     * Create link existing profile panel
+     * Create link existing profile panel (username + password)
      */
     private JComponent createLinkProfilePanel() {
         DDPanel panel = new DDPanel();
@@ -945,45 +934,6 @@ public class FirstTimeWizard extends DialogPhase {
     }
 
     /**
-     * Create email sent panel
-     */
-    private JComponent createEmailSentPanel() {
-        DDPanel panel = new DDPanel();
-        panel.setLayout(new BorderLayout(10, 10));
-
-        DDLabel title = new DDLabel("ftue.email.sent.title", STYLE);
-        title.setFont(title.getFont().deriveFont(Font.BOLD, 14f));
-        panel.add(title, BorderLayout.NORTH);
-
-        String message = PropertyConfig.getMessage("msg.ftue.email.sent.text", playerEmail);
-        DDLabel messageLabel = new DDLabel(GuiManager.DEFAULT, STYLE);
-        messageLabel.setText(message);
-        panel.add(messageLabel, BorderLayout.CENTER);
-
-        // Password entry field
-        DDPanel passwordPanel = new DDPanel();
-        passwordPanel.setLayout(new BorderLayout(5, 10));
-        passwordPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
-
-        DDLabel passwordLabel = new DDLabel("ftue.email.password", STYLE);
-        passwordPanel.add(passwordLabel, BorderLayout.WEST);
-
-        passwordField = new DDTextField(GuiManager.DEFAULT, STYLE);
-        passwordField.setText(receivedPassword);
-        passwordField.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyReleased(java.awt.event.KeyEvent evt) {
-                receivedPassword = passwordField.getText();
-                updateButtonStates();
-            }
-        });
-        passwordPanel.add(passwordField, BorderLayout.CENTER);
-
-        panel.add(passwordPanel, BorderLayout.SOUTH);
-
-        return panel;
-    }
-
-    /**
      * Create completion panel
      */
     private JComponent createCompletePanel() {
@@ -1027,6 +977,46 @@ public class FirstTimeWizard extends DialogPhase {
             return;
         }
 
+        String stepType = getCurrentStepType();
+
+        // Online registration: call REST register, then advance to complete
+        if (selectedMode == MODE_ONLINE_NEW && STEP_TYPE_PROFILE.equals(stepType)) {
+            String serverUrl = "http://" + gameServer;
+            try {
+                var resp = restAuthClient_.register(serverUrl, playerName, playerPassword, playerEmail);
+                registrationJwt = resp.token();
+                registrationProfileId = resp.profileId();
+            } catch (RestAuthClient.RestAuthException e) {
+                validationError = e.getMessage();
+                if (errorLabel != null)
+                    errorLabel.setText(validationError);
+                return;
+            }
+            createOnlineProfile();
+            updateContentPanel();
+            return;
+        }
+
+        // Link existing profile: call REST login, then advance to complete
+        if (selectedMode == MODE_ONLINE_LINK && STEP_TYPE_LINK_PROFILE.equals(stepType)) {
+            String serverUrl = "http://" + gameServer;
+            try {
+                var resp = restAuthClient_.login(serverUrl, playerName, playerPassword);
+                registrationJwt = resp.token();
+                registrationProfileId = resp.profileId();
+                var profile = restAuthClient_.getCurrentUser(serverUrl, resp.token());
+                playerEmail = profile.email();
+            } catch (RestAuthClient.RestAuthException e) {
+                validationError = e.getMessage();
+                if (errorLabel != null)
+                    errorLabel.setText(validationError);
+                return;
+            }
+            linkExistingProfile();
+            updateContentPanel();
+            return;
+        }
+
         nextStep();
         updateContentPanel();
     }
@@ -1050,6 +1040,7 @@ public class FirstTimeWizard extends DialogPhase {
             statusLabel.setText(PropertyConfig.getMessage("msg.ftue.server.success"));
             statusLabel.setForeground(new Color(0, 128, 0)); // Green
             setServerConfigComplete(true);
+            saveServerToPreferences();
         } else {
             statusLabel.setText(PropertyConfig.getMessage("msg.ftue.server.failed"));
             statusLabel.setForeground(Color.RED);
@@ -1057,6 +1048,20 @@ public class FirstTimeWizard extends DialogPhase {
         }
 
         updateButtonStates();
+    }
+
+    /**
+     * Persist the configured server address to the application preferences so
+     * {@code RestAuthClient} callers (e.g. {@code ChangePasswordDialog}) can read
+     * it without requiring the wizard to still be open.
+     */
+    private void saveServerToPreferences() {
+        try {
+            String node = Prefs.NODE_OPTIONS + PokerMain.getPokerMain().getPrefsNodeName();
+            Prefs.getUserPrefs(node).put(EngineConstants.OPTION_ONLINE_SERVER, gameServer);
+        } catch (Exception e) {
+            logger.warn("Failed to save server address to preferences", e);
+        }
     }
 
     /**
@@ -1072,9 +1077,16 @@ public class FirstTimeWizard extends DialogPhase {
                     errorLabel.setText(getValidationError());
                     return false;
                 }
-                if (selectedMode != MODE_OFFLINE && !validateEmail()) {
-                    errorLabel.setText(getValidationError());
-                    return false;
+                if (selectedMode != MODE_OFFLINE) {
+                    if (!validateEmail()) {
+                        errorLabel.setText(getValidationError());
+                        return false;
+                    }
+                    // Password required for online registration
+                    if (playerPassword.isEmpty()) {
+                        errorLabel.setText("Please enter a password");
+                        return false;
+                    }
                 }
                 break;
 
@@ -1091,13 +1103,6 @@ public class FirstTimeWizard extends DialogPhase {
                     return false;
                 }
                 if (playerPassword.isEmpty()) {
-                    errorLabel.setText(PropertyConfig.getMessage("msg.ftue.validation.password.empty"));
-                    return false;
-                }
-                break;
-
-            case STEP_TYPE_EMAIL_SENT :
-                if (!validatePassword()) {
                     errorLabel.setText(PropertyConfig.getMessage("msg.ftue.validation.password.empty"));
                     return false;
                 }

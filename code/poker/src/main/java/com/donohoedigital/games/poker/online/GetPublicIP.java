@@ -135,16 +135,9 @@ public class GetPublicIP extends SendMessageDialog {
             // Simulate successful server response
             messageReceived(result);
         } else {
-            // Fallback: use original server query behavior
-            logger.warn("Failed to fetch public IP from external services, falling back to server query");
-
-            if (isFaceless()) {
-                // Initialize parent now for faceless mode
-                super.start();
-            }
-
-            // Let parent class handle server query
-            sendMessage(null);
+            // Detection failed — no server-query fallback in community edition
+            logger.warn("Failed to fetch public IP from external services");
+            updateStep(DDMessageListener.STEP_DONE);
         }
     }
 }

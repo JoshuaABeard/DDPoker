@@ -42,7 +42,7 @@ import com.donohoedigital.comms.DMArrayList;
 import com.donohoedigital.games.config.GameButton;
 import com.donohoedigital.games.engine.ChainPhase;
 import com.donohoedigital.games.engine.EngineUtils;
-import com.donohoedigital.games.poker.online.TournamentDirector;
+import com.donohoedigital.games.poker.online.PokerDirector;
 
 /**
  *
@@ -58,7 +58,7 @@ public class PreShowdown extends ChainPhase {
      */
     public void process() {
         PokerGame game = (PokerGame) context_.getGame();
-        TournamentDirector td = (TournamentDirector) context_.getGameManager();
+        PokerDirector td = (PokerDirector) context_.getGameManager();
         PokerPlayer player = game.getLocalPlayer();
 
         // ask show/win question
@@ -87,9 +87,5 @@ public class PreShowdown extends ChainPhase {
                 }
             }
         }
-
-        // notify tournament director that the question has been answered
-        if (td != null)
-            td.removeFromWaitList(player);
     }
 }

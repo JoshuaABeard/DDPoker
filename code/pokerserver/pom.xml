@@ -48,6 +48,29 @@
   <version>3.3.0-CommunityEdition</version>
   <name>pokerserver</name>
 
+  <dependencyManagement>
+    <dependencies>
+      <!-- jjwt-jackson (transitive via poker) forces jackson-databind to 2.12.7.1, but
+           jackson-datatype-jsr310 (from Spring Boot via poker) requires 2.19.x.
+           Pin all three core Jackson artifacts to resolve the conflict. -->
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>2.19.4</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>2.19.4</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-core</artifactId>
+        <version>2.19.4</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <dependency>
       <groupId>com.donohoedigital</groupId>

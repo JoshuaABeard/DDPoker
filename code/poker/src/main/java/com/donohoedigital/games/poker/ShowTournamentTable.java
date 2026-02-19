@@ -48,7 +48,6 @@ import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.event.PokerTableListener;
 import com.donohoedigital.games.poker.model.TournamentProfile;
-import com.donohoedigital.games.poker.network.OnlineMessage;
 import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.gui.*;
 
@@ -537,11 +536,6 @@ public class ShowTournamentTable extends ShowPokerTable
         boolean bDashAdvisor = profile.isAllowAdvisor();
 
         if (game_.isOnlineGame()) {
-            if (game_.getOnlineMode() == PokerGame.MODE_CLIENT) {
-                manager.addItem(new HostStatusDash(context_), true);
-            } else {
-                manager.addItem(new HostDash(context_), true);
-            }
             manager.addItem(new OnlineDash(context_), true);
         }
 
@@ -854,7 +848,7 @@ public class ShowTournamentTable extends ShowPokerTable
         PokerTable table = event.getTable();
         HoldemHand hhand = table.getHoldemHand();
 
-        if (TournamentDirector.DEBUG_EVENT_DISPLAY)
+        if (PokerConstants.DEBUG_EVENT_DISPLAY)
             logger.debug("Event received: " + event.toString());
         switch (event.getType()) {
             // new players added, repaint all
@@ -1544,7 +1538,7 @@ public class ShowTournamentTable extends ShowPokerTable
     }
 
     private boolean isFocusInChat() {
-        return chat_.hasFocus() || OnlineLobby.hasFocus();
+        return chat_.hasFocus();
     }
 
     /**
@@ -2404,7 +2398,7 @@ public class ShowTournamentTable extends ShowPokerTable
             chat.deliverChatLocal(PokerConstants.CHAT_ALWAYS,
                     PropertyConfig.getMessage(bMuted ? "msg.chat.unmuted" : "msg.chat.muted",
                             Utils.encodeHTML(player.getName())),
-                    bFromLobby ? OnlineMessage.CHAT_DIRECTOR_MSG_ID : OnlineMessage.CHAT_DEALER_MSG_ID);
+                    bFromLobby ? PokerConstants.CHAT_DIRECTOR_MSG_ID : PokerConstants.CHAT_DEALER_MSG_ID);
         }
     }
 
@@ -2452,7 +2446,7 @@ public class ShowTournamentTable extends ShowPokerTable
                 chat.deliverChatLocal(PokerConstants.CHAT_ALWAYS, PropertyConfig.getMessage(
                         bBanNow ? "msg.chat.banned" : (bBanned ? "msg.chat.unbanned.ingame" : "msg.chat.banned.ingame"),
                         Utils.encodeHTML(player.getName())),
-                        bFromLobby ? OnlineMessage.CHAT_DIRECTOR_MSG_ID : OnlineMessage.CHAT_DEALER_MSG_ID);
+                        bFromLobby ? PokerConstants.CHAT_DIRECTOR_MSG_ID : PokerConstants.CHAT_DEALER_MSG_ID);
 
                 if (bBanNow && kickAction != null) {
                     kickAction.run();

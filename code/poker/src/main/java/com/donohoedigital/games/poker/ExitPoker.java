@@ -63,7 +63,7 @@ public class ExitPoker extends BasePhase {
         String sParam1 = null;
 
         // pause TD while asking this question
-        TournamentDirector td = (TournamentDirector) context_.getGameManager();
+        PokerDirector td = (PokerDirector) context_.getGameManager();
         if (td != null) {
             td.setPaused(true);
         }
@@ -140,28 +140,8 @@ public class ExitPoker extends BasePhase {
      * Exit game, clean up as necessary
      */
     protected void doCleanup() {
-        if (game_ != null && game_.isOnlineGame() && !bCancelFromJoin_) {
-            OnlineManager mgr = game_.getOnlineManager();
-            if (mgr == null)
-                return;
-
-            switch (game_.getOnlineMode()) {
-                case PokerGame.MODE_INIT :
-                case PokerGame.MODE_NONE :
-                    break;
-
-                case PokerGame.MODE_CLIENT :
-                    mgr.quitGame();
-                    break;
-
-                case PokerGame.MODE_REG :
-                case PokerGame.MODE_PLAY :
-                    stopWanGame();
-                    mgr.cancelGame();
-                    break;
-
-            }
-        }
+        // P2P cleanup removed in Phase 7.5 — WebSocket session cleanup is handled by
+        // WebSocketTournamentDirector on game finish.
     }
 
     protected String getActionDisplay() {
@@ -180,18 +160,4 @@ public class ExitPoker extends BasePhase {
         engine_.exit(0);
     }
 
-    /**
-     * Stop the WAN game.
-     */
-    private void stopWanGame() {
-        // No server processing if not the host, not a public game, or game has already
-        // ended.
-        if ((game_.getOnlineMode() != PokerGame.MODE_PLAY) || !(game_.isPublic()) || (game_.isGameOver())) {
-            return;
-        }
-
-        // Send a message requesting that the game be ended and results stored.
-        OnlineServer manager = OnlineServer.getWanManager();
-        manager.endGame(game_, false);
-    }
 }

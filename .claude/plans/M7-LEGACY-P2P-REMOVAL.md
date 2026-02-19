@@ -1,8 +1,8 @@
 # M7: Legacy P2P/TCP Code Removal & Client Modernization
 
-**Status:** APPROVED
+**Status:** COMPLETE ✅ — All phases done, full build green
 **Created:** 2026-02-17
-**Last Updated:** 2026-02-17
+**Last Updated:** 2026-02-18
 **Parent Plan:** `.claude/plans/SERVER-HOSTED-GAME-ENGINE.md`
 **Depends On:** M1 ✅, M2 ✅, M3 ✅, M4 ✅, M6 ✅
 **Effort:** L (3–4 weeks)
@@ -449,7 +449,7 @@ Also delete their tests: `BetValidatorTest.java`, `GameOverCheckerTest.java`, `P
 
 ---
 
-## Phase 7.4: Remove Networking Infrastructure
+## Phase 7.4: Remove Networking Infrastructure ✅
 
 **Goal:** Delete all P2P/TCP transport code from the `server` and `pokernetwork` modules.
 
@@ -626,7 +626,7 @@ Several files reference static constants/debug flags on `TournamentDirector`. Th
 
 ---
 
-## Phase 7.6: gamedef.xml, Config & Phase Chain Cleanup
+## Phase 7.6: gamedef.xml, Config & Phase Chain Cleanup ✅
 
 **Goal:** Clean up configuration files to remove references to deleted classes and dead P2P settings.
 
@@ -678,7 +678,7 @@ settings.publicip.cache.ttl=            300000
 
 ---
 
-## Phase 7.7: Testing & Verification
+## Phase 7.7: Testing & Verification ✅
 
 ### Unit Tests
 

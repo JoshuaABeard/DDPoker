@@ -45,7 +45,6 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.model.*;
-import com.donohoedigital.games.poker.network.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
@@ -72,7 +71,6 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
     private TournamentSummaryPanel summary_;
 
     private boolean bHomeMode_ = false;
-    private boolean bOnlineMode_ = false;
 
     @Override
     public void init(GameEngine engine, GameContext context, GamePhase gamephase) {
@@ -81,7 +79,6 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
         // name of style used for all widgets in data area
         String STYLE = gamephase_.getString("style", "default");
         bHomeMode_ = gamephase_.getBoolean("home", false);
-        bOnlineMode_ = gamephase_.getBoolean("online", false);
 
         // Create base panel which holds everything
         menu_ = new MenuBackground(gamephase);
@@ -298,55 +295,6 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
                 // Demo mode removed - no longer limits rounds
                 context_.setGame(game);
             }
-            // online game
-            else if (bOnlineMode_) {
-                PokerMain main = PokerMain.getPokerMain();
-
-                // show warning for tournaments with default players greater than max
-                if (selected_.getNumPlayers() > selected_.getMaxOnlinePlayers()) {
-                    String sMsg = PropertyConfig.getMessage("msg.online.max", selected_.getName(),
-                            selected_.getNumPlayers(), selected_.getMaxOnlinePlayers());
-                    if (!EngineUtils.displayConfirmationDialog(context_, Utils.fixHtmlTextFor15(sMsg),
-                            "onlinemaxplayers")) {
-                        return false;
-                    }
-
-                    // change player count to be max players
-                    selected_.updateNumPlayers(selected_.getMaxOnlinePlayers());
-                }
-
-                // create game, set ID
-                game = new PokerGame(context_);
-                game.setTempOnlineGameID();
-                GameState state = game.newGameState("temp", GameListPanel.SAVE_EXT);
-                // Always use TCP prefix (UDP support removed)
-                String prefix = PokerConstants.ONLINE_GAME_PREFIX_TCP;
-                String id = prefix + state.getFileNumber();
-                String sName = PropertyConfig.getMessage("msg.onlineGameName.host", id);
-                state.setName(sName);
-                game.setOnlineGameID(id);
-
-                // need to create p2p server to get ip/port, so attempt that
-                if (!canHost(main, game)) {
-                    return false;
-                }
-
-                // we can get ip/port, so continue on
-                game.setGameState(state); // save so can save later
-                game.setOnlinePassword(generatePassword());
-                game.setLocalIP(main.getIP());
-                game.setPort(main.getPort());
-
-                // create player for host
-                PlayerProfile profile = PlayerProfileOptions.getDefaultProfile();
-                PokerPlayer player = new PokerPlayer(engine_.getPlayerId(), game.getNextPlayerID(), profile, true);
-                player.setPlayerType(PlayerType.getAdvisor());
-                game.addPlayer(player);
-
-                // init after everything setup
-                game.initOnline(PokerGame.MODE_INIT);
-                context_.setGame(game);
-            }
             // regular tournament
             else {
                 game = setupPracticeGame(engine_, context_);
@@ -360,20 +308,6 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
             game.initTournament(selected_);
         }
 
-        return true;
-    }
-
-    /**
-     * test if can host by creating p2p server
-     */
-    private boolean canHost(PokerMain main, PokerGame game) {
-        PokerConnectionServer p2p = main.getPokerConnectionServer(false); // Always use TCP
-        if (p2p != null && !p2p.isBound()) {
-            EngineUtils.displayInformationDialog(context_,
-                    PropertyConfig.getMessage("msg.canthost", p2p.getConfigPort()));
-            main.shutdownPokerConnectionServer(p2p);
-            return false;
-        }
         return true;
     }
 

@@ -41,7 +41,7 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.base.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.online.*;
+import com.donohoedigital.games.poker.engine.PokerConstants;
 
 /**
  *
@@ -111,7 +111,7 @@ public class PokerGameStateDelegate implements GameStateDelegate {
             return "BeginPokerNightGame";
         } else if (pgame.isOnlineGame()) {
             String sSavedPhase = params.getString(ChainPhase.PARAM_NEXT_PHASE);
-            if (sSavedPhase.equals(TournamentDirector.PHASE_NAME) || sSavedPhase.equals("GameOver")) {
+            if (sSavedPhase.equals(PokerConstants.TD_PHASE_NAME) || sSavedPhase.equals("GameOver")) {
                 return "BeginOnlineGame";
             } else {
                 // special case where save file was created before game

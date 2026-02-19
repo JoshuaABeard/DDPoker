@@ -40,7 +40,6 @@ package com.donohoedigital.games.poker;
 
 import com.donohoedigital.base.ApplicationError;
 import com.donohoedigital.base.CommandLine;
-import com.donohoedigital.base.TypedHashMap;
 import com.donohoedigital.base.Utils;
 import com.donohoedigital.comms.*;
 import com.donohoedigital.config.*;
@@ -51,17 +50,9 @@ import com.donohoedigital.games.config.GameStateFactory;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.model.TournamentProfile;
-import com.donohoedigital.games.poker.network.OnlineMessage;
-import com.donohoedigital.games.poker.network.PokerConnection;
-import com.donohoedigital.games.poker.network.PokerConnectionServer;
-import com.donohoedigital.games.poker.online.ChatHandler;
-import com.donohoedigital.games.poker.online.ChatLobbyManager;
-import com.donohoedigital.games.poker.online.ListGames;
-import com.donohoedigital.games.poker.online.OnlineManager;
 import com.donohoedigital.games.poker.server.EmbeddedGameServer;
 import com.donohoedigital.games.poker.server.GameSaveManager;
 import com.donohoedigital.gui.DDHtmlEditorKit;
-import com.donohoedigital.p2p.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -69,7 +60,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.*;
 import java.net.URL;
-import java.nio.channels.SocketChannel;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -80,7 +70,7 @@ import static com.donohoedigital.config.DebugConfig.TESTING;
 /**
  * @author Doug Donohoe
  */
-public class PokerMain extends GameEngine implements Peer2PeerControllerInterface, LanControllerInterface {
+public class PokerMain extends GameEngine {
     private static final Logger logger;
 
     private static final String APP_NAME = "poker";
@@ -373,13 +363,6 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
     }
 
     /**
-     * Initialize P2P on startup
-     */
-    protected void initP2POnStartup() {
-        initP2P();
-    }
-
-    /**
      * We use gameboard config
      */
     @Override
@@ -393,12 +376,6 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
     @Override
     protected void initialStart() {
         // Server config check moved to PokerStartMenu (after license, before profile)
-
-        // start p2p server after main window initialized (so engine is ready)
-        // player ID is auto-generated, so always available in open source version
-        if (getPlayerId() != null) {
-            initP2P();
-        }
 
         /*
          * handle load
@@ -417,27 +394,6 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
                     log.error("Unable to load saved game: {}", sFileParam_);
                     log.error(ae.toString());
                     // bad save file, so we just do normal initialStart
-                }
-            } else if (sFileParam_.endsWith(PokerConstants.JOIN_FILE_EXT)) {
-                log.info("Loading online game join: {}", sFileParam_);
-                File file = new File(sFileParam_).getAbsoluteFile();
-                try {
-                    // create message from file
-                    String sURL = ConfigUtils.readFile(file).trim();
-                    TypedHashMap params = new TypedHashMap();
-                    params.setString(ListGames.PARAM_URL, sURL);
-
-                    // seed path to JoinGame so cancel buttons work
-                    getDefaultContext().seedHistory("StartMenu");
-                    getDefaultContext().seedHistory("OnlineMenu");
-
-                    // start JoinOnline phase
-                    getDefaultContext().processPhase("JoinGame", params);
-                    return;
-                } catch (ApplicationError ae) {
-                    log.error("Unable to load game join: {}", sFileParam_);
-                    log.error(ae.toString());
-                    // bad join file, so we just do normal initialStart
                 }
             }
         }
@@ -524,305 +480,6 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
     }
 
     ////
-    //// Peer2Peer stuff
-    ////
-
-    private PokerConnectionServer p2p_;
-    private PokerTCPServer tcp_;
-    private TcpChatClientAdapter chat_;
-    private LanManager lan_;
-
-    public synchronized void initP2P() {
-        ApplicationError.assertTrue(lan_ == null, "Attempting to start lan server twice");
-
-        // create multicast server
-        lan_ = new LanManager(this);
-        lan_.start();
-    }
-
-    /**
-     * Get lan manager
-     */
-    public LanManager getLanManager() {
-        return lan_;
-    }
-
-    /**
-     * Get tcp server - used for games
-     */
-    private PokerTCPServer getTCPServer() {
-        if (tcp_ == null) {
-            tcp_ = new PokerTCPServer();
-            tcp_.init();
-            tcp_.start(); // always start regardless if bound
-        }
-        return tcp_;
-    }
-
-    /**
-     * Get p2p server - always returns TCP (bUDP parameter ignored)
-     */
-    public PokerConnectionServer getPokerConnectionServer(boolean bUDP) {
-        // if asking for P2P and not null, make sure we return the right type
-        if (p2p_ != null && p2p_ != tcp_) {
-            shutdownPokerConnectionServer(p2p_);
-        }
-
-        if (p2p_ == null) {
-            // always use TCP for game connections
-            p2p_ = getTCPServer();
-        }
-        return p2p_;
-    }
-
-    /**
-     * get chat server - returns TCP-based chat client
-     */
-    public ChatLobbyManager getChatServer() {
-        if (chat_ == null) {
-            // Get chat server address from configuration
-            String chatHost = PropertyConfig.getStringProperty("settings.host.chathost", "lobby.ddpoker.com");
-            int chatPort = PropertyConfig.getIntegerProperty("settings.tcp.chat.port", 11886);
-
-            chat_ = new TcpChatClientAdapter(chatHost, chatPort);
-        }
-        return chat_;
-    }
-
-    /**
-     * shutdown p2p server
-     */
-    public void shutdownPokerConnectionServer(PokerConnectionServer p2p) {
-        if (p2p_ == null)
-            return;
-
-        p2p_ = null;
-
-        if (p2p == tcp_) {
-            tcp_.shutdown();
-            tcp_ = null;
-        }
-    }
-
-    /**
-     * shut down chat server
-     */
-    public void shutdownChatServer() {
-        if (chat_ != null) {
-            chat_.disconnect();
-            chat_ = null;
-        }
-    }
-
-    /**
-     * Adapter for TcpChatClient that implements ChatLobbyManager. Uses reflection
-     * to avoid circular module dependencies.
-     */
-    private class TcpChatClientAdapter implements ChatLobbyManager {
-        private final Object client; // TcpChatClient instance
-
-        TcpChatClientAdapter(String host, int port) {
-            try {
-                // Create InetSocketAddress
-                java.net.InetSocketAddress address = new java.net.InetSocketAddress(host, port);
-
-                // Load TcpChatClient via reflection
-                Class<?> clientClass = Class.forName("com.donohoedigital.games.poker.network.TcpChatClient");
-                this.client = clientClass.getConstructor(java.net.InetSocketAddress.class).newInstance(address);
-            } catch (Exception e) {
-                throw new ApplicationError("Failed to create TcpChatClient", e);
-            }
-        }
-
-        @Override
-        public void sendChat(PlayerProfile profile, String sMessage) {
-            try {
-                // Special case: null message means send HELLO (from OnlineLobby.start())
-                if (sMessage == null) {
-                    // Check if connected: client.isConnected()
-                    Boolean isConnected = (Boolean) client.getClass().getMethod("isConnected").invoke(client);
-
-                    if (!isConnected) {
-                        // Connect: client.connect()
-                        client.getClass().getMethod("connect").invoke(client);
-                    }
-
-                    // Send HELLO: client.sendHello(profile, playerId)
-                    client.getClass().getMethod("sendHello", Object.class, String.class).invoke(client, profile,
-                            getPlayerId());
-                } else {
-                    // Send chat: client.sendChat(profile, message)
-                    client.getClass().getMethod("sendChat", Object.class, String.class).invoke(client, profile,
-                            sMessage);
-                }
-            } catch (Exception e) {
-                logger.error("Failed to send chat message", e);
-                // Notify handler of error
-                if (chatHandler_ != null) {
-                    OnlineMessage omsg = new OnlineMessage(OnlineMessage.CAT_CHAT_ADMIN);
-                    omsg.setChat(PropertyConfig.getMessage("msg.chat.lobby.unavail",
-                            "Failed to send: " + e.getMessage(), ""));
-                    chatHandler_.chatReceived(omsg);
-                }
-            }
-        }
-
-        void setHandler(ChatHandler handler) {
-            try {
-                // client.setHandler(handler)
-                client.getClass().getMethod("setHandler", Object.class).invoke(client, handler);
-            } catch (Exception e) {
-                logger.error("Failed to set chat handler", e);
-            }
-        }
-
-        void disconnect() {
-            try {
-                // client.disconnect()
-                client.getClass().getMethod("disconnect").invoke(client);
-            } catch (Exception e) {
-                logger.error("Failed to disconnect from chat server", e);
-            }
-        }
-    }
-
-    /**
-     * Poker TCP/IP server
-     */
-    private class PokerTCPServer extends Peer2PeerServer implements PokerConnectionServer {
-        private PokerTCPServer() {
-            super(PokerMain.this);
-            setAppName("PokerTCPServer");
-        }
-
-        public void closeConnection(PokerConnection connection) {
-            if (connection == null)
-                return;
-            super.closeChannel(connection.getSocket());
-        }
-
-        public int send(PokerConnection connection, DDMessageTransporter message) throws IOException {
-            if (connection == null)
-                return 0;
-
-            Peer2PeerMessage p2p = (Peer2PeerMessage) message;
-            return p2p.write(connection.getSocket());
-        }
-
-        public DDMessageTransporter newMessage(DDMessage msg) {
-            return new Peer2PeerMessage(Peer2PeerMessage.P2P_MSG, msg);
-        }
-    }
-
-    /**
-     * Notify by PokerConnectionServer that a connection is closing
-     */
-    public void connectionClosing(PokerConnection connection) {
-        PokerGame game = (PokerGame) getDefaultContext().getGame();
-        OnlineManager mgr = null;
-
-        // if we have a game, look for online mgr
-        if (game != null) {
-            mgr = game.getOnlineManager();
-        }
-
-        // if no online manager, return error
-        if (mgr != null) {
-            mgr.connectionClosing(connection);
-        } else {
-            logger.warn("Connection closing notification received with no OnlineManager from {}", connection);
-        }
-    }
-
-    /**
-     * Handle p2p message received - hand off to OnlineManager
-     */
-    public DDMessageTransporter messageReceived(PokerConnection connection, DDMessageTransporter msg) {
-        PokerGame game = (PokerGame) getDefaultContext().getGame();
-        OnlineManager mgr = null;
-
-        // if we have a game, look for online mgr
-        if (game != null) {
-            mgr = game.getOnlineManager();
-        }
-
-        // if no online manager, return error
-        if (mgr == null) {
-            // possibly disappeared in the interim
-            if (p2p_ == null)
-                return null;
-
-            OnlineMessage omsg = new OnlineMessage(msg.getMessage());
-
-            // reply like Online Manager, but with bogus guid
-            // so server test responds with appropriate message
-            if (omsg.getCategory() == OnlineMessage.CAT_TEST) {
-                return OnlineManager.getTestReply(p2p_, "guid-no-online-game", omsg);
-            }
-
-            // respond to any other type of message with same response,
-            // as if someone was trying to join
-            // logger.warn("Message received with no OnlineManager: " + msg);
-            return OnlineManager.getAppErrorReply(p2p_, omsg, PropertyConfig.getMessage("msg.nojoin.nogame"), false);
-        } else {
-            return mgr.handleMessage(msg, connection);
-        }
-    }
-
-    /**
-     * port used to direct connect
-     */
-    public int getPort() {
-        return p2p_ == null ? 0 : p2p_.getPreferredPort();
-    }
-
-    /**
-     * ip used to direct connect
-     */
-    public String getIP() {
-        return p2p_ == null ? "127.0.0.1" : p2p_.getPreferredIP();
-    }
-
-    ////
-    //// Peer2PeerControllerInterface (TCP)
-    ////
-
-    /**
-     * Handle p2p message received - hand off to OnlineManager
-     */
-    public DDMessageTransporter p2pMessageReceived(SocketChannel channel, DDMessageTransporter msg) {
-        return messageReceived(new PokerConnection(channel), msg);
-    }
-
-    /**
-     * Handle when a socket is closed.
-     */
-    public void socketClosing(SocketChannel channel) {
-        connectionClosing(new PokerConnection(channel));
-    }
-
-    ////
-    //// Chat
-    ////
-
-    private ChatHandler chatHandler_;
-
-    ChatHandler getChatLobbyHandler() {
-        return chatHandler_;
-    }
-
-    public void setChatLobbyHandler(ChatHandler mgr) {
-        chatHandler_ = mgr;
-
-        // if no chat handler, close connection to chat server
-        if (chatHandler_ == null && chat_ != null) {
-            chat_.disconnect();
-        } else if (chatHandler_ != null && chat_ != null) {
-            chat_.setHandler(chatHandler_);
-        }
-    }
-
-    ////
     //// LanControllerInterface methods
     ////
 
@@ -905,23 +562,11 @@ public class PokerMain extends GameEngine implements Peer2PeerControllerInterfac
     public static final String ONLINE_GAME_STATUS = "status";
 
     /**
-     * Get online game description
+     * Get online game description for LAN broadcast. Returns null in M7 — games are
+     * hosted by the embedded server, not broadcast via LAN P2P.
      */
     public DataMarshal getOnlineGame() {
-        PokerGame game = (PokerGame) getDefaultContext().getGame();
-        DMTypedHashMap gamedata = null;
-
-        // if there is a game with an online manager, then this
-        // is a host that has a game, so prepare data
-        if (game != null && game.getOnlineManager() != null && game.getOnlineManager().isHost()) {
-            gamedata = new DMTypedHashMap();
-            gamedata.setInteger(ONLINE_GAME_STATUS, game.getOnlineMode());
-            if (game.isAcceptingRegistrations()) {
-                gamedata.setString(ONLINE_GAME_LAN_CONNECT, game.getLanConnectURL());
-                gamedata.setObject(ONLINE_GAME_PROFILE, game.getProfile());
-            }
-        }
-        return gamedata;
+        return null;
     }
 
     /**

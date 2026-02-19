@@ -43,7 +43,6 @@ import com.donohoedigital.base.Utils;
 import com.donohoedigital.comms.DDMessageListener;
 import com.donohoedigital.comms.DMTypedHashMap;
 import com.donohoedigital.config.AudioConfig;
-import com.donohoedigital.config.DebugConfig;
 import com.donohoedigital.config.Prefs;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.comms.EngineMessage;
@@ -85,7 +84,6 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
     private DDTabbedPane tabs_;
     private final GuiUtils.CheckListener checkListeners_;
     private OptionText onlineServer_;
-    private OptionText chatServer_;
     private OptionBoolean onlineEnabled_;
     private GlassButton test_;
 
@@ -520,22 +518,6 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
 
             miscoptions.setLayout(new GridLayout(0, 1, 0, GRIDADJUST1));
 
-            OptionBoolean ob = OptionMenu
-                    .add(new OptionBoolean(NODE, PokerConstants.OPTION_ONLINE_UDP, OSTYLE, map_, true), miscoptions);
-            // TODO: turn off
-            if (!DebugConfig.isTestingOn()) {
-                ob.getCheckBox().setSelected(false);
-                ob.getCheckBox().setToolTipText(
-                        "Hosting via UDP is reserved for DD Poker personnel only while testing continues.");
-                ob.setEnabled(false);
-            }
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_ONLINE_PAUSE, OSTYLE, map_, true),
-                    miscoptions);
-            OptionMenu.add(
-                    new OptionBoolean(NODE, PokerConstants.OPTION_ONLINE_PAUSE_ALL_DISCONNECTED, OSTYLE, map_, true),
-                    miscoptions);
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_ONLINE_COUNTDOWN, OSTYLE, map_, true),
-                    miscoptions);
             OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_ONLINE_AUDIO, OSTYLE, map_, true),
                     miscoptions);
             if (Utils.ISWINDOWS)
@@ -613,8 +595,6 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
 
             onlineServer_ = new OptionText(NODE, EngineConstants.OPTION_ONLINE_SERVER, OSTYLE, map_,
                     ONLINE_SERVER_LIMIT, ONLINE_SERVER_REGEXP, 400, true);
-            chatServer_ = new OptionText(NODE, PokerConstants.OPTION_ONLINE_CHAT, OSTYLE, map_, ONLINE_SERVER_LIMIT,
-                    ONLINE_SERVER_REGEXP, 400, true);
 
             GridBagConstraints gbc = new GridBagConstraints();
             gbc.gridx = 0;
@@ -624,8 +604,6 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
             gbc.insets = new Insets(2, 0, 2, 10);
 
             serversTable.add(onlineServer_, gbc);
-            gbc.gridy = 1;
-            serversTable.add(chatServer_, gbc);
             serverBorder.add(serversTable, BorderLayout.CENTER);
 
             // test button
@@ -644,7 +622,6 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
         private void doOnlineEnabled() {
             boolean enabled = onlineEnabled_.getCheckBox().isSelected();
             onlineServer_.setEnabled(enabled);
-            chatServer_.setEnabled(enabled);
             test_.setEnabled(enabled);
         }
     }

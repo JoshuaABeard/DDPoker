@@ -18,7 +18,9 @@
 package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.engine.GameManager;
+import com.donohoedigital.games.poker.HandAction;
 import com.donohoedigital.games.poker.PokerPlayer;
+import com.donohoedigital.games.poker.PokerTable;
 
 /**
  * Combined interface for the tournament director as seen by the desktop UI.
@@ -64,4 +66,79 @@ public interface PokerDirector extends GameManager, ChatManager {
      *            serialized settings string
      */
     void playerUpdate(PokerPlayer player, String settings);
+
+    /**
+     * Submits a player's hand action (fold, call, raise, etc.) to the director.
+     *
+     * <p>
+     * In {@link WebSocketTournamentDirector}, routes the action over WebSocket to
+     * the embedded server. In the legacy {@code TournamentDirector}, applies the
+     * action to the local game state directly.
+     *
+     * @param action
+     *            the hand action chosen by the player
+     * @param bRemote
+     *            {@code true} if this action originated from a remote player
+     */
+    void doHandAction(HandAction action, boolean bRemote);
+
+    /**
+     * Signals the director that the game is over.
+     *
+     * <p>
+     * In {@link WebSocketTournamentDirector}, this is a no-op because game-over is
+     * driven by the server's {@code GAME_COMPLETE} message. In the legacy
+     * {@code TournamentDirector}, sets internal state to stop the game loop.
+     */
+    void setGameOver();
+
+    /**
+     * Initiates dealing at the given table.
+     *
+     * <p>
+     * In {@link WebSocketTournamentDirector}, this is a no-op — the server controls
+     * the deal. In the legacy {@code TournamentDirector}, advances the table state
+     * and triggers the game loop.
+     *
+     * @param table
+     *            the table to deal
+     */
+    void doDeal(PokerTable table);
+
+    /**
+     * Records a rebuy decision for the given player.
+     *
+     * <p>
+     * In {@link WebSocketTournamentDirector}, applies the rebuy to the local player
+     * model and sends a {@code REBUY_DECISION(accept=true)} message to the server.
+     *
+     * @param player
+     *            the player doing the rebuy
+     * @param nLevel
+     *            the blind level at which the rebuy occurs
+     * @param nAmount
+     *            the chip cost of the rebuy
+     * @param nChips
+     *            the chips awarded
+     * @param bPending
+     *            {@code true} if the rebuy takes effect after the current hand
+     */
+    void doRebuy(PokerPlayer player, int nLevel, int nAmount, int nChips, boolean bPending);
+
+    /**
+     * Records an add-on decision for the given player.
+     *
+     * <p>
+     * In {@link WebSocketTournamentDirector}, applies the add-on to the local
+     * player model and sends an {@code ADDON_DECISION(accept=true)} message to the
+     * server.
+     *
+     * @param player
+     *            the player doing the add-on
+     * @param nAmount
+     *            the chip cost of the add-on
+     * @param nChips
+     *            the chips awarded
+     */
+    void doAddon(PokerPlayer player, int nAmount, int nChips);
 }

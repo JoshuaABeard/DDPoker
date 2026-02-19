@@ -142,12 +142,11 @@ public class ObserversDash extends DashboardItem {
             if (!p.isLocallyControlled()) {
                 PokerPrefsPlayerList muted = PokerPrefsPlayerList.getSharedList(PokerPrefsPlayerList.LIST_MUTE);
                 PokerPrefsPlayerList banned = PokerPrefsPlayerList.getSharedList(PokerPrefsPlayerList.LIST_BANNED);
-                OnlineManager mgr = game_.getOnlineManager();
+                PokerDirector td = (PokerDirector) context_.getGameManager();
                 menu.add(new ShowTournamentTable.MutePlayer("PokerTable", p,
-                        muted.containsPlayer(p.getName(), p.getPlayerId()), mgr, false));
+                        muted.containsPlayer(p.getName(), p.getPlayerId()), td, false));
                 menu.add(new ShowTournamentTable.BanPlayer(context_, "PokerTable", p,
-                        banned.containsPlayer(p.getName(), p.getPlayerId()), () -> mgr.banPlayer(p), mgr, false,
-                        mgr.isHost()));
+                        banned.containsPlayer(p.getName(), p.getPlayerId()), null, td, false, false));
             }
 
             menu.show(this, e.getX(), e.getY());

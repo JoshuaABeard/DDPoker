@@ -41,7 +41,6 @@ package com.donohoedigital.games.poker.engine;
 import com.donohoedigital.base.Format;
 import com.donohoedigital.comms.Version;
 import com.donohoedigital.games.config.GamePlayer;
-import com.donohoedigital.p2p.P2PURL;
 
 /**
  * @author Doug Donohoe
@@ -219,6 +218,8 @@ public class PokerConstants {
     public static final int CHAT_1 = 1;
     public static final int CHAT_2 = 2;
     public static final int CHAT_TIMEOUT = 3;
+    public static final int CHAT_DIRECTOR_MSG_ID = -2;
+    public static final int CHAT_DEALER_MSG_ID = -3;
 
     // payout options
     public static final int PAYOUT_SPOTS = 1;
@@ -275,12 +276,12 @@ public class PokerConstants {
     public static final int MIN_SCHEDULED_START_PLAYERS = 2;
     public static final String ONLINE_GAME_PREFIX_TCP = "n-";
     public static final String ONLINE_GAME_PREFIX_UDP = "u-";
-    public static final String URL_START = "poker" + P2PURL.PROTOCOL_DELIM;
+    public static final String URL_START = "poker://";
     public static final String ID_PASS_DELIM = "/";
     public static final String REGEXP_DOLLAR_AMOUNT = "^\\$?[0-9\\,]*$";
     public static final String REGEXP_IP_ADDRESS = "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b";
-    public static final String REGEXP_GAME_URL = URL_START + REGEXP_IP_ADDRESS + P2PURL.PORT_DELIM + "\\d{1,5}" + // port
-            P2PURL.URI_DELIM + '(' + ONLINE_GAME_PREFIX_TCP + '|' + ONLINE_GAME_PREFIX_UDP + ')' + "\\d{1,5}" + // gameid
+    public static final String REGEXP_GAME_URL = URL_START + REGEXP_IP_ADDRESS + ":" + "\\d{1,5}" + // port
+            "/" + '(' + ONLINE_GAME_PREFIX_TCP + '|' + ONLINE_GAME_PREFIX_UDP + ')' + "\\d{1,5}" + // gameid
             ID_PASS_DELIM + "[A-NP-Z]{3}-[1-9]{3}"; // password
 
     // join game file information
@@ -348,4 +349,12 @@ public class PokerConstants {
     public static final String TESTING_SPLIT_HUMANS = "settings.debug.onlinesplithumans";
     public static final String TESTING_ONLINE_AI_NO_WAIT = "settings.debug.onlineainowait";
     public static final String TESTING_PROCESS_ALL_COMPUTER_TABLES = "settings.debug.processallaitables";
+
+    // Debug flags migrated from TournamentDirector (Phase 7.5)
+    public static final boolean DEBUG_EVENT_DISPLAY = false;
+    public static final boolean DEBUG_CLEANUP_TABLE = false;
+
+    // Game constants migrated from TournamentDirector (Phase 7.5)
+    public static final int AI_PAUSE_TENTHS = 10;
+    public static final String TD_PHASE_NAME = "TournamentDirector";
 }

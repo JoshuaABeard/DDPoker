@@ -32,6 +32,7 @@ import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
 import com.donohoedigital.games.poker.gameserver.persistence.TestJpaConfiguration;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.BanRepository;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.OnlineProfileRepository;
+import com.donohoedigital.games.poker.gameserver.persistence.repository.PasswordResetTokenRepository;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 
 import java.nio.file.Path;
@@ -47,6 +48,9 @@ class AuthServiceTest {
 
     @Autowired
     private BanRepository banRepository;
+
+    @Autowired
+    private PasswordResetTokenRepository resetTokenRepository;
 
     @Autowired
     private AuthService authService;
@@ -73,9 +77,10 @@ class AuthServiceTest {
         }
 
         @org.springframework.context.annotation.Bean
-        public AuthService authService(OnlineProfileRepository profileRepository, BanService banService,
+        public AuthService authService(OnlineProfileRepository profileRepository,
+                PasswordResetTokenRepository resetTokenRepository, BanService banService,
                 JwtTokenProvider tokenProvider) {
-            return new AuthService(profileRepository, banService, tokenProvider);
+            return new AuthService(profileRepository, resetTokenRepository, banService, tokenProvider);
         }
     }
 

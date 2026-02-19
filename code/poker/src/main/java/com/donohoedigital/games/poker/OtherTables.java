@@ -51,8 +51,7 @@ import java.util.*;
  * @author donohoe
  */
 public class OtherTables {
-    @SuppressWarnings({"NonFinalStaticVariableUsedInClassInitialization"})
-    private static boolean DEBUG = TournamentDirector.DEBUG_CLEANUP_TABLE;
+    private static final boolean DEBUG = PokerConstants.DEBUG_CLEANUP_TABLE;
 
     static Logger logger = LogManager.getLogger(OtherTables.class);
 
@@ -369,9 +368,8 @@ public class OtherTables {
     /**
      * Record each player's placement in the tournament.
      */
-    public static void recordPlayerPlacement(TournamentDirector td, PokerGame game, List<PokerPlayer> removed) {
+    public static void recordPlayerPlacement(PokerDirector td, PokerGame game, List<PokerPlayer> removed) {
         Collections.sort(removed, SORTCHIPSATSTART);
-        boolean bUpdate = false;
         for (PokerPlayer p : removed) {
             // if already elimintated, don't eliminate again
             if (p.isEliminated())
@@ -379,8 +377,6 @@ public class OtherTables {
 
             // notify game player is out so prize/place can be determined
             game.playerOut(p);
-            if (!p.isComputer())
-                bUpdate = true;
 
             // send chat (online only)
             if (game.isOnlineGame()) {
@@ -393,19 +389,10 @@ public class OtherTables {
             }
 
             // debug
-            if (DEBUG || TournamentDirector.DEBUG_CLEANUP_TABLE) {
+            if (DEBUG) {
                 logger.debug("   " + p.getName() + "(" + p.getID() + ") out chips at start: " + p.getChipCountAtStart()
                         + ", win=" + p.getPrize() + ", place=" + p.getPlace());
             }
-        }
-
-        // if we removed players in a public online game, send an update to server.
-        // we do this here (instead of in playerOut() in case multiple players busted
-        // (to consolidate into one send). The final player out is updated when
-        // the final results are sent down.
-        if (bUpdate && game.isOnlineGame() && game.isPublic()) {
-            OnlineServer manager = OnlineServer.getWanManager();
-            manager.updateGameProfile(game);
         }
     }
 

@@ -38,7 +38,6 @@
 
 package com.donohoedigital.games.poker;
 
-import com.donohoedigital.base.TypedHashMap;
 import com.donohoedigital.base.Utils;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.db.BindArray;
@@ -46,9 +45,7 @@ import com.donohoedigital.games.config.GamePhase;
 import com.donohoedigital.games.engine.DialogPhase;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.GameEngine;
-import com.donohoedigital.games.engine.OptionMenu;
 import com.donohoedigital.games.poker.model.TournamentProfile;
-import com.donohoedigital.games.poker.online.Lobby;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -130,11 +127,6 @@ public class GameInfoDialog extends DialogPhase {
         // otherwise add it as a tab
         tab_.addTab(PropertyConfig.getMessage("msg.gametab"), ic_, base, null);
 
-        // online settings
-        if (game_.isOnlineGame()) {
-            tab_.addTab(PropertyConfig.getMessage("msg.online2"), ic_, new OnlineTab(), null);
-        }
-
         return tab_;
     }
 
@@ -157,40 +149,6 @@ public class GameInfoDialog extends DialogPhase {
             sum.updateProfile(profile_);
             add(sum, BorderLayout.CENTER);
 
-            repaint();
-        }
-    }
-
-    private class OnlineTab extends DDTabPanel {
-        public void createUI() {
-            setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 5, VerticalFlowLayout.LEFT));
-
-            DDLabelBorder area = Lobby.createURLPanel(game_, STYLE, STYLE, "PokerStandardDialog", 5);
-            add(area);
-
-            if (game_.getLocalPlayer().isHost()) {
-                TypedHashMap dummy = new TypedHashMap();
-
-                // timeout
-                DDLabelBorder timeout = new DDLabelBorder("timeout", STYLE);
-                timeout.setLayout(new GridLayout(0, 1, 0, 4));
-                add(timeout);
-                OptionInteger oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_TIMEOUT, STYLE, dummy,
-                        null, TournamentProfile.MIN_TIMEOUT, TournamentProfile.MAX_TIMEOUT, 50, true), timeout);
-                oi.setBorder(BorderFactory.createEmptyBorder(0, 5, 5, 5));
-                oi.setMap(profile_.getMap());
-                oi.resetToMap();
-
-                oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_THINKBANK, STYLE, dummy, null, 0,
-                        TournamentProfile.MAX_THINKBANK, 50, true), timeout);
-                oi.setBorder(BorderFactory.createEmptyBorder(0, 5, 5, 5));
-                oi.setMap(profile_.getMap());
-                oi.resetToMap();
-
-                // boot
-                DDLabelBorder bootbase = TournamentProfileDialog.createBootControls(STYLE, dummy, profile_);
-                add(bootbase);
-            }
             repaint();
         }
     }

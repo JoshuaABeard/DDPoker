@@ -48,9 +48,7 @@ import com.donohoedigital.games.poker.ai.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.model.LevelAdvanceMode;
-import com.donohoedigital.games.poker.network.*;
 import com.donohoedigital.games.poker.online.*;
-import com.donohoedigital.p2p.*;
 import org.apache.logging.log4j.*;
 
 import java.io.*;
@@ -155,7 +153,6 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     private PokerTableInput input_ = null;
 
     // online transient
-    private OnlineManager onlineMgr_;
     private boolean bStartFromLobby_;
 
     /**
@@ -403,29 +400,6 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         for (int i = 0; i < nNum; i++) {
             p = getPokerObserverAt(i);
             if (sKey.equals(p.getPlayerId()))
-                return p;
-        }
-
-        return null;
-    }
-
-    /**
-     * Get poker player by socket - used in online games. Player returned could be
-     * an observer.
-     */
-    public PokerPlayer getPokerPlayerFromConnection(PokerConnection connection) {
-        PokerPlayer p;
-        int nNum = getNumPlayers();
-        for (int i = 0; i < nNum; i++) {
-            p = getPokerPlayerAt(i);
-            if (connection.equals(p.getConnection()))
-                return p;
-        }
-
-        nNum = getNumObservers();
-        for (int i = 0; i < nNum; i++) {
-            p = getPokerObserverAt(i);
-            if (connection.equals(p.getConnection()))
                 return p;
         }
 
@@ -1563,38 +1537,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
 
         setOnlineMode(MODE_NONE);
 
-        if (onlineMgr_ != null) {
-            onlineMgr_.finish();
-            onlineMgr_ = null;
-        }
-
         super.finish();
-    }
-
-    /**
-     * Initialize game for online play - create OnlineManager
-     */
-    public void initOnline(int mode) {
-        setOnlineMode(mode);
-        initOnlineManager(null);
-    }
-
-    /**
-     * init online manager
-     */
-    public OnlineManager initOnlineManager(TournamentDirector td) {
-        OnlineManager mgr = new OnlineManager(this);
-        if (td != null)
-            mgr.setTournamentDirector(td);
-        onlineMgr_ = mgr;
-        return getOnlineManager();
-    }
-
-    /**
-     * Get online manager
-     */
-    public OnlineManager getOnlineManager() {
-        return onlineMgr_;
     }
 
     /**
@@ -1717,9 +1660,9 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         StringBuilder sb = new StringBuilder();
         sb.append(PokerConstants.URL_START);
         sb.append(IP);
-        sb.append(P2PURL.PORT_DELIM);
+        sb.append(":");
         sb.append(getPort());
-        sb.append(P2PURL.URI_DELIM);
+        sb.append("/");
         sb.append(getOnlineGameID());
         sb.append(PokerConstants.ID_PASS_DELIM);
         sb.append(getOnlinePassword());
@@ -2085,7 +2028,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
             for (int aRemoved : removed) {
                 table = getTableByNumber(aRemoved);
                 removeTable(table);
-                if (TournamentDirector.DEBUG_CLEANUP_TABLE) {
+                if (PokerConstants.DEBUG_CLEANUP_TABLE) {
                     logger.debug("Removed on load: " + table.getName());
                 }
             }
@@ -2113,21 +2056,6 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
 
         // set disconnected flag
         fixDisconnected(state);
-
-        // fix IP address if necessary
-        if (state.getFile() != null && isOnlineGame()) {
-            // check IP address to see if it changed from last save
-            LanManager lan = PokerMain.getPokerMain().getLanManager();
-            if (lan != null) {
-                String sIP = lan.getIP();
-                String sSavedIP = getLocalIP();
-                if (!sSavedIP.equals(sIP) && !sIP.equals("127.0.0.1")) {
-                    logger.info("Updating local ip from: " + sSavedIP + " to: " + sIP);
-                    setLocalIP(sIP);
-                    // TODO: notify user and check about public ip
-                }
-            }
-        }
 
         // upon load make sure DDMessage MsgState is created
         // no need to load since after gameLoaded is called,

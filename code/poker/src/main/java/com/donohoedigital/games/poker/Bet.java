@@ -45,7 +45,6 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.games.poker.dashboard.*;
 import com.donohoedigital.games.poker.engine.*;
-import com.donohoedigital.games.poker.logic.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
@@ -172,8 +171,13 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
             int nToCall = hhand_.getCall(player_);
             int nBet = hhand_.getBet();
 
-            // Determine input mode based on betting state (extracted to BetValidator)
-            int inputMode = BetValidator.determineInputMode(nToCall, nBet);
+            // Determine input mode based on betting state
+            int inputMode;
+            if (nToCall == 0) {
+                inputMode = (nBet == 0) ? PokerTableInput.MODE_CHECK_BET : PokerTableInput.MODE_CHECK_RAISE;
+            } else {
+                inputMode = PokerTableInput.MODE_CALL_RAISE;
+            }
             game_.setInputMode(inputMode, hhand_, player_);
         }
         // Computer controlled player at active table
@@ -192,7 +196,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
             // do ai
             if (!TESTING(PokerConstants.TESTING_PAUSE_AI) || table_.isZipMode()) {
                 int nWaitTenths = game_.isOnlineGame()
-                        ? (TESTING(PokerConstants.TESTING_ONLINE_AI_NO_WAIT) ? 0 : TournamentDirector.AI_PAUSE_TENTHS)
+                        ? (TESTING(PokerConstants.TESTING_ONLINE_AI_NO_WAIT) ? 0 : 10)
                         : PokerUtils.getIntOption(PokerConstants.OPTION_DELAY);
 
                 // encore idea - have ai pause to increase drama after human has bet - to
@@ -305,7 +309,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
         }
 
         // notify TD of action
-        TournamentDirector td = (TournamentDirector) context_.getGameManager();
+        PokerDirector td = (PokerDirector) context_.getGameManager();
         td.doHandAction(action, false);
 
         // update dash item to show we folded, need to do
@@ -395,10 +399,17 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
     private HandAction betRaise(int nAmount) {
         // bet/raise by appropriate amount (in case user typed in value not
         // a multiple of min chip)
-        BetValidator.BetValidationResult validation = BetValidator.validateBetAmount(table_, nAmount);
+        int nMinChip = table_.getMinChip();
+        int nOdd = nAmount % nMinChip;
+        int nNewAmount = nAmount;
+        if (nOdd != 0) {
+            nNewAmount = nAmount - nOdd;
+            if ((float) nOdd >= (nMinChip / 2.0f)) {
+                nNewAmount += nMinChip;
+            }
+        }
 
-        if (validation.needsRounding()) {
-            int nNewAmount = validation.getRoundedAmount();
+        if (nNewAmount != nAmount) {
             String sMsg = PropertyConfig.getMessage("msg.betodd", table_.getMinChip(), nAmount, nNewAmount);
             if (EngineUtils.displayConfirmationDialog(context_, sMsg, "msg.windowtitle.betodd", "betodd", "betodd")) {
                 nAmount = nNewAmount;

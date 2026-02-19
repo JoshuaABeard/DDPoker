@@ -181,7 +181,6 @@ class FirstTimeWizardTest {
 
         // Complete server config
         wizard.setGameServer("localhost:8877");
-        wizard.setChatServer("localhost:11886");
         wizard.setServerConfigComplete(true);
         wizard.nextStep();
 
@@ -331,11 +330,11 @@ class FirstTimeWizardTest {
     }
 
     // =================================================================
-    // Test 10: Email/Password Flow Simulation
+    // Test 10: Online Registration Flow (REST — no email activation step)
     // =================================================================
 
     @Test
-    void should_ShowEmailSentPanel_When_OnlineProfileCreated() {
+    void should_ShowCompletePanel_When_OnlineProfileCreated() {
         wizard = new FirstTimeWizard();
         wizard.init(mockEngine, mockContext, params);
 
@@ -344,25 +343,11 @@ class FirstTimeWizardTest {
         wizard.setPlayerEmail("test@example.com");
         wizard.setServerConfigComplete(true);
 
-        // Create profile (would send to server)
+        // createOnlineProfile() advances to the complete step (REST already succeeded
+        // before this is called in the real handleNext() flow)
         wizard.createOnlineProfile();
 
-        assertThat(wizard.getCurrentStepType()).isEqualTo(FirstTimeWizard.STEP_TYPE_EMAIL_SENT);
-    }
-
-    @Test
-    void should_ValidatePassword_When_PasswordEntered() {
-        wizard = new FirstTimeWizard();
-        wizard.init(mockEngine, mockContext, params);
-
-        wizard.selectPlayMode(FirstTimeWizard.MODE_ONLINE_NEW);
-        wizard.createOnlineProfile();
-
-        // Simulate password from email
-        wizard.setReceivedPassword("testpass");
-        boolean isValid = wizard.validatePassword();
-
-        assertThat(isValid).isTrue();
+        assertThat(wizard.getCurrentStepType()).isEqualTo(FirstTimeWizard.STEP_TYPE_COMPLETE);
     }
 
     // =================================================================

@@ -55,7 +55,7 @@ public class OnlineDash extends DashboardItem {
     private DDPanel base_;
     private PokerPlayer player_;
     private DDCheckBox sitout_, mucklose_, muckwin_;
-    private TournamentDirector td_;
+    private PokerDirector td_;
 
     public OnlineDash(GameContext context) {
         super(context, "onlineopt");
@@ -68,9 +68,9 @@ public class OnlineDash extends DashboardItem {
         // needed in future
     }
 
-    private TournamentDirector getTD() {
+    private PokerDirector getTD() {
         if (td_ == null) {
-            td_ = (TournamentDirector) context_.getGameManager();
+            td_ = (PokerDirector) context_.getGameManager();
         }
         return td_;
     }

@@ -562,46 +562,6 @@ class FirstTimeWizardEdgeCaseTest {
     }
 
     // =================================================================
-    // Password Validation Edge Cases
-    // =================================================================
-
-    @Test
-    void should_RejectPasswordWithWhitespaceOnly_When_Validating() {
-        wizard = new FirstTimeWizard();
-        wizard.init(mockEngine, mockContext, params);
-
-        wizard.setReceivedPassword("   ");
-        boolean isValid = wizard.validatePassword();
-
-        // validatePassword checks isEmpty() but not trim()
-        // Documents current behavior
-        assertThat(isValid).isTrue(); // Current behavior - accepts whitespace
-    }
-
-    @Test
-    void should_AcceptVeryLongPassword_When_Validating() {
-        wizard = new FirstTimeWizard();
-        wizard.init(mockEngine, mockContext, params);
-
-        String longPassword = "A".repeat(10000);
-        wizard.setReceivedPassword(longPassword);
-        boolean isValid = wizard.validatePassword();
-
-        assertThat(isValid).isTrue();
-    }
-
-    @Test
-    void should_AcceptPasswordWithSpecialCharacters_When_Validating() {
-        wizard = new FirstTimeWizard();
-        wizard.init(mockEngine, mockContext, params);
-
-        wizard.setReceivedPassword("P@ssw0rd!@#$%^&*()");
-        boolean isValid = wizard.validatePassword();
-
-        assertThat(isValid).isTrue();
-    }
-
-    // =================================================================
     // Mode Selection Edge Cases
     // =================================================================
 
@@ -699,18 +659,6 @@ class FirstTimeWizardEdgeCaseTest {
 
         // setPlayerEmail converts null to empty string
         assertThat(isValid).isFalse();
-    }
-
-    @Test
-    void should_HandleNullPassword_When_Setting() {
-        wizard = new FirstTimeWizard();
-        wizard.init(mockEngine, mockContext, params);
-
-        wizard.setPlayerPassword(null);
-        wizard.setReceivedPassword(null);
-
-        // Should convert null to empty string
-        assertThat(wizard.validatePassword()).isFalse();
     }
 
     @Test

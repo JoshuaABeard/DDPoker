@@ -2,6 +2,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 DD Poker Community
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,10 +40,10 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.base.*;
+import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.model.*;
-import com.donohoedigital.games.poker.network.*;
+import com.donohoedigital.games.poker.online.RestAuthClient;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
@@ -106,19 +107,27 @@ public class ChangePasswordDialog extends DialogPhase implements PropertyChangeL
         boolean bSuccess = true;
 
         if (button.getName().equals(okayButton_.getName())) {
-            // okay
-            OnlineProfile profile = profile_.toOnlineProfile();
-            OnlineProfile auth = profile_.toOnlineProfile();
-            profile.setPassword(newText_.getText());
-            bResult = true;
-            bSuccess = SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_CHANGE_PASSWORD, profile,
-                    auth);
+            String serverUrl = getServerUrl();
+            String jwt = profile_.getJwt();
+            Long profileId = profile_.getProfileId();
 
-            if (bSuccess) {
-                // update local profile values
-                profile_.setPassword(newText_.getText());
+            if (serverUrl == null || serverUrl.isEmpty() || jwt == null || profileId == null) {
+                logger.warn("Cannot change password: not connected to server (serverUrl={}, jwt={})", serverUrl,
+                        jwt != null ? "set" : "null");
+                bSuccess = false;
             } else {
-                bResult = false;
+                try {
+                    RestAuthClient.getInstance().changePassword(serverUrl, jwt, profileId, currentText_.getText(),
+                            newText_.getText());
+
+                    // update local profile values
+                    profile_.setPassword(newText_.getText());
+                    bResult = true;
+                } catch (RestAuthClient.RestAuthException e) {
+                    logger.warn("Change password failed: {}", e.getMessage());
+                    EngineUtils.displayInformationDialog(context_, e.getMessage());
+                    bSuccess = false;
+                }
             }
         }
 
@@ -151,5 +160,22 @@ public class ChangePasswordDialog extends DialogPhase implements PropertyChangeL
         }
 
         okayButton_.setEnabled(bEnabled);
+    }
+
+    /**
+     * Resolve the REST server URL from the configured online server preference.
+     */
+    private String getServerUrl() {
+        try {
+            String node = Prefs.NODE_OPTIONS + PokerMain.getPokerMain().getPrefsNodeName();
+            String server = Prefs.getUserPrefs(node).get(EngineConstants.OPTION_ONLINE_SERVER, "");
+            if (server == null || server.isEmpty()) {
+                return null;
+            }
+            return "http://" + server;
+        } catch (Exception e) {
+            logger.warn("Could not get server URL from preferences", e);
+            return null;
+        }
     }
 }

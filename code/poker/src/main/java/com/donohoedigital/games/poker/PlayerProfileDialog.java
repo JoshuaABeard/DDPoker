@@ -2,6 +2,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 DD Poker Community
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,13 +40,10 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.base.*;
-import com.donohoedigital.comms.*;
 import com.donohoedigital.config.*;
-import com.donohoedigital.games.comms.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.model.*;
-import com.donohoedigital.games.poker.network.*;
+import com.donohoedigital.games.poker.online.RestAuthClient;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
@@ -73,9 +71,7 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
     private DDPanel buttonPanel_;
     private DDButton emailButton_;
     private DDButton passwordButton_;
-    private DDButton sendButton_;
     private DDButton resetButton_;
-    private DDButton syncButton_;
     private boolean bEmailMode_;
     private boolean bPasswordMode_;
 
@@ -192,24 +188,8 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
                 });
             }
 
-            if (sendButton_ != null) {
-                sendButton_.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        doButton(e);
-                    }
-                });
-            }
-
             if (resetButton_ != null) {
                 resetButton_.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        doButton(e);
-                    }
-                });
-            }
-
-            if (syncButton_ != null) {
-                syncButton_.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         doButton(e);
                     }
@@ -340,67 +320,66 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
             if (bOnline) {
                 // new online profile if previously a local profile
                 bNew = !profile_.isOnline();
-                bResult = bNew | bEmailMode_ | bPasswordMode_ | (passwordWidgets_ != null);
+                bResult = bNew | bEmailMode_ | bPasswordMode_;
             }
         }
 
         if (bResult && bOnline) {
-            // if online profile, send it to the server
-            OnlineProfile profile = profile_.toOnlineProfile();
+            String serverUrl = getServerUrl();
 
             if (bNew) {
-                if (emailWidgets_ != null) {
-                    // submit new profile
-                    // Activation removed in open source
-                    profile.setEmail(emailWidgets_.getText());
-                    bSuccess = SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_ADD, profile,
-                            null);
+                if (serverUrl == null) {
+                    logger.warn("Cannot register/link profile: server not configured");
+                    bSuccess = false;
+                } else if (emailWidgets_ != null) {
+                    // registration: new profile with email + password
+                    try {
+                        var resp = RestAuthClient.getInstance().register(serverUrl, profile_.getName(),
+                                passwordWidgets_.getText(), emailWidgets_.getText());
+                        profile_.setJwt(resp.token());
+                        profile_.setProfileId(resp.profileId());
+                        profile_.setEmail(emailWidgets_.getText());
+                        profile_.setPassword(passwordWidgets_.getText());
+                    } catch (RestAuthClient.RestAuthException e) {
+                        EngineUtils.displayInformationDialog(context_, e.getMessage());
+                        bSuccess = false;
+                    }
                 } else {
-                    // retrieve profile
-                    profile.setPassword(passwordWidgets_.getText());
-                    SendMessageDialog dialog = SendWanProfile.sendWanProfileDialog(context_,
-                            OnlineMessage.CAT_WAN_PROFILE_LINK, profile, null);
-                    bSuccess = dialog.getStatus() == DDMessageListener.STATUS_OK;
-
-                    if (bSuccess) {
-                        // update local values using the server profile
-                        EngineMessage resEngineMsg = dialog.getReturnMessage();
-                        OnlineMessage resOnlineMsg = new OnlineMessage(resEngineMsg);
-                        OnlineProfile resProfile = new OnlineProfile(resOnlineMsg.getOnlineProfileData());
-
-                        // Activation removed in open source
-                        profile.setEmail(resProfile.getEmail());
+                    // link existing profile: login with name + password
+                    try {
+                        var resp = RestAuthClient.getInstance().login(serverUrl, profile_.getName(),
+                                passwordWidgets_.getText());
+                        profile_.setJwt(resp.token());
+                        profile_.setProfileId(resp.profileId());
+                        profile_.setPassword(passwordWidgets_.getText());
+                        var userProfile = RestAuthClient.getInstance().getCurrentUser(serverUrl, resp.token());
+                        profile_.setEmail(userProfile.email());
+                    } catch (RestAuthClient.RestAuthException e) {
+                        EngineUtils.displayInformationDialog(context_, e.getMessage());
+                        bSuccess = false;
                     }
                 }
             } else if (bEmailMode_) {
-                // submit email change
-                // Activation removed in open source
-                profile.setEmail(emailWidgets_.getText());
-                bSuccess = SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_RESET, profile, null);
-
-                if (bSuccess) {
-                    // new password was sent so reset the local value
-                    profile_.setPassword(null);
+                // update email via REST
+                String jwt = profile_.getJwt();
+                Long profileId = profile_.getProfileId();
+                if (serverUrl == null || jwt == null || profileId == null) {
+                    logger.warn("Cannot update email: not connected to server");
+                    bSuccess = false;
+                } else {
+                    try {
+                        RestAuthClient.getInstance().updateProfile(serverUrl, jwt, profileId, emailWidgets_.getText());
+                        profile_.setEmail(emailWidgets_.getText());
+                    } catch (RestAuthClient.RestAuthException e) {
+                        EngineUtils.displayInformationDialog(context_, e.getMessage());
+                        bSuccess = false;
+                    }
                 }
             } else if (bPasswordMode_) {
-                // close dialog after password change
                 bSuccess = true;
-            } else {
-                // submit profile activation
-                // Activation removed in open source
-                profile.setPassword(passwordWidgets_.getText());
-                bSuccess = SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_ACTIVATE, profile,
-                        null);
             }
 
-            if (bSuccess) {
-                // update local profile values
-                profile_.setEmail(profile.getEmail());
-
-                if (passwordWidgets_ != null) {
-                    profile_.setPassword(passwordWidgets_.getText());
-                }
-            } else {
+            if (!bSuccess) {
                 bResult = false;
             }
         }
@@ -425,25 +404,22 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
      * Handle radio change
      */
     private void doRadio() {
-        if (isOnline() && false) {
-            EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.playerprofile.demo"));
-            noRadio_.setSelected(true);
-            return;
-        }
-
         if (noRadio_.isSelected()) {
             removeEmail();
             removePassword();
 
             context_.getWindow().clearMessage();
         } else if (newRadio_.isSelected()) {
+            // registration: needs both email and password
             removePassword();
             addEmail();
+            addPassword();
 
             getDialog().showHelp(emailWidgets_.text_);
             getDialog().ignoreNextHelp();
             emailWidgets_.text_.requestFocus();
         } else {
+            // link existing: needs password only
             removeEmail();
             addPassword();
 
@@ -480,9 +456,7 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
 
             emailButton_ = null;
             passwordButton_ = null;
-            sendButton_ = null;
             resetButton_ = null;
-            syncButton_ = null;
 
             // resize and set focus to a useful field
             getDialog().showHelp(emailWidgets_.text_);
@@ -504,42 +478,17 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
                 bPasswordMode_ = true;
                 okayButton_.doClick();
             }
-        } else if (syncButton_ == source) {
-            // sync password
-            TypedHashMap hmParams = new TypedHashMap();
-            hmParams.setObject(ProfileList.PARAM_PROFILE, profile_);
-            SyncPasswordDialog dialog = (SyncPasswordDialog) context_.processPhaseNow("SyncPasswordDialog", hmParams);
-
-            // close the dialog if a new password was successfully submitted
-            Boolean result = (Boolean) dialog.getResult();
-
-            if ((result != null) && (result)) {
-                bPasswordMode_ = true;
-                okayButton_.doClick();
-            }
-        } else if (sendButton_ == source) {
-            // send password
-            OnlineProfile profile = profile_.toOnlineProfile();
-            SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_SEND_PASSWORD, profile, null);
         } else if (resetButton_ == source) {
-            // reset password
+            // send forgot-password email
             String sMsg = PropertyConfig.getMessage("msg.profilereset");
             if (!EngineUtils.displayConfirmationDialog(context_, sMsg, "profilereset")) {
                 return;
             }
 
-            // do an update since it automatically resets the password
-            OnlineProfile profile = profile_.toOnlineProfile();
-            if (!SendWanProfile.sendWanProfile(context_, OnlineMessage.CAT_WAN_PROFILE_RESET, profile, null)) {
-                return;
+            String serverUrl = getServerUrl();
+            if (serverUrl != null && profile_.getEmail() != null) {
+                RestAuthClient.getInstance().forgotPassword(serverUrl, profile_.getEmail());
             }
-
-            // reset the local profile
-            profile_.setPassword(null);
-
-            // close the dialog
-            bPasswordMode_ = true;
-            okayButton_.doClick();
         }
     }
 
@@ -553,17 +502,33 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
         if (bEnabled && bOnline) {
             if (emailWidgets_ != null) {
                 bEnabled = (emailWidgets_.getText().length() > 0) && (emailWidgets_.text_.isValidData());
-            } else if (passwordWidgets_ != null) {
+            }
+            if (bEnabled && passwordWidgets_ != null) {
                 bEnabled = (passwordWidgets_.getText().length() > 0);
 
                 if (emailButton_ != null)
                     emailButton_.setEnabled(!bEnabled);
-                if (sendButton_ != null)
-                    sendButton_.setEnabled(!bEnabled);
             }
         }
 
         okayButton_.setEnabled(bEnabled);
+    }
+
+    /**
+     * Resolve the REST server URL from the configured online server preference.
+     */
+    private String getServerUrl() {
+        try {
+            String node = Prefs.NODE_OPTIONS + PokerMain.getPokerMain().getPrefsNodeName();
+            String server = Prefs.getUserPrefs(node).get(EngineConstants.OPTION_ONLINE_SERVER, "");
+            if (server == null || server.isEmpty()) {
+                return null;
+            }
+            return "http://" + server;
+        } catch (Exception e) {
+            logger.warn("Could not get server URL from preferences", e);
+            return null;
+        }
     }
 
     /**
@@ -602,10 +567,9 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
 
             passwordButton_ = new GlassButton("profilepassword", "Glass");
             buttonPanel.add(passwordButton_);
+
             resetButton_ = new GlassButton("profilereset", "Glass");
             buttonPanel.add(resetButton_);
-            syncButton_ = new GlassButton("profilesync", "Glass");
-            buttonPanel.add(syncButton_);
 
             DDPanel align = new DDPanel();
             align.setLayout(new CenterLayout());

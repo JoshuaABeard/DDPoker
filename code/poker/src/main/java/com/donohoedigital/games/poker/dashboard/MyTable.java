@@ -41,17 +41,13 @@ import com.donohoedigital.gui.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Mar 18, 2005 Time: 4:40:33 PM
  * To change this template use File | Settings | File Templates.
  */
-public class MyTable extends DashboardItem implements ActionListener {
+public class MyTable extends DashboardItem {
     private DDLabel labelInfo_;
-    private GlassButton change_;
-    private JComponent changebase_;
 
     public MyTable(GameContext context) {
         super(context, "mytable");
@@ -66,21 +62,7 @@ public class MyTable extends DashboardItem implements ActionListener {
         labelInfo_ = new DDLabel(GuiManager.DEFAULT, STYLE);
         base.add(labelInfo_, BorderLayout.NORTH);
 
-        change_ = new GlassButton("changetable", "Glass");
-        changebase_ = GuiUtils.CENTER(change_);
-        base.add(changebase_, BorderLayout.CENTER);
-        change_.addActionListener(this);
-
         return base;
-    }
-
-    /**
-     * change table
-     *
-     * @param e
-     */
-    public void actionPerformed(ActionEvent e) {
-        context_.processPhaseNow("ChangeTableDialog", null);
     }
 
     protected Object getDynamicTitleParam() {
@@ -112,9 +94,5 @@ public class MyTable extends DashboardItem implements ActionListener {
         labelInfo_.setText(PropertyConfig.getMessage(sMsgKey, human.getTable().getNumber(),
                 bObs ? null : human.getSeat() + 1, "" + nHandNum) // use "" + to not get commas
         );
-
-        if (changebase_.isVisible() != bObs) {
-            changebase_.setVisible(bObs);
-        }
     }
 }

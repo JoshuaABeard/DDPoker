@@ -80,11 +80,6 @@ public class DisplayTableMoves extends ChainPhase {
     }
 
     public void nextPhase() {
-        // notify tournament director that cards have the player has
-        // seen the cards dealt
-        TournamentDirector td = (TournamentDirector) context_.getGameManager();
-        td.removeFromWaitList(game_.getHumanPlayer());
-
         super.nextPhase();
     }
 

@@ -253,10 +253,6 @@ public class ColorUpFinish extends ChainPhase implements PlayerActionListener, R
     }
 
     public void nextPhase() {
-        // notify tournament director that color up is done
-        TournamentDirector td = (TournamentDirector) context_.getGameManager();
-        td.removeFromWaitList(game_.getHumanPlayer());
-
         super.nextPhase();
     }
 }

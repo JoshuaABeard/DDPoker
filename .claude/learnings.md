@@ -19,6 +19,9 @@ Persistent knowledge discovered during development sessions. Read this at the st
 - [coverage] Coverage threshold is 65% enforced by JaCoCo; use `mvn verify -P coverage` to check (2026-02-12)
 - [format] Spotless auto-formats Java code on compile — don't manually format, just run `mvn compile` (2026-02-12)
 
+- [build] Running `mvn test -pl <module>` in isolation uses installed JARs from `~/.m2` for upstream modules — if those JARs are stale (not reinstalled after changes), tests that depend on new classes in upstream modules will fail with `ClassNotFoundException`. Fix: run full `mvn clean test` from root, or `mvn install -pl <upstream> -DskipTests` first (2026-02-18)
+- [pokerserver] `jjwt-jackson:0.12.5` forces `jackson-databind:2.12.7.1` which conflicts with `jackson-datatype-jsr310:2.19.x` pulled in by Spring Boot. Fixed in `pokerserver/pom.xml` via `<dependencyManagement>` pinning all three core Jackson artifacts to `2.19.4` (2026-02-18)
+
 ## Testing
 
 - [pokerengine] AIStrategyNode tests depend on PropertyConfig state; tests must be resilient to initialization order (2026-02-12)

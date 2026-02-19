@@ -196,7 +196,7 @@
     <param name="menubox-height" intvalue="430"/>
     <param name="profile.phase" strvalue="PlayerProfileOptions"/>
     <param name="practice.phase" strvalue="TournamentOptions"/>
-    <param name="online.phase" strvalue="OnlineMenu"/>
+    <param name="online.phase" strvalue="FindGames"/>
     <param name="pokerclock.phase" strvalue="PokerNightOptions"/>
     <param name="analysis.phase" strvalue="StatisticsViewer"/>
     <param name="options.phase" strvalue="GamePrefs"/>
@@ -223,37 +223,6 @@
   <phase name="Activate" extends="StartMenu">
   </phase>
 
-  <phase name="OnlineMenu" class="com.donohoedigital.games.poker.online.OnlineMenu" extends="Menu">
-    <param name="menubox-title" boolvalue="true"/>
-    <param name="menubox-title-prop" strvalue="msg.title.OnlineMenu"/>
-    <param name="menubox-help-name" strvalue="onlinemenu"/>
-    <param name="default-button" strvalue="lobby"/>
-    <param name="profile.phase" strvalue="PlayerProfileOptions"/>
-    <paramlist name="buttons">
-      <strvalue>lobby:OnlineLobby</strvalue>
-      <strvalue>hostonline:OnlineOptions</strvalue>
-      <strvalue>joinonline:JoinGame</strvalue>
-      <strvalue>loadgameonline:LoadOnlineGameMenu</strvalue>
-      <strvalue>website:LaunchOnlineWebsite</strvalue>
-      <strvalue>forums:LaunchOnlineForums</strvalue>
-      <strvalue>helpdetail:Help:online</strvalue>
-      <strvalue>cancelprev:PreviousPhase</strvalue>
-    </paramlist>
-  </phase>
-
-  <phase name="OnlineLobby" class="com.donohoedigital.games.poker.online.OnlineLobby" history="true" window="lobby"
-         cache="true">
-    <param name="window-title" strvalue="msg.windowtitle.lobby"/>
-    <param name="window-width" intvalue="600"/>
-    <param name="window-height" intvalue="400"/>
-    <param name="window-multi" boolvalue="false"/>
-    <param name="window-background" strvalue="engine.basepanel"/>
-    <param name="style" strvalue="OnlineLobby"/>
-    <param name="dialog-windowtitle-image" strvalue="pokerbannerwintitle"/>
-    <param name="dialog-help-name" strvalue="empty"/>
-    <param name="dialog-background-image" strvalue="pokerdialog"/>
-    <param name="dialog-style" strvalue="PokerStandardDialog"/>
-  </phase>
 
   <phase name="CalcTool" class="com.donohoedigital.games.poker.SimulatorDialog" history="true" window="calctool"
          cache="true">
@@ -336,44 +305,7 @@
     </paramlist>
   </phase>
 
-  <phase name="OnlineOptions" extends="TournamentOptions">
-    <param name="online" boolvalue="true"/>
-    <param name="menubox-title-prop" strvalue="msg.title.OnlineOptions"/>
-    <param name="menubox-help-name" strvalue="onlineoptions"/>
-    <param name="default-button" strvalue="continueonline"/>
-    <paramlist name="buttons">
-      <strvalue>continueonline:OnlineConfiguration</strvalue>
-      <strvalue>helpdetail:Help:hostonline</strvalue>
-      <strvalue>cancelprev:PreviousPhase</strvalue>
-    </paramlist>
-  </phase>
-
-  <phase name="OnlineConfiguration" extends="TournamentOptions"
-         class="com.donohoedigital.games.poker.online.OnlineConfiguration">
-    <param name="menubox-title-prop" strvalue="msg.title.OnlineConfiguration"/>
-    <param name="menubox-help-name" strvalue="onlineconfig"/>
-    <param name="default-button" strvalue="okaybegin"/>
-    <param name="profile.phase" strvalue="PlayerProfileOptions"/>
-    <paramlist name="buttons">
-      <strvalue>okaybegin:Lobby.Host</strvalue>
-      <strvalue>helpdetail:Help:hostonline</strvalue>
-      <strvalue>cancelprev:PreviousPhase</strvalue>
-    </paramlist>
-  </phase>
-
-  <phase name="JoinGame" extends="TournamentOptions" class="com.donohoedigital.games.poker.online.JoinGame">
-    <param name="menubox-title-prop" strvalue="msg.title.JoinGame"/>
-    <param name="menubox-help-name" strvalue="joingame"/>
-    <param name="default-button" strvalue="okayjoin"/>
-    <paramlist name="buttons">
-      <strvalue>okayjoin</strvalue>
-      <strvalue>okayobserve</strvalue>
-      <strvalue>helpdetail:Help:joinonline</strvalue>
-      <strvalue>cancelprev:PreviousPhase</strvalue>
-    </paramlist>
-  </phase>
-
-  <phase name="FindGames" extends="JoinGame" class="com.donohoedigital.games.poker.online.FindGames">
+  <phase name="FindGames" extends="TournamentOptions" class="com.donohoedigital.games.poker.online.FindGames">
     <param name="menubox-title-prop" strvalue="msg.title.FindGames"/>
     <param name="menubox-help-name" strvalue="findgames"/>
     <param name="default-button" strvalue="okayjoin"/>
@@ -386,37 +318,7 @@
     </paramlist>
   </phase>
 
-  <phase name="Lobby.Host" extends="TournamentOptions" class="com.donohoedigital.games.poker.online.Lobby">
-    <param name="host" boolvalue="true"/>
-    <param name="menubox-title-prop" strvalue="msg.title.Lobby.Host"/>
-    <param name="menubox-help-name" strvalue="lobby.host"/>
-    <paramlist name="buttons">
-      <strvalue>okaystart:HostStart</strvalue>
-      <strvalue>editonlinegame</strvalue>
-      <strvalue>options:GamePrefsDialog</strvalue>
-      <strvalue>helpdetail:Help:hostonline</strvalue>
-      <strvalue>canceltourney</strvalue>
-    </paramlist>
-  </phase>
-
-  <phase name="Lobby.Player" extends="Lobby.Host">
-    <param name="host" boolvalue="false"/>
-    <param name="menubox-title-prop" strvalue="msg.title.Lobby.Player"/>
-    <param name="menubox-help-name" strvalue="lobby.player"/>
-    <param name="default-button" strvalue="NONE"/>
-    <paramlist name="buttons">
-      <strvalue>info:GameInfoDialogLobby</strvalue>
-      <strvalue>options:GamePrefsDialog</strvalue>
-      <strvalue>helpdetail:Help:joinonline</strvalue>
-      <strvalue>cancelleave:PreviousPhase</strvalue>
-    </paramlist>
-  </phase>
-
   <!-- ONLINE PHASES -->
-
-  <phase name="HostStart" class="com.donohoedigital.games.poker.online.HostStart">
-    <param name="next-phase" strvalue="InitializeOnlineGame"/>
-  </phase>
 
   <phase name="TournamentDirector" class="com.donohoedigital.games.poker.online.WebSocketTournamentDirector">
   </phase>
@@ -708,22 +610,6 @@
     </paramlist>
   </phase>
 
-  <phase name="PokerErrorDialog" class="com.donohoedigital.games.poker.online.PokerErrorDialog" transient="true"
-         cache="true">
-    <param name="style" strvalue="PokerStandardDialog"/>
-    <param name="dialog-minwidth" intvalue="600"/>
-    <param name="dialog-windowtitle-image" strvalue="pokerbannerwintitle"/>
-    <param name="dialog-windowtitle-prop" strvalue="msg.windowtitle.messageError"/>
-    <param name="dialog-style" strvalue="PokerStandardDialog"/>
-    <param name="dialog-modal" boolvalue="false"/>
-    <param name="dialog-help-name" strvalue="empty"/>
-    <param name="dialog-background-image" strvalue="pokerdialog"/>
-    <param name="default-button" strvalue="okay"/>
-    <paramlist name="buttons">
-      <strvalue>okay</strvalue>
-    </paramlist>
-  </phase>
-
   <!-- UserRegistrationSend extends SendMessageDialog (used to talk to the server) -->
   <phase name="UserRegistrationSend" class="com.donohoedigital.games.engine.UserRegistrationSend">
     <param name="style" strvalue="PokerStandardDialog"/>
@@ -748,43 +634,6 @@
   <!-- GetPublicIP extends SendMessageDialog (used to talk to the server) -->
   <phase name="GetPublicIP" class="com.donohoedigital.games.poker.online.GetPublicIP" extends="UserRegistrationSend">
     <param name="dialog-windowtitle-prop" strvalue="msg.windowtitle.getPublicIP"/>
-  </phase>
-
-  <!-- TestPublicConnect extends SendMessageDialog (used to talk to the server) -->
-  <phase name="TestPublicConnect" class="com.donohoedigital.games.poker.online.TestPublicConnect"
-         extends="UserRegistrationSend">
-    <param name="dialog-windowtitle-prop" strvalue="msg.windowtitle.testPublicConnect"/>
-  </phase>
-
-  <!-- PokerP2PDialog extends SendMessageDialog (TCP version) -->
-  <phase name="ConnectGameTCP" class="com.donohoedigital.games.poker.online.PokerP2PDialog"
-         extends="UserRegistrationSend">
-    <param name="dialog-windowtitle-prop" strvalue="msg.windowtitle.connectGame"/>
-  </phase>
-
-  <!-- SendWanProfile extends SendMessageDialog (used to talk to the server) -->
-  <phase name="SendWanProfile" class="com.donohoedigital.games.poker.SendWanProfile" extends="UserRegistrationSend"
-         cache="false">
-    <param name="dialog-windowtitle-prop" strvalue="msg.windowtitle.sendWanProfile"/>
-  </phase>
-
-  <!-- SendWanGame extends SendMessageDialog (used to talk to the server) -->
-  <phase name="SendWanGame" class="com.donohoedigital.games.poker.online.SendWanGame" extends="UserRegistrationSend"
-         cache="false">
-    <param name="dialog-windowtitle-prop" strvalue="msg.windowtitle.sendWanGame"/>
-  </phase>
-
-  <!-- GetWanList extends SendMessageDialog (used to talk to the server) -->
-  <phase name="GetWanList" class="com.donohoedigital.games.poker.online.GetWanList" extends="UserRegistrationSend"
-         cache="false">
-    <param name="dialog-windowtitle-prop" strvalue="msg.windowtitle.getWanList"/>
-  </phase>
-
-  <!-- GetWanList extends SendMessageDialog (used to talk to the server) -->
-  <phase name="ValidateProfile" class="com.donohoedigital.games.poker.online.ValidateProfile"
-         extends="UserRegistrationSend"
-         cache="false">
-    <param name="dialog-windowtitle-prop" strvalue="msg.windowtitle.validateProfile"/>
   </phase>
 
   <phase name="DDMessageCheck" class="com.donohoedigital.games.engine.DDMessageCheck" extends="UserRegistrationSend"

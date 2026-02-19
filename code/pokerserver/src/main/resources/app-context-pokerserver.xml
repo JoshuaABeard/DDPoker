@@ -49,21 +49,14 @@
     <constructor-arg value="${app.type}"/>
   </bean>
 
-  <bean id="servlet" class="com.donohoedigital.games.poker.server.PokerServlet"/>
+  <bean id="servlet" class="com.donohoedigital.games.server.EngineServlet"/>
 
   <bean id="server" class="com.donohoedigital.games.poker.server.PokerServer" init-method="init"
         depends-on="configManager">
     <property name="servlet" ref="servlet"/>
     <property name="configLoadRequired" value="false"/>
     <!-- use of configManager means configLoad not needed -->
-    <property name="tcpChatServer" ref="tcpChatServer"/>
   </bean>
-
-  <bean id="tcpChatServer" class="com.donohoedigital.games.poker.server.TcpChatServer" depends-on="configManager">
-    <property name="configLoadRequired" value="false"/>
-    <!-- ConfigManager already initialized by server bean -->
-  </bean>
-
 
   <bean id="email" class="com.donohoedigital.mail.DDPostalServiceImpl" depends-on="configManager">
     <constructor-arg value="false"/>

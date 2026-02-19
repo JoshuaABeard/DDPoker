@@ -44,7 +44,6 @@ import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.engine.*;
-import com.donohoedigital.games.poker.logic.*;
 import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
@@ -428,15 +427,8 @@ public class PokerUtils extends EngineUtils {
             }
         }
 
-        if (game.isOnlineGame()) {
-            TournamentDirector td = (TournamentDirector) context.getGameManager();
-            td.sendDealerChatLocal(PokerConstants.CHAT_1,
-                    chatInformation(PropertyConfig.getMessage("chat." + sType + ".ai", sb.toString())));
-        } else {
-            EngineUtils.displayInformationDialog(context,
-                    PropertyConfig.getMessage("msg." + sType + ".ai", sb.toString()), "msg.windowtitle." + sType,
-                    "ai" + sType, "noshowai" + sType);
-        }
+        EngineUtils.displayInformationDialog(context, PropertyConfig.getMessage("msg." + sType + ".ai", sb.toString()),
+                "msg.windowtitle." + sType, "ai" + sType, "noshowai" + sType);
 
         // i forget why this is necessary...but leaving in
         getPokerGameboard().repaintVisible(false);
@@ -523,8 +515,7 @@ public class PokerUtils extends EngineUtils {
     /////
 
     /**
-     * Calculate integer power (n^p). Delegates to
-     * {@link PokerLogicUtils#pow(int, int)}.
+     * Calculate integer power (n^p).
      *
      * @param n
      *            base
@@ -533,7 +524,10 @@ public class PokerUtils extends EngineUtils {
      * @return n raised to the power p
      */
     public static int pow(int n, int p) {
-        return PokerLogicUtils.pow(n, p);
+        int res = 1;
+        while (p-- > 0)
+            res *= n;
+        return res;
     }
 
     public static String getTimeString(PokerGame game) {
@@ -597,8 +591,7 @@ public class PokerUtils extends EngineUtils {
     }
 
     /**
-     * Round chips to be a multiple of the min chip on the table. Delegates to
-     * {@link PokerLogicUtils#roundAmountMinChip(PokerTable, int)}.
+     * Round chips to be a multiple of the min chip on the table.
      *
      * @param table
      *            poker table with min chip setting
@@ -607,7 +600,16 @@ public class PokerUtils extends EngineUtils {
      * @return chips rounded to nearest multiple of table min chip
      */
     public static int roundAmountMinChip(PokerTable table, int chips) {
-        return PokerLogicUtils.roundAmountMinChip(table, chips);
+        int nNewAmount = chips;
+        int nMinChip = table.getMinChip();
+        int nOdd = chips % nMinChip;
+        if (nOdd != 0) {
+            nNewAmount = chips - nOdd;
+            if ((float) nOdd >= (nMinChip / 2.0f)) {
+                nNewAmount += nMinChip;
+            }
+        }
+        return nNewAmount;
     }
 
     /**
@@ -671,22 +673,7 @@ public class PokerUtils extends EngineUtils {
     }
 
     /**
-     * Get pauser
-     */
-    public static TournamentDirectorPauser TDPAUSER(GameContext context) {
-        return new TournamentDirectorPauser(context);
-    }
-
-    /**
-     * @param n
-     *            Number of items to choose from.
-     * @param k
-     *            Number of choices.
-     * @return Non-ordered combinations possible.
-     */
-    /**
-     * Calculate n choose k (binomial coefficient). Delegates to
-     * {@link PokerLogicUtils#nChooseK(int, int)}.
+     * Calculate n choose k (binomial coefficient).
      *
      * @param n
      *            total items
@@ -695,7 +682,13 @@ public class PokerUtils extends EngineUtils {
      * @return number of ways to choose k items from n
      */
     public static long nChooseK(int n, int k) {
-        return PokerLogicUtils.nChooseK(n, k);
+        if (k > n - k)
+            k = n - k;
+        long result = 1;
+        for (int i = 0; i < k; i++) {
+            result = result * (n - i) / (i + 1);
+        }
+        return result;
     }
 
     /**

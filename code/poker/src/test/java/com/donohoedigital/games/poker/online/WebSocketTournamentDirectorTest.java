@@ -576,7 +576,7 @@ class WebSocketTournamentDirectorTest {
 
     @Test
     void setChatHandlerStores() {
-        ChatHandler handler = msg -> {
+        ChatHandler handler = (fromPlayerID, chatType, message) -> {
         };
         wsTD.setChatHandler(handler);
         // No exception, handler stored internally

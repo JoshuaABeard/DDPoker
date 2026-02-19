@@ -38,13 +38,11 @@
 
 package com.donohoedigital.games.poker.online;
 
-import com.donohoedigital.games.poker.network.*;
-
 /**
  *
  * @author donohoe
  */
 public interface ChatHandler {
 
-    public void chatReceived(OnlineMessage omsg);
+    public void chatReceived(int fromPlayerID, int chatType, String message);
 }

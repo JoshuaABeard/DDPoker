@@ -43,6 +43,7 @@ import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
+import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
@@ -288,7 +289,7 @@ public class PokerGameboard extends Gameboard {
                     int nBet = hhand.getBet(player);
                     int nLast = hhand.getLastAction(player);
 
-                    if (TournamentDirector.DEBUG_EVENT_DISPLAY || TESTING(EngineConstants.TESTING_DEBUG_REPAINT)) {
+                    if (PokerConstants.DEBUG_EVENT_DISPLAY || TESTING(EngineConstants.TESTING_DEBUG_REPAINT)) {
                         logger.debug("repaintTerritory (with hhand) for " + player.getName() + " round: "
                                 + HoldemHand.getRoundName(hhand.getRound().toLegacy()) + " current: "
                                 + player.isCurrentGamePlayer());
@@ -382,7 +383,7 @@ public class PokerGameboard extends Gameboard {
             info.bet.setText(sText);
             info.bet.setForeground(color);
 
-            if (TournamentDirector.DEBUG_EVENT_DISPLAY || TESTING(EngineConstants.TESTING_DEBUG_REPAINT)) {
+            if (PokerConstants.DEBUG_EVENT_DISPLAY || TESTING(EngineConstants.TESTING_DEBUG_REPAINT)) {
                 logger.debug(player == null ? "null" : player.getName() + " text: " + sText + ", icon: " + sIcon);
             }
 

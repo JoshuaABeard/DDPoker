@@ -446,54 +446,6 @@ class FirstTimeWizardAdvancedEdgeCaseTest {
     }
 
     // =================================================================
-    // Password Advanced Edge Cases
-    // =================================================================
-
-    @Test
-    void should_RejectEmptyPassword_When_Validating() {
-        wizard = new FirstTimeWizard();
-        wizard.init(mockEngine, mockContext, params);
-
-        wizard.setReceivedPassword("");
-        boolean isValid = wizard.validatePassword();
-
-        assertThat(isValid).isFalse();
-    }
-
-    @Test
-    void should_AcceptPasswordWithOnlyNumbers_When_Validating() {
-        wizard = new FirstTimeWizard();
-        wizard.init(mockEngine, mockContext, params);
-
-        wizard.setReceivedPassword("123456789");
-        boolean isValid = wizard.validatePassword();
-
-        assertThat(isValid).isTrue();
-    }
-
-    @Test
-    void should_AcceptPasswordWithTabs_When_Validating() {
-        wizard = new FirstTimeWizard();
-        wizard.init(mockEngine, mockContext, params);
-
-        wizard.setReceivedPassword("pass\tword");
-        boolean isValid = wizard.validatePassword();
-
-        assertThat(isValid).isTrue();
-    }
-
-    @Test
-    void should_AcceptPasswordWithNewlines_When_Validating() {
-        wizard = new FirstTimeWizard();
-        wizard.init(mockEngine, mockContext, params);
-
-        wizard.setReceivedPassword("pass\nword");
-        boolean isValid = wizard.validatePassword();
-
-        assertThat(isValid).isTrue();
-    }
-
-    // =================================================================
     // Navigation Flow Advanced Edge Cases
     // =================================================================
 
@@ -601,7 +553,6 @@ class FirstTimeWizardAdvancedEdgeCaseTest {
         wizard.setPlayerName("TestUser");
         wizard.setPlayerEmail("test@example.com");
         wizard.setPlayerPassword("password123");
-        wizard.setReceivedPassword("password123");
         wizard.setGameServer("localhost:8877");
 
         // All validations should pass

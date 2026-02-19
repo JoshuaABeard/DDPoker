@@ -71,7 +71,7 @@ public class EmbeddedGameServer {
     private volatile boolean running = false;
 
     /**
-     * Starts the embedded Spring Boot server.
+     * Starts the embedded Spring Boot server on a random OS-assigned port.
      *
      * <p>
      * Generates JWT keys if needed, then starts Spring Boot with the
@@ -82,6 +82,27 @@ public class EmbeddedGameServer {
      *             if the server fails to start
      */
     public void start() throws EmbeddedServerStartupException {
+        startInternal(null, false);
+    }
+
+    /**
+     * Starts the embedded Spring Boot server on a specific port, bound to all
+     * network interfaces for external access.
+     *
+     * <p>
+     * Used for community hosting where a predictable port is required for port
+     * forwarding. Port 0 retains random-port behavior.
+     *
+     * @param port
+     *            the port to listen on (default community port: 11885)
+     * @throws EmbeddedServerStartupException
+     *             if the server fails to start
+     */
+    public void start(int port) throws EmbeddedServerStartupException {
+        startInternal(port, true);
+    }
+
+    private void startInternal(Integer port, boolean bindAllInterfaces) throws EmbeddedServerStartupException {
         if (running) {
             return;
         }
@@ -95,10 +116,21 @@ public class EmbeddedGameServer {
             SpringApplication app = new SpringApplication(EmbeddedServerConfig.class);
             app.setAdditionalProfiles("embedded");
             app.setHeadless(false); // Running inside a Swing application
+            if (port != null || bindAllInterfaces) {
+                Properties props = new Properties();
+                if (port != null) {
+                    props.setProperty("server.port", String.valueOf(port));
+                }
+                if (bindAllInterfaces) {
+                    props.setProperty("server.address", "0.0.0.0");
+                }
+                app.setDefaultProperties(props);
+            }
             context = app.run();
-            port = resolvePort();
+            this.port = resolvePort();
             running = true;
-            logger.info("Embedded game server started on port {}", port);
+            logger.info("Embedded game server started on port {}{}", this.port,
+                    bindAllInterfaces ? " (external access)" : "");
         } catch (Exception e) {
             throw new EmbeddedServerStartupException("Failed to start embedded Spring Boot server", e);
         }

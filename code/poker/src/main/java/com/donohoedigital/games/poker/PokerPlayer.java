@@ -50,7 +50,6 @@ import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.engine.*;
-import com.donohoedigital.games.poker.network.*;
 import com.donohoedigital.server.*;
 
 import java.io.*;
@@ -90,7 +89,6 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     private int nTimeMillis_; // store think bank in millis (first 6 digits ... up to 999 seconds), timeout
                                 // next 4 (214.7 max)
     private String playerId_;
-    private PokerURL url_;
     private PlayerType playerType_ = null;
     private boolean bCardsExposed_ = false;
     private boolean bSittingOut_ = false;
@@ -122,10 +120,7 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
 
     // online transient info
     private volatile WorkerThread worker_;
-    private PokerConnection connection_;
     private int nConnCnt_;
-    private Object sendSync_;
-    private boolean bRejoining_;
     private volatile long nLastMessageRcvd_;
     private Version version_ = PokerConstants.VERSION;
 
@@ -453,20 +448,6 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
      */
     public void setProfilePath(String sPath) {
         sProfileLocation_ = sPath;
-    }
-
-    /**
-     * Get url this player uses to connect to host in online games
-     */
-    public PokerURL getConnectURL() {
-        return url_;
-    }
-
-    /**
-     * Set the url this player uses to connect to host in online games
-     */
-    public void setConnectURL(PokerURL url) {
-        url_ = url;
     }
 
     /**
@@ -1753,7 +1734,7 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
 
         // Poker 2.0
         entry.addToken(playerId_);
-        entry.addToken(url_ == null ? null : url_.toString());
+        entry.addToken((String) null); // url removed in M7
         if (details.getSaveAI() == SaveDetails.SAVE_ALL) {
             entry.addToken(playerType_ == null ? null : playerType_.getUniqueKey());
         } else {
@@ -1822,9 +1803,8 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
         sProfileLocation_ = entry.removeStringToken();
 
         // Poker 2.0
-        String url;
         playerId_ = entry.removeStringToken();
-        url_ = ((url = entry.removeStringToken()) == null) ? null : new PokerURL(url);
+        entry.removeStringToken(); // skip url (removed in M7)
         String sPlayerTypeKey = entry.removeStringToken();
         if (details.getSaveAI() == SaveDetails.SAVE_ALL) {
             playerType_ = sPlayerTypeKey == null ? null : PlayerType.getByUniqueKey(sPlayerTypeKey, pdetails);
@@ -2053,26 +2033,6 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     /////
 
     /**
-     * For online games, the host uses this to store the connection through which
-     * this player is connected. For locally controlled players on the host, this is
-     * null. For all players on remote clients, this is null
-     */
-    public PokerConnection getConnection() {
-        return connection_;
-    }
-
-    /**
-     * Set socket used by this player
-     */
-    public void setConnection(PokerConnection connection) {
-        clearMessageReceived(); // reset timestamp when socket changes
-        connection_ = connection;
-        setDisconnected(connection_ == null); // note connected status (which is marshalled; socket is not)
-        if (connection_ != null)
-            nConnCnt_++; // track number of connections made (discos equal this less 1)
-    }
-
-    /**
      * Add to number of disconnections
      */
     public int addDisconnect() {
@@ -2086,29 +2046,6 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
         if (isHost() && isLocallyControlled())
             return 0;
         return nConnCnt_ - 1;
-    }
-
-    /**
-     * set rejoining flag - used to handle "re-integration" of player
-     */
-    public void setRejoining(boolean b) {
-        bRejoining_ = b;
-    }
-
-    /**
-     * Is rejoining?
-     */
-    public boolean isRejoining() {
-        return bRejoining_;
-    }
-
-    /**
-     * Get object to sync on for player sends
-     */
-    public Object getSendSync() {
-        if (sendSync_ == null)
-            sendSync_ = new Object();
-        return sendSync_;
     }
 
     /**
