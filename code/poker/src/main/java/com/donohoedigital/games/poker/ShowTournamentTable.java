@@ -630,8 +630,9 @@ public class ShowTournamentTable extends ShowPokerTable
     private void poststart() {
         // For practice games, register the tournament with the embedded server
         // so WebSocketTournamentDirector has a non-null WebSocketConfig to connect
-        // with.
-        if (!game_.isOnlineGame()) {
+        // with. Skip if WebSocketConfig is already set (e.g., resume scenario where
+        // the caller pre-configured the connection to an existing server-side game).
+        if (!game_.isOnlineGame() && game_.getWebSocketConfig() == null) {
             PokerMain pokerMain = (PokerMain) GameEngine.getGameEngine();
             PracticeGameLauncher launcher = new PracticeGameLauncher(pokerMain.getEmbeddedServer());
             launcher.launch(game_.getProfile(), game_);

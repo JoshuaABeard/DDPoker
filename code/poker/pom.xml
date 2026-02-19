@@ -324,6 +324,48 @@
   <!-- ===================================================================== -->
   <profiles>
     <!-- ================================================================= -->
+    <!-- Dev profile - adds src/dev/java for dev-only tools (control server) -->
+    <!-- ================================================================= -->
+    <profile>
+      <id>dev</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.6.0</version>
+            <executions>
+              <execution>
+                <id>add-dev-sources</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>add-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>src/dev/java</source>
+                  </sources>
+                </configuration>
+              </execution>
+              <execution>
+                <id>add-dev-test-sources</id>
+                <phase>generate-test-sources</phase>
+                <goals>
+                  <goal>add-test-source</goal>
+                </goals>
+                <configuration>
+                  <sources>
+                    <source>src/dev-test/java</source>
+                  </sources>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- ================================================================= -->
     <!-- Windows Installer (MSI) - Auto-activated on Windows              -->
     <!-- ================================================================= -->
     <profile>

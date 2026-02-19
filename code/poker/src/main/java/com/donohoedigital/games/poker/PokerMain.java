@@ -78,6 +78,7 @@ public class PokerMain extends GameEngine {
     private final boolean bLoadNames;
     private EmbeddedGameServer embeddedServer_;
     private GameSaveManager gameSaveManager_;
+    private Object controlServer_;
 
     static {
         // forget why I set this
@@ -193,8 +194,12 @@ public class PokerMain extends GameEngine {
         gameSaveManager_ = new GameSaveManager(embeddedServer_);
         gameSaveManager_.loadResumableGames();
 
+        // Start dev control server if compiled in (dev builds only — src/dev/java)
+        startDevControlServer();
+
         // Register shutdown hook to cleanly stop the embedded server when the JVM exits
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            stopDevControlServer();
             if (embeddedServer_ != null) {
                 embeddedServer_.stop();
             }
@@ -220,6 +225,36 @@ public class PokerMain extends GameEngine {
         // register our custom tag display classes
         DDHtmlEditorKit.registerTagViewClass("ddcard", DDCardView.class);
         DDHtmlEditorKit.registerTagViewClass("ddhandgroup", DDHandGroupView.class);
+    }
+
+    /**
+     * Start the dev control server via reflection so production builds compile
+     * cleanly without the src/dev/java source tree.
+     */
+    private void startDevControlServer() {
+        try {
+            Class<?> cls = Class.forName("com.donohoedigital.games.poker.control.GameControlServer");
+            controlServer_ = cls.getDeclaredConstructor().newInstance();
+            cls.getMethod("start").invoke(controlServer_);
+        } catch (ClassNotFoundException ignored) {
+            // Not a dev build — control server not compiled in, which is expected in
+            // production
+        } catch (Exception e) {
+            logger.warn("Failed to start dev control server", e);
+        }
+    }
+
+    /**
+     * Stop the dev control server if it was started.
+     */
+    private void stopDevControlServer() {
+        if (controlServer_ == null)
+            return;
+        try {
+            controlServer_.getClass().getMethod("stop").invoke(controlServer_);
+        } catch (Exception e) {
+            logger.warn("Error stopping dev control server", e);
+        }
     }
 
     /**
