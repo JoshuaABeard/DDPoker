@@ -166,13 +166,17 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             });
         }
 
-        // Register connection
+        // Send CONNECTED first — establishes the client's identity before any
+        // broadcasts or game-state events arrive via the connection manager.
+        ServerMessage connectedMsg = converter.createConnectedMessage(gameId, profileId, null);
+        playerConnection.sendMessage(connectedMsg);
+
+        // Register connection (player can now receive broadcasts)
         connectionManager.addConnection(gameId, profileId, playerConnection);
 
         // Wire event bus broadcaster — create once per game, not once per connection.
         // computeIfAbsent ensures only the first connecting player creates the
-        // broadcaster;
-        // subsequent connections reuse it, so no player loses their event stream.
+        // broadcaster; subsequent connections reuse it.
         if (game.getEventBus() != null) {
             gameBroadcasters.computeIfAbsent(gameId, id -> {
                 GameEventBroadcaster broadcaster = new GameEventBroadcaster(id, connectionManager, converter);
@@ -181,14 +185,10 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             });
         }
 
-        // If reconnecting, notify game
+        // If reconnecting to an in-progress game, notify the game engine.
         if (alreadyInGame && (state == GameInstanceState.IN_PROGRESS || state == GameInstanceState.PAUSED)) {
             game.reconnectPlayer(profileId);
         }
-
-        // Send CONNECTED message (null snapshot; full state comes from events)
-        ServerMessage connectedMsg = converter.createConnectedMessage(gameId, profileId, null);
-        playerConnection.sendMessage(connectedMsg);
 
         if (state == GameInstanceState.WAITING_FOR_PLAYERS) {
             // Lobby phase: send lobby state snapshot to the joining player...
@@ -199,6 +199,11 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             ServerMessage joinedMsg = ServerMessage.of(ServerMessageType.LOBBY_PLAYER_JOINED, gameId,
                     new ServerMessageData.LobbyPlayerJoinedData(playerData));
             connectionManager.broadcastToGame(gameId, joinedMsg, profileId);
+            // Practice game auto-start: all players were pre-added by the REST endpoint;
+            // start the game when the owner's WebSocket connects.
+            if (alreadyInGame && profileId == game.getOwnerProfileId()) {
+                gameInstanceManager.startGame(gameId, profileId);
+            }
         } else {
             // In-game: broadcast PLAYER_JOINED to others
             ServerMessage joinedMsg = converter.createPlayerJoinedMessage(gameId, profileId, username, -1);

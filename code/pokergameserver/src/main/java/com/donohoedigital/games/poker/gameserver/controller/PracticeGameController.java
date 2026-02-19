@@ -41,11 +41,11 @@ import java.util.List;
  *
  * <p>
  * {@code POST /api/v1/games/practice} accepts a fully-formed {@link GameConfig}
- * (including {@code aiPlayers}), creates the game, adds all AI players,
- * auto-joins the authenticated caller as the human player, and starts the game
- * immediately. Returns a {@code { "gameId": "..." }} response that the desktop
- * client passes to
+ * (including {@code aiPlayers}), creates the game, adds all AI players, and
+ * auto-joins the authenticated caller as the human player. Returns a {@code {
+ * "gameId": "..." }} response that the desktop client passes to
  * {@link com.donohoedigital.games.poker.online.WebSocketTournamentDirector}.
+ * The game starts when the owner's WebSocket connection is established.
  */
 @RestController
 @RequestMapping("/api/v1/games/practice")
@@ -65,8 +65,9 @@ public class PracticeGameController {
      * Create a practice game.
      *
      * <p>
-     * The caller is auto-joined as the human player and the game is started
-     * immediately. AI players are added from {@link GameConfig#aiPlayers()}.
+     * The caller is auto-joined as the human player. AI players are added from
+     * {@link GameConfig#aiPlayers()}. The game starts when the owner's WebSocket
+     * connects.
      *
      * @param config
      *            game configuration including AI players
@@ -95,10 +96,7 @@ public class PracticeGameController {
             }
         }
 
-        // Start immediately — owner is the human caller
-        gameInstanceManager.startGame(instance.getGameId(), user.profileId());
-
-        logger.info("Practice game {} started for user {} with {} AI players", instance.getGameId(), user.username(),
+        logger.info("Practice game {} created for user {} with {} AI players", instance.getGameId(), user.username(),
                 aiPlayers != null ? aiPlayers.size() : 0);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(new CreateGameResponse(instance.getGameId()));

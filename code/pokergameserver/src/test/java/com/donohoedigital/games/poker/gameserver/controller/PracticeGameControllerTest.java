@@ -34,6 +34,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -114,14 +115,16 @@ class PracticeGameControllerTest {
     }
 
     @Test
-    void startsGameAfterAddingPlayers() throws Exception {
+    void gameNotStartedByRestEndpoint() throws Exception {
         GameInstance mockInstance = stubMockInstance("game-4");
 
         mockMvc.perform(
                 post("/api/v1/games/practice").contentType(MediaType.APPLICATION_JSON).content(MINIMAL_GAME_CONFIG))
                 .andExpect(status().isCreated());
 
-        verify(gameInstanceManager).startGame(eq("game-4"), eq(1L));
+        // startGame is intentionally NOT called here — it is triggered when the
+        // owner's WebSocket connects (GameWebSocketHandler.afterConnectionEstablished).
+        verify(gameInstanceManager, never()).startGame(anyString(), anyLong());
     }
 
     @Test

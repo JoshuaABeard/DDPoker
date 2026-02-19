@@ -155,6 +155,31 @@ class GameWebSocketHandlerTest {
     }
 
     @Test
+    void autoStartsGameWhenOwnerConnectsWithPreAddedEntry() throws Exception {
+        // Simulate practice game: owner was pre-added by REST endpoint, connects via WS
+        when(gameInstance.getState()).thenReturn(GameInstanceState.WAITING_FOR_PLAYERS);
+        when(gameInstance.hasPlayer(PROFILE_ID)).thenReturn(true);
+        when(gameInstance.getOwnerProfileId()).thenReturn(PROFILE_ID);
+
+        handler.afterConnectionEstablished(session);
+
+        verify(gameInstanceManager).startGame(GAME_ID, PROFILE_ID);
+        verify(session, never()).close(any(CloseStatus.class));
+    }
+
+    @Test
+    void doesNotAutoStartGameWhenNonOwnerConnects() throws Exception {
+        // Non-owner already in lobby — must not trigger auto-start
+        when(gameInstance.getState()).thenReturn(GameInstanceState.WAITING_FOR_PLAYERS);
+        when(gameInstance.hasPlayer(PROFILE_ID)).thenReturn(true);
+        when(gameInstance.getOwnerProfileId()).thenReturn(PROFILE_ID + 1); // different owner
+
+        handler.afterConnectionEstablished(session);
+
+        verify(gameInstanceManager, never()).startGame(anyString(), anyLong());
+    }
+
+    @Test
     void handleTextMessage_delegatesToInboundMessageRouter() throws Exception {
         // First establish connection
         handler.afterConnectionEstablished(session);
