@@ -85,9 +85,9 @@ public class WebSocketAutoConfiguration {
     public GameWebSocketHandler gameWebSocketHandler(JwtTokenProvider jwtTokenProvider,
             GameInstanceManager gameInstanceManager, GameConnectionManager gameConnectionManager,
             InboundMessageRouter inboundMessageRouter, OutboundMessageConverter outboundMessageConverter,
-            ObjectMapper objectMapper, GameService gameService) {
+            ObjectMapper objectMapper, GameService gameService, GameServerProperties properties) {
         return new GameWebSocketHandler(jwtTokenProvider, gameInstanceManager, gameConnectionManager,
-                inboundMessageRouter, outboundMessageConverter, objectMapper, gameService);
+                inboundMessageRouter, outboundMessageConverter, objectMapper, gameService, properties);
     }
 
     @Bean

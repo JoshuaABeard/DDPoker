@@ -30,6 +30,7 @@ import com.donohoedigital.games.poker.gameserver.ActionRequest;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
 import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.GameInstanceState;
+import com.donohoedigital.games.poker.gameserver.GameServerProperties;
 import com.donohoedigital.games.poker.gameserver.GameStateSnapshot;
 import com.donohoedigital.games.poker.gameserver.ServerGameEventBus;
 import com.donohoedigital.games.poker.gameserver.ServerPlayerSession;
@@ -68,6 +69,7 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
     private final OutboundMessageConverter converter;
     private final ObjectMapper objectMapper;
     private final GameService gameService;
+    private final int actionTimeoutSeconds;
 
     /** Maps WebSocket session ID → PlayerConnection */
     private final ConcurrentHashMap<String, PlayerConnection> sessionConnections = new ConcurrentHashMap<>();
@@ -93,10 +95,13 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
      *            converter for outbound server messages
      * @param objectMapper
      *            JSON object mapper
+     * @param properties
+     *            server configuration properties
      */
     public GameWebSocketHandler(JwtTokenProvider jwtTokenProvider, GameInstanceManager gameInstanceManager,
             GameConnectionManager connectionManager, InboundMessageRouter inboundMessageRouter,
-            OutboundMessageConverter converter, ObjectMapper objectMapper, GameService gameService) {
+            OutboundMessageConverter converter, ObjectMapper objectMapper, GameService gameService,
+            GameServerProperties properties) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.gameInstanceManager = gameInstanceManager;
         this.connectionManager = connectionManager;
@@ -104,6 +109,7 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
         this.converter = converter;
         this.objectMapper = objectMapper;
         this.gameService = gameService;
+        this.actionTimeoutSeconds = properties.actionTimeoutSeconds();
     }
 
     @Override
@@ -167,7 +173,7 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             playerSession.setMessageSender(obj -> {
                 if (obj instanceof ActionRequest actionRequest) {
                     ServerMessage actionMsg = converter.createActionRequiredMessage(gameId, actionRequest.options(),
-                            30);
+                            actionTimeoutSeconds);
                     playerConnection.sendMessage(actionMsg);
                 }
             });

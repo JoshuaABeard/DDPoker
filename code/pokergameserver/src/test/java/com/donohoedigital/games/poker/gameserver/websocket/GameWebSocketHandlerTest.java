@@ -20,6 +20,7 @@ package com.donohoedigital.games.poker.gameserver.websocket;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
 import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.GameInstanceState;
+import com.donohoedigital.games.poker.gameserver.GameServerProperties;
 import com.donohoedigital.games.poker.gameserver.ServerGameEventBus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,7 +76,8 @@ class GameWebSocketHandlerTest {
         gameService = mock(GameService.class);
 
         handler = new GameWebSocketHandler(jwtTokenProvider, gameInstanceManager, connectionManager,
-                inboundMessageRouter, converter, objectMapper, gameService);
+                inboundMessageRouter, converter, objectMapper, gameService,
+                new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0));
 
         // Set up JWT provider defaults
         when(jwtTokenProvider.validateToken(VALID_TOKEN)).thenReturn(true);
