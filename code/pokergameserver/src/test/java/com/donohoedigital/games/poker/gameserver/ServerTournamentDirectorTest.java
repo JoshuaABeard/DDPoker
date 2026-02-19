@@ -23,12 +23,14 @@ import com.donohoedigital.games.poker.model.LevelAdvanceMode;
 import com.donohoedigital.games.poker.core.PlayerAction;
 import com.donohoedigital.games.poker.core.PlayerActionProvider;
 import com.donohoedigital.games.poker.core.TournamentEngine;
+import com.donohoedigital.games.poker.core.event.GameEvent;
 import com.donohoedigital.games.poker.core.state.TableState;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -241,6 +243,70 @@ class ServerTournamentDirectorTest {
         // Verify total chips unchanged
         int finalTotalChips = players.stream().mapToInt(ServerPlayer::getChipCount).sum();
         assertThat(finalTotalChips).isEqualTo(totalChips);
+    }
+
+    /**
+     * Test that the inter-hand pause (aiActionDelayMs) prevents AI-only hands from
+     * racing. With aiActionDelayMs=20ms and instant AI actions (0ms per action),
+     * the gap between consecutive HAND_STARTED events must be >= 20ms.
+     *
+     * Regression test for: hands completing in <1ms when nextState==CLEAN and
+     * TD.CheckEndHand were both dead code paths for auto-deal games. The correct
+     * hook is nextState==BEGIN (handleDone() always returns BEGIN after showdown).
+     */
+    @Test
+    void interHandPausePreventsRacing() throws Exception {
+        int delayMs = 20; // small enough for fast tests, large enough to detect racing
+
+        // 6 players ensures at least 5 hands are played before one player wins all
+        // chips
+        List<ServerPlayer> players = createPlayers(6, 500);
+        ServerTournamentContext tournament = createTournament(players, 1);
+
+        InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-pacing");
+        ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
+
+        // AI actions: instant (no per-action delay). Only inter-hand pause is tested.
+        PlayerActionProvider aiProvider = createSimpleAI(42);
+        ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {
+        }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
+
+        // Record timestamp of each HAND_STARTED event
+        List<Long> handStartedNanos = new CopyOnWriteArrayList<>();
+        eventBus.subscribe(event -> {
+            if (event instanceof GameEvent.HandStarted) {
+                handStartedNanos.add(System.nanoTime());
+            }
+        });
+
+        ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
+                tournament, eventBus, actionProvider,
+                new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", delayMs),
+                event -> {
+                });
+
+        Thread thread = new Thread(director);
+        thread.start();
+        thread.join(30000); // wait for game to complete naturally
+
+        assertThat(thread.isAlive()).isFalse();
+        assertThat(tournament.isGameOver()).isTrue();
+
+        // Must have played at least 3 hands for gap assertions to be meaningful
+        assertThat(handStartedNanos.size())
+                .as("Expected at least 3 HAND_STARTED events but got %d", handStartedNanos.size())
+                .isGreaterThanOrEqualTo(3);
+
+        // Verify inter-hand gaps: every consecutive pair should be >= delayMs.
+        // Old racing bug: gaps were <1ms (sleep hook was dead code). Fixed by
+        // hooking nextState==BEGIN instead of unreachable CLEAN/CheckEndHand.
+        long minExpectedGapNs = (long) delayMs * 1_000_000L;
+        for (int i = 1; i < handStartedNanos.size(); i++) {
+            long gapNs = handStartedNanos.get(i) - handStartedNanos.get(i - 1);
+            assertThat(gapNs)
+                    .as("Gap between HAND_STARTED[%d] and [%d] should be >= %dms (racing fix)", i - 1, i, delayMs)
+                    .isGreaterThanOrEqualTo(minExpectedGapNs);
+        }
     }
 
     // Helper methods
