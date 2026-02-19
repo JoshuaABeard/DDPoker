@@ -871,8 +871,8 @@ public class WebSocketTournamentDirector extends BasePhase
             PokerPlayer p = new PokerPlayer((int) sd.playerId(), sd.playerName(), sd.playerId() == localPlayerId_);
             p.setChipCount(sd.chipCount());
             // Apply hole cards from snapshot (only provided for the local player)
-            if (sd.cards() != null && !sd.cards().isEmpty()) {
-                for (String c : sd.cards()) {
+            if (sd.holeCards() != null && !sd.holeCards().isEmpty()) {
+                for (String c : sd.holeCards()) {
                     Card card = Card.getCard(c);
                     if (card != null)
                         p.getHand().addCard(card);
