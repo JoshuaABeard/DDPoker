@@ -180,17 +180,6 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
         // Register connection (player can now receive broadcasts)
         connectionManager.addConnection(gameId, profileId, playerConnection);
 
-        // Wire event bus broadcaster — create once per game, not once per connection.
-        // computeIfAbsent ensures only the first connecting player creates the
-        // broadcaster; subsequent connections reuse it.
-        if (game.getEventBus() != null) {
-            gameBroadcasters.computeIfAbsent(gameId, id -> {
-                GameEventBroadcaster broadcaster = new GameEventBroadcaster(id, connectionManager, converter);
-                game.getEventBus().setBroadcastCallback(broadcaster);
-                return broadcaster;
-            });
-        }
-
         // If reconnecting to an in-progress game, notify the game engine.
         if (alreadyInGame && (state == GameInstanceState.IN_PROGRESS || state == GameInstanceState.PAUSED)) {
             game.reconnectPlayer(profileId);
@@ -209,8 +198,31 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             // start the game when the owner's WebSocket connects.
             if (alreadyInGame && profileId == game.getOwnerProfileId()) {
                 gameInstanceManager.startGame(gameId, profileId);
+                // startGame() creates the eventBus synchronously; wire the broadcaster now
+                // with a game reference so HandStarted delivers per-player GAME_STATE
+                // snapshots before the HAND_STARTED broadcast. This ensures the client
+                // has table data before any action events arrive.
+                if (game.getEventBus() != null) {
+                    gameBroadcasters.computeIfAbsent(gameId, id -> {
+                        GameEventBroadcaster broadcaster = new GameEventBroadcaster(id, connectionManager, converter,
+                                game);
+                        game.getEventBus().setBroadcastCallback(broadcaster);
+                        return broadcaster;
+                    });
+                }
             }
         } else {
+            // Wire event bus broadcaster — create once per game, not once per connection.
+            // computeIfAbsent ensures only the first connecting player creates the
+            // broadcaster; subsequent connections reuse it. For reconnects the eventBus
+            // already exists (game is IN_PROGRESS/PAUSED).
+            if (game.getEventBus() != null) {
+                gameBroadcasters.computeIfAbsent(gameId, id -> {
+                    GameEventBroadcaster broadcaster = new GameEventBroadcaster(id, connectionManager, converter);
+                    game.getEventBus().setBroadcastCallback(broadcaster);
+                    return broadcaster;
+                });
+            }
             // In-game: broadcast PLAYER_JOINED to others
             ServerMessage joinedMsg = converter.createPlayerJoinedMessage(gameId, profileId, username, -1);
             connectionManager.broadcastToGame(gameId, joinedMsg, profileId);

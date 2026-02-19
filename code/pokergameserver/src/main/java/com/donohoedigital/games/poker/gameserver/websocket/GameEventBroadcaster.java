@@ -18,6 +18,8 @@
 package com.donohoedigital.games.poker.gameserver.websocket;
 
 import com.donohoedigital.games.poker.core.event.GameEvent;
+import com.donohoedigital.games.poker.gameserver.GameInstance;
+import com.donohoedigital.games.poker.gameserver.GameStateSnapshot;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
@@ -53,7 +55,15 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
     private final OutboundMessageConverter converter;
 
     /**
-     * Creates a game event broadcaster.
+     * Optional game reference used to send per-player GAME_STATE snapshots before
+     * HAND_STARTED when a game starts fresh (i.e. the client has no table data
+     * yet). Null for reconnect-path broadcasters where the handler already sends
+     * the snapshot directly.
+     */
+    private final GameInstance game;
+
+    /**
+     * Creates a game event broadcaster without a game reference (reconnect path).
      *
      * @param gameId
      *            Game ID this broadcaster serves
@@ -64,19 +74,53 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
      */
     public GameEventBroadcaster(String gameId, GameConnectionManager connectionManager,
             OutboundMessageConverter converter) {
+        this(gameId, connectionManager, converter, null);
+    }
+
+    /**
+     * Creates a game event broadcaster with a game reference (auto-start path). The
+     * game reference is used to send each player a GAME_STATE snapshot immediately
+     * before the HAND_STARTED broadcast so that the client can build its table view
+     * before any action-related events arrive.
+     *
+     * @param gameId
+     *            Game ID this broadcaster serves
+     * @param connectionManager
+     *            Connection manager for routing messages
+     * @param converter
+     *            Converter for game state to message payloads
+     * @param game
+     *            Game instance for snapshot generation (may be null)
+     */
+    public GameEventBroadcaster(String gameId, GameConnectionManager connectionManager,
+            OutboundMessageConverter converter, GameInstance game) {
         this.gameId = gameId;
         this.connectionManager = connectionManager;
         this.converter = converter;
+        this.game = game;
     }
 
     @Override
     public void accept(GameEvent event) {
         logger.debug("[BROADCAST] gameId={} event={}", gameId, event.getClass().getSimpleName());
         switch (event) {
-            case GameEvent.HandStarted e -> broadcast(
-                ServerMessage.of(ServerMessageType.HAND_STARTED, gameId,
-                    new ServerMessageData.HandStartedData(e.handNumber(), -1, -1, -1, List.of()))
-            );
+            case GameEvent.HandStarted e -> {
+                // Send per-player GAME_STATE before HAND_STARTED so the client can build
+                // its table view (players, cards, pots) before any action events arrive.
+                // Required when the game starts fresh — the client has no table data yet.
+                if (game != null) {
+                    for (PlayerConnection conn : connectionManager.getConnections(gameId)) {
+                        GameStateSnapshot snapshot = game.getGameStateSnapshot(conn.getProfileId());
+                        if (snapshot != null) {
+                            logger.debug("[BROADCAST] sending GAME_STATE to player={} before HAND_STARTED",
+                                    conn.getProfileId());
+                            conn.sendMessage(converter.createGameStateMessage(gameId, snapshot));
+                        }
+                    }
+                }
+                broadcast(ServerMessage.of(ServerMessageType.HAND_STARTED, gameId,
+                        new ServerMessageData.HandStartedData(e.handNumber(), -1, -1, -1, List.of())));
+            }
             case GameEvent.PlayerActed e -> broadcast(
                 ServerMessage.of(ServerMessageType.PLAYER_ACTED, gameId,
                     new ServerMessageData.PlayerActedData(e.playerId(), "", e.action().name(), e.amount(), 0, 0, 0))
