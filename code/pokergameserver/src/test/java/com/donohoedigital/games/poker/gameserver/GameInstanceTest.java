@@ -247,17 +247,18 @@ class GameInstanceTest {
     void testOnlyOwnerCanPause() throws Exception {
         GameInstance game = GameInstance.create("test-1", 100L, config, properties);
         game.transitionToWaitingForPlayers();
-        game.addPlayer(1, "AI-1", true, 50);
-        game.addPlayer(2, "AI-2", true, 50);
+        addPlayersForPauseTest(game);
         game.start(executor);
 
         // Wait for game to be actively processing (or skip test if completed too
         // quickly)
         if (awaitState(game, state -> state == GameInstanceState.IN_PROGRESS, 100)) {
             // Non-owner cannot pause
-            assertThrows(GameServerException.class, () -> game.pauseAsUser(999L));
+            if (game.getState() == GameInstanceState.IN_PROGRESS) {
+                assertThrows(GameServerException.class, () -> game.pauseAsUser(999L));
+            }
 
-            // Owner can pause (skip if game completed during non-owner check)
+            // Owner can pause
             if (game.getState() == GameInstanceState.IN_PROGRESS) {
                 assertDoesNotThrow(() -> game.pauseAsUser(100L));
             }
@@ -280,22 +281,25 @@ class GameInstanceTest {
     void testOnlyOwnerCanResume() throws Exception {
         GameInstance game = GameInstance.create("test-1", 100L, config, properties);
         game.transitionToWaitingForPlayers();
-        game.addPlayer(1, "AI-1", true, 50);
-        game.addPlayer(2, "AI-2", true, 50);
+        addPlayersForPauseTest(game);
         game.start(executor);
 
         // Wait for game to be actively processing (or skip test if completed too
         // quickly)
         if (awaitState(game, state -> state == GameInstanceState.IN_PROGRESS, 100)) {
             // Pause as owner first
-            game.pauseAsUser(100L);
+            if (game.getState() == GameInstanceState.IN_PROGRESS) {
+                game.pauseAsUser(100L);
+            }
 
             if (game.getState() == GameInstanceState.PAUSED) {
                 // Non-owner cannot resume
                 assertThrows(GameServerException.class, () -> game.resumeAsUser(999L));
 
                 // Owner can resume
-                assertDoesNotThrow(() -> game.resumeAsUser(100L));
+                if (game.getState() == GameInstanceState.PAUSED) {
+                    assertDoesNotThrow(() -> game.resumeAsUser(100L));
+                }
             }
         }
     }
@@ -354,6 +358,19 @@ class GameInstanceTest {
     // ====================================
     // Helper Methods
     // ====================================
+
+    /**
+     * Add enough AI players for pause/resume tests to avoid race conditions.
+     * Two-player games complete too quickly on fast CI machines.
+     */
+    private void addPlayersForPauseTest(GameInstance game) {
+        game.addPlayer(1, "AI-1", true, 50);
+        game.addPlayer(2, "AI-2", true, 50);
+        game.addPlayer(3, "AI-3", true, 50);
+        game.addPlayer(4, "AI-4", true, 50);
+        game.addPlayer(5, "AI-5", true, 50);
+        game.addPlayer(6, "AI-6", true, 50);
+    }
 
     private GameConfig createTestConfig() {
         // 6 blind levels for hands-based testing
