@@ -93,7 +93,10 @@ class StateHandler extends BaseHandler {
         if (inputMode == PokerTableInput.MODE_NONE) return "NONE";
         List<PokerTable> tables = game.getTables();
         if (tables == null || tables.isEmpty()) return "LOBBY";
-        PokerTable table = tables.get(0);
+        // Prefer the current table (set by WebSocketTournamentDirector) over tables.get(0)
+        // which may be an unrelated loaded game when multiple tables exist in the context.
+        PokerTable current = game.getCurrentTable();
+        PokerTable table = (current != null) ? current : tables.get(0);
         HoldemHand hand = table.getHoldemHand();
         if (hand == null) return "BETWEEN_HANDS";
         return switch (hand.getRound()) {

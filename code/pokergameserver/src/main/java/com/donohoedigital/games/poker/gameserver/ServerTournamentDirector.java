@@ -195,13 +195,13 @@ public class ServerTournamentDirector implements Runnable {
         if (result.nextState() != null) {
             table.setTableState(result.nextState());
 
-            // Increment hands played when hand completes (transitions to CLEAN state)
-            if (result.nextState() == TableState.CLEAN && tournament instanceof ServerTournamentContext) {
+            // Sleep between hands at the universal DONE→BEGIN transition.
+            // handleDone() always returns nextState(BEGIN) after every showdown.
+            // When isAutoDeal()=true (all online games), handleBegin() goes directly to
+            // START_HAND, bypassing WaitForDeal and TD.CheckEndHand entirely — so this
+            // is the only reliable hook for the inter-hand pause.
+            if (result.nextState() == TableState.BEGIN && tournament instanceof ServerTournamentContext) {
                 ((ServerTournamentContext) tournament).incrementHandsPlayed();
-                // Pause between hands so clients can observe the outcome. This is
-                // essential for all-AI scenarios where hand.isDone() causes the entire
-                // betting round to be skipped — without this delay, hands race in
-                // milliseconds with no visible pause.
                 if (properties.aiActionDelayMs() > 0) {
                     sleepMillis(properties.aiActionDelayMs());
                 }

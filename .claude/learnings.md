@@ -44,6 +44,17 @@ Persistent knowledge discovered during development sessions. Read this at the st
 
 - [config] PropertyConfig is a global singleton — tests that modify it can affect other tests running in the same JVM (2026-02-12)
 
+## Server Game Engine (ServerTournamentDirector)
+
+- [server] Inter-hand pause must hook `result.nextState() == TableState.BEGIN` (the DONE→BEGIN transition from `handleDone()`), NOT `nextState==CLEAN` or `TD.CheckEndHand` — both are dead code for auto-deal online games where `handleBegin()` with `isAutoDeal()=true` goes directly to `START_HAND` (2026-02-19)
+- [server] `nextState==CLEAN` is always dead: CLEAN is reached via `pendingState`, never via `nextState` (2026-02-19)
+- [server] `TD.CheckEndHand` phase is skipped for auto-deal games: `handleBegin(isAutoDeal=true)` → `nextState(START_HAND)`, never visits WaitForDeal or CheckEndHand (2026-02-19)
+- [server] `aiActionDelayMs` in embedded mode is configured via `application-embedded.properties` as `game.server.ai-action-delay-ms=400`. Default for server mode is 0 (2026-02-19)
+- [server] All-AI hands (after human elimination) complete in <1ms — automation polling at 0.15s will miss PRE_FLOP transitions. Use HAND_STARTED timestamps in WebSocket debug log to verify pacing, not automation hand counter (2026-02-19)
+- [automation] The `run-client-local.ps1` script does NOT include `pokergameserver` module classes directly — it's loaded as a JAR dependency from `code/poker/target/dependency/`. Rebuild BOTH `pokergameserver` AND `poker` (to update the copied JAR) when changing server code (2026-02-19)
+- [automation] H2 database file lock: always kill ALL Java processes before relaunching the client. The lock file is NOT automatically cleared on crash and prevents startup (2026-02-19)
+- [server] `handleOnHold()` in TournamentEngine also returns `nextState(BEGIN)`, which would trigger a spurious pause+incrementHandsPlayed at the DONE→BEGIN hook. Currently unreachable in ServerTournamentDirector (which never sets ON_HOLD), but must be guarded if multi-table ON_HOLD logic is ever added (2026-02-19)
+
 ## Dev Control Server
 
 - [dev-server] `PlayerProfile.getProfileList()` requires `ConfigManager` to be initialized — throws NPE in test environments that don't start the full desktop app. Wrap in try-catch and return empty list (2026-02-19)
