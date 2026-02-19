@@ -105,30 +105,32 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
         logger.debug("[BROADCAST] gameId={} event={}", gameId, event.getClass().getSimpleName());
         switch (event) {
             case GameEvent.HandStarted e -> {
-                // Send per-player GAME_STATE before HAND_STARTED so the client can build
-                // its table view (players, cards, pots) before any action events arrive.
-                // Required when the game starts fresh — the client has no table data yet.
                 if (game != null) {
+                    // Look up dealer seat from the starting table.
+                    int dealerSeat = -1;
+                    if (game.getTournament() != null && e.tableId() >= 0
+                            && e.tableId() < game.getTournament().getNumTables()) {
+                        dealerSeat = game.getTournament().getTable(e.tableId()).getButton();
+                    }
+                    ServerMessage handStartedMsg = ServerMessage.of(ServerMessageType.HAND_STARTED, gameId,
+                            new ServerMessageData.HandStartedData(e.handNumber(), dealerSeat, -1, -1, List.of()));
+                    // Send GAME_STATE + HAND_STARTED only to players seated at this table.
+                    // Sending HAND_STARTED for other tables would corrupt the client's
+                    // hand model (onHandStarted always applies to currentTable).
                     for (PlayerConnection conn : connectionManager.getConnections(gameId)) {
                         GameStateSnapshot snapshot = game.getGameStateSnapshot(conn.getProfileId());
-                        if (snapshot != null) {
-                            logger.debug("[BROADCAST] sending GAME_STATE to player={} before HAND_STARTED",
-                                    conn.getProfileId());
+                        if (snapshot != null && snapshot.tableId() == e.tableId()) {
+                            logger.debug("[BROADCAST] sending GAME_STATE + HAND_STARTED to player={} for table={}",
+                                    conn.getProfileId(), e.tableId());
                             conn.sendMessage(converter.createGameStateMessage(gameId, snapshot));
+                            conn.sendMessage(handStartedMsg);
                         }
                     }
+                } else {
+                    // No game reference — broadcast to all (future: filter by table).
+                    broadcast(ServerMessage.of(ServerMessageType.HAND_STARTED, gameId,
+                            new ServerMessageData.HandStartedData(e.handNumber(), -1, -1, -1, List.of())));
                 }
-                // Look up dealer seat from the tournament table so the client can position
-                // the dealer button correctly. Falls back to -1 if unavailable.
-                int dealerSeat = -1;
-                if (game != null && game.getTournament() != null) {
-                    int tableId = e.tableId();
-                    if (tableId >= 0 && tableId < game.getTournament().getNumTables()) {
-                        dealerSeat = game.getTournament().getTable(tableId).getButton();
-                    }
-                }
-                broadcast(ServerMessage.of(ServerMessageType.HAND_STARTED, gameId,
-                        new ServerMessageData.HandStartedData(e.handNumber(), dealerSeat, -1, -1, List.of())));
             }
             case GameEvent.PlayerActed e -> broadcast(
                 ServerMessage.of(ServerMessageType.PLAYER_ACTED, gameId,
