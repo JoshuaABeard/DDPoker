@@ -130,11 +130,7 @@ export default async function TournamentHistoryPage({
     {
       key: 'gameName',
       header: 'Tournament',
-      render: (entry: TournamentEntry) => (
-        <Link href={`/online/game?id=${entry.id}`} className="text-blue-600 hover:underline">
-          {entry.gameName}
-        </Link>
-      ),
+      render: (entry: TournamentEntry) => entry.gameName,
     },
     {
       key: 'placement',

@@ -51,7 +51,6 @@ export const adminSidebarData: SidebarSection[] = [
     items: [
       { title: 'Dashboard', link: '/admin', icon: '⚙️', exactMatch: true },
       { title: 'Profile Search', link: '/admin/online-profile-search', icon: '👥' },
-      { title: 'Registration Search', link: '/admin/reg-search', icon: '📝' },
       { title: 'Ban List', link: '/admin/ban-list', icon: '🚫' },
     ],
   },

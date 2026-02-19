@@ -165,7 +165,7 @@ export default function PasswordHelp() {
               <div>
                 <p>
                   You can change your password on the{' '}
-                  <Link href="/myprofile" className="text-[var(--color-poker-green)] hover:underline">
+                  <Link href="/online/myprofile" className="text-[var(--color-poker-green)] hover:underline">
                     My Profile
                   </Link>{' '}
                   page.
@@ -224,7 +224,7 @@ export default function PasswordHelp() {
                 </p>
                 <p>
                   Click the <strong>Sync Password</strong> button if you already changed your password on the{' '}
-                  <Link href="/myprofile" className="text-[var(--color-poker-green)] hover:underline">
+                  <Link href="/online/myprofile" className="text-[var(--color-poker-green)] hover:underline">
                     My Profile
                   </Link>{' '}
                   web page and you need to update the password in the DD Poker game to match.

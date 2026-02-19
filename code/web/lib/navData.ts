@@ -74,7 +74,6 @@ export const navData: Record<string, NavItem> = {
     subPages: [
       { title: 'Admin', link: '/admin' },
       { title: 'Profile Search', link: '/admin/online-profile-search' },
-      { title: 'Reg Search', link: '/admin/reg-search' },
       { title: 'Ban List', link: '/admin/ban-list' },
     ],
   },
