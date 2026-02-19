@@ -74,7 +74,6 @@
 		<help name="general"  display="General Info" location="general.html"/>
 			<help name="ddigital"  display="Donohoe Digital" location="ddigital.html" indent="1"/>                	
 			<help name="credits"  display="Credits &amp; Legal" location="credits.html" indent="1"/>
-			<help name="license"  display="License" location="license.html" indent="1"/>
 			<help name="faq"  display="FAQ" location="faq.html" indent="1"/>
 
 </HELPS>

@@ -7,7 +7,7 @@ Write-Host "  DD Poker Client (Local Development)" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
 
-$repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot = (Get-Item (Join-Path $PSScriptRoot "..\..")).FullName
 Set-Location $repoRoot
 
 # Set WORK directory
@@ -65,7 +65,6 @@ Write-Host ""
 
 # Run the client
 $javaArgs = @(
-    '-client'
     '-Xms64m'
     '-Xmx256m'
     '-Dfile.encoding=UTF-8'

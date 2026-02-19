@@ -208,18 +208,6 @@ public class PokerStartMenu extends StartMenu {
     }
 
     /**
-     * license agreement check Note: License class removed in Community Edition
-     */
-    private void licenseCheck() {
-        // License agreement auto-accepted for Community Edition
-        String key = "agreed";
-        Preferences prefs = Prefs.getUserPrefs("license");
-        if (!prefs.getBoolean(key, false)) {
-            prefs.putBoolean(key, true);
-        }
-    }
-
-    /**
      * server config check - show dialog if server not configured
      */
     private void serverConfigCheck() {
@@ -345,7 +333,6 @@ public class PokerStartMenu extends StartMenu {
                 bCheck = false;
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
-                        licenseCheck();
                         serverConfigCheck();
                         profileCheck();
                     }
