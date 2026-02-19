@@ -79,11 +79,12 @@ class GameSaveManagerTest {
     void loadResumableGamesFiltersInProgressAndPaused() {
         stubEmbeddedServer();
         testServer.createContext("/api/v1/games", exchange -> {
-            String json = "["
+            String games = "["
                     + "{\"gameId\":\"g1\",\"name\":\"Game1\",\"ownerName\":\"user\",\"playerCount\":2,\"maxPlayers\":9,\"status\":\"IN_PROGRESS\"},"
                     + "{\"gameId\":\"g2\",\"name\":\"Game2\",\"ownerName\":\"user\",\"playerCount\":1,\"maxPlayers\":9,\"status\":\"PAUSED\"},"
                     + "{\"gameId\":\"g3\",\"name\":\"Game3\",\"ownerName\":\"user\",\"playerCount\":0,\"maxPlayers\":9,\"status\":\"WAITING_FOR_PLAYERS\"}"
                     + "]";
+            String json = "{\"games\":" + games + ",\"total\":3,\"page\":0,\"pageSize\":50}";
             byte[] response = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, response.length);
@@ -103,10 +104,11 @@ class GameSaveManagerTest {
     void loadResumableGamesEmptyWhenNoMatchingStatus() {
         stubEmbeddedServer();
         testServer.createContext("/api/v1/games", exchange -> {
-            String json = "["
+            String games = "["
                     + "{\"gameId\":\"g1\",\"name\":\"Game1\",\"ownerName\":\"user\",\"playerCount\":0,\"maxPlayers\":9,\"status\":\"WAITING_FOR_PLAYERS\"},"
                     + "{\"gameId\":\"g2\",\"name\":\"Game2\",\"ownerName\":\"user\",\"playerCount\":9,\"maxPlayers\":9,\"status\":\"COMPLETED\"}"
                     + "]";
+            String json = "{\"games\":" + games + ",\"total\":2,\"page\":0,\"pageSize\":50}";
             byte[] response = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, response.length);
@@ -125,7 +127,7 @@ class GameSaveManagerTest {
     void loadResumableGamesHandlesEmptyList() {
         stubEmbeddedServer();
         testServer.createContext("/api/v1/games", exchange -> {
-            byte[] response = "[]".getBytes(StandardCharsets.UTF_8);
+            byte[] response = "{\"games\":[],\"total\":0,\"page\":0,\"pageSize\":50}".getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, response.length);
             try (OutputStream os = exchange.getResponseBody()) {
@@ -171,7 +173,7 @@ class GameSaveManagerTest {
     void getResumableGamesReturnsUnmodifiableList() {
         stubEmbeddedServer();
         testServer.createContext("/api/v1/games", exchange -> {
-            String json = "[{\"gameId\":\"g1\",\"name\":\"Game1\",\"ownerName\":\"user\",\"playerCount\":1,\"maxPlayers\":9,\"status\":\"IN_PROGRESS\"}]";
+            String json = "{\"games\":[{\"gameId\":\"g1\",\"name\":\"Game1\",\"ownerName\":\"user\",\"playerCount\":1,\"maxPlayers\":9,\"status\":\"IN_PROGRESS\"}],\"total\":1,\"page\":0,\"pageSize\":50}";
             byte[] response = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, response.length);

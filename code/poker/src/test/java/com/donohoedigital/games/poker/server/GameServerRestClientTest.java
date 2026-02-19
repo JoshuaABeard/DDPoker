@@ -136,7 +136,7 @@ class GameServerRestClientTest {
     @Test
     void listGamesReturnsGameSummaries() {
         testServer.createContext("/api/v1/games", exchange -> {
-            String json = "[{\"gameId\":\"g1\",\"name\":\"Test\",\"ownerName\":\"user\",\"playerCount\":1,\"maxPlayers\":9,\"status\":\"WAITING_FOR_PLAYERS\"}]";
+            String json = "{\"games\":[{\"gameId\":\"g1\",\"name\":\"Test\",\"ownerName\":\"user\",\"playerCount\":1,\"maxPlayers\":9,\"status\":\"WAITING_FOR_PLAYERS\"}],\"total\":1,\"page\":0,\"pageSize\":50}";
             byte[] response = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, response.length);
