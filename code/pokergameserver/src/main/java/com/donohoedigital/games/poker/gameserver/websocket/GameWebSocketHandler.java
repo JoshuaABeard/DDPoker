@@ -31,6 +31,7 @@ import com.donohoedigital.games.poker.gameserver.GameInstance;
 import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.GameInstanceState;
 import com.donohoedigital.games.poker.gameserver.GameStateSnapshot;
+import com.donohoedigital.games.poker.gameserver.ServerGameEventBus;
 import com.donohoedigital.games.poker.gameserver.ServerPlayerSession;
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
 import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
@@ -197,19 +198,18 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             // Practice game auto-start: all players were pre-added by the REST endpoint;
             // start the game when the owner's WebSocket connects.
             if (alreadyInGame && profileId == game.getOwnerProfileId()) {
+                // Pre-create the eventBus and wire the broadcaster BEFORE starting the
+                // director. The director runs on a thread pool and fires HandStarted
+                // almost immediately; wiring after startGame() risks missing it.
+                // game.prepareStart() creates eventBus without starting the director;
+                // game.start() (inside startGame) reuses it.
+                ServerGameEventBus earlyEventBus = game.prepareStart();
+                gameBroadcasters.computeIfAbsent(gameId, id -> {
+                    GameEventBroadcaster broadcaster = new GameEventBroadcaster(id, connectionManager, converter, game);
+                    earlyEventBus.setBroadcastCallback(broadcaster);
+                    return broadcaster;
+                });
                 gameInstanceManager.startGame(gameId, profileId);
-                // startGame() creates the eventBus synchronously; wire the broadcaster now
-                // with a game reference so HandStarted delivers per-player GAME_STATE
-                // snapshots before the HAND_STARTED broadcast. This ensures the client
-                // has table data before any action events arrive.
-                if (game.getEventBus() != null) {
-                    gameBroadcasters.computeIfAbsent(gameId, id -> {
-                        GameEventBroadcaster broadcaster = new GameEventBroadcaster(id, connectionManager, converter,
-                                game);
-                        game.getEventBus().setBroadcastCallback(broadcaster);
-                        return broadcaster;
-                    });
-                }
             }
         } else {
             // Wire event bus broadcaster — create once per game, not once per connection.

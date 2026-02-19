@@ -20,6 +20,7 @@ package com.donohoedigital.games.poker.gameserver.websocket;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
 import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.GameInstanceState;
+import com.donohoedigital.games.poker.gameserver.ServerGameEventBus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -160,6 +161,8 @@ class GameWebSocketHandlerTest {
         when(gameInstance.getState()).thenReturn(GameInstanceState.WAITING_FOR_PLAYERS);
         when(gameInstance.hasPlayer(PROFILE_ID)).thenReturn(true);
         when(gameInstance.getOwnerProfileId()).thenReturn(PROFILE_ID);
+        // prepareStart() must return a non-null bus so the broadcaster can be wired
+        when(gameInstance.prepareStart()).thenReturn(mock(ServerGameEventBus.class));
 
         handler.afterConnectionEstablished(session);
 

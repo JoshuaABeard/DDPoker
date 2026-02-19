@@ -123,6 +123,34 @@ public class GameInstance {
     }
 
     /**
+     * Pre-creates the event bus so that callers can wire broadcast callbacks before
+     * the director starts. Must be called while the game is in
+     * {@link GameInstanceState#WAITING_FOR_PLAYERS}.
+     *
+     * <p>
+     * Calling this is optional; if not called before {@link #start}, {@code start}
+     * creates the event bus itself. If called, {@code start} reuses the pre-created
+     * bus so that no events are missed.
+     *
+     * @return the newly created (or already existing) event bus
+     */
+    public ServerGameEventBus prepareStart() {
+        stateLock.lock();
+        try {
+            if (state != GameInstanceState.WAITING_FOR_PLAYERS) {
+                throw new IllegalStateException("Cannot prepareStart in state: " + state);
+            }
+            if (eventBus == null) {
+                eventStore = new InMemoryGameEventStore(gameId);
+                eventBus = new ServerGameEventBus(eventStore);
+            }
+            return eventBus;
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    /**
      * Start the game (WAITING_FOR_PLAYERS → IN_PROGRESS). Creates tournament
      * context and starts director thread.
      */
@@ -142,9 +170,13 @@ public class GameInstance {
                 players.add(player);
             }
 
-            // Initialize game objects
-            eventStore = new InMemoryGameEventStore(gameId);
-            eventBus = new ServerGameEventBus(eventStore);
+            // Reuse pre-created event bus (from prepareStart) if available, otherwise
+            // create now. This avoids a race where a broadcast callback wired after
+            // start() could miss events fired by the director's first hand.
+            if (eventBus == null) {
+                eventStore = new InMemoryGameEventStore(gameId);
+                eventBus = new ServerGameEventBus(eventStore);
+            }
 
             PlayerActionProvider aiProvider = createSimpleAI();
             actionProvider = new ServerPlayerActionProvider(aiProvider, this::onActionRequest,
