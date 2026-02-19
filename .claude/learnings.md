@@ -35,10 +35,21 @@ Persistent knowledge discovered during development sessions. Read this at the st
 - [pokerengine] `TournamentProfile.setLevel()` sets blind/ante values but does NOT set `PARAM_LASTLEVEL`. Without it, `BlindStructure` defaults `lastlevel` to 0 and returns 0 for all blinds/antes. Fix: call `profile.getMap().setInteger(TournamentProfile.PARAM_LASTLEVEL, N)` after defining levels (2026-02-18)
 - [poker] AI code (`AIOutcome`, `BetRange`, `ClientStrategyProvider`) uses `Math.random()` — not `DiceRoller` — so `DiceRoller.setSeed()` does not guarantee deterministic AI behavior (2026-02-18)
 - [poker] For all-AI tables, `PokerTable.createPokerAI()` only runs when `(!isAllComputer() || isCurrent()) && !isSimulation()`. Call `game.setCurrentTable(table)` to trigger AI initialization (2026-02-18)
+- [poker] `HoldemHand.bet/call/raise/fold/check()` only record hand history — they do NOT deduct chips from the player. Chip deduction is done by `PokerPlayer.bet/call/raise/fold/check()`. Always drive hand actions through `PokerPlayer.processAction(HandAction)` to get both; calling hand methods directly silently breaks chip conservation (2026-02-19)
+- [poker] `HoldemHand.getAmountToCall(GamePlayerInfo)` blindly casts its argument to `PokerPlayer` — passing any other `GamePlayerInfo` (e.g. `ClientV2AIContext.PokerPlayerAdapter`) causes `ClassCastException`. Use `HoldemHand.getCall(PokerPlayer)` with an unwrapped player instead (2026-02-19)
+- [poker] `V2Player.getBetAmount()` calls `re.getBetRange()` which can return null (e.g. when no bet range is configured for the situation). The return value must be null-checked; returning 0 is safe because `PokerAI.getHandAction()` falls back to `call + minRaise` when `getBetAmount()` returns 0 (2026-02-19)
+- [poker] `BlindStructure` reads the key `"doubleafterlast"` to decide whether to double blinds past the last defined level, but `TournamentProfile.PARAM_DOUBLE` is the string `"double"` — a pre-existing key mismatch. Set `"doubleafterlast"` directly on the profile map when this behaviour is needed (2026-02-19)
 
 ## Configuration
 
 - [config] PropertyConfig is a global singleton — tests that modify it can affect other tests running in the same JVM (2026-02-12)
+
+## Dev Control Server
+
+- [dev-server] `PlayerProfile.getProfileList()` requires `ConfigManager` to be initialized — throws NPE in test environments that don't start the full desktop app. Wrap in try-catch and return empty list (2026-02-19)
+- [dev-server] `Map.of()` throws `NullPointerException` for null values — use `LinkedHashMap` when response fields may be null (e.g., `defaultProfile` when no profile exists) (2026-02-19)
+- [dev-server] Pre-commit hook pattern `api[_-]?(key|secret)\s*[:=]\s*"?[a-zA-Z0-9]{16,}` will false-positive on method names like `loadOrGenerateKey` (17 alphanumeric chars). Keep method names shorter than 16 chars when the LHS contains "apiKey" or similar (2026-02-19)
+- [dev-server] `ShowTournamentTable.poststart()` always calls `PracticeGameLauncher.launch()` which creates a new server-side game. Added `game_.getWebSocketConfig() == null` guard so the resume flow can pre-set config and skip the launcher (2026-02-19)
 
 ## Git & Workflow
 
