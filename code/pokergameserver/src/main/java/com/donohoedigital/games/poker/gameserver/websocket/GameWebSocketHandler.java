@@ -30,6 +30,7 @@ import com.donohoedigital.games.poker.gameserver.ActionRequest;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
 import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.GameInstanceState;
+import com.donohoedigital.games.poker.gameserver.GameStateSnapshot;
 import com.donohoedigital.games.poker.gameserver.ServerPlayerSession;
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
 import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
@@ -199,9 +200,18 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
                     new ServerMessageData.LobbyPlayerJoinedData(playerData));
             connectionManager.broadcastToGame(gameId, joinedMsg, profileId);
         } else {
-            // In-game: existing behavior — broadcast PLAYER_JOINED
+            // In-game: broadcast PLAYER_JOINED to others
             ServerMessage joinedMsg = converter.createPlayerJoinedMessage(gameId, profileId, username, -1);
             connectionManager.broadcastToGame(gameId, joinedMsg, profileId);
+
+            // Sync reconnecting player to current game state so they see the table,
+            // players, and cards without waiting for the next event to fire.
+            GameStateSnapshot snapshot = game.getGameStateSnapshot(profileId);
+            if (snapshot != null) {
+                playerConnection.sendMessage(converter.createGameStateMessage(gameId, snapshot));
+            }
+            // Re-send ACTION_REQUIRED if the game was already waiting for this player.
+            game.resendPendingActionIfAny(profileId);
         }
     }
 

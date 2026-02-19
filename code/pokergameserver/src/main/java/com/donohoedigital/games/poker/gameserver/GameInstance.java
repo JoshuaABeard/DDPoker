@@ -431,6 +431,40 @@ public class GameInstance {
         return tournament;
     }
 
+    /**
+     * Build a game state snapshot for a specific player (for reconnect state sync).
+     * Returns null if the tournament hasn't started or the player's table isn't found.
+     */
+    public GameStateSnapshot getGameStateSnapshot(long profileId) {
+        if (tournament == null)
+            return null;
+        for (int t = 0; t < tournament.getNumTables(); t++) {
+            ServerGameTable table = (ServerGameTable) tournament.getTable(t);
+            for (int s = 0; s < table.getSeats(); s++) {
+                ServerPlayer p = table.getPlayer(s);
+                if (p != null && p.getID() == (int) profileId) {
+                    ServerHand hand = (ServerHand) table.getHoldemHand();
+                    return GameStateProjection.forPlayer(table, hand, (int) profileId);
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Re-sends the ACTION_REQUIRED message if the game is currently waiting for
+     * this player's action. Called by the WebSocket handler when a player reconnects
+     * so they receive the action prompt even if it fired before they connected.
+     */
+    public void resendPendingActionIfAny(long profileId) {
+        if (actionProvider == null)
+            return;
+        ActionRequest req = actionProvider.getPendingActionRequest((int) profileId);
+        if (req != null) {
+            onActionRequest(req);
+        }
+    }
+
     public IGameEventStore getEventStore() {
         return eventStore;
     }

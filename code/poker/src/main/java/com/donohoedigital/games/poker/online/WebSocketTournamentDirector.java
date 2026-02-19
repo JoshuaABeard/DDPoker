@@ -320,7 +320,9 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onConnected(ConnectedData d) {
         localPlayerId_ = d.playerId();
-        onGameState(d.gameState());
+        if (d.gameState() != null) {
+            onGameState(d.gameState());
+        }
     }
 
     private void onGameState(GameStateData d) {
@@ -868,6 +870,14 @@ public class WebSocketTournamentDirector extends BasePhase
             // Integer.MAX_VALUE (e.g., high-volume server deployment in M6+).
             PokerPlayer p = new PokerPlayer((int) sd.playerId(), sd.playerName(), sd.playerId() == localPlayerId_);
             p.setChipCount(sd.chipCount());
+            // Apply hole cards from snapshot (only provided for the local player)
+            if (sd.cards() != null && !sd.cards().isEmpty()) {
+                for (String c : sd.cards()) {
+                    Card card = Card.getCard(c);
+                    if (card != null)
+                        p.getHand().addCard(card);
+                }
+            }
             players[sd.seatIndex()] = p;
             if (sd.isDealer())
                 dealerSeat = sd.seatIndex();

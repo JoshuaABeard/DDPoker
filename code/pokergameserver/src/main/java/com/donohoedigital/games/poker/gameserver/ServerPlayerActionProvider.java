@@ -122,7 +122,7 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
         }
 
         CompletableFuture<PlayerAction> future = new CompletableFuture<>();
-        PendingAction pending = new PendingAction(future, options);
+        PendingAction pending = new PendingAction(future, options, player);
         pendingActions.put(player.getID(), pending);
 
         // Notify via callback (GameInstance sends WebSocket ACTION_REQUIRED)
@@ -218,8 +218,18 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
     }
 
     /**
+     * Returns the pending action request for a player, or null if none is waiting.
+     * Used by the WebSocket handler to re-send ACTION_REQUIRED when a player reconnects.
+     */
+    public ActionRequest getPendingActionRequest(int playerId) {
+        PendingAction pending = pendingActions.get(playerId);
+        return pending != null ? new ActionRequest((ServerPlayer) pending.player(), pending.options()) : null;
+    }
+
+    /**
      * Pending action tracking.
      */
-    private record PendingAction(CompletableFuture<PlayerAction> future, ActionOptions options) {
+    private record PendingAction(CompletableFuture<PlayerAction> future, ActionOptions options,
+            GamePlayerInfo player) {
     }
 }

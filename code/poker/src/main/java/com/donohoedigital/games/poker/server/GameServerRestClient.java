@@ -20,9 +20,9 @@ package com.donohoedigital.games.poker.server;
 import com.donohoedigital.games.poker.gameserver.GameConfig;
 import com.donohoedigital.games.poker.gameserver.controller.TournamentProfileConverter;
 import com.donohoedigital.games.poker.gameserver.dto.CreateGameResponse;
+import com.donohoedigital.games.poker.gameserver.dto.GameListResponse;
 import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
 import com.donohoedigital.games.poker.model.TournamentProfile;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -126,8 +126,8 @@ public class GameServerRestClient {
                         "Server returned " + response.statusCode() + ": " + response.body());
             }
 
-            return OBJECT_MAPPER.readValue(response.body(), new TypeReference<List<GameSummary>>() {
-            });
+            GameListResponse result = OBJECT_MAPPER.readValue(response.body(), GameListResponse.class);
+            return result.games();
         } catch (GameServerClientException e) {
             throw e;
         } catch (Exception e) {
