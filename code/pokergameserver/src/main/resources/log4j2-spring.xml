@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Log4j2 configuration for the embedded game server (Spring Boot).
+  Spring Boot picks up log4j2-spring.xml automatically from the classpath root.
+  This prevents Spring Boot from applying its default broken-pattern fallback
+  when the embedded server starts inside the desktop client JVM.
+-->
+<Configuration status="WARN">
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} EMB [%-15.15thread::%-30.30logger{1}] %-5level %msg%n"/>
+    </Console>
+  </Appenders>
+
+  <Loggers>
+    <!-- Suppress noisy Spring Boot / Hibernate startup chatter -->
+    <Logger name="org.springframework" level="WARN"/>
+    <Logger name="org.hibernate" level="WARN"/>
+    <Logger name="com.zaxxer" level="WARN"/>
+    <Logger name="com.mchange" level="WARN"/>
+    <Logger name="org.apache.tomcat" level="WARN"/>
+    <Logger name="org.apache.catalina" level="WARN"/>
+
+    <!-- DD Poker embedded server — debug for actionable diagnostics -->
+    <Logger name="com.donohoedigital" level="DEBUG"/>
+
+    <Root level="INFO">
+      <AppenderRef ref="Console"/>
+    </Root>
+  </Loggers>
+</Configuration>
