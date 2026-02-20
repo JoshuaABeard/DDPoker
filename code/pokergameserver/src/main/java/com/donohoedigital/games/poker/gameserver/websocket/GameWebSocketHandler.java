@@ -216,6 +216,15 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
                     return broadcaster;
                 });
                 gameInstanceManager.startGame(gameId, profileId);
+
+                // Send initial game state snapshot to the client so the table and players
+                // are available before ACTION_REQUIRED arrives. Without this, the client's
+                // tables_ map stays empty and action buttons never appear.
+                GameStateSnapshot snapshot = game.getGameStateSnapshot(profileId);
+                if (snapshot != null) {
+                    playerConnection.sendMessage(converter.createGameStateMessage(gameId, snapshot));
+                    logger.debug("[WS-CONNECT] sent initial GAME_STATE to practice game owner player={}", username);
+                }
             }
         } else {
             // Wire event bus broadcaster — create once per game, not once per connection.
