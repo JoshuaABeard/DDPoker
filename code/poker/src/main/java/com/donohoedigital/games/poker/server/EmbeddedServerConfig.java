@@ -17,7 +17,13 @@
  */
 package com.donohoedigital.games.poker.server;
 
+import com.donohoedigital.games.poker.gameserver.GameServerAutoConfiguration;
+import com.donohoedigital.games.poker.gameserver.GameServerWebAutoConfiguration;
+import com.donohoedigital.games.poker.gameserver.auth.GameServerSecurityAutoConfiguration;
+import com.donohoedigital.games.poker.gameserver.persistence.GameServerPersistenceAutoConfiguration;
+import com.donohoedigital.games.poker.gameserver.websocket.WebSocketAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Import;
 
 /**
  * Spring Boot application source class for the embedded game server.
@@ -26,16 +32,22 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * This class is the entry point passed to
  * {@link org.springframework.boot.SpringApplication} when the desktop client
  * starts its embedded Spring Boot context. All game server infrastructure (REST
- * API, WebSocket, JPA, security) is wired via auto-configuration from the
- * {@code pokergameserver} module — no custom beans are needed here.
+ * API, WebSocket, JPA, security) is wired via explicit {@link Import}.
+ *
+ * <p>
+ * We use {@code @Import} rather than relying on
+ * {@code META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports}
+ * because the maven-assembly-plugin fat-JAR build overwrites that file with
+ * Spring Boot's own version, silently dropping our entries. Explicit imports
+ * survive the merge.
  *
  * <p>
  * Activated via the {@code embedded} Spring profile, which loads
  * {@code application-embedded.properties}.
  */
 @SpringBootApplication
+@Import({GameServerAutoConfiguration.class, GameServerWebAutoConfiguration.class,
+        GameServerPersistenceAutoConfiguration.class, GameServerSecurityAutoConfiguration.class,
+        WebSocketAutoConfiguration.class})
 public class EmbeddedServerConfig {
-    // No beans needed here — pokergameserver auto-configurations handle everything
-    // via
-    // META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
 }

@@ -136,7 +136,8 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
      * @return the player's action, or auto-fold/check on timeout
      */
     private PlayerAction getHumanAction(GamePlayerInfo player, ActionOptions options) {
-        logger.debug("[ACTION-HUMAN] player={} id={}", player.getName(), player.getID());
+        logger.debug("[ACTION-HUMAN] getHumanAction player={} id={} options={}", player.getName(), player.getID(),
+                options);
         // Check if player is disconnected and past grace period
         ServerPlayerSession session = playerSessions.get((long) player.getID());
         if (session != null && session.isDisconnected()) {
@@ -152,6 +153,7 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
         CompletableFuture<PlayerAction> future = new CompletableFuture<>();
         PendingAction pending = new PendingAction(future, options, player);
         pendingActions.put(player.getID(), pending);
+        logger.debug("[ACTION-HUMAN] stored pending action for playerId={}", player.getID());
 
         // Notify via callback (GameInstance sends WebSocket ACTION_REQUIRED)
         logger.debug("[ACTION-HUMAN] calling actionRequestCallback for player={} messageSender={}", player.getName(),
@@ -188,12 +190,16 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
      *            the player's chosen action
      */
     public void submitAction(int playerId, PlayerAction action) {
+        logger.debug("[ACTION-HUMAN] submitAction playerId={} action={} pendingKeys={}", playerId, action,
+                pendingActions.keySet());
         PendingAction pending = pendingActions.get(playerId);
         if (pending != null) {
             PlayerAction validated = validateAction(action, pending.options);
+            logger.debug("[ACTION-HUMAN] completing future with validated={}", validated);
             pending.future.complete(validated);
+        } else {
+            logger.debug("[ACTION-HUMAN] no pending action for playerId={}", playerId);
         }
-        // If no pending action, ignore silently (might be stale submission)
     }
 
     /**

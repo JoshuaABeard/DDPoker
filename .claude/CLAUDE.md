@@ -17,7 +17,8 @@ mvn test -P dev                # Fast: unit tests only, skip slow/integration, 4
 mvn test -P fast               # Skip coverage, integration, javadoc
 mvn test -pl <module> -Dtest=Class  # Single test class in one module
 mvn verify -P coverage         # Full coverage aggregation
-mvn clean package -DskipTests  # Build only
+mvn clean package -DskipTests  # Build only (no dev control server)
+mvn clean package -DskipTests -P dev  # Build with dev GameControlServer included in fat JAR
 ```
 
 ### Key Entry Points
@@ -25,6 +26,45 @@ mvn clean package -DskipTests  # Build only
 - Desktop: `com.donohoedigital.games.poker.PokerMain`
 - Server: `com.donohoedigital.games.poker.server.PokerServerMain`
 - REST API: `com.donohoedigital.poker.api.ApiApplication`
+
+### Dev Control Server (automated testing via HTTP API)
+
+The `-P dev` Maven profile adds `src/dev/java` to the build, which includes `GameControlServer` — a lightweight HTTP API for driving the game without UI interaction.
+
+**Build and run:**
+```bash
+# From code/
+mvn clean package -DskipTests -P dev   # Build fat JAR with GameControlServer
+java -jar poker/target/DDPokerCE-3.3.0.jar > /tmp/game.log 2>&1 &
+```
+
+**Control server endpoints** (auth via `X-Control-Key` header from `~/.ddpoker/control-server.key`):
+```bash
+PORT=$(cat ~/.ddpoker/control-server.port)
+KEY=$(cat ~/.ddpoker/control-server.key)
+H="X-Control-Key: $KEY"
+
+curl -s -H "$H" http://localhost:$PORT/health                          # {"status":"ok"}
+curl -s -H "$H" http://localhost:$PORT/state                           # full game state JSON
+curl -s -H "$H" -X POST -H "Content-Type: application/json" \
+     -d '{"numPlayers":3}' http://localhost:$PORT/game/start           # start practice game
+curl -s -H "$H" -X POST -H "Content-Type: application/json" \
+     -d '{"type":"CALL"}' http://localhost:$PORT/action                # submit player action
+```
+
+**Polling for human turn:**
+```bash
+# Wait until isHumanTurn is true, then act
+until curl -s -H "$H" http://localhost:$PORT/state | grep -q '"isHumanTurn":true'; do sleep 1; done
+curl -s -H "$H" -X POST -H "Content-Type: application/json" -d '{"type":"CALL"}' http://localhost:$PORT/action
+```
+
+**Key game state fields:**
+- `inputMode`: `NONE` | `QUITSAVE` (AI turn) | `CHECK_BET` | `CHECK_RAISE` | `CALL_RAISE` (human turn) | `DEAL` | `CONTINUE`
+- `currentAction.isHumanTurn`: `true` when human action is needed
+- `currentAction.availableActions`: list of valid action types for the current mode
+
+See `.claude/guides/desktop-client-testing.md` for the full reference: all endpoints, input mode table, polling patterns, enabling debug logging, and common failure modes.
 
 ## 2. Think Before Coding
 

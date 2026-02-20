@@ -112,8 +112,38 @@ class InboundMessageRouterTest {
     }
 
     @Test
-    void handleMessage_rejectsRateLimitedActions() throws Exception {
-        // Use a very long interval rate limiter (effectively blocks second action)
+    void handleMessage_rejectsChatRateLimitedMessages() throws Exception {
+        // Chat rate limiting is not cleared after each message, so rapid-fire chat
+        // is still throttled. This also verifies the rate-limiting mechanism itself.
+        RateLimiter actionRateLimiter = new RateLimiter(500);
+        RateLimiter strictChatRateLimiter = new RateLimiter(60_000); // 60 second interval
+        InboundMessageRouter strictRouter = new InboundMessageRouter(gameInstanceManager, connectionManager,
+                actionRateLimiter, strictChatRateLimiter, objectMapper);
+
+        WebSocketSession strictSession = mock(WebSocketSession.class);
+        when(strictSession.isOpen()).thenReturn(true);
+        when(strictSession.getId()).thenReturn("strict-sess");
+        PlayerConnection strictConnection = new PlayerConnection(strictSession, 99L, "strictuser", GAME_ID,
+                objectMapper);
+        connectionManager.addConnection(GAME_ID, 99L, strictConnection);
+
+        // First chat should pass
+        String json1 = "{\"type\":\"CHAT\",\"sequenceNumber\":1,\"data\":{\"message\":\"Hello\",\"tableChat\":true}}";
+        strictRouter.handleMessage(strictConnection, json1);
+        verify(strictSession, never()).sendMessage(argThat(msg -> isErrorMessage(msg)));
+
+        // Second chat immediately after should be rate-limited
+        String json2 = "{\"type\":\"CHAT\",\"sequenceNumber\":2,\"data\":{\"message\":\"Again\",\"tableChat\":true}}";
+        strictRouter.handleMessage(strictConnection, json2);
+        verify(strictSession).sendMessage(argThat(msg -> isMessageWithType(msg, "ERROR")));
+    }
+
+    @Test
+    void handleMessage_playerActionRateLimiterClearedAfterValidAction() throws Exception {
+        // After a valid PLAYER_ACTION is processed, removePlayer() clears the
+        // rate-limit
+        // entry so that the next hand's action is never blocked by the inter-action
+        // minimum interval (fast-advancing games resolve hands in < 1 second).
         RateLimiter strictActionRateLimiter = new RateLimiter(60_000); // 60 second interval
         RateLimiter chatRateLimiter = new RateLimiter(500);
         InboundMessageRouter strictRouter = new InboundMessageRouter(gameInstanceManager, connectionManager,
@@ -126,15 +156,16 @@ class InboundMessageRouterTest {
                 objectMapper);
         connectionManager.addConnection(GAME_ID, 99L, strictConnection);
 
-        // First action should pass
+        // First action passes
         String json1 = "{\"type\":\"PLAYER_ACTION\",\"sequenceNumber\":1,\"data\":{\"action\":\"FOLD\",\"amount\":0}}";
         strictRouter.handleMessage(strictConnection, json1);
         verify(strictSession, never()).sendMessage(argThat(msg -> isErrorMessage(msg)));
 
-        // Second action immediately after should be rate-limited
-        String json2 = "{\"type\":\"PLAYER_ACTION\",\"sequenceNumber\":2,\"data\":{\"action\":\"CHECK\",\"amount\":0}}";
+        // Second action also passes because removePlayer() cleared the rate-limit entry
+        String json2 = "{\"type\":\"PLAYER_ACTION\",\"sequenceNumber\":2,\"data\":{\"action\":\"FOLD\",\"amount\":0}}";
         strictRouter.handleMessage(strictConnection, json2);
-        verify(strictSession).sendMessage(argThat(msg -> isMessageWithType(msg, "ERROR")));
+        verify(strictSession, never()).sendMessage(argThat(msg -> isErrorMessage(msg)));
+        verify(gameInstance, times(2)).onPlayerAction(eq(99L), any(PlayerAction.class));
     }
 
     @Test

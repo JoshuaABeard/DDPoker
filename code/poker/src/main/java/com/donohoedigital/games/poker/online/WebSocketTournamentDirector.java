@@ -113,10 +113,13 @@ public class WebSocketTournamentDirector extends BasePhase
         wsClient_.setMessageHandler(this::onMessage);
         wsClient_.connect(serverPort_, gameId_, jwt_);
 
-        // Route player UI actions to WebSocket; hide buttons immediately on click
+        // Route player UI actions to WebSocket; hide buttons immediately on click.
+        // NOTE: the listener receives PokerGame.ACTION_* constants (e.g.
+        // ACTION_FOLD=1),
+        // NOT HandAction.ACTION_* constants (ACTION_FOLD=0). Use a dedicated mapper.
         game_.setPlayerActionListener((action, amount) -> {
             game_.setInputMode(PokerTableInput.MODE_QUITSAVE);
-            String wsAction = mapActionToWsString(action);
+            String wsAction = mapPokerGameActionToWsString(action);
             wsClient_.sendAction(wsAction, amount);
         });
     }
@@ -225,6 +228,7 @@ public class WebSocketTournamentDirector extends BasePhase
                 case ACTION_REQUIRED -> {
                     ActionRequiredData d = parse(data, ActionRequiredData.class);
                     onActionRequired(d);
+                    logger.debug("[WS-DIRECTOR] queued {} to EDT", type);
                 }
                 case PLAYER_ACTED -> {
                     PlayerActedData d = parse(data, PlayerActedData.class);
@@ -335,6 +339,18 @@ public class WebSocketTournamentDirector extends BasePhase
             logger.debug("[GAME_STATE EDT] applying {} tables", d.tables() != null ? d.tables().size() : 0);
             // Update level immediately — independent of table creation
             game_.setLevel(d.level());
+
+            // On the first GAME_STATE, remove any locally-created setup tables (added by
+            // setupPracticeGame) that pre-date the WebSocket connection. These are plain
+            // PokerTable instances, not RemotePokerTable, so we can identify them easily.
+            if (tables_.isEmpty()) {
+                for (PokerTable local : new ArrayList<>(game_.getTables())) {
+                    if (!(local instanceof RemotePokerTable)) {
+                        game_.removeTable(local);
+                        logger.debug("[GAME_STATE EDT] removed local setup table: {}", local.getName());
+                    }
+                }
+            }
 
             // Remove tables no longer present
             List<Integer> receivedIds = new ArrayList<>();
@@ -489,6 +505,7 @@ public class WebSocketTournamentDirector extends BasePhase
                     inputMode);
             table.fireEvent(PokerTableEvent.TYPE_CURRENT_PLAYER_CHANGED);
             game_.setInputMode(inputMode, hand, localPlayer);
+            logger.debug("[WS-DIRECTOR] ACTION_REQUIRED applied inputMode={} options={}", inputMode, d.options());
         });
     }
 
@@ -1118,6 +1135,26 @@ public class WebSocketTournamentDirector extends BasePhase
             case HandAction.ACTION_CALL -> "CALL";
             case HandAction.ACTION_BET -> "BET";
             case HandAction.ACTION_RAISE -> "RAISE";
+            default -> "FOLD"; // safe fallback
+        };
+    }
+
+    /**
+     * Maps a {@link PokerGame} action integer (from PlayerActionListener /
+     * playerActionPerformed) to the wire-format string.
+     *
+     * <p>
+     * PokerGame.ACTION_* constants differ from HandAction.ACTION_* constants (e.g.
+     * PokerGame.ACTION_FOLD=1 vs HandAction.ACTION_FOLD=0), so a separate mapping
+     * is required for actions originating from the Swing game engine.
+     */
+    private String mapPokerGameActionToWsString(int action) {
+        return switch (action) {
+            case PokerGame.ACTION_FOLD -> "FOLD";
+            case PokerGame.ACTION_CHECK -> "CHECK";
+            case PokerGame.ACTION_CALL -> "CALL";
+            case PokerGame.ACTION_BET -> "BET";
+            case PokerGame.ACTION_RAISE -> "RAISE";
             default -> "FOLD"; // safe fallback
         };
     }

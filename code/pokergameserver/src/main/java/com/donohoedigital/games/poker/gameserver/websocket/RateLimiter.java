@@ -19,6 +19,9 @@ package com.donohoedigital.games.poker.gameserver.websocket;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Rate limiter for player actions and chat messages.
  *
@@ -26,6 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * player to prevent spam and abuse.
  */
 public class RateLimiter {
+
+    private static final Logger logger = LoggerFactory.getLogger(RateLimiter.class);
 
     private final ConcurrentHashMap<String, Long> lastActionTimestamps = new ConcurrentHashMap<>();
     private final long minIntervalMillis;
@@ -59,13 +64,19 @@ public class RateLimiter {
         String key = profileId + ":" + gameId;
         long now = System.currentTimeMillis();
         boolean[] allowed = {false};
+        long[] elapsed = {0};
         lastActionTimestamps.compute(key, (k, lastTimestamp) -> {
             if (lastTimestamp == null || (now - lastTimestamp) >= minIntervalMillis) {
                 allowed[0] = true;
                 return now;
             }
+            elapsed[0] = now - lastTimestamp;
             return lastTimestamp;
         });
+        if (!allowed[0]) {
+            logger.debug("[RateLimiter] rejected profileId={} gameId={} elapsedMs={} minIntervalMs={}", profileId,
+                    gameId, elapsed[0], minIntervalMillis);
+        }
         return allowed[0];
     }
 

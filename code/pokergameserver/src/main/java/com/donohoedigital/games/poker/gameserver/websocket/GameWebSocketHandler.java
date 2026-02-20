@@ -177,6 +177,7 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
                     playerConnection.sendMessage(actionMsg);
                 }
             });
+            logger.debug("[WS-HANDLER] Wired messageSender for profileId={} gameId={}", profileId, gameId);
         }
 
         // Send CONNECTED first — establishes the client's identity before any
@@ -271,6 +272,8 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
         PlayerConnection connection = findConnection(session);
         if (connection != null) {
+            logger.debug("[WS-HANDLER] connection closed profileId={} gameId={} status={}", connection.getProfileId(),
+                    connection.getGameId(), closeStatus);
             sessionConnections.remove(session.getId());
             connectionManager.removeConnection(connection.getGameId(), connection.getProfileId());
 

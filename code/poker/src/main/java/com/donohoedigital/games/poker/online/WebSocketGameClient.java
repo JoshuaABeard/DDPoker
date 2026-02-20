@@ -196,14 +196,17 @@ public class WebSocketGameClient {
     private void sendMessage(ClientMessageType type, Object data) {
         if (!connected || webSocket == null) {
             logger.warn("Attempted to send {} but not connected", type);
+            logger.debug("[WS-SEND] DROPPED - not connected, type={}", type);
             return;
         }
         try {
             ObjectNode envelope = objectMapper.createObjectNode();
             envelope.put("type", type.name());
-            envelope.put("sequenceNumber", sequenceCounter.incrementAndGet());
+            long seq = sequenceCounter.incrementAndGet();
+            envelope.put("sequenceNumber", seq);
             envelope.set("data", objectMapper.valueToTree(data));
             String json = objectMapper.writeValueAsString(envelope);
+            logger.debug("[WS-SEND] type={} seq={} json={}", type, seq, json);
             webSocket.sendText(json, true);
         } catch (Exception e) {
             logger.error("Failed to send {} message", type, e);

@@ -25,6 +25,8 @@ import com.donohoedigital.games.poker.gameserver.websocket.message.ClientMessage
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Routes inbound WebSocket messages from clients to the appropriate game
@@ -41,6 +43,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class InboundMessageRouter {
 
+    private static final Logger logger = LoggerFactory.getLogger(InboundMessageRouter.class);
     private static final int CHAT_MAX_LENGTH = 500;
     private static final String HTML_TAG_PATTERN = "<[^>]*>";
 
@@ -124,6 +127,8 @@ public class InboundMessageRouter {
 
         // Validate sequence number (must be strictly greater than last seen)
         if (sequenceNumber <= connection.getLastSequenceNumber()) {
+            logger.debug("[ROUTER] OUT_OF_ORDER seq={} lastSeen={} type={}", sequenceNumber,
+                    connection.getLastSequenceNumber(), type);
             sendError(connection, "OUT_OF_ORDER", "Sequence number must be greater than last received");
             return;
         }
@@ -159,10 +164,12 @@ public class InboundMessageRouter {
     }
 
     private void handlePlayerAction(PlayerConnection connection, GameInstance game, JsonNode dataNode) {
+        logger.debug("[ROUTER] handlePlayerAction profileId={} data={}", connection.getProfileId(), dataNode);
         ClientMessageData.PlayerActionData data;
         try {
             data = objectMapper.treeToValue(dataNode, ClientMessageData.PlayerActionData.class);
         } catch (Exception e) {
+            logger.debug("[ROUTER] INVALID_DATA: {}", e.getMessage());
             sendError(connection, "INVALID_DATA", "Invalid player action data");
             return;
         }
@@ -171,11 +178,19 @@ public class InboundMessageRouter {
         try {
             action = parseAction(data.action(), data.amount());
         } catch (IllegalArgumentException e) {
+            logger.debug("[ROUTER] INVALID_ACTION: {}", data.action());
             sendError(connection, "INVALID_ACTION", "Unknown action: " + data.action());
             return;
         }
 
+        logger.debug("[ROUTER] dispatching action={} profileId={}", action, connection.getProfileId());
         game.onPlayerAction(connection.getProfileId(), action);
+        logger.debug("[ROUTER] onPlayerAction returned");
+        // Clear the player's rate-limit entry after a valid action so the next hand's
+        // action isn't blocked by the inter-action minimum interval. Without this,
+        // fast-advancing games (AI opponents, practice mode) can trigger RATE_LIMITED
+        // on the very next turn, leaving the server waiting indefinitely.
+        actionRateLimiter.removePlayer(connection.getProfileId(), connection.getGameId());
     }
 
     private void handleChat(PlayerConnection connection, GameInstance game, JsonNode dataNode) {

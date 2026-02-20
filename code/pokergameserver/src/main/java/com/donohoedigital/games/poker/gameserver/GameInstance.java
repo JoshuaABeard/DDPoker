@@ -36,6 +36,8 @@ import com.donohoedigital.games.poker.core.PlayerActionProvider;
 import com.donohoedigital.games.poker.core.TournamentEngine;
 import com.donohoedigital.games.poker.gameserver.GameConfig.BlindLevel;
 import java.time.Instant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +56,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * thread.
  */
 public class GameInstance {
+
+    private static final Logger logger = LoggerFactory.getLogger(GameInstance.class);
 
     private final String gameId;
     private final long ownerProfileId;
@@ -160,6 +164,9 @@ public class GameInstance {
             if (state != GameInstanceState.WAITING_FOR_PLAYERS) {
                 throw new IllegalStateException("Cannot start game in state: " + state);
             }
+            logger.debug("[GameInstance] start() gameId={} players={} startingChips={} blindLevels={}", gameId,
+                    playerSessions.size(), config.startingChips(),
+                    config.blindStructure() != null ? config.blindStructure().size() : 0);
 
             // Create player list from sessions
             int startingChips = config.startingChips();
@@ -404,6 +411,9 @@ public class GameInstance {
             // Send action request to connected WebSocket client
             // (MessageSender is set by WebSocket layer in Milestone 3)
             session.getMessageSender().accept(request);
+        } else {
+            logger.debug("[GameInstance] onActionRequest profileId={} messageSender=null (session={})",
+                    request.player().getID(), session != null ? "present" : "absent");
         }
     }
 
@@ -431,6 +441,7 @@ public class GameInstance {
      *            the action to submit
      */
     public void onPlayerAction(long profileId, com.donohoedigital.games.poker.core.PlayerAction action) {
+        logger.debug("[GameInstance] onPlayerAction profileId={} action={}", profileId, action);
         if (actionProvider != null) {
             actionProvider.submitAction((int) profileId, action);
         }

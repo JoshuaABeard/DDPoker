@@ -37,6 +37,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.donohoedigital.games.poker.core.GameHand;
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.PlayerAction;
@@ -53,6 +56,7 @@ import com.donohoedigital.games.poker.engine.Card;
  * interface for AI integration
  */
 public class ServerHand implements GameHand {
+    private static final Logger logger = LoggerFactory.getLogger(ServerHand.class);
     private static final int NO_CURRENT_PLAYER = -1;
 
     // Table reference
@@ -130,6 +134,18 @@ public class ServerHand implements GameHand {
      * Deal cards and post blinds/antes.
      */
     public void deal() {
+        logger.debug("[ServerHand] deal() handNumber={} seats={}", handNumber, table.getNumSeats());
+        // Reset per-hand player state (folded/allIn carry over from previous hand
+        // on the same ServerPlayer objects; clear them before starting a new hand)
+        MockTable t = table;
+        for (int seat = 0; seat < t.getNumSeats(); seat++) {
+            ServerPlayer player = t.getPlayer(seat);
+            if (player != null) {
+                player.setFolded(false);
+                player.setAllIn(false);
+            }
+        }
+
         // Initialize player order (all active players in seat order)
         initializePlayerOrder();
 
@@ -529,6 +545,7 @@ public class ServerHand implements GameHand {
 
     @Override
     public void advanceRound() {
+        logger.debug("[ServerHand] advanceRound() currentRound={}", round);
         // Calculate pots for the round that just completed BEFORE advancing round
         // This creates side pots for all-in situations based on current round
         if (!playerBets.isEmpty()) {
@@ -640,6 +657,7 @@ public class ServerHand implements GameHand {
 
     @Override
     public void resolve() {
+        logger.debug("[ServerHand] resolve() numWithCards={} pots={}", getNumWithCards(), pots.size());
         done = true;
 
         // Calculate final pots from remaining bets before resolving
@@ -879,6 +897,9 @@ public class ServerHand implements GameHand {
     @Override
     public void applyPlayerAction(GamePlayerInfo player, PlayerAction action) {
         ServerPlayer sp = (ServerPlayer) player;
+        int chipsBefore = sp.getChipCount();
+        logger.debug("[ServerHand] applyPlayerAction player={} action={} amount={} chipsBefore={}", sp.getName(),
+                action.actionType(), action.amount(), chipsBefore);
 
         switch (action.actionType()) {
             case FOLD :
@@ -933,6 +954,8 @@ public class ServerHand implements GameHand {
         if (sp.getChipCount() == 0) {
             sp.setAllIn(true);
         }
+        logger.debug("[ServerHand] applyPlayerAction result player={} chipsAfter={} allIn={}", sp.getName(),
+                sp.getChipCount(), sp.isAllIn());
 
         // Advance to next player
         playerActed();

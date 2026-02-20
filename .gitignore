@@ -32,6 +32,7 @@ docker/*.tar
 # Temporary test files
 DDPoker-latest.jar
 test-client*.bat
+test-*.js
 /config/
 
 # Local runtime data
