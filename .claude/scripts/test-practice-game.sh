@@ -251,7 +251,7 @@ for GAME_NUM in $(seq 1 "$NUM_GAMES"); do
               ACTION="CALL"
             fi
           fi
-          RESP=$(api_post_json /action "{\"type\":\"$ACTION\"}" 2>/dev/null)
+          RESP=$(api_post_json /action "{\"type\":\"$ACTION\"}" 2>/dev/null) || true
           if echo "$RESP" | grep -q '"accepted":true'; then
             ACTIONS_TAKEN=$((ACTIONS_TAKEN + 1))
             log "  Hand $HANDS_THIS_GAME | $INPUT_MODE → $ACTION (actions: $ACTIONS_TAKEN)"
@@ -262,7 +262,7 @@ for GAME_NUM in $(seq 1 "$NUM_GAMES"); do
         ;;
 
       DEAL)
-        RESP=$(api_post_json /action '{"type":"DEAL"}' 2>/dev/null)
+        RESP=$(api_post_json /action '{"type":"DEAL"}' 2>/dev/null) || true
         if echo "$RESP" | grep -q '"accepted":true'; then
           HANDS_THIS_GAME=$((HANDS_THIS_GAME + 1))
           log "  Dealt hand $HANDS_THIS_GAME"
@@ -270,7 +270,7 @@ for GAME_NUM in $(seq 1 "$NUM_GAMES"); do
         ;;
 
       CONTINUE|CONTINUE_LOWER)
-        RESP=$(api_post_json /action "{\"type\":\"$INPUT_MODE\"}" 2>/dev/null)
+        RESP=$(api_post_json /action "{\"type\":\"$INPUT_MODE\"}" 2>/dev/null) || true
         if echo "$RESP" | grep -q '"accepted":true'; then
           log "  Continued ($INPUT_MODE)"
         fi
