@@ -463,6 +463,12 @@ public class WebSocketTournamentDirector extends BasePhase
                 return;
             }
 
+            // Clear visual state from the previous hand (card pieces, result overlays such
+            // as "all-in", and the pot display). TYPE_CLEANING_DONE is not fired by the
+            // server in WebSocket mode, so we fire it here to ensure eliminated players'
+            // cards and status indicators are removed before the new hand begins.
+            table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_CLEANING_DONE, table));
+
             // Reuse the existing hand from the preceding GAME_STATE snapshot if available
             // so that bets (blinds/antes) set in applyTableData() are preserved.
             RemoteHoldemHand hand = table.getRemoteHand();

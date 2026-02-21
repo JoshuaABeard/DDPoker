@@ -183,6 +183,20 @@ class WebSocketTournamentDirectorTest {
         assertThat(events).contains(PokerTableEvent.TYPE_BUTTON_MOVED);
     }
 
+    @Test
+    void handStartedFiresCleaningDoneToResetVisualState() throws Exception {
+        // CLEANING_DONE must fire before each new hand so that visual elements from
+        // eliminated players (hole cards, all-in indicators) are cleared by
+        // ShowTournamentTable's existing TYPE_CLEANING_DONE handler.
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0));
+        RemotePokerTable table = requireTable();
+
+        List<Integer> events = collectEvents(table);
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+
+        assertThat(events).contains(PokerTableEvent.TYPE_CLEANING_DONE);
+    }
+
     // -------------------------------------------------------------------------
     // COMMUNITY_CARDS_DEALT
     // -------------------------------------------------------------------------
