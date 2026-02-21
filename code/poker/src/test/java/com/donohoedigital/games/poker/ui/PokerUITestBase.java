@@ -46,6 +46,7 @@ import java.util.function.BooleanSupplier;
 public abstract class PokerUITestBase extends AssertJSwingTestCaseTemplate {
     protected FrameFixture window;
     protected PokerMain pokerMain;
+    private String savedProfileFileName;
 
     @BeforeAll
     public static void setUpOnce() {
@@ -88,6 +89,7 @@ public abstract class PokerUITestBase extends AssertJSwingTestCaseTemplate {
         // NOW that GameEngine is initialized, we can set up profiles
         // This prevents FirstTimeWizard from blocking (for non-wizard tests)
         try {
+            savedProfileFileName = TestProfileHelper.saveStoredProfileFileName();
             TestProfileHelper.setupForNonWizardTests("UITestDefaultProfile");
             System.out.println("Profile setup complete");
         } catch (Exception e) {
@@ -108,6 +110,14 @@ public abstract class PokerUITestBase extends AssertJSwingTestCaseTemplate {
     }
 
     protected void onTearDown() {
+        // Clean up test profile and restore real user's profile to prevent game data
+        // pollution
+        try {
+            TestProfileHelper.cleanupAndRestoreProfile("UITestDefaultProfile", savedProfileFileName);
+        } catch (Exception e) {
+            System.err.println("Profile cleanup failed: " + e.getMessage());
+        }
+
         if (window != null) {
             window.cleanUp();
         }

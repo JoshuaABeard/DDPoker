@@ -146,6 +146,59 @@ public class TestProfileHelper {
     }
 
     /**
+     * Saves the currently stored profile file name for later restoration. Call this
+     * before setupForNonWizardTests to capture the real user's profile.
+     *
+     * @return The file name of the currently stored profile, or null if none
+     */
+    public static String saveStoredProfileFileName() {
+        try {
+            return ProfileList.getStoredProfile(PlayerProfileOptions.PROFILE_NAME);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Cleans up a named test profile and restores the previously stored profile.
+     * Call this in teardown to prevent test profiles from polluting the real game.
+     *
+     * @param testProfileName
+     *            The name of the test profile to delete
+     * @param previousFileName
+     *            The file name saved by saveStoredProfileFileName(), or null
+     */
+    public static void cleanupAndRestoreProfile(String testProfileName, String previousFileName) {
+        // Delete the test profile file
+        List<BaseProfile> profiles = PlayerProfile.getProfileList();
+        if (profiles != null) {
+            for (BaseProfile profile : profiles) {
+                if (testProfileName.equals(profile.getName())) {
+                    File file = profile.getFile();
+                    if (file != null && file.exists()) {
+                        file.delete();
+                    }
+                    break;
+                }
+            }
+        }
+
+        // Restore the previous profile or clear the preference
+        if (previousFileName != null) {
+            profiles = PlayerProfile.getProfileList();
+            if (profiles != null) {
+                for (BaseProfile profile : profiles) {
+                    if (previousFileName.equals(profile.getFileName())) {
+                        ProfileList.setStoredProfile((PlayerProfile) profile, PlayerProfileOptions.PROFILE_NAME);
+                        return;
+                    }
+                }
+            }
+        }
+        ProfileList.setStoredProfile(null, PlayerProfileOptions.PROFILE_NAME);
+    }
+
+    /**
      * Gets the count of existing profiles. Useful for assertions in tests.
      *
      * @return Number of existing profiles
