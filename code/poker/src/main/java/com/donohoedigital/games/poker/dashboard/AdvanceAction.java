@@ -338,6 +338,37 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
     }
 
     /**
+     * For WebSocket practice mode: returns {wsAction, wsAmount} if an
+     * advance-action button is selected, otherwise null. Clears the selection on
+     * success so the button is not acted on a second time.
+     *
+     * @param canCheck
+     *            true if CHECK is legal this turn (otherwise checkfold maps to
+     *            FOLD)
+     * @param allInAmount
+     *            chip amount to send with an all-in raise
+     */
+    public static String[] getAdvanceActionWS(boolean canCheck, int allInAmount) {
+        if (impl_ == null || impl_.buttons_.size() == 0)
+            return null;
+        String[] result = impl_._getAdvanceActionWS(canCheck, allInAmount);
+        if (result != null)
+            impl_.clearButtons();
+        return result;
+    }
+
+    private String[] _getAdvanceActionWS(boolean canCheck, int allInAmount) {
+        if (checkfold_.isSelected()) {
+            return new String[]{canCheck ? "CHECK" : "FOLD", "0"};
+        } else if (call_.isSelected()) {
+            return new String[]{"CALL", "0"};
+        } else if (allin_.isSelected()) {
+            return new String[]{"RAISE", String.valueOf(allInAmount)};
+        }
+        return null;
+    }
+
+    /**
      * get action indicated by player
      */
     private HandAction _getAdvanceAction() {

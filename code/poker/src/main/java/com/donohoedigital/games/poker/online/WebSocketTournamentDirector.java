@@ -21,6 +21,7 @@ import com.donohoedigital.games.engine.BasePhase;
 import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.engine.GameManager;
 import com.donohoedigital.games.poker.*;
+import com.donohoedigital.games.poker.dashboard.AdvanceAction;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
@@ -132,6 +133,9 @@ public class WebSocketTournamentDirector extends BasePhase
             String wsAction = mapPokerGameActionToWsString(action);
             wsClient_.sendAction(wsAction, amount);
         });
+
+        // Register as the GameManager so ShowTournamentTable.poststart() can wire chat.
+        context_.setGameManager(this);
     }
 
     /**
@@ -151,6 +155,7 @@ public class WebSocketTournamentDirector extends BasePhase
      */
     @Override
     public void finish() {
+        context_.setGameManager(null);
         wsClient_.disconnect();
         game_.setPlayerActionListener(null);
     }
@@ -582,6 +587,18 @@ public class WebSocketTournamentDirector extends BasePhase
             // the bet spinner and enable/disable the raise button correctly.
             if (d.options() != null) {
                 hand.updateActionOptions(d.options());
+            }
+
+            // If the player pre-selected an advance action while another player was
+            // acting, auto-submit it now instead of showing the action buttons.
+            if (d.options() != null) {
+                String[] advance = AdvanceAction.getAdvanceActionWS(d.options().canCheck(), d.options().allInAmount());
+                if (advance != null) {
+                    logger.debug("[ACTION_REQUIRED EDT] firing pre-action advance={}", advance[0]);
+                    game_.setInputMode(PokerTableInput.MODE_QUITSAVE);
+                    wsClient_.sendAction(advance[0], Integer.parseInt(advance[1]));
+                    return;
+                }
             }
 
             // Determine input mode from server options and show action buttons.
@@ -1293,9 +1310,9 @@ public class WebSocketTournamentDirector extends BasePhase
             BettingRound round = parseBettingRound(td.currentRound());
             hand.updateRound(round);
 
-            if (td.communityCards() != null && !td.communityCards().isEmpty()) {
-                hand.updateCommunity(parseCards(td.communityCards()));
-            }
+            hand.updateCommunity(td.communityCards() != null && !td.communityCards().isEmpty()
+                    ? parseCards(td.communityCards())
+                    : new Hand());
 
             int potTotal = td.pots() == null ? 0 : td.pots().stream().mapToInt(PotData::amount).sum();
             hand.updatePot(potTotal);
