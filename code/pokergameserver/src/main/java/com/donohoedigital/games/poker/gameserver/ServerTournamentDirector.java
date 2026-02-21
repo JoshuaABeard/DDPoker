@@ -379,9 +379,11 @@ public class ServerTournamentDirector implements Runnable {
      * plays out instantly.
      *
      * <p>
-     * Only activates when there is at least one human player at the table (so
-     * all-AI games are unaffected). Zip mode is reset at the start of each new hand
-     * in the {@code TD.DealDisplayHand} handler.
+     * Only activates in practice mode (single-human offline games). In online
+     * multiplayer, delays are always preserved so all connected players can watch
+     * the hand play out. Also only activates when there is at least one human
+     * player at the table (so all-AI games are unaffected). Zip mode is reset at
+     * the start of each new hand in the {@code TD.DealDisplayHand} handler.
      *
      * @param table
      *            the table to inspect
@@ -389,6 +391,10 @@ public class ServerTournamentDirector implements Runnable {
     private void checkAndUpdateZipMode(GameTable table) {
         if (actionProvider.isZipMode()) {
             return; // Already in zip mode — no need to re-check
+        }
+        // Zip mode is a practice-only feature — never skip delays in online games.
+        if (!(tournament instanceof ServerTournamentContext stc) || !stc.isPractice()) {
+            return;
         }
         boolean hasHuman = false;
         boolean hasActiveHuman = false;
