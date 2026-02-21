@@ -69,6 +69,7 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
     private final Map<Long, ServerPlayerSession> playerSessions;
     private final int aiActionDelayMs;
     private final Consumer<GameEvent> timeoutPublisher;
+    private volatile boolean zipMode = false;
 
     /**
      * Create a new server player action provider with no AI delay. Used by tests
@@ -145,7 +146,7 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
     public PlayerAction getAction(GamePlayerInfo player, ActionOptions options) {
         if (player.isComputer()) {
             PlayerAction action = aiProvider.getAction(player, options);
-            if (aiActionDelayMs > 0) {
+            if (aiActionDelayMs > 0 && !zipMode) {
                 try {
                     long delay = ThreadLocalRandom.current().nextLong(aiActionDelayMs / 2L, aiActionDelayMs * 2L + 1);
                     Thread.sleep(delay);
@@ -302,6 +303,21 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
     public ActionRequest getPendingActionRequest(int playerId) {
         PendingAction pending = pendingActions.get(playerId);
         return pending != null ? new ActionRequest((ServerPlayer) pending.player(), pending.options()) : null;
+    }
+
+    /**
+     * Enable or disable zip mode. When enabled, AI action delays are skipped so the
+     * remaining hand plays out instantly after the human player folds.
+     */
+    public void setZipMode(boolean zipMode) {
+        this.zipMode = zipMode;
+    }
+
+    /**
+     * Returns true if zip mode is active (human has folded, AI delays suppressed).
+     */
+    public boolean isZipMode() {
+        return zipMode;
     }
 
     /**

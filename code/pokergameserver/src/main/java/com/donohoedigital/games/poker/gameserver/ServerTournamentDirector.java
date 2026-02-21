@@ -290,7 +290,7 @@ public class ServerTournamentDirector implements Runnable {
                 if (tournament.getNumTables() == 1) {
                     eliminateZeroChipPlayers(table);
                 }
-                if (!tournament.isGameOver() && properties.aiActionDelayMs() > 0) {
+                if (!tournament.isGameOver() && properties.aiActionDelayMs() > 0 && !actionProvider.isZipMode()) {
                     sleepMillis(properties.aiActionDelayMs());
                 }
             }
@@ -304,6 +304,8 @@ public class ServerTournamentDirector implements Runnable {
             // clients before HAND_STARTED, giving them table context before any
             // ACTION_REQUIRED arrives.
             if ("TD.DealDisplayHand".equals(result.phaseToRun())) {
+                // New hand starting — exit zip mode so delays resume for the next hand.
+                actionProvider.setZipMode(false);
                 eventBus.publish(new GameEvent.HandStarted(table.getNumber(), table.getHandNum()));
                 // Publish PlayerActed events for antes and blinds so clients see chip
                 // deductions before the first ACTION_REQUIRED arrives.
@@ -361,9 +363,48 @@ public class ServerTournamentDirector implements Runnable {
             }
         }
 
-        // 3. Broadcast state to connected clients (via GameInstance callback)
+        // 3. Check if all human players have folded; if so, enable zip mode so
+        // remaining AI actions run without delay for the rest of this hand.
+        checkAndUpdateZipMode(table);
+
+        // 4. Broadcast state to connected clients (via GameInstance callback)
         if (table instanceof ServerGameTable serverTable) {
             eventBus.broadcastTableState(serverTable);
+        }
+    }
+
+    /**
+     * Enable zip mode when all human players at the table have folded. Zip mode
+     * suppresses AI action delays and the inter-hand pause so the remaining hand
+     * plays out instantly.
+     *
+     * <p>
+     * Only activates when there is at least one human player at the table (so
+     * all-AI games are unaffected). Zip mode is reset at the start of each new hand
+     * in the {@code TD.DealDisplayHand} handler.
+     *
+     * @param table
+     *            the table to inspect
+     */
+    private void checkAndUpdateZipMode(GameTable table) {
+        if (actionProvider.isZipMode()) {
+            return; // Already in zip mode — no need to re-check
+        }
+        boolean hasHuman = false;
+        boolean hasActiveHuman = false;
+        for (int seat = 0; seat < table.getSeats(); seat++) {
+            ServerPlayer player = (ServerPlayer) table.getPlayer(seat);
+            if (player != null && player.isHuman() && !player.isSittingOut()) {
+                hasHuman = true;
+                if (!player.isFolded()) {
+                    hasActiveHuman = true;
+                    break;
+                }
+            }
+        }
+        if (hasHuman && !hasActiveHuman) {
+            logger.debug("[ZIP] All human players folded — enabling zip mode for rest of hand");
+            actionProvider.setZipMode(true);
         }
     }
 

@@ -69,6 +69,60 @@ class ServerPlayerActionProviderTest {
         provider = new ServerPlayerActionProvider(mockAI, capturedRequest::set, TIMEOUT_SECONDS, 2, playerSessions);
     }
 
+    // === Zip Mode ===
+
+    @Test
+    void testZipMode_SkipsAIDelay() {
+        // Provider with 500ms AI delay
+        ServerPlayerActionProvider delayedProvider = new ServerPlayerActionProvider(mockAI, capturedRequest::set, 0, 2,
+                playerSessions, 500);
+
+        ServerPlayer aiPlayer = createAIPlayer(1, "AI");
+        ActionOptions options = createSimpleOptions();
+        mockAI.nextAction = PlayerAction.call();
+
+        delayedProvider.setZipMode(true);
+
+        long start = System.currentTimeMillis();
+        PlayerAction action = delayedProvider.getAction(aiPlayer, options);
+        long elapsedMs = System.currentTimeMillis() - start;
+
+        assertEquals(ActionType.CALL, action.actionType());
+        assertTrue(elapsedMs < 200, "Zip mode should skip the 500ms AI delay (elapsed=" + elapsedMs + "ms)");
+    }
+
+    @Test
+    void testZipMode_DelayAppliedWhenOff() {
+        // Provider with 100ms delay (small enough for test to be fast)
+        ServerPlayerActionProvider delayedProvider = new ServerPlayerActionProvider(mockAI, capturedRequest::set, 0, 2,
+                playerSessions, 100);
+
+        ServerPlayer aiPlayer = createAIPlayer(1, "AI");
+        ActionOptions options = createSimpleOptions();
+        mockAI.nextAction = PlayerAction.call();
+
+        // Zip mode off (default) — delay should apply (min = 50ms)
+        long start = System.currentTimeMillis();
+        delayedProvider.getAction(aiPlayer, options);
+        long elapsedMs = System.currentTimeMillis() - start;
+
+        assertTrue(elapsedMs >= 40, "Without zip mode, AI delay should apply (elapsed=" + elapsedMs + "ms)");
+    }
+
+    @Test
+    void testZipMode_DefaultOff() {
+        assertFalse(provider.isZipMode(), "Zip mode should default to false");
+    }
+
+    @Test
+    void testZipMode_SetAndGet() {
+        assertFalse(provider.isZipMode());
+        provider.setZipMode(true);
+        assertTrue(provider.isZipMode());
+        provider.setZipMode(false);
+        assertFalse(provider.isZipMode());
+    }
+
     // === AI Player Actions ===
 
     @Test

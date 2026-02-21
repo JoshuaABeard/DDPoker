@@ -582,6 +582,76 @@ class ServerTournamentDirectorTest {
         assertThat(blindEvents).anySatisfy(e -> assertThat(e.action()).isEqualTo(ActionType.ANTE));
     }
 
+    /**
+     * When the human player folds, the director should enable zip mode so the
+     * remaining AI actions run without delay. Verifies that: 1. The game completes
+     * correctly with a human player present. 2. Zip mode resets to false at the
+     * start of each new hand (TD.DealDisplayHand).
+     *
+     * <p>
+     * Uses a human player that always folds immediately. The inter-hand pause is
+     * set to 50ms; with zip mode active it should be skipped, making the game
+     * complete well within the timeout even with aiActionDelayMs > 0.
+     */
+    @Test
+    void zipModeActivatesWhenHumanFoldsAndResetsEachHand() throws Exception {
+        int delayMs = 50;
+
+        // Mix: 1 human + 3 AI
+        List<ServerPlayer> players = new ArrayList<>();
+        ServerPlayer humanPlayer = new ServerPlayer(1, "Human", true, 0, 500);
+        humanPlayer.setSeat(0);
+        players.add(humanPlayer);
+        for (int i = 1; i <= 3; i++) {
+            ServerPlayer ai = new ServerPlayer(i + 1, "AI" + i, false, 5, 500);
+            ai.setSeat(i);
+            players.add(ai);
+        }
+        ServerTournamentContext tournament = createTournament(players, 1);
+
+        InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-zip");
+        ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
+
+        // Use a holder so the fold callback can reference the provider it's constructed
+        // into.
+        final ServerPlayerActionProvider[] holder = {null};
+        PlayerActionProvider aiProvider = createSimpleAI(77);
+        holder[0] = new ServerPlayerActionProvider(aiProvider, request -> {
+            // Human always folds immediately — called synchronously before future.get()
+            holder[0].submitAction(request.player().getID(), PlayerAction.fold());
+        }, 5, 2, new java.util.concurrent.ConcurrentHashMap<>(), delayMs);
+        ServerPlayerActionProvider actionProvider = holder[0];
+
+        // Track zip mode state at each HAND_STARTED (fires after setZipMode(false))
+        List<Boolean> zipStatesAtHandStart = new CopyOnWriteArrayList<>();
+        eventBus.subscribe(event -> {
+            if (event instanceof GameEvent.HandStarted) {
+                zipStatesAtHandStart.add(actionProvider.isZipMode());
+            }
+        });
+
+        ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
+                tournament, eventBus, actionProvider,
+                new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", delayMs),
+                event -> {
+                });
+
+        Thread thread = new Thread(director);
+        thread.start();
+        // With zip mode working, even delayMs=50 should not make this slow —
+        // the human folds every hand, so zip mode skips both per-action and inter-hand
+        // delays.
+        thread.join(30000);
+
+        assertThat(thread.isAlive()).isFalse();
+        assertThat(tournament.isGameOver()).isTrue();
+
+        // Each HAND_STARTED fires after setZipMode(false), so zip mode must be false.
+        assertThat(zipStatesAtHandStart).as("Zip mode at each hand start").isNotEmpty();
+        assertThat(zipStatesAtHandStart).as("Zip mode always off at hand start")
+                .allSatisfy(zipActive -> assertThat(zipActive).isFalse());
+    }
+
     // Helper methods
 
     private List<ServerPlayer> createPlayers(int count, int startingChips) {
