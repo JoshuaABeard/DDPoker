@@ -432,6 +432,8 @@ public class AudioPlayer implements Runnable, LineListener {
             fGain_ = value;
         if (dataline_ == null)
             return;
+        if (!dataline_.isControlSupported(FloatControl.Type.MASTER_GAIN))
+            return;
 
         try {
             FloatControl gainControl = (FloatControl) dataline_.getControl(FloatControl.Type.MASTER_GAIN);

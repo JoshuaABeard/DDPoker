@@ -187,6 +187,8 @@ public class AudioConfig extends XMLConfigFileLoader {
      */
     public static AudioPlayer playMusic(String sName, double sleepSecs, boolean bLoop, boolean bRemember) {
         AudioPlayer player = play(sName, fMusicGain_, sleepSecs, bLoop, true, false);
+        if (player == null)
+            return null;
         if (!bMuteMusic_)
             player.play();
         if (bRemember)
