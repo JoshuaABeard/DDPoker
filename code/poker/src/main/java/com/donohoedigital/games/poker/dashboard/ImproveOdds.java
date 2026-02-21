@@ -79,8 +79,11 @@ public class ImproveOdds extends Odds {
         HandSorted csorted = new HandSorted(community);
         nRound = hhand.getRoundForDisplay();
 
-        // pre-flop
-        if (nRound == BettingRound.PRE_FLOP.toLegacy()) {
+        // pre-flop, or insufficient community cards.
+        // In WebSocket mode getCommunityForDisplay() can return an empty hand when
+        // the round has advanced on the server before the COMMUNITY_CARDS_DEALT
+        // message arrives. HandInfo.categorize() crashes with < 3 community cards.
+        if (nRound == BettingRound.PRE_FLOP.toLegacy() || community.size() < 3) {
             return "";
         }
 
