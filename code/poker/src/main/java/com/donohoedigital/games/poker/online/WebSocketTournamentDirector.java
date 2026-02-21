@@ -789,8 +789,11 @@ public class WebSocketTournamentDirector extends BasePhase
             RemotePokerTable table = currentTable();
             if (table == null)
                 return;
-            table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REBUY, table,
-                    findPlayer(localPlayerId_), d.cost(), d.chips(), true));
+            PokerPlayer localPlayer = findPlayer(localPlayerId_);
+            if (localPlayer == null)
+                return;
+            table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REBUY, table, localPlayer,
+                    d.cost(), d.chips(), true));
         });
     }
 
@@ -799,8 +802,11 @@ public class WebSocketTournamentDirector extends BasePhase
             RemotePokerTable table = currentTable();
             if (table == null)
                 return;
-            table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ADDON, table,
-                    findPlayer(localPlayerId_), d.cost(), d.chips(), true));
+            PokerPlayer localPlayer = findPlayer(localPlayerId_);
+            if (localPlayer == null)
+                return;
+            table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ADDON, table, localPlayer,
+                    d.cost(), d.chips(), true));
         });
     }
 
