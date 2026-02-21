@@ -1,4 +1,4 @@
-Status: in-progress
+Status: complete
 
 # Fix Practice Mode — Server + Embedded Client
 
@@ -14,7 +14,18 @@ gets stuck or misbehaves during multi-hand play.
 Use the **Game Control Server** (dev HTTP API at `src/dev/java/.../control/`) to
 drive practice games programmatically — no human UI interaction needed. This lets
 us reproduce issues deterministically, fix them, and verify fixes with an automated
-test loop. All work targets fidelity with the original `TournamentDirector` design.
+test loop. The `GET /screenshot` endpoint provides visual verification without manual
+testing. The control surface can be extended as needed during this work.
+
+All fixes target fidelity with the original `TournamentDirector` design.
+
+## Branch
+
+Create a new worktree from main (which includes the merged `fix-embedded-autoconfiguration`):
+
+```bash
+git worktree add -b fix-practice-mode ../DDPoker-fix-practice-mode
+```
 
 ## Completed (merged to main as 94e94513)
 
@@ -101,10 +112,10 @@ Common root causes to look for (based on branch debugging history):
 
 ---
 
-## Phase 3: Fix Identified Issues
+## Phase 3: Fix Issues
 
-Based on the branch analysis and original design study, these are the **known
-probable issues** to fix. Actual work depends on Phase 2 findings.
+Fix what Phase 2 reproduces, plus obvious code defects found during analysis.
+Items below are **probable issues** — only fix if reproduced or clearly defective.
 
 ### 3.1 ServerPlayerActionProvider — CompletableFuture race condition
 
@@ -121,6 +132,8 @@ future must be ready before the client can possibly respond.
 up the action listener, then waited. The server must do the same: prepare to
 receive before asking.
 
+**Fix if reproduced or if code inspection confirms the ordering bug.**
+
 ### 3.2 Action mapping completeness
 
 **Problem:** `mapPokerGameActionToWsString()` default case falls through to FOLD
@@ -128,6 +141,8 @@ for unmapped action constants (e.g. ALL_IN). Silent data loss.
 
 **Fix:** Map all `PokerGame.ACTION_*` constants explicitly. Log a warning for
 truly unknown values instead of silently folding.
+
+**Fix unconditionally — this is an obvious code defect.**
 
 ### 3.3 Sequence number desync on reconnect
 
@@ -138,6 +153,8 @@ rejected as `OUT_OF_ORDER`.
 **Fix:** Either (a) server accepts any sequence > 0 after reconnect, or (b) client
 resets its counter on reconnect. Option (a) is simpler and matches the original
 design where there were no sequence numbers.
+
+**Fix if reproduced.** Reconnect isn't expected during normal practice games.
 
 ### 3.4 DEAL/CONTINUE input modes not reaching client
 
@@ -151,6 +168,8 @@ client showed a "Deal" button. The server auto-completes these phases
 practice), the server should auto-advance without waiting for client input. If
 manual deal, the server must send a message that triggers `DEAL` input mode.
 
+**Fix if reproduced.** Verification item, not necessarily a bug.
+
 ### 3.5 Game completion not reaching client
 
 **Problem:** When the tournament ends (1 player left), `ServerTournamentDirector`
@@ -160,6 +179,9 @@ phase transition fails, the client sits forever.
 
 **Fix:** Verify `GAME_COMPLETE` handling. Add a fallback: if the game state shows
 only 1 player with chips and no action for 5 seconds, treat as game over.
+
+**Fix if reproduced.** This was noted as the known remaining issue after the
+autoconfiguration branch merge.
 
 ### 3.6 Thread safety in WebSocketTournamentDirector
 
@@ -172,32 +194,30 @@ being modified on the EDT, data races occur.
 `SwingUtilities.invokeLater()`. The original `TournamentDirector` ran entirely on
 a single thread — the new design must achieve equivalent safety.
 
+**Fix if reproduced or if code audit reveals clear thread-safety violations.**
+
 ---
 
 ## Phase 4: Verify
 
-### 4.1 Run test harness — full game completion
+### 4.1 Automated — full game completion (FOLD strategy)
 
-The test script from Phase 1 must complete 5 consecutive practice games (3-player,
-FOLD-only strategy) without any stuck timeouts.
+The test script must complete 5 consecutive practice games (3-player, FOLD-only
+strategy) without any stuck timeouts or errors.
 
-### 4.2 Run test harness — varied strategies
+### 4.2 Automated — varied strategies
 
-Modify the script to use CHECK/CALL instead of FOLD to exercise more betting paths.
+Run the test script with CHECK/CALL instead of FOLD to exercise more betting paths.
 Verify completion.
 
-### 4.3 Run existing unit tests
+### 4.3 Screenshot verification
 
-`mvn test -P dev` — all 283+ tests pass, zero failures.
+Capture `GET /screenshot` at key points (game start, mid-hand, game over) to verify
+the Swing UI renders correctly without manual inspection.
 
-### 4.4 Manual smoke test
+### 4.4 Unit tests
 
-Launch the desktop client normally (non-dev build), start a practice game through
-the UI, play a few hands manually. Verify the Swing UI updates correctly:
-- Cards animate/appear
-- Pot updates
-- Chip counts correct
-- Game completes to "Game Over" screen
+`mvn test -P dev` — all existing tests pass, zero failures.
 
 ---
 
@@ -206,16 +226,15 @@ the UI, play a few hands manually. Verify the Swing UI updates correctly:
 1. Automated test script plays a full practice game to completion via Game Control
    Server — no stuck states, no errors
 2. All existing unit tests pass
-3. No regressions in the Swing UI rendering
+3. Screenshots confirm the UI renders game state correctly
 4. Debug logging confirms the action pipeline matches the original design:
    `ACTION_REQUIRED` → player acts → `PLAYER_ACTED` → next player, no gaps
 5. Multiple consecutive games complete without H2 lock issues or resource leaks
 
 ## Files Likely Modified
 
-- `ServerPlayerActionProvider.java` — CompletableFuture ordering fix
-- `WebSocketTournamentDirector.java` — thread safety, action mapping, game over handling
-- `InboundMessageRouter.java` — sequence number handling
-- `ServerTournamentDirector.java` — auto-deal alignment
+- `ServerPlayerActionProvider.java` — CompletableFuture ordering (if reproduced)
+- `WebSocketTournamentDirector.java` — action mapping fix (3.2), thread safety (if needed)
+- `InboundMessageRouter.java` — sequence number handling (if reproduced)
 - `.claude/scripts/test-practice-game.sh` — new test harness
-- Test classes for each fix
+- Test classes for confirmed fixes
