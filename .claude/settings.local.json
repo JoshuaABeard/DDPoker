@@ -53,17 +53,6 @@
     ]
   },
   "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "startup",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "pwsh -NoProfile -File C:/Repos/DDPoker/.claude/hooks/session-start-telegram.ps1"
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "hooks": [
