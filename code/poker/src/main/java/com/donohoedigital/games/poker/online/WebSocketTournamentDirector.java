@@ -649,6 +649,7 @@ public class WebSocketTournamentDirector extends BasePhase
             int handAction = mapWsStringToAction(d.action());
             HandAction action = new HandAction(player, hand.getRoundForDisplay(), handAction, d.amount());
             table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ACTION, table, action));
+            deliverChatLocal(PokerConstants.CHAT_2, action.getChat(0, null, null), PokerConstants.CHAT_DEALER_MSG_ID);
         });
     }
 
@@ -670,6 +671,7 @@ public class WebSocketTournamentDirector extends BasePhase
             int handAction = mapWsStringToAction(d.autoAction());
             HandAction action = new HandAction(player, hand.getRoundForDisplay(), handAction, 0);
             table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ACTION, table, action));
+            deliverChatLocal(PokerConstants.CHAT_2, action.getChat(0, null, null), PokerConstants.CHAT_DEALER_MSG_ID);
         });
     }
 

@@ -20,6 +20,7 @@ package com.donohoedigital.games.poker.online;
 import com.donohoedigital.games.poker.GameClock;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerPlayer;
+import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
@@ -941,6 +942,48 @@ class WebSocketTournamentDirectorTest {
         assertThat(table1.getPlayer(0)).isNull(); // old seat on table 1 cleared
         assertThat(table2.getPlayer(3)).isNotNull(); // new seat on table 2 filled
         assertThat(table2.getPlayer(3).getName()).isEqualTo("Alice");
+    }
+
+    // -------------------------------------------------------------------------
+    // PLAYER_ACTED / ACTION_TIMEOUT — dealer chat (fix: action chat in practice
+    // mode)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void playerActedSendsDealerChatToHandler() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        requireTable(); // skip if PropertyConfig not initialized
+
+        List<int[]> received = new ArrayList<>();
+        wsTD.setChatHandler((fromPlayerID, chatType, message) -> received.add(new int[]{fromPlayerID, chatType}));
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("playerId", 1L).put("playerName", "Alice").put("action", "CALL").put("amount", 100)
+                .put("totalBet", 100).put("chipCount", 900).put("potTotal", 200).put("tableId", 1);
+        dispatch(ServerMessageType.PLAYER_ACTED, payload);
+
+        assertThat(received).hasSize(1);
+        assertThat(received.get(0)[0]).isEqualTo(PokerConstants.CHAT_DEALER_MSG_ID);
+        assertThat(received.get(0)[1]).isEqualTo(PokerConstants.CHAT_2);
+    }
+
+    @Test
+    void actionTimeoutSendsDealerChatToHandler() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        requireTable(); // skip if PropertyConfig not initialized
+
+        List<int[]> received = new ArrayList<>();
+        wsTD.setChatHandler((fromPlayerID, chatType, message) -> received.add(new int[]{fromPlayerID, chatType}));
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("playerId", 1L).put("playerName", "Alice").put("autoAction", "FOLD").put("tableId", 1);
+        dispatch(ServerMessageType.ACTION_TIMEOUT, payload);
+
+        assertThat(received).hasSize(1);
+        assertThat(received.get(0)[0]).isEqualTo(PokerConstants.CHAT_DEALER_MSG_ID);
+        assertThat(received.get(0)[1]).isEqualTo(PokerConstants.CHAT_2);
     }
 
     // -------------------------------------------------------------------------
