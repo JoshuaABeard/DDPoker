@@ -197,11 +197,13 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
         actionRequestCallback.accept(new ActionRequest((ServerPlayer) player, options));
 
         try {
-            if (timeoutSeconds > 0) {
-                return future.get(timeoutSeconds, TimeUnit.SECONDS);
+            PlayerAction action = timeoutSeconds > 0 ? future.get(timeoutSeconds, TimeUnit.SECONDS) : future.get();
+            // Successful action resets the disconnect-grace counter so a later
+            // disconnect doesn't penalise the player for an old timeout.
+            if (session != null) {
+                session.resetConsecutiveTimeouts();
             }
-            // No timeout (practice mode) — wait indefinitely
-            return future.get();
+            return action;
         } catch (TimeoutException e) {
             // Auto-fold on timeout, or check if available (check is free)
             if (session != null) {
