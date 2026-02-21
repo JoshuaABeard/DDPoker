@@ -745,6 +745,24 @@ public class WebSocketTournamentDirector extends BasePhase
             if (hand == null)
                 return;
 
+            // Reveal opponent cards before firing TYPE_DEALER_ACTION so that
+            // displayShowdown() sees them as exposed (isCardsExposed() == true).
+            if (d.showdownPlayers() != null) {
+                for (ShowdownPlayerData sp : d.showdownPlayers()) {
+                    PokerPlayer player = findPlayer(sp.playerId());
+                    if (player != null && !sp.cards().isEmpty()) {
+                        Hand showHand = player.getHand();
+                        showHand.clear();
+                        for (String c : sp.cards()) {
+                            Card card = Card.getCard(c);
+                            if (card != null)
+                                showHand.addCard(card);
+                        }
+                        player.setCardsExposed(true);
+                    }
+                }
+            }
+
             hand.updateRound(BettingRound.SHOWDOWN);
             table.fireEvent(PokerTableEvent.TYPE_DEALER_ACTION, BettingRound.SHOWDOWN.toLegacy());
         });

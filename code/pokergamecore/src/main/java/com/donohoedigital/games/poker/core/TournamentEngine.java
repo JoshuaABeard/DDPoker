@@ -634,7 +634,7 @@ public class TournamentEngine {
 
         if (shouldRunPhase) {
             // Run DealCommunity phase, then go to BETTING
-            boolean disableSleep = table.isZipMode() || hand.isDone();
+            boolean disableSleep = table.isZipMode();
             return TableProcessResult.builder().phaseToRun("TD.DealCommunity").shouldRunOnClient(true)
                     .pendingState(TableState.BETTING).shouldSleep(!disableSleep).build();
         } else {

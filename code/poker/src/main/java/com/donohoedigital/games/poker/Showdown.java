@@ -158,18 +158,19 @@ public class Showdown {
             if (bUncontested && player.isShowWinning() && (bShowRiver || bSeenRiver))
                 bShowHandTypeLocal = true;
 
-            // get hand info
-            info = player.getHandInfo();
+            // get hand info (requires >=3 community cards; null for pre-flop uncontested)
+            info = hhand.getCommunitySorted().size() >= 3 ? player.getHandInfo() : null;
 
             // overbet / win text
             if (nTotal > 0) {
                 sResult = PropertyConfig.getMessage(bShowHandTypeLocal ? "msg.hand.win" : "msg.hand.win.noshow",
-                        info.getHandTypeDesc(), info.getBest().toStringRank(), nTotal);
+                        info != null ? info.getHandTypeDesc() : "", info != null ? info.getBest().toStringRank() : "",
+                        nTotal);
             }
             // lose text
             else {
                 sResult = PropertyConfig.getMessage(bShowCards ? "msg.hand.lose" : "msg.hand.lose.muck",
-                        info.getHandTypeDesc(), info.getBest().toStringRank());
+                        info != null ? info.getHandTypeDesc() : "", info != null ? info.getBest().toStringRank() : "");
             }
 
             // placard choice

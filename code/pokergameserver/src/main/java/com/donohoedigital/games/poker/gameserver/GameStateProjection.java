@@ -71,11 +71,11 @@ public class GameStateProjection {
             communityCards = hand.getCommunityCards();
         }
 
-        // Build player states
+        // Build player states (exclude sitting-out/eliminated players)
         List<GameStateSnapshot.PlayerState> playerStates = new ArrayList<>();
         for (int seat = 0; seat < table.getSeats(); seat++) {
             ServerPlayer player = table.getPlayer(seat);
-            if (player != null) {
+            if (player != null && !player.isSittingOut()) {
                 // Include hole cards ONLY for the requesting player
                 Card[] holeCards = null;
                 if (player.getID() == playerId && hand != null) {

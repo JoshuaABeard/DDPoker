@@ -160,4 +160,19 @@ class GameStateProjectionTest {
             assertNull(playerState.holeCards(), "SECURITY VIOLATION: Cards should be null without a hand!");
         }
     }
+
+    @Test
+    void testProjectionExcludesSittingOutPlayers() {
+        // Sitting-out players (e.g. eliminated from tournament) must not appear in
+        // the snapshot — they were formerly shown as ALL_IN with 0 chips (bug fix).
+        players.get(2).setSittingOut(true); // Charlie is eliminated
+
+        GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, null, 1);
+
+        assertEquals(2, snapshot.players().size());
+        List<Integer> playerIds = snapshot.players().stream().map(GameStateSnapshot.PlayerState::playerId).toList();
+        assertTrue(playerIds.contains(1));
+        assertTrue(playerIds.contains(2));
+        assertFalse(playerIds.contains(3), "Eliminated (sitting-out) player must be excluded from snapshot");
+    }
 }

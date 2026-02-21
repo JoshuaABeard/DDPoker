@@ -116,6 +116,29 @@ class ServerMessageSerializationTest {
     }
 
     @Test
+    void showdownStartedData_includesShowdownPlayers() throws Exception {
+        // ShowdownStartedData now carries showdown player cards so the client
+        // can reveal hole cards before displayShowdown() runs.
+        var showdownPlayers = java.util.List
+                .of(new ServerMessageData.ShowdownPlayerData(7L, java.util.List.of("Ah", "Kd"), ""));
+        ServerMessageData.ShowdownStartedData data = new ServerMessageData.ShowdownStartedData(1, showdownPlayers);
+        ServerMessage message = ServerMessage.of(ServerMessageType.SHOWDOWN_STARTED, "game-xyz", data);
+
+        String json = objectMapper.writeValueAsString(message);
+        JsonNode node = objectMapper.readTree(json);
+
+        assertEquals("SHOWDOWN_STARTED", node.get("type").asText());
+        JsonNode dataNode = node.get("data");
+        assertNotNull(dataNode);
+        assertEquals(1, dataNode.get("tableId").asInt());
+        JsonNode players = dataNode.get("showdownPlayers");
+        assertNotNull(players, "showdownPlayers must be present");
+        assertEquals(1, players.size());
+        assertEquals(7L, players.get(0).get("playerId").asLong());
+        assertEquals("Ah", players.get(0).get("cards").get(0).asText());
+    }
+
+    @Test
     void chatMessageData_fieldsRoundtrip() throws Exception {
         ServerMessageData.ChatMessageData data = new ServerMessageData.ChatMessageData(3L, "Carol",
                 "Good game everyone!", true);

@@ -327,6 +327,7 @@ export interface PotAwardedData {
 
 export interface ShowdownStartedData {
   tableId: number
+  showdownPlayers: ShowdownPlayerData[]
 }
 
 export interface PlayerRebuyData {

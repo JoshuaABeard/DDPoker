@@ -257,10 +257,30 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 broadcast(ServerMessage.of(ServerMessageType.POT_AWARDED, gameId,
                     new ServerMessageData.PotAwardedData(winnerIds, e.amount(), e.potIndex(), e.tableId())));
             }
-            case GameEvent.ShowdownStarted e -> broadcast(
-                ServerMessage.of(ServerMessageType.SHOWDOWN_STARTED, gameId,
-                    new ServerMessageData.ShowdownStartedData(e.tableId()))
-            );
+            case GameEvent.ShowdownStarted e -> {
+                List<ServerMessageData.ShowdownPlayerData> showdownPlayers = List.of();
+                if (game != null && game.getTournament() != null && e.tableId() >= 0
+                        && e.tableId() < game.getTournament().getNumTables()) {
+                    Object gt = game.getTournament().getTable(e.tableId());
+                    if (gt instanceof ServerGameTable sgt) {
+                        ServerHand hand = (ServerHand) sgt.getHoldemHand();
+                        if (hand != null) {
+                            List<ServerMessageData.ShowdownPlayerData> sp = new ArrayList<>();
+                            for (int s = 0; s < sgt.getNumSeats(); s++) {
+                                ServerPlayer player = sgt.getPlayer(s);
+                                if (player != null && !player.isFolded()) {
+                                    List<String> cards = OutboundMessageConverter.cardsToList(
+                                            hand.getPlayerCards(player));
+                                    sp.add(new ServerMessageData.ShowdownPlayerData(player.getID(), cards, ""));
+                                }
+                            }
+                            showdownPlayers = sp;
+                        }
+                    }
+                }
+                broadcast(ServerMessage.of(ServerMessageType.SHOWDOWN_STARTED, gameId,
+                        new ServerMessageData.ShowdownStartedData(e.tableId(), showdownPlayers)));
+            }
             case GameEvent.LevelChanged e -> {
                 int sb = 0, bb = 0, ante = 0;
                 if (game != null && game.getTournament() instanceof TournamentContext tc) {
