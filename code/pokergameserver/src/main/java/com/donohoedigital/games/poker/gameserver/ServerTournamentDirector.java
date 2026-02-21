@@ -314,7 +314,7 @@ public class ServerTournamentDirector implements Runnable {
                 if (tournament.getNumTables() == 1) {
                     eliminateZeroChipPlayers(table);
                 }
-                if (!tournament.isGameOver() && !actionProvider.isZipMode()) {
+                if (!tournament.isGameOver() && properties.aiActionDelayMs() > 0 && !actionProvider.isZipMode()) {
                     sleepMillis(HAND_RESULT_PAUSE_MS);
                 }
             }
@@ -367,7 +367,7 @@ public class ServerTournamentDirector implements Runnable {
                 }
                 // Pause between cards during an all-in runout so players can follow
                 // each reveal. Skip in zip mode (human already folded).
-                if (!actionProvider.isZipMode() && isAllInRunout(table)) {
+                if (properties.aiActionDelayMs() > 0 && !actionProvider.isZipMode() && isAllInRunout(table)) {
                     sleepMillis(COMMUNITY_RUNOUT_PAUSE_MS);
                 }
             } else if ("TD.Showdown".equals(result.phaseToRun())) {
