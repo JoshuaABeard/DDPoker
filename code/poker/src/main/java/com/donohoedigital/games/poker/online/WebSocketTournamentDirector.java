@@ -793,7 +793,7 @@ public class WebSocketTournamentDirector extends BasePhase
                 }
             }
             if (context_ != null) {
-                context_.processPhase("PracticeGameOver");
+                context_.processPhase("OnlineGameOver");
             }
         });
     }
