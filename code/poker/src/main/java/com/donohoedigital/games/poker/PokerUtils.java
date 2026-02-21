@@ -610,6 +610,8 @@ public class PokerUtils extends EngineUtils {
     public static int roundAmountMinChip(PokerTable table, int chips) {
         int nNewAmount = chips;
         int nMinChip = table.getMinChip();
+        if (nMinChip <= 0)
+            return chips;
         int nOdd = chips % nMinChip;
         if (nOdd != 0) {
             nNewAmount = chips - nOdd;

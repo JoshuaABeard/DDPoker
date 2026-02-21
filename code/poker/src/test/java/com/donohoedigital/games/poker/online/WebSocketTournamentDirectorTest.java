@@ -127,6 +127,19 @@ class WebSocketTournamentDirectorTest {
     }
 
     @Test
+    void gameStateSetsMinChipOnRemoteTable() throws Exception {
+        // RemotePokerTable.nMinChip_ defaults to 0 which causes ArithmeticException
+        // (/ by zero) in PokerUtils.roundAmountMinChip when the bet slider fires
+        // ChangeEvent. The fix calls table.setMinChip(game_.getMinChip()) on creation.
+        Assumptions.assumeTrue(tablesAvailable, "PropertyConfig not initialized; skipping");
+        Mockito.when(mockGame.getMinChip()).thenReturn(25);
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0));
+
+        RemotePokerTable table = requireTable();
+        assertThat(table.getMinChip()).isEqualTo(25);
+    }
+
+    @Test
     void gameStateMultipleTablesCreatesAllTables() throws Exception {
         Assumptions.assumeTrue(tablesAvailable, "PropertyConfig not initialized; skipping");
         ObjectNode gs = buildGameState(3, 0); // 3 tables

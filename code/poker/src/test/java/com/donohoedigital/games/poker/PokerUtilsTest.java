@@ -22,6 +22,7 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
 import org.junit.jupiter.api.*;
+import org.mockito.Mockito;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -222,6 +223,30 @@ class PokerUtilsTest {
 
         assertThat(important).contains(message);
         assertThat(information).contains(message);
+    }
+
+    // ========== roundAmountMinChip Tests ==========
+
+    @Test
+    void roundAmountMinChip_returnsChipsUnchanged_whenMinChipIsZero() {
+        PokerTable table = Mockito.mock(PokerTable.class);
+        Mockito.when(table.getMinChip()).thenReturn(0);
+
+        // Previously threw ArithmeticException (/ by zero); now returns chips unchanged
+        assertThat(PokerUtils.roundAmountMinChip(table, 500)).isEqualTo(500);
+        assertThat(PokerUtils.roundAmountMinChip(table, 0)).isEqualTo(0);
+        assertThat(PokerUtils.roundAmountMinChip(table, 1000)).isEqualTo(1000);
+    }
+
+    @Test
+    void roundAmountMinChip_roundsToNearestMultiple() {
+        PokerTable table = Mockito.mock(PokerTable.class);
+        Mockito.when(table.getMinChip()).thenReturn(25);
+
+        assertThat(PokerUtils.roundAmountMinChip(table, 500)).isEqualTo(500); // exact
+        assertThat(PokerUtils.roundAmountMinChip(table, 510)).isEqualTo(500); // round down
+        assertThat(PokerUtils.roundAmountMinChip(table, 515)).isEqualTo(525); // round up (>= half)
+        assertThat(PokerUtils.roundAmountMinChip(table, 525)).isEqualTo(525); // exact
     }
 
     // ========== Edge Case Tests ==========

@@ -434,6 +434,7 @@ public class WebSocketTournamentDirector extends BasePhase
                 RemotePokerTable table = tables_.computeIfAbsent(td.tableId(), id -> {
                     RemotePokerTable t = new RemotePokerTable(game_, id);
                     game_.addTable(t);
+                    t.setMinChip(game_.getMinChip());
                     return t;
                 });
                 applyTableData(table, td);
