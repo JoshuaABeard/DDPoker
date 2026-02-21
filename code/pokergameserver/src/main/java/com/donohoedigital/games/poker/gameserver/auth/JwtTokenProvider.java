@@ -138,11 +138,13 @@ public class JwtTokenProvider {
      * <p>
      * Two scopes are supported:
      * <ul>
-     * <li>{@code ws-connect} — Short-lived (60s), single-use token for initial WebSocket
-     * connection. Includes a unique {@code jti} claim for replay prevention.</li>
-     * <li>{@code reconnect} — Longer-lived (24h), game-scoped token included in the CONNECTED
-     * message. Includes a {@code gameId} claim so the server can verify the player reconnects
-     * to the correct game. Not single-use (needed for repeated reconnects on flaky networks).</li>
+     * <li>{@code ws-connect} — Short-lived (60s), single-use token for initial
+     * WebSocket connection. Includes a unique {@code jti} claim for replay
+     * prevention.</li>
+     * <li>{@code reconnect} — Longer-lived (24h), game-scoped token included in the
+     * CONNECTED message. Includes a {@code gameId} claim so the server can verify
+     * the player reconnects to the correct game. Not single-use (needed for
+     * repeated reconnects on flaky networks).</li>
      * </ul>
      *
      * @param username
@@ -152,7 +154,8 @@ public class JwtTokenProvider {
      * @param scope
      *            token scope: {@code "ws-connect"} or {@code "reconnect"}
      * @param gameId
-     *            game ID (required for {@code reconnect} scope, null for {@code ws-connect})
+     *            game ID (required for {@code reconnect} scope, null for
+     *            {@code ws-connect})
      * @param ttlMs
      *            token lifetime in milliseconds
      * @return the signed JWT token
@@ -164,12 +167,8 @@ public class JwtTokenProvider {
             throw new IllegalStateException("Cannot generate tokens in validation-only mode");
         }
 
-        var builder = Jwts.builder()
-                .subject(username)
-                .claim("profileId", profileId)
-                .claim("scope", scope)
-                .claim("jti", UUID.randomUUID().toString())
-                .issuedAt(new Date())
+        var builder = Jwts.builder().subject(username).claim("profileId", profileId).claim("scope", scope)
+                .claim("jti", UUID.randomUUID().toString()).issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + ttlMs));
 
         if (gameId != null) {

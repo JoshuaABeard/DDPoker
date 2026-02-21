@@ -64,7 +64,10 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
     private static final Logger log = LoggerFactory.getLogger(GameWebSocketHandler.class);
     private static final int SESSION_MAX_TEXT_BUFFER_SIZE = 8192;
 
-    /** Close code sent to the old tab when the same player opens the game in a new tab. */
+    /**
+     * Close code sent to the old tab when the same player opens the game in a new
+     * tab.
+     */
     private static final int CLOSE_CONNECTION_REPLACED = 4409;
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -184,7 +187,8 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
 
         GameInstanceState state = game.getState();
         boolean alreadyInGame = game.hasPlayer(profileId);
-        boolean reconnecting = alreadyInGame && (state == GameInstanceState.IN_PROGRESS || state == GameInstanceState.PAUSED);
+        boolean reconnecting = alreadyInGame
+                && (state == GameInstanceState.IN_PROGRESS || state == GameInstanceState.PAUSED);
         log.debug("[WS-CONNECT] player={} profileId={} gameId={} state={} alreadyInGame={}", username, profileId,
                 gameId, state, alreadyInGame);
 
@@ -196,13 +200,12 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             // so the old tab knows it was superseded. Only applies during active gameplay.
             final long fProfileId = profileId;
             PlayerConnection existingConnection = sessionConnections.values().stream()
-                    .filter(c -> c.getProfileId() == fProfileId && c.getGameId().equals(gameId))
-                    .findFirst()
+                    .filter(c -> c.getProfileId() == fProfileId && c.getGameId().equals(gameId)).findFirst()
                     .orElse(null);
             if (existingConnection != null) {
                 try {
-                    existingConnection.getSession().close(
-                            new CloseStatus(CLOSE_CONNECTION_REPLACED, "Connection replaced by new session"));
+                    existingConnection.getSession()
+                            .close(new CloseStatus(CLOSE_CONNECTION_REPLACED, "Connection replaced by new session"));
                 } catch (Exception e) {
                     log.debug("Could not close replaced session for player {} in game {}: {}", profileId, gameId,
                             e.getMessage());

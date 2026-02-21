@@ -33,8 +33,9 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
      * Sent on successful WebSocket connection, includes full game state snapshot.
      *
      * <p>
-     * {@code reconnectToken} is a game-scoped JWT (scope: "reconnect", 24h TTL) the client
-     * stores in memory and uses for WebSocket reconnection — bypassing cookie auth entirely.
+     * {@code reconnectToken} is a game-scoped JWT (scope: "reconnect", 24h TTL) the
+     * client stores in memory and uses for WebSocket reconnection — bypassing
+     * cookie auth entirely.
      */
     record ConnectedData(long playerId, GameStateData gameState, String reconnectToken) implements ServerMessageData {
     }

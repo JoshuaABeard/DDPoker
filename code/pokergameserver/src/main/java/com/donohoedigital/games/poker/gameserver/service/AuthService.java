@@ -79,14 +79,14 @@ public class AuthService {
     private final ConcurrentHashMap<String, Long> forgotPasswordRateLimits = new ConcurrentHashMap<>();
 
     /**
-     * WS token rate limit tracking: profileId → list of request timestamps (epoch ms).
-     * Each list contains timestamps within the current sliding window.
+     * WS token rate limit tracking: profileId → list of request timestamps (epoch
+     * ms). Each list contains timestamps within the current sliding window.
      */
     private final ConcurrentHashMap<Long, ArrayList<Long>> wsTokenRateLimits = new ConcurrentHashMap<>();
 
     /**
-     * Used jti set for single-use WS connect tokens: jti → expiry epoch ms.
-     * Entries are TTL-evicted lazily on each access.
+     * Used jti set for single-use WS connect tokens: jti → expiry epoch ms. Entries
+     * are TTL-evicted lazily on each access.
      */
     private final ConcurrentHashMap<String, Long> usedJtis = new ConcurrentHashMap<>();
 
@@ -298,12 +298,13 @@ public class AuthService {
     }
 
     /**
-     * Generate a game-scoped reconnect token for inclusion in the CONNECTED message.
+     * Generate a game-scoped reconnect token for inclusion in the CONNECTED
+     * message.
      *
      * <p>
-     * The reconnect token has a 24-hour TTL and is scoped to a single game.
-     * It is stored in memory by the client and used for WebSocket reconnection
-     * without requiring a valid session cookie.
+     * The reconnect token has a 24-hour TTL and is scoped to a single game. It is
+     * stored in memory by the client and used for WebSocket reconnection without
+     * requiring a valid session cookie.
      *
      * @param profileId
      *            the player's profile ID

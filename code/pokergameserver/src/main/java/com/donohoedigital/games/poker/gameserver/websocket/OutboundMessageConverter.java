@@ -33,7 +33,8 @@ import java.util.stream.Collectors;
  * Converts internal game state objects to server-to-client WebSocket messages.
  *
  * All card serialization uses getRankDisplaySingle() + getCardSuit().getAbbr()
- * to produce two-character notation (e.g. "Ah", "Ts") compatible with Card.getCard() parsing.
+ * to produce two-character notation (e.g. "Ah", "Ts") compatible with
+ * Card.getCard() parsing.
  */
 public class OutboundMessageConverter {
 
@@ -73,7 +74,8 @@ public class OutboundMessageConverter {
      * @param snapshot
      *            Game state snapshot (may be null if game not started)
      * @param reconnectToken
-     *            Game-scoped reconnect JWT (24h TTL) the client uses for reconnection
+     *            Game-scoped reconnect JWT (24h TTL) the client uses for
+     *            reconnection
      * @return CONNECTED message
      */
     public ServerMessage createConnectedMessage(String gameId, long profileId, GameStateSnapshot snapshot,
