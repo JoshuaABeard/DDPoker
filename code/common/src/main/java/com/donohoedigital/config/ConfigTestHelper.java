@@ -46,9 +46,10 @@ import org.apache.logging.log4j.Logger;
  *
  * <h2>Thread Safety</h2>
  * <p>
- * This helper ensures that configuration singletons are properly reset between
- * test classes, allowing tests to run in parallel at the class level without
- * interference.
+ * This helper is synchronized to prevent parallel test classes from stomping
+ * each other's config. If config is already initialized with the same app name
+ * and type, subsequent calls are a no-op rather than resetting and
+ * re-initializing (which would break parallel tests using the same config).
  * </p>
  *
  * <h2>What Gets Reset</h2>
@@ -65,6 +66,9 @@ import org.apache.logging.log4j.Logger;
 public class ConfigTestHelper {
 
     private static final Logger logger = LogManager.getLogger(ConfigTestHelper.class);
+
+    private static volatile String currentAppName = null;
+    private static volatile ApplicationType currentAppType = null;
 
     /**
      * Initialize ConfigManager for testing with headless client type.
@@ -108,15 +112,27 @@ public class ConfigTestHelper {
      *            Whether to allow property overrides
      * @return The initialized ConfigManager instance
      */
-    public static ConfigManager initializeForTesting(String appName, ApplicationType type, boolean allowOverrides) {
-        // Reset if already initialized
+    public static synchronized ConfigManager initializeForTesting(String appName, ApplicationType type,
+            boolean allowOverrides) {
+        // If already initialized with the same config, skip reset — resetting would
+        // tear down config for other test classes running in parallel with the same
+        // app.
+        if (ConfigManager.getConfigManager() != null && appName.equals(currentAppName) && type == currentAppType) {
+            logger.debug("ConfigManager already initialized with same config (appName={}, type={}), skipping re-init",
+                    appName, type);
+            return ConfigManager.getConfigManager();
+        }
+
         if (ConfigManager.getConfigManager() != null) {
-            logger.debug("ConfigManager already initialized, resetting before re-initialization");
+            logger.debug("ConfigManager already initialized with different config, resetting before re-initialization");
             resetForTesting();
         }
 
         logger.debug("Initializing ConfigManager for testing: appName={}, type={}", appName, type);
-        return new ConfigManager(appName, type, allowOverrides);
+        ConfigManager result = new ConfigManager(appName, type, allowOverrides);
+        currentAppName = appName;
+        currentAppType = type;
+        return result;
     }
 
     /**
@@ -148,11 +164,13 @@ public class ConfigTestHelper {
      * all child config singletons, so we only need to call it once.
      * </p>
      */
-    public static void resetForTesting() {
+    public static synchronized void resetForTesting() {
         logger.debug("Resetting all config singletons for testing");
 
         // ConfigManager.resetForTesting() resets all child singletons too
         ConfigManager.resetForTesting();
+        currentAppName = null;
+        currentAppType = null;
 
         logger.debug("Config singletons reset complete");
     }
