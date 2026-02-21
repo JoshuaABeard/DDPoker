@@ -860,6 +860,11 @@ public class WebSocketTournamentDirector extends BasePhase
                 table.firePokerTableEvent(
                         new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ADDED, table, p, d.seatIndex()));
             }
+            // Keep currentTable in sync immediately so messages that follow
+            // (before the next GAME_STATE) route to the right table.
+            if (d.playerId() == localPlayerId_) {
+                game_.setCurrentTable(table);
+            }
         });
     }
 
