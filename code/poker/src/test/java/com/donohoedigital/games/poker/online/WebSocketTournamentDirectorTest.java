@@ -17,6 +17,7 @@
  */
 package com.donohoedigital.games.poker.online;
 
+import com.donohoedigital.games.poker.GameClock;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
 import com.donohoedigital.games.poker.core.state.BettingRound;
@@ -54,14 +55,19 @@ class WebSocketTournamentDirectorTest {
 
     private WebSocketTournamentDirector wsTD;
     private PokerGame mockGame;
+    private GameClock mockClock;
     private ObjectMapper mapper;
     private boolean tablesAvailable;
 
     @BeforeEach
     void setUp() throws Exception {
         mapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        mockGame = Mockito.mock(PokerGame.class);
 
+        // Probe mock — clock must be configured so onGameState doesn't NPE inside
+        // SwingUtilities.invokeLater when it calls game_.getGameClock().isRunning().
+        mockGame = Mockito.mock(PokerGame.class);
+        mockClock = Mockito.mock(GameClock.class);
+        Mockito.when(mockGame.getGameClock()).thenReturn(mockClock);
         wsTD = new WebSocketTournamentDirector();
         wsTD.setGameForTest(mockGame);
         wsTD.setLocalPlayerIdForTest(1L);
@@ -74,6 +80,8 @@ class WebSocketTournamentDirectorTest {
 
         // Reset for individual tests
         mockGame = Mockito.mock(PokerGame.class);
+        mockClock = Mockito.mock(GameClock.class);
+        Mockito.when(mockGame.getGameClock()).thenReturn(mockClock);
         wsTD = new WebSocketTournamentDirector();
         wsTD.setGameForTest(mockGame);
         wsTD.setLocalPlayerIdForTest(1L);
@@ -690,6 +698,154 @@ class WebSocketTournamentDirectorTest {
         };
         wsTD.setChatHandler(handler);
         // No exception, handler stored internally
+    }
+
+    // -------------------------------------------------------------------------
+    // PLAYER_ACTED — all-in chip count (fix 1)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void betAllInUpdatesChipCountToZero() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        RemotePokerTable table = requireTable();
+
+        // Player goes all-in via BET: server returns chipCount=0.
+        // The old guard (chipCount > 0 || isFold || isBlindAnte) skipped this update.
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("playerId", 1L).put("playerName", "Alice").put("action", "BET").put("amount", 1000)
+                .put("totalBet", 1000).put("chipCount", 0).put("potTotal", 1000);
+        dispatch(ServerMessageType.PLAYER_ACTED, payload);
+
+        assertThat(table.getPlayer(0).getChipCount()).isZero();
+    }
+
+    @Test
+    void raiseAllInUpdatesChipCountToZero() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        RemotePokerTable table = requireTable();
+
+        // Player goes all-in via RAISE: server returns chipCount=0.
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("playerId", 1L).put("playerName", "Alice").put("action", "RAISE").put("amount", 1000)
+                .put("totalBet", 1000).put("chipCount", 0).put("potTotal", 1000);
+        dispatch(ServerMessageType.PLAYER_ACTED, payload);
+
+        assertThat(table.getPlayer(0).getChipCount()).isZero();
+    }
+
+    // -------------------------------------------------------------------------
+    // GAME_PAUSED / GAME_RESUMED — GameClock pause/unpause (fix 2)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void gamePausedCallsClockPause() throws Exception {
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("reason", "user request").put("pausedBy", "Alice");
+        dispatch(ServerMessageType.GAME_PAUSED, payload);
+
+        Mockito.verify(mockClock).pause();
+    }
+
+    @Test
+    void gameResumedCallsClockUnpause() throws Exception {
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("resumedBy", "Alice");
+        dispatch(ServerMessageType.GAME_RESUMED, payload);
+
+        Mockito.verify(mockClock).unpause();
+    }
+
+    // -------------------------------------------------------------------------
+    // GAME_CANCELLED — navigates away from table (fix 4)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void gameCancelledDoesNotThrow() throws Exception {
+        // context_ is null in unit tests so processPhase is not called,
+        // but the null guard must prevent any exception.
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("reason", "host left");
+        dispatch(ServerMessageType.GAME_CANCELLED, payload);
+        // No exception — null-guarded processPhase is the key assertion here.
+    }
+
+    @Test
+    void gameCancelledFiresStateChangedEventWhenTablePresent() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0));
+        RemotePokerTable table = requireTable();
+        List<Integer> events = collectEvents(table);
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("reason", "host left");
+        dispatch(ServerMessageType.GAME_CANCELLED, payload);
+
+        assertThat(events).contains(PokerTableEvent.TYPE_STATE_CHANGED);
+    }
+
+    // -------------------------------------------------------------------------
+    // deliverChatLocal — routes to chatHandler (fix 5)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void deliverChatLocalWithHandlerCallsChatReceived() {
+        List<int[]> received = new ArrayList<>();
+        List<String> messages = new ArrayList<>();
+        ChatHandler handler = (fromPlayerID, chatType, message) -> {
+            received.add(new int[]{fromPlayerID, chatType});
+            messages.add(message);
+        };
+        wsTD.setChatHandler(handler);
+
+        wsTD.deliverChatLocal(1, "Hello!", 42);
+
+        assertThat(received).hasSize(1);
+        assertThat(received.get(0)[0]).isEqualTo(42); // fromPlayerID = id param
+        assertThat(received.get(0)[1]).isEqualTo(1); // chatType = nType param
+        assertThat(messages.get(0)).isEqualTo("Hello!");
+    }
+
+    @Test
+    void deliverChatLocalWithNullHandlerDoesNotThrow() {
+        // chatHandler_ is null — must not throw NPE
+        wsTD.deliverChatLocal(0, "ignored", 99);
+    }
+
+    @Test
+    void chatMessageDeliveredToHandlerViaOnChatMessage() throws Exception {
+        List<String> received = new ArrayList<>();
+        wsTD.setChatHandler((fromPlayerID, chatType, message) -> received.add(message));
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("playerId", 2L).put("playerName", "Bob").put("message", "Hello!").put("tableChat", true);
+        dispatch(ServerMessageType.CHAT_MESSAGE, payload);
+
+        assertThat(received).hasSize(1);
+        assertThat(received.get(0)).contains("Bob").contains("Hello!");
+    }
+
+    // -------------------------------------------------------------------------
+    // PLAYER_JOINED — clears old seat on consolidation (fix 6 client)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void playerJoinedClearsOldSeatBeforeAddingToNew() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        RemotePokerTable table = requireTable();
+
+        // Player 1 is at seat 0 (from GAME_STATE). Simulate table consolidation:
+        // PLAYER_JOINED arrives for player 1 at seat 3 of the same table (PLAYER_LEFT
+        // was suppressed server-side for active players during consolidation).
+        assertThat(table.getPlayer(0)).isNotNull();
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("playerId", 1L).put("playerName", "Alice").put("seatIndex", 3).put("tableId", 1);
+        dispatch(ServerMessageType.PLAYER_JOINED, payload);
+
+        assertThat(table.getPlayer(0)).isNull(); // old seat cleared
+        assertThat(table.getPlayer(3)).isNotNull(); // new seat filled
+        assertThat(table.getPlayer(3).getName()).isEqualTo("Alice");
     }
 
     // -------------------------------------------------------------------------

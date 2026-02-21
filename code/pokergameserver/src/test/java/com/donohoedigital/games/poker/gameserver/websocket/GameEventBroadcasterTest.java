@@ -18,11 +18,17 @@
 package com.donohoedigital.games.poker.gameserver.websocket;
 
 import com.donohoedigital.games.poker.core.event.GameEvent;
+import com.donohoedigital.games.poker.gameserver.GameInstance;
+import com.donohoedigital.games.poker.gameserver.ServerGameTable;
+import com.donohoedigital.games.poker.gameserver.ServerPlayer;
+import com.donohoedigital.games.poker.gameserver.ServerTournamentContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -257,5 +263,106 @@ class GameEventBroadcasterTest {
             String json = ((TextMessage) msg).getPayload();
             return json.contains("\"type\":\"PLAYER_ELIMINATED\"") || json.contains("\"type\" : \"PLAYER_ELIMINATED\"");
         }));
+    }
+
+    // ====================================
+    // Fix 3: null-game broadcaster still broadcasts (reconnect path)
+    // ====================================
+
+    @Test
+    void nullGameBroadcaster_playerRemoved_sendsPlayerLeft() throws Exception {
+        // Broadcaster without game (null-game constructor) always sends PLAYER_LEFT.
+        // This verifies the reconnect-path broadcaster (fix 3) doesn't break
+        // PlayerRemoved.
+        PlayerConnection p1 = makeConnectedPlayer(1L);
+
+        broadcaster.accept(new GameEvent.PlayerRemoved(0, 42, 3));
+
+        verify(p1.getSession()).sendMessage(any(TextMessage.class));
+    }
+
+    // ====================================
+    // Fix 6 server: PlayerRemoved suppression during consolidation
+    // ====================================
+
+    @Test
+    void playerRemoved_activePlayer_suppressesPlayerLeft() throws Exception {
+        // Active player (finishPosition=0) being consolidated: PLAYER_LEFT suppressed.
+        PlayerConnection p1 = makeConnectedPlayer(1L);
+
+        GameInstance mockGame = mock(GameInstance.class);
+        ServerTournamentContext mockCtx = mock(ServerTournamentContext.class);
+        ServerPlayer activePlayer = mock(ServerPlayer.class);
+        when(activePlayer.getID()).thenReturn(42);
+        when(activePlayer.getFinishPosition()).thenReturn(0);
+        when(mockCtx.getAllPlayers()).thenReturn(List.of(activePlayer));
+        when(mockGame.getTournament()).thenReturn(mockCtx);
+
+        GameEventBroadcaster broadcastWithGame = new GameEventBroadcaster("game-1", connectionManager, converter,
+                mockGame);
+        broadcastWithGame.accept(new GameEvent.PlayerRemoved(0, 42, 3));
+
+        verify(p1.getSession(), never()).sendMessage(any());
+    }
+
+    @Test
+    void playerRemoved_eliminatedPlayer_sendsPlayerLeft() throws Exception {
+        // Eliminated player (finishPosition>0): PLAYER_LEFT sent to clear seat.
+        PlayerConnection p1 = makeConnectedPlayer(1L);
+
+        GameInstance mockGame = mock(GameInstance.class);
+        ServerTournamentContext mockCtx = mock(ServerTournamentContext.class);
+        ServerPlayer eliminatedPlayer = mock(ServerPlayer.class);
+        when(eliminatedPlayer.getID()).thenReturn(42);
+        when(eliminatedPlayer.getFinishPosition()).thenReturn(5);
+        when(mockCtx.getAllPlayers()).thenReturn(List.of(eliminatedPlayer));
+        when(mockGame.getTournament()).thenReturn(mockCtx);
+
+        GameEventBroadcaster broadcastWithGame = new GameEventBroadcaster("game-1", connectionManager, converter,
+                mockGame);
+        broadcastWithGame.accept(new GameEvent.PlayerRemoved(0, 42, 3));
+
+        verify(p1.getSession()).sendMessage(any(TextMessage.class));
+    }
+
+    // ====================================
+    // Fix 6 server: PlayerAdded includes player name
+    // ====================================
+
+    @Test
+    void playerAdded_withGame_includesPlayerName() throws Exception {
+        WebSocketSession session = mock(WebSocketSession.class);
+        when(session.isOpen()).thenReturn(true);
+        connectionManager.addConnection("game-1", 1L, new PlayerConnection(session, 1L, "p1", "game-1", objectMapper));
+
+        GameInstance mockGame = mock(GameInstance.class);
+        ServerTournamentContext mockCtx = mock(ServerTournamentContext.class);
+        ServerGameTable mockTable = mock(ServerGameTable.class);
+        ServerPlayer namedPlayer = mock(ServerPlayer.class);
+        when(namedPlayer.getName()).thenReturn("Alice");
+        when(mockTable.getPlayer(3)).thenReturn(namedPlayer);
+        when(mockCtx.getTable(0)).thenReturn(mockTable);
+        when(mockGame.getTournament()).thenReturn(mockCtx);
+
+        GameEventBroadcaster broadcastWithGame = new GameEventBroadcaster("game-1", connectionManager, converter,
+                mockGame);
+        broadcastWithGame.accept(new GameEvent.PlayerAdded(0, 42, 3));
+
+        verify(session).sendMessage(argThat(msg -> {
+            String json = ((TextMessage) msg).getPayload();
+            return json.contains("Alice");
+        }));
+    }
+
+    @Test
+    void playerAdded_withoutGame_sendsEmptyName() throws Exception {
+        // Broadcaster without game falls back to empty player name.
+        WebSocketSession session = mock(WebSocketSession.class);
+        when(session.isOpen()).thenReturn(true);
+        connectionManager.addConnection("game-1", 1L, new PlayerConnection(session, 1L, "p1", "game-1", objectMapper));
+
+        broadcaster.accept(new GameEvent.PlayerAdded(0, 42, 3));
+
+        verify(session).sendMessage(any(TextMessage.class));
     }
 }

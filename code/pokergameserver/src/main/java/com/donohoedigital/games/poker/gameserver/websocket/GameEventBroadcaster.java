@@ -293,14 +293,38 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 ServerMessage.of(ServerMessageType.GAME_RESUMED, gameId,
                     new ServerMessageData.GameResumedData("system"))
             );
-            case GameEvent.PlayerAdded e -> broadcast(
-                ServerMessage.of(ServerMessageType.PLAYER_JOINED, gameId,
-                    new ServerMessageData.PlayerJoinedData(e.playerId(), "", e.seat(), e.tableId()))
-            );
-            case GameEvent.PlayerRemoved e -> broadcast(
-                ServerMessage.of(ServerMessageType.PLAYER_LEFT, gameId,
-                    new ServerMessageData.PlayerLeftData(e.playerId(), ""))
-            );
+            case GameEvent.PlayerAdded e -> {
+                // Look up the player's name from the table so it arrives correctly
+                // in PLAYER_JOINED (e.g. during multi-table consolidation moves).
+                String playerName = "";
+                if (game != null && game.getTournament() != null) {
+                    Object gt = game.getTournament().getTable(e.tableId());
+                    if (gt instanceof ServerGameTable sgt) {
+                        ServerPlayer sp = sgt.getPlayer(e.seat());
+                        if (sp != null) {
+                            playerName = sp.getName();
+                        }
+                    }
+                }
+                broadcast(ServerMessage.of(ServerMessageType.PLAYER_JOINED, gameId,
+                    new ServerMessageData.PlayerJoinedData(e.playerId(), playerName, e.seat(), e.tableId())));
+            }
+            case GameEvent.PlayerRemoved e -> {
+                // During table consolidation the player is moved (PlayerRemoved then
+                // PlayerAdded). Suppress PLAYER_LEFT so the client doesn't show them
+                // as permanently gone; the subsequent PLAYER_JOINED will re-seat them.
+                // For eliminated players (finishPosition > 0) we still send PLAYER_LEFT
+                // to clear their seat (PLAYER_ELIMINATED doesn't clear it).
+                boolean isConsolidation = false;
+                if (game != null && game.getTournament() instanceof ServerTournamentContext ctx) {
+                    isConsolidation = ctx.getAllPlayers().stream()
+                            .anyMatch(p -> p.getID() == e.playerId() && p.getFinishPosition() == 0);
+                }
+                if (!isConsolidation) {
+                    broadcast(ServerMessage.of(ServerMessageType.PLAYER_LEFT, gameId,
+                        new ServerMessageData.PlayerLeftData(e.playerId(), "")));
+                }
+            }
             case GameEvent.PlayerRebuy e -> broadcast(
                 ServerMessage.of(ServerMessageType.PLAYER_REBUY, gameId,
                     new ServerMessageData.PlayerRebuyData(e.playerId(), "", e.amount()))

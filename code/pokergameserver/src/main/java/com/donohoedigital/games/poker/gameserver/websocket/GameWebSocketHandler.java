@@ -234,7 +234,7 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             // already exists (game is IN_PROGRESS/PAUSED).
             if (game.getEventBus() != null) {
                 gameBroadcasters.computeIfAbsent(gameId, id -> {
-                    GameEventBroadcaster broadcaster = new GameEventBroadcaster(id, connectionManager, converter);
+                    GameEventBroadcaster broadcaster = new GameEventBroadcaster(id, connectionManager, converter, game);
                     game.getEventBus().setBroadcastCallback(broadcaster);
                     return broadcaster;
                 });

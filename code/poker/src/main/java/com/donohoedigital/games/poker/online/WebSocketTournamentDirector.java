@@ -594,16 +594,11 @@ public class WebSocketTournamentDirector extends BasePhase
             // Update chip count and pot from server-provided post-action values
             PokerPlayer player = findPlayer(d.playerId());
             if (player != null) {
-                String act = d.action();
-                // Always update chipCount for blind/ante (player may have gone all-in
-                // posting, leaving chipCount=0). Also update for fold (no change) and
-                // any action where the server returned a positive chip count.
-                boolean isBlindAnte = "BLIND_SM".equalsIgnoreCase(act) || "BLIND_BIG".equalsIgnoreCase(act)
-                        || "ANTE".equalsIgnoreCase(act);
-                if (d.chipCount() > 0 || "FOLD".equalsIgnoreCase(act) || isBlindAnte) {
-                    player.setChipCount(d.chipCount());
-                }
-                if ("FOLD".equalsIgnoreCase(act)) {
+                // Server is authoritative — always apply the chip count from the server.
+                // The previous guard (chipCount > 0 || isFold || isBlindAnte) missed
+                // all-in BET/RAISE where the server correctly returns chipCount=0.
+                player.setChipCount(d.chipCount());
+                if ("FOLD".equalsIgnoreCase(d.action())) {
                     player.setFolded(true);
                 }
             }
@@ -809,6 +804,15 @@ public class WebSocketTournamentDirector extends BasePhase
             if (table == null) {
                 return;
             }
+            // During table consolidation, the player may still occupy their old seat
+            // (if PLAYER_LEFT was suppressed on the server). Clear it from any table
+            // before seating at the new location so they don't appear twice.
+            for (RemotePokerTable t : tables_.values()) {
+                int oldSeat = findSeat(t, d.playerId());
+                if (oldSeat >= 0 && (t != table || oldSeat != d.seatIndex())) {
+                    t.clearSeat(oldSeat);
+                }
+            }
             PokerPlayer existing = table.getPlayer(d.seatIndex());
             if (existing == null) {
                 PokerPlayer p = new PokerPlayer((int) d.playerId(), d.playerName(), d.playerId() == localPlayerId_);
@@ -877,6 +881,7 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onGamePaused(GamePausedData d) {
         SwingUtilities.invokeLater(() -> {
+            game_.getGameClock().pause();
             for (RemotePokerTable table : tables_.values()) {
                 table.fireEvent(PokerTableEvent.TYPE_STATE_CHANGED);
             }
@@ -885,6 +890,7 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onGameResumed(GameResumedData d) {
         SwingUtilities.invokeLater(() -> {
+            game_.getGameClock().unpause();
             for (RemotePokerTable table : tables_.values()) {
                 table.fireEvent(PokerTableEvent.TYPE_STATE_CHANGED);
             }
@@ -993,6 +999,9 @@ public class WebSocketTournamentDirector extends BasePhase
         SwingUtilities.invokeLater(() -> {
             logger.debug("[GAME_CANCELLED] reason={}", d.reason());
             fireStateChangedOnCurrentTable();
+            if (context_ != null) {
+                context_.processPhase("PracticeGameOver");
+            }
         });
     }
 
@@ -1093,8 +1102,9 @@ public class WebSocketTournamentDirector extends BasePhase
 
     @Override
     public void deliverChatLocal(int nType, String sMessage, int id) {
-        // In M4 practice mode this is never called with a live chatHandler_.
-        // In M6 multiplayer, the chatHandler_ will route this to the chat panel.
+        if (chatHandler_ != null) {
+            chatHandler_.chatReceived(id, nType, sMessage);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -1330,7 +1340,10 @@ public class WebSocketTournamentDirector extends BasePhase
             case HandAction.ACTION_CALL -> "CALL";
             case HandAction.ACTION_BET -> "BET";
             case HandAction.ACTION_RAISE -> "RAISE";
-            default -> "FOLD"; // safe fallback
+            default -> {
+                logger.warn("[mapActionToWsString] unknown action={}, defaulting to FOLD", action);
+                yield "FOLD";
+            }
         };
     }
 
