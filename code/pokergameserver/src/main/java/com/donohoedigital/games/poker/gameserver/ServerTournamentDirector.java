@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.donohoedigital.games.poker.core.GameHand;
+import com.donohoedigital.games.poker.core.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.GameTable;
 import com.donohoedigital.games.poker.core.TableProcessResult;
 import com.donohoedigital.games.poker.core.TournamentContext;
@@ -65,6 +66,11 @@ import com.donohoedigital.games.poker.model.LevelAdvanceMode;
 public class ServerTournamentDirector implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(ServerTournamentDirector.class);
     private static final int SLEEP_MILLIS = 10; // Short sleep to prevent CPU spinning
+    // How long to display the hand result before starting the next hand (ms).
+    // Must be long enough for players to read pot amounts and winner highlights.
+    private static final int HAND_RESULT_PAUSE_MS = 3000;
+    // Pause between community card reveals during an all-in runout (ms).
+    private static final int COMMUNITY_RUNOUT_PAUSE_MS = 1500;
 
     private final TournamentEngine engine;
     private final TournamentContext tournament;
@@ -229,6 +235,24 @@ public class ServerTournamentDirector implements Runnable {
     }
 
     /**
+     * Returns true when the current hand is an all-in runout — every player still
+     * holding cards has committed their entire stack. Used to gate the per-card
+     * reveal pause so normal betting rounds are unaffected.
+     */
+    private boolean isAllInRunout(GameTable table) {
+        GameHand hand = table.getHoldemHand();
+        if (hand == null || hand.getNumWithCards() <= 1)
+            return false;
+        for (int i = 0; i < table.getSeats(); i++) {
+            GamePlayerInfo p = table.getPlayer(i);
+            if (p != null && !p.isFolded() && !p.isAllIn()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Apply the result of table processing.
      *
      * @param table
@@ -290,8 +314,8 @@ public class ServerTournamentDirector implements Runnable {
                 if (tournament.getNumTables() == 1) {
                     eliminateZeroChipPlayers(table);
                 }
-                if (!tournament.isGameOver() && properties.aiActionDelayMs() > 0 && !actionProvider.isZipMode()) {
-                    sleepMillis(properties.aiActionDelayMs());
+                if (!tournament.isGameOver() && !actionProvider.isZipMode()) {
+                    sleepMillis(HAND_RESULT_PAUSE_MS);
                 }
             }
         }
@@ -340,6 +364,11 @@ public class ServerTournamentDirector implements Runnable {
                 GameHand hand = table.getHoldemHand();
                 if (hand != null) {
                     eventBus.publish(new GameEvent.CommunityCardsDealt(table.getNumber(), hand.getRound()));
+                }
+                // Pause between cards during an all-in runout so players can follow
+                // each reveal. Skip in zip mode (human already folded).
+                if (!actionProvider.isZipMode() && isAllInRunout(table)) {
+                    sleepMillis(COMMUNITY_RUNOUT_PAUSE_MS);
                 }
             } else if ("TD.Showdown".equals(result.phaseToRun())) {
                 // hand.resolve() was already called in TournamentEngine.handleShowdown().
