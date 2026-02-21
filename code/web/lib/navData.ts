@@ -62,10 +62,14 @@ export const navData: Record<string, NavItem> = {
     link: '/support',
     // No dropdown - uses left sidebar navigation instead
   },
+  games: {
+    title: 'Games',
+    link: '/games',
+  },
   online: {
     title: 'Online',
-    link: '/online/available',
-    // No dropdown - goes directly to Available Games, uses left sidebar navigation
+    link: '/online',
+    // No dropdown - goes to portal landing, uses left sidebar navigation
   },
   admin: {
     admin: true,

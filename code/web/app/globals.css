@@ -207,3 +207,19 @@ body {
   padding: 0.25rem 1rem !important;
   font-size: 1rem !important;
 }
+
+/* ========================================================================
+   Game Table — Dark Theme Variables
+   ======================================================================== */
+
+:root {
+  /* Poker table */
+  --game-bg: #1a1a2e;
+  --felt-green: #2d5a1b;
+  --felt-green-dark: #152d0d;
+  --gold-accent: #FFD700;
+}
+
+.game-bg {
+  background-color: var(--game-bg);
+}

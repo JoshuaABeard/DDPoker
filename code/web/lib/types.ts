@@ -38,53 +38,6 @@ export interface PlayerStats {
 }
 
 /**
- * Game/Tournament information
- */
-export interface Game {
-  id: number
-  name: string
-  host: string
-  status: 'waiting' | 'in_progress' | 'completed'
-  gameType: 'no_limit' | 'pot_limit' | 'limit'
-  buyIn: number
-  currentPlayers: number
-  maxPlayers: number
-  startTime?: string
-  endTime?: string
-  blindLevel?: number
-}
-
-/**
- * Game details with player list
- */
-export interface GameDetails extends Game {
-  players: GamePlayer[]
-  blindStructure?: BlindLevel[]
-  chatEnabled: boolean
-}
-
-/**
- * Player in a game
- */
-export interface GamePlayer {
-  playerName: string
-  chips: number
-  position: number
-  status: 'active' | 'sitting_out' | 'eliminated'
-}
-
-/**
- * Blind level structure
- */
-export interface BlindLevel {
-  level: number
-  smallBlind: number
-  bigBlind: number
-  ante?: number
-  duration: number
-}
-
-/**
  * Leaderboard entry
  */
 export interface LeaderboardEntry {
@@ -183,32 +136,6 @@ export interface TournamentStats {
  * Backend DTO Interfaces - Match actual API responses from Spring Boot backend
  */
 
-export interface TournamentProfileDto {
-  name: string
-  gameType: string
-  buyIn: number
-  maxPlayers: number
-}
-
-export interface GamePlayerDto {
-  name?: string
-  playerName?: string
-}
-
-export interface OnlineGameDto {
-  id: number
-  tournamentProfile?: TournamentProfileDto
-  hostPlayer?: string
-  numPlayers?: number
-  createDate?: string
-  startDate?: string
-  endDate?: string
-  currentBlindLevel?: number
-  players?: GamePlayerDto[]
-  winner?: string
-  finishTable?: Array<{ playerName?: string }>
-}
-
 export interface LeaderboardEntryDto {
   rank: number
   playerName: string
@@ -276,10 +203,3 @@ export interface ProfileAliasDto {
   retireDate?: string
 }
 
-/**
- * Game list response from backend
- */
-export interface GameListResponse {
-  games: OnlineGameDto[]
-  total: number
-}

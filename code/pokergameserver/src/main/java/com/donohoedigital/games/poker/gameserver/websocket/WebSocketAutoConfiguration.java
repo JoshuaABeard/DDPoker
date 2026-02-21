@@ -23,6 +23,7 @@ import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.GameServerAutoConfiguration;
 import com.donohoedigital.games.poker.gameserver.GameServerProperties;
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
+import com.donohoedigital.games.poker.gameserver.service.AuthService;
 import com.donohoedigital.games.poker.gameserver.service.BanService;
 import com.donohoedigital.games.poker.gameserver.service.GameService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -85,9 +86,10 @@ public class WebSocketAutoConfiguration {
     public GameWebSocketHandler gameWebSocketHandler(JwtTokenProvider jwtTokenProvider,
             GameInstanceManager gameInstanceManager, GameConnectionManager gameConnectionManager,
             InboundMessageRouter inboundMessageRouter, OutboundMessageConverter outboundMessageConverter,
-            ObjectMapper objectMapper, GameService gameService, GameServerProperties properties) {
+            ObjectMapper objectMapper, GameService gameService, AuthService authService,
+            GameServerProperties properties) {
         return new GameWebSocketHandler(jwtTokenProvider, gameInstanceManager, gameConnectionManager,
-                inboundMessageRouter, outboundMessageConverter, objectMapper, gameService, properties);
+                inboundMessageRouter, outboundMessageConverter, objectMapper, gameService, authService, properties);
     }
 
     @Bean

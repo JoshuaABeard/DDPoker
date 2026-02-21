@@ -9,24 +9,22 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Online Games Portal - DD Poker Community Edition',
-  description: 'View leaderboards, current games, and tournament history',
+  description: 'Browse games, view leaderboards, and tournament history',
 }
 
 export default function OnlinePortal() {
   const sections = [
     {
+      title: 'Play',
+      links: [
+        { href: '/games', label: 'Game Lobby' },
+      ],
+    },
+    {
       title: 'Rankings & Stats',
       links: [
         { href: '/online/leaderboard', label: 'Leaderboard', rss: '/api/rss/leaderboard' },
         { href: '/online/search', label: 'Player Search' },
-      ],
-    },
-    {
-      title: 'Games',
-      links: [
-        { href: '/online/available', label: 'Available Games', rss: '/api/rss/available' },
-        { href: '/online/current', label: 'Current Games', rss: '/api/rss/current' },
-        { href: '/online/completed', label: 'Completed Games', rss: '/api/rss/completed' },
       ],
     },
     {

@@ -18,7 +18,16 @@ function LoginContent() {
     <div className="container mx-auto px-4 py-12">
       <LoginForm />
 
-      <div className="max-w-md mx-auto mt-8 text-center">
+      <div className="max-w-md mx-auto mt-6 text-center text-sm">
+        <p className="text-gray-600">
+          Don&apos;t have an account?{' '}
+          <Link href="/register" className="text-green-700 hover:underline font-semibold">
+            Create one
+          </Link>
+        </p>
+      </div>
+
+      <div className="max-w-md mx-auto mt-6 text-center">
         <h3 className="text-lg font-semibold mb-3">Need Help?</h3>
         <ul className="space-y-2 text-sm">
           <li>

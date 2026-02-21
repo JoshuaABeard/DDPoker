@@ -23,8 +23,7 @@ export const onlineSidebarData: SidebarSection[] = [
   {
     title: 'Games',
     items: [
-      { title: 'Available Games', link: '/online/available', icon: '🎲' },
-      { title: 'Current Games', link: '/online/current', icon: '▶️' },
+      { title: 'Game Lobby', link: '/games', icon: '🎲', exactMatch: true },
       { title: 'Hosts', link: '/online/hosts', icon: '🎯' },
     ],
   },
@@ -32,7 +31,6 @@ export const onlineSidebarData: SidebarSection[] = [
     title: 'Statistics',
     items: [
       { title: 'Leaderboard', link: '/online/leaderboard', icon: '🏆' },
-      { title: 'Completed Games', link: '/online/completed', icon: '✅' },
       { title: 'History', link: '/online/history', icon: '📜' },
     ],
   },
@@ -41,6 +39,17 @@ export const onlineSidebarData: SidebarSection[] = [
     items: [
       { title: 'My Profile', link: '/online/myprofile', icon: '🙋' },
       { title: 'Search Players', link: '/online/search', icon: '🔍' },
+    ],
+  },
+]
+
+export const gamesSidebarData: SidebarSection[] = [
+  {
+    title: 'Games',
+    items: [
+      { title: 'Game Lobby', link: '/games', icon: '🎲', exactMatch: true },
+      { title: 'Create Game', link: '/games/create', icon: '➕' },
+      { title: 'Quick Practice', link: '/games/create?practice=true', icon: '🤖' },
     ],
   },
 ]

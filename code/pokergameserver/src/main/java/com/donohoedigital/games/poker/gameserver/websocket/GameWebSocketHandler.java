@@ -21,6 +21,8 @@ import java.net.URI;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -36,14 +38,14 @@ import com.donohoedigital.games.poker.gameserver.ServerGameEventBus;
 import com.donohoedigital.games.poker.gameserver.ServerPlayerSession;
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
 import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
+import com.donohoedigital.games.poker.gameserver.service.AuthService;
 import com.donohoedigital.games.poker.gameserver.service.GameService;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData.LobbyPlayerData;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.jsonwebtoken.Claims;
 
 /**
  * WebSocket handler for game connections.
@@ -59,8 +61,11 @@ import org.slf4j.LoggerFactory;
  */
 public class GameWebSocketHandler extends TextWebSocketHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(GameWebSocketHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(GameWebSocketHandler.class);
     private static final int SESSION_MAX_TEXT_BUFFER_SIZE = 8192;
+
+    /** Close code sent to the old tab when the same player opens the game in a new tab. */
+    private static final int CLOSE_CONNECTION_REPLACED = 4409;
 
     private final JwtTokenProvider jwtTokenProvider;
     private final GameInstanceManager gameInstanceManager;
@@ -69,6 +74,7 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
     private final OutboundMessageConverter converter;
     private final ObjectMapper objectMapper;
     private final GameService gameService;
+    private final AuthService authService;
     private final int actionTimeoutSeconds;
 
     /** Maps WebSocket session ID → PlayerConnection */
@@ -95,13 +101,17 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
      *            converter for outbound server messages
      * @param objectMapper
      *            JSON object mapper
+     * @param gameService
+     *            game service for lobby state
+     * @param authService
+     *            auth service for jti tracking and reconnect token generation
      * @param properties
      *            server configuration properties
      */
     public GameWebSocketHandler(JwtTokenProvider jwtTokenProvider, GameInstanceManager gameInstanceManager,
             GameConnectionManager connectionManager, InboundMessageRouter inboundMessageRouter,
             OutboundMessageConverter converter, ObjectMapper objectMapper, GameService gameService,
-            GameServerProperties properties) {
+            AuthService authService, GameServerProperties properties) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.gameInstanceManager = gameInstanceManager;
         this.connectionManager = connectionManager;
@@ -109,6 +119,7 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
         this.converter = converter;
         this.objectMapper = objectMapper;
         this.gameService = gameService;
+        this.authService = authService;
         this.actionTimeoutSeconds = properties.actionTimeoutSeconds();
     }
 
@@ -127,8 +138,11 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        long profileId = jwtTokenProvider.getProfileIdFromToken(token);
-        String username = jwtTokenProvider.getUsernameFromToken(token);
+        // Validate token scope and extract claims
+        Claims claims = jwtTokenProvider.getClaims(token);
+        String scope = claims.get("scope", String.class);
+        long profileId = claims.get("profileId", Long.class);
+        String username = claims.getSubject();
 
         // Extract gameId from URI path (last segment of /ws/games/{gameId})
         String gameId = extractGameId(uri.getPath());
@@ -136,6 +150,30 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             session.close(new CloseStatus(4004, "Game not found"));
             return;
         }
+
+        // Enforce scope restrictions
+        if ("reconnect".equals(scope)) {
+            // Reconnect tokens must be scoped to this specific game
+            String tokenGameId = claims.get("gameId", String.class);
+            if (!gameId.equals(tokenGameId)) {
+                session.close(new CloseStatus(4001, "Token not valid for this game"));
+                return;
+            }
+        } else if ("ws-connect".equals(scope)) {
+            // ws-connect tokens are single-use — check and mark jti
+            String jti = claims.getId();
+            long expiryMs = claims.getExpiration().getTime();
+            if (jti == null || authService.isJtiUsed(jti)) {
+                session.close(new CloseStatus(4001, "Token already used"));
+                return;
+            }
+            authService.markJtiUsed(jti, expiryMs);
+        } else if (scope != null) {
+            // Unknown scope — reject
+            session.close(new CloseStatus(4001, "Invalid token scope"));
+            return;
+        }
+        // null scope = legacy regular JWT (desktop client compatibility)
 
         // Look up the game
         GameInstance game = gameInstanceManager.getGame(gameId);
@@ -146,16 +184,32 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
 
         GameInstanceState state = game.getState();
         boolean alreadyInGame = game.hasPlayer(profileId);
-        logger.debug("[WS-CONNECT] player={} profileId={} gameId={} state={} alreadyInGame={}", username, profileId,
+        boolean reconnecting = alreadyInGame && (state == GameInstanceState.IN_PROGRESS || state == GameInstanceState.PAUSED);
+        log.debug("[WS-CONNECT] player={} profileId={} gameId={} state={} alreadyInGame={}", username, profileId,
                 gameId, state, alreadyInGame);
 
         if (state == GameInstanceState.WAITING_FOR_PLAYERS && !alreadyInGame) {
             // Auto-join player
             game.addPlayer(profileId, username, false, 0);
-        } else if ((state == GameInstanceState.IN_PROGRESS || state == GameInstanceState.PAUSED) && alreadyInGame) {
-            // Reconnect existing player — handled below
+        } else if (reconnecting) {
+            // Reconnect: close the existing WebSocket session (if any) with code 4409
+            // so the old tab knows it was superseded. Only applies during active gameplay.
+            final long fProfileId = profileId;
+            PlayerConnection existingConnection = sessionConnections.values().stream()
+                    .filter(c -> c.getProfileId() == fProfileId && c.getGameId().equals(gameId))
+                    .findFirst()
+                    .orElse(null);
+            if (existingConnection != null) {
+                try {
+                    existingConnection.getSession().close(
+                            new CloseStatus(CLOSE_CONNECTION_REPLACED, "Connection replaced by new session"));
+                } catch (Exception e) {
+                    log.debug("Could not close replaced session for player {} in game {}: {}", profileId, gameId,
+                            e.getMessage());
+                }
+            }
         } else if (!alreadyInGame) {
-            logger.debug("[WS-CONNECT] rejecting player={} not in game gameId={}", username, gameId);
+            log.debug("[WS-CONNECT] rejecting player={} not in game gameId={}", username, gameId);
             session.close(new CloseStatus(4003, "Not in game"));
             return;
         }
@@ -177,21 +231,23 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
                     playerConnection.sendMessage(actionMsg);
                 }
             });
-            logger.debug("[WS-HANDLER] Wired messageSender for profileId={} gameId={}", profileId, gameId);
+            log.debug("[WS-HANDLER] Wired messageSender for profileId={} gameId={}", profileId, gameId);
         }
 
-        // Send CONNECTED first — establishes the client's identity before any
-        // broadcasts or game-state events arrive via the connection manager.
-        ServerMessage connectedMsg = converter.createConnectedMessage(gameId, profileId, null);
-        playerConnection.sendMessage(connectedMsg);
-
-        // Register connection (player can now receive broadcasts)
+        // Register connection (replaces any existing connection for this player)
         connectionManager.addConnection(gameId, profileId, playerConnection);
 
-        // If reconnecting to an in-progress game, notify the game engine.
-        if (alreadyInGame && (state == GameInstanceState.IN_PROGRESS || state == GameInstanceState.PAUSED)) {
+        // If reconnecting, notify game
+        if (reconnecting) {
             game.reconnectPlayer(profileId);
         }
+
+        // Generate a reconnect token (24h, game-scoped) for this player
+        String reconnectToken = authService.generateReconnectToken(profileId, username, gameId);
+
+        // Send CONNECTED message (with reconnect token)
+        ServerMessage connectedMsg = converter.createConnectedMessage(gameId, profileId, null, reconnectToken);
+        playerConnection.sendMessage(connectedMsg);
 
         if (state == GameInstanceState.WAITING_FOR_PLAYERS) {
             // Lobby phase: send lobby state snapshot to the joining player...
@@ -224,7 +280,7 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
                 GameStateSnapshot snapshot = game.getGameStateSnapshot(profileId);
                 if (snapshot != null) {
                     playerConnection.sendMessage(converter.createGameStateMessage(gameId, snapshot));
-                    logger.debug("[WS-CONNECT] sent initial GAME_STATE to practice game owner player={}", username);
+                    log.debug("[WS-CONNECT] sent initial GAME_STATE to practice game owner player={}", username);
                 }
             }
         } else {
@@ -242,7 +298,7 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             // Sync reconnecting player to current game state so they see the table,
             // players, and cards without waiting for the next event to fire.
             GameStateSnapshot snapshot = game.getGameStateSnapshot(profileId);
-            logger.debug("[WS-CONNECT] in-game reconnect player={} snapshot={}", username,
+            log.debug("[WS-CONNECT] in-game reconnect player={} snapshot={}", username,
                     snapshot != null
                             ? "tableId=" + snapshot.tableId() + " players=" + snapshot.players().size()
                             : "null");
@@ -255,11 +311,11 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
 
             if (snapshot != null) {
                 playerConnection.sendMessage(converter.createGameStateMessage(gameId, snapshot));
-                logger.debug("[WS-CONNECT] sent GAME_STATE to player={}", username);
+                log.debug("[WS-CONNECT] sent GAME_STATE to player={}", username);
             }
             // Re-send ACTION_REQUIRED if the game was already waiting for this player.
             game.resendPendingActionIfAny(profileId);
-            logger.debug("[WS-CONNECT] resendPendingActionIfAny called for player={}", username);
+            log.debug("[WS-CONNECT] resendPendingActionIfAny called for player={}", username);
         }
     }
 
@@ -275,7 +331,7 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
         PlayerConnection connection = findConnection(session);
         if (connection != null) {
-            logger.debug("[WS-HANDLER] connection closed profileId={} gameId={} status={}", connection.getProfileId(),
+            log.debug("[WS-HANDLER] connection closed profileId={} gameId={} status={}", connection.getProfileId(),
                     connection.getGameId(), closeStatus);
             sessionConnections.remove(session.getId());
             connectionManager.removeConnection(connection.getGameId(), connection.getProfileId());

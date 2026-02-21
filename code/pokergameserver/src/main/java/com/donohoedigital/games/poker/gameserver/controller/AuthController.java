@@ -95,6 +95,37 @@ public class AuthController {
     }
 
     /**
+     * Issues a short-lived WebSocket connect token for the authenticated user.
+     *
+     * <p>
+     * The web client's JWT lives in an HttpOnly cookie inaccessible to JavaScript.
+     * This endpoint bridges the gap: authenticated cookie → short-lived WS token the
+     * client appends as {@code ?token=xxx} to the WebSocket URL.
+     *
+     * <p>
+     * Security properties:
+     * <ul>
+     * <li>Rate-limited to 5 requests per minute per user.</li>
+     * <li>Token TTL: 60 seconds (single-use, validated in GameWebSocketHandler).</li>
+     * <li>Token scope: {@code "ws-connect"} — cannot be used for REST authentication.</li>
+     * </ul>
+     *
+     * @return {@code { "token": "..." }} on success; 429 if rate-limited
+     */
+    @GetMapping("/ws-token")
+    public ResponseEntity<Map<String, String>> wsToken() {
+        Long profileId = getAuthenticatedProfileId();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        String token = authService.generateWsToken(profileId, username);
+        if (token == null) {
+            return ResponseEntity.status(429).body(Map.of("message", "Rate limit exceeded. Try again in a minute."));
+        }
+        return ResponseEntity.ok(Map.of("token", token));
+    }
+
+    /**
      * Returns the current authenticated user's profile data.
      */
     @GetMapping("/me")

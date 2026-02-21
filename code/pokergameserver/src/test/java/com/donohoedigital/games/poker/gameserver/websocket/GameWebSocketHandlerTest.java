@@ -23,6 +23,7 @@ import com.donohoedigital.games.poker.gameserver.GameInstanceState;
 import com.donohoedigital.games.poker.gameserver.GameServerProperties;
 import com.donohoedigital.games.poker.gameserver.ServerGameEventBus;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.socket.CloseStatus;
@@ -31,11 +32,13 @@ import org.springframework.web.socket.WebSocketSession;
 
 import java.net.URI;
 import java.util.Collections;
+import java.util.Date;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
+import com.donohoedigital.games.poker.gameserver.service.AuthService;
 import com.donohoedigital.games.poker.gameserver.service.GameService;
 
 /**
@@ -53,6 +56,7 @@ class GameWebSocketHandlerTest {
     private OutboundMessageConverter converter;
     private ObjectMapper objectMapper;
     private GameService gameService;
+    private AuthService authService;
     private GameWebSocketHandler handler;
 
     private WebSocketSession session;
@@ -74,15 +78,26 @@ class GameWebSocketHandlerTest {
         objectMapper = new ObjectMapper();
         objectMapper.findAndRegisterModules();
         gameService = mock(GameService.class);
+        authService = mock(AuthService.class);
 
         handler = new GameWebSocketHandler(jwtTokenProvider, gameInstanceManager, connectionManager,
-                inboundMessageRouter, converter, objectMapper, gameService,
+                inboundMessageRouter, converter, objectMapper, gameService, authService,
                 new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0));
 
-        // Set up JWT provider defaults
+        // Set up JWT provider defaults: getClaims() returns a Claims mock with no scope
+        // (null scope = legacy desktop client compatibility path)
+        Claims mockClaims = mock(Claims.class);
+        when(mockClaims.get("profileId", Long.class)).thenReturn(PROFILE_ID);
+        when(mockClaims.getSubject()).thenReturn(USERNAME);
+        when(mockClaims.get("scope", String.class)).thenReturn(null);
+        when(mockClaims.getId()).thenReturn(null);
+        when(mockClaims.getExpiration()).thenReturn(new Date(System.currentTimeMillis() + 60_000));
         when(jwtTokenProvider.validateToken(VALID_TOKEN)).thenReturn(true);
-        when(jwtTokenProvider.getProfileIdFromToken(VALID_TOKEN)).thenReturn(PROFILE_ID);
-        when(jwtTokenProvider.getUsernameFromToken(VALID_TOKEN)).thenReturn(USERNAME);
+        when(jwtTokenProvider.getClaims(VALID_TOKEN)).thenReturn(mockClaims);
+
+        // generateReconnectToken returns a stub token
+        when(authService.generateReconnectToken(anyLong(), anyString(), anyString()))
+                .thenReturn("reconnect-token-stub");
 
         // Set up game instance defaults
         gameInstance = mock(GameInstance.class);

@@ -5,61 +5,9 @@
  */
 
 import type {
-  OnlineGameDto,
   LeaderboardEntryDto,
   TournamentHistoryDto,
 } from './types'
-
-/**
- * Map backend OnlineGame to frontend AvailableGame format (mode 0)
- */
-export function mapAvailableGame(game: OnlineGameDto) {
-  return {
-    id: game.id,
-    name: game.tournamentProfile?.name || 'Unknown',
-    host: game.hostPlayer || 'Unknown',
-    mode: game.tournamentProfile?.gameType || 'Unknown',
-    buyIn: game.tournamentProfile?.buyIn || 0,
-    players: game.numPlayers || 0,
-    maxPlayers: game.tournamentProfile?.maxPlayers || 0,
-    created: game.createDate || new Date().toISOString(),
-  }
-}
-
-/**
- * Map backend OnlineGame to frontend CurrentGame format (mode 1)
- * Extracts player names from the players array
- */
-export function mapCurrentGame(game: OnlineGameDto) {
-  const players = game.players?.map((p) => p.name || p.playerName || 'Unknown') || []
-  return {
-    id: game.id,
-    name: game.tournamentProfile?.name || 'Unknown',
-    host: game.hostPlayer || 'Unknown',
-    mode: game.tournamentProfile?.gameType || 'Unknown',
-    players,
-    blindLevel: game.currentBlindLevel || 0,
-    started: game.startDate || new Date().toISOString(),
-  }
-}
-
-/**
- * Map backend OnlineGame to frontend CompletedGame format (mode 2)
- * Finds the winner from the finish table
- */
-export function mapCompletedGame(game: OnlineGameDto) {
-  const winner = game.winner || game.finishTable?.[0]?.playerName || 'Unknown'
-  return {
-    id: game.id,
-    name: game.tournamentProfile?.name || 'Unknown',
-    host: game.hostPlayer || 'Unknown',
-    mode: game.tournamentProfile?.gameType || 'Unknown',
-    winner,
-    players: game.numPlayers || 0,
-    buyIn: game.tournamentProfile?.buyIn || 0,
-    completed: game.endDate || new Date().toISOString(),
-  }
-}
 
 /**
  * Map backend LeaderboardSummary to frontend LeaderboardEntry

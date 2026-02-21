@@ -10,9 +10,6 @@ import type {
   ApiResponse,
   AuthResponse,
   BannedKeyDto,
-  Game,
-  GameDetails,
-  GameListResponse,
   HostSummary,
   LeaderboardEntry,
   LeaderboardEntryDto,
@@ -26,6 +23,13 @@ import type {
   TournamentHistoryDto,
   TournamentHistoryEntry,
 } from './types'
+import type {
+  GameConfigDto,
+  GameJoinResponseDto,
+  GameSummaryDto,
+  PracticeGameResponseDto,
+  WsTokenResponseDto,
+} from './game/types'
 
 /**
  * Base fetch wrapper with error handling
@@ -40,9 +44,8 @@ async function apiFetch<T>(
     'Content-Type': 'application/json',
   }
 
-  // Add timeout for build-time API calls (5 seconds)
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 5000)
+  const timeoutId = setTimeout(() => controller.abort(), config.apiTimeout)
 
   const fetchOptions: RequestInit = {
     credentials: 'include', // Always send cookies (JWT in HttpOnly cookie)
@@ -193,61 +196,131 @@ export const profileApi = {
 }
 
 /**
- * Games API
+ * Game Server API — calls /api/v1/* endpoints on the pokergameserver.
+ *
+ * This is distinct from the legacy `/api/*` portal API. All new game
+ * management (create, join, play) goes through these endpoints.
  */
-export const gamesApi = {
+export const gameServerApi = {
   /**
-   * Get available games (mode 0 - waiting for players)
+   * Register a new user via the game server's JWT-based auth.
+   * (Not `authApi.register` which calls the legacy /api/auth/register.)
    */
-  getAvailable: async (page = 0, pageSize = 20): Promise<GameListResponse> => {
-    const params = new URLSearchParams({
-      modes: '0',
-      page: page.toString(),
-      pageSize: pageSize.toString(),
+  register: async (username: string, password: string, email: string): Promise<{ success: boolean; message?: string }> => {
+    const response = await apiFetch<{ success: boolean; message?: string }>('/api/v1/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ username, password, email }),
     })
-    const response = await apiFetch<GameListResponse>(`/api/games?${params}`)
     return response.data
   },
 
   /**
-   * Get running games (mode 1 - in progress)
+   * Get a short-lived WebSocket connect token (60s, single-use).
+   * Must be called just before opening the WebSocket connection.
    */
-  getRunning: async (page = 0, pageSize = 20): Promise<GameListResponse> => {
-    const params = new URLSearchParams({
-      modes: '1',
-      page: page.toString(),
-      pageSize: pageSize.toString(),
-    })
-    const response = await apiFetch<GameListResponse>(`/api/games?${params}`)
+  getWsToken: async (): Promise<WsTokenResponseDto> => {
+    const response = await apiFetch<WsTokenResponseDto>('/api/v1/auth/ws-token')
     return response.data
   },
 
   /**
-   * Get completed games (mode 2 - finished)
+   * List games with optional status filter.
+   * @param status Filter: 'WAITING_FOR_PLAYERS' | 'IN_PROGRESS' | 'COMPLETED' (omit for all)
    */
-  getCompleted: async (
-    page = 0,
-    pageSize = 20,
-    from?: string,
-    to?: string
-  ): Promise<GameListResponse> => {
-    const params = new URLSearchParams({
-      modes: '2',
-      page: page.toString(),
-      pageSize: pageSize.toString(),
-    })
-    if (from) params.append('from', from)
-    if (to) params.append('to', to)
-    const response = await apiFetch<GameListResponse>(`/api/games?${params}`)
+  listGames: async (params?: {
+    status?: string
+    search?: string
+    page?: number
+    pageSize?: number
+  }): Promise<{ games: GameSummaryDto[]; total: number }> => {
+    const qs = new URLSearchParams()
+    if (params?.status) qs.append('status', params.status)
+    if (params?.search) qs.append('search', params.search)
+    if (params?.page !== undefined) qs.append('page', params.page.toString())
+    if (params?.pageSize) qs.append('pageSize', params.pageSize.toString())
+    const response = await apiFetch<{ games: GameSummaryDto[]; total: number }>(
+      `/api/v1/games${qs.toString() ? `?${qs}` : ''}`
+    )
     return response.data
   },
 
   /**
-   * Get game details by ID
+   * Get a single game summary by ID.
    */
-  getDetails: async (gameId: number): Promise<GameDetails> => {
-    const response = await apiFetch<GameDetails>(`/api/games/${gameId}`)
+  getGame: async (gameId: string): Promise<GameSummaryDto> => {
+    const response = await apiFetch<GameSummaryDto>(`/api/v1/games/${gameId}`)
     return response.data
+  },
+
+  /**
+   * Create a new game.
+   * Returns the created game summary (including gameId and wsUrl).
+   */
+  createGame: async (config: GameConfigDto): Promise<GameSummaryDto> => {
+    const response = await apiFetch<GameSummaryDto>('/api/v1/games', {
+      method: 'POST',
+      body: JSON.stringify(config),
+    })
+    return response.data
+  },
+
+  /**
+   * Create a practice game (pre-filled with AI, auto-starts).
+   * Returns { gameId } — no separate join/start needed.
+   */
+  createPracticeGame: async (config?: Partial<GameConfigDto>): Promise<PracticeGameResponseDto> => {
+    const response = await apiFetch<PracticeGameResponseDto>('/api/v1/games/practice', {
+      method: 'POST',
+      body: JSON.stringify(config ?? {}),
+    })
+    return response.data
+  },
+
+  /**
+   * Join a game. Returns the WebSocket URL and gameId.
+   * @param password Required for private games. Sent in POST body only (never in URL).
+   */
+  joinGame: async (gameId: string, password?: string): Promise<GameJoinResponseDto> => {
+    const response = await apiFetch<GameJoinResponseDto>(`/api/v1/games/${gameId}/join`, {
+      method: 'POST',
+      body: JSON.stringify(password !== undefined ? { password } : {}),
+    })
+    return response.data
+  },
+
+  /**
+   * Start a game (owner only).
+   */
+  startGame: async (gameId: string): Promise<void> => {
+    await apiFetch<void>(`/api/v1/games/${gameId}/start`, { method: 'POST' })
+  },
+
+  /**
+   * Update game settings (owner only, lobby phase only).
+   */
+  updateSettings: async (gameId: string, settings: Partial<GameConfigDto>): Promise<GameSummaryDto> => {
+    const response = await apiFetch<GameSummaryDto>(`/api/v1/games/${gameId}/settings`, {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    })
+    return response.data
+  },
+
+  /**
+   * Kick a player (owner only).
+   */
+  kickPlayer: async (gameId: string, profileId: number): Promise<void> => {
+    await apiFetch<void>(`/api/v1/games/${gameId}/kick`, {
+      method: 'POST',
+      body: JSON.stringify({ profileId }),
+    })
+  },
+
+  /**
+   * Cancel a game (owner only).
+   */
+  cancelGame: async (gameId: string): Promise<void> => {
+    await apiFetch<void>(`/api/v1/games/${gameId}`, { method: 'DELETE' })
   },
 }
 

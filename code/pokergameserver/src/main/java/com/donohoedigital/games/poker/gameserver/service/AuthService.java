@@ -23,7 +23,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.mindrot.jbcrypt.BCrypt;
@@ -56,6 +59,16 @@ public class AuthService {
     /** Rate limit window: 1 request per email per hour. */
     static final long FORGOT_PASSWORD_RATE_LIMIT_MILLIS = 60L * 60 * 1000;
 
+    /** WS token: 60 seconds TTL (initial connection only). */
+    static final long WS_TOKEN_TTL_MS = 60_000L;
+
+    /** Reconnect token: 24 hours TTL. */
+    static final long RECONNECT_TOKEN_TTL_MS = 24L * 60 * 60 * 1000;
+
+    /** WS token rate limit: max 5 requests per user per minute. */
+    static final int WS_TOKEN_RATE_LIMIT = 5;
+    static final long WS_TOKEN_RATE_WINDOW_MS = 60_000L;
+
     private final OnlineProfileRepository profileRepository;
     private final PasswordResetTokenRepository resetTokenRepository;
     private final BanService banService;
@@ -64,6 +77,18 @@ public class AuthService {
 
     /** In-memory rate limit: normalized email → last request time (epoch ms). */
     private final ConcurrentHashMap<String, Long> forgotPasswordRateLimits = new ConcurrentHashMap<>();
+
+    /**
+     * WS token rate limit tracking: profileId → list of request timestamps (epoch ms).
+     * Each list contains timestamps within the current sliding window.
+     */
+    private final ConcurrentHashMap<Long, ArrayList<Long>> wsTokenRateLimits = new ConcurrentHashMap<>();
+
+    /**
+     * Used jti set for single-use WS connect tokens: jti → expiry epoch ms.
+     * Entries are TTL-evicted lazily on each access.
+     */
+    private final ConcurrentHashMap<String, Long> usedJtis = new ConcurrentHashMap<>();
 
     public AuthService(OnlineProfileRepository profileRepository, PasswordResetTokenRepository resetTokenRepository,
             BanService banService, JwtTokenProvider tokenProvider) {
@@ -229,5 +254,107 @@ public class AuthService {
                 .orElseThrow(InvalidResetTokenException::new);
         profile.setPasswordHash(BCrypt.hashpw(newPassword, BCrypt.gensalt()));
         profileRepository.save(profile);
+    }
+
+    /**
+     * Generate a short-lived WebSocket connect token for the given user.
+     *
+     * <p>
+     * Rate-limited to {@link #WS_TOKEN_RATE_LIMIT} requests per user per minute.
+     * Returns {@code null} if rate-limited.
+     *
+     * @param profileId
+     *            authenticated user's profile ID
+     * @param username
+     *            authenticated user's username
+     * @return a {@code ws-connect}-scoped JWT, or {@code null} if rate-limited
+     */
+    public String generateWsToken(Long profileId, String username) {
+        long now = System.currentTimeMillis();
+
+        // Sliding-window rate limit: 5 requests per 60s per user
+        wsTokenRateLimits.compute(profileId, (id, timestamps) -> {
+            if (timestamps == null) {
+                timestamps = new ArrayList<>();
+            }
+            // Evict stale entries outside the window
+            long windowStart = now - WS_TOKEN_RATE_WINDOW_MS;
+            timestamps.removeIf(ts -> ts < windowStart);
+            return timestamps;
+        });
+
+        ArrayList<Long> timestamps = wsTokenRateLimits.get(profileId);
+        if (timestamps != null && timestamps.size() >= WS_TOKEN_RATE_LIMIT) {
+            return null;
+        }
+
+        // Record this request
+        wsTokenRateLimits.computeIfPresent(profileId, (id, ts) -> {
+            ts.add(now);
+            return ts;
+        });
+
+        return tokenProvider.generateScopedToken(username, profileId, "ws-connect", null, WS_TOKEN_TTL_MS);
+    }
+
+    /**
+     * Generate a game-scoped reconnect token for inclusion in the CONNECTED message.
+     *
+     * <p>
+     * The reconnect token has a 24-hour TTL and is scoped to a single game.
+     * It is stored in memory by the client and used for WebSocket reconnection
+     * without requiring a valid session cookie.
+     *
+     * @param profileId
+     *            the player's profile ID
+     * @param username
+     *            the player's username
+     * @param gameId
+     *            the game this token is scoped to
+     * @return a {@code reconnect}-scoped JWT
+     */
+    public String generateReconnectToken(Long profileId, String username, String gameId) {
+        return tokenProvider.generateScopedToken(username, profileId, "reconnect", gameId, RECONNECT_TOKEN_TTL_MS);
+    }
+
+    /**
+     * Mark a WS connect token's {@code jti} as used.
+     *
+     * <p>
+     * Lazily evicts expired entries before recording the new jti.
+     *
+     * @param jti
+     *            JWT ID claim from the token
+     * @param expiryMs
+     *            token expiry as epoch milliseconds
+     */
+    public void markJtiUsed(String jti, long expiryMs) {
+        // Lazy eviction of expired jtis
+        long now = System.currentTimeMillis();
+        for (Iterator<Map.Entry<String, Long>> it = usedJtis.entrySet().iterator(); it.hasNext();) {
+            if (it.next().getValue() < now) {
+                it.remove();
+            }
+        }
+        usedJtis.put(jti, expiryMs);
+    }
+
+    /**
+     * Returns true if the given jti has already been used.
+     *
+     * @param jti
+     *            JWT ID claim
+     * @return true if already used or expired
+     */
+    public boolean isJtiUsed(String jti) {
+        Long expiry = usedJtis.get(jti);
+        if (expiry == null) {
+            return false;
+        }
+        if (expiry < System.currentTimeMillis()) {
+            usedJtis.remove(jti);
+            return false;
+        }
+        return true;
     }
 }

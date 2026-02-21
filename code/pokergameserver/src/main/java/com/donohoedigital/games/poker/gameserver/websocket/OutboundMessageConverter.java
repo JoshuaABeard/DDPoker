@@ -72,12 +72,15 @@ public class OutboundMessageConverter {
      *            Player's profile ID
      * @param snapshot
      *            Game state snapshot (may be null if game not started)
+     * @param reconnectToken
+     *            Game-scoped reconnect JWT (24h TTL) the client uses for reconnection
      * @return CONNECTED message
      */
-    public ServerMessage createConnectedMessage(String gameId, long profileId, GameStateSnapshot snapshot) {
+    public ServerMessage createConnectedMessage(String gameId, long profileId, GameStateSnapshot snapshot,
+            String reconnectToken) {
         ServerMessageData.GameStateData gameStateData = snapshot != null ? convertSnapshot(snapshot) : null;
         return ServerMessage.of(ServerMessageType.CONNECTED, gameId,
-                new ServerMessageData.ConnectedData(profileId, gameStateData));
+                new ServerMessageData.ConnectedData(profileId, gameStateData, reconnectToken));
     }
 
     /**
