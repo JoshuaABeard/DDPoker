@@ -14,6 +14,7 @@
 #   --strategy FOLD   Action strategy: FOLD or CALL (default: FOLD)
 #   --stuck-timeout N Seconds before declaring stuck (default: 15)
 #   --log-dir DIR     Where to write logs and screenshots (default: /tmp/ddpoker-test)
+#   --ai-delay-ms N   AI action delay in ms (default: 0 for fast tests; game default is 1000)
 #
 # Dependencies: node (for JSON parsing), curl, mvn (unless --skip-build)
 
@@ -26,6 +27,7 @@ NUM_GAMES=1
 STRATEGY="FOLD"
 STUCK_TIMEOUT=45
 LOG_DIR="/tmp/ddpoker-test"
+AI_DELAY_MS=0
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CODE_DIR="$REPO_ROOT/code"
@@ -43,6 +45,7 @@ while [[ $# -gt 0 ]]; do
     --strategy)     STRATEGY="$2"; shift ;;
     --stuck-timeout) STUCK_TIMEOUT="$2"; shift ;;
     --log-dir)      LOG_DIR="$2"; shift ;;
+    --ai-delay-ms)  AI_DELAY_MS="$2"; shift ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
   shift
@@ -119,11 +122,12 @@ fi
 
 # ── Step 3: Delete stale port/key files, then launch the client ─────────────
 rm -f "$PORT_FILE" "$KEY_FILE"
-log "Launching DDPoker with debug logging..."
+log "Launching DDPoker with debug logging (ai-delay-ms=$AI_DELAY_MS)..."
 java \
   -Dlogging.level.com.donohoedigital.games.poker.online=DEBUG \
   -Dlogging.level.com.donohoedigital.games.poker.gameserver=DEBUG \
   -Djava.awt.headless=false \
+  -Dgame.server.ai-action-delay-ms="$AI_DELAY_MS" \
   -jar "$JAR" \
   > "$GAME_LOG" 2>&1 &
 JAVA_PID=$!

@@ -181,6 +181,33 @@ java -Dlogging.level.com.donohoedigital.games.poker.online=DEBUG \
      -jar poker/target/DDPokerCE-3.3.0.jar
 ```
 
+---
+
+## Overriding AI Action Delay for Fast Tests
+
+By default the embedded game server adds a randomized 500–2000ms delay before
+each AI action (base `game.server.ai-action-delay-ms=1000`, randomized in
+`[base/2, base*2]`). This makes the game feel natural but makes automated tests
+very slow — a 3-player game can take minutes instead of seconds.
+
+Override it to 0 for instant AI responses:
+
+```bash
+java -Dgame.server.ai-action-delay-ms=0 \
+     -jar poker/target/DDPokerCE-3.3.0.jar
+```
+
+The smoke test script (`test-practice-game.sh`) defaults to `--ai-delay-ms 0`
+so automated runs are fast. Pass a non-zero value to test realistic timing:
+
+```bash
+bash .claude/scripts/test-practice-game.sh --ai-delay-ms 200
+```
+
+The `--ai-delay-ms` value is passed directly to `-Dgame.server.ai-action-delay-ms`
+at JVM launch. With `ai-action-delay-ms=0` the `> 0` guard in
+`ServerPlayerActionProvider` skips the sleep entirely — no randomization occurs.
+
 ### Enable in `application.properties` (persistent)
 
 Add to `code/poker/src/main/resources/application.properties` or
