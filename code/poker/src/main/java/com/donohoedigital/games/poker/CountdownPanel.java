@@ -59,7 +59,8 @@ public class CountdownPanel extends DDPanel implements ActionListener {
         game_ = game;
         clock_ = game_.getGameClock();
         setPreferredHeight(5);
-        bSupported_ = !game_.getHost().getVersion().isBefore(PokerConstants.VERSION_COUNTDOWN_CHANGED);
+        PokerPlayer host = game_.getHost();
+        bSupported_ = host == null || !host.getVersion().isBefore(PokerConstants.VERSION_COUNTDOWN_CHANGED);
     }
 
     /**

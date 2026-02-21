@@ -323,7 +323,7 @@ public class ShowTournamentTable extends ShowPokerTable
         DDPanel controlbase = buttonbase_;
 
         // countdown timer
-        if (game_.isOnlineGame()) {
+        if (game_.isOnlineGame() || game_.getWebSocketConfig() != null) {
             controlbase = new DDPanel();
             countdown_ = new CountdownPanel(game_);
             countdown_.setBorder(BorderFactory.createEmptyBorder(0, 5, 2, 5));
