@@ -638,8 +638,10 @@ public class WebSocketTournamentDirector extends BasePhase
             // Advance current player (server will send ACTION_REQUIRED for next actor)
             hand.updateCurrentPlayer(HoldemHand.NO_CURRENT_PLAYER);
 
+            if (player == null)
+                return;
             int handAction = mapWsStringToAction(d.action());
-            HandAction action = new HandAction(player, handAction, d.amount());
+            HandAction action = new HandAction(player, hand.getRoundForDisplay(), handAction, d.amount());
             table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ACTION, table, action));
         });
     }
@@ -657,8 +659,10 @@ public class WebSocketTournamentDirector extends BasePhase
             hand.updateCurrentPlayer(HoldemHand.NO_CURRENT_PLAYER);
 
             PokerPlayer player = findPlayer(d.playerId());
+            if (player == null)
+                return;
             int handAction = mapWsStringToAction(d.autoAction());
-            HandAction action = new HandAction(player, handAction, 0);
+            HandAction action = new HandAction(player, hand.getRoundForDisplay(), handAction, 0);
             table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ACTION, table, action));
         });
     }
@@ -884,9 +888,9 @@ public class WebSocketTournamentDirector extends BasePhase
     private void onPlayerRebuy(PlayerRebuyData d) {
         SwingUtilities.invokeLater(() -> {
             PokerPlayer player = findPlayer(d.playerId());
-            if (player != null) {
-                player.setChipCount(player.getChipCount() + d.addedChips());
-            }
+            if (player == null)
+                return;
+            player.setChipCount(player.getChipCount() + d.addedChips());
             RemotePokerTable table = currentTable();
             if (table != null) {
                 table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REBUY, table, player, 0,
@@ -898,9 +902,9 @@ public class WebSocketTournamentDirector extends BasePhase
     private void onPlayerAddon(PlayerAddonData d) {
         SwingUtilities.invokeLater(() -> {
             PokerPlayer player = findPlayer(d.playerId());
-            if (player != null) {
-                player.setChipCount(player.getChipCount() + d.addedChips());
-            }
+            if (player == null)
+                return;
+            player.setChipCount(player.getChipCount() + d.addedChips());
             RemotePokerTable table = currentTable();
             if (table != null) {
                 table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ADDON, table, player, 0,
@@ -1186,8 +1190,8 @@ public class WebSocketTournamentDirector extends BasePhase
                 td.seats() != null ? td.seats().size() : 0, td.currentRound(), td.communityCards(), td.pots());
         PokerPlayer[] players = new PokerPlayer[PokerConstants.SEATS];
         int dealerSeat = PokerTable.NO_SEAT;
-        int sbSeat = HoldemHand.NO_CURRENT_PLAYER;
-        int bbSeat = HoldemHand.NO_CURRENT_PLAYER;
+        int sbSeat = PokerTable.NO_SEAT;
+        int bbSeat = PokerTable.NO_SEAT;
         boolean localPlayerHasCards = false;
 
         if (td.seats() != null)
