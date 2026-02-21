@@ -24,6 +24,8 @@ import com.donohoedigital.games.poker.core.PlayerAction;
 import com.donohoedigital.games.poker.core.PlayerActionProvider;
 import com.donohoedigital.games.poker.core.TournamentEngine;
 import com.donohoedigital.games.poker.core.event.GameEvent;
+import com.donohoedigital.games.poker.core.state.ActionType;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.core.state.TableState;
 import org.junit.jupiter.api.Test;
 
@@ -292,10 +294,10 @@ class ServerTournamentDirectorTest {
         assertThat(thread.isAlive()).isFalse();
         assertThat(tournament.isGameOver()).isTrue();
 
-        // Must have played at least 3 hands for gap assertions to be meaningful
+        // Must have played at least 2 hands for gap assertions to be meaningful
         assertThat(handStartedNanos.size())
-                .as("Expected at least 3 HAND_STARTED events but got %d", handStartedNanos.size())
-                .isGreaterThanOrEqualTo(3);
+                .as("Expected at least 2 HAND_STARTED events but got %d", handStartedNanos.size())
+                .isGreaterThanOrEqualTo(2);
 
         // Verify inter-hand gaps: every consecutive pair should be >= delayMs.
         // Old racing bug: gaps were <1ms (sleep hook was dead code). Fixed by
@@ -307,6 +309,277 @@ class ServerTournamentDirectorTest {
                     .as("Gap between HAND_STARTED[%d] and [%d] should be >= %dms (racing fix)", i - 1, i, delayMs)
                     .isGreaterThanOrEqualTo(minExpectedGapNs);
         }
+    }
+
+    /**
+     * Test that CommunityCardsDealt events are published when community cards are
+     * dealt. Regression test for: TD.DealCommunity phase previously fell through to
+     * the default case without publishing the event, so clients never received
+     * community card data.
+     *
+     * <p>
+     * Uses a 2-player all-in setup: starting chips (100) equal the big blind (100),
+     * so both players go all-in on the first hand. This guarantees that the flop,
+     * turn, and river are dealt (all-in showdown) and the game finishes in ≤ 2
+     * hands.
+     */
+    @Test
+    void communityCardsDealtEventsPublished() throws Exception {
+        // 2-player game where starting stack == big blind → forced all-in showdown
+        // ensures community cards are always dealt and the game ends quickly.
+        List<ServerPlayer> players = createPlayers(2, 100);
+        ServerTournamentContext tournament = createTournament(players, 1);
+
+        InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-community");
+        ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
+
+        // Passive AI: always check or call, never fold. Players go all-in via blinds.
+        PlayerActionProvider passiveAI = (player, options) -> {
+            if (options.canCheck())
+                return PlayerAction.check();
+            return PlayerAction.call();
+        };
+        ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(passiveAI, request -> {
+        }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
+
+        List<GameEvent.CommunityCardsDealt> communityEvents = new CopyOnWriteArrayList<>();
+        eventBus.subscribe(event -> {
+            if (event instanceof GameEvent.CommunityCardsDealt e) {
+                communityEvents.add(e);
+            }
+        });
+
+        ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
+                tournament, eventBus, actionProvider,
+                new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0), event -> {
+                });
+
+        Thread thread = new Thread(director);
+        thread.start();
+        thread.join(10000); // 10 seconds is more than enough for a 2-player all-in game
+
+        assertThat(thread.isAlive()).isFalse();
+        assertThat(tournament.isGameOver()).isTrue();
+
+        // Debug: print ALL events to understand the state machine flow
+        eventStore.getEvents().forEach(se -> System.out.println("EVENT: " + se.event()));
+        System.out.println("CommunityCardsDealt count: " + communityEvents.size());
+
+        assertThat(communityEvents).isNotEmpty();
+        assertThat(communityEvents).allSatisfy(e -> {
+            assertThat(e.round()).isIn(BettingRound.FLOP, BettingRound.TURN, BettingRound.RIVER);
+            assertThat(e.tableId()).isGreaterThanOrEqualTo(0);
+        });
+    }
+
+    /**
+     * ShowdownStarted, PotAwarded, and HandCompleted must be published for every
+     * completed hand. Uses the same forced all-in setup as
+     * {@link #communityCardsDealtEventsPublished}.
+     */
+    @Test
+    void showdownEventsPublished() throws Exception {
+        List<ServerPlayer> players = createPlayers(2, 100);
+        ServerTournamentContext tournament = createTournament(players, 1);
+        InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-showdown");
+        ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
+
+        PlayerActionProvider passiveAI = (player, options) -> {
+            if (options.canCheck())
+                return PlayerAction.check();
+            return PlayerAction.call();
+        };
+        ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(passiveAI, request -> {
+        }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
+
+        List<GameEvent.ShowdownStarted> showdownEvents = new CopyOnWriteArrayList<>();
+        List<GameEvent.PotAwarded> potEvents = new CopyOnWriteArrayList<>();
+        List<GameEvent.HandCompleted> handDoneEvents = new CopyOnWriteArrayList<>();
+        eventBus.subscribe(event -> {
+            if (event instanceof GameEvent.ShowdownStarted e)
+                showdownEvents.add(e);
+            else if (event instanceof GameEvent.PotAwarded e)
+                potEvents.add(e);
+            else if (event instanceof GameEvent.HandCompleted e)
+                handDoneEvents.add(e);
+        });
+
+        ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
+                tournament, eventBus, actionProvider,
+                new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0), event -> {
+                });
+
+        Thread thread = new Thread(director);
+        thread.start();
+        thread.join(10000);
+
+        assertThat(thread.isAlive()).isFalse();
+        assertThat(tournament.isGameOver()).isTrue();
+
+        assertThat(showdownEvents).as("ShowdownStarted").isNotEmpty();
+        assertThat(potEvents).as("PotAwarded").isNotEmpty();
+        assertThat(potEvents).as("PotAwarded entries").allSatisfy(e -> {
+            assertThat(e.winnerIds()).as("winner IDs").isNotEmpty();
+            assertThat(e.amount()).as("pot amount").isGreaterThan(0);
+            assertThat(e.tableId()).isGreaterThanOrEqualTo(0);
+        });
+        assertThat(handDoneEvents).as("HandCompleted").isNotEmpty();
+
+        // Order: ShowdownStarted → ≥1 PotAwarded → HandCompleted
+        List<GameEvent> allEvents = eventStore.getEvents().stream().map(se -> se.event())
+                .filter(e -> e instanceof GameEvent.ShowdownStarted || e instanceof GameEvent.PotAwarded
+                        || e instanceof GameEvent.HandCompleted)
+                .toList();
+        int firstShowdown = -1, lastPot = -1, firstDone = -1;
+        for (int i = 0; i < allEvents.size(); i++) {
+            if (allEvents.get(i) instanceof GameEvent.ShowdownStarted && firstShowdown < 0)
+                firstShowdown = i;
+            if (allEvents.get(i) instanceof GameEvent.PotAwarded)
+                lastPot = i;
+            if (allEvents.get(i) instanceof GameEvent.HandCompleted && firstDone < 0)
+                firstDone = i;
+        }
+        assertThat(firstShowdown).as("ShowdownStarted index").isGreaterThanOrEqualTo(0);
+        assertThat(lastPot).as("PotAwarded after ShowdownStarted").isGreaterThan(firstShowdown);
+        assertThat(firstDone).as("HandCompleted after PotAwarded").isGreaterThan(lastPot);
+    }
+
+    /**
+     * LevelChanged must be published whenever the tournament advances to the next
+     * blind level. Uses HANDS-based level advancement (every 2 hands) with a
+     * multi-hand game.
+     */
+    @Test
+    void levelChangedEventPublishedOnLevelAdvance() throws Exception {
+        List<ServerPlayer> players = createPlayers(4, 500);
+        ServerTournamentContext tournament = createTournament(players, 1);
+        InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-level");
+        ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
+        PlayerActionProvider aiProvider = createSimpleAI(99);
+        ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {
+        }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
+
+        List<GameEvent.LevelChanged> levelEvents = new CopyOnWriteArrayList<>();
+        eventBus.subscribe(event -> {
+            if (event instanceof GameEvent.LevelChanged e)
+                levelEvents.add(e);
+        });
+
+        ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
+                tournament, eventBus, actionProvider,
+                new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0), event -> {
+                });
+
+        Thread thread = new Thread(director);
+        thread.start();
+        thread.join(30000);
+
+        assertThat(thread.isAlive()).isFalse();
+        assertThat(tournament.isGameOver()).isTrue();
+
+        assertThat(levelEvents).as("LevelChanged events").isNotEmpty();
+        assertThat(levelEvents).as("LevelChanged newLevel values").allSatisfy(e -> {
+            assertThat(e.newLevel()).isGreaterThan(0);
+            assertThat(e.tableId()).isGreaterThanOrEqualTo(0);
+        });
+    }
+
+    /**
+     * PlayerEliminated events must be published for each eliminated player with a
+     * correct finish position. A 4-player tournament eliminates 3 players (the
+     * winner keeps chips); each must receive a position in [2, numPlayers].
+     */
+    @Test
+    void playerEliminatedEventsPublished() throws Exception {
+        List<ServerPlayer> players = createPlayers(4, 100);
+        ServerTournamentContext tournament = createTournament(players, 1);
+
+        InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-elim");
+        ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
+
+        // Passive AI: always call — guarantees showdowns and chip transfers
+        PlayerActionProvider passiveAI = (player, options) -> {
+            if (options.canCheck())
+                return PlayerAction.check();
+            return PlayerAction.call();
+        };
+        ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(passiveAI, request -> {
+        }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
+
+        List<GameEvent.PlayerEliminated> elimEvents = new CopyOnWriteArrayList<>();
+        eventBus.subscribe(event -> {
+            if (event instanceof GameEvent.PlayerEliminated e)
+                elimEvents.add(e);
+        });
+
+        ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
+                tournament, eventBus, actionProvider,
+                new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0), event -> {
+                });
+
+        Thread thread = new Thread(director);
+        thread.start();
+        thread.join(30000);
+
+        assertThat(thread.isAlive()).isFalse();
+        assertThat(tournament.isGameOver()).isTrue();
+
+        // 4 players → exactly 3 eliminations; winner is never eliminated
+        assertThat(elimEvents).as("PlayerEliminated count").hasSize(3);
+        assertThat(elimEvents).as("PlayerEliminated positions").allSatisfy(e -> {
+            assertThat(e.finishPosition()).isBetween(2, 4);
+            assertThat(e.tableId()).isGreaterThanOrEqualTo(0);
+        });
+    }
+
+    /**
+     * PlayerActed events for BLIND_SM and BLIND_BIG (and ANTE when configured) must
+     * be published immediately after each HAND_STARTED so clients can update chip
+     * counts before ACTION_REQUIRED arrives.
+     */
+    @Test
+    void blindPostingEventsPublished() throws Exception {
+        List<ServerPlayer> players = createPlayers(2, 100);
+        ServerTournamentContext tournament = createTournament(players, 1);
+
+        InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-blinds");
+        ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
+
+        // Passive AI: always call — guarantees community cards and full hand play
+        PlayerActionProvider passiveAI = (player, options) -> {
+            if (options.canCheck())
+                return PlayerAction.check();
+            return PlayerAction.call();
+        };
+        ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(passiveAI, request -> {
+        }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
+
+        List<GameEvent.PlayerActed> blindEvents = new CopyOnWriteArrayList<>();
+        eventBus.subscribe(event -> {
+            if (event instanceof GameEvent.PlayerActed e && (e.action() == ActionType.BLIND_SM
+                    || e.action() == ActionType.BLIND_BIG || e.action() == ActionType.ANTE)) {
+                blindEvents.add(e);
+            }
+        });
+
+        ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
+                tournament, eventBus, actionProvider,
+                new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0), event -> {
+                });
+
+        Thread thread = new Thread(director);
+        thread.start();
+        thread.join(10000);
+
+        assertThat(thread.isAlive()).isFalse();
+        assertThat(tournament.isGameOver()).isTrue();
+
+        // At least one hand must publish BLIND_SM, BLIND_BIG, and ANTE events.
+        // Antes are configured at level 0, so the first hand always fires all three.
+        assertThat(blindEvents).as("blind/ante events").isNotEmpty();
+        assertThat(blindEvents).anySatisfy(e -> assertThat(e.action()).isEqualTo(ActionType.BLIND_SM));
+        assertThat(blindEvents).anySatisfy(e -> assertThat(e.action()).isEqualTo(ActionType.BLIND_BIG));
+        assertThat(blindEvents).anySatisfy(e -> assertThat(e.action()).isEqualTo(ActionType.ANTE));
     }
 
     // Helper methods

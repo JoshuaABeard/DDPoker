@@ -42,6 +42,8 @@ import com.donohoedigital.games.poker.core.ActionOptions;
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.PlayerAction;
 import com.donohoedigital.games.poker.core.PlayerActionProvider;
+import com.donohoedigital.games.poker.core.event.GameEvent;
+import com.donohoedigital.games.poker.core.state.ActionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +67,7 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
     private final int disconnectGraceTurns;
     private final Map<Long, ServerPlayerSession> playerSessions;
     private final int aiActionDelayMs;
+    private final Consumer<GameEvent> timeoutPublisher;
 
     /**
      * Create a new server player action provider with no AI delay. Used by tests
@@ -97,6 +100,36 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
     public ServerPlayerActionProvider(PlayerActionProvider aiProvider, Consumer<ActionRequest> actionRequestCallback,
             int timeoutSeconds, int disconnectGraceTurns, Map<Long, ServerPlayerSession> playerSessions,
             int aiActionDelayMs) {
+        this(aiProvider, actionRequestCallback, timeoutSeconds, disconnectGraceTurns, playerSessions, aiActionDelayMs,
+                ignored -> {
+                });
+    }
+
+    /**
+     * Create a new server player action provider with a timeout event publisher.
+     *
+     * @param aiProvider
+     *            AI action provider for computer players
+     * @param actionRequestCallback
+     *            callback invoked when human player action needed (GameInstance
+     *            connects this to WebSocket)
+     * @param timeoutSeconds
+     *            timeout in seconds for human player actions (0 = no timeout)
+     * @param disconnectGraceTurns
+     *            number of turns before disconnected player is auto-folded
+     *            immediately
+     * @param playerSessions
+     *            map of profile ID to player session for disconnect checking
+     * @param aiActionDelayMs
+     *            milliseconds to sleep after each AI action so humans can observe
+     *            the game progressing (0 = no delay)
+     * @param timeoutPublisher
+     *            callback invoked when a player action times out; receives an
+     *            {@link GameEvent.ActionTimeout} event for broadcast
+     */
+    public ServerPlayerActionProvider(PlayerActionProvider aiProvider, Consumer<ActionRequest> actionRequestCallback,
+            int timeoutSeconds, int disconnectGraceTurns, Map<Long, ServerPlayerSession> playerSessions,
+            int aiActionDelayMs, Consumer<GameEvent> timeoutPublisher) {
         this.aiProvider = aiProvider;
         this.actionRequestCallback = actionRequestCallback;
         this.timeoutSeconds = timeoutSeconds;
@@ -104,6 +137,7 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
         this.playerSessions = playerSessions;
         this.pendingActions = new ConcurrentHashMap<>();
         this.aiActionDelayMs = aiActionDelayMs;
+        this.timeoutPublisher = timeoutPublisher;
     }
 
     @Override
@@ -171,7 +205,10 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
             if (session != null) {
                 session.incrementConsecutiveTimeouts();
             }
-            return options.canCheck() ? PlayerAction.check() : PlayerAction.fold();
+            ActionType autoActionType = options.canCheck() ? ActionType.CHECK : ActionType.FOLD;
+            PlayerAction autoAction = options.canCheck() ? PlayerAction.check() : PlayerAction.fold();
+            timeoutPublisher.accept(new GameEvent.ActionTimeout(player.getID(), autoActionType));
+            return autoAction;
         } catch (Exception e) {
             // Any other error — fold
             return PlayerAction.fold();

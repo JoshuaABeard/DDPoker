@@ -886,9 +886,14 @@ public class ShowTournamentTable extends ShowPokerTable
                 break;
 
             case PokerTableEvent.TYPE_DEALER_ACTION :
-                // repaint all to clear bets
-                if (!table_.isZipMode())
-                    GuiUtils.invoke(new SwingIt());
+                if (!table_.isZipMode()) {
+                    if (table_.isRemoteTable())
+                        // Remote (WebSocket) mode: sync card pieces into territories first
+                        GuiUtils.invoke(new SwingIt(SWING_SYNC));
+                    else
+                        // Local engine: card pieces already placed by engine; just repaint
+                        GuiUtils.invoke(new SwingIt());
+                }
                 break;
 
             case PokerTableEvent.TYPE_PLAYER_ACTION :

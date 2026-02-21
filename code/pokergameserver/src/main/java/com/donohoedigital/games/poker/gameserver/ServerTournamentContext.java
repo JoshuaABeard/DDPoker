@@ -65,6 +65,14 @@ public class ServerTournamentContext implements TournamentContext {
     private final int rebuyMaxLevel;
     private final boolean allowAddons;
     private final int timeoutSeconds;
+
+    // Rebuy and addon cost/chips configuration (set after construction via
+    // setRebuyAddonConfig)
+    private int rebuyCost;
+    private int rebuyChips;
+    private int addonCost;
+    private int addonChips;
+    private int addonLevel = -1; // -1 = no addon level configured
     private final LevelAdvanceMode levelAdvanceMode;
     private final int handsPerLevel;
 
@@ -515,12 +523,55 @@ public class ServerTournamentContext implements TournamentContext {
     }
 
     /**
+     * Set rebuy and addon cost/chips configuration. Called from GameInstance after
+     * the tournament context is created so that the director can offer rebuys and
+     * addons with the correct amounts.
+     */
+    public void setRebuyAddonConfig(int rebuyCost, int rebuyChips, int addonCost, int addonChips, int addonLevel) {
+        this.rebuyCost = rebuyCost;
+        this.rebuyChips = rebuyChips;
+        this.addonCost = addonCost;
+        this.addonChips = addonChips;
+        this.addonLevel = addonLevel;
+    }
+
+    public int getRebuyCost() {
+        return rebuyCost;
+    }
+
+    public int getRebuyChips() {
+        return rebuyChips;
+    }
+
+    public int getAddonCost() {
+        return addonCost;
+    }
+
+    public int getAddonChips() {
+        return addonChips;
+    }
+
+    /** Level index at which the addon break is offered, or -1 if not configured. */
+    public int getAddonLevel() {
+        return addonLevel;
+    }
+
+    /**
      * Get maximum rebuys per player.
      *
      * @return max rebuys
      */
     public int getMaxRebuys() {
         return maxRebuys;
+    }
+
+    /**
+     * Get the level advancement mode.
+     *
+     * @return level advance mode (TIME or HANDS)
+     */
+    public LevelAdvanceMode getLevelAdvanceMode() {
+        return levelAdvanceMode;
     }
 
     @Override

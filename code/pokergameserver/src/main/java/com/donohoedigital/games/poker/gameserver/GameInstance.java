@@ -43,8 +43,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -81,6 +85,10 @@ public class GameInstance {
 
     // Completion tracking
     private volatile Instant completedAt;
+
+    // Pending rebuy/addon decisions (playerId → future awaiting client response)
+    private final Map<Integer, CompletableFuture<Boolean>> pendingRebuys = new ConcurrentHashMap<>();
+    private final Map<Integer, CompletableFuture<Boolean>> pendingAddons = new ConcurrentHashMap<>();
 
     // Private constructor - use create() factory method
     private GameInstance(String gameId, long ownerProfileId, GameConfig config, GameServerProperties properties) {
@@ -188,7 +196,7 @@ public class GameInstance {
             PlayerActionProvider aiProvider = createSimpleAI();
             actionProvider = new ServerPlayerActionProvider(aiProvider, this::onActionRequest,
                     properties.actionTimeoutSeconds(), properties.disconnectGraceTurns(), playerSessions,
-                    properties.aiActionDelayMs());
+                    properties.aiActionDelayMs(), eventBus::publish);
 
             // Determine number of tables (1 table per 10 players, minimum 1)
             int numTables = Math.max(1, (players.size() + 9) / 10);
@@ -228,9 +236,18 @@ public class GameInstance {
                     maxRebuys, lastRebuyLevel, addons, properties.actionTimeoutSeconds(), levelAdvanceMode,
                     handsPerLevel);
 
+            // Wire rebuy/addon cost configuration into tournament context
+            if (config.rebuys() != null && config.rebuys().enabled()) {
+                int addonCost = config.addons() != null && config.addons().enabled() ? config.addons().cost() : 0;
+                int addonChips = config.addons() != null && config.addons().enabled() ? config.addons().chips() : 0;
+                int addonLevel = config.addons() != null && config.addons().enabled() ? config.addons().level() : -1;
+                tournament.setRebuyAddonConfig(config.rebuys().cost(), config.rebuys().chips(), addonCost, addonChips,
+                        addonLevel);
+            }
+
             TournamentEngine engine = new TournamentEngine(eventBus, actionProvider);
             director = new ServerTournamentDirector(engine, tournament, eventBus, actionProvider, properties,
-                    this::onLifecycleEvent);
+                    this::onLifecycleEvent, this::offerRebuy, this::offerAddon);
 
             state = GameInstanceState.IN_PROGRESS;
             directorFuture = executor.submit(director);
@@ -389,6 +406,31 @@ public class GameInstance {
         return playerSessions.containsKey(profileId);
     }
 
+    /**
+     * Set a player's sit-out status. No-op if the tournament hasn't started or the
+     * player isn't found.
+     *
+     * @param profileId
+     *            player's profile ID
+     * @param sittingOut
+     *            true to sit out, false to come back
+     */
+    public void setSittingOut(long profileId, boolean sittingOut) {
+        if (tournament == null) {
+            return;
+        }
+        for (int t = 0; t < tournament.getNumTables(); t++) {
+            ServerGameTable table = (ServerGameTable) tournament.getTable(t);
+            for (int s = 0; s < table.getSeats(); s++) {
+                ServerPlayer p = table.getPlayer(s);
+                if (p != null && p.getID() == (int) profileId) {
+                    p.setSittingOut(sittingOut);
+                    return;
+                }
+            }
+        }
+    }
+
     /** Check if player is disconnected */
     public boolean isPlayerDisconnected(long profileId) {
         ServerPlayerSession session = playerSessions.get(profileId);
@@ -521,6 +563,69 @@ public class GameInstance {
 
     public Map<Long, ServerPlayerSession> getPlayerSessions() {
         return java.util.Collections.unmodifiableMap(playerSessions);
+    }
+
+    // ====================================
+    // Rebuy / Addon Offer & Decision
+    // ====================================
+
+    /**
+     * Offers a rebuy to a busted player. Blocks the calling thread (director) until
+     * the player responds or the action timeout elapses. Returns true if accepted,
+     * false if declined or timed out.
+     */
+    public boolean offerRebuy(int playerId, int tableId) {
+        if (tournament == null || tournament.getRebuyCost() == 0) {
+            return false;
+        }
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        pendingRebuys.put(playerId, future);
+        eventBus.publish(new com.donohoedigital.games.poker.core.event.GameEvent.RebuyOffered(tableId, playerId,
+                tournament.getRebuyCost(), tournament.getRebuyChips(), properties.actionTimeoutSeconds()));
+        try {
+            return future.get(properties.actionTimeoutSeconds(), TimeUnit.SECONDS);
+        } catch (TimeoutException | InterruptedException | ExecutionException e) {
+            return false;
+        } finally {
+            pendingRebuys.remove(playerId);
+        }
+    }
+
+    /**
+     * Offers an addon to an active player during a break. Blocks until the player
+     * responds or the action timeout elapses.
+     */
+    public boolean offerAddon(int playerId, int tableId) {
+        if (tournament == null || tournament.getAddonChips() == 0) {
+            return false;
+        }
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        pendingAddons.put(playerId, future);
+        eventBus.publish(new com.donohoedigital.games.poker.core.event.GameEvent.AddonOffered(tableId, playerId,
+                tournament.getAddonCost(), tournament.getAddonChips(), properties.actionTimeoutSeconds()));
+        try {
+            return future.get(properties.actionTimeoutSeconds(), TimeUnit.SECONDS);
+        } catch (TimeoutException | InterruptedException | ExecutionException e) {
+            return false;
+        } finally {
+            pendingAddons.remove(playerId);
+        }
+    }
+
+    /** Called by WebSocket router when a player accepts or declines a rebuy. */
+    public void submitRebuyDecision(int playerId, boolean accept) {
+        CompletableFuture<Boolean> f = pendingRebuys.get(playerId);
+        if (f != null) {
+            f.complete(accept);
+        }
+    }
+
+    /** Called by WebSocket router when a player accepts or declines an addon. */
+    public void submitAddonDecision(int playerId, boolean accept) {
+        CompletableFuture<Boolean> f = pendingAddons.get(playerId);
+        if (f != null) {
+            f.complete(accept);
+        }
     }
 
     // ====================================

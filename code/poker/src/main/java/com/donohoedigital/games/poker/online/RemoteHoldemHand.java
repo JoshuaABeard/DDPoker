@@ -58,6 +58,8 @@ public class RemoteHoldemHand extends HoldemHand {
     private int remotePotTotal_;
     private ActionOptionsData remoteOptions_;
     private final Map<Integer, Integer> remoteBets_ = new HashMap<>();
+    private int remoteSmallBlindSeat_ = NO_CURRENT_PLAYER;
+    private int remoteBigBlindSeat_ = NO_CURRENT_PLAYER;
 
     /**
      * Creates a remote hand with no-arg parent constructor. Calls
@@ -144,6 +146,17 @@ public class RemoteHoldemHand extends HoldemHand {
     @Override
     public BettingRound getRound() {
         return remoteRound_;
+    }
+
+    /**
+     * Overrides the parent which reads {@code nRound_} directly (never set in
+     * remote mode). Returns the legacy int for the server-provided round so
+     * {@link com.donohoedigital.games.poker.DealCommunity#syncCards} can switch on
+     * it.
+     */
+    @Override
+    public int getRoundForDisplay() {
+        return remoteRound_.toLegacy();
     }
 
     @Override
@@ -254,5 +267,29 @@ public class RemoteHoldemHand extends HoldemHand {
      */
     public void clearBets() {
         remoteBets_.clear();
+    }
+
+    /** Updates the small blind seat index for this hand. */
+    public void updateSmallBlindSeat(int seat) {
+        this.remoteSmallBlindSeat_ = seat;
+    }
+
+    /** Updates the big blind seat index for this hand. */
+    public void updateBigBlindSeat(int seat) {
+        this.remoteBigBlindSeat_ = seat;
+    }
+
+    /**
+     * Returns the small blind seat index, or {@code NO_CURRENT_PLAYER} if unknown.
+     */
+    public int getRemoteSmallBlindSeat() {
+        return remoteSmallBlindSeat_;
+    }
+
+    /**
+     * Returns the big blind seat index, or {@code NO_CURRENT_PLAYER} if unknown.
+     */
+    public int getRemoteBigBlindSeat() {
+        return remoteBigBlindSeat_;
     }
 }

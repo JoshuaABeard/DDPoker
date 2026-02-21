@@ -57,7 +57,7 @@ public class OutboundMessageConverter {
      *            Array of cards (may be null or empty)
      * @return List of card display strings, or empty list
      */
-    private static List<String> cardsToList(Card[] cards) {
+    static List<String> cardsToList(Card[] cards) {
         if (cards == null || cards.length == 0)
             return Collections.emptyList();
         return Arrays.stream(cards).map(OutboundMessageConverter::cardToString).collect(Collectors.toList());
@@ -119,10 +119,14 @@ public class OutboundMessageConverter {
      * @return ACTION_REQUIRED message
      */
     public ServerMessage createActionRequiredMessage(String gameId, ActionOptions options, int timeoutSeconds) {
+        // canAllIn: true when the player can put all their chips in via bet or raise.
+        // allInAmount: the player's remaining chip count, which equals maxBet when
+        // betting or maxRaise when raising (both represent the stack in no-limit).
+        boolean canAllIn = options.canBet() || options.canRaise();
+        int allInAmount = options.canBet() ? options.maxBet() : options.maxRaise();
         ServerMessageData.ActionOptionsData optionsData = new ServerMessageData.ActionOptionsData(options.canFold(),
                 options.canCheck(), options.canCall(), options.callAmount(), options.canBet(), options.minBet(),
-                options.maxBet(), options.canRaise(), options.minRaise(), options.maxRaise(), false,
-                options.maxRaise());
+                options.maxBet(), options.canRaise(), options.minRaise(), options.maxRaise(), canAllIn, allInAmount);
         return ServerMessage.of(ServerMessageType.ACTION_REQUIRED, gameId,
                 new ServerMessageData.ActionRequiredData(timeoutSeconds, optionsData));
     }
@@ -152,12 +156,15 @@ public class OutboundMessageConverter {
      * @param playerName
      *            Player's name
      * @param seatIndex
-     *            Seat index
+     *            Seat index (-1 if unknown)
+     * @param tableId
+     *            Table ID (-1 if unknown)
      * @return PLAYER_JOINED message
      */
-    public ServerMessage createPlayerJoinedMessage(String gameId, long profileId, String playerName, int seatIndex) {
+    public ServerMessage createPlayerJoinedMessage(String gameId, long profileId, String playerName, int seatIndex,
+            int tableId) {
         return ServerMessage.of(ServerMessageType.PLAYER_JOINED, gameId,
-                new ServerMessageData.PlayerJoinedData(profileId, playerName, seatIndex));
+                new ServerMessageData.PlayerJoinedData(profileId, playerName, seatIndex, tableId));
     }
 
     /**
@@ -269,11 +276,17 @@ public class OutboundMessageConverter {
      * table layout, player states, and (for the requesting player) hole cards.
      */
     private ServerMessageData.GameStateData convertSnapshot(GameStateSnapshot snapshot) {
+        int dealerSeat = snapshot.dealerSeat();
+        int sbSeat = snapshot.smallBlindSeat();
+        int bbSeat = snapshot.bigBlindSeat();
+        int actorSeat = snapshot.currentActorSeat();
+
         // Build seats from player states
         List<ServerMessageData.SeatData> seats = snapshot.players().stream()
                 .map(p -> new ServerMessageData.SeatData(p.seat(), p.playerId(), p.playerName(), p.chipCount(),
-                        p.folded() ? "FOLDED" : (p.allIn() ? "ALL_IN" : "ACTIVE"), false, false, false, p.currentBet(),
-                        cardsToList(p.holeCards()), false))
+                        p.folded() ? "FOLDED" : (p.allIn() ? "ALL_IN" : "ACTIVE"), p.seat() == dealerSeat,
+                        p.seat() == sbSeat, p.seat() == bbSeat, p.currentBet(), cardsToList(p.holeCards()),
+                        p.seat() == actorSeat))
                 .collect(Collectors.toList());
 
         // Build pots
@@ -283,8 +296,9 @@ public class OutboundMessageConverter {
                 .collect(Collectors.toList());
 
         // Build table data
+        String round = snapshot.bettingRound() != null ? snapshot.bettingRound() : "PRE_FLOP";
         ServerMessageData.TableData tableData = new ServerMessageData.TableData(snapshot.tableId(), seats,
-                cardsToList(snapshot.communityCards()), pots, "PRE_FLOP", snapshot.handNumber());
+                cardsToList(snapshot.communityCards()), pots, round, snapshot.handNumber());
 
         // Build summary player list
         List<ServerMessageData.PlayerSummaryData> playerSummaries = snapshot.players().stream()
@@ -292,7 +306,8 @@ public class OutboundMessageConverter {
                         snapshot.tableId(), p.seat(), null))
                 .collect(Collectors.toList());
 
-        return new ServerMessageData.GameStateData("IN_PROGRESS", 0, new ServerMessageData.BlindsData(0, 0, 0), null,
+        return new ServerMessageData.GameStateData("IN_PROGRESS", snapshot.level(),
+                new ServerMessageData.BlindsData(snapshot.smallBlind(), snapshot.bigBlind(), snapshot.ante()), null,
                 List.of(tableData), playerSummaries);
     }
 }

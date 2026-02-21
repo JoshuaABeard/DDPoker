@@ -277,6 +277,54 @@ class WebSocketTournamentDirectorTest {
         assertThat(events).contains(PokerTableEvent.TYPE_END_HAND);
     }
 
+    @Test
+    void handCompleteCreditsWinnerChips() throws Exception {
+        wsTD.setLocalPlayerIdForTest(1L);
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        RemotePokerTable table = requireTable();
+
+        // Player 1 starts with 1000 chips (from GAME_STATE); they win 300 from the pot.
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("handNumber", 1);
+        var winners = payload.putArray("winners");
+        ObjectNode w = mapper.createObjectNode();
+        w.put("playerId", 1L).put("amount", 300).put("hand", "").put("potIndex", 0);
+        w.putArray("cards");
+        winners.add(w);
+        payload.putArray("showdownPlayers");
+        dispatch(ServerMessageType.HAND_COMPLETE, payload);
+
+        assertThat(table.getPlayer(0).getChipCount()).isEqualTo(1300);
+    }
+
+    @Test
+    void handCompleteClearsPotDisplay() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        RemotePokerTable table = requireTable();
+        RemoteHoldemHand hand = table.getRemoteHand();
+        hand.updatePot(500);
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("handNumber", 1);
+        payload.putArray("winners");
+        payload.putArray("showdownPlayers");
+        dispatch(ServerMessageType.HAND_COMPLETE, payload);
+
+        assertThat(hand.getTotalPotChipCount()).isZero();
+    }
+
+    @Test
+    void handStartedStoresSmallAndBigBlindSeats() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+
+        RemoteHoldemHand hand = requireTable().getRemoteHand();
+        assertThat(hand.getRemoteSmallBlindSeat()).isEqualTo(1);
+        assertThat(hand.getRemoteBigBlindSeat()).isEqualTo(2);
+    }
+
     // -------------------------------------------------------------------------
     // LEVEL_CHANGED
     // -------------------------------------------------------------------------
@@ -291,6 +339,34 @@ class WebSocketTournamentDirectorTest {
         dispatch(ServerMessageType.LEVEL_CHANGED, payload);
 
         Mockito.verify(mockGame).setLevel(5);
+    }
+
+    @Test
+    void gameStateSetsBlindAmountsOnHand() throws Exception {
+        // buildGameState includes blinds: {small:50, big:100, ante:0}
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        RemotePokerTable table = requireTable();
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+
+        assertThat(table.getRemoteHand().getSmallBlind()).isEqualTo(50);
+        assertThat(table.getRemoteHand().getBigBlind()).isEqualTo(100);
+        assertThat(table.getRemoteHand().getAnte()).isEqualTo(0);
+    }
+
+    @Test
+    void levelChangedUpdatesBlindAmountsOnHand() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        RemotePokerTable table = requireTable();
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("level", 3).put("smallBlind", 200).put("bigBlind", 400).put("ante", 50);
+        payload.putNull("nextLevelIn");
+        dispatch(ServerMessageType.LEVEL_CHANGED, payload);
+
+        assertThat(table.getRemoteHand().getSmallBlind()).isEqualTo(200);
+        assertThat(table.getRemoteHand().getBigBlind()).isEqualTo(400);
+        assertThat(table.getRemoteHand().getAnte()).isEqualTo(50);
     }
 
     // -------------------------------------------------------------------------
@@ -353,6 +429,40 @@ class WebSocketTournamentDirectorTest {
         dispatch(ServerMessageType.PLAYER_ADDON, payload);
 
         assertThat(events).contains(PokerTableEvent.TYPE_PLAYER_ADDON);
+    }
+
+    @Test
+    void blindAllInUpdatesChipCountToZero() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        RemotePokerTable table = requireTable();
+
+        // Player posts big blind but is all-in: chipCount=0 after posting.
+        // The old guard (chipCount > 0) would have skipped this update.
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("playerId", 1L).put("playerName", "Alice").put("action", "BLIND_BIG").put("amount", 1000)
+                .put("totalBet", 1000).put("chipCount", 0).put("potTotal", 1000);
+        dispatch(ServerMessageType.PLAYER_ACTED, payload);
+
+        assertThat(table.getPlayer(0).getChipCount()).isZero();
+    }
+
+    // -------------------------------------------------------------------------
+    // GAME_COMPLETE
+    // -------------------------------------------------------------------------
+
+    @Test
+    void gameCompleteSetWinnerPlaceToFirst() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        RemotePokerTable table = requireTable();
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.putArray("standings");
+        payload.put("totalHands", 5);
+        payload.put("duration", 60000);
+        dispatch(ServerMessageType.GAME_COMPLETE, payload);
+
+        assertThat(table.getPlayer(0).getPlace()).isEqualTo(1);
     }
 
     // -------------------------------------------------------------------------

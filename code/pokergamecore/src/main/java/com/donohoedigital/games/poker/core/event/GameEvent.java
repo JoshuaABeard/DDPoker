@@ -112,4 +112,20 @@ public sealed interface GameEvent {
     /** Table cleaning process has completed. */
     record CleaningDone(int tableId) implements GameEvent {
     }
+
+    /** A player was eliminated from the tournament. */
+    record PlayerEliminated(int tableId, int playerId, int finishPosition) implements GameEvent {
+    }
+
+    /** A player action timed out; an auto-action was applied. */
+    record ActionTimeout(int playerId, ActionType autoAction) implements GameEvent {
+    }
+
+    /** A rebuy has been offered to a player who busted. */
+    record RebuyOffered(int tableId, int playerId, int cost, int chips, int timeoutSeconds) implements GameEvent {
+    }
+
+    /** An addon has been offered to an eligible player. */
+    record AddonOffered(int tableId, int playerId, int cost, int chips, int timeoutSeconds) implements GameEvent {
+    }
 }

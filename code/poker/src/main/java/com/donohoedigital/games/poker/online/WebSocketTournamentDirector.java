@@ -18,6 +18,7 @@
 package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.engine.BasePhase;
+import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.engine.GameManager;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.core.state.BettingRound;
@@ -91,6 +92,9 @@ public class WebSocketTournamentDirector extends BasePhase
 
     // Chat handler registered by ShowTournamentTable
     private ChatHandler chatHandler_;
+
+    // Lobby player list maintained while game is in WAITING_FOR_PLAYERS state
+    private final List<LobbyPlayerData> lobbyPlayers_ = new ArrayList<>();
 
     // -------------------------------------------------------------------------
     // Phase lifecycle
@@ -172,6 +176,11 @@ public class WebSocketTournamentDirector extends BasePhase
     /** Returns the number of active tables (for testing). */
     int getTableCount() {
         return tables_.size();
+    }
+
+    /** Returns current lobby player list (for testing and UI query). */
+    List<LobbyPlayerData> getLobbyPlayers() {
+        return java.util.Collections.unmodifiableList(lobbyPlayers_);
     }
 
     /**
@@ -314,6 +323,34 @@ public class WebSocketTournamentDirector extends BasePhase
                     ErrorData d = parse(data, ErrorData.class);
                     onError(d);
                 }
+                case LOBBY_STATE -> {
+                    LobbyStateData d = parse(data, LobbyStateData.class);
+                    onLobbyState(d);
+                }
+                case LOBBY_PLAYER_JOINED -> {
+                    LobbyPlayerJoinedData d = parse(data, LobbyPlayerJoinedData.class);
+                    onLobbyPlayerJoined(d);
+                }
+                case LOBBY_PLAYER_LEFT -> {
+                    LobbyPlayerLeftData d = parse(data, LobbyPlayerLeftData.class);
+                    onLobbyPlayerLeft(d);
+                }
+                case LOBBY_SETTINGS_CHANGED -> {
+                    LobbySettingsChangedData d = parse(data, LobbySettingsChangedData.class);
+                    onLobbySettingsChanged(d);
+                }
+                case LOBBY_GAME_STARTING -> {
+                    LobbyGameStartingData d = parse(data, LobbyGameStartingData.class);
+                    onLobbyGameStarting(d);
+                }
+                case LOBBY_PLAYER_KICKED -> {
+                    LobbyPlayerKickedData d = parse(data, LobbyPlayerKickedData.class);
+                    onLobbyPlayerKicked(d);
+                }
+                case GAME_CANCELLED -> {
+                    GameCancelledData d = parse(data, GameCancelledData.class);
+                    onGameCancelled(d);
+                }
             }
         } catch (Exception e) {
             logger.error("Error handling {} message", type, e);
@@ -374,6 +411,19 @@ public class WebSocketTournamentDirector extends BasePhase
                 applyTableData(table, td);
             }
 
+            // Apply blind amounts to all table hands so getSmallBlind()/getBigBlind()
+            // return correct values for UI rendering and hand history recording.
+            if (d.blinds() != null) {
+                for (RemotePokerTable table : tables_.values()) {
+                    RemoteHoldemHand hand = table.getRemoteHand();
+                    if (hand != null) {
+                        hand.setSmallBlind(d.blinds().small());
+                        hand.setBigBlind(d.blinds().big());
+                        hand.setAnte(d.blinds().ante());
+                    }
+                }
+            }
+
             // Select the table that contains the local player
             selectLocalPlayerTable();
         });
@@ -398,6 +448,8 @@ public class WebSocketTournamentDirector extends BasePhase
                 table.setRemoteHand(hand);
             }
             hand.updateRound(BettingRound.PRE_FLOP);
+            hand.updateSmallBlindSeat(d.smallBlindSeat());
+            hand.updateBigBlindSeat(d.bigBlindSeat());
 
             // Reconstruct player order from seated players (seat order for the hand)
             List<PokerPlayer> handPlayers = seatedPlayersFrom(table);
@@ -436,7 +488,9 @@ public class WebSocketTournamentDirector extends BasePhase
                 return;
             }
 
-            Hand playerHand = localPlayer.getHand();
+            // Use newHand() to clear any cards already set from the GAME_STATE snapshot
+            // (sent before HOLE_CARDS_DEALT) to avoid accumulating duplicate cards.
+            Hand playerHand = localPlayer.newHand(Hand.TYPE_NORMAL);
             for (String c : d.cards()) {
                 Card card = Card.getCard(c);
                 if (card != null)
@@ -535,18 +589,20 @@ public class WebSocketTournamentDirector extends BasePhase
             // Update chip count and pot from server-provided post-action values
             PokerPlayer player = findPlayer(d.playerId());
             if (player != null) {
-                if (d.chipCount() > 0 || "FOLD".equalsIgnoreCase(d.action())) {
-                    // Only update chipCount when we have a real value (> 0) or on fold
-                    // (where chip count doesn't change anyway)
+                String act = d.action();
+                // Always update chipCount for blind/ante (player may have gone all-in
+                // posting, leaving chipCount=0). Also update for fold (no change) and
+                // any action where the server returned a positive chip count.
+                boolean isBlindAnte = "BLIND_SM".equalsIgnoreCase(act) || "BLIND_BIG".equalsIgnoreCase(act)
+                        || "ANTE".equalsIgnoreCase(act);
+                if (d.chipCount() > 0 || "FOLD".equalsIgnoreCase(act) || isBlindAnte) {
                     player.setChipCount(d.chipCount());
                 }
-                if ("FOLD".equalsIgnoreCase(d.action())) {
+                if ("FOLD".equalsIgnoreCase(act)) {
                     player.setFolded(true);
                 }
             }
-            if (d.potTotal() > 0) {
-                hand.updatePot(d.potTotal());
-            }
+            hand.updatePot(d.potTotal());
 
             // Update the acting player's current-round bet
             if (player != null && d.totalBet() > 0) {
@@ -609,7 +665,23 @@ public class WebSocketTournamentDirector extends BasePhase
                 }
             }
 
+            // Credit winners with their pot shares so chip counts are correct
+            // before TYPE_END_HAND fires (without this, chip counts remain at
+            // their post-betting values until the next GAME_STATE arrives).
+            if (d.winners() != null) {
+                for (WinnerData w : d.winners()) {
+                    if (w.amount() > 0) {
+                        PokerPlayer winner = findPlayer(w.playerId());
+                        if (winner != null) {
+                            winner.setChipCount(winner.getChipCount() + w.amount());
+                        }
+                    }
+                }
+            }
+
             hand.updateCurrentPlayer(HoldemHand.NO_CURRENT_PLAYER);
+            hand.updatePot(0);
+            hand.clearBets();
             table.fireEvent(PokerTableEvent.TYPE_END_HAND);
         });
     }
@@ -644,8 +716,15 @@ public class WebSocketTournamentDirector extends BasePhase
         SwingUtilities.invokeLater(() -> {
             int oldLevel = game_.getLevel();
             game_.setLevel(d.level());
-            // Fire as a property change that ShowTournamentTable listens to
             for (RemotePokerTable table : tables_.values()) {
+                // Update blind amounts on the hand so UI and hand history show correct values
+                RemoteHoldemHand hand = table.getRemoteHand();
+                if (hand != null) {
+                    hand.setSmallBlind(d.smallBlind());
+                    hand.setBigBlind(d.bigBlind());
+                    hand.setAnte(d.ante());
+                }
+                // Fire as a property change that ShowTournamentTable listens to
                 table.fireEvent(PokerTableEvent.TYPE_LEVEL_CHANGED, oldLevel);
             }
         });
@@ -688,26 +767,44 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onGameComplete(GameCompleteData d) {
         SwingUtilities.invokeLater(() -> {
-            // Trigger the results phase via the context's phase transition
-            context_.processPhase("PracticeGameOver");
+            // Set the winner's finish position to 1st. All eliminated players already
+            // have their place set by onPlayerEliminated; the surviving player is the
+            // tournament winner and receives place=1.
+            outer : for (RemotePokerTable table : tables_.values()) {
+                for (int s = 0; s < PokerConstants.SEATS; s++) {
+                    PokerPlayer p = table.getPlayer(s);
+                    if (p != null && p.getChipCount() > 0) {
+                        p.setPlace(1);
+                        break outer;
+                    }
+                }
+            }
+            if (context_ != null) {
+                context_.processPhase("PracticeGameOver");
+            }
         });
     }
 
     private void onPlayerJoined(PlayerJoinedData d) {
         SwingUtilities.invokeLater(() -> {
-            // Find or create the player and seat them at the matching table
-            for (RemotePokerTable table : tables_.values()) {
-                if (d.seatIndex() < PokerConstants.SEATS) {
-                    PokerPlayer existing = table.getPlayer(d.seatIndex());
-                    if (existing == null) {
-                        PokerPlayer p = new PokerPlayer((int) d.playerId(), d.playerName(),
-                                d.playerId() == localPlayerId_);
-                        table.setRemotePlayer(d.seatIndex(), p);
-                        table.firePokerTableEvent(
-                                new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ADDED, table, p, d.seatIndex()));
-                    }
-                    break;
-                }
+            if (d.seatIndex() < 0 || d.seatIndex() >= PokerConstants.SEATS) {
+                // Reconnect broadcast with unknown seat — nothing to seat, ignore.
+                return;
+            }
+            // Route to the specific table if tableId is known; fall back to first table.
+            RemotePokerTable table = d.tableId() >= 0 ? tables_.get(d.tableId()) : null;
+            if (table == null && !tables_.isEmpty()) {
+                table = tables_.values().iterator().next();
+            }
+            if (table == null) {
+                return;
+            }
+            PokerPlayer existing = table.getPlayer(d.seatIndex());
+            if (existing == null) {
+                PokerPlayer p = new PokerPlayer((int) d.playerId(), d.playerName(), d.playerId() == localPlayerId_);
+                table.setRemotePlayer(d.seatIndex(), p);
+                table.firePokerTableEvent(
+                        new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ADDED, table, p, d.seatIndex()));
             }
         });
     }
@@ -820,6 +917,81 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onError(ErrorData d) {
         SwingUtilities.invokeLater(() -> logger.error("Server error {}: {}", d.code(), d.message()));
+    }
+
+    // -------------------------------------------------------------------------
+    // Lobby message handlers
+    // -------------------------------------------------------------------------
+
+    private void onLobbyState(LobbyStateData d) {
+        SwingUtilities.invokeLater(() -> {
+            lobbyPlayers_.clear();
+            if (d.players() != null) {
+                lobbyPlayers_.addAll(d.players());
+            }
+            logger.debug("[LOBBY_STATE] gameId={} players={}", d.gameId(), lobbyPlayers_.size());
+            fireStateChangedOnCurrentTable();
+        });
+    }
+
+    private void onLobbyPlayerJoined(LobbyPlayerJoinedData d) {
+        SwingUtilities.invokeLater(() -> {
+            if (d.player() != null) {
+                lobbyPlayers_.removeIf(p -> p.profileId() == d.player().profileId());
+                lobbyPlayers_.add(d.player());
+            }
+            logger.debug("[LOBBY_PLAYER_JOINED] player={}", d.player() != null ? d.player().name() : null);
+            fireStateChangedOnCurrentTable();
+        });
+    }
+
+    private void onLobbyPlayerLeft(LobbyPlayerLeftData d) {
+        SwingUtilities.invokeLater(() -> {
+            if (d.player() != null) {
+                lobbyPlayers_.removeIf(p -> p.profileId() == d.player().profileId());
+            }
+            logger.debug("[LOBBY_PLAYER_LEFT] player={}", d.player() != null ? d.player().name() : null);
+            fireStateChangedOnCurrentTable();
+        });
+    }
+
+    private void onLobbySettingsChanged(LobbySettingsChangedData d) {
+        SwingUtilities.invokeLater(() -> {
+            logger.debug("[LOBBY_SETTINGS_CHANGED]");
+            fireStateChangedOnCurrentTable();
+        });
+    }
+
+    private void onLobbyGameStarting(LobbyGameStartingData d) {
+        SwingUtilities.invokeLater(() -> {
+            logger.debug("[LOBBY_GAME_STARTING] startingInSeconds={}", d.startingInSeconds());
+            fireStateChangedOnCurrentTable();
+        });
+    }
+
+    private void onLobbyPlayerKicked(LobbyPlayerKickedData d) {
+        SwingUtilities.invokeLater(() -> {
+            if (d.player() != null) {
+                lobbyPlayers_.removeIf(p -> p.profileId() == d.player().profileId());
+            }
+            logger.debug("[LOBBY_PLAYER_KICKED] player={}", d.player() != null ? d.player().name() : null);
+            fireStateChangedOnCurrentTable();
+        });
+    }
+
+    private void onGameCancelled(GameCancelledData d) {
+        SwingUtilities.invokeLater(() -> {
+            logger.debug("[GAME_CANCELLED] reason={}", d.reason());
+            fireStateChangedOnCurrentTable();
+        });
+    }
+
+    /** Fires TYPE_STATE_CHANGED on the current table if one exists. */
+    private void fireStateChangedOnCurrentTable() {
+        RemotePokerTable table = currentTable();
+        if (table != null) {
+            table.fireEvent(PokerTableEvent.TYPE_STATE_CHANGED);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -964,6 +1136,8 @@ public class WebSocketTournamentDirector extends BasePhase
                 td.seats() != null ? td.seats().size() : 0, td.currentRound(), td.communityCards(), td.pots());
         PokerPlayer[] players = new PokerPlayer[PokerConstants.SEATS];
         int dealerSeat = PokerTable.NO_SEAT;
+        int sbSeat = HoldemHand.NO_CURRENT_PLAYER;
+        int bbSeat = HoldemHand.NO_CURRENT_PLAYER;
         boolean localPlayerHasCards = false;
 
         for (SeatData sd : td.seats()) {
@@ -972,7 +1146,11 @@ public class WebSocketTournamentDirector extends BasePhase
             // PokerPlayer.getID() is int; server IDs are long. Safe for embedded mode
             // where IDs are small sequential values. Will need revisiting if IDs exceed
             // Integer.MAX_VALUE (e.g., high-volume server deployment in M6+).
-            PokerPlayer p = new PokerPlayer((int) sd.playerId(), sd.playerName(), sd.playerId() == localPlayerId_);
+            // For the local player, pass the engine's player ID as the key so
+            // PokerPlayer.isLocallyControlled() returns true and hole cards render face-up.
+            String playerKey = sd.playerId() == localPlayerId_ ? GameEngine.getGameEngine().getPlayerId() : null;
+            PokerPlayer p = new PokerPlayer(playerKey, (int) sd.playerId(), sd.playerName(),
+                    sd.playerId() == localPlayerId_);
             p.setChipCount(sd.chipCount());
             // Apply folded status from snapshot (all-in is derived from chipCount == 0)
             if ("FOLDED".equals(sd.status())) {
@@ -1002,6 +1180,10 @@ public class WebSocketTournamentDirector extends BasePhase
             players[sd.seatIndex()] = p;
             if (sd.isDealer())
                 dealerSeat = sd.seatIndex();
+            if (sd.isSmallBlind())
+                sbSeat = sd.seatIndex();
+            if (sd.isBigBlind())
+                bbSeat = sd.seatIndex();
         }
 
         table.updateFromState(players, dealerSeat);
@@ -1023,6 +1205,9 @@ public class WebSocketTournamentDirector extends BasePhase
 
             int potTotal = td.pots() == null ? 0 : td.pots().stream().mapToInt(PotData::amount).sum();
             hand.updatePot(potTotal);
+
+            hand.updateSmallBlindSeat(sbSeat);
+            hand.updateBigBlindSeat(bbSeat);
 
             List<PokerPlayer> handPlayers = seatedPlayersFrom(table);
             hand.updatePlayerOrder(handPlayers);
@@ -1155,7 +1340,12 @@ public class WebSocketTournamentDirector extends BasePhase
             case PokerGame.ACTION_CALL -> "CALL";
             case PokerGame.ACTION_BET -> "BET";
             case PokerGame.ACTION_RAISE -> "RAISE";
-            default -> "FOLD"; // safe fallback
+            // ALL_IN is sent as RAISE with the all-in chip amount; server parses RAISE
+            case PokerGame.ACTION_ALL_IN -> "RAISE";
+            default -> {
+                logger.warn("[mapPokerGameActionToWsString] unknown action={}, defaulting to FOLD", action);
+                yield "FOLD";
+            }
         };
     }
 

@@ -1,5 +1,61 @@
 Status: complete
 
+## Session Work Log (2026-02-20)
+
+### Completed this session (commits 22934c57, 09e12f3f)
+
+**Data quality / rendering gaps:**
+- `GameStateSnapshot` — expanded from 6 to 15 fields: `dealerSeat`, `smallBlindSeat`,
+  `bigBlindSeat`, `currentActorSeat`, `bettingRound`, `level`, `smallBlind`, `bigBlind`,
+  `ante`
+- `GameStateProjection` — populates all new fields from live table/hand/tournament
+- `OutboundMessageConverter` — uses real data instead of hardcoded zeros/false
+- `GameEventBroadcaster` — enriched `HandStarted` (real SB/BB seats), `HandCompleted`
+  (winner data from `PotResolutionResult`), `LevelChanged` (actual blind amounts)
+- `RemoteHoldemHand` — added SB/BB seat tracking fields + accessors
+- `WebSocketTournamentDirector.onHandComplete` — credits winner chip counts, clears
+  pot/bets; `onHandStarted` and `applyTableData` — set SB/BB seats on remote hand
+
+**Missing events:**
+- `GameEvent.PlayerEliminated` record added to sealed interface
+- `ServerTournamentDirector.eliminateZeroChipPlayers` — publishes events with finish
+  position; `handleGameOver` — publishes elimination events for final-hand busts
+  (engine may bypass DONE→BEGIN transition when last player wins)
+- `GameEventBroadcaster` — broadcasts `PLAYER_ELIMINATED` to clients
+- `SwingEventBus` — exhaustive switch cases for `PlayerEliminated`
+- `ServerHand` — added `getSmallBlindAmount/getBigBlindAmount/getAnteAmount` getters
+- `ServerTournamentDirector.processTable` — publishes `PlayerActed(BLIND_SM/BB/ANTE)`
+  after `HandStarted` so client chip counts update before first `ACTION_REQUIRED`
+
+### Also completed this session (commits 61cc07c4, 33d4d584)
+
+**Client-side correctness fixes:**
+- `WebSocketTournamentDirector.onPlayerActed` — extended chipCount update condition to
+  include `BLIND_SM/BLIND_BIG/ANTE` actions so all-in blind posting sets chipCount=0
+- `WebSocketTournamentDirector.onGameComplete` — sets winner's `place=1` before
+  triggering `PracticeGameOver`; guarded `context_.processPhase()` with null check for
+  testability
+- `WebSocketTournamentDirector.mapPokerGameActionToWsString` — added
+  `PokerGame.ACTION_ALL_IN → "RAISE"` mapping (was falling through to FOLD); added
+  warn log for truly unknown constants
+
+**Tests added:**
+- `WebSocketTournamentDirectorTest.blindAllInUpdatesChipCountToZero` — verifies
+  `chipCount=0` is applied when blind posted all-in
+- `WebSocketTournamentDirectorTest.gameCompleteSetWinnerPlaceToFirst` — verifies
+  `place=1` is set on survivor when `GAME_COMPLETE` received
+- `GameEventBroadcasterTest.playerEliminated_broadcastsToAllPlayers` and
+  `broadcastsCorrectMessageType_playerEliminated`
+- `ServerTournamentDirectorTest.playerEliminatedEventsPublished` and
+  `blindPostingEventsPublished`
+
+**Known remaining gaps:**
+- `GAME_COMPLETE` sends empty standings (no per-player finish positions); lower priority
+  since places are correctly set via `PLAYER_ELIMINATED` + `onGameComplete`
+- `TIMER_UPDATE` never sent by server (client countdown NYI; not needed for practice mode)
+
+---
+
 # Fix Practice Mode — Server + Embedded Client
 
 ## Problem

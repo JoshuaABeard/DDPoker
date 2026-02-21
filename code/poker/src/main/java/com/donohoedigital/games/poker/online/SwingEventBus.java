@@ -197,6 +197,18 @@ public class SwingEventBus extends GameEventBus {
 
             case GameEvent.CleaningDone e ->
                 new PokerTableEvent(PokerTableEvent.TYPE_CLEANING_DONE, table);
+
+            case GameEvent.PlayerEliminated e ->
+                null; // No direct legacy equivalent
+
+            case GameEvent.ActionTimeout ignored ->
+                null; // Client handles ACTION_TIMEOUT via WebSocket message, not legacy event
+
+            case GameEvent.RebuyOffered ignored ->
+                null; // Client handles REBUY_OFFERED via WebSocket message
+
+            case GameEvent.AddonOffered ignored ->
+                null; // Client handles ADDON_OFFERED via WebSocket message
         };
     }
 
@@ -226,6 +238,10 @@ public class SwingEventBus extends GameEventBus {
             case GameEvent.CleaningDone e -> e.tableId();
             case GameEvent.LevelChanged e -> -1; // No tableId for game-level events
             case GameEvent.TournamentCompleted e -> -1; // No tableId for game-level events
+            case GameEvent.PlayerEliminated e -> e.tableId();
+            case GameEvent.ActionTimeout e -> -1; // No tableId for timeout events
+            case GameEvent.RebuyOffered e -> e.tableId();
+            case GameEvent.AddonOffered e -> e.tableId();
         };
     }
 }

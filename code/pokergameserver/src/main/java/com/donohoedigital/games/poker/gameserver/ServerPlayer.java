@@ -52,6 +52,7 @@ public class ServerPlayer implements GamePlayerInfo {
     private boolean sittingOut;
     private boolean observer;
     private int numRebuys;
+    private int finishPosition; // 0 = still in tournament
 
     // Think bank for timed tournaments
     private int thinkBankMillis;
@@ -233,6 +234,14 @@ public class ServerPlayer implements GamePlayerInfo {
 
     public void incrementRebuys() {
         this.numRebuys++;
+    }
+
+    public int getFinishPosition() {
+        return finishPosition;
+    }
+
+    public void setFinishPosition(int finishPosition) {
+        this.finishPosition = finishPosition;
     }
 
     public int getSkillLevel() {

@@ -19,6 +19,8 @@
  */
 package com.donohoedigital.games.poker.gameserver;
 
+import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import com.donohoedigital.games.poker.core.TournamentContext;
 import com.donohoedigital.games.poker.engine.Card;
 
 import java.util.ArrayList;
@@ -104,7 +106,27 @@ public class GameStateProjection {
             }
         }
 
-        return new GameStateSnapshot(tableId, handNumber, myHoleCards, communityCards, playerStates, potStates);
+        // Table meta
+        int dealerSeat = table.getButton();
+        int smallBlindSeat = hand != null ? hand.getSmallBlindSeat() : -1;
+        int bigBlindSeat = hand != null ? hand.getBigBlindSeat() : -1;
+        int currentActorSeat = -1;
+        if (hand != null) {
+            GamePlayerInfo actor = hand.getCurrentPlayerWithInit();
+            if (actor != null) {
+                currentActorSeat = actor.getSeat();
+            }
+        }
+        String bettingRound = hand != null ? hand.getRound().name() : null;
+        TournamentContext tc = table.getTournament()instanceof TournamentContext t ? t : null;
+        int level = tc != null ? tc.getLevel() : 0;
+        int smallBlind = tc != null ? tc.getSmallBlind(level) : 0;
+        int bigBlind = tc != null ? tc.getBigBlind(level) : 0;
+        int ante = tc != null ? tc.getAnte(level) : 0;
+
+        return new GameStateSnapshot(tableId, handNumber, myHoleCards, communityCards, playerStates, potStates,
+                dealerSeat, smallBlindSeat, bigBlindSeat, currentActorSeat, bettingRound, level, smallBlind, bigBlind,
+                ante);
     }
 
     /**
@@ -169,7 +191,19 @@ public class GameStateProjection {
             }
         }
 
-        return new GameStateSnapshot(tableId, handNumber, myHoleCards, communityCards, playerStates, potStates);
+        // Table meta (at showdown no player is currently acting)
+        int dealerSeat = table.getButton();
+        int smallBlindSeat = hand != null ? hand.getSmallBlindSeat() : -1;
+        int bigBlindSeat = hand != null ? hand.getBigBlindSeat() : -1;
+        String bettingRound = hand != null ? hand.getRound().name() : null;
+        TournamentContext tc = table.getTournament()instanceof TournamentContext t ? t : null;
+        int level = tc != null ? tc.getLevel() : 0;
+        int smallBlind = tc != null ? tc.getSmallBlind(level) : 0;
+        int bigBlind = tc != null ? tc.getBigBlind(level) : 0;
+        int ante = tc != null ? tc.getAnte(level) : 0;
+
+        return new GameStateSnapshot(tableId, handNumber, myHoleCards, communityCards, playerStates, potStates,
+                dealerSeat, smallBlindSeat, bigBlindSeat, -1, bettingRound, level, smallBlind, bigBlind, ante);
     }
 
     private static ServerPlayer findPlayer(ServerGameTable table, int playerId) {

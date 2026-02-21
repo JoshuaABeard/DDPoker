@@ -2157,4 +2157,13 @@ public class PokerTable implements ObjectID, GameTable {
         }
         bNewPlayers_ = false;
     }
+
+    /**
+     * Returns {@code true} if this table is driven by WebSocket remote state rather
+     * than the local game engine. Overridden in
+     * {@link com.donohoedigital.games.poker.online.RemotePokerTable}.
+     */
+    public boolean isRemoteTable() {
+        return false;
+    }
 }

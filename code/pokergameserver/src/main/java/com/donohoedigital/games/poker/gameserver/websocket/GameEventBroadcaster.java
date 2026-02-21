@@ -17,20 +17,26 @@
  */
 package com.donohoedigital.games.poker.gameserver.websocket;
 
+import com.donohoedigital.games.poker.core.TournamentContext;
 import com.donohoedigital.games.poker.core.event.GameEvent;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
 import com.donohoedigital.games.poker.gameserver.GameStateSnapshot;
 import com.donohoedigital.games.poker.gameserver.ServerGameTable;
 import com.donohoedigital.games.poker.gameserver.ServerHand;
 import com.donohoedigital.games.poker.gameserver.ServerPlayer;
+import com.donohoedigital.games.poker.gameserver.ServerTournamentContext;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
+
+import com.donohoedigital.games.poker.engine.Card;
 
 /**
  * Bridges the ServerGameEventBus to WebSocket connections.
@@ -109,14 +115,25 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
         switch (event) {
             case GameEvent.HandStarted e -> {
                 if (game != null) {
-                    // Look up dealer seat from the starting table.
+                    // Look up dealer/SB/BB seats from the starting table.
                     int dealerSeat = -1;
+                    int sbSeat = -1;
+                    int bbSeat = -1;
                     if (game.getTournament() != null && e.tableId() >= 0
                             && e.tableId() < game.getTournament().getNumTables()) {
-                        dealerSeat = game.getTournament().getTable(e.tableId()).getButton();
+                        Object gt = game.getTournament().getTable(e.tableId());
+                        if (gt instanceof ServerGameTable sgt) {
+                            dealerSeat = sgt.getButton();
+                            ServerHand hand = (ServerHand) sgt.getHoldemHand();
+                            if (hand != null) {
+                                sbSeat = hand.getSmallBlindSeat();
+                                bbSeat = hand.getBigBlindSeat();
+                            }
+                        }
                     }
                     ServerMessage handStartedMsg = ServerMessage.of(ServerMessageType.HAND_STARTED, gameId,
-                            new ServerMessageData.HandStartedData(e.handNumber(), dealerSeat, -1, -1, List.of()));
+                            new ServerMessageData.HandStartedData(e.handNumber(), dealerSeat, sbSeat, bbSeat,
+                                    List.of()));
                     // Send GAME_STATE + HAND_STARTED only to players seated at this table.
                     // Sending HAND_STARTED for other tables would corrupt the client's
                     // hand model (onHandStarted always applies to currentTable).
@@ -127,6 +144,12 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                                     conn.getProfileId(), e.tableId());
                             conn.sendMessage(converter.createGameStateMessage(gameId, snapshot));
                             conn.sendMessage(handStartedMsg);
+                            // Send hole cards privately AFTER HAND_STARTED so they arrive
+                            // after the client's TYPE_NEW_HAND fires (which resets card slots).
+                            Card[] holeCards = snapshot.myHoleCards();
+                            if (holeCards != null && holeCards.length > 0) {
+                                conn.sendMessage(converter.createHoleCardsMessage(gameId, holeCards));
+                            }
                         }
                     }
                 } else {
@@ -160,14 +183,70 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                     new ServerMessageData.PlayerActedData(e.playerId(), "", e.action().name(), e.amount(),
                         totalBet, chipCount, potTotal)));
             }
-            case GameEvent.CommunityCardsDealt e -> broadcast(
-                ServerMessage.of(ServerMessageType.COMMUNITY_CARDS_DEALT, gameId,
-                    new ServerMessageData.CommunityCardsDealtData(e.round().name(), List.of(), List.of()))
-            );
-            case GameEvent.HandCompleted e -> broadcast(
-                ServerMessage.of(ServerMessageType.HAND_COMPLETE, gameId,
-                    new ServerMessageData.HandCompleteData(0, List.of(), List.of()))
-            );
+            case GameEvent.CommunityCardsDealt e -> {
+                // Look up actual community cards from the live hand at broadcast time.
+                List<String> allCommunityCards = List.of();
+                if (game != null && game.getTournament() != null && e.tableId() >= 0
+                        && e.tableId() < game.getTournament().getNumTables()) {
+                    Object gt = game.getTournament().getTable(e.tableId());
+                    if (gt instanceof ServerGameTable sgt) {
+                        ServerHand hand = (ServerHand) sgt.getHoldemHand();
+                        if (hand != null) {
+                            Card[] community = hand.getCommunityCards();
+                            allCommunityCards = OutboundMessageConverter.cardsToList(community);
+                        }
+                    }
+                }
+                broadcast(ServerMessage.of(ServerMessageType.COMMUNITY_CARDS_DEALT, gameId,
+                        new ServerMessageData.CommunityCardsDealtData(e.round().name(), allCommunityCards,
+                                allCommunityCards)));
+            }
+            case GameEvent.HandCompleted e -> {
+                int handNum = 0;
+                List<ServerMessageData.WinnerData> winners = List.of();
+                List<ServerMessageData.ShowdownPlayerData> showdownPlayers = List.of();
+                if (game != null && game.getTournament() != null && e.tableId() >= 0
+                        && e.tableId() < game.getTournament().getNumTables()) {
+                    Object gt = game.getTournament().getTable(e.tableId());
+                    if (gt instanceof ServerGameTable sgt) {
+                        handNum = sgt.getHandNum();
+                        ServerHand hand = (ServerHand) sgt.getHoldemHand();
+                        if (hand != null) {
+                            List<ServerHand.PotResolutionResult> results = hand.getResolutionResults();
+                            if (!results.isEmpty()) {
+                                List<ServerMessageData.WinnerData> w = new ArrayList<>();
+                                for (ServerHand.PotResolutionResult r : results) {
+                                    int share = r.winnerIds().length > 0 ? r.amount() / r.winnerIds().length : 0;
+                                    for (int wid : r.winnerIds()) {
+                                        w.add(new ServerMessageData.WinnerData(wid, share, "", List.of(),
+                                                r.potIndex()));
+                                    }
+                                }
+                                winners = w;
+                            }
+                            // Build showdown players (non-folded when ≥2 remain)
+                            List<ServerPlayer> nonFolded = new ArrayList<>();
+                            for (int s = 0; s < sgt.getNumSeats(); s++) {
+                                ServerPlayer sp = sgt.getPlayer(s);
+                                if (sp != null && !sp.isFolded()) {
+                                    nonFolded.add(sp);
+                                }
+                            }
+                            if (nonFolded.size() > 1) {
+                                showdownPlayers = nonFolded.stream()
+                                        .map(sp -> new ServerMessageData.ShowdownPlayerData(
+                                                sp.getID(),
+                                                OutboundMessageConverter.cardsToList(
+                                                        hand.getPlayerCards(sp.getID()).toArray(new Card[0])),
+                                                ""))
+                                        .toList();
+                            }
+                        }
+                    }
+                }
+                broadcast(ServerMessage.of(ServerMessageType.HAND_COMPLETE, gameId,
+                        new ServerMessageData.HandCompleteData(handNum, winners, showdownPlayers)));
+            }
             case GameEvent.PotAwarded e -> {
                 int[] ids = e.winnerIds();
                 long[] winnerIds = new long[ids.length];
@@ -179,14 +258,33 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 ServerMessage.of(ServerMessageType.SHOWDOWN_STARTED, gameId,
                     new ServerMessageData.ShowdownStartedData(e.tableId()))
             );
-            case GameEvent.LevelChanged e -> broadcast(
-                ServerMessage.of(ServerMessageType.LEVEL_CHANGED, gameId,
-                    new ServerMessageData.LevelChangedData(e.newLevel(), 0, 0, 0, null))
-            );
-            case GameEvent.TournamentCompleted e -> broadcast(
-                ServerMessage.of(ServerMessageType.GAME_COMPLETE, gameId,
-                    new ServerMessageData.GameCompleteData(List.of(), 0, 0L))
-            );
+            case GameEvent.LevelChanged e -> {
+                int sb = 0, bb = 0, ante = 0;
+                if (game != null && game.getTournament() instanceof TournamentContext tc) {
+                    sb = tc.getSmallBlind(e.newLevel());
+                    bb = tc.getBigBlind(e.newLevel());
+                    ante = tc.getAnte(e.newLevel());
+                }
+                broadcast(ServerMessage.of(ServerMessageType.LEVEL_CHANGED, gameId,
+                        new ServerMessageData.LevelChangedData(e.newLevel(), sb, bb, ante, null)));
+            }
+            case GameEvent.TournamentCompleted e -> {
+                List<ServerMessageData.StandingData> standings = List.of();
+                if (game != null && game.getTournament() instanceof ServerTournamentContext ctx) {
+                    ctx.getAllPlayers().stream()
+                            .filter(p -> p.getID() == e.winnerId())
+                            .findFirst()
+                            .ifPresent(p -> p.setFinishPosition(1));
+                    standings = ctx.getAllPlayers().stream()
+                            .filter(p -> p.getFinishPosition() > 0)
+                            .sorted(Comparator.comparingInt(ServerPlayer::getFinishPosition))
+                            .map(p -> new ServerMessageData.StandingData(p.getFinishPosition(), p.getID(),
+                                    p.getName(), 0))
+                            .toList();
+                }
+                broadcast(ServerMessage.of(ServerMessageType.GAME_COMPLETE, gameId,
+                        new ServerMessageData.GameCompleteData(standings, 0, 0L)));
+            }
             case GameEvent.BreakStarted e -> broadcast(
                 ServerMessage.of(ServerMessageType.GAME_PAUSED, gameId,
                     new ServerMessageData.GamePausedData("Break started", "system"))
@@ -197,7 +295,7 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
             );
             case GameEvent.PlayerAdded e -> broadcast(
                 ServerMessage.of(ServerMessageType.PLAYER_JOINED, gameId,
-                    new ServerMessageData.PlayerJoinedData(e.playerId(), "", e.seat()))
+                    new ServerMessageData.PlayerJoinedData(e.playerId(), "", e.seat(), e.tableId()))
             );
             case GameEvent.PlayerRemoved e -> broadcast(
                 ServerMessage.of(ServerMessageType.PLAYER_LEFT, gameId,
@@ -211,6 +309,20 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 ServerMessage.of(ServerMessageType.PLAYER_ADDON, gameId,
                     new ServerMessageData.PlayerAddonData(e.playerId(), "", e.amount()))
             );
+            case GameEvent.PlayerEliminated e -> broadcast(
+                ServerMessage.of(ServerMessageType.PLAYER_ELIMINATED, gameId,
+                    new ServerMessageData.PlayerEliminatedData(e.playerId(), "", e.finishPosition(), 0))
+            );
+            case GameEvent.ActionTimeout e -> broadcast(
+                ServerMessage.of(ServerMessageType.ACTION_TIMEOUT, gameId,
+                    new ServerMessageData.ActionTimeoutData(e.playerId(), e.autoAction().name()))
+            );
+            case GameEvent.RebuyOffered e -> connectionManager.sendToPlayer(gameId, (long) e.playerId(),
+                ServerMessage.of(ServerMessageType.REBUY_OFFERED, gameId,
+                    new ServerMessageData.RebuyOfferedData(e.cost(), e.chips(), e.timeoutSeconds())));
+            case GameEvent.AddonOffered e -> connectionManager.sendToPlayer(gameId, (long) e.playerId(),
+                ServerMessage.of(ServerMessageType.ADDON_OFFERED, gameId,
+                    new ServerMessageData.AddonOfferedData(e.cost(), e.chips(), e.timeoutSeconds())));
             // Internal housekeeping events — not broadcast to clients
             case GameEvent.ButtonMoved ignored -> {}
             case GameEvent.TableStateChanged ignored -> {}

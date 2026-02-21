@@ -88,6 +88,11 @@ public class ServerHand implements GameHand {
     private final int bigBlindSeat;
     private final int handNumber;
 
+    // Actual posted amounts (may be less than configured if player is
+    // short-stacked)
+    private int actualSmallBlindPosted;
+    private int actualBigBlindPosted;
+
     // Status tracking
     private boolean done;
     private boolean allInShowdown;
@@ -96,6 +101,23 @@ public class ServerHand implements GameHand {
     // Resolution
     private List<ServerPlayer> preWinners;
     private List<ServerPlayer> preLosers;
+
+    /**
+     * Records the outcome of a single pot after {@link #resolve()} completes. Used
+     * by {@code ServerTournamentDirector} to publish {@code GameEvent.PotAwarded}
+     * for each pot.
+     *
+     * @param potIndex
+     *            index of the pot (0 = main pot)
+     * @param winnerIds
+     *            IDs of all players who shared this pot
+     * @param amount
+     *            total chips distributed from this pot
+     */
+    public record PotResolutionResult(int potIndex, int[] winnerIds, int amount) {
+    }
+
+    private final List<PotResolutionResult> resolutionResults = new ArrayList<>();
 
     /**
      * Create a new server hand.
@@ -211,6 +233,7 @@ public class ServerHand implements GameHand {
         ServerPlayer sb = t.getPlayer(smallBlindSeat);
         if (sb != null) {
             int actualSB = Math.min(smallBlindAmount, sb.getChipCount());
+            actualSmallBlindPosted = actualSB;
             sb.subtractChips(actualSB);
             // Track in playerBets - will be added to pots by calcPots()
             playerBets.put(sb.getID(), playerBets.getOrDefault(sb.getID(), 0) + actualSB);
@@ -223,6 +246,7 @@ public class ServerHand implements GameHand {
         ServerPlayer bb = t.getPlayer(bigBlindSeat);
         if (bb != null) {
             int actualBB = Math.min(bigBlindAmount, bb.getChipCount());
+            actualBigBlindPosted = actualBB;
             bb.subtractChips(actualBB);
             // Track in playerBets - will be added to pots by calcPots()
             playerBets.put(bb.getID(), playerBets.getOrDefault(bb.getID(), 0) + actualBB);
@@ -433,19 +457,26 @@ public class ServerHand implements GameHand {
         if (done)
             return true;
 
+        // Hand not yet dealt — playerOrder is empty, nothing to evaluate
+        if (playerOrder.isEmpty())
+            return false;
+
         // Hand is done if only one player remains (uncontested)
         if (isUncontested())
             return true;
 
-        // Count players that have acted
-        MockTable t = table;
+        // Count players that have acted.
+        // IMPORTANT: iterate over playerOrder (hand participants), NOT all table seats.
+        // A player seated mid-hand via table consolidation is NOT in playerOrder and
+        // must not be counted here — they have no hole cards and cannot act in this
+        // hand. Counting them would make isDone() permanently return false, causing an
+        // infinite betting loop.
         int playersToAct = 0;
         int playersActed = 0;
         int allInCount = 0;
 
-        for (int seat = 0; seat < t.getNumSeats(); seat++) {
-            ServerPlayer player = t.getPlayer(seat);
-            if (player == null || player.isFolded())
+        for (ServerPlayer player : playerOrder) {
+            if (player.isFolded())
                 continue;
 
             // Increment players that have to act (anyone still in hand)
@@ -485,15 +516,14 @@ public class ServerHand implements GameHand {
     }
 
     /**
-     * Is pot good? Have all players matched the current bet or gone all-in?
+     * Is pot good? Have all players matched the current bet or gone all-in? Uses
+     * playerOrder (hand participants) to ignore players seated mid-hand.
      */
     private boolean isPotGood() {
-        MockTable t = table;
         int highestBet = getCurrentBet();
 
-        for (int seat = 0; seat < t.getNumSeats(); seat++) {
-            ServerPlayer player = t.getPlayer(seat);
-            if (player == null || player.isFolded() || player.isAllIn())
+        for (ServerPlayer player : playerOrder) {
+            if (player.isFolded() || player.isAllIn())
                 continue;
 
             int playerBet = playerBets.getOrDefault(player.getID(), 0);
@@ -504,14 +534,13 @@ public class ServerHand implements GameHand {
     }
 
     /**
-     * Get number of players with chips left to bet (and still in hand).
+     * Get number of players with chips left to bet (and still in hand). Uses
+     * playerOrder (hand participants) to ignore players seated mid-hand.
      */
     private int getNumWithChips() {
-        MockTable t = table;
         int count = 0;
-        for (int seat = 0; seat < t.getNumSeats(); seat++) {
-            ServerPlayer player = t.getPlayer(seat);
-            if (player != null && !player.isFolded() && !player.isAllIn()) {
+        for (ServerPlayer player : playerOrder) {
+            if (!player.isFolded() && !player.isAllIn()) {
                 count++;
             }
         }
@@ -527,11 +556,11 @@ public class ServerHand implements GameHand {
 
     @Override
     public int getNumWithCards() {
-        MockTable t = table;
+        // Use playerOrder (hand participants) so players seated mid-hand via
+        // consolidation — who have no hole cards — are not counted.
         int count = 0;
-        for (int seat = 0; seat < t.getNumSeats(); seat++) {
-            ServerPlayer player = t.getPlayer(seat);
-            if (player != null && !player.isFolded() && playerHands.containsKey(player.getID())) {
+        for (ServerPlayer player : playerOrder) {
+            if (!player.isFolded() && playerHands.containsKey(player.getID())) {
                 count++;
             }
         }
@@ -659,6 +688,7 @@ public class ServerHand implements GameHand {
     public void resolve() {
         logger.debug("[ServerHand] resolve() numWithCards={} pots={}", getNumWithCards(), pots.size());
         done = true;
+        resolutionResults.clear();
 
         // Calculate final pots from remaining bets before resolving
         if (!playerBets.isEmpty()) {
@@ -669,6 +699,62 @@ public class ServerHand implements GameHand {
         for (int i = 0; i < pots.size(); i++) {
             resolvePot(i);
         }
+    }
+
+    /**
+     * Returns the outcome of each pot from the most recent {@link #resolve()} call.
+     * Populated in order of pot index; empty if resolve has not been called. Used
+     * by {@code ServerTournamentDirector} to publish {@code GameEvent.PotAwarded}
+     * events.
+     */
+    public List<PotResolutionResult> getResolutionResults() {
+        return Collections.unmodifiableList(resolutionResults);
+    }
+
+    /** Returns the seat index of the small blind for this hand. */
+    public int getSmallBlindSeat() {
+        return smallBlindSeat;
+    }
+
+    /** Returns the seat index of the big blind for this hand. */
+    public int getBigBlindSeat() {
+        return bigBlindSeat;
+    }
+
+    /** Returns the small blind amount for this hand. */
+    public int getSmallBlindAmount() {
+        return smallBlindAmount;
+    }
+
+    /** Returns the big blind amount for this hand. */
+    public int getBigBlindAmount() {
+        return bigBlindAmount;
+    }
+
+    /** Returns the ante amount for this hand (0 if no ante). */
+    public int getAnteAmount() {
+        return anteAmount;
+    }
+
+    /**
+     * Returns the actual small blind posted (may be less than smallBlindAmount for
+     * short-stacked players).
+     */
+    public int getActualSmallBlindPosted() {
+        return actualSmallBlindPosted;
+    }
+
+    /**
+     * Returns the actual big blind posted (may be less than bigBlindAmount for
+     * short-stacked players).
+     */
+    public int getActualBigBlindPosted() {
+        return actualBigBlindPosted;
+    }
+
+    /** Returns the hole cards for a player by ID, or an empty list if none. */
+    public List<Card> getPlayerCards(int playerId) {
+        return Collections.unmodifiableList(playerHands.getOrDefault(playerId, List.of()));
     }
 
     /**
@@ -754,6 +840,10 @@ public class ServerHand implements GameHand {
                 }
                 winner.addChips(amount);
             }
+
+            // Record outcome for PotAwarded event publishing
+            int[] winnerIds = winners.stream().mapToInt(ServerPlayer::getID).toArray();
+            resolutionResults.add(new PotResolutionResult(potIndex, winnerIds, potAmount));
         }
 
         // Clear pot after distribution to prevent double-counting

@@ -95,7 +95,7 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
     }
 
     /** Player joined the game. */
-    record PlayerJoinedData(long playerId, String playerName, int seatIndex) implements ServerMessageData {
+    record PlayerJoinedData(long playerId, String playerName, int seatIndex, int tableId) implements ServerMessageData {
     }
 
     /** Player left the game intentionally. */

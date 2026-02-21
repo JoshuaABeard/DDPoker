@@ -157,9 +157,10 @@ public class InboundMessageRouter {
             case ADMIN_KICK -> handleAdminKick(connection, game, dataNode);
             case ADMIN_PAUSE -> handleAdminPause(connection, game);
             case ADMIN_RESUME -> handleAdminResume(connection, game);
-            // Silently ignore these — game features coming later
-            case REBUY_DECISION, ADDON_DECISION, SIT_OUT, COME_BACK -> {
-            }
+            case SIT_OUT -> handleSitOut(connection, game);
+            case COME_BACK -> handleComeBack(connection, game);
+            case REBUY_DECISION -> handleRebuyDecision(connection, game, dataNode);
+            case ADDON_DECISION -> handleAddonDecision(connection, game, dataNode);
         }
     }
 
@@ -261,6 +262,14 @@ public class InboundMessageRouter {
         connectionManager.broadcastToGame(connection.getGameId(), pausedMsg);
     }
 
+    private void handleSitOut(PlayerConnection connection, GameInstance game) {
+        game.setSittingOut(connection.getProfileId(), true);
+    }
+
+    private void handleComeBack(PlayerConnection connection, GameInstance game) {
+        game.setSittingOut(connection.getProfileId(), false);
+    }
+
     private void handleAdminResume(PlayerConnection connection, GameInstance game) {
         if (connection.getProfileId() != game.getOwnerProfileId()) {
             sendError(connection, "FORBIDDEN", "Only the game owner can resume the game");
@@ -271,6 +280,28 @@ public class InboundMessageRouter {
 
         ServerMessage resumedMsg = converter.createGameResumedMessage(connection.getGameId(), connection.getUsername());
         connectionManager.broadcastToGame(connection.getGameId(), resumedMsg);
+    }
+
+    private void handleRebuyDecision(PlayerConnection connection, GameInstance game, JsonNode dataNode) {
+        ClientMessageData.RebuyDecisionData data;
+        try {
+            data = objectMapper.treeToValue(dataNode, ClientMessageData.RebuyDecisionData.class);
+        } catch (Exception e) {
+            sendError(connection, "INVALID_DATA", "Invalid rebuy decision data");
+            return;
+        }
+        game.submitRebuyDecision((int) connection.getProfileId(), data.accept());
+    }
+
+    private void handleAddonDecision(PlayerConnection connection, GameInstance game, JsonNode dataNode) {
+        ClientMessageData.AddonDecisionData data;
+        try {
+            data = objectMapper.treeToValue(dataNode, ClientMessageData.AddonDecisionData.class);
+        } catch (Exception e) {
+            sendError(connection, "INVALID_DATA", "Invalid addon decision data");
+            return;
+        }
+        game.submitAddonDecision((int) connection.getProfileId(), data.accept());
     }
 
     private PlayerAction parseAction(String actionString, int amount) {

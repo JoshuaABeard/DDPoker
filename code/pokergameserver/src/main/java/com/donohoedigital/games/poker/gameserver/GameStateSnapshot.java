@@ -44,9 +44,28 @@ import java.util.List;
  *            all players at the table with public state
  * @param pots
  *            current pot information
+ * @param dealerSeat
+ *            seat index of the dealer button (-1 if unknown)
+ * @param smallBlindSeat
+ *            seat index of the small blind (-1 if no hand in progress)
+ * @param bigBlindSeat
+ *            seat index of the big blind (-1 if no hand in progress)
+ * @param currentActorSeat
+ *            seat index of the player whose turn it is (-1 if nobody acting)
+ * @param bettingRound
+ *            current betting round name (null if no hand in progress)
+ * @param level
+ *            current tournament level
+ * @param smallBlind
+ *            current small blind amount
+ * @param bigBlind
+ *            current big blind amount
+ * @param ante
+ *            current ante amount
  */
 public record GameStateSnapshot(int tableId, int handNumber, Card[] myHoleCards, Card[] communityCards,
-        List<PlayerState> players, List<PotState> pots) {
+        List<PlayerState> players, List<PotState> pots, int dealerSeat, int smallBlindSeat, int bigBlindSeat,
+        int currentActorSeat, String bettingRound, int level, int smallBlind, int bigBlind, int ante) {
 
     /**
      * Per-player state visible in the snapshot.

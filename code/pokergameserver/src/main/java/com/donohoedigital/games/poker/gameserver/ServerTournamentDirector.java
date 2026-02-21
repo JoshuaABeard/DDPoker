@@ -31,6 +31,8 @@
  */
 package com.donohoedigital.games.poker.gameserver;
 
+import java.util.List;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -41,7 +43,10 @@ import com.donohoedigital.games.poker.core.GameTable;
 import com.donohoedigital.games.poker.core.TableProcessResult;
 import com.donohoedigital.games.poker.core.TournamentContext;
 import com.donohoedigital.games.poker.core.TournamentEngine;
+import com.donohoedigital.games.poker.core.event.GameEvent;
+import com.donohoedigital.games.poker.core.state.ActionType;
 import com.donohoedigital.games.poker.core.state.TableState;
+import com.donohoedigital.games.poker.model.LevelAdvanceMode;
 
 /**
  * Server-side tournament director. Drives TournamentEngine without Swing
@@ -68,12 +73,25 @@ public class ServerTournamentDirector implements Runnable {
     private final GameServerProperties properties;
     private final Consumer<GameLifecycleEvent> lifecycleCallback;
 
+    private final BiPredicate<Integer, Integer> rebuyOfferCallback;
+    private final BiPredicate<Integer, Integer> addonOfferCallback;
+
     private volatile boolean running;
     private volatile boolean paused;
     private volatile boolean shutdownRequested;
 
     /**
-     * Create a new server tournament director.
+     * Create a new server tournament director (test-compatible overload, no
+     * rebuy/addon callbacks).
+     */
+    public ServerTournamentDirector(TournamentEngine engine, TournamentContext tournament, ServerGameEventBus eventBus,
+            ServerPlayerActionProvider actionProvider, GameServerProperties properties,
+            Consumer<GameLifecycleEvent> lifecycleCallback) {
+        this(engine, tournament, eventBus, actionProvider, properties, lifecycleCallback, null, null);
+    }
+
+    /**
+     * Create a new server tournament director with rebuy/addon callbacks.
      *
      * @param engine
      *            the tournament engine for state machine processing
@@ -87,16 +105,25 @@ public class ServerTournamentDirector implements Runnable {
      *            server configuration properties
      * @param lifecycleCallback
      *            callback for game lifecycle events (GameInstance listens)
+     * @param rebuyOfferCallback
+     *            called with (playerId, tableId) when a rebuy is offered; returns
+     *            true if accepted. May be null to disable rebuy offers.
+     * @param addonOfferCallback
+     *            called with (playerId, tableId) when an addon is offered; returns
+     *            true if accepted. May be null to disable addon offers.
      */
     public ServerTournamentDirector(TournamentEngine engine, TournamentContext tournament, ServerGameEventBus eventBus,
             ServerPlayerActionProvider actionProvider, GameServerProperties properties,
-            Consumer<GameLifecycleEvent> lifecycleCallback) {
+            Consumer<GameLifecycleEvent> lifecycleCallback, BiPredicate<Integer, Integer> rebuyOfferCallback,
+            BiPredicate<Integer, Integer> addonOfferCallback) {
         this.engine = engine;
         this.tournament = tournament;
         this.eventBus = eventBus;
         this.actionProvider = actionProvider;
         this.properties = properties;
         this.lifecycleCallback = lifecycleCallback;
+        this.rebuyOfferCallback = rebuyOfferCallback;
+        this.addonOfferCallback = addonOfferCallback;
     }
 
     /**
@@ -116,7 +143,10 @@ public class ServerTournamentDirector implements Runnable {
 
                 processAllTables();
 
-                if (tournament.isGameOver()) {
+                // Don't end the game while chips are in the pot (all-in showdown in
+                // progress). isOnePlayerLeft() returns true as soon as one player's stack
+                // hits 0, but the hand must play out so the pot can be awarded normally.
+                if (tournament.isGameOver() && !hasActivePot()) {
                     handleGameOver();
                     break;
                 }
@@ -154,21 +184,16 @@ public class ServerTournamentDirector implements Runnable {
             applyResult(table, result);
             allSleep &= result.shouldSleep();
 
-            // Check for game over (since we auto-complete phases that would normally set
-            // this)
-            // This is critical to ensure the game ends when only one player remains
+            // Check for game over after each table is processed. Only fire when there
+            // are no chips in the pot: isOnePlayerLeft() returns true as soon as one
+            // player's stack hits 0 (e.g. BB posting all-in), but the hand must play
+            // out through SHOWDOWN so that hand.resolve() awards the pot correctly.
             if (tournament.isGameOver() && table.getTableState() != TableState.GAME_OVER) {
-                // Award any remaining pot chips to the winner before ending
                 GameHand hand = table.getHoldemHand();
                 if (hand instanceof ServerHand serverHand && serverHand.getPotSize() > 0) {
-                    // Find the last player with chips and award pot
-                    for (int seat = 0; seat < table.getSeats(); seat++) {
-                        if (table.getPlayer(seat) != null && table.getPlayer(seat).getChipCount() > 0) {
-                            ServerPlayer winner = (ServerPlayer) table.getPlayer(seat);
-                            winner.setChipCount(winner.getChipCount() + serverHand.getPotSize());
-                            break;
-                        }
-                    }
+                    // Chips still in pot — all-in showdown in progress. Let the hand
+                    // complete naturally via COMMUNITY/SHOWDOWN; do not force GAME_OVER.
+                    continue;
                 }
                 table.setTableState(TableState.GAME_OVER);
             }
@@ -183,6 +208,27 @@ public class ServerTournamentDirector implements Runnable {
     }
 
     /**
+     * Returns {@code true} if any active table has chips in its pot, indicating an
+     * all-in showdown hand is still in progress. Used to prevent premature
+     * game-over detection: {@code isOnePlayerLeft()} returns true as soon as a
+     * player's stack hits zero (e.g. big-blind all-in), but the hand must run
+     * through COMMUNITY/SHOWDOWN so {@code hand.resolve()} can award the pot.
+     */
+    private boolean hasActivePot() {
+        for (int i = 0; i < tournament.getNumTables(); i++) {
+            GameTable table = tournament.getTable(i);
+            if (table.getTableState() == TableState.GAME_OVER) {
+                continue;
+            }
+            GameHand hand = table.getHoldemHand();
+            if (hand instanceof ServerHand serverHand && serverHand.getPotSize() > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Apply the result of table processing.
      *
      * @param table
@@ -193,16 +239,58 @@ public class ServerTournamentDirector implements Runnable {
     private void applyResult(GameTable table, TableProcessResult result) {
         // 1. Apply state transitions first (like HeadlessGameRunnerTest)
         if (result.nextState() != null) {
+            TableState previousState = table.getTableState();
             table.setTableState(result.nextState());
+
+            // Publish break lifecycle events based on state transitions.
+            if (result.nextState() == TableState.BREAK) {
+                eventBus.publish(new GameEvent.BreakStarted(table.getNumber()));
+                // Offer addons to all active players at the configured addon break level
+                if (addonOfferCallback != null && tournament instanceof ServerTournamentContext stc
+                        && stc.isAllowAddons() && stc.getLevel() == stc.getAddonLevel()) {
+                    for (int s = 0; s < table.getSeats(); s++) {
+                        ServerPlayer player = (ServerPlayer) table.getPlayer(s);
+                        if (player != null && !player.isSittingOut()) {
+                            boolean accepted = addonOfferCallback.test(player.getID(), table.getNumber());
+                            if (accepted) {
+                                player.addChips(stc.getAddonChips());
+                                eventBus.publish(new GameEvent.PlayerAddon(table.getNumber(), player.getID(),
+                                        stc.getAddonChips()));
+                            }
+                        }
+                    }
+                }
+            } else if (result.nextState() == TableState.NEW_LEVEL_CHECK && previousState == TableState.BREAK) {
+                eventBus.publish(new GameEvent.BreakEnded(table.getNumber()));
+            }
 
             // Sleep between hands at the universal DONE→BEGIN transition.
             // handleDone() always returns nextState(BEGIN) after every showdown.
             // When isAutoDeal()=true (all online games), handleBegin() goes directly to
             // START_HAND, bypassing WaitForDeal and TD.CheckEndHand entirely — so this
             // is the only reliable hook for the inter-hand pause.
-            if (result.nextState() == TableState.BEGIN && tournament instanceof ServerTournamentContext) {
-                ((ServerTournamentContext) tournament).incrementHandsPlayed();
-                if (properties.aiActionDelayMs() > 0) {
+            if (result.nextState() == TableState.BEGIN && tournament instanceof ServerTournamentContext stc) {
+                // Always track hands for blind level advancement (shared counter across
+                // tables).
+                stc.incrementHandsPlayed();
+                // HANDS-mode level advancement: the engine's normal mechanism (BREAK state)
+                // requires break levels, which server tests don't use. Advance the level here
+                // instead. TIME-mode games use the engine's BREAK mechanism — skip to avoid
+                // conflicting with it. Guard against advancing past the last configured level,
+                // which would make getSmallBlind/getBigBlind/getAnte return 0 (no forced
+                // bets), causing an infinite game loop.
+                if (stc.getLevelAdvanceMode() == LevelAdvanceMode.HANDS && tournament.isLevelExpired()
+                        && tournament.getLevel() < stc.getNumLevels() - 1) {
+                    tournament.nextLevel();
+                    eventBus.publish(new GameEvent.LevelChanged(table.getNumber(), tournament.getLevel()));
+                }
+                // CLEAN phase: for single-table only. Multi-table relies on
+                // consolidateTables() which uses chip counts — marking 0-chip players as
+                // sittingOut there would produce empty playerOrder lists and hang.
+                if (tournament.getNumTables() == 1) {
+                    eliminateZeroChipPlayers(table);
+                }
+                if (!tournament.isGameOver() && properties.aiActionDelayMs() > 0) {
                     sleepMillis(properties.aiActionDelayMs());
                 }
             }
@@ -216,15 +304,118 @@ public class ServerTournamentDirector implements Runnable {
             // clients before HAND_STARTED, giving them table context before any
             // ACTION_REQUIRED arrives.
             if ("TD.DealDisplayHand".equals(result.phaseToRun())) {
-                eventBus.publish(
-                        new com.donohoedigital.games.poker.core.event.GameEvent.HandStarted(table.getNumber(), -1));
+                eventBus.publish(new GameEvent.HandStarted(table.getNumber(), table.getHandNum()));
+                // Publish PlayerActed events for antes and blinds so clients see chip
+                // deductions before the first ACTION_REQUIRED arrives.
+                GameHand rawHand = table.getHoldemHand();
+                if (rawHand instanceof ServerHand hand) {
+                    int anteAmt = hand.getAnteAmount();
+                    if (anteAmt > 0) {
+                        for (int seat = 0; seat < table.getSeats(); seat++) {
+                            ServerPlayer player = (ServerPlayer) table.getPlayer(seat);
+                            if (player != null && !player.isSittingOut()) {
+                                eventBus.publish(new GameEvent.PlayerActed(table.getNumber(), player.getID(),
+                                        ActionType.ANTE, anteAmt));
+                            }
+                        }
+                    }
+                    int sbSeat = hand.getSmallBlindSeat();
+                    int bbSeat = hand.getBigBlindSeat();
+                    ServerPlayer sbPlayer = (ServerPlayer) table.getPlayer(sbSeat);
+                    ServerPlayer bbPlayer = (ServerPlayer) table.getPlayer(bbSeat);
+                    if (sbPlayer != null) {
+                        eventBus.publish(new GameEvent.PlayerActed(table.getNumber(), sbPlayer.getID(),
+                                ActionType.BLIND_SM, hand.getActualSmallBlindPosted()));
+                    }
+                    if (bbPlayer != null) {
+                        eventBus.publish(new GameEvent.PlayerActed(table.getNumber(), bbPlayer.getID(),
+                                ActionType.BLIND_BIG, hand.getActualBigBlindPosted()));
+                    }
+                }
+            } else if ("TD.DealCommunity".equals(result.phaseToRun())) {
+                // Community cards are already in the hand at this point; publish so the
+                // broadcaster can push COMMUNITY_CARDS_DEALT to clients.
+                GameHand hand = table.getHoldemHand();
+                if (hand != null) {
+                    eventBus.publish(new GameEvent.CommunityCardsDealt(table.getNumber(), hand.getRound()));
+                }
+            } else if ("TD.Showdown".equals(result.phaseToRun())) {
+                // hand.resolve() was already called in TournamentEngine.handleShowdown().
+                // Publish ShowdownStarted and one PotAwarded per pot, then HandCompleted
+                // after handleServerPhase() sets the state to DONE.
+                eventBus.publish(new GameEvent.ShowdownStarted(table.getNumber()));
+                GameHand hand = table.getHoldemHand();
+                if (hand instanceof ServerHand serverHand) {
+                    List<ServerHand.PotResolutionResult> potResults = serverHand.getResolutionResults();
+                    for (int pi = 0; pi < potResults.size(); pi++) {
+                        ServerHand.PotResolutionResult pr = potResults.get(pi);
+                        eventBus.publish(new GameEvent.PotAwarded(table.getNumber(), pi, pr.winnerIds(), pr.amount()));
+                    }
+                }
             }
             handleServerPhase(table, result.phaseToRun(), result.pendingState());
+            // HandCompleted fires after the state is set to DONE (only TD.Showdown
+            // uses pendingState=DONE, so this is safe to key on).
+            if (TableState.DONE.equals(result.pendingState())) {
+                eventBus.publish(new GameEvent.HandCompleted(table.getNumber()));
+            }
         }
 
         // 3. Broadcast state to connected clients (via GameInstance callback)
         if (table instanceof ServerGameTable serverTable) {
             eventBus.broadcastTableState(serverTable);
+        }
+    }
+
+    /**
+     * CLEAN phase: mark players with 0 chips as sitting-out so they are excluded
+     * from the next hand's player order. Only called for single-table tournaments.
+     *
+     * <p>
+     * This mirrors the original TournamentDirector's CLEAN state which removed
+     * busted players between hands before starting the next deal.
+     *
+     * <p>
+     * Multi-table tournaments must NOT use this — marking all 0-chip players as
+     * sitting-out on a table with all busted players would produce an empty
+     * playerOrder on the next deal attempt, causing an infinite loop.
+     * {@link #consolidateTables()} handles multi-table elimination using chip
+     * counts instead.
+     *
+     * @param table
+     *            the table whose players to check
+     */
+    private void eliminateZeroChipPlayers(GameTable table) {
+        // Count active survivors (chips > 0) to derive finish position.
+        int survivors = 0;
+        for (int seat = 0; seat < table.getSeats(); seat++) {
+            ServerPlayer player = (ServerPlayer) table.getPlayer(seat);
+            if (player != null && !player.isSittingOut() && player.getChipCount() > 0) {
+                survivors++;
+            }
+        }
+        for (int seat = 0; seat < table.getSeats(); seat++) {
+            ServerPlayer player = (ServerPlayer) table.getPlayer(seat);
+            if (player != null && player.getChipCount() == 0 && !player.isSittingOut()) {
+                // Offer rebuy if in the rebuy period and callback is wired
+                if (rebuyOfferCallback != null && tournament instanceof ServerTournamentContext stc
+                        && stc.isRebuyPeriodActive(player)) {
+                    boolean accepted = rebuyOfferCallback.test(player.getID(), table.getNumber());
+                    if (accepted) {
+                        player.addChips(stc.getRebuyChips());
+                        player.incrementRebuys();
+                        eventBus.publish(
+                                new GameEvent.PlayerRebuy(table.getNumber(), player.getID(), stc.getRebuyChips()));
+                        continue; // Player stays in the tournament
+                    }
+                }
+                player.setSittingOut(true);
+                logger.debug("[CLEAN] eliminated player={} seat={} (0 chips)", player.getName(), seat);
+                // finishPosition = survivors + 1; if multiple players bust in the same
+                // hand they share the same position (standard tournament convention).
+                player.setFinishPosition(survivors + 1);
+                eventBus.publish(new GameEvent.PlayerEliminated(table.getNumber(), player.getID(), survivors + 1));
+            }
         }
     }
 
@@ -300,9 +491,20 @@ public class ServerTournamentDirector implements Runnable {
                 }
             }
 
-            // If no players with chips, mark table as game over
+            // If no players with chips, mark table as game over — but ONLY when
+            // the pot is empty. If chips are in the pot the chip-holder went all-in
+            // during this hand: the engine must resolve the hand first so chips
+            // return to the winner's stack. Marking GAME_OVER now would abandon
+            // those chips, making isOnePlayerLeft() never return true.
             if (playersWithChips == 0) {
-                sourceTable.setTableState(TableState.GAME_OVER);
+                int potSize = 0;
+                GameHand potHand = sourceTable.getHoldemHand();
+                if (potHand instanceof ServerHand sh) {
+                    potSize = sh.getPotSize();
+                }
+                if (potSize == 0) {
+                    sourceTable.setTableState(TableState.GAME_OVER);
+                }
             }
         }
     }
@@ -386,11 +588,13 @@ public class ServerTournamentDirector implements Runnable {
 
         // Remove player from source table
         sourceTable.removePlayer(sourceSeat);
+        eventBus.publish(new GameEvent.PlayerRemoved(sourceTable.getNumber(), playerToMove.getID(), sourceSeat));
 
         // Move player to target table (find empty seat)
         for (int seat = 0; seat < targetTable.getSeats(); seat++) {
             if (targetTable.getPlayer(seat) == null) {
                 targetTable.addPlayer(playerToMove, seat);
+                eventBus.publish(new GameEvent.PlayerAdded(targetTable.getNumber(), playerToMove.getID(), seat));
                 break;
             }
         }
@@ -400,9 +604,27 @@ public class ServerTournamentDirector implements Runnable {
     }
 
     /**
-     * Handle game over condition.
+     * Handle game over condition. Marks all tables GAME_OVER and publishes
+     * {@link GameEvent.TournamentCompleted} so that {@link GameEventBroadcaster}
+     * sends {@code GAME_COMPLETE} to connected clients.
+     *
+     * <p>
+     * This is the single authoritative exit point — covers both the normal path
+     * (last player eliminated at DONE→BEGIN) and the mid-hand fast path (all
+     * remaining players go all-in during a hand).
      */
     private void handleGameOver() {
+        // Publish PlayerEliminated for any players still active with 0 chips.
+        // The main loop exits as soon as isGameOver() returns true, which can happen
+        // before processTable(DONE→BEGIN) calls eliminateZeroChipPlayers. The engine
+        // may also transition directly to GAME_OVER when the last opponent busts, so
+        // table state cannot be used as a guard. Always calling is safe: already-
+        // eliminated players are skipped (isSittingOut==true), and the tournament
+        // winner (chips > 0) is skipped by the chip check in eliminateZeroChipPlayers.
+        for (int i = 0; i < tournament.getNumTables(); i++) {
+            eliminateZeroChipPlayers(tournament.getTable(i));
+        }
+
         // All tables should be marked as GAME_OVER
         for (int i = 0; i < tournament.getNumTables(); i++) {
             GameTable table = tournament.getTable(i);
@@ -410,6 +632,37 @@ public class ServerTournamentDirector implements Runnable {
                 table.setTableState(TableState.GAME_OVER);
             }
         }
+
+        // Find the winner (only player with chips remaining) and publish GAME_COMPLETE
+        int winnerId = -1;
+        if (tournament instanceof ServerTournamentContext stc) {
+            // Primary: player with chips > 0 in their stack
+            for (ServerPlayer player : stc.getAllPlayers()) {
+                if (player.getChipCount() > 0) {
+                    winnerId = player.getID();
+                    break;
+                }
+            }
+            // Fallback: all players went all-in (0 chips each, all in pot).
+            // Find the player who is neither sittingOut nor folded — that is the
+            // last standing player whose chips are temporarily in the pot.
+            if (winnerId == -1) {
+                for (int i = 0; i < tournament.getNumTables(); i++) {
+                    GameTable table = tournament.getTable(i);
+                    for (int seat = 0; seat < table.getSeats(); seat++) {
+                        ServerPlayer player = (ServerPlayer) table.getPlayer(seat);
+                        if (player != null && !player.isSittingOut() && !player.isFolded()) {
+                            winnerId = player.getID();
+                            break;
+                        }
+                    }
+                    if (winnerId != -1)
+                        break;
+                }
+            }
+        }
+        logger.debug("[handleGameOver] tournament complete, winnerId={}", winnerId);
+        eventBus.publish(new GameEvent.TournamentCompleted(winnerId));
 
         running = false;
     }

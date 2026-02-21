@@ -183,6 +183,14 @@ public class RemotePokerTable extends PokerTable {
     }
 
     /**
+     * Returns {@code true} — this table is driven by WebSocket remote state.
+     */
+    @Override
+    public boolean isRemoteTable() {
+        return true;
+    }
+
+    /**
      * Fires a {@link PokerTableEvent} with an int value parameter.
      *
      * @param eventType

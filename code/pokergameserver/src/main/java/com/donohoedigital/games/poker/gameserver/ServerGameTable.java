@@ -379,8 +379,13 @@ public class ServerGameTable implements GameTable, ServerHand.MockTable {
         int smallBlindSeat = getNextSeat(button);
         int bigBlindSeat = getNextSeat(smallBlindSeat);
 
-        currentHand = new ServerHand(this, handNum, smallBlindAmount, bigBlindAmount, anteAmount, button,
-                smallBlindSeat, bigBlindSeat);
+        // Read current blinds from tournament context if available (supports level
+        // advancement). Fall back to construction-time amounts if no context.
+        int sb = (tournament != null) ? tournament.getSmallBlind(tournament.getLevel()) : smallBlindAmount;
+        int bb = (tournament != null) ? tournament.getBigBlind(tournament.getLevel()) : bigBlindAmount;
+        int ante = (tournament != null) ? tournament.getAnte(tournament.getLevel()) : anteAmount;
+
+        currentHand = new ServerHand(this, handNum, sb, bb, ante, button, smallBlindSeat, bigBlindSeat);
 
         // Deal the hand
         currentHand.deal();

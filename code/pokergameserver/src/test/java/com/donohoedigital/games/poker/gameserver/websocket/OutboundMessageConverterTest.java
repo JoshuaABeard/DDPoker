@@ -61,7 +61,8 @@ class OutboundMessageConverterTest {
 
     @Test
     void createConnectedMessage_hasCorrectType() {
-        GameStateSnapshot snapshot = new GameStateSnapshot(1, 5, null, new Card[0], List.of(), List.of());
+        GameStateSnapshot snapshot = new GameStateSnapshot(1, 5, null, new Card[0], List.of(), List.of(), -1, -1, -1,
+                -1, null, 0, 0, 0, 0);
 
         ServerMessage message = converter.createConnectedMessage("game-1", 42L, snapshot);
 
@@ -72,7 +73,8 @@ class OutboundMessageConverterTest {
 
     @Test
     void createConnectedMessage_includesPlayerId() {
-        GameStateSnapshot snapshot = new GameStateSnapshot(1, 5, null, new Card[0], List.of(), List.of());
+        GameStateSnapshot snapshot = new GameStateSnapshot(1, 5, null, new Card[0], List.of(), List.of(), -1, -1, -1,
+                -1, null, 0, 0, 0, 0);
 
         ServerMessage message = converter.createConnectedMessage("game-1", 42L, snapshot);
 
@@ -118,6 +120,33 @@ class OutboundMessageConverterTest {
         assertTrue(data.options().canFold());
         assertEquals(200, data.options().minBet());
         assertEquals(1000, data.options().maxBet());
+        // canBet=true: canAllIn must be true and allInAmount must equal maxBet
+        assertTrue(data.options().canAllIn());
+        assertEquals(1000, data.options().allInAmount());
+    }
+
+    @Test
+    void createActionRequiredMessage_allInAmountUsesMaxRaiseWhenOnlyRaisePossible() {
+        // canBet=false, canRaise=true: all-in via raise with maxRaise amount
+        ActionOptions options = new ActionOptions(false, true, false, true, true, 50, 0, 0, 100, 800, 30);
+
+        ServerMessage message = converter.createActionRequiredMessage("game-1", options, 30);
+
+        ServerMessageData.ActionRequiredData data = (ServerMessageData.ActionRequiredData) message.data();
+        assertTrue(data.options().canAllIn());
+        assertEquals(800, data.options().allInAmount());
+    }
+
+    @Test
+    void createActionRequiredMessage_canAllInFalseWhenNoBetOrRaise() {
+        // canBet=false, canRaise=false: player can only check/call/fold
+        ActionOptions options = new ActionOptions(true, true, false, false, true, 50, 0, 0, 0, 0, 30);
+
+        ServerMessage message = converter.createActionRequiredMessage("game-1", options, 30);
+
+        ServerMessageData.ActionRequiredData data = (ServerMessageData.ActionRequiredData) message.data();
+        assertFalse(data.options().canAllIn());
+        assertEquals(0, data.options().allInAmount());
     }
 
     @Test
@@ -132,13 +161,14 @@ class OutboundMessageConverterTest {
 
     @Test
     void createPlayerJoinedMessage_hasCorrectStructure() {
-        ServerMessage message = converter.createPlayerJoinedMessage("game-1", 99L, "TestPlayer", 3);
+        ServerMessage message = converter.createPlayerJoinedMessage("game-1", 99L, "TestPlayer", 3, 0);
 
         assertEquals(ServerMessageType.PLAYER_JOINED, message.type());
         ServerMessageData.PlayerJoinedData data = (ServerMessageData.PlayerJoinedData) message.data();
         assertEquals(99L, data.playerId());
         assertEquals("TestPlayer", data.playerName());
         assertEquals(3, data.seatIndex());
+        assertEquals(0, data.tableId());
     }
 
     @Test
@@ -160,7 +190,10 @@ class OutboundMessageConverterTest {
                 new GameStateSnapshot.PlayerState(1, "Player1", 1000, 0, false, false, holeCards, 100),
                 new GameStateSnapshot.PlayerState(2, "Player2", 2000, 1, false, false, null, 0));
         List<GameStateSnapshot.PotState> pots = List.of(new GameStateSnapshot.PotState(500, List.of(1, 2)));
-        GameStateSnapshot snapshot = new GameStateSnapshot(0, 3, holeCards, communityCards, players, pots);
+        // dealerSeat=0, sbSeat=1, bbSeat=-1, actorSeat=-1, round="FLOP", level=2,
+        // sb=50, bb=100, ante=0
+        GameStateSnapshot snapshot = new GameStateSnapshot(0, 3, holeCards, communityCards, players, pots, 0, 1, -1, -1,
+                "FLOP", 2, 50, 100, 0);
 
         ServerMessage message = converter.createGameStateMessage("game-1", snapshot);
 
@@ -188,5 +221,21 @@ class OutboundMessageConverterTest {
         // Current bet should be passed through from the snapshot
         assertEquals(100, seat0.currentBet());
         assertEquals(0, seat1.currentBet());
+
+        // Dealer/blind flags populated from snapshot (dealerSeat=0, sbSeat=1,
+        // bbSeat=-1)
+        assertTrue(seat0.isDealer());
+        assertFalse(seat0.isSmallBlind());
+        assertFalse(seat0.isBigBlind());
+        assertFalse(seat1.isDealer());
+        assertTrue(seat1.isSmallBlind());
+        assertFalse(seat1.isBigBlind());
+
+        // Betting round, level, and blinds from snapshot
+        assertEquals("FLOP", table.currentRound());
+        assertEquals(2, data.level());
+        assertEquals(50, data.blinds().small());
+        assertEquals(100, data.blinds().big());
+        assertEquals(0, data.blinds().ante());
     }
 }

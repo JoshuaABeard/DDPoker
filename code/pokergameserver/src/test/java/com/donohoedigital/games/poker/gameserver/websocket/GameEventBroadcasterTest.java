@@ -233,4 +233,29 @@ class GameEventBroadcasterTest {
             return json.contains("\"type\":\"SHOWDOWN_STARTED\"") || json.contains("\"type\" : \"SHOWDOWN_STARTED\"");
         }));
     }
+
+    @Test
+    void playerEliminated_broadcastsToAllPlayers() throws Exception {
+        PlayerConnection p1 = makeConnectedPlayer(1L);
+        PlayerConnection p2 = makeConnectedPlayer(2L);
+
+        broadcaster.accept(new GameEvent.PlayerEliminated(0, 1, 4));
+
+        verify(p1.getSession()).sendMessage(any(TextMessage.class));
+        verify(p2.getSession()).sendMessage(any(TextMessage.class));
+    }
+
+    @Test
+    void broadcastsCorrectMessageType_playerEliminated() throws Exception {
+        WebSocketSession session = mock(WebSocketSession.class);
+        when(session.isOpen()).thenReturn(true);
+        connectionManager.addConnection("game-1", 1L, new PlayerConnection(session, 1L, "p1", "game-1", objectMapper));
+
+        broadcaster.accept(new GameEvent.PlayerEliminated(0, 1, 4));
+
+        verify(session).sendMessage(argThat(msg -> {
+            String json = ((TextMessage) msg).getPayload();
+            return json.contains("\"type\":\"PLAYER_ELIMINATED\"") || json.contains("\"type\" : \"PLAYER_ELIMINATED\"");
+        }));
+    }
 }

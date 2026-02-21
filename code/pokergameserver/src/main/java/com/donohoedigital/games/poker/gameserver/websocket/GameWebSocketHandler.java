@@ -239,10 +239,6 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
                     return broadcaster;
                 });
             }
-            // In-game: broadcast PLAYER_JOINED to others
-            ServerMessage joinedMsg = converter.createPlayerJoinedMessage(gameId, profileId, username, -1);
-            connectionManager.broadcastToGame(gameId, joinedMsg, profileId);
-
             // Sync reconnecting player to current game state so they see the table,
             // players, and cards without waiting for the next event to fire.
             GameStateSnapshot snapshot = game.getGameStateSnapshot(profileId);
@@ -250,6 +246,13 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
                     snapshot != null
                             ? "tableId=" + snapshot.tableId() + " players=" + snapshot.players().size()
                             : "null");
+
+            // In-game: broadcast PLAYER_JOINED to others (include tableId so multi-table
+            // clients seat the player at the correct table).
+            int joinTableId = snapshot != null ? snapshot.tableId() : -1;
+            ServerMessage joinedMsg = converter.createPlayerJoinedMessage(gameId, profileId, username, -1, joinTableId);
+            connectionManager.broadcastToGame(gameId, joinedMsg, profileId);
+
             if (snapshot != null) {
                 playerConnection.sendMessage(converter.createGameStateMessage(gameId, snapshot));
                 logger.debug("[WS-CONNECT] sent GAME_STATE to player={}", username);
