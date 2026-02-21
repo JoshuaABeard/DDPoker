@@ -25,7 +25,7 @@ Persistent knowledge discovered during development sessions. Read this at the st
 
 ## Testing
 
-- [pokergameserver] `ServerTournamentDirectorTest.multiTableTournamentConsolidates` and `interHandPausePreventsRacing` are timing-sensitive — they use `thread.join(120000)` / `thread.join(60000)`. They pass reliably in isolation but occasionally timeout under `mvn test -P dev` (4-thread parallel build) due to CPU load. Re-run the module alone to distinguish real failures from load-induced flakiness (2026-02-20)
+- [pokergameserver] `ServerTournamentDirectorTest.multiTableTournamentConsolidates`, `interHandPausePreventsRacing`, and `playerEliminatedEventsPublished` are timing-sensitive — they use `thread.join(30000–120000)`. They pass reliably in isolation but occasionally timeout under `mvn test -P dev` (4-thread parallel build) due to CPU load. Re-run the module alone to distinguish real failures from load-induced flakiness (2026-02-20)
 - [pokerengine] AIStrategyNode tests depend on PropertyConfig state; tests must be resilient to initialization order (2026-02-12)
 - [pokerengine] NEVER call setValue() on static Card constants (SPADES_A, etc.) in tests — they are shared singletons and modifications pollute all other tests. Create new Card instances instead (2026-02-13)
 - [pokerengine] OnlineGame.hashCode() violates equals/hashCode contract by including super.hashCode() — equal objects (same URL) have different hash codes (2026-02-13)
@@ -50,7 +50,7 @@ Persistent knowledge discovered during development sessions. Read this at the st
 - [server] Inter-hand pause must hook `result.nextState() == TableState.BEGIN` (the DONE→BEGIN transition from `handleDone()`), NOT `nextState==CLEAN` or `TD.CheckEndHand` — both are dead code for auto-deal online games where `handleBegin()` with `isAutoDeal()=true` goes directly to `START_HAND` (2026-02-19)
 - [server] `nextState==CLEAN` is always dead: CLEAN is reached via `pendingState`, never via `nextState` (2026-02-19)
 - [server] `TD.CheckEndHand` phase is skipped for auto-deal games: `handleBegin(isAutoDeal=true)` → `nextState(START_HAND)`, never visits WaitForDeal or CheckEndHand (2026-02-19)
-- [server] `aiActionDelayMs` in embedded mode is configured via `application-embedded.properties` as `game.server.ai-action-delay-ms=400`. Default for server mode is 0 (2026-02-19)
+- [server] `aiActionDelayMs` in embedded mode is configured via `application-embedded.properties` as `game.server.ai-action-delay-ms=1000`. Default for server mode is 0 (2026-02-20)
 - [server] All-AI hands (after human elimination) complete in <1ms — automation polling at 0.15s will miss PRE_FLOP transitions. Use HAND_STARTED timestamps in WebSocket debug log to verify pacing, not automation hand counter (2026-02-19)
 - [automation] The `run-client-local.ps1` script does NOT include `pokergameserver` module classes directly — it's loaded as a JAR dependency from `code/poker/target/dependency/`. Rebuild BOTH `pokergameserver` AND `poker` (to update the copied JAR) when changing server code (2026-02-19)
 - [automation] H2 database file lock: always kill ALL Java processes before relaunching the client. The lock file is NOT automatically cleared on crash and prevents startup (2026-02-19)
