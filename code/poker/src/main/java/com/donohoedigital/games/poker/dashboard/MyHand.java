@@ -191,7 +191,7 @@ public class MyHand extends DashboardItem {
 
         // pre-flop or folded
         boolean bFold = (asViewedBy.isFolded() && !asViewedBy.showFoldedHand());
-        if ((nNumBoard < 3) || bFold) {
+        if ((nNumBoard < 3) || bFold || asViewedBy.getHandSorted().size() < 2) {
             String sKey = bFold ? "msg.myhand.folded" : "msg.myhand.preflop";
             sHand_ = PropertyConfig.getMessage(sKey, hand.toHTML());
             sHandTitle_ = hand.toStringRank();

@@ -376,6 +376,11 @@ public class WebSocketTournamentDirector extends BasePhase
             logger.debug("[GAME_STATE EDT] applying {} tables", d.tables() != null ? d.tables().size() : 0);
             // Update level immediately — independent of table creation
             game_.setLevel(d.level());
+            // Start the clock if not already running (handles initial game-start state)
+            if (!game_.getGameClock().isRunning()) {
+                game_.getGameClock().setSecondsRemaining(game_.getSecondsInLevel(d.level()));
+                game_.getGameClock().start();
+            }
 
             // On the first GAME_STATE, remove any locally-created setup tables (added by
             // setupPracticeGame) that pre-date the WebSocket connection. These are plain
@@ -716,6 +721,11 @@ public class WebSocketTournamentDirector extends BasePhase
         SwingUtilities.invokeLater(() -> {
             int oldLevel = game_.getLevel();
             game_.setLevel(d.level());
+            // Reset and restart the clock for the new level
+            game_.getGameClock().setSecondsRemaining(game_.getSecondsInLevel(d.level()));
+            if (!game_.getGameClock().isRunning()) {
+                game_.getGameClock().start();
+            }
             for (RemotePokerTable table : tables_.values()) {
                 // Update blind amounts on the hand so UI and hand history show correct values
                 RemoteHoldemHand hand = table.getRemoteHand();

@@ -142,10 +142,10 @@ public class DashboardAdvisor extends DashboardItem {
         advice_ = NOADVICE;
         title_ = NOADVICETITLE;
 
-        if ((hh != null) && (pp != null) && (h != null) && (ai != null) && !hh.isAllInShowdown() && !hh.isDone()
-                && (hh.getRound() != BettingRound.NONE) && (hh.getRound() != BettingRound.SHOWDOWN) && !pp.isFolded()
-                && pp.isHumanControlled() && (h.getType() == Hand.TYPE_NORMAL && !h.containsCard(Card.BLANK))
-                && (ai instanceof V2Player)) {
+        if ((hh != null) && (pp != null) && (h != null) && (ai != null) && hh.getTable() != null
+                && !hh.isAllInShowdown() && !hh.isDone() && (hh.getRound() != BettingRound.NONE)
+                && (hh.getRound() != BettingRound.SHOWDOWN) && !pp.isFolded() && pp.isHumanControlled()
+                && (h.getType() == Hand.TYPE_NORMAL && !h.containsCard(Card.BLANK)) && (ai instanceof V2Player)) {
             V2Player p = (V2Player) ai;
             // if (p.isReady())
             {
