@@ -2,7 +2,7 @@
 
 **Status:** DRAFT
 **Priority:** Low — Quality-of-life improvement, not blocking any milestone
-**Depends On:** M5 (Web Client Game UI)
+**Depends On:** M5 ✅ (Web Client Game UI — complete)
 **Created:** 2026-02-18
 
 ---

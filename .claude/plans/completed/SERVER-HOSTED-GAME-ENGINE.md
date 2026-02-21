@@ -1,8 +1,8 @@
 # Server-Hosted Game Engine: Comprehensive Implementation Plan
 
-**Status:** IN PROGRESS — M1 ✅ M2 ✅ M3 ✅ M4 ✅ M6 ✅ | Next: M7 (Legacy P2P Removal) or M5 (Web Client)
+**Status:** COMPLETE ✅ — M1 ✅ M2 ✅ M3 ✅ M4 ✅ M5 ✅ M6 ✅ M7 ✅
 **Created:** 2026-02-15
-**Last Updated:** 2026-02-17
+**Last Updated:** 2026-02-21
 **Plan:** `.claude/plans/SERVER-HOSTED-GAME-ENGINE.md`
 
 ---
@@ -813,9 +813,11 @@ Practice games need save/load functionality (existing feature in desktop client)
 
 ---
 
-## Milestone 5: Web Client Game UI
+## Milestone 5: Web Client Game UI ✅
 
 **Goal:** Build the poker game interface in the existing Next.js app.
+
+**Status:** ✅ COMPLETE (2026-02-21, commit c56d0b58). Detailed plan: `.claude/plans/completed/M5-WEB-CLIENT-GAME-UI.md`
 
 **Effort:** XL
 
@@ -1022,7 +1024,7 @@ Milestone 4: Desktop Adaptation              Milestone 5: Web Client
 
 **Detailed Plan:** `.claude/plans/M7-LEGACY-P2P-REMOVAL.md`
 
-**Status:** APPROVED
+**Status:** ✅ COMPLETE. Detailed plan: `.claude/plans/completed/M7-LEGACY-P2P-REMOVAL.md`
 
 **Effort:** L (3–4 weeks)
 
