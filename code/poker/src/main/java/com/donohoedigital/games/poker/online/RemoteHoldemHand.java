@@ -21,6 +21,7 @@ import com.donohoedigital.games.poker.HandAction;
 import com.donohoedigital.games.poker.HoldemHand;
 import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.engine.Hand;
+import com.donohoedigital.games.poker.engine.HandSorted;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData.ActionOptionsData;
 
@@ -53,6 +54,7 @@ public class RemoteHoldemHand extends HoldemHand {
 
     private BettingRound remoteRound_ = BettingRound.PRE_FLOP;
     private Hand remoteCommunity_ = new Hand();
+    private HandSorted remoteCommunitySorted_ = new HandSorted(5);
     private List<PokerPlayer> remotePlayers_ = new ArrayList<>();
     private int remoteCurrentPlayerIndex_ = NO_CURRENT_PLAYER;
     private int remotePotTotal_;
@@ -162,6 +164,14 @@ public class RemoteHoldemHand extends HoldemHand {
     @Override
     public Hand getCommunity() {
         return remoteCommunity_;
+    }
+
+    @Override
+    public HandSorted getCommunitySorted() {
+        if (remoteCommunitySorted_.fingerprint() != remoteCommunity_.fingerprint()) {
+            remoteCommunitySorted_ = new HandSorted(remoteCommunity_);
+        }
+        return remoteCommunitySorted_;
     }
 
     @Override

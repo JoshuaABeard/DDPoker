@@ -745,14 +745,18 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onPlayerEliminated(PlayerEliminatedData d) {
         SwingUtilities.invokeLater(() -> {
-            PokerPlayer player = findPlayer(d.playerId());
-            if (player != null) {
-                player.setPlace(d.finishPosition());
-                player.setChipCount(0);
-            }
-            RemotePokerTable table = currentTable();
-            if (table != null) {
-                table.fireEvent(PokerTableEvent.TYPE_PLAYER_REMOVED);
+            for (RemotePokerTable table : tables_.values()) {
+                int seat = findSeat(table, d.playerId());
+                if (seat >= 0) {
+                    PokerPlayer p = table.getPlayer(seat);
+                    if (p != null) {
+                        p.setPlace(d.finishPosition());
+                        p.setChipCount(0);
+                    }
+                    table.clearSeat(seat);
+                    table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REMOVED, table, p, seat));
+                    break;
+                }
             }
         });
     }

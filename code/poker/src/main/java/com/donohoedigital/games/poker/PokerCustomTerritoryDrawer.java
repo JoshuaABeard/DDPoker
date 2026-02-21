@@ -117,17 +117,24 @@ public class PokerCustomTerritoryDrawer implements CustomTerritoryDrawer {
 
         // loop through history
         List<HandAction> hist = hhand.getHistoryCopy();
-        int nAmount;
+        if (hist.isEmpty()) {
+            // Remote mode: no action history; draw chips proportional to total pot
+            int potTotal = hhand.getTotalPotChipCount();
+            while (potTotal > 0) {
+                potTotal = drawAmount(board, potTotal, g, territoryBounds);
+            }
+        } else {
+            int nAmount;
+            for (HandAction action : hist) {
+                nAmount = action.getAmount();
+                if (nAmount == 0)
+                    continue;
+                if (action.getAction() > HandAction.ACTION_ANTE)
+                    continue;
 
-        for (HandAction action : hist) {
-            nAmount = action.getAmount();
-            if (nAmount == 0)
-                continue;
-            if (action.getAction() > HandAction.ACTION_ANTE)
-                continue;
-
-            while (nAmount > 0) {
-                nAmount = drawAmount(board, nAmount, g, territoryBounds);
+                while (nAmount > 0) {
+                    nAmount = drawAmount(board, nAmount, g, territoryBounds);
+                }
             }
         }
     }

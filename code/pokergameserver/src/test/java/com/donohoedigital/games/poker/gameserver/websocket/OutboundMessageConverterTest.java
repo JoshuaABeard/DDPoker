@@ -52,6 +52,8 @@ class OutboundMessageConverterTest {
     @Test
     void cardToString_returnsCardDisplay() {
         assertEquals("As", OutboundMessageConverter.cardToString(Card.SPADES_A));
+        // Ten must serialize as "T" not "10" so Card.getCard() can round-trip it
+        assertEquals("Ts", OutboundMessageConverter.cardToString(Card.SPADES_T));
     }
 
     @Test
@@ -206,7 +208,7 @@ class OutboundMessageConverterTest {
         ServerMessageData.TableData table = data.tables().get(0);
         assertEquals(2, table.communityCards().size());
         assertEquals("Js", table.communityCards().get(0));
-        assertEquals("10c", table.communityCards().get(1));
+        assertEquals("Tc", table.communityCards().get(1));
 
         // Player's own hole cards should be included
         ServerMessageData.SeatData seat0 = table.seats().get(0);

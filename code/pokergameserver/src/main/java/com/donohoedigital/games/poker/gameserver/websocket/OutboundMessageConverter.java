@@ -32,8 +32,8 @@ import java.util.stream.Collectors;
 /**
  * Converts internal game state objects to server-to-client WebSocket messages.
  *
- * All card serialization uses Card.getDisplay() which produces standard
- * notation like "Ah" (Ace of Hearts), "Kd" (King of Diamonds), etc.
+ * All card serialization uses getRankDisplaySingle() + getCardSuit().getAbbr()
+ * to produce two-character notation (e.g. "Ah", "Ts") compatible with Card.getCard() parsing.
  */
 public class OutboundMessageConverter {
 
@@ -47,7 +47,7 @@ public class OutboundMessageConverter {
     public static String cardToString(Card card) {
         if (card == null)
             return null;
-        return card.getDisplay();
+        return card.getRankDisplaySingle() + card.getCardSuit().getAbbr();
     }
 
     /**
