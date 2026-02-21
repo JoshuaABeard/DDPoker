@@ -503,6 +503,14 @@ public class PokerUtils extends EngineUtils {
     }
 
     /**
+     * audio - shuffle/deal
+     */
+    public static void shuffleAudio() {
+        int n = DiceRoller.rollDieInt(3);
+        AudioConfig.playFX("shuffle" + n, 0);
+    }
+
+    /**
      * audio - cheer
      */
     public static void cheerAudio() {

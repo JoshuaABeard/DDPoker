@@ -887,6 +887,7 @@ public class ShowTournamentTable extends ShowPokerTable
 
             case PokerTableEvent.TYPE_DEALER_ACTION :
                 if (!table_.isZipMode()) {
+                    PokerUtils.shuffleAudio();
                     if (table_.isRemoteTable())
                         // Remote (WebSocket) mode: sync card pieces into territories first
                         GuiUtils.invoke(new SwingIt(SWING_SYNC));
@@ -900,6 +901,27 @@ public class ShowTournamentTable extends ShowPokerTable
                 PokerPlayer p = event.getPlayer();
                 GuiUtils.invoke(new SwingIt(SWING_POT_DISPLAY, false));
                 GuiUtils.invoke(new SwingIt(p));
+                if (!table_.isZipMode()) {
+                    HandAction ha = event.getAction();
+                    if (ha != null) {
+                        switch (ha.getAction()) {
+                            case HandAction.ACTION_CHECK :
+                            case HandAction.ACTION_CHECK_RAISE :
+                                PokerUtils.checkAudio();
+                                break;
+                            case HandAction.ACTION_RAISE :
+                                PokerUtils.raiseAudio();
+                                break;
+                            case HandAction.ACTION_BET :
+                            case HandAction.ACTION_CALL :
+                            case HandAction.ACTION_BLIND_BIG :
+                            case HandAction.ACTION_BLIND_SM :
+                            case HandAction.ACTION_ANTE :
+                                PokerUtils.betAudio();
+                                break;
+                        }
+                    }
+                }
                 break;
 
             case PokerTableEvent.TYPE_PREFS_CHANGED :
