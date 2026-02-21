@@ -848,6 +848,64 @@ class WebSocketTournamentDirectorTest {
         assertThat(table.getPlayer(3).getName()).isEqualTo("Alice");
     }
 
+    @Test
+    void playerJoinedCrossTableConsolidationClearsOldTableSeat() throws Exception {
+        // Build GAME_STATE with 2 tables: player 1 at table 1 seat 0; table 2 is empty.
+        ObjectNode gs = mapper.createObjectNode();
+        gs.put("status", "IN_PROGRESS");
+        gs.put("level", 0);
+        ObjectNode blinds = mapper.createObjectNode();
+        blinds.put("small", 50).put("big", 100).put("ante", 0);
+        gs.set("blinds", blinds);
+        gs.putNull("nextLevelIn");
+        var tables = gs.putArray("tables");
+
+        ObjectNode t1 = mapper.createObjectNode();
+        t1.put("tableId", 1);
+        t1.putNull("currentRound");
+        t1.put("handNumber", 0);
+        t1.putArray("communityCards");
+        t1.putArray("pots");
+        var seats1 = t1.putArray("seats");
+        ObjectNode seat1 = mapper.createObjectNode();
+        seat1.put("seatIndex", 0).put("playerId", 1L).put("playerName", "Alice").put("chipCount", 1000)
+                .put("status", "ACTIVE").put("isDealer", false).put("isSmallBlind", false).put("isBigBlind", false)
+                .put("currentBet", 0).put("isCurrentActor", false);
+        seat1.putArray("holeCards");
+        seats1.add(seat1);
+        tables.add(t1);
+
+        ObjectNode t2 = mapper.createObjectNode();
+        t2.put("tableId", 2);
+        t2.putNull("currentRound");
+        t2.put("handNumber", 0);
+        t2.putArray("communityCards");
+        t2.putArray("pots");
+        t2.putArray("seats");
+        tables.add(t2);
+
+        gs.putArray("players");
+        dispatch(ServerMessageType.GAME_STATE, gs);
+
+        Assumptions.assumeTrue(tablesAvailable, "PropertyConfig not initialized; skipping table-dependent test");
+        assertThat(wsTD.getTableCount()).isEqualTo(2);
+
+        RemotePokerTable table1 = wsTD.getTableForTest(1);
+        RemotePokerTable table2 = wsTD.getTableForTest(2);
+        Assumptions.assumeTrue(table1 != null && table2 != null, "Tables not created; skipping");
+        assertThat(table1.getPlayer(0)).isNotNull();
+
+        // Consolidation: player 1 moves from table 1 seat 0 to table 2 seat 3.
+        // PLAYER_LEFT was suppressed server-side for active players.
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("playerId", 1L).put("playerName", "Alice").put("seatIndex", 3).put("tableId", 2);
+        dispatch(ServerMessageType.PLAYER_JOINED, payload);
+
+        assertThat(table1.getPlayer(0)).isNull(); // old seat on table 1 cleared
+        assertThat(table2.getPlayer(3)).isNotNull(); // new seat on table 2 filled
+        assertThat(table2.getPlayer(3).getName()).isEqualTo("Alice");
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------

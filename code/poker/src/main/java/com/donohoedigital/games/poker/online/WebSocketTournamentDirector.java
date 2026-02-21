@@ -192,6 +192,14 @@ public class WebSocketTournamentDirector extends BasePhase
         return tables_.values().iterator().next();
     }
 
+    /**
+     * Returns the table with the given ID, or null (for testing multi-table
+     * scenarios).
+     */
+    RemotePokerTable getTableForTest(int tableId) {
+        return tables_.get(tableId);
+    }
+
     // -------------------------------------------------------------------------
     // Inbound message dispatch
     // -------------------------------------------------------------------------
@@ -1000,7 +1008,7 @@ public class WebSocketTournamentDirector extends BasePhase
             logger.debug("[GAME_CANCELLED] reason={}", d.reason());
             fireStateChangedOnCurrentTable();
             if (context_ != null) {
-                context_.processPhase("PracticeGameOver");
+                context_.processPhase("OnlineGameOver");
             }
         });
     }

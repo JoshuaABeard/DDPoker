@@ -323,6 +323,8 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 if (!isConsolidation) {
                     broadcast(ServerMessage.of(ServerMessageType.PLAYER_LEFT, gameId,
                         new ServerMessageData.PlayerLeftData(e.playerId(), "")));
+                } else {
+                    logger.debug("[BROADCAST] suppressing PLAYER_LEFT for consolidation playerId={}", e.playerId());
                 }
             }
             case GameEvent.PlayerRebuy e -> broadcast(
