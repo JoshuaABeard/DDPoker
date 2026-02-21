@@ -573,6 +573,7 @@ public class WebSocketTournamentDirector extends BasePhase
 
             // The local player is the current actor
             int playerIndex = indexOfPlayer(hand, localPlayerId_);
+            int oldPlayerIndex = hand.getCurrentPlayerIndex();
             logger.debug("[ACTION_REQUIRED EDT] localPlayer={} playerIndex={} in hand with {} players", localPlayerId_,
                     playerIndex, hand.getNumPlayers());
             hand.updateCurrentPlayer(playerIndex);
@@ -594,7 +595,8 @@ public class WebSocketTournamentDirector extends BasePhase
             }
             logger.debug("[ACTION_REQUIRED EDT] firing TYPE_CURRENT_PLAYER_CHANGED, then setInputMode mode={}",
                     inputMode);
-            table.fireEvent(PokerTableEvent.TYPE_CURRENT_PLAYER_CHANGED);
+            table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_CURRENT_PLAYER_CHANGED, table,
+                    oldPlayerIndex, playerIndex));
             game_.setInputMode(inputMode, hand, localPlayer);
             logger.debug("[WS-DIRECTOR] ACTION_REQUIRED applied inputMode={} options={}", inputMode, d.options());
         });

@@ -245,6 +245,39 @@ class WebSocketTournamentDirectorTest {
     }
 
     @Test
+    void actionRequiredFiresCurrentPlayerChangedWithCorrectIndices() throws Exception {
+        // Local player (id=1) is at seat 1 (hand index 1), behind an AI at seat 0.
+        // Before the fix, fireEvent(TYPE_CURRENT_PLAYER_CHANGED) produced getNew()=0,
+        // so Odds panels would only update when the human happened to be at index 0.
+        dispatch(ServerMessageType.GAME_STATE, buildGameStateTwoPlayers(2L, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        RemotePokerTable table = requireTable();
+
+        // Capture full PokerTableEvent objects (not just types)
+        List<PokerTableEvent> captured = new ArrayList<>();
+        table.addPokerTableListener(e -> {
+            if (e.getType() == PokerTableEvent.TYPE_CURRENT_PLAYER_CHANGED)
+                captured.add(e);
+        }, PokerTableEvent.TYPE_CURRENT_PLAYER_CHANGED);
+
+        ObjectNode options = mapper.createObjectNode();
+        options.put("canFold", true).put("canCheck", false).put("canCall", true).put("callAmount", 50)
+                .put("canBet", false).put("minBet", 0).put("maxBet", 0).put("canRaise", false).put("minRaise", 0)
+                .put("maxRaise", 0).put("canAllIn", true).put("allInAmount", 1000);
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("timeoutSeconds", 30);
+        payload.set("options", options);
+        dispatch(ServerMessageType.ACTION_REQUIRED, payload);
+
+        assertThat(captured).isNotEmpty();
+        PokerTableEvent evt = captured.get(captured.size() - 1);
+        // Local player is at hand index 1, not 0. getNew() must reflect that.
+        assertThat(evt.getNew()).isEqualTo(1);
+        // Old index was NO_CURRENT_PLAYER (-1) set by onHandStarted.
+        assertThat(evt.getOld()).isEqualTo(com.donohoedigital.games.poker.HoldemHand.NO_CURRENT_PLAYER);
+    }
+
+    @Test
     void actionRequiredSetsTimeoutOnLocalPlayer() throws Exception {
         dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
         dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
@@ -1064,5 +1097,47 @@ class WebSocketTournamentDirectorTest {
         List<Integer> events = new ArrayList<>();
         table.addPokerTableListener(e -> events.add(e.getType()), PokerTableEvent.TYPES_ALL);
         return events;
+    }
+
+    /**
+     * Builds a single-table GAME_STATE with two players: {@code aiPlayerId} at seat
+     * 0 and {@code localPlayerId} at seat 1. Used to test that ACTION_REQUIRED
+     * fires TYPE_CURRENT_PLAYER_CHANGED with the correct non-zero hand index for
+     * the local player.
+     */
+    private ObjectNode buildGameStateTwoPlayers(long aiPlayerId, long localPlayerId) {
+        ObjectNode gs = mapper.createObjectNode();
+        gs.put("status", "IN_PROGRESS");
+        gs.put("level", 0);
+        ObjectNode blinds = mapper.createObjectNode();
+        blinds.put("small", 50).put("big", 100).put("ante", 0);
+        gs.set("blinds", blinds);
+        gs.putNull("nextLevelIn");
+
+        ObjectNode t = mapper.createObjectNode();
+        t.put("tableId", 1);
+        t.put("currentRound", "PRE_FLOP");
+        t.put("handNumber", 0);
+        t.putArray("communityCards");
+        t.putArray("pots");
+        var seats = t.putArray("seats");
+
+        ObjectNode seatAI = mapper.createObjectNode();
+        seatAI.put("seatIndex", 0).put("playerId", aiPlayerId).put("playerName", "Bot").put("chipCount", 1000)
+                .put("status", "ACTIVE").put("isDealer", true).put("isSmallBlind", false).put("isBigBlind", false)
+                .put("currentBet", 0).put("isCurrentActor", false);
+        seatAI.putArray("holeCards");
+        seats.add(seatAI);
+
+        ObjectNode seatLocal = mapper.createObjectNode();
+        seatLocal.put("seatIndex", 1).put("playerId", localPlayerId).put("playerName", "Alice").put("chipCount", 1000)
+                .put("status", "ACTIVE").put("isDealer", false).put("isSmallBlind", false).put("isBigBlind", false)
+                .put("currentBet", 0).put("isCurrentActor", false);
+        seatLocal.putArray("holeCards");
+        seats.add(seatLocal);
+
+        gs.putArray("tables").add(t);
+        gs.putArray("players");
+        return gs;
     }
 }

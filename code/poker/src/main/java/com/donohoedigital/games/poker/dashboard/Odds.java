@@ -77,7 +77,7 @@ public abstract class Odds extends DashboardItem {
 
         switch (event.getType()) {
             case PokerTableEvent.TYPE_CURRENT_PLAYER_CHANGED :
-                PokerPlayer nu = hhand.getPlayerAt(event.getNew()); // XX
+                PokerPlayer nu = hhand.getCurrentPlayer();
                 if (nu != null && nu.isHumanControlled()) {
                     bUpdateOdds = true;
                 }

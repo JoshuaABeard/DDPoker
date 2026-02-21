@@ -107,7 +107,11 @@ public class MyHand extends DashboardItem {
         if (event.getType() == PokerTableEvent.TYPE_END_HAND) {
             // proceed
         } else if (event.getType() == PokerTableEvent.TYPE_NEW_HAND) {
-            if (isDisplayed())
+            // In WebSocket/remote mode, TYPE_DEALER_ACTION fires in the same EDT
+            // task as TYPE_NEW_HAND (triggering SWING_SYNC which updates us).
+            // The timer-based clear() would run AFTER that update, erasing it.
+            // Skip the clear here; SWING_SYNC will populate the correct preflop state.
+            if (isDisplayed() && !event.getTable().isRemoteTable())
                 clear();
             return;
         }

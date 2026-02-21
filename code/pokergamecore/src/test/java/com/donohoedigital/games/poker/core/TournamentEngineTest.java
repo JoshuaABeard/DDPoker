@@ -1818,7 +1818,8 @@ class TournamentEngineTest {
 
     @Test
     void handleCommunity_withHandDone_shouldStillSleep() {
-        // hand.isDone() no longer disables sleep (that was a bug causing rapid community
+        // hand.isDone() no longer disables sleep (that was a bug causing rapid
+        // community
         // card flashing during all-in runouts). Only zipMode disables sleep.
         StubGameHand hand = new StubGameHand(BettingRound.FLOP, true);
         hand.numWithCards = 2;
