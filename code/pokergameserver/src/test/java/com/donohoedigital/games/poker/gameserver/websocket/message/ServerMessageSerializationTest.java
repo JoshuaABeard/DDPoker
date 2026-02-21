@@ -73,7 +73,7 @@ class ServerMessageSerializationTest {
     @Test
     void playerActedMessage_hasRequiredFields() throws Exception {
         ServerMessageData.PlayerActedData data = new ServerMessageData.PlayerActedData(7L, "Bob", "CALL", 100, 100, 900,
-                300);
+                300, 1);
         ServerMessage message = ServerMessage.of(ServerMessageType.PLAYER_ACTED, "game-789", data);
 
         String json = objectMapper.writeValueAsString(message);
@@ -94,7 +94,7 @@ class ServerMessageSerializationTest {
         ServerMessage msg2 = ServerMessage.of(ServerMessageType.ERROR, "g2",
                 new ServerMessageData.ErrorData("ERR", "msg"));
         ServerMessage msg3 = ServerMessage.of(ServerMessageType.PLAYER_ACTED, "g3",
-                new ServerMessageData.PlayerActedData(1L, "Alice", "FOLD", 0, 0, 1000, 200));
+                new ServerMessageData.PlayerActedData(1L, "Alice", "FOLD", 0, 0, 1000, 200, 1));
 
         for (ServerMessage msg : new ServerMessage[]{msg1, msg2, msg3}) {
             String json = objectMapper.writeValueAsString(msg);

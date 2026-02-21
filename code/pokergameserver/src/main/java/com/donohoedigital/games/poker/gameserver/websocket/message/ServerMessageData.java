@@ -50,8 +50,8 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
     }
 
     /** Community cards dealt to all players. */
-    record CommunityCardsDealtData(String round, List<String> cards,
-            List<String> allCommunityCards) implements ServerMessageData {
+    record CommunityCardsDealtData(String round, List<String> cards, List<String> allCommunityCards,
+            int tableId) implements ServerMessageData {
     }
 
     /** Action required from a specific player (private). */
@@ -60,16 +60,16 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
 
     /** Player performed an action, broadcast to all. */
     record PlayerActedData(long playerId, String playerName, String action, int amount, int totalBet, int chipCount,
-            int potTotal) implements ServerMessageData {
+            int potTotal, int tableId) implements ServerMessageData {
     }
 
     /** Player action timed out, auto-action performed. */
-    record ActionTimeoutData(long playerId, String autoAction) implements ServerMessageData {
+    record ActionTimeoutData(long playerId, String autoAction, int tableId) implements ServerMessageData {
     }
 
     /** Hand complete with results. */
-    record HandCompleteData(int handNumber, List<WinnerData> winners,
-            List<ShowdownPlayerData> showdownPlayers) implements ServerMessageData {
+    record HandCompleteData(int handNumber, List<WinnerData> winners, List<ShowdownPlayerData> showdownPlayers,
+            int tableId) implements ServerMessageData {
     }
 
     /** Blind level changed. */
@@ -78,8 +78,8 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
     }
 
     /** Player eliminated from tournament. */
-    record PlayerEliminatedData(long playerId, String playerName, int finishPosition,
-            int handsPlayed) implements ServerMessageData {
+    record PlayerEliminatedData(long playerId, String playerName, int finishPosition, int handsPlayed,
+            int tableId) implements ServerMessageData {
     }
 
     /** Rebuy offered to eliminated player (private). */
@@ -107,7 +107,7 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
     }
 
     /** Pot won by one or more players. */
-    record PotAwardedData(long[] winnerIds, int amount, int potIndex) implements ServerMessageData {
+    record PotAwardedData(long[] winnerIds, int amount, int potIndex, int tableId) implements ServerMessageData {
     }
 
     /** Showdown phase begins (cards to be revealed). */

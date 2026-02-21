@@ -184,7 +184,7 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 }
                 broadcast(ServerMessage.of(ServerMessageType.PLAYER_ACTED, gameId,
                     new ServerMessageData.PlayerActedData(e.playerId(), playerName, e.action().name(), e.amount(),
-                        totalBet, chipCount, potTotal)));
+                        totalBet, chipCount, potTotal, e.tableId())));
             }
             case GameEvent.CommunityCardsDealt e -> {
                 // Look up actual community cards from the live hand at broadcast time.
@@ -202,7 +202,7 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 }
                 broadcast(ServerMessage.of(ServerMessageType.COMMUNITY_CARDS_DEALT, gameId,
                         new ServerMessageData.CommunityCardsDealtData(e.round().name(), allCommunityCards,
-                                allCommunityCards)));
+                                allCommunityCards, e.tableId())));
             }
             case GameEvent.HandCompleted e -> {
                 int handNum = 0;
@@ -248,14 +248,14 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                     }
                 }
                 broadcast(ServerMessage.of(ServerMessageType.HAND_COMPLETE, gameId,
-                        new ServerMessageData.HandCompleteData(handNum, winners, showdownPlayers)));
+                        new ServerMessageData.HandCompleteData(handNum, winners, showdownPlayers, e.tableId())));
             }
             case GameEvent.PotAwarded e -> {
                 int[] ids = e.winnerIds();
                 long[] winnerIds = new long[ids.length];
                 for (int i = 0; i < ids.length; i++) winnerIds[i] = ids[i];
                 broadcast(ServerMessage.of(ServerMessageType.POT_AWARDED, gameId,
-                    new ServerMessageData.PotAwardedData(winnerIds, e.amount(), e.potIndex())));
+                    new ServerMessageData.PotAwardedData(winnerIds, e.amount(), e.potIndex(), e.tableId())));
             }
             case GameEvent.ShowdownStarted e -> broadcast(
                 ServerMessage.of(ServerMessageType.SHOWDOWN_STARTED, gameId,
@@ -340,12 +340,30 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
             );
             case GameEvent.PlayerEliminated e -> broadcast(
                 ServerMessage.of(ServerMessageType.PLAYER_ELIMINATED, gameId,
-                    new ServerMessageData.PlayerEliminatedData(e.playerId(), "", e.finishPosition(), 0))
+                    new ServerMessageData.PlayerEliminatedData(e.playerId(), "", e.finishPosition(), 0, e.tableId()))
             );
-            case GameEvent.ActionTimeout e -> broadcast(
-                ServerMessage.of(ServerMessageType.ACTION_TIMEOUT, gameId,
-                    new ServerMessageData.ActionTimeoutData(e.playerId(), e.autoAction().name()))
-            );
+            case GameEvent.ActionTimeout e -> {
+                // ActionTimeout has no tableId on the event itself; derive it by
+                // finding which table the timing-out player is currently seated at.
+                int timeoutTableId = -1;
+                if (game != null && game.getTournament() != null) {
+                    outer:
+                    for (int t = 0; t < game.getTournament().getNumTables(); t++) {
+                        Object gt = game.getTournament().getTable(t);
+                        if (gt instanceof ServerGameTable sgt) {
+                            for (int s = 0; s < sgt.getNumSeats(); s++) {
+                                ServerPlayer sp = sgt.getPlayer(s);
+                                if (sp != null && sp.getID() == e.playerId()) {
+                                    timeoutTableId = t;
+                                    break outer;
+                                }
+                            }
+                        }
+                    }
+                }
+                broadcast(ServerMessage.of(ServerMessageType.ACTION_TIMEOUT, gameId,
+                    new ServerMessageData.ActionTimeoutData(e.playerId(), e.autoAction().name(), timeoutTableId)));
+            }
             case GameEvent.RebuyOffered e -> connectionManager.sendToPlayer(gameId, (long) e.playerId(),
                 ServerMessage.of(ServerMessageType.REBUY_OFFERED, gameId,
                     new ServerMessageData.RebuyOfferedData(e.cost(), e.chips(), e.timeoutSeconds())));
