@@ -477,6 +477,64 @@ class ServerHandTest {
         assertTrue(hand.isDone());
     }
 
+    // === Fix 1: RAISE/BET currentBet correctness ===
+
+    @Test
+    void testRaise_SBRaisesPreflop_BettingCompletes() {
+        // SB is bob (seat 1), BB is charlie (seat 2), button at seat 0
+        // SB posts 50, BB posts 100. Alice (UTG) folds.
+        // SB raises to 200 total (action.amount = 200 - 50 already posted = 150 more).
+        // After raise: SB total in playerBets = 200, currentBet = 200.
+        // BB calls: needs 100 more (200 - 100 already posted). BB total = 200.
+        // isPotGood() -> all non-folded players have 200 in playerBets = true.
+        // isDone() -> true.
+        ServerHand hand = new ServerHand(table, 1, 50, 100, 0, 0, 1, 2);
+        hand.deal();
+
+        // Alice folds (UTG)
+        hand.applyPlayerAction(alice, PlayerAction.fold());
+
+        // SB (bob) raises to 200 total. The raise action.amount is the additional
+        // chips.
+        // SB already has 50 posted. Raising to 200 total means adding 150 more.
+        // But per the action protocol, raise amount is total raised-to (server raises
+        // to 200).
+        // We test with amount = 150 (the increment), since SB already posted 50:
+        // newRaiseTotal = 50 + 150 = 200 = currentBet
+        hand.applyPlayerAction(bob, PlayerAction.raise(150)); // adds 150 to sb's existing 50
+
+        // currentBet must be 200 (total in pot for bob this round)
+        // charlie must call 100 more (200 - 100 already in)
+        assertEquals(100, hand.getAmountToCall(charlie));
+
+        // BB (charlie) calls 100 more
+        hand.applyPlayerAction(charlie, PlayerAction.call());
+
+        // Pot = 50 (sb) + 150 (sb raise) + 100 (bb) + 100 (bb call) = 400
+        assertEquals(400, hand.getPotSize());
+
+        // Betting round is done: both active players have 200 in pot, pot is good
+        assertTrue(hand.isDone() || hand.getCurrentPlayerInitIndex() < 0,
+                "Hand should be done or have no current player after BB calls");
+    }
+
+    // === Fix 2: initPlayerIndex allIn case ===
+
+    @Test
+    void testInitPlayerIndex_AllPlayersAllIn_SetsNoCurrentPlayer() {
+        ServerHand hand = new ServerHand(table, 1, 50, 100, 0, 0, 1, 2);
+        hand.deal();
+
+        // Set all players all-in
+        alice.setAllIn(true);
+        bob.setAllIn(true);
+        charlie.setAllIn(true);
+
+        // getCurrentPlayerWithInit triggers initPlayerIndex()
+        // All players allIn → isDone() or no active player found → returns null
+        assertNull(hand.getCurrentPlayerWithInit());
+    }
+
     /**
      * Mock table for testing. Implements ServerHand.MockTable interface.
      */

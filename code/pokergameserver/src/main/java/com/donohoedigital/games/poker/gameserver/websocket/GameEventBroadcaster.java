@@ -162,7 +162,9 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 int chipCount = 0;
                 int totalBet = 0;
                 int potTotal = 0;
-                if (game != null && game.getTournament() != null) {
+                String playerName = "";
+                if (game != null && game.getTournament() != null
+                        && e.tableId() >= 0 && e.tableId() < game.getTournament().getNumTables()) {
                     Object gt = game.getTournament().getTable(e.tableId());
                     if (gt instanceof ServerGameTable sgt) {
                         ServerHand hand = (ServerHand) sgt.getHoldemHand();
@@ -174,13 +176,14 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                             ServerPlayer sp = sgt.getPlayer(s);
                             if (sp != null && sp.getID() == e.playerId()) {
                                 chipCount = sp.getChipCount();
+                                playerName = sp.getName();
                                 break;
                             }
                         }
                     }
                 }
                 broadcast(ServerMessage.of(ServerMessageType.PLAYER_ACTED, gameId,
-                    new ServerMessageData.PlayerActedData(e.playerId(), "", e.action().name(), e.amount(),
+                    new ServerMessageData.PlayerActedData(e.playerId(), playerName, e.action().name(), e.amount(),
                         totalBet, chipCount, potTotal)));
             }
             case GameEvent.CommunityCardsDealt e -> {
@@ -238,7 +241,7 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                                                 sp.getID(),
                                                 OutboundMessageConverter.cardsToList(
                                                         hand.getPlayerCards(sp.getID()).toArray(new Card[0])),
-                                                ""))
+                                                sp.getName()))
                                         .toList();
                             }
                         }

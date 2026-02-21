@@ -394,7 +394,7 @@ class ServerGameTableTest {
 
     @Test
     void testIsCurrent() {
-        assertFalse(table.isCurrent(), "Table should not be current by default");
+        assertTrue(table.isCurrent(), "Server tables are always current");
     }
 
     // === Helpers ===

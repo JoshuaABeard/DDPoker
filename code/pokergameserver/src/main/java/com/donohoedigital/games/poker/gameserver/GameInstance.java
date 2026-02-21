@@ -180,7 +180,7 @@ public class GameInstance {
             int startingChips = config.startingChips();
             List<ServerPlayer> players = new ArrayList<>();
             for (ServerPlayerSession session : playerSessions.values()) {
-                ServerPlayer player = new ServerPlayer((int) session.getProfileId(), session.getPlayerName(),
+                ServerPlayer player = new ServerPlayer(toIntId(session.getProfileId()), session.getPlayerName(),
                         !session.isAI(), session.getSkillLevel(), startingChips);
                 players.add(player);
             }
@@ -423,7 +423,7 @@ public class GameInstance {
             ServerGameTable table = (ServerGameTable) tournament.getTable(t);
             for (int s = 0; s < table.getSeats(); s++) {
                 ServerPlayer p = table.getPlayer(s);
-                if (p != null && p.getID() == (int) profileId) {
+                if (p != null && p.getID() == toIntId(profileId)) {
                     p.setSittingOut(sittingOut);
                     return;
                 }
@@ -485,7 +485,7 @@ public class GameInstance {
     public void onPlayerAction(long profileId, com.donohoedigital.games.poker.core.PlayerAction action) {
         logger.debug("[GameInstance] onPlayerAction profileId={} action={}", profileId, action);
         if (actionProvider != null) {
-            actionProvider.submitAction((int) profileId, action);
+            actionProvider.submitAction(toIntId(profileId), action);
         }
     }
 
@@ -529,9 +529,9 @@ public class GameInstance {
             ServerGameTable table = (ServerGameTable) tournament.getTable(t);
             for (int s = 0; s < table.getSeats(); s++) {
                 ServerPlayer p = table.getPlayer(s);
-                if (p != null && p.getID() == (int) profileId) {
+                if (p != null && p.getID() == toIntId(profileId)) {
                     ServerHand hand = (ServerHand) table.getHoldemHand();
-                    return GameStateProjection.forPlayer(table, hand, (int) profileId);
+                    return GameStateProjection.forPlayer(table, hand, toIntId(profileId));
                 }
             }
         }
@@ -547,7 +547,7 @@ public class GameInstance {
     public void resendPendingActionIfAny(long profileId) {
         if (actionProvider == null)
             return;
-        ActionRequest req = actionProvider.getPendingActionRequest((int) profileId);
+        ActionRequest req = actionProvider.getPendingActionRequest(toIntId(profileId));
         if (req != null) {
             onActionRequest(req);
         }
@@ -636,6 +636,10 @@ public class GameInstance {
         if (userId != ownerProfileId) {
             throw new GameServerException("Only the game owner can perform this action");
         }
+    }
+
+    private static int toIntId(long profileId) {
+        return Math.toIntExact(profileId); // throws ArithmeticException on overflow
     }
 
     /**

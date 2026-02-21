@@ -503,11 +503,8 @@ public class TournamentEngine {
 
         // Player sitting out - auto-fold
         if (currentPlayer.isSittingOut()) {
-            // Note: doHandAction(fold, ...) stays in TournamentDirector
-            // Note: HandAction creation and processing stays in TD
-            currentPlayer.setSittingOut(true);
             table.setPause(1100); // SLEEP_MILLIS + 100
-
+            processPlayerAction(currentPlayer, PlayerAction.fold(), table, hand, game);
             return TableProcessResult.builder().nextState(TableState.BETTING).build();
         }
 

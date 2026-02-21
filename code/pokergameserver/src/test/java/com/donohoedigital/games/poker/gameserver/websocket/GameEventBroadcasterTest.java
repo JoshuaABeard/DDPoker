@@ -252,6 +252,38 @@ class GameEventBroadcasterTest {
     }
 
     @Test
+    void playerActed_withGameReference_populatesPlayerName() throws Exception {
+        // Create a real player and table so name lookup works
+        ServerPlayer player = new ServerPlayer(42, "TestPlayer", true, 0, 5000);
+        player.setSeat(0);
+        ServerGameTable sgt = new ServerGameTable(0, 2, null, 50, 100, 0);
+        sgt.addPlayer(player, 0);
+
+        ServerTournamentContext tournament = mock(ServerTournamentContext.class);
+        when(tournament.getNumTables()).thenReturn(1);
+        when(tournament.getTable(0)).thenReturn(sgt);
+
+        GameInstance game = mock(GameInstance.class);
+        when(game.getTournament()).thenReturn(tournament);
+
+        GameEventBroadcaster broadcasterWithGame = new GameEventBroadcaster("game-1", connectionManager, converter,
+                game);
+
+        WebSocketSession session = mock(WebSocketSession.class);
+        when(session.isOpen()).thenReturn(true);
+        connectionManager.addConnection("game-1", 99L,
+                new PlayerConnection(session, 99L, "observer", "game-1", objectMapper));
+
+        broadcasterWithGame
+                .accept(new GameEvent.PlayerActed(0, 42, com.donohoedigital.games.poker.core.state.ActionType.FOLD, 0));
+
+        verify(session).sendMessage(argThat(msg -> {
+            String json = ((TextMessage) msg).getPayload();
+            return json.contains("TestPlayer");
+        }));
+    }
+
+    @Test
     void broadcastsCorrectMessageType_playerEliminated() throws Exception {
         WebSocketSession session = mock(WebSocketSession.class);
         when(session.isOpen()).thenReturn(true);

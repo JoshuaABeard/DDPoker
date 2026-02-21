@@ -301,7 +301,7 @@ public class ServerGameTable implements GameTable, ServerHand.MockTable {
     @Override
     public boolean isCurrent() {
         // For server, all tables are conceptually "current"
-        return false;
+        return true;
     }
 
     @Override

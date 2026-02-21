@@ -79,7 +79,7 @@ public class GameInstanceManager {
      * @throws GameServerException
      *             if maximum concurrent games limit is reached
      */
-    public GameInstance createGame(long ownerProfileId, GameConfig config) {
+    public synchronized GameInstance createGame(long ownerProfileId, GameConfig config) {
         if (shutdown) {
             throw new GameServerException("Server is shutting down");
         }

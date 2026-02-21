@@ -290,7 +290,7 @@ public class InboundMessageRouter {
             sendError(connection, "INVALID_DATA", "Invalid rebuy decision data");
             return;
         }
-        game.submitRebuyDecision((int) connection.getProfileId(), data.accept());
+        game.submitRebuyDecision(Math.toIntExact(connection.getProfileId()), data.accept());
     }
 
     private void handleAddonDecision(PlayerConnection connection, GameInstance game, JsonNode dataNode) {
@@ -301,7 +301,7 @@ public class InboundMessageRouter {
             sendError(connection, "INVALID_DATA", "Invalid addon decision data");
             return;
         }
-        game.submitAddonDecision((int) connection.getProfileId(), data.accept());
+        game.submitAddonDecision(Math.toIntExact(connection.getProfileId()), data.accept());
     }
 
     private PlayerAction parseAction(String actionString, int amount) {

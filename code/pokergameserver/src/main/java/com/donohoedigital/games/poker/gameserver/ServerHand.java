@@ -920,8 +920,18 @@ public class ServerHand implements GameHand {
      * Initialize player index to start of betting round.
      */
     private void initPlayerIndex() {
-        // Start at -1, then playerActed will find first active player
-        playerActed(-1);
+        if (isDone()) {
+            currentPlayerIndex = NO_CURRENT_PLAYER;
+            return;
+        }
+        for (int i = 0; i < playerOrder.size(); i++) {
+            ServerPlayer p = playerOrder.get(i);
+            if (!p.isFolded() && !p.isAllIn()) {
+                currentPlayerIndex = i;
+                return;
+            }
+        }
+        currentPlayerIndex = NO_CURRENT_PLAYER;
     }
 
     /**
@@ -1018,8 +1028,9 @@ public class ServerHand implements GameHand {
                 int actualBet = Math.min(betAmount, sp.getChipCount());
                 sp.subtractChips(actualBet);
                 // Track in playerBets - will be added to pots by calcPots()
-                playerBets.put(sp.getID(), playerBets.getOrDefault(sp.getID(), 0) + actualBet);
-                currentBet = actualBet; // Current bet is what player actually bet
+                int newBetTotal = playerBets.getOrDefault(sp.getID(), 0) + actualBet;
+                playerBets.put(sp.getID(), newBetTotal);
+                currentBet = newBetTotal; // Current bet is the bettor's total for this round
                 history.add(new ServerHandAction(sp, round.toLegacy(), ServerHandAction.ACTION_BET, actualBet, 0,
                         sp.getChipCount() == 0));
                 break;
@@ -1030,8 +1041,9 @@ public class ServerHand implements GameHand {
                 int actualRaise = Math.min(raiseAmount, sp.getChipCount());
                 sp.subtractChips(actualRaise);
                 // Track in playerBets - will be added to pots by calcPots()
-                playerBets.put(sp.getID(), playerBets.getOrDefault(sp.getID(), 0) + actualRaise);
-                currentBet = actualRaise; // Current bet is what player actually raised to
+                int newRaiseTotal = playerBets.getOrDefault(sp.getID(), 0) + actualRaise;
+                playerBets.put(sp.getID(), newRaiseTotal);
+                currentBet = newRaiseTotal; // Current bet is the raiser's total for this round
                 history.add(new ServerHandAction(sp, round.toLegacy(), ServerHandAction.ACTION_RAISE, actualRaise, 0,
                         sp.getChipCount() == 0));
                 break;

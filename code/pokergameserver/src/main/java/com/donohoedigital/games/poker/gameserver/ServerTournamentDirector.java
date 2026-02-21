@@ -247,7 +247,7 @@ public class ServerTournamentDirector implements Runnable {
                 eventBus.publish(new GameEvent.BreakStarted(table.getNumber()));
                 // Offer addons to all active players at the configured addon break level
                 if (addonOfferCallback != null && tournament instanceof ServerTournamentContext stc
-                        && stc.isAllowAddons() && stc.getLevel() == stc.getAddonLevel()) {
+                        && stc.isAllowAddons() && stc.getAddonLevel() >= 0 && stc.getLevel() == stc.getAddonLevel()) {
                     for (int s = 0; s < table.getSeats(); s++) {
                         ServerPlayer player = (ServerPlayer) table.getPlayer(s);
                         if (player != null && !player.isSittingOut()) {

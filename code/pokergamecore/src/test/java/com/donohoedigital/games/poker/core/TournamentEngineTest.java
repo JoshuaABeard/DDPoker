@@ -1197,6 +1197,7 @@ class TournamentEngineTest {
         public int amountToCall = 0;
         public int minBet = 0;
         public int minRaise = 0;
+        public PlayerAction lastAction = null; // tracks last action applied
 
         StubGameHand(BettingRound round, boolean done) {
             this.round = round;
@@ -1292,7 +1293,7 @@ class TournamentEngineTest {
 
         @Override
         public void applyPlayerAction(GamePlayerInfo player, PlayerAction action) {
-            // Stub implementation - does nothing
+            this.lastAction = action;
         }
 
         // === V2 AI Support Methods (Stubs) ===
@@ -1520,6 +1521,9 @@ class TournamentEngineTest {
         assertThat(player.isSittingOut()).isTrue();
         assertThat(table.pauseMillis).isEqualTo(1100);
         assertThat(result.nextState()).isEqualTo(TableState.BETTING);
+        // Fix 4: sitting-out player must be auto-folded via applyPlayerAction
+        assertThat(hand.lastAction).isNotNull();
+        assertThat(hand.lastAction.actionType()).isEqualTo(com.donohoedigital.games.poker.core.state.ActionType.FOLD);
     }
 
     @Test
