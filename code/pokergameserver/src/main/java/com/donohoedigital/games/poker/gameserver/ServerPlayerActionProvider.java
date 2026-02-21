@@ -34,6 +34,7 @@ package com.donohoedigital.games.poker.gameserver;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -146,7 +147,8 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
             PlayerAction action = aiProvider.getAction(player, options);
             if (aiActionDelayMs > 0) {
                 try {
-                    Thread.sleep(aiActionDelayMs);
+                    long delay = ThreadLocalRandom.current().nextLong(aiActionDelayMs / 2L, aiActionDelayMs * 2L + 1);
+                    Thread.sleep(delay);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }

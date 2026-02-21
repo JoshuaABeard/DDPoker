@@ -580,6 +580,12 @@ public class WebSocketTournamentDirector extends BasePhase
             // Determine input mode from server options and show action buttons.
             int inputMode = determineInputMode(d.options());
             PokerPlayer localPlayer = hand.getCurrentPlayer();
+            // Set server-provided timeout on the player so CountdownPanel displays
+            // the correct remaining time rather than reading an unset (0) value.
+            if (localPlayer != null && d.timeoutSeconds() > 0) {
+                localPlayer.setTimeoutMillis(d.timeoutSeconds() * 1000);
+                localPlayer.setThinkBankMillis(0);
+            }
             logger.debug("[ACTION_REQUIRED EDT] firing TYPE_CURRENT_PLAYER_CHANGED, then setInputMode mode={}",
                     inputMode);
             table.fireEvent(PokerTableEvent.TYPE_CURRENT_PLAYER_CHANGED);

@@ -19,6 +19,7 @@ package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.poker.GameClock;
 import com.donohoedigital.games.poker.PokerGame;
+import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
@@ -226,6 +227,28 @@ class WebSocketTournamentDirectorTest {
         assertThat(wsTD.getCurrentOptions()).isNotNull();
         assertThat(wsTD.getCurrentOptions().canFold()).isTrue();
         assertThat(wsTD.getCurrentOptions().canCall()).isTrue();
+    }
+
+    @Test
+    void actionRequiredSetsTimeoutOnLocalPlayer() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+
+        ObjectNode options = mapper.createObjectNode();
+        options.put("canFold", true).put("canCheck", true).put("canCall", false).put("callAmount", 0)
+                .put("canBet", false).put("minBet", 0).put("maxBet", 0).put("canRaise", false).put("minRaise", 0)
+                .put("maxRaise", 0).put("canAllIn", false).put("allInAmount", 0);
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("timeoutSeconds", 30);
+        payload.set("options", options);
+        dispatch(ServerMessageType.ACTION_REQUIRED, payload);
+
+        PokerPlayer localPlayer = requireTable().getRemoteHand().getCurrentPlayer();
+        assertThat(localPlayer).isNotNull();
+        // 30s * 1000ms = 30000ms (stored internally in 100ms increments, so readable as
+        // 30000)
+        assertThat(localPlayer.getTimeoutMillis()).isEqualTo(30000);
+        assertThat(localPlayer.getThinkBankMillis()).isEqualTo(0);
     }
 
     // -------------------------------------------------------------------------
