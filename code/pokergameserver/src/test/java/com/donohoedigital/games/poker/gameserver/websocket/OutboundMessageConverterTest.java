@@ -66,7 +66,7 @@ class OutboundMessageConverterTest {
         GameStateSnapshot snapshot = new GameStateSnapshot(1, 5, null, new Card[0], List.of(), List.of(), -1, -1, -1,
                 -1, null, 0, 0, 0, 0);
 
-        ServerMessage message = converter.createConnectedMessage("game-1", 42L, snapshot);
+        ServerMessage message = converter.createConnectedMessage("game-1", 42L, snapshot, null);
 
         assertEquals(ServerMessageType.CONNECTED, message.type());
         assertEquals("game-1", message.gameId());
@@ -78,7 +78,7 @@ class OutboundMessageConverterTest {
         GameStateSnapshot snapshot = new GameStateSnapshot(1, 5, null, new Card[0], List.of(), List.of(), -1, -1, -1,
                 -1, null, 0, 0, 0, 0);
 
-        ServerMessage message = converter.createConnectedMessage("game-1", 42L, snapshot);
+        ServerMessage message = converter.createConnectedMessage("game-1", 42L, snapshot, null);
 
         ServerMessageData.ConnectedData data = (ServerMessageData.ConnectedData) message.data();
         assertEquals(42L, data.playerId());
@@ -86,7 +86,7 @@ class OutboundMessageConverterTest {
 
     @Test
     void createConnectedMessage_nullSnapshotYieldsNullGameState() {
-        ServerMessage message = converter.createConnectedMessage("game-1", 42L, null);
+        ServerMessage message = converter.createConnectedMessage("game-1", 42L, null, null);
 
         ServerMessageData.ConnectedData data = (ServerMessageData.ConnectedData) message.data();
         assertEquals(42L, data.playerId());

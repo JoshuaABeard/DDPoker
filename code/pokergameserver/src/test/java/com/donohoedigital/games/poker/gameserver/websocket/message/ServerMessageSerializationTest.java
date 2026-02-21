@@ -46,7 +46,7 @@ class ServerMessageSerializationTest {
     @Test
     void connectedMessage_serializesTypeCorrectly() throws Exception {
         ServerMessage message = ServerMessage.of(ServerMessageType.CONNECTED, "game-123",
-                new ServerMessageData.ConnectedData(42L, null));
+                new ServerMessageData.ConnectedData(42L, null, null));
 
         String json = objectMapper.writeValueAsString(message);
         JsonNode node = objectMapper.readTree(json);
