@@ -1,7 +1,9 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
- * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 Joshua Beard and contributors
+ *
+ * This file is part of DD Poker, originally created by Doug Donohoe.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -118,7 +120,7 @@ public class Lobby extends BasePhase {
             start_ = buttonbox_.getDefaultButton();
             edit_ = buttonbox_.getButton("edit");
         }
-        cancel_ = buttonbox_.getButton("cancel");
+        cancel_ = buttonbox_.getButtonStartsWith("cancel");
 
         // data area
         DDPanel data = new DDPanel();

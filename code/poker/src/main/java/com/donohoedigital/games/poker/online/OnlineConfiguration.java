@@ -1,7 +1,9 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
- * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 Joshua Beard and contributors
+ *
+ * This file is part of DD Poker, originally created by Doug Donohoe.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -267,7 +269,8 @@ public class OnlineConfiguration extends BasePhase implements ActionListener {
                     : CommunityHostingConfig.buildGameUrl(publicIp, port_, gameId);
             PlayerProfile playerProfile = PlayerProfileOptions.getDefaultProfile();
             String gameName = (playerProfile != null) ? playerProfile.getName() + "'s Game" : profile.getName();
-            String wanBaseUrl = PropertyConfig.getMessage("msg.wanserver.url", "");
+            String wanNode = Prefs.NODE_OPTIONS + context_.getGameEngine().getPrefsNodeName();
+            String wanBaseUrl = Prefs.getUserPrefs(wanNode).get(EngineConstants.OPTION_ONLINE_SERVER, "");
             if (!wanBaseUrl.isEmpty()) {
                 RestGameClient wanClient = new RestGameClient(wanBaseUrl, embeddedServer.getLocalUserJwt());
                 CommunityGameRegistration registration = new CommunityGameRegistration(wanClient);

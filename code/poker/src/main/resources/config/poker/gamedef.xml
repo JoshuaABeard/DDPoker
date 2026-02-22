@@ -307,12 +307,23 @@
     <param name="default-button" strvalue="hostonline"/>
     <param name="profile.phase" strvalue="PlayerProfileOptions"/>
     <paramlist name="buttons">
-      <strvalue>hostonline:OnlineOptions</strvalue>
+      <strvalue>hostonline:OnlineTournamentOptions</strvalue>
       <strvalue>joinonline:FindGames</strvalue>
       <strvalue>loadgameonline:LoadOnlineGameMenu</strvalue>
       <strvalue>website:LaunchOnlineWebsite</strvalue>
       <strvalue>forums:LaunchOnlineForums</strvalue>
       <strvalue>helpdetail:Help:online</strvalue>
+      <strvalue>cancelprev:PreviousPhase</strvalue>
+    </paramlist>
+  </phase>
+
+  <!-- ONLINE TOURNAMENT SELECTION (setup 1 of 2) -->
+  <phase name="OnlineTournamentOptions" extends="TournamentOptions">
+    <param name="menubox-title-prop" strvalue="msg.title.OnlineTournamentOptions"/>
+    <param name="menubox-help-name" strvalue="tournamentoptions"/>
+    <paramlist name="buttons">
+      <strvalue>okaystart:OnlineConfiguration</strvalue>
+      <strvalue>helpdetail:Help:hostonline</strvalue>
       <strvalue>cancelprev:PreviousPhase</strvalue>
     </paramlist>
   </phase>
