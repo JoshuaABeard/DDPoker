@@ -303,7 +303,8 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
                 playerType_ = PlayerType.getAdvisor();
                 if (DebugConfig.isTestingOn())
                     logger.debug("Lazily creating advisor: " + playerType_.getName() + " for " + getName());
-                setPokerAI(PokerAI.createPokerAI(playerType_));
+                ai = PokerAI.createPokerAI(playerType_);
+                setPokerAI(ai);
             } else {
                 if (DebugConfig.isTestingOn())
                     logger.debug("Lazily instantiating dummy ai for player " + getName());
