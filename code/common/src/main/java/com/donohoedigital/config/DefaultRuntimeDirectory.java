@@ -2,6 +2,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 Joshua Beard and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,11 +50,6 @@ public class DefaultRuntimeDirectory implements RuntimeDirectory {
         } else {
             Properties props = System.getProperties();
             base = (String) props.get("user.home");
-
-            // FIX: temp workaround for deployment
-            if (base.contains("root")) {
-                base = "/home/ddpoker3";
-            }
         }
         String work = System.getenv("WORK");
         if (work == null || work.isEmpty()) {
@@ -62,10 +58,10 @@ public class DefaultRuntimeDirectory implements RuntimeDirectory {
         return new File(work + File.separatorChar + "ddpoker" + File.separatorChar + "runtime");
     }
 
+    // appName is kept to satisfy the RuntimeDirectory interface; the
+    // platform-specific
+    // config directory is already baked into FilePrefs.
     public File getClientHome(String appName) {
-        Properties props = System.getProperties();
-        String sUserDir = (String) props.get("user.home");
-        return new File(sUserDir + File.separatorChar + ".dd-" + appName
-                + (Utils.getVersionString() == null ? "" : Utils.getVersionString()));
+        return new File(FilePrefs.getConfigDirectory());
     }
 }

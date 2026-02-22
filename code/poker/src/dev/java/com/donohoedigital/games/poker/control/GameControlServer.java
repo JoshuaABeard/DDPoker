@@ -23,6 +23,7 @@ import com.sun.net.httpserver.HttpServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.donohoedigital.config.FilePrefs;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -40,8 +41,8 @@ import java.util.concurrent.Executors;
  * <p>
  * On startup, writes its port and API key to:
  * <ul>
- *   <li>{@code ~/.ddpoker/control-server.port}</li>
- *   <li>{@code ~/.ddpoker/control-server.key}</li>
+ *   <li>{@code <config-dir>/control-server.port}</li>
+ *   <li>{@code <config-dir>/control-server.key}</li>
  * </ul>
  * <p>
  * Endpoints:
@@ -134,6 +135,6 @@ public class GameControlServer {
     }
 
     Path ddPokerDir() {
-        return Path.of(System.getProperty("user.home"), ".ddpoker");
+        return Path.of(FilePrefs.getConfigDirectory());
     }
 }

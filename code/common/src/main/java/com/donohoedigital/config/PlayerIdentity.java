@@ -161,28 +161,7 @@ public class PlayerIdentity {
         if (configDirectoryOverride != null) {
             return configDirectoryOverride;
         }
-
-        String os = System.getProperty("os.name").toLowerCase();
-
-        // macOS detection - must come before Windows check
-        // (some Mac systems report "mac os x" which contains "os")
-        if (os.contains("mac") || os.contains("darwin")) {
-            return System.getProperty("user.home") + "/Library/Application Support/ddpoker";
-        }
-
-        // Windows detection
-        if (os.contains("win")) {
-            String appdata = System.getenv("APPDATA");
-            if (appdata != null) {
-                return appdata + File.separator + "ddpoker";
-            }
-            // Fallback if APPDATA not set
-            return System.getProperty("user.home") + File.separator + "AppData" + File.separator + "Roaming"
-                    + File.separator + "ddpoker";
-        }
-
-        // Linux and other Unix-like systems (hidden directory)
-        return System.getProperty("user.home") + "/.ddpoker";
+        return FilePrefs.getConfigDirectory();
     }
 
     /**

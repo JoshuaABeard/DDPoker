@@ -17,6 +17,7 @@
  */
 package com.donohoedigital.games.poker.server;
 
+import com.donohoedigital.config.FilePrefs;
 import com.donohoedigital.games.poker.PlayerProfile;
 import com.donohoedigital.games.poker.PlayerProfileOptions;
 import com.donohoedigital.games.poker.gameserver.auth.JwtKeyManager;
@@ -46,7 +47,7 @@ import java.util.Properties;
  * On {@link #start()}, this class:
  * <ol>
  * <li>Generates an RSA key pair for JWT auth if one does not already exist at
- * {@code ~/.ddpoker/jwt/}</li>
+ * {@code <config-dir>/jwt/}</li>
  * <li>Starts a Spring Boot application context, binding to a random port</li>
  * <li>Exposes {@link #getPort()} for the rest of the desktop client to connect
  * to</li>
@@ -65,7 +66,7 @@ public class EmbeddedGameServer {
 
     private static final Logger logger = LogManager.getLogger(EmbeddedGameServer.class);
 
-    private static final Path DDPOKER_DIR = Path.of(System.getProperty("user.home"), ".ddpoker");
+    private static final Path DDPOKER_DIR = Path.of(FilePrefs.getConfigDirectory());
     private static final Path JWT_DIR = DDPOKER_DIR.resolve("jwt");
     private static final Path PRIVATE_KEY_PATH = JWT_DIR.resolve("private-key.pem");
     private static final Path PUBLIC_KEY_PATH = JWT_DIR.resolve("public-key.pem");
@@ -121,6 +122,7 @@ public class EmbeddedGameServer {
         }
 
         try {
+            System.setProperty("ddpoker.config.dir", FilePrefs.getConfigDirectory());
             SpringApplication app = new SpringApplication(EmbeddedServerConfig.class);
             app.setAdditionalProfiles("embedded");
             app.setHeadless(false); // Running inside a Swing application
@@ -249,7 +251,7 @@ public class EmbeddedGameServer {
     // -------------------------------------------------------------------------
 
     /**
-     * Generates the RSA key pair and saves it to {@code ~/.ddpoker/jwt/} if it does
+     * Generates the RSA key pair and saves it to {@code <config-dir>/jwt/} if it does
      * not exist.
      */
     private void ensureJwtKeys() throws Exception {
