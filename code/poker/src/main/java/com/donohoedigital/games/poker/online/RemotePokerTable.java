@@ -158,10 +158,15 @@ public class RemotePokerTable extends PokerTable {
     }
 
     /**
-     * Sets or replaces the current hand view model. Does NOT fire events.
+     * Sets or replaces the current hand view model. Back-links the hand to this
+     * table so {@link RemoteHoldemHand#getTable()} returns the correct value (used
+     * by {@link com.donohoedigital.games.poker.dashboard.DashboardAdvisor} and
+     * other components that call {@code hhand.getTable()}). Does NOT fire events.
      */
     public void setRemoteHand(RemoteHoldemHand hand) {
         this.remoteHand_ = hand;
+        if (hand != null)
+            hand.setOwnerTable(this);
     }
 
     /** Returns the current hand as {@link RemoteHoldemHand}, or {@code null}. */

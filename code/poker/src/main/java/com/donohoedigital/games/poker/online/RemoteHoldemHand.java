@@ -20,6 +20,7 @@ package com.donohoedigital.games.poker.online;
 import com.donohoedigital.games.poker.HandAction;
 import com.donohoedigital.games.poker.HoldemHand;
 import com.donohoedigital.games.poker.PokerPlayer;
+import com.donohoedigital.games.poker.PokerTable;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.HandSorted;
 import com.donohoedigital.games.poker.core.state.BettingRound;
@@ -63,6 +64,7 @@ public class RemoteHoldemHand extends HoldemHand {
     private final Map<Integer, Integer> remoteWins_ = new HashMap<>();
     private int remoteSmallBlindSeat_ = NO_CURRENT_PLAYER;
     private int remoteBigBlindSeat_ = NO_CURRENT_PLAYER;
+    private PokerTable ownerTable_;
 
     /**
      * Creates a remote hand with no-arg parent constructor. Calls
@@ -144,6 +146,21 @@ public class RemoteHoldemHand extends HoldemHand {
     @Override
     public int getHistorySize() {
         return 0;
+    }
+
+    /**
+     * Returns the {@link PokerTable} that owns this hand. Overrides the parent
+     * which reads the {@code table_} field (never set via the no-arg constructor
+     * path). Set by {@link RemotePokerTable#setRemoteHand}.
+     */
+    @Override
+    public PokerTable getTable() {
+        return ownerTable_;
+    }
+
+    /** Called by {@link RemotePokerTable#setRemoteHand} to back-link the table. */
+    void setOwnerTable(PokerTable table) {
+        ownerTable_ = table;
     }
 
     @Override

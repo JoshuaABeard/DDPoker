@@ -407,13 +407,26 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     }
 
     /**
-     * Return the human player. In online games, returns local player.
+     * Return the human player. In online games, returns local player. In WebSocket
+     * mode, finds the human-controlled player in the current table.
      */
     public PokerPlayer getHumanPlayer() {
         if (isOnlineGame())
             return getLocalPlayer();
-        else
-            return getPokerPlayerFromID(PokerConstants.PLAYER_ID_HOST);
+        // In WebSocket mode the human player lives in RemotePokerTable.remotePlayers_,
+        // not in the game's own player list (which still holds the PracticeGameLauncher
+        // placeholder). Scan the current table's seats to find the human player.
+        if (webSocketConfig_ != null) {
+            PokerTable table = getCurrentTable();
+            if (table != null) {
+                for (int s = 0; s < PokerConstants.SEATS; s++) {
+                    PokerPlayer p = table.getPlayer(s);
+                    if (p != null && p.isHuman())
+                        return p;
+                }
+            }
+        }
+        return getPokerPlayerFromID(PokerConstants.PLAYER_ID_HOST);
     }
 
     /**
