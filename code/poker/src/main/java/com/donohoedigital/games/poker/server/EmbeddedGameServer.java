@@ -251,8 +251,8 @@ public class EmbeddedGameServer {
     // -------------------------------------------------------------------------
 
     /**
-     * Generates the RSA key pair and saves it to {@code <config-dir>/jwt/} if it does
-     * not exist.
+     * Generates the RSA key pair and saves it to {@code <config-dir>/jwt/} if it
+     * does not exist.
      */
     private void ensureJwtKeys() throws Exception {
         Files.createDirectories(JWT_DIR);

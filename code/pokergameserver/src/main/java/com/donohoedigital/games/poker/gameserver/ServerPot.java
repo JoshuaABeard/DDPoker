@@ -51,7 +51,8 @@ public class ServerPot {
      * @param round
      *            betting round when pot was created
      * @param sideBet
-     *            incremental all-in cap (0 for main pot which takes all remaining chips)
+     *            incremental all-in cap (0 for main pot which takes all remaining
+     *            chips)
      */
     public ServerPot(int round, int sideBet) {
         this.chips = 0;
