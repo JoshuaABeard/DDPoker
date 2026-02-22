@@ -606,7 +606,8 @@ public class WebSocketTournamentDirector extends BasePhase
             // If the player pre-selected an advance action while another player was
             // acting, auto-submit it now instead of showing the action buttons.
             if (d.options() != null) {
-                String[] advance = AdvanceAction.getAdvanceActionWS(d.options().canCheck(), d.options().allInAmount());
+                String[] advance = AdvanceAction.getAdvanceActionWS(d.options().canCheck(), d.options().canRaise(),
+                        d.options().canAllIn(), d.options().allInAmount());
                 if (advance != null) {
                     logger.debug("[ACTION_REQUIRED EDT] firing pre-action advance={}", advance[0]);
                     game_.setInputMode(PokerTableInput.MODE_QUITSAVE);
@@ -1539,8 +1540,18 @@ public class WebSocketTournamentDirector extends BasePhase
             case PokerGame.ACTION_CALL -> "CALL";
             case PokerGame.ACTION_BET -> "BET";
             case PokerGame.ACTION_RAISE -> "RAISE";
-            // ALL_IN is sent as RAISE with the all-in chip amount; server parses RAISE
-            case PokerGame.ACTION_ALL_IN -> "RAISE";
+            // ALL_IN maps to BET, RAISE, or CALL depending on server options:
+            // canAllIn=true, canRaise=false → BET (first to act, no existing bet)
+            // canAllIn=true, canRaise=true → RAISE (facing an existing bet)
+            // canAllIn=false → CALL (short-stacked: chips ≤ amountToCall)
+            // Without this, the server's validateAction() folds invalid RAISE/BET actions.
+            case PokerGame.ACTION_ALL_IN -> {
+                if (currentOptions_ == null)
+                    yield "RAISE"; // safe fallback; options always set before buttons shown
+                if (currentOptions_.canAllIn())
+                    yield currentOptions_.canRaise() ? "RAISE" : "BET";
+                yield "CALL"; // short-stack all-in: call for all remaining chips
+            }
             default -> {
                 logger.warn("[mapPokerGameActionToWsString] unknown action={}, defaulting to FOLD", action);
                 yield "FOLD";
@@ -1581,6 +1592,14 @@ public class WebSocketTournamentDirector extends BasePhase
             return currentOptions_.allInAmount();
         }
         return uiAmount;
+    }
+
+    /**
+     * Returns the wire-format action string for ACTION_ALL_IN given the current
+     * server options. Package-private for testing.
+     */
+    String allInWsActionForTest() {
+        return mapPokerGameActionToWsString(PokerGame.ACTION_ALL_IN);
     }
 
     /** Deserializes a {@link JsonNode} into the target data class. */

@@ -345,25 +345,36 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
      * @param canCheck
      *            true if CHECK is legal this turn (otherwise checkfold maps to
      *            FOLD)
+     * @param canRaise
+     *            true if RAISE is legal this turn (existing bet to raise against)
+     * @param canAllIn
+     *            true if all-in is a BET or RAISE; false if it is a short-stack
+     *            CALL
      * @param allInAmount
-     *            chip amount to send with an all-in raise
+     *            chip amount to send with an all-in bet or raise (ignored for CALL)
      */
-    public static String[] getAdvanceActionWS(boolean canCheck, int allInAmount) {
+    public static String[] getAdvanceActionWS(boolean canCheck, boolean canRaise, boolean canAllIn, int allInAmount) {
         if (impl_ == null || impl_.buttons_.size() == 0)
             return null;
-        String[] result = impl_._getAdvanceActionWS(canCheck, allInAmount);
+        String[] result = impl_._getAdvanceActionWS(canCheck, canRaise, canAllIn, allInAmount);
         if (result != null)
             impl_.clearButtons();
         return result;
     }
 
-    private String[] _getAdvanceActionWS(boolean canCheck, int allInAmount) {
+    private String[] _getAdvanceActionWS(boolean canCheck, boolean canRaise, boolean canAllIn, int allInAmount) {
         if (checkfold_.isSelected()) {
             return new String[]{canCheck ? "CHECK" : "FOLD", "0"};
         } else if (call_.isSelected()) {
             return new String[]{"CALL", "0"};
         } else if (allin_.isSelected()) {
-            return new String[]{"RAISE", String.valueOf(allInAmount)};
+            // Mirror mapPokerGameActionToWsString logic:
+            // canAllIn=true, canRaise=false → BET (first to act)
+            // canAllIn=true, canRaise=true → RAISE (facing existing bet)
+            // canAllIn=false → CALL (short-stack)
+            if (!canAllIn)
+                return new String[]{"CALL", "0"};
+            return new String[]{canRaise ? "RAISE" : "BET", String.valueOf(allInAmount)};
         }
         return null;
     }
