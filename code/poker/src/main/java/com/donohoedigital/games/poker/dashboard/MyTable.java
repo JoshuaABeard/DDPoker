@@ -67,7 +67,7 @@ public class MyTable extends DashboardItem {
 
     protected Object getDynamicTitleParam() {
         PokerTable table = game_.getCurrentTable();
-        return table.getNumber();
+        return table.getNumber() + 1;
     }
 
     ///
@@ -91,7 +91,7 @@ public class MyTable extends DashboardItem {
             sMsgKey = bObs ? "msg.mytable.obs" : "msg.mytable";
         }
 
-        labelInfo_.setText(PropertyConfig.getMessage(sMsgKey, human.getTable().getNumber(),
+        labelInfo_.setText(PropertyConfig.getMessage(sMsgKey, human.getTable().getNumber() + 1,
                 bObs ? null : human.getSeat() + 1, "" + nHandNum) // use "" + to not get commas
         );
     }
