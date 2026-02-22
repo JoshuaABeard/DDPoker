@@ -39,7 +39,6 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.base.Utils;
-import com.donohoedigital.config.Prefs;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.comms.EngineMessage;
 import com.donohoedigital.games.config.EngineConstants;
@@ -212,19 +211,12 @@ public class PokerStartMenu extends StartMenu {
         // Get default profile (may be null for first-time users)
         profile_ = PlayerProfileOptions.getDefaultProfile();
 
-        // First-time user - show wizard or fallback to old flow
+        // First-time user - create a new profile
         if (profile_ == null) {
             ProfileList list = PlayerProfileOptions.getPlayerProfileList(engine_, context_);
-
-            if (shouldShowFirstTimeWizard()) {
-                // Launch first-time user experience wizard
-                launchFirstTimeWizard(list);
-            } else {
-                // Fallback to old flow if wizard disabled/completed
-                profile_ = (PlayerProfile) list.newProfile("startmenu");
-                if (profile_ != null) {
-                    list.rememberProfile(profile_);
-                }
+            profile_ = (PlayerProfile) list.newProfile("startmenu");
+            if (profile_ != null) {
+                list.rememberProfile(profile_);
             }
         }
 
@@ -259,35 +251,6 @@ public class PokerStartMenu extends StartMenu {
         }
 
         messageCheck = false;
-    }
-
-    /**
-     * Check if first-time wizard should be shown
-     */
-    private boolean shouldShowFirstTimeWizard() {
-        // Check if wizard has been completed or dismissed
-        Preferences prefs = Prefs.getUserPrefs("ftue");
-        boolean wizardCompleted = prefs.getBoolean("wizard_completed", false);
-        boolean dontShowAgain = prefs.getBoolean("dont_show_again", false);
-
-        return !wizardCompleted && !dontShowAgain;
-    }
-
-    /**
-     * Launch first-time user experience wizard
-     */
-    private void launchFirstTimeWizard(ProfileList list) {
-        com.donohoedigital.comms.DMTypedHashMap params = new com.donohoedigital.comms.DMTypedHashMap();
-        params.setObject("profilelist", list);
-
-        // Launch wizard dialog
-        DialogPhase wizard = (DialogPhase) context_.processPhaseNow("FirstTimeWizard", params);
-
-        // Wizard returns with profile created
-        profile_ = PlayerProfileOptions.getDefaultProfile();
-        if (profile_ != null) {
-            list.rememberProfile(profile_);
-        }
     }
 
     /**
