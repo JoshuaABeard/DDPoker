@@ -719,7 +719,13 @@ public class GameInstance {
         pendingContinue = future;
         eventBus.publish(new com.donohoedigital.games.poker.core.event.GameEvent.AllInRunoutPaused(tableId));
         try {
-            future.get(properties.actionTimeoutSeconds() * 2L, TimeUnit.SECONDS);
+            long timeoutSeconds = properties.actionTimeoutSeconds();
+            if (timeoutSeconds <= 0) {
+                // No action timeout (e.g. embedded/practice mode): wait indefinitely
+                future.get();
+            } else {
+                future.get(timeoutSeconds * 2L, TimeUnit.SECONDS);
+            }
         } catch (Exception e) {
             // timeout or interrupt — proceed anyway
         } finally {
