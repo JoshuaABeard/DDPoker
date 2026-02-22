@@ -1033,6 +1033,56 @@ class WebSocketTournamentDirectorTest {
     }
 
     // -------------------------------------------------------------------------
+    // resolveActionAmount — all-in button sends correct amount (fix)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void resolveActionAmountAllInUsesAllInAmountFromOptions() throws Exception {
+        // Simulate server sending ACTION_REQUIRED with allInAmount=1500.
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        ObjectNode options = mapper.createObjectNode();
+        options.put("canFold", true).put("canCheck", false).put("canCall", true).put("callAmount", 50)
+                .put("canBet", false).put("minBet", 0).put("maxBet", 0).put("canRaise", true).put("minRaise", 100)
+                .put("maxRaise", 1500).put("canAllIn", true).put("allInAmount", 1500);
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("timeoutSeconds", 30);
+        payload.set("options", options);
+        dispatch(ServerMessageType.ACTION_REQUIRED, payload);
+
+        // uiAmount=100 (spinner default/min), but ACTION_ALL_IN must use
+        // allInAmount=1500.
+        assertThat(wsTD.resolveActionAmount(PokerGame.ACTION_ALL_IN, 100)).isEqualTo(1500);
+    }
+
+    @Test
+    void resolveActionAmountNonAllInUsesUiAmount() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        ObjectNode options = mapper.createObjectNode();
+        options.put("canFold", true).put("canCheck", false).put("canCall", true).put("callAmount", 50)
+                .put("canBet", false).put("minBet", 0).put("maxBet", 0).put("canRaise", true).put("minRaise", 100)
+                .put("maxRaise", 1500).put("canAllIn", true).put("allInAmount", 1500);
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("timeoutSeconds", 30);
+        payload.set("options", options);
+        dispatch(ServerMessageType.ACTION_REQUIRED, payload);
+
+        // RAISE, BET, CALL, FOLD must pass through the uiAmount unchanged.
+        assertThat(wsTD.resolveActionAmount(PokerGame.ACTION_RAISE, 400)).isEqualTo(400);
+        assertThat(wsTD.resolveActionAmount(PokerGame.ACTION_BET, 200)).isEqualTo(200);
+        assertThat(wsTD.resolveActionAmount(PokerGame.ACTION_CALL, 50)).isEqualTo(50);
+        assertThat(wsTD.resolveActionAmount(PokerGame.ACTION_FOLD, 0)).isEqualTo(0);
+    }
+
+    @Test
+    void resolveActionAmountAllInWithNoOptionsUsesUiAmount() {
+        // currentOptions_ is null (no ACTION_REQUIRED received yet) — must not throw,
+        // must fall back to the uiAmount so the action is still submitted.
+        assertThat(wsTD.resolveActionAmount(PokerGame.ACTION_ALL_IN, 500)).isEqualTo(500);
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 

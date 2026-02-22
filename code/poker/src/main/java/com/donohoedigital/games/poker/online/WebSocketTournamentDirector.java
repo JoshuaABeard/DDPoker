@@ -131,7 +131,7 @@ public class WebSocketTournamentDirector extends BasePhase
             }
             game_.setInputMode(PokerTableInput.MODE_QUITSAVE);
             String wsAction = mapPokerGameActionToWsString(action);
-            wsClient_.sendAction(wsAction, amount);
+            wsClient_.sendAction(wsAction, resolveActionAmount(action, amount));
         });
 
         // Register as the GameManager so ShowTournamentTable.poststart() can wire chat.
@@ -1486,6 +1486,18 @@ public class WebSocketTournamentDirector extends BasePhase
     /** Returns the last {@link ActionOptionsData} received from the server. */
     public ActionOptionsData getCurrentOptions() {
         return currentOptions_;
+    }
+
+    /**
+     * Resolves the wire amount for a player action. For ALL_IN, returns the
+     * server-provided all-in amount from the last {@link ActionOptionsData} instead
+     * of the UI spinner value, which may differ. Package-private for testing.
+     */
+    int resolveActionAmount(int action, int uiAmount) {
+        if (action == PokerGame.ACTION_ALL_IN && currentOptions_ != null) {
+            return currentOptions_.allInAmount();
+        }
+        return uiAmount;
     }
 
     /** Deserializes a {@link JsonNode} into the target data class. */
