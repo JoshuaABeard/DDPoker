@@ -548,13 +548,19 @@ class WebSocketTournamentDirectorTest {
         dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
         RemotePokerTable table = requireTable();
 
+        // Capture winner before GAME_COMPLETE clears the seat.
+        PokerPlayer winner = table.getPlayer(0);
+
         ObjectNode payload = mapper.createObjectNode();
         payload.putArray("standings");
         payload.put("totalHands", 5);
         payload.put("duration", 60000);
         dispatch(ServerMessageType.GAME_COMPLETE, payload);
 
-        assertThat(table.getPlayer(0).getPlace()).isEqualTo(1);
+        // Winner's place is set to 1 before the seat is cleared.
+        assertThat(winner.getPlace()).isEqualTo(1);
+        // Seat is cleared so getHumanPlayer() falls back to game_.players_[0].
+        assertThat(table.getPlayer(0)).isNull();
     }
 
     // -------------------------------------------------------------------------

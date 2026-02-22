@@ -120,6 +120,7 @@ public class WebSocketTournamentDirector extends BasePhase
     public void start() {
         game_ = (PokerGame) context_.getGame();
         game_.setWebSocketOpponentTracker(opponentTracker_);
+        serverIdToGamePlayer_.clear();
 
         PokerGame.WebSocketConfig config = game_.getWebSocketConfig();
         serverPort_ = config.port();
@@ -968,6 +969,7 @@ public class WebSocketTournamentDirector extends BasePhase
                         PokerPlayer p = table.getPlayer(seat);
                         if (p != null)
                             p.setPlace(1);
+                        table.clearSeat(seat);
                         break;
                     }
                 }
