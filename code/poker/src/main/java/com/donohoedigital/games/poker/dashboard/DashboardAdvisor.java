@@ -52,7 +52,6 @@ public class DashboardAdvisor extends DashboardItem {
     String title_;
     String advice_;
     String verboseAdvice_;
-    PokerTable table_;
     int playerID_;
 
     boolean bVerbose_ = TESTING(PokerConstants.TESTING_ADVISOR_VERBOSE);
@@ -64,10 +63,8 @@ public class DashboardAdvisor extends DashboardItem {
     public DashboardAdvisor(GameContext context) {
         super(context, "advisor");
         setDynamicTitle(true);
-        // setTableEventsImmediate(); // we need them immediately to prevent race
-        // conditions
         trackTableEvents(PokerTableEvent.TYPE_NEW_HAND | PokerTableEvent.TYPE_CURRENT_PLAYER_CHANGED
-                | PokerTableEvent.TYPE_CARD_CHANGED | PokerTableEvent.TYPE_PLAYER_CHIPS_CHANGED | // could change pot
+                | PokerTableEvent.TYPE_DEALER_ACTION | PokerTableEvent.TYPE_PLAYER_CHIPS_CHANGED | // could change pot
                                                                                                     // odds, for example
                 PokerTableEvent.TYPE_BUTTON_MOVED | PokerTableEvent.TYPE_PLAYER_AI_CHANGED);
     }
@@ -147,24 +144,15 @@ public class DashboardAdvisor extends DashboardItem {
                 && (hh.getRound() != BettingRound.SHOWDOWN) && !pp.isFolded() && pp.isHumanControlled()
                 && (h.getType() == Hand.TYPE_NORMAL && !h.containsCard(Card.BLANK)) && (ai instanceof V2Player)) {
             V2Player p = (V2Player) ai;
-            // if (p.isReady())
-            {
-                RuleEngine re = p.getRuleEngine();
-                re.execute(p);
-                table_ = pp.getTable();
-                advice_ = re.toHTML(p.getPokerPlayer(), true, true);
-                title_ = PropertyConfig
-                        .getMessage("msg.advisor.action." + HandAction.getActionName(re.getAction().getType()));
-            }
+            RuleEngine re = p.getRuleEngine();
+            re.execute(p);
+            advice_ = re.toHTML(p.getPokerPlayer(), true, true);
+            title_ = PropertyConfig
+                    .getMessage("msg.advisor.action." + HandAction.getActionName(re.getAction().getType()));
         }
 
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                setTitle(getTitle());
-                htmlAdvice_.setText(advice_);
-                buttons_.setVisible(!NOADVICE.equals(advice_));
-            }
-        });
+        htmlAdvice_.setText(advice_);
+        buttons_.setVisible(!NOADVICE.equals(advice_));
     }
 
     @Override
