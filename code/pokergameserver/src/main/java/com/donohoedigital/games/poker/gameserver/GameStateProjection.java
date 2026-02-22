@@ -21,6 +21,7 @@ package com.donohoedigital.games.poker.gameserver;
 
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.TournamentContext;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Card;
 
 import java.util.ArrayList;
@@ -117,7 +118,14 @@ public class GameStateProjection {
                 currentActorSeat = actor.getSeat();
             }
         }
-        String bettingRound = hand != null ? hand.getRound().name() : null;
+        // When the hand is resolved (done), report SHOWDOWN so the client keeps its
+        // showdown display. Without this, applyTableData() would overwrite the client's
+        // SHOWDOWN round with the intermediate round left by advanceRound() (e.g. FLOP
+        // for an uncontested pre-flop fold), causing sync() to skip displayShowdown()
+        // and clear the WIN/LOSE overlays prematurely.
+        String bettingRound = hand != null
+                ? (hand.isDone() ? BettingRound.SHOWDOWN.name() : hand.getRound().name())
+                : null;
         TournamentContext tc = table.getTournament()instanceof TournamentContext t ? t : null;
         int level = tc != null ? tc.getLevel() : 0;
         int smallBlind = tc != null ? tc.getSmallBlind(level) : 0;

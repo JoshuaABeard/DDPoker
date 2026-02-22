@@ -248,7 +248,7 @@ public class ServerGameTable implements GameTable, ServerHand.MockTable {
         int searched = 0;
 
         while (searched < seats) {
-            if (players[nextSeat] != null) {
+            if (players[nextSeat] != null && !players[nextSeat].isSittingOut()) {
                 return nextSeat;
             }
             nextSeat = (nextSeat + 1) % seats;

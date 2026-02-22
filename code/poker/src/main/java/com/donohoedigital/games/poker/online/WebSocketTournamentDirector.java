@@ -672,7 +672,11 @@ public class WebSocketTournamentDirector extends BasePhase
             if (player == null)
                 return;
             int handAction = mapWsStringToAction(d.action());
-            HandAction action = new HandAction(player, hand.getRoundForDisplay(), handAction, d.amount());
+            // For CALL actions, PlayerAction.call() always has amount=0 on the wire.
+            // Use totalBet (player's cumulative bet this round after the call) as the
+            // chat amount so the dealer log shows the correct call size.
+            int chatAmount = (handAction == HandAction.ACTION_CALL) ? d.totalBet() : d.amount();
+            HandAction action = new HandAction(player, hand.getRoundForDisplay(), handAction, chatAmount);
             table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ACTION, table, action));
             deliverChatLocal(PokerConstants.CHAT_2, action.getChat(0, null, null), PokerConstants.CHAT_DEALER_MSG_ID);
         });
