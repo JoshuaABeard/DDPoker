@@ -141,6 +141,12 @@ public class ServerHand implements GameHand {
      */
     public ServerHand(MockTable table, int handNumber, int smallBlind, int bigBlind, int ante, int button, int sbSeat,
             int bbSeat) {
+        this(table, handNumber, smallBlind, bigBlind, ante, button, sbSeat, bbSeat, new ServerDeck());
+    }
+
+    /** Package-private for testing: allows injecting a specific deck. */
+    ServerHand(MockTable table, int handNumber, int smallBlind, int bigBlind, int ante, int button, int sbSeat,
+            int bbSeat, ServerDeck testDeck) {
         this.table = table;
         this.handNumber = handNumber;
         this.smallBlindAmount = smallBlind;
@@ -148,7 +154,7 @@ public class ServerHand implements GameHand {
         this.anteAmount = ante;
         this.smallBlindSeat = sbSeat;
         this.bigBlindSeat = bbSeat;
-        this.deck = new ServerDeck(); // Auto-shuffled
+        this.deck = testDeck;
         this.done = false;
     }
 
@@ -320,31 +326,42 @@ public class ServerHand implements GameHand {
         for (int i = 0; i < info.size(); i++) {
             PotInfo potInfo = info.get(i);
             if (potInfo.needsSidePot() && potInfo.bet > lastSideBet) {
-                ServerPot sidePot = new ServerPot(round.toLegacy(), potInfo.bet);
+                // Use incremental cap (not cumulative) so each side pot only takes
+                // the chips for its level, matching the client's algorithm.
+                ServerPot sidePot = new ServerPot(round.toLegacy(), potInfo.bet - lastSideBet);
                 pots.add(sidePot);
                 lastSideBet = potInfo.bet;
             }
         }
 
-        // Distribute chips from each player into appropriate pots
-        for (ServerPot pot : pots) {
-            if (pot.getRound() != round.toLegacy())
-                continue;
-
-            int sideBet = pot.getSideBet();
-            for (PotInfo potInfo : info) {
-                if (potInfo.bet == 0)
+        // Distribute chips: process side pots (capped) first, then main pot (takes
+        // all remaining). This ensures the chip leader's excess goes into its own
+        // pot (eligible only to them), so it is correctly returned as an overbet
+        // when they lose to a short-stacked opponent.
+        for (int pass = 0; pass < 2; pass++) {
+            boolean doingMainPot = (pass == 1);
+            for (ServerPot pot : pots) {
+                if (pot.getRound() != round.toLegacy())
+                    continue;
+                boolean isMainPot = (pot.getSideBet() == 0);
+                if (isMainPot != doingMainPot)
                     continue;
 
-                if (sideBet == 0) {
-                    // Main pot - take all remaining chips
-                    pot.addChips(potInfo.player, potInfo.bet);
-                    potInfo.bet = 0;
-                } else {
-                    // Side pot - take up to sideBet amount
-                    int contribution = Math.min(sideBet, potInfo.bet);
-                    pot.addChips(potInfo.player, contribution);
-                    potInfo.bet -= contribution;
+                int sideBet = pot.getSideBet();
+                for (PotInfo potInfo : info) {
+                    if (potInfo.bet == 0)
+                        continue;
+
+                    if (sideBet == 0) {
+                        // Main pot - take all remaining chips
+                        pot.addChips(potInfo.player, potInfo.bet);
+                        potInfo.bet = 0;
+                    } else {
+                        // Side pot - take up to incremental cap
+                        int contribution = Math.min(sideBet, potInfo.bet);
+                        pot.addChips(potInfo.player, contribution);
+                        potInfo.bet -= contribution;
+                    }
                 }
             }
         }

@@ -55,6 +55,19 @@ public class ServerDeck {
     }
 
     /**
+     * Package-private for testing: creates a deck with specific cards in the given
+     * order.
+     *
+     * @param orderedCards
+     *            cards to use, in deal order
+     */
+    ServerDeck(List<Card> orderedCards) {
+        this.cards = new ArrayList<>(orderedCards);
+        this.random = new SecureRandom();
+        this.nextCardIndex = 0;
+    }
+
+    /**
      * Create a deck, optionally shuffled.
      *
      * @param shuffle

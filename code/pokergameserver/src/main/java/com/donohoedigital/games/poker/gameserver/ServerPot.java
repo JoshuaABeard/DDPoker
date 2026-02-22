@@ -43,7 +43,7 @@ public class ServerPot {
     private final List<ServerPlayer> eligiblePlayers = new ArrayList<>();
     private final List<ServerPlayer> winners = new ArrayList<>();
     private final int round; // Round pot was created
-    private final int sideBet; // All-in boundary amount (0 for main pot)
+    private final int sideBet; // Incremental all-in cap for this pot (0 = main pot, takes all remaining chips)
 
     /**
      * Create a new pot.
@@ -51,7 +51,7 @@ public class ServerPot {
      * @param round
      *            betting round when pot was created
      * @param sideBet
-     *            all-in boundary amount (0 for main pot)
+     *            incremental all-in cap (0 for main pot which takes all remaining chips)
      */
     public ServerPot(int round, int sideBet) {
         this.chips = 0;
@@ -150,9 +150,9 @@ public class ServerPot {
     }
 
     /**
-     * Get all-in boundary amount for side pots.
+     * Get incremental all-in cap for this pot.
      *
-     * @return side bet amount (0 for main pot)
+     * @return incremental cap (0 for main pot, which takes all remaining chips)
      */
     public int getSideBet() {
         return sideBet;

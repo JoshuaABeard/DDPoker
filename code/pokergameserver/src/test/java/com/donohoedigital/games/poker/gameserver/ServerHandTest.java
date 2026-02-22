@@ -33,6 +33,8 @@ package com.donohoedigital.games.poker.gameserver;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -586,6 +588,161 @@ class ServerHandTest {
         // getCurrentPlayerWithInit triggers initPlayerIndex()
         // All players allIn → isDone() or no active player found → returns null
         assertNull(hand.getCurrentPlayerWithInit());
+    }
+
+    // === All-in Side Pot Tests ===
+
+    /**
+     * Build a deterministic deck for a 2-player heads-up hand.
+     *
+     * Dealing order: seat0 gets deck[0..1], seat1 gets deck[2..3]. Then: burn,
+     * flop(3), burn, turn, burn, river = 9 more cards.
+     *
+     * @param seat0Card1
+     *            hole card 1 for seat 0
+     * @param seat0Card2
+     *            hole card 2 for seat 0
+     * @param seat1Card1
+     *            hole card 1 for seat 1
+     * @param seat1Card2
+     *            hole card 2 for seat 1
+     */
+    private static ServerDeck headsUpDeck(Card seat0Card1, Card seat0Card2, Card seat1Card1, Card seat1Card2) {
+        return new ServerDeck(List.of(seat0Card1, seat0Card2, // seat 0 hole cards
+                seat1Card1, seat1Card2, // seat 1 hole cards
+                Card.SPADES_5, // burn before flop
+                Card.CLUBS_7, Card.DIAMONDS_8, Card.HEARTS_9, // flop
+                Card.CLUBS_T, // burn before turn
+                Card.CLUBS_J, // turn
+                Card.DIAMONDS_Q, // burn before river
+                Card.CLUBS_K)); // river
+    }
+
+    @Test
+    void testAllIn_HeadsUp_ShortStackWins_ChipLeaderGetsExcessReturned() {
+        // Alice (seat 0, chip leader 1000) vs Bob (seat 1, short stack 600).
+        // Both go all-in preflop. Bob wins.
+        // Expected: Bob gets 2*600=1200 (main contested pot), Alice gets back 400
+        // excess.
+        ServerPlayer alice2 = new ServerPlayer(10, "Alice2", true, 0, 1000);
+        ServerPlayer bob2 = new ServerPlayer(11, "Bob2", true, 0, 600);
+        alice2.setSeat(0);
+        bob2.setSeat(1);
+
+        MockServerGameTable table2 = new MockServerGameTable(2);
+        table2.addPlayer(alice2, 0);
+        table2.addPlayer(bob2, 1);
+
+        // Bob (seat 1) gets A♠A♥ → wins; Alice (seat 0) gets 2♦3♦ → loses
+        ServerDeck deck = headsUpDeck(Card.DIAMONDS_2, Card.DIAMONDS_3, Card.SPADES_A, Card.HEARTS_A);
+        // button=0, sbSeat=0 (Alice), bbSeat=1 (Bob), blinds 50/100
+        ServerHand hand = new ServerHand(table2, 1, 50, 100, 0, 0, 0, 1, deck);
+        hand.deal();
+
+        // Alice (SB) raises all-in: she has 1000-50=950 left, raises 950 more
+        hand.applyPlayerAction(alice2, PlayerAction.raise(950));
+        // Bob (BB) calls all-in: needs 900 more but only has 500 left
+        hand.applyPlayerAction(bob2, PlayerAction.call());
+
+        // Advance through all rounds to showdown
+        while (hand.getRound() != BettingRound.SHOWDOWN) {
+            hand.advanceRound();
+        }
+        hand.resolve();
+
+        // Bob wins the contested pot (2*600=1200). Alice gets her excess back (400).
+        assertEquals(1200, bob2.getChipCount(), "Short-stack winner should get 2x their stack");
+        assertEquals(400, alice2.getChipCount(), "Chip leader should get excess chips returned");
+    }
+
+    @Test
+    void testAllIn_HeadsUp_ChipLeaderWins_GetsAllChips() {
+        // Alice (seat 0, chip leader 1000) vs Bob (seat 1, short stack 600).
+        // Both go all-in preflop. Alice wins.
+        // Expected: Alice gets all chips (1600), Bob gets 0.
+        ServerPlayer alice2 = new ServerPlayer(10, "Alice2", true, 0, 1000);
+        ServerPlayer bob2 = new ServerPlayer(11, "Bob2", true, 0, 600);
+        alice2.setSeat(0);
+        bob2.setSeat(1);
+
+        MockServerGameTable table2 = new MockServerGameTable(2);
+        table2.addPlayer(alice2, 0);
+        table2.addPlayer(bob2, 1);
+
+        // Alice (seat 0) gets A♠A♥ → wins; Bob (seat 1) gets 2♦3♦ → loses
+        ServerDeck deck = headsUpDeck(Card.SPADES_A, Card.HEARTS_A, Card.DIAMONDS_2, Card.DIAMONDS_3);
+        ServerHand hand = new ServerHand(table2, 1, 50, 100, 0, 0, 0, 1, deck);
+        hand.deal();
+
+        hand.applyPlayerAction(alice2, PlayerAction.raise(950));
+        hand.applyPlayerAction(bob2, PlayerAction.call());
+
+        while (hand.getRound() != BettingRound.SHOWDOWN) {
+            hand.advanceRound();
+        }
+        hand.resolve();
+
+        assertEquals(1600, alice2.getChipCount(), "Chip leader who wins should get all chips");
+        assertEquals(0, bob2.getChipCount(), "Short stack who loses should get nothing");
+    }
+
+    @Test
+    void testAllIn_ThreePlayers_MultipleAllIns_PotsCorrectlySplit() {
+        // Three players all-in at different stack sizes: Alice=1000, Bob=600,
+        // Carol=400.
+        // After preflop all-in, calcPots() must create two side pots using
+        // INCREMENTAL caps — this directly tests the potInfo.bet - lastSideBet fix.
+        //
+        // Expected pots (using incremental caps of 400 and 200):
+        // sidePot1 = 3×400 = 1200 (all three eligible) → Carol (AA) wins
+        // sidePot2 = 2×200 = 400 (Bob + Alice eligible) → Bob (KK) wins
+        // mainPot = 400 (Alice only, overbet) → returned to Alice
+        ServerPlayer alice3 = new ServerPlayer(10, "Alice3", true, 0, 1000);
+        ServerPlayer bob3 = new ServerPlayer(11, "Bob3", true, 0, 600);
+        ServerPlayer carol3 = new ServerPlayer(12, "Carol3", true, 0, 400);
+        alice3.setSeat(0);
+        bob3.setSeat(1);
+        carol3.setSeat(2);
+
+        MockServerGameTable table3 = new MockServerGameTable(3);
+        table3.addPlayer(alice3, 0);
+        table3.addPlayer(bob3, 1);
+        table3.addPlayer(carol3, 2);
+
+        // Dealing order by seat: Alice gets [0..1], Bob gets [2..3], Carol gets [4..5].
+        // Board: 2♠5♣8♦3♥6♣ — no straights, no flushes.
+        // Alice: J♦J♣ → pair of jacks
+        // Bob: K♠K♣ → pair of kings (beats Alice in their side pot)
+        // Carol: A♠A♥ → pair of aces (beats everyone in the main contested pot)
+        ServerDeck deck3 = new ServerDeck(List.of(Card.DIAMONDS_J, Card.CLUBS_J, // Alice (seat 0)
+                Card.SPADES_K, Card.CLUBS_K, // Bob (seat 1)
+                Card.SPADES_A, Card.HEARTS_A, // Carol (seat 2)
+                Card.DIAMONDS_9, // burn before flop
+                Card.SPADES_2, Card.CLUBS_5, Card.DIAMONDS_8, // flop
+                Card.HEARTS_9, // burn before turn
+                Card.HEARTS_3, // turn
+                Card.CLUBS_9, // burn before river
+                Card.CLUBS_6)); // river
+
+        // button=0, sbSeat=1 (Bob), bbSeat=2 (Carol), blinds 50/100
+        ServerHand hand3 = new ServerHand(table3, 1, 50, 100, 0, 0, 1, 2, deck3);
+        hand3.deal();
+
+        // Pre-flop action: Alice (button/UTG) raises all-in
+        hand3.applyPlayerAction(alice3, PlayerAction.raise(1000));
+        // Bob (SB, 550 remaining) calls all-in
+        hand3.applyPlayerAction(bob3, PlayerAction.call());
+        // Carol (BB, 300 remaining) calls all-in
+        hand3.applyPlayerAction(carol3, PlayerAction.call());
+
+        while (hand3.getRound() != BettingRound.SHOWDOWN) {
+            hand3.advanceRound();
+        }
+        hand3.resolve();
+
+        assertEquals(1200, carol3.getChipCount(), "Carol (AA) wins the 3-way pot (3×400=1200)");
+        assertEquals(400, bob3.getChipCount(), "Bob (KK) wins the 2-way side pot (2×200=400)");
+        assertEquals(400, alice3.getChipCount(), "Alice's uncovered 400 is returned as overbet");
     }
 
     /**
