@@ -84,11 +84,16 @@ public class ServerTournamentDirector implements Runnable {
         this.autoZipEnabled = enabled;
     }
 
-    // Practice config for Never Broke and other practice-only features
-    private GameConfig.PracticeConfig practiceConfig;
+    // Callback invoked when a human busts in practice mode; returns true if chips
+    // should be transferred (Never Broke). Null means the feature is disabled.
+    // Uses a setter (unlike rebuy/addon which use constructor params) because it is
+    // always wired for every practice game, independent of tournament
+    // configuration,
+    // and is set by GameInstance after construction.
+    private BiPredicate<Integer, Integer> neverBrokeCallback;
 
-    public void setPracticeConfig(GameConfig.PracticeConfig pc) {
-        this.practiceConfig = pc;
+    public void setNeverBrokeCallback(BiPredicate<Integer, Integer> cb) {
+        this.neverBrokeCallback = cb;
     }
 
     private final TournamentEngine engine;
@@ -331,7 +336,7 @@ public class ServerTournamentDirector implements Runnable {
                 // consolidateTables() which uses chip counts — marking 0-chip players as
                 // sittingOut there would produce empty playerOrder lists and hang.
                 if (tournament.getNumTables() == 1) {
-                    eliminateZeroChipPlayers(table);
+                    eliminateZeroChipPlayers(table, false);
                 }
                 if (!tournament.isGameOver() && properties.aiActionDelayMs() > 0 && !actionProvider.isZipMode()) {
                     sleepMillis(handResultPauseMs);
@@ -495,7 +500,7 @@ public class ServerTournamentDirector implements Runnable {
      *            the table whose players to check
      */
     // Package-private for testing
-    void eliminateZeroChipPlayers(GameTable table) {
+    void eliminateZeroChipPlayers(GameTable table, boolean inHandleGameOverContext) {
         // Count active survivors (chips > 0) to derive finish position.
         int survivors = 0;
         for (int seat = 0; seat < table.getSeats(); seat++) {
@@ -519,19 +524,21 @@ public class ServerTournamentDirector implements Runnable {
                         continue; // Player stays in the tournament
                     }
                 }
-                // Never Broke: transfer chips from chip leader to keep human playing.
-                // Skip when the game is already over (handleGameOver context) — rescuing
-                // the human there would undo the game-over condition.
-                if (!tournament.isGameOver() && practiceConfig != null
-                        && Boolean.TRUE.equals(practiceConfig.neverBroke()) && player.isHuman()) {
-                    ServerPlayer leader = findChipLeader(table, player.getID());
-                    if (leader != null && leader.getChipCount() > 1) {
-                        int transferAmount = leader.getChipCount() / 2;
-                        leader.setChipCount(leader.getChipCount() - transferAmount);
-                        player.addChips(transferAmount);
-                        eventBus.publish(new GameEvent.ChipsTransferred(table.getNumber(), leader.getID(),
-                                player.getID(), transferAmount));
-                        continue; // Player stays in
+                // Never Broke: offer to transfer chips from chip leader to keep human
+                // playing. Skip when called from handleGameOver context — rescuing the
+                // human there would undo a legitimate game-over condition.
+                if (!inHandleGameOverContext && neverBrokeCallback != null && player.isHuman()) {
+                    boolean accept = neverBrokeCallback.test(player.getID(), table.getNumber());
+                    if (accept) {
+                        ServerPlayer leader = findChipLeader(table, player.getID());
+                        if (leader != null && leader.getChipCount() > 1) {
+                            int transferAmount = leader.getChipCount() / 2;
+                            leader.setChipCount(leader.getChipCount() - transferAmount);
+                            player.addChips(transferAmount);
+                            eventBus.publish(new GameEvent.ChipsTransferred(table.getNumber(), leader.getID(),
+                                    player.getID(), transferAmount));
+                            continue; // Player stays in
+                        }
                     }
                 }
                 player.setSittingOut(true);
@@ -770,7 +777,7 @@ public class ServerTournamentDirector implements Runnable {
         // eliminated players are skipped (isSittingOut==true), and the tournament
         // winner (chips > 0) is skipped by the chip check in eliminateZeroChipPlayers.
         for (int i = 0; i < tournament.getNumTables(); i++) {
-            eliminateZeroChipPlayers(tournament.getTable(i));
+            eliminateZeroChipPlayers(tournament.getTable(i), true);
         }
 
         // All tables should be marked as GAME_OVER

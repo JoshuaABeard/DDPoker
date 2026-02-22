@@ -386,6 +386,11 @@ public class WebSocketTournamentDirector extends BasePhase
                             ServerMessageData.ChipsTransferredData.class);
                     onChipsTransferred(d);
                 }
+                case NEVER_BROKE_OFFERED -> {
+                    ServerMessageData.NeverBrokeOfferedData d = parse(data,
+                            ServerMessageData.NeverBrokeOfferedData.class);
+                    onNeverBrokeOffered(d);
+                }
                 case COLOR_UP_STARTED -> {
                     ServerMessageData.ColorUpStartedData d = parse(data, ServerMessageData.ColorUpStartedData.class);
                     onColorUpStarted(d);
@@ -1212,6 +1217,13 @@ public class WebSocketTournamentDirector extends BasePhase
                 table.fireEvent(PokerTableEvent.TYPE_PLAYER_CHIPS_CHANGED);
             }
         });
+    }
+
+    private void onNeverBrokeOffered(ServerMessageData.NeverBrokeOfferedData d) {
+        // Read the current preference and auto-respond — no dialog needed.
+        boolean accept = com.donohoedigital.games.poker.PokerUtils
+                .isOptionOn(com.donohoedigital.games.poker.engine.PokerConstants.OPTION_CHEAT_NEVERBROKE);
+        wsClient_.sendNeverBrokeDecision(accept);
     }
 
     private void onColorUpStarted(ServerMessageData.ColorUpStartedData d) {

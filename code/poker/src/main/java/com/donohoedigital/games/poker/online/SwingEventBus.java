@@ -210,6 +210,9 @@ public class SwingEventBus extends GameEventBus {
             case GameEvent.AddonOffered ignored ->
                 null; // Client handles ADDON_OFFERED via WebSocket message
 
+            case GameEvent.NeverBrokeOffered ignored ->
+                null; // Client handles NEVER_BROKE_OFFERED via WebSocket message
+
 case GameEvent.ChipsTransferred e ->
                 new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_CHIPS_CHANGED, table);
 
@@ -248,6 +251,7 @@ case GameEvent.ChipsTransferred e ->
             case GameEvent.ActionTimeout e -> -1; // No tableId for timeout events
             case GameEvent.RebuyOffered e -> e.tableId();
             case GameEvent.AddonOffered e -> e.tableId();
+            case GameEvent.NeverBrokeOffered e -> e.tableId();
 case GameEvent.ChipsTransferred e -> e.tableId();
             case GameEvent.ColorUpStarted e -> e.tableId();
         };

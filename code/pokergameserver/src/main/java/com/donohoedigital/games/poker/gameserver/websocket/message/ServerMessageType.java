@@ -138,5 +138,8 @@ public enum ServerMessageType {
     COLOR_UP_STARTED,
 
     /** AI players' hole cards (practice mode aiFaceUp) */
-    AI_HOLE_CARDS
+    AI_HOLE_CARDS,
+
+    /** Never Broke offered to the human player (practice mode) */
+    NEVER_BROKE_OFFERED
 }

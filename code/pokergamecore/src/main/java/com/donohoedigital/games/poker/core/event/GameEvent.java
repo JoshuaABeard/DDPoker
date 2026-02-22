@@ -126,6 +126,13 @@ public sealed interface GameEvent {
     record RebuyOffered(int tableId, int playerId, int cost, int chips, int timeoutSeconds) implements GameEvent {
     }
 
+    /**
+     * Never Broke has been offered to the human player who just busted (practice
+     * mode).
+     */
+    record NeverBrokeOffered(int tableId, int playerId, int timeoutSeconds) implements GameEvent {
+    }
+
     /** An addon has been offered to an eligible player. */
     record AddonOffered(int tableId, int playerId, int cost, int chips, int timeoutSeconds) implements GameEvent {
     }

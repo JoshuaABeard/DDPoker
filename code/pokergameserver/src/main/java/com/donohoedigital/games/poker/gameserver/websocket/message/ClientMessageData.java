@@ -24,7 +24,7 @@ package com.donohoedigital.games.poker.gameserver.websocket.message;
  * COME_BACK, ADMIN_PAUSE, and ADMIN_RESUME have no data fields and are
  * represented by their respective no-data records.
  */
-public sealed interface ClientMessageData permits ClientMessageData.PlayerActionData,ClientMessageData.RebuyDecisionData,ClientMessageData.AddonDecisionData,ClientMessageData.ChatData,ClientMessageData.SitOutData,ClientMessageData.ComeBackData,ClientMessageData.AdminKickData,ClientMessageData.AdminPauseData,ClientMessageData.AdminResumeData {
+public sealed interface ClientMessageData permits ClientMessageData.PlayerActionData,ClientMessageData.RebuyDecisionData,ClientMessageData.AddonDecisionData,ClientMessageData.ChatData,ClientMessageData.SitOutData,ClientMessageData.ComeBackData,ClientMessageData.AdminKickData,ClientMessageData.AdminPauseData,ClientMessageData.AdminResumeData,ClientMessageData.NeverBrokeDecisionData {
 
     /**
      * Player action: FOLD, CHECK, CALL, BET, RAISE, or ALL_IN.
@@ -89,5 +89,14 @@ public sealed interface ClientMessageData permits ClientMessageData.PlayerAction
 
     /** Admin resume: resume a paused game (owner only). No data fields. */
     record AdminResumeData() implements ClientMessageData {
+    }
+
+    /**
+     * Never Broke decision (accept or decline).
+     *
+     * @param accept
+     *            true to accept the Never Broke rescue, false to decline
+     */
+    record NeverBrokeDecisionData(boolean accept) implements ClientMessageData {
     }
 }

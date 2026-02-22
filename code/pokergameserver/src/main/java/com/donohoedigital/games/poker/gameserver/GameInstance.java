@@ -88,9 +88,11 @@ public class GameInstance {
     // Completion tracking
     private volatile Instant completedAt;
 
-    // Pending rebuy/addon decisions (playerId → future awaiting client response)
+    // Pending rebuy/addon/neverBroke decisions (playerId → future awaiting client
+    // response)
     private final Map<Integer, CompletableFuture<Boolean>> pendingRebuys = new ConcurrentHashMap<>();
     private final Map<Integer, CompletableFuture<Boolean>> pendingAddons = new ConcurrentHashMap<>();
+    private final Map<Integer, CompletableFuture<Boolean>> pendingNeverBroke = new ConcurrentHashMap<>();
 
     // Private constructor - use create() factory method
     private GameInstance(String gameId, long ownerProfileId, GameConfig config, GameServerProperties properties) {
@@ -262,8 +264,12 @@ public class GameInstance {
                     director.setAllInRunoutPauseMs(pc.allInRunoutPauseMs());
                 if (Boolean.FALSE.equals(pc.zipModeEnabled()))
                     director.setAutoZipEnabled(false);
-                if (pc.neverBroke() != null)
-                    director.setPracticeConfig(pc);
+                // Wire Never Broke callback: dynamically asks the client each time the
+                // human busts so the preference is read at bust-time, not startup.
+                // This incurs a WebSocket round-trip on every bust even when the option
+                // is off, but the client responds automatically (<100 ms) so it is
+                // imperceptible in practice.
+                director.setNeverBrokeCallback(this::offerNeverBroke);
             }
 
             state = GameInstanceState.IN_PROGRESS;
@@ -651,6 +657,34 @@ public class GameInstance {
     /** Called by WebSocket router when a player accepts or declines an addon. */
     public void submitAddonDecision(int playerId, boolean accept) {
         CompletableFuture<Boolean> f = pendingAddons.get(playerId);
+        if (f != null) {
+            f.complete(accept);
+        }
+    }
+
+    /**
+     * Offers Never Broke to a busted human player. Blocks the calling thread
+     * (director) until the player responds or the action timeout elapses. Returns
+     * true if accepted (chips should be transferred), false if declined or timed
+     * out.
+     */
+    public boolean offerNeverBroke(int playerId, int tableId) {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        pendingNeverBroke.put(playerId, future);
+        eventBus.publish(new com.donohoedigital.games.poker.core.event.GameEvent.NeverBrokeOffered(tableId, playerId,
+                properties.actionTimeoutSeconds()));
+        try {
+            return future.get(properties.actionTimeoutSeconds(), TimeUnit.SECONDS);
+        } catch (TimeoutException | InterruptedException | ExecutionException e) {
+            return false;
+        } finally {
+            pendingNeverBroke.remove(playerId);
+        }
+    }
+
+    /** Called by WebSocket router when a player accepts or declines Never Broke. */
+    public void submitNeverBrokeDecision(int playerId, boolean accept) {
+        CompletableFuture<Boolean> f = pendingNeverBroke.get(playerId);
         if (f != null) {
             f.complete(accept);
         }

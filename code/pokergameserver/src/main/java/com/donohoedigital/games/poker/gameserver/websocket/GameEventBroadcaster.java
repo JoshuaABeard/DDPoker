@@ -434,6 +434,9 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
             case GameEvent.AddonOffered e -> connectionManager.sendToPlayer(gameId, (long) e.playerId(),
                 ServerMessage.of(ServerMessageType.ADDON_OFFERED, gameId,
                     new ServerMessageData.AddonOfferedData(e.cost(), e.chips(), e.timeoutSeconds())));
+            case GameEvent.NeverBrokeOffered e -> connectionManager.sendToPlayer(gameId, (long) e.playerId(),
+                ServerMessage.of(ServerMessageType.NEVER_BROKE_OFFERED, gameId,
+                    new ServerMessageData.NeverBrokeOfferedData(e.timeoutSeconds())));
             case GameEvent.ChipsTransferred e -> {
                 String fromName = "";
                 String toName = "";

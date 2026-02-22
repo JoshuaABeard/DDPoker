@@ -95,13 +95,12 @@ public class PracticeGameLauncher {
         boolean pauseAllin = PokerUtils.isOptionOn(PokerConstants.OPTION_PAUSE_ALLIN);
         int allInPauseMs = pauseAllin ? 1500 : 0;
         boolean zipModeEnabled = PokerUtils.isOptionOn(PokerConstants.OPTION_ZIP_MODE);
-        boolean neverBroke = PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_NEVERBROKE);
         // Always send AI hole cards so both "Computer Cards Face Up" and "Peek at
         // Opponents Cards" cheats work. Whether to display them face-up or face-down
         // is decided client-side at render time by DealDisplay / CardPiece.
         boolean aiFaceUp = true;
         GameConfig.PracticeConfig practiceConfig = new GameConfig.PracticeConfig(aiDelayMs, handPauseMs, allInPauseMs,
-                zipModeEnabled, neverBroke, aiFaceUp);
+                zipModeEnabled, aiFaceUp);
 
         String gameId = restClient.createPracticeGame(profile, aiNames, defaultSkillLevel(profile), jwt,
                 humanDisplayName, practiceConfig);

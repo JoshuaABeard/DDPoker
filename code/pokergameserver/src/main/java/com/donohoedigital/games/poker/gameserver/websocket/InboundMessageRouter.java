@@ -161,6 +161,7 @@ public class InboundMessageRouter {
             case COME_BACK -> handleComeBack(connection, game);
             case REBUY_DECISION -> handleRebuyDecision(connection, game, dataNode);
             case ADDON_DECISION -> handleAddonDecision(connection, game, dataNode);
+            case NEVER_BROKE_DECISION -> handleNeverBrokeDecision(connection, game, dataNode);
         }
     }
 
@@ -302,6 +303,17 @@ public class InboundMessageRouter {
             return;
         }
         game.submitAddonDecision(Math.toIntExact(connection.getProfileId()), data.accept());
+    }
+
+    private void handleNeverBrokeDecision(PlayerConnection connection, GameInstance game, JsonNode dataNode) {
+        ClientMessageData.NeverBrokeDecisionData data;
+        try {
+            data = objectMapper.treeToValue(dataNode, ClientMessageData.NeverBrokeDecisionData.class);
+        } catch (Exception e) {
+            sendError(connection, "INVALID_DATA", "Invalid never broke decision data");
+            return;
+        }
+        game.submitNeverBrokeDecision(Math.toIntExact(connection.getProfileId()), data.accept());
     }
 
     private PlayerAction parseAction(String actionString, int amount) {

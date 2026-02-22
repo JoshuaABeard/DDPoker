@@ -78,7 +78,7 @@ class GameConfigTest {
                 new InviteConfig(false, List.of(), true), new BettingConfig(0, true), false, // allowDash
                 false, // allowAdvisor
                 List.of(), // no AI players
-null, // humanDisplayName
+                null, // humanDisplayName
                 null // practiceConfig (disabled)
         );
 
@@ -174,8 +174,7 @@ null, // humanDisplayName
                 new TimeoutConfig(30, 0, 0, 0, 0, 15), new BootConfig(true, 25, true, 10), null, null, // late reg,
                                                                                                         // scheduled
                                                                                                         // start
-                new InviteConfig(false, List.of(), true), new BettingConfig(0, true), false, false, List.of(),
-                null, // humanDisplayName
+                new InviteConfig(false, List.of(), true), new BettingConfig(0, true), false, false, List.of(), null, // humanDisplayName
                 null); // practiceConfig
 
         String json = objectMapper.writeValueAsString(config);
@@ -195,8 +194,7 @@ null, // humanDisplayName
                 List.of(new BlindLevel(25, 50, 0, 20, false, "NOLIMIT_HOLDEM")), true, "NOLIMIT_HOLDEM",
                 LevelAdvanceMode.TIME, 10, 20, null, null, new PayoutConfig("SPOTS", 3, 0, 0, "AUTO", List.of()), null,
                 null, new TimeoutConfig(30, 0, 0, 0, 0, 15), new BootConfig(true, 25, true, 10), null, null,
-                new InviteConfig(false, List.of(), true), new BettingConfig(0, true), false, false, List.of(),
-                null, // humanDisplayName
+                new InviteConfig(false, List.of(), true), new BettingConfig(0, true), false, false, List.of(), null, // humanDisplayName
                 null); // practiceConfig
     }
 }

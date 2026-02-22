@@ -130,8 +130,7 @@ public record GameConfig(String name, String description, String greeting, int m
         int defaultMinutesPerLevel, RebuyConfig rebuys, AddonConfig addons, PayoutConfig payout, HouseConfig house,
         BountyConfig bounty, TimeoutConfig timeouts, BootConfig boot, LateRegistrationConfig lateRegistration,
         ScheduledStartConfig scheduledStart, InviteConfig invite, BettingConfig betting, boolean allowDash,
-        boolean allowAdvisor, List<AIPlayerConfig> aiPlayers, String humanDisplayName,
-        PracticeConfig practiceConfig) {
+        boolean allowAdvisor, List<AIPlayerConfig> aiPlayers, String humanDisplayName, PracticeConfig practiceConfig) {
 
     /**
      * Validate this configuration.
@@ -384,15 +383,12 @@ public record GameConfig(String name, String description, String greeting, int m
      * @param zipModeEnabled
      *            Enable zip mode (jump-to-end) when human folds (null = server
      *            default true)
-     * @param neverBroke
-     *            Never let human go broke — steal chips from chip leader (null =
-     *            server default false)
      * @param aiFaceUp
      *            Show AI hole cards to human player during play (null = server
      *            default false)
      */
     public record PracticeConfig(Integer aiActionDelayMs, Integer handResultPauseMs, Integer allInRunoutPauseMs,
-            Boolean zipModeEnabled, Boolean neverBroke, Boolean aiFaceUp) {
+            Boolean zipModeEnabled, Boolean aiFaceUp) {
     }
 
     /**
@@ -403,8 +399,8 @@ public record GameConfig(String name, String description, String greeting, int m
         return new GameConfig(name, description, greeting, maxPlayers, maxOnlinePlayers, fillComputer, buyIn,
                 startingChips, newBlindStructure, doubleAfterLastLevel, defaultGameType, levelAdvanceMode,
                 handsPerLevel, defaultMinutesPerLevel, rebuys, addons, payout, house, bounty, timeouts, boot,
-                lateRegistration, scheduledStart, invite, betting, allowDash, allowAdvisor, aiPlayers,
-                humanDisplayName, practiceConfig);
+                lateRegistration, scheduledStart, invite, betting, allowDash, allowAdvisor, aiPlayers, humanDisplayName,
+                practiceConfig);
     }
 
     /**
@@ -415,8 +411,7 @@ public record GameConfig(String name, String description, String greeting, int m
         return new GameConfig(name, description, greeting, newMaxPlayers, maxOnlinePlayers, fillComputer, buyIn,
                 startingChips, blindStructure, doubleAfterLastLevel, defaultGameType, levelAdvanceMode, handsPerLevel,
                 defaultMinutesPerLevel, rebuys, addons, payout, house, bounty, timeouts, boot, lateRegistration,
-                scheduledStart, invite, betting, allowDash, allowAdvisor, aiPlayers, humanDisplayName,
-                practiceConfig);
+                scheduledStart, invite, betting, allowDash, allowAdvisor, aiPlayers, humanDisplayName, practiceConfig);
     }
 
     /**

@@ -79,7 +79,7 @@ public class GameServerRestClient {
      * @throws GameServerClientException
      *             if the HTTP call fails or the server returns an error
      */
-public String createPracticeGame(TournamentProfile profile, List<String> aiNames, int aiSkillLevel, String jwt,
+    public String createPracticeGame(TournamentProfile profile, List<String> aiNames, int aiSkillLevel, String jwt,
             String humanDisplayName) {
         return createPracticeGame(profile, aiNames, aiSkillLevel, jwt, humanDisplayName, null);
     }
@@ -111,8 +111,7 @@ public String createPracticeGame(TournamentProfile profile, List<String> aiNames
             String humanDisplayName, GameConfig.PracticeConfig practiceConfig) {
         GameConfig config = converter.convert(profile)
                 .withAiPlayers(converter.buildAiPlayers(profile, aiNames, aiSkillLevel))
-                .withHumanDisplayName(humanDisplayName)
-                .withPracticeConfig(practiceConfig);
+                .withHumanDisplayName(humanDisplayName).withPracticeConfig(practiceConfig);
         try {
             String body = OBJECT_MAPPER.writeValueAsString(config);
             HttpRequest request = HttpRequest.newBuilder()

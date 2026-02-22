@@ -49,5 +49,8 @@ public enum ClientMessageType {
     ADMIN_PAUSE,
 
     /** Admin resumes the game (owner only) */
-    ADMIN_RESUME
+    ADMIN_RESUME,
+
+    /** Never Broke decision (accept/decline) */
+    NEVER_BROKE_DECISION
 }

@@ -27,7 +27,7 @@ import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
  * Each record matches the master plan JSON spec exactly, ensuring consistent
  * wire format across all client implementations (desktop, web, mobile).
  */
-public sealed interface ServerMessageData permits ServerMessageData.ConnectedData,ServerMessageData.GameStateData,ServerMessageData.HandStartedData,ServerMessageData.HoleCardsDealtData,ServerMessageData.CommunityCardsDealtData,ServerMessageData.ActionRequiredData,ServerMessageData.PlayerActedData,ServerMessageData.ActionTimeoutData,ServerMessageData.HandCompleteData,ServerMessageData.LevelChangedData,ServerMessageData.PlayerEliminatedData,ServerMessageData.RebuyOfferedData,ServerMessageData.AddonOfferedData,ServerMessageData.GameCompleteData,ServerMessageData.PlayerJoinedData,ServerMessageData.PlayerLeftData,ServerMessageData.PlayerDisconnectedData,ServerMessageData.PotAwardedData,ServerMessageData.ShowdownStartedData,ServerMessageData.PlayerRebuyData,ServerMessageData.PlayerAddonData,ServerMessageData.GamePausedData,ServerMessageData.GameResumedData,ServerMessageData.PlayerKickedData,ServerMessageData.ChatMessageData,ServerMessageData.TimerUpdateData,ServerMessageData.ErrorData,ServerMessageData.LobbyStateData,ServerMessageData.LobbyPlayerJoinedData,ServerMessageData.LobbyPlayerLeftData,ServerMessageData.LobbyPlayerKickedData,ServerMessageData.LobbySettingsChangedData,ServerMessageData.LobbyGameStartingData,ServerMessageData.GameCancelledData,ServerMessageData.ChipsTransferredData,ServerMessageData.ColorUpStartedData,ServerMessageData.AiHoleCardsData {
+public sealed interface ServerMessageData permits ServerMessageData.ConnectedData,ServerMessageData.GameStateData,ServerMessageData.HandStartedData,ServerMessageData.HoleCardsDealtData,ServerMessageData.CommunityCardsDealtData,ServerMessageData.ActionRequiredData,ServerMessageData.PlayerActedData,ServerMessageData.ActionTimeoutData,ServerMessageData.HandCompleteData,ServerMessageData.LevelChangedData,ServerMessageData.PlayerEliminatedData,ServerMessageData.RebuyOfferedData,ServerMessageData.AddonOfferedData,ServerMessageData.GameCompleteData,ServerMessageData.PlayerJoinedData,ServerMessageData.PlayerLeftData,ServerMessageData.PlayerDisconnectedData,ServerMessageData.PotAwardedData,ServerMessageData.ShowdownStartedData,ServerMessageData.PlayerRebuyData,ServerMessageData.PlayerAddonData,ServerMessageData.GamePausedData,ServerMessageData.GameResumedData,ServerMessageData.PlayerKickedData,ServerMessageData.ChatMessageData,ServerMessageData.TimerUpdateData,ServerMessageData.ErrorData,ServerMessageData.LobbyStateData,ServerMessageData.LobbyPlayerJoinedData,ServerMessageData.LobbyPlayerLeftData,ServerMessageData.LobbyPlayerKickedData,ServerMessageData.LobbySettingsChangedData,ServerMessageData.LobbyGameStartingData,ServerMessageData.GameCancelledData,ServerMessageData.ChipsTransferredData,ServerMessageData.ColorUpStartedData,ServerMessageData.AiHoleCardsData,ServerMessageData.NeverBrokeOfferedData {
 
     /**
      * Sent on successful WebSocket connection, includes full game state snapshot.
@@ -265,5 +265,9 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
 
     /** AI player's hole cards (used in AiHoleCardsData). */
     record AiPlayerCards(long playerId, List<String> cards) {
+    }
+
+    /** Never Broke offered to the human player (practice mode, private). */
+    record NeverBrokeOfferedData(int timeoutSeconds) implements ServerMessageData {
     }
 }

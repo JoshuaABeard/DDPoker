@@ -33,11 +33,13 @@ package com.donohoedigital.games.poker.gameserver;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.donohoedigital.games.poker.core.event.GameEvent;
 import com.donohoedigital.games.poker.gameserver.GameConfig.*;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -372,6 +374,66 @@ class GameInstanceTest {
         game.addPlayer(6, "AI-6", true, 50);
     }
 
+    // ====================================
+    // Never Broke Offer Tests
+    // ====================================
+
+    /**
+     * offerNeverBroke publishes a NeverBrokeOffered event and blocks until
+     * submitNeverBrokeDecision is called, returning the accept value.
+     */
+    @Test
+    void offerNeverBrokePublishesEventAndBlocksUntilDecision() throws Exception {
+        GameInstance game = GameInstance.create("test-neverbroke", 1L, config, properties);
+        game.transitionToWaitingForPlayers();
+        // prepareStart initializes the event bus without starting the tournament loop
+        ServerGameEventBus eventBus = game.prepareStart();
+
+        AtomicReference<GameEvent.NeverBrokeOffered> capturedEvent = new AtomicReference<>();
+        eventBus.subscribe(event -> {
+            if (event instanceof GameEvent.NeverBrokeOffered e)
+                capturedEvent.set(e);
+        });
+
+        // Call offerNeverBroke on a background thread — it blocks until decision
+        java.util.concurrent.Future<Boolean> future = java.util.concurrent.Executors.newSingleThreadExecutor()
+                .submit(() -> game.offerNeverBroke(42, 0));
+
+        // Wait for the event to be published
+        long deadline = System.currentTimeMillis() + 2000;
+        while (capturedEvent.get() == null && System.currentTimeMillis() < deadline) {
+            Thread.sleep(10);
+        }
+        assertNotNull(capturedEvent.get(), "NeverBrokeOffered event should be published");
+        assertEquals(42, capturedEvent.get().playerId());
+
+        // Accept the offer
+        game.submitNeverBrokeDecision(42, true);
+
+        assertTrue(future.get(2, java.util.concurrent.TimeUnit.SECONDS), "offerNeverBroke should return true");
+    }
+
+    /**
+     * offerNeverBroke returns false when no decision arrives before the timeout.
+     */
+    @Test
+    void offerNeverBrokeReturnsFalseOnTimeout() throws Exception {
+        // Use 1-second actionTimeout so the test stays fast
+        GameServerProperties fastProps = new GameServerProperties(50, 1, 120, 10, 1000, 3, 2, 5, 5, 24, 7,
+                "ws://localhost", 0);
+        GameInstance game = GameInstance.create("test-neverbroke-timeout", 1L, config, fastProps);
+        game.transitionToWaitingForPlayers();
+        game.prepareStart(); // initialize event bus
+
+        long start = System.currentTimeMillis();
+        boolean result = game.offerNeverBroke(99, 0); // no submitNeverBrokeDecision called
+        long elapsed = System.currentTimeMillis() - start;
+
+        assertFalse(result, "offerNeverBroke should return false on timeout");
+        assertTrue(elapsed >= 1000, "Should have waited ~1 second for timeout");
+        assertTrue(elapsed < 3000, "Should not have waited too long");
+    }
+
     private GameConfig createTestConfig() {
         // 6 blind levels for hands-based testing
         // Old setLevel(level, smallBlind, bigBlind, ante, minutes)
@@ -399,8 +461,7 @@ class GameInstanceTest {
                 null, // scheduled start
                 new InviteConfig(false, List.of(), true), new BettingConfig(0, true), false, // allowDash
                 false, // allowAdvisor
-                List.of(),
-                null, // humanDisplayName
+                List.of(), null, // humanDisplayName
                 null); // practiceConfig
     }
 

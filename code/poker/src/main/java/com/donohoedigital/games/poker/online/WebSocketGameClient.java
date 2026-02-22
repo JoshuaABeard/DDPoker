@@ -146,6 +146,15 @@ public class WebSocketGameClient {
         sendMessage(ClientMessageType.ADDON_DECISION, data);
     }
 
+    /**
+     * Sends a Never Broke decision (accept = transfer chips, decline = eliminate).
+     */
+    public void sendNeverBrokeDecision(boolean accept) {
+        ObjectNode data = objectMapper.createObjectNode();
+        data.put("accept", accept);
+        sendMessage(ClientMessageType.NEVER_BROKE_DECISION, data);
+    }
+
     /** Sends an admin pause command (owner only). */
     public void sendAdminPause() {
         sendMessage(ClientMessageType.ADMIN_PAUSE, objectMapper.createObjectNode());
