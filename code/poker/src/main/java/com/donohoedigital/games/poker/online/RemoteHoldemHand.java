@@ -302,6 +302,14 @@ public class RemoteHoldemHand extends HoldemHand {
         remoteBets_.clear();
     }
 
+    /**
+     * Clears all per-player win records. Called at the start of each new hand so
+     * wins from the previous hand do not accumulate into the current hand's total.
+     */
+    public void clearWins() {
+        remoteWins_.clear();
+    }
+
     /** Updates the small blind seat index for this hand. */
     public void updateSmallBlindSeat(int seat) {
         this.remoteSmallBlindSeat_ = seat;

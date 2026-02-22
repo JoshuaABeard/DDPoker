@@ -481,6 +481,11 @@ public class WebSocketTournamentDirector extends BasePhase
             if (hand == null) {
                 hand = new RemoteHoldemHand();
                 table.setRemoteHand(hand);
+            } else {
+                // Clear per-hand state that must not carry over from the previous hand.
+                // Wins accumulate via remoteWins_.merge(), so without this clear the next
+                // hand's WIN overlay would show the sum of all previous win amounts.
+                hand.clearWins();
             }
             hand.updateRound(BettingRound.PRE_FLOP);
             hand.updateSmallBlindSeat(d.smallBlindSeat());
@@ -1318,7 +1323,12 @@ public class WebSocketTournamentDirector extends BasePhase
                     bbSeat = sd.seatIndex();
             }
 
-        table.updateFromState(players, dealerSeat);
+        // Only update the dealer button if the snapshot explicitly identifies one.
+        // If no seat has isDealer=true (e.g., between hands after a player is
+        // eliminated), preserve the current button so it doesn't jump to NO_SEAT
+        // and then back to the new dealer on the next HAND_STARTED.
+        int buttonToApply = dealerSeat != PokerTable.NO_SEAT ? dealerSeat : table.getButton();
+        table.updateFromState(players, buttonToApply);
 
         // Rebuild the current hand from the table snapshot
         if (td.currentRound() != null) {
