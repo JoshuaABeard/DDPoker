@@ -174,7 +174,8 @@ public class Rank extends DashboardItem {
                 nNumTables == 1
                         ? PropertyConfig.getMessage("msg.table")
                         : PropertyConfig.getMessage("msg.tables", nNumTables),
-                nWon > 0 ? nWon : null);
+                nWon > 0 ? nWon : null,
+                game_.getNumPlayers());
         GuiUtils.invoke(setLabelRunner_);
     }
 
