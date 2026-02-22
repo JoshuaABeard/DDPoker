@@ -279,7 +279,7 @@ public class PokerMain extends GameEngine {
         // copy v2 changes
         File userSaveV3 = GameConfigUtils.getSaveDir();
         File userSaveV2 = new File(userSaveV3.getAbsolutePath().replaceAll("poker3", "poker2"));
-        if (userSaveV2.exists() && userSaveV2.isDirectory()) {
+        if (!userSaveV2.equals(userSaveV3) && userSaveV2.exists() && userSaveV2.isDirectory()) {
             ConfigUtils.copyDir(userSaveV2, userSaveV3, new UpgradeFilter());
         }
 
