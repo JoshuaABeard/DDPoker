@@ -1143,6 +1143,9 @@ public class WebSocketTournamentDirector extends BasePhase
     @Override
     public void cleanup() {
         wsClient_.disconnect();
+        if (context_ != null) {
+            context_.restartNormal();
+        }
     }
 
     @Override
