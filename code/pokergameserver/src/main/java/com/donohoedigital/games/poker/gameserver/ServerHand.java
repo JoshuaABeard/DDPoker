@@ -585,6 +585,10 @@ public class ServerHand implements GameHand {
         currentBet = 0;
         playerBets.clear();
 
+        // Reset current player so initPlayerIndex() selects the correct first
+        // actor for the new round (SB for post-flop, UTG for pre-flop).
+        currentPlayerIndex = NO_CURRENT_PLAYER;
+
         // Advance to next round and deal community cards
         switch (round) {
             case NONE :
@@ -917,17 +921,33 @@ public class ServerHand implements GameHand {
     }
 
     /**
-     * Initialize player index to start of betting round.
+     * Initialize player index to the correct start of betting round.
+     *
+     * <p>
+     * {@code playerOrder} is always built as {@code [Button, SB, BB, UTG, ...]}.
+     * The correct first actor depends on the round:
+     * <ul>
+     * <li>Pre-flop: UTG (index 3) acts first for 4+ players. For ≤3 players the
+     * formula wraps to index 0, which is correct (Button=UTG in 3-handed, Button=SB
+     * in heads-up).
+     * <li>Post-flop: SB (index 1) acts first. Button (index 0) acts last.
+     * </ul>
      */
     private void initPlayerIndex() {
         if (isDone()) {
             currentPlayerIndex = NO_CURRENT_PLAYER;
             return;
         }
+        // Pre-flop: min(3, size) % size → 0 for ≤3 players, 3 for 4+ players
+        // Post-flop: 1 (SB), or 0 for the degenerate single-player case
+        int startIndex = (round == BettingRound.PRE_FLOP)
+                ? Math.min(3, playerOrder.size()) % playerOrder.size()
+                : Math.min(1, playerOrder.size() - 1);
         for (int i = 0; i < playerOrder.size(); i++) {
-            ServerPlayer p = playerOrder.get(i);
+            int idx = (startIndex + i) % playerOrder.size();
+            ServerPlayer p = playerOrder.get(idx);
             if (!p.isFolded() && !p.isAllIn()) {
-                currentPlayerIndex = i;
+                currentPlayerIndex = idx;
                 return;
             }
         }

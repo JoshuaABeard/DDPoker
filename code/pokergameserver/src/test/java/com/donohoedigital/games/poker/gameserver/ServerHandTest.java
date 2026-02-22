@@ -518,6 +518,59 @@ class ServerHandTest {
                 "Hand should be done or have no current player after BB calls");
     }
 
+    // === Fix 3: pre-flop action order for 4+ players ===
+
+    @Test
+    void testPreflopActionOrder_FourPlayers_UTGActsFirst() {
+        // 4-player game: button=seat0(alice), SB=seat1(bob), BB=seat2(charlie),
+        // UTG=seat3(diana)
+        // playerOrder = [alice(btn), bob(SB), charlie(BB), diana(UTG)]
+        // Pre-flop: UTG (diana, index 3) should act first, not button (alice, index 0)
+        ServerPlayer diana = new ServerPlayer(4, "Diana", true, 0, 5000);
+        diana.setSeat(3);
+        MockServerGameTable table4 = new MockServerGameTable(4);
+        table4.addPlayer(alice, 0);
+        table4.addPlayer(bob, 1);
+        table4.addPlayer(charlie, 2);
+        table4.addPlayer(diana, 3);
+
+        ServerHand hand = new ServerHand(table4, 1, 50, 100, 0, 0, 1, 2);
+        hand.deal();
+
+        // First actor pre-flop must be UTG (diana), not button (alice)
+        assertEquals(diana, hand.getCurrentPlayerWithInit(),
+                "UTG (diana) should act first pre-flop in a 4-player game, not the button");
+    }
+
+    @Test
+    void testPreflopActionOrder_ThreePlayers_ButtonActsFirst() {
+        // 3-player game: button=seat0(alice)=UTG, SB=seat1(bob), BB=seat2(charlie)
+        // In 3-handed poker the button IS UTG and acts first pre-flop.
+        ServerHand hand = new ServerHand(table, 1, 50, 100, 0, 0, 1, 2);
+        hand.deal();
+
+        assertEquals(alice, hand.getCurrentPlayerWithInit(),
+                "Button (alice=UTG) should act first pre-flop in a 3-player game");
+    }
+
+    @Test
+    void testPostflopActionOrder_ThreePlayers_SBActsFirst() {
+        // 3-player game: button=seat0(alice), SB=seat1(bob), BB=seat2(charlie)
+        // Post-flop: SB (bob, index 1) acts first, button (alice, index 0) acts last.
+        ServerHand hand = new ServerHand(table, 1, 50, 100, 0, 0, 1, 2);
+        hand.deal();
+
+        // Complete pre-flop: alice folds, bob calls, charlie checks
+        hand.applyPlayerAction(alice, PlayerAction.fold());
+        hand.applyPlayerAction(bob, PlayerAction.call());
+        hand.applyPlayerAction(charlie, PlayerAction.check());
+
+        hand.advanceRound(); // → FLOP, resets currentPlayerIndex
+
+        // First actor on flop must be SB (bob), not button (alice, who also folded)
+        assertEquals(bob, hand.getCurrentPlayerWithInit(), "SB (bob) should act first post-flop");
+    }
+
     // === Fix 2: initPlayerIndex allIn case ===
 
     @Test
