@@ -1143,6 +1143,72 @@ class WebSocketTournamentDirectorTest {
     }
 
     // -------------------------------------------------------------------------
+    // Game restart — tables_ cleared between games (fix: second game never deals)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Regression test: when the same {@link WebSocketTournamentDirector} instance
+     * is reused for a second game (as happens in DD Poker's phase system), the
+     * {@code tables_} map must be cleared before the new game's GAME_STATE arrives.
+     *
+     * <p>
+     * Without the fix ({@code tables_.clear()} missing from {@code start()}), the
+     * {@code tables_.isEmpty()} guard in {@code onGameState} would be {@code false}
+     * on restart, so local setup tables would never be removed and no new
+     * {@link RemotePokerTable} instances would be created for the new game.
+     */
+    @Test
+    void gameStateAfterRestartCreatesNewTablesWhenTablesCleared() throws Exception {
+        Assumptions.assumeTrue(tablesAvailable, "PropertyConfig not initialized; skipping");
+
+        // First game: GAME_STATE populates tables_
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0));
+        assertThat(wsTD.getTableCount()).isEqualTo(1);
+
+        // Simulate WebSocketTournamentDirector.start() for a new game:
+        // new PokerGame and tables_.clear() (the fix)
+        PokerGame newGame = Mockito.mock(PokerGame.class);
+        GameClock newClock = Mockito.mock(GameClock.class);
+        Mockito.when(newGame.getGameClock()).thenReturn(newClock);
+        wsTD.setGameForTest(newGame);
+        wsTD.clearTablesForTest(); // simulates start()
+
+        // Second game: GAME_STATE should create a new RemotePokerTable on newGame
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0));
+
+        Mockito.verify(newGame, Mockito.atLeastOnce()).addTable(Mockito.any());
+        assertThat(wsTD.getTableCount()).isEqualTo(1);
+    }
+
+    /**
+     * Documents the bug: without {@code tables_.clear()} in {@code start()}, a
+     * second-game GAME_STATE reuses the stale table from game 1 and never calls
+     * {@code addTable} on the new {@link PokerGame}.
+     */
+    @Test
+    void gameStateWithoutTablesResetReusesStaleTableFromFirstGame() throws Exception {
+        Assumptions.assumeTrue(tablesAvailable, "PropertyConfig not initialized; skipping");
+
+        // First game: GAME_STATE populates tables_
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0));
+        assertThat(wsTD.getTableCount()).isEqualTo(1);
+        RemotePokerTable staleTable = wsTD.getFirstTable();
+
+        // Simulate restart WITHOUT clearing tables (the bug)
+        PokerGame newGame = Mockito.mock(PokerGame.class);
+        GameClock newClock = Mockito.mock(GameClock.class);
+        Mockito.when(newGame.getGameClock()).thenReturn(newClock);
+        wsTD.setGameForTest(newGame);
+        // tables_ NOT cleared — bug condition
+
+        // Second game: GAME_STATE reuses the stale table, no addTable on newGame
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0));
+
+        Mockito.verify(newGame, Mockito.never()).addTable(Mockito.any());
+        assertThat(wsTD.getFirstTable()).isSameAs(staleTable);
+    }
+
+    // -------------------------------------------------------------------------
     // resolveActionAmount — all-in button sends correct amount (fix)
     // -------------------------------------------------------------------------
 

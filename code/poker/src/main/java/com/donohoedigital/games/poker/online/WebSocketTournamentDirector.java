@@ -121,6 +121,7 @@ public class WebSocketTournamentDirector extends BasePhase
         game_ = (PokerGame) context_.getGame();
         game_.setWebSocketOpponentTracker(opponentTracker_);
         serverIdToGamePlayer_.clear();
+        tables_.clear();
 
         PokerGame.WebSocketConfig config = game_.getWebSocketConfig();
         serverPort_ = config.port();
@@ -225,6 +226,14 @@ public class WebSocketTournamentDirector extends BasePhase
      */
     RemotePokerTable getTableForTest(int tableId) {
         return tables_.get(tableId);
+    }
+
+    /**
+     * Clears the tables map for testing, simulating the effect of {@link #start()}
+     * being called at the beginning of a new game.
+     */
+    void clearTablesForTest() {
+        tables_.clear();
     }
 
     // -------------------------------------------------------------------------
