@@ -66,6 +66,7 @@ Persistent knowledge discovered during development sessions. Read this at the st
 ## Git & Workflow
 
 - [worktree] Always create worktrees from the main worktree root, not from inside another worktree (2026-02-12)
+- [hooks] The pre-commit hook that blocks code commits to main also discards working tree changes to the blocked files — re-apply edits in the worktree, don't copy from main (2026-02-22)
 - [ci] CI runs on push to main and on PRs to main (2026-02-12)
 - [hooks] Claude Code `PostToolUse` hooks cause persistent "hook error" messages on Windows — even with a no-op `exit 0` script. Avoid using PostToolUse hooks entirely (2026-02-12)
 - [hooks] Claude Code `PreToolUse` hooks are unreliable on Windows — sometimes work, sometimes error. Don't use for git hooks (2026-02-12)
