@@ -621,6 +621,16 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         return webSocketConfig_;
     }
 
+    private WebSocketOpponentTracker wsOpponentTracker_;
+
+    public WebSocketOpponentTracker getWebSocketOpponentTracker() {
+        return wsOpponentTracker_;
+    }
+
+    public void setWebSocketOpponentTracker(WebSocketOpponentTracker tracker) {
+        wsOpponentTracker_ = tracker;
+    }
+
     /**
      * init chip count over all players (and specify their buyin), init think bank
      * millis and profile

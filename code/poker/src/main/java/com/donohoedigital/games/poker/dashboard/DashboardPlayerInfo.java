@@ -37,6 +37,7 @@ import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.games.poker.ai.*;
 import com.donohoedigital.games.poker.ai.gui.*;
 import com.donohoedigital.games.poker.event.*;
@@ -120,6 +121,16 @@ public class DashboardPlayerInfo extends DashboardItem implements TerritorySelec
 
             float tightness = model.getPreFlopTightness(-1, Float.NaN);
             float aggression = model.getPreFlopAggression(-1, Float.NaN);
+
+            WebSocketOpponentTracker tracker = game_.getWebSocketOpponentTracker();
+            if (tracker != null) {
+                float wsT = tracker.getTightness(last_.getID());
+                float wsA = tracker.getAggression(last_.getID());
+                if (!Float.isNaN(wsT))
+                    tightness = wsT;
+                if (!Float.isNaN(wsA))
+                    aggression = wsA;
+            }
 
             styleQuadsPanel_.setValues(tightness, aggression);
 

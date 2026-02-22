@@ -82,6 +82,10 @@ public class WebSocketTournamentDirector extends BasePhase
     // One WebSocket connection per game session
     private final WebSocketGameClient wsClient_ = new WebSocketGameClient();
 
+    // Tracks per-player pre-flop stats from observed actions
+    private final WebSocketOpponentTracker opponentTracker_ = new WebSocketOpponentTracker();
+    private boolean isPreFlop_ = false;
+
     // One RemotePokerTable per server table ID
     private final Map<Integer, RemotePokerTable> tables_ = new HashMap<>();
 
@@ -109,6 +113,7 @@ public class WebSocketTournamentDirector extends BasePhase
     @Override
     public void start() {
         game_ = (PokerGame) context_.getGame();
+        game_.setWebSocketOpponentTracker(opponentTracker_);
 
         PokerGame.WebSocketConfig config = game_.getWebSocketConfig();
         serverPort_ = config.port();
@@ -460,6 +465,8 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onHandStarted(HandStartedData d) {
         logger.debug("[HAND_STARTED] dealer={}", d.dealerSeat());
+        isPreFlop_ = true;
+        opponentTracker_.onHandStart();
         SwingUtilities.invokeLater(() -> {
             // Apply to all tables (HAND_STARTED is per-table; we apply to the current
             // table)
@@ -544,6 +551,7 @@ public class WebSocketTournamentDirector extends BasePhase
     }
 
     private void onCommunityCardsDealt(CommunityCardsDealtData d) {
+        isPreFlop_ = false;
         SwingUtilities.invokeLater(() -> {
             RemotePokerTable table = tables_.getOrDefault(d.tableId(), currentTable());
             if (table == null)
@@ -648,6 +656,15 @@ public class WebSocketTournamentDirector extends BasePhase
             if (hand == null)
                 return;
 
+            // Record pre-flop action for opponent style tracking (skip blinds/antes)
+            if (isPreFlop_) {
+                String actionStr = d.action();
+                if (!"BLIND_BET".equalsIgnoreCase(actionStr) && !"ANTE".equalsIgnoreCase(actionStr)
+                        && !"BLIND_SM".equalsIgnoreCase(actionStr) && !"BLIND_BIG".equalsIgnoreCase(actionStr)) {
+                    opponentTracker_.onPreFlopAction((int) d.playerId(), actionStr);
+                }
+            }
+
             // Update chip count and pot from server-provided post-action values
             PokerPlayer player = findPlayer(d.playerId());
             if (player != null) {
@@ -750,6 +767,7 @@ public class WebSocketTournamentDirector extends BasePhase
             hand.updatePot(0);
             hand.clearBets();
             table.fireEvent(PokerTableEvent.TYPE_END_HAND);
+            opponentTracker_.onHandComplete();
         });
     }
 
