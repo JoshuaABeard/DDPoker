@@ -1260,7 +1260,10 @@ public class WebSocketTournamentDirector extends BasePhase
                 // Integer.MAX_VALUE (e.g., high-volume server deployment in M6+).
                 // For the local player, pass the engine's player ID as the key so
                 // PokerPlayer.isLocallyControlled() returns true and hole cards render face-up.
-                String playerKey = sd.playerId() == localPlayerId_ ? GameEngine.getGameEngine().getPlayerId() : null;
+                // Guard against null GameEngine (e.g., in unit tests where GameEngine is not
+                // initialized by the test harness).
+                GameEngine ge = GameEngine.getGameEngine();
+                String playerKey = (sd.playerId() == localPlayerId_ && ge != null) ? ge.getPlayerId() : null;
                 PokerPlayer p = new PokerPlayer(playerKey, (int) sd.playerId(), sd.playerName(),
                         sd.playerId() == localPlayerId_);
                 p.setChipCount(sd.chipCount());

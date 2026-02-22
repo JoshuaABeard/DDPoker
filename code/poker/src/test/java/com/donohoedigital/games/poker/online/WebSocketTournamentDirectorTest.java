@@ -337,7 +337,7 @@ class WebSocketTournamentDirectorTest {
 
     @Test
     void actionTimeoutFiresPlayerActionEvent() throws Exception {
-        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0));
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
         dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
         RemotePokerTable table = requireTable();
         List<Integer> events = collectEvents(table);
@@ -1024,7 +1024,7 @@ class WebSocketTournamentDirectorTest {
         wsTD.setChatHandler((fromPlayerID, chatType, message) -> received.add(new int[]{fromPlayerID, chatType}));
 
         ObjectNode payload = mapper.createObjectNode();
-        payload.put("playerId", 1L).put("playerName", "Alice").put("autoAction", "FOLD").put("tableId", 1);
+        payload.put("playerId", 1L).put("autoAction", "FOLD").put("tableId", 1);
         dispatch(ServerMessageType.ACTION_TIMEOUT, payload);
 
         assertThat(received).hasSize(1);
