@@ -76,13 +76,18 @@ public class GameServerRestClient {
      *            AI skill level (1-7)
      * @param jwt
      *            JWT token for the local user
+     * @param humanDisplayName
+     *            display name for the human player (uses profile name instead of OS
+     *            username)
      * @return game ID
      * @throws GameServerClientException
      *             if the HTTP call fails or the server returns an error
      */
-    public String createPracticeGame(TournamentProfile profile, List<String> aiNames, int aiSkillLevel, String jwt) {
+    public String createPracticeGame(TournamentProfile profile, List<String> aiNames, int aiSkillLevel, String jwt,
+            String humanDisplayName) {
         GameConfig config = converter.convert(profile)
-                .withAiPlayers(converter.buildAiPlayers(profile, aiNames, aiSkillLevel));
+                .withAiPlayers(converter.buildAiPlayers(profile, aiNames, aiSkillLevel))
+                .withHumanDisplayName(humanDisplayName);
         try {
             String body = OBJECT_MAPPER.writeValueAsString(config);
             HttpRequest request = HttpRequest.newBuilder()

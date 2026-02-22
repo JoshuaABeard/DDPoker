@@ -191,6 +191,17 @@ public class PokerMain extends GameEngine {
             System.exit(1);
         }
 
+        // Pre-authenticate immediately when the profile changes so the H2 user record
+        // is created eagerly and the JWT is cached before a game is started.
+        final EmbeddedGameServer serverRef = embeddedServer_;
+        PlayerProfileOptions.setOnProfileChanged(p -> serverRef.preAuthenticateProfile(p));
+
+        // Pre-authenticate the profile that was already loaded at startup.
+        PlayerProfile initialProfile = PlayerProfileOptions.getDefaultProfile();
+        if (initialProfile != null) {
+            embeddedServer_.preAuthenticateProfile(initialProfile);
+        }
+
         gameSaveManager_ = new GameSaveManager(embeddedServer_);
         gameSaveManager_.loadResumableGames();
 

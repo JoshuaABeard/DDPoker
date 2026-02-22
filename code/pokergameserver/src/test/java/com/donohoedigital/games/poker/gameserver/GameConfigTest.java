@@ -77,7 +77,8 @@ class GameConfigTest {
                 null, // scheduled start (disabled)
                 new InviteConfig(false, List.of(), true), new BettingConfig(0, true), false, // allowDash
                 false, // allowAdvisor
-                List.of() // no AI players
+                List.of(), // no AI players
+                null // humanDisplayName
         );
 
         // Serialize to JSON
@@ -109,7 +110,8 @@ class GameConfigTest {
                 new ScheduledStartConfig(true, Instant.parse("2026-02-16T20:00:00Z"), 4),
                 new InviteConfig(false, List.of(), true), new BettingConfig(0, true), false, false,
                 List.of(new AIPlayerConfig("Bot-Easy", 2), new AIPlayerConfig("Bot-Medium", 4),
-                        new AIPlayerConfig("Bot-Hard", 6)));
+                        new AIPlayerConfig("Bot-Hard", 6)),
+                null);
 
         String json = objectMapper.writeValueAsString(config);
         GameConfig deserialized = objectMapper.readValue(json, GameConfig.class);
@@ -170,7 +172,7 @@ class GameConfigTest {
                 new TimeoutConfig(30, 0, 0, 0, 0, 15), new BootConfig(true, 25, true, 10), null, null, // late reg,
                                                                                                         // scheduled
                                                                                                         // start
-                new InviteConfig(false, List.of(), true), new BettingConfig(0, true), false, false, List.of());
+                new InviteConfig(false, List.of(), true), new BettingConfig(0, true), false, false, List.of(), null);
 
         String json = objectMapper.writeValueAsString(config);
         GameConfig deserialized = objectMapper.readValue(json, GameConfig.class);
@@ -189,6 +191,6 @@ class GameConfigTest {
                 List.of(new BlindLevel(25, 50, 0, 20, false, "NOLIMIT_HOLDEM")), true, "NOLIMIT_HOLDEM",
                 LevelAdvanceMode.TIME, 10, 20, null, null, new PayoutConfig("SPOTS", 3, 0, 0, "AUTO", List.of()), null,
                 null, new TimeoutConfig(30, 0, 0, 0, 0, 15), new BootConfig(true, 25, true, 10), null, null,
-                new InviteConfig(false, List.of(), true), new BettingConfig(0, true), false, false, List.of());
+                new InviteConfig(false, List.of(), true), new BettingConfig(0, true), false, false, List.of(), null);
     }
 }

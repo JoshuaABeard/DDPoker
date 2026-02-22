@@ -75,7 +75,7 @@ class GameServerRestClientTest {
             }
         });
 
-        String gameId = client.createPracticeGame(profile, List.of("Bot1"), 4, "test-jwt");
+        String gameId = client.createPracticeGame(profile, List.of("Bot1"), 4, "test-jwt", "TestPlayer");
 
         assertThat(gameId).isEqualTo("practice-xyz");
     }
@@ -93,7 +93,7 @@ class GameServerRestClientTest {
             }
         });
 
-        client.createPracticeGame(profile, List.of(), 4, "my-jwt-token");
+        client.createPracticeGame(profile, List.of(), 4, "my-jwt-token", "TestPlayer");
 
         assertThat(capturedAuth.get()).isEqualTo("Bearer my-jwt-token");
     }
@@ -111,7 +111,7 @@ class GameServerRestClientTest {
             }
         });
 
-        client.createPracticeGame(profile, List.of("Bot"), 4, "jwt");
+        client.createPracticeGame(profile, List.of("Bot"), 4, "jwt", "TestPlayer");
 
         assertThat(capturedBody.get()).contains("\"name\"");
         assertThat(capturedBody.get()).contains("\"blindStructure\"");
@@ -129,7 +129,7 @@ class GameServerRestClientTest {
             }
         });
 
-        assertThatThrownBy(() -> client.createPracticeGame(profile, List.of(), 4, "jwt"))
+        assertThatThrownBy(() -> client.createPracticeGame(profile, List.of(), 4, "jwt", "TestPlayer"))
                 .isInstanceOf(GameServerRestClient.GameServerClientException.class).hasMessageContaining("500");
     }
 

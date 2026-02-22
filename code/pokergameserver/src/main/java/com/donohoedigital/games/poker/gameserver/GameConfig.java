@@ -116,6 +116,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  *            Allow AI advisor during play (default: false)
  * @param aiPlayers
  *            AI player configurations
+ * @param humanDisplayName
+ *            Display name for the human player (overrides server-side username
+ *            if non-null)
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record GameConfig(String name, String description, String greeting, int maxPlayers, int maxOnlinePlayers,
@@ -124,7 +127,7 @@ public record GameConfig(String name, String description, String greeting, int m
         int defaultMinutesPerLevel, RebuyConfig rebuys, AddonConfig addons, PayoutConfig payout, HouseConfig house,
         BountyConfig bounty, TimeoutConfig timeouts, BootConfig boot, LateRegistrationConfig lateRegistration,
         ScheduledStartConfig scheduledStart, InviteConfig invite, BettingConfig betting, boolean allowDash,
-        boolean allowAdvisor, List<AIPlayerConfig> aiPlayers) {
+        boolean allowAdvisor, List<AIPlayerConfig> aiPlayers, String humanDisplayName) {
 
     /**
      * Validate this configuration.
@@ -371,7 +374,8 @@ public record GameConfig(String name, String description, String greeting, int m
         return new GameConfig(name, description, greeting, maxPlayers, maxOnlinePlayers, fillComputer, buyIn,
                 startingChips, newBlindStructure, doubleAfterLastLevel, defaultGameType, levelAdvanceMode,
                 handsPerLevel, defaultMinutesPerLevel, rebuys, addons, payout, house, bounty, timeouts, boot,
-                lateRegistration, scheduledStart, invite, betting, allowDash, allowAdvisor, aiPlayers);
+                lateRegistration, scheduledStart, invite, betting, allowDash, allowAdvisor, aiPlayers,
+                humanDisplayName);
     }
 
     /**
@@ -382,7 +386,7 @@ public record GameConfig(String name, String description, String greeting, int m
         return new GameConfig(name, description, greeting, newMaxPlayers, maxOnlinePlayers, fillComputer, buyIn,
                 startingChips, blindStructure, doubleAfterLastLevel, defaultGameType, levelAdvanceMode, handsPerLevel,
                 defaultMinutesPerLevel, rebuys, addons, payout, house, bounty, timeouts, boot, lateRegistration,
-                scheduledStart, invite, betting, allowDash, allowAdvisor, aiPlayers);
+                scheduledStart, invite, betting, allowDash, allowAdvisor, aiPlayers, humanDisplayName);
     }
 
     /**
@@ -393,6 +397,18 @@ public record GameConfig(String name, String description, String greeting, int m
         return new GameConfig(name, description, greeting, maxPlayers, maxOnlinePlayers, fillComputer, buyIn,
                 startingChips, blindStructure, doubleAfterLastLevel, defaultGameType, levelAdvanceMode, handsPerLevel,
                 defaultMinutesPerLevel, rebuys, addons, payout, house, bounty, timeouts, boot, lateRegistration,
-                scheduledStart, invite, betting, allowDash, allowAdvisor, newAiPlayers);
+                scheduledStart, invite, betting, allowDash, allowAdvisor, newAiPlayers, humanDisplayName);
+    }
+
+    /**
+     * Create a copy of this config with a human display name. Used by the desktop
+     * client to pass the active player profile name so the server uses it instead
+     * of the OS-derived authentication username.
+     */
+    public GameConfig withHumanDisplayName(String newHumanDisplayName) {
+        return new GameConfig(name, description, greeting, maxPlayers, maxOnlinePlayers, fillComputer, buyIn,
+                startingChips, blindStructure, doubleAfterLastLevel, defaultGameType, levelAdvanceMode, handsPerLevel,
+                defaultMinutesPerLevel, rebuys, addons, payout, house, bounty, timeouts, boot, lateRegistration,
+                scheduledStart, invite, betting, allowDash, allowAdvisor, aiPlayers, newHumanDisplayName);
     }
 }

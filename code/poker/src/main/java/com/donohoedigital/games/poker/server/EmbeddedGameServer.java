@@ -17,6 +17,8 @@
  */
 package com.donohoedigital.games.poker.server;
 
+import com.donohoedigital.games.poker.PlayerProfile;
+import com.donohoedigital.games.poker.PlayerProfileOptions;
 import com.donohoedigital.games.poker.gameserver.auth.JwtKeyManager;
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
 import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
@@ -28,11 +30,13 @@ import org.springframework.boot.web.server.WebServer;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.security.KeyPair;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.Properties;
-import java.util.UUID;
 
 /**
  * Manages the lifecycle of the embedded Spring Boot game server within the
@@ -52,9 +56,10 @@ import java.util.UUID;
  * On {@link #stop()}, the Spring context is closed and resources released.
  *
  * <p>
- * {@link #getLocalUserJwt()} returns a valid JWT for the local OS user,
- * creating the user record in H2 on first call and persisting the identity to
- * {@code ~/.ddpoker/local-identity.properties}.
+ * {@link #getLocalUserJwt()} returns a valid JWT derived from the active
+ * {@link PlayerProfile}. The server identity (username + password) is derived
+ * deterministically from the profile's file name and create date — no OS
+ * username or stored credentials file is used.
  */
 public class EmbeddedGameServer {
 
@@ -64,11 +69,14 @@ public class EmbeddedGameServer {
     private static final Path JWT_DIR = DDPOKER_DIR.resolve("jwt");
     private static final Path PRIVATE_KEY_PATH = JWT_DIR.resolve("private-key.pem");
     private static final Path PUBLIC_KEY_PATH = JWT_DIR.resolve("public-key.pem");
-    private static final Path LOCAL_IDENTITY_PATH = DDPOKER_DIR.resolve("local-identity.properties");
 
     private ConfigurableApplicationContext context;
     private volatile int port = -1;
     private volatile boolean running = false;
+
+    // JWT cache: avoid repeated H2 lookups for the same profile
+    private volatile String cachedProfileKey_;
+    private volatile String cachedJwt_;
 
     /**
      * Starts the embedded Spring Boot server on a random OS-assigned port.
@@ -150,26 +158,69 @@ public class EmbeddedGameServer {
     }
 
     /**
-     * Returns a valid JWT for the local OS user, creating the user record in H2 on
-     * first call.
+     * Returns a valid JWT for the active {@link PlayerProfile}.
      *
      * <p>
-     * The local user's identity (username + generated password) is persisted to
-     * {@code ~/.ddpoker/local-identity.properties} so the same credentials are
-     * reused across restarts.
+     * The server identity (username + password) is derived deterministically from
+     * the profile's file name and create date — no OS username or stored
+     * credentials file is used. When the active profile changes, a different
+     * identity is used automatically.
      *
      * @return signed JWT string
+     * @throws IllegalStateException
+     *             if no active player profile is set
      */
     public String getLocalUserJwt() {
-        Properties identity = loadOrCreateLocalIdentity();
-        String username = identity.getProperty("username");
-        String password = identity.getProperty("password");
+        PlayerProfile profile = PlayerProfileOptions.getDefaultProfile();
+        if (profile == null) {
+            throw new IllegalStateException("No active player profile");
+        }
+        return getJwtForProfile(profile);
+    }
+
+    /**
+     * Eagerly authenticates the given profile against the embedded server and
+     * caches the resulting JWT.
+     *
+     * <p>
+     * Call this whenever the active profile changes so the server identity is
+     * established immediately, and subsequent {@link #getLocalUserJwt()} calls
+     * return the cached token without an H2 round-trip.
+     *
+     * <p>
+     * Safe to call when the server is not yet running (no-op in that case).
+     *
+     * @param profile
+     *            the newly active player profile
+     */
+    public void preAuthenticateProfile(PlayerProfile profile) {
+        if (!running || context == null) {
+            return;
+        }
+        getJwtForProfile(profile);
+    }
+
+    /**
+     * Returns a valid JWT for the given {@link PlayerProfile}, using a cached token
+     * when the profile has not changed. Package-private for testing.
+     */
+    String getJwtForProfile(PlayerProfile profile) {
+        String key = profile.getFileName() + ":" + profile.getCreateDate();
+        if (key.equals(cachedProfileKey_) && cachedJwt_ != null) {
+            return cachedJwt_;
+        }
+
+        String username = deriveServerUsername(profile);
+        String password = deriveServerPassword(profile);
 
         AuthService authService = context.getBean(AuthService.class);
         JwtTokenProvider jwtProvider = context.getBean(JwtTokenProvider.class);
 
         long profileId = registerOrLogin(authService, username, password);
-        return jwtProvider.generateToken(username, profileId, false);
+        String jwt = jwtProvider.generateToken(username, profileId, false);
+        cachedProfileKey_ = key;
+        cachedJwt_ = jwt;
+        return jwt;
     }
 
     /**
@@ -187,6 +238,8 @@ public class EmbeddedGameServer {
                 context = null;
                 running = false;
                 port = -1;
+                cachedProfileKey_ = null;
+                cachedJwt_ = null;
             }
         }
     }
@@ -223,44 +276,35 @@ public class EmbeddedGameServer {
     }
 
     /**
-     * Loads the local identity from disk, or creates a new one and saves it.
-     *
-     * <p>
-     * The identity contains the OS username and a stable random password so the
-     * same user record is reused across JVM restarts.
+     * Derives a stable server username from the profile's file name (without
+     * extension). Falls back to the profile display name if the file name is
+     * unavailable.
      */
-    private Properties loadOrCreateLocalIdentity() {
+    private String deriveServerUsername(PlayerProfile profile) {
+        String fileName = profile.getFileName();
+        if (fileName != null && !fileName.isBlank()) {
+            int dot = fileName.lastIndexOf('.');
+            String base = (dot > 0) ? fileName.substring(0, dot) : fileName;
+            return sanitizeUsername(base);
+        }
+        String name = profile.getName();
+        return sanitizeUsername(name != null ? name : "local");
+    }
+
+    /**
+     * Derives a stable server password from the profile's file name and create date
+     * via SHA-256. The result is a 32-character Base64-URL string (no padding),
+     * giving 192 bits of entropy.
+     */
+    private String deriveServerPassword(PlayerProfile profile) {
         try {
-            Files.createDirectories(DDPOKER_DIR);
-        } catch (IOException e) {
-            logger.warn("Could not create .ddpoker directory", e);
+            String key = profile.getFileName() + ":" + profile.getCreateDate();
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(key.getBytes(StandardCharsets.UTF_8));
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(hash).substring(0, 32);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 not available", e);
         }
-
-        if (Files.exists(LOCAL_IDENTITY_PATH)) {
-            Properties props = new Properties();
-            try (InputStream in = Files.newInputStream(LOCAL_IDENTITY_PATH)) {
-                props.load(in);
-                if (props.containsKey("username") && props.containsKey("password")) {
-                    return props;
-                }
-            } catch (IOException e) {
-                logger.warn("Could not read local identity, recreating", e);
-            }
-        }
-
-        // Create new identity
-        String username = sanitizeUsername(System.getProperty("user.name", "local"));
-        String password = UUID.randomUUID().toString();
-        Properties props = new Properties();
-        props.setProperty("username", username);
-        props.setProperty("password", password);
-
-        try (OutputStream out = Files.newOutputStream(LOCAL_IDENTITY_PATH)) {
-            props.store(out, "DDPoker local user identity - do not edit");
-        } catch (IOException e) {
-            logger.warn("Could not save local identity", e);
-        }
-        return props;
     }
 
     /**

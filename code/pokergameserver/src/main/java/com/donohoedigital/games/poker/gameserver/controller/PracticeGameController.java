@@ -83,8 +83,11 @@ public class PracticeGameController {
         // Transition to accept players
         instance.transitionToWaitingForPlayers();
 
-        // Auto-join the human caller
-        instance.addPlayer(user.profileId(), user.username(), false, 0);
+        // Auto-join the human caller, using humanDisplayName from config if provided
+        String humanName = (config.humanDisplayName() != null && !config.humanDisplayName().isBlank())
+                ? config.humanDisplayName()
+                : user.username();
+        instance.addPlayer(user.profileId(), humanName, false, 0);
 
         // Add AI players from config
         List<AIPlayerConfig> aiPlayers = config.aiPlayers();

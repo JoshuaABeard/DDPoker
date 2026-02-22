@@ -226,6 +226,9 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener {
             super.rememberProfile(profile);
             default_ = (PlayerProfile) profile;
             PokerDatabase.init(default_);
+            if (onProfileChanged_ != null) {
+                onProfileChanged_.accept(default_);
+            }
         }
 
         @Override
@@ -250,6 +253,13 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener {
      * Cache default profile
      */
     private static PlayerProfile default_ = null;
+
+    /**
+     * Optional listener notified whenever the active profile changes via
+     * {@link PlayerProfileList#rememberProfile}. Used by {@code PokerMain} to
+     * eagerly pre-authenticate the new profile against the embedded game server.
+     */
+    private static java.util.function.Consumer<PlayerProfile> onProfileChanged_;
 
     /**
      * Return stored profile based on preference maintained by PlayerProfileList
@@ -305,6 +315,18 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener {
         }
 
         return default_;
+    }
+
+    /**
+     * Registers a listener that is called whenever the active profile changes.
+     * Replaces any previously registered listener (at most one listener is
+     * supported). Pass {@code null} to remove the listener.
+     *
+     * @param listener
+     *            callback invoked with the new active profile; may be null
+     */
+    public static void setOnProfileChanged(java.util.function.Consumer<PlayerProfile> listener) {
+        onProfileChanged_ = listener;
     }
 
     /**

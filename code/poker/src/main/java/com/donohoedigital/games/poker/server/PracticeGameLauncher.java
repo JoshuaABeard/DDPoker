@@ -17,7 +17,9 @@
  */
 package com.donohoedigital.games.poker.server;
 
+import com.donohoedigital.games.poker.PlayerProfileOptions;
 import com.donohoedigital.games.poker.PokerGame;
+import com.donohoedigital.games.poker.PlayerProfile;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -81,7 +83,11 @@ public class PracticeGameLauncher {
         String jwt = embeddedServer.getLocalUserJwt();
         List<String> aiNames = buildAiNames(profile);
 
-        String gameId = restClient.createPracticeGame(profile, aiNames, defaultSkillLevel(profile), jwt);
+        PlayerProfile playerProfile = PlayerProfileOptions.getDefaultProfile();
+        String humanDisplayName = (playerProfile != null) ? playerProfile.getName() : null;
+
+        String gameId = restClient.createPracticeGame(profile, aiNames, defaultSkillLevel(profile), jwt,
+                humanDisplayName);
 
         game.setWebSocketConfig(gameId, jwt, embeddedServer.getPort());
         logger.info("Practice game {} created on embedded server port {}", gameId, embeddedServer.getPort());

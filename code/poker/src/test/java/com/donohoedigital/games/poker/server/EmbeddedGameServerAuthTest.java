@@ -17,6 +17,7 @@
  */
 package com.donohoedigital.games.poker.server;
 
+import com.donohoedigital.games.poker.PlayerProfile;
 import org.junit.jupiter.api.*;
 
 import java.net.URI;
@@ -29,7 +30,7 @@ import static org.assertj.core.api.Assertions.*;
  * Integration tests for {@link EmbeddedGameServer} JWT authentication.
  *
  * <p>
- * Tests that {@code getLocalUserJwt()} returns a valid JWT and that
+ * Tests that {@code getJwtForProfile()} returns a valid JWT and that
  * authenticated REST requests succeed.
  */
 @Tag("integration")
@@ -37,11 +38,13 @@ import static org.assertj.core.api.Assertions.*;
 class EmbeddedGameServerAuthTest {
 
     private EmbeddedGameServer server;
+    private PlayerProfile testProfile;
 
     @BeforeEach
     void setUp() throws Exception {
         server = new EmbeddedGameServer();
         server.start();
+        testProfile = new PlayerProfile("TestUser");
     }
 
     @AfterEach
@@ -50,8 +53,8 @@ class EmbeddedGameServerAuthTest {
     }
 
     @Test
-    void getLocalUserJwtReturnsNonNullToken() {
-        String jwt = server.getLocalUserJwt();
+    void getJwtForProfileReturnsNonNullToken() {
+        String jwt = server.getJwtForProfile(testProfile);
 
         assertThat(jwt).isNotNull();
         assertThat(jwt).isNotBlank();
@@ -60,20 +63,33 @@ class EmbeddedGameServerAuthTest {
     }
 
     @Test
-    void getLocalUserJwtIsStable() {
-        String first = server.getLocalUserJwt();
-        String second = server.getLocalUserJwt();
+    void getJwtForProfileIsStable() {
+        String first = server.getJwtForProfile(testProfile);
+        String second = server.getJwtForProfile(testProfile);
 
         // Both tokens should be for the same user (though the tokens themselves may
-        // differ
-        // due to issued-at timestamp). We just verify both are valid JWTs.
+        // differ due to issued-at timestamp). We just verify both are valid JWTs.
         assertThat(first.split("\\.")).hasSize(3);
         assertThat(second.split("\\.")).hasSize(3);
     }
 
     @Test
+    void differentProfilesProduceDifferentUsernames() {
+        PlayerProfile otherProfile = new PlayerProfile("OtherUser");
+
+        String first = server.getJwtForProfile(testProfile);
+        String second = server.getJwtForProfile(otherProfile);
+
+        // Both are valid JWTs
+        assertThat(first.split("\\.")).hasSize(3);
+        assertThat(second.split("\\.")).hasSize(3);
+        // The tokens are for different identities (different payload), so they differ
+        assertThat(first).isNotEqualTo(second);
+    }
+
+    @Test
     void authenticatedRestRequestSucceeds() throws Exception {
-        String jwt = server.getLocalUserJwt();
+        String jwt = server.getJwtForProfile(testProfile);
         int port = server.getPort();
 
         HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();

@@ -70,9 +70,10 @@ public class TournamentProfileConverter {
                 profile.getDefaultMinutesPerLevel(), convertRebuys(profile), convertAddons(profile),
                 convertPayout(profile), convertHouse(profile), convertBounty(profile), convertTimeouts(profile),
                 convertBoot(profile), convertLateRegistration(profile), convertScheduledStart(profile),
-                convertInvite(profile), convertBetting(profile), profile.isAllowDash(), profile.isAllowAdvisor(), null // aiPlayers
+                convertInvite(profile), convertBetting(profile), profile.isAllowDash(), profile.isAllowAdvisor(), null, // aiPlayers
                                                                                                                         // set
                                                                                                                         // separately
+                null // humanDisplayName set separately via withHumanDisplayName()
         );
     }
 
