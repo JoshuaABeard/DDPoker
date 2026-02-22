@@ -629,23 +629,31 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
             return;
         }
         String healthUrl = serverUrl.replaceAll("/+$", "") + "/health";
-        try {
-            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
-            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-                    .uri(java.net.URI.create(healthUrl)).timeout(java.time.Duration.ofSeconds(10)).GET().build();
-            java.net.http.HttpResponse<String> response = client.send(request,
-                    java.net.http.HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 200) {
-                EngineUtils.displayInformationDialog(context_,
-                        PropertyConfig.getMessage("msg.testconnect.ok", serverUrl));
-            } else {
-                EngineUtils.displayInformationDialog(context_,
-                        PropertyConfig.getMessage("msg.testconnect.fail", serverUrl, response.statusCode()));
+        test_.setEnabled(false);
+        Thread t = new Thread(() -> {
+            String msg;
+            try {
+                java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+                java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                        .uri(java.net.URI.create(healthUrl)).timeout(java.time.Duration.ofSeconds(10)).GET().build();
+                java.net.http.HttpResponse<String> response = client.send(request,
+                        java.net.http.HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() == 200) {
+                    msg = PropertyConfig.getMessage("msg.testconnect.ok", serverUrl);
+                } else {
+                    msg = PropertyConfig.getMessage("msg.testconnect.fail", serverUrl, response.statusCode());
+                }
+            } catch (Exception ex) {
+                msg = PropertyConfig.getMessage("msg.testconnect.error", serverUrl, ex.getMessage());
             }
-        } catch (Exception ex) {
-            EngineUtils.displayInformationDialog(context_,
-                    PropertyConfig.getMessage("msg.testconnect.error", serverUrl, ex.getMessage()));
-        }
+            String finalMsg = msg;
+            SwingUtilities.invokeLater(() -> {
+                test_.setEnabled(true);
+                EngineUtils.displayInformationDialog(context_, finalMsg);
+            });
+        }, "TestConnection");
+        t.setDaemon(true);
+        t.start();
     }
 
     /**

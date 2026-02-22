@@ -79,6 +79,9 @@ public class OnlineConfiguration extends BasePhase implements ActionListener {
     private DDCheckBox cbxPublicList_;
     private DDCheckBox cbxObserver_;
 
+    // "Get Public IP" button (stored to disable during fetch)
+    private DDButton getIpBtn_;
+
     // Profile label
     private DDLabel profileLabel_;
 
@@ -148,9 +151,9 @@ public class OnlineConfiguration extends BasePhase implements ActionListener {
         publicIpText_.setEditable(true);
 
         // "Get Public IP" button
-        DDButton getIpBtn = new DDButton("hostonline.getip", STYLE);
-        getIpBtn.addActionListener(this);
-        internetBorder.add(GuiUtils.WEST(getIpBtn));
+        getIpBtn_ = new DDButton("hostonline.getip", STYLE);
+        getIpBtn_.addActionListener(this);
+        internetBorder.add(GuiUtils.WEST(getIpBtn_));
 
         Widgets publicUrlWidgets = addIPText(internetBorder, "hostonline.publicurl", STYLE, true);
         publicUrlText_ = publicUrlWidgets.text;
@@ -188,13 +191,20 @@ public class OnlineConfiguration extends BasePhase implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        // "Get Public IP" button — use PublicIPDetector directly
-        PublicIPDetector detector = new PublicIPDetector();
-        String ip = detector.fetchPublicIP();
-        if (ip != null && !ip.isEmpty()) {
-            publicIpText_.setText(ip);
-            publicUrlText_.setText(""); // will be set after game creation
-        }
+        // "Get Public IP" button — fetch off-EDT to avoid freezing UI
+        getIpBtn_.setEnabled(false);
+        Thread t = new Thread(() -> {
+            String ip = new PublicIPDetector().fetchPublicIP();
+            SwingUtilities.invokeLater(() -> {
+                getIpBtn_.setEnabled(true);
+                if (ip != null && !ip.isEmpty()) {
+                    publicIpText_.setText(ip);
+                    publicUrlText_.setText(""); // will be set after game creation
+                }
+            });
+        }, "GetPublicIP");
+        t.setDaemon(true);
+        t.start();
     }
 
     @Override

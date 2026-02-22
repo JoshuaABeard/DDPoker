@@ -266,28 +266,28 @@ public class Lobby extends BasePhase {
             }
             finishPolling();
 
-            // deregister from WAN server if registered
-            CommunityGameRegistration reg = OnlineConfiguration.getActiveRegistration();
-            if (reg != null) {
-                reg.deregister();
-                OnlineConfiguration.clearActiveRegistration();
-            }
-
-            if (bHost_) {
-                // cancel the game on the server
-                EmbeddedGameServer embeddedServer = ((PokerMain) engine_).getEmbeddedServer();
-                if (embeddedServer != null && gameId_ != null) {
+            // perform blocking cleanup (deregister, cancel) off-EDT then navigate
+            boolean host = bHost_;
+            EmbeddedGameServer embeddedServer = host ? ((PokerMain) engine_).getEmbeddedServer() : null;
+            String gameId = gameId_;
+            Thread t = new Thread(() -> {
+                CommunityGameRegistration reg = OnlineConfiguration.getActiveRegistration();
+                if (reg != null) {
+                    reg.deregister();
+                    OnlineConfiguration.clearActiveRegistration();
+                }
+                if (host && embeddedServer != null && gameId != null) {
                     try {
                         new RestGameClient("http://localhost:" + embeddedServer.getPort(),
-                                embeddedServer.getLocalUserJwt()).cancelGame(gameId_);
+                                embeddedServer.getLocalUserJwt()).cancelGame(gameId);
                     } catch (Exception ex) {
                         logger.warn("Failed to cancel game on server: {}", ex.getMessage());
                     }
                 }
-                context_.restart();
-            } else {
-                context_.setGame(null);
-            }
+                SwingUtilities.invokeLater(context_::restart);
+            }, "LobbyCancel");
+            t.setDaemon(true);
+            t.start();
             return false;
         }
 

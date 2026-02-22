@@ -50,6 +50,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
+import com.donohoedigital.games.poker.gameserver.dto.LobbyPlayerInfo;
 
 /**
  * Encapsulates one running game. Owns the ServerTournamentDirector, player
@@ -570,11 +572,10 @@ public class GameInstance {
      * in the pre-game lobby. Human players are role "PLAYER"; AI players are role
      * "AI".
      */
-    public List<com.donohoedigital.games.poker.gameserver.dto.LobbyPlayerInfo> getConnectedPlayers() {
+    public List<LobbyPlayerInfo> getConnectedPlayers() {
         return playerSessions.values().stream()
-                .map(s -> new com.donohoedigital.games.poker.gameserver.dto.LobbyPlayerInfo(s.getPlayerName(),
-                        s.isAI() ? "AI" : "PLAYER"))
-                .collect(java.util.stream.Collectors.toList());
+                .map(s -> new LobbyPlayerInfo(s.getPlayerName(), s.isAI() ? "AI" : "PLAYER"))
+                .collect(Collectors.toList());
     }
 
     // ====================================
