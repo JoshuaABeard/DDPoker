@@ -84,7 +84,18 @@ public class DashboardAdvisor extends DashboardItem {
                 Phase phase = context_.getCurrentPhase();
 
                 if (phase instanceof Bet) {
+                    // Practice mode: Bet phase handles AI action directly
                     ((Bet) phase).doAI();
+                } else if (game_.getPlayerActionListener() != null) {
+                    // WebSocket mode: no Bet phase; route AI action through PlayerActionListener
+                    HoldemHand hh = game_.getCurrentTable().getHoldemHand();
+                    PokerPlayer pp = (hh == null) ? null : hh.getCurrentPlayer();
+                    if (pp != null && pp.isHumanControlled() && pp.getPokerAI() != null) {
+                        HandAction aiAction = pp.getAction(false);
+                        if (aiAction != null) {
+                            game_.playerActionPerformed(toPokerGameAction(aiAction.getAction()), aiAction.getAmount());
+                        }
+                    }
                 }
             }
         });
@@ -127,6 +138,17 @@ public class DashboardAdvisor extends DashboardItem {
          */
 
         return base;
+    }
+
+    private static int toPokerGameAction(int handAction) {
+        return switch (handAction) {
+            case HandAction.ACTION_FOLD -> PokerGame.ACTION_FOLD;
+            case HandAction.ACTION_CHECK, HandAction.ACTION_CHECK_RAISE -> PokerGame.ACTION_CHECK;
+            case HandAction.ACTION_CALL -> PokerGame.ACTION_CALL;
+            case HandAction.ACTION_BET -> PokerGame.ACTION_BET;
+            case HandAction.ACTION_RAISE -> PokerGame.ACTION_RAISE;
+            default -> PokerGame.ACTION_FOLD;
+        };
     }
 
     @Override
