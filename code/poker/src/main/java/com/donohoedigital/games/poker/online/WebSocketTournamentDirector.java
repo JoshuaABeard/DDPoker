@@ -141,8 +141,12 @@ public class WebSocketTournamentDirector extends BasePhase
                 return;
             }
             game_.setInputMode(PokerTableInput.MODE_QUITSAVE);
-            String wsAction = mapPokerGameActionToWsString(action);
-            wsClient_.sendAction(wsAction, resolveActionAmount(action, amount));
+            if (action == PokerGame.ACTION_CONTINUE_LOWER) {
+                wsClient_.sendContinueRunout();
+            } else {
+                String wsAction = mapPokerGameActionToWsString(action);
+                wsClient_.sendAction(wsAction, resolveActionAmount(action, amount));
+            }
         });
 
         // Register as the GameManager so ShowTournamentTable.poststart() can wire chat.
@@ -399,6 +403,7 @@ public class WebSocketTournamentDirector extends BasePhase
                     ServerMessageData.AiHoleCardsData d = parse(data, ServerMessageData.AiHoleCardsData.class);
                     onAiHoleCards(d);
                 }
+                case CONTINUE_RUNOUT -> onContinueRunout();
             }
         } catch (Exception e) {
             logger.error("Error handling {} message", type, e);
@@ -1256,6 +1261,17 @@ public class WebSocketTournamentDirector extends BasePhase
             if (table != null) {
                 table.fireEvent(PokerTableEvent.TYPE_DEALER_ACTION);
             }
+        });
+    }
+
+    private void onContinueRunout() {
+        SwingUtilities.invokeLater(() -> {
+            RemotePokerTable table = currentTable();
+            if (table == null)
+                return;
+            RemoteHoldemHand hand = table.getRemoteHand();
+            PokerPlayer player = findPlayer(localPlayerId_);
+            game_.setInputMode(PokerTableInput.MODE_CONTINUE_LOWER, hand, player);
         });
     }
 

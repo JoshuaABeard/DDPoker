@@ -918,6 +918,77 @@ class ServerTournamentDirectorTest {
         assertThat(transferEvents).as("No ChipsTransferred events for AI-only game").isEmpty();
     }
 
+    /**
+     * When waitForContinueCallback is set, it is called during an all-in runout and
+     * the callback blocks the director until submitContinue() is called. Verifies
+     * the callback fires and the game proceeds after unblocking.
+     */
+    @Test
+    void waitForContinueCallbackBlocksAndUnblocks() throws Exception {
+        // Two players each go all-in — a pure all-in runout scenario.
+        // Both start with equal chips so the hand always ends in a runout.
+        List<ServerPlayer> players = new ArrayList<>();
+        players.add(new ServerPlayer(1, "Player1", false, 5, 500));
+        players.add(new ServerPlayer(2, "Player2", false, 5, 500));
+        players.get(0).setSeat(0);
+        players.get(1).setSeat(1);
+        ServerTournamentContext tournament = createTournament(players, 1);
+
+        InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-cb");
+        ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
+
+        // AI always goes all-in (raises to max)
+        PlayerActionProvider allInAI = (player, options) -> {
+            if (options.canRaise())
+                return PlayerAction.raise(options.maxRaise());
+            if (options.canBet())
+                return PlayerAction.bet(options.maxBet());
+            if (options.canCall())
+                return PlayerAction.call();
+            return PlayerAction.check();
+        };
+        ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(allInAI, req -> {
+        }, 30, 3, java.util.Collections.emptyMap(), 0, e -> {
+        });
+
+        ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
+                tournament, eventBus, actionProvider,
+                new GameServerProperties(50, 30, 120, 10, 0, 3, 2, 5, 5, 24, 7, "ws://localhost", 0), event -> {
+                });
+        director.setHandResultPauseMs(0);
+
+        // Track callback invocations.
+        // callbackFired: signals the test that the director is inside the callback.
+        // releaseCallback: test releases this latch to let the callback return.
+        CountDownLatch callbackFired = new CountDownLatch(1);
+        CountDownLatch releaseCallback = new CountDownLatch(1);
+        java.util.concurrent.atomic.AtomicInteger callbackCount = new java.util.concurrent.atomic.AtomicInteger(0);
+        director.setWaitForContinueCallback(tableId -> {
+            callbackCount.incrementAndGet();
+            callbackFired.countDown();
+            // Hold here until the test releases us, proving the director is blocked.
+            try {
+                releaseCallback.await(5, TimeUnit.SECONDS);
+            } catch (InterruptedException ignored) {
+            }
+        });
+
+        Thread directorThread = new Thread(director);
+        directorThread.start();
+
+        boolean fired = callbackFired.await(10, TimeUnit.SECONDS);
+        assertThat(fired).as("waitForContinue callback was invoked during all-in runout").isTrue();
+        // Director thread must still be alive — it is blocked inside the callback.
+        assertThat(directorThread.isAlive()).as("director thread blocked waiting for continue").isTrue();
+
+        // Release the callback and wait for the game to finish.
+        releaseCallback.countDown();
+        directorThread.join(15000);
+
+        assertThat(callbackCount.get()).as("callback fired at least once").isGreaterThanOrEqualTo(1);
+        assertThat(tournament.isGameOver()).as("game completed after continue").isTrue();
+    }
+
     // Helper methods
 
     private List<ServerPlayer> createPlayers(int count, int startingChips) {

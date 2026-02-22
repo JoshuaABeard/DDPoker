@@ -141,5 +141,8 @@ public enum ServerMessageType {
     AI_HOLE_CARDS,
 
     /** Never Broke offered to the human player (practice mode) */
-    NEVER_BROKE_OFFERED
+    NEVER_BROKE_OFFERED,
+
+    /** Server is pausing during all-in runout; human must click Continue */
+    CONTINUE_RUNOUT
 }

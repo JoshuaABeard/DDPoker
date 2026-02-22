@@ -94,6 +94,9 @@ public class GameInstance {
     private final Map<Integer, CompletableFuture<Boolean>> pendingAddons = new ConcurrentHashMap<>();
     private final Map<Integer, CompletableFuture<Boolean>> pendingNeverBroke = new ConcurrentHashMap<>();
 
+    // Pending interactive continue during all-in runout (null when not waiting)
+    private volatile CompletableFuture<Void> pendingContinue;
+
     // Private constructor - use create() factory method
     private GameInstance(String gameId, long ownerProfileId, GameConfig config, GameServerProperties properties) {
         this.gameId = gameId;
@@ -270,6 +273,8 @@ public class GameInstance {
                 // is off, but the client responds automatically (<100 ms) so it is
                 // imperceptible in practice.
                 director.setNeverBrokeCallback(this::offerNeverBroke);
+                if (Boolean.TRUE.equals(pc.pauseAllinInteractive()))
+                    director.setWaitForContinueCallback(this::waitForContinue);
             }
 
             state = GameInstanceState.IN_PROGRESS;
@@ -336,6 +341,12 @@ public class GameInstance {
         try {
             if (director != null) {
                 director.shutdown();
+            }
+            // Unblock any in-progress waitForContinue so the director thread
+            // exits promptly rather than waiting up to actionTimeoutSeconds*2.
+            CompletableFuture<Void> f = pendingContinue;
+            if (f != null) {
+                f.complete(null);
             }
         } finally {
             stateLock.unlock();
@@ -687,6 +698,40 @@ public class GameInstance {
         CompletableFuture<Boolean> f = pendingNeverBroke.get(playerId);
         if (f != null) {
             f.complete(accept);
+        }
+    }
+
+    /**
+     * Blocks the director thread until the human clicks Continue during an all-in
+     * runout, or until the timeout elapses (game proceeds anyway on timeout).
+     * Called via {@code waitForContinueCallback} set on the director.
+     *
+     * <p>
+     * Ordering invariant: {@code pendingContinue} is assigned <em>before</em> the
+     * event is published, so any {@link #submitContinue()} call arriving on a
+     * WebSocket thread in response to the broadcast will always find a non-null
+     * future. A concurrent {@code submitContinue()} racing the {@code finally}
+     * block (timeout path) will simply call {@code complete(null)} on an already
+     * completed future, which is a no-op.
+     */
+    public void waitForContinue(int tableId) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        pendingContinue = future;
+        eventBus.publish(new com.donohoedigital.games.poker.core.event.GameEvent.AllInRunoutPaused(tableId));
+        try {
+            future.get(properties.actionTimeoutSeconds() * 2L, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            // timeout or interrupt — proceed anyway
+        } finally {
+            pendingContinue = null;
+        }
+    }
+
+    /** Called by the WebSocket router when the human sends CONTINUE_RUNOUT. */
+    public void submitContinue() {
+        CompletableFuture<Void> f = pendingContinue;
+        if (f != null) {
+            f.complete(null);
         }
     }
 

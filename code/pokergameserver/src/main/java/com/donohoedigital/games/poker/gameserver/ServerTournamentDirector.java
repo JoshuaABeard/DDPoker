@@ -34,6 +34,7 @@ package com.donohoedigital.games.poker.gameserver;
 import java.util.List;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,6 +95,14 @@ public class ServerTournamentDirector implements Runnable {
 
     public void setNeverBrokeCallback(BiPredicate<Integer, Integer> cb) {
         this.neverBrokeCallback = cb;
+    }
+
+    // Optional callback that blocks the director thread until the human clicks
+    // Continue during an all-in runout. When null, falls back to timed sleep.
+    private IntConsumer waitForContinueCallback;
+
+    public void setWaitForContinueCallback(IntConsumer cb) {
+        this.waitForContinueCallback = cb;
     }
 
     private final TournamentEngine engine;
@@ -403,8 +412,12 @@ public class ServerTournamentDirector implements Runnable {
                 }
                 // Pause between cards during an all-in runout so players can follow
                 // each reveal. Skip in zip mode (human already folded).
-                if (properties.aiActionDelayMs() > 0 && !actionProvider.isZipMode() && isAllInRunout(table)) {
-                    sleepMillis(allInRunoutPauseMs);
+                if (!actionProvider.isZipMode() && isAllInRunout(table)) {
+                    if (waitForContinueCallback != null) {
+                        waitForContinueCallback.accept(table.getNumber());
+                    } else if (properties.aiActionDelayMs() > 0 && allInRunoutPauseMs > 0) {
+                        sleepMillis(allInRunoutPauseMs);
+                    }
                 }
             } else if ("TD.Showdown".equals(result.phaseToRun())) {
                 // hand.resolve() was already called in TournamentEngine.handleShowdown().

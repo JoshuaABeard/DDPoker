@@ -170,6 +170,11 @@ public class WebSocketGameClient {
         sendMessage(ClientMessageType.SIT_OUT, objectMapper.createObjectNode());
     }
 
+    /** Sends a continue signal during all-in runout (human clicked Continue). */
+    public void sendContinueRunout() {
+        sendMessage(ClientMessageType.CONTINUE_RUNOUT, objectMapper.createObjectNode());
+    }
+
     /** Returns {@code true} if the WebSocket is currently connected. */
     public boolean isConnected() {
         return connected;

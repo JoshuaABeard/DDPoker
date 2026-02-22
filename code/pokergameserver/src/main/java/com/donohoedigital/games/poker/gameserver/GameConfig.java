@@ -386,9 +386,13 @@ public record GameConfig(String name, String description, String greeting, int m
      * @param aiFaceUp
      *            Show AI hole cards to human player during play (null = server
      *            default false)
+     * @param pauseAllinInteractive
+     *            Pause all-in runout interactively (human must click Continue
+     *            before each card reveal); overrides allInRunoutPauseMs when true
+     *            (null = server default false)
      */
     public record PracticeConfig(Integer aiActionDelayMs, Integer handResultPauseMs, Integer allInRunoutPauseMs,
-            Boolean zipModeEnabled, Boolean aiFaceUp) {
+            Boolean zipModeEnabled, Boolean aiFaceUp, Boolean pauseAllinInteractive) {
     }
 
     /**

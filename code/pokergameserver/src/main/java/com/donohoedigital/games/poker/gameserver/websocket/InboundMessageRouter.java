@@ -162,6 +162,7 @@ public class InboundMessageRouter {
             case REBUY_DECISION -> handleRebuyDecision(connection, game, dataNode);
             case ADDON_DECISION -> handleAddonDecision(connection, game, dataNode);
             case NEVER_BROKE_DECISION -> handleNeverBrokeDecision(connection, game, dataNode);
+            case CONTINUE_RUNOUT -> handleContinueRunout(connection, game);
         }
     }
 
@@ -314,6 +315,14 @@ public class InboundMessageRouter {
             return;
         }
         game.submitNeverBrokeDecision(Math.toIntExact(connection.getProfileId()), data.accept());
+    }
+
+    private void handleContinueRunout(PlayerConnection connection, GameInstance game) {
+        if (connection.getProfileId() != game.getOwnerProfileId()) {
+            sendError(connection, "FORBIDDEN", "Only the game owner can send CONTINUE_RUNOUT");
+            return;
+        }
+        game.submitContinue();
     }
 
     private PlayerAction parseAction(String actionString, int amount) {

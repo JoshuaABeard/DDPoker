@@ -218,6 +218,9 @@ case GameEvent.ChipsTransferred e ->
 
             case GameEvent.ColorUpStarted e ->
                 new PokerTableEvent(PokerTableEvent.TYPE_STATE_CHANGED, table);
+
+            case GameEvent.AllInRunoutPaused ignored ->
+                null; // Client handles CONTINUE_RUNOUT via WebSocket message
         };
     }
 
@@ -254,6 +257,7 @@ case GameEvent.ChipsTransferred e ->
             case GameEvent.NeverBrokeOffered e -> e.tableId();
 case GameEvent.ChipsTransferred e -> e.tableId();
             case GameEvent.ColorUpStarted e -> e.tableId();
+            case GameEvent.AllInRunoutPaused e -> e.tableId();
         };
     }
 }

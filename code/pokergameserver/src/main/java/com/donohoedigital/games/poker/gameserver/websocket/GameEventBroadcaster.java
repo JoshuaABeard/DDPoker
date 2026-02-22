@@ -464,6 +464,9 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 broadcast(ServerMessage.of(ServerMessageType.COLOR_UP_STARTED, gameId,
                         new ServerMessageData.ColorUpStartedData(players, e.newMinChip(), e.tableId())));
             }
+            case GameEvent.AllInRunoutPaused e ->
+                connectionManager.sendToPlayer(gameId, game.getOwnerProfileId(),
+                        ServerMessage.of(ServerMessageType.CONTINUE_RUNOUT, gameId, null));
             // Internal housekeeping events — not broadcast to clients
             case GameEvent.ButtonMoved ignored -> {}
             case GameEvent.TableStateChanged ignored -> {}

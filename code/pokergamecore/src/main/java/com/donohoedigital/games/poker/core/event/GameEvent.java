@@ -148,4 +148,10 @@ public sealed interface GameEvent {
     /** Per-player color-up result (used in ColorUpStarted). */
     record ColorUpPlayerData(int playerId, List<String> cards, boolean won, boolean broke, int finalChips) {
     }
+
+    /**
+     * Server is pausing during all-in runout waiting for human to click Continue.
+     */
+    record AllInRunoutPaused(int tableId) implements GameEvent {
+    }
 }

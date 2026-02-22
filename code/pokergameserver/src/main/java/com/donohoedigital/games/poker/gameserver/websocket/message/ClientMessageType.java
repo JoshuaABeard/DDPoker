@@ -52,5 +52,8 @@ public enum ClientMessageType {
     ADMIN_RESUME,
 
     /** Never Broke decision (accept/decline) */
-    NEVER_BROKE_DECISION
+    NEVER_BROKE_DECISION,
+
+    /** Human clicked Continue during all-in runout */
+    CONTINUE_RUNOUT
 }
