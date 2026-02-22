@@ -749,7 +749,24 @@ public class WebSocketTournamentDirector extends BasePhase
             RemotePokerTable table = tables_.getOrDefault(d.tableId(), currentTable());
             if (table == null)
                 return;
-            // Pot display updated — fire a player-chips-changed event
+            RemoteHoldemHand hand = table.getRemoteHand();
+
+            // Record win(s) in hand history so displayShowdown() shows WIN/LOSE overlays
+            // correctly. Without this, getWin() returns 0 for all players and everyone
+            // shows as LOSE. Also handles uncontested pots (all folded) by setting the
+            // round to SHOWDOWN so displayShowdown() runs at all.
+            if (hand != null && d.winnerIds() != null && d.winnerIds().length > 0) {
+                int amountEach = d.amount() / d.winnerIds().length;
+                for (long winnerId : d.winnerIds()) {
+                    PokerPlayer winner = findPlayer(winnerId);
+                    if (winner != null) {
+                        hand.wins(winner, amountEach, d.potIndex());
+                    }
+                }
+                hand.updateRound(BettingRound.SHOWDOWN);
+                table.fireEvent(PokerTableEvent.TYPE_DEALER_ACTION, BettingRound.SHOWDOWN.toLegacy());
+            }
+
             table.fireEvent(PokerTableEvent.TYPE_PLAYER_CHIPS_CHANGED);
         });
     }

@@ -60,6 +60,7 @@ public class RemoteHoldemHand extends HoldemHand {
     private int remotePotTotal_;
     private ActionOptionsData remoteOptions_;
     private final Map<Integer, Integer> remoteBets_ = new HashMap<>();
+    private final Map<Integer, Integer> remoteWins_ = new HashMap<>();
     private int remoteSmallBlindSeat_ = NO_CURRENT_PLAYER;
     private int remoteBigBlindSeat_ = NO_CURRENT_PLAYER;
 
@@ -202,6 +203,28 @@ public class RemoteHoldemHand extends HoldemHand {
     @Override
     public int getTotalPotChipCount() {
         return remotePotTotal_;
+    }
+
+    /**
+     * Records a win for the given player. Overrides to avoid {@code addHistory()},
+     * which fires a {@code TYPE_PLAYER_ACTION} event on {@code table_} — a field
+     * that is {@code null} in remote mode (no-arg constructor never sets it).
+     * Accumulated so that split-pot wins are summed correctly.
+     */
+    @Override
+    public void wins(PokerPlayer player, int nChips, int nPot) {
+        remoteWins_.merge(player.getID(), nChips, Integer::sum);
+    }
+
+    /**
+     * Returns the total chips won by this player in the current hand, or {@code 0}.
+     * Overrides to read from the remote wins map instead of {@code history_} (which
+     * would also work, but only if {@code addHistory()} didn't throw first due to
+     * {@code table_} being {@code null}).
+     */
+    @Override
+    public int getWin(PokerPlayer player) {
+        return remoteWins_.getOrDefault(player.getID(), 0);
     }
 
     // -------------------------------------------------------------------------

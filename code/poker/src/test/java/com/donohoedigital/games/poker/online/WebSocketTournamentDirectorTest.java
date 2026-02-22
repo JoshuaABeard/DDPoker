@@ -639,6 +639,43 @@ class WebSocketTournamentDirectorTest {
         assertThat(events).contains(PokerTableEvent.TYPE_PLAYER_CHIPS_CHANGED);
     }
 
+    @Test
+    void potAwardedRecordsWinInHandHistory() throws Exception {
+        // After POT_AWARDED the winner's hand.getWin() must be > 0 so that
+        // displayShowdown() shows WIN instead of LOSE for the winner.
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        RemotePokerTable table = requireTable();
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("potIndex", 0).put("amount", 300);
+        payload.putArray("winnerIds").add(1L);
+        dispatch(ServerMessageType.POT_AWARDED, payload);
+
+        RemoteHoldemHand hand = table.getRemoteHand();
+        PokerPlayer winner = table.getPlayer(0);
+        assertThat(hand).isNotNull();
+        assertThat(winner).isNotNull();
+        assertThat(hand.getWin(winner)).isGreaterThan(0);
+    }
+
+    @Test
+    void potAwardedFiresDealerActionEvent() throws Exception {
+        // POT_AWARDED must fire TYPE_DEALER_ACTION so the showdown display is
+        // re-rendered with correct WIN/LOSE overlays after win data is recorded.
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        RemotePokerTable table = requireTable();
+        List<Integer> events = collectEvents(table);
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("potIndex", 0).put("amount", 300);
+        payload.putArray("winnerIds").add(1L);
+        dispatch(ServerMessageType.POT_AWARDED, payload);
+
+        assertThat(events).contains(PokerTableEvent.TYPE_DEALER_ACTION);
+    }
+
     // -------------------------------------------------------------------------
     // PLAYER_DISCONNECTED
     // -------------------------------------------------------------------------
