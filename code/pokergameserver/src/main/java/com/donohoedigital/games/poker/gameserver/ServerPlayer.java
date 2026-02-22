@@ -53,6 +53,7 @@ public class ServerPlayer implements GamePlayerInfo {
     private boolean observer;
     private int numRebuys;
     private int finishPosition; // 0 = still in tournament
+    private int oddChips; // fractional chips in current color-up race
 
     // Think bank for timed tournaments
     private int thinkBankMillis;
@@ -242,6 +243,14 @@ public class ServerPlayer implements GamePlayerInfo {
 
     public void setFinishPosition(int finishPosition) {
         this.finishPosition = finishPosition;
+    }
+
+    public int getOddChips() {
+        return oddChips;
+    }
+
+    public void setOddChips(int oddChips) {
+        this.oddChips = oddChips;
     }
 
     public int getSkillLevel() {

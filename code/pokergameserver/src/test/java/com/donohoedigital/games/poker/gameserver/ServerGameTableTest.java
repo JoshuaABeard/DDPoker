@@ -33,6 +33,8 @@ package com.donohoedigital.games.poker.gameserver;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -395,6 +397,132 @@ class ServerGameTableTest {
     @Test
     void testIsCurrent() {
         assertTrue(table.isCurrent(), "Server tables are always current");
+    }
+
+    // === Color-Up (Chip Race) ===
+
+    @Test
+    void colorUpReturnsEmptyWhenNextMinChipEqualsMinChip() {
+        // minChip starts at 1, nextMinChip defaults to 1 — no color-up needed
+        ServerPlayer p = new ServerPlayer(1, "Alice", false, 5, 103);
+        p.setSeat(0);
+        table.addPlayer(p, 0);
+
+        table.colorUp();
+
+        assertTrue(table.getColorUpResults().isEmpty(), "No color-up when nextMinChip == minChip");
+        assertEquals(103, p.getChipCount(), "Chips unchanged when no color-up");
+    }
+
+    @Test
+    void colorUpNoParticipantsWhenAllChipsAreMultiplesOfNewMin() {
+        table.setNextMinChip(5);
+        ServerPlayer p1 = new ServerPlayer(1, "Alice", false, 5, 100); // 100 % 5 == 0
+        ServerPlayer p2 = new ServerPlayer(2, "Bob", false, 5, 200); // 200 % 5 == 0
+        p1.setSeat(0);
+        p2.setSeat(1);
+        table.addPlayer(p1, 0);
+        table.addPlayer(p2, 1);
+
+        table.colorUp();
+
+        assertTrue(table.getColorUpResults().isEmpty(), "No participants when no odd chips");
+        assertEquals(100, p1.getChipCount());
+        assertEquals(200, p2.getChipCount());
+    }
+
+    @Test
+    void colorUpAwardsChipToWinnerAndPreservesChips() {
+        // p1: 103 chips (odd=3), p2: 207 chips (odd=2), p3: 155 chips (odd=0)
+        // nextMinChip=5, totalOdd=5, chipsToAward=5/5=1
+        // chips destroyed = 5 % 5 = 0 → total chips conserved exactly
+        table.setNextMinChip(5);
+        ServerPlayer p1 = new ServerPlayer(1, "Alice", false, 5, 103);
+        ServerPlayer p2 = new ServerPlayer(2, "Bob", false, 5, 207);
+        ServerPlayer p3 = new ServerPlayer(3, "Carol", false, 5, 155); // no odd chips
+        p1.setSeat(0);
+        p2.setSeat(1);
+        p3.setSeat(2);
+        table.addPlayer(p1, 0);
+        table.addPlayer(p2, 1);
+        table.addPlayer(p3, 2);
+
+        table.colorUp();
+
+        List<ServerGameTable.ColorUpPlayerResult> results = table.getColorUpResults();
+        assertEquals(2, results.size(), "Only p1 and p2 participate (p3 has no odd chips)");
+
+        long winnerCount = results.stream().filter(ServerGameTable.ColorUpPlayerResult::won).count();
+        assertEquals(1, winnerCount, "Exactly 1 winner (chipsToAward = totalOdd/newMin = 1)");
+
+        int winner = results.stream().filter(ServerGameTable.ColorUpPlayerResult::won)
+                .mapToInt(ServerGameTable.ColorUpPlayerResult::finalChips).sum();
+        assertTrue(winner > 0, "Winner must have chips");
+
+        assertEquals(103 + 207 + 155, p1.getChipCount() + p2.getChipCount() + p3.getChipCount(),
+                "Total chips conserved");
+    }
+
+    @Test
+    void colorUpBrokeFieldIsTrueWhenFinalChipsIsZero() {
+        // p1: 3 chips → rounds to 0 (odd=3); p2: 7 chips → rounds to 5 (odd=2)
+        // totalOdd=5, chipsToAward=1; chips destroyed = 5 % 5 = 0
+        // If p1 loses the race: finalChips=0, broke=true
+        table.setNextMinChip(5);
+        ServerPlayer p1 = new ServerPlayer(1, "Alice", false, 5, 3);
+        ServerPlayer p2 = new ServerPlayer(2, "Bob", false, 5, 7);
+        p1.setSeat(0);
+        p2.setSeat(1);
+        table.addPlayer(p1, 0);
+        table.addPlayer(p2, 1);
+
+        table.colorUp();
+
+        List<ServerGameTable.ColorUpPlayerResult> results = table.getColorUpResults();
+        assertEquals(2, results.size());
+        for (ServerGameTable.ColorUpPlayerResult r : results) {
+            assertEquals(r.finalChips() == 0, r.broke(),
+                    "broke flag must match finalChips==0 for player " + r.playerId());
+        }
+        assertEquals(10, p1.getChipCount() + p2.getChipCount(), "Total chips conserved");
+    }
+
+    @Test
+    void colorUpIsIdempotent() {
+        // Calling colorUp() twice must not change chips or results
+        table.setNextMinChip(5);
+        ServerPlayer p1 = new ServerPlayer(1, "Alice", false, 5, 103);
+        p1.setSeat(0);
+        table.addPlayer(p1, 0);
+
+        table.colorUp();
+        int chipsAfterFirst = p1.getChipCount();
+        List<ServerGameTable.ColorUpPlayerResult> firstResults = table.getColorUpResults();
+
+        table.colorUp(); // second call — idempotent guard must fire
+
+        assertEquals(chipsAfterFirst, p1.getChipCount(), "Second colorUp must not change chips");
+        assertSame(firstResults, table.getColorUpResults(), "Second colorUp must return same result list");
+    }
+
+    @Test
+    void colorUpSkipsSittingOutPlayers() {
+        // Sitting-out (eliminated) player must not participate in the chip race
+        table.setNextMinChip(5);
+        ServerPlayer active = new ServerPlayer(1, "Active", false, 5, 103); // odd=3
+        ServerPlayer out = new ServerPlayer(2, "Out", false, 5, 207); // odd=2
+        out.setSittingOut(true);
+        active.setSeat(0);
+        out.setSeat(1);
+        table.addPlayer(active, 0);
+        table.addPlayer(out, 1);
+
+        table.colorUp();
+
+        List<ServerGameTable.ColorUpPlayerResult> results = table.getColorUpResults();
+        assertEquals(1, results.size(), "Only active player participates");
+        assertEquals(active.getID(), results.get(0).playerId());
+        assertEquals(207, out.getChipCount(), "Sitting-out player chips unchanged");
     }
 
     // === Helpers ===

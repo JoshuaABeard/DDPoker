@@ -324,6 +324,8 @@ class GameInstanceManagerTest {
                 "NOLIMIT_HOLDEM", LevelAdvanceMode.HANDS, 2, 20, null, null,
                 new PayoutConfig("SPOTS", 3, 0, 0, "AUTO", List.of()), null, null,
                 new TimeoutConfig(30, 0, 0, 0, 0, 15), new BootConfig(true, 25, true, 10), null, null,
-                new InviteConfig(false, List.of(), true), new BettingConfig(0, true), false, false, List.of(), null);
+                new InviteConfig(false, List.of(), true), new BettingConfig(0, true), false, false, List.of(),
+                null, // humanDisplayName
+                null); // practiceConfig
     }
 }

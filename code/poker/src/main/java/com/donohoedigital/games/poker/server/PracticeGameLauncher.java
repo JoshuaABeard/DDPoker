@@ -20,6 +20,9 @@ package com.donohoedigital.games.poker.server;
 import com.donohoedigital.games.poker.PlayerProfileOptions;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PlayerProfile;
+import com.donohoedigital.games.poker.PokerUtils;
+import com.donohoedigital.games.poker.engine.PokerConstants;
+import com.donohoedigital.games.poker.gameserver.GameConfig;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -83,11 +86,22 @@ public class PracticeGameLauncher {
         String jwt = embeddedServer.getLocalUserJwt();
         List<String> aiNames = buildAiNames(profile);
 
-        PlayerProfile playerProfile = PlayerProfileOptions.getDefaultProfile();
+PlayerProfile playerProfile = PlayerProfileOptions.getDefaultProfile();
         String humanDisplayName = (playerProfile != null) ? playerProfile.getName() : null;
 
+        // Read practice timing preferences
+        int aiDelayMs = PokerUtils.getIntOption(PokerConstants.OPTION_DELAY) * 100;
+        int handPauseMs = PokerUtils.getIntOption(PokerConstants.OPTION_AUTODEALHAND) * 100;
+        boolean pauseAllin = PokerUtils.isOptionOn(PokerConstants.OPTION_PAUSE_ALLIN);
+        int allInPauseMs = pauseAllin ? 1500 : 0;
+        boolean zipModeEnabled = PokerUtils.isOptionOn(PokerConstants.OPTION_ZIP_MODE);
+        boolean neverBroke = PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_NEVERBROKE);
+        boolean aiFaceUp = PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_AIFACEUP);
+        GameConfig.PracticeConfig practiceConfig = new GameConfig.PracticeConfig(aiDelayMs, handPauseMs, allInPauseMs,
+                zipModeEnabled, neverBroke, aiFaceUp);
+
         String gameId = restClient.createPracticeGame(profile, aiNames, defaultSkillLevel(profile), jwt,
-                humanDisplayName);
+                humanDisplayName, practiceConfig);
 
         game.setWebSocketConfig(gameId, jwt, embeddedServer.getPort());
         logger.info("Practice game {} created on embedded server port {}", gameId, embeddedServer.getPort());

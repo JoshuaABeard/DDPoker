@@ -375,6 +375,19 @@ public class WebSocketTournamentDirector extends BasePhase
                     GameCancelledData d = parse(data, GameCancelledData.class);
                     onGameCancelled(d);
                 }
+                case CHIPS_TRANSFERRED -> {
+                    ServerMessageData.ChipsTransferredData d = parse(data,
+                            ServerMessageData.ChipsTransferredData.class);
+                    onChipsTransferred(d);
+                }
+                case COLOR_UP_STARTED -> {
+                    ServerMessageData.ColorUpStartedData d = parse(data, ServerMessageData.ColorUpStartedData.class);
+                    onColorUpStarted(d);
+                }
+                case AI_HOLE_CARDS -> {
+                    ServerMessageData.AiHoleCardsData d = parse(data, ServerMessageData.AiHoleCardsData.class);
+                    onAiHoleCards(d);
+                }
             }
         } catch (Exception e) {
             logger.error("Error handling {} message", type, e);
@@ -1165,6 +1178,59 @@ public class WebSocketTournamentDirector extends BasePhase
             fireStateChangedOnCurrentTable();
             if (context_ != null) {
                 context_.processPhase("OnlineGameOver");
+            }
+        });
+    }
+
+    private void onChipsTransferred(ServerMessageData.ChipsTransferredData d) {
+        SwingUtilities.invokeLater(() -> {
+            // Update chip counts from subsequent GAME_STATE; show notification.
+            PokerPlayer fromPlayer = findPlayer(d.fromPlayerId());
+            PokerPlayer toPlayer = findPlayer(d.toPlayerId());
+            if (fromPlayer != null) {
+                fromPlayer.setChipCount(fromPlayer.getChipCount() - d.amount());
+            }
+            if (toPlayer != null) {
+                toPlayer.setChipCount(toPlayer.getChipCount() + d.amount());
+            }
+            String msg = d.fromPlayerName() + " stakes " + d.amount() + " chips to keep you in the game.";
+            deliverChatLocal(PokerConstants.CHAT_2, msg, PokerConstants.CHAT_DEALER_MSG_ID);
+            RemotePokerTable table = currentTable();
+            if (table != null) {
+                table.fireEvent(PokerTableEvent.TYPE_PLAYER_CHIPS_CHANGED);
+            }
+        });
+    }
+
+    private void onColorUpStarted(ServerMessageData.ColorUpStartedData d) {
+        SwingUtilities.invokeLater(() -> {
+            String msg = "Chips are being colored up to " + d.newMinChip() + " chips.";
+            deliverChatLocal(PokerConstants.CHAT_2, msg, PokerConstants.CHAT_DEALER_MSG_ID);
+        });
+    }
+
+    private void onAiHoleCards(ServerMessageData.AiHoleCardsData d) {
+        SwingUtilities.invokeLater(() -> {
+            if (d.players() == null)
+                return;
+            for (ServerMessageData.AiPlayerCards pc : d.players()) {
+                PokerPlayer player = findPlayer(pc.playerId());
+                if (player == null || pc.cards() == null || pc.cards().isEmpty())
+                    continue;
+                Hand playerHand = player.getHand();
+                if (playerHand == null) {
+                    playerHand = player.newHand(Hand.TYPE_NORMAL);
+                }
+                playerHand.clear();
+                for (String c : pc.cards()) {
+                    Card card = Card.getCard(c);
+                    if (card != null)
+                        playerHand.addCard(card);
+                }
+            }
+            RemotePokerTable table = currentTable();
+            if (table != null) {
+                table.fireEvent(PokerTableEvent.TYPE_DEALER_ACTION);
             }
         });
     }

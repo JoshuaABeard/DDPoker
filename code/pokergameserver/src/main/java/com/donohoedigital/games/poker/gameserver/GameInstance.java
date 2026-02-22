@@ -196,9 +196,12 @@ public class GameInstance {
             }
 
             PlayerActionProvider aiProvider = createSimpleAI();
+            int aiDelayMs = config.practiceConfig() != null && config.practiceConfig().aiActionDelayMs() != null
+                    ? config.practiceConfig().aiActionDelayMs()
+                    : properties.aiActionDelayMs();
             actionProvider = new ServerPlayerActionProvider(aiProvider, this::onActionRequest,
-                    properties.actionTimeoutSeconds(), properties.disconnectGraceTurns(), playerSessions,
-                    properties.aiActionDelayMs(), eventBus::publish);
+                    properties.actionTimeoutSeconds(), properties.disconnectGraceTurns(), playerSessions, aiDelayMs,
+                    eventBus::publish);
 
             // Determine number of tables (1 table per 10 players, minimum 1)
             int numTables = Math.max(1, (players.size() + 9) / 10);
@@ -250,6 +253,18 @@ public class GameInstance {
             TournamentEngine engine = new TournamentEngine(eventBus, actionProvider);
             director = new ServerTournamentDirector(engine, tournament, eventBus, actionProvider, properties,
                     this::onLifecycleEvent, this::offerRebuy, this::offerAddon);
+
+            if (config.practiceConfig() != null) {
+                GameConfig.PracticeConfig pc = config.practiceConfig();
+                if (pc.handResultPauseMs() != null)
+                    director.setHandResultPauseMs(pc.handResultPauseMs());
+                if (pc.allInRunoutPauseMs() != null)
+                    director.setAllInRunoutPauseMs(pc.allInRunoutPauseMs());
+                if (Boolean.FALSE.equals(pc.zipModeEnabled()))
+                    director.setAutoZipEnabled(false);
+                if (pc.neverBroke() != null)
+                    director.setPracticeConfig(pc);
+            }
 
             state = GameInstanceState.IN_PROGRESS;
             directorFuture = executor.submit(director);

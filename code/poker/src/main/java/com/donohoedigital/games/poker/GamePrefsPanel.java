@@ -396,13 +396,11 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
             topside.add(practicebase, BorderLayout.WEST);
             practicebase.setLayout(new GridLayout(0, 1, 0, GRIDADJUST1));
 
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_AUTODEAL, OSTYLE, map_, true), practicebase);
             OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_PAUSE_ALLIN, OSTYLE, map_, true),
                     practicebase);
             OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_PAUSE_COLOR, OSTYLE, map_, true),
                     practicebase);
             OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_ZIP_MODE, OSTYLE, map_, true), practicebase);
-            OptionMenu.add(new OptionBoolean(NODE, EngineConstants.PREF_AUTOSAVE, OSTYLE, map_, true), practicebase);
 
             // delay
             OptionInteger oi;
@@ -417,11 +415,6 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
 
             oi = OptionMenu.add(
                     new OptionInteger(NODE, PokerConstants.OPTION_AUTODEALHAND, OSTYLE, map_, null, 0, 100, 55),
-                    delaybase);
-            oi.setEditable(true);
-
-            oi = OptionMenu.add(
-                    new OptionInteger(NODE, PokerConstants.OPTION_AUTODEALFOLD, OSTYLE, map_, null, 0, 100, 55),
                     delaybase);
             oi.setEditable(true);
 
@@ -447,11 +440,7 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
                 cheatbase);
         OptionMenu.add(new OptionBoolean(node, PokerConstants.OPTION_CHEAT_AIFACEUP, ostyle, map, true), cheatbase);
         OptionMenu.add(new OptionBoolean(node, PokerConstants.OPTION_CHEAT_SHOWFOLD, ostyle, map, true), cheatbase);
-        OptionMenu.add(new OptionBoolean(node, PokerConstants.OPTION_CHEAT_PAUSECARDS, ostyle, map, true), cheatbase);
         OptionMenu.add(new OptionBoolean(node, PokerConstants.OPTION_CHEAT_SHOW_MUCKED, ostyle, map, true), cheatbase);
-        OptionMenu.add(new OptionBoolean(node, PokerConstants.OPTION_CHEAT_MANUAL_BUTTON, ostyle, map, true),
-                cheatbase);
-        OptionMenu.add(new OptionBoolean(node, PokerConstants.OPTION_CHEAT_RABBITHUNT, ostyle, map, true), cheatbase);
         OptionMenu.add(new OptionBoolean(node, PokerConstants.OPTION_CHEAT_NEVERBROKE, ostyle, map, true), cheatbase);
 
         if (!b2Cols) {

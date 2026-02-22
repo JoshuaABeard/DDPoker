@@ -73,7 +73,8 @@ public class TournamentProfileConverter {
                 convertInvite(profile), convertBetting(profile), profile.isAllowDash(), profile.isAllowAdvisor(), null, // aiPlayers
                                                                                                                         // set
                                                                                                                         // separately
-                null // humanDisplayName set separately via withHumanDisplayName()
+null, // humanDisplayName set separately via withHumanDisplayName()
+                null // practiceConfig set separately via withPracticeConfig()
         );
     }
 

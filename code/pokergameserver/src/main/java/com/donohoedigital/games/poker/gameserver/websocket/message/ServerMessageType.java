@@ -129,5 +129,14 @@ public enum ServerMessageType {
     LOBBY_PLAYER_KICKED,
 
     /** Game was cancelled by owner or cleanup job */
-    GAME_CANCELLED
+    GAME_CANCELLED,
+
+    /** Chips transferred from chip leader to human player (Never Broke feature) */
+    CHIPS_TRANSFERRED,
+
+    /** Color-up chip race animation data */
+    COLOR_UP_STARTED,
+
+    /** AI players' hole cards (practice mode aiFaceUp) */
+    AI_HOLE_CARDS
 }

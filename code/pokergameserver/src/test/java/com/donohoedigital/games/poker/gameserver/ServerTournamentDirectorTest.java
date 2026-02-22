@@ -286,6 +286,10 @@ class ServerTournamentDirectorTest {
                 new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", delayMs),
                 event -> {
                 });
+        // Use delayMs as the inter-hand pause so the game finishes in milliseconds
+        // rather than seconds. Without this the default 3-second pause can cause the
+        // 30-second join timeout to be exceeded on slow CI machines.
+        director.setHandResultPauseMs(delayMs);
 
         Thread thread = new Thread(director);
         thread.start();
@@ -650,6 +654,143 @@ class ServerTournamentDirectorTest {
         assertThat(zipStatesAtHandStart).as("Zip mode at each hand start").isNotEmpty();
         assertThat(zipStatesAtHandStart).as("Zip mode always off at hand start")
                 .allSatisfy(zipActive -> assertThat(zipActive).isFalse());
+    }
+
+    /**
+     * Never Broke: when a human player hits 0 chips with neverBroke=true, the chip
+     * leader transfers half their chips to keep the human in the game. Verifies
+     * that a ChipsTransferred event is published and the human keeps playing.
+     *
+     * <p>
+     * Tests the logic directly via the package-private eliminateZeroChipPlayers so
+     * the result is deterministic regardless of card outcomes.
+     */
+    @Test
+    void neverBrokeTransfersChipsFromLeaderWhenHumanBusts() {
+        // Human at 0 chips, two AIs still active — game is NOT over yet.
+        // isOnePlayerLeft() = false (2 players have chips), so neverBroke is allowed to
+        // fire.
+        List<ServerPlayer> players = new ArrayList<>();
+        ServerPlayer human = new ServerPlayer(1, "Human", true, 0, 0);
+        human.setSeat(0);
+        players.add(human);
+        ServerPlayer ai1 = new ServerPlayer(2, "AI1", false, 5, 500);
+        ai1.setSeat(1);
+        players.add(ai1);
+        ServerPlayer ai2 = new ServerPlayer(3, "AI2", false, 5, 500);
+        ai2.setSeat(2);
+        players.add(ai2);
+        ServerTournamentContext tournament = createTournament(players, 1);
+
+        InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-neverbroke");
+        ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
+        PlayerActionProvider aiProvider = createSimpleAI(0);
+        ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {
+        }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
+
+        List<GameEvent.ChipsTransferred> transferEvents = new CopyOnWriteArrayList<>();
+        eventBus.subscribe(event -> {
+            if (event instanceof GameEvent.ChipsTransferred e)
+                transferEvents.add(e);
+        });
+
+        ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
+                tournament, eventBus, actionProvider,
+                new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0), event -> {
+                });
+        director.setPracticeConfig(new GameConfig.PracticeConfig(null, null, null, null, true, null));
+
+        // Call directly — no card randomness, result is deterministic.
+        director.eliminateZeroChipPlayers(tournament.getTable(0));
+
+        assertThat(transferEvents).as("ChipsTransferred event published").hasSize(1);
+        assertThat(transferEvents.get(0).toPlayerId()).as("Transfer targets the human").isEqualTo(human.getID());
+        assertThat(human.getChipCount()).as("Human has chips after neverBroke").isEqualTo(250);
+        assertThat(human.isSittingOut()).as("Human is not eliminated").isFalse();
+    }
+
+    /**
+     * Never Broke edge case: when the chip leader has exactly 1 chip, no transfer
+     * can occur and the human is eliminated normally.
+     */
+    @Test
+    void neverBrokeDoesNotTransferWhenLeaderHasOnlyOneChip() {
+        // Human at 0 chips, both AIs at 1 chip — game is NOT over yet (2 players have
+        // chips).
+        // findChipLeader returns a player with 1 chip; leader.getChipCount() > 1 is
+        // false,
+        // so neverBroke falls through to normal elimination.
+        List<ServerPlayer> players = new ArrayList<>();
+        ServerPlayer human = new ServerPlayer(1, "Human", true, 0, 0);
+        human.setSeat(0);
+        players.add(human);
+        ServerPlayer ai1 = new ServerPlayer(2, "AI1", false, 5, 1);
+        ai1.setSeat(1);
+        players.add(ai1);
+        ServerPlayer ai2 = new ServerPlayer(3, "AI2", false, 5, 1);
+        ai2.setSeat(2);
+        players.add(ai2);
+        ServerTournamentContext tournament = createTournament(players, 1);
+
+        InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-neverbroke-onechip");
+        ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
+        PlayerActionProvider aiProvider = createSimpleAI(0);
+        ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {
+        }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
+
+        List<GameEvent.ChipsTransferred> transferEvents = new CopyOnWriteArrayList<>();
+        eventBus.subscribe(event -> {
+            if (event instanceof GameEvent.ChipsTransferred e)
+                transferEvents.add(e);
+        });
+
+        ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
+                tournament, eventBus, actionProvider,
+                new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0), event -> {
+                });
+        director.setPracticeConfig(new GameConfig.PracticeConfig(null, null, null, null, true, null));
+
+        director.eliminateZeroChipPlayers(tournament.getTable(0));
+
+        assertThat(transferEvents).as("No ChipsTransferred when leader has 1 chip").isEmpty();
+        assertThat(human.isSittingOut()).as("Human is eliminated").isTrue();
+    }
+
+    /**
+     * Never Broke must only activate for human players. In an all-AI game with
+     * neverBroke=true, no ChipsTransferred events should be published.
+     */
+    @Test
+    void neverBrokeDoesNotActivateForAiPlayers() throws Exception {
+        List<ServerPlayer> players = createPlayers(4, 500);
+        ServerTournamentContext tournament = createTournament(players, 1);
+
+        InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-neverbroke-ai");
+        ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
+        PlayerActionProvider aiProvider = createSimpleAI(42);
+        ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {
+        }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
+
+        List<GameEvent.ChipsTransferred> transferEvents = new CopyOnWriteArrayList<>();
+        eventBus.subscribe(event -> {
+            if (event instanceof GameEvent.ChipsTransferred e)
+                transferEvents.add(e);
+        });
+
+        ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
+                tournament, eventBus, actionProvider,
+                new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0), event -> {
+                });
+        director.setHandResultPauseMs(20);
+        director.setPracticeConfig(new GameConfig.PracticeConfig(null, null, null, null, true, null));
+
+        Thread thread = new Thread(director);
+        thread.start();
+        thread.join(30000);
+
+        assertThat(thread.isAlive()).isFalse();
+        assertThat(tournament.isGameOver()).isTrue();
+        assertThat(transferEvents).as("No ChipsTransferred events for AI-only game").isEmpty();
     }
 
     // Helper methods

@@ -272,6 +272,10 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
                 ServerGameEventBus earlyEventBus = game.prepareStart();
                 gameBroadcasters.computeIfAbsent(gameId, id -> {
                     GameEventBroadcaster broadcaster = new GameEventBroadcaster(id, connectionManager, converter, game);
+                    if (game.getConfig() != null && game.getConfig().practiceConfig() != null
+                            && Boolean.TRUE.equals(game.getConfig().practiceConfig().aiFaceUp())) {
+                        broadcaster.setAiFaceUp(true);
+                    }
                     earlyEventBus.setBroadcastCallback(broadcaster);
                     return broadcaster;
                 });
@@ -294,6 +298,10 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             if (game.getEventBus() != null) {
                 gameBroadcasters.computeIfAbsent(gameId, id -> {
                     GameEventBroadcaster broadcaster = new GameEventBroadcaster(id, connectionManager, converter, game);
+                    if (game.getConfig() != null && game.getConfig().practiceConfig() != null
+                            && Boolean.TRUE.equals(game.getConfig().practiceConfig().aiFaceUp())) {
+                        broadcaster.setAiFaceUp(true);
+                    }
                     game.getEventBus().setBroadcastCallback(broadcaster);
                     return broadcaster;
                 });

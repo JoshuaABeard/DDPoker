@@ -68,9 +68,28 @@ public class ServerTournamentDirector implements Runnable {
     private static final int SLEEP_MILLIS = 10; // Short sleep to prevent CPU spinning
     // How long to display the hand result before starting the next hand (ms).
     // Must be long enough for players to read pot amounts and winner highlights.
-    private static final int HAND_RESULT_PAUSE_MS = 3000;
+    private int handResultPauseMs = 3000;
     // Pause between community card reveals during an all-in runout (ms).
-    private static final int COMMUNITY_RUNOUT_PAUSE_MS = 1500;
+    private int allInRunoutPauseMs = 1500;
+    // Whether to automatically enable zip mode when human folds.
+    private boolean autoZipEnabled = true;
+
+    public void setHandResultPauseMs(int ms) {
+        this.handResultPauseMs = ms;
+    }
+    public void setAllInRunoutPauseMs(int ms) {
+        this.allInRunoutPauseMs = ms;
+    }
+    public void setAutoZipEnabled(boolean enabled) {
+        this.autoZipEnabled = enabled;
+    }
+
+    // Practice config for Never Broke and other practice-only features
+    private GameConfig.PracticeConfig practiceConfig;
+
+    public void setPracticeConfig(GameConfig.PracticeConfig pc) {
+        this.practiceConfig = pc;
+    }
 
     private final TournamentEngine engine;
     private final TournamentContext tournament;
@@ -315,7 +334,7 @@ public class ServerTournamentDirector implements Runnable {
                     eliminateZeroChipPlayers(table);
                 }
                 if (!tournament.isGameOver() && properties.aiActionDelayMs() > 0 && !actionProvider.isZipMode()) {
-                    sleepMillis(HAND_RESULT_PAUSE_MS);
+                    sleepMillis(handResultPauseMs);
                 }
             }
         }
@@ -358,6 +377,18 @@ public class ServerTournamentDirector implements Runnable {
                                 ActionType.BLIND_BIG, hand.getActualBigBlindPosted()));
                     }
                 }
+            } else if ("TD.ColorUp".equals(result.phaseToRun())) {
+                // Perform the chip race before broadcasting the event so that results
+                // are available for the ColorUpStarted payload.
+                if (table instanceof ServerGameTable sgt) {
+                    sgt.colorUp();
+                    List<GameEvent.ColorUpPlayerData> playerData = sgt.getColorUpResults().stream()
+                            .map(r -> new GameEvent.ColorUpPlayerData(r.playerId(), r.cards(), r.won(), r.broke(),
+                                    r.finalChips()))
+                            .toList();
+                    eventBus.publish(new GameEvent.ColorUpStarted(table.getNumber(), playerData, sgt.getNextMinChip()));
+                    // No server-side sleep: the client drives the animation timing
+                }
             } else if ("TD.DealCommunity".equals(result.phaseToRun())) {
                 // Community cards are already in the hand at this point; publish so the
                 // broadcaster can push COMMUNITY_CARDS_DEALT to clients.
@@ -368,7 +399,7 @@ public class ServerTournamentDirector implements Runnable {
                 // Pause between cards during an all-in runout so players can follow
                 // each reveal. Skip in zip mode (human already folded).
                 if (properties.aiActionDelayMs() > 0 && !actionProvider.isZipMode() && isAllInRunout(table)) {
-                    sleepMillis(COMMUNITY_RUNOUT_PAUSE_MS);
+                    sleepMillis(allInRunoutPauseMs);
                 }
             } else if ("TD.Showdown".equals(result.phaseToRun())) {
                 // hand.resolve() was already called in TournamentEngine.handleShowdown().
@@ -421,6 +452,8 @@ public class ServerTournamentDirector implements Runnable {
         if (actionProvider.isZipMode()) {
             return; // Already in zip mode — no need to re-check
         }
+        if (!autoZipEnabled)
+            return;
         // Zip mode is a practice-only feature — never skip delays in online games.
         if (!(tournament instanceof ServerTournamentContext stc) || !stc.isPractice()) {
             return;
@@ -461,7 +494,8 @@ public class ServerTournamentDirector implements Runnable {
      * @param table
      *            the table whose players to check
      */
-    private void eliminateZeroChipPlayers(GameTable table) {
+    // Package-private for testing
+    void eliminateZeroChipPlayers(GameTable table) {
         // Count active survivors (chips > 0) to derive finish position.
         int survivors = 0;
         for (int seat = 0; seat < table.getSeats(); seat++) {
@@ -485,6 +519,21 @@ public class ServerTournamentDirector implements Runnable {
                         continue; // Player stays in the tournament
                     }
                 }
+                // Never Broke: transfer chips from chip leader to keep human playing.
+                // Skip when the game is already over (handleGameOver context) — rescuing
+                // the human there would undo the game-over condition.
+                if (!tournament.isGameOver() && practiceConfig != null
+                        && Boolean.TRUE.equals(practiceConfig.neverBroke()) && player.isHuman()) {
+                    ServerPlayer leader = findChipLeader(table, player.getID());
+                    if (leader != null && leader.getChipCount() > 1) {
+                        int transferAmount = leader.getChipCount() / 2;
+                        leader.setChipCount(leader.getChipCount() - transferAmount);
+                        player.addChips(transferAmount);
+                        eventBus.publish(new GameEvent.ChipsTransferred(table.getNumber(), leader.getID(),
+                                player.getID(), transferAmount));
+                        continue; // Player stays in
+                    }
+                }
                 player.setSittingOut(true);
                 logger.debug("[CLEAN] eliminated player={} seat={} (0 chips)", player.getName(), seat);
                 // finishPosition = survivors + 1; if multiple players bust in the same
@@ -493,6 +542,29 @@ public class ServerTournamentDirector implements Runnable {
                 eventBus.publish(new GameEvent.PlayerEliminated(table.getNumber(), player.getID(), survivors + 1));
             }
         }
+    }
+
+    /**
+     * Finds the player with the most chips at the table, excluding the given player
+     * ID. Used by the Never Broke feature to find the chip leader to transfer from.
+     *
+     * @param table
+     *            the table to search
+     * @param excludeId
+     *            player ID to exclude from search
+     * @return the chip leader, or null if no eligible player found
+     */
+    private ServerPlayer findChipLeader(GameTable table, int excludeId) {
+        ServerPlayer leader = null;
+        for (int seat = 0; seat < table.getSeats(); seat++) {
+            ServerPlayer p = (ServerPlayer) table.getPlayer(seat);
+            if (p != null && !p.isSittingOut() && p.getID() != excludeId) {
+                if (leader == null || p.getChipCount() > leader.getChipCount()) {
+                    leader = p;
+                }
+            }
+        }
+        return leader;
     }
 
     /**

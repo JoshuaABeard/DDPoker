@@ -62,11 +62,7 @@ public class GameServerRestClient {
     }
 
     /**
-     * Create a practice game on the embedded server.
-     *
-     * <p>
-     * Converts the {@link TournamentProfile} to a {@link GameConfig}, posts it to
-     * {@code POST /api/v1/games/practice}, and returns the game ID.
+     * Create a practice game on the embedded server (no practice config).
      *
      * @param profile
      *            tournament profile from the desktop UI
@@ -83,11 +79,40 @@ public class GameServerRestClient {
      * @throws GameServerClientException
      *             if the HTTP call fails or the server returns an error
      */
-    public String createPracticeGame(TournamentProfile profile, List<String> aiNames, int aiSkillLevel, String jwt,
+public String createPracticeGame(TournamentProfile profile, List<String> aiNames, int aiSkillLevel, String jwt,
             String humanDisplayName) {
+        return createPracticeGame(profile, aiNames, aiSkillLevel, jwt, humanDisplayName, null);
+    }
+
+    /**
+     * Create a practice game on the embedded server with practice configuration.
+     *
+     * <p>
+     * Converts the {@link TournamentProfile} to a {@link GameConfig}, posts it to
+     * {@code POST /api/v1/games/practice}, and returns the game ID.
+     *
+     * @param profile
+     *            tournament profile from the desktop UI
+     * @param aiNames
+     *            names to use for the AI players (one per seat)
+     * @param aiSkillLevel
+     *            AI skill level (1-7)
+     * @param jwt
+     *            JWT token for the local user
+     * @param humanDisplayName
+     *            display name for the human player (null = use JWT username)
+     * @param practiceConfig
+     *            practice mode timing configuration (null = server defaults)
+     * @return game ID
+     * @throws GameServerClientException
+     *             if the HTTP call fails or the server returns an error
+     */
+    public String createPracticeGame(TournamentProfile profile, List<String> aiNames, int aiSkillLevel, String jwt,
+            String humanDisplayName, GameConfig.PracticeConfig practiceConfig) {
         GameConfig config = converter.convert(profile)
                 .withAiPlayers(converter.buildAiPlayers(profile, aiNames, aiSkillLevel))
-                .withHumanDisplayName(humanDisplayName);
+                .withHumanDisplayName(humanDisplayName)
+                .withPracticeConfig(practiceConfig);
         try {
             String body = OBJECT_MAPPER.writeValueAsString(config);
             HttpRequest request = HttpRequest.newBuilder()

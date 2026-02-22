@@ -72,6 +72,23 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
     private final GameInstance game;
 
     /**
+     * When true, broadcast AI hole cards after HAND_STARTED (aiFaceUp practice
+     * option).
+     */
+    private boolean aiFaceUp;
+
+    /**
+     * Enable or disable AI face-up mode. When enabled, AI hole cards are broadcast
+     * to all connections after each HAND_STARTED.
+     *
+     * @param aiFaceUp
+     *            true to reveal AI hole cards
+     */
+    public void setAiFaceUp(boolean aiFaceUp) {
+        this.aiFaceUp = aiFaceUp;
+    }
+
+    /**
      * Creates a game event broadcaster without a game reference (reconnect path).
      *
      * @param gameId
@@ -152,6 +169,32 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                             }
                         }
                     }
+                    // If aiFaceUp, broadcast AI hole cards after all players received HAND_STARTED
+                    if (aiFaceUp && game.getTournament() != null && e.tableId() >= 0
+                            && e.tableId() < game.getTournament().getNumTables()) {
+                        Object gt = game.getTournament().getTable(e.tableId());
+                        if (gt instanceof ServerGameTable sgt) {
+                            ServerHand hand = (ServerHand) sgt.getHoldemHand();
+                            if (hand != null) {
+                                List<ServerMessageData.AiPlayerCards> aiCards = new ArrayList<>();
+                                for (int s = 0; s < sgt.getNumSeats(); s++) {
+                                    ServerPlayer sp = sgt.getPlayer(s);
+                                    if (sp != null && !sp.isHuman() && !sp.isSittingOut()) {
+                                        List<Card> cards = hand.getPlayerCards(sp.getID());
+                                        if (!cards.isEmpty()) {
+                                            aiCards.add(new ServerMessageData.AiPlayerCards(
+                                                    sp.getID(),
+                                                    OutboundMessageConverter.cardsToList(cards.toArray(new Card[0]))));
+                                        }
+                                    }
+                                }
+                                if (!aiCards.isEmpty()) {
+                                    broadcast(ServerMessage.of(ServerMessageType.AI_HOLE_CARDS, gameId,
+                                            new ServerMessageData.AiHoleCardsData(aiCards)));
+                                }
+                            }
+                        }
+                    }
                 } else {
                     // No game reference — broadcast to all (future: filter by table).
                     broadcast(ServerMessage.of(ServerMessageType.HAND_STARTED, gameId,
@@ -227,16 +270,17 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                                 }
                                 winners = w;
                             }
-                            // Build showdown players (non-folded when ≥2 remain)
-                            List<ServerPlayer> nonFolded = new ArrayList<>();
+                            // Build showdown players — include all players who were in the hand
+                            // (not sitting out), so folded players' cards can be revealed too.
+                            List<ServerPlayer> allWithCards = new ArrayList<>();
                             for (int s = 0; s < sgt.getNumSeats(); s++) {
                                 ServerPlayer sp = sgt.getPlayer(s);
-                                if (sp != null && !sp.isFolded()) {
-                                    nonFolded.add(sp);
+                                if (sp != null && !sp.isSittingOut()) {
+                                    allWithCards.add(sp);
                                 }
                             }
-                            if (nonFolded.size() > 1) {
-                                showdownPlayers = nonFolded.stream()
+                            if (allWithCards.size() > 1) {
+                                showdownPlayers = allWithCards.stream()
                                         .map(sp -> new ServerMessageData.ShowdownPlayerData(
                                                 sp.getID(),
                                                 OutboundMessageConverter.cardsToList(
@@ -390,6 +434,33 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
             case GameEvent.AddonOffered e -> connectionManager.sendToPlayer(gameId, (long) e.playerId(),
                 ServerMessage.of(ServerMessageType.ADDON_OFFERED, gameId,
                     new ServerMessageData.AddonOfferedData(e.cost(), e.chips(), e.timeoutSeconds())));
+            case GameEvent.ChipsTransferred e -> {
+                String fromName = "";
+                String toName = "";
+                if (game != null && game.getTournament() != null && e.tableId() >= 0
+                        && e.tableId() < game.getTournament().getNumTables()) {
+                    Object gt = game.getTournament().getTable(e.tableId());
+                    if (gt instanceof ServerGameTable sgt) {
+                        for (int s = 0; s < sgt.getNumSeats(); s++) {
+                            ServerPlayer sp = sgt.getPlayer(s);
+                            if (sp == null) continue;
+                            if (sp.getID() == e.fromPlayerId()) fromName = sp.getName();
+                            if (sp.getID() == e.toPlayerId()) toName = sp.getName();
+                        }
+                    }
+                }
+                broadcast(ServerMessage.of(ServerMessageType.CHIPS_TRANSFERRED, gameId,
+                        new ServerMessageData.ChipsTransferredData(e.fromPlayerId(), fromName,
+                                e.toPlayerId(), toName, e.amount())));
+            }
+            case GameEvent.ColorUpStarted e -> {
+                List<ServerMessageData.ColorUpPlayerData> players = e.players().stream()
+                        .map(p -> new ServerMessageData.ColorUpPlayerData(
+                                p.playerId(), p.cards(), p.won(), p.broke(), p.finalChips()))
+                        .toList();
+                broadcast(ServerMessage.of(ServerMessageType.COLOR_UP_STARTED, gameId,
+                        new ServerMessageData.ColorUpStartedData(players, e.newMinChip(), e.tableId())));
+            }
             // Internal housekeeping events — not broadcast to clients
             case GameEvent.ButtonMoved ignored -> {}
             case GameEvent.TableStateChanged ignored -> {}

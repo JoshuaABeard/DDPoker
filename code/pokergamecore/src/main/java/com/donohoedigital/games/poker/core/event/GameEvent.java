@@ -22,6 +22,7 @@ package com.donohoedigital.games.poker.core.event;
 import com.donohoedigital.games.poker.core.state.ActionType;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.core.state.TableState;
+import java.util.List;
 
 /**
  * Sealed interface for game events. Replaces PokerTableEvent bitmask event
@@ -127,5 +128,17 @@ public sealed interface GameEvent {
 
     /** An addon has been offered to an eligible player. */
     record AddonOffered(int tableId, int playerId, int cost, int chips, int timeoutSeconds) implements GameEvent {
+    }
+
+    /** Chips transferred from one player to another (Never Broke feature). */
+    record ChipsTransferred(int tableId, int fromPlayerId, int toPlayerId, int amount) implements GameEvent {
+    }
+
+    /** Color-up chip race started. */
+    record ColorUpStarted(int tableId, List<ColorUpPlayerData> players, int newMinChip) implements GameEvent {
+    }
+
+    /** Per-player color-up result (used in ColorUpStarted). */
+    record ColorUpPlayerData(int playerId, List<String> cards, boolean won, boolean broke, int finalChips) {
     }
 }

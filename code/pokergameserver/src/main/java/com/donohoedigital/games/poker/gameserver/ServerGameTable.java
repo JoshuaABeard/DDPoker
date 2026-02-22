@@ -32,6 +32,7 @@
 package com.donohoedigital.games.poker.gameserver;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import com.donohoedigital.games.poker.core.GameHand;
@@ -85,6 +86,13 @@ public class ServerGameTable implements GameTable, ServerHand.MockTable {
     private boolean zipMode = false;
     private boolean removed = false;
     private boolean coloringUp = false;
+
+    // Color-up chip race results (set by colorUp(), cleared by colorUpFinish())
+    private List<ColorUpPlayerResult> colorUpResults;
+
+    /** Per-player result from chip race color-up. */
+    public record ColorUpPlayerResult(int playerId, List<String> cards, boolean won, boolean broke, int finalChips) {
+    }
 
     /**
      * Create a new server game table.
@@ -347,19 +355,121 @@ public class ServerGameTable implements GameTable, ServerHand.MockTable {
 
     @Override
     public void colorUp() {
-        // Intentionally stubbed for M1 - color-up detection implemented, chip exchange
-        // deferred
-        // Color-up detection (doColorUpDetermination/isColoringUp) is fully
-        // implemented.
-        // The actual chip exchange logic (trading small chips for larger denominations)
-        // is non-critical for game correctness and deferred to future milestone.
-        // No-op is acceptable - players keep their existing chip stacks.
+        if (colorUpResults != null) {
+            return; // Already computed — idempotent guard
+        }
+        // Chip race algorithm: each player's chips are rounded down to a multiple of
+        // nextMinChip. The remainder (oddChips) entitles the player to one card per
+        // odd chip. Players with the highest cards win one new-denomination chip each,
+        // up to the total number of fractional chips collected.
+        int newMin = nextMinChip;
+        if (newMin <= minChip || newMin <= 0) {
+            colorUpResults = List.of();
+            return;
+        }
+
+        // Step 1: compute each player's odd chips and round their stack down.
+        List<ServerPlayer> participants = new ArrayList<>();
+        int totalOdd = 0;
+        for (int s = 0; s < seats; s++) {
+            ServerPlayer sp = players[s];
+            if (sp == null || sp.isSittingOut())
+                continue;
+            int odd = sp.getChipCount() % newMin;
+            sp.setOddChips(odd);
+            sp.setChipCount(sp.getChipCount() - odd); // round down
+            totalOdd += odd;
+            if (odd > 0) {
+                participants.add(sp);
+            }
+        }
+
+        // Step 2: deal cards to each participant (one card per odd chip) and sort
+        // by highest card. Winners receive one new-min chip each.
+        int chipsToAward = totalOdd / newMin; // whole new-min chips to give out
+        ServerDeck deck = new ServerDeck();
+        deck.shuffle();
+
+        // Assign each participant a single card (highest card wins a chip).
+        // Ties are broken by dealing order (earlier seat wins — consistent with
+        // standard tournament color-up rules).
+        List<int[]> playerCards = new ArrayList<>(); // [playerId, cardRank]
+        for (ServerPlayer sp : participants) {
+            int rank = deck.nextCard().getRank();
+            playerCards.add(new int[]{sp.getID(), rank});
+        }
+        // Sort descending by card rank
+        playerCards.sort(Comparator.comparingInt((int[] a) -> a[1]).reversed());
+
+        // Award chips to top N players
+        List<Integer> winnerIds = new ArrayList<>();
+        for (int i = 0; i < Math.min(chipsToAward, playerCards.size()); i++) {
+            int wid = playerCards.get(i)[0];
+            winnerIds.add(wid);
+            // Give winner one new-min chip
+            for (int s = 0; s < seats; s++) {
+                ServerPlayer sp = players[s];
+                if (sp != null && sp.getID() == wid) {
+                    sp.addChips(newMin);
+                    break;
+                }
+            }
+        }
+
+        // Build card-string lists per participant for the event payload.
+        // We use rank-only strings (e.g. "A", "K") since suits aren't material here.
+        colorUpResults = new ArrayList<>();
+        for (int[] pc : playerCards) {
+            int pid = pc[0];
+            int rank = pc[1];
+            boolean won = winnerIds.contains(pid);
+            int finalChips = 0;
+            boolean broke = false;
+            for (int s = 0; s < seats; s++) {
+                ServerPlayer sp = players[s];
+                if (sp != null && sp.getID() == pid) {
+                    finalChips = sp.getChipCount();
+                    broke = finalChips == 0;
+                    break;
+                }
+            }
+            colorUpResults.add(new ColorUpPlayerResult(pid, List.of(rankToString(rank)), won, broke, finalChips));
+        }
+    }
+
+    /** Convert a card rank integer to a display string (e.g. 14 → "A"). */
+    private static String rankToString(int rank) {
+        return switch (rank) {
+            case 14 -> "A";
+            case 13 -> "K";
+            case 12 -> "Q";
+            case 11 -> "J";
+            case 10 -> "T";
+            default -> String.valueOf(rank);
+        };
+    }
+
+    /**
+     * Get the color-up chip race results computed by {@link #colorUp()}. Returns an
+     * empty list if colorUp() has not been called or no players had odd chips.
+     */
+    public List<ColorUpPlayerResult> getColorUpResults() {
+        return colorUpResults != null ? colorUpResults : List.of();
+    }
+
+    /**
+     * Get the next minimum chip denomination (set by setNextMinChip before
+     * colorUp).
+     */
+    public int getNextMinChip() {
+        return nextMinChip;
     }
 
     @Override
     public void colorUpFinish() {
         this.minChip = this.nextMinChip;
         this.coloringUp = false;
+        this.colorUpResults = null; // Reset for next color-up
     }
 
     @Override

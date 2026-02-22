@@ -399,7 +399,9 @@ class GameInstanceTest {
                 null, // scheduled start
                 new InviteConfig(false, List.of(), true), new BettingConfig(0, true), false, // allowDash
                 false, // allowAdvisor
-                List.of(), null);
+                List.of(),
+                null, // humanDisplayName
+                null); // practiceConfig
     }
 
     /**
