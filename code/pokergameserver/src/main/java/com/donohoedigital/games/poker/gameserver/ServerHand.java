@@ -779,6 +779,41 @@ public class ServerHand implements GameHand {
     }
 
     /**
+     * Replaces a community card at the given index (cheat action).
+     *
+     * @param index
+     *            0-based index into the community card list
+     * @param card
+     *            replacement card
+     * @throws IndexOutOfBoundsException
+     *             if index is out of range
+     */
+    public void setCommunityCard(int index, Card card) {
+        community.set(index, card);
+    }
+
+    /**
+     * Replaces a hole card for a player (cheat action).
+     *
+     * @param playerId
+     *            player whose card to replace
+     * @param index
+     *            0-based index (0 = first hole card, 1 = second)
+     * @param card
+     *            replacement card
+     * @throws IllegalArgumentException
+     *             if the player has no hole cards
+     * @throws IndexOutOfBoundsException
+     *             if index is out of range
+     */
+    public void setPlayerCard(int playerId, int index, Card card) {
+        List<Card> hand = playerHands.get(playerId);
+        if (hand == null)
+            throw new IllegalArgumentException("Player " + playerId + " has no hole cards");
+        hand.set(index, card);
+    }
+
+    /**
      * Resolve a single pot, determining winners and distributing chips.
      */
     private void resolvePot(int potIndex) {

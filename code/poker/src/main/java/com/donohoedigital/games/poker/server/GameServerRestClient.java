@@ -164,6 +164,155 @@ public class GameServerRestClient {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Cheat endpoints (practice mode only, owner only)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Set a player's chip count.
+     *
+     * @param gameId
+     *            practice game ID
+     * @param jwt
+     *            owner JWT
+     * @param playerId
+     *            player ID (negative for AI players)
+     * @param chipCount
+     *            new chip count
+     */
+    public void cheatChips(String gameId, String jwt, int playerId, int chipCount) {
+        String body = "{\"playerId\":" + playerId + ",\"chipCount\":" + chipCount + "}";
+        cheatPost(gameId, jwt, "chips", body);
+    }
+
+    /**
+     * Change a player's display name.
+     *
+     * @param gameId
+     *            practice game ID
+     * @param jwt
+     *            owner JWT
+     * @param playerId
+     *            player ID
+     * @param name
+     *            new display name
+     */
+    public void cheatName(String gameId, String jwt, int playerId, String name) {
+        try {
+            String escapedName = OBJECT_MAPPER.writeValueAsString(name);
+            String body = "{\"playerId\":" + playerId + ",\"name\":" + escapedName + "}";
+            cheatPost(gameId, jwt, "name", body);
+        } catch (Exception e) {
+            throw new GameServerClientException("Failed to serialize cheat name request", e);
+        }
+    }
+
+    /**
+     * Jump to a blind level.
+     *
+     * @param gameId
+     *            practice game ID
+     * @param jwt
+     *            owner JWT
+     * @param level
+     *            0-based blind level index
+     */
+    public void cheatLevel(String gameId, String jwt, int level) {
+        String body = "{\"level\":" + level + "}";
+        cheatPost(gameId, jwt, "level", body);
+    }
+
+    /**
+     * Move the dealer button to the given seat. Only allowed between hands.
+     *
+     * @param gameId
+     *            practice game ID
+     * @param jwt
+     *            owner JWT
+     * @param seat
+     *            0-based seat index
+     */
+    public void cheatButton(String gameId, String jwt, int seat) {
+        String body = "{\"seat\":" + seat + "}";
+        cheatPost(gameId, jwt, "button", body);
+    }
+
+    /**
+     * Eliminate a player by zeroing their chips.
+     *
+     * @param gameId
+     *            practice game ID
+     * @param jwt
+     *            owner JWT
+     * @param playerId
+     *            player ID to eliminate
+     */
+    public void cheatRemovePlayer(String gameId, String jwt, int playerId) {
+        String body = "{\"playerId\":" + playerId + "}";
+        cheatPost(gameId, jwt, "remove-player", body);
+    }
+
+    /**
+     * Swap a card in the current hand.
+     *
+     * @param gameId
+     *            practice game ID
+     * @param jwt
+     *            owner JWT
+     * @param location
+     *            card location: {@code "COMMUNITY:<index>"} or
+     *            {@code "PLAYER:<playerId>:<index>"}
+     * @param newCard
+     *            card string such as {@code "Ah"} or {@code "Kd"}
+     */
+    public void cheatCard(String gameId, String jwt, String location, String newCard) {
+        try {
+            String escapedLocation = OBJECT_MAPPER.writeValueAsString(location);
+            String escapedCard = OBJECT_MAPPER.writeValueAsString(newCard);
+            String body = "{\"location\":" + escapedLocation + ",\"newCard\":" + escapedCard + "}";
+            cheatPost(gameId, jwt, "card", body);
+        } catch (Exception e) {
+            throw new GameServerClientException("Failed to serialize cheat card request", e);
+        }
+    }
+
+    /**
+     * Override the AI skill level for a player (1–10).
+     *
+     * @param gameId
+     *            practice game ID
+     * @param jwt
+     *            owner JWT
+     * @param playerId
+     *            AI player ID
+     * @param skillLevel
+     *            skill level 1 (weakest) to 10 (strongest)
+     */
+    public void cheatAiStrategy(String gameId, String jwt, int playerId, int skillLevel) {
+        String body = "{\"playerId\":" + playerId + ",\"skillLevel\":" + skillLevel + "}";
+        cheatPost(gameId, jwt, "ai-strategy", body);
+    }
+
+    /** POST to {@code /api/v1/games/{gameId}/cheat/{action}} and expect 200. */
+    private void cheatPost(String gameId, String jwt, String action, String body) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:" + port + "/api/v1/games/" + gameId + "/cheat/" + action))
+                    .header("Content-Type", "application/json").header("Authorization", "Bearer " + jwt)
+                    .POST(HttpRequest.BodyPublishers.ofString(body)).build();
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new GameServerClientException(
+                        "Cheat " + action + " returned " + response.statusCode() + ": " + response.body());
+            }
+            logger.debug("Cheat {} game={} ok", action, gameId);
+        } catch (GameServerClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new GameServerClientException("Failed cheat " + action, e);
+        }
+    }
+
     /** Thrown when a REST call to the embedded game server fails. */
     public static class GameServerClientException extends RuntimeException {
         public GameServerClientException(String message) {

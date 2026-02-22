@@ -49,6 +49,7 @@ import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.event.PokerTableListener;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.donohoedigital.games.poker.online.*;
+import com.donohoedigital.games.poker.server.GameServerRestClient;
 import com.donohoedigital.games.poker.server.PracticeGameLauncher;
 import com.donohoedigital.gui.*;
 
@@ -2037,7 +2038,14 @@ public class ShowTournamentTable extends ShowPokerTable
 
             if (!player.getName().equals(sOldName)) {
                 board_.repaintAll(); // could affect amount to call for active non-active player, so repaint all
-                PokerDatabase.playerNameChanged(game_, player);
+                PokerGame.WebSocketConfig cfg = game_.getWebSocketConfig();
+                if (cfg != null) {
+                    String newName = player.getName();
+                    submitCheat(() -> new GameServerRestClient(cfg.port()).cheatName(cfg.gameId(), cfg.jwt(),
+                            player.getID(), newName));
+                } else {
+                    PokerDatabase.playerNameChanged(game_, player);
+                }
             }
         }
     }
@@ -2060,13 +2068,20 @@ public class ShowTournamentTable extends ShowPokerTable
             context_.processPhaseNow("ChangeChipCountDialog", params);
 
             if (player.getChipCount() != nOldChip) {
-                board_.repaintAll(); // could affect amount to call for active non-active player, so repaint all
-                HoldemHand hhand = table_.getHoldemHand();
-                if (hhand != null) {
-                    setInputMode(MODE_RECHECK, hhand, hhand.getCurrentPlayer());
+                PokerGame.WebSocketConfig cfg = game_.getWebSocketConfig();
+                if (cfg != null) {
+                    int newChips = player.getChipCount();
+                    submitCheat(() -> new GameServerRestClient(cfg.port()).cheatChips(cfg.gameId(), cfg.jwt(),
+                            player.getID(), newChips));
+                } else {
+                    board_.repaintAll(); // could affect amount to call for active non-active player, so repaint all
+                    HoldemHand hhand = table_.getHoldemHand();
+                    if (hhand != null) {
+                        setInputMode(MODE_RECHECK, hhand, hhand.getCurrentPlayer());
+                    }
+                    table_.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_CHIPS_CHANGED, table_,
+                            player, player.getSeat()));
                 }
-                table_.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_CHIPS_CHANGED, table_,
-                        player, player.getSeat()));
             }
         }
     }
@@ -2086,25 +2101,31 @@ public class ShowTournamentTable extends ShowPokerTable
             if (EngineUtils.displayConfirmationDialog(context_,
                     PropertyConfig.getMessage("msg.confirm.remove", Utils.encodeHTML(player.getName())),
                     "removeplayer")) {
-                PokerGame game = (PokerGame) context_.getGame();
-                int chips = player.getChipCount();
-                player.setChipCount(0);
-                int nSeat = player.getSeat();
-                table_.removePlayer(nSeat);
-                game.playerOut(player);
-                game.addExtraChips(-chips);
-                Territory seat = PokerUtils.getTerritoryForTableSeat(table_, nSeat);
-                synchronized (seat.getMap()) {
-                    List<GamePiece> pieces = EngineUtils.getMatchingPieces(seat, PokerConstants.PIECE_CARD);
-                    for (GamePiece piece : pieces) {
-                        seat.removeGamePiece(piece);
+                PokerGame.WebSocketConfig cfg = game_.getWebSocketConfig();
+                if (cfg != null) {
+                    submitCheat(() -> new GameServerRestClient(cfg.port()).cheatRemovePlayer(cfg.gameId(), cfg.jwt(),
+                            player.getID()));
+                } else {
+                    PokerGame game = (PokerGame) context_.getGame();
+                    int chips = player.getChipCount();
+                    player.setChipCount(0);
+                    int nSeat = player.getSeat();
+                    table_.removePlayer(nSeat);
+                    game.playerOut(player);
+                    game.addExtraChips(-chips);
+                    Territory seat = PokerUtils.getTerritoryForTableSeat(table_, nSeat);
+                    synchronized (seat.getMap()) {
+                        List<GamePiece> pieces = EngineUtils.getMatchingPieces(seat, PokerConstants.PIECE_CARD);
+                        for (GamePiece piece : pieces) {
+                            seat.removeGamePiece(piece);
+                        }
                     }
+                    ResultsPiece piece = (ResultsPiece) seat.getGamePiece(PokerConstants.PIECE_RESULTS, null);
+                    if (piece != null) {
+                        piece.setResult(ResultsPiece.HIDDEN, "");
+                    }
+                    board_.repaintAll();
                 }
-                ResultsPiece piece = (ResultsPiece) seat.getGamePiece(PokerConstants.PIECE_RESULTS, null);
-                if (piece != null) {
-                    piece.setResult(ResultsPiece.HIDDEN, "");
-                }
-                board_.repaintAll();
             }
         }
     }
@@ -2214,15 +2235,22 @@ public class ShowTournamentTable extends ShowPokerTable
         }
 
         public void actionPerformed(ActionEvent e) {
-            if (bAdvisor_) {
-                player_.setPlayerType(PlayerType.setAdvisor(playerType_));
+            PokerGame.WebSocketConfig cfg = game_.getWebSocketConfig();
+            if (cfg != null && !bAdvisor_) {
+                int skillLevel = PlayerType.toSkillLevel(playerType_);
+                submitCheat(() -> new GameServerRestClient(cfg.port()).cheatAiStrategy(cfg.gameId(), cfg.jwt(),
+                        player_.getID(), skillLevel));
             } else {
-                player_.setPlayerType(playerType_);
-            }
+                if (bAdvisor_) {
+                    player_.setPlayerType(PlayerType.setAdvisor(playerType_));
+                } else {
+                    player_.setPlayerType(playerType_);
+                }
 
-            // TODO: does this belong here or in setPokerAI?
-            table_.firePokerTableEvent(
-                    new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_AI_CHANGED, table_, player_, player_.getSeat()));
+                // TODO: does this belong here or in setPokerAI?
+                table_.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_AI_CHANGED, table_, player_,
+                        player_.getSeat()));
+            }
         }
     }
 
@@ -2271,6 +2299,18 @@ public class ShowTournamentTable extends ShowPokerTable
 
                 if (selectedCard != null && !selectedCard.equals(cardPiece.getCard())
                         && !selectedCard.equals(Card.BLANK)) {
+                    PokerGame.WebSocketConfig cfg = game_.getWebSocketConfig();
+                    if (cfg != null) {
+                        String location = (player == null)
+                                ? "COMMUNITY:" + cardPiece.getCardIndex()
+                                : "PLAYER:" + player.getID() + ":" + cardPiece.getCardIndex();
+                        String cardStr = selectedCard.toStringSingle();
+                        submitCheat(() -> new GameServerRestClient(cfg.port()).cheatCard(cfg.gameId(), cfg.jwt(),
+                                location, cardStr));
+                        menu_.setVisible(false);
+                        return;
+                    }
+
                     HoldemHand hhand = table_.getHoldemHand();
                     Hand community = hhand.getCommunity();
                     Deck deck = hhand.getDeck();
@@ -2368,6 +2408,15 @@ public class ShowTournamentTable extends ShowPokerTable
         }
 
         public void actionPerformed(ActionEvent e) {
+            PokerGame.WebSocketConfig cfg = game_.getWebSocketConfig();
+            if (cfg != null) {
+                if (bMove) {
+                    int seat = PokerUtils.getTableSeatForTerritory(table_, t);
+                    submitCheat(() -> new GameServerRestClient(cfg.port()).cheatButton(cfg.gameId(), cfg.jwt(), seat));
+                }
+                return;
+            }
+
             if (bMove) {
                 table_.setButton(PokerUtils.getTableSeatForTerritory(table_, t));
             }
@@ -2574,9 +2623,34 @@ public class ShowTournamentTable extends ShowPokerTable
         }
 
         public void actionPerformed(ActionEvent e) {
+            PokerGame.WebSocketConfig cfg = game_.getWebSocketConfig();
+            if (cfg != null) {
+                // level_ is 1-based; server expects 0-based index
+                int serverLevel = level_ - 1;
+                submitCheat(
+                        () -> new GameServerRestClient(cfg.port()).cheatLevel(cfg.gameId(), cfg.jwt(), serverLevel));
+                return;
+            }
             game_.changeLevel(level_ - game_.getLevel());
             table_.levelCheck(game_);
         }
+    }
+
+    /**
+     * Run a cheat REST call on a daemon thread so it doesn't block the EDT. Errors
+     * are logged but not shown to the user (the server push will not arrive and the
+     * UI will simply not update).
+     */
+    private void submitCheat(Runnable task) {
+        Thread t = new Thread(() -> {
+            try {
+                task.run();
+            } catch (Exception ex) {
+                logger.warn("[CHEAT] REST call failed: {}", ex.getMessage());
+            }
+        });
+        t.setDaemon(true);
+        t.start();
     }
 
     ////

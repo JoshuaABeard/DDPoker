@@ -684,6 +684,33 @@ public class PlayerType extends BaseProfile {
     }
 
     /**
+     * Map a player type to an AI skill level (1–10) for use by the WebSocket
+     * practice-mode cheat endpoint. The mapping is keyed on the player type's
+     * unique file name.
+     *
+     * @param playerType
+     *            the player type to translate
+     * @return skill level 1–10; defaults to 5 for unknown types
+     */
+    public static int toSkillLevel(PlayerType playerType) {
+        if (playerType == null)
+            return 5;
+        return switch (playerType.getUniqueKey()) {
+            case "playertype.0994.dat" -> 1; // Fish
+            case "playertype.0995.dat" -> 1; // Calling Station
+            case "playertype.0992.dat" -> 2; // Version 1 - Low Skill
+            case "playertype.0996.dat" -> 3; // Weak-Tight
+            case "playertype.0999.dat" -> 5; // Version 1 - Medium Skill
+            case "playertype.0991.dat" -> 6; // Solid-Loose
+            case "playertype.0998.dat" -> 7; // Version 1 - High Skill
+            case "playertype.1000.dat" -> 7; // Solid
+            case "playertype.0997.dat" -> 8; // Rock
+            case "playertype.0993.dat" -> 9; // Maniac
+            default -> 5;
+        };
+    }
+
+    /**
      * Override to allow forced positions and grouping.
      */
     public int compareTo(BaseProfile o) {

@@ -41,9 +41,9 @@ import com.donohoedigital.games.poker.core.GamePlayerInfo;
  */
 public class ServerPlayer implements GamePlayerInfo {
     private final int id;
-    private final String name;
+    private String name;
     private final boolean human;
-    private final int skillLevel; // AI skill level (0 for humans)
+    private int skillLevel; // AI skill level (0 for humans)
 
     private int chipCount;
     private int seat;
@@ -255,6 +255,14 @@ public class ServerPlayer implements GamePlayerInfo {
 
     public int getSkillLevel() {
         return skillLevel;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setSkillLevel(int skillLevel) {
+        this.skillLevel = skillLevel;
     }
 
     @Override

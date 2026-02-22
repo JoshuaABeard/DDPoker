@@ -166,7 +166,21 @@ public class PokerUtils extends EngineUtils {
         if (nDisplaySeat == -1)
             return null;
 
-        return table.getPlayer(table.getTableSeat(nDisplaySeat));
+        PokerPlayer p = table.getPlayer(table.getTableSeat(nDisplaySeat));
+        if (p != null)
+            return p;
+
+        // For remote tables (WebSocket mode) the offset-based lookup can fail if the
+        // seat offset hasn't been resolved yet. Fall back to a linear scan comparing
+        // each player's computed display seat to the territory's display seat.
+        if (table.isRemoteTable()) {
+            for (int i = 0; i < PokerConstants.SEATS; i++) {
+                PokerPlayer candidate = table.getPlayer(i);
+                if (candidate != null && table.getDisplaySeat(i) == nDisplaySeat)
+                    return candidate;
+            }
+        }
+        return null;
     }
 
     /**

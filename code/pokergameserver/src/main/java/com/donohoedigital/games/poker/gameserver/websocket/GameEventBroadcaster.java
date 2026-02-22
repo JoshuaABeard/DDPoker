@@ -476,6 +476,21 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
         }
     }
 
+    /**
+     * Sends a per-player GAME_STATE snapshot to every connected client for this
+     * game. Called by cheat endpoints after mutating server-side state so that
+     * clients receive the updated view without waiting for the next hand event.
+     */
+    public void broadcastGameState() {
+        if (game == null)
+            return;
+        for (PlayerConnection conn : connectionManager.getConnections(gameId)) {
+            GameStateSnapshot snap = game.getGameStateSnapshot(conn.getProfileId());
+            if (snap != null)
+                conn.sendMessage(converter.createGameStateMessage(gameId, snap));
+        }
+    }
+
     private void broadcast(ServerMessage message) {
         connectionManager.broadcastToGame(gameId, message);
     }

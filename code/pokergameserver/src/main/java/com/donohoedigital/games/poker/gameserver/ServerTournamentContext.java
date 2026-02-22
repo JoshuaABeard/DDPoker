@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.GameTable;
@@ -90,6 +91,9 @@ public class ServerTournamentContext implements TournamentContext {
 
     // Tournament state
     private boolean gameOver;
+
+    // Cheat: per-player AI skill level overrides (playerId → skillLevel 1-10)
+    private final Map<Integer, Integer> aiStrategyOverrides = new ConcurrentHashMap<>();
 
     /**
      * Create a new server tournament context (time-based level advancement).
@@ -474,6 +478,32 @@ public class ServerTournamentContext implements TournamentContext {
      */
     public void setGameOver(boolean gameOver) {
         this.gameOver = gameOver;
+    }
+
+    /**
+     * Directly set the current blind level (cheat action). Resets the level clock
+     * and hands-played counter so the new level behaves as if it just started.
+     *
+     * @param level
+     *            0-based level index to jump to
+     */
+    public void setLevel(int level) {
+        if (level < 0 || level >= smallBlinds.length)
+            return;
+        this.currentLevel = level;
+        this.levelStartTimeMillis = System.currentTimeMillis();
+        this.clockAdvanceCount = 0;
+        this.handsPlayedThisLevel = 0;
+    }
+
+    /**
+     * Returns the live AI strategy overrides map. Cheat controller writes here; AI
+     * action provider reads here before using the player's default skill level.
+     *
+     * @return mutable map from player ID to overridden skill level (1–10)
+     */
+    public Map<Integer, Integer> getAiStrategyOverrides() {
+        return aiStrategyOverrides;
     }
 
     /**

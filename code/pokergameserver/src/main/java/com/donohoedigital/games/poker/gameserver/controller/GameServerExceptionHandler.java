@@ -45,7 +45,7 @@ public class GameServerExceptionHandler {
         HttpStatus status = switch (code) {
             case GAME_NOT_FOUND, PLAYER_NOT_FOUND -> HttpStatus.NOT_FOUND;
             case WRONG_PASSWORD, NOT_GAME_OWNER -> HttpStatus.FORBIDDEN;
-            case GAME_FULL, GAME_NOT_JOINABLE, GAME_ALREADY_STARTED, GAME_NOT_IN_LOBBY, GAME_COMPLETED -> HttpStatus.CONFLICT;
+            case GAME_FULL, GAME_NOT_JOINABLE, GAME_ALREADY_STARTED, GAME_NOT_IN_LOBBY, GAME_COMPLETED, INVALID_GAME_STATE -> HttpStatus.CONFLICT;
             case WRONG_HOSTING_TYPE, NOT_APPLICABLE -> HttpStatus.UNPROCESSABLE_ENTITY;
         };
         return ResponseEntity.status(status).body(new ErrorResponse(code.name(), ex.getMessage()));
