@@ -235,7 +235,14 @@ public class GameService {
         if (entity == null) {
             return null;
         }
-        return toSummary(entity);
+        List<com.donohoedigital.games.poker.gameserver.dto.LobbyPlayerInfo> players = java.util.Collections.emptyList();
+        if (gameInstanceManager != null) {
+            GameInstance instance = gameInstanceManager.getGame(gameId);
+            if (instance != null) {
+                players = instance.getConnectedPlayers();
+            }
+        }
+        return toSummaryWithPlayers(entity, players);
     }
 
     // =========================================================================
@@ -465,7 +472,18 @@ public class GameService {
         String wsUrl = isPrivate ? null : e.getWsUrl();
         BlindsSummary blinds = parseBlinds(e.getProfileData());
         return new GameSummary(e.getGameId(), e.getName(), e.getHostingType(), e.getStatus().name(), e.getOwnerName(),
-                e.getPlayerCount(), e.getMaxPlayers(), isPrivate, wsUrl, blinds, e.getCreatedAt(), e.getStartedAt());
+                e.getPlayerCount(), e.getMaxPlayers(), isPrivate, wsUrl, blinds, e.getCreatedAt(), e.getStartedAt(),
+                java.util.Collections.emptyList());
+    }
+
+    private GameSummary toSummaryWithPlayers(GameInstanceEntity e,
+            List<com.donohoedigital.games.poker.gameserver.dto.LobbyPlayerInfo> players) {
+        boolean isPrivate = e.getPasswordHash() != null;
+        String wsUrl = isPrivate ? null : e.getWsUrl();
+        BlindsSummary blinds = parseBlinds(e.getProfileData());
+        return new GameSummary(e.getGameId(), e.getName(), e.getHostingType(), e.getStatus().name(), e.getOwnerName(),
+                e.getPlayerCount(), e.getMaxPlayers(), isPrivate, wsUrl, blinds, e.getCreatedAt(), e.getStartedAt(),
+                players);
     }
 
     private BlindsSummary parseBlinds(String profileData) {

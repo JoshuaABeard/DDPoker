@@ -565,6 +565,18 @@ public class GameInstance {
         return java.util.Collections.unmodifiableMap(playerSessions);
     }
 
+    /**
+     * Returns display names and roles of all currently registered players, for use
+     * in the pre-game lobby. Human players are role "PLAYER"; AI players are role
+     * "AI".
+     */
+    public List<com.donohoedigital.games.poker.gameserver.dto.LobbyPlayerInfo> getConnectedPlayers() {
+        return playerSessions.values().stream()
+                .map(s -> new com.donohoedigital.games.poker.gameserver.dto.LobbyPlayerInfo(s.getPlayerName(),
+                        s.isAI() ? "AI" : "PLAYER"))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     // ====================================
     // Rebuy / Addon Offer & Decision
     // ====================================

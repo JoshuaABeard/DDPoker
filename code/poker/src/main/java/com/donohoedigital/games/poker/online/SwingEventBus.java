@@ -209,6 +209,9 @@ public class SwingEventBus extends GameEventBus {
 
             case GameEvent.AddonOffered ignored ->
                 null; // Client handles ADDON_OFFERED via WebSocket message
+
+            default ->
+                null; // Unhandled event type
         };
     }
 
@@ -242,6 +245,7 @@ public class SwingEventBus extends GameEventBus {
             case GameEvent.ActionTimeout e -> -1; // No tableId for timeout events
             case GameEvent.RebuyOffered e -> e.tableId();
             case GameEvent.AddonOffered e -> e.tableId();
+            default -> -1; // Unhandled event type
         };
     }
 }

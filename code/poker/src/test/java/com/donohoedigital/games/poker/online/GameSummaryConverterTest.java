@@ -192,6 +192,6 @@ class GameSummaryConverterTest {
 
     private GameSummary buildSummary(String gameId, String name, String hostingType, String status, String wsUrl) {
         return new GameSummary(gameId, name, hostingType, status, "alice", 1, 9, false, wsUrl,
-                new GameSummary.BlindsSummary(10, 20, 0), Instant.now(), null);
+                new GameSummary.BlindsSummary(10, 20, 0), Instant.now(), null, java.util.Collections.emptyList());
     }
 }

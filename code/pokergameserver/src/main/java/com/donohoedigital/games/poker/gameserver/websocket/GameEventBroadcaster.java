@@ -398,6 +398,7 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
             case GameEvent.ObserverRemoved ignored -> {}
             case GameEvent.ColorUpCompleted ignored -> {}
             case GameEvent.CleaningDone ignored -> {}
+            default -> logger.debug("[BROADCAST] unhandled event type: {}", event.getClass().getSimpleName());
         }
     }
 

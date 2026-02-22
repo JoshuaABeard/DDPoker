@@ -19,7 +19,9 @@
  */
 package com.donohoedigital.games.poker.online;
 
+import com.donohoedigital.games.poker.gameserver.GameConfig;
 import com.donohoedigital.games.poker.gameserver.dto.CommunityGameRegisterRequest;
+import com.donohoedigital.games.poker.gameserver.dto.CreateGameResponse;
 import com.donohoedigital.games.poker.gameserver.dto.GameListResponse;
 import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -93,6 +95,91 @@ public class RestGameClient {
         } catch (Exception e) {
             logger.warn("Failed to list games from {}", baseUrl, e);
             return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Create a new server-hosted game.
+     *
+     * @param config
+     *            tournament configuration
+     * @return the created game summary (includes gameId and wsUrl)
+     * @throws RestGameClientException
+     *             if creation fails
+     */
+    public GameSummary createGame(GameConfig config) {
+        try {
+            String body = OBJECT_MAPPER.writeValueAsString(config);
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(baseUrl + "/api/v1/games"))
+                    .header("Content-Type", "application/json").header("Authorization", "Bearer " + jwt)
+                    .POST(HttpRequest.BodyPublishers.ofString(body)).build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 201) {
+                throw new RestGameClientException(
+                        "createGame returned " + response.statusCode() + ": " + response.body());
+            }
+            CreateGameResponse created = OBJECT_MAPPER.readValue(response.body(), CreateGameResponse.class);
+            return getGameSummary(created.gameId());
+        } catch (RestGameClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RestGameClientException("Failed to create game", e);
+        }
+    }
+
+    /**
+     * Start a game that is waiting for players.
+     *
+     * @param gameId
+     *            the game to start
+     * @return the updated game summary
+     * @throws RestGameClientException
+     *             if the start fails
+     */
+    public GameSummary startGame(String gameId) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/v1/games/" + gameId + "/start"))
+                    .header("Authorization", "Bearer " + jwt).POST(HttpRequest.BodyPublishers.noBody()).build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new RestGameClientException(
+                        "startGame returned " + response.statusCode() + ": " + response.body());
+            }
+            return OBJECT_MAPPER.readValue(response.body(), GameSummary.class);
+        } catch (RestGameClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RestGameClientException("Failed to start game " + gameId, e);
+        }
+    }
+
+    /**
+     * Fetch the current state/summary of a game.
+     *
+     * @param gameId
+     *            the game to query
+     * @return the game summary
+     * @throws RestGameClientException
+     *             if the game is not found or request fails
+     */
+    public GameSummary getGameSummary(String gameId) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(baseUrl + "/api/v1/games/" + gameId))
+                    .header("Authorization", "Bearer " + jwt).GET().build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new RestGameClientException(
+                        "getGameSummary returned " + response.statusCode() + ": " + response.body());
+            }
+            return OBJECT_MAPPER.readValue(response.body(), GameSummary.class);
+        } catch (RestGameClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RestGameClientException("Failed to get game summary for " + gameId, e);
         }
     }
 

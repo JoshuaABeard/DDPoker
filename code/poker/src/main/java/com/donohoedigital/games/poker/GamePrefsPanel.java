@@ -40,18 +40,14 @@ package com.donohoedigital.games.poker;
 
 import com.donohoedigital.base.TypedHashMap;
 import com.donohoedigital.base.Utils;
-import com.donohoedigital.comms.DDMessageListener;
-import com.donohoedigital.comms.DMTypedHashMap;
 import com.donohoedigital.config.AudioConfig;
 import com.donohoedigital.config.Prefs;
 import com.donohoedigital.config.PropertyConfig;
-import com.donohoedigital.games.comms.EngineMessage;
 import com.donohoedigital.games.config.EngineConstants;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.gui.HandSelectionManager;
 import com.donohoedigital.games.poker.ai.gui.PlayerTypeManager;
 import com.donohoedigital.games.poker.engine.PokerConstants;
-import com.donohoedigital.games.poker.online.GetPublicIP;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -627,11 +623,28 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
     }
 
     private void testConnection() {
-        DMTypedHashMap params = new DMTypedHashMap();
-        params.setBoolean(GetPublicIP.PARAM_TEST_SERVER, true);
-        SendMessageDialog dialog = (SendMessageDialog) context_.processPhaseNow("GetPublicIP", params);
-        if (dialog.getStatus() == DDMessageListener.STATUS_OK) {
-            dialog.getReturnMessage().getString(EngineMessage.PARAM_IP);
+        String serverUrl = onlineServer_.getTextField().getText().trim();
+        if (serverUrl.isEmpty()) {
+            EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.testconnect.noserver"));
+            return;
+        }
+        String healthUrl = serverUrl.replaceAll("/+$", "") + "/health";
+        try {
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(healthUrl)).timeout(java.time.Duration.ofSeconds(10)).GET().build();
+            java.net.http.HttpResponse<String> response = client.send(request,
+                    java.net.http.HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                EngineUtils.displayInformationDialog(context_,
+                        PropertyConfig.getMessage("msg.testconnect.ok", serverUrl));
+            } else {
+                EngineUtils.displayInformationDialog(context_,
+                        PropertyConfig.getMessage("msg.testconnect.fail", serverUrl, response.statusCode()));
+            }
+        } catch (Exception ex) {
+            EngineUtils.displayInformationDialog(context_,
+                    PropertyConfig.getMessage("msg.testconnect.error", serverUrl, ex.getMessage()));
         }
     }
 

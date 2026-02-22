@@ -137,6 +137,7 @@ class GameControllerSecurityTest {
 
     private GameSummary buildSummary(String gameId) {
         return new GameSummary(gameId, "Test Game", "SERVER", "WAITING_FOR_PLAYERS", "owner", 0, 9, false,
-                "ws://localhost/ws/games/" + gameId, new GameSummary.BlindsSummary(10, 20, 0), Instant.now(), null);
+                "ws://localhost/ws/games/" + gameId, new GameSummary.BlindsSummary(10, 20, 0), Instant.now(), null,
+                java.util.Collections.emptyList());
     }
 }

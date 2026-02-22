@@ -196,7 +196,7 @@
     <param name="menubox-height" intvalue="430"/>
     <param name="profile.phase" strvalue="PlayerProfileOptions"/>
     <param name="practice.phase" strvalue="TournamentOptions"/>
-    <param name="online.phase" strvalue="FindGames"/>
+    <param name="online.phase" strvalue="OnlineMenu"/>
     <param name="pokerclock.phase" strvalue="PokerNightOptions"/>
     <param name="analysis.phase" strvalue="StatisticsViewer"/>
     <param name="options.phase" strvalue="GamePrefs"/>
@@ -297,6 +297,72 @@
       <strvalue>helpdetail:Help:clockboard</strvalue>
       <strvalue>cancelprev:PreviousPhase</strvalue>
     </paramlist>
+  </phase>
+
+  <!-- ONLINE MENU -->
+  <phase name="OnlineMenu" class="com.donohoedigital.games.poker.online.OnlineMenu" extends="Menu">
+    <param name="menubox-title" boolvalue="true"/>
+    <param name="menubox-title-prop" strvalue="msg.title.OnlineMenu"/>
+    <param name="menubox-help-name" strvalue="onlinemenu"/>
+    <param name="default-button" strvalue="hostonline"/>
+    <param name="profile.phase" strvalue="PlayerProfileOptions"/>
+    <paramlist name="buttons">
+      <strvalue>hostonline:OnlineOptions</strvalue>
+      <strvalue>joinonline:FindGames</strvalue>
+      <strvalue>loadgameonline:LoadOnlineGameMenu</strvalue>
+      <strvalue>website:LaunchOnlineWebsite</strvalue>
+      <strvalue>forums:LaunchOnlineForums</strvalue>
+      <strvalue>helpdetail:Help:online</strvalue>
+      <strvalue>cancelprev:PreviousPhase</strvalue>
+    </paramlist>
+  </phase>
+
+  <!-- ONLINE CONFIGURATION (setup 2 of 2) -->
+  <phase name="OnlineConfiguration" extends="TournamentOptions"
+         class="com.donohoedigital.games.poker.online.OnlineConfiguration">
+    <param name="menubox-title-prop" strvalue="msg.title.OnlineConfiguration"/>
+    <param name="menubox-help-name" strvalue="onlineconfig"/>
+    <param name="default-button" strvalue="okaybegin"/>
+    <param name="profile.phase" strvalue="PlayerProfileOptions"/>
+    <paramlist name="buttons">
+      <strvalue>okaybegin:Lobby.Host</strvalue>
+      <strvalue>helpdetail:Help:hostonline</strvalue>
+      <strvalue>cancelprev:PreviousPhase</strvalue>
+    </paramlist>
+  </phase>
+
+  <!-- LOBBY (host view) -->
+  <phase name="Lobby.Host" extends="TournamentOptions"
+         class="com.donohoedigital.games.poker.online.Lobby">
+    <param name="host" boolvalue="true"/>
+    <param name="menubox-title-prop" strvalue="msg.title.Lobby.Host"/>
+    <param name="menubox-help-name" strvalue="lobby.host"/>
+    <paramlist name="buttons">
+      <strvalue>okaystart:HostStart</strvalue>
+      <strvalue>editonlinegame</strvalue>
+      <strvalue>options:GamePrefsDialog</strvalue>
+      <strvalue>helpdetail:Help:hostonline</strvalue>
+      <strvalue>canceltourney</strvalue>
+    </paramlist>
+  </phase>
+
+  <!-- LOBBY (joining player view) -->
+  <phase name="Lobby.Player" extends="Lobby.Host">
+    <param name="host" boolvalue="false"/>
+    <param name="menubox-title-prop" strvalue="msg.title.Lobby.Player"/>
+    <param name="menubox-help-name" strvalue="lobby.player"/>
+    <param name="default-button" strvalue="NONE"/>
+    <paramlist name="buttons">
+      <strvalue>info:GameInfoDialogLobby</strvalue>
+      <strvalue>options:GamePrefsDialog</strvalue>
+      <strvalue>helpdetail:Help:joinonline</strvalue>
+      <strvalue>cancelleave:PreviousPhase</strvalue>
+    </paramlist>
+  </phase>
+
+  <!-- HOST START (countdown + begin) -->
+  <phase name="HostStart" class="com.donohoedigital.games.poker.online.HostStart">
+    <param name="next-phase" strvalue="InitializeOnlineGame"/>
   </phase>
 
   <phase name="FindGames" extends="TournamentOptions" class="com.donohoedigital.games.poker.online.FindGames">

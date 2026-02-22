@@ -226,6 +226,7 @@ class GameControllerTest {
 
     private GameSummary buildSummary(String gameId, String name, String hostingType) {
         return new GameSummary(gameId, name, hostingType, "WAITING_FOR_PLAYERS", "owner", 1, 9, false,
-                "ws://localhost/ws/games/" + gameId, new GameSummary.BlindsSummary(10, 20, 0), Instant.now(), null);
+                "ws://localhost/ws/games/" + gameId, new GameSummary.BlindsSummary(10, 20, 0), Instant.now(), null,
+                java.util.Collections.emptyList());
     }
 }
