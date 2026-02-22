@@ -1386,6 +1386,40 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     }
 
     /**
+     * Records the server-reported result for a player in WebSocket mode.
+     *
+     * <p>
+     * {@code applyTableData()} creates new {@link PokerPlayer} objects in
+     * {@link com.donohoedigital.games.poker.online.RemotePokerTable} seats, which
+     * are separate from the original objects in {@code players_}. This method
+     * applies the server-provided finish position to the {@code players_} object so
+     * that {@link #getHumanPlayer()}, {@link #getPlayersByRank()}, and
+     * {@link #getNumPlayersOut()} return correct values for the {@code GameOver}
+     * dialog and {@link ChipLeaderPanel}.
+     *
+     * @param playerId
+     *            server-assigned player ID
+     * @param finishPosition
+     *            1 = winner, 2 = runner-up, etc.
+     */
+    public void applyPlayerResult(int playerId, int finishPosition) {
+        PokerPlayer player = getPokerPlayerFromID(playerId);
+        if (player == null)
+            return;
+        int prize = (profile_ != null) ? profile_.getPayout(finishPosition) : 0;
+        player.setEliminated(true);
+        player.setPlace(finishPosition);
+        player.setPrize(prize);
+        // Zero out chips for eliminated players so getPlayersByRank() sorts them
+        // after the winner (who retains a non-zero initial chip count).
+        if (finishPosition > 1) {
+            player.setChipCount(0);
+        }
+        nNumOut_++;
+        firePropertyChange(PROP_PLAYER_FINISHED, null, player);
+    }
+
+    /**
      * Get number of players out
      */
     public int getNumPlayersOut() {

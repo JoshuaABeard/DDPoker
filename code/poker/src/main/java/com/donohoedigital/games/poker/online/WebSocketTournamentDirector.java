@@ -852,6 +852,9 @@ public class WebSocketTournamentDirector extends BasePhase
                     break;
                 }
             }
+            // Also update the canonical player in game_.players_ so GameOver and
+            // ChipLeaderPanel read the correct place, prize, and chip count.
+            game_.applyPlayerResult((int) d.playerId(), d.finishPosition());
         });
     }
 
@@ -884,17 +887,42 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onGameComplete(GameCompleteData d) {
         SwingUtilities.invokeLater(() -> {
-            // Set the winner's finish position to 1st. All eliminated players already
-            // have their place set by onPlayerEliminated; the surviving player is the
-            // tournament winner and receives place=1.
-            outer : for (RemotePokerTable table : tables_.values()) {
-                for (int s = 0; s < PokerConstants.SEATS; s++) {
-                    PokerPlayer p = table.getPlayer(s);
-                    if (p != null && p.getChipCount() > 0) {
-                        p.setPlace(1);
-                        break outer;
+            // Identify the winner from the server's standings (position=1).
+            // Fall back to scanning the table for the surviving player with chips > 0.
+            int winnerId = -1;
+            if (d.standings() != null) {
+                for (ServerMessageData.StandingData s : d.standings()) {
+                    if (s.position() == 1) {
+                        winnerId = (int) s.playerId();
+                        break;
                     }
                 }
+            }
+            if (winnerId < 0) {
+                outer : for (RemotePokerTable table : tables_.values()) {
+                    for (int s = 0; s < PokerConstants.SEATS; s++) {
+                        PokerPlayer p = table.getPlayer(s);
+                        if (p != null && p.getChipCount() > 0) {
+                            winnerId = p.getID();
+                            break outer;
+                        }
+                    }
+                }
+            }
+            if (winnerId >= 0) {
+                // Update table player's place (for UI during GameOver transition).
+                for (RemotePokerTable table : tables_.values()) {
+                    int seat = findSeat(table, winnerId);
+                    if (seat >= 0) {
+                        PokerPlayer p = table.getPlayer(seat);
+                        if (p != null)
+                            p.setPlace(1);
+                        break;
+                    }
+                }
+                // Update game_.players_ so GameOver shows "You won!" and
+                // ChipLeaderPanel displays the correct final standings.
+                game_.applyPlayerResult(winnerId, 1);
             }
             if (context_ != null) {
                 context_.processPhase("OnlineGameOver");
