@@ -92,6 +92,12 @@ public class WebSocketTournamentDirector extends BasePhase
     // Current player ID for this client (set from CONNECTED message)
     private long localPlayerId_ = -1;
 
+    // Maps server-assigned player IDs to the canonical PokerPlayer objects in
+    // game_.players_. Built lazily on first use (see resolveGamePlayer).
+    // Server IDs come from the JWT profileId (human) and sequential negatives
+    // -1, -2, ... (AI), which differ from the client-assigned IDs 0, 1, 2, ...
+    private final Map<Long, PokerPlayer> serverIdToGamePlayer_ = new HashMap<>();
+
     // Last ACTION_REQUIRED options (stored for UI query)
     private ActionOptionsData currentOptions_;
 
@@ -886,7 +892,10 @@ public class WebSocketTournamentDirector extends BasePhase
             }
             // Also update the canonical player in game_.players_ so GameOver and
             // ChipLeaderPanel read the correct place, prize, and chip count.
-            game_.applyPlayerResult((int) d.playerId(), d.finishPosition());
+            PokerPlayer gamePlayer = resolveGamePlayer(d.playerId());
+            if (gamePlayer != null) {
+                game_.applyPlayerResult(gamePlayer.getID(), d.finishPosition());
+            }
         });
     }
 
@@ -921,11 +930,11 @@ public class WebSocketTournamentDirector extends BasePhase
         SwingUtilities.invokeLater(() -> {
             // Identify the winner from the server's standings (position=1).
             // Fall back to scanning the table for the surviving player with chips > 0.
-            int winnerId = -1;
+            long winnerId = -1L;
             if (d.standings() != null) {
                 for (ServerMessageData.StandingData s : d.standings()) {
                     if (s.position() == 1) {
-                        winnerId = (int) s.playerId();
+                        winnerId = s.playerId();
                         break;
                     }
                 }
@@ -954,7 +963,10 @@ public class WebSocketTournamentDirector extends BasePhase
                 }
                 // Update game_.players_ so GameOver shows "You won!" and
                 // ChipLeaderPanel displays the correct final standings.
-                game_.applyPlayerResult(winnerId, 1);
+                PokerPlayer winnerGamePlayer = resolveGamePlayer(winnerId);
+                if (winnerGamePlayer != null) {
+                    game_.applyPlayerResult(winnerGamePlayer.getID(), 1);
+                }
             }
             if (context_ != null) {
                 context_.processPhase("OnlineGameOver");
@@ -1524,6 +1536,48 @@ public class WebSocketTournamentDirector extends BasePhase
                 return s;
         }
         return -1;
+    }
+
+    /**
+     * Resolves a server-assigned player ID to the corresponding canonical
+     * {@link PokerPlayer} object in {@code game_.players_}. Builds the mapping
+     * lazily on first call.
+     *
+     * <p>
+     * In practice games the embedded server uses the JWT {@code profileId} for the
+     * human player and sequential negative IDs {@code -1, -2, ...} for AI players.
+     * These differ from the client-assigned sequential IDs {@code 0, 1, 2, ...} in
+     * {@code game_.players_}, so a direct ID lookup fails. This method bridges the
+     * two ID spaces.
+     */
+    private PokerPlayer resolveGamePlayer(long serverPlayerId) {
+        if (serverIdToGamePlayer_.isEmpty()) {
+            buildServerIdToGamePlayerMap();
+        }
+        return serverIdToGamePlayer_.get(serverPlayerId);
+    }
+
+    /**
+     * Builds the server-ID → game-player map from the current
+     * {@code game_.players_} list. The human player is always at index 0 (client ID
+     * = {@code PLAYER_ID_HOST}); AI players follow at indices 1, 2, ... matching
+     * the server's sequential negative IDs {@code -1, -2, ...}.
+     */
+    private void buildServerIdToGamePlayerMap() {
+        // Human: server ID = localPlayerId_ → client ID = PLAYER_ID_HOST (0)
+        if (localPlayerId_ != -1L) {
+            PokerPlayer human = game_.getPokerPlayerFromID(PokerConstants.PLAYER_ID_HOST);
+            if (human != null) {
+                serverIdToGamePlayer_.put(localPlayerId_, human);
+            }
+        }
+        // AI players: server ID -1 → game_.players_[1], -2 → [2], ...
+        for (int i = 1; i < game_.getNumPlayers(); i++) {
+            PokerPlayer ai = game_.getPokerPlayerAt(i);
+            if (ai != null) {
+                serverIdToGamePlayer_.put(-(long) i, ai);
+            }
+        }
     }
 
     /** Returns the index of a player (by ID) in the hand's player-order list. */

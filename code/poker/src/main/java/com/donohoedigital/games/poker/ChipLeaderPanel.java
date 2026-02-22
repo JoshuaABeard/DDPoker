@@ -100,9 +100,9 @@ public class ChipLeaderPanel extends DDTabPanel {
             p = leaders.get(i);
             if ((p.getChipCount() != 0 && !bDone) || p.getPlace() == 0)
                 continue;
-            finished.add(new RankInfo(p, i + 1));
+            finished.add(new RankInfo(p, p.getPlace()));
             if (p == human) {
-                nHumanRank = i + 1;
+                nHumanRank = p.getPlace();
             }
         }
 

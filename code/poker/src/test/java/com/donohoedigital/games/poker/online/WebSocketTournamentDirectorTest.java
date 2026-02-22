@@ -710,6 +710,73 @@ class WebSocketTournamentDirectorTest {
         assertThat(events).contains(PokerTableEvent.TYPE_PLAYER_REMOVED);
     }
 
+    /**
+     * PLAYER_ELIMINATED must call game_.applyPlayerResult with the CLIENT player ID
+     * (from game_.players_), not the server-assigned player ID. In practice games
+     * the server uses the JWT profileId for the human and -1, -2, ... for AI, while
+     * game_.players_ uses sequential IDs 0, 1, 2, ...
+     */
+    @Test
+    void playerEliminatedCallsApplyPlayerResultWithClientId() throws Exception {
+        // Set localPlayerId to a non-zero server value (simulating a JWT profileId).
+        long humanServerIdl = 42L;
+        ObjectNode connected = mapper.createObjectNode();
+        connected.put("playerId", humanServerIdl);
+        dispatch(ServerMessageType.CONNECTED, connected);
+
+        // Configure mock game: human at client ID 0, one AI at client ID 1.
+        PokerPlayer humanGamePlayer = Mockito.mock(PokerPlayer.class);
+        Mockito.when(humanGamePlayer.getID()).thenReturn(0);
+        PokerPlayer aiGamePlayer = Mockito.mock(PokerPlayer.class);
+        Mockito.when(aiGamePlayer.getID()).thenReturn(1);
+
+        Mockito.when(mockGame.getPokerPlayerFromID(0)).thenReturn(humanGamePlayer);
+        Mockito.when(mockGame.getPokerPlayerAt(1)).thenReturn(aiGamePlayer);
+        Mockito.when(mockGame.getNumPlayers()).thenReturn(2);
+
+        // AI eliminated at server ID -1 (finish position 2).
+        ObjectNode aiElim = mapper.createObjectNode();
+        aiElim.put("playerId", -1L).put("playerName", "Bot").put("finishPosition", 2).put("handsPlayed", 5);
+        dispatch(ServerMessageType.PLAYER_ELIMINATED, aiElim);
+
+        // Must call applyPlayerResult with CLIENT id 1, not server id -1.
+        Mockito.verify(mockGame).applyPlayerResult(1, 2);
+    }
+
+    /**
+     * GAME_COMPLETE must call game_.applyPlayerResult for the winner using the
+     * CLIENT player ID, not the server-assigned profileId.
+     */
+    @Test
+    void gameCompleteCallsApplyPlayerResultWithClientIdForWinner() throws Exception {
+        // Set localPlayerId to a non-zero server value.
+        long humanServerId = 42L;
+        ObjectNode connected = mapper.createObjectNode();
+        connected.put("playerId", humanServerId);
+        dispatch(ServerMessageType.CONNECTED, connected);
+
+        // Configure mock game: human at client ID 0, one AI at client ID 1.
+        PokerPlayer humanGamePlayer = Mockito.mock(PokerPlayer.class);
+        Mockito.when(humanGamePlayer.getID()).thenReturn(0);
+        PokerPlayer aiGamePlayer = Mockito.mock(PokerPlayer.class);
+        Mockito.when(aiGamePlayer.getID()).thenReturn(1);
+
+        Mockito.when(mockGame.getPokerPlayerFromID(0)).thenReturn(humanGamePlayer);
+        Mockito.when(mockGame.getPokerPlayerAt(1)).thenReturn(aiGamePlayer);
+        Mockito.when(mockGame.getNumPlayers()).thenReturn(2);
+
+        // Human wins (server ID 42 = winner).
+        ObjectNode standing = mapper.createObjectNode();
+        standing.put("playerId", humanServerId).put("position", 1).put("playerName", "Alice").put("prize", 0);
+        ObjectNode gameComplete = mapper.createObjectNode();
+        gameComplete.putArray("standings").add(standing);
+        gameComplete.put("totalHands", 10).put("duration", 120000L);
+        dispatch(ServerMessageType.GAME_COMPLETE, gameComplete);
+
+        // Must call applyPlayerResult with CLIENT id 0, not server id 42.
+        Mockito.verify(mockGame).applyPlayerResult(0, 1);
+    }
+
     // -------------------------------------------------------------------------
     // REBUY_OFFERED / ADDON_OFFERED
     // -------------------------------------------------------------------------
