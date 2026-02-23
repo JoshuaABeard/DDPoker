@@ -188,8 +188,15 @@ class GameStartHandler extends BaseHandler {
         // When rebuys are enabled, allow rebuy through the last blind level.
         // isRebuyAllowed() checks nLevel <= getLastRebuyLevel(); we track lastLevel
         // directly because getLastLevel() returns 0 for a freshly created profile.
+        //
+        // Also set cost, chips, and maxRebuys — all three default to 0 on a fresh
+        // profile, which causes the server's offerRebuy() and isRebuyPeriodActive()
+        // to bail before ever sending REBUY_OFFERED to the client.
         if (profile.isRebuys()) {
             profile.setLastRebuyLevel(lastLevel);
+            profile.getMap().setInteger(TournamentProfile.PARAM_REBUYCOST, buyinChips);
+            profile.getMap().setInteger(TournamentProfile.PARAM_REBUYCHIPS, buyinChips);
+            profile.getMap().setInteger(TournamentProfile.PARAM_MAXREBUYS, TournamentProfile.MAX_REBUYS);
         }
 
         return profile;

@@ -630,10 +630,15 @@ public class GameInstance {
         }
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         pendingRebuys.put(playerId, future);
+        long rebuyTimeoutSeconds = properties.actionTimeoutSeconds();
         eventBus.publish(new com.donohoedigital.games.poker.core.event.GameEvent.RebuyOffered(tableId, playerId,
-                tournament.getRebuyCost(), tournament.getRebuyChips(), properties.actionTimeoutSeconds()));
+                tournament.getRebuyCost(), tournament.getRebuyChips(), (int) rebuyTimeoutSeconds));
         try {
-            return future.get(properties.actionTimeoutSeconds(), TimeUnit.SECONDS);
+            if (rebuyTimeoutSeconds <= 0) {
+                // No action timeout (e.g. embedded/practice mode): wait indefinitely
+                return future.get();
+            }
+            return future.get(rebuyTimeoutSeconds, TimeUnit.SECONDS);
         } catch (TimeoutException | InterruptedException | ExecutionException e) {
             return false;
         } finally {
@@ -651,10 +656,15 @@ public class GameInstance {
         }
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         pendingAddons.put(playerId, future);
+        long addonTimeoutSeconds = properties.actionTimeoutSeconds();
         eventBus.publish(new com.donohoedigital.games.poker.core.event.GameEvent.AddonOffered(tableId, playerId,
-                tournament.getAddonCost(), tournament.getAddonChips(), properties.actionTimeoutSeconds()));
+                tournament.getAddonCost(), tournament.getAddonChips(), (int) addonTimeoutSeconds));
         try {
-            return future.get(properties.actionTimeoutSeconds(), TimeUnit.SECONDS);
+            if (addonTimeoutSeconds <= 0) {
+                // No action timeout (e.g. embedded/practice mode): wait indefinitely
+                return future.get();
+            }
+            return future.get(addonTimeoutSeconds, TimeUnit.SECONDS);
         } catch (TimeoutException | InterruptedException | ExecutionException e) {
             return false;
         } finally {

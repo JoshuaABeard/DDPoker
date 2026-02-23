@@ -126,13 +126,12 @@ lib_launch() {
         return
     fi
 
-    # Kill stale processes
-    if command -v taskkill &>/dev/null; then
-        taskkill //F //IM java.exe 2>/dev/null || true
-    elif command -v pkill &>/dev/null; then
-        pkill -f "DDPokerCE" 2>/dev/null || true
+    # Kill stale Java processes (use kill -9 on all java PIDs — works on Git Bash/Windows)
+    java_pids=$(ps aux 2>/dev/null | grep java | grep -v grep | awk '{print $1}' || true)
+    if [[ -n "$java_pids" ]]; then
+        kill -9 $java_pids 2>/dev/null || true
+        sleep 3
     fi
-    sleep 2
     rm -f "$_DDPOKER_DIR/games.mv.db" "$_DDPOKER_DIR/games.trace.db" \
           "$PORT_FILE" "$KEY_FILE" 2>/dev/null || true
 
