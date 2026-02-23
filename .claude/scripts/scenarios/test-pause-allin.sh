@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
-# test-pause-allin.sh — Verify "Pause on All-In" shows a CONTINUE prompt.
+# test-pause-allin.sh — Verify "Pause on All-In" produces PAUSE_ALLIN inputMode.
 #
-# Procedure:
-#   1. Enable gameplay.pauseAllin=true via /options
-#   2. Start a 3-player game
-#   3. Wait for a human CHECK_BET turn (first to act, no prior bet)
-#   4. POST ALL_IN — the human goes all-in
-#   5. Assert that inputMode eventually becomes CONTINUE (pause dialog appeared)
-#   6. POST CONTINUE to advance
-#   7. Assert CONTINUE was accepted and the game moved on
+# Tests PA-001 through PA-005:
+#   - Enable gameplay.pauseAllin=true via /options
+#   - Start a 3-player game and play hands, taking CALL at every human turn
+#   - Poll /state watching for inputMode == "PAUSE_ALLIN" (up to 120s)
+#   - When PAUSE_ALLIN appears, send CONTINUE and assert game resumes
 #
-# If the human is NOT first to act on the first betting turn (CHECK_RAISE or
-# CALL_RAISE), the script folds and tries the next hand.
+# The PAUSE_ALLIN mode fires when an AI player goes all-in. By always calling,
+# we maximize the chance that an AI is forced all-in. 120s is ample time for
+# this to occur in a 3-player game.
 #
 # Usage:
 #   bash .claude/scripts/scenarios/test-pause-allin.sh [options]
@@ -24,121 +22,123 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 lib_parse_args "$@"
 lib_launch
 
-log "Setting gameplay.pauseAllin=true..."
-api_post_json /options '{"gameplay.pauseAllin": true}' > /dev/null
+FAILURES=0
 
+# ============================================================
+# PA-001: Enable gameplay.pauseAllin
+# ============================================================
+log "=== PA-001: Enable gameplay.pauseAllin ==="
+api_post_json /options '{"gameplay.pauseAllin": true}' > /dev/null
 OPTIONS=$(api GET /options 2>/dev/null) || die "Could not read /options"
 PA=$(jget "$OPTIONS" 'o.gameplay && o.gameplay.pauseAllin')
-[[ "$PA" == "true" ]] || die "gameplay.pauseAllin did not activate (got: $PA)"
-log "gameplay.pauseAllin is active"
+if [[ "$PA" == "true" ]]; then
+    log "  OK: gameplay.pauseAllin is active"
+else
+    die "gameplay.pauseAllin did not activate (got: $PA)"
+fi
 
 lib_start_game 3
 screenshot "pause-allin-start"
 
-FOUND_ALLIN=false
-ATTEMPTS=0
+# ============================================================
+# PA-002: Poll for PAUSE_ALLIN mode while CALLing every human turn
+# ============================================================
+log "=== PA-002: Polling for PAUSE_ALLIN (timeout=120s) ==="
 
-while [[ "$FOUND_ALLIN" == false && $ATTEMPTS -lt 15 ]]; do
-    while true; do
-        STATE=$(wait_mode "CHECK_BET|CHECK_RAISE|CALL_RAISE|DEAL|CONTINUE|CONTINUE_LOWER|REBUY_CHECK" 60) \
-            || die "Timed out"
-        MODE=$(jget "$STATE" 'o.inputMode || "NONE"')
+POLL_START=$(date +%s)
+POLL_TIMEOUT=120
+PAUSE_ALLIN_APPEARED=false
+HUMAN_ACTIONS=0
+LAST_MODE=""
 
-        case "$MODE" in
-            CHECK_BET)
-                IS_HUMAN=$(jget "$STATE" 'o.currentAction && o.currentAction.isHumanTurn || false')
-                if [[ "$IS_HUMAN" == "true" ]]; then
-                    break  # Good — first to act, no prior bet
-                fi
-                sleep 0.3
-                ;;
-            CHECK_RAISE|CALL_RAISE)
-                IS_HUMAN=$(jget "$STATE" 'o.currentAction && o.currentAction.isHumanTurn || false')
-                if [[ "$IS_HUMAN" == "true" ]]; then
-                    api_post_json /action '{"type":"FOLD"}' > /dev/null 2>&1 || true
-                    ATTEMPTS=$((ATTEMPTS+1))
-                fi
-                sleep 0.3
-                ;;
-            DEAL|CONTINUE|CONTINUE_LOWER)
-                api_post_json /action "{\"type\":\"$MODE\"}" > /dev/null 2>&1 || true
-                sleep 0.2
-                break 2  # restart outer while loop
-                ;;
-            REBUY_CHECK)
-                api_post_json /action '{"type":"DECLINE_REBUY"}' > /dev/null 2>&1 || true
-                sleep 0.2
-                break 2
-                ;;
-            *)
-                sleep 0.3
-                ;;
-        esac
-    done
+while true; do
+    STATE=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
+    MODE=$(jget "$STATE" 'o.inputMode || "NONE"')
 
-    [[ "$MODE" != "CHECK_BET" ]] && continue
-    ATTEMPTS=$((ATTEMPTS+1))
-
-    log "Attempt $ATTEMPTS: CHECK_BET mode — going ALL_IN..."
-    RESP=$(api_post_json /action '{"type":"ALL_IN"}')
-    if ! echo "$RESP" | grep -q '"accepted":true'; then
-        log "  ALL_IN rejected (mode may have changed): $RESP — retrying"
-        continue
+    if [[ "$MODE" != "$LAST_MODE" ]]; then
+        log "  mode: $MODE"
+        LAST_MODE="$MODE"
     fi
-    log "  ALL_IN accepted"
-    screenshot "pause-allin-after-allin"
 
-    # Wait for CONTINUE mode (pause dialog)
-    WAIT_START=$(date +%s)
-    PAUSE_APPEARED=false
-    while [[ $(($(date +%s) - WAIT_START)) -lt 20 ]]; do
-        PSTATE=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
-        PMODE=$(jget "$PSTATE" 'o.inputMode || "NONE"')
-        case "$PMODE" in
-            CONTINUE)
-                log "  CONTINUE mode appeared — pause dialog shown"
-                PAUSE_APPEARED=true
-                break
-                ;;
-            DEAL)
-                # Hand resolved without pause — either no all-in occurred or pauseAllin didn't fire
-                log "  DEAL mode appeared (no CONTINUE pause) — all-in may not have occurred"
-                break
-                ;;
-            CONTINUE_LOWER)
-                # Different continue variant
-                PAUSE_APPEARED=true
-                break
-                ;;
-            QUITSAVE|NONE)
-                sleep 0.3
-                ;;
-            *)
-                sleep 0.3
-                ;;
-        esac
-    done
+    case "$MODE" in
+        PAUSE_ALLIN)
+            log "  PAUSE_ALLIN detected — all-in pause fired"
+            PAUSE_ALLIN_APPEARED=true
+            break
+            ;;
+        CHECK_BET|CHECK_RAISE|CALL_RAISE)
+            IS_HUMAN=$(jget "$STATE" 'o.currentAction&&o.currentAction.isHumanTurn||false')
+            if [[ "$IS_HUMAN" == "true" ]]; then
+                api_post_json /action '{"type":"CALL"}' > /dev/null 2>&1 || true
+                HUMAN_ACTIONS=$((HUMAN_ACTIONS+1))
+            fi
+            ;;
+        DEAL)
+            api_post_json /action '{"type":"DEAL"}' > /dev/null 2>&1 || true
+            ;;
+        CONTINUE|CONTINUE_LOWER)
+            api_post_json /action "{\"type\":\"$MODE\"}" > /dev/null 2>&1 || true
+            ;;
+        REBUY_CHECK)
+            api_post_json /action '{"type":"DECLINE_REBUY"}' > /dev/null 2>&1 || true
+            ;;
+        QUITSAVE|NONE)
+            # AI acting — just wait
+            ;;
+    esac
 
-    if [[ "$PAUSE_APPEARED" == true ]]; then
-        FOUND_ALLIN=true
-        # POST CONTINUE to advance
-        CRESP=$(api_post_json /action "{\"type\":\"$PMODE\"}")
-        if echo "$CRESP" | grep -q '"accepted":true'; then
-            log "  CONTINUE accepted — game advanced past all-in pause"
-        else
-            log "  WARN: CONTINUE rejected: $CRESP"
-        fi
-        screenshot "pause-allin-after-continue"
+    ELAPSED=$(($(date +%s) - POLL_START))
+    if [[ $ELAPSED -gt $POLL_TIMEOUT ]]; then
+        log "FAIL: PA-002 — PAUSE_ALLIN never appeared after ${POLL_TIMEOUT}s ($HUMAN_ACTIONS human actions taken)"
+        FAILURES=$((FAILURES+1))
+        break
     fi
+    sleep 0.2
 done
 
-if [[ "$FOUND_ALLIN" == true ]]; then
-    pass "Pause-on-All-In triggered CONTINUE dialog (verified in $ATTEMPTS attempt(s))"
+# ============================================================
+# PA-003: Assert PAUSE_ALLIN appeared
+# ============================================================
+log "=== PA-003: Assert PAUSE_ALLIN appeared ==="
+if [[ "$PAUSE_ALLIN_APPEARED" == "true" ]]; then
+    log "  OK: PAUSE_ALLIN appeared after $HUMAN_ACTIONS human action(s)"
+    screenshot "pause-allin-detected"
 else
-    log "NOTE: Could not trigger pauseAllin CONTINUE in $ATTEMPTS attempts."
-    log "      This may mean: (a) human was always folded before going all-in,"
-    log "      (b) pauseAllin only fires when AI goes all-in and human must watch,"
-    log "      or (c) the option is not wired for practice mode."
-    log "      Manual verification recommended."
-    exit 0  # Not a hard failure — the option setting was verified
+    log "  (already failed above)"
 fi
+
+# ============================================================
+# PA-004: Send CONTINUE and assert mode transitions
+# ============================================================
+if [[ "$PAUSE_ALLIN_APPEARED" == "true" ]]; then
+    log "=== PA-004: Send CONTINUE to advance past PAUSE_ALLIN ==="
+    CRESP=$(api_post_json /action '{"type":"CONTINUE"}' 2>/dev/null) || true
+    ACCEPTED=$(jget "$CRESP" 'o.accepted||false')
+    if [[ "$ACCEPTED" == "true" ]]; then
+        log "  OK: CONTINUE accepted"
+    else
+        log "FAIL: PA-004 — CONTINUE not accepted: $CRESP"
+        FAILURES=$((FAILURES+1))
+    fi
+
+    # ============================================================
+    # PA-005: Assert mode transitioned away from PAUSE_ALLIN
+    # ============================================================
+    log "=== PA-005: Assert mode left PAUSE_ALLIN ==="
+    sleep 1
+    STATE2=$(api GET /state 2>/dev/null) || true
+    MODE2=$(jget "$STATE2" 'o.inputMode || "NONE"')
+    if [[ "$MODE2" != "PAUSE_ALLIN" ]]; then
+        log "  OK: Mode transitioned to $MODE2 after CONTINUE"
+        screenshot "pause-allin-after-continue"
+    else
+        log "FAIL: PA-005 — Still in PAUSE_ALLIN after CONTINUE (mode=$MODE2)"
+        FAILURES=$((FAILURES+1))
+    fi
+fi
+
+if [[ $FAILURES -gt 0 ]]; then
+    die "$FAILURES test(s) failed"
+fi
+
+pass "Pause-on-All-In verified: PAUSE_ALLIN appeared, CONTINUE accepted, game resumed"

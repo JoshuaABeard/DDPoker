@@ -2,7 +2,7 @@
 # test-keyboard-shortcuts.sh — Verify keyboard shortcuts via /keyboard endpoint.
 #
 # Tests G-035 through G-046:
-#   - D key deals next hand
+#   - D key deals next hand (requires disableAutoDeal=true so DEAL mode appears)
 #   - F key folds
 #   - C key checks/calls
 #   - Shortcuts disabled when disableShortcuts=true
@@ -13,27 +13,32 @@
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 lib_parse_args "$@"
 lib_launch
-lib_start_game 3
 
 FAILURES=0
+
+# Start game with disableAutoDeal=true so DEAL mode appears between hands.
+# This makes the D-key test reliable.
+lib_start_game 3 '"disableAutoDeal": true'
 
 # ============================================================
 # G-035: D key deals
 # ============================================================
 log "=== G-035: D Key Deals ==="
 
-# First, get to DEAL mode by playing through initial hand
+# Wait for the first human turn in the initial hand
 state=$(wait_mode "CHECK_BET|CHECK_RAISE|CALL_RAISE|DEAL" 60) \
     || die "Timed out waiting for game"
 mode=$(jget "$state" 'o.inputMode || "NONE"')
 
-# If in a hand, fold to get to DEAL mode
+# If in a betting mode, fold to end the hand, then DEAL mode should appear.
 if echo "$mode" | grep -qE "^(CHECK_BET|CHECK_RAISE|CALL_RAISE)$"; then
-    api_post_json /action '{"type":"FOLD"}' > /dev/null 2>&1 || true
-    # Wait for DEAL (finish the hand)
-    # DEAL mode does not appear in the embedded server (auto-dealt).
-    # Wait briefly, then continue — G-035 will SKIP if DEAL is not reached.
-    WAIT_START=$(date +%s)
+    is_human=$(jget "$state" 'o.currentAction&&o.currentAction.isHumanTurn||false')
+    if [[ "$is_human" == "true" ]]; then
+        api_post_json /action '{"type":"FOLD"}' > /dev/null 2>&1 || true
+    fi
+
+    # Advance through any CONTINUE prompts after fold, then wait for DEAL
+    DEAL_WAIT_START=$(date +%s)
     while true; do
         state=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
         mode=$(jget "$state" 'o.inputMode || "NONE"')
@@ -42,26 +47,33 @@ if echo "$mode" | grep -qE "^(CHECK_BET|CHECK_RAISE|CALL_RAISE)$"; then
             api_post_json /action "{\"type\":\"$mode\"}" > /dev/null 2>&1 || true
         [[ "$mode" == "REBUY_CHECK" ]] && \
             api_post_json /action '{"type":"DECLINE_REBUY"}' > /dev/null 2>&1 || true
-        [[ $(($(date +%s) - WAIT_START)) -gt 5 ]] && break
+        # If another human turn arrived (AI acted first), fold again
+        if echo "$mode" | grep -qE "^(CHECK_BET|CHECK_RAISE|CALL_RAISE)$"; then
+            is_human=$(jget "$state" 'o.currentAction&&o.currentAction.isHumanTurn||false')
+            [[ "$is_human" == "true" ]] && api_post_json /action '{"type":"FOLD"}' > /dev/null 2>&1 || true
+        fi
+        [[ $(($(date +%s) - DEAL_WAIT_START)) -gt 30 ]] && break
         sleep 0.3
     done
 fi
 
 if [[ "$mode" == "DEAL" ]]; then
-    # Press D key
+    # Press D key to deal next hand
     api_post_json /keyboard '{"key":"D"}' > /dev/null 2>&1 || true
     sleep 1
 
-    # Verify mode changed from DEAL
+    # Verify mode transitioned away from DEAL
     state=$(api GET /state 2>/dev/null) || true
     new_mode=$(jget "$state" 'o.inputMode || "NONE"')
     if [[ "$new_mode" != "DEAL" ]]; then
         log "  OK: D key advanced from DEAL to $new_mode"
     else
-        log "  WARN: D key may not have been processed (still in DEAL)"
+        log "FAIL: G-035 — D key had no effect; still in DEAL mode after 1s"
+        FAILURES=$((FAILURES+1))
     fi
 else
-    log "  SKIP: Could not reach DEAL mode for D key test (mode=$mode)"
+    log "FAIL: G-035 — Could not reach DEAL mode for D key test (mode=$mode)"
+    FAILURES=$((FAILURES+1))
 fi
 
 # ============================================================
@@ -70,7 +82,7 @@ fi
 log "=== G-036: F Key Folds ==="
 
 # Wait for human turn
-state=$(wait_human_turn 30) || { log "SKIP: No human turn for F key test"; }
+state=$(wait_human_turn 30) || { log "SKIP: No human turn for F key test"; state=""; }
 
 if [[ -n "$state" ]]; then
     mode=$(jget "$state" 'o.inputMode || "NONE"')
@@ -95,7 +107,7 @@ fi
 log "=== G-045: Disable Shortcuts ==="
 api_post_json /options '{"display.disableShortcuts": true}' > /dev/null 2>&1 || true
 
-# Finish current hand to get to a known state
+# Advance through the current hand to reach DEAL mode
 WAIT_START=$(date +%s)
 while true; do
     state=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
@@ -146,4 +158,4 @@ if [[ $FAILURES -gt 0 ]]; then
     die "$FAILURES test(s) failed"
 fi
 
-pass "Keyboard shortcuts tested: D-key deal, F-key fold, disable/re-enable"
+pass "Keyboard shortcuts tested: D-key deal (disableAutoDeal), F-key fold, disable/re-enable"

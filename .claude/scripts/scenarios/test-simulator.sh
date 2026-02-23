@@ -4,7 +4,7 @@
 # Tests S-001 through S-012:
 #   - Run simulation with pocket aces
 #   - Run simulation with community cards
-#   - Verify error handling for invalid cards
+#   - Verify error handling for invalid cards (hard FAIL)
 #
 # Usage:
 #   bash .claude/scripts/scenarios/test-simulator.sh [options]
@@ -48,39 +48,42 @@ else
 fi
 
 # ============================================================
-# S-007: Invalid cards
+# S-007: Invalid cards — must be rejected with BadRequest
 # ============================================================
 log "=== S-007: Invalid Card Error ==="
 RESULT=$(api_post_json /simulator '{"holeCards": ["Zz", "Ah"]}' 2>/dev/null) || true
 ERROR=$(jget "$RESULT" 'o.error||""')
 if [[ "$ERROR" == "BadRequest" ]]; then
-    log "  OK: Invalid card rejected"
+    log "  OK: Invalid card rejected with BadRequest"
 else
-    log "  WARN: Invalid card response: $RESULT"
+    log "FAIL: S-007 — invalid card 'Zz' should return BadRequest, got: $RESULT"
+    FAILURES=$((FAILURES+1))
 fi
 
 # ============================================================
-# S-008: Wrong card count
+# S-008: Wrong card count — single card must be rejected
 # ============================================================
 log "=== S-008: Wrong Card Count ==="
 RESULT=$(api_post_json /simulator '{"holeCards": ["As"]}' 2>/dev/null) || true
 ERROR=$(jget "$RESULT" 'o.error||""')
 if [[ "$ERROR" == "BadRequest" ]]; then
-    log "  OK: Single card rejected"
+    log "  OK: Single card rejected with BadRequest"
 else
-    log "  WARN: Single card response: $RESULT"
+    log "FAIL: S-008 — single holeCard should return BadRequest, got: $RESULT"
+    FAILURES=$((FAILURES+1))
 fi
 
 # ============================================================
-# S-010: Missing holeCards
+# S-010: Missing holeCards — must be rejected
 # ============================================================
 log "=== S-010: Missing Hole Cards ==="
 RESULT=$(api_post_json /simulator '{"community": ["As", "Ks", "Qs"]}' 2>/dev/null) || true
 ERROR=$(jget "$RESULT" 'o.error||""')
 if [[ "$ERROR" == "BadRequest" ]]; then
-    log "  OK: Missing holeCards rejected"
+    log "  OK: Missing holeCards rejected with BadRequest"
 else
-    log "  WARN: Missing holeCards response: $RESULT"
+    log "FAIL: S-010 — missing holeCards should return BadRequest, got: $RESULT"
+    FAILURES=$((FAILURES+1))
 fi
 
 if [[ $FAILURES -gt 0 ]]; then

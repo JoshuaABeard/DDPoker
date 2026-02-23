@@ -4,6 +4,7 @@
 # Tests CH-010 through CH-020:
 #   - Enable/disable each cheat via /options
 #   - Verify observable effects in /state where possible
+#   - aifaceup: assert opponent hole cards visible in /state (hard FAIL)
 #   - Verify all cheats can be disabled mid-game
 #
 # Usage:
@@ -39,9 +40,8 @@ test_cheat() {
     fi
 }
 
-# Wait for first human turn so the game is running
-state=$(wait_mode "CHECK_BET|CHECK_RAISE|CALL_RAISE|DEAL" 60) \
-    || die "Timed out waiting for game start"
+# Wait for first human turn so the game is in progress (hand dealt)
+state=$(wait_human_turn 60) || die "Timed out waiting for human turn"
 
 # ============================================================
 # CH-010: Show AI Cards Face-Up
@@ -49,20 +49,44 @@ state=$(wait_mode "CHECK_BET|CHECK_RAISE|CALL_RAISE|DEAL" 60) \
 log "=== CH-010: cheat.aifaceup ==="
 test_cheat "cheat.aifaceup" "true" "true"
 
-# With aifaceup, AI hole cards should be visible in /state
+# With aifaceup and a hand in progress, AI hole cards must be visible in /state.
 sleep 0.5
-state=$(api GET /state 2>/dev/null) || true
-human_seat=$(jget "$state" '(o.tables&&o.tables[0]&&o.tables[0].players||[]).find(p=>p&&p.isHuman)?.seat||0')
-ai_cards=$(jget "$state" \
-    "(o.tables&&o.tables[0]&&o.tables[0].players||[]).filter(p=>p&&!p.isHuman).map(p=>(p.holeCards||[]).join(',')).join(';')")
-if [[ -n "$ai_cards" && "$ai_cards" != "" && "$ai_cards" != ";" ]]; then
-    log "  OK: AI cards visible with aifaceup: $ai_cards"
-else
-    log "  WARN: AI cards not visible in /state (may need hand in progress)"
+state=$(api GET /state 2>/dev/null) || die "Could not read /state"
+
+# Check each non-human player for non-empty holeCards
+AIFACEUP_OK=false
+player_count=$(jget "$state" '(o.tables&&o.tables[0]&&o.tables[0].players||[]).length||0')
+for idx in $(seq 0 $((player_count - 1))); do
+    is_human=$(jget "$state" "(o.tables&&o.tables[0]&&o.tables[0].players||[])[$idx]?.isHuman||false")
+    if [[ "$is_human" == "true" ]]; then continue; fi
+    ai_cards=$(jget "$state" "(o.tables&&o.tables[0]&&o.tables[0].players||[])[$idx]?.holeCards?.join(',')||''")
+    if [[ -n "$ai_cards" && "$ai_cards" != "" ]]; then
+        log "  OK: AI player[$idx] hole cards visible with aifaceup: $ai_cards"
+        AIFACEUP_OK=true
+        break
+    fi
+done
+
+if [[ "$AIFACEUP_OK" != "true" ]]; then
+    log "FAIL: CH-010 — aifaceup=true but no AI hole cards visible in /state (hand must be in progress)"
+    FAILURES=$((FAILURES+1))
 fi
 
-# Disable
+# Disable aifaceup and verify cards are hidden
 test_cheat "cheat.aifaceup" "false" "false"
+sleep 0.5
+state=$(api GET /state 2>/dev/null) || die "Could not read /state after aifaceup=false"
+
+for idx in $(seq 0 $((player_count - 1))); do
+    is_human=$(jget "$state" "(o.tables&&o.tables[0]&&o.tables[0].players||[])[$idx]?.isHuman||false")
+    if [[ "$is_human" == "true" ]]; then continue; fi
+    ai_cards=$(jget "$state" "(o.tables&&o.tables[0]&&o.tables[0].players||[])[$idx]?.holeCards?.join(',')||''")
+    if [[ -n "$ai_cards" && "$ai_cards" != "" ]]; then
+        log "FAIL: CH-010 — aifaceup=false but AI player[$idx] hole cards still visible: $ai_cards"
+        FAILURES=$((FAILURES+1))
+    fi
+done
+log "  OK: AI hole cards hidden with aifaceup=false"
 
 # ============================================================
 # CH-011: Show Folded Hands
@@ -154,4 +178,4 @@ if [[ $FAILURES -gt 0 ]]; then
     die "$FAILURES test(s) failed"
 fi
 
-pass "All cheat toggles verified: enable/disable for 8 cheats + bulk disable"
+pass "All cheat toggles verified: enable/disable for 8 cheats + aifaceup visibility + bulk disable"

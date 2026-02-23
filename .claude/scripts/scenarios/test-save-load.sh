@@ -2,8 +2,8 @@
 # test-save-load.sh — Verify save/load game via API.
 #
 # Tests SL-001 through SL-009:
-#   - Save a running game
-#   - Load a saved game
+#   - Save a running game — assert accepted=true (hard FAIL)
+#   - Load a saved game — assert accepted=true (hard FAIL)
 #
 # Usage:
 #   bash .claude/scripts/scenarios/test-save-load.sh [options]
@@ -20,16 +20,17 @@ state=$(wait_mode "CHECK_BET|CHECK_RAISE|CALL_RAISE|DEAL" 60) \
     || die "Timed out waiting for game"
 
 # ============================================================
-# SL-001: Save game
+# SL-001: Save game — assert accepted=true
 # ============================================================
 log "=== SL-001: Save Game ==="
 SAVE_RESULT=$(api_post_json /game/save '{}' 2>/dev/null) || true
-SAVED=$(jget "$SAVE_RESULT" 'o.success||o.saved||""')
 log "  Save result: $SAVE_RESULT"
-if [[ "$SAVED" == "true" ]]; then
-    log "  OK: Game saved"
+SAVE_ACCEPTED=$(jget "$SAVE_RESULT" 'o.accepted||false')
+if [[ "$SAVE_ACCEPTED" == "true" ]]; then
+    log "  OK: Game saved (accepted=true)"
 else
-    log "  WARN: Save response: $SAVE_RESULT (may use phase-based approach)"
+    log "FAIL: SL-001 — save did not return accepted=true: $SAVE_RESULT"
+    FAILURES=$((FAILURES+1))
 fi
 
 # Record current state for comparison after load
@@ -38,14 +39,14 @@ pre_level=$(jget "$state" 'o.tournament&&o.tournament.level')
 log "  Pre-load level: $pre_level"
 
 # ============================================================
-# SL-005: Load game
+# SL-005: Load game — assert accepted=true
 # ============================================================
 log "=== SL-005: Load Game ==="
 LOAD_RESULT=$(api_post_json /game/load '{}' 2>/dev/null) || true
-LOADED=$(jget "$LOAD_RESULT" 'o.success||o.loaded||""')
 log "  Load result: $LOAD_RESULT"
-if [[ "$LOADED" == "true" ]]; then
-    log "  OK: Game loaded"
+LOAD_ACCEPTED=$(jget "$LOAD_RESULT" 'o.accepted||false')
+if [[ "$LOAD_ACCEPTED" == "true" ]]; then
+    log "  OK: Game loaded (accepted=true)"
     sleep 2
 
     # Verify game state is valid after load
@@ -59,11 +60,12 @@ if [[ "$LOADED" == "true" ]]; then
         log "  WARN: Game mode is NONE after load"
     fi
 else
-    log "  WARN: Load response: $LOAD_RESULT (may need a save file first)"
+    log "FAIL: SL-005 — load did not return accepted=true: $LOAD_RESULT"
+    FAILURES=$((FAILURES+1))
 fi
 
 if [[ $FAILURES -gt 0 ]]; then
     die "$FAILURES test(s) failed"
 fi
 
-pass "Save/load tests verified"
+pass "Save/load tests verified: save accepted, load accepted"

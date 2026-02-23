@@ -42,7 +42,7 @@ validate_now() {
     WARNS=$(jget "$VRESULT" '(o.warnings||[]).join("; ")')
 
     if [[ "$CC_VALID" != "true" || "$IM_VALID" != "true" ]]; then
-        log "VALIDATE FAILED after hand $HANDS_VERIFIED:"
+        log "FAIL: Chip conservation violated after hand $HANDS_VERIFIED:"
         log "  chipConservation.valid = $CC_VALID"
         log "  inputModeConsistent    = $IM_VALID"
         [[ -n "$WARNS" ]] && log "  warnings: $WARNS"
@@ -121,5 +121,22 @@ while [[ $HANDS_VERIFIED -lt $HANDS_TARGET ]]; do
 
     sleep 0.15
 done
+
+# Final chip conservation check — hard FAIL (not WARN).
+# Only exception: if a player was eliminated, remaining chips are still conserved
+# (redistributed, not destroyed). The /validate endpoint accounts for this correctly.
+log "=== Final chip conservation check ==="
+FINAL_VRESULT=$(api GET /validate 2>/dev/null) || true
+FINAL_CC_VALID=$(jget "$FINAL_VRESULT" 'o.chipConservation&&o.chipConservation.valid')
+FINAL_WARNS=$(jget "$FINAL_VRESULT" '(o.warnings||[]).join("; ")')
+
+if [[ "$FINAL_CC_VALID" == "true" ]]; then
+    log "  OK: Final chip conservation valid"
+else
+    log "FAIL: Final chip conservation invalid after $HANDS_VERIFIED hands"
+    [[ -n "$FINAL_WARNS" ]] && log "  warnings: $FINAL_WARNS"
+    screenshot "chip-conservation-final-failure"
+    die "Chip conservation invalid at end of test"
+fi
 
 pass "Chip conservation valid after $HANDS_VERIFIED hands"
