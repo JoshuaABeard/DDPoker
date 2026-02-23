@@ -71,7 +71,7 @@ public class PlayerConnection {
      * @param message
      *            Server message to send
      */
-    public void sendMessage(ServerMessage message) {
+    public synchronized void sendMessage(ServerMessage message) {
         if (!session.isOpen()) {
             return;
         }
