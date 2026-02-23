@@ -41,25 +41,39 @@ The UI "Do It" button has worked correctly for both practice and WebSocket modes
 
 ## Review Results
 
-*[Review agent fills this section]*
+**Status:** APPROVED
 
-**Status:**
-
-**Reviewed by:**
-**Date:**
+**Reviewed by:** Claude Opus 4.6
+**Date:** 2026-02-23
 
 ### Findings
 
-#### ✅ Strengths
+#### Strengths
 
-#### ⚠️ Suggestions (Non-blocking)
+1. **Exact mirror of proven UI code.** The `handleAdvisorDoIt` implementation is a faithful reproduction of `DashboardAdvisor.actButton_`'s two-path logic: `Bet.doAI()` for practice mode, `pp.getAction(false)` + `playerActionPerformed` for WebSocket mode. The structure, guard checks (`pp.isHumanControlled()`, `pp.getPokerAI() != null`), and dispatch call are identical.
 
-#### ❌ Required Changes (Blocking)
+2. **Correct use of `SwingUtilities.invokeLater`.** The original code called `dispatchPlayerAction` which already uses `invokeLater`, but the new code needs EDT access for `context.getCurrentPhase()` and other Swing-adjacent state. Wrapping the entire block in `invokeLater` is correct and consistent with the `handleRebuy`/`handleAddon` patterns in the same file.
+
+3. **Eliminates dead code.** The pre-existing `handActionToPokerGameAction` helper was previously unused. This fix gives it a purpose, and its mapping is identical to `DashboardAdvisor.toPokerGameAction`.
+
+4. **Thorough null guards.** Every intermediate object (`main`, `context`, `game`, `hh`, `pp`, `aiAction`) is null-checked before use.
+
+5. **Good comments.** The block comment explaining the two-path logic and why each path exists makes the intent clear for future maintainers.
+
+#### Suggestions (Non-blocking)
+
+1. **Silent no-op when neither branch matches.** If the current phase is not `Bet` AND `getPlayerActionListener()` is null, the `invokeLater` block silently does nothing but the HTTP response still says `accepted: true`. This matches the DashboardAdvisor behavior (the button simply does nothing in edge cases), and the `isBettingInputMode` guard above already ensures we are in a valid betting state. However, if desired for debuggability, you could log a warning when neither branch is taken. This is non-blocking since the scenario is unlikely in practice mode (the Bet phase should always be active when the input mode is a betting mode).
+
+2. **`handActionToPokerGameAction` mapping for non-player actions.** The constants `ACTION_BLIND_BIG` (6), `ACTION_BLIND_SM` (7), `ACTION_ANTE` (8), `ACTION_WIN` (9), `ACTION_OVERBET` (10), and `ACTION_LOSE` (11) are not in the switch and fall through to the `default -> ACTION_FOLD` case. This is correct because `pp.getAction(false)` will never return these dealer/system actions from the AI recommendation path. The default-to-FOLD is a safe fallback consistent with `DashboardAdvisor.toPokerGameAction`. No change needed.
+
+#### Required Changes (Blocking)
+
+None.
 
 ### Verification
 
-- Tests:
-- Coverage:
-- Build:
-- Privacy:
-- Security:
+- **Tests:** 1608/1608 passed (confirmed in handoff)
+- **Coverage:** N/A (dev-only source set, no production code changed)
+- **Build:** Clean
+- **Privacy:** SAFE - no private information, credentials, or secrets in the diff
+- **Security:** SAFE - the handler is behind the existing `X-Control-Key` authentication in `BaseHandler`, and the `isBettingInputMode` guard prevents misuse outside valid betting states
