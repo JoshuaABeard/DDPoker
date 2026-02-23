@@ -163,7 +163,7 @@ class ServerGameEventBusTest {
         assertTrue(broadcastedEvents.get(0) instanceof GameEvent.TableStateChanged);
 
         GameEvent.TableStateChanged stateEvent = (GameEvent.TableStateChanged) broadcastedEvents.get(0);
-        assertEquals(0, stateEvent.tableId());
+        assertEquals(1, stateEvent.tableId());
         assertEquals(TableState.PENDING, stateEvent.newState());
     }
 

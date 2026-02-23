@@ -1267,6 +1267,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      * Assign all players to tables
      */
     private void assignTables(boolean bOnline) {
+        tables_.clear(); // clear any stale tables from a previous setup attempt
         int nNumPlayers = getNumPlayers();
         List<PokerPlayer> players = getPokerPlayersCopy(); // clone since we will remove players as we go
 

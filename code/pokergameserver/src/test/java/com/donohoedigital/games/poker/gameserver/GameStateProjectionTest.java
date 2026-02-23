@@ -63,7 +63,7 @@ class GameStateProjectionTest {
         GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, null, 1);
 
         assertNotNull(snapshot);
-        assertEquals(0, snapshot.tableId());
+        assertEquals(1, snapshot.tableId());
         assertNull(snapshot.myHoleCards());
         assertNull(snapshot.communityCards());
         assertEquals(3, snapshot.players().size());
@@ -73,7 +73,7 @@ class GameStateProjectionTest {
     void testProjectionIncludesTableInfo() {
         GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, null, 1);
 
-        assertEquals(0, snapshot.tableId());
+        assertEquals(1, snapshot.tableId());
         assertEquals(table.getHandNum(), snapshot.handNumber());
     }
 

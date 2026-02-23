@@ -445,15 +445,13 @@ public class WebSocketTournamentDirector extends BasePhase
                 game_.getGameClock().start();
             }
 
-            // On the first GAME_STATE, remove any locally-created setup tables (added by
-            // setupPracticeGame) that pre-date the WebSocket connection. These are plain
-            // PokerTable instances, not RemotePokerTable, so we can identify them easily.
+            // On the first GAME_STATE, remove all locally-created tables that pre-date the
+            // WebSocket connection (setup tables from setupTournament, and any stale
+            // RemotePokerTable instances left from a previous game attempt).
             if (tables_.isEmpty()) {
                 for (PokerTable local : new ArrayList<>(game_.getTables())) {
-                    if (!(local instanceof RemotePokerTable)) {
-                        game_.removeTable(local);
-                        logger.debug("[GAME_STATE EDT] removed local setup table: {}", local.getName());
-                    }
+                    game_.removeTable(local);
+                    logger.debug("[GAME_STATE EDT] removed local setup table: {}", local.getName());
                 }
             }
 

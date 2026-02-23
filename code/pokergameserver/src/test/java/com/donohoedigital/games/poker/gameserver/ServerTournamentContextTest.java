@@ -126,15 +126,15 @@ class ServerTournamentContextTest {
     void testGetTable() {
         GameTable table = tournament.getTable(0);
         assertNotNull(table);
-        assertEquals(0, table.getNumber());
+        assertEquals(1, table.getNumber());
     }
 
     @Test
     void testGetCurrentTable() {
-        // For server, current table is table 0 by default
+        // For server, current table is table 1 by default (1-based numbering)
         GameTable current = tournament.getCurrentTable();
         assertNotNull(current);
-        assertEquals(0, current.getNumber());
+        assertEquals(1, current.getNumber());
     }
 
     // === Level Management ===

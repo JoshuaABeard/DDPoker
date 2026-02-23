@@ -213,7 +213,7 @@ public class ServerTournamentContext implements TournamentContext {
         List<ServerGameTable> newTables = new ArrayList<>();
 
         for (int i = 0; i < numTables; i++) {
-            ServerGameTable table = new ServerGameTable(i, // table number
+            ServerGameTable table = new ServerGameTable(i + 1, // table number (1-based, consistent with client)
                     10, // seats (standard 10-seat table)
                     this, smallBlinds[0], bigBlinds[0], antes[0]);
             newTables.add(table);
