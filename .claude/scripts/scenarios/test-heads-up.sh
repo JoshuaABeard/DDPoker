@@ -28,7 +28,7 @@ assert() {
 
 # Verify 2 players seated
 log "=== Verifying heads-up setup ==="
-state=$(wait_mode "CHECK_BET|CHECK_RAISE|CALL_RAISE|DEAL" 60) \
+state=$(wait_mode "CHECK_BET|CHECK_RAISE|CALL_RAISE|DEAL|QUITSAVE" 60) \
     || die "Timed out waiting for game"
 
 state=$(api GET /state 2>/dev/null) || die "Could not read state"
@@ -50,28 +50,57 @@ assert "chip conservation" "$cc_valid" "true"
 
 screenshot "heads-up-start"
 
-# Play 5 hands with CALL strategy to verify heads-up works
+# Play 5 hands with CALL/CHECK strategy to verify heads-up works.
+# Use phase-transition hand detection: count hands when game transitions
+# from non-PRE_FLOP to PRE_FLOP, or when dealer seat changes in PRE_FLOP.
 log "=== Playing 5 hands heads-up ==="
 HANDS=0
-LAST_MODE=""
+PREV_PHASE=""
+PREV_DEALER="-1"
+LAST_PROGRESS_SIG=""
 LAST_CHANGE=$(date +%s)
 
 while [[ $HANDS -lt 5 ]]; do
     state=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
     mode=$(jget "$state" 'o.inputMode || "NONE"')
+    phase=$(jget "$state" 'o.gamePhase || "NONE"')
     remaining=$(jget "$state" 'o.tournament&&o.tournament.playersRemaining||0')
+    p1chips=$(jget "$state" '(o.tables&&o.tables[0]&&o.tables[0].players||[])[0]?.chips||0')
 
-    if [[ "$mode" != "$LAST_MODE" ]]; then
-        LAST_MODE="$mode"
+    # Detect new hand started
+    if [[ "$phase" == "PRE_FLOP" ]]; then
+        dealer=$(jget "$state" 'o.tables&&o.tables[0]&&o.tables[0].dealerSeat||0')
+        if [[ "$PREV_PHASE" != "PRE_FLOP" && "$PREV_PHASE" != "" && "$PREV_PHASE" != "NONE" ]]; then
+            HANDS=$((HANDS+1))
+            log "  Hand $HANDS complete (from $PREV_PHASE)"
+            # Validate chip conservation between hands
+            vresult=$(api GET /validate 2>/dev/null) || true
+            cc_valid=$(jget "$vresult" 'o.chipConservation&&o.chipConservation.valid')
+            if [[ "$cc_valid" != "true" ]]; then
+                log "FAIL: chip conservation invalid after hand $HANDS"
+                FAILURES=$((FAILURES+1))
+            fi
+        elif [[ "$PREV_PHASE" == "PRE_FLOP" && "$dealer" != "$PREV_DEALER" && "$PREV_DEALER" != "-1" ]]; then
+            HANDS=$((HANDS+1))
+            log "  Hand $HANDS complete (dealer rotated: $PREV_DEALER → $dealer)"
+        fi
+        PREV_DEALER="$dealer"
+    fi
+    PREV_PHASE="$phase"
+
+    # Game over check (before stuck detection)
+    if [[ "$remaining" =~ ^[0-9]+$ && "$remaining" -le 1 && $HANDS -gt 0 ]]; then
+        log "Game ended after $HANDS hands ($remaining players remaining)"
+        break
+    fi
+
+    # Stuck detection using multiple progress signals
+    progress_sig="${mode}:${phase}:${p1chips}:${remaining}"
+    if [[ "$progress_sig" != "$LAST_PROGRESS_SIG" ]]; then
+        LAST_PROGRESS_SIG="$progress_sig"
         LAST_CHANGE=$(date +%s)
     fi
     [[ $(($(date +%s) - LAST_CHANGE)) -gt $STUCK_TIMEOUT ]] && die "Stuck in mode $mode"
-
-    # Game over?
-    if [[ "$remaining" -le 1 && $HANDS -gt 0 ]]; then
-        log "Game ended after $HANDS hands"
-        break
-    fi
 
     case "$mode" in
         CHECK_BET|CHECK_RAISE|CALL_RAISE)
@@ -86,16 +115,7 @@ while [[ $HANDS -lt 5 ]]; do
             fi
             ;;
         DEAL)
-            # Validate before dealing next hand
-            vresult=$(api GET /validate 2>/dev/null) || true
-            cc_valid=$(jget "$vresult" 'o.chipConservation&&o.chipConservation.valid')
-            if [[ "$cc_valid" != "true" ]]; then
-                log "FAIL: chip conservation invalid before hand $((HANDS+1))"
-                FAILURES=$((FAILURES+1))
-            fi
             api_post_json /action '{"type":"DEAL"}' > /dev/null 2>&1 || true
-            HANDS=$((HANDS+1))
-            log "  Hand $HANDS dealt"
             ;;
         CONTINUE|CONTINUE_LOWER)
             api_post_json /action "{\"type\":\"$mode\"}" > /dev/null 2>&1 || true
