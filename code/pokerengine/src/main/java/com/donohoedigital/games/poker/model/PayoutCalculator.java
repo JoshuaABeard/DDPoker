@@ -270,11 +270,19 @@ public class PayoutCalculator {
 
     /**
      * Get payout spot amount as double.
+     *
+     * <p>
+     * Strips a leading {@code $} character before parsing, since
+     * {@link TournamentProfile#setAutoSpots()} stores amounts in the format
+     * {@code "$180"} (via {@code MessageFormat("${0}")}).
      */
     private double getSpot(int position) {
         String value = map.getString(PARAM_SPOTAMOUNT + position);
         if (value == null || value.length() == 0) {
             return 0;
+        }
+        if (value.startsWith("$")) {
+            value = value.substring(1);
         }
         try {
             return Double.parseDouble(value);

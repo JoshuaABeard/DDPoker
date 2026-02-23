@@ -164,6 +164,30 @@ public class PayoutCalculatorTest {
     // ========== getPayout() Tests ==========
 
     @Test
+    public void should_ReturnSpotAmount_WhenAmountStoredWithDollarPrefix() {
+        // Given: AUTO allocation stores amounts with "$" prefix (e.g. "$180") via
+        // TournamentProfile.setAutoSpots() which uses FORMAT_AMOUNT = "${0}"
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("payout", PokerConstants.PAYOUT_SPOTS);
+        map.setInteger("payoutspots", 3);
+        map.setString("spotamount1", "$5000"); // AUTO format: dollar-prefixed
+        map.setString("spotamount2", "$3000");
+        map.setString("spotamount3", "$2000");
+
+        PayoutCalculator calc = new PayoutCalculator(map);
+
+        // When: get payout for each position
+        int first = calc.getPayout(1, 3, 10000);
+        int second = calc.getPayout(2, 3, 10000);
+        int third = calc.getPayout(3, 3, 10000);
+
+        // Then: should parse through "$" prefix and return correct amounts
+        assertEquals(5000, first);
+        assertEquals(3000, second);
+        assertEquals(2000, third);
+    }
+
+    @Test
     public void should_ReturnSpotAmount_WhenModeIsSpots() {
         // Given: spot mode with defined amounts
         DMTypedHashMap map = new DMTypedHashMap();
