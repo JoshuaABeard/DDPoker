@@ -64,6 +64,10 @@ Persistent knowledge discovered during development sessions. Read this at the st
 
 ## Dev Control Server
 
+- [dev-server] `BaseHandler.handle()` must catch `Throwable`, not just `Exception` — `PokerUtils.<clinit>` throws `ExceptionInInitializerError` (an `Error`) without a running game. If `Error` escapes the handler, the JDK HttpServer thread terminates without sending a response, leaving the HTTP client hanging indefinitely (2026-02-22)
+- [dev-server] Handler tests that assert "returns 500 when no GameEngine" are order-dependent — if another test in the same JVM initializes GameEngine first, the handler returns 200 instead and the test fails. Don't write tests that depend on GameEngine absence (2026-02-22)
+- [dev-server] When testing `poker` module dev handlers in isolation (`-pl poker`), the `pokergameserver` dependency is resolved from `~/.m2`. If `pokergameserver` was recently changed (new classes), run `mvn install -pl pokergameserver -am -DskipTests` first, or the handler will get `ClassNotFoundException` at runtime (not compile time) (2026-02-22)
+- [dev-server] Piping Maven output to `tail` in background tasks (`mvn ... | tail -25`) prevents output from appearing in the task output file until Maven exits — the `tail` buffers internally. Never pipe to `tail` in background Bash tasks; just redirect with `2>&1` (2026-02-22)
 - [dev-server] `PlayerProfile.getProfileList()` requires `ConfigManager` to be initialized — throws NPE in test environments that don't start the full desktop app. Wrap in try-catch and return empty list (2026-02-19)
 - [dev-server] `Map.of()` throws `NullPointerException` for null values — use `LinkedHashMap` when response fields may be null (e.g., `defaultProfile` when no profile exists) (2026-02-19)
 - [dev-server] Pre-commit hook pattern `api[_-]?(key|secret)\s*[:=]\s*"?[a-zA-Z0-9]{16,}` will false-positive on method names like `loadOrGenerateKey` (17 alphanumeric chars). Keep method names shorter than 16 chars when the LHS contains "apiKey" or similar (2026-02-19)

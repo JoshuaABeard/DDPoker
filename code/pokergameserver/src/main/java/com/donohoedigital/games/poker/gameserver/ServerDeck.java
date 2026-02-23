@@ -35,6 +35,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 import com.donohoedigital.games.poker.engine.Card;
 
@@ -55,16 +56,31 @@ public class ServerDeck {
     }
 
     /**
-     * Package-private for testing: creates a deck with specific cards in the given
-     * order.
+     * Creates a deck with specific cards in the given order (no shuffle). Used by
+     * {@link CardInjectionRegistry} and tests.
      *
      * @param orderedCards
      *            cards to use, in deal order
      */
-    ServerDeck(List<Card> orderedCards) {
+    public ServerDeck(List<Card> orderedCards) {
         this.cards = new ArrayList<>(orderedCards);
         this.random = new SecureRandom();
         this.nextCardIndex = 0;
+    }
+
+    /**
+     * Creates a full 52-card deck shuffled with a fixed seed for reproducible
+     * deals. Used by {@link CardInjectionRegistry} for seeded testing.
+     *
+     * @param seed
+     *            the random seed
+     */
+    public ServerDeck(long seed) {
+        this.cards = new ArrayList<>(52);
+        this.random = new SecureRandom();
+        this.nextCardIndex = 0;
+        initializeDeck();
+        Collections.shuffle(cards, new Random(seed));
     }
 
     /**

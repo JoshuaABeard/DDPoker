@@ -495,7 +495,10 @@ public class ServerGameTable implements GameTable, ServerHand.MockTable {
         int bb = (tournament != null) ? tournament.getBigBlind(tournament.getLevel()) : bigBlindAmount;
         int ante = (tournament != null) ? tournament.getAnte(tournament.getLevel()) : anteAmount;
 
-        currentHand = new ServerHand(this, handNum, sb, bb, ante, button, smallBlindSeat, bigBlindSeat);
+        ServerDeck injected = CardInjectionRegistry.takeDeck();
+        currentHand = (injected != null)
+                ? new ServerHand(this, handNum, sb, bb, ante, button, smallBlindSeat, bigBlindSeat, injected)
+                : new ServerHand(this, handNum, sb, bb, ante, button, smallBlindSeat, bigBlindSeat);
 
         // Deal the hand
         currentHand.deal();

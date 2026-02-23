@@ -55,7 +55,7 @@ abstract class BaseHandler implements HttpHandler {
                 return;
             }
             handleAuthenticated(exchange);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.error("Error handling {} {}", exchange.getRequestMethod(), exchange.getRequestURI(), e);
             try {
                 sendJson(exchange, 500, Map.of("error", "InternalError", "message",

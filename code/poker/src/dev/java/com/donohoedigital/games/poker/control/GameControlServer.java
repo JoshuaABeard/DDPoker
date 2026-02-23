@@ -58,6 +58,10 @@ import java.util.concurrent.Executors;
  *   <li>{@code GET  /profiles}         — list all player profiles on disk</li>
  *   <li>{@code POST /profiles}         — create a new player profile</li>
  *   <li>{@code GET  /profiles/default} — get the currently active default profile</li>
+ *   <li>{@code POST /cards/inject}     — stage a specific card order or seed for the next hand</li>
+ *   <li>{@code DELETE /cards/inject}   — clear any pending card injection</li>
+ *   <li>{@code GET  /options}          — read current game options and cheat toggles</li>
+ *   <li>{@code POST /options}          — set one or more game options or cheat toggles</li>
  * </ul>
  */
 public class GameControlServer {
@@ -94,6 +98,8 @@ public class GameControlServer {
         ProfilesHandler profilesHandler = new ProfilesHandler(apiKey);
         server.createContext("/profiles/default", profilesHandler);
         server.createContext("/profiles",         profilesHandler);
+        server.createContext("/cards/inject",     new CardInjectHandler(apiKey));
+        server.createContext("/options",          new OptionsHandler(apiKey));
 
         server.start();
 
