@@ -65,25 +65,37 @@ public class WebSocketGameClient {
     private volatile boolean connected = false;
     private volatile boolean intentionallyClosed = false;
     private final AtomicBoolean reconnecting = new AtomicBoolean(false);
+    private final AtomicLong reconnectCycle = new AtomicLong(0);
 
     private String wsUrl;
     private final AtomicLong sequenceCounter = new AtomicLong(0);
 
-    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread t = new Thread(r, "ws-reconnect");
-        t.setDaemon(true);
-        return t;
-    });
+    private final ScheduledExecutorService scheduler;
 
     public WebSocketGameClient() {
-        this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+        this(new ObjectMapper().registerModule(new JavaTimeModule()),
+                HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build(),
+                Executors.newSingleThreadScheduledExecutor(r -> {
+                    Thread t = new Thread(r, "ws-reconnect");
+                    t.setDaemon(true);
+                    return t;
+                }));
     }
 
     // Visible for testing
     WebSocketGameClient(ObjectMapper objectMapper, HttpClient httpClient) {
+        this(objectMapper, httpClient, Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "ws-reconnect");
+            t.setDaemon(true);
+            return t;
+        }));
+    }
+
+    // Visible for testing
+    WebSocketGameClient(ObjectMapper objectMapper, HttpClient httpClient, ScheduledExecutorService scheduler) {
         this.objectMapper = objectMapper;
         this.httpClient = httpClient;
+        this.scheduler = scheduler;
     }
 
     /**
@@ -112,8 +124,18 @@ public class WebSocketGameClient {
         // for remote servers the token appears in server access logs (see M6 notes).
         this.wsUrl = "ws://localhost:" + serverPort + "/ws/games/" + gameId + "?token=" + jwt;
         this.intentionallyClosed = false;
+        this.connected = false;
         this.reconnecting.set(false);
-        return openConnection();
+        this.reconnectCycle.incrementAndGet();
+
+        CompletableFuture<Void> connectFuture = openConnection();
+        connectFuture.whenComplete((v, ex) -> {
+            if (ex != null) {
+                logger.error("WebSocket connection failed to {}: {}", wsUrl, ex.getMessage());
+                handleReconnect();
+            }
+        });
+        return connectFuture;
     }
 
     /** Sends a player action (FOLD, CHECK, CALL, BET, RAISE, ALL_IN). */
@@ -185,6 +207,8 @@ public class WebSocketGameClient {
     public void disconnect() {
         intentionallyClosed = true;
         connected = false;
+        reconnecting.set(false);
+        reconnectCycle.incrementAndGet();
         WebSocket ws = this.webSocket;
         if (ws != null && !ws.isOutputClosed()) {
             ws.sendClose(WebSocket.NORMAL_CLOSURE, "Client disconnecting");
@@ -202,9 +226,6 @@ public class WebSocketGameClient {
                     this.webSocket = ws;
                     this.connected = true;
                     logger.debug("WebSocket connected to {}", wsUrl);
-                }).exceptionally(ex -> {
-                    logger.error("WebSocket connection failed to {}: {}", wsUrl, ex.getMessage());
-                    return null;
                 });
     }
 
@@ -238,6 +259,7 @@ public class WebSocketGameClient {
         if (!reconnecting.compareAndSet(false, true)) {
             return;
         }
+        final long cycleId = reconnectCycle.get();
         connected = false;
         logger.info("WebSocket disconnected, scheduling reconnect");
 
@@ -250,10 +272,13 @@ public class WebSocketGameClient {
             final int attemptNum = attempt;
             final boolean isLastAttempt = (attempt == MAX_RECONNECT_ATTEMPTS);
             scheduler.schedule(() -> {
-                if (intentionallyClosed || reconnected.get())
+                if (intentionallyClosed || connected || reconnected.get() || cycleId != reconnectCycle.get())
                     return;
                 logger.info("Reconnect attempt {}/{}", attemptNum, MAX_RECONNECT_ATTEMPTS);
                 openConnection().whenComplete((v, ex) -> {
+                    if (cycleId != reconnectCycle.get()) {
+                        return;
+                    }
                     if (ex != null) {
                         logger.warn("Reconnect attempt {} failed", attemptNum, ex);
                         if (isLastAttempt)

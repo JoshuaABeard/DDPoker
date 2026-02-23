@@ -48,6 +48,7 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.gui.HandSelectionManager;
 import com.donohoedigital.games.poker.ai.gui.PlayerTypeManager;
 import com.donohoedigital.games.poker.engine.PokerConstants;
+import com.donohoedigital.games.poker.online.OnlineServerUrl;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -82,6 +83,8 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
     private OptionText onlineServer_;
     private OptionBoolean onlineEnabled_;
     private GlassButton test_;
+
+    private static final String ONLINE_SERVER_TEST_PATH = "/api/v1/games?pageSize=1";
 
     private final String NODE;
     private int GRIDADJUST2;
@@ -617,14 +620,21 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
             EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.testconnect.noserver"));
             return;
         }
-        String healthUrl = serverUrl.replaceAll("/+$", "") + "/health";
+
+        java.net.URI testUri = OnlineServerUrl.buildApiUri(serverUrl, ONLINE_SERVER_TEST_PATH);
+        if (testUri == null) {
+            String msg = PropertyConfig.getMessage("msg.testconnect.error", serverUrl, "Invalid server URL");
+            EngineUtils.displayInformationDialog(context_, msg);
+            return;
+        }
+
         test_.setEnabled(false);
         Thread t = new Thread(() -> {
             String msg;
             try {
                 java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
-                java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-                        .uri(java.net.URI.create(healthUrl)).timeout(java.time.Duration.ofSeconds(10)).GET().build();
+                java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder().uri(testUri)
+                        .timeout(java.time.Duration.ofSeconds(10)).GET().build();
                 java.net.http.HttpResponse<String> response = client.send(request,
                         java.net.http.HttpResponse.BodyHandlers.ofString());
                 if (response.statusCode() == 200) {

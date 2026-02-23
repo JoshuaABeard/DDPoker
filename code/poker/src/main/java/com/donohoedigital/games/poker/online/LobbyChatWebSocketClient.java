@@ -31,6 +31,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -64,6 +65,8 @@ public class LobbyChatWebSocketClient {
     private final LobbyMessageListener listener_;
     private final HttpClient httpClient_;
     private final ScheduledExecutorService reconnectScheduler_;
+    private final AtomicBoolean reconnectScheduled_ = new AtomicBoolean(false);
+    private final AtomicBoolean connectInProgress_ = new AtomicBoolean(false);
 
     private volatile WebSocket webSocket_;
     private volatile boolean connected_;
@@ -111,6 +114,7 @@ public class LobbyChatWebSocketClient {
         this.lastServerUrl_ = serverUrl;
         this.lastJwt_ = jwt;
         this.shouldReconnect_ = true;
+        this.reconnectScheduled_.set(false);
         doConnect(serverUrl, jwt);
     }
 
@@ -119,6 +123,7 @@ public class LobbyChatWebSocketClient {
      */
     public void disconnect() {
         shouldReconnect_ = false;
+        reconnectScheduled_.set(false);
         WebSocket ws = webSocket_;
         if (ws != null) {
             try {
@@ -161,12 +166,17 @@ public class LobbyChatWebSocketClient {
     // -------------------------------------------------------------------------
 
     private void doConnect(String serverUrl, String jwt) {
+        if (!connectInProgress_.compareAndSet(false, true)) {
+            return;
+        }
+
         // Convert http:// → ws://, https:// → wss://
         String wsUrl = serverUrl.replaceFirst("^http://", "ws://").replaceFirst("^https://", "wss://");
         URI uri = URI.create(wsUrl + "/ws/lobby?token=" + jwt);
         logger.info("Connecting to lobby WebSocket at {}", wsUrl + "/ws/lobby");
 
         httpClient_.newWebSocketBuilder().buildAsync(uri, new LobbyWebSocketListener()).whenComplete((ws, ex) -> {
+            connectInProgress_.set(false);
             if (ex != null) {
                 logger.warn("Failed to connect to lobby WebSocket at {}", uri, ex);
                 scheduleReconnect();
@@ -176,11 +186,15 @@ public class LobbyChatWebSocketClient {
     }
 
     private void scheduleReconnect() {
-        if (!shouldReconnect_ || reconnectScheduler_ == null) {
+        if (!shouldReconnect_ || reconnectScheduler_ == null || connected_) {
+            return;
+        }
+        if (!reconnectScheduled_.compareAndSet(false, true)) {
             return;
         }
         logger.info("Scheduling lobby chat reconnect in {} seconds", RECONNECT_DELAY_SECONDS);
         reconnectScheduler_.schedule(() -> {
+            reconnectScheduled_.set(false);
             if (shouldReconnect_ && !connected_) {
                 logger.info("Attempting lobby chat reconnect to {}", lastServerUrl_);
                 doConnect(lastServerUrl_, lastJwt_);
@@ -208,6 +222,7 @@ public class LobbyChatWebSocketClient {
         public void onOpen(WebSocket webSocket) {
             webSocket_ = webSocket;
             connected_ = true;
+            reconnectScheduled_.set(false);
             logger.info("Connected to lobby WebSocket");
             listener_.onConnected();
             webSocket.request(1);
@@ -227,9 +242,12 @@ public class LobbyChatWebSocketClient {
         @Override
         public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
             webSocket_ = null;
+            boolean wasConnected = connected_;
             connected_ = false;
             logger.info("Lobby WebSocket closed: {} {}", statusCode, reason);
-            listener_.onDisconnected();
+            if (wasConnected) {
+                listener_.onDisconnected();
+            }
             scheduleReconnect();
             return null;
         }
@@ -238,8 +256,11 @@ public class LobbyChatWebSocketClient {
         public void onError(WebSocket webSocket, Throwable error) {
             logger.warn("Lobby WebSocket error", error);
             webSocket_ = null;
+            boolean wasConnected = connected_;
             connected_ = false;
-            listener_.onDisconnected();
+            if (wasConnected) {
+                listener_.onDisconnected();
+            }
             scheduleReconnect();
         }
 

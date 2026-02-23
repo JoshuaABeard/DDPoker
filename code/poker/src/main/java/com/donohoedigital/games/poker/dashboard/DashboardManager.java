@@ -85,8 +85,8 @@ public class DashboardManager {
             // ignore demarshal errors (registry edited?)
             try {
                 item.demarshal(null, pref);
-            } catch (Throwable e) {
-                logger.error("Error demarshalling " + pref + ": " + Utils.formatExceptionText(e));
+            } catch (RuntimeException e) {
+                logger.error("Error demarshalling dashboard item '{}'", item.getName(), e);
             }
         }
 
@@ -168,10 +168,9 @@ public class DashboardManager {
             // ignore demarshal errors (registry edited?)
             try {
                 prefs_.demarshal(null, sPrefs);
-            } catch (Throwable e) {
+            } catch (RuntimeException e) {
                 prefs_.clear();
-
-                logger.error("Error demarshalling " + sPrefs + ": " + Utils.formatExceptionText(e));
+                logger.error("Error demarshalling dashboard preferences '{}'", sPrefName_, e);
             }
 
         }

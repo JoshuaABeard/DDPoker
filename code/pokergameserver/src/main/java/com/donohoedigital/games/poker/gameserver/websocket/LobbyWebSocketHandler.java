@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
@@ -79,6 +80,12 @@ public class LobbyWebSocketHandler extends TextWebSocketHandler {
 
     /** Close status code for banned players (custom, within 4000-4999 range). */
     private static final int CLOSE_BANNED = 4003;
+
+    /** Max time allowed for a single WebSocket send before session close. */
+    private static final int SEND_TIME_LIMIT_MS = 10_000;
+
+    /** Max buffered outbound bytes per session before session close. */
+    private static final int SEND_BUFFER_SIZE_BYTES = 512 * 1024;
 
     /** Default chat rate limit: max messages per window. */
     public static final int MAX_CHAT_MESSAGES = 30;
@@ -138,12 +145,14 @@ public class LobbyWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        LobbyPlayer player = new LobbyPlayer(profileId, playerName, session);
+        WebSocketSession outboundSession = new ConcurrentWebSocketSessionDecorator(session, SEND_TIME_LIMIT_MS,
+                SEND_BUFFER_SIZE_BYTES);
+        LobbyPlayer player = new LobbyPlayer(profileId, playerName, outboundSession);
         connectedPlayers.put(profileId, player);
         sessionToProfile.put(session.getId(), profileId);
 
         // Send current player list to the new client
-        sendPlayerList(session);
+        sendPlayerList(player.session());
 
         // Broadcast LOBBY_JOIN to all other connected players
         ObjectNode joinMsg = objectMapper.createObjectNode();

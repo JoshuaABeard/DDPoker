@@ -19,6 +19,7 @@
  */
 package com.donohoedigital.games.poker.online;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -262,8 +263,8 @@ public class RestAuthClient {
                     if (node.has("message")) {
                         msg = node.get("message").asText();
                     }
-                } catch (Exception ignore) {
-                    // use default message
+                } catch (IOException | RuntimeException parseError) {
+                    logger.debug("Unable to parse reset-password error response body", parseError);
                 }
                 throw new RestAuthException(msg);
             }
@@ -303,8 +304,8 @@ public class RestAuthClient {
                     if (node.has("message")) {
                         msg = node.get("message").asText();
                     }
-                } catch (Exception ignore) {
-                    // use default message
+                } catch (IOException | RuntimeException parseError) {
+                    logger.debug("Unable to parse update-profile error response body", parseError);
                 }
                 throw new RestAuthException(msg);
             }

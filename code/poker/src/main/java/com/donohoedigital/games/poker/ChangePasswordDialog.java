@@ -43,6 +43,7 @@ import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
+import com.donohoedigital.games.poker.online.OnlineServerUrl;
 import com.donohoedigital.games.poker.online.RestAuthClient;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
@@ -61,6 +62,7 @@ public class ChangePasswordDialog extends DialogPhase implements PropertyChangeL
 
     private TablePanel.TextWidgets currentText_ = null;
     private TablePanel.TextWidgets newText_ = null;
+    private volatile boolean passwordRequestInFlight_;
 
     /**
      * create chat ui
@@ -103,6 +105,10 @@ public class ChangePasswordDialog extends DialogPhase implements PropertyChangeL
      */
     @Override
     public boolean processButton(GameButton button) {
+        if (passwordRequestInFlight_) {
+            return false;
+        }
+
         boolean bResult = false;
         boolean bSuccess = true;
 
@@ -116,19 +122,51 @@ public class ChangePasswordDialog extends DialogPhase implements PropertyChangeL
                         jwt != null ? "set" : "null");
                 bSuccess = false;
             } else {
-                try {
-                    RestAuthClient.getInstance().changePassword(serverUrl, jwt, profileId, currentText_.getText(),
-                            newText_.getText());
+                String oldPassword = currentText_.getText();
+                String newPassword = newText_.getText();
 
-                    // update local profile values
-                    profile_.setPassword(newText_.getText());
-                    bResult = true;
-                } catch (RestAuthClient.RestAuthException e) {
-                    logger.warn("Change password failed: {}", e.getMessage());
-                    EngineUtils.displayInformationDialog(context_, e.getMessage());
-                    bSuccess = false;
-                }
+                passwordRequestInFlight_ = true;
+                setActionButtonsEnabled(false);
+
+                Thread t = new Thread(() -> {
+                    String errorMessage = null;
+                    try {
+                        RestAuthClient.getInstance().changePassword(serverUrl, jwt, profileId, oldPassword,
+                                newPassword);
+                    } catch (RestAuthClient.RestAuthException e) {
+                        logger.warn("Change password failed: {}", e.getMessage());
+                        errorMessage = (e.getMessage() != null && !e.getMessage().isBlank())
+                                ? e.getMessage()
+                                : "Change password failed";
+                    } catch (Exception e) {
+                        errorMessage = e.getMessage() != null ? e.getMessage() : "Change password failed";
+                    }
+
+                    String finalErrorMessage = errorMessage;
+                    SwingUtilities.invokeLater(() -> {
+                        passwordRequestInFlight_ = false;
+                        setActionButtonsEnabled(true);
+
+                        if (finalErrorMessage != null) {
+                            EngineUtils.displayInformationDialog(context_, finalErrorMessage);
+                            setResult(false);
+                            return;
+                        }
+
+                        profile_.setPassword(newPassword);
+                        setResult(true);
+                        removeDialog();
+                    });
+                }, "ChangePasswordRequest");
+
+                t.setDaemon(true);
+                t.start();
+                return false;
             }
+        } else {
+            setResult(false);
+            removeDialog();
+            return true;
         }
 
         if (bSuccess) {
@@ -138,6 +176,19 @@ public class ChangePasswordDialog extends DialogPhase implements PropertyChangeL
         setResult(bResult);
 
         return bSuccess;
+    }
+
+    private void setActionButtonsEnabled(boolean enabled) {
+        if (okayButton_ != null) {
+            okayButton_.setEnabled(enabled);
+        }
+        if (cancelButton_ != null) {
+            cancelButton_.setEnabled(enabled);
+        }
+
+        if (enabled) {
+            checkButtons();
+        }
     }
 
     /**
@@ -160,6 +211,10 @@ public class ChangePasswordDialog extends DialogPhase implements PropertyChangeL
         }
 
         okayButton_.setEnabled(bEnabled);
+
+        if (passwordRequestInFlight_) {
+            okayButton_.setEnabled(false);
+        }
     }
 
     /**
@@ -172,7 +227,7 @@ public class ChangePasswordDialog extends DialogPhase implements PropertyChangeL
             if (server == null || server.isEmpty()) {
                 return null;
             }
-            return "http://" + server;
+            return OnlineServerUrl.normalizeBaseUrl(server);
         } catch (Exception e) {
             logger.warn("Could not get server URL from preferences", e);
             return null;

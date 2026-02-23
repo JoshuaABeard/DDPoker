@@ -251,27 +251,25 @@ public class PokerStatsPanel extends DDTabPanel {
                     potential_ = new HandPotential(pocket_, community_);
             }
 
-            SwingUtilities.invokeLater(new Thread("PokerStatsPanel") {
-                public void run() {
-                    switch (mode_) {
-                        case FLOP :
-                            htmlArea_.setText(potential_.toHTML(BettingRound.FLOP.toLegacy()));
-                            break;
-                        case TURN :
-                            htmlArea_.setText(potential_.toHTML(BettingRound.TURN.toLegacy()));
-                            break;
-                        case RIVER :
-                            htmlArea_.setText(potential_.toHTML(BettingRound.RIVER.toLegacy()));
-                            break;
-                        case LADDER :
-                            htmlArea_.setText(ladder_.toHTML());
-                            break;
-                        case STRENGTH :
-                            htmlArea_.setText(strength_.toHTML(pocket_, community_, 9));
-                            break;
-                    }
-                    htmlArea_.setCaretPosition(0); // scroll to top
+            SwingUtilities.invokeLater(() -> {
+                switch (mode_) {
+                    case FLOP :
+                        htmlArea_.setText(potential_.toHTML(BettingRound.FLOP.toLegacy()));
+                        break;
+                    case TURN :
+                        htmlArea_.setText(potential_.toHTML(BettingRound.TURN.toLegacy()));
+                        break;
+                    case RIVER :
+                        htmlArea_.setText(potential_.toHTML(BettingRound.RIVER.toLegacy()));
+                        break;
+                    case LADDER :
+                        htmlArea_.setText(ladder_.toHTML());
+                        break;
+                    case STRENGTH :
+                        htmlArea_.setText(strength_.toHTML(pocket_, community_, 9));
+                        break;
                 }
+                htmlArea_.setCaretPosition(0); // scroll to top
             });
         }
     }

@@ -49,6 +49,7 @@ import javax.swing.table.*;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Pre-game waiting room for online host games.
@@ -77,6 +78,7 @@ public class Lobby extends BasePhase {
     // REST polling
     private RestGameClient restClient_;
     private javax.swing.Timer pollTimer_;
+    private final AtomicBoolean pollInFlight_ = new AtomicBoolean(false);
 
     // player table
     private PlayerModel playerModel_;
@@ -194,15 +196,24 @@ public class Lobby extends BasePhase {
             pollTimer_.stop();
             pollTimer_ = null;
         }
+        pollInFlight_.set(false);
     }
 
     private void pollServer() {
+        if (!pollInFlight_.compareAndSet(false, true)) {
+            return;
+        }
+
         // run off EDT to avoid blocking UI
         Thread t = new Thread(() -> {
             try {
                 GameSummary summary = restClient_.getGameSummary(gameId_);
                 List<LobbyPlayerInfo> players = summary.players() != null ? summary.players() : Collections.emptyList();
                 SwingUtilities.invokeLater(() -> {
+                    if (pollTimer_ == null) {
+                        return;
+                    }
+
                     playerModel_.update(players);
 
                     // if game has started and we're the host waiting to transition
@@ -213,6 +224,8 @@ public class Lobby extends BasePhase {
                 });
             } catch (Exception ex) {
                 logger.warn("Poll failed: {}", ex.getMessage());
+            } finally {
+                pollInFlight_.set(false);
             }
         }, "LobbyPoll");
         t.setDaemon(true);

@@ -48,6 +48,7 @@ import java.awt.*;
 import java.awt.datatransfer.*;
 import java.awt.event.*;
 import java.beans.*;
+import java.io.IOException;
 
 /**
  * Abstract base class providing the UI scaffolding for listing and joining
@@ -133,7 +134,8 @@ public abstract class ListGames extends BasePhase implements PropertyChangeListe
                         if (s != null) {
                             connectText_.setText(s);
                         }
-                    } catch (Throwable ignored) {
+                    } catch (UnsupportedFlavorException | IOException | ClassCastException ex) {
+                        logger.debug("Unable to paste game URL from clipboard", ex);
                     }
                 }
             }

@@ -62,15 +62,20 @@ public class OnlineGamePurger extends BaseCommandLineApp {
      * Run purger.
      */
     public static void main(String[] args) {
+        System.exit(run(args));
+    }
+
+    static int run(String[] args) {
         try {
             new OnlineGamePurger("poker", args);
+            return 0;
         } catch (ApplicationError ae) {
             logger.error("OnlineGamePurger ending due to ApplicationError: " + ae.toString(), ae);
-        } catch (Throwable t) {
-            logger.error("OnlineGamePurger ending due to unexpected error", t);
+            return 1;
+        } catch (Exception e) {
+            logger.error("OnlineGamePurger ending due to unexpected error", e);
+            return 1;
         }
-
-        System.exit(0);
     }
 
     /**
@@ -84,11 +89,9 @@ public class OnlineGamePurger extends BaseCommandLineApp {
 
         if (date != null) {
             try {
-                // CONCURRENCY-2: Convert LocalDate to Date
-                LocalDate localDate = LocalDate.parse(date, DATE_FORMATTER);
-                date_ = Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
-            } catch (DateTimeParseException e) {
-                CommandLine.exitWithError("Unable to parse date: " + date_);
+                date_ = parseDateOption(date);
+            } catch (IllegalArgumentException e) {
+                CommandLine.exitWithError(e.getMessage());
             }
         } else {
             date_ = new Date(System.currentTimeMillis() - (htOptions_.getInteger("period") * 1000));
@@ -121,6 +124,16 @@ public class OnlineGamePurger extends BaseCommandLineApp {
 
             // Do the work.
             doPurge();
+        }
+    }
+
+    static Date parseDateOption(String date) {
+        try {
+            // CONCURRENCY-2: Convert LocalDate to Date
+            LocalDate localDate = LocalDate.parse(date, DATE_FORMATTER);
+            return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Unable to parse date: " + date, e);
         }
     }
 

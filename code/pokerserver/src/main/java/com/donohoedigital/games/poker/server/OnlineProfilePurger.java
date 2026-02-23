@@ -56,15 +56,20 @@ public class OnlineProfilePurger extends BaseCommandLineApp {
      * Run purger.
      */
     public static void main(String[] args) {
+        System.exit(run(args));
+    }
+
+    static int run(String[] args) {
         try {
             new OnlineProfilePurger("poker", args);
+            return 0;
         } catch (ApplicationError ae) {
             logger.error("OnlineProfilePurger ending due to ApplicationError: " + ae.toString(), ae);
-        } catch (Throwable t) {
-            logger.error("OnlineProfilePurger ending due to unexpected error", t);
+            return 1;
+        } catch (Exception e) {
+            logger.error("OnlineProfilePurger ending due to unexpected error", e);
+            return 1;
         }
-
-        System.exit(0);
     }
 
     /**

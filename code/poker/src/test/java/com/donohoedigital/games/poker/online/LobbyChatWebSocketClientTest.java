@@ -20,10 +20,21 @@
 package com.donohoedigital.games.poker.online;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import java.net.URI;
+import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -255,6 +266,29 @@ class LobbyChatWebSocketClientTest {
         assertThatNoException().isThrownBy(() -> client.sendChat("Hello"));
     }
 
+    @Test
+    void onErrorThenOnClose_schedulesSingleReconnectAndSingleDisconnectNotification() {
+        TestLobbyMessageListener reconnectListener = new TestLobbyMessageListener();
+        HttpClient httpClient = mock(HttpClient.class);
+        WebSocket.Builder wsBuilder = mock(WebSocket.Builder.class);
+        ScheduledExecutorService scheduler = mock(ScheduledExecutorService.class);
+
+        when(httpClient.newWebSocketBuilder()).thenReturn(wsBuilder);
+        when(wsBuilder.buildAsync(any(URI.class), any(WebSocket.Listener.class))).thenReturn(new CompletableFuture<>());
+
+        LobbyChatWebSocketClient reconnectClient = new LobbyChatWebSocketClient(reconnectListener, httpClient,
+                scheduler);
+        reconnectClient.connect("http://localhost:8877", "jwt");
+
+        WebSocket.Listener ws = reconnectClient.createListenerForTesting();
+        ws.onOpen(stubWebSocket);
+        ws.onError(stubWebSocket, new RuntimeException("boom"));
+        ws.onClose(stubWebSocket, WebSocket.NORMAL_CLOSURE, "done");
+
+        verify(scheduler, times(1)).schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
+        assertThat(reconnectListener.disconnectCount).isEqualTo(1);
+    }
+
     // -------------------------------------------------------------------------
     // Helper: test listener implementation
     // -------------------------------------------------------------------------
@@ -262,6 +296,7 @@ class LobbyChatWebSocketClientTest {
     private static class TestLobbyMessageListener implements LobbyChatWebSocketClient.LobbyMessageListener {
         boolean connected;
         boolean disconnected;
+        int disconnectCount;
         List<LobbyChatWebSocketClient.LobbyPlayer> playerList;
         long lastJoinedPlayerId;
         String lastJoinedPlayerName;
@@ -279,6 +314,7 @@ class LobbyChatWebSocketClientTest {
         @Override
         public void onDisconnected() {
             disconnected = true;
+            disconnectCount++;
         }
 
         @Override

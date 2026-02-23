@@ -64,7 +64,8 @@ public class RestGameClient {
      *            JWT bearer token for authenticated requests
      */
     public RestGameClient(String baseUrl, String jwt) {
-        this.baseUrl = baseUrl;
+        String normalizedBaseUrl = OnlineServerUrl.normalizeBaseUrl(baseUrl);
+        this.baseUrl = (normalizedBaseUrl != null) ? normalizedBaseUrl : baseUrl;
         this.jwt = jwt;
         this.http = HttpClient.newHttpClient();
     }

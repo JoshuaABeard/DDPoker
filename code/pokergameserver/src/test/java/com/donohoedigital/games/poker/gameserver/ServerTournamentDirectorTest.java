@@ -228,7 +228,17 @@ class ServerTournamentDirectorTest {
 
         InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-chips");
         ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
-        PlayerActionProvider aiProvider = createSimpleAI(42);
+        // Deterministic, aggressive AI to force fast chip movement and avoid
+        // long-running random simulations in this invariant test.
+        PlayerActionProvider aiProvider = (player, options) -> {
+            if (options.canRaise())
+                return PlayerAction.raise(options.maxRaise());
+            if (options.canBet())
+                return PlayerAction.bet(options.maxBet());
+            if (options.canCall())
+                return PlayerAction.call();
+            return PlayerAction.check();
+        };
         ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {
         }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
 
@@ -236,11 +246,16 @@ class ServerTournamentDirectorTest {
                 tournament, eventBus, actionProvider,
                 new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0), event -> {
                 });
+        // Keep this test deterministic and fast.
+        director.setHandResultPauseMs(0);
 
         // Run
         Thread thread = new Thread(director);
         thread.start();
         thread.join(30000);
+
+        assertThat(thread.isAlive()).isFalse();
+        assertThat(tournament.isGameOver()).isTrue();
 
         // Verify total chips unchanged
         int finalTotalChips = players.stream().mapToInt(ServerPlayer::getChipCount).sum();
@@ -429,23 +444,34 @@ class ServerTournamentDirectorTest {
         });
         assertThat(handDoneEvents).as("HandCompleted").isNotEmpty();
 
-        // Order: ShowdownStarted → ≥1 PotAwarded → HandCompleted
+        // Order invariant per showdown cycle:
+        // ShowdownStarted → one or more PotAwarded → HandCompleted
+        // This avoids false failures when multiple hands are played.
         List<GameEvent> allEvents = eventStore.getEvents().stream().map(se -> se.event())
                 .filter(e -> e instanceof GameEvent.ShowdownStarted || e instanceof GameEvent.PotAwarded
                         || e instanceof GameEvent.HandCompleted)
                 .toList();
-        int firstShowdown = -1, lastPot = -1, firstDone = -1;
-        for (int i = 0; i < allEvents.size(); i++) {
-            if (allEvents.get(i) instanceof GameEvent.ShowdownStarted && firstShowdown < 0)
-                firstShowdown = i;
-            if (allEvents.get(i) instanceof GameEvent.PotAwarded)
-                lastPot = i;
-            if (allEvents.get(i) instanceof GameEvent.HandCompleted && firstDone < 0)
-                firstDone = i;
+
+        boolean inShowdownCycle = false;
+        int potsInCycle = 0;
+        int completedCycles = 0;
+
+        for (GameEvent event : allEvents) {
+            if (event instanceof GameEvent.ShowdownStarted) {
+                inShowdownCycle = true;
+                potsInCycle = 0;
+            } else if (event instanceof GameEvent.PotAwarded) {
+                assertThat(inShowdownCycle).as("PotAwarded must occur after ShowdownStarted").isTrue();
+                potsInCycle++;
+            } else if (event instanceof GameEvent.HandCompleted) {
+                assertThat(inShowdownCycle).as("HandCompleted must occur after ShowdownStarted").isTrue();
+                assertThat(potsInCycle).as("HandCompleted must occur after PotAwarded").isGreaterThan(0);
+                inShowdownCycle = false;
+                completedCycles++;
+            }
         }
-        assertThat(firstShowdown).as("ShowdownStarted index").isGreaterThanOrEqualTo(0);
-        assertThat(lastPot).as("PotAwarded after ShowdownStarted").isGreaterThan(firstShowdown);
-        assertThat(firstDone).as("HandCompleted after PotAwarded").isGreaterThan(lastPot);
+
+        assertThat(completedCycles).as("Completed showdown cycles").isGreaterThan(0);
     }
 
     /**
@@ -501,13 +527,17 @@ class ServerTournamentDirectorTest {
         InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-elim");
         ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
 
-        // Passive AI: always call — guarantees showdowns and chip transfers
-        PlayerActionProvider passiveAI = (player, options) -> {
-            if (options.canCheck())
-                return PlayerAction.check();
-            return PlayerAction.call();
+        // Deterministic, aggressive AI avoids long passive simulations in CI.
+        PlayerActionProvider aggressiveAI = (player, options) -> {
+            if (options.canRaise())
+                return PlayerAction.raise(options.maxRaise());
+            if (options.canBet())
+                return PlayerAction.bet(options.maxBet());
+            if (options.canCall())
+                return PlayerAction.call();
+            return PlayerAction.check();
         };
-        ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(passiveAI, request -> {
+        ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aggressiveAI, request -> {
         }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
 
         List<GameEvent.PlayerEliminated> elimEvents = new CopyOnWriteArrayList<>();
@@ -520,10 +550,11 @@ class ServerTournamentDirectorTest {
                 tournament, eventBus, actionProvider,
                 new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", 0), event -> {
                 });
+        director.setHandResultPauseMs(0);
 
         Thread thread = new Thread(director);
         thread.start();
-        thread.join(30000);
+        thread.join(15000);
 
         assertThat(thread.isAlive()).isFalse();
         assertThat(tournament.isGameOver()).isTrue();

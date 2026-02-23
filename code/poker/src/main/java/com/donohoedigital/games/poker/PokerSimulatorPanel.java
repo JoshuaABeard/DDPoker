@@ -238,11 +238,9 @@ public class PokerSimulatorPanel extends DDTabPanel implements DDProgressFeedbac
 
     public void setIntermediateResult(Object oResult) {
         final StatResults stats_ = (StatResults) oResult;
-        SwingUtilities.invokeLater(new Thread("PokerSimulatorPanel") {
-            public void run() {
-                htmlArea_.setText(stats_.toHTML());
-                htmlArea_.setCaretPosition(0); // scroll to top
-            }
+        SwingUtilities.invokeLater(() -> {
+            htmlArea_.setText(stats_.toHTML());
+            htmlArea_.setCaretPosition(0); // scroll to top
         });
     }
 

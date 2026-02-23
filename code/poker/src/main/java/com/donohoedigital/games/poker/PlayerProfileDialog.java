@@ -43,7 +43,10 @@ import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
+import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
+import com.donohoedigital.games.poker.gameserver.dto.ProfileResponse;
 import com.donohoedigital.games.poker.online.RestAuthClient;
+import com.donohoedigital.games.poker.online.OnlineServerUrl;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
@@ -74,6 +77,7 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
     private DDButton resetButton_;
     private boolean bEmailMode_;
     private boolean bPasswordMode_;
+    private volatile boolean onlineRequestInFlight_;
 
     /**
      * create chat ui
@@ -301,6 +305,10 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
      */
     @Override
     public boolean processButton(GameButton button) {
+        if (onlineRequestInFlight_) {
+            return false;
+        }
+
         boolean bResult = false;
         boolean bSuccess = true;
         boolean bOnline = false;
@@ -322,6 +330,10 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
                 bNew = !profile_.isOnline();
                 bResult = bNew | bEmailMode_ | bPasswordMode_;
             }
+        } else {
+            setResult(false);
+            removeDialog();
+            return true;
         }
 
         if (bResult && bOnline) {
@@ -333,31 +345,37 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
                     bSuccess = false;
                 } else if (emailWidgets_ != null) {
                     // registration: new profile with email + password
-                    try {
-                        var resp = RestAuthClient.getInstance().register(serverUrl, profile_.getName(),
-                                passwordWidgets_.getText(), emailWidgets_.getText());
+                    String profileName = profile_.getName();
+                    String password = passwordWidgets_ != null ? passwordWidgets_.getText() : "";
+                    String email = emailWidgets_.getText();
+                    final LoginResponse[] responseRef = new LoginResponse[1];
+                    startOnlineRequest("ProfileRegister", () -> {
+                        responseRef[0] = RestAuthClient.getInstance().register(serverUrl, profileName, password, email);
+                    }, () -> {
+                        LoginResponse resp = responseRef[0];
                         profile_.setJwt(resp.token());
                         profile_.setProfileId(resp.profileId());
-                        profile_.setEmail(emailWidgets_.getText());
-                        profile_.setPassword(passwordWidgets_.getText());
-                    } catch (RestAuthClient.RestAuthException e) {
-                        EngineUtils.displayInformationDialog(context_, e.getMessage());
-                        bSuccess = false;
-                    }
+                        profile_.setEmail(email);
+                        profile_.setPassword(password);
+                    });
+                    return false;
                 } else {
                     // link existing profile: login with name + password
-                    try {
-                        var resp = RestAuthClient.getInstance().login(serverUrl, profile_.getName(),
-                                passwordWidgets_.getText());
+                    String profileName = profile_.getName();
+                    String password = passwordWidgets_ != null ? passwordWidgets_.getText() : "";
+                    final LoginResponse[] responseRef = new LoginResponse[1];
+                    final ProfileResponse[] userRef = new ProfileResponse[1];
+                    startOnlineRequest("ProfileLogin", () -> {
+                        responseRef[0] = RestAuthClient.getInstance().login(serverUrl, profileName, password);
+                        userRef[0] = RestAuthClient.getInstance().getCurrentUser(serverUrl, responseRef[0].token());
+                    }, () -> {
+                        LoginResponse resp = responseRef[0];
                         profile_.setJwt(resp.token());
                         profile_.setProfileId(resp.profileId());
-                        profile_.setPassword(passwordWidgets_.getText());
-                        var userProfile = RestAuthClient.getInstance().getCurrentUser(serverUrl, resp.token());
-                        profile_.setEmail(userProfile.email());
-                    } catch (RestAuthClient.RestAuthException e) {
-                        EngineUtils.displayInformationDialog(context_, e.getMessage());
-                        bSuccess = false;
-                    }
+                        profile_.setPassword(password);
+                        profile_.setEmail(userRef[0].email());
+                    });
+                    return false;
                 }
             } else if (bEmailMode_) {
                 // update email via REST
@@ -367,13 +385,11 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
                     logger.warn("Cannot update email: not connected to server");
                     bSuccess = false;
                 } else {
-                    try {
-                        RestAuthClient.getInstance().updateProfile(serverUrl, jwt, profileId, emailWidgets_.getText());
-                        profile_.setEmail(emailWidgets_.getText());
-                    } catch (RestAuthClient.RestAuthException e) {
-                        EngineUtils.displayInformationDialog(context_, e.getMessage());
-                        bSuccess = false;
-                    }
+                    String newEmail = emailWidgets_.getText();
+                    startOnlineRequest("ProfileUpdateEmail",
+                            () -> RestAuthClient.getInstance().updateProfile(serverUrl, jwt, profileId, newEmail),
+                            () -> profile_.setEmail(newEmail));
+                    return false;
                 }
             } else if (bPasswordMode_) {
                 bSuccess = true;
@@ -487,8 +503,98 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
 
             String serverUrl = getServerUrl();
             if (serverUrl != null && profile_.getEmail() != null) {
-                RestAuthClient.getInstance().forgotPassword(serverUrl, profile_.getEmail());
+                if (resetButton_ != null) {
+                    resetButton_.setEnabled(false);
+                }
+                String email = profile_.getEmail();
+                Thread t = new Thread(() -> {
+                    String errorMessage = null;
+                    try {
+                        RestAuthClient.getInstance().forgotPassword(serverUrl, email);
+                    } catch (Exception ex) {
+                        logger.warn("Failed to submit forgot-password request", ex);
+                        errorMessage = ex.getMessage() != null
+                                ? ex.getMessage()
+                                : "Failed to send password reset request";
+                    }
+
+                    String finalErrorMessage = errorMessage;
+                    SwingUtilities.invokeLater(() -> {
+                        if (resetButton_ != null && !onlineRequestInFlight_) {
+                            resetButton_.setEnabled(true);
+                        }
+                        if (finalErrorMessage != null) {
+                            EngineUtils.displayInformationDialog(context_, finalErrorMessage);
+                        }
+                    });
+                }, "ProfileForgotPassword");
+                t.setDaemon(true);
+                t.start();
             }
+        }
+    }
+
+    @FunctionalInterface
+    private interface OnlineRequest {
+        void run() throws RestAuthClient.RestAuthException;
+    }
+
+    private void startOnlineRequest(String threadName, OnlineRequest request, Runnable onSuccess) {
+        onlineRequestInFlight_ = true;
+        setOnlineActionButtonsEnabled(false);
+
+        Thread t = new Thread(() -> {
+            String errorMessage = null;
+            try {
+                request.run();
+            } catch (RestAuthClient.RestAuthException e) {
+                errorMessage = (e.getMessage() != null && !e.getMessage().isBlank())
+                        ? e.getMessage()
+                        : "Request failed";
+            } catch (Exception e) {
+                errorMessage = e.getMessage() != null ? e.getMessage() : "Request failed";
+            }
+
+            String finalErrorMessage = errorMessage;
+            SwingUtilities.invokeLater(() -> {
+                onlineRequestInFlight_ = false;
+                setOnlineActionButtonsEnabled(true);
+
+                if (finalErrorMessage != null) {
+                    EngineUtils.displayInformationDialog(context_, finalErrorMessage);
+                    setResult(false);
+                    return;
+                }
+
+                onSuccess.run();
+                setResult(true);
+                removeDialog();
+            });
+        }, threadName);
+
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private void setOnlineActionButtonsEnabled(boolean enabled) {
+        if (okayButton_ != null) {
+            okayButton_.setEnabled(enabled);
+        }
+        if (cancelButton_ != null) {
+            cancelButton_.setEnabled(enabled);
+        }
+        if (emailButton_ != null) {
+            emailButton_.setEnabled(enabled);
+        }
+        if (passwordButton_ != null) {
+            passwordButton_.setEnabled(enabled);
+        }
+        if (resetButton_ != null) {
+            resetButton_.setEnabled(enabled);
+        }
+
+        if (enabled) {
+            checkButtons();
         }
     }
 
@@ -512,6 +618,16 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
         }
 
         okayButton_.setEnabled(bEnabled);
+
+        if (onlineRequestInFlight_) {
+            okayButton_.setEnabled(false);
+            if (emailButton_ != null)
+                emailButton_.setEnabled(false);
+            if (passwordButton_ != null)
+                passwordButton_.setEnabled(false);
+            if (resetButton_ != null)
+                resetButton_.setEnabled(false);
+        }
     }
 
     /**
@@ -524,7 +640,7 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
             if (server == null || server.isEmpty()) {
                 return null;
             }
-            return "http://" + server;
+            return OnlineServerUrl.normalizeBaseUrl(server);
         } catch (Exception e) {
             logger.warn("Could not get server URL from preferences", e);
             return null;

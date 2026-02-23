@@ -89,6 +89,7 @@ public class OnlineConfiguration extends BasePhase implements ActionListener {
     private String lanIp_;
     private int port_;
     private RestGameClient restClient_;
+    private volatile boolean openLobbyInFlight_;
 
     /** Active WAN registration, if the host posted to the public game list. */
     private static CommunityGameRegistration activeRegistration_;
@@ -209,37 +210,30 @@ public class OnlineConfiguration extends BasePhase implements ActionListener {
 
     @Override
     public boolean processButton(GameButton button) {
+        if (openLobbyInFlight_) {
+            return false;
+        }
+
         if (okaybegin_ != null && button.getName().equals(okaybegin_.getName())) {
-            return doOpenLobby();
+            doOpenLobby();
+            return false;
         }
         return true;
     }
 
-    private boolean doOpenLobby() {
+    private void doOpenLobby() {
         // start embedded server in external/community mode if not yet running
         EmbeddedGameServer embeddedServer = ((PokerMain) engine_).getEmbeddedServer();
         if (embeddedServer == null) {
             EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.hostonline.noserver"));
-            return false;
-        }
-        if (!embeddedServer.isRunning()) {
-            try {
-                embeddedServer.start(CommunityHostingConfig.DEFAULT_COMMUNITY_PORT);
-                port_ = embeddedServer.getPort();
-                restClient_ = new RestGameClient("http://localhost:" + port_, embeddedServer.getLocalUserJwt());
-            } catch (EmbeddedGameServer.EmbeddedServerStartupException ex) {
-                logger.error("Failed to start embedded server for hosting", ex);
-                EngineUtils.displayInformationDialog(context_,
-                        PropertyConfig.getMessage("msg.hostonline.startfail", ex.getMessage()));
-                return false;
-            }
+            return;
         }
 
         // get the TournamentProfile selected in the previous step
         PokerGame game = (PokerGame) context_.getGame();
         if (game == null) {
             logger.error("No game set in context — cannot open lobby");
-            return false;
+            return;
         }
         TournamentProfile profile = game.getProfile();
 
@@ -247,67 +241,134 @@ public class OnlineConfiguration extends BasePhase implements ActionListener {
         com.donohoedigital.games.poker.gameserver.controller.TournamentProfileConverter converter = new com.donohoedigital.games.poker.gameserver.controller.TournamentProfileConverter();
         GameConfig gameConfig = converter.convert(profile);
 
-        GameSummary summary;
-        try {
-            summary = restClient_.createGame(gameConfig);
-        } catch (RestGameClient.RestGameClientException ex) {
-            logger.error("Failed to create game on server", ex);
-            EngineUtils.displayInformationDialog(context_,
-                    PropertyConfig.getMessage("msg.hostonline.createfail", ex.getMessage()));
-            return false;
-        }
-
-        String gameId = summary.gameId();
-        String wsUrl = summary.wsUrl();
-
-        // store the WebSocket connection info on the PokerGame
-        game.setWebSocketConfig(gameId, embeddedServer.getLocalUserJwt(), port_);
-
-        // update URL display fields
-        if (wsUrl != null) {
-            lanUrlText_.setText(wsUrl);
-        }
         String publicIp = publicIpText_.getText().trim();
-        if (!publicIp.isEmpty()) {
-            publicUrlText_.setText(CommunityHostingConfig.buildGameUrl(publicIp, port_, gameId));
-        }
+        boolean postPublicList = cbxPublicList_.isSelected();
+        boolean hostAsObserver = cbxObserver_.isSelected();
 
-        // post on public game list if requested
-        if (cbxPublicList_.isSelected()) {
-            String publicWsUrl = publicIp.isEmpty()
-                    ? wsUrl
-                    : CommunityHostingConfig.buildGameUrl(publicIp, port_, gameId);
-            PlayerProfile playerProfile = PlayerProfileOptions.getDefaultProfile();
-            String gameName = (playerProfile != null) ? playerProfile.getName() + "'s Game" : profile.getName();
-            String wanNode = Prefs.NODE_OPTIONS + context_.getGameEngine().getPrefsNodeName();
-            String wanBaseUrl = Prefs.getUserPrefs(wanNode).get(EngineConstants.OPTION_ONLINE_SERVER, "");
-            if (!wanBaseUrl.isEmpty()) {
-                RestGameClient wanClient = new RestGameClient(wanBaseUrl, embeddedServer.getLocalUserJwt());
-                CommunityGameRegistration registration = new CommunityGameRegistration(wanClient);
-                try {
-                    registration.register(gameName, publicWsUrl, null);
-                    activeRegistration_ = registration;
-                } catch (Exception ex) {
-                    logger.warn("Failed to post game to public list: {}", ex.getMessage());
-                    // non-fatal — continue to lobby
+        openLobbyInFlight_ = true;
+        setHostingControlsEnabled(false);
+
+        Thread t = new Thread(() -> {
+            try {
+                if (!embeddedServer.isRunning()) {
+                    embeddedServer.start(CommunityHostingConfig.DEFAULT_COMMUNITY_PORT);
+                }
+
+                int runningPort = embeddedServer.getPort();
+                String localJwt = embeddedServer.getLocalUserJwt();
+                RestGameClient localClient = new RestGameClient("http://localhost:" + runningPort, localJwt);
+
+                GameSummary summary = localClient.createGame(gameConfig);
+                String gameId = summary.gameId();
+                String wsUrl = summary.wsUrl();
+
+                CommunityGameRegistration registration = null;
+                if (postPublicList) {
+                    String publicWsUrl = publicIp.isEmpty()
+                            ? wsUrl
+                            : CommunityHostingConfig.buildGameUrl(publicIp, runningPort, gameId);
+                    PlayerProfile playerProfile = PlayerProfileOptions.getDefaultProfile();
+                    String gameName = (playerProfile != null) ? playerProfile.getName() + "'s Game" : profile.getName();
+                    String wanNode = Prefs.NODE_OPTIONS + context_.getGameEngine().getPrefsNodeName();
+                    String wanServerPref = Prefs.getUserPrefs(wanNode).get(EngineConstants.OPTION_ONLINE_SERVER, "");
+                    String wanBaseUrl = OnlineServerUrl.normalizeBaseUrl(wanServerPref);
+                    if (wanBaseUrl != null) {
+                        RestGameClient wanClient = new RestGameClient(wanBaseUrl, localJwt);
+                        registration = new CommunityGameRegistration(wanClient);
+                        try {
+                            registration.register(gameName, publicWsUrl, null);
+                        } catch (Exception ex) {
+                            logger.warn("Failed to post game to public list: {}", ex.getMessage());
+                            registration = null;
+                        }
+                    } else if (!wanServerPref.isEmpty()) {
+                        logger.warn("Invalid online server preference for WAN registration: {}", wanServerPref);
+                    }
+                }
+
+                CommunityGameRegistration finalRegistration = registration;
+                SwingUtilities.invokeLater(() -> {
+                    openLobbyInFlight_ = false;
+                    setHostingControlsEnabled(true);
+
+                    port_ = runningPort;
+                    restClient_ = localClient;
+
+                    game.setWebSocketConfig(gameId, localJwt, runningPort);
+
+                    if (wsUrl != null) {
+                        lanUrlText_.setText(wsUrl);
+                    }
+                    if (!publicIp.isEmpty()) {
+                        publicUrlText_.setText(CommunityHostingConfig.buildGameUrl(publicIp, runningPort, gameId));
+                    }
+
+                    activeRegistration_ = finalRegistration;
+
+                    if (hostAsObserver) {
+                        PokerPlayer host = game.getHost();
+                        if (host != null) {
+                            game.removePlayer(host);
+                            game.getTable(0).addObserver(host);
+                        }
+                    }
+
+                    DMTypedHashMap params = new DMTypedHashMap();
+                    params.setBoolean("host", Boolean.TRUE);
+                    context_.processPhase("Lobby", params);
+                });
+            } catch (EmbeddedGameServer.EmbeddedServerStartupException ex) {
+                logger.error("Failed to start embedded server for hosting", ex);
+                SwingUtilities.invokeLater(() -> {
+                    openLobbyInFlight_ = false;
+                    setHostingControlsEnabled(true);
+                    EngineUtils.displayInformationDialog(context_,
+                            PropertyConfig.getMessage("msg.hostonline.startfail", ex.getMessage()));
+                });
+            } catch (RestGameClient.RestGameClientException ex) {
+                logger.error("Failed to create game on server", ex);
+                SwingUtilities.invokeLater(() -> {
+                    openLobbyInFlight_ = false;
+                    setHostingControlsEnabled(true);
+                    EngineUtils.displayInformationDialog(context_,
+                            PropertyConfig.getMessage("msg.hostonline.createfail", ex.getMessage()));
+                });
+            } catch (Exception ex) {
+                logger.error("Unexpected failure while opening lobby", ex);
+                SwingUtilities.invokeLater(() -> {
+                    openLobbyInFlight_ = false;
+                    setHostingControlsEnabled(true);
+                    String detail = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+                    EngineUtils.displayInformationDialog(context_,
+                            PropertyConfig.getMessage("msg.hostonline.createfail", detail));
+                });
+            }
+        }, "OpenLobby");
+
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private void setHostingControlsEnabled(boolean enabled) {
+        if (buttonbox_ != null) {
+            for (Object button : buttonbox_.getButtons().values()) {
+                if (button instanceof DDButton ddButton) {
+                    ddButton.setEnabled(enabled);
                 }
             }
         }
-
-        // host as observer if requested
-        if (cbxObserver_.isSelected()) {
-            PokerPlayer host = game.getHost();
-            if (host != null) {
-                game.removePlayer(host);
-                game.getTable(0).addObserver(host);
-            }
+        if (getIpBtn_ != null) {
+            getIpBtn_.setEnabled(enabled);
         }
-
-        // navigate to Lobby (host=true)
-        DMTypedHashMap params = new DMTypedHashMap();
-        params.setBoolean("host", Boolean.TRUE);
-        context_.processPhase("Lobby", params);
-        return false;
+        if (publicIpText_ != null) {
+            publicIpText_.setEnabled(enabled);
+        }
+        if (cbxPublicList_ != null) {
+            cbxPublicList_.setEnabled(enabled);
+        }
+        if (cbxObserver_ != null) {
+            cbxObserver_.setEnabled(enabled);
+        }
     }
 
     // =========================================================================

@@ -332,10 +332,11 @@ public class PokerMain extends GameEngine {
                 if (profile != null)
                     profile.testDB();
                 return true;
-            } catch (Throwable t) {
+            } catch (Exception e) {
                 // FIX: if database driver is missing, this fails silently.
                 // This code is kind of a mess. Log message for now
-                logger.warn(Utils.formatExceptionText(t));
+                logger.warn("Initial profile DB check failed; retrying once after lock wait: {}",
+                        Utils.formatExceptionText(e));
             }
 
             // if first attempt failed, try again after 3 seconds to see
