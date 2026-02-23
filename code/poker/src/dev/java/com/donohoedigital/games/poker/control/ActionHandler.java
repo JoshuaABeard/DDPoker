@@ -20,6 +20,7 @@
 package com.donohoedigital.games.poker.control;
 
 import com.donohoedigital.games.engine.GameContext;
+import com.donohoedigital.games.poker.HandAction;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
 import com.donohoedigital.games.poker.PokerPlayer;
@@ -58,6 +59,9 @@ import java.util.Map;
  *   {"type": "REBUY"}
  *   {"type": "ADDON"}
  *   {"type": "DECLINE_REBUY"}   // no-op; let rebuy timer expire naturally
+ *
+ * Advisor (modes CHECK_BET, CHECK_RAISE, CALL_RAISE):
+ *   {"type": "ADVISOR_DO_IT"}   // execute the advisor's recommended action
  * </pre>
  */
 class ActionHandler extends BaseHandler {
@@ -101,9 +105,10 @@ class ActionHandler extends BaseHandler {
             case "REBUY" -> handleRebuy(exchange, inputMode);
             case "ADDON" -> handleAddon(exchange, inputMode);
             case "DECLINE_REBUY" -> handleDeclineRebuy(exchange, inputMode);
+            case "ADVISOR_DO_IT" -> handleAdvisorDoIt(exchange, inputMode);
             default -> sendJson(exchange, 400, Map.of("error", "BadRequest",
                     "message", "Unknown action type: " + type +
-                               ". Valid: FOLD, CHECK, CALL, BET, RAISE, ALL_IN, DEAL, CONTINUE, CONTINUE_LOWER, REBUY, ADDON, DECLINE_REBUY"));
+                               ". Valid: FOLD, CHECK, CALL, BET, RAISE, ALL_IN, DEAL, CONTINUE, CONTINUE_LOWER, REBUY, ADDON, DECLINE_REBUY, ADVISOR_DO_IT"));
         }
     }
 
@@ -186,6 +191,25 @@ class ActionHandler extends BaseHandler {
                 "note", "Rebuy timer will expire naturally"));
     }
 
+    private void handleAdvisorDoIt(HttpExchange exchange, int inputMode) throws Exception {
+        if (!isBettingInputMode(inputMode)) {
+            sendConflict(exchange, inputMode);
+            return;
+        }
+        SwingUtilities.invokeLater(() -> {
+            PokerGame game = getGame();
+            if (game == null) return;
+            PokerPlayer human = game.getHumanPlayer();
+            if (human == null || human.getPokerAI() == null) return;
+            HandAction action = human.getAction(false);
+            if (action != null) {
+                int actionId = handActionToPokerGameAction(action.getAction());
+                game.playerActionPerformed(actionId, action.getAmount());
+            }
+        });
+        sendJson(exchange, 200, Map.of("accepted", true, "type", "ADVISOR_DO_IT"));
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
@@ -260,6 +284,22 @@ class ActionHandler extends BaseHandler {
             case PokerTableInput.MODE_CONTINUE_LOWER-> List.of("CONTINUE_LOWER");
             case PokerTableInput.MODE_REBUY_CHECK   -> List.of("REBUY", "ADDON", "DECLINE_REBUY");
             default                                 -> List.of();
+        };
+    }
+
+    /**
+     * Maps {@code HandAction.ACTION_*} constants to {@code PokerGame.ACTION_*} constants.
+     * Note: HandAction has no ACTION_ALL_IN; the AI expresses all-in as BET or RAISE
+     * with an amount equal to the player's full chip count.
+     */
+    private static int handActionToPokerGameAction(int handAction) {
+        return switch (handAction) {
+            case HandAction.ACTION_FOLD                                    -> PokerGame.ACTION_FOLD;
+            case HandAction.ACTION_CHECK, HandAction.ACTION_CHECK_RAISE   -> PokerGame.ACTION_CHECK;
+            case HandAction.ACTION_CALL                                    -> PokerGame.ACTION_CALL;
+            case HandAction.ACTION_BET                                     -> PokerGame.ACTION_BET;
+            case HandAction.ACTION_RAISE                                   -> PokerGame.ACTION_RAISE;
+            default                                                        -> PokerGame.ACTION_FOLD;
         };
     }
 }

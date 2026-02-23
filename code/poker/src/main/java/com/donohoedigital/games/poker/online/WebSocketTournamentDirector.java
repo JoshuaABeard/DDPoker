@@ -122,6 +122,8 @@ public class WebSocketTournamentDirector extends BasePhase
         game_.setWebSocketOpponentTracker(opponentTracker_);
         serverIdToGamePlayer_.clear();
         tables_.clear();
+        WsMessageLog.clear();
+        GameEventLog.clear();
 
         PokerGame.WebSocketConfig config = game_.getWebSocketConfig();
         serverPort_ = config.port();
@@ -256,6 +258,7 @@ public class WebSocketTournamentDirector extends BasePhase
         ServerMessageType type = msg.type();
         JsonNode data = msg.data();
         logger.debug("[WS-IN] type={}", type);
+        WsMessageLog.logInbound(type.name(), data != null ? data.toString() : "");
         try {
             switch (type) {
                 case CONNECTED -> {
@@ -544,6 +547,7 @@ public class WebSocketTournamentDirector extends BasePhase
             int oldButton = table.getButton();
             table.setRemoteButton(d.dealerSeat());
             table.fireEvent(PokerTableEvent.TYPE_BUTTON_MOVED, oldButton);
+            GameEventLog.log("NEW_HAND", table.getNumber());
             table.fireEvent(PokerTableEvent.TYPE_NEW_HAND);
             // Re-trigger card display: TYPE_NEW_HAND may reset card slots; this ensures
             // the local player's hole cards and opponents' face-down cards are rendered.
@@ -664,6 +668,7 @@ public class WebSocketTournamentDirector extends BasePhase
             }
             logger.debug("[ACTION_REQUIRED EDT] firing TYPE_CURRENT_PLAYER_CHANGED, then setInputMode mode={}",
                     inputMode);
+            GameEventLog.log("CURRENT_PLAYER_CHANGED", table.getNumber());
             table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_CURRENT_PLAYER_CHANGED, table,
                     oldPlayerIndex, playerIndex));
             game_.setInputMode(inputMode, hand, localPlayer);
@@ -804,6 +809,7 @@ public class WebSocketTournamentDirector extends BasePhase
             hand.updateCurrentPlayer(HoldemHand.NO_CURRENT_PLAYER);
             hand.updatePot(0);
             hand.clearBets();
+            GameEventLog.log("END_HAND", table.getNumber());
             table.fireEvent(PokerTableEvent.TYPE_END_HAND);
             opponentTracker_.onHandComplete();
         });
@@ -888,6 +894,7 @@ public class WebSocketTournamentDirector extends BasePhase
                     hand.setAnte(d.ante());
                 }
                 // Fire as a property change that ShowTournamentTable listens to
+                GameEventLog.log("LEVEL_CHANGED", table.getNumber());
                 table.fireEvent(PokerTableEvent.TYPE_LEVEL_CHANGED, oldLevel);
             }
         });
@@ -904,6 +911,7 @@ public class WebSocketTournamentDirector extends BasePhase
                         p.setChipCount(0);
                     }
                     table.clearSeat(seat);
+                    GameEventLog.log("PLAYER_REMOVED", table.getNumber());
                     table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REMOVED, table, p, seat));
                     break;
                 }

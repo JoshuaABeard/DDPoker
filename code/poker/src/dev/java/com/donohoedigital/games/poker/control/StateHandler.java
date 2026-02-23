@@ -27,6 +27,7 @@ import com.donohoedigital.games.poker.dashboard.DashboardAdvisor;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.PokerConstants;
+import com.donohoedigital.games.poker.online.GameEventLog;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.util.*;
@@ -77,6 +78,7 @@ class StateHandler extends BaseHandler {
         state.put("tournament", buildTournamentInfo(game));
         state.put("tables", buildTables(game));
         state.put("currentAction", buildCurrentAction(game, context, inputMode));
+        state.put("recentEvents", buildRecentEvents());
         return state;
     }
 
@@ -236,6 +238,18 @@ class StateHandler extends BaseHandler {
         action.put("advisorTitle", DashboardAdvisor.getCurrentTitle());
 
         return action;
+    }
+
+    private List<Map<String, Object>> buildRecentEvents() {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (GameEventLog.Entry e : GameEventLog.getLastN(20)) {
+            Map<String, Object> ev = new LinkedHashMap<>();
+            ev.put("ms", e.millis());
+            ev.put("type", e.type());
+            ev.put("table", e.tableId());
+            result.add(ev);
+        }
+        return result;
     }
 
     private Map<String, Object> buildChipConservation(PokerTable table, HoldemHand hand) {

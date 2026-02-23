@@ -118,6 +118,7 @@ public class WebSocketGameClient {
 
     /** Sends a player action (FOLD, CHECK, CALL, BET, RAISE, ALL_IN). */
     public void sendAction(String action, int amount) {
+        WsMessageLog.logOutbound("PLAYER_ACTION", action + ":" + amount);
         ObjectNode data = objectMapper.createObjectNode();
         data.put("action", action);
         data.put("amount", amount);
