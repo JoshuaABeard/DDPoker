@@ -6,7 +6,7 @@
 #   RB-011: Use setChips cheat to set human chips to 0
 #   RB-012: Assert inputMode becomes REBUY_CHECK (hard FAIL if not)
 #   RB-013: Send DECLINE_REBUY and assert mode transitions away
-#   RB-015: Repeat — set chips to 0 again, assert REBUY_CHECK, send ACCEPT_REBUY,
+#   RB-015: Repeat — set chips to 0 again, assert REBUY_CHECK, send REBUY,
 #            assert chips are restored
 #
 # Prerequisites:
@@ -128,7 +128,7 @@ fi
 # ============================================================
 # RB-015: Accept rebuy — set chips to 0 again, assert REBUY_CHECK, ACCEPT, verify restored
 # ============================================================
-log "=== RB-015: ACCEPT_REBUY restores chips ==="
+log "=== RB-015: REBUY restores chips ==="
 
 # Wait for the next human turn (new hand or current hand continues)
 WAIT_START=$(date +%s)
@@ -188,12 +188,12 @@ if [[ "$HUMAN_TURN_FOUND" == "true" ]]; then
     done
 
     if [[ "$REBUY2_APPEARED" == "true" ]]; then
-        ACCEPT_RESP=$(api_post_json /action '{"type":"ACCEPT_REBUY"}' 2>/dev/null) || true
+        ACCEPT_RESP=$(api_post_json /action '{"type":"REBUY"}' 2>/dev/null) || true
         ACCEPT_OK=$(jget "$ACCEPT_RESP" 'o.accepted||false')
         if [[ "$ACCEPT_OK" == "true" ]]; then
-            log "  OK: ACCEPT_REBUY accepted"
+            log "  OK: REBUY accepted"
         else
-            log "FAIL: RB-015 — ACCEPT_REBUY not accepted: $ACCEPT_RESP"
+            log "FAIL: RB-015 — REBUY not accepted: $ACCEPT_RESP"
             FAILURES=$((FAILURES+1))
         fi
 
@@ -203,21 +203,21 @@ if [[ "$HUMAN_TURN_FOUND" == "true" ]]; then
         human_chips=$(jget "$state" \
             "(o.tables&&o.tables[0]&&o.tables[0].players||[]).find(p=>p&&p.seat===$HUMAN_SEAT)?.chips||0")
         if [[ "$human_chips" -gt 0 ]]; then
-            log "  OK: Human chips restored to $human_chips after ACCEPT_REBUY"
+            log "  OK: Human chips restored to $human_chips after REBUY"
             screenshot "rebuy-after-accept"
         else
-            log "FAIL: RB-015 — Chips still 0 after ACCEPT_REBUY (chips=$human_chips)"
+            log "FAIL: RB-015 — Chips still 0 after REBUY (chips=$human_chips)"
             FAILURES=$((FAILURES+1))
         fi
     else
         log "  WARN: Could not trigger second REBUY_CHECK for accept test — skipping RB-015"
     fi
 else
-    log "  WARN: Could not find human turn for ACCEPT_REBUY test — skipping RB-015"
+    log "  WARN: Could not find human turn for REBUY test — skipping RB-015"
 fi
 
 if [[ $FAILURES -gt 0 ]]; then
     die "$FAILURES test(s) failed"
 fi
 
-pass "Rebuy dialog flow verified: REBUY_CHECK appeared, DECLINE_REBUY accepted, ACCEPT_REBUY accepted"
+pass "Rebuy dialog flow verified: REBUY_CHECK appeared, DECLINE_REBUY accepted, REBUY accepted"
