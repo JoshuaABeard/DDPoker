@@ -53,25 +53,53 @@ Implements 8 bug fixes and dev control server improvements across the `pokerengi
 
 ## Review Results
 
-*[Review agent fills this section]*
+**Status:** APPROVED_WITH_SUGGESTIONS
 
-**Status:**
-
-**Reviewed by:**
-**Date:**
+**Reviewed by:** Claude Opus 4.6
+**Date:** 2026-02-23
 
 ### Findings
 
 #### Strengths
 
+1. **Card.getCard null fix (A1)** is correct and well-tested. The new `CardTest.testGetCardByStringInvalidReturnsNull` covers short strings, invalid rank, invalid suit, and the combination. The fix is minimal: two guard clauses returning null, placed at the right points in the method. The `CardInjectHandler` update to `c == null || c.isBlank()` is the right defense.
+
+2. **ShowTournamentTable REBUY_CHECK fix (A2)** is safe. `ShowPokerTable.setInputMode()` (the super method) simply assigns `nInputMode_ = nMode` with no side effects -- no UI updates, no event firing, no listener notification. Calling it before the early return is the minimal, correct fix. The rebuy-specific UI code (`setRebuyButton`) still runs on the same code path, so no existing behavior changes.
+
+3. **StateHandler handNumber + aifaceup (A3+A4)** are clean additive changes. `currentTable.getHandNum()` is the right counter -- it is 0 before the first deal and increments per hand, matching the documented semantics. The aifaceup exposure is correctly gated on `PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_AIFACEUP)` and only when `hand != null`, preventing stale card data between hands. The showdown path (`hand.getRound() == BettingRound.SHOWDOWN`) is logically separate from the aifaceup path -- both are ORed, which is correct (showdown reveals cards regardless of cheat state).
+
+4. **disableAutoDeal (B1)** design is sound. The nullable `Boolean autoDeal` in `PracticeConfig` is a clean contract: `null` = default (auto-deal on), `false` = disabled. `PracticeGameLauncher` reads the pref and passes `autoDealEnabled ? null : false`, which correctly maps the user preference. `GameInstance.start()` iterates all tables to set `autoDeal(false)` before the director starts, so there is no race.
+
+5. **ValidateHandler (B4)** correctly uses `profile.getNumPlayers()` for the immutable starting count. The multi-table heuristic (`tables.size() < ceil(profilePlayers/SEATS) && expectedTables > 1`) is reasonable for the dev tooling context. The null guard on `profile` with fallback to `game.getNumPlayers()` prevents NPE during early initialization.
+
+6. **CheatControllerTest** update to the 7-arg `PracticeConfig` constructor is minimal and correct.
+
 #### Suggestions (Non-blocking)
+
+1. **Card.getCard null -- downstream callers in production code need audit.** Two production callers are not null-safe after this change:
+
+   - `DDCardView` (line 63): `card_ = Card.getCard(card)` -- if the HTML attribute contains a malformed card string, `card_` becomes null. Line 75 then calls `piece_.setCard(null)` and line 76 evaluates `null != Card.BLANK` as true (displaying a null card face-up). In practice, the HTML card attributes come from `Card.toStringSingle()` via `toHTML()`, so they should always be valid 2-character strings. However, the code should defensively handle null, e.g., `card_ = Card.getCard(card); if (card_ == null) card_ = Card.BLANK;`.
+
+   - `PokerDatabase` (lines 1730-1742): `Card.getCard(card).toHTML()` is called directly. If the database contained a malformed card string, this would NPE. The `card != null` guard on the line above only checks for SQL NULL, not for invalid card content. Again, in practice, the database stores cards written by the engine (always valid), so this is a theoretical risk only.
+
+   Both of these are pre-existing latent issues -- the old code masked them by returning BLANK for invalid input. The risk is extremely low in practice (both callers only receive card strings written by the engine itself), but adding null guards would be defensive best practice. Consider a follow-up to audit all `Card.getCard(String)` callers in production code.
+
+2. **completeGame thread safety (B2).** The `handleCompleteGame` method reads `human.getChipCount()`, iterates all tables, sums chips, and sets chip counts -- all inside `SwingUtilities.invokeLater()`. This runs on the EDT, which is correct for Swing state. However, if the game engine is concurrently running AI actions on a background thread that also modifies chip counts, there could be a brief inconsistency. In practice, the scenario test scripts wait for a non-betting input mode before calling `/cheat`, so this is unlikely to be a real problem. No action needed, but worth noting.
+
+3. **completeGame does not trigger game-over logic directly.** It redistributes chips so that only the human has chips and all AI players have 0. The game-over condition (one player remaining with chips) is checked by the engine at the start of the next hand. So the game does not end immediately -- it ends after the next hand starts and the engine detects the condition. This is the correct behavior for the stated use case (test wants to play one more hand and then see game-over), but callers should be aware that `completeGame` is not instantaneous termination.
+
+4. **advanceClock and level advancement.** `clock.setSecondsRemaining(newRemaining)` fires a `SET` action event. However, the actual level advancement is driven by the `STOP` action event (fired when `isExpired()` is true and `stop()` is called during the tick). Setting seconds to 0 does not itself trigger a tick or stop -- the next 1-second timer tick will detect the expiry and fire the stop event. This means there is up to a 1-second delay between the `advanceClock` call and the actual level advancement. For test tooling this is fine, but the caller should poll for level change rather than assuming immediate effect.
+
+5. **ValidateHandler multi-table heuristic.** The check `(tables == null ? 0 : tables.size()) < expectedTables && expectedTables > 1` correctly detects when fewer tables are visible than expected. However, `PokerConstants.SEATS` is used in the calculation, which is the max seats per table (10). If the tournament uses a different table size, the heuristic would be wrong. In practice, DD Poker always uses 10-seat tables, so this is not a real issue. The heuristic is also generous (it skips the check entirely rather than trying to do partial validation), which is the right call for dev tooling.
 
 #### Required Changes (Blocking)
 
+None. All changes are correct and safe for the stated purpose. The `Card.getCard` null-safety concern in `DDCardView` and `PokerDatabase` is a pre-existing latent issue that this change makes slightly more likely to surface, but the practical risk is near zero since those callers only receive engine-generated card strings.
+
 ### Verification
 
-- Tests:
-- Coverage:
-- Build:
-- Privacy:
-- Security:
+- Tests: Accepted -- all passed per handoff, and new CardTest cases cover the null-return contract.
+- Coverage: Accepted -- new production code (Card.java guard clauses, ShowTournamentTable super call) is covered by new tests and existing integration paths.
+- Build: Accepted -- clean build with zero warnings.
+- Privacy: SAFE -- no private data, credentials, or PII in any changed file.
+- Security: SAFE -- all new endpoints are dev-only (src/dev/java), gated by API key authentication. No new attack surface in production code.
