@@ -147,6 +147,27 @@ class StateHandler extends BaseHandler {
             }
         }
 
+        // Chip leaderboard (top players across all tables)
+        List<PokerTable> allTables = game.getTables();
+        if (allTables != null && !allTables.isEmpty()) {
+            List<Map<String, Object>> leaders = new ArrayList<>();
+            for (PokerTable tbl : allTables) {
+                for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
+                    PokerPlayer p = tbl.getPlayer(seat);
+                    if (p != null && !p.isEliminated()) {
+                        Map<String, Object> entry = new LinkedHashMap<>();
+                        entry.put("name", p.getName());
+                        entry.put("chips", p.getChipCount());
+                        entry.put("table", tbl.getNumber());
+                        entry.put("isHuman", p.isHuman());
+                        leaders.add(entry);
+                    }
+                }
+            }
+            leaders.sort((a, b) -> Integer.compare((int) b.get("chips"), (int) a.get("chips")));
+            t.put("chipLeaderboard", leaders.size() > 20 ? leaders.subList(0, 20) : leaders);
+        }
+
         // Clock state
         GameClock clock = game.getGameClock();
         if (clock != null) {

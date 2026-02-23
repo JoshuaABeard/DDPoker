@@ -74,6 +74,12 @@ import java.util.concurrent.Executors;
  *   <li>{@code POST /game/load}        — load a saved game</li>
  *   <li>{@code POST /keyboard}         — inject keyboard events</li>
  *   <li>{@code GET  /help/topics}      — list help topics with existence check</li>
+ *   <li>{@code GET/POST/DELETE /hand-groups} — CRUD for starting hand groups</li>
+ *   <li>{@code GET  /ai-types}        — list AI player type profiles</li>
+ *   <li>{@code POST /simulator}       — run hand equity simulation</li>
+ *   <li>{@code GET  /history}         — tournament history for current profile</li>
+ *   <li>{@code GET  /history/hand}    — specific hand history by ID</li>
+ *   <li>{@code GET  /game/saves}      — list saved game files</li>
  * </ul>
  */
 public class GameControlServer {
@@ -122,6 +128,12 @@ public class GameControlServer {
         server.createContext("/game/load",        new SaveLoadHandler(apiKey, "load"));
         server.createContext("/keyboard",         new KeyboardHandler(apiKey));
         server.createContext("/help/topics",      new HelpTopicsHandler(apiKey));
+        server.createContext("/hand-groups",      new HandGroupsHandler(apiKey));
+        server.createContext("/ai-types",         new AiTypesHandler(apiKey));
+        server.createContext("/simulator",        new SimulatorHandler(apiKey));
+        server.createContext("/history/hand",     new HistoryHandler(apiKey));
+        server.createContext("/history",          new HistoryHandler(apiKey));
+        server.createContext("/game/saves",       new SaveListHandler(apiKey));
 
         server.start();
 

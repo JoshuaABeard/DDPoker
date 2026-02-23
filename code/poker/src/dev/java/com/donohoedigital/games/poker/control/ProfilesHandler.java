@@ -36,6 +36,7 @@ import java.util.Map;
  * <ul>
  *   <li>{@code GET  /profiles}         — list all profiles on disk</li>
  *   <li>{@code POST /profiles}         — create a new profile and make it the default</li>
+ *   <li>{@code DELETE /profiles}       — delete a player profile by name</li>
  *   <li>{@code GET  /profiles/default} — return the currently active default profile name</li>
  * </ul>
  */
@@ -56,6 +57,8 @@ class ProfilesHandler extends BaseHandler {
             handleList(exchange);
         } else if ("POST".equals(method)) {
             handleCreate(exchange);
+        } else if ("DELETE".equals(method)) {
+            handleDelete(exchange);
         } else {
             sendJson(exchange, 405, Map.of("error", "MethodNotAllowed"));
         }
@@ -141,6 +144,56 @@ class ProfilesHandler extends BaseHandler {
             sendJson(exchange, 500, Map.of("error", "InternalError",
                     "message", "Could not create profile: " + e.getMessage()));
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // DELETE /profiles
+    // -------------------------------------------------------------------------
+
+    private void handleDelete(HttpExchange exchange) throws Exception {
+        String body = readRequestBodyAsString(exchange);
+        if (body.isBlank()) {
+            sendJson(exchange, 400, Map.of("error", "BadRequest", "message", "Request body required with 'name'"));
+            return;
+        }
+
+        JsonNode json;
+        try {
+            json = MAPPER.readTree(body);
+        } catch (Exception e) {
+            sendJson(exchange, 400, Map.of("error", "BadRequest", "message", "Invalid JSON"));
+            return;
+        }
+
+        String name = json.has("name") ? json.get("name").asText("").strip() : "";
+        if (name.isEmpty()) {
+            sendJson(exchange, 400, Map.of("error", "BadRequest", "message", "name is required"));
+            return;
+        }
+
+        try {
+            List<BaseProfile> profiles = PlayerProfile.getProfileList();
+            if (profiles != null) {
+                for (BaseProfile p : profiles) {
+                    if (p.getName().equalsIgnoreCase(name)) {
+                        // Don't allow deleting the last profile
+                        if (profiles.size() <= 1) {
+                            sendJson(exchange, 403, Map.of("error", "Forbidden", "message", "Cannot delete the last profile"));
+                            return;
+                        }
+                        p.getFile().delete();
+                        sendJson(exchange, 200, Map.of("deleted", true, "name", name));
+                        return;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to delete profile '{}'", name, e);
+            sendJson(exchange, 500, Map.of("error", "InternalError", "message", "Could not delete profile: " + e.getMessage()));
+            return;
+        }
+
+        sendJson(exchange, 404, Map.of("error", "NotFound", "message", "No profile named: " + name));
     }
 
     // -------------------------------------------------------------------------
