@@ -65,6 +65,15 @@ import java.util.concurrent.Executors;
  *   <li>{@code POST /cheat}            — manipulate live game state (setChips, setLevel, setButton, eliminatePlayer)</li>
  *   <li>{@code GET  /ws-log}           — last 40 WebSocket messages and last 50 game events</li>
  *   <li>{@code GET  /validate}         — chip conservation and game-state invariant checks</li>
+ *   <li>{@code GET  /tournament-profiles}   — list all tournament profiles</li>
+ *   <li>{@code POST /tournament-profiles}   — create a new tournament profile</li>
+ *   <li>{@code DELETE /tournament-profiles}  — delete a tournament profile by name</li>
+ *   <li>{@code POST /navigate}         — programmatic menu/phase navigation</li>
+ *   <li>{@code GET  /system-info}      — version, config paths, runtime info</li>
+ *   <li>{@code POST /game/save}        — save current game</li>
+ *   <li>{@code POST /game/load}        — load a saved game</li>
+ *   <li>{@code POST /keyboard}         — inject keyboard events</li>
+ *   <li>{@code GET  /help/topics}      — list help topics with existence check</li>
  * </ul>
  */
 public class GameControlServer {
@@ -106,6 +115,13 @@ public class GameControlServer {
         server.createContext("/cheat",            new CheatHandler(apiKey));
         server.createContext("/ws-log",           new WsLogHandler(apiKey));
         server.createContext("/validate",         new ValidateHandler(apiKey));
+        server.createContext("/tournament-profiles", new TournamentProfilesHandler(apiKey));
+        server.createContext("/navigate",         new NavigateHandler(apiKey));
+        server.createContext("/system-info",      new SystemInfoHandler(apiKey));
+        server.createContext("/game/save",        new SaveLoadHandler(apiKey, "save"));
+        server.createContext("/game/load",        new SaveLoadHandler(apiKey, "load"));
+        server.createContext("/keyboard",         new KeyboardHandler(apiKey));
+        server.createContext("/help/topics",      new HelpTopicsHandler(apiKey));
 
         server.start();
 

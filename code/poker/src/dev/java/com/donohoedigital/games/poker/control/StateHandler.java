@@ -22,11 +22,13 @@ package com.donohoedigital.games.poker.control;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.Phase;
 import com.donohoedigital.games.poker.*;
+import com.donohoedigital.games.poker.ai.PlayerType;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.dashboard.DashboardAdvisor;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.PokerConstants;
+import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.donohoedigital.games.poker.online.GameEventLog;
 import com.sun.net.httpserver.HttpExchange;
 
@@ -75,8 +77,11 @@ class StateHandler extends BaseHandler {
         state.put("lifecyclePhase", lifecyclePhase);
         state.put("inputMode", inputModeName);
         state.put("availableActions", availableActions);
+        state.put("version", PokerConstants.VERSION.getMajorAsString());
         state.put("tournament", buildTournamentInfo(game));
-        state.put("tables", buildTables(game));
+        List<Map<String, Object>> tables = buildTables(game);
+        state.put("tables", tables);
+        state.put("tableCount", tables.size());
         state.put("currentAction", buildCurrentAction(game, context, inputMode));
         state.put("recentEvents", buildRecentEvents());
         return state;
@@ -120,9 +125,38 @@ class StateHandler extends BaseHandler {
         t.put("ante", game.getAnte());
         t.put("totalPlayers", game.getNumPlayers());
         t.put("playersRemaining", game.getNumPlayers() - game.getNumPlayersOut());
-        if (game.getProfile() != null) {
-            t.put("tournamentName", game.getProfile().getName());
+
+        TournamentProfile profile = game.getProfile();
+        if (profile != null) {
+            t.put("tournamentName", profile.getName());
+            t.put("levelCount", profile.getLastLevel());
+
+            // Next level blinds preview
+            int nextLevel = game.getLevel() + 1;
+            if (nextLevel <= profile.getLastLevel()) {
+                t.put("nextSmallBlind", profile.getSmallBlind(nextLevel));
+                t.put("nextBigBlind", profile.getBigBlind(nextLevel));
+            }
+
+            // Hands-per-level mode
+            String advanceMode = profile.getLevelAdvanceMode().name();
+            t.put("levelAdvanceMode", advanceMode);
+            if ("HANDS".equals(advanceMode)) {
+                t.put("handsPerLevel", profile.getHandsPerLevel());
+                t.put("handsInLevel", game.getHandsInLevel());
+            }
         }
+
+        // Clock state
+        GameClock clock = game.getGameClock();
+        if (clock != null) {
+            Map<String, Object> clockInfo = new LinkedHashMap<>();
+            clockInfo.put("secondsRemaining", clock.getSecondsRemaining());
+            clockInfo.put("isPaused", clock.isPaused());
+            clockInfo.put("isExpired", clock.isExpired());
+            t.put("clock", clockInfo);
+        }
+
         return t;
     }
 
@@ -179,6 +213,14 @@ class StateHandler extends BaseHandler {
         p.put("isAllIn", player.isAllIn());
         p.put("isSittingOut", player.isSittingOut());
 
+        // AI player type name
+        if (!player.isHuman()) {
+            PlayerType pt = player.getPlayerType();
+            if (pt != null) {
+                p.put("playerType", pt.getName());
+            }
+        }
+
         // Hole cards — only show for the local human player or during showdown
         Hand holeCards = player.getHand();
         if (player.isHuman() || (hand != null && hand.getRound() == BettingRound.SHOWDOWN)) {
@@ -189,6 +231,16 @@ class StateHandler extends BaseHandler {
 
         if (hand != null) {
             p.put("totalBetThisHand", hand.getTotalBet(player));
+        }
+
+        // Hand strength and rank for the human player during a hand
+        if (player.isHuman() && hand != null && hand.getRound() != BettingRound.NONE) {
+            p.put("handStrength", player.getHandStrength());
+            p.put("effectiveHandStrength", player.getEffectiveHandStrength());
+            PokerGame game = player.getTable() != null ? player.getTable().getGame() : null;
+            if (game != null) {
+                p.put("rank", game.getRank(player));
+            }
         }
         return p;
     }

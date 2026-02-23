@@ -84,11 +84,29 @@ class OptionsHandler extends BaseHandler {
         BOOL_KEYS.put("gameplay.pauseColor",   PokerConstants.OPTION_PAUSE_COLOR);
         BOOL_KEYS.put("gameplay.zipMode",      PokerConstants.OPTION_ZIP_MODE);
         BOOL_KEYS.put("gameplay.autodeal",     PokerConstants.OPTION_AUTODEAL);
+        BOOL_KEYS.put("gameplay.checkfold",    PokerConstants.OPTION_CHECKFOLD);
         BOOL_KEYS.put("display.largeCards",    PokerConstants.OPTION_LARGE_CARDS);
         BOOL_KEYS.put("display.fourColorDeck", PokerConstants.OPTION_FOUR_COLOR_DECK);
         BOOL_KEYS.put("display.holeCardsDown", PokerConstants.OPTION_HOLE_CARDS_DOWN);
+        BOOL_KEYS.put("display.stylizedFaceCards", PokerConstants.OPTION_STYLIZED_FACE_CARDS);
+        BOOL_KEYS.put("display.showPlayerType",    PokerConstants.OPTION_SHOW_PLAYER_TYPE);
+        BOOL_KEYS.put("display.rightClickOnly",    PokerConstants.OPTION_RIGHT_CLICK_ONLY);
+        BOOL_KEYS.put("display.disableShortcuts",  PokerConstants.OPTION_DISABLE_SHORTCUTS);
+        BOOL_KEYS.put("clock.colorUpNotify",       PokerConstants.OPTION_CLOCK_COLOUP);
+        BOOL_KEYS.put("clock.pauseAtLevelEnd",     PokerConstants.OPTION_CLOCK_PAUSE);
+        BOOL_KEYS.put("advisor.enabled",           PokerConstants.OPTION_DEFAULT_ADVISOR);
+        BOOL_KEYS.put("cheat.rabbithunt",          PokerConstants.OPTION_CHEAT_RABBITHUNT);
+        BOOL_KEYS.put("cheat.manualbutton",        PokerConstants.OPTION_CHEAT_MANUAL_BUTTON);
 
-        INT_KEYS.put("gameplay.aiDelayMs",     PokerConstants.OPTION_DELAY);
+        INT_KEYS.put("gameplay.aiDelayMs",         PokerConstants.OPTION_DELAY);
+        INT_KEYS.put("gameplay.autodealHand",      PokerConstants.OPTION_AUTODEALHAND);
+        INT_KEYS.put("gameplay.autodealFold",      PokerConstants.OPTION_AUTODEALFOLD);
+        INT_KEYS.put("gameplay.handsPerHour",      PokerConstants.OPTION_HANDS_PER_HOUR);
+        INT_KEYS.put("chat.dealer",                PokerConstants.OPTION_CHAT_DEALER);
+        INT_KEYS.put("chat.display",               PokerConstants.OPTION_CHAT_DISPLAY);
+        INT_KEYS.put("chat.fontSize",              PokerConstants.OPTION_CHAT_FONT_SIZE);
+        INT_KEYS.put("screenshot.maxWidth",        PokerConstants.OPTION_SCREENSHOT_MAX_WIDTH);
+        INT_KEYS.put("screenshot.maxHeight",       PokerConstants.OPTION_SCREENSHOT_MAX_HEIGHT);
     }
 
     OptionsHandler(String apiKey) {
@@ -121,16 +139,44 @@ class OptionsHandler extends BaseHandler {
         gameplay.put("zipMode",     PokerUtils.isOptionOn(PokerConstants.OPTION_ZIP_MODE));
         gameplay.put("aiDelayMs",   PokerUtils.getIntOption(PokerConstants.OPTION_DELAY));
         gameplay.put("autodeal",    PokerUtils.isOptionOn(PokerConstants.OPTION_AUTODEAL));
+        gameplay.put("autodealHand", PokerUtils.getIntOption(PokerConstants.OPTION_AUTODEALHAND));
+        gameplay.put("autodealFold", PokerUtils.getIntOption(PokerConstants.OPTION_AUTODEALFOLD));
+        gameplay.put("checkfold",   PokerUtils.isOptionOn(PokerConstants.OPTION_CHECKFOLD));
+        gameplay.put("handsPerHour", PokerUtils.getIntOption(PokerConstants.OPTION_HANDS_PER_HOUR));
 
         Map<String, Object> display = new LinkedHashMap<>();
-        display.put("largeCards",    PokerUtils.isOptionOn(PokerConstants.OPTION_LARGE_CARDS));
-        display.put("fourColorDeck", PokerUtils.isOptionOn(PokerConstants.OPTION_FOUR_COLOR_DECK));
-        display.put("holeCardsDown", PokerUtils.isOptionOn(PokerConstants.OPTION_HOLE_CARDS_DOWN));
+        display.put("largeCards",       PokerUtils.isOptionOn(PokerConstants.OPTION_LARGE_CARDS));
+        display.put("fourColorDeck",    PokerUtils.isOptionOn(PokerConstants.OPTION_FOUR_COLOR_DECK));
+        display.put("holeCardsDown",    PokerUtils.isOptionOn(PokerConstants.OPTION_HOLE_CARDS_DOWN));
+        display.put("stylizedFaceCards", PokerUtils.isOptionOn(PokerConstants.OPTION_STYLIZED_FACE_CARDS));
+        display.put("showPlayerType",   PokerUtils.isOptionOn(PokerConstants.OPTION_SHOW_PLAYER_TYPE));
+        display.put("rightClickOnly",   PokerUtils.isOptionOn(PokerConstants.OPTION_RIGHT_CLICK_ONLY));
+        display.put("disableShortcuts", PokerUtils.isOptionOn(PokerConstants.OPTION_DISABLE_SHORTCUTS));
+
+        Map<String, Object> clock = new LinkedHashMap<>();
+        clock.put("colorUpNotify",   PokerUtils.isOptionOn(PokerConstants.OPTION_CLOCK_COLOUP));
+        clock.put("pauseAtLevelEnd", PokerUtils.isOptionOn(PokerConstants.OPTION_CLOCK_PAUSE));
+
+        Map<String, Object> advisor = new LinkedHashMap<>();
+        advisor.put("enabled", PokerUtils.isOptionOn(PokerConstants.OPTION_DEFAULT_ADVISOR));
+
+        Map<String, Object> chat = new LinkedHashMap<>();
+        chat.put("dealer",   PokerUtils.getIntOption(PokerConstants.OPTION_CHAT_DEALER));
+        chat.put("display",  PokerUtils.getIntOption(PokerConstants.OPTION_CHAT_DISPLAY));
+        chat.put("fontSize", PokerUtils.getIntOption(PokerConstants.OPTION_CHAT_FONT_SIZE));
+
+        Map<String, Object> screenshot = new LinkedHashMap<>();
+        screenshot.put("maxWidth",  PokerUtils.getIntOption(PokerConstants.OPTION_SCREENSHOT_MAX_WIDTH));
+        screenshot.put("maxHeight", PokerUtils.getIntOption(PokerConstants.OPTION_SCREENSHOT_MAX_HEIGHT));
 
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("cheat",    cheat);
-        result.put("gameplay", gameplay);
-        result.put("display",  display);
+        result.put("cheat",      cheat);
+        result.put("gameplay",   gameplay);
+        result.put("display",    display);
+        result.put("clock",      clock);
+        result.put("advisor",    advisor);
+        result.put("chat",       chat);
+        result.put("screenshot", screenshot);
         sendJson(exchange, 200, result);
     }
 
