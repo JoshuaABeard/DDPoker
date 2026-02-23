@@ -28,6 +28,7 @@ else
 fi
 
 sleep 1
+screenshot "navigate-practice-lobby"
 
 # ============================================================
 # L-015: Navigate back to main menu
@@ -42,6 +43,7 @@ else
 fi
 
 sleep 1
+screenshot "navigate-main-menu"
 
 # ============================================================
 # L-017: Invalid phase name

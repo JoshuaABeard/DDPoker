@@ -481,6 +481,37 @@ Same as H2 lock above — the previous instance holds the database file lock.
 
 ---
 
+## Visual Verification via Screenshots
+
+Scenario scripts capture screenshots at key visual checkpoints using `screenshot "label"`,
+which calls `POST /screenshot` and saves PNGs to `$LOG_DIR/{label}.png`.
+
+**Reviewing screenshots:** Claude can read PNG files directly with the Read tool to
+visually verify UI correctness. This covers visual-only test cases that can't be
+validated through API data alone (window layout, dialog appearance, card rendering, etc.).
+
+```bash
+# Run a scenario — screenshots auto-saved
+bash .claude/scripts/scenarios/test-app-launch.sh --skip-build
+
+# Screenshots saved to log dir (default: /tmp/ddpoker-scenario/)
+ls /tmp/ddpoker-scenario/*.png
+```
+
+Most scripts already include screenshot calls. Common screenshot labels:
+
+| Label | Script | What it captures |
+|-------|--------|------------------|
+| `app-launch` | test-app-launch.sh | Main menu after startup |
+| `dashboard-start` | test-dashboard-panels.sh | Dashboard panel layout |
+| `dashboard-human-turn` | test-dashboard-panels.sh | Dashboard during human turn |
+| `hand-flow-flop` | test-hand-flow.sh | Table after flop dealt |
+| `clock-paused` | test-clock-pause.sh | Clock in paused state |
+| `table-layout` | test-game-start.sh | Table with players seated |
+| `side-pot-resolved` | test-allin-side-pot.sh | Side pot resolution display |
+
+---
+
 ## Full Automated Test Loop (Node.js example)
 
 See `test-practice.js` at the repo root for a complete example that:
