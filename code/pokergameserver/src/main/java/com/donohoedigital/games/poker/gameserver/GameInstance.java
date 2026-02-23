@@ -353,6 +353,12 @@ public class GameInstance {
             if (f != null) {
                 f.complete(null);
             }
+            // Unblock any in-progress offerRebuy/offerAddon/offerNeverBroke so
+            // the director thread exits promptly in embedded/practice mode where
+            // those methods wait indefinitely (actionTimeoutSeconds == 0).
+            pendingRebuys.values().forEach(r -> r.complete(false));
+            pendingAddons.values().forEach(r -> r.complete(false));
+            pendingNeverBroke.values().forEach(r -> r.complete(false));
         } finally {
             stateLock.unlock();
         }
