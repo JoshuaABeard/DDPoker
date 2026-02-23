@@ -102,15 +102,13 @@ class SimulatorHandler extends BaseHandler {
             }
         }
 
-        int precision = json.has("numSimulations") ? json.get("numSimulations").asInt(10000) : 10000;
-
-        // Run simulation
-        var results = HoldemSimulator.simulate(hole, community.size() > 0 ? community : null, precision, null);
+        // HoldemSimulator.precision is a logarithmic scale (DEFAULT=4), not a raw iteration count.
+        // Use the 3-argument overload which applies DEFAULT_PRECISION internally.
+        var results = HoldemSimulator.simulate(hole, community, null);
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("holeCards", holeCardsToStrings(hole));
         response.put("community", holeCardsToStrings(community));
-        response.put("numSimulations", precision);
 
         if (results != null) {
             // StatResults contains per-hand-group data; extract overall win rate

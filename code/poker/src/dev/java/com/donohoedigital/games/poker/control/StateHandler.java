@@ -69,6 +69,7 @@ class StateHandler extends BaseHandler {
             state.put("lifecyclePhase", lifecyclePhase);
             state.put("inputMode", inputModeName);
             state.put("availableActions", availableActions);
+            state.put("version", PokerConstants.VERSION.getMajorAsString());
             return state;
         }
 
@@ -119,20 +120,27 @@ class StateHandler extends BaseHandler {
 
     private Map<String, Object> buildTournamentInfo(PokerGame game) {
         Map<String, Object> t = new LinkedHashMap<>();
-        t.put("level", game.getLevel());
-        t.put("smallBlind", game.getSmallBlind());
-        t.put("bigBlind", game.getBigBlind());
-        t.put("ante", game.getAnte());
+        // profile_ may be null during early game initialization; guard to avoid NPE.
+        // PokerGame.nLevel_ starts at 0 but TournamentProfile levels are 1-indexed,
+        // so getSmallBlind(0) returns 0. Use effectiveLevel = max(1, level) for lookups.
+        // Also expose effectiveLevel as the "level" field so 0 is never returned (0 is
+        // falsy in JavaScript and confuses test assertions using ||"" fallbacks).
+        TournamentProfile profile0 = game.getProfile();
+        int effectiveLevel = Math.max(1, game.getLevel());
+        t.put("level", effectiveLevel);
+        t.put("smallBlind", profile0 != null ? profile0.getSmallBlind(effectiveLevel) : 0);
+        t.put("bigBlind",   profile0 != null ? profile0.getBigBlind(effectiveLevel)   : 0);
+        t.put("ante",       profile0 != null ? profile0.getAnte(effectiveLevel)       : 0);
         t.put("totalPlayers", game.getNumPlayers());
         t.put("playersRemaining", game.getNumPlayers() - game.getNumPlayersOut());
 
-        TournamentProfile profile = game.getProfile();
+        TournamentProfile profile = profile0;
         if (profile != null) {
             t.put("tournamentName", profile.getName());
             t.put("levelCount", profile.getLastLevel());
 
             // Next level blinds preview
-            int nextLevel = game.getLevel() + 1;
+            int nextLevel = effectiveLevel + 1;
             if (nextLevel <= profile.getLastLevel()) {
                 t.put("nextSmallBlind", profile.getSmallBlind(nextLevel));
                 t.put("nextBigBlind", profile.getBigBlind(nextLevel));
@@ -260,7 +268,11 @@ class StateHandler extends BaseHandler {
             p.put("effectiveHandStrength", player.getEffectiveHandStrength());
             PokerGame game = player.getTable() != null ? player.getTable().getGame() : null;
             if (game != null) {
-                p.put("rank", game.getRank(player));
+                try {
+                    p.put("rank", game.getRank(player));
+                } catch (Exception ignored) {
+                    // getRank throws if player not yet in rank list during initialization
+                }
             }
         }
         return p;

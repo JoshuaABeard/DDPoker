@@ -94,21 +94,49 @@ class ValidateHandler extends BaseHandler {
 
     private Map<String, Object> buildChipConservation(PokerGame game, List<String> warnings) {
         List<Map<String, Object>> tableResults = new ArrayList<>();
-        boolean allValid = true;
 
-        if (game != null) {
-            List<PokerTable> tables = game.getTables();
-            int buyinPerPlayer = game.getStartingChips();
+        if (game == null) {
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("valid", true);
+            result.put("tables", tableResults);
+            return result;
+        }
 
-            if (tables != null) {
-                for (PokerTable table : tables) {
-                    Map<String, Object> tableResult = checkTable(table, buyinPerPlayer, warnings);
-                    tableResults.add(tableResult);
-                    if (!(Boolean) tableResult.get("valid")) {
-                        allValid = false;
-                    }
-                }
+        List<PokerTable> tables = game.getTables();
+        int buyinPerPlayer = game.getStartingChips();
+        // Use the initial player count (includes eliminated players whose chips
+        // have been redistributed but whose seats may have been removed).
+        int initialPlayerCount = game.getNumPlayers();
+        int expectedTotal = buyinPerPlayer * initialPlayerCount;
+
+        int grandTotalChips = 0;
+        int grandTotalInPot = 0;
+
+        if (tables != null) {
+            for (PokerTable table : tables) {
+                Map<String, Object> tableResult = buildTableChipInfo(table);
+                tableResults.add(tableResult);
+                grandTotalChips += (int) tableResult.get("playerChips");
+                grandTotalInPot += (int) tableResult.get("inPot");
             }
+        }
+
+        int grandTotal = grandTotalChips + grandTotalInPot;
+        boolean allValid = (grandTotal == expectedTotal);
+
+        if (!allValid) {
+            warnings.add(String.format(
+                    "Game chip conservation violated: total=%d expected=%d"
+                            + " (playerChips=%d inPot=%d initialPlayers=%d buyinPerPlayer=%d)",
+                    grandTotal, expectedTotal,
+                    grandTotalChips, grandTotalInPot, initialPlayerCount, buyinPerPlayer));
+        }
+
+        // Mark each table result with the game-level validity flag
+        for (Map<String, Object> tableResult : tableResults) {
+            tableResult.put("valid", allValid);
+            tableResult.put("expectedTotal", expectedTotal);
+            tableResult.put("initialPlayerCount", initialPlayerCount);
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -117,40 +145,27 @@ class ValidateHandler extends BaseHandler {
         return result;
     }
 
-    private Map<String, Object> checkTable(PokerTable table, int buyinPerPlayer,
-                                           List<String> warnings) {
+    private Map<String, Object> buildTableChipInfo(PokerTable table) {
         int playerChips = 0;
-        int numPlayers = 0;
+        int numSeated = 0;
         for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
             PokerPlayer player = table.getPlayer(seat);
             if (player != null) {
                 playerChips += player.getChipCount();
-                numPlayers++;
+                numSeated++;
             }
         }
 
         HoldemHand hand = table.getHoldemHand();
         int inPot = hand != null ? hand.getTotalPotChipCount() : 0;
         int total = playerChips + inPot;
-        int expectedTotal = buyinPerPlayer * numPlayers;
-        boolean valid = (total == expectedTotal);
-
-        if (!valid) {
-            warnings.add(String.format(
-                    "Table %d chip conservation violated: total=%d expected=%d (playerChips=%d inPot=%d numPlayers=%d buyinPerPlayer=%d)",
-                    table.getNumber(), total, expectedTotal,
-                    playerChips, inPot, numPlayers, buyinPerPlayer));
-        }
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("id", table.getNumber());
-        result.put("valid", valid);
         result.put("playerChips", playerChips);
         result.put("inPot", inPot);
         result.put("total", total);
-        result.put("buyinPerPlayer", buyinPerPlayer);
-        result.put("numPlayers", numPlayers);
-        result.put("expectedTotal", expectedTotal);
+        result.put("numSeated", numSeated);
         return result;
     }
 

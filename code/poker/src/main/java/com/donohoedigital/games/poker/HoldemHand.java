@@ -3388,12 +3388,13 @@ public class HoldemHand implements DataMarshal, GameHand {
      */
     @Override
     public Card[] getCommunityCards() {
-        if (community_ == null || community_.size() == 0) {
+        Hand comm = getCommunity(); // use polymorphic getter so subclasses (RemoteHoldemHand) work correctly
+        if (comm == null || comm.size() == 0) {
             return null;
         }
-        Card[] cards = new Card[community_.size()];
-        for (int i = 0; i < community_.size(); i++) {
-            cards[i] = community_.getCard(i);
+        Card[] cards = new Card[comm.size()];
+        for (int i = 0; i < comm.size(); i++) {
+            cards[i] = comm.getCard(i);
         }
         return cards;
     }

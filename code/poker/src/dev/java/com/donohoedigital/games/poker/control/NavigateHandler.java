@@ -19,7 +19,9 @@
  */
 package com.donohoedigital.games.poker.control;
 
+import com.donohoedigital.games.config.GamePhases;
 import com.donohoedigital.games.engine.GameContext;
+import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.poker.PokerMain;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpExchange;
@@ -89,6 +91,18 @@ class NavigateHandler extends BaseHandler {
             return;
         }
 
+        // Validate the phase name synchronously before dispatching.
+        // Return 200 with success:false rather than 404 so that curl without -f
+        // still captures the JSON error body (curl exits non-zero on 4xx, making
+        // $(...) capture empty in the test scripts).
+        GameEngine engine = context.getGameEngine();
+        GamePhases phases = engine.getGamedefconfig().getGamePhases();
+        if (!phases.containsKey(phase)) {
+            sendJson(exchange, 200, Map.of("error", "NotFound", "message", "Unknown phase: " + phase,
+                    "success", false));
+            return;
+        }
+
         SwingUtilities.invokeLater(() -> {
             try {
                 context.processPhase(phase);
@@ -98,6 +112,6 @@ class NavigateHandler extends BaseHandler {
             }
         });
 
-        sendJson(exchange, 200, Map.of("accepted", true, "phase", phase));
+        sendJson(exchange, 200, Map.of("success", true, "phase", phase));
     }
 }

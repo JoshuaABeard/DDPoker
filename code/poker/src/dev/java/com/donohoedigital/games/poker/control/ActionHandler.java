@@ -196,17 +196,11 @@ class ActionHandler extends BaseHandler {
             sendConflict(exchange, inputMode);
             return;
         }
-        SwingUtilities.invokeLater(() -> {
-            PokerGame game = getGame();
-            if (game == null) return;
-            PokerPlayer human = game.getHumanPlayer();
-            if (human == null || human.getPokerAI() == null) return;
-            HandAction action = human.getAction(false);
-            if (action != null) {
-                int actionId = handActionToPokerGameAction(action.getAction());
-                game.playerActionPerformed(actionId, action.getAmount());
-            }
-        });
+        // In the dev control server there is no UI advisor, so we cannot query a
+        // PokerAI recommendation.  Calling Bet.doAI() on a human player causes
+        // PokerPlayer.getAction() to silently recover and return FOLD (its error path),
+        // which is the wrong action.  Use CALL — the safe neutral action — instead.
+        dispatchPlayerAction(PokerGame.ACTION_CALL, 0);
         sendJson(exchange, 200, Map.of("accepted", true, "type", "ADVISOR_DO_IT"));
     }
 

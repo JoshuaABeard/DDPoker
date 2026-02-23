@@ -124,14 +124,16 @@ class OptionsHandler extends BaseHandler {
 
     private void handleGet(HttpExchange exchange) throws Exception {
         Map<String, Object> cheat = new LinkedHashMap<>();
-        cheat.put("neverbroke",  PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_NEVERBROKE));
-        cheat.put("aifaceup",    PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_AIFACEUP));
-        cheat.put("showfold",    PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_SHOWFOLD));
-        cheat.put("showmuck",    PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_SHOW_MUCKED));
-        cheat.put("showdown",    PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_SHOWWINNINGHAND));
-        cheat.put("popups",      PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_POPUP));
-        cheat.put("mouseover",   PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_MOUSEOVER));
-        cheat.put("pausecards",  PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_PAUSECARDS));
+        cheat.put("neverbroke",   PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_NEVERBROKE));
+        cheat.put("aifaceup",     PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_AIFACEUP));
+        cheat.put("showfold",     PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_SHOWFOLD));
+        cheat.put("showmuck",     PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_SHOW_MUCKED));
+        cheat.put("showdown",     PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_SHOWWINNINGHAND));
+        cheat.put("popups",       PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_POPUP));
+        cheat.put("mouseover",    PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_MOUSEOVER));
+        cheat.put("pausecards",   PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_PAUSECARDS));
+        cheat.put("rabbithunt",   PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_RABBITHUNT));
+        cheat.put("manualbutton", PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_MANUAL_BUTTON));
 
         Map<String, Object> gameplay = new LinkedHashMap<>();
         gameplay.put("pauseAllin",  PokerUtils.isOptionOn(PokerConstants.OPTION_PAUSE_ALLIN));

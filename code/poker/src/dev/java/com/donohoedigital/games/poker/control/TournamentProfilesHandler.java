@@ -50,12 +50,16 @@ class TournamentProfilesHandler extends BaseHandler {
     }
 
     private void handleGet(HttpExchange exchange) throws Exception {
-        List<BaseProfile> profiles = TournamentProfile.getProfileList();
         List<Map<String, Object>> result = new ArrayList<>();
-        for (BaseProfile bp : profiles) {
-            if (bp instanceof TournamentProfile tp) {
-                result.add(profileToMap(tp));
+        try {
+            List<BaseProfile> profiles = TournamentProfile.getProfileList();
+            for (BaseProfile bp : profiles) {
+                if (bp instanceof TournamentProfile tp) {
+                    result.add(profileToMap(tp));
+                }
             }
+        } catch (Exception e) {
+            logger.debug("Could not load tournament profile list", e);
         }
         sendJson(exchange, 200, Map.of("profiles", result));
     }
@@ -173,11 +177,13 @@ class TournamentProfilesHandler extends BaseHandler {
         for (int i = 1; i <= tp.getLastLevel(); i++) {
             Map<String, Object> level = new LinkedHashMap<>();
             level.put("level", i);
-            level.put("smallBlind", tp.getSmallBlind(i));
-            level.put("bigBlind", tp.getBigBlind(i));
-            level.put("ante", tp.getAnte(i));
+            boolean isBreak = tp.isBreak(i);
+            level.put("isBreak", isBreak);
+            // Break levels have no blind/ante values — calling getSmallBlind() on a break level throws.
+            level.put("smallBlind", isBreak ? null : tp.getSmallBlind(i));
+            level.put("bigBlind", isBreak ? null : tp.getBigBlind(i));
+            level.put("ante", isBreak ? null : tp.getAnte(i));
             level.put("minutes", tp.getMinutes(i));
-            level.put("isBreak", tp.isBreak(i));
             levels.add(level);
         }
         m.put("blindLevels", levels);

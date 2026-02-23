@@ -19,8 +19,12 @@
  */
 package com.donohoedigital.games.poker.control;
 
+import com.donohoedigital.games.config.BaseProfile;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.GameEngine;
+import com.donohoedigital.games.engine.ProfileList;
+import com.donohoedigital.games.poker.PlayerProfile;
+import com.donohoedigital.games.poker.PlayerProfileOptions;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
 import com.donohoedigital.games.poker.TournamentOptions;
@@ -30,6 +34,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpExchange;
 
 import javax.swing.*;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -99,6 +104,8 @@ class GameStartHandler extends BaseHandler {
                 }
                 GameEngine engine = GameEngine.getGameEngine();
 
+                ensureDefaultProfile();
+
                 PokerGame game = TournamentOptions.setupPracticeGame(engine, context);
                 game.initTournament(profile);
                 context.processPhase("InitializeTournamentGame");
@@ -110,6 +117,23 @@ class GameStartHandler extends BaseHandler {
         });
 
         sendJson(exchange, 200, Map.of("accepted", true));
+    }
+
+    /** Auto-create a "Test Player" profile if no profile exists, so game start never fails on first launch. */
+    private void ensureDefaultProfile() {
+        try {
+            if (PlayerProfileOptions.getDefaultProfile() != null) return;
+            List<BaseProfile> existing = PlayerProfile.getProfileList();
+            if (existing != null && !existing.isEmpty()) return;
+            PlayerProfile profile = new PlayerProfile("Test Player");
+            profile.init();
+            profile.initFile();
+            profile.save();
+            ProfileList.setStoredProfile(profile, PlayerProfileOptions.PROFILE_NAME);
+            logger.info("Auto-created default player profile 'Test Player' for dev testing");
+        } catch (Exception e) {
+            logger.warn("Could not auto-create default profile", e);
+        }
     }
 
     private TournamentProfile buildProfile(JsonNode json) {
@@ -152,6 +176,14 @@ class GameStartHandler extends BaseHandler {
         }
 
         profile.fixAll();
+
+        // When rebuys are enabled, allow rebuy through the last blind level.
+        // isRebuyAllowed() checks nLevel <= getLastRebuyLevel(); the default is 0
+        // (meaning no rebuys allowed), so we must set it explicitly.
+        if (profile.isRebuys()) {
+            profile.setLastRebuyLevel(profile.getLastLevel());
+        }
+
         return profile;
     }
 

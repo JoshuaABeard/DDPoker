@@ -46,11 +46,22 @@ class HandGroupsHandler extends BaseHandler {
     }
 
     private void handleGet(HttpExchange exchange) throws Exception {
-        List<BaseProfile> profiles = HandGroup.getProfileList();
         List<Map<String, Object>> result = new ArrayList<>();
+        List<BaseProfile> profiles;
+        try {
+            profiles = HandGroup.getProfileList();
+        } catch (Exception e) {
+            logger.debug("Could not load hand group list", e);
+            sendJson(exchange, 200, Map.of("handGroups", result));
+            return;
+        }
         for (BaseProfile bp : profiles) {
             if (bp instanceof HandGroup hg) {
-                result.add(groupToMap(hg));
+                try {
+                    result.add(groupToMap(hg));
+                } catch (Exception e) {
+                    logger.debug("Could not serialize hand group: {}", hg.getName(), e);
+                }
             }
         }
         sendJson(exchange, 200, Map.of("handGroups", result));
@@ -141,7 +152,14 @@ class HandGroupsHandler extends BaseHandler {
         m.put("handCount", hg.getHandCount());
         m.put("classCount", hg.getClassCount());
         m.put("percent", hg.getPercent());
-        m.put("summary", hg.getSummary());
+        // getSummary() may throw NPE for empty groups (pairs_ not initialized until hands are added)
+        String summary;
+        try {
+            summary = hg.getSummary();
+        } catch (Exception e) {
+            summary = "";
+        }
+        m.put("summary", summary);
         return m;
     }
 }
