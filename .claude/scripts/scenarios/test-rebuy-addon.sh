@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 # test-rebuy-addon.sh — Verify rebuy and add-on game configuration.
 #
-# Tests RB-001 through RB-006:
+# Tests RB-001, RB-004, RB-005, RB-006:
 #   RB-001: Start game with rebuys=true succeeds
-#   RB-002: Start game with addons=true succeeds
-#   RB-003: Profile lastRebuyLevel is set (our fix) — isRebuyAllowed() works
 #   RB-004: Chip conservation holds during play with rebuy profile
-#   RB-005: Neverbroke fires and restores chips when no rebuys remain
-#   RB-006: Second game with addons+rebuys starts correctly
+#   RB-005: Neverbroke fires and restores chips (separate game, no rebuys)
+#   RB-006: Start game with addons=true succeeds
+#
+# Note: RB-002 (rebuy dialog accept) and RB-003 (decline rebuy) are not
+# automatable — NewLevelActions.rebuy() shows a blocking Swing modal that
+# cannot be driven via HTTP. isRebuyAllowed() is implicitly verified by
+# RB-001 starting successfully with rebuys=true.
 #
 # Limitation: The interactive rebuy dialog (NewLevelActions.rebuy()) is a
 # blocking Swing modal that cannot be automated via the control server API.
