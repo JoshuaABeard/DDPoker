@@ -64,6 +64,7 @@ import java.util.concurrent.Executors;
  *   <li>{@code POST /options}          — set one or more game options or cheat toggles</li>
  *   <li>{@code POST /cheat}            — manipulate live game state (setChips, setLevel, setButton, eliminatePlayer)</li>
  *   <li>{@code GET  /ws-log}           — last 40 WebSocket messages and last 50 game events</li>
+ *   <li>{@code GET  /validate}         — chip conservation and game-state invariant checks</li>
  * </ul>
  */
 public class GameControlServer {
@@ -104,6 +105,7 @@ public class GameControlServer {
         server.createContext("/options",          new OptionsHandler(apiKey));
         server.createContext("/cheat",            new CheatHandler(apiKey));
         server.createContext("/ws-log",           new WsLogHandler(apiKey));
+        server.createContext("/validate",         new ValidateHandler(apiKey));
 
         server.start();
 
