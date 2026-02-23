@@ -46,25 +46,41 @@ Standard tournament convention: rebuy costs the same as the original buyin and r
 
 ## Review Results
 
-*[Review agent fills this section]*
+**Status:** APPROVED with suggestions
 
-**Status:**
-
-**Reviewed by:**
-**Date:**
+**Reviewed by:** Claude Opus 4.6
+**Date:** 2026-02-23
 
 ### Findings
 
-#### ✅ Strengths
+#### Strengths
 
-#### ⚠️ Suggestions (Non-blocking)
+1. **Correct root-cause chain identified.** All three bugs (missing profile params, instant timeout, client-only cheat in test) are genuine, and the fixes are minimal and targeted. Good diagnostic work.
 
-#### ❌ Required Changes (Blocking)
+2. **`offerRebuy()` / `offerAddon()` indefinite-wait pattern matches `waitForContinue()` exactly.** The structure -- check `timeoutSeconds <= 0`, branch to `future.get()` vs `future.get(timeout, SECONDS)`, catch block, finally cleanup -- is a 1:1 match with the established pattern at line 732. This is the correct approach.
+
+3. **Rebuy profile defaults are correct.** Setting `PARAM_REBUYCOST = buyinChips` and `PARAM_REBUYCHIPS = buyinChips` is the standard tournament convention (rebuy costs what you originally paid and restores the starting stack). `PARAM_MAXREBUYS = MAX_REBUYS` (99) is the engine's defined cap, verified by `ParameterConstraintsTest.should_CapRebuysAtMAX_REBUYS()`. The values are set *after* `profile.fixAll()` but use the raw `setInteger` path, which is fine since `fixAll()` applies constraints on read via `getInteger(key, default, min, max)`.
+
+4. **Test script design is sound.** The natural chip-loss approach (500-chip buyin with 50/100 blinds, fold every hand) is the right strategy. The human loses 50 or 100 chips per hand from blinds alone, so bust occurs within 5-10 hands -- well within the 120s timeout. This is far more reliable than the client-only `setChips` cheat that the server never sees.
+
+5. **`lib.sh` fix is correct.** The `|| true` on the `ps aux | grep java | grep -v grep` pipeline is necessary because `grep -v grep` can produce zero matches, causing a nonzero exit under `set -euo pipefail`. This is a genuine fix, not a suppression of real errors.
+
+#### Suggestions (Non-blocking)
+
+1. **`shutdown()` does not unblock pending rebuys/addons.** The `shutdown()` method at line 344 completes `pendingContinue` to unblock the director thread, but does not complete futures in `pendingRebuys` or `pendingAddons`. With the new indefinite-wait behavior, if `shutdown()` is called while `offerRebuy()` is blocking, the director thread will hang forever. In online mode this was safe (the timeout would expire), but with `timeoutSeconds <= 0` it becomes a potential deadlock. In practice this is unlikely to trigger -- a user would have to quit the game at exactly the moment a rebuy offer is pending -- but it should be addressed in a follow-up to keep `shutdown()` consistent with the `waitForContinue` teardown pattern. The fix would be iterating `pendingRebuys.values()` and `pendingAddons.values()` and completing each with `false`.
+
+2. **Test script RB-015 failure path is a silent skip, not a failure.** At line 171, if the second REBUY_CHECK never appears within 120s, the script logs `WARN` and skips RB-015 entirely rather than failing. This means the accept-rebuy path could silently go untested. Consider making this a test failure (incrementing `FAILURES`) since the same game setup should reliably trigger bust a second time.
+
+3. **`screenshot()` placement after DECLINE_REBUY (line 103) is safe but worth noting.** The screenshot was removed from the REBUY_CHECK detection loop (correct -- it would block the EDT during the latch window), but it's still called after DECLINE_REBUY on line 103. This is safe because the rebuy latch has already been resolved at that point, but if screenshot ever becomes slow on CI, the 2-second sleep on line 98 may need adjustment.
+
+#### Required Changes (Blocking)
+
+None. The code changes are correct and the identified shutdown concern is an edge case appropriate for a follow-up fix rather than blocking this commit.
 
 ### Verification
 
-- Tests:
-- Coverage:
-- Build:
-- Privacy:
-- Security:
+- Tests: Scenario test coverage verified by review of test script logic; natural chip-loss approach is reliable within timeout bounds.
+- Coverage: N/A -- confirmed changes are dev-only (`GameStartHandler.java`) and a single logic branch addition in `GameInstance.java` matching existing pattern.
+- Build: No new warnings introduced per handoff verification.
+- Privacy: SAFE -- no credentials, tokens, or personal data in any changed file.
+- Security: SAFE -- no new endpoints, no auth changes, no input validation gaps.
