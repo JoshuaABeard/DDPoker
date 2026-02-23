@@ -163,6 +163,7 @@ class GameStartHandler extends BaseHandler {
         }
 
         // Blind levels (1-indexed in TournamentProfile)
+        int lastLevel;
         if (json.has("blindLevels") && json.get("blindLevels").isArray()) {
             JsonNode levels = json.get("blindLevels");
             for (int i = 0; i < levels.size(); i++) {
@@ -173,20 +174,22 @@ class GameStartHandler extends BaseHandler {
                 int minutes = getInt(level, "minutes", 15);
                 profile.setLevel(i + 1, ante, small, big, minutes);
             }
+            lastLevel = levels.size();
         } else {
             // Default 3-level structure
             profile.setLevel(1, 0,  25,  50, 15);
             profile.setLevel(2, 0,  50, 100, 15);
             profile.setLevel(3, 25, 100, 200, 15);
+            lastLevel = 3;
         }
 
         profile.fixAll();
 
         // When rebuys are enabled, allow rebuy through the last blind level.
-        // isRebuyAllowed() checks nLevel <= getLastRebuyLevel(); the default is 0
-        // (meaning no rebuys allowed), so we must set it explicitly.
+        // isRebuyAllowed() checks nLevel <= getLastRebuyLevel(); we track lastLevel
+        // directly because getLastLevel() returns 0 for a freshly created profile.
         if (profile.isRebuys()) {
-            profile.setLastRebuyLevel(profile.getLastLevel());
+            profile.setLastRebuyLevel(lastLevel);
         }
 
         return profile;
