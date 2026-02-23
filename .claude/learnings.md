@@ -48,6 +48,8 @@ Persistent knowledge discovered during development sessions. Read this at the st
 ## WebSocket Broadcasting
 
 - [broadcaster] `GameEventBroadcaster` looks up tables with `getTable(e.tableId() - 1)` (0-based index) because events carry `table.getNumber()` which is 1-based. If you add a new event handler that looks up a table, always use `e.tableId() - 1` and bound-check with `e.tableId() > 0 && (e.tableId() - 1) < getNumTables()` (2026-02-22)
+- [broadcaster] `GameEventBroadcaster.HandStarted` sends GAME_STATE → HAND_STARTED → HOLE_CARDS in that order. This is the sole mechanism that populates the client's `tables_` map before ACTION_REQUIRED arrives — do NOT add extra GAME_STATE sends from the WebSocket handler thread after `startGame()`, as they race with broadcaster events on the game thread and can cause out-of-order community card state (2026-02-22)
+- [websocket] `PlayerConnection.sendMessage()` is `synchronized` — Spring's WebSocketSession.sendMessage() is not thread-safe (JSR-356). `LobbyWebSocketHandler.sendSafe()` bypasses this and calls `session.sendMessage()` directly; lobby sends are currently single-threaded so this is not an active race, but it's an inconsistency to note (2026-02-22)
 
 ## Server Game Engine (ServerTournamentDirector)
 
