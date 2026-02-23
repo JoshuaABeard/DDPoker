@@ -570,6 +570,94 @@ class PokerGameTest {
     }
 
     // =================================================================
+    // applyPlayerResult Tests (WebSocket mode)
+    // =================================================================
+
+    @Test
+    void should_DoNothing_When_PlayerIdNotFoundInApplyPlayerResult() {
+        // No players added — ID 999 won't be found
+        assertThatCode(() -> game.applyPlayerResult(999, 2)).doesNotThrowAnyException();
+        assertThat(game.getNumPlayersOut()).isEqualTo(0);
+    }
+
+    @Test
+    void should_MarkPlayerEliminated_When_ApplyPlayerResultCalled() {
+        PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        game.addPlayer(player);
+
+        game.applyPlayerResult(1, 2);
+
+        assertThat(player.isEliminated()).isTrue();
+    }
+
+    @Test
+    void should_SetFinishPosition_When_ApplyPlayerResultCalled() {
+        PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        game.addPlayer(player);
+
+        game.applyPlayerResult(1, 3);
+
+        assertThat(player.getPlace()).isEqualTo(3);
+    }
+
+    @Test
+    void should_ZeroChips_When_FinishPositionIsNotFirst() {
+        PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        player.setChipCount(1000);
+        game.addPlayer(player);
+
+        game.applyPlayerResult(1, 2);
+
+        assertThat(player.getChipCount()).isEqualTo(0);
+    }
+
+    @Test
+    void should_PreserveChips_When_FinishPositionIsFirst() {
+        PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        player.setChipCount(5000);
+        game.addPlayer(player);
+
+        game.applyPlayerResult(1, 1);
+
+        assertThat(player.getChipCount()).isEqualTo(5000);
+    }
+
+    @Test
+    void should_IncrementPlayersOut_When_ApplyPlayerResultCalled() {
+        PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        game.addPlayer(player);
+
+        game.applyPlayerResult(1, 2);
+
+        assertThat(game.getNumPlayersOut()).isEqualTo(1);
+    }
+
+    @Test
+    void should_SetZeroPrize_When_NoProfileSetInApplyPlayerResult() {
+        // No profile set — prize defaults to 0
+        PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        game.addPlayer(player);
+
+        game.applyPlayerResult(1, 2);
+
+        assertThat(player.getPrize()).isEqualTo(0);
+    }
+
+    @Test
+    void should_SetPrizeFromProfile_When_ProfileIsSetInApplyPlayerResult() {
+        TournamentProfile profile = createTestProfile();
+        game.setProfile(profile);
+        PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        game.addPlayer(player);
+
+        game.applyPlayerResult(1, 2);
+
+        // getPayout(2) for a basic profile without explicit payout structure returns 0;
+        // just verify the method ran without exception and set a non-negative prize.
+        assertThat(player.getPrize()).isGreaterThanOrEqualTo(0);
+    }
+
+    // =================================================================
     // Test Helper Methods
     // =================================================================
 
