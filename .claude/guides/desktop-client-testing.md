@@ -404,6 +404,11 @@ Ready-to-run scenario scripts in `.claude/scripts/scenarios/`. All scripts share
 | `test-ai-types.sh` | AI player types listing | Types have names and skill levels; type visible in game |
 | `test-simulator.sh` | Hand equity simulation | Pocket aces sim; board sim; invalid card handling |
 | `test-hand-history.sh` | Tournament history + save list | Play game, verify history; list save files |
+| `test-poker-night.sh` | Poker Night clock mode | Navigate to clock mode; verify ticking; level info |
+| `test-edge-cases.sh` | Short stack, eliminations, leaderboard | Short stack all-in; multiple eliminations; chip leaderboard |
+| `test-dashboard-data.sh` | Dashboard panel data on human turn | Hand strength, rank, advisor, pot, actions, standings |
+| `test-save-load-extended.sh` | Extended save/load testing | List saves; save during play; verify file; load; validate |
+| `test-preferences-full.sh` | Comprehensive options coverage | All display, gameplay, clock, advisor, chat, screenshot, cheat options |
 
 Common options (all scripts):
 
