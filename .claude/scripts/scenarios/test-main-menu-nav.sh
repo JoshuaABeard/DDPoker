@@ -2,8 +2,8 @@
 # test-main-menu-nav.sh — Test menu navigation via /navigate endpoint.
 #
 # Tests L-010 through L-017:
-#   - Navigate to LobbyPractice
-#   - Navigate to MainMenu
+#   - Navigate to LoadGameMenu (practice/saved game list)
+#   - Navigate to StartMenu (main menu)
 #   - Navigate to other valid phases
 #   - Invalid phase returns error
 #
@@ -46,22 +46,22 @@ test_navigate() {
 }
 
 # ============================================================
-# L-010: Navigate to practice game lobby (PlayerProfileOptions is the practice setup screen)
+# L-010: Navigate to practice game lobby
 # ============================================================
-log "=== L-010: Navigate to PlayerProfileOptions ==="
-test_navigate "PlayerProfileOptions" "true"
+log "=== L-010: Navigate to LoadGameMenu ==="
+test_navigate "LoadGameMenu" "true"
 
 # ============================================================
-# L-011: Navigate back to StartMenu (main menu)
+# L-011: Navigate back to StartMenu from lobby
 # ============================================================
 log "=== L-011: Navigate to StartMenu ==="
 test_navigate "StartMenu" "true"
 
 # ============================================================
-# L-012: Navigate to Online lobby (OnlineMenu)
+# L-012: Navigate to Online lobby
 # ============================================================
-log "=== L-012: Navigate to OnlineMenu ==="
-NAV_RESULT=$(api_post_json /navigate '{"phase": "OnlineMenu"}' 2>/dev/null) || true
+log "=== L-012: Navigate to LobbyOnline ==="
+NAV_RESULT=$(api_post_json /navigate '{"phase": "LobbyOnline"}' 2>/dev/null) || true
 SUCCESS=$(jget "$NAV_RESULT" 'o.success')
 if [[ "$SUCCESS" == "true" ]]; then
     log "  OK: Navigation to LobbyOnline succeeded"
@@ -77,10 +77,10 @@ api_post_json /navigate '{"phase": "StartMenu"}' > /dev/null 2>&1 || true
 sleep 1
 
 # ============================================================
-# L-013: Navigate to GamePrefsDialog (options)
+# L-013: Navigate to PokerPrefsDialog (options)
 # ============================================================
-log "=== L-013: Navigate to GamePrefsDialog ==="
-NAV_RESULT=$(api_post_json /navigate '{"phase": "GamePrefsDialog"}' 2>/dev/null) || true
+log "=== L-013: Navigate to PokerPrefsDialog ==="
+NAV_RESULT=$(api_post_json /navigate '{"phase": "PokerPrefsDialog"}' 2>/dev/null) || true
 SUCCESS=$(jget "$NAV_RESULT" 'o.success')
 if [[ "$SUCCESS" == "true" ]]; then
     log "  OK: Navigation to PokerPrefsDialog succeeded"
@@ -96,10 +96,10 @@ api_post_json /navigate '{"phase": "StartMenu"}' > /dev/null 2>&1 || true
 sleep 1
 
 # ============================================================
-# L-015: Navigate to PlayerProfileOptions and back to StartMenu
+# L-015: Navigate to LoadGameMenu and back to StartMenu
 # ============================================================
 log "=== L-015: Round-trip navigation ==="
-test_navigate "PlayerProfileOptions" "true"
+test_navigate "LoadGameMenu" "true"
 test_navigate "StartMenu" "true"
 
 # ============================================================
