@@ -373,6 +373,25 @@ Ready-to-run scenario scripts in `.claude/scripts/scenarios/`. All scripts share
 | `test-neverbroke.sh` | Drain human chips → all-in bust | `inputMode` becomes `REBUY_CHECK` |
 | `test-pause-allin.sh` | ALL_IN with `gameplay.pauseAllin=true` | `inputMode` becomes `CONTINUE`; POST `CONTINUE` advances |
 | `test-allin-side-pot.sh` | Staggered stacks → side pot | `/validate` passes after pot distribution |
+| `test-game-start-params.sh` | Vary numPlayers/chips/blinds across 4 configs | Player count, chips, blinds, dealer seat all match request |
+| `test-hand-flow.sh` | Card injection → trace preflop through showdown | Community cards appear at correct streets; chip conservation valid |
+| `test-all-actions.sh` | Exercise FOLD/CHECK/CALL/BET/RAISE/ALL_IN | Each action accepted; chip conservation valid after each |
+| `test-blind-posting.sh` | Verify blind/ante deductions; partial blind | Correct blind amounts posted; partial blind handled |
+| `test-level-advance.sh` | setLevel cheat → verify blind escalation | Blinds increase across levels 1 → 3 → 5 |
+| `test-rebuy-addon.sh` | Drain chips → rebuy prompt → accept rebuy | REBUY_CHECK appears; chips restored after rebuy |
+| `test-advisor-detail.sh` | Enable advisor → verify advice on human turn | advisorAdvice/advisorTitle populated; updates across streets |
+| `test-cheats-toggle.sh` | Toggle each cheat via /options | All 8 cheats enable/disable correctly; bulk disable works |
+| `test-heads-up.sh` | 2-player game with CALL strategy | Heads-up plays correctly; chip conservation valid |
+| `test-fold-every-hand.sh` | Human folds every hand to elimination | Human eliminated; game over reached |
+| `test-split-pot.sh` | Inject identical hands → tie at showdown | Chip conservation valid after split pot |
+| `test-large-field.sh` | 20+ player multi-table tournament | Tournament completes; periodic validation passes |
+| `test-tournament-profiles.sh` | CRUD on tournament profiles | List/create/verify/delete profiles; built-in protection |
+| `test-options-expanded.sh` | Toggle all option categories | Display, gameplay, clock, advisor, chat, screenshot, cheat options round-trip |
+| `test-keyboard-shortcuts.sh` | D/F key actions, disable/re-enable | D key deals, F key folds, shortcuts disabled when option set |
+| `test-system-info.sh` | System info + help topics | Version, config dir, Java version; help topics listed with existence |
+| `test-clock-state.sh` | Clock/timer fields in /state | secondsRemaining, level, blinds, next blinds, advance mode |
+| `test-navigate.sh` | Menu navigation via /navigate | Navigate to practice lobby, main menu; invalid phase errors |
+| `test-save-load.sh` | Save/load game via API | Save running game; load it back; verify valid state |
 
 Common options (all scripts):
 
