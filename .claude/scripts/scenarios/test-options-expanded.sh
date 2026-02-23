@@ -26,9 +26,7 @@ test_bool_option() {
     api_post_json /options "{\"$key\": true}" > /dev/null 2>&1 || { log "FAIL: could not set $key=true"; FAILURES=$((FAILURES+1)); return; }
     local options val
     options=$(api GET /options 2>/dev/null) || { log "FAIL: could not read /options"; FAILURES=$((FAILURES+1)); return; }
-    local nested_path
-    nested_path=$(echo "$key" | sed 's/\./\&\&o./g; s/^/o./')
-    val=$(jget "$options" "$nested_path")
+    val=$(jget "$options" "o.$key")
     if [[ "$val" == "true" ]]; then
         OPTIONS_TESTED=$((OPTIONS_TESTED+1))
     else
@@ -45,9 +43,7 @@ test_int_option() {
     api_post_json /options "{\"$key\": $value}" > /dev/null 2>&1 || { log "FAIL: could not set $key=$value"; FAILURES=$((FAILURES+1)); return; }
     local options val
     options=$(api GET /options 2>/dev/null) || { log "FAIL: could not read /options"; FAILURES=$((FAILURES+1)); return; }
-    local nested_path
-    nested_path=$(echo "$key" | sed 's/\./\&\&o./g; s/^/o./')
-    val=$(jget "$options" "$nested_path")
+    val=$(jget "$options" "o.$key")
     if [[ "$val" == "$value" ]]; then
         OPTIONS_TESTED=$((OPTIONS_TESTED+1))
     else
