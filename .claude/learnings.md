@@ -45,6 +45,10 @@ Persistent knowledge discovered during development sessions. Read this at the st
 
 - [config] PropertyConfig is a global singleton — tests that modify it can affect other tests running in the same JVM (2026-02-12)
 
+## WebSocket Broadcasting
+
+- [broadcaster] `GameEventBroadcaster` looks up tables with `getTable(e.tableId() - 1)` (0-based index) because events carry `table.getNumber()` which is 1-based. If you add a new event handler that looks up a table, always use `e.tableId() - 1` and bound-check with `e.tableId() > 0 && (e.tableId() - 1) < getNumTables()` (2026-02-22)
+
 ## Server Game Engine (ServerTournamentDirector)
 
 - [server] Inter-hand pause must hook `result.nextState() == TableState.BEGIN` (the DONE→BEGIN transition from `handleDone()`), NOT `nextState==CLEAN` or `TD.CheckEndHand` — both are dead code for auto-deal online games where `handleBegin()` with `isAutoDeal()=true` goes directly to `START_HAND` (2026-02-19)
