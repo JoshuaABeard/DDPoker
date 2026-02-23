@@ -18,15 +18,17 @@ FAILURES=0
 
 run_test() {
     local label="$1" players="$2" chips="$3" small_blind="$4"
+    local big_blind=$((small_blind * 2))
     log "=== $label: ${players}p, ${chips} chips, SB=${small_blind} ==="
 
-    local extra="\"startingChips\": $chips, \"smallBlind\": $small_blind"
+    # Build extra JSON using correct API params: buyinChips + blindLevels
+    local extra="\"buyinChips\": $chips, \"blindLevels\": [{\"small\": $small_blind, \"big\": $big_blind}]"
     lib_start_game "$players" "$extra"
     sleep 1
 
-    # Wait for first human turn or DEAL mode
+    # Wait for first human turn, QUITSAVE (AI acting), or DEAL
     local state
-    state=$(wait_mode "CHECK_BET|CHECK_RAISE|CALL_RAISE|DEAL|CONTINUE" 60) \
+    state=$(wait_mode "CHECK_BET|CHECK_RAISE|CALL_RAISE|DEAL|CONTINUE|QUITSAVE" 60) \
         || { log "FAIL: $label — timed out waiting for game to start"; FAILURES=$((FAILURES+1)); return; }
 
     local mode
@@ -52,11 +54,11 @@ run_test() {
         log "  OK: player count = $actual_players"
     fi
 
-    # G-003: Verify starting chips (sum should be players * chips, accounting for blinds already posted)
+    # G-003: Verify starting chips (sum includes blinds already in pot)
     local total_chips
     total_chips=$(jget "$state" '(o.tables&&o.tables[0]&&o.tables[0].chipConservation||{}).sum||0')
     local expected_total=$((players * chips))
-    if [[ "$total_chips" != "$expected_total" && "$total_chips" != "0" ]]; then
+    if [[ "$total_chips" != "$expected_total" ]]; then
         log "FAIL: $label — expected total chips $expected_total, got $total_chips"
         FAILURES=$((FAILURES+1))
     else
@@ -66,7 +68,7 @@ run_test() {
     # G-005: Verify blind amounts via tournament state
     local actual_sb
     actual_sb=$(jget "$state" 'o.tournament&&o.tournament.smallBlind||0')
-    if [[ "$actual_sb" != "$small_blind" && "$actual_sb" != "0" ]]; then
+    if [[ "$actual_sb" != "$small_blind" ]]; then
         log "FAIL: $label — expected SB=$small_blind, got $actual_sb"
         FAILURES=$((FAILURES+1))
     else
@@ -98,16 +100,16 @@ run_test() {
 }
 
 # Test 1: Default 3 players
-run_test "3p-default" 3 1500 10
+run_test "3p-default" 3 1500 25
 
 # Test 2: 6 players, larger stacks
 run_test "6p-large" 6 5000 25
 
 # Test 3: 2 players (heads-up)
-run_test "2p-headsup" 2 1000 5
+run_test "2p-headsup" 2 1000 10
 
-# Test 4: 10 players
-run_test "10p-full" 10 2000 50
+# Test 4: 9 players (near max)
+run_test "9p-large" 9 2000 50
 
 if [[ $FAILURES -gt 0 ]]; then
     die "$FAILURES test(s) failed"
