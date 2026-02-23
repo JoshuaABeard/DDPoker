@@ -19,12 +19,14 @@ package com.donohoedigital.games.poker.gameserver.websocket;
 
 import com.donohoedigital.games.poker.core.event.GameEvent;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
+import com.donohoedigital.games.poker.gameserver.GameStateSnapshot;
 import com.donohoedigital.games.poker.gameserver.ServerGameTable;
 import com.donohoedigital.games.poker.gameserver.ServerPlayer;
 import com.donohoedigital.games.poker.gameserver.ServerTournamentContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -421,5 +423,54 @@ class GameEventBroadcasterTest {
         broadcaster.accept(new GameEvent.PlayerAdded(0, 42, 3));
 
         verify(session).sendMessage(any(TextMessage.class));
+    }
+
+    // ====================================
+    // HandStarted ordering: GAME_STATE before HAND_STARTED
+    // ====================================
+
+    /**
+     * Guards the invariant that GAME_STATE is sent before HAND_STARTED in the
+     * broadcaster's HandStarted handler. The GameWebSocketHandler no longer sends
+     * an extra GAME_STATE after startGame() (which raced with the broadcaster); the
+     * broadcaster's pre-HAND_STARTED snapshot is now the sole mechanism that
+     * populates the client's tables_ map before ACTION_REQUIRED arrives.
+     */
+    @Test
+    void handStarted_withGame_sendsGameStateBeforeHandStarted() throws Exception {
+        WebSocketSession session = mock(WebSocketSession.class);
+        when(session.isOpen()).thenReturn(true);
+        long profileId = 7L;
+        connectionManager.addConnection("game-1", profileId,
+                new PlayerConnection(session, profileId, "alice", "game-1", objectMapper));
+
+        // Mock game returning a snapshot with tableId=1 (matches HandStarted tableId
+        // below)
+        GameStateSnapshot snapshot = new GameStateSnapshot(1, 3, null, null, List.of(), List.of(), -1, -1, -1, -1,
+                "PRE_FLOP", 1, 25, 50, 0);
+        GameInstance mockGame = mock(GameInstance.class);
+        when(mockGame.getGameStateSnapshot(profileId)).thenReturn(snapshot);
+
+        ServerTournamentContext mockCtx = mock(ServerTournamentContext.class);
+        when(mockCtx.getNumTables()).thenReturn(1);
+        ServerGameTable mockTable = mock(ServerGameTable.class);
+        when(mockTable.getNumSeats()).thenReturn(0);
+        when(mockCtx.getTable(0)).thenReturn(mockTable);
+        when(mockGame.getTournament()).thenReturn(mockCtx);
+
+        GameEventBroadcaster broadcasterWithGame = new GameEventBroadcaster("game-1", connectionManager, converter,
+                mockGame);
+        broadcasterWithGame.accept(new GameEvent.HandStarted(1, 3)); // 1-based tableId
+
+        // Capture all messages sent, in order
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(session, atLeast(2)).sendMessage(captor.capture());
+        List<TextMessage> messages = captor.getAllValues();
+
+        String first = messages.get(0).getPayload();
+        String second = messages.get(1).getPayload();
+        assertTrue(first.contains("GAME_STATE"),
+                "First message must be GAME_STATE so tables_ is populated before hand state; got: " + first);
+        assertTrue(second.contains("HAND_STARTED"), "Second message must be HAND_STARTED; got: " + second);
     }
 }
