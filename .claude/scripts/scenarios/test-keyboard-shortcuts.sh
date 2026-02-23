@@ -31,6 +31,8 @@ mode=$(jget "$state" 'o.inputMode || "NONE"')
 if echo "$mode" | grep -qE "^(CHECK_BET|CHECK_RAISE|CALL_RAISE)$"; then
     api_post_json /action '{"type":"FOLD"}' > /dev/null 2>&1 || true
     # Wait for DEAL (finish the hand)
+    # DEAL mode does not appear in the embedded server (auto-dealt).
+    # Wait briefly, then continue — G-035 will SKIP if DEAL is not reached.
     WAIT_START=$(date +%s)
     while true; do
         state=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
@@ -40,7 +42,7 @@ if echo "$mode" | grep -qE "^(CHECK_BET|CHECK_RAISE|CALL_RAISE)$"; then
             api_post_json /action "{\"type\":\"$mode\"}" > /dev/null 2>&1 || true
         [[ "$mode" == "REBUY_CHECK" ]] && \
             api_post_json /action '{"type":"DECLINE_REBUY"}' > /dev/null 2>&1 || true
-        [[ $(($(date +%s) - WAIT_START)) -gt 30 ]] && break
+        [[ $(($(date +%s) - WAIT_START)) -gt 5 ]] && break
         sleep 0.3
     done
 fi
