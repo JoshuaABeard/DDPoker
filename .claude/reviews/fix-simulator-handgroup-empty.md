@@ -38,25 +38,51 @@ Fixed two production bugs uncovered by the scenario test suite, plus two test sc
 
 ## Review Results
 
-*[Review agent fills this section]*
+**Status: APPROVED**
 
-**Status:**
-
-**Reviewed by:**
-**Date:**
+**Reviewed by:** Claude Opus 4.6
+**Date:** 2026-02-23
 
 ### Findings
 
 #### ✅ Strengths
 
+**HandGroup.read() fix is correct and minimal.**
+The root cause analysis is accurate. `HandGroup(File, boolean)` delegates to `super(file, bFull)` which calls `load()` → `read()`. The `read()` method called `super.read()` and then branched on whether a `"hands"` key was present. For empty groups saved without a `"hands"` key (because `write()` omits it when `classCount_ == 0`), `pairs_`/`suited_`/`offsuit_` were never initialized, leaving them null. Calling `clearContents()` unconditionally at the start of `read()` closes this gap cleanly (line 589 in `HandGroup.java`). The fix is surgical — one line added, nothing else touched.
+
+The double-call concern (`parse()` calls `clearContents()` again for non-empty groups) is correctly assessed as harmless: `clearContents()` is idempotent (it always sets arrays to newly allocated zero-filled arrays and resets counters to zero). Calling it twice before data is loaded has no adverse effect.
+
+**HoldemSimulator empty-group skip is correct and safe.**
+`Math.log(0)` returns `-Infinity`, which when cast to `int` yields `Integer.MIN_VALUE`. Passing that as `handCount` to the sampling loop would produce undefined behavior (looping 2 billion iterations or an immediate underflow). The added guard (lines 103-107 in `HoldemSimulator.java`) short-circuits cleanly before that computation, increments `nNumDone` to keep the progress bar consistent, then calls `perc()` and `continue`. This matches the expected behavior exactly: an empty group simply contributes nothing to the simulation, no crash.
+
+**curl --fail-with-body is the right tool for the job.**
+The old `-f` / `--fail` flag causes curl to exit non-zero on 4xx/5xx responses and suppresses the response body, which makes test debugging significantly harder. `--fail-with-body` (available since curl 7.76.0; the environment has 8.18.0) exits non-zero on HTTP errors while still printing the response body. The switch does not change the success/failure semantics for any existing `|| die` call sites — they still get exit code propagation. It only improves the `|| true` callers by making the error JSON readable in logs. This is a clean, correct improvement to the testing infrastructure.
+
+**test-tournament-profile-editor.sh JSON path fix is correct.**
+The API response for a successful profile creation returns `{ "created": true, "profile": { "name": "..." } }`, not `{ "created": true, "name": "..." }`. The corrected expression `o.profile?.name||""` (line 31) matches the actual response structure. The optional-chaining (`?.`) is appropriate defensive coding since `profile` could be absent on failure paths, preventing a runtime error in the `jget` node snippet.
+
+**Progress accounting for skipped groups is correct.**
+When an empty group is skipped, `nNumDone++` and `perc()` are called before `continue`, so the progress bar advances normally. This mirrors the structure at the end of the normal (non-empty) path and avoids leaving the progress counter behind.
+
 #### ⚠️ Suggestions (Non-blocking)
+
+**No test for the empty-group file round-trip.**
+`HandGroupTest.java` has thorough unit tests for in-memory construction and parse logic, but no test exercises the `HandGroup(File, boolean)` constructor path with an empty group. The bug — `pairs_` being null when `read()` is called on a file with no `"hands"` key — would not be caught by any existing test. A test that writes an empty `HandGroup` to a temp file and reads it back via `HandGroup(file, false)`, then asserts `expand()` returns an empty `HandList` without throwing, would pin this regression permanently. This is a suggestion, not a blocker, since the fix is clearly correct on inspection.
+
+**HoldemSimulator: no test for the log(0) guard.**
+Similarly, there is no unit test that feeds a simulate call a `HandGroup` with zero hands and verifies it is skipped without error. Given that `HoldemSimulator.simulate()` relies on file-system hand groups, a direct unit test may be difficult, but an integration-level test or a focused test using a mocked/injected list would be valuable to prevent regression.
+
+**Comment on the `clearContents()` double-call is informative but could be clearer.**
+The inline comment on line 589 (`// ensure pairs_/suited_/offsuit_ are initialized even for empty groups`) is accurate. It would be marginally clearer to note that `parse()` will call it again for non-empty groups and that the repetition is harmless, but this is a style preference and not required.
 
 #### ❌ Required Changes (Blocking)
 
+None.
+
 ### Verification
 
-- Tests:
-- Coverage:
-- Build:
-- Privacy:
-- Security:
+- **Tests:** Reported PASS for test-simulator and test-tournament-profile-editor (17/17). Existing tests unaffected. Accepted on author's attestation; no regressions evident from code inspection.
+- **Coverage:** Not measured for this bug-fix PR; acceptable given the nature of the changes.
+- **Build:** Reported clean.
+- **Privacy:** SAFE — no private data present in any changed file.
+- **Security:** No security concerns. The curl change actually improves auditability of error responses. No injection vectors introduced.
