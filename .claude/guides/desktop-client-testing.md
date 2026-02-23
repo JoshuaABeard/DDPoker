@@ -371,7 +371,7 @@ Ready-to-run scenario scripts in `.claude/scripts/scenarios/`. All scripts share
 | `test-gameover-ranks.sh` | FOLD strategy to completion | `playersRemaining == 1` at end; `/validate` passes |
 | `test-dashboard-panels.sh` | Inspect state on human turn | `advisorAdvice`, `advisorTitle`, `pot`, `availableActions` all populated |
 | `test-neverbroke.sh` | Drain human chips → all-in bust | `inputMode` becomes `REBUY_CHECK` |
-| `test-pause-allin.sh` | ALL_IN with `gameplay.pauseAllin=true` | `inputMode` becomes `CONTINUE`; POST `CONTINUE` advances |
+| `test-pause-allin.sh` | ALL_IN with `gameplay.pauseAllin=true`; blinds=50/100 buyinChips=100 so BB auto-all-in on post | `inputMode` becomes `CONTINUE_LOWER`; POST `CONTINUE_LOWER` advances |
 | `test-allin-side-pot.sh` | Staggered stacks → side pot | `/validate` passes after pot distribution |
 | `test-game-start-params.sh` | Vary numPlayers/chips/blinds across 4 configs | Player count, chips, blinds, dealer seat all match request |
 | `test-hand-flow.sh` | Card injection → trace preflop through showdown | Community cards appear at correct streets; chip conservation valid |
@@ -435,6 +435,37 @@ bash .claude/scripts/scenarios/test-allin-side-pot.sh --skip-build --skip-launch
 # Game-over test with 4 players
 bash .claude/scripts/scenarios/test-gameover-ranks.sh --players 4
 ```
+
+### Running the Full Scenario Suite
+
+There is no automated runner — each of the 45 scripts is run independently. The
+fastest workflow when the JAR is already built and the game is already running:
+
+```bash
+# Build once (from code/)
+cd code && mvn clean package -DskipTests -P dev
+
+# Launch the game once
+java -Dgame.server.ai-action-delay-ms=0 -jar poker/target/DDPokerCE-3.3.0.jar > /tmp/game.log 2>&1 &
+sleep 6  # wait for startup
+
+# Run any/all scripts with --skip-build --skip-launch
+for script in .claude/scripts/scenarios/test-*.sh; do
+    echo "=== $script ==="
+    bash "$script" --skip-build --skip-launch
+done
+```
+
+> **Note:** Some tests start their own game regardless (they have incompatible game
+> state requirements). Check each script's header comment if a test fails unexpectedly
+> when reusing a running game.
+
+### ADVISOR_DO_IT prerequisite
+
+`test-advisor-do-it.sh` sets `cheat.aifaceup=true` before starting the game.
+Without this, `pp.getPokerAI()` is null for the human player in WebSocket mode and
+the action silently no-ops. Always set `cheat.aifaceup=true` before calling
+`ADVISOR_DO_IT` in any custom test script.
 
 ---
 
