@@ -145,21 +145,26 @@ if [[ "$PAUSE_ALLIN_APPEARED" == "true" ]]; then
     fi
 
     # ============================================================
-    # PA-005: Drain remaining CONTINUE_LOWER pauses (one per street:
-    #         flop, turn, river) and assert mode eventually leaves.
-    # The first CONTINUE_LOWER was accepted above (PA-004). Two more
-    # may follow (for turn and river). Keep sending CONTINUE_LOWER
-    # while the mode stays in CONTINUE_LOWER, then assert it leaves.
+    # PA-005: Assert mode eventually leaves CONTINUE_LOWER.
+    # Poll-first, send-second: wait for the current mode, then send
+    # CONTINUE_LOWER only if still needed. This avoids firing a second
+    # sendContinueRunout() before the server has processed the first
+    # (from PA-004), which could cause a double-resolve and leave the
+    # game stuck waiting for a CL that was already sent.
     # ============================================================
     log "=== PA-005: Assert mode left CONTINUE_LOWER ==="
     CL_START=$(date +%s)
-    CL_TIMEOUT=20
+    CL_TIMEOUT=30
     MODE2="CONTINUE_LOWER"
-    while [[ "$MODE2" == "CONTINUE_LOWER" ]]; do
-        api_post_json /action '{"type":"CONTINUE_LOWER"}' > /dev/null 2>&1 || true
-        sleep 0.5
+    while true; do
+        sleep 0.3
         STATE2=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
         MODE2=$(jget "$STATE2" 'o.inputMode || "NONE"')
+        if [[ "$MODE2" != "CONTINUE_LOWER" ]]; then
+            break
+        fi
+        # Mode is still CONTINUE_LOWER — send a drain CL and keep polling.
+        api_post_json /action '{"type":"CONTINUE_LOWER"}' > /dev/null 2>&1 || true
         ELAPSED2=$(($(date +%s) - CL_START))
         if [[ $ELAPSED2 -gt $CL_TIMEOUT ]]; then
             log "FAIL: PA-005 — Still in CONTINUE_LOWER after ${CL_TIMEOUT}s"
