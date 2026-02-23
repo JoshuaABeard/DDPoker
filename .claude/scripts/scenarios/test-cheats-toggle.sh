@@ -28,9 +28,7 @@ test_cheat() {
     options=$(api GET /options 2>/dev/null) || { log "FAIL: could not read /options"; FAILURES=$((FAILURES+1)); return; }
 
     # Parse the nested key (e.g., cheat.aifaceup → o.cheat.aifaceup)
-    local nested_path
-    nested_path=$(echo "$key" | sed 's/\./\&\&o./g; s/^/o./')
-    opt_val=$(jget "$options" "$nested_path")
+    opt_val=$(jget "$options" "o.$key")
 
     if [[ "$opt_val" == "$expected_val" ]]; then
         log "  OK: $key = $opt_val"
