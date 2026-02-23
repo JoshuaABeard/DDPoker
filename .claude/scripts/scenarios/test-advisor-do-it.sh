@@ -38,23 +38,22 @@ echo "$RESP" | grep -q '"accepted":true' || die "ADVISOR_DO_IT rejected: $RESP"
 log "ADVISOR_DO_IT accepted"
 screenshot "advisor-after-action"
 
-# Verify the mode changed (game advanced)
-sleep 1
-STATE2=$(api GET /state 2>/dev/null) || die "Could not read state after ADVISOR_DO_IT"
-MODE2=$(jget "$STATE2" 'o.inputMode || "NONE"')
-log "Mode after ADVISOR_DO_IT: $MODE2 (was: $MODE)"
-
-# Mode should have changed from the betting mode (could now be QUITSAVE, CONTINUE, etc.)
-# Accept any change; QUITSAVE means AI is now acting, which is correct.
-if [[ "$MODE2" == "$MODE" ]]; then
-    # Wait one more second in case the dispatch is slow
-    sleep 2
-    STATE3=$(api GET /state 2>/dev/null) || true
-    MODE3=$(jget "$STATE3" 'o.inputMode || "NONE"')
-    if [[ "$MODE3" == "$MODE" ]]; then
-        die "Mode unchanged after ADVISOR_DO_IT: still $MODE — action may not have executed"
+# Verify the mode changed (game advanced).
+# With ai-delay-ms=0, the game can cycle back to a betting mode within milliseconds,
+# so we poll in a tight loop rather than checking at a fixed delay.
+MODE_AFTER=""
+for i in $(seq 1 60); do   # 60 × 50ms = 3 seconds
+    sleep 0.05
+    POLL_STATE=$(api GET /state 2>/dev/null) || continue
+    POLL_MODE=$(jget "$POLL_STATE" 'o.inputMode || "NONE"')
+    if [[ "$POLL_MODE" != "$MODE" ]]; then
+        MODE_AFTER="$POLL_MODE"
+        break
     fi
-    MODE2="$MODE3"
+done
+
+if [[ -z "$MODE_AFTER" ]]; then
+    die "Mode unchanged after ADVISOR_DO_IT: still $MODE — action may not have executed"
 fi
 
-pass "ADVISOR_DO_IT executed OK: $MODE → $MODE2  (advice was: '${TITLE}')"
+pass "ADVISOR_DO_IT executed OK: $MODE → $MODE_AFTER  (advice was: '${TITLE}')"
