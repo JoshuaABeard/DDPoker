@@ -26,122 +26,80 @@ assert_ge() {
     fi
 }
 
-assert_ne() {
-    local desc="$1" actual="$2" not_val="$3"
-    if [[ "$actual" != "$not_val" ]]; then
-        log "  OK: $desc = $actual (not $not_val)"
+assert_gt() {
+    local desc="$1" actual="$2" min="$3"
+    if [[ "$actual" -gt "$min" ]]; then
+        log "  OK: $desc = $actual (> $min)"
     else
-        log "FAIL: $desc = $actual (should not be $not_val)"
+        log "FAIL: $desc = $actual (expected > $min)"
         FAILURES=$((FAILURES+1))
     fi
 }
 
-# Wait for first human turn to establish baseline
+# Wait for game to reach a playable state (any human or AI betting mode)
 log "=== Baseline: Level 1 ==="
-state=$(wait_mode "CHECK_BET|CHECK_RAISE|CALL_RAISE|DEAL" 60) \
+state=$(wait_mode "CHECK_BET|CHECK_RAISE|CALL_RAISE|QUITSAVE" 60) \
     || die "Timed out waiting for game start"
 
-# Get level 1 blinds
+# Read level 1 blinds directly from state
 state=$(api GET /state 2>/dev/null) || die "Could not read state"
 level1_sb=$(jget "$state" 'o.tournament&&o.tournament.smallBlind||0')
 level1_bb=$(jget "$state" 'o.tournament&&o.tournament.bigBlind||0')
-level1_level=$(jget "$state" 'o.tournament&&o.tournament.level||1')
+level1_level=$(jget "$state" 'o.tournament&&o.tournament.level||0')
 log "  Level $level1_level: SB=$level1_sb, BB=$level1_bb"
 
-# Fold current hand
-mode=$(jget "$state" 'o.inputMode || "NONE"')
-if echo "$mode" | grep -qE "^(CHECK_BET|CHECK_RAISE|CALL_RAISE)$"; then
-    api_post_json /action '{"type":"FOLD"}' > /dev/null 2>&1 || true
+# Sanity: level 1 blinds must be positive
+if [[ "$level1_sb" -le 0 ]]; then
+    log "FAIL: Level 1 small blind is 0 — StateHandler blind lookup broken"
+    FAILURES=$((FAILURES+1))
 fi
 
-# Wait for DEAL
-state=$(wait_mode "DEAL|CONTINUE|CONTINUE_LOWER|REBUY_CHECK" 30) || true
-mode=$(jget "$state" 'o.inputMode || "NONE"')
-while [[ "$mode" != "DEAL" ]]; do
-    advance_non_betting "$state"
-    sleep 0.5
-    state=$(api GET /state 2>/dev/null) || break
-    mode=$(jget "$state" 'o.inputMode || "NONE"')
-done
+# ============================================================
+# C-010/C-014: Advance to level 2 and verify blinds increase
+# ============================================================
+# The default practice profile has 3 levels (25/50, 50/100, 100/200),
+# so we test level advancement within that range.
+log "=== Advancing to Level 2 ==="
+cheat_result=$(api_post_json /cheat '{"action":"setLevel","level":2}' 2>/dev/null) \
+    || log "WARN: setLevel HTTP call failed"
+log "  setLevel result: $cheat_result"
+sleep 0.3
+
+# Read blinds immediately — StateHandler reads from profile using the new level
+state=$(api GET /state 2>/dev/null) || die "Could not read state"
+level2_sb=$(jget "$state" 'o.tournament&&o.tournament.smallBlind||0')
+level2_bb=$(jget "$state" 'o.tournament&&o.tournament.bigBlind||0')
+level2_level=$(jget "$state" 'o.tournament&&o.tournament.level||0')
+log "  Level $level2_level: SB=$level2_sb, BB=$level2_bb"
+
+# Blinds should be higher at level 2 than level 1
+assert_ge "level 2 small blind vs level 1" "$level2_sb" "$level1_sb"
+assert_ge "level 2 big blind vs level 1" "$level2_bb" "$level1_bb"
+assert_gt "level 2 small blind strictly greater" "$level2_sb" "$level1_sb"
+
+screenshot "level-advance-2"
 
 # ============================================================
-# C-010/C-014: Advance to level 3 and verify blinds increase
+# C-010: Advance to level 3 and verify further increase
 # ============================================================
 log "=== Advancing to Level 3 ==="
-api_post_json /cheat '{"action":"setLevel","level":3}' > /dev/null 2>&1 \
-    || log "WARN: setLevel cheat failed"
-sleep 0.5
+api_post_json /cheat '{"action":"setLevel","level":3}' > /dev/null 2>&1 || true
+sleep 0.3
 
-# Deal a hand at the new level
-api_post_json /action '{"type":"DEAL"}' > /dev/null 2>&1 || true
-sleep 1
-
-state=$(wait_mode "CHECK_BET|CHECK_RAISE|CALL_RAISE|QUITSAVE" 30) \
-    || die "Timed out after level advance"
-state=$(api GET /state 2>/dev/null) || die "Could not read state"
-
+state=$(api GET /state 2>/dev/null) || true
 level3_sb=$(jget "$state" 'o.tournament&&o.tournament.smallBlind||0')
 level3_bb=$(jget "$state" 'o.tournament&&o.tournament.bigBlind||0')
-level3_level=$(jget "$state" 'o.tournament&&o.tournament.level||1')
+level3_level=$(jget "$state" 'o.tournament&&o.tournament.level||0')
 log "  Level $level3_level: SB=$level3_sb, BB=$level3_bb"
 
-# Blinds should be higher at level 3 than level 1
-assert_ge "level 3 small blind vs level 1" "$level3_sb" "$level1_sb"
-assert_ge "level 3 big blind vs level 1" "$level3_bb" "$level1_bb"
-
-# Validate chip conservation
-vresult=$(api GET /validate 2>/dev/null) || true
-cc_valid=$(jget "$vresult" 'o.chipConservation&&o.chipConservation.valid')
-if [[ "$cc_valid" != "true" ]]; then
-    log "WARN: chip conservation invalid after level advance (expected — chips may not match new buyin)"
-fi
+assert_ge "level 3 small blind vs level 2" "$level3_sb" "$level2_sb"
+assert_ge "level 3 big blind vs level 2" "$level3_bb" "$level2_bb"
+assert_gt "level 3 small blind strictly greater" "$level3_sb" "$level2_sb"
 
 screenshot "level-advance-3"
-
-# Fold to move on
-mode=$(jget "$state" 'o.inputMode || "NONE"')
-if echo "$mode" | grep -qE "^(CHECK_BET|CHECK_RAISE|CALL_RAISE)$"; then
-    is_human=$(jget "$state" 'o.currentAction&&o.currentAction.isHumanTurn||false')
-    if [[ "$is_human" == "true" ]]; then
-        api_post_json /action '{"type":"FOLD"}' > /dev/null 2>&1 || true
-    fi
-fi
-
-# ============================================================
-# C-010: Advance to level 5 and verify further increase
-# ============================================================
-log "=== Advancing to Level 5 ==="
-# Wait for DEAL
-state=$(wait_mode "DEAL|CONTINUE|CONTINUE_LOWER|REBUY_CHECK" 30) || true
-mode=$(jget "$state" 'o.inputMode || "NONE"')
-while [[ "$mode" != "DEAL" ]]; do
-    advance_non_betting "$state"
-    sleep 0.5
-    state=$(api GET /state 2>/dev/null) || break
-    mode=$(jget "$state" 'o.inputMode || "NONE"')
-done
-
-api_post_json /cheat '{"action":"setLevel","level":5}' > /dev/null 2>&1 || true
-sleep 0.5
-
-api_post_json /action '{"type":"DEAL"}' > /dev/null 2>&1 || true
-sleep 1
-
-state=$(wait_mode "CHECK_BET|CHECK_RAISE|CALL_RAISE|QUITSAVE" 30) || true
-state=$(api GET /state 2>/dev/null) || true
-
-level5_sb=$(jget "$state" 'o.tournament&&o.tournament.smallBlind||0')
-level5_bb=$(jget "$state" 'o.tournament&&o.tournament.bigBlind||0')
-level5_level=$(jget "$state" 'o.tournament&&o.tournament.level||1')
-log "  Level $level5_level: SB=$level5_sb, BB=$level5_bb"
-
-assert_ge "level 5 small blind vs level 3" "$level5_sb" "$level3_sb"
-assert_ge "level 5 big blind vs level 3" "$level5_bb" "$level3_bb"
-
-screenshot "level-advance-5"
 
 if [[ $FAILURES -gt 0 ]]; then
     die "$FAILURES test(s) failed"
 fi
 
-pass "Level advancement verified: blinds increase correctly across levels 1 → 3 → 5"
+pass "Level advancement verified: blinds increase correctly across levels 1 → 2 → 3"
