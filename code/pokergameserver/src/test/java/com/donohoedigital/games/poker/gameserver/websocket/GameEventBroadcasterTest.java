@@ -241,6 +241,30 @@ class GameEventBroadcasterTest {
     }
 
     @Test
+    void showdownStarted_1basedTableId_looksUpTableAtIndex0() throws Exception {
+        // Regression test: table.getNumber() returns 1-based numbers, so
+        // ShowdownStarted(1) must look up getTable(0), not getTable(1).
+        // Before the fix, the bounds check "1 < getNumTables()=1" was false,
+        // so showdownPlayers was always empty and AI cards were never revealed.
+        makeConnectedPlayer(1L);
+
+        GameInstance mockGame = mock(GameInstance.class);
+        ServerTournamentContext mockCtx = mock(ServerTournamentContext.class);
+        ServerGameTable mockTable = mock(ServerGameTable.class);
+        when(mockTable.getNumSeats()).thenReturn(0); // no players in hand
+        when(mockCtx.getNumTables()).thenReturn(1);
+        when(mockCtx.getTable(0)).thenReturn(mockTable); // 0-based index for table number 1
+        when(mockGame.getTournament()).thenReturn(mockCtx);
+
+        GameEventBroadcaster broadcastWithGame = new GameEventBroadcaster("game-1", connectionManager, converter,
+                mockGame);
+        broadcastWithGame.accept(new GameEvent.ShowdownStarted(1)); // 1-based table number
+
+        // Verify the lookup was attempted with the correct 0-based index
+        verify(mockCtx).getTable(0);
+    }
+
+    @Test
     void playerEliminated_broadcastsToAllPlayers() throws Exception {
         PlayerConnection p1 = makeConnectedPlayer(1L);
         PlayerConnection p2 = makeConnectedPlayer(2L);
@@ -256,12 +280,12 @@ class GameEventBroadcasterTest {
         // Create a real player and table so name lookup works
         ServerPlayer player = new ServerPlayer(42, "TestPlayer", true, 0, 5000);
         player.setSeat(0);
-        ServerGameTable sgt = new ServerGameTable(0, 2, null, 50, 100, 0);
+        ServerGameTable sgt = new ServerGameTable(1, 2, null, 50, 100, 0);
         sgt.addPlayer(player, 0);
 
         ServerTournamentContext tournament = mock(ServerTournamentContext.class);
         when(tournament.getNumTables()).thenReturn(1);
-        when(tournament.getTable(0)).thenReturn(sgt);
+        when(tournament.getTable(0)).thenReturn(sgt); // 0-based index for table number 1
 
         GameInstance game = mock(GameInstance.class);
         when(game.getTournament()).thenReturn(tournament);
@@ -275,7 +299,7 @@ class GameEventBroadcasterTest {
                 new PlayerConnection(session, 99L, "observer", "game-1", objectMapper));
 
         broadcasterWithGame
-                .accept(new GameEvent.PlayerActed(0, 42, com.donohoedigital.games.poker.core.state.ActionType.FOLD, 0));
+                .accept(new GameEvent.PlayerActed(1, 42, com.donohoedigital.games.poker.core.state.ActionType.FOLD, 0));
 
         verify(session).sendMessage(argThat(msg -> {
             String json = ((TextMessage) msg).getPayload();
@@ -373,12 +397,13 @@ class GameEventBroadcasterTest {
         ServerPlayer namedPlayer = mock(ServerPlayer.class);
         when(namedPlayer.getName()).thenReturn("Alice");
         when(mockTable.getPlayer(3)).thenReturn(namedPlayer);
-        when(mockCtx.getTable(0)).thenReturn(mockTable);
+        when(mockCtx.getNumTables()).thenReturn(1);
+        when(mockCtx.getTable(0)).thenReturn(mockTable); // 0-based index for table number 1
         when(mockGame.getTournament()).thenReturn(mockCtx);
 
         GameEventBroadcaster broadcastWithGame = new GameEventBroadcaster("game-1", connectionManager, converter,
                 mockGame);
-        broadcastWithGame.accept(new GameEvent.PlayerAdded(0, 42, 3));
+        broadcastWithGame.accept(new GameEvent.PlayerAdded(1, 42, 3)); // 1-based table number
 
         verify(session).sendMessage(argThat(msg -> {
             String json = ((TextMessage) msg).getPayload();

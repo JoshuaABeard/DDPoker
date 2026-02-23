@@ -136,9 +136,9 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                     int dealerSeat = -1;
                     int sbSeat = -1;
                     int bbSeat = -1;
-                    if (game.getTournament() != null && e.tableId() >= 0
-                            && e.tableId() < game.getTournament().getNumTables()) {
-                        Object gt = game.getTournament().getTable(e.tableId());
+                    if (game.getTournament() != null && e.tableId() > 0
+                            && (e.tableId() - 1) < game.getTournament().getNumTables()) {
+                        Object gt = game.getTournament().getTable(e.tableId() - 1);
                         if (gt instanceof ServerGameTable sgt) {
                             dealerSeat = sgt.getButton();
                             ServerHand hand = (ServerHand) sgt.getHoldemHand();
@@ -170,9 +170,9 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                         }
                     }
                     // If aiFaceUp, broadcast AI hole cards after all players received HAND_STARTED
-                    if (aiFaceUp && game.getTournament() != null && e.tableId() >= 0
-                            && e.tableId() < game.getTournament().getNumTables()) {
-                        Object gt = game.getTournament().getTable(e.tableId());
+                    if (aiFaceUp && game.getTournament() != null && e.tableId() > 0
+                            && (e.tableId() - 1) < game.getTournament().getNumTables()) {
+                        Object gt = game.getTournament().getTable(e.tableId() - 1);
                         if (gt instanceof ServerGameTable sgt) {
                             ServerHand hand = (ServerHand) sgt.getHoldemHand();
                             if (hand != null) {
@@ -207,8 +207,8 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 int potTotal = 0;
                 String playerName = "";
                 if (game != null && game.getTournament() != null
-                        && e.tableId() >= 0 && e.tableId() < game.getTournament().getNumTables()) {
-                    Object gt = game.getTournament().getTable(e.tableId());
+                        && e.tableId() > 0 && (e.tableId() - 1) < game.getTournament().getNumTables()) {
+                    Object gt = game.getTournament().getTable(e.tableId() - 1);
                     if (gt instanceof ServerGameTable sgt) {
                         ServerHand hand = (ServerHand) sgt.getHoldemHand();
                         if (hand != null) {
@@ -232,9 +232,9 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
             case GameEvent.CommunityCardsDealt e -> {
                 // Look up actual community cards from the live hand at broadcast time.
                 List<String> allCommunityCards = List.of();
-                if (game != null && game.getTournament() != null && e.tableId() >= 0
-                        && e.tableId() < game.getTournament().getNumTables()) {
-                    Object gt = game.getTournament().getTable(e.tableId());
+                if (game != null && game.getTournament() != null && e.tableId() > 0
+                        && (e.tableId() - 1) < game.getTournament().getNumTables()) {
+                    Object gt = game.getTournament().getTable(e.tableId() - 1);
                     if (gt instanceof ServerGameTable sgt) {
                         ServerHand hand = (ServerHand) sgt.getHoldemHand();
                         if (hand != null) {
@@ -251,9 +251,9 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 int handNum = 0;
                 List<ServerMessageData.WinnerData> winners = List.of();
                 List<ServerMessageData.ShowdownPlayerData> showdownPlayers = List.of();
-                if (game != null && game.getTournament() != null && e.tableId() >= 0
-                        && e.tableId() < game.getTournament().getNumTables()) {
-                    Object gt = game.getTournament().getTable(e.tableId());
+                if (game != null && game.getTournament() != null && e.tableId() > 0
+                        && (e.tableId() - 1) < game.getTournament().getNumTables()) {
+                    Object gt = game.getTournament().getTable(e.tableId() - 1);
                     if (gt instanceof ServerGameTable sgt) {
                         handNum = sgt.getHandNum();
                         ServerHand hand = (ServerHand) sgt.getHoldemHand();
@@ -303,9 +303,9 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
             }
             case GameEvent.ShowdownStarted e -> {
                 List<ServerMessageData.ShowdownPlayerData> showdownPlayers = List.of();
-                if (game != null && game.getTournament() != null && e.tableId() >= 0
-                        && e.tableId() < game.getTournament().getNumTables()) {
-                    Object gt = game.getTournament().getTable(e.tableId());
+                if (game != null && game.getTournament() != null && e.tableId() > 0
+                        && (e.tableId() - 1) < game.getTournament().getNumTables()) {
+                    Object gt = game.getTournament().getTable(e.tableId() - 1);
                     if (gt instanceof ServerGameTable sgt) {
                         ServerHand hand = (ServerHand) sgt.getHoldemHand();
                         if (hand != null) {
@@ -364,8 +364,9 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 // Look up the player's name from the table so it arrives correctly
                 // in PLAYER_JOINED (e.g. during multi-table consolidation moves).
                 String playerName = "";
-                if (game != null && game.getTournament() != null) {
-                    Object gt = game.getTournament().getTable(e.tableId());
+                if (game != null && game.getTournament() != null && e.tableId() > 0
+                        && (e.tableId() - 1) < game.getTournament().getNumTables()) {
+                    Object gt = game.getTournament().getTable(e.tableId() - 1);
                     if (gt instanceof ServerGameTable sgt) {
                         ServerPlayer sp = sgt.getPlayer(e.seat());
                         if (sp != null) {
@@ -440,9 +441,9 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
             case GameEvent.ChipsTransferred e -> {
                 String fromName = "";
                 String toName = "";
-                if (game != null && game.getTournament() != null && e.tableId() >= 0
-                        && e.tableId() < game.getTournament().getNumTables()) {
-                    Object gt = game.getTournament().getTable(e.tableId());
+                if (game != null && game.getTournament() != null && e.tableId() > 0
+                        && (e.tableId() - 1) < game.getTournament().getNumTables()) {
+                    Object gt = game.getTournament().getTable(e.tableId() - 1);
                     if (gt instanceof ServerGameTable sgt) {
                         for (int s = 0; s < sgt.getNumSeats(); s++) {
                             ServerPlayer sp = sgt.getPlayer(s);
