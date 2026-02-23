@@ -129,6 +129,144 @@ Returns `{"accepted": true, "type": "FOLD"}` on success, or
 `{"error": "Conflict", "inputMode": "...", "availableActions": [...]}` (409)
 if the action doesn't match the current mode.
 
+All valid action types:
+
+| Type | Mode | Notes |
+|------|------|-------|
+| `FOLD` | CHECK_BET / CHECK_RAISE / CALL_RAISE | |
+| `CHECK` | CHECK_BET / CHECK_RAISE | No existing bet |
+| `CALL` | CALL_RAISE | Match existing bet |
+| `BET` | CHECK_BET | `amount` required |
+| `RAISE` | CHECK_RAISE / CALL_RAISE | `amount` required |
+| `ALL_IN` | any betting mode | Uses `amount=0`; engine uses full stack |
+| `DEAL` | DEAL | Deal next hand |
+| `CONTINUE` | CONTINUE | Advance past pause/showdown |
+| `CONTINUE_LOWER` | CONTINUE_LOWER | Variant continue |
+| `REBUY` | REBUY_CHECK | Accept rebuy |
+| `ADDON` | REBUY_CHECK | Accept add-on |
+| `DECLINE_REBUY` | REBUY_CHECK | Skip (timer expires naturally) |
+| `ADVISOR_DO_IT` | any betting mode | Execute the advisor's recommended action |
+
+### Card Injection
+
+Stage a specific card order for the **next** hand dealt:
+
+```bash
+# Explicit card order: seat0-c1, seat0-c2, seat1-c1, seat1-c2, ...,
+#   burn, flop1, flop2, flop3, burn, turn, burn, river
+# For 3 players that's 14 cards total.
+curl -s -H "$H" -X POST -H "Content-Type: application/json" \
+     -d '{"cards": ["As","Ks","2d","3c","7h","8h","Qd","Jd","Td","9d","4c","2h","3s","5c"]}' \
+     http://localhost:$PORT/cards/inject
+
+# Reproducible seeded shuffle
+curl -s -H "$H" -X POST -H "Content-Type: application/json" \
+     -d '{"seed": 42}' \
+     http://localhost:$PORT/cards/inject
+
+# Clear pending injection
+curl -s -H "$H" -X DELETE http://localhost:$PORT/cards/inject
+```
+
+The injection is consumed once (one hand) and then cleared automatically.
+
+### Options and Cheat Toggles
+
+```bash
+# Read all current options
+curl -s -H "$H" http://localhost:$PORT/options | jq .
+
+# Set one or more options
+curl -s -H "$H" -X POST -H "Content-Type: application/json" \
+     -d '{"cheat.neverbroke": true, "gameplay.pauseAllin": true, "gameplay.aiDelayMs": 500}' \
+     http://localhost:$PORT/options
+```
+
+Boolean option keys: `cheat.neverbroke`, `cheat.aifaceup`, `cheat.showfold`,
+`cheat.showmuck`, `cheat.showdown`, `cheat.popups`, `cheat.mouseover`,
+`cheat.pausecards`, `gameplay.pauseAllin`, `gameplay.pauseColor`, `gameplay.zipMode`
+
+Integer option keys: `gameplay.aiDelayMs`
+
+### Mid-Game State Manipulation (`/cheat`)
+
+```bash
+# Set a player's chip count
+curl -s -H "$H" -X POST -H "Content-Type: application/json" \
+     -d '{"action": "setChips", "seat": 2, "amount": 100}' \
+     http://localhost:$PORT/cheat
+
+# Advance to blind level 3 (0-based)
+curl -s -H "$H" -X POST -H "Content-Type: application/json" \
+     -d '{"action": "setLevel", "level": 3}' \
+     http://localhost:$PORT/cheat
+
+# Move dealer button to seat 1
+curl -s -H "$H" -X POST -H "Content-Type: application/json" \
+     -d '{"action": "setButton", "seat": 1}' \
+     http://localhost:$PORT/cheat
+
+# Mark player as eliminated
+curl -s -H "$H" -X POST -H "Content-Type: application/json" \
+     -d '{"action": "eliminatePlayer", "seat": 0}' \
+     http://localhost:$PORT/cheat
+```
+
+### WebSocket Log
+
+```bash
+# Last 40 WebSocket messages and last 50 game events
+curl -s -H "$H" http://localhost:$PORT/ws-log | jq .
+```
+
+Response shape:
+```json
+{
+  "messages": [{"ms": 1234567890, "direction": "OUT", "type": "PLAYER_ACTION", "payload": "BET:200"}],
+  "events":   [{"ms": 1234567890, "type": "NEW_HAND", "table": 1}]
+}
+```
+
+Use this to verify what WebSocket message type was actually sent for an action (e.g., confirm that
+ALL_IN in CHECK_BET mode sends `BET` not `RAISE` on the wire).
+
+### Invariant Validation
+
+```bash
+curl -s -H "$H" http://localhost:$PORT/validate | jq .
+```
+
+Response shape:
+```json
+{
+  "chipConservation": {
+    "valid": true,
+    "tables": [{
+      "id": 1, "playerChips": 4400, "inPot": 100, "total": 4500,
+      "buyinPerPlayer": 1500, "numPlayers": 3, "expectedTotal": 4500
+    }]
+  },
+  "inputModeConsistent": true,
+  "warnings": []
+}
+```
+
+`chipConservation.valid` is `false` if `playerChips + inPot != buyinPerPlayer * numPlayers` on
+any table. `inputModeConsistent` is `false` if a betting input mode is active but no hand is
+running. `warnings` lists human-readable violation descriptions.
+
+### Richer State Fields
+
+The `/state` response includes additional fields after D4:
+
+| Field | Where | Meaning |
+|-------|-------|---------|
+| `tables[].chipConservation` | always | `{playerTotal, inPot, sum}` — live chip total for quick sanity checks |
+| `tables[].currentBets` | during hand | `{"seat0": N, "seat2": M}` — per-player bets in the current round |
+| `currentAction.advisorAdvice` | human turn | Advisor recommendation text (null if not computed yet) |
+| `currentAction.advisorTitle` | human turn | Short advisor title (e.g., "Call") |
+| `recentEvents` | always | Last 20 game events from the ring buffer |
+
 ---
 
 ## Polling for Human Turn
@@ -216,6 +354,50 @@ Add to `code/poker/src/main/resources/application.properties` or
 ```properties
 logging.level.com.donohoedigital.games.poker.online=DEBUG
 logging.level.com.donohoedigital.games.poker.gameserver=DEBUG
+```
+
+---
+
+## Scenario Scripts
+
+Ready-to-run scenario scripts in `.claude/scripts/scenarios/`. All scripts share
+`.claude/scripts/scenarios/lib.sh` for common launch/cleanup/helper logic.
+
+| Script | What It Tests | Key Assertion |
+|--------|--------------|---------------|
+| `test-chip-conservation.sh` | Play N hands with CALL strategy | `/validate` passes after every hand |
+| `test-advisor-do-it.sh` | POST `ADVISOR_DO_IT` on human turn | inputMode changes (game advanced); advisorAdvice/Title present |
+| `test-action-type-log.sh` | POST `ALL_IN` in CHECK_BET mode | `/ws-log` shows outbound `PLAYER_ACTION` payload starting with `BET:` |
+| `test-gameover-ranks.sh` | FOLD strategy to completion | `playersRemaining == 1` at end; `/validate` passes |
+| `test-dashboard-panels.sh` | Inspect state on human turn | `advisorAdvice`, `advisorTitle`, `pot`, `availableActions` all populated |
+| `test-neverbroke.sh` | Drain human chips → all-in bust | `inputMode` becomes `REBUY_CHECK` |
+| `test-pause-allin.sh` | ALL_IN with `gameplay.pauseAllin=true` | `inputMode` becomes `CONTINUE`; POST `CONTINUE` advances |
+| `test-allin-side-pot.sh` | Staggered stacks → side pot | `/validate` passes after pot distribution |
+
+Common options (all scripts):
+
+```bash
+--skip-build     # Reuse existing JAR (no mvn build)
+--skip-launch    # Reuse already-running game (no launch)
+--ai-delay-ms N  # AI action delay (default: 0)
+--stuck-timeout N # Seconds before declaring stuck (default: 30)
+--log-dir DIR    # Where to write logs + screenshots (default: /tmp/ddpoker-scenario)
+```
+
+Example usage:
+
+```bash
+# Full end-to-end chip conservation test
+bash .claude/scripts/scenarios/test-chip-conservation.sh --hands 10
+
+# Advisor test (build already done)
+bash .claude/scripts/scenarios/test-advisor-do-it.sh --skip-build
+
+# Side-pot regression (reuse a running game)
+bash .claude/scripts/scenarios/test-allin-side-pot.sh --skip-build --skip-launch
+
+# Game-over test with 4 players
+bash .claude/scripts/scenarios/test-gameover-ranks.sh --players 4
 ```
 
 ---
