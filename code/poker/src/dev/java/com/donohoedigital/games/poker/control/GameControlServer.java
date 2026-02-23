@@ -19,6 +19,7 @@
  */
 package com.donohoedigital.games.poker.control;
 
+import com.donohoedigital.games.poker.NewLevelActions;
 import com.sun.net.httpserver.HttpServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,7 +32,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.HexFormat;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Lightweight embedded HTTP control server for dev builds only (src/dev/java).
@@ -92,6 +96,33 @@ public class GameControlServer {
     private HttpServer server;
     String apiKey;
 
+    // -------------------------------------------------------------------------
+    // Rebuy decision latch — lets ActionHandler resolve a pending rebuy prompt
+    // that NewLevelActions is blocking on (on the EDT) waiting for API input.
+    // -------------------------------------------------------------------------
+
+    private static volatile CountDownLatch rebuyLatch;
+    private static final AtomicBoolean rebuyAccepted = new AtomicBoolean(false);
+
+    /**
+     * Called by ActionHandler when REBUY or DECLINE_REBUY is received while
+     * NewLevelActions is waiting for a rebuy decision via the control server.
+     *
+     * @param accepted true if the player chose to rebuy
+     */
+    static void resolveRebuyDecision(boolean accepted) {
+        CountDownLatch latch = rebuyLatch;
+        if (latch != null) {
+            rebuyAccepted.set(accepted);
+            latch.countDown();
+        }
+    }
+
+    /** Returns true if a rebuy decision is currently pending. */
+    static boolean isPendingRebuyDecision() {
+        return rebuyLatch != null;
+    }
+
     /** Start the HTTP server on a random localhost port. */
     public void start() throws IOException {
         apiKey = resolveKey();
@@ -137,6 +168,22 @@ public class GameControlServer {
 
         server.start();
 
+        // Install the control-server-aware rebuy provider so NewLevelActions
+        // bypasses the Swing dialog and exposes REBUY_CHECK via the API instead.
+        NewLevelActions.rebuyDecisionProvider = (setInputModeFn, timeoutSeconds) -> {
+            rebuyLatch = new CountDownLatch(1);
+            rebuyAccepted.set(false);
+            setInputModeFn.run();  // sets inputMode = MODE_REBUY_CHECK on EDT
+            try {
+                rebuyLatch.await(timeoutSeconds, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                rebuyLatch = null;
+            }
+            return rebuyAccepted.get();
+        };
+
         int port = server.getAddress().getPort();
         writePortFile(port);
         logger.info("Dev control server started on localhost:{}", port);
@@ -144,6 +191,7 @@ public class GameControlServer {
 
     /** Stop the HTTP server gracefully. */
     public void stop() {
+        NewLevelActions.rebuyDecisionProvider = null;
         if (server != null) {
             server.stop(2);
             logger.info("Dev control server stopped");

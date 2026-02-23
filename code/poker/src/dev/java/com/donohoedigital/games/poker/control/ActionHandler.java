@@ -149,16 +149,23 @@ class ActionHandler extends BaseHandler {
             sendConflict(exchange, inputMode);
             return;
         }
-        SwingUtilities.invokeLater(() -> {
-            PokerGame game = getGame();
-            PokerDirector director = getDirector();
-            if (game == null || director == null) return;
-            PokerPlayer human = game.getHumanPlayer();
-            TournamentProfile prof = game.getProfile();
-            if (human == null || prof == null) return;
-            boolean pending = human.isInHand();
-            director.doRebuy(human, game.getLevel(), prof.getRebuyCost(), prof.getRebuyChips(), pending);
-        });
+        if (GameControlServer.isPendingRebuyDecision()) {
+            // NewLevelActions.rebuy() is blocking on EDT waiting for this signal;
+            // resolve the latch so it calls doRebuy() itself.
+            GameControlServer.resolveRebuyDecision(true);
+        } else {
+            // GameOver REBUY_CHECK: call doRebuy directly (no blocking latch).
+            SwingUtilities.invokeLater(() -> {
+                PokerGame game = getGame();
+                PokerDirector director = getDirector();
+                if (game == null || director == null) return;
+                PokerPlayer human = game.getHumanPlayer();
+                TournamentProfile prof = game.getProfile();
+                if (human == null || prof == null) return;
+                boolean pending = human.isInHand();
+                director.doRebuy(human, game.getLevel(), prof.getRebuyCost(), prof.getRebuyChips(), pending);
+            });
+        }
         sendJson(exchange, 200, Map.of("accepted", true, "type", "REBUY"));
     }
 
@@ -184,11 +191,12 @@ class ActionHandler extends BaseHandler {
             sendConflict(exchange, inputMode);
             return;
         }
-        // Declining a rebuy is a no-op at the API level — the game's rebuy timer
-        // will expire naturally. Use tournament profiles with rebuys=false to avoid
-        // this mode entirely in automated tests.
-        sendJson(exchange, 200, Map.of("accepted", true, "type", "DECLINE_REBUY",
-                "note", "Rebuy timer will expire naturally"));
+        if (GameControlServer.isPendingRebuyDecision()) {
+            // NewLevelActions.rebuy() is blocking on EDT; signal decline so it returns false.
+            GameControlServer.resolveRebuyDecision(false);
+        }
+        // For GameOver REBUY_CHECK, declining is a no-op — the game continues naturally.
+        sendJson(exchange, 200, Map.of("accepted", true, "type", "DECLINE_REBUY"));
     }
 
     private void handleAdvisorDoIt(HttpExchange exchange, int inputMode) throws Exception {

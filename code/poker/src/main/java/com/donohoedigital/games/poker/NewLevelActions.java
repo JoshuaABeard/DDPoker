@@ -51,6 +51,27 @@ import com.donohoedigital.base.*;
  * @author donohoe
  */
 public class NewLevelActions extends ChainPhase implements CancelablePhase {
+
+    /**
+     * Callback installed by GameControlServer (dev build only) to intercept the
+     * mid-tournament rebuy dialog and expose it as MODE_REBUY_CHECK input mode.
+     * Null in normal interactive play; set during embedded server startup.
+     */
+    public interface RebuyDecisionProvider {
+        /**
+         * Called instead of the Swing dialog when a rebuy opportunity arises.
+         *
+         * @param setInputModeFn
+         *            Runnable that sets inputMode = MODE_REBUY_CHECK
+         * @param timeoutSeconds
+         *            Seconds to wait before treating as declined
+         * @return true if the player accepted the rebuy
+         */
+        boolean waitForDecision(Runnable setInputModeFn, int timeoutSeconds);
+    }
+
+    /** Set by GameControlServer on startup; null in normal interactive builds. */
+    public static volatile RebuyDecisionProvider rebuyDecisionProvider;
     private PokerGame game_;
     private PokerDirector td_;
     private boolean bCanceled_ = false;
@@ -137,6 +158,18 @@ public class NewLevelActions extends ChainPhase implements CancelablePhase {
         int nCost = prof.getRebuyCost();
         int nChips = prof.getRebuyChips();
         boolean bPending = player.isInHand();
+
+        // Control-server path: bypass the Swing dialog so the API can respond
+        RebuyDecisionProvider provider = rebuyDecisionProvider;
+        if (provider != null) {
+            boolean accepted = provider.waitForDecision(() -> game.setInputMode(PokerTableInput.MODE_REBUY_CHECK), 30);
+            if (accepted) {
+                td.doRebuy(player, nLevel, nCost, nChips, bPending);
+                return true;
+            }
+            return false;
+        }
+
         String sPending = "";
         if (bPending)
             sPending = PropertyConfig.getMessage("msg.dorebuy.pending");
