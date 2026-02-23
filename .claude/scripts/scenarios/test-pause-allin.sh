@@ -3,15 +3,20 @@
 #
 # Tests PA-001 through PA-005:
 #   - Enable gameplay.pauseAllin=true via /options
-#   - Start a 3-player game and play hands, taking CALL at every human turn
-#   - Poll /state watching for inputMode == "CONTINUE_LOWER" (up to 120s)
-#   - When CONTINUE_LOWER appears, send CONTINUE_LOWER action and assert game resumes
+#   - Start a 3-player game with buyinChips=100 and blinds=50/100
+#   - BB (100 chips) posts 100 = all-in (full BB, no partial posting)
+#   - UTG/SB go all-in via ALL_IN action; BB checks freely (canCheck=true,
+#     no chips needed) and stays in hand → 2+ players all-in with cards
+#     → AllInRunoutPaused → CONTINUE_LOWER appears
+#   - Send CONTINUE_LOWER, assert game resumes
 #
 # The pause-allin option routes through WebSocketTournamentDirector on the
-# embedded server. When an AI goes all-in, the director enters the
-# AllInRunoutPaused state which surfaces as inputMode "CONTINUE_LOWER".
-# By always CALLing we maximise chip pressure on AI players, forcing all-ins.
-# 120s is ample time for this to occur in a 3-player game.
+# embedded server. When all remaining players are all-in, the director enters
+# the AllInRunoutPaused state which surfaces as inputMode "CONTINUE_LOWER".
+# With buyinChips=100 / blinds=50/100, BB posts the full big blind (all-in).
+# UTG/SB go all-in by sending ALL_IN. BB gets canCheck=true (nobody raised)
+# and checks to stay in the hand. With 2+ players all-in and holding cards,
+# CONTINUE_LOWER appears within a few seconds.
 #
 # Usage:
 #   bash .claude/scripts/scenarios/test-pause-allin.sh [options]
@@ -39,16 +44,25 @@ else
     die "gameplay.pauseAllin did not activate (got: $PA)"
 fi
 
-lib_start_game 3
+lib_start_game 3 '"buyinChips": 100, "blindLevels": [{"small": 50, "big": 100, "ante": 0, "minutes": 60}]'
 screenshot "pause-allin-start"
 
 # ============================================================
-# PA-002: Poll for CONTINUE_LOWER mode while CALLing every human turn
+# PA-002: Poll for CONTINUE_LOWER mode while acting on every human turn.
+#
+# Action strategy to reliably produce an all-in runout:
+#   CALL_RAISE → ALL_IN: forces the player all-in (canAllIn=true when
+#       calling equals going all-in with buyinChips=100, big=100)
+#   CHECK_BET / CHECK_RAISE → CHECK: BB posted the full big blind and nobody
+#       raised, so canCheck=true — checking keeps BB in the hand with 0 chips.
+#       Sending CALL would be rejected (wrong mode), and ALL_IN → FOLD because
+#       canAllIn=false for a 0-chip all-in player, both of which remove BB's
+#       cards and prevent the all-in runout from firing.
 # ============================================================
-log "=== PA-002: Polling for CONTINUE_LOWER (timeout=120s) ==="
+log "=== PA-002: Polling for CONTINUE_LOWER (timeout=60s) ==="
 
 POLL_START=$(date +%s)
-POLL_TIMEOUT=120
+POLL_TIMEOUT=60
 PAUSE_ALLIN_APPEARED=false
 HUMAN_ACTIONS=0
 LAST_MODE=""
@@ -68,10 +82,17 @@ while true; do
             PAUSE_ALLIN_APPEARED=true
             break
             ;;
-        CHECK_BET|CHECK_RAISE|CALL_RAISE)
+        CALL_RAISE)
             IS_HUMAN=$(jget "$STATE" 'o.currentAction&&o.currentAction.isHumanTurn||false')
             if [[ "$IS_HUMAN" == "true" ]]; then
-                api_post_json /action '{"type":"CALL"}' > /dev/null 2>&1 || true
+                api_post_json /action '{"type":"ALL_IN"}' > /dev/null 2>&1 || true
+                HUMAN_ACTIONS=$((HUMAN_ACTIONS+1))
+            fi
+            ;;
+        CHECK_BET|CHECK_RAISE)
+            IS_HUMAN=$(jget "$STATE" 'o.currentAction&&o.currentAction.isHumanTurn||false')
+            if [[ "$IS_HUMAN" == "true" ]]; then
+                api_post_json /action '{"type":"CHECK"}' > /dev/null 2>&1 || true
                 HUMAN_ACTIONS=$((HUMAN_ACTIONS+1))
             fi
             ;;
@@ -91,7 +112,7 @@ while true; do
 
     ELAPSED=$(($(date +%s) - POLL_START))
     if [[ $ELAPSED -gt $POLL_TIMEOUT ]]; then
-        log "FAIL: PA-002 — CONTINUE_LOWER never appeared after ${POLL_TIMEOUT}s ($HUMAN_ACTIONS human actions taken)"
+        log "FAIL: PA-002 — CONTINUE_LOWER never appeared after ${POLL_TIMEOUT}s ($HUMAN_ACTIONS human action(s) taken); last mode=$MODE"
         FAILURES=$((FAILURES+1))
         break
     fi
@@ -124,18 +145,31 @@ if [[ "$PAUSE_ALLIN_APPEARED" == "true" ]]; then
     fi
 
     # ============================================================
-    # PA-005: Assert mode transitioned away from CONTINUE_LOWER
+    # PA-005: Drain remaining CONTINUE_LOWER pauses (one per street:
+    #         flop, turn, river) and assert mode eventually leaves.
+    # The first CONTINUE_LOWER was accepted above (PA-004). Two more
+    # may follow (for turn and river). Keep sending CONTINUE_LOWER
+    # while the mode stays in CONTINUE_LOWER, then assert it leaves.
     # ============================================================
     log "=== PA-005: Assert mode left CONTINUE_LOWER ==="
-    sleep 1
-    STATE2=$(api GET /state 2>/dev/null) || true
-    MODE2=$(jget "$STATE2" 'o.inputMode || "NONE"')
+    CL_START=$(date +%s)
+    CL_TIMEOUT=20
+    MODE2="CONTINUE_LOWER"
+    while [[ "$MODE2" == "CONTINUE_LOWER" ]]; do
+        api_post_json /action '{"type":"CONTINUE_LOWER"}' > /dev/null 2>&1 || true
+        sleep 0.5
+        STATE2=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
+        MODE2=$(jget "$STATE2" 'o.inputMode || "NONE"')
+        ELAPSED2=$(($(date +%s) - CL_START))
+        if [[ $ELAPSED2 -gt $CL_TIMEOUT ]]; then
+            log "FAIL: PA-005 — Still in CONTINUE_LOWER after ${CL_TIMEOUT}s"
+            FAILURES=$((FAILURES+1))
+            break
+        fi
+    done
     if [[ "$MODE2" != "CONTINUE_LOWER" ]]; then
-        log "  OK: Mode transitioned to $MODE2 after CONTINUE_LOWER"
+        log "  OK: Mode transitioned to $MODE2 after all CONTINUE_LOWER pauses"
         screenshot "pause-allin-after-continue"
-    else
-        log "FAIL: PA-005 — Still in CONTINUE_LOWER after sending CONTINUE_LOWER (mode=$MODE2)"
-        FAILURES=$((FAILURES+1))
     fi
 fi
 

@@ -225,7 +225,7 @@ public class ServerHand implements GameHand {
                 player.subtractChips(actualAmount);
                 // Track in playerBets - will be added to pots by calcPots()
                 playerBets.put(player.getID(), playerBets.getOrDefault(player.getID(), 0) + actualAmount);
-                if (actualAmount < anteAmount) {
+                if (player.getChipCount() == 0) {
                     player.setAllIn(true);
                 }
             }
@@ -243,7 +243,7 @@ public class ServerHand implements GameHand {
             sb.subtractChips(actualSB);
             // Track in playerBets - will be added to pots by calcPots()
             playerBets.put(sb.getID(), playerBets.getOrDefault(sb.getID(), 0) + actualSB);
-            if (actualSB < smallBlindAmount) {
+            if (sb.getChipCount() == 0) {
                 sb.setAllIn(true);
             }
         }
@@ -256,7 +256,7 @@ public class ServerHand implements GameHand {
             bb.subtractChips(actualBB);
             // Track in playerBets - will be added to pots by calcPots()
             playerBets.put(bb.getID(), playerBets.getOrDefault(bb.getID(), 0) + actualBB);
-            if (actualBB < bigBlindAmount) {
+            if (bb.getChipCount() == 0) {
                 bb.setAllIn(true);
             }
             currentBet = bigBlindAmount;

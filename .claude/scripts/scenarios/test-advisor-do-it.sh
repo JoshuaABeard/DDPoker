@@ -5,7 +5,7 @@
 # waits for the first human-turn betting mode, then POSTs ADVISOR_DO_IT.
 # Asserts that:
 #   1. /action accepts ADVISOR_DO_IT
-#   2. The inputMode changes from a betting mode (i.e., the game advanced)
+#   2. The human's hole cards change (a new hand was dealt, proving the game advanced)
 #
 # Usage:
 #   bash .claude/scripts/scenarios/test-advisor-do-it.sh [options]
@@ -30,30 +30,38 @@ STATE=$(wait_human_turn 60) || die "Timed out waiting for human turn"
 MODE=$(jget "$STATE" 'o.inputMode || "NONE"')
 ADVICE=$(jget "$STATE" 'o.currentAction && o.currentAction.advisorAdvice || ""')
 TITLE=$(jget "$STATE" 'o.currentAction && o.currentAction.advisorTitle || ""')
-log "Human turn: mode=$MODE  advisorTitle='$TITLE'  advice='$ADVICE'"
+# Capture human's hole cards — unique per hand (probability of identical consecutive hands ≈ 0).
+# handNumber is not used because getHandNum() is always 0 in the embedded desktop game
+# (setHandNum is only called from the online game server).
+CARDS_BEFORE=$(jget "$STATE" '(function(){var t=(o.tables||[])[0],h=t&&(t.players||[]).find(function(p){return p.isHuman});return JSON.stringify(h&&h.holeCards||[])})()')
+log "Human turn: mode=$MODE  advisorTitle='$TITLE'  advice='$ADVICE'  cards=$CARDS_BEFORE"
 
 # Submit ADVISOR_DO_IT
 RESP=$(api_post_json /action '{"type":"ADVISOR_DO_IT"}')
 echo "$RESP" | grep -q '"accepted":true' || die "ADVISOR_DO_IT rejected: $RESP"
 log "ADVISOR_DO_IT accepted"
-screenshot "advisor-after-action"
 
-# Verify the mode changed (game advanced).
-# With ai-delay-ms=0, the game can cycle back to a betting mode within milliseconds,
-# so we poll in a tight loop rather than checking at a fixed delay.
-MODE_AFTER=""
-for i in $(seq 1 60); do   # 60 × 50ms = 3 seconds
-    sleep 0.05
+# Verify the human's hole cards change (game dealt a new hand).
+# With ai-delay-ms=0, inputMode cycles back to CALL_RAISE within milliseconds of
+# the action completing — too fast to catch a mode transition. Hole cards change
+# when a new hand is dealt; they are unique per hand and stable within a hand,
+# making them the reliable indicator that ADVISOR_DO_IT executed and the game advanced.
+# NOTE: screenshot must NOT be called before this poll — it blocks ~25s while the game
+# processes the action, causing the poll to start before new cards are dealt.
+CARDS_AFTER=""
+for i in $(seq 1 30); do   # 30 × ~800ms per iteration (200ms sleep + curl + jget)
+    sleep 0.2
     POLL_STATE=$(api GET /state 2>/dev/null) || continue
-    POLL_MODE=$(jget "$POLL_STATE" 'o.inputMode || "NONE"')
-    if [[ "$POLL_MODE" != "$MODE" ]]; then
-        MODE_AFTER="$POLL_MODE"
+    POLL_CARDS=$(jget "$POLL_STATE" '(function(){var t=(o.tables||[])[0],h=t&&(t.players||[]).find(function(p){return p.isHuman});return JSON.stringify(h&&h.holeCards||[])})()')
+    if [[ "$POLL_CARDS" != "$CARDS_BEFORE" ]]; then
+        CARDS_AFTER="$POLL_CARDS"
         break
     fi
 done
 
-if [[ -z "$MODE_AFTER" ]]; then
-    die "Mode unchanged after ADVISOR_DO_IT: still $MODE — action may not have executed"
+if [[ -z "$CARDS_AFTER" ]]; then
+    die "Hole cards unchanged after ADVISOR_DO_IT (still $CARDS_BEFORE) — action may not have executed"
 fi
 
-pass "ADVISOR_DO_IT executed OK: $MODE → $MODE_AFTER  (advice was: '${TITLE}')"
+screenshot "advisor-after-action"
+pass "ADVISOR_DO_IT executed OK: cards $CARDS_BEFORE → $CARDS_AFTER  (advice was: '${TITLE}')"

@@ -670,6 +670,11 @@ class ServerTournamentDirectorTest {
                 new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", delayMs),
                 event -> {
                 });
+        // Disable the all-in runout sleep so that occasional hands where the human is
+        // BB with exactly bigBlindAmount chips (and is auto-all-in from posting) do not
+        // add 1500ms per community card and blow the 30-second timeout. This test is
+        // about zip-mode correctness, not about all-in runout timing.
+        director.setAllInRunoutPauseMs(0);
 
         Thread thread = new Thread(director);
         thread.start();

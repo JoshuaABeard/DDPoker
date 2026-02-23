@@ -1298,6 +1298,26 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onContinueRunout() {
         SwingUtilities.invokeLater(() -> {
+            // Re-register the player action listener if it was cleared by Bet.finish() at
+            // the end of the preceding betting round. Without this, ACTION_CONTINUE_LOWER
+            // dispatched by the UI (or the dev control server) silently drops because
+            // playerActionListener_ is null and the WebSocket never receives the
+            // CONTINUE_RUNOUT signal to unblock the server's waitForContinue() future.
+            //
+            // This is a one-shot listener: it clears itself after firing so the next
+            // Bet.process() can install its own listener without triggering the
+            // "Attempt to replace existing listener" assertion.
+            if (game_.getPlayerActionListener() == null) {
+                game_.setPlayerActionListener((action, amount) -> {
+                    game_.setPlayerActionListener(null); // one-shot — clear self after use
+                    if (!wsClient_.isConnected()) {
+                        logger.warn("[ACTION] not connected, dropping continue-lower action");
+                        return;
+                    }
+                    game_.setInputMode(PokerTableInput.MODE_QUITSAVE);
+                    wsClient_.sendContinueRunout();
+                });
+            }
             RemotePokerTable table = currentTable();
             if (table == null)
                 return;
