@@ -392,6 +392,18 @@ Ready-to-run scenario scripts in `.claude/scripts/scenarios/`. All scripts share
 | `test-clock-state.sh` | Clock/timer fields in /state | secondsRemaining, level, blinds, next blinds, advance mode |
 | `test-navigate.sh` | Menu navigation via /navigate | Navigate to practice lobby, main menu; invalid phase errors |
 | `test-save-load.sh` | Save/load game via API | Save running game; load it back; verify valid state |
+| `test-app-launch.sh` | App launch and health | Health endpoint responds; version matches /system-info |
+| `test-main-menu-nav.sh` | Menu navigation phases | Navigate to lobby, main menu; invalid phase errors |
+| `test-profile-management.sh` | Player profile CRUD | List/create/default/delete; duplicate/blank rejection |
+| `test-color-up.sh` | Level advance and color-up | Blinds increase with setLevel; chip conservation valid |
+| `test-multi-table.sh` | Multi-table tournament flow | tableCount > 1; player distribution; chip conservation |
+| `test-game-info-data.sh` | Game info dialog data | Players, pot, bets, tournament, clock all in /state |
+| `test-clock-pause.sh` | Clock pause/resume | PAUSE stops clock; RESUME restarts; seconds frozen while paused |
+| `test-tournament-profile-editor.sh` | Detailed profile fields | Player counts, chips, blind structures, rebuys, validation |
+| `test-hand-groups.sh` | Hand group CRUD | List/create/verify/delete groups; duplicate rejection |
+| `test-ai-types.sh` | AI player types listing | Types have names and skill levels; type visible in game |
+| `test-simulator.sh` | Hand equity simulation | Pocket aces sim; board sim; invalid card handling |
+| `test-hand-history.sh` | Tournament history + save list | Play game, verify history; list save files |
 
 Common options (all scripts):
 
