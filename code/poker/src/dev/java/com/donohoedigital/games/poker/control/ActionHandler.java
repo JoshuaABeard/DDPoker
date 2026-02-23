@@ -20,7 +20,10 @@
 package com.donohoedigital.games.poker.control;
 
 import com.donohoedigital.games.engine.GameContext;
+import com.donohoedigital.games.engine.Phase;
+import com.donohoedigital.games.poker.Bet;
 import com.donohoedigital.games.poker.HandAction;
+import com.donohoedigital.games.poker.HoldemHand;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
 import com.donohoedigital.games.poker.PokerPlayer;
@@ -204,11 +207,33 @@ class ActionHandler extends BaseHandler {
             sendConflict(exchange, inputMode);
             return;
         }
-        // In the dev control server there is no UI advisor, so we cannot query a
-        // PokerAI recommendation.  Calling Bet.doAI() on a human player causes
-        // PokerPlayer.getAction() to silently recover and return FOLD (its error path),
-        // which is the wrong action.  Use CALL — the safe neutral action — instead.
-        dispatchPlayerAction(PokerGame.ACTION_CALL, 0);
+        // Mirror DashboardAdvisor.actButton_:
+        //   Practice mode (Bet phase active): delegate to Bet.doAI() which reads the AI
+        //   recommendation and submits it through the normal Bet flow.
+        //   WebSocket mode (no Bet phase, but a PlayerActionListener is set): get the AI
+        //   recommendation via pp.getAction(false) and dispatch it directly.
+        SwingUtilities.invokeLater(() -> {
+            PokerMain main = PokerMain.getPokerMain();
+            if (main == null) return;
+            GameContext context = main.getDefaultContext();
+            if (context == null) return;
+            PokerGame game = (PokerGame) context.getGame();
+            if (game == null) return;
+            Phase phase = context.getCurrentPhase();
+            if (phase instanceof Bet bet) {
+                bet.doAI();
+            } else if (game.getPlayerActionListener() != null) {
+                HoldemHand hh = game.getCurrentTable().getHoldemHand();
+                PokerPlayer pp = (hh == null) ? null : hh.getCurrentPlayer();
+                if (pp != null && pp.isHumanControlled() && pp.getPokerAI() != null) {
+                    HandAction aiAction = pp.getAction(false);
+                    if (aiAction != null) {
+                        game.playerActionPerformed(
+                                handActionToPokerGameAction(aiAction.getAction()), aiAction.getAmount());
+                    }
+                }
+            }
+        });
         sendJson(exchange, 200, Map.of("accepted", true, "type", "ADVISOR_DO_IT"));
     }
 
