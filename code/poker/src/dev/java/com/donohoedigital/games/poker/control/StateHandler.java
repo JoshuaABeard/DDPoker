@@ -23,6 +23,7 @@ import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.Phase;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.dashboard.DashboardAdvisor;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.PokerConstants;
@@ -75,7 +76,7 @@ class StateHandler extends BaseHandler {
         state.put("availableActions", availableActions);
         state.put("tournament", buildTournamentInfo(game));
         state.put("tables", buildTables(game));
-        state.put("currentAction", buildCurrentAction(game, inputMode));
+        state.put("currentAction", buildCurrentAction(game, context, inputMode));
         return state;
     }
 
@@ -158,6 +159,10 @@ class StateHandler extends BaseHandler {
             }
         }
         t.put("players", players);
+        t.put("chipConservation", buildChipConservation(table, hand));
+        if (hand != null) {
+            t.put("currentBets", buildCurrentBets(table, hand));
+        }
         return t;
     }
 
@@ -186,7 +191,7 @@ class StateHandler extends BaseHandler {
         return p;
     }
 
-    private Map<String, Object> buildCurrentAction(PokerGame game, int inputMode) {
+    private Map<String, Object> buildCurrentAction(PokerGame game, GameContext context, int inputMode) {
         boolean isHumanTurn = inputMode == PokerTableInput.MODE_CHECK_BET
                 || inputMode == PokerTableInput.MODE_CHECK_RAISE
                 || inputMode == PokerTableInput.MODE_CALL_RAISE;
@@ -227,7 +232,40 @@ class StateHandler extends BaseHandler {
             action.put("pot", hand.getTotalPotChipCount());
         }
 
+        action.put("advisorAdvice", DashboardAdvisor.getCurrentAdvice());
+        action.put("advisorTitle", DashboardAdvisor.getCurrentTitle());
+
         return action;
+    }
+
+    private Map<String, Object> buildChipConservation(PokerTable table, HoldemHand hand) {
+        int playerTotal = 0;
+        for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
+            PokerPlayer player = table.getPlayer(seat);
+            if (player != null) {
+                playerTotal += player.getChipCount();
+            }
+        }
+        int inPot = hand != null ? hand.getTotalPotChipCount() : 0;
+        Map<String, Object> cc = new LinkedHashMap<>();
+        cc.put("playerTotal", playerTotal);
+        cc.put("inPot", inPot);
+        cc.put("sum", playerTotal + inPot);
+        return cc;
+    }
+
+    private Map<String, Object> buildCurrentBets(PokerTable table, HoldemHand hand) {
+        Map<String, Object> bets = new LinkedHashMap<>();
+        for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
+            PokerPlayer player = table.getPlayer(seat);
+            if (player != null) {
+                int bet = hand.getBet(player);
+                if (bet > 0) {
+                    bets.put("seat" + seat, bet);
+                }
+            }
+        }
+        return bets;
     }
 
     private List<String> cardsToStrings(Card[] cards) {

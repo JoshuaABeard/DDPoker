@@ -58,6 +58,26 @@ public class DashboardAdvisor extends DashboardItem {
     public static final String NOADVICE = PropertyConfig.getMessage("msg.advisor.noadvice");
     public static final String NOADVICETITLE = PropertyConfig.getMessage("msg.advisor.noadvice.title");
 
+    // Static state readable by the dev control server (StateHandler) without
+    // navigating the UI tree.
+    private static volatile String currentAdvice_ = null;
+    private static volatile String currentTitle_ = null;
+
+    /**
+     * Returns the most recently computed advice text, or null if not yet available.
+     */
+    public static String getCurrentAdvice() {
+        return currentAdvice_;
+    }
+
+    /**
+     * Returns the most recently computed advice title, or null if not yet
+     * available.
+     */
+    public static String getCurrentTitle() {
+        return currentTitle_;
+    }
+
     private DDPanel buttons_;
 
     public DashboardAdvisor(GameContext context) {
@@ -173,6 +193,8 @@ public class DashboardAdvisor extends DashboardItem {
                     .getMessage("msg.advisor.action." + HandAction.getActionName(re.getAction().getType()));
         }
 
+        currentAdvice_ = advice_;
+        currentTitle_ = title_;
         htmlAdvice_.setText(advice_);
         buttons_.setVisible(!NOADVICE.equals(advice_));
     }
