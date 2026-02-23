@@ -161,9 +161,9 @@ See `.claude/guides/plan-protocol.md` for plan lifecycle and management.
 
 ## 7. Git Workflow
 
-**NEVER work directly on main. All development happens in worktrees.**
+**Prefer worktrees over working directly on main.**
 
-Use a worktree for anything touching code or tests. Main is OK for small (< 10 lines) non-code changes: `.claude/` files, plans, .gitignore, README typos. If unsure, use a worktree.
+Use a worktree for anything touching code or tests. Main is OK for small (< 10 lines) non-code changes: `.claude/` files, plans, .gitignore, README typos. If unsure, use a worktree. If already on main and work is underway, continue on main rather than blocking progress.
 
 ```bash
 # From the main worktree root
