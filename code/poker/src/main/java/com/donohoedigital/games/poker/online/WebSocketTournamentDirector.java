@@ -927,13 +927,28 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onRebuyOffered(RebuyOfferedData d) {
         SwingUtilities.invokeLater(() -> {
-            // Show rebuy dialog — existing UI flow
             RemotePokerTable table = currentTable();
             if (table == null)
                 return;
             PokerPlayer localPlayer = findPlayer(localPlayerId_);
             if (localPlayer == null)
                 return;
+
+            // Control-server path: bypass the Swing rebuy button and expose the
+            // rebuy decision as MODE_REBUY_CHECK so the API can respond.
+            NewLevelActions.RebuyDecisionProvider provider = NewLevelActions.rebuyDecisionProvider;
+            if (provider != null) {
+                boolean accepted = provider.waitForDecision(() -> game_.setInputMode(PokerTableInput.MODE_REBUY_CHECK),
+                        30);
+                if (accepted) {
+                    doRebuy(localPlayer, table.getLevel(), d.cost(), d.chips(), localPlayer.isInHand());
+                } else {
+                    wsClient_.sendRebuyDecision(false);
+                }
+                return;
+            }
+
+            // Normal UI flow: enable the rebuy button in the table panel.
             table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REBUY, table, localPlayer,
                     d.cost(), d.chips(), true));
         });
