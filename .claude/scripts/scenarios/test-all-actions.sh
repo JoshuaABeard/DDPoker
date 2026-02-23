@@ -15,13 +15,14 @@
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 lib_parse_args "$@"
 lib_launch
-lib_start_game 3
+# 3 players with large stacks so no one gets eliminated during the test.
+lib_start_game 3 '"buyinChips": 50000'
 
 FAILURES=0
 ACTIONS_TESTED=0
 
 assert_action() {
-    local action_type="$1" amount_json="$2"
+    local action_type="$1" amount_json="${2:-}"
     local body="{\"type\":\"$action_type\"${amount_json:+, $amount_json}}"
     local resp
     resp=$(api_post_json /action "$body" 2>/dev/null) || { log "FAIL: $action_type — request failed"; FAILURES=$((FAILURES+1)); return 1; }
@@ -55,6 +56,7 @@ advance_to_human_turn() {
                 fi
                 ;;
             DEAL)
+                # Between-hand DEAL mode (some configurations); advance it
                 api_post_json /action '{"type":"DEAL"}' > /dev/null 2>&1 || true
                 ;;
             CONTINUE|CONTINUE_LOWER)
@@ -63,7 +65,11 @@ advance_to_human_turn() {
             REBUY_CHECK)
                 api_post_json /action '{"type":"DECLINE_REBUY"}' > /dev/null 2>&1 || true
                 ;;
+            QUITSAVE|NONE)
+                # AI acting or between states — just wait
+                ;;
         esac
+
 
         local elapsed=$(( $(date +%s) - start_time ))
         [[ $elapsed -gt $timeout ]] && { log "Timed out waiting for human turn"; return 1; }
@@ -72,13 +78,35 @@ advance_to_human_turn() {
 }
 
 # Helper: play through rest of hand after our action (AI + continues)
+# The embedded server auto-deals the next hand without showing DEAL mode,
+# so we detect "hand over" when the game advances to a new hand (cc drops
+# back to 0 from a non-zero value, or QUITSAVE persists 3s after cc>=5).
 finish_hand() {
     local timeout="${1:-60}"
     local start_time=$(date +%s)
+    local max_cc=0 river_done_time=0
     while true; do
         local st md
         st=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
         md=$(jget "$st" 'o.inputMode || "NONE"')
+
+        local cc
+        cc=$(jget "$st" '(o.tables&&o.tables[0]&&o.tables[0].communityCards||[]).length')
+        [[ "$cc" =~ ^[0-9]+$ ]] || cc=0
+
+        # Detect hand completion:
+        # 1) cc drops back to 0 after being non-zero (new hand started)
+        # 2) River (cc=5) seen and 3s have passed
+        if [[ $max_cc -ge 5 && $river_done_time -eq 0 ]]; then
+            river_done_time=$(date +%s)
+        fi
+        if [[ $river_done_time -gt 0 && $(( $(date +%s) - river_done_time )) -ge 3 ]]; then
+            return 0
+        fi
+        if [[ $max_cc -gt 0 && $cc -eq 0 ]]; then
+            return 0  # cc reset — new hand dealing
+        fi
+        [[ $cc -gt $max_cc ]] && max_cc=$cc
 
         case "$md" in
             CHECK_BET|CHECK_RAISE|CALL_RAISE)
@@ -99,7 +127,7 @@ finish_hand() {
                 api_post_json /action "{\"type\":\"$md\"}" > /dev/null 2>&1 || true
                 ;;
             DEAL)
-                return 0  # Hand is over
+                return 0  # Hand is over (between-hand DEAL mode)
                 ;;
             REBUY_CHECK)
                 api_post_json /action '{"type":"DECLINE_REBUY"}' > /dev/null 2>&1 || true
@@ -140,12 +168,15 @@ validate_hand "FOLD"
 # Test 2: CHECK (G-021)
 # ============================================================
 log "=== Test: CHECK ==="
-# Need to be in CHECK_BET mode — may need multiple hands
-MAX_TRIES=10
+# CHECK requires CHECK_BET or CHECK_RAISE mode.
+# In a 3-player game this occurs when the human is BB (no preflop raise)
+# or when the human acts first post-flop with no bet.
+# Strategy: fold when CHECK isn't available; the next hand will cycle the
+# dealer button so the human's position changes.
+MAX_TRIES=20
 CHECK_DONE=false
 for i in $(seq 1 $MAX_TRIES); do
     state=$(advance_to_human_turn) || die "Could not reach human turn for CHECK test"
-    mode=$(jget "$state" 'o.inputMode || "NONE"')
     avail=$(jget "$state" '(o.currentAction&&o.currentAction.availableActions||[]).join(",")')
     if echo "$avail" | grep -q "CHECK"; then
         assert_action "CHECK"
@@ -154,9 +185,7 @@ for i in $(seq 1 $MAX_TRIES); do
         CHECK_DONE=true
         break
     else
-        # Not in a check-able mode, fold and try again
         api_post_json /action '{"type":"FOLD"}' > /dev/null 2>&1 || true
-        finish_hand || true
     fi
 done
 [[ "$CHECK_DONE" == "true" ]] || { log "FAIL: Never got CHECK opportunity in $MAX_TRIES hands"; FAILURES=$((FAILURES+1)); }
@@ -178,7 +207,6 @@ for i in $(seq 1 $MAX_TRIES); do
     else
         api_post_json /action '{"type":"CHECK"}' > /dev/null 2>&1 || \
             api_post_json /action '{"type":"FOLD"}' > /dev/null 2>&1 || true
-        finish_hand || true
     fi
 done
 [[ "$CALL_DONE" == "true" ]] || { log "FAIL: Never got CALL opportunity in $MAX_TRIES hands"; FAILURES=$((FAILURES+1)); }
@@ -200,7 +228,6 @@ for i in $(seq 1 $MAX_TRIES); do
         break
     else
         api_post_json /action '{"type":"FOLD"}' > /dev/null 2>&1 || true
-        finish_hand || true
     fi
 done
 [[ "$BET_DONE" == "true" ]] || { log "FAIL: Never got BET opportunity in $MAX_TRIES hands"; FAILURES=$((FAILURES+1)); }
@@ -222,7 +249,6 @@ for i in $(seq 1 $MAX_TRIES); do
         break
     else
         api_post_json /action '{"type":"FOLD"}' > /dev/null 2>&1 || true
-        finish_hand || true
     fi
 done
 [[ "$RAISE_DONE" == "true" ]] || { log "FAIL: Never got RAISE opportunity in $MAX_TRIES hands"; FAILURES=$((FAILURES+1)); }

@@ -19,8 +19,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 CODE_DIR="$REPO_ROOT/code"
 JAR="$CODE_DIR/poker/target/DDPokerCE-3.3.0.jar"
-PORT_FILE="$HOME/.ddpoker/control-server.port"
-KEY_FILE="$HOME/.ddpoker/control-server.key"
+# On Windows, DDPoker stores config in %APPDATA%\ddpoker; on Unix, ~/.ddpoker
+if [[ -n "${APPDATA:-}" ]]; then
+    _DDPOKER_DIR="$(cygpath -u "$APPDATA")/ddpoker"
+else
+    _DDPOKER_DIR="$HOME/.ddpoker"
+fi
+PORT_FILE="$_DDPOKER_DIR/control-server.port"
+KEY_FILE="$_DDPOKER_DIR/control-server.key"
 LOG_DIR="${LOG_DIR:-/tmp/ddpoker-scenario}"
 GAME_LOG="$LOG_DIR/game.log"
 JAVA_PID=""
@@ -46,7 +52,7 @@ cleanup() {
         sleep 1
         kill -9 "$JAVA_PID" 2>/dev/null || true
     fi
-    rm -f "$HOME/.ddpoker/games.mv.db" "$HOME/.ddpoker/games.trace.db" 2>/dev/null || true
+    rm -f "$_DDPOKER_DIR/games.mv.db" "$_DDPOKER_DIR/games.trace.db" 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -120,7 +126,7 @@ lib_launch() {
         pkill -f "DDPokerCE" 2>/dev/null || true
     fi
     sleep 2
-    rm -f "$HOME/.ddpoker/games.mv.db" "$HOME/.ddpoker/games.trace.db" \
+    rm -f "$_DDPOKER_DIR/games.mv.db" "$_DDPOKER_DIR/games.trace.db" \
           "$PORT_FILE" "$KEY_FILE" 2>/dev/null || true
 
     log "Launching DDPoker (ai-delay-ms=$AI_DELAY_MS)..."

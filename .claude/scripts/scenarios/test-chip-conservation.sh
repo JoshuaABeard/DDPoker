@@ -25,27 +25,69 @@ for i in "$@"; do
 done
 
 lib_launch
-lib_start_game 3
+# Use enough chips so no player is eliminated during the test (avoids tournament ending early).
+lib_start_game 3 '"buyinChips": 50000'
 
 log "Playing $HANDS_TARGET hands with CALL strategy, validating after each hand..."
 HANDS_VERIFIED=0
-LAST_MODE=""
-LAST_CHANGE=$(date +%s)
+PREV_PHASE=""
+PREV_DEALER="-1"
+LAST_PHASE_CHANGE=$(date +%s)
+
+validate_now() {
+    local VRESULT CC_VALID IM_VALID WARNS
+    VRESULT=$(api GET /validate 2>/dev/null) || { log "WARN: /validate call failed"; return; }
+    CC_VALID=$(jget "$VRESULT" 'o.chipConservation && o.chipConservation.valid')
+    IM_VALID=$(jget "$VRESULT" 'o.inputModeConsistent')
+    WARNS=$(jget "$VRESULT" '(o.warnings||[]).join("; ")')
+
+    if [[ "$CC_VALID" != "true" || "$IM_VALID" != "true" ]]; then
+        log "VALIDATE FAILED after hand $HANDS_VERIFIED:"
+        log "  chipConservation.valid = $CC_VALID"
+        log "  inputModeConsistent    = $IM_VALID"
+        [[ -n "$WARNS" ]] && log "  warnings: $WARNS"
+        screenshot "validation-failure-hand${HANDS_VERIFIED}"
+        die "Chip conservation violated after hand $HANDS_VERIFIED"
+    fi
+    HANDS_VERIFIED=$((HANDS_VERIFIED + 1))
+    log "  Hand $HANDS_VERIFIED validated OK"
+}
 
 while [[ $HANDS_VERIFIED -lt $HANDS_TARGET ]]; do
     STATE=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
     MODE=$(jget "$STATE" 'o.inputMode || "NONE"')
     PHASE=$(jget "$STATE" 'o.gamePhase || "NONE"')
-    REMAINING=$(jget "$STATE" 'o.tournament && o.tournament.playersRemaining || 0')
+    REMAINING=$(jget "$STATE" 'o.tournament && o.tournament.playersRemaining || 99')
 
-    if [[ "$MODE" != "$LAST_MODE" ]]; then
-        LAST_MODE="$MODE"
-        LAST_CHANGE=$(date +%s)
+    # Detect hand completion by watching for a new PRE_FLOP starting.
+    #
+    # The embedded server auto-deals hands without DEAL mode, and BETWEEN_HANDS
+    # is too brief (milliseconds) to reliably catch at 0.15s polling intervals.
+    #
+    # Two signals for "new hand just started":
+    #   1. Phase transitioned FROM a non-PRE_FLOP hand phase TO PRE_FLOP
+    #      (hand went to flop/turn/river, then a new hand started)
+    #   2. Phase stayed PRE_FLOP but dealer seat changed
+    #      (previous hand ended during preflop — everyone folded)
+    if [[ "$PHASE" == "PRE_FLOP" ]]; then
+        DEALER=$(jget "$STATE" 'o.tables&&o.tables[0]&&o.tables[0].dealerSeat||0')
+        if [[ "$PREV_PHASE" != "PRE_FLOP" && "$PREV_PHASE" != "" && "$PREV_PHASE" != "NONE" ]]; then
+            # Came from flop/turn/river/showdown/between-hands — validate
+            validate_now
+        elif [[ "$PREV_PHASE" == "PRE_FLOP" && "$DEALER" != "$PREV_DEALER" ]]; then
+            # Dealer rotated — previous hand ended during preflop (everyone folded)
+            validate_now
+        fi
+        PREV_DEALER="$DEALER"
     fi
-    [[ $(($(date +%s) - LAST_CHANGE)) -gt $STUCK_TIMEOUT ]] && die "Stuck in mode $MODE"
 
-    # Game over before target hands?
-    if [[ "$REMAINING" -le 1 && $HANDS_VERIFIED -gt 0 ]]; then
+    if [[ "$PHASE" != "$PREV_PHASE" ]]; then
+        LAST_PHASE_CHANGE=$(date +%s)
+    fi
+    PREV_PHASE="$PHASE"
+
+    # Game over — exit cleanly if tournament ended
+    if [[ "$REMAINING" =~ ^[0-9]+$ && "$REMAINING" -le 1 ]]; then
         log "Game ended after $HANDS_VERIFIED hands (${REMAINING} players remaining)"
         break
     fi
@@ -60,6 +102,7 @@ while [[ $HANDS_VERIFIED -lt $HANDS_TARGET ]]; do
                 else
                     api_post_json /action '{"type":"CALL"}' > /dev/null 2>&1 || true
                 fi
+                LAST_PHASE_CHANGE=$(date +%s)
             fi
             ;;
         DEAL)
@@ -71,33 +114,10 @@ while [[ $HANDS_VERIFIED -lt $HANDS_TARGET ]]; do
         REBUY_CHECK)
             api_post_json /action '{"type":"DECLINE_REBUY"}' > /dev/null 2>&1 || true
             ;;
-        QUITSAVE|NONE)
-            # After BETWEEN_HANDS, run validation once before the next DEAL prompt
-            if [[ "$PHASE" == "BETWEEN_HANDS" ]] && [[ $HANDS_VERIFIED -gt 0 ]]; then
-                : # handled below via PHASE check
-            fi
-            sleep 0.2
-            ;;
     esac
 
-    # Run /validate after each hand completes (BETWEEN_HANDS + DEAL mode)
-    if [[ "$MODE" == "DEAL" ]]; then
-        VRESULT=$(api GET /validate 2>/dev/null) || { log "WARN: /validate call failed"; sleep 0.3; continue; }
-        CC_VALID=$(jget "$VRESULT" 'o.chipConservation && o.chipConservation.valid')
-        IM_VALID=$(jget "$VRESULT" 'o.inputModeConsistent')
-        WARNS=$(jget "$VRESULT" '(o.warnings||[]).join("; ")')
-
-        if [[ "$CC_VALID" != "true" || "$IM_VALID" != "true" ]]; then
-            log "VALIDATE FAILED after hand $HANDS_VERIFIED:"
-            log "  chipConservation.valid = $CC_VALID"
-            log "  inputModeConsistent    = $IM_VALID"
-            [[ -n "$WARNS" ]] && log "  warnings: $WARNS"
-            screenshot "validation-failure-hand${HANDS_VERIFIED}"
-            die "Chip conservation violated after hand $HANDS_VERIFIED"
-        fi
-        HANDS_VERIFIED=$((HANDS_VERIFIED + 1))
-        log "  Hand $HANDS_VERIFIED validated OK (chipConservation valid, inputModeConsistent)"
-    fi
+    # Stuck detection: game phase hasn't changed for STUCK_TIMEOUT seconds
+    [[ $(($(date +%s) - LAST_PHASE_CHANGE)) -gt $STUCK_TIMEOUT ]] && die "Stuck in mode $MODE / phase $PHASE (no phase change for ${STUCK_TIMEOUT}s)"
 
     sleep 0.15
 done
