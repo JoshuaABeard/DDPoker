@@ -100,6 +100,11 @@ public class HoldemSimulator {
             group = (HandGroup) handGroups.get(i);
             msg(progress, group.getName());
             list = group.expand();
+            if (list.size() == 0) {
+                nNumDone++;
+                perc(progress, nNumDone, nNumSims);
+                continue;
+            }
 
             // if we have flop, we can iterate over remaining cards
             if (nSize >= 3) {

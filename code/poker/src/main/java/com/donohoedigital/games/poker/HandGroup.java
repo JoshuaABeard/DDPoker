@@ -586,6 +586,7 @@ public class HandGroup extends BaseProfile {
         BufferedReader buf = new BufferedReader(reader);
         super.read(buf, bFull);
 
+        clearContents(); // ensure pairs_/suited_/offsuit_ are initialized even for empty groups
         map_ = new DMTypedHashMap();
         map_.demarshal(null, buf.readLine());
 

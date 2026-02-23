@@ -28,7 +28,7 @@ create_and_verify() {
 
     result=$(api_post_json /tournament-profiles "$body" 2>/dev/null) || true
     created=$(jget "$result" 'o.created')
-    name=$(jget "$result" 'o.name||""')
+    name=$(jget "$result" 'o.profile?.name||""')
 
     if [[ "$created" == "true" ]]; then
         log "  OK: $label — profile created: $name"

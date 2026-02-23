@@ -87,7 +87,7 @@ jget() {
 api() {
     local method="$1" path="$2"
     shift 2
-    curl -s -f -H "X-Control-Key: $KEY" \
+    curl -s --fail-with-body -H "X-Control-Key: $KEY" \
         ${method:+-X "$method"} \
         "$@" \
         "http://localhost:$PORT$path"
