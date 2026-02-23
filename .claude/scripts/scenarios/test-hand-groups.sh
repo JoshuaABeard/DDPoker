@@ -20,14 +20,14 @@ FAILURES=0
 # HG-001: List hand groups
 # ============================================================
 log "=== HG-001: List Hand Groups ==="
-GROUPS=$(api GET /hand-groups 2>/dev/null) || die "Could not read /hand-groups"
-GROUP_COUNT=$(jget "$GROUPS" '(o.handGroups||[]).length')
+HG_LIST=$(api GET /hand-groups 2>/dev/null) || die "Could not read /hand-groups"
+GROUP_COUNT=$(jget "$HG_LIST" '(o.handGroups||[]).length')
 log "  Found $GROUP_COUNT hand groups"
 
 if [[ "$GROUP_COUNT" -gt 0 ]]; then
     log "  OK: Hand groups found"
-    FIRST_NAME=$(jget "$GROUPS" '(o.handGroups||[])[0]?.name||""')
-    FIRST_COUNT=$(jget "$GROUPS" '(o.handGroups||[])[0]?.handCount||0')
+    FIRST_NAME=$(jget "$HG_LIST" '(o.handGroups||[])[0]?.name||""')
+    FIRST_COUNT=$(jget "$HG_LIST" '(o.handGroups||[])[0]?.handCount||0')
     log "  First group: $FIRST_NAME (handCount=$FIRST_COUNT)"
 else
     log "  WARN: No hand groups found"
@@ -51,8 +51,8 @@ fi
 # HG-004: Verify group in list
 # ============================================================
 log "=== HG-004: Verify Group in List ==="
-GROUPS=$(api GET /hand-groups 2>/dev/null) || die "Could not re-read hand groups"
-FOUND=$(jget "$GROUPS" "(o.handGroups||[]).find(g=>g.name==='$TEST_NAME')?.name||''")
+HG_LIST=$(api GET /hand-groups 2>/dev/null) || die "Could not re-read hand groups"
+FOUND=$(jget "$HG_LIST" "(o.handGroups||[]).find(g=>g.name==='$TEST_NAME')?.name||''")
 if [[ "$FOUND" == "$TEST_NAME" ]]; then
     log "  OK: Group found in list"
 else
@@ -75,8 +75,8 @@ else
 fi
 
 # Verify gone
-GROUPS=$(api GET /hand-groups 2>/dev/null) || true
-STILL=$(jget "$GROUPS" "(o.handGroups||[]).find(g=>g.name==='$TEST_NAME')?.name||''")
+HG_LIST=$(api GET /hand-groups 2>/dev/null) || true
+STILL=$(jget "$HG_LIST" "(o.handGroups||[]).find(g=>g.name==='$TEST_NAME')?.name||''")
 if [[ -z "$STILL" || "$STILL" == "" ]]; then
     log "  OK: Group no longer in list"
 else

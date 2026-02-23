@@ -74,7 +74,14 @@ lib_parse_args() {
 # Usage: jget "$json" '.field // "default"'
 jget() {
     local json="$1" expr="$2"
-    node -e "try{const o=JSON.parse(process.argv[1]);const r=($expr);process.stdout.write(String(r==null?'':r));}catch(e){process.stdout.write('');}" -- "$json" 2>/dev/null
+    # Pass JSON via stdin to avoid Windows CLI argument length limits on large responses.
+    printf '%s' "$json" | node -e "
+        let d='';
+        process.stdin.on('data',c=>d+=c);
+        process.stdin.on('end',()=>{
+            try{const o=JSON.parse(d);const r=($expr);process.stdout.write(String(r==null?'':r));}
+            catch(e){process.stdout.write('');}
+        });" 2>/dev/null
 }
 
 api() {

@@ -50,14 +50,21 @@ if echo "$mode" | grep -qE "^(CHECK_BET|CHECK_RAISE|CALL_RAISE)$"; then
     fi
 fi
 
-# Wait for DEAL mode
-state=$(wait_mode "DEAL|CONTINUE|CONTINUE_LOWER|REBUY_CHECK" 30) || true
-mode=$(jget "$state" 'o.inputMode || "NONE"')
-while [[ "$mode" != "DEAL" ]]; do
-    advance_non_betting "$state"
-    sleep 0.5
-    state=$(api GET /state 2>/dev/null) || break
+# Wait for DEAL mode (with timeout and betting-mode fallback to avoid infinite loop)
+DEAL_START=$(date +%s)
+while [[ $(($(date +%s) - DEAL_START)) -lt 30 ]]; do
+    state=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
     mode=$(jget "$state" 'o.inputMode || "NONE"')
+    case "$mode" in
+        DEAL) break ;;
+        CHECK_BET|CHECK_RAISE|CALL_RAISE)
+            is_human=$(jget "$state" 'o.currentAction&&o.currentAction.isHumanTurn||false')
+            [[ "$is_human" == "true" ]] && api_post_json /action '{"type":"FOLD"}' > /dev/null 2>&1 || true
+            ;;
+        CONTINUE|CONTINUE_LOWER) advance_non_betting "$state" ;;
+        REBUY_CHECK) api_post_json /action '{"type":"DECLINE_REBUY"}' > /dev/null 2>&1 || true ;;
+    esac
+    sleep 0.3
 done
 
 # ============================================================

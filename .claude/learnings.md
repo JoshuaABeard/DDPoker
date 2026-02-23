@@ -83,3 +83,14 @@ Persistent knowledge discovered during development sessions. Read this at the st
 - [hooks] Use git native hooks via `core.hooksPath = .claude/hooks` instead of Claude Code hooks for pre-commit/post-commit — works reliably across all worktrees (2026-02-12)
 - [hooks] Claude Code `SessionStart` hooks work on Windows when using PowerShell (`pwsh -NoProfile -File script.ps1`) instead of bash (2026-02-12)
 - [hooks] The `find` command in bash scripts on Windows behaves differently than Unix — use PowerShell `Get-ChildItem` for Windows-compatible hooks (2026-02-12)
+
+## Scenario Test Suite (embedded GameControlServer)
+
+- [scenario-tests] The embedded server auto-deals each hand immediately after the previous hand ends — DEAL mode does NOT appear between hands. Tests must detect hand completion via community card resets or phase transitions, not DEAL mode (2026-02-23)
+- [scenario-tests] BETWEEN_HANDS phase is too brief (~ms) to reliably catch at 0.15s polling. Detect new hands by watching for PRE_FLOP transitions from a non-PRE_FLOP phase, or by dealer seat change when phase stays PRE_FLOP (all-folded-preflop hands) (2026-02-23)
+- [scenario-tests] After river (5 community cards), the game goes into QUITSAVE (AI acting in new hand) not DEAL mode. Detect "hand over" by waiting 3 seconds after recording the river card (2026-02-23)
+- [scenario-tests] ValidateHandler chip conservation uses game.getNumPlayers() (initial count) not currently-seated numPlayers — eliminated players are removed from their seat, so numPlayers * buyinChips underestimates the true chip total (2026-02-23)
+- [scenario-tests] HoldemHand.getCommunityCards() was reading community_ field directly instead of calling getCommunity(), bypassing RemoteHoldemHand override. Community cards always appeared empty in API state. Fix: use polymorphic getCommunity() (2026-02-23)
+- [scenario-tests] Scripts that call advance_to_human_turn as state=$(fn) have log output swallowed by command substitution — log messages go into $state not the terminal. Use stderr for debug output inside such functions (2026-02-23)
+- [scenario-tests] Both tests racing to build simultaneously will fail with Maven file lock on common/target. Run sequentially or add --skip-build after first build (2026-02-23)
+- [scenario-tests] Windows: DDPoker config files are in %APPDATA%/ddpoker (C:\Users\...\AppData\Roaming\ddpoker), not ~/.ddpoker. lib.sh must detect $APPDATA env var and use cygpath -u to convert to Unix path (2026-02-23)

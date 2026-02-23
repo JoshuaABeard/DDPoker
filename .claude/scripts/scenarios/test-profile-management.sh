@@ -19,6 +19,14 @@ lib_launch
 
 FAILURES=0
 
+# api_post_json uses curl -f which suppresses the response body on HTTP errors (4xx/5xx).
+# For tests that check error response bodies, use this helper without -f.
+api_post_raw() {
+    local path="$1" body="$2"
+    curl -s -H "X-Control-Key: $KEY" -X POST -H "Content-Type: application/json" \
+        -d "$body" "http://localhost:$PORT$path"
+}
+
 # ============================================================
 # PP-001: List profiles
 # ============================================================
@@ -101,7 +109,7 @@ fi
 # PP-006: Duplicate name should be rejected (409)
 # ============================================================
 log "=== PP-006: Duplicate Name Rejected ==="
-DUP_RESULT=$(api_post_json /profiles "{\"name\": \"$TEST_NAME\"}" 2>/dev/null) || true
+DUP_RESULT=$(api_post_raw /profiles "{\"name\": \"$TEST_NAME\"}" 2>/dev/null) || true
 DUP_ERROR=$(jget "$DUP_RESULT" 'o.error||""')
 if [[ "$DUP_ERROR" == "Conflict" ]]; then
     log "  OK: Duplicate name correctly rejected with Conflict"
@@ -114,7 +122,7 @@ fi
 # PP-007: Missing name field should return 400
 # ============================================================
 log "=== PP-007: Missing Name Field ==="
-BAD_RESULT=$(api_post_json /profiles '{"email": "test@test.com"}' 2>/dev/null) || true
+BAD_RESULT=$(api_post_raw /profiles '{"email": "test@test.com"}' 2>/dev/null) || true
 BAD_ERROR=$(jget "$BAD_RESULT" 'o.error||""')
 if [[ "$BAD_ERROR" == "BadRequest" ]]; then
     log "  OK: Missing name correctly rejected with BadRequest"
@@ -127,7 +135,7 @@ fi
 # PP-008: Blank name should return 400
 # ============================================================
 log "=== PP-008: Blank Name ==="
-BLANK_RESULT=$(api_post_json /profiles '{"name": "   "}' 2>/dev/null) || true
+BLANK_RESULT=$(api_post_raw /profiles '{"name": "   "}' 2>/dev/null) || true
 BLANK_ERROR=$(jget "$BLANK_RESULT" 'o.error||""')
 if [[ "$BLANK_ERROR" == "BadRequest" ]]; then
     log "  OK: Blank name correctly rejected with BadRequest"
@@ -140,7 +148,7 @@ fi
 # PP-009: Empty body should return 400
 # ============================================================
 log "=== PP-009: Empty Body ==="
-EMPTY_RESULT=$(api_post_json /profiles '' 2>/dev/null) || true
+EMPTY_RESULT=$(api_post_raw /profiles '' 2>/dev/null) || true
 EMPTY_ERROR=$(jget "$EMPTY_RESULT" 'o.error||""')
 if [[ "$EMPTY_ERROR" == "BadRequest" ]]; then
     log "  OK: Empty body correctly rejected with BadRequest"
