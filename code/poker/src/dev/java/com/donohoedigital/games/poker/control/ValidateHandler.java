@@ -22,6 +22,7 @@ package com.donohoedigital.games.poker.control;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.PokerConstants;
+import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.util.*;
@@ -104,13 +105,14 @@ class ValidateHandler extends BaseHandler {
 
         List<PokerTable> tables = game.getTables();
         int buyinPerPlayer = game.getStartingChips();
-        // Use the initial player count (includes eliminated players whose chips
-        // have been redistributed but whose seats may have been removed).
-        int initialPlayerCount = game.getNumPlayers();
-        int expectedTotal = buyinPerPlayer * initialPlayerCount;
+        // Profile holds the original configured player count (constant throughout game).
+        // game.getNumPlayers() may shrink as players are eliminated and removed.
+        TournamentProfile profile = game.getProfile();
+        int profilePlayerCount = profile != null ? profile.getNumPlayers() : game.getNumPlayers();
 
         int grandTotalChips = 0;
         int grandTotalInPot = 0;
+        int visiblePlayerCount = 0;
 
         if (tables != null) {
             for (PokerTable table : tables) {
@@ -118,25 +120,38 @@ class ValidateHandler extends BaseHandler {
                 tableResults.add(tableResult);
                 grandTotalChips += (int) tableResult.get("playerChips");
                 grandTotalInPot += (int) tableResult.get("inPot");
+                visiblePlayerCount += (int) tableResult.get("numSeated");
             }
         }
 
+        // In multi-table tournaments, the client only sees the human's current table.
+        // We cannot validate global chip conservation when tables are invisible to the
+        // client. Detect this case: fewer tables visible than expected for the
+        // profile's player count (assuming 10 seats per table).
+        int expectedTables = (int) Math.ceil((double) profilePlayerCount / PokerConstants.SEATS);
+        boolean isMultiTable = (tables == null ? 0 : tables.size()) < expectedTables && expectedTables > 1;
+
+        int expectedTotal = buyinPerPlayer * profilePlayerCount;
         int grandTotal = grandTotalChips + grandTotalInPot;
-        boolean allValid = (grandTotal == expectedTotal);
+
+        // Skip chip conservation check for multi-table — not all chips are visible.
+        boolean allValid = isMultiTable || (grandTotal == expectedTotal);
 
         if (!allValid) {
             warnings.add(String.format(
                     "Game chip conservation violated: total=%d expected=%d"
-                            + " (playerChips=%d inPot=%d initialPlayers=%d buyinPerPlayer=%d)",
+                            + " (playerChips=%d inPot=%d visiblePlayers=%d profilePlayers=%d buyinPerPlayer=%d)",
                     grandTotal, expectedTotal,
-                    grandTotalChips, grandTotalInPot, initialPlayerCount, buyinPerPlayer));
+                    grandTotalChips, grandTotalInPot, visiblePlayerCount, profilePlayerCount, buyinPerPlayer));
         }
 
         // Mark each table result with the game-level validity flag
         for (Map<String, Object> tableResult : tableResults) {
             tableResult.put("valid", allValid);
             tableResult.put("expectedTotal", expectedTotal);
-            tableResult.put("initialPlayerCount", initialPlayerCount);
+            tableResult.put("visiblePlayerCount", visiblePlayerCount);
+            tableResult.put("profilePlayerCount", profilePlayerCount);
+            tableResult.put("isMultiTable", isMultiTable);
         }
 
         Map<String, Object> result = new LinkedHashMap<>();

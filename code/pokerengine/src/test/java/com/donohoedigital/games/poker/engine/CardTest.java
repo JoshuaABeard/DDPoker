@@ -360,6 +360,27 @@ public class CardTest {
     }
 
     @Test
+    public void testGetCardByStringInvalidReturnsNull() {
+        // Invalid rank character
+        assertNull(getCard("Zs"));
+        // Invalid suit character
+        assertNull(getCard("Az"));
+        // Both invalid
+        assertNull(getCard("Zz"));
+        // Too short
+        assertNull(getCard("A"));
+        assertNull(getCard(""));
+    }
+
+    @Test
+    public void testGetCardByStringValidDoesNotReturnNull() {
+        assertNotNull(getCard("As"));
+        assertNotNull(getCard("Kh"));
+        assertNotNull(getCard("2c"));
+        assertNotNull(getCard("Td"));
+    }
+
+    @Test
     public void testGetCardByIndex() {
         Card card = getCard(0);
         assertNotNull(card);

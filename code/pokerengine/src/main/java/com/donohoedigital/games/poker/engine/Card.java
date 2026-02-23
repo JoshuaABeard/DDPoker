@@ -449,6 +449,9 @@ public class Card extends com.ddpoker.Card implements DataMarshal, Comparable<Ca
         if (card == null)
             return Card.BLANK;
 
+        if (card.length() < 2)
+            return null;
+
         int suit = CardSuit.UNKNOWN_RANK;
 
         switch (card.charAt(1)) {
@@ -471,6 +474,9 @@ public class Card extends com.ddpoker.Card implements DataMarshal, Comparable<Ca
         }
 
         int rank = getRank(card.charAt(0));
+
+        if (rank == UNKNOWN || suit == CardSuit.UNKNOWN_RANK)
+            return null;
 
         return getCard(suit, rank);
     }

@@ -20,14 +20,17 @@
 package com.donohoedigital.games.poker.control;
 
 import com.donohoedigital.games.engine.GameContext;
+import com.donohoedigital.games.poker.GameClock;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
 import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.PokerTable;
+import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.sun.net.httpserver.HttpExchange;
 
 import javax.swing.*;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -85,9 +88,11 @@ class CheatHandler extends BaseHandler {
             case "setLevel" -> handleSetLevel(exchange, body);
             case "setButton" -> handleSetButton(exchange, body);
             case "eliminatePlayer" -> handleEliminatePlayer(exchange, body);
+            case "completeGame" -> handleCompleteGame(exchange);
+            case "advanceClock" -> handleAdvanceClock(exchange, body);
             default -> sendJson(exchange, 400, Map.of(
                     "error", "BadRequest",
-                    "message", "Unknown action: '" + action + "'. Valid: setChips, setLevel, setButton, eliminatePlayer"));
+                    "message", "Unknown action: '" + action + "'. Valid: setChips, setLevel, setButton, eliminatePlayer, completeGame, advanceClock"));
         }
     }
 
@@ -199,6 +204,66 @@ class CheatHandler extends BaseHandler {
 
         SwingUtilities.invokeLater(() -> player.setEliminated(true));
         sendJson(exchange, 200, Map.of("accepted", true, "action", "eliminatePlayer", "seat", seat));
+    }
+
+    private void handleCompleteGame(HttpExchange exchange) throws Exception {
+        PokerGame game = getGame();
+        if (game == null) {
+            sendJson(exchange, 409, Map.of("error", "Conflict", "message", "No game is currently running"));
+            return;
+        }
+
+        SwingUtilities.invokeLater(() -> {
+            PokerPlayer human = game.getHumanPlayer();
+            if (human == null) return;
+
+            // Collect all chips from AI players and give them to the human
+            int totalChips = human.getChipCount();
+            List<PokerTable> tables = game.getTables();
+            if (tables == null) return;
+
+            for (PokerTable table : tables) {
+                for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
+                    PokerPlayer p = table.getPlayer(seat);
+                    if (p != null && !p.isHuman() && !p.isEliminated()) {
+                        totalChips += p.getChipCount();
+                        p.setChipCount(0);
+                    }
+                }
+            }
+            human.setChipCount(totalChips);
+        });
+
+        sendJson(exchange, 200, Map.of("accepted", true, "action", "completeGame"));
+    }
+
+    private void handleAdvanceClock(HttpExchange exchange, Map<String, Object> body) throws Exception {
+        Integer seconds = getIntParam(body, "seconds");
+        if (seconds == null) {
+            sendJson(exchange, 400, Map.of("error", "BadRequest",
+                    "message", "advanceClock requires 'seconds' (int)"));
+            return;
+        }
+        if (seconds < 1) {
+            sendJson(exchange, 400, Map.of("error", "BadRequest", "message", "'seconds' must be >= 1"));
+            return;
+        }
+
+        PokerGame game = getGame();
+        if (game == null) {
+            sendJson(exchange, 409, Map.of("error", "Conflict", "message", "No game is currently running"));
+            return;
+        }
+
+        int finalSeconds = seconds;
+        SwingUtilities.invokeLater(() -> {
+            GameClock clock = game.getGameClock();
+            if (clock == null) return;
+            int newRemaining = Math.max(0, clock.getSecondsRemaining() - finalSeconds);
+            clock.setSecondsRemaining(newRemaining);
+        });
+
+        sendJson(exchange, 200, Map.of("accepted", true, "action", "advanceClock", "seconds", finalSeconds));
     }
 
     // -------------------------------------------------------------------------

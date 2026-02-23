@@ -134,6 +134,14 @@ class StateHandler extends BaseHandler {
         t.put("totalPlayers", game.getNumPlayers());
         t.put("playersRemaining", game.getNumPlayers() - game.getNumPlayersOut());
 
+        // Hand number from the current table (0 = no hand yet dealt)
+        PokerTable currentTable = game.getCurrentTable();
+        if (currentTable == null) {
+            List<PokerTable> tables = game.getTables();
+            currentTable = (tables != null && !tables.isEmpty()) ? tables.get(0) : null;
+        }
+        t.put("handNumber", currentTable != null ? currentTable.getHandNum() : 0);
+
         TournamentProfile profile = profile0;
         if (profile != null) {
             t.put("tournamentName", profile.getName());
@@ -250,9 +258,12 @@ class StateHandler extends BaseHandler {
             }
         }
 
-        // Hole cards — only show for the local human player or during showdown
+        // Hole cards — show for human, showdown, or when aifaceup cheat is active
         Hand holeCards = player.getHand();
-        if (player.isHuman() || (hand != null && hand.getRound() == BettingRound.SHOWDOWN)) {
+        boolean aiFaceUp = !player.isHuman()
+                && hand != null
+                && PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_AIFACEUP);
+        if (player.isHuman() || (hand != null && hand.getRound() == BettingRound.SHOWDOWN) || aiFaceUp) {
             p.put("holeCards", handToStrings(holeCards));
         } else {
             p.put("holeCards", List.of()); // hidden for AI players

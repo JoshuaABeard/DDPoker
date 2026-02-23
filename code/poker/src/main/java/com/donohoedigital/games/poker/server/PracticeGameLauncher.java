@@ -101,8 +101,9 @@ public class PracticeGameLauncher {
         // Opponents Cards" cheats work. Whether to display them face-up or face-down
         // is decided client-side at render time by DealDisplay / CardPiece.
         boolean aiFaceUp = true;
+        boolean autoDealEnabled = PokerUtils.isOptionOn(PokerConstants.OPTION_AUTODEAL);
         GameConfig.PracticeConfig practiceConfig = new GameConfig.PracticeConfig(aiDelayMs, handPauseMs, 0,
-                zipModeEnabled, aiFaceUp, pauseAllin);
+                zipModeEnabled, aiFaceUp, pauseAllin, autoDealEnabled ? null : false);
 
         String gameId = restClient.createPracticeGame(profile, aiNames, defaultSkillLevel(profile), jwt,
                 humanDisplayName, practiceConfig);

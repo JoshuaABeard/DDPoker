@@ -285,7 +285,7 @@ class CheatControllerTest {
         when(game.getOwnerProfileId()).thenReturn(ownerProfileId);
 
         GameConfig config = mock(GameConfig.class);
-        PracticeConfig practiceConfig = new PracticeConfig(null, null, null, null, null, null);
+        PracticeConfig practiceConfig = new PracticeConfig(null, null, null, null, null, null, null);
         when(config.practiceConfig()).thenReturn(practiceConfig);
         when(game.getConfig()).thenReturn(config);
 

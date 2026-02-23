@@ -29,6 +29,7 @@ import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
 import com.donohoedigital.games.poker.TournamentOptions;
 import com.donohoedigital.games.poker.ai.PlayerType;
+import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpExchange;
@@ -89,6 +90,7 @@ class GameStartHandler extends BaseHandler {
         }
 
         TournamentProfile profile = buildProfile(json);
+        boolean disableAutoDeal = getBool(json, "disableAutoDeal", false);
 
         SwingUtilities.invokeLater(() -> {
             try {
@@ -106,11 +108,14 @@ class GameStartHandler extends BaseHandler {
 
                 ensureDefaultProfile();
 
+                // Persist the auto-deal preference so PracticeGameLauncher picks it up
+                engine.getPrefsNode().putBoolean(PokerConstants.OPTION_AUTODEAL, !disableAutoDeal);
+
                 PokerGame game = TournamentOptions.setupPracticeGame(engine, context);
                 game.initTournament(profile);
                 context.processPhase("InitializeTournamentGame");
-                logger.info("Practice game started with {} players, {} buyin chips",
-                        profile.getNumPlayers(), profile.getBuyinChips());
+                logger.info("Practice game started with {} players, {} buyin chips, disableAutoDeal={}",
+                        profile.getNumPlayers(), profile.getBuyinChips(), disableAutoDeal);
             } catch (Exception e) {
                 logger.error("Error starting practice game", e);
             }

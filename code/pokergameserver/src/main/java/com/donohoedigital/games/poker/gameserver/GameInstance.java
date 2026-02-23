@@ -275,6 +275,11 @@ public class GameInstance {
                 director.setNeverBrokeCallback(this::offerNeverBroke);
                 if (Boolean.TRUE.equals(pc.pauseAllinInteractive()))
                     director.setWaitForContinueCallback(this::waitForContinue);
+                if (Boolean.FALSE.equals(pc.autoDeal())) {
+                    for (int t = 0; t < tournament.getNumTables(); t++) {
+                        ((ServerGameTable) tournament.getTable(t)).setAutoDeal(false);
+                    }
+                }
             }
 
             state = GameInstanceState.IN_PROGRESS;

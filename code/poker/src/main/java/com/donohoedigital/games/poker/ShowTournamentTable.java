@@ -1024,9 +1024,12 @@ public class ShowTournamentTable extends ShowPokerTable
         if (nMode != nOldMode || nMode == MODE_REBUY_CHECK)
             setRebuyButton(true);
 
-        // don't do anything else for a rebuy check
-        if (nMode == MODE_REBUY_CHECK)
+        // don't do anything else for a rebuy check, but update nInputMode_ first
+        // so that StateHandler can observe MODE_REBUY_CHECK in /state
+        if (nMode == MODE_REBUY_CHECK) {
+            super.setInputMode(nMode, hhand, player);
             return;
+        }
 
         // skip if already at this mode
         if (nMode == nOldMode)

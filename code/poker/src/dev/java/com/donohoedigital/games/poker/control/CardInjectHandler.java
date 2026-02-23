@@ -105,7 +105,7 @@ class CardInjectHandler extends BaseHandler {
 
             for (String s : cardStrings) {
                 Card c = Card.getCard(s);
-                if (c.isBlank()) {
+                if (c == null || c.isBlank()) {
                     errors.add("unrecognized card: \"" + s + "\"");
                 } else if (!seen.add(c.getIndex())) {
                     errors.add("duplicate card: \"" + s + "\"");
