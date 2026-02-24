@@ -37,6 +37,14 @@ assert_action() {
     fi
 }
 
+require_finish_hand() {
+    local label="$1"
+    if ! finish_hand; then
+        log "FAIL: hand did not finish cleanly after $label"
+        FAILURES=$((FAILURES+1))
+    fi
+}
+
 # Helper: advance through non-human-turn states until human betting turn
 advance_to_human_turn() {
     local timeout="${1:-60}"
@@ -72,7 +80,7 @@ advance_to_human_turn() {
 
 
         local elapsed=$(( $(date +%s) - start_time ))
-        [[ $elapsed -gt $timeout ]] && { log "Timed out waiting for human turn"; return 1; }
+        [[ $elapsed -gt $timeout ]] && { log "  INFO: timed out waiting for human turn"; return 1; }
         sleep 0.2
     done
 }
@@ -135,7 +143,7 @@ finish_hand() {
         esac
 
         local elapsed=$(( $(date +%s) - start_time ))
-        [[ $elapsed -gt $timeout ]] && { log "Timed out finishing hand"; return 1; }
+        [[ $elapsed -gt $timeout ]] && { log "  INFO: timed out finishing hand"; return 1; }
         sleep 0.2
     done
 }
@@ -159,9 +167,9 @@ validate_hand() {
 log "=== Test: FOLD ==="
 state=$(advance_to_human_turn) || die "Could not reach human turn for FOLD test"
 mode=$(jget "$state" 'o.inputMode || "NONE"')
-log "  Input mode: $mode"
+log "  INFO: input mode: $mode"
 assert_action "FOLD"
-finish_hand || log "WARN: hand did not finish cleanly after FOLD"
+require_finish_hand "FOLD"
 validate_hand "FOLD"
 
 # ============================================================
@@ -180,7 +188,7 @@ for i in $(seq 1 $MAX_TRIES); do
     avail=$(jget "$state" '(o.currentAction&&o.currentAction.availableActions||[]).join(",")')
     if echo "$avail" | grep -q "CHECK"; then
         assert_action "CHECK"
-        finish_hand || log "WARN: hand did not finish cleanly after CHECK"
+        require_finish_hand "CHECK"
         validate_hand "CHECK"
         CHECK_DONE=true
         break
@@ -200,7 +208,7 @@ for i in $(seq 1 $MAX_TRIES); do
     avail=$(jget "$state" '(o.currentAction&&o.currentAction.availableActions||[]).join(",")')
     if echo "$avail" | grep -q "CALL"; then
         assert_action "CALL"
-        finish_hand || log "WARN: hand did not finish cleanly after CALL"
+        require_finish_hand "CALL"
         validate_hand "CALL"
         CALL_DONE=true
         break
@@ -222,7 +230,7 @@ for i in $(seq 1 $MAX_TRIES); do
     if echo "$avail" | grep -q "BET"; then
         min_bet=$(jget "$state" 'o.currentAction&&o.currentAction.minBet||20')
         assert_action "BET" "\"amount\": $min_bet"
-        finish_hand || log "WARN: hand did not finish cleanly after BET"
+        require_finish_hand "BET"
         validate_hand "BET"
         BET_DONE=true
         break
@@ -243,7 +251,7 @@ for i in $(seq 1 $MAX_TRIES); do
     if echo "$avail" | grep -q "RAISE"; then
         min_raise=$(jget "$state" 'o.currentAction&&o.currentAction.minRaise||40')
         assert_action "RAISE" "\"amount\": $min_raise"
-        finish_hand || log "WARN: hand did not finish cleanly after RAISE"
+        require_finish_hand "RAISE"
         validate_hand "RAISE"
         RAISE_DONE=true
         break
@@ -257,15 +265,37 @@ done
 # Test 6: ALL_IN (G-025)
 # ============================================================
 log "=== Test: ALL_IN ==="
-state=$(advance_to_human_turn) || die "Could not reach human turn for ALL_IN test"
-assert_action "ALL_IN"
-finish_hand || log "WARN: hand did not finish cleanly after ALL_IN"
-validate_hand "ALL_IN"
+ALL_IN_DONE=false
+for i in $(seq 1 $MAX_TRIES); do
+    state=$(advance_to_human_turn 45) || {
+        log "  INFO: timed out waiting for ALL_IN opportunity ($i/$MAX_TRIES); restarting game"
+        lib_start_game 3 '"buyinChips": 50000'
+        continue
+    }
+    avail=$(jget "$state" '(o.currentAction&&o.currentAction.availableActions||[]).join(",")')
+    if echo "$avail" | grep -q "ALL_IN"; then
+        assert_action "ALL_IN"
+        require_finish_hand "ALL_IN"
+        validate_hand "ALL_IN"
+        ALL_IN_DONE=true
+        break
+    fi
+
+    # Keep progressing hands until ALL_IN becomes available.
+    if echo "$avail" | grep -q "FOLD"; then
+        api_post_json /action '{"type":"FOLD"}' > /dev/null 2>&1 || true
+    elif echo "$avail" | grep -q "CHECK"; then
+        api_post_json /action '{"type":"CHECK"}' > /dev/null 2>&1 || true
+    else
+        api_post_json /action '{"type":"CALL"}' > /dev/null 2>&1 || true
+    fi
+done
+[[ "$ALL_IN_DONE" == "true" ]] || { log "FAIL: Never got ALL_IN opportunity in $MAX_TRIES hands"; FAILURES=$((FAILURES+1)); }
 
 screenshot "all-actions-complete"
 
 log "---"
-log "Actions tested: $ACTIONS_TESTED"
+log "  INFO: actions tested: $ACTIONS_TESTED"
 
 if [[ $FAILURES -gt 0 ]]; then
     die "$FAILURES test(s) failed"

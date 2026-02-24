@@ -16,19 +16,32 @@ lib_launch
 
 FAILURES=0
 
+restart_runtime() {
+    SKIP_BUILD=true
+    cleanup
+    JAVA_PID=""
+    PORT=""
+    KEY=""
+    lib_launch
+}
+
 run_test() {
     local label="$1" players="$2" chips="$3" small_blind="$4"
     local big_blind=$((small_blind * 2))
     log "=== $label: ${players}p, ${chips} chips, SB=${small_blind} ==="
+
+    # Isolate each configuration in a fresh runtime to avoid cross-test
+    # state interactions from previous games.
+    restart_runtime
 
     # Build extra JSON using correct API params: buyinChips + blindLevels
     local extra="\"buyinChips\": $chips, \"blindLevels\": [{\"small\": $small_blind, \"big\": $big_blind}]"
     lib_start_game "$players" "$extra"
     sleep 1
 
-    # Wait for first human turn, QUITSAVE (AI acting), or DEAL
+    # Wait for a playable mode after startup settles.
     local state
-    state=$(wait_mode "CHECK_BET|CHECK_RAISE|CALL_RAISE|DEAL|CONTINUE|QUITSAVE" 60) \
+    state=$(wait_mode "CHECK_BET|CHECK_RAISE|CALL_RAISE|DEAL|CONTINUE|CONTINUE_LOWER" 60) \
         || { log "FAIL: $label — timed out waiting for game to start"; FAILURES=$((FAILURES+1)); return; }
 
     local mode
@@ -75,11 +88,33 @@ run_test() {
         log "  OK: smallBlind = $actual_sb"
     fi
 
-    # G-006: Verify dealer button is on a valid seat
-    local dealer_seat
-    dealer_seat=$(jget "$state" 'o.tables&&o.tables[0]&&o.tables[0].dealerSeat')
-    if [[ -z "$dealer_seat" || "$dealer_seat" == "undefined" ]]; then
-        log "FAIL: $label — dealer seat not set"
+    # G-006: Verify dealer button is on a valid seat.
+    # Immediately after game start, some states can briefly report BETWEEN_HANDS
+    # with dealerSeat=-1 before preflop initializes; allow a short settle window.
+    local dealer_seat mode settle_start
+    settle_start=$(date +%s)
+    while true; do
+        dealer_seat=$(jget "$state" 'o.tables&&o.tables[0]&&o.tables[0].dealerSeat')
+        if [[ "$dealer_seat" =~ ^[0-9]+$ && "$dealer_seat" -lt "$players" ]]; then
+            break
+        fi
+
+        if [[ $(($(date +%s) - settle_start)) -ge 10 ]]; then
+            break
+        fi
+
+        mode=$(jget "$state" 'o.inputMode || "NONE"')
+        case "$mode" in
+            DEAL|CONTINUE|CONTINUE_LOWER|REBUY_CHECK)
+                advance_non_betting "$state"
+                ;;
+        esac
+        sleep 0.3
+        state=$(api GET /state 2>/dev/null) || true
+    done
+
+    if [[ ! "$dealer_seat" =~ ^[0-9]+$ || "$dealer_seat" -ge "$players" ]]; then
+        log "FAIL: $label — dealer seat invalid ($dealer_seat)"
         FAILURES=$((FAILURES+1))
     else
         log "  OK: dealerSeat = $dealer_seat"

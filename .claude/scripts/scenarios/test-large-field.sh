@@ -132,7 +132,10 @@ screenshot "large-field-final"
 vresult=$(api GET /validate 2>/dev/null) || true
 cc_valid=$(jget "$vresult" 'o.chipConservation&&o.chipConservation.valid')
 warns=$(jget "$vresult" '(o.warnings||[]).join("; ")')
-[[ "$cc_valid" != "true" ]] && log "WARN: final chipConservation=$cc_valid warnings: $warns"
+if [[ "$cc_valid" != "true" ]]; then
+    log "FAIL: final chipConservation=$cc_valid warnings: $warns"
+    FAILURES=$((FAILURES+1))
+fi
 
 final_state=$(api GET /state 2>/dev/null) || true
 final_remaining=$(jget "$final_state" 'o.tournament&&o.tournament.playersRemaining||-1')

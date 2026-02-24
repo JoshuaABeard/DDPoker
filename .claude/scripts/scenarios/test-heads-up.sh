@@ -37,7 +37,7 @@ assert "player count" "$player_count" "2"
 
 # Verify dealer seat exists
 dealer_seat=$(jget "$state" 'o.tables&&o.tables[0]&&o.tables[0].dealerSeat')
-log "  Dealer seat: $dealer_seat"
+log "  INFO: dealer seat: $dealer_seat"
 if [[ -z "$dealer_seat" || "$dealer_seat" == "undefined" ]]; then
     log "FAIL: No dealer seat assigned"
     FAILURES=$((FAILURES+1))
@@ -72,7 +72,7 @@ while [[ $HANDS -lt 5 ]]; do
         dealer=$(jget "$state" 'o.tables&&o.tables[0]&&o.tables[0].dealerSeat||0')
         if [[ "$PREV_PHASE" != "PRE_FLOP" && "$PREV_PHASE" != "" && "$PREV_PHASE" != "NONE" ]]; then
             HANDS=$((HANDS+1))
-            log "  Hand $HANDS complete (from $PREV_PHASE)"
+            log "  INFO: hand $HANDS complete (from $PREV_PHASE)"
             # Validate chip conservation between hands
             vresult=$(api GET /validate 2>/dev/null) || true
             cc_valid=$(jget "$vresult" 'o.chipConservation&&o.chipConservation.valid')
@@ -82,7 +82,13 @@ while [[ $HANDS -lt 5 ]]; do
             fi
         elif [[ "$PREV_PHASE" == "PRE_FLOP" && "$dealer" != "$PREV_DEALER" && "$PREV_DEALER" != "-1" ]]; then
             HANDS=$((HANDS+1))
-            log "  Hand $HANDS complete (dealer rotated: $PREV_DEALER → $dealer)"
+            log "  INFO: hand $HANDS complete (dealer rotated: $PREV_DEALER -> $dealer)"
+            vresult=$(api GET /validate 2>/dev/null) || true
+            cc_valid=$(jget "$vresult" 'o.chipConservation&&o.chipConservation.valid')
+            if [[ "$cc_valid" != "true" ]]; then
+                log "FAIL: chip conservation invalid after hand $HANDS"
+                FAILURES=$((FAILURES+1))
+            fi
         fi
         PREV_DEALER="$dealer"
     fi
@@ -90,7 +96,7 @@ while [[ $HANDS -lt 5 ]]; do
 
     # Game over check (before stuck detection)
     if [[ "$remaining" =~ ^[0-9]+$ && "$remaining" -le 1 && $HANDS -gt 0 ]]; then
-        log "Game ended after $HANDS hands ($remaining players remaining)"
+        log "  INFO: game ended after $HANDS hands ($remaining players remaining)"
         break
     fi
 

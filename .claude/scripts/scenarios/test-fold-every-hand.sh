@@ -23,7 +23,7 @@ HUMAN_ELIMINATED=false
 LAST_PROGRESS_SIG=""
 LAST_CHANGE=$(date +%s)
 
-log "Folding every hand until elimination..."
+log "  INFO: folding every hand until elimination"
 
 while true; do
     state=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
@@ -41,7 +41,7 @@ while true; do
     # Human eliminated (either flag or 0 chips in a non-rebuy mode)
     if [[ "$human_elim" == "true" || ("$human_chips" == "0" && "$mode" != "REBUY_CHECK" && $HANDS -gt 0) ]]; then
         HUMAN_ELIMINATED=true
-        log "Human eliminated after $HANDS hands (chips=$human_chips, mode=$mode)"
+        log "  INFO: human eliminated after $HANDS hands (chips=$human_chips, mode=$mode)"
         screenshot "fold-every-eliminated"
         break
     fi
@@ -51,7 +51,7 @@ while true; do
         players_with_chips=$(jget "$state" \
             '(o.tables||[]).reduce((s,t)=>s+(t.players||[]).filter(p=>p&&p.chips>0).length,0)')
         if [[ "$players_with_chips" -le 1 ]]; then
-            log "Game complete via QUITSAVE: $players_with_chips player(s) with chips"
+            log "  INFO: game complete via QUITSAVE: $players_with_chips player(s) with chips"
             HUMAN_ELIMINATED=true
             break
         fi
@@ -59,13 +59,13 @@ while true; do
 
     # Remaining players
     if [[ "$remaining" =~ ^[0-9]+$ && "$remaining" -le 1 && $HANDS -gt 0 ]]; then
-        log "Game ended: $remaining players remaining"
+        log "  INFO: game ended: $remaining players remaining"
         break
     fi
 
     # Lifecycle phase signals game over
     if echo "$lifecycle" | grep -qiE "gameover|GameOver|PracticeGameOver"; then
-        log "Game over via lifecycle: $lifecycle"
+        log "  INFO: game over via lifecycle: $lifecycle"
         break
     fi
 
@@ -87,7 +87,7 @@ while true; do
             if [[ "$is_human" == "true" ]]; then
                 api_post_json /action '{"type":"FOLD"}' > /dev/null 2>&1 || true
                 HANDS=$((HANDS+1))
-                [[ $((HANDS % 10)) -eq 0 ]] && log "  $HANDS hands folded (chips=$human_chips)"
+                [[ $((HANDS % 10)) -eq 0 ]] && log "  INFO: $HANDS hands folded (chips=$human_chips)"
             fi
             ;;
         DEAL)
@@ -110,10 +110,11 @@ done
 vresult=$(api GET /validate 2>/dev/null) || true
 cc_valid=$(jget "$vresult" 'o.chipConservation&&o.chipConservation.valid')
 if [[ "$cc_valid" != "true" ]]; then
-    log "WARN: Final chip conservation invalid (expected — player eliminated)"
+    warnings=$(jget "$vresult" '(o.warnings||[]).join("; ")')
+    die "Final chip conservation invalid: $warnings"
 fi
 
-log "Result: $HANDS hands played, human eliminated=$HUMAN_ELIMINATED"
+log "  INFO: result: $HANDS hands played, human eliminated=$HUMAN_ELIMINATED"
 
 if [[ "$HUMAN_ELIMINATED" == "true" || ("$remaining" =~ ^[0-9]+$ && "$remaining" -le 1) ]]; then
     pass "Fold-every-hand test: human eliminated after $HANDS hands"

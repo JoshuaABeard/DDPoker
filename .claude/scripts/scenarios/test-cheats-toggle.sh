@@ -169,7 +169,23 @@ screenshot "cheats-all-disabled"
 # Validate game still healthy
 vresult=$(api GET /validate 2>/dev/null) || true
 im_valid=$(jget "$vresult" 'o.inputModeConsistent')
-log "  inputModeConsistent: $im_valid"
+cc_valid=$(jget "$vresult" 'o.chipConservation&&o.chipConservation.valid')
+warns=$(jget "$vresult" '(o.warnings||[]).join("; ")')
+
+if [[ "$im_valid" == "true" ]]; then
+    log "  OK: inputModeConsistent=true"
+else
+    log "FAIL: inputModeConsistent=$im_valid"
+    FAILURES=$((FAILURES+1))
+fi
+
+if [[ "$cc_valid" == "true" ]]; then
+    log "  OK: chipConservation.valid=true"
+else
+    log "FAIL: chipConservation.valid=$cc_valid"
+    [[ -n "$warns" ]] && log "  warnings: $warns"
+    FAILURES=$((FAILURES+1))
+fi
 
 log "---"
 log "Cheats tested: $CHEATS_TESTED"

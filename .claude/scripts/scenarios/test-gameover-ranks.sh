@@ -3,7 +3,7 @@
 #
 # Plays a 3-player game to completion using the FOLD strategy and asserts:
 #   1. playersRemaining reaches 1 (OR lifecycle reaches a game-over phase)
-#   2. /validate passes throughout the game
+#   2. Final /validate chip-conservation check passes
 #   3. The final state has exactly one player with chips > 0
 #
 # Usage:
@@ -24,7 +24,7 @@ lib_launch
 lib_start_game "$NUM_PLAYERS"
 screenshot "gameover-start"
 
-log "Running $NUM_PLAYERS-player FOLD strategy to completion..."
+log "  INFO: running $NUM_PLAYERS-player FOLD strategy to completion"
 ACTIONS=0
 HANDS=0
 LAST_MODE=""
@@ -47,18 +47,18 @@ while true; do
 
     # Game-over detection
     if [[ "$REMAINING" -le 1 && $ACTIONS -gt 0 ]]; then
-        log "Tournament complete: $REMAINING player(s) remaining (actions=$ACTIONS, hands=$HANDS)"
+        log "  INFO: tournament complete: $REMAINING player(s) remaining (actions=$ACTIONS, hands=$HANDS)"
         screenshot "gameover-final"
         break
     fi
     if echo "$LIFECYCLE" | grep -qiE "gameover|GameOver|PracticeGameOver"; then
-        log "Tournament complete via lifecycle: $LIFECYCLE"
+        log "  INFO: tournament complete via lifecycle: $LIFECYCLE"
         screenshot "gameover-final"
         break
     fi
     # Post-GAME_COMPLETE freeze detection
     if [[ "$MODE" == "QUITSAVE" && "$PLAYERS_WITH_CHIPS" == "1" && $ACTIONS -gt 0 ]]; then
-        log "Tournament complete (post-GAME_COMPLETE: 1 player with chips)"
+        log "  INFO: tournament complete (post-GAME_COMPLETE: 1 player with chips)"
         screenshot "gameover-final"
         break
     fi
@@ -92,15 +92,17 @@ VRESULT=$(api GET /validate 2>/dev/null) || true
 CC_VALID=$(jget "$VRESULT" 'o.chipConservation && o.chipConservation.valid')
 WARNS=$(jget "$VRESULT" '(o.warnings||[]).join("; ")')
 [[ "$CC_VALID" == "true" ]] || \
-    log "WARN: final /validate chipConservation.valid=$CC_VALID  warnings: $WARNS"
+    die "final /validate chipConservation.valid=$CC_VALID  warnings: $WARNS"
 
 # Assert final state
-FINAL_STATE=$(api GET /state 2>/dev/null) || true
+FINAL_STATE=$(api GET /state 2>/dev/null) || die "Could not read final /state"
 FINAL_REMAINING=$(jget "$FINAL_STATE" 'o.tournament && o.tournament.playersRemaining || -1')
-log "Final playersRemaining: $FINAL_REMAINING  hands: $HANDS  actions: $ACTIONS"
+FINAL_PLAYERS_WITH_CHIPS=$(jget "$FINAL_STATE" \
+    '(o.tables||[]).reduce((s,t)=>s+(t.players||[]).filter(p=>p&&p.chips>0).length,0)')
+log "  INFO: final playersRemaining: $FINAL_REMAINING  playersWithChips: $FINAL_PLAYERS_WITH_CHIPS  hands: $HANDS  actions: $ACTIONS"
 
-if [[ "$FINAL_REMAINING" -le 1 || "$PLAYERS_WITH_CHIPS" -le 1 ]]; then
+if [[ "$FINAL_REMAINING" -le 1 || "$FINAL_PLAYERS_WITH_CHIPS" -le 1 ]]; then
     pass "Game reached proper game-over state ($NUM_PLAYERS players, $HANDS hands)"
 else
-    die "Game did not reach game-over: playersRemaining=$FINAL_REMAINING"
+    die "Game did not reach game-over: playersRemaining=$FINAL_REMAINING playersWithChips=$FINAL_PLAYERS_WITH_CHIPS"
 fi

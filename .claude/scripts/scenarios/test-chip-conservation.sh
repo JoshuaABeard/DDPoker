@@ -28,29 +28,31 @@ lib_launch
 # Use enough chips so no player is eliminated during the test (avoids tournament ending early).
 lib_start_game 3 '"buyinChips": 50000'
 
-log "Playing $HANDS_TARGET hands with CALL strategy, validating after each hand..."
+log "  INFO: playing $HANDS_TARGET hands with CALL strategy, validating after each hand"
 HANDS_VERIFIED=0
 PREV_PHASE=""
 PREV_DEALER="-1"
 LAST_PHASE_CHANGE=$(date +%s)
+RESTARTS=0
+MAX_RESTARTS=3
 
 validate_now() {
     local VRESULT CC_VALID IM_VALID WARNS
-    VRESULT=$(api GET /validate 2>/dev/null) || { log "WARN: /validate call failed"; return; }
+    VRESULT=$(api GET /validate 2>/dev/null) || die "/validate call failed during hand validation"
     CC_VALID=$(jget "$VRESULT" 'o.chipConservation && o.chipConservation.valid')
     IM_VALID=$(jget "$VRESULT" 'o.inputModeConsistent')
     WARNS=$(jget "$VRESULT" '(o.warnings||[]).join("; ")')
 
     if [[ "$CC_VALID" != "true" || "$IM_VALID" != "true" ]]; then
         log "FAIL: Chip conservation violated after hand $HANDS_VERIFIED:"
-        log "  chipConservation.valid = $CC_VALID"
-        log "  inputModeConsistent    = $IM_VALID"
-        [[ -n "$WARNS" ]] && log "  warnings: $WARNS"
+        log "  INFO: chipConservation.valid = $CC_VALID"
+        log "  INFO: inputModeConsistent = $IM_VALID"
+        [[ -n "$WARNS" ]] && log "  INFO: warnings: $WARNS"
         screenshot "validation-failure-hand${HANDS_VERIFIED}"
         die "Chip conservation violated after hand $HANDS_VERIFIED"
     fi
     HANDS_VERIFIED=$((HANDS_VERIFIED + 1))
-    log "  Hand $HANDS_VERIFIED validated OK"
+    log "  OK: hand $HANDS_VERIFIED validated"
 }
 
 while [[ $HANDS_VERIFIED -lt $HANDS_TARGET ]]; do
@@ -88,8 +90,23 @@ while [[ $HANDS_VERIFIED -lt $HANDS_TARGET ]]; do
 
     # Game over — exit cleanly if tournament ended
     if [[ "$REMAINING" =~ ^[0-9]+$ && "$REMAINING" -le 1 ]]; then
-        log "Game ended after $HANDS_VERIFIED hands (${REMAINING} players remaining)"
-        break
+        if [[ $HANDS_VERIFIED -ge $HANDS_TARGET ]]; then
+            log "  INFO: game ended after $HANDS_VERIFIED hands (${REMAINING} players remaining)"
+            break
+        fi
+
+        RESTARTS=$((RESTARTS + 1))
+        if [[ $RESTARTS -gt $MAX_RESTARTS ]]; then
+            die "Game ended before reaching target hands ($HANDS_VERIFIED/$HANDS_TARGET) after $MAX_RESTARTS restart(s)"
+        fi
+
+        log "  INFO: game ended early ($HANDS_VERIFIED/$HANDS_TARGET hands); restarting game ($RESTARTS/$MAX_RESTARTS)"
+        lib_start_game 3 '"buyinChips": 50000'
+        PREV_PHASE=""
+        PREV_DEALER="-1"
+        LAST_PHASE_CHANGE=$(date +%s)
+        sleep 0.3
+        continue
     fi
 
     case "$MODE" in
@@ -122,6 +139,10 @@ while [[ $HANDS_VERIFIED -lt $HANDS_TARGET ]]; do
     sleep 0.15
 done
 
+if [[ $HANDS_VERIFIED -lt $HANDS_TARGET ]]; then
+    die "Validated only $HANDS_VERIFIED hand(s); expected $HANDS_TARGET"
+fi
+
 # Final chip conservation check — hard FAIL (not WARN).
 # Only exception: if a player was eliminated, remaining chips are still conserved
 # (redistributed, not destroyed). The /validate endpoint accounts for this correctly.
@@ -134,7 +155,7 @@ if [[ "$FINAL_CC_VALID" == "true" ]]; then
     log "  OK: Final chip conservation valid"
 else
     log "FAIL: Final chip conservation invalid after $HANDS_VERIFIED hands"
-    [[ -n "$FINAL_WARNS" ]] && log "  warnings: $FINAL_WARNS"
+    [[ -n "$FINAL_WARNS" ]] && log "  INFO: warnings: $FINAL_WARNS"
     screenshot "chip-conservation-final-failure"
     die "Chip conservation invalid at end of test"
 fi

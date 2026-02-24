@@ -33,7 +33,7 @@ fi
 log "=== L-002: Version Consistency ==="
 INFO=$(api GET /system-info 2>/dev/null) || die "Could not read /system-info"
 INFO_VERSION=$(jget "$INFO" 'o.version||""')
-log "  /system-info version: $INFO_VERSION"
+log "  INFO: /system-info version: $INFO_VERSION"
 
 if [[ -z "$INFO_VERSION" || "$INFO_VERSION" == "" || "$INFO_VERSION" == "undefined" ]]; then
     log "FAIL: /system-info version is missing"
@@ -44,7 +44,7 @@ fi
 
 STATE=$(api GET /state 2>/dev/null) || die "Could not read /state"
 STATE_VERSION=$(jget "$STATE" 'o.version||""')
-log "  /state version: $STATE_VERSION"
+log "  INFO: /state version: $STATE_VERSION"
 
 if [[ -z "$STATE_VERSION" || "$STATE_VERSION" == "" || "$STATE_VERSION" == "undefined" ]]; then
     log "FAIL: /state version is missing"
@@ -65,9 +65,9 @@ CONFIG_DIR=$(jget "$INFO" 'o.configDir||""')
 JAVA_VER=$(jget "$INFO" 'o.javaVersion||""')
 OS_NAME=$(jget "$INFO" 'o.osName||""')
 
-log "  configDir: $CONFIG_DIR"
-log "  javaVersion: $JAVA_VER"
-log "  osName: $OS_NAME"
+log "  INFO: configDir: $CONFIG_DIR"
+log "  INFO: javaVersion: $JAVA_VER"
+log "  INFO: osName: $OS_NAME"
 
 if [[ -n "$CONFIG_DIR" && "$CONFIG_DIR" != "" ]]; then
     log "  OK: configDir present"

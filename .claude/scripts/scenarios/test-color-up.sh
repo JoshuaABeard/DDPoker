@@ -105,8 +105,9 @@ warns=$(jget "$vresult" '(o.warnings||[]).join("; ")')
 if [[ "$cc_valid" == "true" ]]; then
     log "  OK: Chip conservation valid after level advance"
 else
-    log "  WARN: Chip conservation=$cc_valid (may be expected after forced level change)"
+    log "FAIL: Chip conservation invalid after level advance"
     [[ -n "$warns" ]] && log "  warnings: $warns"
+    FAILURES=$((FAILURES+1))
 fi
 
 screenshot "color-up-level5"
@@ -170,7 +171,14 @@ log "  Level $final_level: SB=$final_sb"
 # Final validation
 vresult=$(api GET /validate 2>/dev/null) || true
 cc_valid=$(jget "$vresult" 'o.chipConservation&&o.chipConservation.valid')
-log "  Final chip conservation: $cc_valid"
+warns=$(jget "$vresult" '(o.warnings||[]).join("; ")')
+if [[ "$cc_valid" == "true" ]]; then
+    log "  OK: Final chip conservation valid"
+else
+    log "FAIL: Final chip conservation invalid"
+    [[ -n "$warns" ]] && log "  warnings: $warns"
+    FAILURES=$((FAILURES+1))
+fi
 
 # Reset pauseColor
 api_post_json /options '{"gameplay.pauseColor": false}' > /dev/null 2>&1 || true

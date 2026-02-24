@@ -45,6 +45,48 @@ log()  { echo "[$(date '+%H:%M:%S')] $*"; }
 die()  { log "FAIL: $*"; cleanup; exit 1; }
 pass() { log "PASS: $*"; }
 
+record_failure() {
+    local msg="$1"
+    log "FAIL: $msg"
+    if [[ -n "${FAILURES+x}" ]]; then
+        FAILURES=$((FAILURES + 1))
+    fi
+}
+
+assert_json_field() {
+    local json="$1" expr="$2" desc="$3"
+    local val
+    val=$(jget "$json" "$expr")
+    if [[ -z "$val" || "$val" == "undefined" || "$val" == "null" ]]; then
+        record_failure "$desc missing ($expr)"
+        return
+    fi
+    log "  OK: $desc = $val"
+}
+
+assert_action_accepted() {
+    local response="$1" desc="${2:-action}"
+    local accepted
+    accepted=$(jget "$response" 'o.accepted||false')
+    if [[ "$accepted" != "true" ]]; then
+        record_failure "$desc not accepted: $response"
+        return
+    fi
+    log "  OK: $desc accepted"
+}
+
+assert_mode_transition() {
+    local expected_modes="$1" timeout="${2:-$STUCK_TIMEOUT}" desc="${3:-mode transition}"
+    local state mode
+    if state=$(wait_mode "$expected_modes" "$timeout" 2>/dev/null); then
+        mode=$(jget "$state" 'o.inputMode || "NONE"')
+        log "  OK: $desc -> $mode"
+        printf '%s' "$state"
+    else
+        record_failure "$desc timed out waiting for [$expected_modes]"
+    fi
+}
+
 cleanup() {
     if [[ -n "$JAVA_PID" ]] && kill -0 "$JAVA_PID" 2>/dev/null; then
         log "Stopping Java process $JAVA_PID"

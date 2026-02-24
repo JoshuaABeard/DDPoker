@@ -69,7 +69,8 @@ CC_VALID=$(jget "$VRESULT" 'o.chipConservation&&o.chipConservation.valid')
 if [[ "$CC_VALID" == "true" ]]; then
     log "  OK: Chip conservation valid"
 else
-    log "  WARN: Chip conservation: $CC_VALID (may be OK mid-hand)"
+    log "FAIL: Chip conservation invalid at rebuy profile start"
+    FAILURES=$((FAILURES+1))
 fi
 
 # ============================================================

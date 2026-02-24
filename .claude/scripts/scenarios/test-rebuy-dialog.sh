@@ -57,7 +57,7 @@ while true; do
     mode=$(jget "$state" 'o.inputMode || "NONE"')
 
     if [[ "$mode" == "REBUY_CHECK" ]]; then
-        log "  REBUY_CHECK detected — human went bust"
+        log "  INFO: REBUY_CHECK detected; human went bust"
         REBUY_APPEARED=true
         break
     fi
@@ -68,6 +68,12 @@ while true; do
         if [[ "$is_human" == "true" ]]; then
             api_post_json /action '{"type":"FOLD"}' > /dev/null 2>&1 || true
         fi
+    else
+        case "$mode" in
+            DEAL|CONTINUE|CONTINUE_LOWER|REBUY_CHECK)
+                advance_non_betting "$state"
+                ;;
+        esac
     fi
 
     if [[ $(($(date +%s) - REBUY_START)) -gt $REBUY_TIMEOUT ]]; then
@@ -117,11 +123,21 @@ RESULT=$(api_post_json /game/start '{
     "blindLevels": [{"small": 50, "big": 100, "ante": 0, "minutes": 60}]
 }' 2>/dev/null) || true
 
+START2_ACCEPTED=$(jget "$RESULT" 'o.accepted||false')
+if [[ "$START2_ACCEPTED" != "true" ]]; then
+    log "FAIL: RB-015 — second game/start failed: $RESULT"
+    FAILURES=$((FAILURES+1))
+fi
+
 # Wait for human seat
-SEAT_STATE=$(wait_human_turn 30 2>/dev/null) || true
+SEAT_STATE=$(wait_mode "CHECK_BET|CHECK_RAISE|CALL_RAISE|DEAL|CONTINUE|QUITSAVE|REBUY_CHECK" 30 2>/dev/null) || true
 HUMAN_SEAT=$(jget "$SEAT_STATE" \
     "(o.tables&&o.tables[0]&&o.tables[0].players||[]).find(p=>p&&p.isHuman)?.seat??-1")
-log "  Human seat: $HUMAN_SEAT"
+log "  INFO: human seat: $HUMAN_SEAT"
+if ! [[ "$HUMAN_SEAT" =~ ^[0-9]+$ ]]; then
+    log "FAIL: RB-015 — invalid human seat: $HUMAN_SEAT"
+    FAILURES=$((FAILURES+1))
+fi
 
 # Keep folding until bust
 REBUY2_START=$(date +%s)
@@ -140,6 +156,12 @@ while true; do
         if [[ "$is_human" == "true" ]]; then
             api_post_json /action '{"type":"FOLD"}' > /dev/null 2>&1 || true
         fi
+    else
+        case "$mode" in
+            DEAL|CONTINUE|CONTINUE_LOWER|REBUY_CHECK)
+                advance_non_betting "$state"
+                ;;
+        esac
     fi
 
     [[ $(($(date +%s) - REBUY2_START)) -gt 120 ]] && break
@@ -168,7 +190,8 @@ if [[ "$REBUY2_APPEARED" == "true" ]]; then
         FAILURES=$((FAILURES+1))
     fi
 else
-    log "  WARN: Could not trigger second REBUY_CHECK for accept test — skipping RB-015"
+    log "FAIL: RB-015 — could not trigger second REBUY_CHECK for accept test"
+    FAILURES=$((FAILURES+1))
 fi
 
 if [[ $FAILURES -gt 0 ]]; then
