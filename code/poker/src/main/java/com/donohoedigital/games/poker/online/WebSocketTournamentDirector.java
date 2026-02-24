@@ -39,6 +39,8 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -89,6 +91,9 @@ public class WebSocketTournamentDirector extends BasePhase
     // One RemotePokerTable per server table ID
     private final Map<Integer, RemotePokerTable> tables_ = new HashMap<>();
 
+    // Per-table hand-result capture state used to publish API-HR-01 in /state.
+    private final Map<Integer, HandResultCapture> handResultCaptureByTable_ = new HashMap<>();
+
     // Current player ID for this client (set from CONNECTED message)
     private long localPlayerId_ = -1;
 
@@ -107,6 +112,28 @@ public class WebSocketTournamentDirector extends BasePhase
     // Lobby player list maintained while game is in WAITING_FOR_PLAYERS state
     private final List<LobbyPlayerData> lobbyPlayers_ = new ArrayList<>();
 
+    // Most recent full GAME_STATE payload from the server.
+    private volatile GameStateData latestGameState_;
+
+    // Rebuy outcome observability for control-server /state snapshots.
+    private final Object rebuyObservabilityLock_ = new Object();
+    private long rebuyOfferSequence_;
+    private long rebuyDecisionSequence_;
+    private long rebuyApplySequence_;
+    private String rebuyState_ = "NONE";
+    private long rebuyStateAtMs_;
+    private int rebuyLastOfferCost_;
+    private int rebuyLastOfferChips_;
+    private int rebuyLastOfferTimeoutSeconds_;
+    private long rebuyLastOfferAtMs_;
+    private String rebuyLastDecision_ = "NONE";
+    private long rebuyLastDecisionAtMs_;
+    private boolean rebuyLastDecisionPending_;
+    private boolean rebuyAwaitingServerApply_;
+    private long rebuyLastAppliedPlayerId_ = -1;
+    private int rebuyLastAppliedAddedChips_;
+    private long rebuyLastAppliedAtMs_;
+
     // -------------------------------------------------------------------------
     // Phase lifecycle
     // -------------------------------------------------------------------------
@@ -122,10 +149,18 @@ public class WebSocketTournamentDirector extends BasePhase
         game_.setWebSocketOpponentTracker(opponentTracker_);
         serverIdToGamePlayer_.clear();
         tables_.clear();
+        handResultCaptureByTable_.clear();
+        latestGameState_ = null;
+        resetRebuyObservability();
         WsMessageLog.clear();
         GameEventLog.clear();
+        HandResultLog.clear();
 
         PokerGame.WebSocketConfig config = game_.getWebSocketConfig();
+        if (config == null) {
+            throw new IllegalStateException("WebSocketTournamentDirector started without a WebSocketConfig — "
+                    + "call game.setWebSocketConfig() before launching this phase");
+        }
         serverPort_ = config.port();
         gameId_ = config.gameId();
         jwt_ = config.jwt();
@@ -236,6 +271,91 @@ public class WebSocketTournamentDirector extends BasePhase
      */
     void clearTablesForTest() {
         tables_.clear();
+    }
+
+    @Override
+    public Map<String, Object> getControlObservabilitySnapshot() {
+        Map<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("source", "websocket");
+        snapshot.put("localPlayerId", localPlayerId_);
+
+        RemotePokerTable current = currentTable();
+        snapshot.put("currentTableId", current != null ? current.getNumber() : -1);
+
+        GameStateData latest = latestGameState_;
+        int serverTableCount = latest != null && latest.tables() != null ? latest.tables().size() : 0;
+        int serverPlayerCount = latest != null && latest.players() != null ? latest.players().size() : 0;
+        snapshot.put("serverReportedTableCount", serverTableCount);
+        snapshot.put("serverReportedPlayerCount", serverPlayerCount);
+
+        List<RemotePokerTable> localTables = new ArrayList<>(tables_.values());
+        snapshot.put("remoteTableCount", localTables.size());
+
+        List<Map<String, Object>> tableSummaries = new ArrayList<>();
+        int totalSeatedPlayers = 0;
+        int totalPlayersWithChips = 0;
+        int totalChips = 0;
+        int totalPot = 0;
+
+        for (RemotePokerTable table : localTables) {
+            Map<String, Object> t = new LinkedHashMap<>();
+            t.put("id", table.getNumber());
+            t.put("dealerSeat", table.getButton());
+
+            RemoteHoldemHand hand = table.getRemoteHand();
+            int pot = hand != null ? hand.getTotalPotChipCount() : 0;
+            t.put("pot", pot);
+            t.put("round", hand != null ? hand.getRound().name() : "NONE");
+            t.put("handNumber", table.getHandNum());
+            totalPot += pot;
+
+            List<Map<String, Object>> seats = new ArrayList<>();
+            int seated = 0;
+            int withChips = 0;
+            int tableChips = 0;
+            for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
+                PokerPlayer p = table.getPlayer(seat);
+                if (p == null) {
+                    continue;
+                }
+
+                seated++;
+                int chips = p.getChipCount();
+                if (chips > 0) {
+                    withChips++;
+                }
+                tableChips += chips;
+
+                Map<String, Object> seatMap = new LinkedHashMap<>();
+                seatMap.put("seat", seat);
+                seatMap.put("playerId", p.getID());
+                seatMap.put("name", p.getName());
+                seatMap.put("chips", chips);
+                seatMap.put("isHuman", p.isHuman());
+                seatMap.put("isEliminated", p.isEliminated());
+                seats.add(seatMap);
+            }
+
+            t.put("seatedPlayers", seated);
+            t.put("playersWithChips", withChips);
+            t.put("totalChips", tableChips);
+            t.put("seats", seats);
+
+            totalSeatedPlayers += seated;
+            totalPlayersWithChips += withChips;
+            totalChips += tableChips;
+            tableSummaries.add(t);
+        }
+
+        tableSummaries.sort((a, b) -> Integer.compare((int) a.get("id"), (int) b.get("id")));
+        snapshot.put("tables", tableSummaries);
+        snapshot.put("totalSeatedPlayers", totalSeatedPlayers);
+        snapshot.put("totalPlayersWithChips", totalPlayersWithChips);
+        snapshot.put("totalChips", totalChips);
+        snapshot.put("totalPot", totalPot);
+        snapshot.put("hasMultipleTables", serverTableCount > 1 || localTables.size() > 1);
+        snapshot.put("rebuyOutcome", buildRebuyOutcomeSnapshot());
+        return snapshot;
     }
 
     // -------------------------------------------------------------------------
@@ -436,6 +556,7 @@ public class WebSocketTournamentDirector extends BasePhase
     }
 
     private void onGameState(GameStateData d) {
+        latestGameState_ = d;
         logger.debug("[GAME_STATE] status={} level={} tables={} players={}", d.status(), d.level(),
                 d.tables() != null ? d.tables().size() : 0, d.players() != null ? d.players().size() : 0);
         SwingUtilities.invokeLater(() -> {
@@ -515,6 +636,10 @@ public class WebSocketTournamentDirector extends BasePhase
                 logger.debug("[HAND_STARTED EDT] currentTable=null, skipping");
                 return;
             }
+
+            HandResultCapture capture = handResultCaptureByTable_.computeIfAbsent(table.getNumber(),
+                    k -> new HandResultCapture());
+            capture.resetForHand(d.handNumber(), snapshotStartPayoutBySeat(table));
 
             // Clear visual state from the previous hand (card pieces, result overlays such
             // as "all-in", and the pot display). TYPE_CLEANING_DONE is not fired by the
@@ -806,6 +931,8 @@ public class WebSocketTournamentDirector extends BasePhase
                 }
             }
 
+            recordCompletedHandResult(table, hand, d);
+
             hand.updateCurrentPlayer(HoldemHand.NO_CURRENT_PLAYER);
             hand.updatePot(0);
             hand.clearBets();
@@ -820,6 +947,11 @@ public class WebSocketTournamentDirector extends BasePhase
             RemotePokerTable table = tables_.getOrDefault(d.tableId(), currentTable());
             if (table == null)
                 return;
+
+            HandResultCapture capture = handResultCaptureByTable_.computeIfAbsent(table.getNumber(),
+                    k -> new HandResultCapture());
+            capture.recordPotAward(buildPotBreakdown(d));
+
             RemoteHoldemHand hand = table.getRemoteHand();
 
             // Record win(s) in hand history so displayShowdown() shows WIN/LOSE overlays
@@ -927,6 +1059,7 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onRebuyOffered(RebuyOfferedData d) {
         SwingUtilities.invokeLater(() -> {
+            markRebuyOffer(d.cost(), d.chips(), d.timeoutSeconds());
             RemotePokerTable table = currentTable();
             if (table == null)
                 return;
@@ -943,6 +1076,7 @@ public class WebSocketTournamentDirector extends BasePhase
                 if (accepted) {
                     doRebuy(localPlayer, table.getLevel(), d.cost(), d.chips(), localPlayer.isInHand());
                 } else {
+                    markRebuyDecisionSent(false, d.cost(), d.chips(), localPlayer.isInHand());
                     wsClient_.sendRebuyDecision(false);
                 }
                 return;
@@ -954,6 +1088,13 @@ public class WebSocketTournamentDirector extends BasePhase
         });
     }
 
+    /**
+     * Set by GameControlServer to intercept addon decisions via the control API.
+     * When non-null, {@link #onAddonOffered} blocks the EDT (sets MODE_REBUY_CHECK)
+     * and waits for the API caller to resolve before sending ADDON_DECISION.
+     */
+    public static volatile NewLevelActions.RebuyDecisionProvider addonDecisionProvider;
+
     private void onAddonOffered(AddonOfferedData d) {
         SwingUtilities.invokeLater(() -> {
             RemotePokerTable table = currentTable();
@@ -962,6 +1103,22 @@ public class WebSocketTournamentDirector extends BasePhase
             PokerPlayer localPlayer = findPlayer(localPlayerId_);
             if (localPlayer == null)
                 return;
+
+            // Control-server path: bypass the Swing addon button and expose the
+            // addon decision as MODE_REBUY_CHECK so the API can respond.
+            NewLevelActions.RebuyDecisionProvider provider = addonDecisionProvider;
+            if (provider != null) {
+                boolean accepted = provider.waitForDecision(() -> game_.setInputMode(PokerTableInput.MODE_REBUY_CHECK),
+                        30);
+                if (accepted) {
+                    doAddon(localPlayer, d.cost(), d.chips());
+                } else {
+                    wsClient_.sendAddonDecision(false);
+                }
+                return;
+            }
+
+            // Normal UI flow: enable the addon button in the table panel.
             table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ADDON, table, localPlayer,
                     d.cost(), d.chips(), true));
         });
@@ -1084,6 +1241,7 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onPlayerRebuy(PlayerRebuyData d) {
         SwingUtilities.invokeLater(() -> {
+            markRebuyApplied(d.playerId(), d.addedChips());
             PokerPlayer player = findPlayer(d.playerId());
             if (player == null)
                 return;
@@ -1335,6 +1493,171 @@ public class WebSocketTournamentDirector extends BasePhase
         }
     }
 
+    private static final class HandResultCapture {
+        int handNumber_;
+        final Map<Integer, StartPayoutSnapshot> startPayoutBySeat_ = new HashMap<>();
+        final Map<Integer, HandResultLog.PotBreakdown> potBreakdownByIndex_ = new LinkedHashMap<>();
+
+        private record StartPayoutSnapshot(long playerId, String name, boolean isHuman, int startChips) {
+        }
+
+        void resetForHand(int handNumber, Map<Integer, StartPayoutSnapshot> startPayoutBySeat) {
+            handNumber_ = handNumber;
+            startPayoutBySeat_.clear();
+            startPayoutBySeat_.putAll(startPayoutBySeat);
+            potBreakdownByIndex_.clear();
+        }
+
+        void recordPotAward(HandResultLog.PotBreakdown pot) {
+            potBreakdownByIndex_.put(pot.potIndex(), pot);
+        }
+
+        List<HandResultLog.PotBreakdown> potBreakdown() {
+            return new ArrayList<>(potBreakdownByIndex_.values());
+        }
+    }
+
+    private Map<Integer, HandResultCapture.StartPayoutSnapshot> snapshotStartPayoutBySeat(RemotePokerTable table) {
+        Map<Integer, HandResultCapture.StartPayoutSnapshot> start = new HashMap<>();
+        for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
+            PokerPlayer player = table.getPlayer(seat);
+            if (player != null) {
+                start.put(seat, new HandResultCapture.StartPayoutSnapshot(player.getID(), player.getName(),
+                        player.isHuman(), player.getChipCount()));
+            }
+        }
+        return start;
+    }
+
+    private HandResultLog.PotBreakdown buildPotBreakdown(PotAwardedData d) {
+        List<HandResultLog.PotWinnerAward> winners = new ArrayList<>();
+        long[] winnerIds = d.winnerIds() != null ? d.winnerIds() : new long[0];
+        if (winnerIds.length > 0) {
+            int baseShare = d.amount() / winnerIds.length;
+            int remainder = d.amount() % winnerIds.length;
+            for (int i = 0; i < winnerIds.length; i++) {
+                long winnerId = winnerIds[i];
+                PokerPlayer winner = findPlayer(winnerId);
+                int seat = winner != null ? winner.getSeat() : -1;
+                String name = winner != null ? winner.getName() : "player-" + winnerId;
+                int amount = baseShare + (i == 0 ? remainder : 0);
+                winners.add(new HandResultLog.PotWinnerAward(winnerId, seat, name, amount));
+            }
+        }
+        return new HandResultLog.PotBreakdown(d.potIndex(), d.amount(), winners);
+    }
+
+    private void recordCompletedHandResult(RemotePokerTable table, RemoteHoldemHand hand, HandCompleteData d) {
+        HandResultCapture capture = handResultCaptureByTable_.computeIfAbsent(table.getNumber(),
+                k -> new HandResultCapture());
+
+        int handNumber = d.handNumber() > 0 ? d.handNumber() : capture.handNumber_;
+        List<HandResultLog.PotBreakdown> potBreakdown = capture.potBreakdown();
+
+        Map<Long, Integer> amountWonByPlayer = new HashMap<>();
+        for (HandResultLog.PotBreakdown pot : potBreakdown) {
+            for (HandResultLog.PotWinnerAward winner : pot.winners()) {
+                amountWonByPlayer.merge(winner.playerId(), winner.amount(), Integer::sum);
+            }
+        }
+        if (amountWonByPlayer.isEmpty() && d.winners() != null) {
+            for (WinnerData winnerData : d.winners()) {
+                amountWonByPlayer.merge(winnerData.playerId(), winnerData.amount(), Integer::sum);
+            }
+        }
+
+        LinkedHashSet<Long> winnerIds = new LinkedHashSet<>();
+        if (d.winners() != null) {
+            for (WinnerData winnerData : d.winners()) {
+                winnerIds.add(winnerData.playerId());
+            }
+        }
+        if (winnerIds.isEmpty()) {
+            winnerIds.addAll(amountWonByPlayer.keySet());
+        }
+
+        List<HandResultLog.WinnerResult> winners = new ArrayList<>();
+        for (Long winnerId : winnerIds) {
+            PokerPlayer winner = findPlayer(winnerId);
+            int seat = winner != null ? winner.getSeat() : -1;
+            String name = winner != null ? winner.getName() : "player-" + winnerId;
+            int amountWon = amountWonByPlayer.getOrDefault(winnerId, 0);
+
+            String handClass = "UNKNOWN";
+            String handDescription = "Unknown";
+            if (winner != null && hand != null && winner.getHand() != null && winner.getHand().size() >= 2
+                    && hand.getCommunity() != null && hand.getCommunity().size() >= 3) {
+                try {
+                    HandInfo info = new HandInfo(winner, winner.getHandSorted(), hand.getCommunitySorted());
+                    handClass = handClassName(info.getHandType());
+                    handDescription = info.getHandTypeDesc();
+                } catch (Exception e) {
+                    logger.debug("[HAND_RESULT] could not evaluate winner hand for {}", name, e);
+                }
+            }
+
+            List<String> cards = winner != null ? cardsToStrings(winner.getHand()) : List.of();
+            winners.add(
+                    new HandResultLog.WinnerResult(winnerId, seat, name, handClass, handDescription, amountWon, cards));
+        }
+
+        List<HandResultLog.PayoutDelta> payoutDeltas = new ArrayList<>();
+        LinkedHashSet<Integer> payoutSeats = new LinkedHashSet<>(capture.startPayoutBySeat_.keySet());
+        for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
+            PokerPlayer player = table.getPlayer(seat);
+            if (player != null) {
+                payoutSeats.add(seat);
+            }
+        }
+
+        for (int seat : payoutSeats) {
+            PokerPlayer player = table.getPlayer(seat);
+            HandResultCapture.StartPayoutSnapshot start = capture.startPayoutBySeat_.get(seat);
+
+            long playerId = player != null ? player.getID() : (start != null ? start.playerId() : -1L);
+            String name = player != null ? player.getName() : (start != null ? start.name() : "seat-" + seat);
+            boolean isHuman = player != null ? player.isHuman() : (start != null && start.isHuman());
+            int startChips = start != null ? start.startChips() : (player != null ? player.getChipCount() : 0);
+            int endChips = player != null ? player.getChipCount() : 0;
+
+            payoutDeltas.add(new HandResultLog.PayoutDelta(playerId, seat, name, isHuman, startChips, endChips,
+                    endChips - startChips));
+        }
+
+        HandResultLog.record(new HandResultLog.HandResult(System.currentTimeMillis(), table.getNumber(), handNumber,
+                hand != null ? cardsToStrings(hand.getCommunity()) : List.of(), winners, potBreakdown, payoutDeltas));
+    }
+
+    private List<String> cardsToStrings(Hand hand) {
+        if (hand == null || hand.size() == 0) {
+            return List.of();
+        }
+        List<String> cards = new ArrayList<>();
+        for (int i = 0; i < hand.size(); i++) {
+            Card card = hand.getCard(i);
+            if (card != null && !card.isBlank()) {
+                cards.add(card.getDisplay());
+            }
+        }
+        return cards;
+    }
+
+    private String handClassName(int handType) {
+        return switch (handType) {
+            case HandInfo.ROYAL_FLUSH -> "ROYAL_FLUSH";
+            case HandInfo.STRAIGHT_FLUSH -> "STRAIGHT_FLUSH";
+            case HandInfo.QUADS -> "QUADS";
+            case HandInfo.FULL_HOUSE -> "FULL_HOUSE";
+            case HandInfo.FLUSH -> "FLUSH";
+            case HandInfo.STRAIGHT -> "STRAIGHT";
+            case HandInfo.TRIPS -> "TRIPS";
+            case HandInfo.TWO_PAIR -> "TWO_PAIR";
+            case HandInfo.PAIR -> "PAIR";
+            case HandInfo.HIGH_CARD -> "HIGH_CARD";
+            default -> "UNKNOWN";
+        };
+    }
+
     // -------------------------------------------------------------------------
     // PokerDirector (GameManager + ChatManager + setPaused + playerUpdate)
     // -------------------------------------------------------------------------
@@ -1391,6 +1714,7 @@ public class WebSocketTournamentDirector extends BasePhase
 
     @Override
     public void doRebuy(PokerPlayer player, int nLevel, int nAmount, int nChips, boolean bPending) {
+        markRebuyDecisionSent(true, nAmount, nChips, bPending);
         player.addRebuy(nAmount, nChips, bPending);
         wsClient_.sendRebuyDecision(true);
     }
@@ -1399,6 +1723,89 @@ public class WebSocketTournamentDirector extends BasePhase
     public void doAddon(PokerPlayer player, int nAmount, int nChips) {
         player.addAddon(nAmount, nChips);
         wsClient_.sendAddonDecision(true);
+    }
+
+    private void resetRebuyObservability() {
+        synchronized (rebuyObservabilityLock_) {
+            rebuyOfferSequence_ = 0;
+            rebuyDecisionSequence_ = 0;
+            rebuyApplySequence_ = 0;
+            rebuyState_ = "NONE";
+            rebuyStateAtMs_ = 0;
+            rebuyLastOfferCost_ = 0;
+            rebuyLastOfferChips_ = 0;
+            rebuyLastOfferTimeoutSeconds_ = 0;
+            rebuyLastOfferAtMs_ = 0;
+            rebuyLastDecision_ = "NONE";
+            rebuyLastDecisionAtMs_ = 0;
+            rebuyLastDecisionPending_ = false;
+            rebuyAwaitingServerApply_ = false;
+            rebuyLastAppliedPlayerId_ = -1;
+            rebuyLastAppliedAddedChips_ = 0;
+            rebuyLastAppliedAtMs_ = 0;
+        }
+    }
+
+    private void markRebuyOffer(int cost, int chips, int timeoutSeconds) {
+        synchronized (rebuyObservabilityLock_) {
+            rebuyOfferSequence_++;
+            rebuyState_ = "OFFERED";
+            rebuyStateAtMs_ = System.currentTimeMillis();
+            rebuyLastOfferCost_ = cost;
+            rebuyLastOfferChips_ = chips;
+            rebuyLastOfferTimeoutSeconds_ = timeoutSeconds;
+            rebuyLastOfferAtMs_ = rebuyStateAtMs_;
+            rebuyAwaitingServerApply_ = false;
+        }
+    }
+
+    private void markRebuyDecisionSent(boolean accepted, int amount, int chips, boolean pending) {
+        synchronized (rebuyObservabilityLock_) {
+            rebuyDecisionSequence_++;
+            rebuyLastDecision_ = accepted ? "ACCEPT" : "DECLINE";
+            rebuyLastDecisionAtMs_ = System.currentTimeMillis();
+            rebuyLastDecisionPending_ = pending;
+            rebuyLastOfferCost_ = amount;
+            rebuyLastOfferChips_ = chips;
+            rebuyState_ = accepted ? "ACCEPT_SENT" : "DECLINE_SENT";
+            rebuyStateAtMs_ = rebuyLastDecisionAtMs_;
+            rebuyAwaitingServerApply_ = accepted;
+        }
+    }
+
+    private void markRebuyApplied(long playerId, int addedChips) {
+        synchronized (rebuyObservabilityLock_) {
+            rebuyApplySequence_++;
+            rebuyState_ = "APPLIED";
+            rebuyStateAtMs_ = System.currentTimeMillis();
+            rebuyAwaitingServerApply_ = false;
+            rebuyLastAppliedPlayerId_ = playerId;
+            rebuyLastAppliedAddedChips_ = addedChips;
+            rebuyLastAppliedAtMs_ = rebuyStateAtMs_;
+        }
+    }
+
+    private Map<String, Object> buildRebuyOutcomeSnapshot() {
+        synchronized (rebuyObservabilityLock_) {
+            Map<String, Object> rebuy = new LinkedHashMap<>();
+            rebuy.put("state", rebuyState_);
+            rebuy.put("stateAtMs", rebuyStateAtMs_);
+            rebuy.put("offerSequence", rebuyOfferSequence_);
+            rebuy.put("decisionSequence", rebuyDecisionSequence_);
+            rebuy.put("applySequence", rebuyApplySequence_);
+            rebuy.put("awaitingServerApply", rebuyAwaitingServerApply_);
+            rebuy.put("lastOfferCost", rebuyLastOfferCost_);
+            rebuy.put("lastOfferChips", rebuyLastOfferChips_);
+            rebuy.put("lastOfferTimeoutSeconds", rebuyLastOfferTimeoutSeconds_);
+            rebuy.put("lastOfferAtMs", rebuyLastOfferAtMs_);
+            rebuy.put("lastDecision", rebuyLastDecision_);
+            rebuy.put("lastDecisionAtMs", rebuyLastDecisionAtMs_);
+            rebuy.put("lastDecisionPending", rebuyLastDecisionPending_);
+            rebuy.put("lastAppliedPlayerId", rebuyLastAppliedPlayerId_);
+            rebuy.put("lastAppliedAddedChips", rebuyLastAppliedAddedChips_);
+            rebuy.put("lastAppliedAtMs", rebuyLastAppliedAtMs_);
+            return rebuy;
+        }
     }
 
     // -------------------------------------------------------------------------

@@ -20,6 +20,7 @@
 package com.donohoedigital.games.poker.control;
 
 import com.donohoedigital.games.poker.NewLevelActions;
+import com.donohoedigital.games.poker.online.WebSocketTournamentDirector;
 import com.sun.net.httpserver.HttpServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -73,6 +74,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *   <li>{@code POST /tournament-profiles}   — create a new tournament profile</li>
  *   <li>{@code DELETE /tournament-profiles}  — delete a tournament profile by name</li>
  *   <li>{@code POST /navigate}         — programmatic menu/phase navigation</li>
+ *   <li>{@code GET  /navigate/status}  — durable status of latest navigation request</li>
+ *   <li>{@code GET  /ui/state}         — Swing/UI observability snapshot</li>
+ *   <li>{@code GET/POST /ui/dashboard} — dashboard layout snapshot and customization controls</li>
+ *   <li>{@code GET  /ui/dashboard/widgets} — semantic widget snapshot with timing metadata</li>
  *   <li>{@code GET  /system-info}      — version, config paths, runtime info</li>
  *   <li>{@code POST /game/save}        — save current game</li>
  *   <li>{@code POST /game/load}        — load a saved game</li>
@@ -123,6 +128,34 @@ public class GameControlServer {
         return rebuyLatch != null;
     }
 
+    // -------------------------------------------------------------------------
+    // Addon decision latch — lets ActionHandler resolve a pending addon prompt
+    // that WebSocketTournamentDirector.onAddonOffered is blocking on (EDT).
+    // -------------------------------------------------------------------------
+
+    private static volatile CountDownLatch addonLatch;
+    private static final AtomicBoolean addonAccepted = new AtomicBoolean(false);
+
+    /**
+     * Called by ActionHandler when ADDON or DECLINE_ADDON is received while
+     * WebSocketTournamentDirector is waiting for an addon decision via the
+     * control server.
+     *
+     * @param accepted true if the player chose to take the addon
+     */
+    static void resolveAddonDecision(boolean accepted) {
+        CountDownLatch latch = addonLatch;
+        if (latch != null) {
+            addonAccepted.set(accepted);
+            latch.countDown();
+        }
+    }
+
+    /** Returns true if an addon decision is currently pending. */
+    static boolean isPendingAddonDecision() {
+        return addonLatch != null;
+    }
+
     /** Start the HTTP server on a random localhost port. */
     public void start() throws IOException {
         apiKey = resolveKey();
@@ -154,6 +187,10 @@ public class GameControlServer {
         server.createContext("/validate",         new ValidateHandler(apiKey));
         server.createContext("/tournament-profiles", new TournamentProfilesHandler(apiKey));
         server.createContext("/navigate",         new NavigateHandler(apiKey));
+        server.createContext("/navigate/status",  new NavigateStatusHandler(apiKey));
+        server.createContext("/ui/state",         new UiStateHandler(apiKey));
+        server.createContext("/ui/dashboard",     new UiDashboardHandler(apiKey));
+        server.createContext("/ui/dashboard/widgets", new UiDashboardWidgetsHandler(apiKey));
         server.createContext("/system-info",      new SystemInfoHandler(apiKey));
         server.createContext("/game/save",        new SaveLoadHandler(apiKey, "save"));
         server.createContext("/game/load",        new SaveLoadHandler(apiKey, "load"));
@@ -184,6 +221,23 @@ public class GameControlServer {
             return rebuyAccepted.get();
         };
 
+        // Install the control-server-aware addon provider so
+        // WebSocketTournamentDirector.onAddonOffered bypasses the Swing button
+        // and exposes REBUY_CHECK via the API instead.
+        WebSocketTournamentDirector.addonDecisionProvider = (setInputModeFn, timeoutSeconds) -> {
+            addonLatch = new CountDownLatch(1);
+            addonAccepted.set(false);
+            setInputModeFn.run();  // sets inputMode = MODE_REBUY_CHECK on EDT
+            try {
+                addonLatch.await(timeoutSeconds, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                addonLatch = null;
+            }
+            return addonAccepted.get();
+        };
+
         int port = server.getAddress().getPort();
         writePortFile(port);
         logger.info("Dev control server started on localhost:{}", port);
@@ -192,6 +246,7 @@ public class GameControlServer {
     /** Stop the HTTP server gracefully. */
     public void stop() {
         NewLevelActions.rebuyDecisionProvider = null;
+        WebSocketTournamentDirector.addonDecisionProvider = null;
         if (server != null) {
             server.stop(2);
             logger.info("Dev control server stopped");

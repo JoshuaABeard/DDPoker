@@ -61,7 +61,8 @@ import java.util.Map;
  * Rebuy/addon (mode REBUY_CHECK):
  *   {"type": "REBUY"}
  *   {"type": "ADDON"}
- *   {"type": "DECLINE_REBUY"}   // no-op; let rebuy timer expire naturally
+ *   {"type": "DECLINE_REBUY"}   // decline rebuy; let rebuy timer expire naturally
+ *   {"type": "DECLINE_ADDON"}   // decline addon offer
  *
  * Advisor (modes CHECK_BET, CHECK_RAISE, CALL_RAISE):
  *   {"type": "ADVISOR_DO_IT"}   // execute the advisor's recommended action
@@ -108,10 +109,11 @@ class ActionHandler extends BaseHandler {
             case "REBUY" -> handleRebuy(exchange, inputMode);
             case "ADDON" -> handleAddon(exchange, inputMode);
             case "DECLINE_REBUY" -> handleDeclineRebuy(exchange, inputMode);
+            case "DECLINE_ADDON" -> handleDeclineAddon(exchange, inputMode);
             case "ADVISOR_DO_IT" -> handleAdvisorDoIt(exchange, inputMode);
             default -> sendJson(exchange, 400, Map.of("error", "BadRequest",
                     "message", "Unknown action type: " + type +
-                               ". Valid: FOLD, CHECK, CALL, BET, RAISE, ALL_IN, DEAL, CONTINUE, CONTINUE_LOWER, REBUY, ADDON, DECLINE_REBUY, ADVISOR_DO_IT"));
+                               ". Valid: FOLD, CHECK, CALL, BET, RAISE, ALL_IN, DEAL, CONTINUE, CONTINUE_LOWER, REBUY, ADDON, DECLINE_REBUY, DECLINE_ADDON, ADVISOR_DO_IT"));
         }
     }
 
@@ -177,16 +179,36 @@ class ActionHandler extends BaseHandler {
             sendConflict(exchange, inputMode);
             return;
         }
-        SwingUtilities.invokeLater(() -> {
-            PokerGame game = getGame();
-            PokerDirector director = getDirector();
-            if (game == null || director == null) return;
-            PokerPlayer human = game.getHumanPlayer();
-            TournamentProfile prof = game.getProfile();
-            if (human == null || prof == null) return;
-            director.doAddon(human, prof.getAddonCost(), prof.getAddonChips());
-        });
+        if (GameControlServer.isPendingAddonDecision()) {
+            // WebSocketTournamentDirector.onAddonOffered() is blocking on the EDT
+            // waiting for this signal; resolve the latch so it calls doAddon().
+            GameControlServer.resolveAddonDecision(true);
+        } else {
+            // Fallback: call doAddon() directly (no blocking latch active).
+            SwingUtilities.invokeLater(() -> {
+                PokerGame game = getGame();
+                PokerDirector director = getDirector();
+                if (game == null || director == null) return;
+                PokerPlayer human = game.getHumanPlayer();
+                TournamentProfile prof = game.getProfile();
+                if (human == null || prof == null) return;
+                director.doAddon(human, prof.getAddonCost(), prof.getAddonChips());
+            });
+        }
         sendJson(exchange, 200, Map.of("accepted", true, "type", "ADDON"));
+    }
+
+    private void handleDeclineAddon(HttpExchange exchange, int inputMode) throws Exception {
+        if (inputMode != PokerTableInput.MODE_REBUY_CHECK) {
+            sendConflict(exchange, inputMode);
+            return;
+        }
+        if (GameControlServer.isPendingAddonDecision()) {
+            // Signal the WebSocketTournamentDirector latch to decline the addon.
+            GameControlServer.resolveAddonDecision(false);
+        }
+        // If no latch is pending, declining is a no-op.
+        sendJson(exchange, 200, Map.of("accepted", true, "type", "DECLINE_ADDON"));
     }
 
     private void handleDeclineRebuy(HttpExchange exchange, int inputMode) throws Exception {
@@ -223,7 +245,7 @@ class ActionHandler extends BaseHandler {
             if (phase instanceof Bet bet) {
                 bet.doAI();
             } else if (game.getPlayerActionListener() != null) {
-                HoldemHand hh = game.getCurrentTable().getHoldemHand();
+                HoldemHand hh = game.getCurrentTable() != null ? game.getCurrentTable().getHoldemHand() : null;
                 PokerPlayer pp = (hh == null) ? null : hh.getCurrentPlayer();
                 if (pp != null && pp.isHumanControlled() && pp.getPokerAI() != null) {
                     HandAction aiAction = pp.getAction(false);
@@ -309,7 +331,7 @@ class ActionHandler extends BaseHandler {
             case PokerTableInput.MODE_DEAL          -> List.of("DEAL");
             case PokerTableInput.MODE_CONTINUE      -> List.of("CONTINUE");
             case PokerTableInput.MODE_CONTINUE_LOWER-> List.of("CONTINUE_LOWER");
-            case PokerTableInput.MODE_REBUY_CHECK   -> List.of("REBUY", "ADDON", "DECLINE_REBUY");
+            case PokerTableInput.MODE_REBUY_CHECK   -> List.of("REBUY", "ADDON", "DECLINE_REBUY", "DECLINE_ADDON");
             default                                 -> List.of();
         };
     }
