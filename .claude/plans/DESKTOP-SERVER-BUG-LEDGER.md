@@ -8,8 +8,8 @@
 
 ## Baseline Execution Status
 
-- `mvn test -P dev` is currently blocked in this environment because `JAVA_HOME` is not configured and no Java runtime is available in PATH.
-- Triage below is from static code review plus flow analysis, with repro steps prepared for execution once Java is available.
+- All tests passing: 628 pokergameserver, 1518 poker, 724 pokergamecore, 275 pokerengine (verified 2026-02-24).
+- Bug hunt (NEW-001 through NEW-013) fixed in commit `1e5fbad3`.
 
 ---
 
@@ -117,6 +117,96 @@
   1. Run purger with invalid `--date` value.
   2. Error message reports null/incorrect value.
 - **Fix direction:** report the original input string.
+
+---
+
+## Fixed Bugs (Bug Hunt — 2026-02-24)
+
+Fixed in `1e5fbad3` — Plan: `.claude/plans/replicated-meandering-stardust.md`
+
+### NEW-001 [FIXED] — `ServerGameEventBus.publish` broadcastCallback unprotected
+
+- **Area:** server event pipeline
+- **Severity:** Critical
+- **Fix:** Wrapped `broadcastCallback.accept(event)` in try/catch so a single callback failure no longer crashes the event pipeline.
+
+### NEW-002 [FIXED] — `PlayerConnection.sendMessage` rethrows `JsonProcessingException`
+
+- **Area:** server WebSocket broadcast
+- **Severity:** Critical
+- **Fix:** Changed from `throw new RuntimeException(...)` to `logger.error(...)`. Serialization failure no longer crashes the game director thread.
+
+### NEW-003 [FIXED] — `GameConnectionManager.broadcastToGame` one failure kills stream
+
+- **Area:** server WebSocket broadcast
+- **Severity:** Critical
+- **Fix:** Added per-connection try/catch in the broadcast stream so one failed send doesn't skip remaining connections.
+
+### NEW-004 [FIXED] — `onActionRequest` silently drops when messageSender null — game deadlocks
+
+- **Area:** server game instance
+- **Severity:** Critical
+- **Fix:** When messageSender is null, auto-submit check/fold via `actionProvider.submitAction()` to prevent infinite deadlock (especially in practice mode where timeout=0).
+
+### NEW-005 [FIXED] — `offerNeverBroke` missing zero-timeout handling
+
+- **Area:** server game instance
+- **Severity:** High
+- **Fix:** Added `if (timeout <= 0) future.get()` pattern matching `offerRebuy`/`offerAddon`.
+
+### NEW-006 [FIXED] — `ServerTournamentDirector.run()` fires COMPLETED after ERROR
+
+- **Area:** server game lifecycle
+- **Severity:** High
+- **Fix:** Added `boolean fatalError` flag; skip COMPLETED lifecycle callback in finally block when a fatal error already fired ERROR.
+
+### NEW-007 [FIXED] — `directorFuture` never monitors uncaught `Error`
+
+- **Area:** server game lifecycle
+- **Severity:** High
+- **Fix:** Changed `catch (Exception e)` to `catch (Throwable e)` so `Error` subclasses don't silently kill the game. Updated `handleFatalError` signature to accept `Throwable`.
+
+### NEW-008 [FIXED] — `ExitPoker.java:76` NPE on `getLocalPlayer()`
+
+- **Area:** desktop client
+- **Severity:** High
+- **Fix:** Null guard `getLocalPlayer()` before chained `.getID()` call.
+
+### NEW-009 [FIXED] — `ShowTournamentTable.java:309` NPE on rebuy button chain
+
+- **Area:** desktop client
+- **Severity:** High
+- **Fix:** Null guard `getHumanPlayer()` and `.getTable()` before calling `NewLevelActions.rebuy(...)`.
+
+### NEW-010 [FIXED] — `getLocalPlayer().isHost()` NPE in multiple files
+
+- **Area:** desktop client (ShowTournamentTable, GameInfoDialog, ChipLeaderPanel)
+- **Severity:** High
+- **Fix:** Null guard `getLocalPlayer()` before `.isHost()` in all three locations.
+
+### NEW-011 [FIXED] — `getCurrentTable()` NPE in multiple files
+
+- **Area:** desktop client (GameInfoDialog, SidePotsDialog, WaitForDeal)
+- **Severity:** High
+- **Fix:** Null guard `getCurrentTable()` before chained calls in all three locations.
+
+### NEW-012 [FIXED] — `sendComeBack()` missing from `WebSocketGameClient`
+
+- **Area:** client WebSocket protocol
+- **Severity:** Medium
+- **Fix:** Added `sendComeBack()` method sending `ClientMessageType.COME_BACK`.
+
+### NEW-013 [FIXED] — `sendAdminKick()` missing from `WebSocketGameClient`
+
+- **Area:** client WebSocket protocol
+- **Severity:** Medium
+- **Fix:** Added `sendAdminKick(long playerId)` method sending `ClientMessageType.ADMIN_KICK`.
+
+### NEW-014 — `TIMER_UPDATE` server message type is dead code
+
+- **Area:** server WebSocket protocol
+- **Severity:** Low (informational)
+- **Status:** Known — intentional reserved type for future action timer feature. No runtime impact.
 
 ---
 
