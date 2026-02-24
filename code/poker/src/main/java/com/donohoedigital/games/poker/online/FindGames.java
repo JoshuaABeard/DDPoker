@@ -403,7 +403,13 @@ public class FindGames extends ListGames {
         String serverHost = "localhost:" + embeddedServer.getPort();
         GameSummaryConverter converter = new GameSummaryConverter(serverHost);
 
-        List<com.donohoedigital.games.poker.gameserver.dto.GameSummary> summaries = restClient_.listGames();
+        List<com.donohoedigital.games.poker.gameserver.dto.GameSummary> summaries;
+        try {
+            summaries = restClient_.listGames();
+        } catch (RestGameClient.RestGameClientException e) {
+            logger.warn("Failed to fetch game list: {}", e.getMessage());
+            return new OnlineGameList();
+        }
         return converter.convertAll(summaries);
     }
 }

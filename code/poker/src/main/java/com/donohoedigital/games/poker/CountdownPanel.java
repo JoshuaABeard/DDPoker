@@ -108,7 +108,15 @@ public class CountdownPanel extends DDPanel implements ActionListener {
         if (b) {
             if (count_ != null)
                 return;
-            PokerPlayer player = game_.getCurrentTable().getHoldemHand().getCurrentPlayer();
+            PokerTable table = game_.getCurrentTable();
+            if (table == null)
+                return;
+            HoldemHand hh = table.getHoldemHand();
+            if (hh == null)
+                return;
+            PokerPlayer player = hh.getCurrentPlayer();
+            if (player == null)
+                return;
             setTime(player.getTimeoutMillis(), player.getThinkBankMillis());
             timepoint_ = System.currentTimeMillis();
             elapsed_ = 0;

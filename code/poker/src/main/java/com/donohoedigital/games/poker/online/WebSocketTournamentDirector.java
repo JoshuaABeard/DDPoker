@@ -173,10 +173,12 @@ public class WebSocketTournamentDirector extends BasePhase
         // ACTION_FOLD=1),
         // NOT HandAction.ACTION_* constants (ACTION_FOLD=0). Use a dedicated mapper.
         game_.setPlayerActionListener((action, amount) -> {
-            // Only hide buttons if we are actually connected. If not, drop the action
-            // silently and leave the UI active so the player can retry after reconnect.
+            // Only hide buttons if we are actually connected. If not, leave the UI
+            // active so the player can retry after reconnect, and notify via chat.
             if (!wsClient_.isConnected()) {
                 logger.warn("[ACTION] not connected, dropping action={} amount={}", action, amount);
+                deliverChatLocal(PokerConstants.CHAT_ALWAYS, "Action not sent \u2014 reconnecting to server...",
+                        PokerConstants.CHAT_DEALER_MSG_ID);
                 return;
             }
             game_.setInputMode(PokerTableInput.MODE_QUITSAVE);
@@ -273,7 +275,6 @@ public class WebSocketTournamentDirector extends BasePhase
         tables_.clear();
     }
 
-    @Override
     public Map<String, Object> getControlObservabilitySnapshot() {
         Map<String, Object> snapshot = new LinkedHashMap<>();
         snapshot.put("source", "websocket");
@@ -540,6 +541,8 @@ public class WebSocketTournamentDirector extends BasePhase
             }
         } catch (Exception e) {
             logger.error("Error handling {} message", type, e);
+            deliverChatLocal(PokerConstants.CHAT_ALWAYS, "Warning: failed to process " + type + " message",
+                    PokerConstants.CHAT_DEALER_MSG_ID);
         }
     }
 
@@ -1321,7 +1324,11 @@ public class WebSocketTournamentDirector extends BasePhase
     }
 
     private void onError(ErrorData d) {
-        SwingUtilities.invokeLater(() -> logger.error("Server error {}: {}", d.code(), d.message()));
+        SwingUtilities.invokeLater(() -> {
+            logger.error("Server error {}: {}", d.code(), d.message());
+            deliverChatLocal(PokerConstants.CHAT_ALWAYS, "Server error: " + d.message(),
+                    PokerConstants.CHAT_DEALER_MSG_ID);
+        });
     }
 
     // -------------------------------------------------------------------------
@@ -1419,6 +1426,10 @@ public class WebSocketTournamentDirector extends BasePhase
         boolean accept = com.donohoedigital.games.poker.PokerUtils
                 .isOptionOn(com.donohoedigital.games.poker.engine.PokerConstants.OPTION_CHEAT_NEVERBROKE);
         wsClient_.sendNeverBrokeDecision(accept);
+        if (accept) {
+            deliverChatLocal(PokerConstants.CHAT_ALWAYS, "Never-broke activated: chips restored",
+                    PokerConstants.CHAT_DEALER_MSG_ID);
+        }
     }
 
     private void onColorUpStarted(ServerMessageData.ColorUpStartedData d) {

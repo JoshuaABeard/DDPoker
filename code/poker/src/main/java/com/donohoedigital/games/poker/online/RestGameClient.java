@@ -34,7 +34,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -87,15 +86,16 @@ public class RestGameClient {
 
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
-                logger.warn("listGames returned {}: {}", response.statusCode(), response.body());
-                return Collections.emptyList();
+                throw new RestGameClientException(
+                        "listGames returned " + response.statusCode() + ": " + response.body());
             }
 
             GameListResponse listResponse = OBJECT_MAPPER.readValue(response.body(), GameListResponse.class);
             return listResponse.games();
+        } catch (RestGameClientException e) {
+            throw e;
         } catch (Exception e) {
-            logger.warn("Failed to list games from {}", baseUrl, e);
-            return Collections.emptyList();
+            throw new RestGameClientException("Failed to list games from " + baseUrl, e);
         }
     }
 

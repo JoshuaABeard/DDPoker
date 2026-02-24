@@ -284,6 +284,9 @@ public class WebSocketGameClient {
                         if (isLastAttempt)
                             reconnecting.set(false);
                     } else {
+                        // No explicit state request needed — the server sends
+                        // CONNECTED + GAME_STATE on every new WebSocket connection
+                        // (GameWebSocketHandler.afterConnectionEstablished).
                         reconnected.set(true);
                         reconnecting.set(false);
                     }

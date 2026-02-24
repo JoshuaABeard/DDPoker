@@ -99,7 +99,7 @@ public enum ServerMessageType {
     /** Chat message */
     CHAT_MESSAGE,
 
-    /** Timer update */
+    /** Reserved for future action timer countdown feature */
     TIMER_UPDATE,
 
     /** Error occurred */

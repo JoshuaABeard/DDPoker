@@ -67,7 +67,7 @@ public class MyTable extends DashboardItem {
 
     protected Object getDynamicTitleParam() {
         PokerTable table = game_.getCurrentTable();
-        return table.getNumber() + 1;
+        return table != null ? table.getNumber() + 1 : 1;
     }
 
     ///
@@ -80,6 +80,8 @@ public class MyTable extends DashboardItem {
     protected void updateInfo() {
         PokerTable table = game_.getCurrentTable();
         PokerPlayer human = game_.getHumanPlayer();
+        if (table == null || human == null)
+            return;
 
         String sMsgKey;
         int nHandNum = table.getHandNum();
@@ -91,8 +93,16 @@ public class MyTable extends DashboardItem {
             sMsgKey = bObs ? "msg.mytable.obs" : "msg.mytable";
         }
 
-        labelInfo_.setText(PropertyConfig.getMessage(sMsgKey, human.getTable().getNumber() + 1,
-                bObs ? null : human.getSeat() + 1, "" + nHandNum) // use "" + to not get commas
-        );
+        PokerTable humanTable = human.getTable();
+        int tableNum = humanTable != null ? humanTable.getNumber() + 1 : table.getNumber() + 1;
+        labelInfo_
+                .setText(PropertyConfig.getMessage(sMsgKey, tableNum, bObs ? null : human.getSeat() + 1, "" + nHandNum) // use
+                                                                                                                        // ""
+                                                                                                                        // +
+                                                                                                                        // to
+                                                                                                                        // not
+                                                                                                                        // get
+                                                                                                                        // commas
+                );
     }
 }

@@ -469,8 +469,10 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
      * Send all chat message
      */
     private void sendChatPrivate(int nToID) {
+        PokerTable localTable = local_ != null ? local_.getTable() : null;
+        String tableName = localTable != null ? localTable.getName() : "";
         String sMsg = PropertyConfig.getMessage(nToID == PokerPlayer.HOST_ID ? "msg.chat.tohost" : "msg.chat.replyhost",
-                Utils.encodeHTML(msg_.getText()), local_.getTable().getName());
+                Utils.encodeHTML(msg_.getText()), tableName);
 
         msg_.setText("");
         if (mgr_ != null)

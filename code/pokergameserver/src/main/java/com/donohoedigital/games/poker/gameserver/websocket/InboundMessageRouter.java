@@ -163,6 +163,7 @@ public class InboundMessageRouter {
             case ADDON_DECISION -> handleAddonDecision(connection, game, dataNode);
             case NEVER_BROKE_DECISION -> handleNeverBrokeDecision(connection, game, dataNode);
             case CONTINUE_RUNOUT -> handleContinueRunout(connection, game);
+            default -> sendError(connection, "INVALID_MESSAGE", "Unhandled message type: " + type);
         }
     }
 

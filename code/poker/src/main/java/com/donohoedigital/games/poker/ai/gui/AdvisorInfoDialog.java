@@ -84,6 +84,20 @@ public class AdvisorInfoDialog extends DialogPhase {
     private ImageComponent ic_ = new ImageComponent("ddlogo20", 1.0d);
 
     /**
+     * Returns the current player from the active hand, or null if any link in the
+     * chain (table, hand, player) is missing.
+     */
+    private PokerPlayer getActivePlayer() {
+        PokerTable table = game_.getCurrentTable();
+        if (table == null)
+            return null;
+        HoldemHand hh = table.getHoldemHand();
+        if (hh == null)
+            return null;
+        return hh.getCurrentPlayer();
+    }
+
+    /**
      * Init phase, storing engine and gamephase. Called createUI()
      */
     public void init(GameEngine engine, GameContext context, GamePhase gamephase) {
@@ -100,9 +114,10 @@ public class AdvisorInfoDialog extends DialogPhase {
     public void finish() {
         super.finish();
 
+        PokerPlayer player = getActivePlayer();
+        if (player == null)
+            return;
         PokerTable table = game_.getCurrentTable();
-        PokerPlayer player = table.getHoldemHand().getCurrentPlayer();
-
         table.firePokerTableEvent(
                 new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_AI_CHANGED, table, player, player.getSeat()));
     }
@@ -156,8 +171,10 @@ public class AdvisorInfoDialog extends DialogPhase {
     }
 
     private void updateResult() {
+        PokerPlayer p = getActivePlayer();
+        if (p == null)
+            return;
         HoldemHand hhand = game_.getCurrentTable().getHoldemHand();
-        PokerPlayer p = hhand.getCurrentPlayer();
         V2Player ai = (V2Player) p.getPokerAI();
         RuleEngine re = ai.getRuleEngine();
         re.execute(ai);
@@ -215,7 +232,11 @@ public class AdvisorInfoDialog extends DialogPhase {
         }
 
         public void ancestorAdded(AncestorEvent event) {
-            PokerPlayer p = game_.getCurrentTable().getHoldemHand().getCurrentPlayer();
+            PokerPlayer p = getActivePlayer();
+            if (p == null) {
+                super.ancestorAdded(event);
+                return;
+            }
 
             V2Player ai = (V2Player) p.getPokerAI();
             ai.getRuleEngine().execute(ai);
@@ -247,7 +268,11 @@ public class AdvisorInfoDialog extends DialogPhase {
         }
 
         public void ancestorAdded(AncestorEvent event) {
-            PokerPlayer p = game_.getCurrentTable().getHoldemHand().getCurrentPlayer();
+            PokerPlayer p = getActivePlayer();
+            if (p == null) {
+                super.ancestorAdded(event);
+                return;
+            }
 
             V2Player ai = (V2Player) p.getPokerAI();
 
@@ -259,7 +284,9 @@ public class AdvisorInfoDialog extends DialogPhase {
 
     private class PlayersTab extends DDTabPanel {
         public void createUI() {
-            PokerPlayer p = game_.getCurrentTable().getHoldemHand().getCurrentPlayer();
+            PokerPlayer p = getActivePlayer();
+            if (p == null)
+                return;
             V2Player ai = (V2Player) p.getPokerAI();
 
             DDHtmlArea htmlArea = new DDHtmlArea(GuiManager.DEFAULT, "OptionsDialog");
@@ -286,7 +313,9 @@ public class AdvisorInfoDialog extends DialogPhase {
         DDProgressBar progressBar_;
 
         public void createUI() {
-            PokerPlayer p = game_.getCurrentTable().getHoldemHand().getCurrentPlayer();
+            PokerPlayer p = getActivePlayer();
+            if (p == null)
+                return;
             V2Player ai = (V2Player) p.getPokerAI();
             PlayerType playerType = ai.getPlayerType();
             HandSelectionPanel handSelectionPanel = new HandSelectionPanel(playerType, STYLE);
@@ -320,7 +349,9 @@ public class AdvisorInfoDialog extends DialogPhase {
                     if (updateThread_ != null)
                         return; // for now, no mouseover while computing
 
-                    PokerPlayer p = game_.getCurrentTable().getHoldemHand().getCurrentPlayer();
+                    PokerPlayer p = getActivePlayer();
+                    if (p == null)
+                        return;
                     String sOutcome = grid_.getOutcomeString(e);
                     if (sOutcome == null) {
                         int outcome = grid_.getOutcome(e);
@@ -389,7 +420,9 @@ public class AdvisorInfoDialog extends DialogPhase {
                     return;
             }
 
-            PokerPlayer p = game_.getCurrentTable().getHoldemHand().getCurrentPlayer();
+            PokerPlayer p = getActivePlayer();
+            if (p == null)
+                return;
             V2Player ai = (V2Player) p.getPokerAI();
             PlayerType playerType = ai.getPlayerType();
             playerType.setName(PropertyConfig.getMessage("msg.advisor.profilename"));
@@ -428,7 +461,11 @@ public class AdvisorInfoDialog extends DialogPhase {
         }
 
         public void run() {
-            PokerPlayer p = game_.getCurrentTable().getHoldemHand().getCurrentPlayer();
+            PokerPlayer p = getActivePlayer();
+            if (p == null) {
+                updateThread_ = null;
+                return;
+            }
 
             V2Player ai = (V2Player) p.getPokerAI();
 

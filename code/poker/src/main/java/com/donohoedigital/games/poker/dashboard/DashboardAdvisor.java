@@ -108,7 +108,10 @@ public class DashboardAdvisor extends DashboardItem {
                     ((Bet) phase).doAI();
                 } else if (game_.getPlayerActionListener() != null) {
                     // WebSocket mode: no Bet phase; route AI action through PlayerActionListener
-                    HoldemHand hh = game_.getCurrentTable().getHoldemHand();
+                    PokerTable table = game_.getCurrentTable();
+                    if (table == null)
+                        return;
+                    HoldemHand hh = table.getHoldemHand();
                     PokerPlayer pp = (hh == null) ? null : hh.getCurrentPlayer();
                     if (pp != null && pp.isHumanControlled() && pp.getPokerAI() != null) {
                         HandAction aiAction = pp.getAction(false);
@@ -173,7 +176,15 @@ public class DashboardAdvisor extends DashboardItem {
 
     @Override
     protected void updateInfo() {
-        HoldemHand hh = game_.getCurrentTable().getHoldemHand();
+        PokerTable table = game_.getCurrentTable();
+        if (table == null) {
+            currentAdvice_ = NOADVICE;
+            currentTitle_ = NOADVICETITLE;
+            htmlAdvice_.setText(NOADVICE);
+            buttons_.setVisible(false);
+            return;
+        }
+        HoldemHand hh = table.getHoldemHand();
         PokerPlayer pp = (hh == null) ? null : hh.getCurrentPlayer();
         Hand h = (pp == null) ? null : pp.getHand();
         PokerAI ai = (pp == null) ? null : pp.getPokerAI();
