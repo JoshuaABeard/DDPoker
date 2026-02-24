@@ -20,6 +20,8 @@ package com.donohoedigital.games.poker.gameserver.websocket;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -32,6 +34,8 @@ import java.io.IOException;
  * and anti-replay protection.
  */
 public class PlayerConnection {
+
+    private static final Logger logger = LoggerFactory.getLogger(PlayerConnection.class);
 
     private final WebSocketSession session;
     private final long profileId;
@@ -80,7 +84,7 @@ public class PlayerConnection {
             String json = objectMapper.writeValueAsString(message);
             session.sendMessage(new TextMessage(json));
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to serialize message: " + message, e);
+            logger.error("Failed to serialize message: {}", message, e);
         } catch (IOException e) {
             // Session closed mid-send — not an error, just discard
             return;

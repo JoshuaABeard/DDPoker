@@ -495,18 +495,23 @@ public class GameInstance {
     private void onActionRequest(ActionRequest request) {
         ServerPlayerSession session = playerSessions.get((long) request.player().getID());
         if (session != null && session.getMessageSender() != null) {
-            // Send action request to connected WebSocket client
-            // (MessageSender is set by WebSocket layer in Milestone 3)
             session.getMessageSender().accept(request);
         } else {
-            logger.debug("[GameInstance] onActionRequest profileId={} messageSender=null (session={})",
+            logger.warn(
+                    "[GameInstance] onActionRequest: no messageSender for player={} (session={}). "
+                            + "Submitting default action to prevent deadlock.",
                     request.player().getID(), session != null ? "present" : "absent");
+            // Prevent director deadlock by submitting a default check/fold
+            if (actionProvider != null) {
+                actionProvider.submitAction(request.player().getID(),
+                        request.options().canCheck() ? PlayerAction.check() : PlayerAction.fold());
+            }
         }
     }
 
     /** Called when director reports lifecycle events (STARTED, COMPLETED, etc.) */
     private void onLifecycleEvent(GameLifecycleEvent event) {
-        if (event == GameLifecycleEvent.COMPLETED) {
+        if (event == GameLifecycleEvent.COMPLETED || event == GameLifecycleEvent.ERROR) {
             stateLock.lock();
             try {
                 if (state != GameInstanceState.CANCELLED) {
@@ -706,7 +711,12 @@ public class GameInstance {
         eventBus.publish(new com.donohoedigital.games.poker.core.event.GameEvent.NeverBrokeOffered(tableId, playerId,
                 properties.actionTimeoutSeconds()));
         try {
-            return future.get(properties.actionTimeoutSeconds(), TimeUnit.SECONDS);
+            long neverBrokeTimeout = properties.actionTimeoutSeconds();
+            if (neverBrokeTimeout <= 0) {
+                // No action timeout (e.g. embedded/practice mode): wait indefinitely
+                return future.get();
+            }
+            return future.get(neverBrokeTimeout, TimeUnit.SECONDS);
         } catch (TimeoutException | InterruptedException | ExecutionException e) {
             return false;
         } finally {

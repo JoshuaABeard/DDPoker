@@ -172,6 +172,31 @@ class GameConnectionManagerTest {
     }
 
     @Test
+    void broadcastToGame_continuesWhenOneConnectionThrows() throws Exception {
+        WebSocketSession session1 = mock(WebSocketSession.class);
+        WebSocketSession session2 = mock(WebSocketSession.class);
+        when(session1.isOpen()).thenReturn(true);
+        when(session2.isOpen()).thenReturn(true);
+
+        // session1 will throw on sendMessage
+        doThrow(new RuntimeException("send failed")).when(session1).sendMessage(any());
+
+        PlayerConnection connection1 = new PlayerConnection(session1, 1L, "player1", "game-1", objectMapper);
+        PlayerConnection connection2 = new PlayerConnection(session2, 2L, "player2", "game-1", objectMapper);
+
+        manager.addConnection("game-1", 1L, connection1);
+        manager.addConnection("game-1", 2L, connection2);
+
+        ServerMessage message = ServerMessage.of(ServerMessageType.HAND_STARTED, "game-1", null);
+
+        // Should not throw even though one connection fails
+        assertDoesNotThrow(() -> manager.broadcastToGame("game-1", message));
+
+        // session2 should still receive the message despite session1's failure
+        verify(session2).sendMessage(any());
+    }
+
+    @Test
     void threadSafety_concurrentAddsAndRemoves() throws InterruptedException {
         int threadCount = 10;
         int operationsPerThread = 100;

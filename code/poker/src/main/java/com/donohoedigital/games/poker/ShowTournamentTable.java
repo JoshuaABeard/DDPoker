@@ -306,7 +306,10 @@ public class ShowTournamentTable extends ShowPokerTable
             buttonbase_.add(buttonRebuy_);
             buttonRebuy_.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    NewLevelActions.rebuy(game_, REBUY_BUTTON, game_.getHumanPlayer().getTable().getLevel());
+                    PokerPlayer hp = game_.getHumanPlayer();
+                    if (hp != null && hp.getTable() != null) {
+                        NewLevelActions.rebuy(game_, REBUY_BUTTON, hp.getTable().getLevel());
+                    }
                 }
             });
         }
@@ -1055,7 +1058,9 @@ public class ShowTournamentTable extends ShowPokerTable
         boolean bAllowTestCase = false;
         boolean bShowTimer = false;
 
-        boolean bAllowSave = !game_.isOnlineGame() || (game_.isOnlineGame() && game_.getLocalPlayer().isHost());
+        PokerPlayer localPlayer = game_.getLocalPlayer();
+        boolean bAllowSave = !game_.isOnlineGame()
+                || (game_.isOnlineGame() && localPlayer != null && localPlayer.isHost());
         boolean bAllowQuit = true;
 
         boolean bAllowAmount = false;

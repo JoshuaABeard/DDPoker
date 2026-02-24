@@ -142,9 +142,10 @@ public class GameInfoDialog extends DialogPhase {
             add(label, BorderLayout.NORTH);
 
             // description
+            PokerPlayer infoLocal = game_.getLocalPlayer();
             TournamentSummaryPanel sum = new TournamentSummaryPanel(context_, "TournamentSummaryDialog", null,
                     "OptionsDialog", GuiManager.DEFAULT, 1.0d, (!game_.isOnlineGame() && !game_.isClockMode())
-                            || (game_.isOnlineGame() && game_.getLocalPlayer().isHost()),
+                            || (game_.isOnlineGame() && infoLocal != null && infoLocal.isHost()),
                     false);
             sum.updateProfile(profile_);
             add(sum, BorderLayout.CENTER);
@@ -160,7 +161,8 @@ public class GameInfoDialog extends DialogPhase {
             BindArray bindArray = new BindArray();
             bindArray.addValue(Types.INTEGER, PokerDatabase.storeTournament(game_));
 
-            HoldemHand hhand = game_.getCurrentTable().getHoldemHand();
+            PokerTable currentTable = game_.getCurrentTable();
+            HoldemHand hhand = currentTable != null ? currentTable.getHoldemHand() : null;
 
             if (hhand == null || hhand.isStoredInDatabase()) {
                 hhand = null;

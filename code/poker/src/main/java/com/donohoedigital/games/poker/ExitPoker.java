@@ -72,8 +72,10 @@ public class ExitPoker extends BasePhase {
         // real id (a temp id means
         // quit was clicked when a join-failure message was displayed)
         game_ = (PokerGame) context_.getGame();
-        if (game_ != null && !game_.isClockMode())
-            bCancelFromJoin_ = game_.getLocalPlayer().getID() == PokerConstants.PLAYER_ID_TEMP;
+        if (game_ != null && !game_.isClockMode()) {
+            PokerPlayer local = game_.getLocalPlayer();
+            bCancelFromJoin_ = local != null && local.getID() == PokerConstants.PLAYER_ID_TEMP;
+        }
         if (game_ != null && game_.isOnlineGame() && !bCancelFromJoin_) {
             switch (game_.getOnlineMode()) {
                 case PokerGame.MODE_INIT :

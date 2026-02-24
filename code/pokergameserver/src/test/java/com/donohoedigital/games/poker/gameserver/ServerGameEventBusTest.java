@@ -236,4 +236,26 @@ class ServerGameEventBusTest {
             eventBus.publish(null);
         });
     }
+
+    @Test
+    void testBroadcastCallbackExceptionDoesNotPropagate() {
+        // Set a broadcast callback that throws
+        eventBus.setBroadcastCallback(event -> {
+            throw new RuntimeException("Broadcast failed");
+        });
+
+        // Subscribe a listener to verify it was still notified
+        eventBus.subscribe(listenerReceivedEvents::add);
+
+        GameEvent event = new GameEvent.HandStarted(0, 1);
+
+        // publish() should not throw even though broadcast callback throws
+        assertDoesNotThrow(() -> eventBus.publish(event));
+
+        // Event should still be stored
+        assertEquals(1, eventStore.getEvents().size());
+
+        // Listener should still have been notified (listeners run before broadcast)
+        assertEquals(1, listenerReceivedEvents.size());
+    }
 }

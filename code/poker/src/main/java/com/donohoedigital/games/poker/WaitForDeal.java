@@ -59,7 +59,8 @@ public class WaitForDeal extends ChainPhase {
         game.setInputMode(PokerTableInput.MODE_DEAL);
 
         // show dialog about pressing D to begin
-        if (game.getCurrentTable().getHandNum() == 0) {
+        PokerTable table = game.getCurrentTable();
+        if (table != null && table.getHandNum() == 0) {
             // show info dialog
             if (!TESTING(PokerConstants.TESTING_AUTOPILOT_INIT)) {
                 String sMsg = PropertyConfig.getMessage("msg.waitfordeal");

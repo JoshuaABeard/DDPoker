@@ -209,7 +209,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
             return PropertyConfig.getMessage("msg.savegame.desc.o", profile_.getName(), getNumPlayers());
         } else {
             PokerPlayer human = getHumanPlayer();
-            Integer chips = getHumanPlayer().getChipCount();
+            Integer chips = human.getChipCount();
             return PropertyConfig.getMessage("msg.savegame.desc", human.getName(), chips, profile_.getName());
         }
     }

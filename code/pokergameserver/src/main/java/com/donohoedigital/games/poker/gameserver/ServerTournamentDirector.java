@@ -171,6 +171,7 @@ public class ServerTournamentDirector implements Runnable {
     @Override
     public void run() {
         running = true;
+        boolean fatalError = false;
         lifecycleCallback.accept(GameLifecycleEvent.STARTED);
 
         try {
@@ -193,11 +194,14 @@ public class ServerTournamentDirector implements Runnable {
                 // No sleep - run full speed like HeadlessGameRunnerTest
                 // The engine handles its own timing internally
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            fatalError = true;
             handleFatalError(e);
         } finally {
             running = false;
-            lifecycleCallback.accept(GameLifecycleEvent.COMPLETED);
+            if (!fatalError) {
+                lifecycleCallback.accept(GameLifecycleEvent.COMPLETED);
+            }
         }
     }
 
@@ -839,9 +843,9 @@ public class ServerTournamentDirector implements Runnable {
      * Handle a fatal error.
      *
      * @param e
-     *            the exception that occurred
+     *            the error that occurred
      */
-    private void handleFatalError(Exception e) {
+    private void handleFatalError(Throwable e) {
         lifecycleCallback.accept(GameLifecycleEvent.ERROR);
         running = false;
         logger.error("Fatal error in ServerTournamentDirector", e);

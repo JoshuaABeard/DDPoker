@@ -18,6 +18,8 @@
 package com.donohoedigital.games.poker.gameserver.websocket;
 
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -30,6 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * management, message routing, and reconnection handling.
  */
 public class GameConnectionManager {
+
+    private static final Logger logger = LoggerFactory.getLogger(GameConnectionManager.class);
 
     /** Map of gameId -> (profileId -> PlayerConnection) */
     private final ConcurrentHashMap<String, ConcurrentHashMap<Long, PlayerConnection>> connections = new ConcurrentHashMap<>();
@@ -119,7 +123,14 @@ public class GameConnectionManager {
         if (gameConnections != null) {
             gameConnections.values().stream()
                     .filter(conn -> excludeProfileId == null || conn.getProfileId() != excludeProfileId)
-                    .forEach(conn -> conn.sendMessage(message));
+                    .forEach(conn -> {
+                        try {
+                            conn.sendMessage(message);
+                        } catch (Exception e) {
+                            logger.warn("Failed to send message to player={} in game={}: {}", conn.getProfileId(),
+                                    gameId, e.getMessage());
+                        }
+                    });
         }
     }
 

@@ -107,4 +107,19 @@ class PlayerConnectionTest {
         connection.setLastActionTimestamp(now);
         assertEquals(now, connection.getLastActionTimestamp());
     }
+
+    @Test
+    void sendMessage_jsonSerializationErrorDoesNotThrow() {
+        when(mockSession.isOpen()).thenReturn(true);
+
+        // Create a message with a data payload that cannot be serialized
+        // (ObjectMapper configured without the module to handle the type)
+        ObjectMapper brokenMapper = new ObjectMapper();
+        PlayerConnection brokenConn = new PlayerConnection(mockSession, 1L, "user", "g", brokenMapper);
+
+        // Even with a broken mapper or unserializable data, sendMessage should not
+        // throw
+        ServerMessage message = ServerMessage.of(ServerMessageType.CONNECTED, "g", null);
+        assertDoesNotThrow(() -> brokenConn.sendMessage(message));
+    }
 }

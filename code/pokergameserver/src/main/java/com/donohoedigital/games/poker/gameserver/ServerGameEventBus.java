@@ -23,6 +23,8 @@ import com.donohoedigital.games.poker.core.event.GameEvent;
 import com.donohoedigital.games.poker.core.event.GameEventBus;
 
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Server-side event bus that broadcasts game events to listeners, persists to
@@ -33,6 +35,8 @@ import java.util.function.Consumer;
  * notified → Broadcast to WebSocket clients
  */
 public class ServerGameEventBus extends GameEventBus {
+    private static final Logger logger = Logger.getLogger(ServerGameEventBus.class.getName());
+
     private final IGameEventStore eventStore;
     private volatile Consumer<GameEvent> broadcastCallback;
 
@@ -81,7 +85,11 @@ public class ServerGameEventBus extends GameEventBus {
 
         // 3. Broadcast to connected clients
         if (broadcastCallback != null) {
-            broadcastCallback.accept(event);
+            try {
+                broadcastCallback.accept(event);
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Error in broadcast callback for event: " + event, e);
+            }
         }
     }
 

@@ -93,7 +93,8 @@ public class SidePotsDialog extends DialogPhase {
      */
     private void setPots() {
         nSide = 0;
-        HoldemHand hhand = game_.getCurrentTable().getHoldemHand();
+        PokerTable currentTable = game_.getCurrentTable();
+        HoldemHand hhand = currentTable != null ? currentTable.getHoldemHand() : null;
         if (hhand == null)
             return;
         int nNum = hhand.getNumPots();

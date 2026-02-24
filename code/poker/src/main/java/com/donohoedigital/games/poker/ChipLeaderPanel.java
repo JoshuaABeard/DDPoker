@@ -299,8 +299,9 @@ public class ChipLeaderPanel extends DDTabPanel {
                     return "";
 
                 boolean bSet = false;
+                PokerPlayer chipLocal = game.getLocalPlayer();
                 if (bShowPlayerType && p != null && names[colIndex].equals(COL_NAME_PLAYERTYPE) && p.isComputer()
-                        && (!game.isOnlineGame() || (game.isOnlineGame() && game.getLocalPlayer().isHost()))) {
+                        && (!game.isOnlineGame() || (game.isOnlineGame() && chipLocal != null && chipLocal.isHost()))) {
                     PlayerType ai = p.getPlayerType();
                     if (ai != null) {
                         sValue = PropertyConfig.getMessage("msg.playername.playertype", p.getName(), ai.getName());

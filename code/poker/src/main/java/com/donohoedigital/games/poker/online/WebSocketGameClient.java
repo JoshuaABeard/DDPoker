@@ -193,6 +193,18 @@ public class WebSocketGameClient {
         sendMessage(ClientMessageType.SIT_OUT, objectMapper.createObjectNode());
     }
 
+    /** Sends a come-back request (return from sitting out). */
+    public void sendComeBack() {
+        sendMessage(ClientMessageType.COME_BACK, objectMapper.createObjectNode());
+    }
+
+    /** Sends an admin kick command (owner only). */
+    public void sendAdminKick(long playerId) {
+        ObjectNode data = objectMapper.createObjectNode();
+        data.put("playerId", playerId);
+        sendMessage(ClientMessageType.ADMIN_KICK, data);
+    }
+
     /** Sends a continue signal during all-in runout (human clicked Continue). */
     public void sendContinueRunout() {
         sendMessage(ClientMessageType.CONTINUE_RUNOUT, objectMapper.createObjectNode());
