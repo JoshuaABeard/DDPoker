@@ -1,5 +1,7 @@
 # Plan: Require Password Validation When Switching to Online Profile
 
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
 ## Context
 
 Online profiles (those with a non-null email, `PlayerProfile.isOnline() == true`) are

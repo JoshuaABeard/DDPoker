@@ -1,5 +1,7 @@
 # Community Game WebSocket Proxy — Future Plan
 
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
 **Status:** DRAFT
 **Priority:** Low — Quality-of-life improvement, not blocking any milestone
 **Depends On:** M5 ✅ (Web Client Game UI — complete)

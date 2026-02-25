@@ -1,5 +1,7 @@
 # Plan: Desktop + Server Bug Cleanup
 
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
 **Status:** active
 **Created:** 2026-02-23
 **Scope:** `code/poker` (desktop client) and `code/pokerserver` (server)
@@ -12,7 +14,7 @@ Reduce real user-facing bugs in the Java desktop client while tightening server 
 
 This plan prioritizes correctness and stability first, then UX polish and maintainability.
 
-Phase 1 bug ledger: `.claude/plans/DESKTOP-SERVER-BUG-LEDGER.md`
+Phase 1 bug ledger: `docs/plans/2026-02-23-desktop-server-bug-ledger.md`
 
 ---
 

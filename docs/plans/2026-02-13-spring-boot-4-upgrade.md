@@ -1,5 +1,7 @@
 # Spring Boot 4.0 Upgrade Plan
 
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
 **Status:** paused
 **Priority:** Medium
 **Created:** 2026-02-13

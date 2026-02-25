@@ -8,7 +8,7 @@
 
 ## Plan
 <!-- Link to plan if one was used, otherwise delete this section -->
-Plan: `.claude/plans/PLAN-NAME.md`
+Plan: `docs/plans/YYYY-MM-DD-plan-name.md`
 
 ## Testing
 <!-- How was this tested? -->
@@ -25,7 +25,4 @@ Plan: `.claude/plans/PLAN-NAME.md`
 
 ## Review
 <!-- Link to review file if automated review was used -->
-Review: `.claude/reviews/BRANCH-NAME.md`
-
 ---
-Co-Authored-By: Claude Sonnet 4.5

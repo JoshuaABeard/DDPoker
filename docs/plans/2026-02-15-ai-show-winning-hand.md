@@ -1,5 +1,7 @@
 # AI Show Winning Hand (Configurable)
 
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
 **Created:** 2026-02-15
 **Status:** draft
 **Estimated Effort:** 4-6 hours

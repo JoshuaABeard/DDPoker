@@ -1,5 +1,7 @@
 # Plan: Lobby Chat UI Panel
 
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
 ## Context
 The server has a fully implemented `/ws/lobby` WebSocket endpoint and
 `LobbyChatWebSocketClient` transport, but no Swing UI displays or sends lobby

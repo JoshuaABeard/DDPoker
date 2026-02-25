@@ -12,22 +12,19 @@
 
 ## `/guides` — Reference Documentation
 
-Read on demand. Referenced from CLAUDE.md when relevant.
+Read on demand. Referenced from AGENTS.md when relevant.
 
 | File | When to Read |
 |------|-------------|
-| `testing-guide.md` | Writing tests — practices, frameworks, coverage |
-| `plan-protocol.md` | Creating or managing implementation plans |
-| `worktree-workflow.md` | Creating worktrees, merging, cleanup |
-| `review-protocol.md` | Requesting or performing code reviews |
+| `testing-guide.md` | Writing tests — frameworks, commands, coverage thresholds |
+| `desktop-client-testing.md` | Control server API, scenario scripts, input modes |
+| `copyright-licensing-guide.md` | Copyright headers, GPL-3.0 compliance |
+| `docker-build-workflow.md` | Docker build and deployment |
 
-## `/plans` — Implementation Plans
+## `/plans/completed` — Archived Plans (Historical)
 
-- **Active plans** — Current work in progress
-- **`/plans/completed`** — Archived completed plans
+Completed implementation plans from earlier work. New plans go to `docs/plans/`.
 
-## `/reviews` — Code Review Handoffs
+## `/reviews/completed` — Archived Reviews (Historical)
 
-- **`TEMPLATE.md`** — Starting template for review requests
-- **Active reviews** — Named `BRANCH-NAME.md`
-- **`/reviews/completed`** — Archived completed reviews
+Completed code review handoffs from earlier work. New reviews use superpowers workflow.

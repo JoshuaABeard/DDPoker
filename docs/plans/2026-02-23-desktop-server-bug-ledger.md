@@ -1,5 +1,7 @@
 # Desktop + Server Bug Ledger (Phase 1)
 
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
 **Status:** active
 **Created:** 2026-02-23
 **Scope:** non-AI issues only

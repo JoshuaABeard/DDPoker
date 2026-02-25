@@ -87,12 +87,7 @@ Priorities (highest to lowest):
 
 **If genuinely stuck:** Stop and ask. Don't guess.
 
-### When Things Break
-
-- Build fails: Read the error. Fix the root cause, don't suppress warnings or skip checks.
-- Tests fail: Investigate before re-running. If flaky, note it — don't ignore it.
-- Blocked by environment/dependency: State what's broken and what you tried. Don't work around it silently.
-- **Can't complete the work:** Stop and explain why. Never leave partial implementations, TODOs, or stubs.
+**When things break:** Use `superpowers:systematic-debugging`. Never suppress warnings, skip checks, or work around failures silently. If you can't complete the work, stop and explain why.
 
 ## 3. Simplicity & Surgical Changes
 
@@ -135,15 +130,7 @@ Priorities (highest to lowest):
 
 ## 4. Testing
 
-**Write tests BEFORE implementation whenever possible.**
-
-After implementing, verify:
-- All new tests pass
-- All existing tests still pass
-- Code coverage meets thresholds (see testing guide)
-- Build completes with zero warnings
-
-See `.claude/guides/testing-guide.md` for test-first practices, test types, and when tests can wait.
+See `.claude/guides/testing-guide.md` for project-specific frameworks, commands, and coverage thresholds.
 
 ## 5. Decisions
 
@@ -153,54 +140,15 @@ Create an ADR when choosing between multiple valid approaches or making a non-ob
 
 ## 6. Plans
 
-**Plans live in `.claude/plans/`. Always create a plan for features, significant refactoring, or anything spanning > 3 files or > 200 lines.**
-
-Skip plans for trivial fixes, docs-only changes, config tweaks, dependency updates. If unsure, propose one — user can say "just do it."
-
-See `.claude/guides/plan-protocol.md` for plan lifecycle and management.
+Plans live in `docs/plans/`. Use `superpowers:brainstorming` for design exploration and `superpowers:writing-plans` for implementation plans.
 
 ## 7. Git Workflow
 
-**Prefer worktrees over working directly on main.**
-
-Use a worktree for anything touching code or tests. Main is OK for small (< 10 lines) non-code changes: `.claude/` files, plans, .gitignore, README typos. If unsure, use a worktree. If already on main and work is underway, continue on main rather than blocking progress.
-
-```bash
-# From the main worktree root
-git worktree add -b feature-<description> ../DDPoker-feature-<description>
-```
-
-**Naming:** `feature-*`, `fix-*`, `refactor-*`
-
-**Merging:** This project does NOT use pull requests. After code review approval, rebase onto main, squash merge to main, and push directly to origin/main.
-
-See `.claude/guides/worktree-workflow.md` for the full create/merge/cleanup workflow.
-
-### Commit Message Format
-
-**Types:** `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
-
-```
-feat: Add player hand evaluation logic
-Plan: .claude/plans/hand-evaluation.md
-
-Chose lookup-table approach over brute-force for performance.
-
-Co-Authored-By: <agent name and version>
-```
-
-- First line: `<type>: <summary>` (50 chars max)
-- Second line: `Plan: <path>` (if a plan was used, omit otherwise)
-- Body: Context, reasoning, or tradeoffs (omit if self-explanatory)
-- Last line: `Co-Authored-By: <agent name and version>`
+Handled by superpowers: `using-git-worktrees`, `finishing-a-development-branch`.
 
 ## 8. Code Reviews
 
-**When work is complete, document your changes for review.**
-
-Create a review handoff at `.claude/reviews/BRANCH-NAME.md` using the template at `.claude/reviews/TEMPLATE.md`.
-
-See `.claude/guides/review-protocol.md` for the full review process.
+Handled by superpowers: `requesting-code-review`, `receiving-code-review`.
 
 ## 9. Privacy & Security
 

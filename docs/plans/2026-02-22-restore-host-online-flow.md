@@ -1,5 +1,7 @@
 # Plan: Restore Online Game Hosting Flow
 
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
 **Status:** proposed
 **Created:** 2026-02-22
 

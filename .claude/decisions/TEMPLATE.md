@@ -2,7 +2,7 @@
 
 **Status:** Proposed | Accepted | Superseded
 **Date:** YYYY-MM-DD
-**Plan:** `.claude/plans/PLAN.md` (if applicable, omit otherwise)
+**Plan:** `docs/plans/YYYY-MM-DD-plan-name.md` (if applicable, omit otherwise)
 
 ## Decision
 [What was decided, in 1-3 sentences.]

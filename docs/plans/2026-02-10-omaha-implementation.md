@@ -1,5 +1,7 @@
 # Omaha Poker Implementation Plan
 
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
 **Status:** draft (v3 — updated 2026-02-18)
 
 ## Context
