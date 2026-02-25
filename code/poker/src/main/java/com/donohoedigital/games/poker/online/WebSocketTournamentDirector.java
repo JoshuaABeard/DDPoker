@@ -17,6 +17,7 @@
  */
 package com.donohoedigital.games.poker.online;
 
+import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.engine.BasePhase;
 import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.engine.GameManager;
@@ -538,6 +539,27 @@ public class WebSocketTournamentDirector extends BasePhase
                     onAiHoleCards(d);
                 }
                 case CONTINUE_RUNOUT -> onContinueRunout();
+                case PLAYER_SAT_OUT -> {
+                    ServerMessageData.PlayerSatOutData d = parse(data, ServerMessageData.PlayerSatOutData.class);
+                    onPlayerSatOut(d);
+                }
+                case PLAYER_CAME_BACK -> {
+                    ServerMessageData.PlayerCameBackData d = parse(data, ServerMessageData.PlayerCameBackData.class);
+                    onPlayerCameBack(d);
+                }
+                case OBSERVER_JOINED -> {
+                    ServerMessageData.ObserverJoinedData d = parse(data, ServerMessageData.ObserverJoinedData.class);
+                    onObserverJoined(d);
+                }
+                case OBSERVER_LEFT -> {
+                    ServerMessageData.ObserverLeftData d = parse(data, ServerMessageData.ObserverLeftData.class);
+                    onObserverLeft(d);
+                }
+                case COLOR_UP_COMPLETED -> {
+                    ServerMessageData.ColorUpCompletedData d = parse(data,
+                            ServerMessageData.ColorUpCompletedData.class);
+                    onColorUpCompleted(d);
+                }
             }
         } catch (Exception e) {
             logger.error("Error handling {} message", type, e);
@@ -564,8 +586,9 @@ public class WebSocketTournamentDirector extends BasePhase
                 d.tables() != null ? d.tables().size() : 0, d.players() != null ? d.players().size() : 0);
         SwingUtilities.invokeLater(() -> {
             logger.debug("[GAME_STATE EDT] applying {} tables", d.tables() != null ? d.tables().size() : 0);
-            // Update level immediately — independent of table creation
+            // Update level and tournament-wide info immediately
             game_.setLevel(d.level());
+            game_.setServerTournamentInfo(d.totalPlayers(), d.playersRemaining(), d.numTables(), d.playerRank());
             // Start the clock if not already running (handles initial game-start state)
             if (!game_.getGameClock().isRunning()) {
                 game_.getGameClock().setSecondsRemaining(game_.getSecondsInLevel(d.level()));
@@ -1057,6 +1080,14 @@ public class WebSocketTournamentDirector extends BasePhase
             if (gamePlayer != null) {
                 game_.applyPlayerResult(gamePlayer.getID(), d.finishPosition());
             }
+            // Chat notification for eliminations — more prominent for human players
+            String name = d.playerName() != null && !d.playerName().isEmpty()
+                    ? d.playerName()
+                    : "Player " + d.playerId();
+            String place = PropertyConfig.getPlace(d.finishPosition());
+            String msg = name + " finished in " + place + " place";
+            int chatType = d.isHuman() ? PokerConstants.CHAT_ALWAYS : PokerConstants.CHAT_2;
+            deliverChatLocal(chatType, msg, PokerConstants.CHAT_DEALER_MSG_ID);
         });
     }
 
@@ -1274,6 +1305,15 @@ public class WebSocketTournamentDirector extends BasePhase
     private void onGamePaused(GamePausedData d) {
         SwingUtilities.invokeLater(() -> {
             game_.getGameClock().pause();
+            if (d.isBreak()) {
+                String msg = d.breakDurationMinutes() != null && d.breakDurationMinutes() > 0
+                        ? "Tournament break \u2014 resumes in " + d.breakDurationMinutes() + " minutes"
+                        : "Tournament break";
+                deliverChatLocal(PokerConstants.CHAT_ALWAYS, msg, PokerConstants.CHAT_DEALER_MSG_ID);
+            } else {
+                String who = d.pausedBy() != null && !d.pausedBy().isEmpty() ? d.pausedBy() : "Host";
+                deliverChatLocal(PokerConstants.CHAT_2, who + " paused the game", PokerConstants.CHAT_DEALER_MSG_ID);
+            }
             for (RemotePokerTable table : tables_.values()) {
                 table.fireEvent(PokerTableEvent.TYPE_STATE_CHANGED);
             }
@@ -1377,6 +1417,10 @@ public class WebSocketTournamentDirector extends BasePhase
     private void onLobbyGameStarting(LobbyGameStartingData d) {
         SwingUtilities.invokeLater(() -> {
             logger.debug("[LOBBY_GAME_STARTING] startingInSeconds={}", d.startingInSeconds());
+            String msg = d.startingInSeconds() > 0
+                    ? "Game starting in " + d.startingInSeconds() + " seconds..."
+                    : "Game starting...";
+            deliverChatLocal(PokerConstants.CHAT_ALWAYS, msg, PokerConstants.CHAT_DEALER_MSG_ID);
             fireStateChangedOnCurrentTable();
         });
     }
@@ -1462,6 +1506,55 @@ public class WebSocketTournamentDirector extends BasePhase
             if (table != null) {
                 table.fireEvent(PokerTableEvent.TYPE_DEALER_ACTION);
             }
+        });
+    }
+
+    private void onPlayerSatOut(ServerMessageData.PlayerSatOutData d) {
+        SwingUtilities.invokeLater(() -> {
+            String name = d.playerName() != null && !d.playerName().isEmpty()
+                    ? d.playerName()
+                    : "Player " + d.playerId();
+            deliverChatLocal(PokerConstants.CHAT_2, name + " is sitting out", PokerConstants.CHAT_DEALER_MSG_ID);
+            fireStateChangedOnCurrentTable();
+        });
+    }
+
+    private void onPlayerCameBack(ServerMessageData.PlayerCameBackData d) {
+        SwingUtilities.invokeLater(() -> {
+            String name = d.playerName() != null && !d.playerName().isEmpty()
+                    ? d.playerName()
+                    : "Player " + d.playerId();
+            deliverChatLocal(PokerConstants.CHAT_2, name + " is back", PokerConstants.CHAT_DEALER_MSG_ID);
+            fireStateChangedOnCurrentTable();
+        });
+    }
+
+    private void onObserverJoined(ServerMessageData.ObserverJoinedData d) {
+        SwingUtilities.invokeLater(() -> {
+            RemotePokerTable table = currentTable();
+            if (table != null) {
+                String name = d.observerName() != null && !d.observerName().isEmpty()
+                        ? d.observerName()
+                        : "Observer " + d.observerId();
+                deliverChatLocal(PokerConstants.CHAT_2, name + " is watching", PokerConstants.CHAT_DEALER_MSG_ID);
+                table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_OBSERVER_ADDED, table, null, -1));
+            }
+        });
+    }
+
+    private void onObserverLeft(ServerMessageData.ObserverLeftData d) {
+        SwingUtilities.invokeLater(() -> {
+            RemotePokerTable table = currentTable();
+            if (table != null) {
+                table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_OBSERVER_REMOVED, table, null, -1));
+            }
+        });
+    }
+
+    private void onColorUpCompleted(ServerMessageData.ColorUpCompletedData d) {
+        SwingUtilities.invokeLater(() -> {
+            deliverChatLocal(PokerConstants.CHAT_2, "Color-up complete.", PokerConstants.CHAT_DEALER_MSG_ID);
+            fireStateChangedOnCurrentTable();
         });
     }
 

@@ -352,10 +352,17 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 broadcast(ServerMessage.of(ServerMessageType.GAME_COMPLETE, gameId,
                         new ServerMessageData.GameCompleteData(standings, 0, 0L)));
             }
-            case GameEvent.BreakStarted e -> broadcast(
-                ServerMessage.of(ServerMessageType.GAME_PAUSED, gameId,
-                    new ServerMessageData.GamePausedData("Break started", "system"))
-            );
+            case GameEvent.BreakStarted e -> {
+                Integer breakMinutes = null;
+                if (game != null && game.getTournament() instanceof ServerTournamentContext ctx) {
+                    int minutes = ctx.getLevelMinutes(ctx.getLevel());
+                    if (minutes > 0) {
+                        breakMinutes = minutes;
+                    }
+                }
+                broadcast(ServerMessage.of(ServerMessageType.GAME_PAUSED, gameId,
+                    new ServerMessageData.GamePausedData("Break started", "system", true, breakMinutes)));
+            }
             case GameEvent.BreakEnded e -> broadcast(
                 ServerMessage.of(ServerMessageType.GAME_RESUMED, gameId,
                     new ServerMessageData.GameResumedData("system"))
@@ -403,10 +410,22 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 ServerMessage.of(ServerMessageType.PLAYER_ADDON, gameId,
                     new ServerMessageData.PlayerAddonData(e.playerId(), "", e.amount()))
             );
-            case GameEvent.PlayerEliminated e -> broadcast(
-                ServerMessage.of(ServerMessageType.PLAYER_ELIMINATED, gameId,
-                    new ServerMessageData.PlayerEliminatedData(e.playerId(), "", e.finishPosition(), 0, e.tableId()))
-            );
+            case GameEvent.PlayerEliminated e -> {
+                String elimName = "";
+                boolean elimHuman = false;
+                if (game != null && game.getTournament() instanceof ServerTournamentContext ctx) {
+                    for (ServerPlayer sp : ctx.getAllPlayers()) {
+                        if (sp.getID() == e.playerId()) {
+                            elimName = sp.getName();
+                            elimHuman = sp.isHuman();
+                            break;
+                        }
+                    }
+                }
+                broadcast(ServerMessage.of(ServerMessageType.PLAYER_ELIMINATED, gameId,
+                    new ServerMessageData.PlayerEliminatedData(e.playerId(), elimName, e.finishPosition(), 0,
+                        e.tableId(), elimHuman)));
+            }
             case GameEvent.ActionTimeout e -> {
                 // ActionTimeout has no tableId on the event itself; derive it by
                 // finding which table the timing-out player is currently seated at.
@@ -468,13 +487,24 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
             case GameEvent.AllInRunoutPaused e ->
                 connectionManager.sendToPlayer(gameId, game.getOwnerProfileId(),
                         ServerMessage.of(ServerMessageType.CONTINUE_RUNOUT, gameId, null));
+            case GameEvent.ObserverAdded e -> {
+                String name = lookupPlayerName(e.observerId());
+                broadcast(ServerMessage.of(ServerMessageType.OBSERVER_JOINED, gameId,
+                    new ServerMessageData.ObserverJoinedData(e.observerId(), name, e.tableId())));
+            }
+            case GameEvent.ObserverRemoved e -> {
+                String name = lookupPlayerName(e.observerId());
+                broadcast(ServerMessage.of(ServerMessageType.OBSERVER_LEFT, gameId,
+                    new ServerMessageData.ObserverLeftData(e.observerId(), name, e.tableId())));
+            }
+            case GameEvent.ColorUpCompleted e -> broadcast(
+                ServerMessage.of(ServerMessageType.COLOR_UP_COMPLETED, gameId,
+                    new ServerMessageData.ColorUpCompletedData(e.tableId()))
+            );
             // Internal housekeeping events — not broadcast to clients
             case GameEvent.ButtonMoved ignored -> {}
             case GameEvent.TableStateChanged ignored -> {}
             case GameEvent.CurrentPlayerChanged ignored -> {}
-            case GameEvent.ObserverAdded ignored -> {}
-            case GameEvent.ObserverRemoved ignored -> {}
-            case GameEvent.ColorUpCompleted ignored -> {}
             case GameEvent.CleaningDone ignored -> {}
             default -> logger.debug("[BROADCAST] unhandled event type: {}", event.getClass().getSimpleName());
         }
@@ -493,6 +523,17 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
             if (snap != null)
                 conn.sendMessage(converter.createGameStateMessage(gameId, snap));
         }
+    }
+
+    private String lookupPlayerName(int playerId) {
+        if (game != null && game.getTournament()instanceof ServerTournamentContext ctx) {
+            for (ServerPlayer sp : ctx.getAllPlayers()) {
+                if (sp.getID() == playerId) {
+                    return sp.getName();
+                }
+            }
+        }
+        return "";
     }
 
     private void broadcast(ServerMessage message) {

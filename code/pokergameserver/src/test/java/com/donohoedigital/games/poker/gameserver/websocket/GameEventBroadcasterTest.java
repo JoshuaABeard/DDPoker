@@ -447,7 +447,7 @@ class GameEventBroadcasterTest {
         // Mock game returning a snapshot with tableId=1 (matches HandStarted tableId
         // below)
         GameStateSnapshot snapshot = new GameStateSnapshot(1, 3, null, null, List.of(), List.of(), -1, -1, -1, -1,
-                "PRE_FLOP", 1, 25, 50, 0);
+                "PRE_FLOP", 1, 25, 50, 0, 0, 0, 0, 0);
         GameInstance mockGame = mock(GameInstance.class);
         when(mockGame.getGameStateSnapshot(profileId)).thenReturn(snapshot);
 

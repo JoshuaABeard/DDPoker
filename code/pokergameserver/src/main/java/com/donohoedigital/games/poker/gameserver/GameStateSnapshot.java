@@ -65,7 +65,8 @@ import java.util.List;
  */
 public record GameStateSnapshot(int tableId, int handNumber, Card[] myHoleCards, Card[] communityCards,
         List<PlayerState> players, List<PotState> pots, int dealerSeat, int smallBlindSeat, int bigBlindSeat,
-        int currentActorSeat, String bettingRound, int level, int smallBlind, int bigBlind, int ante) {
+        int currentActorSeat, String bettingRound, int level, int smallBlind, int bigBlind, int ante, int totalPlayers,
+        int playersRemaining, int numTables, int playerRank) {
 
     /**
      * Per-player state visible in the snapshot.
@@ -89,7 +90,7 @@ public record GameStateSnapshot(int tableId, int handNumber, Card[] myHoleCards,
      *            total amount bet by this player in the current betting round
      */
     public record PlayerState(int playerId, String playerName, int chipCount, int seat, boolean folded, boolean allIn,
-            Card[] holeCards, int currentBet) {
+            Card[] holeCards, int currentBet, boolean sittingOut) {
     }
 
     /**

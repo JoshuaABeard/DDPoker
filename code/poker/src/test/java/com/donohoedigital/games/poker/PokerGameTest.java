@@ -419,6 +419,21 @@ class PokerGameTest {
     }
 
     @Test
+    void should_AdjustTotalChipsInPlay_When_ExtraChipsChange() {
+        TournamentProfile profile = createTestProfile();
+        game.setProfile(profile);
+        game.addPlayer(createTestPlayer("Player1", false));
+        game.addPlayer(createTestPlayer("Player2", false));
+
+        game.computeTotalChipsInPlay();
+        int baseline = game.getTotalChipsInPlay();
+
+        game.addExtraChips(-25);
+
+        assertThat(game.getTotalChipsInPlay()).isEqualTo(baseline - 25);
+    }
+
+    @Test
     void should_ComputeTotalChips_When_ChipsInPlay() {
         TournamentProfile profile = createTestProfile();
         game.setProfile(profile);
@@ -648,6 +663,7 @@ class PokerGameTest {
         TournamentProfile profile = createTestProfile();
         game.setProfile(profile);
         PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        player.setBuyin(100);
         game.addPlayer(player);
 
         game.applyPlayerResult(1, 2);
@@ -655,6 +671,26 @@ class PokerGameTest {
         // getPayout(2) for a basic profile without explicit payout structure returns 0;
         // just verify the method ran without exception and set a non-negative prize.
         assertThat(player.getPrize()).isGreaterThanOrEqualTo(0);
+    }
+
+    @Test
+    void should_AllocatePrizePoolAcrossResults_When_ApplyPlayerResultCalledForAllFinishers() {
+        TournamentProfile profile = createTestProfile();
+        game.setProfile(profile);
+
+        PokerPlayer winner = new PokerPlayer(1, "Winner", false);
+        winner.setBuyin(100);
+        PokerPlayer runnerUp = new PokerPlayer(2, "RunnerUp", false);
+        runnerUp.setBuyin(100);
+
+        game.addPlayer(winner);
+        game.addPlayer(runnerUp);
+
+        game.applyPlayerResult(2, 2);
+        game.applyPlayerResult(1, 1);
+
+        assertThat(winner.getPrize()).isGreaterThan(0);
+        assertThat(game.getPrizesPaid()).isEqualTo(game.getPrizePool());
     }
 
     // =================================================================

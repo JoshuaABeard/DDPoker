@@ -161,20 +161,38 @@ public class Rank extends DashboardItem {
             sMsgKey = nWon == 0 ? "msg.rank.out" : "msg.rank.out.win";
         } else {
             sMsgKey = human.isObserver() ? "msg.rank.obs" : "msg.rank";
-            if (!human.isObserver())
-                nRank = game_.getRank(human);
+            if (!human.isObserver()) {
+                // For online games, use server-provided rank when available
+                if (game_.isOnlineGame() && game_.getServerPlayerRank() > 0) {
+                    nRank = game_.getServerPlayerRank();
+                } else {
+                    nRank = game_.getRank(human);
+                }
+            }
         }
 
         sRank_ = null;
         if (nRank != 0) {
             sRank_ = PropertyConfig.getPlace(nRank);
         }
-        int nNumTables = game_.getNumTables();
-        sTextToUpdate_ = PropertyConfig.getMessage(sMsgKey, sRank_, game_.getNumPlayers() - game_.getNumPlayersOut(),
+        // For online games, use server-provided tournament info when available
+        int nPlayersRemaining;
+        int nNumTables;
+        int nTotalPlayers;
+        if (game_.isOnlineGame() && game_.getServerTotalPlayers() > 0) {
+            nPlayersRemaining = game_.getServerPlayersRemaining();
+            nNumTables = game_.getServerNumTables();
+            nTotalPlayers = game_.getServerTotalPlayers();
+        } else {
+            nPlayersRemaining = game_.getNumPlayers() - game_.getNumPlayersOut();
+            nNumTables = game_.getNumTables();
+            nTotalPlayers = game_.getNumPlayers();
+        }
+        sTextToUpdate_ = PropertyConfig.getMessage(sMsgKey, sRank_, nPlayersRemaining,
                 nNumTables == 1
                         ? PropertyConfig.getMessage("msg.table")
                         : PropertyConfig.getMessage("msg.tables", nNumTables),
-                nWon > 0 ? nWon : null, game_.getNumPlayers());
+                nWon > 0 ? nWon : null, nTotalPlayers);
         GuiUtils.invoke(setLabelRunner_);
     }
 

@@ -119,6 +119,12 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     // table
     private int nHandsInLevel_ = 0; // tracks hands played in current level for HANDS mode
 
+    // Server-provided tournament info for online games (updated via GAME_STATE)
+    private int serverTotalPlayers_;
+    private int serverPlayersRemaining_;
+    private int serverNumTables_;
+    private int serverPlayerRank_;
+
     // online game and other info added for 2.0
     private String sLocalIP_;
     private String sPublicIP_;
@@ -551,6 +557,32 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     }
 
     /**
+     * Server-provided tournament info for online games.
+     */
+    public int getServerTotalPlayers() {
+        return serverTotalPlayers_;
+    }
+
+    public int getServerPlayersRemaining() {
+        return serverPlayersRemaining_;
+    }
+
+    public int getServerNumTables() {
+        return serverNumTables_;
+    }
+
+    public int getServerPlayerRank() {
+        return serverPlayerRank_;
+    }
+
+    public void setServerTournamentInfo(int totalPlayers, int playersRemaining, int numTables, int playerRank) {
+        this.serverTotalPlayers_ = totalPlayers;
+        this.serverPlayersRemaining_ = playersRemaining;
+        this.serverNumTables_ = numTables;
+        this.serverPlayerRank_ = playerRank;
+    }
+
+    /**
      * Add a table to the list of tables maintained by the game. Added table passed
      * as "new" value in PROP_TABLES event.
      */
@@ -729,6 +761,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      */
     public void addExtraChips(int n) {
         nExtraChips_ += n;
+        totalChipsInPlay_ += n;
     }
 
     /**
@@ -951,6 +984,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     public void setProfile(TournamentProfile profile) {
         TournamentProfile old = profile_;
         profile_ = profile;
+        nLastPool_ = -1;
         firePropertyChange(PROP_PROFILE, old, profile_);
     }
 
@@ -1106,6 +1140,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         id_ = Utils.getCurrentTimeStamp();
         nLevel_ = 0;
         profile_ = profile;
+        nLastPool_ = -1;
 
         if (isClockMode()) {
             nextLevel();
@@ -1430,7 +1465,22 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         PokerPlayer player = getPokerPlayerFromID(playerId);
         if (player == null)
             return;
-        int prize = (profile_ != null) ? profile_.getPayout(finishPosition) : 0;
+
+        int prize = 0;
+        if (profile_ != null) {
+            int pool = getPrizePool();
+            if (pool != nLastPool_) {
+                nLastPool_ = pool;
+                profile_.setPrizePool(pool, true);
+            }
+
+            if (finishPosition == 1) {
+                prize = profile_.getPrizePool() - getPrizesPaid();
+            } else {
+                prize = profile_.getPayout(finishPosition);
+            }
+        }
+
         player.setEliminated(true);
         player.setPlace(finishPosition);
         player.setPrize(prize);

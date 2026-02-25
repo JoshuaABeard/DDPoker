@@ -162,17 +162,21 @@ class GameStateProjectionTest {
     }
 
     @Test
-    void testProjectionExcludesSittingOutPlayers() {
-        // Sitting-out players (e.g. eliminated from tournament) must not appear in
-        // the snapshot — they were formerly shown as ALL_IN with 0 chips (bug fix).
-        players.get(2).setSittingOut(true); // Charlie is eliminated
+    void testProjectionIncludesSittingOutPlayersWithFlag() {
+        // Sitting-out players are included in the snapshot with sittingOut=true
+        // so other clients can display them correctly (e.g. greyed-out seat).
+        players.get(2).setSittingOut(true); // Charlie is sitting out
 
         GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, null, 1);
 
-        assertEquals(2, snapshot.players().size());
-        List<Integer> playerIds = snapshot.players().stream().map(GameStateSnapshot.PlayerState::playerId).toList();
-        assertTrue(playerIds.contains(1));
-        assertTrue(playerIds.contains(2));
-        assertFalse(playerIds.contains(3), "Eliminated (sitting-out) player must be excluded from snapshot");
+        assertEquals(3, snapshot.players().size());
+        GameStateSnapshot.PlayerState charlieState = snapshot.players().stream().filter(p -> p.playerId() == 3)
+                .findFirst().orElseThrow();
+        assertTrue(charlieState.sittingOut(), "Sitting-out player must have sittingOut=true");
+
+        // Active players should not be sitting out
+        GameStateSnapshot.PlayerState aliceState = snapshot.players().stream().filter(p -> p.playerId() == 1)
+                .findFirst().orElseThrow();
+        assertFalse(aliceState.sittingOut());
     }
 }

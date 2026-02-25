@@ -367,6 +367,20 @@ public class ServerTournamentContext implements TournamentContext {
         return breakLevels[level];
     }
 
+    /**
+     * Get the duration in minutes for a given level (break or play).
+     *
+     * @param level
+     *            level index
+     * @return minutes for the level, or 0 if out of range
+     */
+    public int getLevelMinutes(int level) {
+        if (level < 0 || level >= levelMinutes.length) {
+            return 0;
+        }
+        return levelMinutes[level];
+    }
+
     @Override
     public GamePlayerInfo getLocalPlayer() {
         // For server, local player is the first human player

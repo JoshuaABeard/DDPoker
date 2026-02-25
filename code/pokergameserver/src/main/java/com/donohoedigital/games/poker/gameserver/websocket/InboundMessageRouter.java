@@ -23,6 +23,8 @@ import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ClientMessageData;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ClientMessageType;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage;
+import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData;
+import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -267,10 +269,16 @@ public class InboundMessageRouter {
 
     private void handleSitOut(PlayerConnection connection, GameInstance game) {
         game.setSittingOut(connection.getProfileId(), true);
+        ServerMessage msg = ServerMessage.of(ServerMessageType.PLAYER_SAT_OUT, connection.getGameId(),
+                new ServerMessageData.PlayerSatOutData(connection.getProfileId(), connection.getUsername()));
+        connectionManager.broadcastToGame(connection.getGameId(), msg);
     }
 
     private void handleComeBack(PlayerConnection connection, GameInstance game) {
         game.setSittingOut(connection.getProfileId(), false);
+        ServerMessage msg = ServerMessage.of(ServerMessageType.PLAYER_CAME_BACK, connection.getGameId(),
+                new ServerMessageData.PlayerCameBackData(connection.getProfileId(), connection.getUsername()));
+        connectionManager.broadcastToGame(connection.getGameId(), msg);
     }
 
     private void handleAdminResume(PlayerConnection connection, GameInstance game) {

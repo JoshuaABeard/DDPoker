@@ -236,7 +236,7 @@ public class OutboundMessageConverter {
      */
     public ServerMessage createGamePausedMessage(String gameId, String reason, String pausedBy) {
         return ServerMessage.of(ServerMessageType.GAME_PAUSED, gameId,
-                new ServerMessageData.GamePausedData(reason, pausedBy));
+                new ServerMessageData.GamePausedData(reason, pausedBy, false, null));
     }
 
     /**
@@ -289,9 +289,9 @@ public class OutboundMessageConverter {
         // Build seats from player states
         List<ServerMessageData.SeatData> seats = snapshot.players().stream()
                 .map(p -> new ServerMessageData.SeatData(p.seat(), p.playerId(), p.playerName(), p.chipCount(),
-                        p.folded() ? "FOLDED" : (p.allIn() ? "ALL_IN" : "ACTIVE"), p.seat() == dealerSeat,
-                        p.seat() == sbSeat, p.seat() == bbSeat, p.currentBet(), cardsToList(p.holeCards()),
-                        p.seat() == actorSeat))
+                        p.sittingOut() ? "SITTING_OUT" : (p.folded() ? "FOLDED" : (p.allIn() ? "ALL_IN" : "ACTIVE")),
+                        p.seat() == dealerSeat, p.seat() == sbSeat, p.seat() == bbSeat, p.currentBet(),
+                        cardsToList(p.holeCards()), p.seat() == actorSeat))
                 .collect(Collectors.toList());
 
         // Build pots
@@ -313,6 +313,7 @@ public class OutboundMessageConverter {
 
         return new ServerMessageData.GameStateData("IN_PROGRESS", snapshot.level(),
                 new ServerMessageData.BlindsData(snapshot.smallBlind(), snapshot.bigBlind(), snapshot.ante()), null,
-                List.of(tableData), playerSummaries);
+                List.of(tableData), playerSummaries, snapshot.totalPlayers(), snapshot.playersRemaining(),
+                snapshot.numTables(), snapshot.playerRank());
     }
 }

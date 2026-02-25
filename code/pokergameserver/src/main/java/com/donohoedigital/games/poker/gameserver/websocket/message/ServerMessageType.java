@@ -144,5 +144,20 @@ public enum ServerMessageType {
     NEVER_BROKE_OFFERED,
 
     /** Server is pausing during all-in runout; human must click Continue */
-    CONTINUE_RUNOUT
+    CONTINUE_RUNOUT,
+
+    /** Player chose to sit out (broadcast to all) */
+    PLAYER_SAT_OUT,
+
+    /** Player came back from sitting out (broadcast to all) */
+    PLAYER_CAME_BACK,
+
+    /** Observer joined a table (broadcast to all) */
+    OBSERVER_JOINED,
+
+    /** Observer left a table (broadcast to all) */
+    OBSERVER_LEFT,
+
+    /** Color-up chip race completed */
+    COLOR_UP_COMPLETED
 }

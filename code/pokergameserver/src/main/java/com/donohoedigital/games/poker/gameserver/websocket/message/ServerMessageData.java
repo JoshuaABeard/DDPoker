@@ -27,7 +27,7 @@ import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
  * Each record matches the master plan JSON spec exactly, ensuring consistent
  * wire format across all client implementations (desktop, web, mobile).
  */
-public sealed interface ServerMessageData permits ServerMessageData.ConnectedData,ServerMessageData.GameStateData,ServerMessageData.HandStartedData,ServerMessageData.HoleCardsDealtData,ServerMessageData.CommunityCardsDealtData,ServerMessageData.ActionRequiredData,ServerMessageData.PlayerActedData,ServerMessageData.ActionTimeoutData,ServerMessageData.HandCompleteData,ServerMessageData.LevelChangedData,ServerMessageData.PlayerEliminatedData,ServerMessageData.RebuyOfferedData,ServerMessageData.AddonOfferedData,ServerMessageData.GameCompleteData,ServerMessageData.PlayerJoinedData,ServerMessageData.PlayerLeftData,ServerMessageData.PlayerDisconnectedData,ServerMessageData.PotAwardedData,ServerMessageData.ShowdownStartedData,ServerMessageData.PlayerRebuyData,ServerMessageData.PlayerAddonData,ServerMessageData.GamePausedData,ServerMessageData.GameResumedData,ServerMessageData.PlayerKickedData,ServerMessageData.ChatMessageData,ServerMessageData.TimerUpdateData,ServerMessageData.ErrorData,ServerMessageData.LobbyStateData,ServerMessageData.LobbyPlayerJoinedData,ServerMessageData.LobbyPlayerLeftData,ServerMessageData.LobbyPlayerKickedData,ServerMessageData.LobbySettingsChangedData,ServerMessageData.LobbyGameStartingData,ServerMessageData.GameCancelledData,ServerMessageData.ChipsTransferredData,ServerMessageData.ColorUpStartedData,ServerMessageData.AiHoleCardsData,ServerMessageData.NeverBrokeOfferedData {
+public sealed interface ServerMessageData permits ServerMessageData.ConnectedData,ServerMessageData.GameStateData,ServerMessageData.HandStartedData,ServerMessageData.HoleCardsDealtData,ServerMessageData.CommunityCardsDealtData,ServerMessageData.ActionRequiredData,ServerMessageData.PlayerActedData,ServerMessageData.ActionTimeoutData,ServerMessageData.HandCompleteData,ServerMessageData.LevelChangedData,ServerMessageData.PlayerEliminatedData,ServerMessageData.RebuyOfferedData,ServerMessageData.AddonOfferedData,ServerMessageData.GameCompleteData,ServerMessageData.PlayerJoinedData,ServerMessageData.PlayerLeftData,ServerMessageData.PlayerDisconnectedData,ServerMessageData.PotAwardedData,ServerMessageData.ShowdownStartedData,ServerMessageData.PlayerRebuyData,ServerMessageData.PlayerAddonData,ServerMessageData.GamePausedData,ServerMessageData.GameResumedData,ServerMessageData.PlayerKickedData,ServerMessageData.ChatMessageData,ServerMessageData.TimerUpdateData,ServerMessageData.ErrorData,ServerMessageData.LobbyStateData,ServerMessageData.LobbyPlayerJoinedData,ServerMessageData.LobbyPlayerLeftData,ServerMessageData.LobbyPlayerKickedData,ServerMessageData.LobbySettingsChangedData,ServerMessageData.LobbyGameStartingData,ServerMessageData.GameCancelledData,ServerMessageData.ChipsTransferredData,ServerMessageData.ColorUpStartedData,ServerMessageData.AiHoleCardsData,ServerMessageData.NeverBrokeOfferedData,ServerMessageData.PlayerSatOutData,ServerMessageData.PlayerCameBackData,ServerMessageData.ObserverJoinedData,ServerMessageData.ObserverLeftData,ServerMessageData.ColorUpCompletedData {
 
     /**
      * Sent on successful WebSocket connection, includes full game state snapshot.
@@ -42,7 +42,8 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
 
     /** Full game state snapshot. */
     record GameStateData(String status, int level, BlindsData blinds, Long nextLevelIn, List<TableData> tables,
-            List<PlayerSummaryData> players) implements ServerMessageData {
+            List<PlayerSummaryData> players, int totalPlayers, int playersRemaining, int numTables,
+            int playerRank) implements ServerMessageData {
     }
 
     /** New hand started. */
@@ -83,8 +84,8 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
     }
 
     /** Player eliminated from tournament. */
-    record PlayerEliminatedData(long playerId, String playerName, int finishPosition, int handsPlayed,
-            int tableId) implements ServerMessageData {
+    record PlayerEliminatedData(long playerId, String playerName, int finishPosition, int handsPlayed, int tableId,
+            boolean isHuman) implements ServerMessageData {
     }
 
     /** Rebuy offered to eliminated player (private). */
@@ -128,7 +129,8 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
     }
 
     /** Game paused. */
-    record GamePausedData(String reason, String pausedBy) implements ServerMessageData {
+    record GamePausedData(String reason, String pausedBy, boolean isBreak,
+            Integer breakDurationMinutes) implements ServerMessageData {
     }
 
     /** Game resumed. */
@@ -269,5 +271,25 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
 
     /** Never Broke offered to the human player (practice mode, private). */
     record NeverBrokeOfferedData(int timeoutSeconds) implements ServerMessageData {
+    }
+
+    /** Player chose to sit out (broadcast to all). */
+    record PlayerSatOutData(long playerId, String playerName) implements ServerMessageData {
+    }
+
+    /** Player came back from sitting out (broadcast to all). */
+    record PlayerCameBackData(long playerId, String playerName) implements ServerMessageData {
+    }
+
+    /** Observer joined a table (broadcast to all). */
+    record ObserverJoinedData(long observerId, String observerName, int tableId) implements ServerMessageData {
+    }
+
+    /** Observer left a table (broadcast to all). */
+    record ObserverLeftData(long observerId, String observerName, int tableId) implements ServerMessageData {
+    }
+
+    /** Color-up chip race completed. */
+    record ColorUpCompletedData(int tableId) implements ServerMessageData {
     }
 }

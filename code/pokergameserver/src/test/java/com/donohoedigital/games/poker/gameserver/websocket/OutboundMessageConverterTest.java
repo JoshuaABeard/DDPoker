@@ -64,7 +64,7 @@ class OutboundMessageConverterTest {
     @Test
     void createConnectedMessage_hasCorrectType() {
         GameStateSnapshot snapshot = new GameStateSnapshot(1, 5, null, new Card[0], List.of(), List.of(), -1, -1, -1,
-                -1, null, 0, 0, 0, 0);
+                -1, null, 0, 0, 0, 0, 0, 0, 0, 0);
 
         ServerMessage message = converter.createConnectedMessage("game-1", 42L, snapshot, null);
 
@@ -76,7 +76,7 @@ class OutboundMessageConverterTest {
     @Test
     void createConnectedMessage_includesPlayerId() {
         GameStateSnapshot snapshot = new GameStateSnapshot(1, 5, null, new Card[0], List.of(), List.of(), -1, -1, -1,
-                -1, null, 0, 0, 0, 0);
+                -1, null, 0, 0, 0, 0, 0, 0, 0, 0);
 
         ServerMessage message = converter.createConnectedMessage("game-1", 42L, snapshot, null);
 
@@ -189,13 +189,13 @@ class OutboundMessageConverterTest {
         Card[] communityCards = {Card.SPADES_J, Card.CLUBS_T};
 
         List<GameStateSnapshot.PlayerState> players = List.of(
-                new GameStateSnapshot.PlayerState(1, "Player1", 1000, 0, false, false, holeCards, 100),
-                new GameStateSnapshot.PlayerState(2, "Player2", 2000, 1, false, false, null, 0));
+                new GameStateSnapshot.PlayerState(1, "Player1", 1000, 0, false, false, holeCards, 100, false),
+                new GameStateSnapshot.PlayerState(2, "Player2", 2000, 1, false, false, null, 0, false));
         List<GameStateSnapshot.PotState> pots = List.of(new GameStateSnapshot.PotState(500, List.of(1, 2)));
         // dealerSeat=0, sbSeat=1, bbSeat=-1, actorSeat=-1, round="FLOP", level=2,
         // sb=50, bb=100, ante=0
         GameStateSnapshot snapshot = new GameStateSnapshot(0, 3, holeCards, communityCards, players, pots, 0, 1, -1, -1,
-                "FLOP", 2, 50, 100, 0);
+                "FLOP", 2, 50, 100, 0, 6, 6, 1, 1);
 
         ServerMessage message = converter.createGameStateMessage("game-1", snapshot);
 
