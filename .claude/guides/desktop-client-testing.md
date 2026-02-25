@@ -147,6 +147,32 @@ All valid action types:
 | `DECLINE_REBUY` | REBUY_CHECK | Skip (timer expires naturally) |
 | `ADVISOR_DO_IT` | any betting mode | Execute the advisor's recommended action |
 
+### Dialog Observability and Control
+
+Inspect currently open Swing dialogs:
+
+```bash
+curl -s -H "$H" http://localhost:$PORT/ui/dialogs | jq .
+```
+
+Close the top-most dialog (generic):
+
+```bash
+curl -s -H "$H" -X POST -H "Content-Type: application/json" \
+     -d '{"action":"CLOSE"}' \
+     http://localhost:$PORT/ui/dialogs
+```
+
+Close a specific dialog by id/title selector:
+
+```bash
+curl -s -H "$H" -X POST -H "Content-Type: application/json" \
+     -d '{"action":"CLOSE","dialog":"Tournament Over"}' \
+     http://localhost:$PORT/ui/dialogs
+```
+
+Other supported actions: `CLICK_BUTTON`, `SELECT_TAB`, `SET_OPTION`, `SET_COMPONENT`.
+
 ### Card Injection
 
 Stage a specific card order for the **next** hand dealt:
@@ -407,6 +433,7 @@ Ready-to-run scenario scripts in `.claude/scripts/scenarios/`. All scripts share
 | `test-poker-night.sh` | Poker Night clock mode | Navigate to clock mode; verify ticking; level info |
 | `test-edge-cases.sh` | Short stack, eliminations, leaderboard | Short stack all-in; multiple eliminations; chip leaderboard |
 | `test-dashboard-data.sh` | Dashboard panel data on human turn | Hand strength, rank, advisor, pot, actions, standings |
+| `test-dashboard-widgets-strict.sh` | Strict semantic dashboard contracts | `/ui/dashboard/widgets` + `/state` cross-checks for D-001..D-013, source-sequence timing assertion after a real action, non-human advisor branch checks, FLOP/TURN/RIVER checks for handStrength/improveOdds, and game-over rank consistency checks with deterministic dialog draining via `/ui/dialogs` |
 | `test-save-load-extended.sh` | Extended save/load testing | List saves; save during play; verify file; load; validate |
 | `test-preferences-full.sh` | Comprehensive options coverage | All display, gameplay, clock, advisor, chat, screenshot, cheat options |
 

@@ -69,6 +69,7 @@ LAST_MODE=""
 
 while true; do
     STATE=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
+    close_visible_dialog_if_any "pause-allin-loop" > /dev/null 2>&1 || true
     MODE=$(jget "$STATE" 'o.inputMode || "NONE"')
 
     if [[ "$MODE" != "$LAST_MODE" ]]; then
@@ -106,7 +107,27 @@ while true; do
             api_post_json /action '{"type":"DECLINE_REBUY"}' > /dev/null 2>&1 || true
             ;;
         QUITSAVE|NONE)
-            # AI acting — just wait
+            # Usually AI acting, but if control state still reports a human turn,
+            # submit a safe fallback action to avoid deadlock in QUITSAVE.
+            IS_HUMAN=$(jget "$STATE" 'o.currentAction&&o.currentAction.isHumanTurn||false')
+            if [[ "$IS_HUMAN" == "true" ]]; then
+                CAN_CHECK=$(jget "$STATE" 'Array.isArray(o.currentAction&&o.currentAction.availableActions) && o.currentAction.availableActions.includes("CHECK")')
+                CAN_CALL=$(jget "$STATE" 'Array.isArray(o.currentAction&&o.currentAction.availableActions) && o.currentAction.availableActions.includes("CALL")')
+                CAN_ALL_IN=$(jget "$STATE" 'Array.isArray(o.currentAction&&o.currentAction.availableActions) && o.currentAction.availableActions.includes("ALL_IN")')
+
+                if [[ "$CAN_CHECK" == "true" ]]; then
+                    api_post_json /action '{"type":"CHECK"}' > /dev/null 2>&1 || true
+                    HUMAN_ACTIONS=$((HUMAN_ACTIONS+1))
+                elif [[ "$CAN_ALL_IN" == "true" ]]; then
+                    api_post_json /action '{"type":"ALL_IN"}' > /dev/null 2>&1 || true
+                    HUMAN_ACTIONS=$((HUMAN_ACTIONS+1))
+                elif [[ "$CAN_CALL" == "true" ]]; then
+                    api_post_json /action '{"type":"CALL"}' > /dev/null 2>&1 || true
+                    HUMAN_ACTIONS=$((HUMAN_ACTIONS+1))
+                fi
+            fi
+
+            close_visible_dialog_if_any "pause-allin-idle" > /dev/null 2>&1 || true
             ;;
     esac
 
@@ -159,6 +180,7 @@ if [[ "$PAUSE_ALLIN_APPEARED" == "true" ]]; then
     while true; do
         sleep 0.3
         STATE2=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
+        close_visible_dialog_if_any "pause-allin-continue" > /dev/null 2>&1 || true
         MODE2=$(jget "$STATE2" 'o.inputMode || "NONE"')
         if [[ "$MODE2" != "CONTINUE_LOWER" ]]; then
             break

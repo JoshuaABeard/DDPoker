@@ -25,7 +25,7 @@ Persistent knowledge discovered during development sessions. Read this at the st
 
 ## Testing
 
-- [pokergameserver] `ServerTournamentDirectorTest.multiTableTournamentConsolidates`, `interHandPausePreventsRacing`, `playerEliminatedEventsPublished`, and `levelChangedEventPublishedOnLevelAdvance` are timing-sensitive — they use `thread.join(30000–120000)`. They pass reliably in isolation but occasionally timeout under `mvn test -P dev` (4-thread parallel build) due to CPU load. Re-run the module alone to distinguish real failures from load-induced flakiness (2026-02-20)
+- [pokergameserver] `ServerTournamentDirectorTest.multiTableTournamentConsolidates`, `interHandPausePreventsRacing`, and `playerEliminatedEventsPublished` are timing-sensitive — they use `thread.join(30000–120000)`. They pass reliably in isolation but occasionally timeout under `mvn test -P dev` (4-thread parallel build) due to CPU load. Re-run the module alone to distinguish real failures from load-induced flakiness (2026-02-20)
 - [pokerengine] AIStrategyNode tests depend on PropertyConfig state; tests must be resilient to initialization order (2026-02-12)
 - [pokerengine] NEVER call setValue() on static Card constants (SPADES_A, etc.) in tests — they are shared singletons and modifications pollute all other tests. Create new Card instances instead (2026-02-13)
 - [pokerengine] OnlineGame.hashCode() violates equals/hashCode contract by including super.hashCode() — equal objects (same URL) have different hash codes (2026-02-13)

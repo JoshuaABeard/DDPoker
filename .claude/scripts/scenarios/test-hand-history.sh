@@ -44,6 +44,7 @@ PLAY_START=$(date +%s)
 
 while [[ $HANDS_FOLDED -lt $TARGET_FOLDS ]]; do
     state=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
+    close_visible_dialog_if_any "history-fold-loop" > /dev/null 2>&1 || true
     mode=$(jget "$state" 'o.inputMode || "NONE"')
 
     case "$mode" in
@@ -95,6 +96,7 @@ GAMEOVER_START=$(date +%s)
 
 while [[ "$GAMEOVER" == "false" ]]; do
     state=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
+    close_visible_dialog_if_any "history-gameover-loop" > /dev/null 2>&1 || true
     mode=$(jget "$state" 'o.inputMode || "NONE"')
     remaining=$(jget "$state" 'o.tournament&&o.tournament.playersRemaining||99')
     lifecycle=$(jget "$state" 'o.lifecyclePhase||""')

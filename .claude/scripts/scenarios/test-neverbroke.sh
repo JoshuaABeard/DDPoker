@@ -6,8 +6,8 @@
 #   2. Start a game (no rebuys required)
 #   3. Set human chips to 0 via cheat during their turn, then FOLD
 #   4. At end of hand, NEVER_BROKE_ACTIVE fires: chips auto-transferred from chip leader
-#      to human (chips restored BEFORE any blocking dialog)
-#   5. Verify human chips > 0 via /state polling (works even while info dialog blocks EDT)
+#      to human (chips restored BEFORE any info dialog)
+#   5. Verify human chips > 0 via /state polling; dismiss any popups via /ui/dialogs
 #
 # Note: REBUY_CHECK mode (from GameOver phase) only fires when human is fully eliminated
 # (bGameOver=true). Neverbroke sets bGameOver=false, so REBUY_CHECK never appears here.
@@ -60,7 +60,10 @@ while true; do
             advance_non_betting "$STATE"
             sleep 0.2
             ;;
-        *) sleep 0.3 ;;
+        *)
+            close_visible_dialog_if_any "neverbroke-turn-wait" > /dev/null 2>&1 || true
+            sleep 0.3
+            ;;
     esac
 done
 
@@ -79,8 +82,7 @@ api_post_json /action '{"type":"FOLD"}' > /dev/null 2>&1 || true
 # NB-003: Verify chips restored (neverbroke auto-transfers from chip leader)
 # ============================================================
 log "=== NB-003: Verify chips restored by neverbroke ==="
-# NEVER_BROKE_ACTIVE sets human.setChipCount(nAdd) BEFORE showing any info dialog,
-# so polling /state works even while the EDT is blocked by the info dialog.
+# NEVER_BROKE_ACTIVE sets human.setChipCount(nAdd) before showing its info dialog.
 START=$(date +%s)
 HUMAN_CHIPS=0
 while [[ $(($(date +%s) - START)) -lt 30 ]]; do
@@ -89,7 +91,10 @@ while [[ $(($(date +%s) - START)) -lt 30 ]]; do
     HUMAN_CHIPS=$(jget "$STATE" \
         "(o.tables&&o.tables[0]&&o.tables[0].players||[]).find(p=>p&&p.seat===$HUMAN_SEAT)?.chips||0")
     [[ "$HUMAN_CHIPS" -gt 0 ]] && break
+    close_visible_dialog_if_any "neverbroke-poll" > /dev/null 2>&1 || true
 done
+
+drain_visible_dialogs "neverbroke-post-check" 6 0.2
 
 if [[ "$HUMAN_CHIPS" -gt 0 ]]; then
     log "  OK: Neverbroke restored chips to $HUMAN_CHIPS"

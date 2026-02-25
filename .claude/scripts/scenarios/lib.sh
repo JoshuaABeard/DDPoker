@@ -87,6 +87,128 @@ assert_mode_transition() {
     fi
 }
 
+now_ms() {
+    node -e "process.stdout.write(String(Date.now()))" 2>/dev/null
+}
+
+close_visible_dialog_if_any() {
+    local reason="${1:-progress}"
+    local dialogs count dialog_id title close_resp accepted control_resp control_ok
+
+    dialogs=$(api GET /ui/dialogs 2>/dev/null || true)
+    if [[ -z "$dialogs" ]]; then
+        return 1
+    fi
+
+    count=$(jget "$dialogs" 'Number(o && o.dialogCount || 0)')
+    if ! [[ "$count" =~ ^[0-9]+$ ]] || [[ "$count" -le 0 ]]; then
+        return 1
+    fi
+
+    dialog_id=$(jget "$dialogs" '(o.dialogs && o.dialogs[0] && o.dialogs[0].id) || ""')
+    title=$(jget "$dialogs" '(o.dialogs && o.dialogs[0] && o.dialogs[0].title) || ""')
+
+    if [[ "$title" == *"Tournament Over"* || "$title" == *"Game Over"* ]]; then
+        control_resp=$(api_post_json /control '{"action":"CLOSE_TOURNAMENT_OVER"}' 2>/dev/null || true)
+        control_ok=$(jget "$control_resp" 'o.accepted || false')
+        if [[ "$control_ok" == "true" ]]; then
+            log "  INFO: $reason closed dialog via /control fallback (title='$title')"
+            return 0
+        fi
+
+        log "  NOTE: $reason could not close tournament/game-over dialog safely (title='$title'): $control_resp"
+        return 1
+    fi
+
+    if [[ -n "$dialog_id" ]]; then
+        close_resp=$(api_post_json /ui/dialogs "{\"action\":\"CLOSE\",\"dialog\":\"$dialog_id\"}" 2>/dev/null || true)
+    else
+        close_resp=$(api_post_json /ui/dialogs '{"action":"CLOSE"}' 2>/dev/null || true)
+    fi
+
+    accepted=$(jget "$close_resp" 'o.accepted || false')
+    if [[ "$accepted" == "true" ]]; then
+        log "  INFO: $reason closed dialog via /ui/dialogs (title='$title')"
+        return 0
+    fi
+
+    log "  NOTE: $reason could not close dialog (title='$title'): $close_resp"
+    return 1
+}
+
+drain_visible_dialogs() {
+    local reason="${1:-progress}" max_attempts="${2:-5}" delay_s="${3:-0.2}"
+    local i
+    for ((i=0; i<max_attempts; i++)); do
+        close_visible_dialog_if_any "$reason" || return 0
+        sleep "$delay_s"
+    done
+    return 0
+}
+
+wait_for_widget_state() {
+    local expr="$1" timeout="${2:-$STUCK_TIMEOUT}" desc="${3:-widget state}"
+    local start=$(date +%s)
+    local snap=""
+    while true; do
+        snap=$(api GET /ui/dashboard/widgets 2>/dev/null || true)
+        if [[ -n "$snap" ]]; then
+            local ok
+            ok=$(jget "$snap" "$expr")
+            if [[ "$ok" == "true" || "$ok" == "1" ]]; then
+                log "  OK: $desc" >&2
+                printf '%s' "$snap"
+                return 0
+            fi
+        fi
+
+        local elapsed=$(( $(date +%s) - start ))
+        if [[ $elapsed -gt $timeout ]]; then
+            log "Timed out waiting for $desc" >&2
+            if [[ -n "$snap" ]]; then
+                node -e "try{process.stdout.write(JSON.stringify(JSON.parse(process.argv[1]),null,2))}catch(e){}" -- "$snap" >> "$LOG_DIR/last-widgets.json" || true
+            fi
+            return 1
+        fi
+        sleep 0.2
+    done
+}
+
+assert_widget_fresh() {
+    local widgets_json="$1" widget_key="$2" max_age_ms="$3" desc="${4:-$2 freshness}"
+    local updated
+    updated=$(jget "$widgets_json" "Number(o.widgets && o.widgets.${widget_key} && o.widgets.${widget_key}.freshness && o.widgets.${widget_key}.freshness.updatedAtMs || 0)")
+    if ! [[ "$updated" =~ ^[0-9]+$ ]] || [[ "$updated" -le 0 ]]; then
+        record_failure "$desc missing updatedAtMs"
+        return
+    fi
+
+    local now age
+    now=$(now_ms)
+    if ! [[ "$now" =~ ^[0-9]+$ ]]; then
+        record_failure "$desc could not compute current time"
+        return
+    fi
+    age=$((now - updated))
+    if [[ "$age" -lt 0 || "$age" -gt "$max_age_ms" ]]; then
+        record_failure "$desc stale (age=${age}ms, max=${max_age_ms}ms)"
+        return
+    fi
+    log "  OK: $desc age=${age}ms"
+}
+
+assert_widget_matches_state() {
+    local widgets_json="$1" state_json="$2" widget_expr="$3" state_expr="$4" desc="$5"
+    local wv sv
+    wv=$(jget "$widgets_json" "$widget_expr")
+    sv=$(jget "$state_json" "$state_expr")
+    if [[ "$wv" != "$sv" ]]; then
+        record_failure "$desc mismatch (widget='$wv' state='$sv')"
+        return
+    fi
+    log "  OK: $desc = $wv"
+}
+
 cleanup() {
     if [[ -n "$JAVA_PID" ]] && kill -0 "$JAVA_PID" 2>/dev/null; then
         log "Stopping Java process $JAVA_PID"
@@ -169,7 +291,7 @@ lib_launch() {
     fi
 
     # Kill stale Java processes (use kill -9 on all java PIDs — works on Git Bash/Windows)
-    java_pids=$(ps aux 2>/dev/null | grep java | grep -v grep | awk '{print $1}' || true)
+    java_pids=$(ps aux 2>/dev/null | grep java | grep -v grep | awk '{print $2}' || true)
     if [[ -n "$java_pids" ]]; then
         kill -9 $java_pids 2>/dev/null || true
         sleep 3
@@ -189,9 +311,10 @@ lib_launch() {
     log "Java PID: $JAVA_PID"
 
     local start=$(date +%s)
+    local startup_timeout=120
     until [[ -f "$PORT_FILE" && -f "$KEY_FILE" ]]; do
         sleep 0.5
-        [[ $(($(date +%s) - start)) -gt 60 ]] && die "Timed out waiting for port/key files"
+        [[ $(($(date +%s) - start)) -gt $startup_timeout ]] && die "Timed out waiting for port/key files"
         kill -0 "$JAVA_PID" 2>/dev/null || die "Java process died — see $GAME_LOG"
     done
     PORT=$(cat "$PORT_FILE")
@@ -200,7 +323,7 @@ lib_launch() {
 
     until api GET /health 2>/dev/null | grep -q '"ok"'; do
         sleep 0.5
-        [[ $(($(date +%s) - start)) -gt 60 ]] && die "Timed out waiting for /health"
+        [[ $(($(date +%s) - start)) -gt $startup_timeout ]] && die "Timed out waiting for /health"
         kill -0 "$JAVA_PID" 2>/dev/null || die "Java process died — see $GAME_LOG"
     done
     log "Control server healthy"
@@ -230,6 +353,9 @@ wait_mode() {
             echo "$state"
             return 0
         fi
+
+        close_visible_dialog_if_any "wait_mode[$modes]" > /dev/null 2>&1 || true
+
         local elapsed=$(( $(date +%s) - start ))
         if [[ $elapsed -gt $timeout ]]; then
             log "Timed out waiting for mode [$modes]; current: $mode"

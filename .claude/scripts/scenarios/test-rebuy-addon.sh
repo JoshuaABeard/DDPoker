@@ -7,16 +7,9 @@
 #   RB-005: Neverbroke fires and restores chips (separate game, no rebuys)
 #   RB-006: Start game with addons=true succeeds
 #
-# Note: RB-002 (rebuy dialog accept) and RB-003 (decline rebuy) are not
-# automatable — NewLevelActions.rebuy() shows a blocking Swing modal that
-# cannot be driven via HTTP. isRebuyAllowed() is implicitly verified by
-# RB-001 starting successfully with rebuys=true.
-#
-# Limitation: The interactive rebuy dialog (NewLevelActions.rebuy()) is a
-# blocking Swing modal that cannot be automated via the control server API.
-# Testing rebuy accept/decline requires manual UI interaction or autopilot
-# mode (which disables human API control). The tests below verify game
-# configuration and chip restoration via the neverbroke fallback.
+# RB-002/RB-003 rebuy decision behavior is covered by test-rebuy-dialog.sh.
+# This scenario focuses on configuration, conservation, and neverbroke fallback
+# while dismissing incidental dialogs via /ui/dialogs so execution stays unblocked.
 #
 # Usage:
 #   bash .claude/scripts/scenarios/test-rebuy-addon.sh [options]
@@ -50,6 +43,7 @@ while [[ $(($(date +%s) - START_WAIT)) -lt 30 ]]; do
     sleep 0.5
     STATE=$(api GET /state 2>/dev/null) || continue
     MODE=$(jget "$STATE" 'o.inputMode || "NONE"')
+    close_visible_dialog_if_any "rebuy-start-wait" > /dev/null 2>&1 || true
     case "$MODE" in
         CHECK_BET|CHECK_RAISE|CALL_RAISE|DEAL|CONTINUE|CONTINUE_LOWER)
             FIRST_MODE="$MODE"
@@ -75,8 +69,7 @@ fi
 
 # ============================================================
 # RB-005: Neverbroke fires when broke (fallback when rebuys not in window)
-# Enable neverbroke — since we have rebuys=true, the REBUY_OFFERED path
-# fires first (blocking dialog). Instead test neverbroke without rebuys.
+# Enable neverbroke in a separate game without rebuys for deterministic behavior.
 # ============================================================
 log "=== RB-005: Neverbroke fallback (separate game, no rebuys) ==="
 
@@ -112,7 +105,9 @@ while true; do
         DEAL|CONTINUE|CONTINUE_LOWER)
             advance_non_betting "$STATE"
             sleep 0.2 ;;
-        *) sleep 0.3 ;;
+        *)
+            close_visible_dialog_if_any "rebuy-neverbroke-turn-wait" > /dev/null 2>&1 || true
+            sleep 0.3 ;;
     esac
 done
 log "  Human at seat $HUMAN_SEAT, mode=$MODE"
@@ -121,7 +116,7 @@ log "  Human at seat $HUMAN_SEAT, mode=$MODE"
 api_post_json /cheat "{\"action\":\"setChips\",\"seat\":$HUMAN_SEAT,\"amount\":0}" > /dev/null 2>&1 || true
 api_post_json /action '{"type":"FOLD"}' > /dev/null 2>&1 || true
 
-# Poll for chips restored (neverbroke auto-transfers before its blocking dialog)
+# Poll for chips restored (dismiss any incidental dialogs while polling)
 POLL_START=$(date +%s)
 HUMAN_CHIPS=0
 while [[ $(($(date +%s) - POLL_START)) -lt 30 ]]; do
@@ -130,7 +125,10 @@ while [[ $(($(date +%s) - POLL_START)) -lt 30 ]]; do
     HUMAN_CHIPS=$(jget "$STATE" \
         "(o.tables&&o.tables[0]&&o.tables[0].players||[]).find(p=>p&&p.seat===$HUMAN_SEAT)?.chips||0")
     [[ "$HUMAN_CHIPS" -gt 0 ]] && break
+    close_visible_dialog_if_any "rebuy-neverbroke-poll" > /dev/null 2>&1 || true
 done
+
+drain_visible_dialogs "rebuy-neverbroke-post-check" 6 0.2
 
 if [[ "$HUMAN_CHIPS" -gt 0 ]]; then
     log "  OK: Neverbroke restored chips to $HUMAN_CHIPS"
@@ -155,6 +153,7 @@ fi
 sleep 2
 STATE3=$(api GET /state 2>/dev/null) || true
 MODE3=$(jget "$STATE3" 'o.inputMode || "NONE"')
+drain_visible_dialogs "addons-start" 6 0.2
 log "  Game state after addons start: mode=$MODE3"
 screenshot "rebuy-addon-start"
 

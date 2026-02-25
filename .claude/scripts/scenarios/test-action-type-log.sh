@@ -62,6 +62,7 @@ while true; do
             sleep 0.2
             ;;
         *)
+            close_visible_dialog_if_any "action-type-loop" > /dev/null 2>&1 || true
             sleep 0.3
             ;;
     esac

@@ -61,6 +61,8 @@ while true; do
     cc=$(jget "$st" '(o.tables&&o.tables[0]&&o.tables[0].communityCards||[]).length')
     [[ "$cc" =~ ^[0-9]+$ ]] || cc=0
 
+    close_visible_dialog_if_any "split-pot-loop" > /dev/null 2>&1 || true
+
     # Track max community cards seen
     [[ $cc -gt $MAX_CC ]] && MAX_CC=$cc
 

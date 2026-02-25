@@ -27,6 +27,7 @@ log "  INFO: folding every hand until elimination"
 
 while true; do
     state=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
+    close_visible_dialog_if_any "fold-every-loop" > /dev/null 2>&1 || true
     mode=$(jget "$state" 'o.inputMode || "NONE"')
     remaining=$(jget "$state" 'o.tournament&&o.tournament.playersRemaining||0')
     lifecycle=$(jget "$state" 'o.lifecyclePhase || "NONE"')
@@ -100,6 +101,7 @@ while true; do
             api_post_json /action '{"type":"DECLINE_REBUY"}' > /dev/null 2>&1 || true
             ;;
         QUITSAVE|NONE)
+            close_visible_dialog_if_any "fold-every-idle" > /dev/null 2>&1 || true
             sleep 0.2
             ;;
     esac

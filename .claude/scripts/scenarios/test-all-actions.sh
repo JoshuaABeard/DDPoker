@@ -54,6 +54,8 @@ advance_to_human_turn() {
         st=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
         md=$(jget "$st" 'o.inputMode || "NONE"')
 
+        close_visible_dialog_if_any "all-actions-advance" > /dev/null 2>&1 || true
+
         case "$md" in
             CHECK_BET|CHECK_RAISE|CALL_RAISE)
                 local is_human
@@ -97,6 +99,8 @@ finish_hand() {
         local st md
         st=$(api GET /state 2>/dev/null) || { sleep 0.3; continue; }
         md=$(jget "$st" 'o.inputMode || "NONE"')
+
+        close_visible_dialog_if_any "all-actions-finish" > /dev/null 2>&1 || true
 
         local cc
         cc=$(jget "$st" '(o.tables&&o.tables[0]&&o.tables[0].communityCards||[]).length')
