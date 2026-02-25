@@ -32,6 +32,7 @@
 package com.donohoedigital.games.poker.gameserver;
 
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Server-side player implementation. Implements GamePlayerInfo without Swing
@@ -41,28 +42,28 @@ import com.donohoedigital.games.poker.core.GamePlayerInfo;
  */
 public class ServerPlayer implements GamePlayerInfo {
     private final int id;
-    private String name;
+    private volatile String name;
     private final boolean human;
-    private int skillLevel; // AI skill level (0 for humans)
+    private volatile int skillLevel; // AI skill level (0 for humans)
 
-    private int chipCount;
-    private int seat;
-    private boolean folded;
-    private boolean allIn;
-    private boolean sittingOut;
-    private boolean observer;
-    private int numRebuys;
-    private int finishPosition; // 0 = still in tournament
-    private int oddChips; // fractional chips in current color-up race
+    private final AtomicInteger chipCount = new AtomicInteger();
+    private volatile int seat;
+    private volatile boolean folded;
+    private volatile boolean allIn;
+    private volatile boolean sittingOut;
+    private volatile boolean observer;
+    private final AtomicInteger numRebuys = new AtomicInteger();
+    private volatile int finishPosition; // 0 = still in tournament
+    private volatile int oddChips; // fractional chips in current color-up race
 
     // Think bank for timed tournaments
-    private int thinkBankMillis;
-    private int timeoutMillis;
-    private int timeoutMessageSecondsLeft;
+    private volatile int thinkBankMillis;
+    private volatile int timeoutMillis;
+    private volatile int timeoutMessageSecondsLeft;
 
     // Card-showing preferences (defaults for server)
-    private boolean askShowWinning = false;
-    private boolean askShowLosing = false;
+    private volatile boolean askShowWinning = false;
+    private volatile boolean askShowLosing = false;
 
     /**
      * Create a new server player.
@@ -83,13 +84,12 @@ public class ServerPlayer implements GamePlayerInfo {
         this.name = name;
         this.human = human;
         this.skillLevel = skillLevel;
-        this.chipCount = startingChips;
+        this.chipCount.set(startingChips);
         this.seat = -1; // Not seated initially
         this.folded = false;
         this.allIn = false;
         this.sittingOut = false;
         this.observer = false;
-        this.numRebuys = 0;
         this.thinkBankMillis = 0;
         this.timeoutMillis = 0;
         this.timeoutMessageSecondsLeft = 0;
@@ -112,7 +112,7 @@ public class ServerPlayer implements GamePlayerInfo {
 
     @Override
     public int getChipCount() {
-        return chipCount;
+        return chipCount.get();
     }
 
     @Override
@@ -188,21 +188,21 @@ public class ServerPlayer implements GamePlayerInfo {
 
     @Override
     public int getNumRebuys() {
-        return numRebuys;
+        return numRebuys.get();
     }
 
     // Additional setters and methods
 
     public void setChipCount(int chipCount) {
-        this.chipCount = chipCount;
+        this.chipCount.set(chipCount);
     }
 
     public void addChips(int amount) {
-        this.chipCount += amount;
+        this.chipCount.addAndGet(amount);
     }
 
     public void subtractChips(int amount) {
-        this.chipCount -= amount;
+        this.chipCount.addAndGet(-amount);
     }
 
     public void setSeat(int seat) {
@@ -234,7 +234,7 @@ public class ServerPlayer implements GamePlayerInfo {
     }
 
     public void incrementRebuys() {
-        this.numRebuys++;
+        this.numRebuys.incrementAndGet();
     }
 
     public int getFinishPosition() {
@@ -267,6 +267,6 @@ public class ServerPlayer implements GamePlayerInfo {
 
     @Override
     public String toString() {
-        return "ServerPlayer{id=" + id + ", name='" + name + "', chips=" + chipCount + ", seat=" + seat + "}";
+        return "ServerPlayer{id=" + id + ", name='" + name + "', chips=" + chipCount.get() + ", seat=" + seat + "}";
     }
 }

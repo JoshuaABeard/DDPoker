@@ -32,7 +32,12 @@
 package com.donohoedigital.games.poker.gameserver;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
@@ -238,5 +243,26 @@ class ServerPlayerTest {
         ServerPlayer player = new ServerPlayer(1, "Human", true, 0, 5000);
 
         assertEquals(0, player.getSkillLevel());
+    }
+
+    @Test
+    void addChipsIsThreadSafe() throws Exception {
+        ServerPlayer player = new ServerPlayer(1, "Test", false, 3, 0);
+        player.setChipCount(0);
+        int threads = 10;
+        int increments = 1000;
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+        CountDownLatch latch = new CountDownLatch(threads);
+        for (int i = 0; i < threads; i++) {
+            executor.submit(() -> {
+                for (int j = 0; j < increments; j++) {
+                    player.addChips(1);
+                }
+                latch.countDown();
+            });
+        }
+        latch.await(5, TimeUnit.SECONDS);
+        executor.shutdown();
+        assertThat(player.getChipCount()).isEqualTo(threads * increments);
     }
 }
