@@ -159,5 +159,20 @@ public enum ServerMessageType {
     OBSERVER_LEFT,
 
     /** Color-up chip race completed */
-    COLOR_UP_COMPLETED
+    COLOR_UP_COMPLETED,
+
+    /** Dealer button moved to a new seat */
+    BUTTON_MOVED,
+
+    /** Active player changed during betting round */
+    CURRENT_PLAYER_CHANGED,
+
+    /** Table state transitioned (e.g. BETTING to SHOWDOWN) */
+    TABLE_STATE_CHANGED,
+
+    /** Between-hand cleaning phase completed */
+    CLEANING_DONE,
+
+    /** Player moved from one table to another during table consolidation */
+    PLAYER_MOVED
 }

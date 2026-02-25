@@ -156,13 +156,12 @@ class GameEventBroadcasterTest {
     }
 
     @Test
-    void cleaningDone_silentlyIgnored() throws Exception {
-        // Internal housekeeping events should not be broadcast
+    void cleaningDone_broadcastsToAllPlayers() throws Exception {
         PlayerConnection p1 = makeConnectedPlayer(1L);
 
         broadcaster.accept(new GameEvent.CleaningDone(0));
 
-        verify(p1.getSession(), never()).sendMessage(any());
+        verify(p1.getSession()).sendMessage(any(TextMessage.class));
     }
 
     @Test
@@ -344,8 +343,8 @@ class GameEventBroadcasterTest {
     // ====================================
 
     @Test
-    void playerRemoved_activePlayer_suppressesPlayerLeft() throws Exception {
-        // Active player (finishPosition=0) being consolidated: PLAYER_LEFT suppressed.
+    void playerRemoved_activePlayer_sendsPlayerMoved() throws Exception {
+        // Active player (finishPosition=0) being consolidated: PLAYER_MOVED sent.
         PlayerConnection p1 = makeConnectedPlayer(1L);
 
         GameInstance mockGame = mock(GameInstance.class);
@@ -353,6 +352,7 @@ class GameEventBroadcasterTest {
         ServerPlayer activePlayer = mock(ServerPlayer.class);
         when(activePlayer.getID()).thenReturn(42);
         when(activePlayer.getFinishPosition()).thenReturn(0);
+        when(activePlayer.getName()).thenReturn("TestPlayer");
         when(mockCtx.getAllPlayers()).thenReturn(List.of(activePlayer));
         when(mockGame.getTournament()).thenReturn(mockCtx);
 
@@ -360,7 +360,9 @@ class GameEventBroadcasterTest {
                 mockGame);
         broadcastWithGame.accept(new GameEvent.PlayerRemoved(0, 42, 3));
 
-        verify(p1.getSession(), never()).sendMessage(any());
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(p1.getSession()).sendMessage(captor.capture());
+        assertTrue(captor.getValue().getPayload().contains("PLAYER_MOVED"));
     }
 
     @Test

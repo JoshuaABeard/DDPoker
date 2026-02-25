@@ -44,6 +44,12 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Replaces {@link TournamentDirector} in the phase chain.
@@ -110,11 +116,25 @@ public class WebSocketTournamentDirector extends BasePhase
     // Chat handler registered by ShowTournamentTable
     private ChatHandler chatHandler_;
 
+    // Tracks the last sit-out state sent to the server, to avoid re-sending on
+    // echo.
+    private boolean lastSentSittingOut_ = false;
+
     // Lobby player list maintained while game is in WAITING_FOR_PLAYERS state
     private final List<LobbyPlayerData> lobbyPlayers_ = new ArrayList<>();
 
     // Most recent full GAME_STATE payload from the server.
     private volatile GameStateData latestGameState_;
+
+    // Scheduler for rebuy/addon decline timeouts (Gap 1: prevent server deadlock
+    // when user ignores the rebuy/addon button in the Swing UI).
+    private final ScheduledExecutorService declineScheduler_ = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "ws-decline-timer");
+        t.setDaemon(true);
+        return t;
+    });
+    private volatile ScheduledFuture<?> pendingRebuyDecline_;
+    private volatile ScheduledFuture<?> pendingAddonDecline_;
 
     // Rebuy outcome observability for control-server /state snapshots.
     private final Object rebuyObservabilityLock_ = new Object();
@@ -152,6 +172,7 @@ public class WebSocketTournamentDirector extends BasePhase
         tables_.clear();
         handResultCaptureByTable_.clear();
         latestGameState_ = null;
+        lastSentSittingOut_ = false;
         resetRebuyObservability();
         WsMessageLog.clear();
         GameEventLog.clear();
@@ -213,6 +234,8 @@ public class WebSocketTournamentDirector extends BasePhase
     @Override
     public void finish() {
         context_.setGameManager(null);
+        cancelPendingRebuyDecline();
+        cancelPendingAddonDecline();
         wsClient_.disconnect();
         game_.setPlayerActionListener(null);
     }
@@ -560,6 +583,28 @@ public class WebSocketTournamentDirector extends BasePhase
                             ServerMessageData.ColorUpCompletedData.class);
                     onColorUpCompleted(d);
                 }
+                case BUTTON_MOVED -> {
+                    ServerMessageData.ButtonMovedData d = parse(data, ServerMessageData.ButtonMovedData.class);
+                    onButtonMoved(d);
+                }
+                case CURRENT_PLAYER_CHANGED -> {
+                    ServerMessageData.CurrentPlayerChangedData d = parse(data,
+                            ServerMessageData.CurrentPlayerChangedData.class);
+                    onCurrentPlayerChanged(d);
+                }
+                case TABLE_STATE_CHANGED -> {
+                    ServerMessageData.TableStateChangedData d = parse(data,
+                            ServerMessageData.TableStateChangedData.class);
+                    onTableStateChanged(d);
+                }
+                case CLEANING_DONE -> {
+                    ServerMessageData.CleaningDoneData d = parse(data, ServerMessageData.CleaningDoneData.class);
+                    onCleaningDone(d);
+                }
+                case PLAYER_MOVED -> {
+                    ServerMessageData.PlayerMovedData d = parse(data, ServerMessageData.PlayerMovedData.class);
+                    onPlayerMoved(d);
+                }
             }
         } catch (Exception e) {
             logger.error("Error handling {} message", type, e);
@@ -574,7 +619,13 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onConnected(ConnectedData d) {
         localPlayerId_ = d.playerId();
-        logger.debug("[CONNECTED] playerId={} hasGameState={}", d.playerId(), d.gameState() != null);
+        logger.debug("[CONNECTED] playerId={} hasGameState={} hasReconnectToken={}", d.playerId(),
+                d.gameState() != null, d.reconnectToken() != null);
+        // Store reconnect token for auto-reconnect (24h TTL, replaces short-lived
+        // ws-connect JWT)
+        if (d.reconnectToken() != null) {
+            wsClient_.setReconnectToken(d.reconnectToken());
+        }
         if (d.gameState() != null) {
             onGameState(d.gameState());
         }
@@ -799,7 +850,8 @@ public class WebSocketTournamentDirector extends BasePhase
             // acting, auto-submit it now instead of showing the action buttons.
             if (d.options() != null) {
                 String[] advance = AdvanceAction.getAdvanceActionWS(d.options().canCheck(), d.options().canRaise(),
-                        d.options().canAllIn(), d.options().allInAmount());
+                        d.options().canAllIn(), d.options().allInAmount(), d.options().canBet(), d.options().maxBet(),
+                        d.options().maxRaise());
                 if (advance != null) {
                     logger.debug("[ACTION_REQUIRED EDT] firing pre-action advance={}", advance[0]);
                     game_.setInputMode(PokerTableInput.MODE_QUITSAVE);
@@ -946,12 +998,17 @@ public class WebSocketTournamentDirector extends BasePhase
             // Credit winners with their pot shares so chip counts are correct
             // before TYPE_END_HAND fires (without this, chip counts remain at
             // their post-betting values until the next GAME_STATE arrives).
+            // Prefer absolute chip count from server when available to prevent drift.
             if (d.winners() != null) {
                 for (WinnerData w : d.winners()) {
                     if (w.amount() > 0) {
                         PokerPlayer winner = findPlayer(w.playerId());
                         if (winner != null) {
-                            winner.setChipCount(winner.getChipCount() + w.amount());
+                            if (w.chipCount() != null) {
+                                winner.setChipCount(w.chipCount());
+                            } else {
+                                winner.setChipCount(winner.getChipCount() + w.amount());
+                            }
                         }
                     }
                 }
@@ -1119,6 +1176,17 @@ public class WebSocketTournamentDirector extends BasePhase
             // Normal UI flow: enable the rebuy button in the table panel.
             table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REBUY, table, localPlayer,
                     d.cost(), d.chips(), true));
+
+            // Schedule auto-decline if user doesn't click the rebuy button within
+            // the timeout. Without this, the server's CompletableFuture blocks
+            // indefinitely in practice mode (timeout=0 means 30s default here).
+            int timeout = d.timeoutSeconds() > 0 ? d.timeoutSeconds() : 30;
+            cancelPendingRebuyDecline();
+            pendingRebuyDecline_ = declineScheduler_.schedule(() -> {
+                logger.debug("[REBUY] auto-declining after {}s timeout", timeout);
+                markRebuyDecisionSent(false, d.cost(), d.chips(), localPlayer.isInHand());
+                wsClient_.sendRebuyDecision(false);
+            }, timeout, TimeUnit.SECONDS);
         });
     }
 
@@ -1155,22 +1223,61 @@ public class WebSocketTournamentDirector extends BasePhase
             // Normal UI flow: enable the addon button in the table panel.
             table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ADDON, table, localPlayer,
                     d.cost(), d.chips(), true));
+
+            // Schedule auto-decline if user doesn't click the addon button within
+            // the timeout.
+            int timeout = d.timeoutSeconds() > 0 ? d.timeoutSeconds() : 30;
+            cancelPendingAddonDecline();
+            pendingAddonDecline_ = declineScheduler_.schedule(() -> {
+                logger.debug("[ADDON] auto-declining after {}s timeout", timeout);
+                wsClient_.sendAddonDecision(false);
+            }, timeout, TimeUnit.SECONDS);
         });
     }
 
     private void onGameComplete(GameCompleteData d) {
         SwingUtilities.invokeLater(() -> {
-            // Identify the winner from the server's standings (position=1).
-            // Fall back to scanning the table for the surviving player with chips > 0.
+            PokerPlayer winnerGamePlayer = null;
             long winnerId = -1L;
+
+            // Apply all final standings from the server, not just the winner.
+            // This keeps place/prize data correct even when PLAYER_ELIMINATED is
+            // delayed or the server/player ID mapping changed.
+            Set<Integer> appliedResults = new HashSet<>();
             if (d.standings() != null) {
-                for (ServerMessageData.StandingData s : d.standings()) {
-                    if (s.position() == 1) {
-                        winnerId = s.playerId();
-                        break;
+                for (ServerMessageData.StandingData standing : d.standings()) {
+                    if (standing == null || standing.position() <= 0) {
+                        continue;
+                    }
+
+                    PokerPlayer gamePlayer = resolveGamePlayer(standing.playerId());
+                    if (gamePlayer == null && standing.playerName() != null && !standing.playerName().isBlank()) {
+                        gamePlayer = findGamePlayerByName(standing.playerName());
+                    }
+
+                    if (gamePlayer != null && appliedResults.add(gamePlayer.getID())) {
+                        game_.applyPlayerResult(gamePlayer.getID(), standing.position());
+                    }
+
+                    if (standing.position() == 1) {
+                        winnerId = standing.playerId();
+                        if (gamePlayer != null) {
+                            winnerGamePlayer = gamePlayer;
+                        }
                     }
                 }
             }
+
+            // Final fallback for winner mapping in case standings->player mapping failed.
+            if (winnerGamePlayer == null && winnerId >= 0) {
+                winnerGamePlayer = resolveGamePlayer(winnerId);
+            }
+            if (winnerGamePlayer == null) {
+                winnerGamePlayer = findLikelyWinnerGamePlayer();
+            }
+
+            // Identify the winner from the server's standings (position=1).
+            // Fall back to scanning the table for the surviving player with chips > 0.
             if (winnerId < 0) {
                 outer : for (RemotePokerTable table : tables_.values()) {
                     for (int s = 0; s < PokerConstants.SEATS; s++) {
@@ -1196,8 +1303,7 @@ public class WebSocketTournamentDirector extends BasePhase
                 }
                 // Update game_.players_ so GameOver shows "You won!" and
                 // ChipLeaderPanel displays the correct final standings.
-                PokerPlayer winnerGamePlayer = resolveGamePlayer(winnerId);
-                if (winnerGamePlayer != null) {
+                if (winnerGamePlayer != null && appliedResults.add(winnerGamePlayer.getID())) {
                     game_.applyPlayerResult(winnerGamePlayer.getID(), 1);
                 }
             }
@@ -1205,6 +1311,33 @@ public class WebSocketTournamentDirector extends BasePhase
                 context_.processPhase("OnlineGameOver");
             }
         });
+    }
+
+    private PokerPlayer findGamePlayerByName(String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        for (int i = 0; i < game_.getNumPlayers(); i++) {
+            PokerPlayer p = game_.getPokerPlayerAt(i);
+            if (p != null && name.equals(p.getName())) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    private PokerPlayer findLikelyWinnerGamePlayer() {
+        PokerPlayer best = null;
+        for (int i = 0; i < game_.getNumPlayers(); i++) {
+            PokerPlayer p = game_.getPokerPlayerAt(i);
+            if (p == null) {
+                continue;
+            }
+            if (best == null || p.getChipCount() > best.getChipCount()) {
+                best = p;
+            }
+        }
+        return best;
     }
 
     private void onPlayerJoined(PlayerJoinedData d) {
@@ -1242,6 +1375,11 @@ public class WebSocketTournamentDirector extends BasePhase
             if (d.playerId() == localPlayerId_) {
                 game_.setCurrentTable(table);
             }
+            // Show a chat notification distinguishing reconnect from new join.
+            if (d.playerId() != localPlayerId_ && d.playerName() != null && !d.playerName().isEmpty()) {
+                String verb = d.isReconnect() ? "reconnected" : "joined";
+                deliverChatLocal(PokerConstants.CHAT_2, d.playerName() + " " + verb, PokerConstants.CHAT_DEALER_MSG_ID);
+            }
         });
     }
 
@@ -1256,6 +1394,27 @@ public class WebSocketTournamentDirector extends BasePhase
                     break;
                 }
             }
+        });
+    }
+
+    private void onPlayerMoved(ServerMessageData.PlayerMovedData d) {
+        SwingUtilities.invokeLater(() -> {
+            // Remove the player from the origin table and show a notification.
+            // The subsequent PLAYER_JOINED will seat them at the destination table.
+            for (RemotePokerTable table : tables_.values()) {
+                int seat = findSeat(table, d.playerId());
+                if (seat >= 0) {
+                    PokerPlayer p = table.getPlayer(seat);
+                    table.clearSeat(seat);
+                    table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REMOVED, table, p, seat));
+                    break;
+                }
+            }
+            String name = d.playerName() != null && !d.playerName().isEmpty()
+                    ? d.playerName()
+                    : "Player " + d.playerId();
+            deliverChatLocal(PokerConstants.CHAT_2, name + " moved to another table",
+                    PokerConstants.CHAT_DEALER_MSG_ID);
         });
     }
 
@@ -1279,7 +1438,12 @@ public class WebSocketTournamentDirector extends BasePhase
             PokerPlayer player = findPlayer(d.playerId());
             if (player == null)
                 return;
-            player.setChipCount(player.getChipCount() + d.addedChips());
+            // Prefer absolute chip count from server when available to prevent drift.
+            if (d.chipCount() != null) {
+                player.setChipCount(d.chipCount());
+            } else {
+                player.setChipCount(player.getChipCount() + d.addedChips());
+            }
             RemotePokerTable table = currentTable();
             if (table != null) {
                 table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REBUY, table, player, 0,
@@ -1293,7 +1457,12 @@ public class WebSocketTournamentDirector extends BasePhase
             PokerPlayer player = findPlayer(d.playerId());
             if (player == null)
                 return;
-            player.setChipCount(player.getChipCount() + d.addedChips());
+            // Prefer absolute chip count from server when available to prevent drift.
+            if (d.chipCount() != null) {
+                player.setChipCount(d.chipCount());
+            } else {
+                player.setChipCount(player.getChipCount() + d.addedChips());
+            }
             RemotePokerTable table = currentTable();
             if (table != null) {
                 table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ADDON, table, player, 0,
@@ -1409,7 +1578,8 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onLobbySettingsChanged(LobbySettingsChangedData d) {
         SwingUtilities.invokeLater(() -> {
-            logger.debug("[LOBBY_SETTINGS_CHANGED]");
+            logger.debug("[LOBBY_SETTINGS_CHANGED] settings={}", d.updatedSettings());
+            // Notify the UI so any settings display can refresh.
             fireStateChangedOnCurrentTable();
         });
     }
@@ -1447,14 +1617,22 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onChipsTransferred(ServerMessageData.ChipsTransferredData d) {
         SwingUtilities.invokeLater(() -> {
-            // Update chip counts from subsequent GAME_STATE; show notification.
             PokerPlayer fromPlayer = findPlayer(d.fromPlayerId());
             PokerPlayer toPlayer = findPlayer(d.toPlayerId());
+            // Prefer absolute chip counts from server when available to prevent drift.
             if (fromPlayer != null) {
-                fromPlayer.setChipCount(fromPlayer.getChipCount() - d.amount());
+                if (d.fromChipCount() != null) {
+                    fromPlayer.setChipCount(d.fromChipCount());
+                } else {
+                    fromPlayer.setChipCount(fromPlayer.getChipCount() - d.amount());
+                }
             }
             if (toPlayer != null) {
-                toPlayer.setChipCount(toPlayer.getChipCount() + d.amount());
+                if (d.toChipCount() != null) {
+                    toPlayer.setChipCount(d.toChipCount());
+                } else {
+                    toPlayer.setChipCount(toPlayer.getChipCount() + d.amount());
+                }
             }
             String msg = d.fromPlayerName() + " stakes " + d.amount() + " chips to keep you in the game.";
             deliverChatLocal(PokerConstants.CHAT_2, msg, PokerConstants.CHAT_DEALER_MSG_ID);
@@ -1511,6 +1689,11 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onPlayerSatOut(ServerMessageData.PlayerSatOutData d) {
         SwingUtilities.invokeLater(() -> {
+            PokerPlayer player = resolveGamePlayer(d.playerId());
+            if (player != null) {
+                player.setSittingOut(true);
+                player.fireSettingsChanged();
+            }
             String name = d.playerName() != null && !d.playerName().isEmpty()
                     ? d.playerName()
                     : "Player " + d.playerId();
@@ -1521,6 +1704,11 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onPlayerCameBack(ServerMessageData.PlayerCameBackData d) {
         SwingUtilities.invokeLater(() -> {
+            PokerPlayer player = resolveGamePlayer(d.playerId());
+            if (player != null) {
+                player.setSittingOut(false);
+                player.fireSettingsChanged();
+            }
             String name = d.playerName() != null && !d.playerName().isEmpty()
                     ? d.playerName()
                     : "Player " + d.playerId();
@@ -1555,6 +1743,60 @@ public class WebSocketTournamentDirector extends BasePhase
         SwingUtilities.invokeLater(() -> {
             deliverChatLocal(PokerConstants.CHAT_2, "Color-up complete.", PokerConstants.CHAT_DEALER_MSG_ID);
             fireStateChangedOnCurrentTable();
+        });
+    }
+
+    private void onButtonMoved(ServerMessageData.ButtonMovedData d) {
+        SwingUtilities.invokeLater(() -> {
+            RemotePokerTable table = tables_.get(d.tableId());
+            if (table == null)
+                return;
+            int oldButton = table.getButton();
+            table.setRemoteButton(d.newSeat());
+            table.firePokerTableEvent(
+                    new PokerTableEvent(PokerTableEvent.TYPE_BUTTON_MOVED, table, oldButton, d.newSeat()));
+        });
+    }
+
+    private void onCurrentPlayerChanged(ServerMessageData.CurrentPlayerChangedData d) {
+        SwingUtilities.invokeLater(() -> {
+            RemotePokerTable table = tables_.get(d.tableId());
+            if (table == null)
+                return;
+            RemoteHoldemHand hand = table.getRemoteHand();
+            if (hand == null)
+                return;
+            // Find the index of the player in the hand's player order
+            int newIndex = RemoteHoldemHand.NO_CURRENT_PLAYER;
+            for (int i = 0; i < hand.getNumPlayers(); i++) {
+                PokerPlayer p = hand.getPlayerAt(i);
+                if (p != null && p.getID() == d.playerId()) {
+                    newIndex = i;
+                    break;
+                }
+            }
+            int oldIndex = hand.getCurrentPlayerIndex();
+            hand.updateCurrentPlayer(newIndex);
+            table.firePokerTableEvent(
+                    new PokerTableEvent(PokerTableEvent.TYPE_CURRENT_PLAYER_CHANGED, table, oldIndex, newIndex));
+        });
+    }
+
+    private void onTableStateChanged(ServerMessageData.TableStateChangedData d) {
+        SwingUtilities.invokeLater(() -> {
+            RemotePokerTable table = tables_.get(d.tableId());
+            if (table == null)
+                return;
+            table.fireEvent(PokerTableEvent.TYPE_STATE_CHANGED);
+        });
+    }
+
+    private void onCleaningDone(ServerMessageData.CleaningDoneData d) {
+        SwingUtilities.invokeLater(() -> {
+            RemotePokerTable table = tables_.get(d.tableId());
+            if (table == null)
+                return;
+            table.fireEvent(PokerTableEvent.TYPE_CLEANING_DONE);
         });
     }
 
@@ -1795,8 +2037,23 @@ public class WebSocketTournamentDirector extends BasePhase
 
     @Override
     public void playerUpdate(PokerPlayer player, String settings) {
-        // No-op in M4 practice mode (AI-only games have no settings to propagate).
-        // In M6 multiplayer, this sends a player-settings update to the server.
+        if (player == null) {
+            return;
+        }
+        // Detect sit-out state changes and send the appropriate WS message.
+        if (player.isSittingOut() != lastSentSittingOut_) {
+            lastSentSittingOut_ = player.isSittingOut();
+            if (lastSentSittingOut_) {
+                wsClient_.sendSitOut();
+            } else {
+                wsClient_.sendComeBack();
+            }
+        }
+    }
+
+    @Override
+    public void kickPlayer(long playerId) {
+        wsClient_.sendAdminKick(playerId);
     }
 
     @Override
@@ -1818,15 +2075,35 @@ public class WebSocketTournamentDirector extends BasePhase
 
     @Override
     public void doRebuy(PokerPlayer player, int nLevel, int nAmount, int nChips, boolean bPending) {
+        cancelPendingRebuyDecline();
         markRebuyDecisionSent(true, nAmount, nChips, bPending);
-        player.addRebuy(nAmount, nChips, bPending);
+        // Don't update chips locally — let the server's PLAYER_REBUY message be
+        // the sole update path to avoid double-add when onPlayerRebuy() fires.
         wsClient_.sendRebuyDecision(true);
     }
 
     @Override
     public void doAddon(PokerPlayer player, int nAmount, int nChips) {
-        player.addAddon(nAmount, nChips);
+        cancelPendingAddonDecline();
+        // Don't update chips locally — let the server's PLAYER_ADDON message be
+        // the sole update path to avoid double-add when onPlayerAddon() fires.
         wsClient_.sendAddonDecision(true);
+    }
+
+    private void cancelPendingRebuyDecline() {
+        ScheduledFuture<?> f = pendingRebuyDecline_;
+        if (f != null) {
+            f.cancel(false);
+            pendingRebuyDecline_ = null;
+        }
+    }
+
+    private void cancelPendingAddonDecline() {
+        ScheduledFuture<?> f = pendingAddonDecline_;
+        if (f != null) {
+            f.cancel(false);
+            pendingAddonDecline_ = null;
+        }
     }
 
     private void resetRebuyObservability() {
@@ -2251,18 +2528,7 @@ public class WebSocketTournamentDirector extends BasePhase
             case PokerGame.ACTION_CALL -> "CALL";
             case PokerGame.ACTION_BET -> "BET";
             case PokerGame.ACTION_RAISE -> "RAISE";
-            // ALL_IN maps to BET, RAISE, or CALL depending on server options:
-            // canAllIn=true, canRaise=false → BET (first to act, no existing bet)
-            // canAllIn=true, canRaise=true → RAISE (facing an existing bet)
-            // canAllIn=false → CALL (short-stacked: chips ≤ amountToCall)
-            // Without this, the server's validateAction() folds invalid RAISE/BET actions.
-            case PokerGame.ACTION_ALL_IN -> {
-                if (currentOptions_ == null)
-                    yield "RAISE"; // safe fallback; options always set before buttons shown
-                if (currentOptions_.canAllIn())
-                    yield currentOptions_.canRaise() ? "RAISE" : "BET";
-                yield "CALL"; // short-stack all-in: call for all remaining chips
-            }
+            case PokerGame.ACTION_ALL_IN -> "ALL_IN";
             default -> {
                 logger.warn("[mapPokerGameActionToWsString] unknown action={}, defaulting to FOLD", action);
                 yield "FOLD";
@@ -2294,13 +2560,13 @@ public class WebSocketTournamentDirector extends BasePhase
     }
 
     /**
-     * Resolves the wire amount for a player action. For ALL_IN, returns the
-     * server-provided all-in amount from the last {@link ActionOptionsData} instead
-     * of the UI spinner value, which may differ. Package-private for testing.
+     * Resolves the wire amount for a player action. For ALL_IN, the amount is
+     * ignored because the server resolves it from pending action options.
+     * Package-private for testing.
      */
     int resolveActionAmount(int action, int uiAmount) {
-        if (action == PokerGame.ACTION_ALL_IN && currentOptions_ != null) {
-            return currentOptions_.allInAmount();
+        if (action == PokerGame.ACTION_ALL_IN) {
+            return 0; // server resolves ALL_IN amount from pending options
         }
         return uiAmount;
     }

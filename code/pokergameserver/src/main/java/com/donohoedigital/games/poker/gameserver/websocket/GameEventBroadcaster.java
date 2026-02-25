@@ -34,6 +34,11 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 import com.donohoedigital.games.poker.engine.Card;
@@ -72,10 +77,19 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
     private final GameInstance game;
 
     /**
+     * Monotonic per-game sequence counter for gap detection on reconnect.
+     */
+    private final AtomicLong sequenceCounter = new AtomicLong(0);
+
+    /**
      * When true, broadcast AI hole cards after HAND_STARTED (aiFaceUp practice
      * option).
      */
     private boolean aiFaceUp;
+
+    /** Scheduler for periodic TIMER_UPDATE broadcasts during action timeouts. */
+    private final ScheduledExecutorService timerScheduler;
+    private volatile ScheduledFuture<?> activeTimerTask;
 
     /**
      * Enable or disable AI face-up mode. When enabled, AI hole cards are broadcast
@@ -124,6 +138,11 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
         this.connectionManager = connectionManager;
         this.converter = converter;
         this.game = game;
+        this.timerScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "timer-update-" + gameId);
+            t.setDaemon(true);
+            return t;
+        });
     }
 
     @Override
@@ -154,7 +173,19 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                     // Send GAME_STATE + HAND_STARTED only to players seated at this table.
                     // Sending HAND_STARTED for other tables would corrupt the client's
                     // hand model (onHandStarted always applies to currentTable).
+                    GameStateSnapshot observerSnapshot = null;
                     for (PlayerConnection conn : connectionManager.getConnections(gameId)) {
+                        if (conn.isObserver()) {
+                            // Observers get a no-hole-card snapshot (computed once, lazily)
+                            if (observerSnapshot == null) {
+                                observerSnapshot = game.getObserverSnapshot(e.tableId());
+                            }
+                            if (observerSnapshot != null) {
+                                conn.sendMessage(converter.createGameStateMessage(gameId, observerSnapshot));
+                                conn.sendMessage(handStartedMsg);
+                            }
+                            continue;
+                        }
                         GameStateSnapshot snapshot = game.getGameStateSnapshot(conn.getProfileId());
                         if (snapshot != null && snapshot.tableId() == e.tableId()) {
                             logger.debug("[BROADCAST] sending GAME_STATE + HAND_STARTED to player={} for table={}",
@@ -202,6 +233,7 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 }
             }
             case GameEvent.PlayerActed e -> {
+                cancelActionTimer();
                 int chipCount = 0;
                 int totalBet = 0;
                 int potTotal = 0;
@@ -264,8 +296,9 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                                 for (ServerHand.PotResolutionResult r : results) {
                                     int share = r.winnerIds().length > 0 ? r.amount() / r.winnerIds().length : 0;
                                     for (int wid : r.winnerIds()) {
+                                        Integer winnerChips = lookupPlayerChipsAtTable(sgt, wid);
                                         w.add(new ServerMessageData.WinnerData(wid, share, "", List.of(),
-                                                r.potIndex()));
+                                                r.potIndex(), winnerChips));
                                     }
                                 }
                                 winners = w;
@@ -382,34 +415,43 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                     }
                 }
                 broadcast(ServerMessage.of(ServerMessageType.PLAYER_JOINED, gameId,
-                    new ServerMessageData.PlayerJoinedData(e.playerId(), playerName, e.seat(), e.tableId())));
+                    new ServerMessageData.PlayerJoinedData(e.playerId(), playerName, e.seat(), e.tableId(), false)));
             }
             case GameEvent.PlayerRemoved e -> {
                 // During table consolidation the player is moved (PlayerRemoved then
-                // PlayerAdded). Suppress PLAYER_LEFT so the client doesn't show them
-                // as permanently gone; the subsequent PLAYER_JOINED will re-seat them.
+                // PlayerAdded). Send PLAYER_MOVED instead of PLAYER_LEFT so the origin
+                // table knows the player was relocated, not permanently gone.
                 // For eliminated players (finishPosition > 0) we still send PLAYER_LEFT
                 // to clear their seat (PLAYER_ELIMINATED doesn't clear it).
                 boolean isConsolidation = false;
+                String movedName = "";
                 if (game != null && game.getTournament() instanceof ServerTournamentContext ctx) {
-                    isConsolidation = ctx.getAllPlayers().stream()
-                            .anyMatch(p -> p.getID() == e.playerId() && p.getFinishPosition() == 0);
+                    for (ServerPlayer sp : ctx.getAllPlayers()) {
+                        if (sp.getID() == e.playerId()) {
+                            isConsolidation = sp.getFinishPosition() == 0;
+                            movedName = sp.getName();
+                            break;
+                        }
+                    }
                 }
                 if (!isConsolidation) {
                     broadcast(ServerMessage.of(ServerMessageType.PLAYER_LEFT, gameId,
-                        new ServerMessageData.PlayerLeftData(e.playerId(), "")));
+                        new ServerMessageData.PlayerLeftData(e.playerId(), movedName)));
                 } else {
-                    logger.debug("[BROADCAST] suppressing PLAYER_LEFT for consolidation playerId={}", e.playerId());
+                    broadcast(ServerMessage.of(ServerMessageType.PLAYER_MOVED, gameId,
+                        new ServerMessageData.PlayerMovedData(e.playerId(), movedName, e.tableId(), -1)));
                 }
             }
-            case GameEvent.PlayerRebuy e -> broadcast(
-                ServerMessage.of(ServerMessageType.PLAYER_REBUY, gameId,
-                    new ServerMessageData.PlayerRebuyData(e.playerId(), "", e.amount()))
-            );
-            case GameEvent.PlayerAddon e -> broadcast(
-                ServerMessage.of(ServerMessageType.PLAYER_ADDON, gameId,
-                    new ServerMessageData.PlayerAddonData(e.playerId(), "", e.amount()))
-            );
+            case GameEvent.PlayerRebuy e -> {
+                Integer chipCount = lookupPlayerChips(e.playerId());
+                broadcast(ServerMessage.of(ServerMessageType.PLAYER_REBUY, gameId,
+                    new ServerMessageData.PlayerRebuyData(e.playerId(), "", e.amount(), chipCount)));
+            }
+            case GameEvent.PlayerAddon e -> {
+                Integer chipCount = lookupPlayerChips(e.playerId());
+                broadcast(ServerMessage.of(ServerMessageType.PLAYER_ADDON, gameId,
+                    new ServerMessageData.PlayerAddonData(e.playerId(), "", e.amount(), chipCount)));
+            }
             case GameEvent.PlayerEliminated e -> {
                 String elimName = "";
                 boolean elimHuman = false;
@@ -427,6 +469,7 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                         e.tableId(), elimHuman)));
             }
             case GameEvent.ActionTimeout e -> {
+                cancelActionTimer();
                 // ActionTimeout has no tableId on the event itself; derive it by
                 // finding which table the timing-out player is currently seated at.
                 int timeoutTableId = -1;
@@ -460,6 +503,8 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
             case GameEvent.ChipsTransferred e -> {
                 String fromName = "";
                 String toName = "";
+                Integer fromChipCount = null;
+                Integer toChipCount = null;
                 if (game != null && game.getTournament() != null && e.tableId() > 0
                         && (e.tableId() - 1) < game.getTournament().getNumTables()) {
                     Object gt = game.getTournament().getTable(e.tableId() - 1);
@@ -467,14 +512,20 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                         for (int s = 0; s < sgt.getNumSeats(); s++) {
                             ServerPlayer sp = sgt.getPlayer(s);
                             if (sp == null) continue;
-                            if (sp.getID() == e.fromPlayerId()) fromName = sp.getName();
-                            if (sp.getID() == e.toPlayerId()) toName = sp.getName();
+                            if (sp.getID() == e.fromPlayerId()) {
+                                fromName = sp.getName();
+                                fromChipCount = sp.getChipCount();
+                            }
+                            if (sp.getID() == e.toPlayerId()) {
+                                toName = sp.getName();
+                                toChipCount = sp.getChipCount();
+                            }
                         }
                     }
                 }
                 broadcast(ServerMessage.of(ServerMessageType.CHIPS_TRANSFERRED, gameId,
                         new ServerMessageData.ChipsTransferredData(e.fromPlayerId(), fromName,
-                                e.toPlayerId(), toName, e.amount())));
+                                e.toPlayerId(), toName, e.amount(), fromChipCount, toChipCount)));
             }
             case GameEvent.ColorUpStarted e -> {
                 List<ServerMessageData.ColorUpPlayerData> players = e.players().stream()
@@ -501,11 +552,21 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 ServerMessage.of(ServerMessageType.COLOR_UP_COMPLETED, gameId,
                     new ServerMessageData.ColorUpCompletedData(e.tableId()))
             );
-            // Internal housekeeping events — not broadcast to clients
-            case GameEvent.ButtonMoved ignored -> {}
-            case GameEvent.TableStateChanged ignored -> {}
-            case GameEvent.CurrentPlayerChanged ignored -> {}
-            case GameEvent.CleaningDone ignored -> {}
+            case GameEvent.ButtonMoved e -> broadcast(ServerMessage.of(
+                ServerMessageType.BUTTON_MOVED, gameId,
+                new ServerMessageData.ButtonMovedData(e.tableId(), e.newSeat())));
+            case GameEvent.TableStateChanged e -> broadcast(ServerMessage.of(
+                ServerMessageType.TABLE_STATE_CHANGED, gameId,
+                new ServerMessageData.TableStateChangedData(e.tableId(),
+                    e.oldState().name(), e.newState().name())));
+            case GameEvent.CurrentPlayerChanged e -> {
+                String name = lookupPlayerName(e.playerId());
+                broadcast(ServerMessage.of(ServerMessageType.CURRENT_PLAYER_CHANGED, gameId,
+                    new ServerMessageData.CurrentPlayerChangedData(e.tableId(), e.playerId(), name)));
+            }
+            case GameEvent.CleaningDone e -> broadcast(ServerMessage.of(
+                ServerMessageType.CLEANING_DONE, gameId,
+                new ServerMessageData.CleaningDoneData(e.tableId())));
             default -> logger.debug("[BROADCAST] unhandled event type: {}", event.getClass().getSimpleName());
         }
     }
@@ -518,11 +579,42 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
     public void broadcastGameState() {
         if (game == null)
             return;
+        GameStateSnapshot observerSnap = null;
         for (PlayerConnection conn : connectionManager.getConnections(gameId)) {
-            GameStateSnapshot snap = game.getGameStateSnapshot(conn.getProfileId());
-            if (snap != null)
-                conn.sendMessage(converter.createGameStateMessage(gameId, snap));
+            if (conn.isObserver()) {
+                if (observerSnap == null) {
+                    observerSnap = game.getObserverSnapshot();
+                }
+                if (observerSnap != null) {
+                    conn.sendMessage(converter.createGameStateMessage(gameId, observerSnap));
+                }
+            } else {
+                GameStateSnapshot snap = game.getGameStateSnapshot(conn.getProfileId());
+                if (snap != null)
+                    conn.sendMessage(converter.createGameStateMessage(gameId, snap));
+            }
         }
+    }
+
+    private Integer lookupPlayerChips(long playerId) {
+        if (game != null && game.getTournament()instanceof ServerTournamentContext ctx) {
+            for (ServerPlayer sp : ctx.getAllPlayers()) {
+                if (sp.getID() == playerId) {
+                    return sp.getChipCount();
+                }
+            }
+        }
+        return null;
+    }
+
+    private Integer lookupPlayerChipsAtTable(ServerGameTable table, long playerId) {
+        for (int s = 0; s < table.getNumSeats(); s++) {
+            ServerPlayer sp = table.getPlayer(s);
+            if (sp != null && sp.getID() == playerId) {
+                return sp.getChipCount();
+            }
+        }
+        return null;
     }
 
     private String lookupPlayerName(int playerId) {
@@ -536,7 +628,45 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
         return "";
     }
 
+    /**
+     * Starts periodic TIMER_UPDATE broadcasts every 5 seconds for the given player
+     * and timeout. Called by the WebSocket handler when ACTION_REQUIRED is sent.
+     * Cancels any previously running timer.
+     */
+    public void startActionTimer(long playerId, int timeoutSeconds) {
+        cancelActionTimer();
+        if (timeoutSeconds <= 0) {
+            return;
+        }
+        final long startTime = System.currentTimeMillis();
+        final int totalSeconds = timeoutSeconds;
+        activeTimerTask = timerScheduler.scheduleAtFixedRate(() -> {
+            int elapsed = (int) ((System.currentTimeMillis() - startTime) / 1000);
+            int remaining = totalSeconds - elapsed;
+            if (remaining <= 0) {
+                cancelActionTimer();
+                return;
+            }
+            broadcast(ServerMessage.of(ServerMessageType.TIMER_UPDATE, gameId,
+                    new ServerMessageData.TimerUpdateData(playerId, remaining)));
+        }, 5, 5, TimeUnit.SECONDS);
+    }
+
+    /** Cancels the active TIMER_UPDATE broadcast task, if any. */
+    public void cancelActionTimer() {
+        ScheduledFuture<?> task = activeTimerTask;
+        if (task != null) {
+            task.cancel(false);
+            activeTimerTask = null;
+        }
+    }
+
     private void broadcast(ServerMessage message) {
-        connectionManager.broadcastToGame(gameId, message);
+        connectionManager.broadcastToGame(gameId, message.withSequence(sequenceCounter.incrementAndGet()));
+    }
+
+    /** Returns the current sequence number (for stamping direct-send messages). */
+    public long nextSequence() {
+        return sequenceCounter.incrementAndGet();
     }
 }

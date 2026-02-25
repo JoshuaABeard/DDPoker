@@ -155,6 +155,7 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
         }
 
         // Enforce scope restrictions
+        boolean isObserver = "observe".equals(scope);
         if ("reconnect".equals(scope)) {
             // Reconnect tokens must be scoped to this specific game
             String tokenGameId = claims.get("gameId", String.class);
@@ -171,6 +172,13 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
                 return;
             }
             authService.markJtiUsed(jti, expiryMs);
+        } else if (isObserver) {
+            // Observe tokens must be scoped to this specific game
+            String tokenGameId = claims.get("gameId", String.class);
+            if (!gameId.equals(tokenGameId)) {
+                session.close(new CloseStatus(4001, "Token not valid for this game"));
+                return;
+            }
         } else if (scope != null) {
             // Unknown scope — reject
             session.close(new CloseStatus(4001, "Invalid token scope"));
@@ -189,10 +197,18 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
         boolean alreadyInGame = game.hasPlayer(profileId);
         boolean reconnecting = alreadyInGame
                 && (state == GameInstanceState.IN_PROGRESS || state == GameInstanceState.PAUSED);
-        log.debug("[WS-CONNECT] player={} profileId={} gameId={} state={} alreadyInGame={}", username, profileId,
-                gameId, state, alreadyInGame);
+        log.debug("[WS-CONNECT] player={} profileId={} gameId={} state={} alreadyInGame={} observer={}", username,
+                profileId, gameId, state, alreadyInGame, isObserver);
 
-        if (state == GameInstanceState.WAITING_FOR_PLAYERS && !alreadyInGame) {
+        // Observers don't join the game — skip the player join/reconnect logic
+        if (isObserver) {
+            // Observers can watch games that are in progress or waiting for players
+            if (state != GameInstanceState.IN_PROGRESS && state != GameInstanceState.PAUSED
+                    && state != GameInstanceState.WAITING_FOR_PLAYERS) {
+                session.close(new CloseStatus(4003, "Game is not observable"));
+                return;
+            }
+        } else if (state == GameInstanceState.WAITING_FOR_PLAYERS && !alreadyInGame) {
             // Auto-join player
             game.addPlayer(profileId, username, false, 0);
         } else if (reconnecting) {
@@ -221,8 +237,48 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
         session.setTextMessageSizeLimit(SESSION_MAX_TEXT_BUFFER_SIZE);
 
         // Create player connection
-        PlayerConnection playerConnection = new PlayerConnection(session, profileId, username, gameId, objectMapper);
+        PlayerConnection playerConnection = new PlayerConnection(session, profileId, username, gameId, objectMapper,
+                isObserver);
         sessionConnections.put(session.getId(), playerConnection);
+
+        // Register connection (replaces any existing connection for this
+        // player/observer)
+        connectionManager.addConnection(gameId, profileId, playerConnection);
+
+        if (isObserver) {
+            // Observers: send CONNECTED (no reconnect token), then game state snapshot
+            ServerMessage connectedMsg = converter.createConnectedMessage(gameId, profileId, null, null);
+            playerConnection.sendMessage(connectedMsg);
+
+            // Wire event bus broadcaster (same as non-observer path)
+            if (game.getEventBus() != null) {
+                gameBroadcasters.computeIfAbsent(gameId, id -> {
+                    GameEventBroadcaster broadcaster = new GameEventBroadcaster(id, connectionManager, converter, game);
+                    if (game.getConfig() != null && game.getConfig().practiceConfig() != null
+                            && Boolean.TRUE.equals(game.getConfig().practiceConfig().aiFaceUp())) {
+                        broadcaster.setAiFaceUp(true);
+                    }
+                    game.getEventBus().setBroadcastCallback(broadcaster);
+                    return broadcaster;
+                });
+            }
+
+            // Send game state (no hole cards) if game is in progress
+            if (state == GameInstanceState.IN_PROGRESS || state == GameInstanceState.PAUSED) {
+                GameStateSnapshot snapshot = game.getObserverSnapshot();
+                if (snapshot != null) {
+                    playerConnection.sendMessage(converter.createGameStateMessage(gameId, snapshot));
+                }
+            } else if (state == GameInstanceState.WAITING_FOR_PLAYERS) {
+                sendLobbyState(playerConnection, game);
+            }
+
+            // Broadcast OBSERVER_JOINED to all connections
+            ServerMessage observerMsg = ServerMessage.of(ServerMessageType.OBSERVER_JOINED, gameId,
+                    new ServerMessageData.ObserverJoinedData(profileId, username, -1));
+            connectionManager.broadcastToGame(gameId, observerMsg, profileId);
+            return;
+        }
 
         // Wire message sender to player session so ACTION_REQUIRED events reach client
         ServerPlayerSession playerSession = game.getPlayerSessions().get(profileId);
@@ -232,13 +288,16 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
                     ServerMessage actionMsg = converter.createActionRequiredMessage(gameId, actionRequest.options(),
                             actionTimeoutSeconds);
                     playerConnection.sendMessage(actionMsg);
+                    // Start periodic TIMER_UPDATE broadcasts so all clients can
+                    // display the action countdown.
+                    GameEventBroadcaster broadcaster = gameBroadcasters.get(gameId);
+                    if (broadcaster != null && actionTimeoutSeconds > 0) {
+                        broadcaster.startActionTimer(profileId, actionTimeoutSeconds);
+                    }
                 }
             });
             log.debug("[WS-HANDLER] Wired messageSender for profileId={} gameId={}", profileId, gameId);
         }
-
-        // Register connection (replaces any existing connection for this player)
-        connectionManager.addConnection(gameId, profileId, playerConnection);
 
         // If reconnecting, notify game
         if (reconnecting) {
@@ -314,7 +373,8 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             // In-game: broadcast PLAYER_JOINED to others (include tableId so multi-table
             // clients seat the player at the correct table).
             int joinTableId = snapshot != null ? snapshot.tableId() : -1;
-            ServerMessage joinedMsg = converter.createPlayerJoinedMessage(gameId, profileId, username, -1, joinTableId);
+            ServerMessage joinedMsg = converter.createPlayerJoinedMessage(gameId, profileId, username, -1, joinTableId,
+                    reconnecting);
             connectionManager.broadcastToGame(gameId, joinedMsg, profileId);
 
             if (snapshot != null) {
@@ -339,34 +399,42 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
         PlayerConnection connection = findConnection(session);
         if (connection != null) {
-            log.debug("[WS-HANDLER] connection closed profileId={} gameId={} status={}", connection.getProfileId(),
-                    connection.getGameId(), closeStatus);
+            log.debug("[WS-HANDLER] connection closed profileId={} gameId={} status={} observer={}",
+                    connection.getProfileId(), connection.getGameId(), closeStatus, connection.isObserver());
             sessionConnections.remove(session.getId());
             connectionManager.removeConnection(connection.getGameId(), connection.getProfileId());
 
-            GameInstance game = gameInstanceManager.getGame(connection.getGameId());
-            if (game != null) {
-                game.removePlayer(connection.getProfileId());
-            }
-
-            // Broadcast the appropriate leave message based on game phase.
-            GameInstanceState state = game != null ? game.getState() : null;
-            final ServerMessage leftMsg;
-            if (state == GameInstanceState.WAITING_FOR_PLAYERS) {
-                // Lobby phase: LOBBY_PLAYER_LEFT
-                LobbyPlayerData playerData = new LobbyPlayerData(connection.getProfileId(), connection.getUsername(),
-                        false, false, null);
-                leftMsg = ServerMessage.of(ServerMessageType.LOBBY_PLAYER_LEFT, connection.getGameId(),
-                        new ServerMessageData.LobbyPlayerLeftData(playerData));
+            if (connection.isObserver()) {
+                // Observers: broadcast OBSERVER_LEFT, don't remove from game
+                ServerMessage leftMsg = ServerMessage.of(ServerMessageType.OBSERVER_LEFT, connection.getGameId(),
+                        new ServerMessageData.ObserverLeftData(connection.getProfileId(), connection.getUsername(),
+                                -1));
+                connectionManager.broadcastToGame(connection.getGameId(), leftMsg);
             } else {
-                boolean reconnectable = state == GameInstanceState.IN_PROGRESS || state == GameInstanceState.PAUSED;
-                leftMsg = reconnectable
-                        ? converter.createPlayerDisconnectedMessage(connection.getGameId(), connection.getProfileId(),
-                                connection.getUsername())
-                        : converter.createPlayerLeftMessage(connection.getGameId(), connection.getProfileId(),
-                                connection.getUsername());
+                GameInstance game = gameInstanceManager.getGame(connection.getGameId());
+                if (game != null) {
+                    game.removePlayer(connection.getProfileId());
+                }
+
+                // Broadcast the appropriate leave message based on game phase.
+                GameInstanceState state = game != null ? game.getState() : null;
+                final ServerMessage leftMsg;
+                if (state == GameInstanceState.WAITING_FOR_PLAYERS) {
+                    // Lobby phase: LOBBY_PLAYER_LEFT
+                    LobbyPlayerData playerData = new LobbyPlayerData(connection.getProfileId(),
+                            connection.getUsername(), false, false, null);
+                    leftMsg = ServerMessage.of(ServerMessageType.LOBBY_PLAYER_LEFT, connection.getGameId(),
+                            new ServerMessageData.LobbyPlayerLeftData(playerData));
+                } else {
+                    boolean reconnectable = state == GameInstanceState.IN_PROGRESS || state == GameInstanceState.PAUSED;
+                    leftMsg = reconnectable
+                            ? converter.createPlayerDisconnectedMessage(connection.getGameId(),
+                                    connection.getProfileId(), connection.getUsername())
+                            : converter.createPlayerLeftMessage(connection.getGameId(), connection.getProfileId(),
+                                    connection.getUsername());
+                }
+                connectionManager.broadcastToGame(connection.getGameId(), leftMsg);
             }
-            connectionManager.broadcastToGame(connection.getGameId(), leftMsg);
 
             // Clean up per-game broadcaster when the last connection closes
             if (connectionManager.getConnections(connection.getGameId()).isEmpty()) {

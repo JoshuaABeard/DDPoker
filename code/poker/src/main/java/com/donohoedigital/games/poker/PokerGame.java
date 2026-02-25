@@ -651,14 +651,22 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     // -------------------------------------------------------------------------
 
     /** Immutable connection parameters for WebSocketTournamentDirector. */
-    public record WebSocketConfig(String gameId, String jwt, int port) {
+    public record WebSocketConfig(String gameId, String jwt, int port, boolean observer) {
+        public WebSocketConfig(String gameId, String jwt, int port) {
+            this(gameId, jwt, port, false);
+        }
     }
 
     private WebSocketConfig webSocketConfig_;
 
     /** Stores the WebSocket connection parameters before the WsTD phase starts. */
     public void setWebSocketConfig(String gameId, String jwt, int port) {
-        webSocketConfig_ = new WebSocketConfig(gameId, jwt, port);
+        webSocketConfig_ = new WebSocketConfig(gameId, jwt, port, false);
+    }
+
+    /** Stores WebSocket connection parameters with observer flag. */
+    public void setWebSocketConfig(String gameId, String jwt, int port, boolean observer) {
+        webSocketConfig_ = new WebSocketConfig(gameId, jwt, port, observer);
     }
 
     /** Returns the WebSocket connection parameters, or null if not yet set. */
@@ -1405,6 +1413,16 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      * handle a player getting out of tournament
      */
     public void playerOut(PokerPlayer player) {
+        if (player == null) {
+            return;
+        }
+
+        PokerPlayer canonical = getPokerPlayerFromID(player.getID());
+        PokerPlayer finisher = canonical != null ? canonical : player;
+        if (finisher.isEliminated()) {
+            return;
+        }
+
         // figure finish spot
         int nTotalOut = getNumPlayersOut();
         int nFinish = getNumPlayers() - nTotalOut;
@@ -1432,16 +1450,16 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         }
 
         // set player's prize, place and note eliminated
-        player.setEliminated(true);
-        player.setPlace(nFinish);
-        player.setPrize(nPrize);
+        finisher.setEliminated(true);
+        finisher.setPlace(nFinish);
+        finisher.setPrize(nPrize);
         nNumOut_++;
 
         // update player list (online games)
-        updatePlayerList(player);
+        updatePlayerList(finisher);
 
         // event
-        firePropertyChange(PROP_PLAYER_FINISHED, null, player);
+        firePropertyChange(PROP_PLAYER_FINISHED, null, finisher);
     }
 
     /**
@@ -1463,19 +1481,26 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      */
     public void applyPlayerResult(int playerId, int finishPosition) {
         PokerPlayer player = getPokerPlayerFromID(playerId);
-        if (player == null)
+        if (player == null || finishPosition <= 0)
             return;
+
+        boolean alreadyEliminated = player.isEliminated();
+        int previousPlace = player.getPlace();
+        if (alreadyEliminated && previousPlace == finishPosition) {
+            return;
+        }
 
         int prize = 0;
         if (profile_ != null) {
             int pool = getPrizePool();
-            if (pool != nLastPool_) {
+            if (pool != nLastPool_ || profile_.getPrizePool() != pool) {
                 nLastPool_ = pool;
                 profile_.setPrizePool(pool, true);
             }
 
+            int prizesPaidExcludingPlayer = getPrizesPaid() - player.getPrize();
             if (finishPosition == 1) {
-                prize = profile_.getPrizePool() - getPrizesPaid();
+                prize = Math.max(0, profile_.getPrizePool() - prizesPaidExcludingPlayer);
             } else {
                 prize = profile_.getPayout(finishPosition);
             }
@@ -1489,7 +1514,9 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         if (finishPosition > 1) {
             player.setChipCount(0);
         }
-        nNumOut_++;
+        if (!alreadyEliminated) {
+            nNumOut_++;
+        }
         firePropertyChange(PROP_PLAYER_FINISHED, null, player);
     }
 

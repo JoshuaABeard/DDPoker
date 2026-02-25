@@ -17,9 +17,11 @@
  */
 package com.donohoedigital.games.poker.gameserver.websocket;
 
+import com.donohoedigital.games.poker.core.ActionOptions;
 import com.donohoedigital.games.poker.core.PlayerAction;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
 import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
+import com.donohoedigital.games.poker.gameserver.GameStateSnapshot;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ClientMessageData;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ClientMessageType;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage;
@@ -153,6 +155,12 @@ public class InboundMessageRouter {
 
         JsonNode dataNode = root.get("data");
 
+        // Observers can only send CHAT messages
+        if (connection.isObserver() && type != ClientMessageType.CHAT) {
+            sendError(connection, "FORBIDDEN", "Observers cannot perform game actions");
+            return;
+        }
+
         switch (type) {
             case PLAYER_ACTION -> handlePlayerAction(connection, game, dataNode);
             case CHAT -> handleChat(connection, game, dataNode);
@@ -165,6 +173,7 @@ public class InboundMessageRouter {
             case ADDON_DECISION -> handleAddonDecision(connection, game, dataNode);
             case NEVER_BROKE_DECISION -> handleNeverBrokeDecision(connection, game, dataNode);
             case CONTINUE_RUNOUT -> handleContinueRunout(connection, game);
+            case REQUEST_STATE -> handleRequestState(connection, game);
             default -> sendError(connection, "INVALID_MESSAGE", "Unhandled message type: " + type);
         }
     }
@@ -182,7 +191,7 @@ public class InboundMessageRouter {
 
         PlayerAction action;
         try {
-            action = parseAction(data.action(), data.amount());
+            action = resolveAction(data.action(), data.amount(), connection.getProfileId(), game);
         } catch (IllegalArgumentException e) {
             logger.debug("[ROUTER] INVALID_ACTION: {}", data.action());
             sendError(connection, "INVALID_ACTION", "Unknown action: " + data.action());
@@ -334,17 +343,43 @@ public class InboundMessageRouter {
         game.submitContinue();
     }
 
-    private PlayerAction parseAction(String actionString, int amount) {
+    private void handleRequestState(PlayerConnection connection, GameInstance game) {
+        logger.debug("[ROUTER] handleRequestState profileId={}", connection.getProfileId());
+        GameStateSnapshot snapshot = game.getGameStateSnapshot(connection.getProfileId());
+        if (snapshot != null) {
+            connection.sendMessage(converter.createGameStateMessage(connection.getGameId(), snapshot));
+        }
+    }
+
+    private PlayerAction resolveAction(String actionString, int amount, long profileId, GameInstance game) {
         return switch (actionString.toUpperCase()) {
             case "FOLD" -> PlayerAction.fold();
             case "CHECK" -> PlayerAction.check();
             case "CALL" -> PlayerAction.call();
             case "BET" -> PlayerAction.bet(amount);
             case "RAISE" -> PlayerAction.raise(amount);
-            // ALL_IN is not a valid client action; clients must use RAISE with the all-in
-            // amount
+            case "ALL_IN" -> resolveAllIn(profileId, game);
             default -> throw new IllegalArgumentException("Unknown action: " + actionString);
         };
+    }
+
+    /**
+     * Resolves an ALL_IN action to the appropriate engine action (BET, RAISE, or
+     * CALL) using the server's pending action options for this player.
+     */
+    private PlayerAction resolveAllIn(long profileId, GameInstance game) {
+        ActionOptions opts = game.getPendingActionOptions(profileId);
+        if (opts == null) {
+            logger.warn("[ROUTER] ALL_IN with no pending options for profileId={}, defaulting to CALL", profileId);
+            return PlayerAction.call();
+        }
+        if (opts.canRaise()) {
+            return PlayerAction.raise(opts.maxRaise());
+        } else if (opts.canBet()) {
+            return PlayerAction.bet(opts.maxBet());
+        } else {
+            return PlayerAction.call();
+        }
     }
 
     private String sanitizeChat(String message) {

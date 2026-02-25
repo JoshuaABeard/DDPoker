@@ -68,7 +68,11 @@ public class WebSocketGameClient {
     private final AtomicLong reconnectCycle = new AtomicLong(0);
 
     private String wsUrl;
+    private int serverPort;
+    private String gameId;
+    private volatile String reconnectToken;
     private final AtomicLong sequenceCounter = new AtomicLong(0);
+    private final AtomicLong lastReceivedSequence = new AtomicLong(0);
 
     private final ScheduledExecutorService scheduler;
 
@@ -122,7 +126,10 @@ public class WebSocketGameClient {
         // HTTP GET, so custom request headers are not supported. This is standard
         // practice for WebSocket auth. Acceptable for embedded (localhost-only) mode;
         // for remote servers the token appears in server access logs (see M6 notes).
-        this.wsUrl = "ws://localhost:" + serverPort + "/ws/games/" + gameId + "?token=" + jwt;
+        this.serverPort = serverPort;
+        this.gameId = gameId;
+        this.wsUrl = buildWsUrl(jwt);
+        this.reconnectToken = null;
         this.intentionallyClosed = false;
         this.connected = false;
         this.reconnecting.set(false);
@@ -210,6 +217,22 @@ public class WebSocketGameClient {
         sendMessage(ClientMessageType.CONTINUE_RUNOUT, objectMapper.createObjectNode());
     }
 
+    /**
+     * Requests a fresh GAME_STATE from the server after detecting a sequence gap.
+     */
+    public void sendRequestState() {
+        sendMessage(ClientMessageType.REQUEST_STATE, objectMapper.createObjectNode());
+    }
+
+    /**
+     * Stores a reconnect token received from the server's CONNECTED message. On
+     * auto-reconnect, this token (24h TTL, game-scoped) replaces the original
+     * short-lived ws-connect JWT in the WebSocket URL.
+     */
+    public void setReconnectToken(String token) {
+        this.reconnectToken = token;
+    }
+
     /** Returns {@code true} if the WebSocket is currently connected. */
     public boolean isConnected() {
         return connected;
@@ -231,6 +254,10 @@ public class WebSocketGameClient {
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
+
+    private String buildWsUrl(String token) {
+        return "ws://localhost:" + serverPort + "/ws/games/" + gameId + "?token=" + token;
+    }
 
     private CompletableFuture<Void> openConnection() {
         return httpClient.newWebSocketBuilder().buildAsync(URI.create(wsUrl), new GameWebSocketListener())
@@ -273,7 +300,16 @@ public class WebSocketGameClient {
         }
         final long cycleId = reconnectCycle.get();
         connected = false;
-        logger.info("WebSocket disconnected, scheduling reconnect");
+
+        // Use the reconnect token (24h, game-scoped) instead of the original
+        // ws-connect JWT which is single-use and short-lived (60s).
+        String token = this.reconnectToken;
+        if (token != null) {
+            this.wsUrl = buildWsUrl(token);
+            logger.info("WebSocket disconnected, scheduling reconnect with reconnect token");
+        } else {
+            logger.info("WebSocket disconnected, scheduling reconnect (no reconnect token available)");
+        }
 
         // Per-cycle flag: once one attempt succeeds, the remaining scheduled
         // attempts for this cycle are no-ops.
@@ -321,8 +357,11 @@ public class WebSocketGameClient {
      *            the game ID
      * @param data
      *            raw JSON node for the message data (to be parsed by the handler)
+     * @param sequenceNumber
+     *            server-assigned per-game sequence number (null for
+     *            connection-setup messages)
      */
-    public record InboundMessage(ServerMessageType type, String gameId, JsonNode data) {
+    public record InboundMessage(ServerMessageType type, String gameId, JsonNode data, Long sequenceNumber) {
     }
 
     // -------------------------------------------------------------------------
@@ -371,12 +410,28 @@ public class WebSocketGameClient {
             try {
                 JsonNode root = objectMapper.readTree(json);
                 String typeName = root.path("type").asText();
-                String gameId = root.path("gameId").asText();
+                String msgGameId = root.path("gameId").asText();
                 JsonNode data = root.path("data");
-                logger.debug("[WS-RAW] type={} gameId={}", typeName, gameId);
+
+                // Parse optional server-side sequence number for gap detection
+                Long seq = root.has("sequenceNumber") && !root.get("sequenceNumber").isNull()
+                        ? root.get("sequenceNumber").asLong()
+                        : null;
+                logger.debug("[WS-RAW] type={} gameId={} seq={}", typeName, msgGameId, seq);
+
+                if (seq != null) {
+                    long prev = lastReceivedSequence.get();
+                    if (prev > 0 && seq > prev + 1) {
+                        logger.warn("[WS-GAP] sequence gap detected: last={} received={} (missed {} events)", prev, seq,
+                                seq - prev - 1);
+                        // Request a fresh GAME_STATE to recover from the gap.
+                        sendRequestState();
+                    }
+                    lastReceivedSequence.set(seq);
+                }
 
                 ServerMessageType type = ServerMessageType.valueOf(typeName);
-                messageHandler.accept(new InboundMessage(type, gameId, data));
+                messageHandler.accept(new InboundMessage(type, msgGameId, data, seq));
             } catch (Exception e) {
                 logger.error("Failed to dispatch inbound message: {}", json, e);
             }

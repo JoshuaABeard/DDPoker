@@ -55,5 +55,8 @@ public enum ClientMessageType {
     NEVER_BROKE_DECISION,
 
     /** Human clicked Continue during all-in runout */
-    CONTINUE_RUNOUT
+    CONTINUE_RUNOUT,
+
+    /** Client requests fresh GAME_STATE after detecting a sequence gap */
+    REQUEST_STATE
 }

@@ -354,27 +354,44 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
      *            chip amount to send with an all-in bet or raise (ignored for CALL)
      */
     public static String[] getAdvanceActionWS(boolean canCheck, boolean canRaise, boolean canAllIn, int allInAmount) {
+        return getAdvanceActionWS(canCheck, canRaise, canAllIn, allInAmount, false, 0, 0);
+    }
+
+    /**
+     * Extended version that also handles bet/raise/betpot/raisepot advance actions.
+     *
+     * @param canBet
+     *            true if BET is legal this turn
+     * @param maxBet
+     *            maximum bet amount (for bet and betpot actions)
+     * @param maxRaise
+     *            maximum raise amount (for raise and raisepot actions)
+     */
+    public static String[] getAdvanceActionWS(boolean canCheck, boolean canRaise, boolean canAllIn, int allInAmount,
+            boolean canBet, int maxBet, int maxRaise) {
         if (impl_ == null || impl_.buttons_.size() == 0)
             return null;
-        String[] result = impl_._getAdvanceActionWS(canCheck, canRaise, canAllIn, allInAmount);
+        String[] result = impl_._getAdvanceActionWS(canCheck, canBet, maxBet, canRaise, maxRaise);
         if (result != null)
             impl_.clearButtons();
         return result;
     }
 
-    private String[] _getAdvanceActionWS(boolean canCheck, boolean canRaise, boolean canAllIn, int allInAmount) {
+    private String[] _getAdvanceActionWS(boolean canCheck, boolean canBet, int maxBet, boolean canRaise, int maxRaise) {
         if (checkfold_.isSelected()) {
             return new String[]{canCheck ? "CHECK" : "FOLD", "0"};
         } else if (call_.isSelected()) {
             return new String[]{"CALL", "0"};
+        } else if (bet_.isSelected() && canBet) {
+            return new String[]{"BET", String.valueOf(maxBet)};
+        } else if (raise_.isSelected() && canRaise) {
+            return new String[]{"RAISE", String.valueOf(maxRaise)};
+        } else if (betpot_.isSelected() && canBet) {
+            return new String[]{"BET", String.valueOf(maxBet)};
+        } else if (raisepot_.isSelected() && canRaise) {
+            return new String[]{"RAISE", String.valueOf(maxRaise)};
         } else if (allin_.isSelected()) {
-            // Mirror mapPokerGameActionToWsString logic:
-            // canAllIn=true, canRaise=false → BET (first to act)
-            // canAllIn=true, canRaise=true → RAISE (facing existing bet)
-            // canAllIn=false → CALL (short-stack)
-            if (!canAllIn)
-                return new String[]{"CALL", "0"};
-            return new String[]{canRaise ? "RAISE" : "BET", String.valueOf(allInAmount)};
+            return new String[]{"ALL_IN", "0"};
         }
         return null;
     }

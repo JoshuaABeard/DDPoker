@@ -168,8 +168,13 @@ public class OutboundMessageConverter {
      */
     public ServerMessage createPlayerJoinedMessage(String gameId, long profileId, String playerName, int seatIndex,
             int tableId) {
+        return createPlayerJoinedMessage(gameId, profileId, playerName, seatIndex, tableId, false);
+    }
+
+    public ServerMessage createPlayerJoinedMessage(String gameId, long profileId, String playerName, int seatIndex,
+            int tableId, boolean isReconnect) {
         return ServerMessage.of(ServerMessageType.PLAYER_JOINED, gameId,
-                new ServerMessageData.PlayerJoinedData(profileId, playerName, seatIndex, tableId));
+                new ServerMessageData.PlayerJoinedData(profileId, playerName, seatIndex, tableId, isReconnect));
     }
 
     /**

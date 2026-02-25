@@ -40,8 +40,11 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
 import com.donohoedigital.games.poker.gameserver.dto.LobbyPlayerInfo;
+import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData;
 import com.donohoedigital.games.poker.server.*;
 import com.donohoedigital.gui.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.logging.log4j.*;
 
 import javax.swing.*;
@@ -55,12 +58,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Pre-game waiting room for online host games.
  *
  * <p>
- * Polls the embedded server REST API every 2 seconds to refresh the player
- * list. The host can start the game or cancel it from this screen.
+ * Connects to the embedded server via WebSocket for real-time lobby updates
+ * (player joins/leaves/kicks, settings changes, game start). Falls back to REST
+ * polling if WebSocket connection fails. REST is still used for one-shot
+ * operations like startGame() and cancelGame().
  */
 public class Lobby extends BasePhase {
 
     static Logger logger = LogManager.getLogger(Lobby.class);
+
+    private final ObjectMapper objectMapper_ = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private String STYLE;
     private MenuBackground menu_;
@@ -75,8 +82,13 @@ public class Lobby extends BasePhase {
     private String gameId_;
     private boolean bStarting_;
 
-    // REST polling
+    // REST client for one-shot operations (startGame, cancelGame)
     private RestGameClient restClient_;
+
+    // WebSocket connection for real-time lobby updates
+    private WebSocketGameClient wsClient_;
+
+    // REST polling fallback (used if WebSocket connection fails)
     private javax.swing.Timer pollTimer_;
     private final AtomicBoolean pollInFlight_ = new AtomicBoolean(false);
 
@@ -170,17 +182,154 @@ public class Lobby extends BasePhase {
     @Override
     public void start() {
         context_.setMainUIComponent(this, menu_, false, null);
-        startPolling();
+        connectWebSocket();
     }
 
     @Override
     public void finish() {
+        disconnectWebSocket();
         finishPolling();
         super.finish();
     }
 
     // =========================================================================
-    // Polling
+    // WebSocket connection for real-time lobby updates
+    // =========================================================================
+
+    private void connectWebSocket() {
+        PokerGame.WebSocketConfig config = game_ != null ? game_.getWebSocketConfig() : null;
+        if (config == null || gameId_ == null) {
+            startPolling();
+            return;
+        }
+
+        wsClient_ = new WebSocketGameClient();
+        wsClient_.setMessageHandler(this::onLobbyMessage);
+        wsClient_.connect(config.port(), gameId_, config.jwt()).whenComplete((v, ex) -> {
+            if (ex != null) {
+                logger.warn("WebSocket lobby connection failed, falling back to REST polling: {}", ex.getMessage());
+                SwingUtilities.invokeLater(this::startPolling);
+            } else {
+                logger.debug("WebSocket lobby connected for game {}", gameId_);
+            }
+        });
+    }
+
+    private void disconnectWebSocket() {
+        if (wsClient_ != null) {
+            wsClient_.disconnect();
+            wsClient_ = null;
+        }
+    }
+
+    private void onLobbyMessage(WebSocketGameClient.InboundMessage msg) {
+        try {
+            switch (msg.type()) {
+                case LOBBY_STATE -> {
+                    ServerMessageData.LobbyStateData d = objectMapper_.treeToValue(msg.data(),
+                            ServerMessageData.LobbyStateData.class);
+                    SwingUtilities.invokeLater(() -> updateFromLobbyState(d));
+                }
+                case LOBBY_PLAYER_JOINED -> {
+                    ServerMessageData.LobbyPlayerJoinedData d = objectMapper_.treeToValue(msg.data(),
+                            ServerMessageData.LobbyPlayerJoinedData.class);
+                    SwingUtilities.invokeLater(() -> addLobbyPlayer(d.player()));
+                }
+                case LOBBY_PLAYER_LEFT -> {
+                    ServerMessageData.LobbyPlayerLeftData d = objectMapper_.treeToValue(msg.data(),
+                            ServerMessageData.LobbyPlayerLeftData.class);
+                    SwingUtilities.invokeLater(() -> removeLobbyPlayer(d.player()));
+                }
+                case LOBBY_PLAYER_KICKED -> {
+                    ServerMessageData.LobbyPlayerKickedData d = objectMapper_.treeToValue(msg.data(),
+                            ServerMessageData.LobbyPlayerKickedData.class);
+                    SwingUtilities.invokeLater(() -> removeLobbyPlayer(d.player()));
+                }
+                case LOBBY_SETTINGS_CHANGED -> {
+                    ServerMessageData.LobbySettingsChangedData d = objectMapper_.treeToValue(msg.data(),
+                            ServerMessageData.LobbySettingsChangedData.class);
+                    SwingUtilities.invokeLater(() -> updateFromLobbySettings(d));
+                }
+                case LOBBY_GAME_STARTING -> {
+                    ServerMessageData.LobbyGameStartingData d = objectMapper_.treeToValue(msg.data(),
+                            ServerMessageData.LobbyGameStartingData.class);
+                    SwingUtilities.invokeLater(() -> onGameStarting(d.startingInSeconds()));
+                }
+                case GAME_CANCELLED -> {
+                    ServerMessageData.GameCancelledData d = objectMapper_.treeToValue(msg.data(),
+                            ServerMessageData.GameCancelledData.class);
+                    SwingUtilities.invokeLater(() -> onGameCancelled(d.reason()));
+                }
+                case CONNECTED -> {
+                    // Initial connection — server sends CONNECTED then LOBBY_STATE
+                    logger.debug("[LOBBY] WebSocket connected");
+                }
+                default -> logger.debug("[LOBBY] Ignoring message type: {}", msg.type());
+            }
+        } catch (Exception ex) {
+            logger.warn("Failed to process lobby message {}: {}", msg.type(), ex.getMessage());
+        }
+    }
+
+    private void updateFromLobbyState(ServerMessageData.LobbyStateData d) {
+        if (d.players() != null) {
+            List<LobbyPlayerInfo> players = d.players().stream()
+                    .map(lp -> new LobbyPlayerInfo(lp.name(), lp.isOwner() ? "Host" : (lp.isAI() ? "AI" : "Player")))
+                    .toList();
+            playerModel_.update(players);
+        }
+    }
+
+    private void updateFromLobbySettings(ServerMessageData.LobbySettingsChangedData d) {
+        if (d.updatedSettings() == null) {
+            return;
+        }
+        GameSummary s = d.updatedSettings();
+        logger.debug("[LOBBY] settings changed: name={} maxPlayers={} blinds={}", s.name(), s.maxPlayers(), s.blinds());
+        // Update the window title if the game name changed.
+        String titleKey = bHost_ ? "msg.title.Lobby.Host" : "msg.title.Lobby.Player";
+        String title = PropertyConfig.getMessage(titleKey);
+        if (s.name() != null && !s.name().isBlank()) {
+            title = s.name() + " - " + title;
+        }
+        if (menu_ != null) {
+            menu_.repaint();
+        }
+    }
+
+    private void addLobbyPlayer(ServerMessageData.LobbyPlayerData player) {
+        if (player == null) {
+            return;
+        }
+        String role = player.isOwner() ? "Host" : (player.isAI() ? "AI" : "Player");
+        playerModel_.addPlayer(new LobbyPlayerInfo(player.name(), role));
+    }
+
+    private void removeLobbyPlayer(ServerMessageData.LobbyPlayerData player) {
+        if (player == null) {
+            return;
+        }
+        playerModel_.removePlayer(player.name());
+    }
+
+    private void onGameStarting(int startingInSeconds) {
+        logger.info("[LOBBY] Game starting in {} seconds", startingInSeconds);
+        disconnectWebSocket();
+        finishPolling();
+        context_.processPhase("InitializeOnlineGame", null);
+    }
+
+    private void onGameCancelled(String reason) {
+        logger.info("[LOBBY] Game cancelled: {}", reason);
+        disconnectWebSocket();
+        finishPolling();
+        EngineUtils.displayInformationDialog(context_,
+                PropertyConfig.getMessage("msg.lobby.cancelled", reason != null ? reason : "Game cancelled"));
+        context_.restart();
+    }
+
+    // =========================================================================
+    // REST polling fallback
     // =========================================================================
 
     private void startPolling() {
@@ -277,6 +426,7 @@ public class Lobby extends BasePhase {
             if (!EngineUtils.displayConfirmationDialog(context_, sMsg)) {
                 return false;
             }
+            disconnectWebSocket();
             finishPolling();
 
             // perform blocking cleanup (deregister, cancel) off-EDT then navigate
@@ -335,7 +485,7 @@ public class Lobby extends BasePhase {
     }
 
     // =========================================================================
-    // PlayerModel — updated by REST poll
+    // PlayerModel — updated by WebSocket events or REST poll fallback
     // =========================================================================
 
     private class PlayerModel extends AbstractTableModel {
@@ -344,6 +494,18 @@ public class Lobby extends BasePhase {
 
         void update(List<LobbyPlayerInfo> newPlayers) {
             players_ = new ArrayList<>(newPlayers);
+            fireTableDataChanged();
+        }
+
+        void addPlayer(LobbyPlayerInfo player) {
+            players_ = new ArrayList<>(players_);
+            players_.add(player);
+            fireTableDataChanged();
+        }
+
+        void removePlayer(String name) {
+            players_ = new ArrayList<>(players_);
+            players_.removeIf(p -> p.name().equals(name));
             fireTableDataChanged();
         }
 

@@ -584,6 +584,40 @@ class PokerGameTest {
         assertThatCode(() -> game.verifyChipCount()).doesNotThrowAnyException();
     }
 
+    @Test
+    void should_NotDoubleCountPlayerOut_When_PlayerAlreadyEliminated() {
+        TournamentProfile profile = createTestProfile();
+        game.setProfile(profile);
+
+        PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        player.setBuyin(100);
+        game.addPlayer(player);
+
+        game.playerOut(player);
+        game.playerOut(player);
+
+        assertThat(game.getNumPlayersOut()).isEqualTo(1);
+    }
+
+    @Test
+    void should_ResolveCanonicalPlayer_When_PlayerOutCalledWithCloneObject() {
+        TournamentProfile profile = createTestProfile();
+        game.setProfile(profile);
+
+        PokerPlayer canonical = new PokerPlayer(7, "Player7", false);
+        canonical.setBuyin(100);
+        game.addPlayer(canonical);
+
+        PokerPlayer clone = new PokerPlayer(7, "Player7", false);
+        game.playerOut(clone);
+
+        assertThat(canonical.isEliminated()).isTrue();
+        assertThat(game.getNumPlayersOut()).isEqualTo(1);
+
+        game.playerOut(clone);
+        assertThat(game.getNumPlayersOut()).isEqualTo(1);
+    }
+
     // =================================================================
     // applyPlayerResult Tests (WebSocket mode)
     // =================================================================
@@ -689,6 +723,41 @@ class PokerGameTest {
         game.applyPlayerResult(2, 2);
         game.applyPlayerResult(1, 1);
 
+        assertThat(winner.getPrize()).isGreaterThan(0);
+        assertThat(game.getPrizesPaid()).isEqualTo(game.getPrizePool());
+    }
+
+    @Test
+    void should_NotIncrementPlayersOut_When_ApplyPlayerResultRepeatedForSamePlayer() {
+        PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        game.addPlayer(player);
+
+        game.applyPlayerResult(1, 2);
+        game.applyPlayerResult(1, 2);
+
+        assertThat(game.getNumPlayersOut()).isEqualTo(1);
+    }
+
+    @Test
+    void should_NotOverwriteWinnerPrize_When_ApplyPlayerResultRepeatedForWinner() {
+        TournamentProfile profile = createTestProfile();
+        game.setProfile(profile);
+
+        PokerPlayer winner = new PokerPlayer(1, "Winner", false);
+        winner.setBuyin(100);
+        PokerPlayer runnerUp = new PokerPlayer(2, "RunnerUp", false);
+        runnerUp.setBuyin(100);
+
+        game.addPlayer(winner);
+        game.addPlayer(runnerUp);
+
+        game.applyPlayerResult(2, 2);
+        game.applyPlayerResult(1, 1);
+        int prizeAfterFirstApply = winner.getPrize();
+
+        game.applyPlayerResult(1, 1);
+
+        assertThat(winner.getPrize()).isEqualTo(prizeAfterFirstApply);
         assertThat(winner.getPrize()).isGreaterThan(0);
         assertThat(game.getPrizesPaid()).isEqualTo(game.getPrizePool());
     }
