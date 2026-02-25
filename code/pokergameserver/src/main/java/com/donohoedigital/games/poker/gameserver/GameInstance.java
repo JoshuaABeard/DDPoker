@@ -440,9 +440,14 @@ public class GameInstance {
 
     /** Reconnect a previously disconnected player */
     public void reconnectPlayer(long profileId) {
-        ServerPlayerSession session = playerSessions.get(profileId);
-        if (session != null) {
-            session.connect();
+        stateLock.lock();
+        try {
+            ServerPlayerSession session = playerSessions.get(profileId);
+            if (session != null) {
+                session.connect();
+            }
+        } finally {
+            stateLock.unlock();
         }
     }
 
