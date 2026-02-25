@@ -20,6 +20,7 @@
 package com.donohoedigital.games.poker.gameserver;
 
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
@@ -40,7 +41,7 @@ public class ServerPlayerSession {
     private volatile boolean disconnected;
     private volatile Instant disconnectedAt;
     private volatile Consumer<Object> messageSender; // WebSocket message callback
-    private volatile int consecutiveTimeouts;
+    private final AtomicInteger consecutiveTimeouts = new AtomicInteger();
 
     /**
      * Create a new player session.
@@ -61,13 +62,12 @@ public class ServerPlayerSession {
         this.skillLevel = skillLevel;
         this.connected = false;
         this.disconnected = false;
-        this.consecutiveTimeouts = 0;
     }
 
     /**
      * Mark this session as connected. Clears disconnected state.
      */
-    public void connect() {
+    public synchronized void connect() {
         this.connected = true;
         this.disconnected = false;
         this.disconnectedAt = null;
@@ -77,7 +77,7 @@ public class ServerPlayerSession {
      * Mark this session as disconnected. Records the disconnection timestamp and
      * clears the message sender.
      */
-    public void disconnect() {
+    public synchronized void disconnect() {
         this.connected = false;
         if (!this.disconnected) {
             this.disconnected = true;
@@ -90,14 +90,14 @@ public class ServerPlayerSession {
      * Increment the consecutive timeout counter.
      */
     public void incrementConsecutiveTimeouts() {
-        this.consecutiveTimeouts++;
+        this.consecutiveTimeouts.incrementAndGet();
     }
 
     /**
      * Reset the consecutive timeout counter (called when player acts successfully).
      */
     public void resetConsecutiveTimeouts() {
-        this.consecutiveTimeouts = 0;
+        this.consecutiveTimeouts.set(0);
     }
 
     // === Getters ===
@@ -139,7 +139,7 @@ public class ServerPlayerSession {
     }
 
     public int getConsecutiveTimeouts() {
-        return consecutiveTimeouts;
+        return consecutiveTimeouts.get();
     }
 
     @Override
