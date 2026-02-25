@@ -539,6 +539,18 @@ public class GameInstance {
         }
     }
 
+    /**
+     * Returns the pending action options for the given player, or null if there is
+     * no pending action. Used by the inbound message router to resolve ALL_IN
+     * actions server-side.
+     */
+    public com.donohoedigital.games.poker.core.ActionOptions getPendingActionOptions(long profileId) {
+        if (actionProvider == null)
+            return null;
+        ActionRequest req = actionProvider.getPendingActionRequest(toIntId(profileId));
+        return req != null ? req.options() : null;
+    }
+
     // ====================================
     // Accessors
     // ====================================
@@ -584,6 +596,47 @@ public class GameInstance {
                     return GameStateProjection.forPlayer(table, hand, toIntId(profileId));
                 }
             }
+        }
+        return null;
+    }
+
+    /**
+     * Build a game state snapshot for an observer (spectator). Returns a view of
+     * the first active table with no hole cards. Returns null if the tournament
+     * hasn't started.
+     */
+    public GameStateSnapshot getObserverSnapshot() {
+        if (tournament == null)
+            return null;
+        for (int t = 0; t < tournament.getNumTables(); t++) {
+            ServerGameTable table = (ServerGameTable) tournament.getTable(t);
+            // Check if table has any seated players
+            boolean hasPlayers = false;
+            for (int s = 0; s < table.getSeats(); s++) {
+                if (table.getPlayer(s) != null) {
+                    hasPlayers = true;
+                    break;
+                }
+            }
+            if (hasPlayers) {
+                ServerHand hand = (ServerHand) table.getHoldemHand();
+                return GameStateProjection.forObserver(table, hand);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Build a game state snapshot for an observer at a specific table. Returns null
+     * if the tournament hasn't started or the table doesn't exist.
+     */
+    public GameStateSnapshot getObserverSnapshot(int tableId) {
+        if (tournament == null)
+            return null;
+        if (tableId > 0 && (tableId - 1) < tournament.getNumTables()) {
+            ServerGameTable table = (ServerGameTable) tournament.getTable(tableId - 1);
+            ServerHand hand = (ServerHand) table.getHoldemHand();
+            return GameStateProjection.forObserver(table, hand);
         }
         return null;
     }

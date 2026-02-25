@@ -288,15 +288,16 @@ class InboundMessageRouterTest {
     }
 
     @Test
-    void allIn_action_returnsInvalidAction() throws Exception {
-        // ALL_IN is not a valid client action; clients must use RAISE with the all-in
-        // amount
+    void allIn_action_resolvedServerSide() throws Exception {
+        // ALL_IN is resolved server-side to the appropriate action (BET/RAISE/CALL)
+        // based on pending action options. When no options are available, falls back
+        // to CALL.
         String json = "{\"type\":\"PLAYER_ACTION\",\"sequenceNumber\":1,\"data\":{\"action\":\"ALL_IN\",\"amount\":0}}";
 
         router.handleMessage(connection, json);
 
-        verify(session).sendMessage(argThat(msg -> isMessageWithType(msg, "ERROR")));
-        verify(gameInstance, never()).onPlayerAction(anyLong(), any(PlayerAction.class));
+        verify(gameInstance).onPlayerAction(eq(PLAYER_PROFILE_ID), any(PlayerAction.class));
+        verify(session, never()).sendMessage(argThat(msg -> isErrorMessage(msg)));
     }
 
     // ============================================================================================

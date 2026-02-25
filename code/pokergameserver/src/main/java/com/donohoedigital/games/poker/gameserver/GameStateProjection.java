@@ -283,6 +283,94 @@ public class GameStateProjection {
                 totalPlayers, playersRemaining, numTables, playerRank);
     }
 
+    /**
+     * Create a state snapshot for an observer (spectator). Includes all public
+     * information but NO hole cards for any player.
+     *
+     * @param table
+     *            the game table
+     * @param hand
+     *            the current hand (null if no hand in progress)
+     * @return the game state snapshot visible to an observer
+     */
+    public static GameStateSnapshot forObserver(ServerGameTable table, ServerHand hand) {
+        int tableId = table.getNumber();
+        int handNumber = table.getHandNum();
+
+        // Community cards (visible to all)
+        Card[] communityCards = null;
+        if (hand != null) {
+            communityCards = hand.getCommunityCards();
+        }
+
+        // Build player states — no hole cards for observers
+        List<GameStateSnapshot.PlayerState> playerStates = new ArrayList<>();
+        for (int seat = 0; seat < table.getSeats(); seat++) {
+            ServerPlayer player = table.getPlayer(seat);
+            if (player != null) {
+                int currentBet = (hand != null && !player.isSittingOut()) ? hand.getPlayerBet(player.getID()) : 0;
+                playerStates
+                        .add(new GameStateSnapshot.PlayerState(player.getID(), player.getName(), player.getChipCount(),
+                                seat, player.isFolded(), player.isAllIn(), null, currentBet, player.isSittingOut()));
+            }
+        }
+
+        // Build pot states
+        List<GameStateSnapshot.PotState> potStates = new ArrayList<>();
+        if (hand != null) {
+            List<ServerPot> pots = hand.getPots();
+            for (ServerPot pot : pots) {
+                List<Integer> eligiblePlayerIds = new ArrayList<>();
+                for (ServerPlayer eligible : pot.getEligiblePlayers()) {
+                    eligiblePlayerIds.add(eligible.getID());
+                }
+                potStates.add(new GameStateSnapshot.PotState(pot.getChips(), eligiblePlayerIds));
+            }
+            int pendingBets = hand.getPendingBetTotal();
+            if (pendingBets > 0) {
+                potStates.add(new GameStateSnapshot.PotState(pendingBets, List.of()));
+            }
+        }
+
+        // Table meta
+        int dealerSeat = table.getButton();
+        int smallBlindSeat = hand != null ? hand.getSmallBlindSeat() : -1;
+        int bigBlindSeat = hand != null ? hand.getBigBlindSeat() : -1;
+        int currentActorSeat = -1;
+        if (hand != null) {
+            GamePlayerInfo actor = hand.getCurrentPlayerWithInit();
+            if (actor != null) {
+                currentActorSeat = actor.getSeat();
+            }
+        }
+        String bettingRound = hand != null
+                ? (hand.isDone() ? BettingRound.SHOWDOWN.name() : hand.getRound().name())
+                : null;
+        TournamentContext tc = table.getTournament()instanceof TournamentContext t ? t : null;
+        int level = tc != null ? tc.getLevel() : 0;
+        int smallBlind = tc != null ? tc.getSmallBlind(level) : 0;
+        int bigBlind = tc != null ? tc.getBigBlind(level) : 0;
+        int ante = tc != null ? tc.getAnte(level) : 0;
+
+        // Tournament-wide stats
+        int totalPlayers = 0;
+        int playersRemaining = 0;
+        int numTables = 0;
+        if (tc instanceof ServerTournamentContext ctx) {
+            totalPlayers = ctx.getNumPlayers();
+            numTables = ctx.getNumTables();
+            for (ServerPlayer p : ctx.getAllPlayers()) {
+                if (p.getFinishPosition() == 0 && !p.isSittingOut()) {
+                    playersRemaining++;
+                }
+            }
+        }
+
+        return new GameStateSnapshot(tableId, handNumber, null, communityCards, playerStates, potStates, dealerSeat,
+                smallBlindSeat, bigBlindSeat, currentActorSeat, bettingRound, level, smallBlind, bigBlind, ante,
+                totalPlayers, playersRemaining, numTables, 0);
+    }
+
     private static ServerPlayer findPlayer(ServerGameTable table, int playerId) {
         for (int seat = 0; seat < table.getSeats(); seat++) {
             ServerPlayer player = table.getPlayer(seat);

@@ -49,6 +49,7 @@ import com.donohoedigital.games.poker.gameserver.dto.GameListResponse;
 import com.donohoedigital.games.poker.gameserver.dto.GameSettingsRequest;
 import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
 import com.donohoedigital.games.poker.gameserver.dto.KickRequest;
+import com.donohoedigital.games.poker.gameserver.service.AuthService;
 import com.donohoedigital.games.poker.gameserver.service.GameService;
 
 /**
@@ -64,9 +65,11 @@ import com.donohoedigital.games.poker.gameserver.service.GameService;
 public class GameController {
 
     private final GameService gameService;
+    private final AuthService authService;
 
-    public GameController(GameService gameService) {
+    public GameController(GameService gameService, AuthService authService) {
         this.gameService = gameService;
+        this.authService = authService;
     }
 
     // =========================================================================
@@ -142,6 +145,18 @@ public class GameController {
             @RequestBody(required = false) GameJoinRequest request) {
         String password = request != null ? request.password() : null;
         return ResponseEntity.ok(gameService.joinGame(id, password));
+    }
+
+    /**
+     * Observe gate: validates game is observable and returns the WebSocket URL with
+     * an observe-scoped token for spectating.
+     */
+    @PostMapping("/{id}/observe")
+    public ResponseEntity<GameJoinResponse> observeGame(@PathVariable("id") String id) {
+        AuthenticatedUser user = getAuthenticatedUser();
+        GameJoinResponse base = gameService.observeGame(id);
+        String observeToken = authService.generateObserveToken(user.profileId(), user.username(), id);
+        return ResponseEntity.ok(new GameJoinResponse(base.wsUrl(), base.gameId(), observeToken));
     }
 
     /** Community host keepalive. COMMUNITY games only; owner only. */

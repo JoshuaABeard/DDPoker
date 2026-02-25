@@ -1885,6 +1885,10 @@ public class ShowTournamentTable extends ShowPokerTable
                             muted.containsPlayer(p.getName(), p.getPlayerId()), TD(), false));
                     menu.add(new BanPlayer(context_, sStyle, PokerUtils.getPokerPlayer(context_, t),
                             banned.containsPlayer(p.getName(), p.getPlayerId()), null, TD(), false, false));
+                    // Kick option for WebSocket game owner
+                    if (game_.getWebSocketConfig() != null && game_.getHumanPlayer().isHost()) {
+                        menu.add(new KickPlayer(sStyle, t));
+                    }
                 }
 
                 if (bShowCheatItems) {
@@ -2456,6 +2460,22 @@ public class ShowTournamentTable extends ShowPokerTable
         public void actionPerformed(ActionEvent e) {
             player.setSittingOut(bSitout);
             TD().playerUpdate(player, player.getOnlineSettings());
+        }
+    }
+
+    /**
+     * kick menu item (WebSocket games, owner only)
+     */
+    private class KickPlayer extends TerritoryMenuItem implements ActionListener {
+        KickPlayer(String sStyle, Territory t) {
+            super(sStyle, t);
+            setText(PropertyConfig.getMessage("menuitem.kick"));
+            setIcon(removePlayerIcon_);
+            addActionListener(this);
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            TD().kickPlayer(player.getID());
         }
     }
 

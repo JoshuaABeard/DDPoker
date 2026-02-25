@@ -271,6 +271,23 @@ public class GameService {
         return new GameJoinResponse(entity.getWsUrl(), gameId);
     }
 
+    /**
+     * Observe gate: validates game is in progress and returns the WebSocket URL for
+     * spectating.
+     */
+    public GameJoinResponse observeGame(String gameId) {
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId)
+                .orElseThrow(() -> new GameServerException(ErrorCode.GAME_NOT_FOUND, "Game not found: " + gameId));
+
+        if (entity.getStatus() != GameInstanceState.IN_PROGRESS
+                && entity.getStatus() != GameInstanceState.WAITING_FOR_PLAYERS) {
+            throw new GameServerException(ErrorCode.GAME_NOT_OBSERVABLE,
+                    "Game is not observable (status: " + entity.getStatus() + ")");
+        }
+
+        return new GameJoinResponse(entity.getWsUrl(), gameId);
+    }
+
     // =========================================================================
     // Heartbeat
     // =========================================================================

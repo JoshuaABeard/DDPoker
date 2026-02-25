@@ -302,6 +302,7 @@ public class ServerTournamentDirector implements Runnable {
         if (result.nextState() != null) {
             TableState previousState = table.getTableState();
             table.setTableState(result.nextState());
+            eventBus.publish(new GameEvent.TableStateChanged(table.getNumber(), previousState, result.nextState()));
 
             // Publish break lifecycle events based on state transitions.
             if (result.nextState() == TableState.BREAK) {
@@ -393,6 +394,12 @@ public class ServerTournamentDirector implements Runnable {
                     if (bbPlayer != null) {
                         eventBus.publish(new GameEvent.PlayerActed(table.getNumber(), bbPlayer.getID(),
                                 ActionType.BLIND_BIG, hand.getActualBigBlindPosted()));
+                    }
+                    // Publish the first current player for this hand so clients know
+                    // whose turn it is before any ACTION_REQUIRED arrives.
+                    com.donohoedigital.games.poker.core.GamePlayerInfo firstPlayer = hand.getCurrentPlayerWithInit();
+                    if (firstPlayer != null) {
+                        eventBus.publish(new GameEvent.CurrentPlayerChanged(table.getNumber(), firstPlayer.getID()));
                     }
                 }
             } else if ("TD.ColorUp".equals(result.phaseToRun())) {
@@ -566,6 +573,7 @@ public class ServerTournamentDirector implements Runnable {
                 eventBus.publish(new GameEvent.PlayerEliminated(table.getNumber(), player.getID(), survivors + 1));
             }
         }
+        eventBus.publish(new GameEvent.CleaningDone(table.getNumber()));
     }
 
     /**

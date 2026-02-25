@@ -133,6 +133,9 @@ class StateHandler extends BaseHandler {
         t.put("ante",       profile0 != null ? profile0.getAnte(effectiveLevel)       : 0);
         t.put("totalPlayers", game.getNumPlayers());
         t.put("playersRemaining", game.getNumPlayers() - game.getNumPlayersOut());
+        t.put("prizePool", game.getPrizePool());
+        t.put("prizesPaid", game.getPrizesPaid());
+        t.put("isGameOver", game.isGameOver());
 
         // Hand number from the current table (0 = no hand yet dealt)
         PokerTable currentTable = game.getCurrentTable();
@@ -161,7 +164,11 @@ class StateHandler extends BaseHandler {
                 t.put("handsPerLevel", profile.getHandsPerLevel());
                 t.put("handsInLevel", game.getHandsInLevel());
             }
+
+            t.put("payoutTable", buildPayoutTable(game, profile));
         }
+
+        t.put("standings", buildTournamentStandings(game));
 
         // Chip leaderboard (top players across all tables)
         List<PokerTable> allTables = game.getTables();
@@ -244,6 +251,10 @@ class StateHandler extends BaseHandler {
         p.put("seat", player.getSeat());
         p.put("name", player.getName());
         p.put("chips", player.getChipCount());
+        p.put("place", player.getPlace());
+        p.put("prize", player.getPrize());
+        p.put("totalSpent", player.getTotalSpent());
+        p.put("netResult", player.getPrize() - player.getTotalSpent());
         p.put("isHuman", player.isHuman());
         p.put("isEliminated", player.isEliminated());
         p.put("isFolded", player.isFolded());
@@ -287,6 +298,65 @@ class StateHandler extends BaseHandler {
             }
         }
         return p;
+    }
+
+    private List<Map<String, Object>> buildPayoutTable(PokerGame game, TournamentProfile profile) {
+        List<Map<String, Object>> payouts = new ArrayList<>();
+        int totalPlayers = Math.max(0, game.getNumPlayers());
+        for (int place = 1; place <= totalPlayers; place++) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("place", place);
+            row.put("payout", profile.getPayout(place));
+            payouts.add(row);
+        }
+        return payouts;
+    }
+
+    private List<Map<String, Object>> buildTournamentStandings(PokerGame game) {
+        List<Map<String, Object>> standings = new ArrayList<>();
+        int totalPlayers = Math.max(0, game.getNumPlayers());
+
+        for (int i = 0; i < totalPlayers; i++) {
+            PokerPlayer player = game.getPokerPlayerAt(i);
+            if (player == null) {
+                continue;
+            }
+
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("name", player.getName());
+            row.put("isHuman", player.isHuman());
+            row.put("chips", player.getChipCount());
+            row.put("place", player.getPlace());
+            row.put("prize", player.getPrize());
+            row.put("totalSpent", player.getTotalSpent());
+            row.put("netResult", player.getPrize() - player.getTotalSpent());
+            row.put("isEliminated", player.isEliminated());
+            row.put("isObserver", player.isObserver());
+            row.put("tableId", player.getTable() != null ? player.getTable().getNumber() : -1);
+
+            try {
+                row.put("rank", game.getRank(player));
+            } catch (Exception e) {
+                row.put("rank", 0);
+            }
+
+            standings.add(row);
+        }
+
+        standings.sort(Comparator
+                .comparingInt((Map<String, Object> row) -> {
+                    Object placeObj = row.get("place");
+                    int place = placeObj instanceof Number n ? n.intValue() : 0;
+                    return place > 0 ? place : Integer.MAX_VALUE;
+                })
+                .thenComparing((Map<String, Object> row) -> {
+                    Object chipsObj = row.get("chips");
+                    int chips = chipsObj instanceof Number n ? n.intValue() : 0;
+                    return -chips;
+                })
+                .thenComparing(row -> String.valueOf(row.getOrDefault("name", ""))));
+
+        return standings;
     }
 
     private Map<String, Object> buildCurrentAction(PokerGame game, GameContext context, int inputMode) {

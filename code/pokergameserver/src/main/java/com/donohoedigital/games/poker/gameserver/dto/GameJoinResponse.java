@@ -20,7 +20,12 @@
 package com.donohoedigital.games.poker.gameserver.dto;
 
 /**
- * Returned after a successful join. Contains the WebSocket URL to connect to.
+ * Returned after a successful join or observe. Contains the WebSocket URL to
+ * connect to and an optional scoped token.
  */
-public record GameJoinResponse(String wsUrl, String gameId) {
+public record GameJoinResponse(String wsUrl, String gameId, String token) {
+    /** Constructor for join responses (no extra token needed). */
+    public GameJoinResponse(String wsUrl, String gameId) {
+        this(wsUrl, gameId, null);
+    }
 }

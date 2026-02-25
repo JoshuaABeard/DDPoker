@@ -40,6 +40,7 @@ import com.donohoedigital.games.poker.gameserver.GameServerException.ErrorCode;
 import com.donohoedigital.games.poker.gameserver.dto.GameJoinResponse;
 import com.donohoedigital.games.poker.gameserver.dto.GameListResponse;
 import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
+import com.donohoedigital.games.poker.gameserver.service.AuthService;
 import com.donohoedigital.games.poker.gameserver.service.GameService;
 
 @WebMvcTest
@@ -51,6 +52,9 @@ class GameControllerTest {
 
     @MockitoBean
     private GameService gameService;
+
+    @MockitoBean
+    private AuthService authService;
 
     // =========================================================================
     // POST /api/v1/games — createGame

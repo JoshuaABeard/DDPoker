@@ -476,13 +476,13 @@ class ServerTournamentDirectorTest {
 
     /**
      * LevelChanged must be published whenever the tournament advances to the next
-     * blind level. Uses HANDS-based level advancement (every 2 hands) with a
-     * multi-hand game.
+     * blind level. Uses HANDS-based level advancement (every 1 hand) to guarantee
+     * level advancement even in short games under CI load.
      */
     @Test
     void levelChangedEventPublishedOnLevelAdvance() throws Exception {
         List<ServerPlayer> players = createPlayers(4, 500);
-        ServerTournamentContext tournament = createTournament(players, 1);
+        ServerTournamentContext tournament = createTournament(players, 1, 1);
         InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-level");
         ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
         PlayerActionProvider aiProvider = createSimpleAI(99);
@@ -1040,9 +1040,13 @@ class ServerTournamentDirectorTest {
     }
 
     private ServerTournamentContext createTournament(List<ServerPlayer> players, int numTables) {
+        return createTournament(players, numTables, 2);
+    }
+
+    private ServerTournamentContext createTournament(List<ServerPlayer> players, int numTables, int handsPerLevel) {
         // Aggressive blinds with hands-based level advancement for fast test completion
         // Starting M of ~3.3 (500 chips / (50+100) blinds) forces quick action
-        // Levels advance every 2 hands with 6 tiers for rapid escalation
+        // Levels advance with 6 tiers for rapid escalation
         return new ServerTournamentContext(players, numTables, 500, // starting chips (aggressive)
                 new int[]{50, 100, 200, 400, 800, 1600}, // small blinds (rapid progression)
                 new int[]{100, 200, 400, 800, 1600, 3200}, // big blinds (rapid progression)
@@ -1055,8 +1059,7 @@ class ServerTournamentDirectorTest {
                 false, // allow addons
                 0 // timeout seconds
                 , LevelAdvanceMode.HANDS, // hands-based advancement
-                2 // 2 hands per level
-        );
+                handsPerLevel);
     }
 
     private PlayerActionProvider createSimpleAI(long seed) {

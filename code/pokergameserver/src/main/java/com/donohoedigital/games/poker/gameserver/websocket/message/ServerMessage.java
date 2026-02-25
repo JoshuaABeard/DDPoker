@@ -33,8 +33,18 @@ import java.time.Instant;
  *            When the message was created
  * @param data
  *            Type-specific message payload
+ * @param sequenceNumber
+ *            Monotonic per-game sequence number for gap detection (null for
+ *            connection-setup messages like CONNECTED)
  */
-public record ServerMessage(ServerMessageType type, String gameId, Instant timestamp, Object data) {
+public record ServerMessage(ServerMessageType type, String gameId, Instant timestamp, Object data,
+        Long sequenceNumber) {
+
+    /** Backward-compatible constructor (no sequence number). */
+    public ServerMessage(ServerMessageType type, String gameId, Instant timestamp, Object data) {
+        this(type, gameId, timestamp, data, null);
+    }
+
     /**
      * Factory method to create a server message with current timestamp.
      *
@@ -48,5 +58,12 @@ public record ServerMessage(ServerMessageType type, String gameId, Instant times
      */
     public static ServerMessage of(ServerMessageType type, String gameId, Object data) {
         return new ServerMessage(type, gameId, Instant.now(), data);
+    }
+
+    /**
+     * Returns a copy of this message with the given sequence number stamped.
+     */
+    public ServerMessage withSequence(long seq) {
+        return new ServerMessage(type, gameId, timestamp, data, seq);
     }
 }

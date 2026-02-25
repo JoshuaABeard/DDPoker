@@ -42,6 +42,7 @@ public class PlayerConnection {
     private final String username;
     private final String gameId;
     private final ObjectMapper objectMapper;
+    private final boolean observer;
 
     private volatile long lastActionTimestamp = 0;
     private volatile long lastSequenceNumber = 0;
@@ -62,11 +63,17 @@ public class PlayerConnection {
      */
     public PlayerConnection(WebSocketSession session, long profileId, String username, String gameId,
             ObjectMapper objectMapper) {
+        this(session, profileId, username, gameId, objectMapper, false);
+    }
+
+    public PlayerConnection(WebSocketSession session, long profileId, String username, String gameId,
+            ObjectMapper objectMapper, boolean observer) {
         this.session = session;
         this.profileId = profileId;
         this.username = username;
         this.gameId = gameId;
         this.objectMapper = objectMapper;
+        this.observer = observer;
     }
 
     /**
@@ -183,5 +190,13 @@ public class PlayerConnection {
      */
     public WebSocketSession getSession() {
         return session;
+    }
+
+    /**
+     * Returns true if this connection is an observer (spectator), not an active
+     * player.
+     */
+    public boolean isObserver() {
+        return observer;
     }
 }

@@ -141,6 +141,77 @@ class GameControlServerTest {
         assertThat(resp.statusCode()).isEqualTo(405);
     }
 
+    @Test
+    void uiDashboardWidgets_noGame_returnsSchemaWithWidgets() throws Exception {
+        HttpResponse<String> resp = get("/ui/dashboard/widgets", apiKey);
+        assertThat(resp.statusCode()).isEqualTo(200);
+
+        JsonNode body = json(resp);
+        assertThat(body.path("present").asBoolean()).isFalse();
+        assertThat(body.path("source").path("sourceRound").asText()).isEqualTo("NONE");
+        assertThat(body.path("source").path("sourceStateSeq").asLong()).isGreaterThanOrEqualTo(0L);
+
+        JsonNode widgets = body.path("widgets");
+        assertThat(widgets.isObject()).isTrue();
+        assertThat(widgets.path("clock").path("present").asBoolean()).isFalse();
+        assertThat(widgets.path("advisor").path("data").path("isHumanTurn").asBoolean()).isFalse();
+    }
+
+    @Test
+    void uiDashboardWidgets_postMethod_returns405() throws Exception {
+        HttpResponse<String> resp = post("/ui/dashboard/widgets", apiKey, "{}");
+        assertThat(resp.statusCode()).isEqualTo(405);
+    }
+
+    @Test
+    void uiDashboardWidgets_noStateChange_keepsSequenceStable() throws Exception {
+        HttpResponse<String> firstResp = get("/ui/dashboard/widgets", apiKey);
+        HttpResponse<String> secondResp = get("/ui/dashboard/widgets", apiKey);
+
+        assertThat(firstResp.statusCode()).isEqualTo(200);
+        assertThat(secondResp.statusCode()).isEqualTo(200);
+
+        JsonNode first = json(firstResp);
+        JsonNode second = json(secondResp);
+        assertThat(second.path("source").path("sourceStateSeq").asLong())
+                .isEqualTo(first.path("source").path("sourceStateSeq").asLong());
+    }
+
+    @Test
+    void uiDialogs_noGame_returnsEmptyDialogSnapshot() throws Exception {
+        HttpResponse<String> resp = get("/ui/dialogs", apiKey);
+        assertThat(resp.statusCode()).isEqualTo(200);
+
+        JsonNode body = json(resp);
+        assertThat(body.path("dialogCount").asInt()).isEqualTo(0);
+        assertThat(body.path("dialogs").isArray()).isTrue();
+        assertThat(body.path("dialogs")).isEmpty();
+        assertThat(body.path("currentUIPhaseName").asText()).isEqualTo("NONE");
+    }
+
+    @Test
+    void uiDialogs_postMissingBody_returns400() throws Exception {
+        HttpResponse<String> resp = post("/ui/dialogs", apiKey, "");
+        assertThat(resp.statusCode()).isEqualTo(400);
+        assertThat(json(resp).path("error").asText()).isEqualTo("BadRequest");
+    }
+
+    @Test
+    void uiDialogs_unknownAction_returns400() throws Exception {
+        HttpResponse<String> resp = post("/ui/dialogs", apiKey, "{\"action\":\"BOOP\"}");
+        assertThat(resp.statusCode()).isEqualTo(400);
+        assertThat(json(resp).path("error").asText()).isEqualTo("BadRequest");
+    }
+
+    @Test
+    void uiDialogs_knownActionWithoutGame_returns409Conflict() throws Exception {
+        HttpResponse<String> resp = post("/ui/dialogs", apiKey, "{\"action\":\"CLOSE\"}");
+        assertThat(resp.statusCode()).isEqualTo(409);
+        JsonNode body = json(resp);
+        assertThat(body.path("error").asText()).isEqualTo("Conflict");
+        assertThat(body.path("action").asText()).isEqualTo("CLOSE");
+    }
+
     // -------------------------------------------------------------------------
     // Action endpoint
     // -------------------------------------------------------------------------

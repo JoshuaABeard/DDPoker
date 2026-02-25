@@ -780,7 +780,7 @@ class WebSocketTournamentDirectorTest {
         dispatch(ServerMessageType.GAME_COMPLETE, gameComplete);
 
         // Must call applyPlayerResult with CLIENT id 0, not server id 42.
-        Mockito.verify(mockGame).applyPlayerResult(0, 1);
+        Mockito.verify(mockGame, Mockito.times(1)).applyPlayerResult(0, 1);
     }
 
     // -------------------------------------------------------------------------
@@ -872,8 +872,8 @@ class WebSocketTournamentDirectorTest {
     }
 
     @Test
-    void playerUpdateIsNoOp() {
-        wsTD.playerUpdate(null, null); // no-op in M4
+    void playerUpdateNullPlayerIsNoOp() {
+        wsTD.playerUpdate(null, null); // null player is safe
     }
 
     @Test
@@ -1209,12 +1209,13 @@ class WebSocketTournamentDirectorTest {
     }
 
     // -------------------------------------------------------------------------
-    // resolveActionAmount — all-in button sends correct amount (fix)
+    // resolveActionAmount — ALL_IN sends 0 (server resolves), others pass through
     // -------------------------------------------------------------------------
 
     @Test
-    void resolveActionAmountAllInUsesAllInAmountFromOptions() throws Exception {
-        // Simulate server sending ACTION_REQUIRED with allInAmount=1500.
+    void resolveActionAmountAllInReturnsZero() throws Exception {
+        // ALL_IN amount is always 0 because the server resolves it from pending
+        // options.
         dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
         dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
         ObjectNode options = mapper.createObjectNode();
@@ -1226,9 +1227,8 @@ class WebSocketTournamentDirectorTest {
         payload.set("options", options);
         dispatch(ServerMessageType.ACTION_REQUIRED, payload);
 
-        // uiAmount=100 (spinner default/min), but ACTION_ALL_IN must use
-        // allInAmount=1500.
-        assertThat(wsTD.resolveActionAmount(PokerGame.ACTION_ALL_IN, 100)).isEqualTo(1500);
+        // Server resolves ALL_IN amount, client sends 0.
+        assertThat(wsTD.resolveActionAmount(PokerGame.ACTION_ALL_IN, 100)).isEqualTo(0);
     }
 
     @Test
@@ -1252,75 +1252,19 @@ class WebSocketTournamentDirectorTest {
     }
 
     @Test
-    void resolveActionAmountAllInWithNoOptionsUsesUiAmount() {
-        // currentOptions_ is null (no ACTION_REQUIRED received yet) — must not throw,
-        // must fall back to the uiAmount so the action is still submitted.
-        assertThat(wsTD.resolveActionAmount(PokerGame.ACTION_ALL_IN, 500)).isEqualTo(500);
+    void resolveActionAmountAllInWithNoOptionsReturnsZero() {
+        // currentOptions_ is null — ALL_IN always returns 0 regardless.
+        assertThat(wsTD.resolveActionAmount(PokerGame.ACTION_ALL_IN, 500)).isEqualTo(0);
     }
 
     // -------------------------------------------------------------------------
-    // allInWsAction — all-in sends BET (not RAISE) when no existing bet (fix)
+    // allInWsAction — always sends "ALL_IN" (server resolves to BET/RAISE/CALL)
     // -------------------------------------------------------------------------
 
     @Test
-    void allInWsActionIsBetWhenCanRaiseFalse() throws Exception {
-        // canRaise=false, canBet=true: no existing bet (check-bet mode).
-        // The server will fold the player if it receives RAISE with canRaise=false,
-        // so the client must send BET instead.
-        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
-        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
-        ObjectNode options = mapper.createObjectNode();
-        options.put("canFold", true).put("canCheck", true).put("canCall", false).put("callAmount", 0)
-                .put("canBet", true).put("minBet", 100).put("maxBet", 1500).put("canRaise", false).put("minRaise", 0)
-                .put("maxRaise", 0).put("canAllIn", true).put("allInAmount", 1500);
-        ObjectNode payload = mapper.createObjectNode();
-        payload.put("timeoutSeconds", 30);
-        payload.set("options", options);
-        dispatch(ServerMessageType.ACTION_REQUIRED, payload);
-
-        assertThat(wsTD.allInWsActionForTest()).isEqualTo("BET");
-    }
-
-    @Test
-    void allInWsActionIsRaiseWhenCanRaiseTrue() throws Exception {
-        // canRaise=true: there is an existing bet to raise against.
-        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
-        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
-        ObjectNode options = mapper.createObjectNode();
-        options.put("canFold", true).put("canCheck", false).put("canCall", true).put("callAmount", 50)
-                .put("canBet", false).put("minBet", 0).put("maxBet", 0).put("canRaise", true).put("minRaise", 100)
-                .put("maxRaise", 1500).put("canAllIn", true).put("allInAmount", 1500);
-        ObjectNode payload = mapper.createObjectNode();
-        payload.put("timeoutSeconds", 30);
-        payload.set("options", options);
-        dispatch(ServerMessageType.ACTION_REQUIRED, payload);
-
-        assertThat(wsTD.allInWsActionForTest()).isEqualTo("RAISE");
-    }
-
-    @Test
-    void allInWsActionIsRaiseWhenNoOptions() {
-        // currentOptions_ is null — default to RAISE (safe fallback).
-        assertThat(wsTD.allInWsActionForTest()).isEqualTo("RAISE");
-    }
-
-    @Test
-    void allInWsActionIsCallWhenShortStacked() throws Exception {
-        // Short-stacked: chipCount <= amountToCall → canAllIn=false, canRaise=false,
-        // canBet=false, canCall=true. All-in must send CALL so the server processes
-        // the short-stack call instead of folding the player.
-        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
-        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
-        ObjectNode options = mapper.createObjectNode();
-        options.put("canFold", true).put("canCheck", false).put("canCall", true).put("callAmount", 500)
-                .put("canBet", false).put("minBet", 0).put("maxBet", 0).put("canRaise", false).put("minRaise", 0)
-                .put("maxRaise", 0).put("canAllIn", false).put("allInAmount", 0);
-        ObjectNode payload = mapper.createObjectNode();
-        payload.put("timeoutSeconds", 30);
-        payload.set("options", options);
-        dispatch(ServerMessageType.ACTION_REQUIRED, payload);
-
-        assertThat(wsTD.allInWsActionForTest()).isEqualTo("CALL");
+    void allInWsActionAlwaysSendsAllIn() {
+        // ALL_IN is now sent directly to the server which resolves it.
+        assertThat(wsTD.allInWsActionForTest()).isEqualTo("ALL_IN");
     }
 
     // -------------------------------------------------------------------------
@@ -1329,7 +1273,8 @@ class WebSocketTournamentDirectorTest {
 
     /** Dispatches a message and drains the Swing EDT. */
     private void dispatch(ServerMessageType type, ObjectNode data) throws Exception {
-        WebSocketGameClient.InboundMessage msg = new WebSocketGameClient.InboundMessage(type, "test-game-id", data);
+        WebSocketGameClient.InboundMessage msg = new WebSocketGameClient.InboundMessage(type, "test-game-id", data,
+                null);
         wsTD.onMessage(msg);
         drainEdt();
     }

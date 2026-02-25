@@ -131,7 +131,10 @@ class ValidateHandler extends BaseHandler {
         int expectedTables = (int) Math.ceil((double) profilePlayerCount / PokerConstants.SEATS);
         boolean isMultiTable = (tables == null ? 0 : tables.size()) < expectedTables && expectedTables > 1;
 
-        int expectedTotal = buyinPerPlayer * profilePlayerCount;
+        int expectedTotal = game.getTotalChipsInPlay();
+        if (expectedTotal <= 0) {
+            expectedTotal = buyinPerPlayer * profilePlayerCount;
+        }
         int grandTotal = grandTotalChips + grandTotalInPot;
 
         // Skip chip conservation check for multi-table — not all chips are visible.

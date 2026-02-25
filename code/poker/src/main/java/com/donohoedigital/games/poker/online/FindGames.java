@@ -37,6 +37,7 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
+import com.donohoedigital.games.poker.gameserver.dto.GameJoinResponse;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.model.util.*;
 import com.donohoedigital.games.poker.server.*;
@@ -165,6 +166,106 @@ public class FindGames extends ListGames {
             obs_.setEnabled(true);
         } else {
             super.checkButtons();
+        }
+    }
+
+    /**
+     * Handle join (start_) and observe (obs_) button clicks.
+     */
+    @Override
+    public boolean processButton(GameButton button) {
+        if (selected_ == null || restClient_ == null) {
+            return true;
+        }
+
+        if (start_ != null && button.getName().equals(start_.getName())) {
+            String gameId = extractGameId(selected_.getUrl());
+            if (gameId == null) {
+                return true;
+            }
+
+            start_.setEnabled(false);
+            obs_.setEnabled(false);
+
+            Thread t = new Thread(() -> {
+                try {
+                    GameJoinResponse response = restClient_.joinGame(gameId, null);
+                    SwingUtilities.invokeLater(() -> {
+                        PokerGame game = (PokerGame) context_.getGame();
+                        int port = extractPort(response.wsUrl());
+                        game.setWebSocketConfig(response.gameId(),
+                                ((PokerMain) engine_).getEmbeddedServer().getLocalUserJwt(), port);
+                        context_.processPhase("Lobby");
+                    });
+                } catch (Exception ex) {
+                    logger.error("Failed to join game: {}", ex.getMessage());
+                    SwingUtilities.invokeLater(() -> {
+                        start_.setEnabled(true);
+                        obs_.setEnabled(true);
+                        EngineUtils.displayInformationDialog(context_,
+                                PropertyConfig.getMessage("msg.lobby.joinfail", ex.getMessage()));
+                    });
+                }
+            }, "FindGames-Join");
+            t.setDaemon(true);
+            t.start();
+            return false;
+        }
+
+        if (obs_ != null && button.getName().equals(obs_.getName())) {
+            String gameId = extractGameId(selected_.getUrl());
+            if (gameId == null) {
+                return true;
+            }
+
+            start_.setEnabled(false);
+            obs_.setEnabled(false);
+
+            Thread t = new Thread(() -> {
+                try {
+                    GameJoinResponse response = restClient_.observeGame(gameId);
+                    SwingUtilities.invokeLater(() -> {
+                        PokerGame game = (PokerGame) context_.getGame();
+                        int port = extractPort(response.wsUrl());
+                        // Use the observe-scoped token from the server response
+                        String jwt = response.token() != null
+                                ? response.token()
+                                : ((PokerMain) engine_).getEmbeddedServer().getLocalUserJwt();
+                        game.setWebSocketConfig(response.gameId(), jwt, port, true);
+                        context_.processPhase("Lobby");
+                    });
+                } catch (Exception ex) {
+                    logger.error("Failed to observe game: {}", ex.getMessage());
+                    SwingUtilities.invokeLater(() -> {
+                        start_.setEnabled(true);
+                        obs_.setEnabled(true);
+                        EngineUtils.displayInformationDialog(context_,
+                                PropertyConfig.getMessage("msg.lobby.observefail", ex.getMessage()));
+                    });
+                }
+            }, "FindGames-Observe");
+            t.setDaemon(true);
+            t.start();
+            return false;
+        }
+
+        return true;
+    }
+
+    private static String extractGameId(String wsUrl) {
+        if (wsUrl == null) {
+            return null;
+        }
+        int lastSlash = wsUrl.lastIndexOf('/');
+        return lastSlash >= 0 ? wsUrl.substring(lastSlash + 1) : null;
+    }
+
+    private static int extractPort(String wsUrl) {
+        try {
+            java.net.URI uri = java.net.URI.create(wsUrl);
+            return uri.getPort();
+        } catch (Exception e) {
+            return 54321;
         }
     }
 

@@ -68,6 +68,20 @@ public interface PokerDirector extends GameManager, ChatManager {
     void playerUpdate(PokerPlayer player, String settings);
 
     /**
+     * Kicks a player from the game (owner only).
+     *
+     * <p>
+     * In {@link WebSocketTournamentDirector}, sends an {@code ADMIN_KICK} message
+     * to the server. No-op by default.
+     *
+     * @param playerId
+     *            the server-assigned player ID to kick
+     */
+    default void kickPlayer(long playerId) {
+        // No-op by default; implemented in WebSocketTournamentDirector.
+    }
+
+    /**
      * Submits a player's hand action (fold, call, raise, etc.) to the director.
      *
      * <p>

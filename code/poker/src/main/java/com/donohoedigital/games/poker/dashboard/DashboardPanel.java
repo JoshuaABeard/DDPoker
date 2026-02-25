@@ -197,4 +197,12 @@ public class DashboardPanel extends DDPanel {
             item.finish();
         }
     }
+
+    public DashboardManager getDashboardManager() {
+        return mgr_;
+    }
+
+    public void refreshFromManager() {
+        sync();
+    }
 }

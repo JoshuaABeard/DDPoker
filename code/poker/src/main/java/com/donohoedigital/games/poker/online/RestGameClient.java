@@ -22,6 +22,7 @@ package com.donohoedigital.games.poker.online;
 import com.donohoedigital.games.poker.gameserver.GameConfig;
 import com.donohoedigital.games.poker.gameserver.dto.CommunityGameRegisterRequest;
 import com.donohoedigital.games.poker.gameserver.dto.CreateGameResponse;
+import com.donohoedigital.games.poker.gameserver.dto.GameJoinResponse;
 import com.donohoedigital.games.poker.gameserver.dto.GameListResponse;
 import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -154,6 +155,68 @@ public class RestGameClient {
             throw e;
         } catch (Exception e) {
             throw new RestGameClientException("Failed to start game " + gameId, e);
+        }
+    }
+
+    /**
+     * Join a game that is waiting for players. Returns a response with the
+     * WebSocket URL to connect to.
+     *
+     * @param gameId
+     *            the game to join
+     * @param password
+     *            password for private games, or null
+     * @return the join response with wsUrl and gameId
+     * @throws RestGameClientException
+     *             if the join fails
+     */
+    public GameJoinResponse joinGame(String gameId, String password) {
+        try {
+            String body = password != null ? "{\"password\":\"" + password + "\"}" : "{}";
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/v1/games/" + gameId + "/join"))
+                    .header("Content-Type", "application/json").header("Authorization", "Bearer " + jwt)
+                    .POST(HttpRequest.BodyPublishers.ofString(body)).build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new RestGameClientException(
+                        "joinGame returned " + response.statusCode() + ": " + response.body());
+            }
+            return OBJECT_MAPPER.readValue(response.body(), GameJoinResponse.class);
+        } catch (RestGameClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RestGameClientException("Failed to join game " + gameId, e);
+        }
+    }
+
+    /**
+     * Observe a game (spectate). Returns the WebSocket URL for read-only viewing.
+     *
+     * @param gameId
+     *            the game to observe
+     * @return the join response with wsUrl and gameId
+     * @throws RestGameClientException
+     *             if the game cannot be observed
+     */
+    public GameJoinResponse observeGame(String gameId) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/v1/games/" + gameId + "/observe"))
+                    .header("Content-Type", "application/json").header("Authorization", "Bearer " + jwt)
+                    .POST(HttpRequest.BodyPublishers.noBody()).build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new RestGameClientException(
+                        "observeGame returned " + response.statusCode() + ": " + response.body());
+            }
+            return OBJECT_MAPPER.readValue(response.body(), GameJoinResponse.class);
+        } catch (RestGameClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RestGameClientException("Failed to observe game " + gameId, e);
         }
     }
 

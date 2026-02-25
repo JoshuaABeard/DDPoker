@@ -65,6 +65,9 @@ public class AuthService {
     /** Reconnect token: 24 hours TTL. */
     static final long RECONNECT_TOKEN_TTL_MS = 24L * 60 * 60 * 1000;
 
+    /** Observe token: 4 hours TTL. */
+    static final long OBSERVE_TOKEN_TTL_MS = 4L * 60 * 60 * 1000;
+
     /** WS token rate limit: max 5 requests per user per minute. */
     static final int WS_TOKEN_RATE_LIMIT = 5;
     static final long WS_TOKEN_RATE_WINDOW_MS = 60_000L;
@@ -316,6 +319,21 @@ public class AuthService {
      */
     public String generateReconnectToken(Long profileId, String username, String gameId) {
         return tokenProvider.generateScopedToken(username, profileId, "reconnect", gameId, RECONNECT_TOKEN_TTL_MS);
+    }
+
+    /**
+     * Generate a game-scoped observe token for spectating a game.
+     *
+     * @param profileId
+     *            the observer's profile ID
+     * @param username
+     *            the observer's username
+     * @param gameId
+     *            the game to observe
+     * @return an {@code observe}-scoped JWT
+     */
+    public String generateObserveToken(Long profileId, String username, String gameId) {
+        return tokenProvider.generateScopedToken(username, profileId, "observe", gameId, OBSERVE_TOKEN_TTL_MS);
     }
 
     /**

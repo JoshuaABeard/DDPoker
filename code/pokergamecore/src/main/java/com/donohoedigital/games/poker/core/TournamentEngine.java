@@ -262,6 +262,7 @@ public class TournamentEngine {
         if (isHost) {
             // Deal cards to assign button
             table.setButton();
+            eventBus.publish(new GameEvent.ButtonMoved(table.getNumber(), table.getButton()));
 
             // Note: Multi-table coordination (doDealForButtonAllComputers) stays in
             // TournamentDirector
@@ -583,6 +584,16 @@ public class TournamentEngine {
         // Emit event for UI/logging
         eventBus.publish(
                 new GameEvent.PlayerActed(table.getNumber(), player.getID(), action.actionType(), action.amount()));
+
+        // Notify clients who the next active player is (after the hand advances).
+        // Only publish when a valid next player exists (index >= 0). When the round
+        // or hand is done, currentPlayerInitIndex is NO_CURRENT_PLAYER (-1).
+        if (hand.getCurrentPlayerInitIndex() >= 0) {
+            GamePlayerInfo nextPlayer = hand.getCurrentPlayerWithInit();
+            if (nextPlayer != null) {
+                eventBus.publish(new GameEvent.CurrentPlayerChanged(table.getNumber(), nextPlayer.getID()));
+            }
+        }
     }
 
     private TableState getNextBettingState(GameHand hand) {

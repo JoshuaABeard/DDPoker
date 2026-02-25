@@ -20,14 +20,18 @@
 package com.donohoedigital.games.poker.control;
 
 import com.donohoedigital.games.engine.GameContext;
+import com.donohoedigital.games.engine.DialogPhase;
 import com.donohoedigital.games.engine.GameManager;
+import com.donohoedigital.games.engine.Phase;
 import com.donohoedigital.games.poker.PokerMain;
 import com.donohoedigital.games.poker.online.PokerDirector;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpExchange;
 
 import javax.swing.*;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * {@code POST /control} — game flow control commands.
@@ -80,13 +84,15 @@ class ControlHandler extends BaseHandler {
         switch (action) {
             case "PAUSE" -> handlePause(exchange, true);
             case "RESUME" -> handlePause(exchange, false);
+            case "CLOSE_TOURNAMENT_OVER", "CLOSE_GAME_OVER" -> handleCloseTournamentOver(exchange, action);
             case "PHASE" -> {
                 String phase = json.has("phase") ? json.get("phase").asText("") : "";
                 handlePhase(exchange, phase);
             }
             default -> sendJson(exchange, 400, Map.of(
                     "error", "BadRequest",
-                    "message", "Unknown action: " + action + ". Valid values: PAUSE, RESUME, PHASE"));
+                    "message", "Unknown action: " + action
+                            + ". Valid values: PAUSE, RESUME, PHASE, CLOSE_TOURNAMENT_OVER"));
         }
     }
 
@@ -112,6 +118,61 @@ class ControlHandler extends BaseHandler {
             }
         });
         sendJson(exchange, 200, Map.of("accepted", true, "action", "PHASE", "phase", phase));
+    }
+
+    private void handleCloseTournamentOver(HttpExchange exchange, String action) throws Exception {
+        AtomicReference<Map<String, Object>> resultRef = new AtomicReference<>(Map.of());
+        SwingUtilities.invokeAndWait(() -> resultRef.set(closeTournamentOverOnEdt(action)));
+        Map<String, Object> result = resultRef.get();
+        boolean accepted = Boolean.TRUE.equals(result.get("accepted"));
+        sendJson(exchange, accepted ? 200 : 409, result);
+    }
+
+    private Map<String, Object> closeTournamentOverOnEdt(String action) {
+        PokerMain main = PokerMain.getPokerMain();
+        if (main == null || main.getDefaultContext() == null) {
+            return Map.of(
+                    "accepted", false,
+                    "action", action,
+                    "error", "Conflict",
+                    "message", "Game context is not initialized");
+        }
+
+        GameContext context = main.getDefaultContext();
+        Phase uiPhase = context.getCurrentUIPhase();
+        String uiPhaseClass = uiPhase != null ? uiPhase.getClass().getSimpleName() : "NONE";
+        String uiPhaseName = uiPhase != null && uiPhase.getGamePhase() != null
+                ? uiPhase.getGamePhase().getName()
+                : "NONE";
+
+        boolean looksGameOver = containsIgnoreCase(uiPhaseClass, "gameover")
+                || containsIgnoreCase(uiPhaseName, "gameover");
+        if (!looksGameOver) {
+            return Map.of(
+                    "accepted", false,
+                    "action", action,
+                    "error", "Conflict",
+                    "message", "Current UI phase is not a tournament-over dialog",
+                    "uiPhaseClass", uiPhaseClass,
+                    "uiPhaseName", uiPhaseName);
+        }
+
+        if (uiPhase instanceof DialogPhase dialogPhase) {
+            dialogPhase.removeDialog();
+        }
+        context.processPhase("StartMenu");
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("accepted", true);
+        out.put("action", action);
+        out.put("closedPhaseClass", uiPhaseClass);
+        out.put("closedPhaseName", uiPhaseName);
+        out.put("nextPhase", "StartMenu");
+        return out;
+    }
+
+    private static boolean containsIgnoreCase(String value, String token) {
+        return value != null && token != null && value.toLowerCase().contains(token.toLowerCase());
     }
 
     private PokerDirector getDirector() {

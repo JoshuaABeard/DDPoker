@@ -78,6 +78,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *   <li>{@code GET  /ui/state}         — Swing/UI observability snapshot</li>
  *   <li>{@code GET/POST /ui/dashboard} — dashboard layout snapshot and customization controls</li>
  *   <li>{@code GET  /ui/dashboard/widgets} — semantic widget snapshot with timing metadata</li>
+ *   <li>{@code GET/POST /ui/dialogs} — active dialog snapshot and generic dialog interactions</li>
  *   <li>{@code GET  /system-info}      — version, config paths, runtime info</li>
  *   <li>{@code POST /game/save}        — save current game</li>
  *   <li>{@code POST /game/load}        — load a saved game</li>
@@ -191,6 +192,7 @@ public class GameControlServer {
         server.createContext("/ui/state",         new UiStateHandler(apiKey));
         server.createContext("/ui/dashboard",     new UiDashboardHandler(apiKey));
         server.createContext("/ui/dashboard/widgets", new UiDashboardWidgetsHandler(apiKey));
+        server.createContext("/ui/dialogs",       new UiDialogsHandler(apiKey));
         server.createContext("/system-info",      new SystemInfoHandler(apiKey));
         server.createContext("/game/save",        new SaveLoadHandler(apiKey, "save"));
         server.createContext("/game/load",        new SaveLoadHandler(apiKey, "load"));
