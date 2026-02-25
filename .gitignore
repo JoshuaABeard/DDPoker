@@ -43,6 +43,9 @@ test-*.js
 # Module-specific data directories
 code/pokerserver/data/
 
+# Git worktrees
+.worktrees/
+
 # IDE
 .vscode/
 .idea/
