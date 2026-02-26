@@ -14,10 +14,14 @@ import type {
   ActionOptionsData,
   ActionRequiredData,
   AddonOfferedData,
+  AiHoleCardsData,
+  ButtonMovedData,
   ChatMessageData,
+  ChipsTransferredData,
   CommunityCardsDealtData,
   ConnectedData,
   ConnectionState,
+  CurrentPlayerChangedData,
   GameCancelledData,
   GameCompleteData,
   GamePausedData,
@@ -34,14 +38,20 @@ import type {
   LobbyPlayerLeftData,
   LobbySettingsChangedData,
   LobbyStateData,
+  NeverBrokeOfferedData,
+  ObserverJoinedData,
+  ObserverLeftData,
   PlayerActedData,
   PlayerAddonData,
+  PlayerCameBackData,
   PlayerDisconnectedData,
   PlayerEliminatedData,
   PlayerJoinedData,
   PlayerKickedData,
   PlayerLeftData,
+  PlayerMovedData,
   PlayerRebuyData,
+  PlayerSatOutData,
   PotAwardedData,
   RebuyOfferedData,
   ServerMessage,
@@ -52,6 +62,22 @@ import type {
 
 /** Maximum chat messages to keep (FIFO — oldest dropped on overflow). */
 const MAX_CHAT_MESSAGES = 200
+
+/** Maximum hand history entries to keep (FIFO). */
+const MAX_HAND_HISTORY = 200
+
+export interface HandHistoryEntry {
+  id: string
+  handNumber: number
+  type: 'action' | 'deal' | 'community' | 'result' | 'hand_start'
+  playerName?: string
+  action?: string
+  amount?: number
+  round?: string
+  cards?: string[]
+  winners?: { playerName: string; amount: number; hand: string }[]
+  timestamp: number
+}
 
 export interface ChatEntry {
   id: string
@@ -99,6 +125,29 @@ export interface GameState {
   /** Set when the current player is eliminated; position shown in overlay */
   eliminatedPosition: number | null
   error: string | null
+
+  // Tournament stats (from GAME_STATE)
+  totalPlayers: number
+  playersRemaining: number
+  numTables: number
+  playerRank: number
+
+  // Hand history
+  handHistory: HandHistoryEntry[]
+
+  // Observers
+  observers: { observerId: number; observerName: string }[]
+
+  // Color-up
+  colorUpInProgress: boolean
+
+  // Overlay prompts
+  neverBrokeOffer: { timeoutSeconds: number } | null
+  continueRunoutPending: boolean
+
+  // Sequence tracking
+  lastSequenceNumber: number | null
+  sequenceGapDetected: boolean
 }
 
 export const initialGameState: GameState = {
@@ -120,6 +169,17 @@ export const initialGameState: GameState = {
   addonOffer: null,
   eliminatedPosition: null,
   error: null,
+  totalPlayers: 0,
+  playersRemaining: 0,
+  numTables: 0,
+  playerRank: 0,
+  handHistory: [],
+  observers: [],
+  colorUpInProgress: false,
+  neverBrokeOffer: null,
+  continueRunoutPending: false,
+  lastSequenceNumber: null,
+  sequenceGapDetected: false,
 }
 
 // ---------------------------------------------------------------------------
@@ -131,6 +191,9 @@ export type ReducerAction =
   | { type: 'SERVER_MESSAGE'; message: ServerMessage }
   | { type: 'CHAT_OPTIMISTIC'; entry: ChatEntry }
   | { type: 'CLEAR_OFFERS' }
+  | { type: 'CLEAR_NEVER_BROKE' }
+  | { type: 'CLEAR_CONTINUE_RUNOUT' }
+  | { type: 'ACTION_SENT' }
   | { type: 'RESET' }
 
 // ---------------------------------------------------------------------------
@@ -149,6 +212,15 @@ export function gameReducer(state: GameState, action: ReducerAction): GameState 
 
     case 'CLEAR_OFFERS':
       return { ...state, rebuyOffer: null, addonOffer: null }
+
+    case 'CLEAR_NEVER_BROKE':
+      return { ...state, neverBrokeOffer: null }
+
+    case 'CLEAR_CONTINUE_RUNOUT':
+      return { ...state, continueRunoutPending: false }
+
+    case 'ACTION_SENT':
+      return { ...state, actionRequired: null }
 
     case 'RESET':
       return { ...initialGameState }
@@ -172,117 +244,192 @@ function handleServerMessage(state: GameState, message: ServerMessage): GameStat
     return state
   }
 
+  // Sequence gap detection
+  const seq = message.sequenceNumber
+  let sequenceGapDetected = state.sequenceGapDetected
+  if (seq != null && state.lastSequenceNumber != null && seq > state.lastSequenceNumber + 1) {
+    console.warn(`[gameReducer] Sequence gap detected: expected ${state.lastSequenceNumber + 1}, got ${seq}`)
+    sequenceGapDetected = true
+  } else if (seq != null) {
+    sequenceGapDetected = false
+  }
+
+  const seqState = { lastSequenceNumber: seq ?? state.lastSequenceNumber, sequenceGapDetected }
+
   try {
     switch (message.type) {
       // Connection lifecycle
       case 'CONNECTED':
-        return handleConnected(state, message.gameId, message.data as ConnectedData)
+        return { ...handleConnected(state, message.gameId, message.data as ConnectedData), ...seqState }
 
       case 'ERROR':
-        return { ...state, error: (message.data as { code: string; message: string }).message }
+        return { ...state, error: (message.data as { code: string; message: string }).message, ...seqState }
 
       // Lobby messages
       case 'LOBBY_STATE':
-        return handleLobbyState(state, message.data as LobbyStateData)
+        return { ...handleLobbyState(state, message.data as LobbyStateData), ...seqState }
 
       case 'LOBBY_PLAYER_JOINED':
-        return handleLobbyPlayerJoined(state, (message.data as LobbyPlayerJoinedData).player)
+        return { ...handleLobbyPlayerJoined(state, (message.data as LobbyPlayerJoinedData).player), ...seqState }
 
       case 'LOBBY_PLAYER_LEFT':
-        return handleLobbyPlayerLeft(state, (message.data as LobbyPlayerLeftData).player)
+        return { ...handleLobbyPlayerLeft(state, (message.data as LobbyPlayerLeftData).player), ...seqState }
 
       case 'LOBBY_PLAYER_KICKED':
-        return handleLobbyPlayerLeft(state, (message.data as LobbyPlayerKickedData).player)
+        return { ...handleLobbyPlayerLeft(state, (message.data as LobbyPlayerKickedData).player), ...seqState }
 
       case 'LOBBY_SETTINGS_CHANGED':
-        return handleLobbySettingsChanged(state, message.data as LobbySettingsChangedData)
+        return { ...handleLobbySettingsChanged(state, message.data as LobbySettingsChangedData), ...seqState }
 
       case 'LOBBY_GAME_STARTING':
-        return handleLobbyGameStarting(state, message.data as LobbyGameStartingData)
+        return { ...handleLobbyGameStarting(state, message.data as LobbyGameStartingData), ...seqState }
 
       case 'GAME_CANCELLED':
-        return handleGameCancelled(state, message.data as GameCancelledData)
+        return { ...handleGameCancelled(state, message.data as GameCancelledData), ...seqState }
 
       // Game state
       case 'GAME_STATE':
-        return handleGameState(state, message.data as GameStateData)
+        return { ...handleGameState(state, message.data as GameStateData), ...seqState }
 
       case 'HAND_STARTED':
-        return handleHandStarted(state, message.data as HandStartedData)
+        return { ...handleHandStarted(state, message.data as HandStartedData), ...seqState }
 
       case 'HOLE_CARDS_DEALT':
-        return handleHoleCardsDealt(state, message.data as HoleCardsDealtData)
+        return { ...handleHoleCardsDealt(state, message.data as HoleCardsDealtData), ...seqState }
 
       case 'COMMUNITY_CARDS_DEALT':
-        return handleCommunityCardsDealt(state, message.data as CommunityCardsDealtData)
+        return { ...handleCommunityCardsDealt(state, message.data as CommunityCardsDealtData), ...seqState }
 
       case 'ACTION_REQUIRED':
-        return handleActionRequired(state, message.data as ActionRequiredData)
+        return { ...handleActionRequired(state, message.data as ActionRequiredData), ...seqState }
 
       case 'PLAYER_ACTED':
-        return handlePlayerActed(state, message.data as PlayerActedData)
+        return { ...handlePlayerActed(state, message.data as PlayerActedData), ...seqState }
 
       case 'ACTION_TIMEOUT':
-        return handleActionTimeout(state)
+        return { ...handleActionTimeout(state), ...seqState }
 
       case 'HAND_COMPLETE':
-        return handleHandComplete(state, message.data as HandCompleteData)
+        return { ...handleHandComplete(state, message.data as HandCompleteData), ...seqState }
 
       case 'LEVEL_CHANGED':
-        return handleLevelChanged(state, message.data as LevelChangedData)
+        return { ...handleLevelChanged(state, message.data as LevelChangedData), ...seqState }
 
       case 'PLAYER_ELIMINATED':
-        return handlePlayerEliminated(state, message.data as PlayerEliminatedData)
+        return { ...handlePlayerEliminated(state, message.data as PlayerEliminatedData), ...seqState }
 
       case 'REBUY_OFFERED':
-        return { ...state, rebuyOffer: message.data as RebuyOfferedData }
+        return { ...state, rebuyOffer: message.data as RebuyOfferedData, ...seqState }
 
       case 'ADDON_OFFERED':
-        return { ...state, addonOffer: message.data as AddonOfferedData }
+        return { ...state, addonOffer: message.data as AddonOfferedData, ...seqState }
 
       case 'GAME_COMPLETE':
-        return handleGameComplete(state, message.data as GameCompleteData)
+        return { ...handleGameComplete(state, message.data as GameCompleteData), ...seqState }
 
       // Player events
       case 'PLAYER_JOINED':
-        return handlePlayerJoined(state, message.data as PlayerJoinedData)
+        return { ...handlePlayerJoined(state, message.data as PlayerJoinedData), ...seqState }
 
       case 'PLAYER_LEFT':
-        return handlePlayerLeft(state, message.data as PlayerLeftData)
+        return { ...handlePlayerLeft(state, message.data as PlayerLeftData), ...seqState }
 
       case 'PLAYER_DISCONNECTED':
-        return handlePlayerDisconnected(state, message.data as PlayerDisconnectedData)
+        return { ...handlePlayerDisconnected(state, message.data as PlayerDisconnectedData), ...seqState }
 
       case 'PLAYER_KICKED':
-        return handlePlayerKicked(state, message.data as PlayerKickedData)
+        return { ...handlePlayerKicked(state, message.data as PlayerKickedData), ...seqState }
 
-      case 'PLAYER_REBUY':
-        return handlePlayerChipChange(state, (message.data as PlayerRebuyData).playerId,
-          (message.data as PlayerRebuyData).addedChips, true)
+      case 'PLAYER_REBUY': {
+        const d = message.data as PlayerRebuyData
+        return { ...handlePlayerChipChange(state, d.playerId, d.addedChips, d.chipCount), ...seqState }
+      }
 
-      case 'PLAYER_ADDON':
-        return handlePlayerChipChange(state, (message.data as PlayerAddonData).playerId,
-          (message.data as PlayerAddonData).addedChips, true)
+      case 'PLAYER_ADDON': {
+        const d = message.data as PlayerAddonData
+        return { ...handlePlayerChipChange(state, d.playerId, d.addedChips, d.chipCount), ...seqState }
+      }
 
       case 'POT_AWARDED':
-        return handlePotAwarded(state, message.data as PotAwardedData)
+        return { ...handlePotAwarded(state, message.data as PotAwardedData), ...seqState }
 
       case 'SHOWDOWN_STARTED':
-        return state // Visual effect only — no state change
+        return { ...state, ...seqState } // Visual effect only — no state change
 
       // Admin events
       case 'GAME_PAUSED':
-        return handleGamePaused(state, message.data as GamePausedData)
+        return { ...handleGamePaused(state, message.data as GamePausedData), ...seqState }
 
       case 'GAME_RESUMED':
-        return handleGameResumed(state, message.data as GameResumedData)
+        return { ...handleGameResumed(state, message.data as GameResumedData), ...seqState }
 
       // Chat
       case 'CHAT_MESSAGE':
-        return handleChatMessage(state, message.data as ChatMessageData)
+        return { ...handleChatMessage(state, message.data as ChatMessageData), ...seqState }
 
       case 'TIMER_UPDATE':
-        return handleTimerUpdate(state, message.data as TimerUpdateData)
+        return { ...handleTimerUpdate(state, message.data as TimerUpdateData), ...seqState }
+
+      // New message types (Phase 2)
+      case 'CHIPS_TRANSFERRED':
+        return { ...handleChipsTransferred(state, message.data as ChipsTransferredData), ...seqState }
+
+      case 'COLOR_UP_STARTED':
+        return { ...state, colorUpInProgress: true, ...seqState }
+
+      case 'COLOR_UP_COMPLETED':
+        return { ...state, colorUpInProgress: false, ...seqState }
+
+      case 'AI_HOLE_CARDS':
+        return { ...handleAiHoleCards(state, message.data as AiHoleCardsData), ...seqState }
+
+      case 'NEVER_BROKE_OFFERED': {
+        const d = message.data as NeverBrokeOfferedData
+        return { ...state, neverBrokeOffer: { timeoutSeconds: d.timeoutSeconds }, ...seqState }
+      }
+
+      case 'CONTINUE_RUNOUT':
+        return { ...state, continueRunoutPending: true, ...seqState }
+
+      case 'PLAYER_SAT_OUT':
+        return { ...handlePlayerSatOut(state, message.data as PlayerSatOutData), ...seqState }
+
+      case 'PLAYER_CAME_BACK':
+        return { ...handlePlayerCameBack(state, message.data as PlayerCameBackData), ...seqState }
+
+      case 'OBSERVER_JOINED': {
+        const d = message.data as ObserverJoinedData
+        return {
+          ...state,
+          observers: [...state.observers, { observerId: d.observerId, observerName: d.observerName }],
+          ...seqState,
+        }
+      }
+
+      case 'OBSERVER_LEFT': {
+        const d = message.data as ObserverLeftData
+        return {
+          ...state,
+          observers: state.observers.filter((o) => o.observerId !== d.observerId),
+          ...seqState,
+        }
+      }
+
+      case 'BUTTON_MOVED':
+        return { ...handleButtonMoved(state, message.data as ButtonMovedData), ...seqState }
+
+      case 'CURRENT_PLAYER_CHANGED':
+        return { ...handleCurrentPlayerChanged(state, message.data as CurrentPlayerChangedData), ...seqState }
+
+      case 'TABLE_STATE_CHANGED':
+        // Informational only — no UI state change needed
+        return { ...state, ...seqState }
+
+      case 'CLEANING_DONE':
+        return { ...handleCleaningDone(state), ...seqState }
+
+      case 'PLAYER_MOVED':
+        return { ...handlePlayerMoved(state, message.data as PlayerMovedData), ...seqState }
 
       default:
         console.warn('[gameReducer] Unknown server message type:', message.type)
@@ -383,6 +530,11 @@ function handleGameState(state: GameState, data: GameStateData): GameState {
     actionRequired: null,
     actionTimeoutSeconds: null,
     actionTimer: null,
+    // Tournament stats
+    totalPlayers: data.totalPlayers,
+    playersRemaining: data.playersRemaining,
+    numTables: data.numTables,
+    playerRank: data.playerRank,
   }
 }
 
@@ -400,13 +552,19 @@ function handleHandStarted(state: GameState, data: HandStartedData): GameState {
           // Reset per-hand state
           holeCards: [],
           currentBet: 0,
-          status: seat.status === 'FOLDED' ? 'ACTIVE' : seat.status,
+          status: seat.status === 'FOLDED' || seat.status === 'ALL_IN' ? 'ACTIVE' : seat.status,
           isCurrentActor: false,
         })),
         communityCards: [],
         pots: [],
       }
     : state.currentTable
+  const handStartEntry: HandHistoryEntry = {
+    id: `${data.handNumber}-hand_start-${Date.now()}`,
+    handNumber: data.handNumber,
+    type: 'hand_start',
+    timestamp: Date.now(),
+  }
   return {
     ...state,
     holeCards: [],
@@ -416,6 +574,7 @@ function handleHandStarted(state: GameState, data: HandStartedData): GameState {
     rebuyOffer: null,
     addonOffer: null,
     currentTable: updatedTable,
+    handHistory: [...state.handHistory, handStartEntry].slice(-MAX_HAND_HISTORY),
   }
 }
 
@@ -425,6 +584,14 @@ function handleHoleCardsDealt(state: GameState, data: HoleCardsDealtData): GameS
 
 function handleCommunityCardsDealt(state: GameState, data: CommunityCardsDealtData): GameState {
   if (!state.currentTable) return state
+  const communityEntry: HandHistoryEntry = {
+    id: `${state.currentTable.handNumber}-community-${data.round}-${Date.now()}`,
+    handNumber: state.currentTable.handNumber,
+    type: 'community',
+    round: data.round,
+    cards: data.cards,
+    timestamp: Date.now(),
+  }
   return {
     ...state,
     currentTable: {
@@ -432,6 +599,7 @@ function handleCommunityCardsDealt(state: GameState, data: CommunityCardsDealtDa
       communityCards: data.allCommunityCards,
       currentRound: data.round,
     },
+    handHistory: [...state.handHistory, communityEntry].slice(-MAX_HAND_HISTORY),
   }
 }
 
@@ -469,20 +637,58 @@ function handlePlayerActed(state: GameState, data: PlayerActedData): GameState {
       actionTimer: null,
     }
   }
-  return newState
+  const actionEntry: HandHistoryEntry = {
+    id: `${newState.currentTable?.handNumber ?? 0}-${data.playerName}-${Date.now()}`,
+    handNumber: newState.currentTable?.handNumber ?? 0,
+    type: 'action',
+    playerName: data.playerName,
+    action: data.action,
+    amount: data.amount,
+    timestamp: Date.now(),
+  }
+  return {
+    ...newState,
+    handHistory: [...newState.handHistory, actionEntry].slice(-MAX_HAND_HISTORY),
+  }
 }
 
 function handleActionTimeout(state: GameState): GameState {
   return { ...state, actionRequired: null, actionTimeoutSeconds: null, actionTimer: null }
 }
 
-function handleHandComplete(state: GameState, _data: HandCompleteData): GameState {
+function handleHandComplete(state: GameState, data: HandCompleteData): GameState {
+  // Update winner chip counts in the table
+  let updatedTable = state.currentTable
+  if (updatedTable && data.winners.length > 0) {
+    updatedTable = {
+      ...updatedTable,
+      seats: updatedTable.seats.map((seat) => {
+        const winner = data.winners.find((w) => w.playerId === seat.playerId)
+        if (winner && winner.chipCount != null) {
+          return { ...seat, chipCount: winner.chipCount }
+        }
+        return seat
+      }),
+    }
+  }
+  const resultEntry: HandHistoryEntry = {
+    id: `${data.handNumber}-result-${Date.now()}`,
+    handNumber: data.handNumber,
+    type: 'result',
+    winners: data.winners.map((w) => {
+      const seat = state.currentTable?.seats.find((s) => s.playerId === w.playerId)
+      return { playerName: seat?.playerName ?? String(w.playerId), amount: w.amount, hand: w.hand }
+    }),
+    timestamp: Date.now(),
+  }
   return {
     ...state,
+    currentTable: updatedTable,
     actionRequired: null,
     actionTimeoutSeconds: null,
     actionTimer: null,
     holeCards: [],
+    handHistory: [...state.handHistory, resultEntry].slice(-MAX_HAND_HISTORY),
   }
 }
 
@@ -560,14 +766,22 @@ function handlePlayerKicked(state: GameState, data: PlayerKickedData): GameState
   if (data.playerId === state.myPlayerId) {
     return { ...state, error: 'You were removed from the game', gamePhase: 'lobby' }
   }
-  return state
+  // Remove the kicked player's seat from the table
+  if (!state.currentTable) return state
+  return {
+    ...state,
+    currentTable: {
+      ...state.currentTable,
+      seats: state.currentTable.seats.filter((s) => s.playerId !== data.playerId),
+    },
+  }
 }
 
 function handlePlayerChipChange(
   state: GameState,
   playerId: number,
   addedChips: number,
-  add: boolean,
+  absoluteChipCount: number | null,
 ): GameState {
   if (!state.currentTable) return state
   return {
@@ -576,7 +790,7 @@ function handlePlayerChipChange(
       ...state.currentTable,
       seats: state.currentTable.seats.map((seat) =>
         seat.playerId === playerId
-          ? { ...seat, chipCount: add ? seat.chipCount + addedChips : addedChips }
+          ? { ...seat, chipCount: absoluteChipCount != null ? absoluteChipCount : seat.chipCount + addedChips }
           : seat,
       ),
     },
@@ -606,6 +820,15 @@ function handleChatMessage(state: GameState, data: ChatMessageData): GameState {
     message: data.message,
     tableChat: data.tableChat,
   }
+  // Deduplicate: if there is an optimistic entry with the same playerId + message, replace it
+  const optimisticIndex = state.chatMessages.findIndex(
+    (m) => m.optimistic && m.playerId === data.playerId && m.message === data.message,
+  )
+  if (optimisticIndex !== -1) {
+    const updated = [...state.chatMessages]
+    updated[optimisticIndex] = entry
+    return { ...state, chatMessages: updated }
+  }
   return { ...state, chatMessages: appendChat(state.chatMessages, entry) }
 }
 
@@ -613,6 +836,119 @@ function handleTimerUpdate(state: GameState, data: TimerUpdateData): GameState {
   return {
     ...state,
     actionTimer: { playerId: data.playerId, secondsRemaining: data.secondsRemaining },
+  }
+}
+
+// ---------------------------------------------------------------------------
+// New message type handlers (Phase 2)
+// ---------------------------------------------------------------------------
+
+function handleChipsTransferred(state: GameState, data: ChipsTransferredData): GameState {
+  if (!state.currentTable) return state
+  return {
+    ...state,
+    currentTable: {
+      ...state.currentTable,
+      seats: state.currentTable.seats.map((s) => {
+        if (s.playerId === data.fromPlayerId && data.fromChipCount != null) return { ...s, chipCount: data.fromChipCount }
+        if (s.playerId === data.toPlayerId && data.toChipCount != null) return { ...s, chipCount: data.toChipCount }
+        return s
+      }),
+    },
+  }
+}
+
+function handleAiHoleCards(state: GameState, data: AiHoleCardsData): GameState {
+  if (!state.currentTable) return state
+  return {
+    ...state,
+    currentTable: {
+      ...state.currentTable,
+      seats: state.currentTable.seats.map((s) => {
+        const aiCards = data.players.find((p) => p.playerId === s.playerId)
+        return aiCards ? { ...s, holeCards: aiCards.cards } : s
+      }),
+    },
+  }
+}
+
+function handlePlayerSatOut(state: GameState, data: PlayerSatOutData): GameState {
+  if (!state.currentTable) return state
+  return {
+    ...state,
+    currentTable: {
+      ...state.currentTable,
+      seats: state.currentTable.seats.map((s) =>
+        s.playerId === data.playerId ? { ...s, status: 'SAT_OUT' } : s,
+      ),
+    },
+  }
+}
+
+function handlePlayerCameBack(state: GameState, data: PlayerCameBackData): GameState {
+  if (!state.currentTable) return state
+  return {
+    ...state,
+    currentTable: {
+      ...state.currentTable,
+      seats: state.currentTable.seats.map((s) =>
+        s.playerId === data.playerId ? { ...s, status: 'ACTIVE' } : s,
+      ),
+    },
+  }
+}
+
+function handleButtonMoved(state: GameState, data: ButtonMovedData): GameState {
+  if (!state.currentTable) return state
+  return {
+    ...state,
+    currentTable: {
+      ...state.currentTable,
+      seats: state.currentTable.seats.map((s) => ({ ...s, isDealer: s.seatIndex === data.newSeat })),
+    },
+  }
+}
+
+function handleCurrentPlayerChanged(state: GameState, data: CurrentPlayerChangedData): GameState {
+  if (!state.currentTable) return state
+  return {
+    ...state,
+    currentTable: {
+      ...state.currentTable,
+      seats: state.currentTable.seats.map((s) => ({ ...s, isCurrentActor: s.playerId === data.playerId })),
+    },
+  }
+}
+
+function handleCleaningDone(state: GameState): GameState {
+  if (!state.currentTable) return state
+  return {
+    ...state,
+    currentTable: {
+      ...state.currentTable,
+      communityCards: [],
+      pots: [],
+      seats: state.currentTable.seats.map((s) => ({
+        ...s,
+        currentBet: 0,
+        holeCards: [],
+        isCurrentActor: false,
+      })),
+    },
+  }
+}
+
+function handlePlayerMoved(state: GameState, data: PlayerMovedData): GameState {
+  if (!state.currentTable) return state
+  // If moved player is us, server will send a new GAME_STATE — just wait
+  if (data.playerId === state.myPlayerId) return state
+  // Remove moved player from our table
+  return {
+    ...state,
+    currentTable: {
+      ...state.currentTable,
+      seats: state.currentTable.seats.filter((s) => s.playerId !== data.playerId),
+    },
   }
 }
 
