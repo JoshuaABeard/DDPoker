@@ -58,24 +58,22 @@ export function HandHistory({ entries }: HandHistoryProps) {
         <span>{open ? '▾' : '▸'}</span>
       </button>
 
-      {open && (
-        <div
-          id="hand-history-log"
-          className="overflow-y-auto max-h-60 px-2 pb-2 space-y-0.5"
-          role="log"
-          aria-label="Hand history"
-        >
-          {entries.length === 0 ? (
-            <p className="text-gray-500 text-xs text-center py-2">No history yet</p>
-          ) : (
-            entries.map((entry) => (
-              <div key={entry.id} className="text-xs text-gray-300">
-                {renderEntry(entry)}
-              </div>
-            ))
-          )}
-        </div>
-      )}
+      <div
+        id="hand-history-log"
+        className={`overflow-y-auto max-h-60 px-2 pb-2 space-y-0.5${open ? '' : ' hidden'}`}
+        role="log"
+        aria-label="Hand history"
+      >
+        {entries.length === 0 ? (
+          <p className="text-gray-500 text-xs text-center py-2">No history yet</p>
+        ) : (
+          entries.map((entry) => (
+            <div key={entry.id} className="text-xs text-gray-300">
+              {renderEntry(entry)}
+            </div>
+          ))
+        )}
+      </div>
     </div>
   )
 }
