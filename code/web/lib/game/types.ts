@@ -56,6 +56,21 @@ export type ServerMessageType =
   | 'LOBBY_GAME_STARTING'
   | 'LOBBY_PLAYER_KICKED'
   | 'GAME_CANCELLED'
+  | 'CHIPS_TRANSFERRED'
+  | 'COLOR_UP_STARTED'
+  | 'AI_HOLE_CARDS'
+  | 'NEVER_BROKE_OFFERED'
+  | 'CONTINUE_RUNOUT'
+  | 'PLAYER_SAT_OUT'
+  | 'PLAYER_CAME_BACK'
+  | 'OBSERVER_JOINED'
+  | 'OBSERVER_LEFT'
+  | 'COLOR_UP_COMPLETED'
+  | 'BUTTON_MOVED'
+  | 'CURRENT_PLAYER_CHANGED'
+  | 'TABLE_STATE_CHANGED'
+  | 'CLEANING_DONE'
+  | 'PLAYER_MOVED'
 
 // ============================================================================
 // Client message types
@@ -71,6 +86,9 @@ export type ClientMessageType =
   | 'ADMIN_KICK'
   | 'ADMIN_PAUSE'
   | 'ADMIN_RESUME'
+  | 'NEVER_BROKE_DECISION'
+  | 'CONTINUE_RUNOUT'
+  | 'REQUEST_STATE'
 
 // ============================================================================
 // Server message wrapper
@@ -80,6 +98,8 @@ export interface ServerMessage<T = unknown> {
   type: ServerMessageType
   gameId: string
   sequenceNumber: number
+  /** ISO-8601 from Java Instant */
+  timestamp: string
   data: T
 }
 
@@ -97,25 +117,28 @@ export interface ClientMessage<T = unknown> {
 // Shared sub-types
 // ============================================================================
 
+/** WebSocket protocol blinds (small/big). Do NOT change field names. */
 export interface BlindsData {
   small: number
   big: number
   ante: number
 }
 
+/** REST DTO blinds (GameSummary.BlindsSummary). Uses smallBlind/bigBlind. */
 export interface BlindsSummary {
-  small: number
-  big: number
+  smallBlind: number
+  bigBlind: number
   ante: number
-  levels?: BlindLevelConfig[]
 }
 
+/** Matches server's GameConfig.BlindLevel */
 export interface BlindLevelConfig {
-  level: number
-  small: number
-  big: number
+  smallBlind: number
+  bigBlind: number
   ante: number
-  durationMinutes: number
+  minutes: number
+  isBreak: boolean
+  gameType: string
 }
 
 export interface SeatData {
@@ -178,6 +201,7 @@ export interface WinnerData {
   hand: string
   cards: string[]
   potIndex: number
+  chipCount: number | null
 }
 
 export interface ShowdownPlayerData {
@@ -224,6 +248,10 @@ export interface GameStateData {
   nextLevelIn: number | null
   tables: TableData[]
   players: PlayerSummaryData[]
+  totalPlayers: number
+  playersRemaining: number
+  numTables: number
+  playerRank: number
 }
 
 export interface HandStartedData {
@@ -242,6 +270,7 @@ export interface CommunityCardsDealtData {
   round: string
   cards: string[]
   allCommunityCards: string[]
+  tableId: number
 }
 
 export interface ActionRequiredData {
@@ -257,17 +286,20 @@ export interface PlayerActedData {
   totalBet: number
   chipCount: number
   potTotal: number
+  tableId: number
 }
 
 export interface ActionTimeoutData {
   playerId: number
   autoAction: string
+  tableId: number
 }
 
 export interface HandCompleteData {
   handNumber: number
   winners: WinnerData[]
   showdownPlayers: ShowdownPlayerData[]
+  tableId: number
 }
 
 export interface LevelChangedData {
@@ -283,6 +315,8 @@ export interface PlayerEliminatedData {
   playerName: string
   finishPosition: number
   handsPlayed: number
+  tableId: number
+  isHuman: boolean
 }
 
 export interface RebuyOfferedData {
@@ -307,6 +341,8 @@ export interface PlayerJoinedData {
   playerId: number
   playerName: string
   seatIndex: number
+  tableId: number
+  isReconnect: boolean
 }
 
 export interface PlayerLeftData {
@@ -323,6 +359,7 @@ export interface PotAwardedData {
   winnerIds: number[]
   amount: number
   potIndex: number
+  tableId: number
 }
 
 export interface ShowdownStartedData {
@@ -334,17 +371,21 @@ export interface PlayerRebuyData {
   playerId: number
   playerName: string
   addedChips: number
+  chipCount: number | null
 }
 
 export interface PlayerAddonData {
   playerId: number
   playerName: string
   addedChips: number
+  chipCount: number | null
 }
 
 export interface GamePausedData {
   reason: string
   pausedBy: string
+  isBreak: boolean
+  breakDurationMinutes: number | null
 }
 
 export interface GameResumedData {
@@ -379,11 +420,10 @@ export interface LobbyStateData {
   name: string
   hostingType: string
   ownerName: string
-  ownerProfileId: number
   maxPlayers: number
   isPrivate: boolean
   players: LobbyPlayerData[]
-  blinds: BlindsSummary
+  blinds: BlindsData
 }
 
 export interface LobbyPlayerJoinedData {
@@ -411,6 +451,103 @@ export interface GameCancelledData {
 }
 
 // ============================================================================
+// New server message data payloads (for new message types)
+// ============================================================================
+
+export interface ChipsTransferredData {
+  fromPlayerId: number
+  fromPlayerName: string
+  toPlayerId: number
+  toPlayerName: string
+  amount: number
+  fromChipCount: number | null
+  toChipCount: number | null
+}
+
+export interface ColorUpPlayerData {
+  playerId: number
+  cards: string[]
+  won: boolean
+  broke: boolean
+  finalChips: number
+}
+
+export interface ColorUpStartedData {
+  players: ColorUpPlayerData[]
+  newMinChip: number
+  tableId: number
+}
+
+export interface AiPlayerCards {
+  playerId: number
+  cards: string[]
+}
+
+export interface AiHoleCardsData {
+  players: AiPlayerCards[]
+}
+
+export interface NeverBrokeOfferedData {
+  timeoutSeconds: number
+}
+
+export type ContinueRunoutData = Record<string, never>
+
+export interface PlayerSatOutData {
+  playerId: number
+  playerName: string
+}
+
+export interface PlayerCameBackData {
+  playerId: number
+  playerName: string
+}
+
+export interface ObserverJoinedData {
+  observerId: number
+  observerName: string
+  tableId: number
+}
+
+export interface ObserverLeftData {
+  observerId: number
+  observerName: string
+  tableId: number
+}
+
+export interface ColorUpCompletedData {
+  tableId: number
+}
+
+export interface ButtonMovedData {
+  tableId: number
+  newSeat: number
+}
+
+export interface CurrentPlayerChangedData {
+  tableId: number
+  playerId: number
+  playerName: string
+}
+
+export interface TableStateChangedData {
+  tableId: number
+  oldState: string
+  newState: string
+}
+
+export interface CleaningDoneData {
+  tableId: number
+}
+
+export interface PlayerMovedData {
+  playerId: number
+  playerName: string
+  fromTableId: number
+  toTableId: number
+}
+
+// ============================================================================
 // Client message data payloads (matching ClientMessageData.java records)
 // ============================================================================
 
@@ -424,6 +561,10 @@ export interface RebuyDecisionData {
 }
 
 export interface AddonDecisionData {
+  accept: boolean
+}
+
+export interface NeverBrokeDecisionData {
   accept: boolean
 }
 
@@ -443,37 +584,143 @@ export interface AdminKickData {
 export interface GameSummaryDto {
   gameId: string
   name: string
-  status: 'WAITING_FOR_PLAYERS' | 'IN_PROGRESS' | 'PAUSED' | 'COMPLETED' | 'CANCELLED'
   hostingType: 'SERVER' | 'COMMUNITY'
+  status: 'WAITING_FOR_PLAYERS' | 'IN_PROGRESS' | 'PAUSED' | 'COMPLETED' | 'CANCELLED'
   ownerName: string
-  ownerProfileId: number
   playerCount: number
   maxPlayers: number
   isPrivate: boolean
-  buyIn: number
-  startingChips: number
-  blinds: BlindsSummary
   wsUrl: string | null
+  blinds: BlindsSummary
+  createdAt: string | null
+  startedAt: string | null
+  players: LobbyPlayerData[]
+}
+
+export interface RebuyConfigDto {
+  enabled: boolean
+  cost: number
+  chips: number
+  chipCount?: number
+  maxRebuys: number
+  lastLevel?: number
+  expressionType?: string
+}
+
+export interface AddonConfigDto {
+  enabled: boolean
+  cost: number
+  chips: number
+  level?: number
+}
+
+export interface PayoutConfigDto {
+  type: string
+  spots: number
+  percent: number
+  prizePool: number
+  allocationType: string
+  spotAllocations?: number[]
+}
+
+export interface HouseConfigDto {
+  cutType: string
+  percent: number
+  amount: number
+}
+
+export interface BountyConfigDto {
+  enabled: boolean
+  amount: number
+}
+
+export interface TimeoutConfigDto {
+  defaultSeconds: number
+  preflopSeconds?: number
+  flopSeconds?: number
+  turnSeconds?: number
+  riverSeconds?: number
+  thinkBankSeconds?: number
+}
+
+export interface BootConfigDto {
+  bootSitout: boolean
+  bootSitoutCount: number
+  bootDisconnect: boolean
+  bootDisconnectCount: number
+}
+
+export interface LateRegistrationConfigDto {
+  enabled: boolean
+  untilLevel: number
+  chipMode: string
+}
+
+export interface ScheduledStartConfigDto {
+  enabled: boolean
+  startTime: string
+  minPlayers: number
+}
+
+export interface InviteConfigDto {
+  inviteOnly: boolean
+  invitees: string[]
+  observersPublic: boolean
+}
+
+export interface BettingConfigDto {
+  maxRaises: number
+  raiseCapIgnoredHeadsUp: boolean
+}
+
+export interface AIPlayerConfigDto {
+  name: string
+  skillLevel: number
+}
+
+export interface PracticeConfigDto {
+  aiActionDelayMs?: number
+  handResultPauseMs?: number
+  allInRunoutPauseMs?: number
+  zipModeEnabled?: boolean
+  aiFaceUp?: boolean
+  pauseAllinInteractive?: boolean
+  autoDeal?: boolean
 }
 
 export interface GameConfigDto {
   name: string
+  description?: string
+  greeting?: string
   maxPlayers: number
+  maxOnlinePlayers?: number
+  fillComputer: boolean
   buyIn: number
   startingChips: number
   blindStructure: BlindLevelConfig[]
-  fillWithAI: boolean
-  aiSkillLevel?: number
-  aiCount?: number
+  doubleAfterLastLevel?: boolean
+  /** "NO_LIMIT" | "POT_LIMIT" | "LIMIT" */
+  defaultGameType: string
+  levelAdvanceMode?: 'TIME' | 'HANDS'
+  handsPerLevel?: number
+  defaultMinutesPerLevel?: number
+  rebuys: RebuyConfigDto
+  addons: AddonConfigDto
+  payout?: PayoutConfigDto
+  house?: HouseConfigDto
+  bounty?: BountyConfigDto
+  timeouts: TimeoutConfigDto
+  boot?: BootConfigDto
+  lateRegistration?: LateRegistrationConfigDto
+  scheduledStart?: ScheduledStartConfigDto
+  invite?: InviteConfigDto
+  betting?: BettingConfigDto
+  allowDash?: boolean
+  allowAdvisor?: boolean
+  aiPlayers: AIPlayerConfigDto[]
+  humanDisplayName?: string
+  practiceConfig?: PracticeConfigDto
   password?: string
-  allowRebuys: boolean
-  rebuyLimit: number
-  rebuyCost: number
-  rebuyChips: number
-  allowAddon: boolean
-  addonCost: number
-  addonChips: number
-  actionTimeoutSeconds: number
 }
 
 export interface GameJoinResponseDto {

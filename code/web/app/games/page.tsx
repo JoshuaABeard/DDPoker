@@ -170,7 +170,7 @@ export default function GamesPage() {
                     {game.playerCount}/{game.maxPlayers}
                   </td>
                   <td className="px-4 py-3 text-gray-600">
-                    {formatChips(game.blinds.small)}/{formatChips(game.blinds.big)}
+                    {formatChips(game.blinds.smallBlind)}/{formatChips(game.blinds.bigBlind)}
                   </td>
                   <td className="px-3 py-3 text-center">
                     {game.isPrivate ? (

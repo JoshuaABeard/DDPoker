@@ -13,16 +13,16 @@ import { gameServerApi } from '@/lib/api'
 import type { GameConfigDto } from '@/lib/game/types'
 
 const DEFAULT_BLIND_STRUCTURE: GameConfigDto['blindStructure'] = [
-  { level: 1,  small: 25,   big: 50,    ante: 0,   durationMinutes: 15 },
-  { level: 2,  small: 50,   big: 100,   ante: 0,   durationMinutes: 15 },
-  { level: 3,  small: 75,   big: 150,   ante: 25,  durationMinutes: 15 },
-  { level: 4,  small: 100,  big: 200,   ante: 25,  durationMinutes: 15 },
-  { level: 5,  small: 150,  big: 300,   ante: 50,  durationMinutes: 15 },
-  { level: 6,  small: 200,  big: 400,   ante: 50,  durationMinutes: 15 },
-  { level: 7,  small: 300,  big: 600,   ante: 75,  durationMinutes: 15 },
-  { level: 8,  small: 400,  big: 800,   ante: 100, durationMinutes: 15 },
-  { level: 9,  small: 600,  big: 1200,  ante: 200, durationMinutes: 15 },
-  { level: 10, small: 800,  big: 1600,  ante: 200, durationMinutes: 15 },
+  { smallBlind: 25,   bigBlind: 50,    ante: 0,   minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
+  { smallBlind: 50,   bigBlind: 100,   ante: 0,   minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
+  { smallBlind: 75,   bigBlind: 150,   ante: 25,  minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
+  { smallBlind: 100,  bigBlind: 200,   ante: 25,  minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
+  { smallBlind: 150,  bigBlind: 300,   ante: 50,  minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
+  { smallBlind: 200,  bigBlind: 400,   ante: 50,  minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
+  { smallBlind: 300,  bigBlind: 600,   ante: 75,  minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
+  { smallBlind: 400,  bigBlind: 800,   ante: 100, minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
+  { smallBlind: 600,  bigBlind: 1200,  ante: 200, minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
+  { smallBlind: 800,  bigBlind: 1600,  ante: 200, minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
 ]
 
 function CreateGameForm() {
@@ -35,7 +35,7 @@ function CreateGameForm() {
   const [buyIn, setBuyIn] = useState(0)
   const [startingChips, setStartingChips] = useState(10_000)
   const [password, setPassword] = useState('')
-  const [fillWithAI, setFillWithAI] = useState(isPractice)
+  const [fillComputer, setFillComputer] = useState(isPractice)
   const [aiCount, setAiCount] = useState(8)
   const [allowRebuys, setAllowRebuys] = useState(false)
   const [rebuyCost, setRebuyCost] = useState(0)
@@ -48,27 +48,57 @@ function CreateGameForm() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  function buildConfig(overrides: Partial<{
+    name: string
+    fillComputer: boolean
+    aiPlayerCount: number
+  }> = {}): GameConfigDto {
+    const effectiveName = overrides.name ?? name
+    const effectiveFill = overrides.fillComputer ?? fillComputer
+    const effectiveAiCount = overrides.aiPlayerCount ?? aiCount
+
+    const aiPlayers = effectiveFill
+      ? Array.from({ length: effectiveAiCount }, (_, i) => ({ name: `AI ${i + 1}`, skillLevel: 5 }))
+      : []
+
+    return {
+      name: effectiveName,
+      maxPlayers,
+      fillComputer: effectiveFill,
+      buyIn,
+      startingChips,
+      blindStructure: DEFAULT_BLIND_STRUCTURE,
+      defaultGameType: 'NO_LIMIT',
+      rebuys: {
+        enabled: allowRebuys,
+        cost: rebuyCost,
+        chips: rebuyChips,
+        maxRebuys: rebuyLimit,
+      },
+      addons: {
+        enabled: allowAddon,
+        cost: addonCost,
+        chips: addonChips,
+      },
+      timeouts: {
+        defaultSeconds: actionTimeoutSeconds,
+      },
+      aiPlayers,
+      password: password || undefined,
+    }
+  }
+
   async function handlePractice() {
     setError(null)
     setLoading(true)
     try {
-      const { gameId } = await gameServerApi.createPracticeGame({
-        name: name || 'Quick Practice',
-        startingChips,
-        blindStructure: DEFAULT_BLIND_STRUCTURE,
-        actionTimeoutSeconds,
-        fillWithAI: true,
-        aiCount: 8,
-        maxPlayers: 9,
-        buyIn: 0,
-        allowRebuys: false,
-        rebuyLimit: 0,
-        rebuyCost: 0,
-        rebuyChips: 0,
-        allowAddon: false,
-        addonCost: 0,
-        addonChips: 0,
-      })
+      const { gameId } = await gameServerApi.createPracticeGame(
+        buildConfig({
+          name: name || 'Quick Practice',
+          fillComputer: true,
+          aiPlayerCount: 8,
+        })
+      )
       router.push(`/games/${gameId}/play`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to create practice game.')
@@ -86,25 +116,7 @@ function CreateGameForm() {
     setError(null)
     setLoading(true)
     try {
-      const config: GameConfigDto = {
-        name: name.trim(),
-        maxPlayers,
-        buyIn,
-        startingChips,
-        blindStructure: DEFAULT_BLIND_STRUCTURE,
-        fillWithAI,
-        aiCount: fillWithAI ? aiCount : 0,
-        password: password || undefined,
-        allowRebuys,
-        rebuyLimit,
-        rebuyCost,
-        rebuyChips,
-        allowAddon,
-        addonCost,
-        addonChips,
-        actionTimeoutSeconds,
-      }
-      const game = await gameServerApi.createGame(config)
+      const game = await gameServerApi.createGame(buildConfig({ name: name.trim() }))
       router.push(`/games/${game.gameId}/lobby`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to create game.')
@@ -187,13 +199,13 @@ function CreateGameForm() {
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input
               type="checkbox"
-              checked={fillWithAI}
-              onChange={(e) => setFillWithAI(e.target.checked)}
+              checked={fillComputer}
+              onChange={(e) => setFillComputer(e.target.checked)}
               className="rounded"
             />
             Fill empty seats with AI players
           </label>
-          {fillWithAI && (
+          {fillComputer && (
             <div>
               <label htmlFor="aiCount" className="block text-sm font-medium mb-1">
                 AI Player Count

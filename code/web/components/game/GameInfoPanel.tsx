@@ -5,7 +5,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
-import type { BlindLevelConfig, BlindsSummary } from '@/lib/game/types'
+import type { BlindsData, BlindLevelConfig } from '@/lib/game/types'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -20,7 +20,9 @@ export interface GameInfoPlayer {
 export interface GameInfoPanelProps {
   gameName: string
   ownerName: string
-  blinds: BlindsSummary
+  blinds: BlindsData
+  /** Full blind structure for display. Omit to hide the structure table. */
+  blindStructure?: BlindLevelConfig[]
   /** Current blind level number (1-based). Highlights matching row in structure. */
   currentLevel?: number
   /** Player list for chip counts; sorted descending by chipCount. */
@@ -39,7 +41,7 @@ function formatChips(n: number): string {
 
 function formatBlind(level: BlindLevelConfig): string {
   const ante = level.ante > 0 ? ` / ${formatChips(level.ante)}` : ''
-  return `${formatChips(level.small)} / ${formatChips(level.big)}${ante}`
+  return `${formatChips(level.smallBlind)} / ${formatChips(level.bigBlind)}${ante}`
 }
 
 // ---------------------------------------------------------------------------
@@ -56,6 +58,7 @@ export function GameInfoPanel({
   gameName,
   ownerName,
   blinds,
+  blindStructure,
   currentLevel,
   players,
   onClose,
@@ -64,7 +67,7 @@ export function GameInfoPanel({
     ? [...players].sort((a, b) => b.chipCount - a.chipCount)
     : null
 
-  const levels = blinds.levels ?? []
+  const levels = blindStructure ?? []
 
   return (
     <div className="bg-gray-900 text-white rounded-xl shadow-2xl w-72 flex flex-col overflow-hidden">
@@ -107,11 +110,12 @@ export function GameInfoPanel({
         <div className="px-4 py-2 border-b border-gray-700">
           <div className="text-xs text-gray-400 uppercase tracking-wide mb-2">Blind Structure</div>
           <div className="space-y-0.5 max-h-40 overflow-y-auto pr-1">
-            {levels.map((lvl) => {
-              const isCurrent = currentLevel != null && lvl.level === currentLevel
+            {levels.map((lvl, idx) => {
+              const levelNum = idx + 1
+              const isCurrent = currentLevel != null && levelNum === currentLevel
               return (
                 <div
-                  key={lvl.level}
+                  key={idx}
                   className={[
                     'flex items-center justify-between text-xs px-2 py-1 rounded',
                     isCurrent
@@ -120,10 +124,10 @@ export function GameInfoPanel({
                   ].join(' ')}
                 >
                   <span className="text-gray-400 mr-2 w-8">
-                    {isCurrent ? '▶' : `L${lvl.level}`}
+                    {isCurrent ? '▶' : `L${levelNum}`}
                   </span>
                   <span className="flex-1">{formatBlind(lvl)}</span>
-                  <span className="text-gray-500 ml-2">{lvl.durationMinutes}m</span>
+                  <span className="text-gray-500 ml-2">{lvl.minutes}m</span>
                 </div>
               )
             })}

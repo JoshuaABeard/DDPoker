@@ -7,7 +7,7 @@ import type { ServerMessage } from '../types'
 // ---------------------------------------------------------------------------
 
 function msg<T>(type: string, data: T, gameId = 'game-1'): ServerMessage {
-  return { type: type as ServerMessage['type'], gameId, sequenceNumber: 1, data }
+  return { type: type as ServerMessage['type'], gameId, sequenceNumber: 1, timestamp: '2026-01-01T00:00:00Z', data }
 }
 
 function connected(playerId = 42, reconnectToken: string | null = 'rt-token') {
@@ -105,7 +105,6 @@ describe('gameReducer', () => {
       name: 'Test Game',
       hostingType: 'SERVER',
       ownerName: 'Alice',
-      ownerProfileId: 1,
       maxPlayers: 9,
       isPrivate: false,
       players: [{ profileId: 1, name: 'Alice', isOwner: true, isAI: false, aiSkillLevel: null }],
@@ -136,7 +135,6 @@ describe('gameReducer', () => {
           name: 'Test',
           hostingType: 'SERVER',
           ownerName: 'Alice',
-          ownerProfileId: 1,
           maxPlayers: 9,
           isPrivate: false,
           players: [{ profileId: 1, name: 'Alice', isOwner: true, isAI: false, aiSkillLevel: null }],
@@ -161,7 +159,6 @@ describe('gameReducer', () => {
           name: 'Test',
           hostingType: 'SERVER',
           ownerName: 'Alice',
-          ownerProfileId: 1,
           maxPlayers: 9,
           isPrivate: false,
           players: [{ profileId: 1, name: 'Alice', isOwner: true, isAI: false, aiSkillLevel: null }],
@@ -304,7 +301,6 @@ describe('gameReducer', () => {
       name: 'Old Name',
       hostingType: 'SERVER',
       ownerName: 'Alice',
-      ownerProfileId: 1,
       maxPlayers: 9,
       isPrivate: false,
       players: [{ profileId: 1, name: 'Alice', isOwner: true, isAI: false, aiSkillLevel: null }],
@@ -319,14 +315,14 @@ describe('gameReducer', () => {
         status: 'WAITING_FOR_PLAYERS' as const,
         hostingType: 'SERVER' as const,
         ownerName: 'Alice',
-        ownerProfileId: 1,
         playerCount: 1,
         maxPlayers: 6,
         isPrivate: true,
-        buyIn: 1000,
-        startingChips: 5000,
-        blinds: { small: 25, big: 50, ante: 5 },
+        blinds: { smallBlind: 25, bigBlind: 50, ante: 5 },
         wsUrl: null,
+        createdAt: null,
+        startedAt: null,
+        players: [],
       }
       const result = gameReducer(state, {
         type: 'SERVER_MESSAGE',
@@ -335,7 +331,6 @@ describe('gameReducer', () => {
       expect(result.lobbyState?.name).toBe('New Name')
       expect(result.lobbyState?.maxPlayers).toBe(6)
       expect(result.lobbyState?.isPrivate).toBe(true)
-      expect(result.lobbyState?.blinds.small).toBe(25)
       // Players list must be preserved (not wiped by settings change)
       expect(result.lobbyState?.players).toHaveLength(1)
     })
