@@ -5,7 +5,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
-import type { BlindsData, BlindLevelConfig } from '@/lib/game/types'
+import type { BlindsData, BlindsSummary, BlindLevelConfig } from '@/lib/game/types'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -20,7 +20,8 @@ export interface GameInfoPlayer {
 export interface GameInfoPanelProps {
   gameName: string
   ownerName: string
-  blinds: BlindsData
+  /** Accepts either BlindsData (small/big) from game state or BlindsSummary (smallBlind/bigBlind) from lobby state. */
+  blinds: BlindsData | BlindsSummary
   /** Full blind structure for display. Omit to hide the structure table. */
   blindStructure?: BlindLevelConfig[]
   /** Current blind level number (1-based). Highlights matching row in structure. */
@@ -29,6 +30,18 @@ export interface GameInfoPanelProps {
   players?: GameInfoPlayer[]
   /** Called when the close button is clicked. Omit to hide the close button. */
   onClose?: () => void
+}
+
+// ---------------------------------------------------------------------------
+// Blind normalization
+// ---------------------------------------------------------------------------
+
+/** Normalize either BlindsData (small/big) or BlindsSummary (smallBlind/bigBlind) to a common shape. */
+function normalizeBlinds(blinds: BlindsData | BlindsSummary): { smallBlind: number; bigBlind: number; ante: number } {
+  if ('small' in blinds) {
+    return { smallBlind: blinds.small, bigBlind: blinds.big, ante: blinds.ante }
+  }
+  return { smallBlind: blinds.smallBlind, bigBlind: blinds.bigBlind, ante: blinds.ante }
 }
 
 // ---------------------------------------------------------------------------
@@ -68,6 +81,7 @@ export function GameInfoPanel({
     : null
 
   const levels = blindStructure ?? []
+  const normalizedBlinds = normalizeBlinds(blinds)
 
   return (
     <div className="bg-gray-900 text-white rounded-xl shadow-2xl w-72 flex flex-col overflow-hidden">
@@ -96,10 +110,10 @@ export function GameInfoPanel({
           {currentLevel != null ? `Level ${currentLevel} — Current Blinds` : 'Blinds'}
         </div>
         <div className="text-base font-semibold">
-          {formatChips(blinds.small)} / {formatChips(blinds.big)}
-          {blinds.ante > 0 && (
+          {formatChips(normalizedBlinds.smallBlind)} / {formatChips(normalizedBlinds.bigBlind)}
+          {normalizedBlinds.ante > 0 && (
             <span className="text-sm text-gray-300 font-normal ml-1">
-              (ante {formatChips(blinds.ante)})
+              (ante {formatChips(normalizedBlinds.ante)})
             </span>
           )}
         </div>

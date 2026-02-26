@@ -358,6 +358,7 @@ function handleLobbySettingsChanged(state: GameState, data: LobbySettingsChanged
       maxPlayers: s.maxPlayers,
       isPrivate: s.isPrivate,
       ownerName: s.ownerName,
+      blinds: s.blinds ?? state.lobbyState.blinds,
     },
   }
 }

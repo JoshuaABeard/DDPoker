@@ -105,10 +105,11 @@ describe('gameReducer', () => {
       name: 'Test Game',
       hostingType: 'SERVER',
       ownerName: 'Alice',
+      ownerProfileId: 1,
       maxPlayers: 9,
       isPrivate: false,
       players: [{ profileId: 1, name: 'Alice', isOwner: true, isAI: false, aiSkillLevel: null }],
-      blinds: { small: 10, big: 20, ante: 0 },
+      blinds: { smallBlind: 10, bigBlind: 20, ante: 0 },
     }
 
     it('sets lobby state and phase', () => {
@@ -135,10 +136,11 @@ describe('gameReducer', () => {
           name: 'Test',
           hostingType: 'SERVER',
           ownerName: 'Alice',
+          ownerProfileId: 1,
           maxPlayers: 9,
           isPrivate: false,
           players: [{ profileId: 1, name: 'Alice', isOwner: true, isAI: false, aiSkillLevel: null }],
-          blinds: { small: 10, big: 20, ante: 0 },
+          blinds: { smallBlind: 10, bigBlind: 20, ante: 0 },
         },
       }
       const result = gameReducer(initialWithLobby, {
@@ -159,10 +161,11 @@ describe('gameReducer', () => {
           name: 'Test',
           hostingType: 'SERVER',
           ownerName: 'Alice',
+          ownerProfileId: 1,
           maxPlayers: 9,
           isPrivate: false,
           players: [{ profileId: 1, name: 'Alice', isOwner: true, isAI: false, aiSkillLevel: null }],
-          blinds: { small: 10, big: 20, ante: 0 },
+          blinds: { smallBlind: 10, bigBlind: 20, ante: 0 },
         },
       }
       const result = gameReducer(initialWithLobby, {
@@ -301,10 +304,11 @@ describe('gameReducer', () => {
       name: 'Old Name',
       hostingType: 'SERVER',
       ownerName: 'Alice',
+      ownerProfileId: 1,
       maxPlayers: 9,
       isPrivate: false,
       players: [{ profileId: 1, name: 'Alice', isOwner: true, isAI: false, aiSkillLevel: null }],
-      blinds: { small: 10, big: 20, ante: 0 },
+      blinds: { smallBlind: 10, bigBlind: 20, ante: 0 },
     }
 
     it('updates lobby settings from LOBBY_SETTINGS_CHANGED', () => {
@@ -331,6 +335,8 @@ describe('gameReducer', () => {
       expect(result.lobbyState?.name).toBe('New Name')
       expect(result.lobbyState?.maxPlayers).toBe(6)
       expect(result.lobbyState?.isPrivate).toBe(true)
+      // Blinds must be updated from the new settings
+      expect(result.lobbyState?.blinds).toEqual({ smallBlind: 25, bigBlind: 50, ante: 5 })
       // Players list must be preserved (not wiped by settings change)
       expect(result.lobbyState?.players).toHaveLength(1)
     })

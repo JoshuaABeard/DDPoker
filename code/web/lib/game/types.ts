@@ -97,7 +97,7 @@ export type ClientMessageType =
 export interface ServerMessage<T = unknown> {
   type: ServerMessageType
   gameId: string
-  sequenceNumber: number
+  sequenceNumber: number | null
   /** ISO-8601 from Java Instant */
   timestamp: string
   data: T
@@ -420,10 +420,11 @@ export interface LobbyStateData {
   name: string
   hostingType: string
   ownerName: string
+  ownerProfileId: number
   maxPlayers: number
   isPrivate: boolean
   players: LobbyPlayerData[]
-  blinds: BlindsData
+  blinds: BlindsSummary
 }
 
 export interface LobbyPlayerJoinedData {
@@ -491,7 +492,7 @@ export interface NeverBrokeOfferedData {
   timeoutSeconds: number
 }
 
-export type ContinueRunoutData = Record<string, never>
+export type ContinueRunoutData = Record<string, never> | null
 
 export interface PlayerSatOutData {
   playerId: number
@@ -581,6 +582,12 @@ export interface AdminKickData {
 // REST DTO types (matching server DTOs)
 // ============================================================================
 
+/** Matches server's GameSummary.LobbyPlayerInfo (name + role only). */
+export interface LobbyPlayerInfoDto {
+  name: string
+  role: string  // "PLAYER" | "AI"
+}
+
 export interface GameSummaryDto {
   gameId: string
   name: string
@@ -594,7 +601,7 @@ export interface GameSummaryDto {
   blinds: BlindsSummary
   createdAt: string | null
   startedAt: string | null
-  players: LobbyPlayerData[]
+  players: LobbyPlayerInfoDto[]
 }
 
 export interface RebuyConfigDto {
@@ -699,7 +706,7 @@ export interface GameConfigDto {
   startingChips: number
   blindStructure: BlindLevelConfig[]
   doubleAfterLastLevel?: boolean
-  /** "NO_LIMIT" | "POT_LIMIT" | "LIMIT" */
+  /** "NOLIMIT_HOLDEM" | "POTLIMIT_HOLDEM" | "LIMIT_HOLDEM" */
   defaultGameType: string
   levelAdvanceMode?: 'TIME' | 'HANDS'
   handsPerLevel?: number

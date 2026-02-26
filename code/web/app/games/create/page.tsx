@@ -13,16 +13,16 @@ import { gameServerApi } from '@/lib/api'
 import type { GameConfigDto } from '@/lib/game/types'
 
 const DEFAULT_BLIND_STRUCTURE: GameConfigDto['blindStructure'] = [
-  { smallBlind: 25,   bigBlind: 50,    ante: 0,   minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
-  { smallBlind: 50,   bigBlind: 100,   ante: 0,   minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
-  { smallBlind: 75,   bigBlind: 150,   ante: 25,  minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
-  { smallBlind: 100,  bigBlind: 200,   ante: 25,  minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
-  { smallBlind: 150,  bigBlind: 300,   ante: 50,  minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
-  { smallBlind: 200,  bigBlind: 400,   ante: 50,  minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
-  { smallBlind: 300,  bigBlind: 600,   ante: 75,  minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
-  { smallBlind: 400,  bigBlind: 800,   ante: 100, minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
-  { smallBlind: 600,  bigBlind: 1200,  ante: 200, minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
-  { smallBlind: 800,  bigBlind: 1600,  ante: 200, minutes: 15, isBreak: false, gameType: 'NO_LIMIT' },
+  { smallBlind: 25,   bigBlind: 50,    ante: 0,   minutes: 15, isBreak: false, gameType: 'NOLIMIT_HOLDEM' },
+  { smallBlind: 50,   bigBlind: 100,   ante: 0,   minutes: 15, isBreak: false, gameType: 'NOLIMIT_HOLDEM' },
+  { smallBlind: 75,   bigBlind: 150,   ante: 25,  minutes: 15, isBreak: false, gameType: 'NOLIMIT_HOLDEM' },
+  { smallBlind: 100,  bigBlind: 200,   ante: 25,  minutes: 15, isBreak: false, gameType: 'NOLIMIT_HOLDEM' },
+  { smallBlind: 150,  bigBlind: 300,   ante: 50,  minutes: 15, isBreak: false, gameType: 'NOLIMIT_HOLDEM' },
+  { smallBlind: 200,  bigBlind: 400,   ante: 50,  minutes: 15, isBreak: false, gameType: 'NOLIMIT_HOLDEM' },
+  { smallBlind: 300,  bigBlind: 600,   ante: 75,  minutes: 15, isBreak: false, gameType: 'NOLIMIT_HOLDEM' },
+  { smallBlind: 400,  bigBlind: 800,   ante: 100, minutes: 15, isBreak: false, gameType: 'NOLIMIT_HOLDEM' },
+  { smallBlind: 600,  bigBlind: 1200,  ante: 200, minutes: 15, isBreak: false, gameType: 'NOLIMIT_HOLDEM' },
+  { smallBlind: 800,  bigBlind: 1600,  ante: 200, minutes: 15, isBreak: false, gameType: 'NOLIMIT_HOLDEM' },
 ]
 
 function CreateGameForm() {
@@ -68,7 +68,7 @@ function CreateGameForm() {
       buyIn,
       startingChips,
       blindStructure: DEFAULT_BLIND_STRUCTURE,
-      defaultGameType: 'NO_LIMIT',
+      defaultGameType: 'NOLIMIT_HOLDEM',
       rebuys: {
         enabled: allowRebuys,
         cost: rebuyCost,
