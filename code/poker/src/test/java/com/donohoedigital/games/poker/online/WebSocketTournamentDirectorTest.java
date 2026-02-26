@@ -342,6 +342,21 @@ class WebSocketTournamentDirectorTest {
         dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
         RemotePokerTable table = requireTable();
 
+        // Set a real current player via ACTION_REQUIRED so the assert is non-vacuous
+        ObjectNode options = mapper.createObjectNode();
+        options.put("canFold", true).put("canCheck", false).put("canCall", true).put("callAmount", 50)
+                .put("canBet", false).put("minBet", 0).put("maxBet", 0).put("canRaise", false).put("minRaise", 0)
+                .put("maxRaise", 0).put("canAllIn", true).put("allInAmount", 1000);
+        ObjectNode arPayload = mapper.createObjectNode();
+        arPayload.put("timeoutSeconds", 30);
+        arPayload.set("options", options);
+        dispatch(ServerMessageType.ACTION_REQUIRED, arPayload);
+
+        // Verify current player is set (non-sentinel)
+        assertThat(table.getRemoteHand().getCurrentPlayerIndex())
+                .isNotEqualTo(com.donohoedigital.games.poker.HoldemHand.NO_CURRENT_PLAYER);
+
+        // Now timeout that player — current player must be cleared
         ObjectNode payload = mapper.createObjectNode();
         payload.put("playerId", 1L).put("autoAction", "FOLD").put("tableId", 1);
         dispatch(ServerMessageType.ACTION_TIMEOUT, payload);
