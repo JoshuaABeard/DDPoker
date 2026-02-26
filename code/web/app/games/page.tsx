@@ -29,6 +29,7 @@ export default function GamesPage() {
   const [error, setError] = useState<string | null>(null)
   const [passwordTarget, setPasswordTarget] = useState<GameSummaryDto | null>(null)
   const [joinError, setJoinError] = useState<string | null>(null)
+  const [watchError, setWatchError] = useState<string | null>(null)
 
   const fetchGames = useCallback(async () => {
     try {
@@ -186,12 +187,21 @@ export default function GamesPage() {
                         Results
                       </Link>
                     ) : tab === 'IN_PROGRESS' ? (
-                      <Link
-                        href={`/games/${game.gameId}/play`}
-                        className="text-blue-600 hover:underline text-sm"
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            setWatchError(null)
+                            await gameServerApi.observeGame(game.gameId)
+                            router.push(`/games/${game.gameId}/play`)
+                          } catch {
+                            setWatchError(`Cannot watch game: ${game.name || game.gameId}`)
+                          }
+                        }}
+                        className="text-blue-600 hover:underline text-sm bg-transparent border-0 cursor-pointer p-0"
                       >
                         Watch
-                      </Link>
+                      </button>
                     ) : (
                       <button
                         type="button"
@@ -209,6 +219,10 @@ export default function GamesPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {watchError && (
+        <p className="text-red-500 text-sm mt-2 text-center">{watchError}</p>
       )}
 
       {/* Password dialog for private games */}

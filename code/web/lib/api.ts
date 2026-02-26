@@ -327,6 +327,16 @@ export const gameServerApi = {
   cancelGame: async (gameId: string): Promise<void> => {
     await apiFetch<void>(`/api/v1/games/${gameId}`, { method: 'DELETE' })
   },
+
+  /**
+   * Join a game as observer (spectator). Returns WebSocket URL and token.
+   */
+  observeGame: async (gameId: string): Promise<GameJoinResponseDto> => {
+    const response = await apiFetch<GameJoinResponseDto>(`/api/v1/games/${gameId}/observe`, {
+      method: 'POST',
+    })
+    return response.data
+  },
 }
 
 /**

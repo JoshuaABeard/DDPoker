@@ -9,12 +9,10 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { GameProvider } from '@/lib/game/GameContext'
 import { useGameState, useGameActions } from '@/lib/game/hooks'
 import { ChatPanel } from '@/components/game/ChatPanel'
 import { GameInfoPanel } from '@/components/game/GameInfoPanel'
 import { gameServerApi } from '@/lib/api'
-import { config } from '@/lib/config'
 
 // ---------------------------------------------------------------------------
 // Inner lobby UI — must be inside GameProvider
@@ -189,17 +187,12 @@ function LobbyContent({ gameId }: { gameId: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Page — wraps content in GameProvider
+// Page — GameProvider is in the shared [gameId]/layout.tsx
 // ---------------------------------------------------------------------------
 
 export default function LobbyPage() {
   const params = useParams()
   const gameId = params.gameId as string
-  const serverBaseUrl = config.apiBaseUrl
 
-  return (
-    <GameProvider gameId={gameId} serverBaseUrl={serverBaseUrl}>
-      <LobbyContent gameId={gameId} />
-    </GameProvider>
-  )
+  return <LobbyContent gameId={gameId} />
 }
