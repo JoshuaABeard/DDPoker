@@ -5,17 +5,11 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
-interface PotData {
-  amount: number
-  eligiblePlayers: number[]
-}
+import type { PotData } from '@/lib/game/types'
+import { formatChips } from '@/lib/utils'
 
 interface PotDisplayProps {
   pots: PotData[]
-}
-
-function formatChips(amount: number): string {
-  return new Intl.NumberFormat('en-US').format(amount)
 }
 
 /**

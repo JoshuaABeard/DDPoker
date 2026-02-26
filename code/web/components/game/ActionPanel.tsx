@@ -11,15 +11,12 @@ import { useEffect, useRef, useState } from 'react'
 import { BetSlider } from './BetSlider'
 import type { ActionOptionsData } from '@/lib/game/types'
 import type { PlayerActionData } from '@/lib/game/types'
+import { formatChips } from '@/lib/utils'
 
 interface ActionPanelProps {
   options: ActionOptionsData
   potSize: number
   onAction: (action: PlayerActionData) => void
-}
-
-function formatChips(n: number): string {
-  return new Intl.NumberFormat('en-US').format(n)
 }
 
 /**
@@ -34,7 +31,8 @@ function formatChips(n: number): string {
 export function ActionPanel({ options, potSize, onAction }: ActionPanelProps) {
   const [betAmount, setBetAmount] = useState(options.canRaise ? options.minRaise : options.minBet)
   const [pendingAction, setPendingAction] = useState<'bet' | 'raise' | null>(null)
-  const panelRef = useRef<HTMLDivElement>(null)
+  const onActionRef = useRef(onAction)
+  onActionRef.current = onAction
 
   const showBetSlider = pendingAction === 'bet' || pendingAction === 'raise'
   const sliderMin = pendingAction === 'raise' ? options.minRaise : options.minBet
@@ -48,11 +46,11 @@ export function ActionPanel({ options, potSize, onAction }: ActionPanelProps) {
 
       switch (e.key.toLowerCase()) {
         case 'f':
-          if (options.canFold) handleFold()
+          if (options.canFold) onActionRef.current({ action: 'FOLD', amount: 0 })
           break
         case 'c':
-          if (options.canCheck) handleCheck()
-          else if (options.canCall) handleCall()
+          if (options.canCheck) onActionRef.current({ action: 'CHECK', amount: 0 })
+          else if (options.canCall) onActionRef.current({ action: 'CALL', amount: options.callAmount })
           break
         case 'r':
           if (options.canRaise) setPendingAction('raise')
@@ -62,7 +60,12 @@ export function ActionPanel({ options, potSize, onAction }: ActionPanelProps) {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options])
+
+  // Reset bet amount and pending action when options change (new hand)
+  useEffect(() => {
+    setBetAmount(options.canRaise ? options.minRaise : options.minBet)
+    setPendingAction(null)
   }, [options])
 
   function handleFold() {
@@ -88,7 +91,6 @@ export function ActionPanel({ options, potSize, onAction }: ActionPanelProps) {
 
   return (
     <div
-      ref={panelRef}
       className="flex flex-col gap-2 bg-gray-900 bg-opacity-90 rounded-xl p-3 shadow-xl"
       role="region"
       aria-label="Action panel"

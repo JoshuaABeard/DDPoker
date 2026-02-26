@@ -22,6 +22,7 @@ export interface WebSocketClientOptions {
   onMessage: (message: ServerMessage) => void
   onStateChange: (state: ConnectionState) => void
   onError: (error: Event) => void
+  tokenRefreshFn?: () => Promise<string>
 }
 
 /**
@@ -40,7 +41,6 @@ export interface WebSocketClientOptions {
 export class WebSocketClient {
   private ws: WebSocket | null = null
   private wsUrl: string | null = null
-  private initialToken: string | null = null
   private reconnectToken: string | null = null
   private sequenceNumber = 0
   private reconnectAttempt = 0
@@ -57,8 +57,17 @@ export class WebSocketClient {
    * @param token Short-lived ws-connect token from GET /api/v1/auth/ws-token
    */
   connect(wsUrl: string, token: string): void {
+    // Clean up any existing connection first
+    if (this.ws) {
+      this.ws.onopen = null
+      this.ws.onmessage = null
+      this.ws.onerror = null
+      this.ws.onclose = null
+      this.ws.close(1000, 'Reconnecting')
+      this.ws = null
+    }
+    this.clearReconnectTimer()
     this.wsUrl = wsUrl
-    this.initialToken = token
     this.intentionalClose = false
     this.reconnectAttempt = 0
     this.openSocket(token)
@@ -71,6 +80,10 @@ export class WebSocketClient {
     this.intentionalClose = true
     this.clearReconnectTimer()
     if (this.ws) {
+      this.ws.onopen = null
+      this.ws.onmessage = null
+      this.ws.onerror = null
+      this.ws.onclose = null
       this.ws.close(1000, 'Client disconnect')
       this.ws = null
     }
@@ -113,6 +126,11 @@ export class WebSocketClient {
 
   private openSocket(token: string): void {
     if (!this.wsUrl) return
+
+    // Reset client sequence number on fresh connections (not reconnects)
+    if (this.reconnectAttempt === 0) {
+      this.sequenceNumber = 0
+    }
 
     this.setState(this.reconnectAttempt === 0 ? 'CONNECTING' : 'RECONNECTING')
 
@@ -171,13 +189,18 @@ export class WebSocketClient {
 
     this.reconnectTimerId = setTimeout(() => {
       this.reconnectAttempt++
-      // Use reconnect token if available (bypasses cookie), otherwise fall back to initial token
-      const token = this.reconnectToken ?? this.initialToken
-      if (!token) {
+      const refreshFn = this.options.tokenRefreshFn
+      if (this.reconnectToken) {
+        this.openSocket(this.reconnectToken)
+      } else if (refreshFn) {
+        refreshFn().then(token => {
+          this.openSocket(token)
+        }).catch(() => {
+          this.setState('DISCONNECTED')
+        })
+      } else {
         this.setState('DISCONNECTED')
-        return
       }
-      this.openSocket(token)
     }, delay)
   }
 

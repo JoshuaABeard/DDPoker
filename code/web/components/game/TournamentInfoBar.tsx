@@ -6,6 +6,7 @@
  */
 
 import type { BlindsData } from '@/lib/game/types'
+import { formatChips } from '@/lib/utils'
 
 interface TournamentInfoBarProps {
   level: number
@@ -14,12 +15,10 @@ interface TournamentInfoBarProps {
   nextLevelIn: number | null
   /** Total player count remaining. */
   playerCount: number
+  totalPlayers?: number
+  playerRank?: number
   /** Game name — rendered as text, never HTML. */
   gameName: string
-}
-
-function formatChips(n: number): string {
-  return new Intl.NumberFormat('en-US').format(n)
 }
 
 function formatTime(seconds: number): string {
@@ -33,7 +32,7 @@ function formatTime(seconds: number): string {
  *
  * XSS safety: gameName rendered as text node only.
  */
-export function TournamentInfoBar({ level, blinds, nextLevelIn, playerCount, gameName }: TournamentInfoBarProps) {
+export function TournamentInfoBar({ level, blinds, nextLevelIn, playerCount, totalPlayers, playerRank, gameName }: TournamentInfoBarProps) {
   return (
     <div className="flex items-center justify-between px-4 py-2 bg-gray-900 bg-opacity-80 text-white text-sm">
       <div className="font-semibold text-gray-300 truncate max-w-[200px]">{gameName}</div>
@@ -59,10 +58,24 @@ export function TournamentInfoBar({ level, blinds, nextLevelIn, playerCount, gam
           </div>
         )}
 
-        <div>
-          <span className="text-gray-400 text-xs">Players </span>
-          <span className="font-bold">{playerCount}</span>
-        </div>
+        {totalPlayers != null ? (
+          <div>
+            <span className="text-gray-400 text-xs">Players </span>
+            <span className="font-bold">{playerCount}/{totalPlayers}</span>
+          </div>
+        ) : (
+          <div>
+            <span className="text-gray-400 text-xs">Players </span>
+            <span className="font-bold">{playerCount}</span>
+          </div>
+        )}
+
+        {playerRank != null && (
+          <div>
+            <span className="text-gray-400 text-xs">Rank </span>
+            <span className="font-bold">{playerRank}</span>
+          </div>
+        )}
       </div>
     </div>
   )

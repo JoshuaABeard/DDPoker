@@ -36,8 +36,11 @@ export default function RegisterPage() {
 
     setLoading(true)
     try {
-      await gameServerApi.register(username, password, email)
-      // Server sets auth cookie on success; navigate to game lobby
+      const response = await gameServerApi.register(username, password, email)
+      if (!response.success) {
+        setError(response.message || 'Registration failed. Please try again.')
+        return
+      }
       router.push('/games')
     } catch (err: unknown) {
       const msg =

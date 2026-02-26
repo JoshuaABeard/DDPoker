@@ -8,16 +8,13 @@
 import { Card } from './Card'
 import { DealerButton } from './DealerButton'
 import type { SeatData } from '@/lib/game/types'
+import { formatChips } from '@/lib/utils'
 
 interface PlayerSeatProps {
   seat: SeatData
   isMe: boolean
   /** CSS position override for oval layout (e.g. { top: '10%', left: '50%' }) */
   positionStyle: React.CSSProperties
-}
-
-function formatChips(n: number): string {
-  return new Intl.NumberFormat('en-US').format(n)
 }
 
 /**
@@ -42,11 +39,11 @@ export function PlayerSeat({ seat, isMe, positionStyle }: PlayerSeatProps) {
       role="region"
       aria-label={`${playerName}'s seat`}
     >
-      {/* Hole cards — hidden for folded players; face-down for all others not me */}
+      {/* Hole cards — hidden for folded/sat-out/eliminated players; face-down for active others */}
       <div className="flex gap-0.5">
         {isMe ? (
           holeCards.map((card, i) => <Card key={i} card={card} width={40} />)
-        ) : !isFolded ? (
+        ) : !isFolded && status !== 'SAT_OUT' ? (
           <>
             <Card width={40} />
             <Card width={40} />
@@ -77,6 +74,12 @@ export function PlayerSeat({ seat, isMe, positionStyle }: PlayerSeatProps) {
           )}
           {isFolded && (
             <span className="text-[9px] bg-gray-600 text-gray-300 rounded px-1">FOLDED</span>
+          )}
+          {status === 'SAT_OUT' && (
+            <span className="text-[9px] text-yellow-400 italic rounded px-1">Sitting Out</span>
+          )}
+          {status === 'DISCONNECTED' && (
+            <span className="text-[9px] text-red-400 italic rounded px-1">Disconnected</span>
           )}
         </div>
       </div>

@@ -8,14 +8,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { formatChips } from '@/lib/utils'
 import type { StandingData } from '@/lib/game/types'
-
-function formatChips(n: number): string {
-  return new Intl.NumberFormat('en-US').format(n)
-}
 
 function ordinal(n: number): string {
   const s = ['th', 'st', 'nd', 'rd']
@@ -115,25 +111,29 @@ function ResultsView({ standings, myPlayerId }: ResultsViewProps) {
 
 export default function ResultsPage() {
   const params = useParams()
-  // gameId available if a future REST fallback is needed
-  void params.gameId
+  const gameId = params.gameId as string
 
   const [standings, setStandings] = useState<StandingData[] | null>(null)
   const [myPlayerId, setMyPlayerId] = useState<number | null>(null)
 
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem('ddpoker_results')
-      if (raw) {
+    const raw = sessionStorage.getItem('ddpoker_results')
+    if (raw) {
+      try {
         const parsed = JSON.parse(raw) as { standings: StandingData[]; myPlayerId: number | null }
         setStandings(parsed.standings)
         setMyPlayerId(parsed.myPlayerId)
-        sessionStorage.removeItem('ddpoker_results')
+      } catch {
+        // Ignore malformed data
       }
-    } catch {
-      // Ignore parse errors or unavailable sessionStorage
+      sessionStorage.removeItem('ddpoker_results')
     }
-  }, [])
+    // NOTE: REST fallback (e.g. after page refresh) is not implemented because
+    // GameSummaryDto does not include a standings field. Standings are only
+    // available via the WebSocket GAME_COMPLETE message (GameCompleteData).
+    // A future enhancement could store standings server-side and expose them
+    // via a dedicated /api/v1/games/{id}/results endpoint.
+  }, [gameId])
 
   if (standings && standings.length > 0) {
     return <ResultsView standings={standings} myPlayerId={myPlayerId} />

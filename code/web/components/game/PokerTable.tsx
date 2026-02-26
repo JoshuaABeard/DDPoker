@@ -88,15 +88,19 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
   const myIndex = currentTable.seats.findIndex((s) => s.playerId === myPlayerId)
   const seatCount = Math.max(currentTable.seats.length, 1)
 
-  function visualPosition(seatIndex: number): number {
+  function visualPosition(arrayIndex: number): number {
     const pos = myIndex < 0
-      ? seatIndex % 10
-      : ((seatIndex - myIndex + seatCount) % seatCount) % 10
+      ? arrayIndex % SEAT_POSITIONS.length
+      : ((arrayIndex - myIndex + seatCount) % seatCount) % SEAT_POSITIONS.length
     return pos >= 0 && pos < SEAT_POSITIONS.length ? pos : 0
   }
 
   const potTotal = currentTable.pots.reduce((sum, p) => sum + p.amount, 0)
   const showTimer = actionTimeoutSeconds != null
+
+  // Task 6.7: find this player's seat to determine sit-out status
+  const mySeat = currentTable.seats.find((s) => s.playerId === myPlayerId)
+  const isSatOut = mySeat?.status === 'SAT_OUT'
 
   return (
     <div
@@ -110,25 +114,36 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
           level={gameState.level}
           blinds={gameState.blinds}
           nextLevelIn={gameState.nextLevelIn}
-          playerCount={gameState.players.length}
+          playerCount={state.playersRemaining > 0 ? state.playersRemaining : gameState.players.length}
+          totalPlayers={state.totalPlayers > 0 ? state.totalPlayers : undefined}
+          playerRank={state.playerRank > 0 ? state.playerRank : undefined}
           gameName={gameName}
         />
       </div>
+
+      {/* Task 6.8: observer count — shown when watchers are present */}
+      {state.observers.length > 0 && (
+        <div className="absolute top-12 left-3 z-10">
+          <span className="text-gray-400 text-xs">
+            {state.observers.length} watching
+          </span>
+        </div>
+      )}
 
       {/* Oval felt surface (community cards + pots) */}
       <TableFelt table={currentTable} />
 
       {/* Player seats — rotated so my seat is always at position 0 */}
-      {currentTable.seats.map((seat) => (
+      {currentTable.seats.map((seat, arrayIndex) => (
         <PlayerSeat
-          key={seat.seatIndex}
+          key={seat.playerId ?? arrayIndex}
           seat={{
             ...seat,
             // Reveal hole cards for the current player only
             holeCards: seat.playerId === myPlayerId ? holeCards : [],
           }}
           isMe={seat.playerId === myPlayerId}
-          positionStyle={SEAT_POSITIONS[visualPosition(seat.seatIndex)]}
+          positionStyle={SEAT_POSITIONS[visualPosition(arrayIndex)]}
         />
       ))}
 
@@ -153,11 +168,22 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
         </div>
       )}
 
+      {/* Task 6.7: sit-out / come-back toggle — shown when player has a seat */}
+      {mySeat != null && (
+        <div className="absolute bottom-3 left-3 z-20">
+          <button
+            type="button"
+            onClick={() => (isSatOut ? actions.sendComeBack() : actions.sendSitOut())}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
+          >
+            {isSatOut ? "I'm Back" : 'Sit Out'}
+          </button>
+        </div>
+      )}
+
       {/* Hand history — top-right corner */}
       <div className="absolute top-12 right-3 z-10">
-        {/* Hand history entries are not yet tracked in game state;
-            the reducer will need a handHistory field in a future iteration. */}
-        <HandHistory entries={[]} />
+        <HandHistory entries={state.handHistory} />
       </div>
 
       {/* Chat panel — bottom-right corner */}

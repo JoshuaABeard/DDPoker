@@ -9,12 +9,10 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { GameProvider } from '@/lib/game/GameContext'
 import { useGameState, useGameActions } from '@/lib/game/hooks'
 import { PokerTable } from '@/components/game/PokerTable'
 import { GameOverlay } from '@/components/game/GameOverlay'
 import { GameInfoPanel } from '@/components/game/GameInfoPanel'
-import { config } from '@/lib/config'
 
 // ---------------------------------------------------------------------------
 // Inner play content — must be inside GameProvider
@@ -161,16 +159,12 @@ function PlayContent({ gameId }: { gameId: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Page — wraps content in GameProvider
+// Page — GameProvider is in the shared [gameId]/layout.tsx
 // ---------------------------------------------------------------------------
 
 export default function PlayPage() {
   const params = useParams()
   const gameId = params.gameId as string
 
-  return (
-    <GameProvider gameId={gameId} serverBaseUrl={config.apiBaseUrl}>
-      <PlayContent gameId={gameId} />
-    </GameProvider>
-  )
+  return <PlayContent gameId={gameId} />
 }

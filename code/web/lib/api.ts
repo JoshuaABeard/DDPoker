@@ -40,17 +40,22 @@ async function apiFetch<T>(
 ): Promise<ApiResponse<T>> {
   const url = getApiUrl(endpoint)
 
-  const defaultHeaders: HeadersInit = {
-    'Content-Type': 'application/json',
+  const defaultHeaders: HeadersInit = {}
+  if (options.body) {
+    defaultHeaders['Content-Type'] = 'application/json'
   }
 
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), config.apiTimeout)
 
+  const signals: AbortSignal[] = [controller.signal]
+  if (options.signal) signals.push(options.signal)
+  const composedSignal = signals.length > 1 ? AbortSignal.any(signals) : controller.signal
+
   const fetchOptions: RequestInit = {
     credentials: 'include', // Always send cookies (JWT in HttpOnly cookie)
     ...options,
-    signal: controller.signal,
+    signal: composedSignal,
     headers: {
       ...defaultHeaders,
       ...options.headers,
@@ -59,7 +64,6 @@ async function apiFetch<T>(
 
   try {
     const response = await fetch(url, fetchOptions)
-    clearTimeout(timeoutId)
 
     if (!response.ok) {
       const errorData: ApiError = await response.json().catch(() => ({
@@ -74,9 +78,10 @@ async function apiFetch<T>(
       timestamp: new Date().toISOString(),
     }
   } catch (error) {
-    clearTimeout(timeoutId)
     console.error('API fetch error:', error)
     throw error
+  } finally {
+    clearTimeout(timeoutId)
   }
 }
 
@@ -322,6 +327,16 @@ export const gameServerApi = {
   cancelGame: async (gameId: string): Promise<void> => {
     await apiFetch<void>(`/api/v1/games/${gameId}`, { method: 'DELETE' })
   },
+
+  /**
+   * Join a game as observer (spectator). Returns WebSocket URL and token.
+   */
+  observeGame: async (gameId: string): Promise<GameJoinResponseDto> => {
+    const response = await apiFetch<GameJoinResponseDto>(`/api/v1/games/${gameId}/observe`, {
+      method: 'POST',
+    })
+    return response.data
+  },
 }
 
 /**
@@ -509,12 +524,9 @@ export const adminApi = {
  */
 export async function checkApiHealth(): Promise<boolean> {
   try {
-    const response = await fetch(getApiUrl('/api/health'), {
-      method: 'GET',
-    })
-    return response.ok
-  } catch (error) {
-    console.error('API health check failed:', error)
+    await apiFetch<{ status: string }>('/api/health')
+    return true
+  } catch {
     return false
   }
 }
