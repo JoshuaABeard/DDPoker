@@ -356,7 +356,6 @@ If you skip the wizard or want to create additional profiles:
 ## Related Documentation
 
 - [File-Based Configuration](file-based-configuration.md) - How settings are stored
-- [License Removal Technical](../archive/license-removal-technical.md) - Player identity system
 - [CHANGELOG](../CHANGELOG.md) - Release notes and version history
 
 ---
