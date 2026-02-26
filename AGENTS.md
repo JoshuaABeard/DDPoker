@@ -134,9 +134,9 @@ See `.claude/guides/testing-guide.md` for project-specific frameworks, commands,
 
 ## 5. Decisions
 
-**Architecture Decision Records live in `.claude/decisions/`. Check relevant ADRs before working in related areas.**
+Capture non-obvious technical decisions in the relevant plan under `docs/plans/` (and keep them when moved to `docs/plans/completed/`).
 
-Create an ADR when choosing between multiple valid approaches or making a non-obvious technical decision. See `.claude/decisions/README.md` for format.
+If a decision creates a long-lived implementation gotcha, add a concise entry to `docs/memory.md`.
 
 ## 6. Plans
 

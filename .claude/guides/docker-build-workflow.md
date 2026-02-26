@@ -166,6 +166,6 @@ Run the GitHub Actions workflow with "Push to Docker Hub" **unchecked** to test 
 - `docker/docker-compose.yml` - Docker Compose configuration
 - `docker/DOCKER-HUB-PUBLISHING.md` - Detailed publishing guide
 
-## Related ADRs
+## Related Decisions
 
-- `ADR-005`: jpackage for Cross-Platform Installers
+- Installers are built with `jpackage` for Windows (MSI), macOS (DMG), and Linux (DEB/RPM).

@@ -48,4 +48,4 @@ When writing or reviewing code, check for these common vulnerability patterns:
 - **Command Injection** — Never pass user input directly to `Runtime.exec()` or `ProcessBuilder`. If shell commands are necessary, use explicit argument arrays, not string concatenation.
 - **Path Traversal** — Validate and sanitize file paths from user input. Reject `../` sequences. Use `Path.normalize()` and verify the resolved path is within the expected directory.
 - **Insecure Deserialization** — Avoid deserializing untrusted data with Java's native serialization. Prefer JSON/XML with explicit type mapping.
-- **Authentication/Session** — Use bcrypt for password hashing (see ADR-001). Never store plaintext passwords. Validate session tokens server-side.
+- **Authentication/Session** — Use bcrypt for password hashing. Never store plaintext passwords. Validate session tokens server-side.

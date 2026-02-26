@@ -16,7 +16,7 @@ Persistent knowledge discovered during development sessions. Read this at the st
 
 - [build] `mvn test -P dev` is the fast path — skips slow/integration tests, runs 4 threads (2026-02-12)
 - [build] CI uses `-P dev` profile, not the full test suite (2026-02-12)
-- [coverage] Coverage threshold is 65% enforced by JaCoCo; use `mvn verify -P coverage` to check (2026-02-12)
+- [coverage] Global JaCoCo enforcement in `code/pom.xml` is intentionally `0.00`; real enforcement is module-specific baselines in each module POM. Use `mvn verify -P coverage` for full checks (2026-02-26)
 - [format] Spotless auto-formats Java code on compile — don't manually format, just run `mvn compile` (2026-02-12)
 - [build] Running `mvn test -pl <module>` in isolation uses installed JARs from `~/.m2` for upstream modules — if those JARs are stale (not reinstalled after changes), tests that depend on new classes in upstream modules will fail with `ClassNotFoundException`. Fix: run full `mvn clean test` from root, or `mvn install -pl <upstream> -DskipTests` first (2026-02-18)
 - [pokerserver] `jjwt-jackson:0.12.5` forces `jackson-databind:2.12.7.1` which conflicts with `jackson-datatype-jsr310:2.19.x` pulled in by Spring Boot. Fixed in `pokerserver/pom.xml` via `<dependencyManagement>` pinning all three core Jackson artifacts to `2.19.4` (2026-02-18)
@@ -24,6 +24,7 @@ Persistent knowledge discovered during development sessions. Read this at the st
 ## Testing
 
 - [pokergameserver] `ServerTournamentDirectorTest.multiTableTournamentConsolidates`, `interHandPausePreventsRacing`, and `playerEliminatedEventsPublished` are timing-sensitive — they use `thread.join(30000–120000)`. They pass reliably in isolation but occasionally timeout under `mvn test -P dev` (4-thread parallel build) due to CPU load. Re-run the module alone to distinguish real failures from load-induced flakiness (2026-02-20)
+- [poker] `PokerMain` and `PokerUtils` are infrastructure-heavy (UI/network glue), so low unit line coverage is expected; prioritize integration tests over chasing unit coverage percentages there (2026-02-26)
 - [pokerengine] AIStrategyNode tests depend on PropertyConfig state; tests must be resilient to initialization order (2026-02-12)
 - [pokerengine] NEVER call setValue() on static Card constants (SPADES_A, etc.) in tests — they are shared singletons and modifications pollute all other tests. Create new Card instances instead (2026-02-13)
 - [pokerengine] OnlineGame.hashCode() violates equals/hashCode contract by including super.hashCode() — equal objects (same URL) have different hash codes (2026-02-13)
@@ -42,6 +43,15 @@ Persistent knowledge discovered during development sessions. Read this at the st
 ## Configuration
 
 - [config] PropertyConfig is a global singleton — tests that modify it can affect other tests running in the same JVM (2026-02-12)
+- [config] File-based app config locations: `%APPDATA%\ddpoker\` (Windows), `~/Library/Application Support/ddpoker/` (macOS), `~/.ddpoker/` (Linux) (2026-02-26)
+
+## Security & Auth
+
+- [auth] Passwords are bcrypt one-way hashes; account recovery must use reset flows, never plaintext recovery (2026-02-26)
+
+## Networking
+
+- [network] Public IP detection is client-side with fallback order `ipify.org` -> `icanhazip.com` -> `checkip.amazonaws.com`, with short-term caching and private-IP rejection (2026-02-26)
 
 ## WebSocket Broadcasting
 

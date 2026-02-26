@@ -343,7 +343,7 @@ git revert <merge-commit-sha>
 - [Spring Boot 4 Breaking Changes](https://medium.com/@pmLearners/spring-boot-4-the-7-breaking-changes-every-developer-must-know-99de4c2b60e2)
 
 ### Internal Documentation
-- `.claude/analysis/spring-boot-4-upgrade-analysis.md` - Detailed analysis
+- Investigation context is captured in this plan's Phase 0 and risk sections.
 
 ## Timeline Estimate
 
