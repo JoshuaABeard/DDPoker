@@ -2,7 +2,7 @@
 
 **Status:** COMPLETED
 Created: 2026-02-24
-Scope: `.claude/scripts/scenarios`, `.claude/test-plans`, `.claude/guides`, `code/poker/src/dev/java/com/donohoedigital/games/poker/control`
+Scope: `tests/scenarios`, `docs/testing/plans`, `docs/guides`, `code/poker/src/dev/java/com/donohoedigital/games/poker/control`
 
 ---
 
@@ -45,8 +45,8 @@ Create a machine-checkable contract table per widget:
 
 Deliverables:
 
-- Add contract section to `.claude/guides/desktop-client-testing.md`.
-- Add contract mapping notes to `.claude/test-plans/local-features-strict-coverage-matrix.md`.
+- Add contract section to `docs/guides/desktop-client-testing.md`.
+- Add contract mapping notes to `docs/testing/plans/local-features-strict-coverage-matrix.md`.
 
 ### WS2 - Observability Expansion
 
@@ -77,7 +77,7 @@ Rules:
 
 ### WS4 - Timing Correctness Harness
 
-Add shared helpers in `.claude/scripts/scenarios/lib.sh`:
+Add shared helpers in `tests/scenarios/lib.sh`:
 
 - `wait_for_widget_state(widget, predicate, timeout)`
 - `assert_widget_fresh(widget, max_age_ms)`
@@ -138,7 +138,7 @@ Exit criteria:
 ## Verification Commands
 
 - `mvn -pl poker -P dev -Dtest=GameControlServerTest test -f code/pom.xml`
-- `bash .claude/scripts/scenarios/test-dashboard-panels.sh --skip-build`
+- `bash tests/scenarios/test-dashboard-panels.sh --skip-build`
 - new strict dashboard scripts (WS3)
 - targeted release-gate subset run after integration
 
@@ -158,8 +158,8 @@ Exit criteria:
 ## Related Artifacts
 
 - `.claude/plans/DESKTOP-CLIENT-TEST-REALISM-OVERHAUL.md`
-- `.claude/test-plans/local-features-test-plan.md`
-- `.claude/test-plans/local-features-strict-coverage-matrix.md`
+- `docs/testing/plans/local-features-test-plan.md`
+- `docs/testing/plans/local-features-strict-coverage-matrix.md`
 
 ---
 

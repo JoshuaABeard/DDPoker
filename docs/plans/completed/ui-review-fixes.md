@@ -22,8 +22,8 @@ All Priority 1-4 items have been successfully addressed:
   - Documented for future: Emoji→SVG, color system standardization
 
 **Documentation Added:**
-- `.claude/docs/ADMIN-AUTH-ARCHITECTURE.md` - Auth architecture and limitations
-- `.claude/docs/CSRF-PROTECTION.md` - CSRF protection verification
+- `docs/security/ADMIN-AUTH-ARCHITECTURE.md` - Auth architecture and limitations
+- `docs/security/CSRF-PROTECTION.md` - CSRF protection verification
 
 **Code Changes Pushed:**
 - HTML5 compliance (fixed nested main, button in link)

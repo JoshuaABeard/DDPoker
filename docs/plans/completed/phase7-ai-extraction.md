@@ -74,7 +74,7 @@ poker module (Swing client - backward compatible)
 
 ### 2026-02-15: Tournament AI POC & Interface Extensions
 
-**Session:** `.claude/sessions/2026-02-15-tournament-ai-poc.md`
+**Session:** `docs/archive/sessions/2026-02-15-tournament-ai-poc.md`
 **Review:** `.claude/reviews/main-tournament-ai-poc.md`
 
 #### 1. ✅ Extended TournamentContext Interface
@@ -552,7 +552,7 @@ public class TournamentAI implements PurePokerAI {
 - `code/pokerserver/src/test/java/.../HeadlessGameRunnerTest.java` - Tournament AI POC
 - `code/pokergamecore/src/main/java/.../TournamentContext.java` - Blind query methods
 - `code/poker/src/main/java/.../PokerGame.java` - Blind query implementations
-- `.claude/sessions/2026-02-15-tournament-ai-poc.md` - Session documentation
+- `docs/archive/sessions/2026-02-15-tournament-ai-poc.md` - Session documentation
 - `.claude/reviews/main-tournament-ai-poc.md` - Code review (approved)
 
 **To Be Created in Phase 7:**

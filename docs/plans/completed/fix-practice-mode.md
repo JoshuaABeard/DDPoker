@@ -109,7 +109,7 @@ game via the Game Control Server — no Swing interaction.
 
 ### 1.1 Create integration test script
 
-Write a shell script (`.claude/scripts/test-practice-game.sh`) that:
+Write a shell script (`tests/test-practice-game.sh`) that:
 1. Builds the desktop client with `-P dev` (shade plugin, dev control server)
 2. Launches the JAR in the background with debug logging enabled
 3. Waits for the control server to come up (`/health` polling)
@@ -292,5 +292,5 @@ the Swing UI renders correctly without manual inspection.
 - `ServerPlayerActionProvider.java` — CompletableFuture ordering (if reproduced)
 - `WebSocketTournamentDirector.java` — action mapping fix (3.2), thread safety (if needed)
 - `InboundMessageRouter.java` — sequence number handling (if reproduced)
-- `.claude/scripts/test-practice-game.sh` — new test harness
+- `tests/test-practice-game.sh` — new test harness
 - Test classes for confirmed fixes

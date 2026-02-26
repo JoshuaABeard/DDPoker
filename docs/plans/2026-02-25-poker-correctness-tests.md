@@ -979,7 +979,7 @@ Fix any issues found during smoke testing and commit.
 ### Task 10: Add puppet and hand result helpers to lib.sh
 
 **Files:**
-- Modify: `.claude/scripts/scenarios/lib.sh`
+- Modify: `tests/scenarios/lib.sh`
 
 **Step 1: Add helpers at end of file (before the last line)**
 
@@ -1243,7 +1243,7 @@ play_to_showdown() {
 **Step 2: Commit**
 
 ```bash
-git add .claude/scripts/scenarios/lib.sh
+git add tests/scenarios/lib.sh
 git commit -m "feat: Add puppet mode and hand result helpers to lib.sh"
 ```
 
@@ -1254,7 +1254,7 @@ git commit -m "feat: Add puppet mode and hand result helpers to lib.sh"
 ### Task 11: test-hand-rankings.sh
 
 **Files:**
-- Create: `.claude/scripts/scenarios/test-hand-rankings.sh`
+- Create: `tests/scenarios/test-hand-rankings.sh`
 
 **Step 1: Write the test**
 
@@ -1268,7 +1268,7 @@ git commit -m "feat: Add puppet mode and hand result helpers to lib.sh"
 # Requires puppet mode and hand result API.
 #
 # Usage:
-#   bash .claude/scripts/scenarios/test-hand-rankings.sh [options]
+#   bash tests/scenarios/test-hand-rankings.sh [options]
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 lib_parse_args "$@"
@@ -1391,8 +1391,8 @@ pass "All 10 hand ranking tests passed"
 **Step 2: Make executable and commit**
 
 ```bash
-chmod +x .claude/scripts/scenarios/test-hand-rankings.sh
-git add .claude/scripts/scenarios/test-hand-rankings.sh
+chmod +x tests/scenarios/test-hand-rankings.sh
+git add tests/scenarios/test-hand-rankings.sh
 git commit -m "test: Add hand ranking correctness tests with puppet mode"
 ```
 
@@ -1401,7 +1401,7 @@ git commit -m "test: Add hand ranking correctness tests with puppet mode"
 ### Task 12: test-pot-distribution.sh
 
 **Files:**
-- Create: `.claude/scripts/scenarios/test-pot-distribution.sh`
+- Create: `tests/scenarios/test-pot-distribution.sh`
 
 **Step 1: Write the test**
 
@@ -1413,7 +1413,7 @@ git commit -m "test: Add hand ranking correctness tests with puppet mode"
 # Uses puppet mode for full control and /hand/result for verification.
 #
 # Usage:
-#   bash .claude/scripts/scenarios/test-pot-distribution.sh [options]
+#   bash tests/scenarios/test-pot-distribution.sh [options]
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 lib_parse_args "$@"
@@ -1554,8 +1554,8 @@ pass "Pot distribution tests passed"
 **Step 2: Make executable and commit**
 
 ```bash
-chmod +x .claude/scripts/scenarios/test-pot-distribution.sh
-git add .claude/scripts/scenarios/test-pot-distribution.sh
+chmod +x tests/scenarios/test-pot-distribution.sh
+git add tests/scenarios/test-pot-distribution.sh
 git commit -m "test: Add pot distribution correctness tests"
 ```
 
@@ -1564,7 +1564,7 @@ git commit -m "test: Add pot distribution correctness tests"
 ### Task 13: test-limit-holdem.sh
 
 **Files:**
-- Create: `.claude/scripts/scenarios/test-limit-holdem.sh`
+- Create: `tests/scenarios/test-limit-holdem.sh`
 
 **Step 1: Write the test**
 
@@ -1576,7 +1576,7 @@ git commit -m "test: Add pot distribution correctness tests"
 # raise cap ignored heads-up, correct available actions.
 #
 # Usage:
-#   bash .claude/scripts/scenarios/test-limit-holdem.sh [options]
+#   bash tests/scenarios/test-limit-holdem.sh [options]
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 lib_parse_args "$@"
@@ -1670,8 +1670,8 @@ pass "Limit Hold'em betting rules verified"
 **Step 2: Make executable and commit**
 
 ```bash
-chmod +x .claude/scripts/scenarios/test-limit-holdem.sh
-git add .claude/scripts/scenarios/test-limit-holdem.sh
+chmod +x tests/scenarios/test-limit-holdem.sh
+git add tests/scenarios/test-limit-holdem.sh
 git commit -m "test: Add Limit Hold'em betting rules tests"
 ```
 
@@ -1680,7 +1680,7 @@ git commit -m "test: Add Limit Hold'em betting rules tests"
 ### Task 14: test-potlimit-holdem.sh
 
 **Files:**
-- Create: `.claude/scripts/scenarios/test-potlimit-holdem.sh`
+- Create: `tests/scenarios/test-potlimit-holdem.sh`
 
 **Step 1: Write the test**
 
@@ -1691,7 +1691,7 @@ git commit -m "test: Add Limit Hold'em betting rules tests"
 # Tests: max bet = pot size, max raise after bet, correct min/max amounts.
 #
 # Usage:
-#   bash .claude/scripts/scenarios/test-potlimit-holdem.sh [options]
+#   bash tests/scenarios/test-potlimit-holdem.sh [options]
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 lib_parse_args "$@"
@@ -1740,8 +1740,8 @@ pass "Pot Limit Hold'em betting rules verified"
 **Step 2: Make executable and commit**
 
 ```bash
-chmod +x .claude/scripts/scenarios/test-potlimit-holdem.sh
-git add .claude/scripts/scenarios/test-potlimit-holdem.sh
+chmod +x tests/scenarios/test-potlimit-holdem.sh
+git add tests/scenarios/test-potlimit-holdem.sh
 git commit -m "test: Add Pot Limit Hold'em betting rules tests"
 ```
 
@@ -1750,7 +1750,7 @@ git commit -m "test: Add Pot Limit Hold'em betting rules tests"
 ### Task 15: test-mixed-game.sh
 
 **Files:**
-- Create: `.claude/scripts/scenarios/test-mixed-game.sh`
+- Create: `tests/scenarios/test-mixed-game.sh`
 
 **Step 1: Write the test**
 
@@ -1763,7 +1763,7 @@ git commit -m "test: Add Pot Limit Hold'em betting rules tests"
 # Verifies betting rules change correctly at each transition.
 #
 # Usage:
-#   bash .claude/scripts/scenarios/test-mixed-game.sh [options]
+#   bash tests/scenarios/test-mixed-game.sh [options]
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 lib_parse_args "$@"
@@ -1819,8 +1819,8 @@ pass "Mixed game type transitions verified"
 **Step 2: Make executable and commit**
 
 ```bash
-chmod +x .claude/scripts/scenarios/test-mixed-game.sh
-git add .claude/scripts/scenarios/test-mixed-game.sh
+chmod +x tests/scenarios/test-mixed-game.sh
+git add tests/scenarios/test-mixed-game.sh
 git commit -m "test: Add mixed game type transition tests"
 ```
 
@@ -1829,7 +1829,7 @@ git commit -m "test: Add mixed game type transition tests"
 ### Task 16: test-tournament-lifecycle.sh
 
 **Files:**
-- Create: `.claude/scripts/scenarios/test-tournament-lifecycle.sh`
+- Create: `tests/scenarios/test-tournament-lifecycle.sh`
 
 **Step 1: Write the test**
 
@@ -1842,7 +1842,7 @@ git commit -m "test: Add mixed game type transition tests"
 # weak-handed players go all-in against strong hands.
 #
 # Usage:
-#   bash .claude/scripts/scenarios/test-tournament-lifecycle.sh [options]
+#   bash tests/scenarios/test-tournament-lifecycle.sh [options]
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 lib_parse_args "$@"
@@ -1958,8 +1958,8 @@ pass "Tournament lifecycle tests passed"
 **Step 2: Make executable and commit**
 
 ```bash
-chmod +x .claude/scripts/scenarios/test-tournament-lifecycle.sh
-git add .claude/scripts/scenarios/test-tournament-lifecycle.sh
+chmod +x tests/scenarios/test-tournament-lifecycle.sh
+git add tests/scenarios/test-tournament-lifecycle.sh
 git commit -m "test: Add tournament lifecycle tests (blinds, button, elimination)"
 ```
 
@@ -1978,12 +1978,12 @@ cd code && mvn clean package -DskipTests -P dev
 **Step 2: Run each new test script**
 
 ```bash
-bash .claude/scripts/scenarios/test-hand-rankings.sh --skip-build
-bash .claude/scripts/scenarios/test-pot-distribution.sh --skip-build --skip-launch
-bash .claude/scripts/scenarios/test-limit-holdem.sh --skip-build
-bash .claude/scripts/scenarios/test-potlimit-holdem.sh --skip-build --skip-launch
-bash .claude/scripts/scenarios/test-mixed-game.sh --skip-build
-bash .claude/scripts/scenarios/test-tournament-lifecycle.sh --skip-build
+bash tests/scenarios/test-hand-rankings.sh --skip-build
+bash tests/scenarios/test-pot-distribution.sh --skip-build --skip-launch
+bash tests/scenarios/test-limit-holdem.sh --skip-build
+bash tests/scenarios/test-potlimit-holdem.sh --skip-build --skip-launch
+bash tests/scenarios/test-mixed-game.sh --skip-build
+bash tests/scenarios/test-tournament-lifecycle.sh --skip-build
 ```
 
 **Step 3: Fix any failures found during integration**
@@ -2006,7 +2006,7 @@ git commit -m "fix: Integration test fixes for poker correctness suite"
 ### Task 18: Update desktop-client-testing.md guide
 
 **Files:**
-- Modify: `.claude/guides/desktop-client-testing.md`
+- Modify: `docs/guides/desktop-client-testing.md`
 
 **Step 1: Add documentation for new endpoints**
 
@@ -2027,7 +2027,7 @@ Add a "Puppet Mode" section explaining the pattern:
 **Step 2: Commit**
 
 ```bash
-git add .claude/guides/desktop-client-testing.md
+git add docs/guides/desktop-client-testing.md
 git commit -m "docs: Document puppet mode, hand result, and game type APIs"
 ```
 

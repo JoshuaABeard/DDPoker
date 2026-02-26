@@ -2,7 +2,7 @@
 
 **Status:** COMPLETED
 Created: 2026-02-23
-Scope: `.claude/test-plans`, `.claude/scripts/scenarios`, `code/poker/src/dev/java/com/donohoedigital/games/poker/control`
+Scope: `docs/testing/plans`, `tests/scenarios`, `code/poker/src/dev/java/com/donohoedigital/games/poker/control`
 
 ---
 
@@ -197,7 +197,7 @@ Optimal sequencing when working on both this plan and the [bug cleanup plan](DES
   - `test-navigate.sh`
   - `test-blind-posting.sh`
   - `test-allin-side-pot.sh`
-- Added release-gate executable artifact: `.claude/scripts/scenarios/run-release-gate.sh`.
+- Added release-gate executable artifact: `tests/scenarios/run-release-gate.sh`.
 - Updated docs for hand-number path correction (`tournament.handNumber`) and `handResult` payload usage.
 
 ### 2026-02-24 — Build Session 2 (active)
@@ -299,7 +299,7 @@ Optimal sequencing when working on both this plan and the [bug cleanup plan](DES
 - Added/extended tests and docs for new APIs:
   - `GameControlServerTest` coverage for `/navigate/status` and `/ui/state`,
   - `WebSocketTournamentDirectorTest` coverage for rebuy outcome state signaling,
-  - `.claude/guides/desktop-client-testing.md` updated with endpoint details and `tournament.rebuyOutcome` schema.
+  - `docs/guides/desktop-client-testing.md` updated with endpoint details and `tournament.rebuyOutcome` schema.
 - Targeted verification completed:
   - `mvn -pl poker -P dev -Dtest=GameControlServerTest,WebSocketTournamentDirectorTest test -f code/pom.xml`
   - `test-navigate.sh --skip-build`

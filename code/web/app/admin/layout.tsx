@@ -14,7 +14,7 @@
  * CRITICAL: Backend Java servlets MUST independently verify admin authorization.
  * This frontend check is for UX only - NOT a security boundary.
  *
- * See: .claude/docs/ADMIN-AUTH-ARCHITECTURE.md for details and recommendations.
+ * See: docs/security/ADMIN-AUTH-ARCHITECTURE.md for details and recommendations.
  */
 
 import { useRequireAuth } from '@/lib/auth/useRequireAuth'

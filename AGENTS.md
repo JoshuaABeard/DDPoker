@@ -64,7 +64,7 @@ curl -s -H "$H" -X POST -H "Content-Type: application/json" -d '{"type":"CALL"}'
 - `currentAction.isHumanTurn`: `true` when human action is needed
 - `currentAction.availableActions`: list of valid action types for the current mode
 
-See `.claude/guides/desktop-client-testing.md` for the full reference: all endpoints, input mode table, polling patterns, enabling debug logging, and common failure modes.
+See `docs/guides/desktop-client-testing.md` for the full reference: all endpoints, input mode table, polling patterns, enabling debug logging, and common failure modes.
 
 ## 2. Think Before Coding
 
@@ -130,7 +130,7 @@ Priorities (highest to lowest):
 
 ## 4. Testing
 
-See `.claude/guides/testing-guide.md` for project-specific frameworks, commands, and coverage thresholds.
+See `docs/guides/testing-guide.md` for project-specific frameworks, commands, and coverage thresholds.
 
 ## 5. Decisions
 
@@ -167,7 +167,7 @@ When creating or modifying files:
 - **Substantially modified files**: Use dual copyright (Template 2)
 - **Minor changes/bug fixes**: Keep original copyright (Template 1)
 
-See `.claude/guides/copyright-licensing-guide.md` for:
+See `docs/guides/copyright-licensing-guide.md` for:
 - Complete copyright header templates
 - File-by-file decision guide
 - GPL-3.0 compliance requirements

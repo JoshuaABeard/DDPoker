@@ -43,7 +43,7 @@
 
 **See:**
 - `.claude/plans/PHASE7-AI-EXTRACTION.md` - AI extraction roadmap
-- `.claude/sessions/2026-02-15-tournament-ai-poc.md` - POC implementation details
+- `docs/archive/sessions/2026-02-15-tournament-ai-poc.md` - POC implementation details
 - `.claude/reviews/main-tournament-ai-poc.md` - Code review (approved)
 
 ### ✅ V1 AI Algorithm Extraction Complete (2026-02-15)

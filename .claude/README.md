@@ -1,30 +1,21 @@
-# .claude Directory Structure
+# .claude Directory
 
-## Root Files
+This directory is for agent/runtime tooling files, not project docs or tests.
 
-| File | Purpose |
-|------|---------|
-| `CLAUDE.md` | AI agent instructions and behavioral guidelines |
-| `DDPOKER-OVERVIEW.md` | Full project architecture, tech stack, module structure |
-| `SECURITY.md` | Privacy and security checklist for commits |
-| `README.md` | This file (directory guide) |
-| `settings.local.json` | Local configuration settings |
+## Kept here
 
-## `/guides` — Reference Documentation
+- `CLAUDE.md` - Agent bootstrap instructions.
+- `DDPOKER-OVERVIEW.md` - Compact architecture context for agent sessions.
+- `SECURITY.md` - Commit-time privacy/security checklist for agent workflows.
+- `hooks/` - Git hook scripts used by this repository setup.
+- `settings*.json` - Local agent settings.
 
-Read on demand. Referenced from AGENTS.md when relevant.
+## Moved out of `.claude`
 
-| File | When to Read |
-|------|-------------|
-| `testing-guide.md` | Writing tests — frameworks, commands, coverage thresholds |
-| `desktop-client-testing.md` | Control server API, scenario scripts, input modes |
-| `copyright-licensing-guide.md` | Copyright headers, GPL-3.0 compliance |
-| `docker-build-workflow.md` | Docker build and deployment |
+- Guides: `docs/guides/`
+- Security architecture docs: `docs/security/`
+- Test plans: `docs/testing/plans/`
+- Scenario integration scripts: `tests/scenarios/`
+- Legacy session summaries: `docs/archive/sessions/`
 
-## `/plans/completed` — Archived Plans (Historical)
-
-Completed implementation plans from earlier work. New plans go to `docs/plans/`.
-
-## `/reviews/completed` — Archived Reviews (Historical)
-
-Completed code review handoffs from earlier work. New reviews use superpowers workflow.
+If a new artifact is part of product/testing documentation, place it under `docs/` or `tests/` instead of `.claude`.

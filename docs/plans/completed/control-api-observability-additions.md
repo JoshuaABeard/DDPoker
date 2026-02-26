@@ -43,7 +43,7 @@ Add missing control-server API observability needed to unblock strict scenario p
   - `test-rebuy-dialog.sh` now asserts `tournament.rebuyOutcome` transitions
   - `test-multi-table.sh` now consumes remote snapshot fields
 - Docs:
-  - `.claude/guides/desktop-client-testing.md` updated with new endpoints and `tournament.rebuyOutcome` schema
+  - `docs/guides/desktop-client-testing.md` updated with new endpoints and `tournament.rebuyOutcome` schema
 
 ## Validation
 
