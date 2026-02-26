@@ -20,6 +20,7 @@ package com.donohoedigital.games.poker.online;
 import com.donohoedigital.games.poker.GameClock;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerPlayer;
+import com.donohoedigital.games.poker.PokerTableInput;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
 import com.donohoedigital.games.poker.core.state.BettingRound;
@@ -336,17 +337,76 @@ class WebSocketTournamentDirectorTest {
     // -------------------------------------------------------------------------
 
     @Test
-    void actionTimeoutFiresPlayerActionEvent() throws Exception {
+    void actionTimeoutClearsCurrentPlayer() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        RemotePokerTable table = requireTable();
+
+        // Set a real current player via ACTION_REQUIRED so the assert is non-vacuous
+        ObjectNode options = mapper.createObjectNode();
+        options.put("canFold", true).put("canCheck", false).put("canCall", true).put("callAmount", 50)
+                .put("canBet", false).put("minBet", 0).put("maxBet", 0).put("canRaise", false).put("minRaise", 0)
+                .put("maxRaise", 0).put("canAllIn", true).put("allInAmount", 1000);
+        ObjectNode arPayload = mapper.createObjectNode();
+        arPayload.put("timeoutSeconds", 30);
+        arPayload.set("options", options);
+        dispatch(ServerMessageType.ACTION_REQUIRED, arPayload);
+
+        // Verify current player is set (non-sentinel)
+        assertThat(table.getRemoteHand().getCurrentPlayerIndex())
+                .isNotEqualTo(com.donohoedigital.games.poker.HoldemHand.NO_CURRENT_PLAYER);
+
+        // Now timeout that player — current player must be cleared
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("playerId", 1L).put("autoAction", "FOLD").put("tableId", 1);
+        dispatch(ServerMessageType.ACTION_TIMEOUT, payload);
+
+        assertThat(table.getRemoteHand().getCurrentPlayerIndex())
+                .isEqualTo(com.donohoedigital.games.poker.HoldemHand.NO_CURRENT_PLAYER);
+    }
+
+    @Test
+    void actionTimeoutDoesNotFirePlayerActionEvent() throws Exception {
         dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
         dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
         RemotePokerTable table = requireTable();
         List<Integer> events = collectEvents(table);
 
         ObjectNode payload = mapper.createObjectNode();
-        payload.put("playerId", 1L).put("autoAction", "FOLD");
+        payload.put("playerId", 1L).put("autoAction", "FOLD").put("tableId", 1);
         dispatch(ServerMessageType.ACTION_TIMEOUT, payload);
 
-        assertThat(events).contains(PokerTableEvent.TYPE_PLAYER_ACTION);
+        assertThat(events).doesNotContain(PokerTableEvent.TYPE_PLAYER_ACTION);
+    }
+
+    @Test
+    void actionTimeoutOnLocalPlayerHidesActionButtons() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        requireTable(); // skip if PropertyConfig not initialized
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("playerId", 1L).put("autoAction", "FOLD").put("tableId", 1);
+        dispatch(ServerMessageType.ACTION_TIMEOUT, payload);
+
+        Mockito.verify(mockGame).setInputMode(PokerTableInput.MODE_QUITSAVE);
+    }
+
+    @Test
+    void actionTimeoutShowsTimeoutChatNotActionChat() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        requireTable(); // skip if PropertyConfig not initialized
+
+        List<String> messages = new ArrayList<>();
+        wsTD.setChatHandler((fromPlayerID, chatType, message) -> messages.add(message));
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("playerId", 1L).put("autoAction", "FOLD").put("tableId", 1);
+        dispatch(ServerMessageType.ACTION_TIMEOUT, payload);
+
+        assertThat(messages).hasSize(1);
+        assertThat(messages.get(0)).containsIgnoringCase("timed out");
     }
 
     // -------------------------------------------------------------------------
@@ -669,10 +729,15 @@ class WebSocketTournamentDirectorTest {
     void potAwardedFiresDealerActionEvent() throws Exception {
         // POT_AWARDED must fire TYPE_DEALER_ACTION so the showdown display is
         // re-rendered with correct WIN/LOSE overlays after win data is recorded.
+        // A real showdown requires SHOWDOWN_STARTED to precede POT_AWARDED.
         dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
         dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
         RemotePokerTable table = requireTable();
         List<Integer> events = collectEvents(table);
+
+        ObjectNode showdownPayload = mapper.createObjectNode();
+        showdownPayload.put("tableId", 1);
+        dispatch(ServerMessageType.SHOWDOWN_STARTED, showdownPayload);
 
         ObjectNode payload = mapper.createObjectNode();
         payload.put("potIndex", 0).put("amount", 300);
@@ -680,6 +745,67 @@ class WebSocketTournamentDirectorTest {
         dispatch(ServerMessageType.POT_AWARDED, payload);
 
         assertThat(events).contains(PokerTableEvent.TYPE_DEALER_ACTION);
+    }
+
+    @Test
+    void potAwardedWithoutShowdownDoesNotSetShowdownRound() throws Exception {
+        // Uncontested pot: all opponents folded, no SHOWDOWN_STARTED sent.
+        // Round must NOT be SHOWDOWN.
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        RemotePokerTable table = requireTable();
+        RemoteHoldemHand hand = table.getRemoteHand();
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("potIndex", 0).put("amount", 300);
+        payload.putArray("winnerIds").add(1L);
+        dispatch(ServerMessageType.POT_AWARDED, payload);
+
+        assertThat(hand.getRound()).isNotEqualTo(BettingRound.SHOWDOWN);
+    }
+
+    @Test
+    void potAwardedAfterShowdownStartedSetsShowdownRound() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        RemotePokerTable table = requireTable();
+        RemoteHoldemHand hand = table.getRemoteHand();
+
+        // Real showdown: SHOWDOWN_STARTED arrived first
+        ObjectNode showdownPayload = mapper.createObjectNode();
+        showdownPayload.put("tableId", 1);
+        dispatch(ServerMessageType.SHOWDOWN_STARTED, showdownPayload);
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("potIndex", 0).put("amount", 300);
+        payload.putArray("winnerIds").add(1L);
+        dispatch(ServerMessageType.POT_AWARDED, payload);
+
+        assertThat(hand.getRound()).isEqualTo(BettingRound.SHOWDOWN);
+    }
+
+    @Test
+    void showdownStartedFlagResetsOnNewHand() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        RemotePokerTable table = requireTable();
+
+        // First hand has a showdown
+        ObjectNode showdownPayload = mapper.createObjectNode();
+        showdownPayload.put("tableId", 1);
+        dispatch(ServerMessageType.SHOWDOWN_STARTED, showdownPayload);
+
+        // New hand starts — flag should reset
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+
+        // POT_AWARDED without SHOWDOWN_STARTED in this new hand — should NOT be
+        // SHOWDOWN
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("potIndex", 0).put("amount", 300);
+        payload.putArray("winnerIds").add(1L);
+        dispatch(ServerMessageType.POT_AWARDED, payload);
+
+        assertThat(table.getRemoteHand().getRound()).isNotEqualTo(BettingRound.SHOWDOWN);
     }
 
     // -------------------------------------------------------------------------
@@ -1265,6 +1391,79 @@ class WebSocketTournamentDirectorTest {
     void allInWsActionAlwaysSendsAllIn() {
         // ALL_IN is now sent directly to the server which resolves it.
         assertThat(wsTD.allInWsActionForTest()).isEqualTo("ALL_IN");
+    }
+
+    // -------------------------------------------------------------------------
+    // finish() lifecycle — declineScheduler_ shutdown
+    // -------------------------------------------------------------------------
+
+    @Test
+    void finishShutsDownDeclineScheduler() {
+        // After finish(), the declineScheduler_ must be shut down.
+        // Verified via the test accessor which runs the same shutdown logic.
+        wsTD.finishSchedulersForTest();
+        assertThat(wsTD.isDeclineSchedulerShutdownForTest()).isTrue();
+    }
+
+    // -------------------------------------------------------------------------
+    // determineInputMode
+    // -------------------------------------------------------------------------
+
+    @Test
+    void determineInputModeCallRaiseWhenCanCall() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        requireTable();
+
+        ObjectNode options = mapper.createObjectNode();
+        options.put("canFold", true).put("canCheck", false).put("canCall", true).put("callAmount", 50)
+                .put("canBet", false).put("minBet", 0).put("maxBet", 0).put("canRaise", true).put("minRaise", 100)
+                .put("maxRaise", 500).put("canAllIn", true).put("allInAmount", 1000);
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("timeoutSeconds", 30).set("options", options);
+        Mockito.clearInvocations(mockGame);
+        dispatch(ServerMessageType.ACTION_REQUIRED, payload);
+
+        Mockito.verify(mockGame).setInputMode(Mockito.eq(PokerTableInput.MODE_CALL_RAISE), Mockito.any(),
+                Mockito.any());
+    }
+
+    @Test
+    void determineInputModeCheckBetWhenCanBetOnly() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        requireTable();
+
+        ObjectNode options = mapper.createObjectNode();
+        options.put("canFold", false).put("canCheck", true).put("canCall", false).put("callAmount", 0)
+                .put("canBet", true).put("minBet", 50).put("maxBet", 1000).put("canRaise", false).put("minRaise", 0)
+                .put("maxRaise", 0).put("canAllIn", true).put("allInAmount", 1000);
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("timeoutSeconds", 30).set("options", options);
+        Mockito.clearInvocations(mockGame);
+        dispatch(ServerMessageType.ACTION_REQUIRED, payload);
+
+        Mockito.verify(mockGame).setInputMode(Mockito.eq(PokerTableInput.MODE_CHECK_BET), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void determineInputModeCheckRaiseWhenBigBlindOption() throws Exception {
+        // Big blind pre-flop: canCheck=true, canRaise=true, canBet=false, canCall=false
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        requireTable();
+
+        ObjectNode options = mapper.createObjectNode();
+        options.put("canFold", true).put("canCheck", true).put("canCall", false).put("callAmount", 0)
+                .put("canBet", false).put("minBet", 0).put("maxBet", 0).put("canRaise", true).put("minRaise", 100)
+                .put("maxRaise", 500).put("canAllIn", true).put("allInAmount", 1000);
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("timeoutSeconds", 30).set("options", options);
+        Mockito.clearInvocations(mockGame);
+        dispatch(ServerMessageType.ACTION_REQUIRED, payload);
+
+        Mockito.verify(mockGame).setInputMode(Mockito.eq(PokerTableInput.MODE_CHECK_RAISE), Mockito.any(),
+                Mockito.any());
     }
 
     // -------------------------------------------------------------------------

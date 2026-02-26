@@ -95,6 +95,10 @@ public class WebSocketTournamentDirector extends BasePhase
     private final WebSocketOpponentTracker opponentTracker_ = new WebSocketOpponentTracker();
     private volatile boolean isPreFlop_ = false;
 
+    // True if SHOWDOWN_STARTED was received for the current hand.
+    // Reset to false on each HAND_STARTED.
+    private volatile boolean showdownStarted_ = false;
+
     // One RemotePokerTable per server table ID
     private final Map<Integer, RemotePokerTable> tables_ = new HashMap<>();
 
@@ -236,6 +240,7 @@ public class WebSocketTournamentDirector extends BasePhase
         context_.setGameManager(null);
         cancelPendingRebuyDecline();
         cancelPendingAddonDecline();
+        declineScheduler_.shutdown();
         wsClient_.disconnect();
         game_.setPlayerActionListener(null);
     }
@@ -297,6 +302,21 @@ public class WebSocketTournamentDirector extends BasePhase
      */
     void clearTablesForTest() {
         tables_.clear();
+    }
+
+    /**
+     * Shuts down schedulers for testing lifecycle (simulates the effect of finish()
+     * without requiring a full phase context).
+     */
+    void finishSchedulersForTest() {
+        cancelPendingRebuyDecline();
+        cancelPendingAddonDecline();
+        declineScheduler_.shutdown();
+    }
+
+    /** Returns true if the decline scheduler has been shut down (for testing). */
+    boolean isDeclineSchedulerShutdownForTest() {
+        return declineScheduler_.isShutdown();
     }
 
     public Map<String, Object> getControlObservabilitySnapshot() {
@@ -706,6 +726,7 @@ public class WebSocketTournamentDirector extends BasePhase
         isPreFlop_ = true;
         opponentTracker_.onHandStart();
         SwingUtilities.invokeLater(() -> {
+            showdownStarted_ = false;
             // Apply to all tables (HAND_STARTED is per-table; we apply to the current
             // table)
             RemotePokerTable table = currentTable();
@@ -890,7 +911,9 @@ public class WebSocketTournamentDirector extends BasePhase
             return PokerTableInput.MODE_CALL_RAISE;
         if (opts.canRaise())
             return PokerTableInput.MODE_CHECK_RAISE;
-        return PokerTableInput.MODE_CHECK_BET;
+        if (opts.canBet())
+            return PokerTableInput.MODE_CHECK_BET;
+        return PokerTableInput.MODE_QUITSAVE;
     }
 
     private void onPlayerActed(PlayerActedData d) {
@@ -947,7 +970,11 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onActionTimeout(ActionTimeoutData d) {
         SwingUtilities.invokeLater(() -> {
-            // Auto-action already applied server-side; treat like PLAYER_ACTED
+            // Notification-only: the subsequent PLAYER_ACTED message handles all
+            // state updates (chip count, folded, pot, action chat). This handler:
+            // 1. Clears the current player highlight
+            // 2. Hides action buttons if the local player timed out
+            // 3. Shows a "timed out" notification (not an action chat)
             RemotePokerTable table = tables_.getOrDefault(d.tableId(), currentTable());
             if (table == null)
                 return;
@@ -957,13 +984,13 @@ public class WebSocketTournamentDirector extends BasePhase
 
             hand.updateCurrentPlayer(HoldemHand.NO_CURRENT_PLAYER);
 
+            if (d.playerId() == localPlayerId_) {
+                game_.setInputMode(PokerTableInput.MODE_QUITSAVE);
+            }
+
             PokerPlayer player = findPlayer(d.playerId());
-            if (player == null)
-                return;
-            int handAction = mapWsStringToAction(d.autoAction());
-            HandAction action = new HandAction(player, hand.getRoundForDisplay(), handAction, 0);
-            table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ACTION, table, action));
-            deliverChatLocal(PokerConstants.CHAT_2, action.getChat(0, null, null), PokerConstants.CHAT_DEALER_MSG_ID);
+            String name = player != null ? player.getName() : "Player " + d.playerId();
+            deliverChatLocal(PokerConstants.CHAT_2, name + " timed out", PokerConstants.CHAT_DEALER_MSG_ID);
         });
     }
 
@@ -1039,8 +1066,8 @@ public class WebSocketTournamentDirector extends BasePhase
 
             // Record win(s) in hand history so displayShowdown() shows WIN/LOSE overlays
             // correctly. Without this, getWin() returns 0 for all players and everyone
-            // shows as LOSE. Also handles uncontested pots (all folded) by setting the
-            // round to SHOWDOWN so displayShowdown() runs at all.
+            // shows as LOSE. Only advance to SHOWDOWN round when a real showdown occurred
+            // (i.e. SHOWDOWN_STARTED was received); uncontested pots must not trigger it.
             if (hand != null && d.winnerIds() != null && d.winnerIds().length > 0) {
                 int amountEach = d.amount() / d.winnerIds().length;
                 for (long winnerId : d.winnerIds()) {
@@ -1049,8 +1076,10 @@ public class WebSocketTournamentDirector extends BasePhase
                         hand.wins(winner, amountEach, d.potIndex());
                     }
                 }
-                hand.updateRound(BettingRound.SHOWDOWN);
-                table.fireEvent(PokerTableEvent.TYPE_DEALER_ACTION, BettingRound.SHOWDOWN.toLegacy());
+                if (showdownStarted_) {
+                    hand.updateRound(BettingRound.SHOWDOWN);
+                    table.fireEvent(PokerTableEvent.TYPE_DEALER_ACTION, BettingRound.SHOWDOWN.toLegacy());
+                }
             }
 
             table.fireEvent(PokerTableEvent.TYPE_PLAYER_CHIPS_CHANGED);
@@ -1059,6 +1088,7 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onShowdownStarted(ShowdownStartedData d) {
         SwingUtilities.invokeLater(() -> {
+            showdownStarted_ = true;
             RemotePokerTable table = tables_.get(d.tableId());
             if (table == null)
                 table = currentTable();
@@ -1162,14 +1192,18 @@ public class WebSocketTournamentDirector extends BasePhase
             // rebuy decision as MODE_REBUY_CHECK so the API can respond.
             NewLevelActions.RebuyDecisionProvider provider = NewLevelActions.rebuyDecisionProvider;
             if (provider != null) {
-                boolean accepted = provider.waitForDecision(() -> game_.setInputMode(PokerTableInput.MODE_REBUY_CHECK),
-                        30);
-                if (accepted) {
-                    doRebuy(localPlayer, table.getLevel(), d.cost(), d.chips(), localPlayer.isInHand());
-                } else {
-                    markRebuyDecisionSent(false, d.cost(), d.chips(), localPlayer.isInHand());
-                    wsClient_.sendRebuyDecision(false);
-                }
+                // Set input mode synchronously on the EDT, then wait for the
+                // decision on a background thread to avoid blocking the EDT.
+                game_.setInputMode(PokerTableInput.MODE_REBUY_CHECK);
+                declineScheduler_.execute(() -> {
+                    boolean accepted = provider.waitForDecision(() -> {
+                    }, 30);
+                    SwingUtilities.invokeLater(() -> {
+                        cancelPendingRebuyDecline();
+                        markRebuyDecisionSent(accepted, d.cost(), d.chips(), false);
+                        wsClient_.sendRebuyDecision(accepted);
+                    });
+                });
                 return;
             }
 
@@ -1192,8 +1226,9 @@ public class WebSocketTournamentDirector extends BasePhase
 
     /**
      * Set by GameControlServer to intercept addon decisions via the control API.
-     * When non-null, {@link #onAddonOffered} blocks the EDT (sets MODE_REBUY_CHECK)
-     * and waits for the API caller to resolve before sending ADDON_DECISION.
+     * When non-null, {@link #onAddonOffered} sets MODE_REBUY_CHECK on the EDT and
+     * waits for the API caller to resolve on the declineScheduler background
+     * thread.
      */
     public static volatile NewLevelActions.RebuyDecisionProvider addonDecisionProvider;
 
@@ -1210,13 +1245,19 @@ public class WebSocketTournamentDirector extends BasePhase
             // addon decision as MODE_REBUY_CHECK so the API can respond.
             NewLevelActions.RebuyDecisionProvider provider = addonDecisionProvider;
             if (provider != null) {
-                boolean accepted = provider.waitForDecision(() -> game_.setInputMode(PokerTableInput.MODE_REBUY_CHECK),
-                        30);
-                if (accepted) {
-                    doAddon(localPlayer, d.cost(), d.chips());
-                } else {
-                    wsClient_.sendAddonDecision(false);
-                }
+                game_.setInputMode(PokerTableInput.MODE_REBUY_CHECK);
+                declineScheduler_.execute(() -> {
+                    boolean accepted = provider.waitForDecision(() -> {
+                    }, 30);
+                    SwingUtilities.invokeLater(() -> {
+                        cancelPendingAddonDecline();
+                        if (accepted) {
+                            doAddon(localPlayer, d.cost(), d.chips());
+                        } else {
+                            wsClient_.sendAddonDecision(false);
+                        }
+                    });
+                });
                 return;
             }
 

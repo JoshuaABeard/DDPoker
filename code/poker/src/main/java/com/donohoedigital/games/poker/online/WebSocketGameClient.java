@@ -74,7 +74,7 @@ public class WebSocketGameClient {
     private final AtomicLong sequenceCounter = new AtomicLong(0);
     private final AtomicLong lastReceivedSequence = new AtomicLong(0);
 
-    private final ScheduledExecutorService scheduler;
+    private volatile ScheduledExecutorService scheduler;
 
     public WebSocketGameClient() {
         this(new ObjectMapper().registerModule(new JavaTimeModule()),
@@ -134,6 +134,16 @@ public class WebSocketGameClient {
         this.connected = false;
         this.reconnecting.set(false);
         this.reconnectCycle.incrementAndGet();
+        this.lastReceivedSequence.set(0);
+        this.sequenceCounter.set(0);
+        // Recreate scheduler if it was shut down by a previous disconnect()
+        if (scheduler.isShutdown()) {
+            scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "ws-reconnect");
+                t.setDaemon(true);
+                return t;
+            });
+        }
 
         CompletableFuture<Void> connectFuture = openConnection();
         connectFuture.whenComplete((v, ex) -> {
@@ -236,6 +246,16 @@ public class WebSocketGameClient {
     /** Returns {@code true} if the WebSocket is currently connected. */
     public boolean isConnected() {
         return connected;
+    }
+
+    // Visible for testing
+    void setLastReceivedSequenceForTest(long value) {
+        lastReceivedSequence.set(value);
+    }
+
+    // Visible for testing
+    long getLastReceivedSequenceForTest() {
+        return lastReceivedSequence.get();
     }
 
     /** Closes the WebSocket connection without reconnecting. */
@@ -422,11 +442,13 @@ public class WebSocketGameClient {
                 if (seq != null) {
                     long prev = lastReceivedSequence.get();
                     if (prev > 0 && seq > prev + 1) {
-                        logger.warn("[WS-GAP] sequence gap detected: last={} received={} (missed {} events). "
-                                + "Requesting full state resync; dropping this message.", prev, seq, seq - prev - 1);
+                        logger.warn(
+                                "[WS-GAP] sequence gap detected: last={} received={} (missed {} events). "
+                                        + "Requesting full state resync; dropping this message.",
+                                prev, seq, seq - prev - 1);
                         lastReceivedSequence.set(seq);
                         sendRequestState();
-                        return;  // Don't process the out-of-order message
+                        return; // Don't process the out-of-order message
                     }
                     lastReceivedSequence.set(seq);
                 }
