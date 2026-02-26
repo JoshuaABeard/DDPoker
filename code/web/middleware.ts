@@ -23,8 +23,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Check for auth cookie
-  const authToken = request.cookies.get('auth_token') || request.cookies.get('access_token')
+  // Check for auth cookie — server sets HttpOnly cookie named 'DDPoker-JWT'
+  const authToken = request.cookies.get('DDPoker-JWT')
   if (!authToken) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('returnUrl', pathname)
