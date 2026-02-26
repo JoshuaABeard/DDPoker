@@ -74,7 +74,7 @@ public class WebSocketGameClient {
     private final AtomicLong sequenceCounter = new AtomicLong(0);
     private final AtomicLong lastReceivedSequence = new AtomicLong(0);
 
-    private ScheduledExecutorService scheduler;
+    private volatile ScheduledExecutorService scheduler;
 
     public WebSocketGameClient() {
         this(new ObjectMapper().registerModule(new JavaTimeModule()),
