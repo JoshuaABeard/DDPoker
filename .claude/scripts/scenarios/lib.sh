@@ -452,8 +452,11 @@ get_hand_result() {
 }
 
 # Wait for a hand result to be available (after showdown).
+# Usage: wait_hand_result [TIMEOUT] [MIN_HAND_NUM]
+# If MIN_HAND_NUM is provided, waits until handNumber > MIN_HAND_NUM (for multi-hand tests).
 wait_hand_result() {
     local timeout="${1:-$STUCK_TIMEOUT}"
+    local min_hand="${2:-0}"
     local start=$(date +%s)
     while true; do
         local result
@@ -462,13 +465,22 @@ wait_hand_result() {
             local err
             err=$(jget "$result" 'o.error||""')
             if [[ -z "$err" ]]; then
-                printf '%s' "$result"
-                return 0
+                if [[ "$min_hand" -gt 0 ]]; then
+                    local hn
+                    hn=$(jget "$result" 'o.handNumber||0')
+                    if [[ "$hn" -gt "$min_hand" ]]; then
+                        printf '%s' "$result"
+                        return 0
+                    fi
+                else
+                    printf '%s' "$result"
+                    return 0
+                fi
             fi
         fi
         local elapsed=$(( $(date +%s) - start ))
         if [[ $elapsed -gt $timeout ]]; then
-            log "Timed out waiting for hand result"
+            log "Timed out waiting for hand result (min_hand=$min_hand)"
             return 1
         fi
         sleep 0.3
@@ -573,9 +585,11 @@ wait_any_turn() {
 # Play all players through to showdown (everyone checks/calls).
 # All non-human players must be puppeted. Handles DEAL/CONTINUE prompts.
 # Returns when a hand result is available from /hand/result.
-# Usage: play_to_showdown [TIMEOUT]
+# Usage: play_to_showdown [TIMEOUT] [MIN_HAND_NUM]
+# If MIN_HAND_NUM is provided, waits for handNumber > MIN_HAND_NUM.
 play_to_showdown() {
     local timeout="${1:-60}"
+    local min_hand="${2:-0}"
     local start=$(date +%s)
     while true; do
         local state mode
@@ -588,8 +602,17 @@ play_to_showdown() {
         local hr
         hr=$(api GET /hand/result 2>/dev/null || true)
         if [[ -n "$hr" ]] && ! echo "$hr" | grep -q '"error"'; then
-            log "  Hand result available"
-            return 0
+            if [[ "$min_hand" -gt 0 ]]; then
+                local hn
+                hn=$(jget "$hr" 'o.handNumber||0')
+                if [[ "$hn" -gt "$min_hand" ]]; then
+                    log "  Hand result available (hand #$hn)"
+                    return 0
+                fi
+            else
+                log "  Hand result available"
+                return 0
+            fi
         fi
 
         # Human betting turn
@@ -631,6 +654,65 @@ play_to_showdown() {
         local elapsed=$(( $(date +%s) - start ))
         if [[ $elapsed -gt $timeout ]]; then
             log "WARN: play_to_showdown timed out after ${timeout}s (mode=$mode)"
+            return 1
+        fi
+        sleep 0.15
+    done
+}
+
+# Advance through post-hand prompts (CONTINUE/DEAL) and optionally inject cards.
+# If CARDS_JSON is provided, injects before advancing through DEAL.
+# Waits until the next hand's betting begins (human or puppet turn).
+# Usage: advance_to_next_hand [TIMEOUT] [CARDS_JSON]
+advance_to_next_hand() {
+    local timeout="${1:-30}"
+    local cards_json="${2:-}"
+    local injected=false
+    local start=$(date +%s)
+    while true; do
+        local state mode
+        state=$(api GET /state 2>/dev/null) || { sleep 0.15; continue; }
+        mode=$(jget "$state" 'o.inputMode||"NONE"')
+
+        close_visible_dialog_if_any "advance-next" > /dev/null 2>&1 || true
+
+        # Advance through CONTINUE prompts
+        case "$mode" in
+            CONTINUE|CONTINUE_LOWER)
+                api_post_json /action "{\"type\":\"$mode\"}" > /dev/null 2>&1 || true
+                sleep 0.2
+                continue
+                ;;
+            REBUY_CHECK)
+                api_post_json /action '{"type":"DECLINE_REBUY"}' > /dev/null 2>&1 || true
+                sleep 0.2
+                continue
+                ;;
+            DEAL)
+                # Inject cards before dealing if requested
+                if [[ -n "$cards_json" && "$injected" != "true" ]]; then
+                    api_post_json /cards/inject "$cards_json" > /dev/null 2>&1 || true
+                    injected=true
+                fi
+                api_post_json /action '{"type":"DEAL"}' > /dev/null 2>&1 || true
+                sleep 0.3
+                continue
+                ;;
+        esac
+
+        # Check for betting/puppet turn (next hand started)
+        if echo "$mode" | grep -qE "^(CHECK_BET|CHECK_RAISE|CALL_RAISE)$"; then
+            return 0
+        fi
+        local puppet_turn
+        puppet_turn=$(jget "$state" 'o.currentAction&&o.currentAction.isPuppetTurn||false')
+        if [[ "$puppet_turn" == "true" ]]; then
+            return 0
+        fi
+
+        local elapsed=$(( $(date +%s) - start ))
+        if [[ $elapsed -gt $timeout ]]; then
+            log "WARN: advance_to_next_hand timed out after ${timeout}s (mode=$mode)"
             return 1
         fi
         sleep 0.15
