@@ -1192,14 +1192,18 @@ public class WebSocketTournamentDirector extends BasePhase
             // rebuy decision as MODE_REBUY_CHECK so the API can respond.
             NewLevelActions.RebuyDecisionProvider provider = NewLevelActions.rebuyDecisionProvider;
             if (provider != null) {
-                boolean accepted = provider.waitForDecision(() -> game_.setInputMode(PokerTableInput.MODE_REBUY_CHECK),
-                        30);
-                if (accepted) {
-                    doRebuy(localPlayer, table.getLevel(), d.cost(), d.chips(), localPlayer.isInHand());
-                } else {
-                    markRebuyDecisionSent(false, d.cost(), d.chips(), localPlayer.isInHand());
-                    wsClient_.sendRebuyDecision(false);
-                }
+                // Set input mode synchronously on the EDT, then wait for the
+                // decision on a background thread to avoid blocking the EDT.
+                game_.setInputMode(PokerTableInput.MODE_REBUY_CHECK);
+                declineScheduler_.execute(() -> {
+                    boolean accepted = provider.waitForDecision(() -> {
+                    }, 30);
+                    SwingUtilities.invokeLater(() -> {
+                        cancelPendingRebuyDecline();
+                        markRebuyDecisionSent(accepted, d.cost(), d.chips(), false);
+                        wsClient_.sendRebuyDecision(accepted);
+                    });
+                });
                 return;
             }
 
