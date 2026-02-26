@@ -98,6 +98,10 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
   const potTotal = currentTable.pots.reduce((sum, p) => sum + p.amount, 0)
   const showTimer = actionTimeoutSeconds != null
 
+  // Task 6.7: find this player's seat to determine sit-out status
+  const mySeat = currentTable.seats.find((s) => s.playerId === myPlayerId)
+  const isSatOut = mySeat?.status === 'SAT_OUT'
+
   return (
     <div
       className="game-bg relative w-full h-full overflow-hidden"
@@ -110,10 +114,21 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
           level={gameState.level}
           blinds={gameState.blinds}
           nextLevelIn={gameState.nextLevelIn}
-          playerCount={gameState.players.length}
+          playerCount={state.playersRemaining > 0 ? state.playersRemaining : gameState.players.length}
+          totalPlayers={state.totalPlayers > 0 ? state.totalPlayers : undefined}
+          playerRank={state.playerRank > 0 ? state.playerRank : undefined}
           gameName={gameName}
         />
       </div>
+
+      {/* Task 6.8: observer count — shown when watchers are present */}
+      {state.observers.length > 0 && (
+        <div className="absolute top-12 left-3 z-10">
+          <span className="text-gray-400 text-xs">
+            {state.observers.length} watching
+          </span>
+        </div>
+      )}
 
       {/* Oval felt surface (community cards + pots) */}
       <TableFelt table={currentTable} />
@@ -153,9 +168,22 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
         </div>
       )}
 
+      {/* Task 6.7: sit-out / come-back toggle — shown when player has a seat */}
+      {mySeat != null && (
+        <div className="absolute bottom-3 left-3 z-20">
+          <button
+            type="button"
+            onClick={() => (isSatOut ? actions.sendComeBack() : actions.sendSitOut())}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
+          >
+            {isSatOut ? "I'm Back" : 'Sit Out'}
+          </button>
+        </div>
+      )}
+
       {/* Hand history — top-right corner */}
       <div className="absolute top-12 right-3 z-10">
-        <HandHistory entries={gameState.handHistory} />
+        <HandHistory entries={state.handHistory} />
       </div>
 
       {/* Chat panel — bottom-right corner */}

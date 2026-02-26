@@ -25,18 +25,46 @@ const DEFAULT_BLIND_STRUCTURE: GameConfigDto['blindStructure'] = [
   { smallBlind: 800,  bigBlind: 1600,  ante: 200, minutes: 15, isBreak: false, gameType: 'NOLIMIT_HOLDEM' },
 ]
 
+const DEFAULT_AI_PLAYERS: Array<{ name: string; skillLevel: number }> = [
+  { name: 'AI 1', skillLevel: 5 },
+  { name: 'AI 2', skillLevel: 5 },
+  { name: 'AI 3', skillLevel: 5 },
+  { name: 'AI 4', skillLevel: 5 },
+  { name: 'AI 5', skillLevel: 5 },
+  { name: 'AI 6', skillLevel: 5 },
+  { name: 'AI 7', skillLevel: 5 },
+  { name: 'AI 8', skillLevel: 5 },
+]
+
 function CreateGameForm() {
   const searchParams = useSearchParams()
   const isPractice = searchParams.get('practice') === 'true'
   const router = useRouter()
 
+  // Basic settings
   const [name, setName] = useState('')
   const [maxPlayers, setMaxPlayers] = useState(9)
   const [buyIn, setBuyIn] = useState(0)
   const [startingChips, setStartingChips] = useState(10_000)
   const [password, setPassword] = useState('')
+
+  // Task 6.1 step 1 — game type
+  const [defaultGameType, setDefaultGameType] = useState<'NOLIMIT_HOLDEM' | 'POTLIMIT_HOLDEM' | 'LIMIT_HOLDEM'>('NOLIMIT_HOLDEM')
+
+  // Task 6.1 step 2 — blind structure
+  const [blindStructure, setBlindStructure] = useState([...DEFAULT_BLIND_STRUCTURE])
+
+  // Task 6.1 step 3 — level advance mode
+  const [levelAdvanceMode, setLevelAdvanceMode] = useState<'TIME' | 'HANDS'>('TIME')
+  const [handsPerLevel, setHandsPerLevel] = useState(20)
+
+  // Task 6.4 step 2 — AI player list (replaces aiCount)
   const [fillComputer, setFillComputer] = useState(isPractice)
-  const [aiCount, setAiCount] = useState(8)
+  const [aiPlayerList, setAiPlayerList] = useState<Array<{ name: string; skillLevel: number }>>([
+    ...DEFAULT_AI_PLAYERS,
+  ])
+
+  // Rebuys / addons
   const [allowRebuys, setAllowRebuys] = useState(false)
   const [rebuyCost, setRebuyCost] = useState(0)
   const [rebuyChips, setRebuyChips] = useState(10_000)
@@ -44,22 +72,78 @@ function CreateGameForm() {
   const [allowAddon, setAllowAddon] = useState(false)
   const [addonCost, setAddonCost] = useState(0)
   const [addonChips, setAddonChips] = useState(5_000)
+
+  // Timeouts
   const [actionTimeoutSeconds, setActionTimeoutSeconds] = useState(30)
+
+  // Task 6.2 step 1 — payout
+  const [payoutSpots, setPayoutSpots] = useState(3)
+
+  // Task 6.2 step 2 — bounty
+  const [bountyEnabled, setBountyEnabled] = useState(false)
+  const [bountyAmount, setBountyAmount] = useState(0)
+
+  // Task 6.3 step 2 — boot settings
+  const [bootSitout, setBootSitout] = useState(false)
+  const [bootDisconnect, setBootDisconnect] = useState(false)
+  const [bootAfterHands, setBootAfterHands] = useState(3)
+
+  // Task 6.3 step 3 — late registration
+  const [lateRegistration, setLateRegistration] = useState(false)
+  const [lateRegUntilLevel, setLateRegUntilLevel] = useState(3)
+
+  // UI state
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  // Blind structure helpers
+  function updateBlindLevel(
+    index: number,
+    field: keyof GameConfigDto['blindStructure'][number],
+    value: number | boolean | string,
+  ) {
+    setBlindStructure((prev) =>
+      prev.map((level, i) => (i === index ? { ...level, [field]: value } : level)),
+    )
+  }
+
+  function addBlindLevel() {
+    setBlindStructure((prev) => {
+      const last = prev[prev.length - 1] ?? DEFAULT_BLIND_STRUCTURE[0]
+      return [...prev, { ...last }]
+    })
+  }
+
+  function removeBlindLevel(index: number) {
+    setBlindStructure((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  // AI player list helpers
+  function updateAiPlayer(index: number, field: 'name' | 'skillLevel', value: string | number) {
+    setAiPlayerList((prev) =>
+      prev.map((p, i) => (i === index ? { ...p, [field]: value } : p)),
+    )
+  }
+
+  function addAiPlayer() {
+    setAiPlayerList((prev) => [
+      ...prev,
+      { name: `AI ${prev.length + 1}`, skillLevel: 5 },
+    ])
+  }
+
+  function removeAiPlayer(index: number) {
+    setAiPlayerList((prev) => prev.filter((_, i) => i !== index))
+  }
 
   function buildConfig(overrides: Partial<{
     name: string
     fillComputer: boolean
-    aiPlayerCount: number
+    aiPlayerList: Array<{ name: string; skillLevel: number }>
   }> = {}): GameConfigDto {
     const effectiveName = overrides.name ?? name
     const effectiveFill = overrides.fillComputer ?? fillComputer
-    const effectiveAiCount = overrides.aiPlayerCount ?? aiCount
-
-    const aiPlayers = effectiveFill
-      ? Array.from({ length: effectiveAiCount }, (_, i) => ({ name: `AI ${i + 1}`, skillLevel: 5 }))
-      : []
+    const effectiveAiPlayerList = overrides.aiPlayerList ?? aiPlayerList
 
     return {
       name: effectiveName,
@@ -67,8 +151,10 @@ function CreateGameForm() {
       fillComputer: effectiveFill,
       buyIn,
       startingChips,
-      blindStructure: DEFAULT_BLIND_STRUCTURE,
-      defaultGameType: 'NOLIMIT_HOLDEM',
+      blindStructure,
+      defaultGameType,
+      levelAdvanceMode,
+      handsPerLevel: levelAdvanceMode === 'HANDS' ? handsPerLevel : undefined,
       rebuys: {
         enabled: allowRebuys,
         cost: rebuyCost,
@@ -83,7 +169,20 @@ function CreateGameForm() {
       timeouts: {
         defaultSeconds: actionTimeoutSeconds,
       },
-      aiPlayers,
+      aiPlayers: effectiveFill ? effectiveAiPlayerList : [],
+      payout: { type: 'STANDARD', spots: payoutSpots, percent: 0, prizePool: 0, allocationType: 'PERCENT' },
+      bounty: bountyEnabled ? { enabled: true, amount: bountyAmount } : undefined,
+      boot: {
+        bootSitout,
+        bootSitoutCount: bootAfterHands,
+        bootDisconnect,
+        bootDisconnectCount: bootAfterHands,
+      },
+      lateRegistration: {
+        enabled: lateRegistration,
+        untilLevel: lateRegUntilLevel,
+        chipMode: 'STARTING',
+      },
       password: password || undefined,
     }
   }
@@ -96,7 +195,7 @@ function CreateGameForm() {
         buildConfig({
           name: name || 'Quick Practice',
           fillComputer: true,
-          aiPlayerCount: 8,
+          aiPlayerList: DEFAULT_AI_PLAYERS,
         })
       )
       router.push(`/games/${gameId}/play`)
@@ -191,6 +290,177 @@ function CreateGameForm() {
               />
             </div>
           </div>
+
+          {/* Task 6.1 step 1 — Game type selector */}
+          <div>
+            <label htmlFor="defaultGameType" className="block text-sm font-medium mb-1">
+              Game Type
+            </label>
+            <select
+              id="defaultGameType"
+              value={defaultGameType}
+              onChange={(e) => setDefaultGameType(e.target.value as typeof defaultGameType)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="NOLIMIT_HOLDEM">No Limit</option>
+              <option value="POTLIMIT_HOLDEM">Pot Limit</option>
+              <option value="LIMIT_HOLDEM">Limit</option>
+            </select>
+          </div>
+        </section>
+
+        {/* Task 6.1 step 2 — Blind Structure Editor */}
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold border-b border-gray-200 pb-1">Blind Structure</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="text-left text-gray-500">
+                  <th className="pr-2 py-1 font-medium">Level</th>
+                  <th className="pr-2 py-1 font-medium">Small</th>
+                  <th className="pr-2 py-1 font-medium">Big</th>
+                  <th className="pr-2 py-1 font-medium">Ante</th>
+                  <th className="pr-2 py-1 font-medium">Min</th>
+                  <th className="py-1"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {blindStructure.map((level, i) => (
+                  <tr key={i} className="border-t border-gray-100">
+                    <td className="pr-2 py-1 text-gray-500">{i + 1}</td>
+                    <td className="pr-2 py-1">
+                      <input
+                        type="number"
+                        value={level.smallBlind}
+                        min={1}
+                        onChange={(e) => updateBlindLevel(i, 'smallBlind', Number(e.target.value))}
+                        className="w-20 border border-gray-300 rounded px-1 py-0.5"
+                      />
+                    </td>
+                    <td className="pr-2 py-1">
+                      <input
+                        type="number"
+                        value={level.bigBlind}
+                        min={1}
+                        onChange={(e) => updateBlindLevel(i, 'bigBlind', Number(e.target.value))}
+                        className="w-20 border border-gray-300 rounded px-1 py-0.5"
+                      />
+                    </td>
+                    <td className="pr-2 py-1">
+                      <input
+                        type="number"
+                        value={level.ante}
+                        min={0}
+                        onChange={(e) => updateBlindLevel(i, 'ante', Number(e.target.value))}
+                        className="w-16 border border-gray-300 rounded px-1 py-0.5"
+                      />
+                    </td>
+                    <td className="pr-2 py-1">
+                      <input
+                        type="number"
+                        value={level.minutes}
+                        min={1}
+                        onChange={(e) => updateBlindLevel(i, 'minutes', Number(e.target.value))}
+                        className="w-14 border border-gray-300 rounded px-1 py-0.5"
+                      />
+                    </td>
+                    <td className="py-1">
+                      <button
+                        type="button"
+                        onClick={() => removeBlindLevel(i)}
+                        disabled={blindStructure.length <= 1}
+                        className="text-red-500 hover:text-red-700 disabled:opacity-30 text-xs px-1"
+                      >
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button
+            type="button"
+            onClick={addBlindLevel}
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
+            + Add Level
+          </button>
+        </section>
+
+        {/* Task 6.1 step 3 — Level Advance Mode */}
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold border-b border-gray-200 pb-1">Level Timing</h2>
+          <div className="flex items-center gap-4">
+            <label htmlFor="levelAdvanceMode" className="block text-sm font-medium">
+              Advance levels by
+            </label>
+            <select
+              id="levelAdvanceMode"
+              value={levelAdvanceMode}
+              onChange={(e) => setLevelAdvanceMode(e.target.value as 'TIME' | 'HANDS')}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="TIME">Time</option>
+              <option value="HANDS">Hands</option>
+            </select>
+          </div>
+          {levelAdvanceMode === 'HANDS' && (
+            <div>
+              <label htmlFor="handsPerLevel" className="block text-sm font-medium mb-1">
+                Hands per Level
+              </label>
+              <input
+                id="handsPerLevel"
+                type="number"
+                value={handsPerLevel}
+                min={1}
+                onChange={(e) => setHandsPerLevel(Math.max(1, Number(e.target.value)))}
+                className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
+        </section>
+
+        {/* Task 6.2 — Payout & Bounty */}
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold border-b border-gray-200 pb-1">Payouts</h2>
+          <div>
+            <label htmlFor="payoutSpots" className="block text-sm font-medium mb-1">
+              Pay top N spots
+            </label>
+            <input
+              id="payoutSpots"
+              type="number"
+              value={payoutSpots}
+              min={1}
+              onChange={(e) => setPayoutSpots(Math.max(1, Number(e.target.value)))}
+              className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={bountyEnabled}
+                onChange={(e) => setBountyEnabled(e.target.checked)}
+                className="rounded"
+              />
+              Enable bounties
+            </label>
+            {bountyEnabled && (
+              <div className="ml-6">
+                <label className="block text-xs font-medium mb-1">Bounty Amount</label>
+                <input
+                  type="number"
+                  value={bountyAmount}
+                  min={0}
+                  onChange={(e) => setBountyAmount(Number(e.target.value))}
+                  className="w-32 border border-gray-300 rounded px-2 py-1 text-xs"
+                />
+              </div>
+            )}
+          </div>
         </section>
 
         {/* AI settings */}
@@ -206,19 +476,45 @@ function CreateGameForm() {
             Fill empty seats with AI players
           </label>
           {fillComputer && (
-            <div>
-              <label htmlFor="aiCount" className="block text-sm font-medium mb-1">
-                AI Player Count
-              </label>
-              <input
-                id="aiCount"
-                type="number"
-                value={aiCount}
-                onChange={(e) => setAiCount(Math.max(1, Math.min(maxPlayers - 1, Number(e.target.value))))}
-                min={1}
-                max={maxPlayers - 1}
-                className="w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            <div className="space-y-2">
+              {aiPlayerList.map((ai, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={ai.name}
+                    onChange={(e) => updateAiPlayer(i, 'name', e.target.value)}
+                    maxLength={40}
+                    placeholder={`AI ${i + 1}`}
+                    className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+                  />
+                  <label className="text-xs text-gray-500 whitespace-nowrap">Skill</label>
+                  <input
+                    type="number"
+                    value={ai.skillLevel}
+                    min={1}
+                    max={10}
+                    onChange={(e) =>
+                      updateAiPlayer(i, 'skillLevel', Math.max(1, Math.min(10, Number(e.target.value))))
+                    }
+                    className="w-16 border border-gray-300 rounded px-2 py-1 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeAiPlayer(i)}
+                    disabled={aiPlayerList.length <= 1}
+                    className="text-red-500 hover:text-red-700 disabled:opacity-30 text-xs"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addAiPlayer}
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              >
+                + Add AI Player
+              </button>
             </div>
           )}
         </section>
@@ -320,6 +616,66 @@ function CreateGameForm() {
                 </div>
               )}
             </div>
+
+            {/* Task 6.3 step 2 — Boot Settings */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Boot Settings</p>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={bootSitout}
+                  onChange={(e) => setBootSitout(e.target.checked)}
+                  className="rounded"
+                />
+                Boot players who sit out
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={bootDisconnect}
+                  onChange={(e) => setBootDisconnect(e.target.checked)}
+                  className="rounded"
+                />
+                Boot players who disconnect
+              </label>
+              {(bootSitout || bootDisconnect) && (
+                <div className="ml-6">
+                  <label className="block text-xs font-medium mb-1">After how many hands</label>
+                  <input
+                    type="number"
+                    value={bootAfterHands}
+                    min={1}
+                    onChange={(e) => setBootAfterHands(Math.max(1, Number(e.target.value)))}
+                    className="w-20 border border-gray-300 rounded px-2 py-1 text-xs"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Task 6.3 step 3 — Late Registration */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={lateRegistration}
+                  onChange={(e) => setLateRegistration(e.target.checked)}
+                  className="rounded"
+                />
+                Allow late registration
+              </label>
+              {lateRegistration && (
+                <div className="ml-6">
+                  <label className="block text-xs font-medium mb-1">Until level</label>
+                  <input
+                    type="number"
+                    value={lateRegUntilLevel}
+                    min={1}
+                    onChange={(e) => setLateRegUntilLevel(Math.max(1, Number(e.target.value)))}
+                    className="w-20 border border-gray-300 rounded px-2 py-1 text-xs"
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </details>
 
@@ -337,7 +693,7 @@ function CreateGameForm() {
               disabled={loading}
               className="flex-1 py-2 bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white font-bold rounded-lg transition-colors"
             >
-              {loading ? 'Starting…' : 'Start Practice Game'}
+              {loading ? 'Starting\u2026' : 'Start Practice Game'}
             </button>
           ) : (
             <>
@@ -346,7 +702,7 @@ function CreateGameForm() {
                 disabled={loading}
                 className="flex-1 py-2 bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white font-bold rounded-lg transition-colors"
               >
-                {loading ? 'Creating…' : 'Create Game'}
+                {loading ? 'Creating\u2026' : 'Create Game'}
               </button>
               <button
                 type="button"
@@ -366,7 +722,7 @@ function CreateGameForm() {
 
 export default function CreateGamePage() {
   return (
-    <Suspense fallback={<div className="text-gray-500 text-sm">Loading…</div>}>
+    <Suspense fallback={<div className="text-gray-500 text-sm">Loading\u2026</div>}>
       <CreateGameForm />
     </Suspense>
   )
