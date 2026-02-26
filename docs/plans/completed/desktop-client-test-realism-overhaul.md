@@ -52,7 +52,7 @@ Priority scripts requiring redesign or hardening:
 ## Related Plans
 
 - **[Desktop + Server Bug Cleanup](DESKTOP-SERVER-BUG-CLEANUP-PLAN.md):** Bug fixes and test hardening should happen together. When a bug is fixed in the cleanup plan, the corresponding scenario test should be promoted from Smoke to Strict simultaneously. Phase 2 crash/correctness fixes feed directly into Phase 1 credibility work here.
-- **[Coverage Matrix](local-features-strict-coverage-matrix.md):** Quantitative tracking of classification promotions across phases.
+- **[Coverage Matrix](../../guides/local-features-strict-coverage-matrix.md):** Quantitative tracking of classification promotions across phases.
 
 ---
 
@@ -121,7 +121,7 @@ Exit criteria:
 ### Phase 4 - Suite Rationalization
 
 - Merge duplicate or overlapping scripts (`navigate` variants, option variants).
-- Publish one coverage matrix mapping `local-features-test-plan.md` IDs to:
+- Publish one coverage matrix mapping `docs/guides/local-features-test-plan.md` IDs to:
   - automated strict,
   - automated smoke (hard / soft),
   - manual only,

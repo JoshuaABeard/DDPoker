@@ -2,7 +2,7 @@
 
 Status: active baseline
 Date: 2026-02-23
-Source plan: `docs/plans/local-features-test-plan.md`
+Source plan: `docs/guides/local-features-test-plan.md`
 
 ## Related Plans
 
