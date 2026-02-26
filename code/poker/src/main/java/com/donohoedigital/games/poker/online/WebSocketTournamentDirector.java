@@ -911,7 +911,9 @@ public class WebSocketTournamentDirector extends BasePhase
             return PokerTableInput.MODE_CALL_RAISE;
         if (opts.canRaise())
             return PokerTableInput.MODE_CHECK_RAISE;
-        return PokerTableInput.MODE_CHECK_BET;
+        if (opts.canBet())
+            return PokerTableInput.MODE_CHECK_BET;
+        return PokerTableInput.MODE_QUITSAVE;
     }
 
     private void onPlayerActed(PlayerActedData d) {

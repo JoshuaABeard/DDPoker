@@ -1406,6 +1406,67 @@ class WebSocketTournamentDirectorTest {
     }
 
     // -------------------------------------------------------------------------
+    // determineInputMode
+    // -------------------------------------------------------------------------
+
+    @Test
+    void determineInputModeCallRaiseWhenCanCall() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        requireTable();
+
+        ObjectNode options = mapper.createObjectNode();
+        options.put("canFold", true).put("canCheck", false).put("canCall", true).put("callAmount", 50)
+                .put("canBet", false).put("minBet", 0).put("maxBet", 0).put("canRaise", true).put("minRaise", 100)
+                .put("maxRaise", 500).put("canAllIn", true).put("allInAmount", 1000);
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("timeoutSeconds", 30).set("options", options);
+        Mockito.clearInvocations(mockGame);
+        dispatch(ServerMessageType.ACTION_REQUIRED, payload);
+
+        Mockito.verify(mockGame).setInputMode(Mockito.eq(PokerTableInput.MODE_CALL_RAISE), Mockito.any(),
+                Mockito.any());
+    }
+
+    @Test
+    void determineInputModeCheckBetWhenCanBetOnly() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        requireTable();
+
+        ObjectNode options = mapper.createObjectNode();
+        options.put("canFold", false).put("canCheck", true).put("canCall", false).put("callAmount", 0)
+                .put("canBet", true).put("minBet", 50).put("maxBet", 1000).put("canRaise", false).put("minRaise", 0)
+                .put("maxRaise", 0).put("canAllIn", true).put("allInAmount", 1000);
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("timeoutSeconds", 30).set("options", options);
+        Mockito.clearInvocations(mockGame);
+        dispatch(ServerMessageType.ACTION_REQUIRED, payload);
+
+        Mockito.verify(mockGame).setInputMode(Mockito.eq(PokerTableInput.MODE_CHECK_BET), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void determineInputModeCheckRaiseWhenBigBlindOption() throws Exception {
+        // Big blind pre-flop: canCheck=true, canRaise=true, canBet=false, canCall=false
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        requireTable();
+
+        ObjectNode options = mapper.createObjectNode();
+        options.put("canFold", true).put("canCheck", true).put("canCall", false).put("callAmount", 0)
+                .put("canBet", false).put("minBet", 0).put("maxBet", 0).put("canRaise", true).put("minRaise", 100)
+                .put("maxRaise", 500).put("canAllIn", true).put("allInAmount", 1000);
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("timeoutSeconds", 30).set("options", options);
+        Mockito.clearInvocations(mockGame);
+        dispatch(ServerMessageType.ACTION_REQUIRED, payload);
+
+        Mockito.verify(mockGame).setInputMode(Mockito.eq(PokerTableInput.MODE_CHECK_RAISE), Mockito.any(),
+                Mockito.any());
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
