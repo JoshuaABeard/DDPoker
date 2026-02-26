@@ -93,7 +93,7 @@ public class WebSocketTournamentDirector extends BasePhase
 
     // Tracks per-player pre-flop stats from observed actions
     private final WebSocketOpponentTracker opponentTracker_ = new WebSocketOpponentTracker();
-    private boolean isPreFlop_ = false;
+    private volatile boolean isPreFlop_ = false;
 
     // One RemotePokerTable per server table ID
     private final Map<Integer, RemotePokerTable> tables_ = new HashMap<>();
