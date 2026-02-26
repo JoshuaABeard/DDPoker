@@ -1226,8 +1226,9 @@ public class WebSocketTournamentDirector extends BasePhase
 
     /**
      * Set by GameControlServer to intercept addon decisions via the control API.
-     * When non-null, {@link #onAddonOffered} blocks the EDT (sets MODE_REBUY_CHECK)
-     * and waits for the API caller to resolve before sending ADDON_DECISION.
+     * When non-null, {@link #onAddonOffered} sets MODE_REBUY_CHECK on the EDT and
+     * waits for the API caller to resolve on the declineScheduler background
+     * thread.
      */
     public static volatile NewLevelActions.RebuyDecisionProvider addonDecisionProvider;
 
@@ -1244,13 +1245,19 @@ public class WebSocketTournamentDirector extends BasePhase
             // addon decision as MODE_REBUY_CHECK so the API can respond.
             NewLevelActions.RebuyDecisionProvider provider = addonDecisionProvider;
             if (provider != null) {
-                boolean accepted = provider.waitForDecision(() -> game_.setInputMode(PokerTableInput.MODE_REBUY_CHECK),
-                        30);
-                if (accepted) {
-                    doAddon(localPlayer, d.cost(), d.chips());
-                } else {
-                    wsClient_.sendAddonDecision(false);
-                }
+                game_.setInputMode(PokerTableInput.MODE_REBUY_CHECK);
+                declineScheduler_.execute(() -> {
+                    boolean accepted = provider.waitForDecision(() -> {
+                    }, 30);
+                    SwingUtilities.invokeLater(() -> {
+                        cancelPendingAddonDecline();
+                        if (accepted) {
+                            doAddon(localPlayer, d.cost(), d.chips());
+                        } else {
+                            wsClient_.sendAddonDecision(false);
+                        }
+                    });
+                });
                 return;
             }
 
