@@ -13,12 +13,9 @@ import Link from 'next/link'
 import { gameServerApi } from '@/lib/api'
 import type { GameSummaryDto } from '@/lib/game/types'
 import { PasswordDialog } from '@/components/game/PasswordDialog'
+import { formatChips } from '@/lib/utils'
 
 type TabFilter = 'WAITING_FOR_PLAYERS' | 'IN_PROGRESS' | 'COMPLETED'
-
-function formatChips(n: number): string {
-  return new Intl.NumberFormat('en-US').format(n)
-}
 
 export default function GamesPage() {
   const router = useRouter()
