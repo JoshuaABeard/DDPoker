@@ -729,10 +729,15 @@ class WebSocketTournamentDirectorTest {
     void potAwardedFiresDealerActionEvent() throws Exception {
         // POT_AWARDED must fire TYPE_DEALER_ACTION so the showdown display is
         // re-rendered with correct WIN/LOSE overlays after win data is recorded.
+        // A real showdown requires SHOWDOWN_STARTED to precede POT_AWARDED.
         dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
         dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
         RemotePokerTable table = requireTable();
         List<Integer> events = collectEvents(table);
+
+        ObjectNode showdownPayload = mapper.createObjectNode();
+        showdownPayload.put("tableId", 1);
+        dispatch(ServerMessageType.SHOWDOWN_STARTED, showdownPayload);
 
         ObjectNode payload = mapper.createObjectNode();
         payload.put("potIndex", 0).put("amount", 300);
@@ -740,6 +745,67 @@ class WebSocketTournamentDirectorTest {
         dispatch(ServerMessageType.POT_AWARDED, payload);
 
         assertThat(events).contains(PokerTableEvent.TYPE_DEALER_ACTION);
+    }
+
+    @Test
+    void potAwardedWithoutShowdownDoesNotSetShowdownRound() throws Exception {
+        // Uncontested pot: all opponents folded, no SHOWDOWN_STARTED sent.
+        // Round must NOT be SHOWDOWN.
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        RemotePokerTable table = requireTable();
+        RemoteHoldemHand hand = table.getRemoteHand();
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("potIndex", 0).put("amount", 300);
+        payload.putArray("winnerIds").add(1L);
+        dispatch(ServerMessageType.POT_AWARDED, payload);
+
+        assertThat(hand.getRound()).isNotEqualTo(BettingRound.SHOWDOWN);
+    }
+
+    @Test
+    void potAwardedAfterShowdownStartedSetsShowdownRound() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        RemotePokerTable table = requireTable();
+        RemoteHoldemHand hand = table.getRemoteHand();
+
+        // Real showdown: SHOWDOWN_STARTED arrived first
+        ObjectNode showdownPayload = mapper.createObjectNode();
+        showdownPayload.put("tableId", 1);
+        dispatch(ServerMessageType.SHOWDOWN_STARTED, showdownPayload);
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("potIndex", 0).put("amount", 300);
+        payload.putArray("winnerIds").add(1L);
+        dispatch(ServerMessageType.POT_AWARDED, payload);
+
+        assertThat(hand.getRound()).isEqualTo(BettingRound.SHOWDOWN);
+    }
+
+    @Test
+    void showdownStartedFlagResetsOnNewHand() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        RemotePokerTable table = requireTable();
+
+        // First hand has a showdown
+        ObjectNode showdownPayload = mapper.createObjectNode();
+        showdownPayload.put("tableId", 1);
+        dispatch(ServerMessageType.SHOWDOWN_STARTED, showdownPayload);
+
+        // New hand starts — flag should reset
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+
+        // POT_AWARDED without SHOWDOWN_STARTED in this new hand — should NOT be
+        // SHOWDOWN
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("potIndex", 0).put("amount", 300);
+        payload.putArray("winnerIds").add(1L);
+        dispatch(ServerMessageType.POT_AWARDED, payload);
+
+        assertThat(table.getRemoteHand().getRound()).isNotEqualTo(BettingRound.SHOWDOWN);
     }
 
     // -------------------------------------------------------------------------

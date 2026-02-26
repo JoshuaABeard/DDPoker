@@ -95,6 +95,10 @@ public class WebSocketTournamentDirector extends BasePhase
     private final WebSocketOpponentTracker opponentTracker_ = new WebSocketOpponentTracker();
     private volatile boolean isPreFlop_ = false;
 
+    // True if SHOWDOWN_STARTED was received for the current hand.
+    // Reset to false on each HAND_STARTED.
+    private volatile boolean showdownStarted_ = false;
+
     // One RemotePokerTable per server table ID
     private final Map<Integer, RemotePokerTable> tables_ = new HashMap<>();
 
@@ -722,6 +726,7 @@ public class WebSocketTournamentDirector extends BasePhase
         isPreFlop_ = true;
         opponentTracker_.onHandStart();
         SwingUtilities.invokeLater(() -> {
+            showdownStarted_ = false;
             // Apply to all tables (HAND_STARTED is per-table; we apply to the current
             // table)
             RemotePokerTable table = currentTable();
@@ -1059,8 +1064,8 @@ public class WebSocketTournamentDirector extends BasePhase
 
             // Record win(s) in hand history so displayShowdown() shows WIN/LOSE overlays
             // correctly. Without this, getWin() returns 0 for all players and everyone
-            // shows as LOSE. Also handles uncontested pots (all folded) by setting the
-            // round to SHOWDOWN so displayShowdown() runs at all.
+            // shows as LOSE. Only advance to SHOWDOWN round when a real showdown occurred
+            // (i.e. SHOWDOWN_STARTED was received); uncontested pots must not trigger it.
             if (hand != null && d.winnerIds() != null && d.winnerIds().length > 0) {
                 int amountEach = d.amount() / d.winnerIds().length;
                 for (long winnerId : d.winnerIds()) {
@@ -1069,8 +1074,10 @@ public class WebSocketTournamentDirector extends BasePhase
                         hand.wins(winner, amountEach, d.potIndex());
                     }
                 }
-                hand.updateRound(BettingRound.SHOWDOWN);
-                table.fireEvent(PokerTableEvent.TYPE_DEALER_ACTION, BettingRound.SHOWDOWN.toLegacy());
+                if (showdownStarted_) {
+                    hand.updateRound(BettingRound.SHOWDOWN);
+                    table.fireEvent(PokerTableEvent.TYPE_DEALER_ACTION, BettingRound.SHOWDOWN.toLegacy());
+                }
             }
 
             table.fireEvent(PokerTableEvent.TYPE_PLAYER_CHIPS_CHANGED);
@@ -1079,6 +1086,7 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onShowdownStarted(ShowdownStartedData d) {
         SwingUtilities.invokeLater(() -> {
+            showdownStarted_ = true;
             RemotePokerTable table = tables_.get(d.tableId());
             if (table == null)
                 table = currentTable();
