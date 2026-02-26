@@ -41,7 +41,6 @@ export interface WebSocketClientOptions {
 export class WebSocketClient {
   private ws: WebSocket | null = null
   private wsUrl: string | null = null
-  private initialToken: string | null = null
   private reconnectToken: string | null = null
   private sequenceNumber = 0
   private reconnectAttempt = 0
@@ -69,7 +68,6 @@ export class WebSocketClient {
     }
     this.clearReconnectTimer()
     this.wsUrl = wsUrl
-    this.initialToken = token
     this.intentionalClose = false
     this.reconnectAttempt = 0
     this.openSocket(token)
