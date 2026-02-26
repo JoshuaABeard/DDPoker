@@ -353,7 +353,7 @@ Yes, this is embarrassing in retrospect.
 
 ### Computer AI
 
-While not "AI" by today's standards, there is a white paper in `docs/AI_Whitepaper.rtf` that
+While not "AI" by today's standards, there is a white paper in `docs/archive/AI_Whitepaper.rtf` that
 explains the design of DD Poker's computer opponents.
 
 ### Database Host

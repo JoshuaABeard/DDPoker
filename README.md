@@ -33,7 +33,7 @@ This is a **community-maintained fork** of DD Poker, created to provide:
 - macOS: `~/Library/Application Support/ddpoker/config.json`
 - Linux: `~/.ddpoker/config.json`
 
-See [docs/FILE-BASED-CONFIGURATION.md](docs/FILE-BASED-CONFIGURATION.md) for complete documentation.
+See [docs/guides/file-based-configuration.md](docs/guides/file-based-configuration.md) for complete documentation.
 
 ### What's New in 3.3.0 Community Edition
 
@@ -125,7 +125,7 @@ environment:
 
 Then access the admin panel at http://localhost:8080/admin
 
-For complete admin setup and usage guide, see [docs/ADMIN-PANEL.md](docs/ADMIN-PANEL.md).
+For complete admin setup and usage guide, see [docs/guides/admin-panel.md](docs/guides/admin-panel.md).
 
 For complete Docker documentation, configuration options, and troubleshooting, see [docker/DEPLOYMENT.md](docker/DEPLOYMENT.md).
 
@@ -134,7 +134,7 @@ DD Poker is available as an Unraid Community Application with built-in admin con
 
 ### For Developers
 
-See [README-DEV.md](README-DEV.md) for comprehensive development documentation, including:
+See [docs/guides/developer-notes.md](docs/guides/developer-notes.md) for comprehensive development documentation, including:
 - Building from source with Maven
 - Running locally for development
 - Testing online multiplayer

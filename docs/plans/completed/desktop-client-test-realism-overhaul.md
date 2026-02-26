@@ -2,7 +2,7 @@
 
 **Status:** COMPLETED
 Created: 2026-02-23
-Scope: `docs/testing/plans`, `tests/scenarios`, `code/poker/src/dev/java/com/donohoedigital/games/poker/control`
+Scope: `docs/plans`, `tests/scenarios`, `code/poker/src/dev/java/com/donohoedigital/games/poker/control`
 
 ---
 
@@ -52,7 +52,7 @@ Priority scripts requiring redesign or hardening:
 ## Related Plans
 
 - **[Desktop + Server Bug Cleanup](DESKTOP-SERVER-BUG-CLEANUP-PLAN.md):** Bug fixes and test hardening should happen together. When a bug is fixed in the cleanup plan, the corresponding scenario test should be promoted from Smoke to Strict simultaneously. Phase 2 crash/correctness fixes feed directly into Phase 1 credibility work here.
-- **[Coverage Matrix](../test-plans/local-features-strict-coverage-matrix.md):** Quantitative tracking of classification promotions across phases.
+- **[Coverage Matrix](local-features-strict-coverage-matrix.md):** Quantitative tracking of classification promotions across phases.
 
 ---
 

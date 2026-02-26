@@ -428,7 +428,7 @@ docker logs ddpoker | grep -i admin
 ## Additional Resources
 
 - **Main Documentation**: [README.md](../README.md)
-- **Configuration Guide**: [FILE-BASED-CONFIGURATION.md](FILE-BASED-CONFIGURATION.md)
+- **Configuration Guide**: [file-based-configuration.md](file-based-configuration.md)
 - **Docker Setup**: [docker/docker-compose.yml](../docker/docker-compose.yml)
 - **Issue Tracker**: [GitHub Issues](https://github.com/JoshuaABeard/DDPoker/issues)
 

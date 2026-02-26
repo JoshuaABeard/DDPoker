@@ -25,7 +25,7 @@ DDPoker currently has a Windows MSI installer built with `jpackage-maven-plugin`
 | `.github/workflows/build-installers.yml` | NEW — GitHub Actions matrix build for all 3 platforms |
 | `docker/Dockerfile` | Update COPY to include *.dmg, *.deb, *.rpm alongside *.msi |
 | `code/pokerwicket/.../pages/download/DownloadHome.html` | Add macOS and Linux download sections |
-| `BUILD.md` | Add multi-platform build instructions |
+| `docs/guides/build.md` | Add multi-platform build instructions |
 
 ## Step-by-Step Implementation
 

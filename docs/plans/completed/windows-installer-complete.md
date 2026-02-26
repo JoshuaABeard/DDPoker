@@ -442,7 +442,7 @@ java -jar DDPokerCommunityEdition-3.3.0.jar
 
 ## Documentation Updates
 
-### BUILD.md
+### docs/guides/build.md
 **Added:** "Build Windows Installer" section
 - WiX Toolset installation instructions
 - jpackage build command
@@ -654,7 +654,7 @@ java -jar DDPokerCommunityEdition-3.3.0.jar
 - `docker/README.md` - Added installer build instructions
 
 ### Documentation
-- `BUILD.md` - Added Windows installer build guide
+- `docs/guides/build.md` - Added Windows installer build guide
 - `README.md` - Updated download options
 - `code/pokerwicket/src/main/java/.../DownloadHome.html` - Dual download UI
 

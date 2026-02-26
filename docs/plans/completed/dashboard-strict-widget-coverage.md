@@ -2,7 +2,7 @@
 
 **Status:** COMPLETED
 Created: 2026-02-24
-Scope: `tests/scenarios`, `docs/testing/plans`, `docs/guides`, `code/poker/src/dev/java/com/donohoedigital/games/poker/control`
+Scope: `tests/scenarios`, `docs/plans`, `docs/guides`, `code/poker/src/dev/java/com/donohoedigital/games/poker/control`
 
 ---
 
@@ -46,7 +46,7 @@ Create a machine-checkable contract table per widget:
 Deliverables:
 
 - Add contract section to `docs/guides/desktop-client-testing.md`.
-- Add contract mapping notes to `docs/testing/plans/local-features-strict-coverage-matrix.md`.
+- Add contract mapping notes to `docs/plans/local-features-strict-coverage-matrix.md`.
 
 ### WS2 - Observability Expansion
 
@@ -158,8 +158,8 @@ Exit criteria:
 ## Related Artifacts
 
 - `.claude/plans/DESKTOP-CLIENT-TEST-REALISM-OVERHAUL.md`
-- `docs/testing/plans/local-features-test-plan.md`
-- `docs/testing/plans/local-features-strict-coverage-matrix.md`
+- `docs/plans/local-features-test-plan.md`
+- `docs/plans/local-features-strict-coverage-matrix.md`
 
 ---
 

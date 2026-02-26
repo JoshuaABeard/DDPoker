@@ -511,11 +511,11 @@ While production-ready, these enhancements could be considered:
 - [FTUE-ADVANCED-EDGE-CASE-TESTING.md](.claude/plans/completed/FTUE-ADVANCED-EDGE-CASE-TESTING.md) - Advanced edge case testing summary
 
 ### User Documentation
-- [FIRST-TIME-WIZARD.md](docs/FIRST-TIME-WIZARD.md) - User guide and FAQ
+- [FIRST-TIME-WIZARD.md](../guides/first-time-wizard.md) - User guide and FAQ
 
 ### General Documentation
 - [CHANGELOG.md](CHANGELOG.md) - Release notes
-- [FILE-BASED-CONFIGURATION.md](docs/FILE-BASED-CONFIGURATION.md) - Configuration system
+- [FILE-BASED-CONFIGURATION.md](../guides/file-based-configuration.md) - Configuration system
 
 ---
 

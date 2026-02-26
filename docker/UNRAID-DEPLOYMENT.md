@@ -409,5 +409,5 @@ After successful deployment:
 
 For issues or questions:
 - Check [DEPLOYMENT.md](DEPLOYMENT.md) for general Docker documentation
-- Review [../docs/ADMIN-PANEL.md](../docs/ADMIN-PANEL.md) for admin features
+- Review [../docs/guides/admin-panel.md](../docs/guides/admin-panel.md) for admin features
 - File issue at https://github.com/anthropics/claude-code/issues

@@ -27,7 +27,7 @@
 | JUnit 5 (preferred) | Unit and integration tests. Legacy JUnit 4 tests exist but new tests should use JUnit 5. |
 | Mockito | Mocking dependencies |
 | AssertJ | Fluent assertions |
-| AssertJ Swing | Desktop UI tests |
+| AssertJ Swing | Desktop UI tests — see [ui-testing.md](ui-testing.md) for full reference |
 
 ## Running Tests
 

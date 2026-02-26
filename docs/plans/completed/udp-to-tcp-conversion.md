@@ -273,11 +273,11 @@ All documentation referencing UDP ports, networking architecture, or Docker conf
 | [docker/README.md](docker/README.md) | Update port list: remove `/udp` suffixes from 11886, 11889. |
 | [docker/Dockerfile](docker/Dockerfile) | Change `EXPOSE 11886/udp 11889/udp` to `EXPOSE 11886 11889` (TCP is default). |
 | [docker/docker-compose.yml](docker/docker-compose.yml) | Change `11886:11886/udp` and `11889:11889/udp` to `11886:11886` and `11889:11889`. |
-| [LOCAL-DEVELOPMENT.md](LOCAL-DEVELOPMENT.md) | Remove "Do NOT use localhost for UDP chat" caveat (TCP works fine with localhost). Update port descriptions. Simplify networking instructions. |
-| [BUILD.md](BUILD.md) | Update port references from UDP to TCP. |
+| [docs/guides/local-development.md](docs/guides/local-development.md) | Remove "Do NOT use localhost for UDP chat" caveat (TCP works fine with localhost). Update port descriptions. Simplify networking instructions. |
+| [docs/guides/build.md](docs/guides/build.md) | Update port references from UDP to TCP. |
 | [README.md](README.md) | Update port list in Docker quick start section. |
 | [unraid/README.md](unraid/README.md) | Update port table: 11886/11889 change from UDP to TCP. Remove "UDP port mapping can be unreliable" note. Mark all ports as Required (TCP is reliable). |
-| [docs/PUBLIC-IP-DETECTION-TECHNICAL.md](docs/PUBLIC-IP-DETECTION-TECHNICAL.md) | Review P2P architecture description — update any UDP references to TCP. |
+| [docs/architecture/public-ip-detection-technical.md](docs/architecture/public-ip-detection-technical.md) | Review P2P architecture description — update any UDP references to TCP. |
 | [CHANGELOG.md](CHANGELOG.md) | Add entry for the TCP conversion describing the change and its benefits. |
 | [.claude/plans/CHAT-TCP-CONVERSION.md](.claude/plans/CHAT-TCP-CONVERSION.md) | Mark as completed or update to reflect final implementation. |
 

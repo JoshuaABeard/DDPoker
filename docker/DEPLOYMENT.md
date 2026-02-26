@@ -483,7 +483,7 @@ environment:
 - For public servers, use a reverse proxy with HTTPS
 - Consider IP whitelisting for admin access
 
-For complete admin panel documentation and usage guide, see [../docs/ADMIN-PANEL.md](../docs/ADMIN-PANEL.md).
+For complete admin panel documentation and usage guide, see [../docs/guides/admin-panel.md](../docs/guides/admin-panel.md).
 
 ### Custom Ports
 

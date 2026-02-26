@@ -30,7 +30,7 @@ AssertJ Swing UI testing infrastructure has been successfully added to DD Poker!
   - Custom matchers
 
 ### 4. Documentation
-- **docs/UI-TESTING.md** - Comprehensive guide with:
+- **docs/guides/ui-testing.md** - Comprehensive guide with:
   - How to write UI tests
   - Best practices
   - Debugging tips
@@ -127,7 +127,7 @@ mvn test -Dtest=MyFeatureTest
 
 ## Documentation
 
-See **docs/UI-TESTING.md** for:
+See **docs/guides/ui-testing.md** for:
 - Complete API reference
 - Best practices
 - Advanced patterns

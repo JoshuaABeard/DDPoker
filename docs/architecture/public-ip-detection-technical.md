@@ -550,8 +550,8 @@ If user doesn't trust external services:
 
 ### Related Documentation
 
-- `docs/LICENSE-REMOVAL-TECHNICAL.md` - Player identity system
-- `docs/FILE-BASED-CONFIGURATION.md` - Configuration system
+- `docs/archive/license-removal-technical.md` - Player identity system
+- `docs/guides/file-based-configuration.md` - Configuration system
 - `CHANGELOG.md` - Release notes
 
 ## Conclusion

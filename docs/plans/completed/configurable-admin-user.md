@@ -326,7 +326,7 @@ ENV ADMIN_PASSWORD=
 ### 5. Documentation
 
 #### ADMIN-PANEL.md (NEW)
-**File:** `docs/ADMIN-PANEL.md`
+**File:** `docs/guides/admin-panel.md`
 
 **Comprehensive 400+ line user-facing guide covering:**
 
@@ -428,7 +428,7 @@ Navigate to: `http://server-ip:8080/admin`
 ### Created
 - `code/pokerserver/src/test/java/com/donohoedigital/games/poker/server/PokerServerTest.java`
 - `code/pokerwicket/src/test/java/com/donohoedigital/games/poker/wicket/PokerUserTest.java`
-- `docs/ADMIN-PANEL.md`
+- `docs/guides/admin-panel.md`
 
 ---
 
@@ -455,7 +455,7 @@ cd code && mvn test -pl pokerserver,pokerwicket
 - Restart without env vars - verify admin pages inaccessible
 
 ✅ **4. Documentation Complete**
-- User-facing: `docs/ADMIN-PANEL.md` (comprehensive guide)
+- User-facing: `docs/guides/admin-panel.md` (comprehensive guide)
 - Deployment: `docker/DEPLOYMENT.md` (configuration section)
 - Main: `README.md` (feature highlight and links)
 - Unraid: `unraid/DDPoker.xml` (template with admin fields)

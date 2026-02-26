@@ -365,7 +365,7 @@ The smoke test script (`test-practice-game.sh`) defaults to `--ai-delay-ms 0`
 so automated runs are fast. Pass a non-zero value to test realistic timing:
 
 ```bash
-bash tests/test-practice-game.sh --ai-delay-ms 200
+bash tests/scenarios/test-practice-game.sh --ai-delay-ms 200
 ```
 
 The `--ai-delay-ms` value is passed directly to `-Dgame.server.ai-action-delay-ms`
