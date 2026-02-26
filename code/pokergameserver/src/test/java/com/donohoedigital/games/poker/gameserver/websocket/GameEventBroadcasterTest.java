@@ -19,9 +19,12 @@ package com.donohoedigital.games.poker.gameserver.websocket;
 
 import com.donohoedigital.games.poker.core.event.GameEvent;
 import com.donohoedigital.games.poker.core.state.ActionType;
+import com.donohoedigital.games.poker.engine.Card;
+import com.donohoedigital.games.poker.engine.CardSuit;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
 import com.donohoedigital.games.poker.gameserver.GameStateSnapshot;
 import com.donohoedigital.games.poker.gameserver.ServerGameTable;
+import com.donohoedigital.games.poker.gameserver.ServerHand;
 import com.donohoedigital.games.poker.gameserver.ServerPlayer;
 import com.donohoedigital.games.poker.gameserver.ServerTournamentContext;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -571,5 +574,120 @@ class GameEventBroadcasterTest {
                             + "false gap detection; type=" + root.get("type").asText() + " seq="
                             + root.get("sequenceNumber"));
         }
+    }
+
+    // ====================================
+    // Bug A: AllInRunoutPaused NPE when game is null
+    // ====================================
+
+    @Test
+    void allInRunoutPaused_withNullGame_doesNotThrowAndSendsContinueRunout() throws Exception {
+        // Reconnect-path broadcaster has null game. When AllInRunoutPaused fires it
+        // must NOT throw NullPointerException and must still deliver CONTINUE_RUNOUT
+        // to the connected human player.
+        PlayerConnection player = makeConnectedPlayer(99L);
+
+        assertDoesNotThrow(() -> broadcaster.accept(new GameEvent.AllInRunoutPaused(1)));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(player.getSession()).sendMessage(captor.capture());
+        assertTrue(captor.getValue().getPayload().contains("CONTINUE_RUNOUT"));
+    }
+
+    @Test
+    void allInRunoutPaused_withGame_sendsOnlyToOwner() throws Exception {
+        // When a game reference is present, CONTINUE_RUNOUT goes only to the owner.
+        PlayerConnection owner = makeConnectedPlayer(7L);
+        PlayerConnection other = makeConnectedPlayer(8L);
+
+        GameInstance mockGame = mock(GameInstance.class);
+        when(mockGame.getOwnerProfileId()).thenReturn(7L);
+
+        GameEventBroadcaster b = new GameEventBroadcaster("game-1", connectionManager, converter, mockGame);
+        b.accept(new GameEvent.AllInRunoutPaused(1));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(owner.getSession()).sendMessage(captor.capture());
+        assertTrue(captor.getValue().getPayload().contains("CONTINUE_RUNOUT"));
+        verify(other.getSession(), never()).sendMessage(any());
+    }
+
+    // ====================================
+    // Bug B: ShowdownStarted must use int getPlayerCards overload
+    // ====================================
+
+    @Test
+    void showdownStarted_withGame_includesPlayerCards() throws Exception {
+        // Regression: ShowdownStarted must broadcast player hole cards when they
+        // exist. The GamePlayerInfo overload of getPlayerCards returns null for empty
+        // hands; the int overload returns an empty list. Both reach cardsToList the
+        // same way, but using the int overload (matching HAND_COMPLETE) avoids the
+        // null-return path and is consistent.
+        WebSocketSession session = mock(WebSocketSession.class);
+        when(session.isOpen()).thenReturn(true);
+        connectionManager.addConnection("game-1", 1L,
+                new PlayerConnection(session, 1L, "watcher", "game-1", objectMapper));
+
+        ServerPlayer player = new ServerPlayer(42, "Alice", false, 0, 5000);
+        player.setSeat(0);
+
+        ServerGameTable mockTable = mock(ServerGameTable.class);
+        when(mockTable.getNumSeats()).thenReturn(1);
+        when(mockTable.getPlayer(0)).thenReturn(player);
+
+        // Set up a ServerHand with cards for player 42.
+        // Mock Card objects to avoid PropertyConfig initialization.
+        ServerHand mockHand = mock(ServerHand.class);
+        CardSuit mockSuit = mock(CardSuit.class);
+        when(mockSuit.getAbbr()).thenReturn("s");
+        Card aceSpades = mock(Card.class);
+        when(aceSpades.getRankDisplaySingle()).thenReturn("A");
+        when(aceSpades.getCardSuit()).thenReturn(mockSuit);
+        Card kingSpades = mock(Card.class);
+        when(kingSpades.getRankDisplaySingle()).thenReturn("K");
+        when(kingSpades.getCardSuit()).thenReturn(mockSuit);
+        // int overload — returns actual cards (never null)
+        when(mockHand.getPlayerCards(42)).thenReturn(List.of(aceSpades, kingSpades));
+        // GamePlayerInfo overload — returns null (the old buggy path)
+        when(mockHand.getPlayerCards(any(ServerPlayer.class))).thenReturn(null);
+
+        when(mockTable.getHoldemHand()).thenReturn(mockHand);
+
+        ServerTournamentContext mockCtx = mock(ServerTournamentContext.class);
+        when(mockCtx.getNumTables()).thenReturn(1);
+        when(mockCtx.getTable(0)).thenReturn(mockTable);
+
+        GameInstance mockGame = mock(GameInstance.class);
+        when(mockGame.getTournament()).thenReturn(mockCtx);
+
+        GameEventBroadcaster b = new GameEventBroadcaster("game-1", connectionManager, converter, mockGame);
+        b.accept(new GameEvent.ShowdownStarted(1)); // 1-based tableId
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(session).sendMessage(captor.capture());
+        JsonNode data = objectMapper.readTree(captor.getValue().getPayload()).get("data");
+        JsonNode players = data.get("showdownPlayers");
+        assertFalse(players.isEmpty(), "showdownPlayers must not be empty");
+        assertFalse(players.get(0).get("cards").isEmpty(),
+                "Player cards must be non-empty in SHOWDOWN_STARTED; got: " + players.get(0));
+    }
+
+    // ====================================
+    // Bug C: cancelActionTimer must be idempotent (no orphaned task on re-entry)
+    // ====================================
+
+    @Test
+    void cancelActionTimer_isIdempotentAfterStartAndCancel() throws Exception {
+        // Regression guard for the TOCTOU race: calling cancelActionTimer twice
+        // (e.g. once from the timer callback and once from startActionTimer) must
+        // not throw and must leave the broadcaster in a clean state.
+        assertDoesNotThrow(() -> {
+            broadcaster.startActionTimer(1L, 60);
+            broadcaster.cancelActionTimer();
+            broadcaster.cancelActionTimer(); // second call — must not NPE or corrupt state
+        });
+        // After double-cancel a fresh startActionTimer must work
+        assertDoesNotThrow(() -> broadcaster.startActionTimer(2L, 30));
+        broadcaster.shutdown();
     }
 }

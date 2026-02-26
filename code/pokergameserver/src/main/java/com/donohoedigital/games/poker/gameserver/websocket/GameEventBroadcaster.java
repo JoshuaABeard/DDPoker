@@ -89,7 +89,7 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
 
     /** Scheduler for periodic TIMER_UPDATE broadcasts during action timeouts. */
     private final ScheduledExecutorService timerScheduler;
-    private volatile ScheduledFuture<?> activeTimerTask;
+    private ScheduledFuture<?> activeTimerTask;
 
     /**
      * Enable or disable AI face-up mode. When enabled, AI hole cards are broadcast
@@ -355,7 +355,7 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                                 ServerPlayer player = sgt.getPlayer(s);
                                 if (player != null && !player.isFolded()) {
                                     List<String> cards = OutboundMessageConverter.cardsToList(
-                                            hand.getPlayerCards(player));
+                                            hand.getPlayerCards(player.getID()).toArray(new Card[0]));
                                     sp.add(new ServerMessageData.ShowdownPlayerData(player.getID(), cards, ""));
                                 }
                             }
@@ -543,9 +543,19 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 broadcast(ServerMessage.of(ServerMessageType.COLOR_UP_STARTED, gameId,
                         new ServerMessageData.ColorUpStartedData(players, e.newMinChip(), e.tableId())));
             }
-            case GameEvent.AllInRunoutPaused e ->
-                connectionManager.sendToPlayer(gameId, game.getOwnerProfileId(),
-                        ServerMessage.of(ServerMessageType.CONTINUE_RUNOUT, gameId, null));
+            case GameEvent.AllInRunoutPaused e -> {
+                ServerMessage msg = ServerMessage.of(ServerMessageType.CONTINUE_RUNOUT, gameId, null);
+                if (game != null) {
+                    connectionManager.sendToPlayer(gameId, game.getOwnerProfileId(), msg);
+                } else {
+                    // Reconnect-path broadcaster has no game reference; find the human player's
+                    // connection and send directly. In practice there is exactly one non-observer
+                    // (the human) in a practice game.
+                    connectionManager.getConnections(gameId).stream()
+                            .filter(c -> !c.isObserver())
+                            .forEach(c -> c.sendMessage(msg));
+                }
+            }
             case GameEvent.ObserverAdded e -> {
                 String name = lookupPlayerName(e.observerId());
                 broadcast(ServerMessage.of(ServerMessageType.OBSERVER_JOINED, gameId,
@@ -641,7 +651,7 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
      * and timeout. Called by the WebSocket handler when ACTION_REQUIRED is sent.
      * Cancels any previously running timer.
      */
-    public void startActionTimer(long playerId, int timeoutSeconds) {
+    public synchronized void startActionTimer(long playerId, int timeoutSeconds) {
         cancelActionTimer();
         if (timeoutSeconds <= 0) {
             return;
@@ -661,7 +671,7 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
     }
 
     /** Cancels the active TIMER_UPDATE broadcast task, if any. */
-    public void cancelActionTimer() {
+    public synchronized void cancelActionTimer() {
         ScheduledFuture<?> task = activeTimerTask;
         if (task != null) {
             task.cancel(false);
