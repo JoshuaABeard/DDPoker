@@ -28,6 +28,9 @@ import com.donohoedigital.games.poker.dashboard.DashboardAdvisor;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.PokerConstants;
+import com.donohoedigital.games.poker.gameserver.ActionRequest;
+import com.donohoedigital.games.poker.gameserver.ServerPlayerActionProvider;
+import com.donohoedigital.games.poker.gameserver.ServerTournamentDirector;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.donohoedigital.games.poker.online.GameEventLog;
 import com.sun.net.httpserver.HttpExchange;
@@ -85,6 +88,25 @@ class StateHandler extends BaseHandler {
         state.put("tableCount", tables.size());
         state.put("currentAction", buildCurrentAction(game, context, inputMode));
         state.put("recentEvents", buildRecentEvents());
+
+        // Puppet mode info
+        ServerTournamentDirector director = ServerTournamentDirector.getCurrent();
+        if (director != null) {
+            ServerPlayerActionProvider provider = director.getActionProvider();
+            Set<Integer> puppetedIds = provider.getPuppetedPlayerIds();
+            List<Integer> puppetedSeats = new ArrayList<>();
+            PokerTable currentTable = game.getCurrentTable();
+            if (currentTable != null) {
+                for (int s = 0; s < PokerConstants.SEATS; s++) {
+                    PokerPlayer pp = currentTable.getPlayer(s);
+                    if (pp != null && puppetedIds.contains(pp.getID())) {
+                        puppetedSeats.add(s);
+                    }
+                }
+            }
+            state.put("puppetedSeats", puppetedSeats);
+        }
+
         return state;
     }
 
@@ -367,6 +389,37 @@ class StateHandler extends BaseHandler {
         Map<String, Object> action = new LinkedHashMap<>();
         action.put("isHumanTurn", isHumanTurn);
 
+        // Check for pending puppet action (puppet turn detection).
+        // This must run even when isHumanTurn is false, because puppet turns
+        // don't fire the client callback and so inputMode stays at MODE_NONE.
+        ServerTournamentDirector dir = ServerTournamentDirector.getCurrent();
+        if (dir != null) {
+            ActionRequest puppetReq = dir.getActionProvider().getCurrentPuppetRequest();
+            if (puppetReq != null) {
+                action.put("isPuppetTurn", true);
+                action.put("currentPlayerSeat", puppetReq.player().getSeat());
+                action.put("currentPlayerName", puppetReq.player().getName());
+                action.put("isPlayerPuppeted", true);
+
+                // Build available actions from puppet's options
+                com.donohoedigital.games.poker.core.ActionOptions opts = puppetReq.options();
+                List<String> puppetActions = new ArrayList<>();
+                if (opts.canFold()) puppetActions.add("FOLD");
+                if (opts.canCheck()) puppetActions.add("CHECK");
+                if (opts.canCall()) puppetActions.add("CALL");
+                if (opts.canBet()) puppetActions.add("BET");
+                if (opts.canRaise()) puppetActions.add("RAISE");
+                puppetActions.add("ALL_IN");
+                action.put("availableActions", puppetActions);
+                action.put("callAmount", opts.callAmount());
+                action.put("minBet", opts.minBet());
+                action.put("maxBet", opts.maxBet());
+                action.put("minRaise", opts.minRaise());
+                action.put("maxRaise", opts.maxRaise());
+                return action;
+            }
+        }
+
         if (!isHumanTurn) return action;
 
         PokerPlayer human = game.getHumanPlayer();
@@ -402,6 +455,22 @@ class StateHandler extends BaseHandler {
 
         action.put("advisorAdvice", DashboardAdvisor.getCurrentAdvice());
         action.put("advisorTitle", DashboardAdvisor.getCurrentTitle());
+
+        // Current player info (for puppet mode)
+        PokerTable actionTable = game.getCurrentTable();
+        if (actionTable != null) {
+            HoldemHand actionHand = actionTable.getHoldemHand();
+            if (actionHand != null) {
+                PokerPlayer current = actionHand.getCurrentPlayer();
+                if (current != null) {
+                    action.put("currentPlayerSeat", current.getSeat());
+                    action.put("currentPlayerName", current.getName());
+                    ServerTournamentDirector dirInner = ServerTournamentDirector.getCurrent();
+                    action.put("isPlayerPuppeted",
+                            dirInner != null && dirInner.getActionProvider().isPuppeted(current.getID()));
+                }
+            }
+        }
 
         return action;
     }

@@ -102,6 +102,12 @@ public class ServerHand implements GameHand {
     private List<ServerPlayer> preWinners;
     private List<ServerPlayer> preLosers;
 
+    // Snapshot of fold states at resolve() time — live player state resets when
+    // the next hand is dealt, so we capture it here for accurate post-resolution
+    // queries (isUncontested, wasPlayerFolded).
+    private int resolvedNumWithCards;
+    private final Map<Integer, Boolean> resolvedFoldStates = new HashMap<>();
+
     /**
      * Records the outcome of a single pot after {@link #resolve()} completes. Used
      * by {@code ServerTournamentDirector} to publish {@code GameEvent.PotAwarded}
@@ -708,6 +714,15 @@ public class ServerHand implements GameHand {
     @Override
     public void resolve() {
         logger.debug("[ServerHand] resolve() numWithCards={} pots={}", getNumWithCards(), pots.size());
+
+        // Snapshot fold states BEFORE marking done — live player state resets
+        // when the next hand is dealt, making post-resolution queries stale.
+        resolvedNumWithCards = getNumWithCards();
+        resolvedFoldStates.clear();
+        for (ServerPlayer player : playerOrder) {
+            resolvedFoldStates.put(player.getID(), player.isFolded());
+        }
+
         done = true;
         resolutionResults.clear();
 
@@ -946,7 +961,25 @@ public class ServerHand implements GameHand {
 
     @Override
     public boolean isUncontested() {
+        // After resolve(), use the snapshot — live player state may have reset.
+        if (done) {
+            return resolvedNumWithCards == 1;
+        }
         return getNumWithCards() == 1;
+    }
+
+    /**
+     * Returns whether a player had folded at resolution time. Uses the snapshot
+     * captured in {@link #resolve()}, so it remains accurate even after the next
+     * hand is dealt and live player state resets.
+     *
+     * @param playerId
+     *            the player ID to check
+     * @return {@code true} if the player had folded when the hand was resolved,
+     *         {@code false} if not folded or if the player was not in this hand
+     */
+    public boolean wasPlayerFolded(int playerId) {
+        return resolvedFoldStates.getOrDefault(playerId, false);
     }
 
     @Override

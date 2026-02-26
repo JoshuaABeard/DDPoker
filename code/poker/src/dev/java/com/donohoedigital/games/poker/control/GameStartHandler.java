@@ -152,6 +152,10 @@ class GameStartHandler extends BaseHandler {
         profile.setRebuys(getBool(json, "rebuys", false));
         profile.setAddons(getBool(json, "addons", false));
 
+        // Game type (betting structure): "nolimit" (default), "potlimit", or "limit"
+        String gameType = json.has("gameType") ? json.get("gameType").asText("nolimit") : "nolimit";
+        profile.setDefaultGameType(gameType);
+
         // Set default player type (AI difficulty)
         try {
             PlayerType defaultType = PlayerType.getDefaultProfile();
@@ -173,6 +177,9 @@ class GameStartHandler extends BaseHandler {
                 int ante    = getInt(level, "ante",    0);
                 int minutes = getInt(level, "minutes", 15);
                 profile.setLevel(i + 1, ante, small, big, minutes);
+                if (level.has("gameType")) {
+                    profile.setGameType(i + 1, level.get("gameType").asText());
+                }
             }
             lastLevel = levels.size();
         } else {

@@ -32,6 +32,7 @@
 package com.donohoedigital.games.poker.gameserver;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -70,6 +71,8 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
     private final int aiActionDelayMs;
     private final Consumer<GameEvent> timeoutPublisher;
     private volatile boolean zipMode = false;
+    private final Set<Integer> puppetedPlayerIds = ConcurrentHashMap.newKeySet();
+    private volatile ActionRequest currentPuppetRequest;
 
     /**
      * Create a new server player action provider with no AI delay. Used by tests
@@ -144,6 +147,11 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
 
     @Override
     public PlayerAction getAction(GamePlayerInfo player, ActionOptions options) {
+        if (isPuppeted(player.getID())) {
+            logger.debug("[PUPPET] player={} id={} is puppeted, blocking for external action", player.getName(),
+                    player.getID());
+            return getPuppetAction(player, options);
+        }
         if (player.isComputer()) {
             PlayerAction action = aiProvider.getAction(player, options);
             if (aiActionDelayMs > 0 && !zipMode) {
@@ -220,6 +228,44 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
         } finally {
             pendingActions.remove(player.getID());
         }
+    }
+
+    /**
+     * Get action for a puppeted AI player. Like getHumanAction but without
+     * disconnect checking or session management — puppets are always "connected".
+     * Does NOT fire the actionRequestCallback (which would confuse the client into
+     * setting input mode for the human player). Instead, sets currentPuppetRequest
+     * so the /state endpoint can detect puppet turns.
+     */
+    private PlayerAction getPuppetAction(GamePlayerInfo player, ActionOptions options) {
+        CompletableFuture<PlayerAction> future = new CompletableFuture<>();
+        PendingAction pending = new PendingAction(future, options, player);
+        pendingActions.put(player.getID(), pending);
+        logger.debug("[PUPPET] stored pending action for playerId={}", player.getID());
+
+        // Track the puppet request for state reporting (NOT the client callback)
+        currentPuppetRequest = new ActionRequest((ServerPlayer) player, options);
+
+        try {
+            PlayerAction action = timeoutSeconds > 0 ? future.get(timeoutSeconds, TimeUnit.SECONDS) : future.get();
+            return action;
+        } catch (TimeoutException e) {
+            logger.debug("[PUPPET] timeout for playerId={}, auto-checking/folding", player.getID());
+            return options.canCheck() ? PlayerAction.check() : PlayerAction.fold();
+        } catch (Exception e) {
+            return PlayerAction.fold();
+        } finally {
+            currentPuppetRequest = null;
+            pendingActions.remove(player.getID());
+        }
+    }
+
+    /**
+     * Returns the current pending puppet action request, or null. Used by the state
+     * endpoint to detect puppet turns.
+     */
+    public ActionRequest getCurrentPuppetRequest() {
+        return currentPuppetRequest;
     }
 
     /**
@@ -318,6 +364,41 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
      */
     public boolean isZipMode() {
         return zipMode;
+    }
+
+    /**
+     * Enable or disable puppet mode for a player. When puppeted, AI players block
+     * on a CompletableFuture like humans, waiting for external action submission
+     * via {@link #submitAction(int, PlayerAction)}.
+     */
+    public void setPuppeted(int playerId, boolean enabled) {
+        if (enabled) {
+            puppetedPlayerIds.add(playerId);
+        } else {
+            puppetedPlayerIds.remove(playerId);
+        }
+        logger.debug("[PUPPET] setPuppeted playerId={} enabled={}", playerId, enabled);
+    }
+
+    /**
+     * Returns true if the given player is in puppet mode.
+     */
+    public boolean isPuppeted(int playerId) {
+        return puppetedPlayerIds.contains(playerId);
+    }
+
+    /**
+     * Returns the set of puppeted player IDs (for state reporting).
+     */
+    public Set<Integer> getPuppetedPlayerIds() {
+        return Set.copyOf(puppetedPlayerIds);
+    }
+
+    /**
+     * Clear all puppet mode settings (for game reset).
+     */
+    public void clearAllPuppets() {
+        puppetedPlayerIds.clear();
     }
 
     /**

@@ -119,6 +119,53 @@ public class ServerTournamentDirector implements Runnable {
     private volatile boolean paused;
     private volatile boolean shutdownRequested;
 
+    // Static accessor for the current game's director (practice mode only).
+    // Set when run() starts, cleared when it exits.
+    private static volatile ServerTournamentDirector currentDirector;
+
+    // Last resolved hand and its table, cached after showdown for the control
+    // server.
+    private volatile ServerHand lastResolvedHand;
+    private volatile ServerGameTable lastResolvedTable;
+    private volatile int lastResolvedHandNum;
+
+    /**
+     * Returns the currently running director, or null if no game is active. Used by
+     * control server handlers to access the action provider.
+     */
+    public static ServerTournamentDirector getCurrent() {
+        return currentDirector;
+    }
+
+    /**
+     * Returns the action provider for submitting puppet/human actions.
+     */
+    public ServerPlayerActionProvider getActionProvider() {
+        return actionProvider;
+    }
+
+    /**
+     * Returns the last resolved hand (after showdown), or null if no hand has
+     * completed yet.
+     */
+    public ServerHand getLastResolvedHand() {
+        return lastResolvedHand;
+    }
+
+    /**
+     * Returns the table from the last resolved hand, for player lookups.
+     */
+    public ServerGameTable getLastResolvedTable() {
+        return lastResolvedTable;
+    }
+
+    /**
+     * Returns the hand number of the last resolved hand.
+     */
+    public int getLastResolvedHandNum() {
+        return lastResolvedHandNum;
+    }
+
     /**
      * Create a new server tournament director (test-compatible overload, no
      * rebuy/addon callbacks).
@@ -171,6 +218,7 @@ public class ServerTournamentDirector implements Runnable {
     @Override
     public void run() {
         running = true;
+        currentDirector = this;
         boolean fatalError = false;
         lifecycleCallback.accept(GameLifecycleEvent.STARTED);
 
@@ -199,6 +247,7 @@ public class ServerTournamentDirector implements Runnable {
             handleFatalError(e);
         } finally {
             running = false;
+            currentDirector = null;
             if (!fatalError) {
                 lifecycleCallback.accept(GameLifecycleEvent.COMPLETED);
             }
@@ -437,6 +486,11 @@ public class ServerTournamentDirector implements Runnable {
                 eventBus.publish(new GameEvent.ShowdownStarted(table.getNumber()));
                 GameHand hand = table.getHoldemHand();
                 if (hand instanceof ServerHand serverHand) {
+                    // Cache for the control server's /hand/result endpoint
+                    lastResolvedHand = serverHand;
+                    lastResolvedTable = (table instanceof ServerGameTable sgt) ? sgt : null;
+                    lastResolvedHandNum = table.getHandNum();
+
                     List<ServerHand.PotResolutionResult> potResults = serverHand.getResolutionResults();
                     for (int pi = 0; pi < potResults.size(); pi++) {
                         ServerHand.PotResolutionResult pr = potResults.get(pi);
