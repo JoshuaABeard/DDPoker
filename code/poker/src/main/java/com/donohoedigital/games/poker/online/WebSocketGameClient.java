@@ -422,10 +422,11 @@ public class WebSocketGameClient {
                 if (seq != null) {
                     long prev = lastReceivedSequence.get();
                     if (prev > 0 && seq > prev + 1) {
-                        logger.warn("[WS-GAP] sequence gap detected: last={} received={} (missed {} events)", prev, seq,
-                                seq - prev - 1);
-                        // Request a fresh GAME_STATE to recover from the gap.
+                        logger.warn("[WS-GAP] sequence gap detected: last={} received={} (missed {} events). "
+                                + "Requesting full state resync; dropping this message.", prev, seq, seq - prev - 1);
+                        lastReceivedSequence.set(seq);
                         sendRequestState();
+                        return;  // Don't process the out-of-order message
                     }
                     lastReceivedSequence.set(seq);
                 }
