@@ -1,12 +1,12 @@
 #!/bin/bash
-# Post-commit hook - reminds to update learnings.md after commits
+# Post-commit hook - reminds to update docs/memory.md after commits
 # Runs automatically after every successful git commit
 
 echo ""
 echo "✓ Commit successful."
 echo ""
 echo "Reminder: If you encountered non-obvious issues during this work,"
-echo "consider updating .claude/learnings.md to help future sessions."
+echo "consider updating docs/memory.md to help future sessions."
 echo ""
 
 exit 0

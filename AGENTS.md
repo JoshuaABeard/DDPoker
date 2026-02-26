@@ -6,7 +6,7 @@
 
 **DD Poker** is a Texas Hold'em poker simulator with a Java Swing desktop client and online multiplayer server. Community-maintained fork of DD Poker by Doug Donohoe (2003-2017).
 
-See `.claude/DDPOKER-OVERVIEW.md` for full tech stack, module structure, and configuration details. Check `.claude/learnings.md` for known gotchas before starting non-trivial work.
+See `.claude/DDPOKER-OVERVIEW.md` for full tech stack, module structure, and configuration details. Check `docs/memory.md` for known gotchas before starting non-trivial work.
 
 ### Quick Reference
 

@@ -43,7 +43,7 @@ try {
     }
 
     Write-Host ""
-    Write-Host "Tip: Check .claude/learnings.md for known gotchas"
+    Write-Host "Tip: Check docs/memory.md for known gotchas"
     Write-Host "======================"
     Write-Host ""
 } catch {

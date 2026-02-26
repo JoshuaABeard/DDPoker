@@ -1,4 +1,4 @@
-# Agent Learnings
+# Agent Memory
 
 Persistent knowledge discovered during development sessions. Read this at the start of non-trivial tasks to avoid rediscovering known issues.
 
@@ -18,8 +18,6 @@ Persistent knowledge discovered during development sessions. Read this at the st
 - [build] CI uses `-P dev` profile, not the full test suite (2026-02-12)
 - [coverage] Coverage threshold is 65% enforced by JaCoCo; use `mvn verify -P coverage` to check (2026-02-12)
 - [format] Spotless auto-formats Java code on compile — don't manually format, just run `mvn compile` (2026-02-12)
-- [format] Spotless also reformats XML resource files (gamedef.xml, etc.) during `mvn compile`/`package`, reverting uncommitted edits to match git HEAD. Always commit XML edits before building, or they will be lost (2026-02-19)
-
 - [build] Running `mvn test -pl <module>` in isolation uses installed JARs from `~/.m2` for upstream modules — if those JARs are stale (not reinstalled after changes), tests that depend on new classes in upstream modules will fail with `ClassNotFoundException`. Fix: run full `mvn clean test` from root, or `mvn install -pl <upstream> -DskipTests` first (2026-02-18)
 - [pokerserver] `jjwt-jackson:0.12.5` forces `jackson-databind:2.12.7.1` which conflicts with `jackson-datatype-jsr310:2.19.x` pulled in by Spring Boot. Fixed in `pokerserver/pom.xml` via `<dependencyManagement>` pinning all three core Jackson artifacts to `2.19.4` (2026-02-18)
 
@@ -69,7 +67,6 @@ Persistent knowledge discovered during development sessions. Read this at the st
 - [dev-server] When testing `poker` module dev handlers in isolation (`-pl poker`), the `pokergameserver` dependency is resolved from `~/.m2`. If `pokergameserver` was recently changed (new classes), run `mvn install -pl pokergameserver -am -DskipTests` first, or the handler will get `ClassNotFoundException` at runtime (not compile time) (2026-02-22)
 - [dev-server] Piping Maven output to `tail` in background tasks (`mvn ... | tail -25`) prevents output from appearing in the task output file until Maven exits — the `tail` buffers internally. Never pipe to `tail` in background Bash tasks; just redirect with `2>&1` (2026-02-22)
 - [dev-server] `PlayerProfile.getProfileList()` requires `ConfigManager` to be initialized — throws NPE in test environments that don't start the full desktop app. Wrap in try-catch and return empty list (2026-02-19)
-- [dev-server] `Map.of()` throws `NullPointerException` for null values — use `LinkedHashMap` when response fields may be null (e.g., `defaultProfile` when no profile exists) (2026-02-19)
 - [dev-server] Pre-commit hook pattern `api[_-]?(key|secret)\s*[:=]\s*"?[a-zA-Z0-9]{16,}` will false-positive on method names like `loadOrGenerateKey` (17 alphanumeric chars). Keep method names shorter than 16 chars when the LHS contains "apiKey" or similar (2026-02-19)
 - [dev-server] `ShowTournamentTable.poststart()` always calls `PracticeGameLauncher.launch()` which creates a new server-side game. Added `game_.getWebSocketConfig() == null` guard so the resume flow can pre-set config and skip the launcher (2026-02-19)
 
@@ -89,8 +86,6 @@ Persistent knowledge discovered during development sessions. Read this at the st
 - [scenario-tests] The embedded server auto-deals each hand immediately after the previous hand ends — DEAL mode does NOT appear between hands. Tests must detect hand completion via community card resets or phase transitions, not DEAL mode (2026-02-23)
 - [scenario-tests] BETWEEN_HANDS phase is too brief (~ms) to reliably catch at 0.15s polling. Detect new hands by watching for PRE_FLOP transitions from a non-PRE_FLOP phase, or by dealer seat change when phase stays PRE_FLOP (all-folded-preflop hands) (2026-02-23)
 - [scenario-tests] After river (5 community cards), the game goes into QUITSAVE (AI acting in new hand) not DEAL mode. Detect "hand over" by waiting 3 seconds after recording the river card (2026-02-23)
-- [scenario-tests] ValidateHandler chip conservation uses game.getNumPlayers() (initial count) not currently-seated numPlayers — eliminated players are removed from their seat, so numPlayers * buyinChips underestimates the true chip total (2026-02-23)
-- [scenario-tests] HoldemHand.getCommunityCards() was reading community_ field directly instead of calling getCommunity(), bypassing RemoteHoldemHand override. Community cards always appeared empty in API state. Fix: use polymorphic getCommunity() (2026-02-23)
 - [scenario-tests] Scripts that call advance_to_human_turn as state=$(fn) have log output swallowed by command substitution — log messages go into $state not the terminal. Use stderr for debug output inside such functions (2026-02-23)
 - [scenario-tests] Both tests racing to build simultaneously will fail with Maven file lock on common/target. Run sequentially or add --skip-build after first build (2026-02-23)
 - [scenario-tests] Windows: DDPoker config files are in %APPDATA%/ddpoker (C:\Users\...\AppData\Roaming\ddpoker), not ~/.ddpoker. lib.sh must detect $APPDATA env var and use cygpath -u to convert to Unix path (2026-02-23)
@@ -105,10 +100,13 @@ Persistent knowledge discovered during development sessions. Read this at the st
 - [dev-server] `ValidateHandler` chip conservation must use `TournamentProfile.getNumPlayers()` (initial count, constant) rather than `game.getNumPlayers()` (shrinks as eliminated players are removed from the seat map). Using the game-level count causes an ever-shrinking expected total that never matches actual chips (2026-02-23)
 - [dev-server] When `pokergameserver` record fields change (e.g. new `autoDeal` field in `PracticeConfig`), the `poker` module silently resolves the old record from `~/.m2` at compile time. Compile succeeds but `ClassNotFoundException`/`NoSuchMethodError` occurs at runtime. Always `mvn install -pl pokergameserver -DskipTests` first when adding record fields (2026-02-23)
 - [dev-server] Practice game tournaments (client-side) also auto-deal between hands — DEAL mode never appears. Use wall-clock timing for play loops, not DEAL-mode hand counting (2026-02-23)
-- [poker] `HandGroup(File, boolean)` does NOT call `clearContents()`, so `pairs_`/`suited_`/`offsuit_` arrays are null for groups loaded from file that have 0 hands (no "hands" key in map). `expand()` NPEs on such groups. Fixed in HandGroup.read() by calling clearContents() before parsing the map (2026-02-23)
-- [poker] `HoldemSimulator.simulate()` computes `Math.log(list.size())` for each hand group's iteration count — `log(0)` = -Infinity → Integer.MIN_VALUE as handCount for empty groups. Skip groups where list.size()==0 after expand() (2026-02-23)
 - [scenario-tests] `curl -f` exits non-zero AND produces no output for 4xx responses. Use `--fail-with-body` instead so error response JSON is captured in $() subshells for error-checking tests (2026-02-23)
 - [scenario-tests] Interrupted test-hand-groups runs can leave stale empty hand group .dat files in ~/.ddpoker/save/handgroups/. These have no "hands" key and cause HoldemSimulator NPE. The HandGroup.read() fix prevents the crash, but stale files may skew group counts in assertions (2026-02-23)
 - [scenario-tests] `TournamentProfilesHandler` POST /tournament-profiles returns `{"created": true, "profile": {...}}` — the profile name is at `o.profile.name`, NOT `o.name`. Test scripts must extract with `jget ... 'o.profile?.name'` (2026-02-23)
 - [scenario-tests] Sending CONTINUE_LOWER immediately after another CONTINUE_LOWER (before the first is processed by the server) causes a double `sendContinueRunout()` to the embedded server; the second call may resolve the next `waitForContinue()` future too early, leaving the game stuck in CONTINUE_LOWER. Always poll state first; send CONTINUE_LOWER only when `inputMode == CONTINUE_LOWER` (2026-02-23)
 - [scenario-tests] `ADVISOR_DO_IT` requires `cheat.aifaceup=true` to be set before the game starts; without it `pp.getPokerAI()` is null for the human player in WebSocket mode and the action silently no-ops. Set the option via POST /options before POST /game/start (2026-02-23)
+- [scenario-tests] Scripts with CRLF line endings fail with "No such file or directory" in bash on Windows — run `dos2unix` on `.sh` files if they won't execute (2026-02-26)
+- [scenario-tests] Running multiple `/game/start` calls without restarting DDPoker hits a 3-game concurrent limit on the embedded server. Restart DDPoker between test suite runs (2026-02-26)
+- [dev-server] `CardInjectionRegistry` is queue-based (`ConcurrentLinkedQueue`) — multiple `setCards()` calls enqueue decks; each `takeDeck()` dequeues one. Test scripts can stage cards for several upcoming hands without overwriting (2026-02-26)
+- [dev-server] `takeDeck()` is called in `ServerGameTable.startNewHand()` which fires 1-2 seconds AFTER the hand result becomes available (not instantly). Don't assume injection is consumed the moment the previous hand ends (2026-02-26)
+- [pokergameserver] `ServerPlayer.isFolded()` resets to `false` when the next hand deals new cards. `ServerHand.isUncontested()` and `HandResultHandler` must use `resolvedFoldStates` snapshot captured at `resolve()` time, not live player state (2026-02-26)
