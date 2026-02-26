@@ -325,6 +325,13 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
     }
 
     /**
+     * Returns true if autopilot mode is currently active.
+     */
+    public static boolean isAutopilot() {
+        return impl_ != null && impl_.autopilot_ != null && impl_.autopilot_.isSelected();
+    }
+
+    /**
      * Get action indicated by player and clear buttons
      */
     public static HandAction getAdvanceAction() {
@@ -408,11 +415,6 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
         int nAmount = 0;
 
         if (autopilot_ != null && autopilot_.isSelected()) {
-            // online game, sleep random amount
-            if (game_.isOnlineGame()) {
-                int nDelay = 5 + DiceRoller.rollDieInt(15);
-                Utils.sleepMillis(nDelay * 100);
-            }
             return human.getAction(false);
         } else if (checkfold_.isSelected()) {
             if (hhand.getCall(human) == 0) {

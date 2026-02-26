@@ -132,7 +132,15 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
                 HandAction action = AdvanceAction.getAdvanceAction();
                 if (action != null) {
                     // logger.debug("Advance action: " + action);
-                    handleAction(action);
+                    if (game_.isOnlineGame() && AdvanceAction.isAutopilot()) {
+                        // Schedule the action after a random delay instead of blocking the EDT
+                        int nDelay = (5 + DiceRoller.rollDieInt(15)) * 100;
+                        javax.swing.Timer timer = new javax.swing.Timer(nDelay, e -> handleAction(action));
+                        timer.setRepeats(false);
+                        timer.start();
+                    } else {
+                        handleAction(action);
+                    }
                     return;
                 } else {
                     AdvanceAction.humanActing(true);
