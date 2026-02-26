@@ -713,6 +713,20 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     }
 
     /**
+     * Set default game type (e.g. "nolimit", "potlimit", "limit")
+     */
+    public void setDefaultGameType(String gameType) {
+        map_.setString(PARAM_GAMETYPE_DEFAULT, gameType);
+    }
+
+    /**
+     * Set game type for a specific level
+     */
+    public void setGameType(int level, String gameType) {
+        map_.setString(PARAM_GAMETYPE + level, gameType);
+    }
+
+    /**
      * Get default game type
      */
     public String getDefaultGameTypeString() {

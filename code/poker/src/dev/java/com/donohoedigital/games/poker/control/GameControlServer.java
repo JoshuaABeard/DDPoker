@@ -204,6 +204,9 @@ public class GameControlServer {
         server.createContext("/history/hand",     new HistoryHandler(apiKey));
         server.createContext("/history",          new HistoryHandler(apiKey));
         server.createContext("/game/saves",       new SaveListHandler(apiKey));
+        server.createContext("/players/puppet",  new PuppetHandler(apiKey));
+        server.createContext("/players/action",  new PuppetActionHandler(apiKey));
+        server.createContext("/hand/result",     new HandResultHandler(apiKey));
 
         server.start();
 

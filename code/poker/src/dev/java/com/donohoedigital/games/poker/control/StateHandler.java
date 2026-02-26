@@ -28,6 +28,8 @@ import com.donohoedigital.games.poker.dashboard.DashboardAdvisor;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.PokerConstants;
+import com.donohoedigital.games.poker.gameserver.ServerPlayerActionProvider;
+import com.donohoedigital.games.poker.gameserver.ServerTournamentDirector;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.donohoedigital.games.poker.online.GameEventLog;
 import com.sun.net.httpserver.HttpExchange;
@@ -85,6 +87,25 @@ class StateHandler extends BaseHandler {
         state.put("tableCount", tables.size());
         state.put("currentAction", buildCurrentAction(game, context, inputMode));
         state.put("recentEvents", buildRecentEvents());
+
+        // Puppet mode info
+        ServerTournamentDirector director = ServerTournamentDirector.getCurrent();
+        if (director != null) {
+            ServerPlayerActionProvider provider = director.getActionProvider();
+            Set<Integer> puppetedIds = provider.getPuppetedPlayerIds();
+            List<Integer> puppetedSeats = new ArrayList<>();
+            PokerTable currentTable = game.getCurrentTable();
+            if (currentTable != null) {
+                for (int s = 0; s < PokerConstants.SEATS; s++) {
+                    PokerPlayer pp = currentTable.getPlayer(s);
+                    if (pp != null && puppetedIds.contains(pp.getID())) {
+                        puppetedSeats.add(s);
+                    }
+                }
+            }
+            state.put("puppetedSeats", puppetedSeats);
+        }
+
         return state;
     }
 
@@ -402,6 +423,22 @@ class StateHandler extends BaseHandler {
 
         action.put("advisorAdvice", DashboardAdvisor.getCurrentAdvice());
         action.put("advisorTitle", DashboardAdvisor.getCurrentTitle());
+
+        // Current player info (for puppet mode)
+        PokerTable actionTable = game.getCurrentTable();
+        if (actionTable != null) {
+            HoldemHand actionHand = actionTable.getHoldemHand();
+            if (actionHand != null) {
+                PokerPlayer current = actionHand.getCurrentPlayer();
+                if (current != null) {
+                    action.put("currentPlayerSeat", current.getSeat());
+                    action.put("currentPlayerName", current.getName());
+                    ServerTournamentDirector dir = ServerTournamentDirector.getCurrent();
+                    action.put("isPlayerPuppeted",
+                            dir != null && dir.getActionProvider().isPuppeted(current.getID()));
+                }
+            }
+        }
 
         return action;
     }
