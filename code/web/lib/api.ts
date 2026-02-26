@@ -40,17 +40,22 @@ async function apiFetch<T>(
 ): Promise<ApiResponse<T>> {
   const url = getApiUrl(endpoint)
 
-  const defaultHeaders: HeadersInit = {
-    'Content-Type': 'application/json',
+  const defaultHeaders: HeadersInit = {}
+  if (options.body) {
+    defaultHeaders['Content-Type'] = 'application/json'
   }
 
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), config.apiTimeout)
 
+  const signals: AbortSignal[] = [controller.signal]
+  if (options.signal) signals.push(options.signal)
+  const composedSignal = signals.length > 1 ? AbortSignal.any(signals) : controller.signal
+
   const fetchOptions: RequestInit = {
     credentials: 'include', // Always send cookies (JWT in HttpOnly cookie)
     ...options,
-    signal: controller.signal,
+    signal: composedSignal,
     headers: {
       ...defaultHeaders,
       ...options.headers,
@@ -509,12 +514,9 @@ export const adminApi = {
  */
 export async function checkApiHealth(): Promise<boolean> {
   try {
-    const response = await fetch(getApiUrl('/api/health'), {
-      method: 'GET',
-    })
-    return response.ok
-  } catch (error) {
-    console.error('API health check failed:', error)
+    const response = await apiFetch<{ status: string }>('/api/health')
+    return !!response.data
+  } catch {
     return false
   }
 }

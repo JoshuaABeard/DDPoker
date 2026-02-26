@@ -38,6 +38,16 @@ export interface GameActions {
   sendRebuyDecision: (accept: boolean) => void
   /** Accept or decline an addon offer. */
   sendAddonDecision: (accept: boolean) => void
+  /** Sit out next hand. */
+  sendSitOut: () => void
+  /** Come back from sitting out. */
+  sendComeBack: () => void
+  /** Accept or decline a never-broke offer. */
+  sendNeverBrokeDecision: (accept: boolean) => void
+  /** Continue runout in all-in scenario. */
+  sendContinueRunout: () => void
+  /** Request full game state resync from server. */
+  sendRequestState: () => void
 }
 
 interface GameContextValue {
@@ -130,6 +140,10 @@ export function GameProvider({ gameId, serverBaseUrl, children }: GameProviderPr
           onError(error) {
             console.error('[GameProvider] WebSocket error:', error)
           },
+          tokenRefreshFn: async () => {
+            const { token } = await gameServerApi.getWsToken()
+            return token
+          },
         })
 
         wsClientRef.current = client
@@ -159,6 +173,7 @@ export function GameProvider({ gameId, serverBaseUrl, children }: GameProviderPr
   const actions = useMemo<GameActions>(() => ({
     sendAction(data: PlayerActionData) {
       wsClientRef.current?.send('PLAYER_ACTION', data)
+      dispatch({ type: 'ACTION_SENT' })
     },
 
     sendChat(message: string, tableChat = true) {
@@ -200,7 +215,36 @@ export function GameProvider({ gameId, serverBaseUrl, children }: GameProviderPr
       wsClientRef.current?.send('ADDON_DECISION', { accept })
       dispatch({ type: 'CLEAR_OFFERS' })
     },
+
+    sendSitOut() {
+      wsClientRef.current?.send('SIT_OUT')
+    },
+
+    sendComeBack() {
+      wsClientRef.current?.send('COME_BACK')
+    },
+
+    sendNeverBrokeDecision(accept: boolean) {
+      wsClientRef.current?.send('NEVER_BROKE_DECISION', { accept })
+      dispatch({ type: 'CLEAR_NEVER_BROKE' })
+    },
+
+    sendContinueRunout() {
+      wsClientRef.current?.send('CONTINUE_RUNOUT')
+      dispatch({ type: 'CLEAR_CONTINUE_RUNOUT' })
+    },
+
+    sendRequestState() {
+      wsClientRef.current?.send('REQUEST_STATE')
+    },
   }), [dispatch])
+
+  // Request state resync when sequence gap is detected
+  useEffect(() => {
+    if (state.sequenceGapDetected && wsClientRef.current) {
+      wsClientRef.current.send('REQUEST_STATE')
+    }
+  }, [state.sequenceGapDetected])
 
   return <GameContext.Provider value={{ state, actions }}>{children}</GameContext.Provider>
 }

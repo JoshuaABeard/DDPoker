@@ -269,6 +269,124 @@ describe('WebSocketClient', () => {
     expect(MockWebSocket.instances).toHaveLength(1)
     expect(states[states.length - 1]).toBe('DISCONNECTED')
   })
+
+  it('double-connect guard: nulls first socket handlers and closes it before opening second', () => {
+    const client = new WebSocketClient({
+      onMessage: vi.fn(),
+      onStateChange: vi.fn(),
+      onError: vi.fn(),
+    })
+
+    client.connect('ws://localhost/ws/games/g1', 'tok-1')
+    const firstWs = MockWebSocket.latest()
+    firstWs.simulateOpen()
+
+    // Capture handler references before second connect
+    const firstOnopen = firstWs.onopen
+    const firstOnmessage = firstWs.onmessage
+    const firstOnerror = firstWs.onerror
+    const firstOnclose = firstWs.onclose
+
+    // Second connect — should clean up the first socket
+    client.connect('ws://localhost/ws/games/g1', 'tok-2')
+
+    // First socket's handlers should be nulled
+    expect(firstWs.onopen).toBeNull()
+    expect(firstWs.onmessage).toBeNull()
+    expect(firstWs.onerror).toBeNull()
+    expect(firstWs.onclose).toBeNull()
+
+    // The original references should be non-null (we captured them before)
+    expect(firstOnopen).not.toBeNull()
+    expect(firstOnmessage).not.toBeNull()
+
+    // First socket should have been closed
+    expect(firstWs.closeCalls.length).toBeGreaterThan(0)
+
+    // A second WebSocket instance should exist
+    expect(MockWebSocket.instances).toHaveLength(2)
+  })
+
+  it('clean disconnect: nulls handlers before closing socket', () => {
+    const client = new WebSocketClient({
+      onMessage: vi.fn(),
+      onStateChange: vi.fn(),
+      onError: vi.fn(),
+    })
+
+    client.connect('ws://localhost/ws/games/g1', 'tok')
+    const ws = MockWebSocket.latest()
+    ws.simulateOpen()
+
+    // Track whether handlers were null at the time close() was called
+    let handlersNulledBeforeClose = false
+    const originalClose = ws.close.bind(ws)
+    ws.close = (code?: number, reason?: string) => {
+      handlersNulledBeforeClose =
+        ws.onopen === null &&
+        ws.onmessage === null &&
+        ws.onerror === null &&
+        ws.onclose === null
+      originalClose(code, reason)
+    }
+
+    client.disconnect()
+
+    expect(handlersNulledBeforeClose).toBe(true)
+  })
+
+  it('tokenRefreshFn is called during reconnect when no reconnectToken', () => {
+    const refreshedToken = 'fresh-token-from-refresh'
+    const tokenRefreshFn = vi.fn().mockResolvedValue(refreshedToken)
+
+    const client = new WebSocketClient({
+      onMessage: vi.fn(),
+      onStateChange: vi.fn(),
+      onError: vi.fn(),
+      tokenRefreshFn,
+    })
+
+    // Connect without setting a reconnect token
+    client.connect('ws://localhost/ws/games/g1', 'initial-token')
+    MockWebSocket.latest().simulateOpen()
+
+    // Simulate unexpected close — should trigger reconnect
+    MockWebSocket.latest().simulateClose(1006, 'Connection lost')
+
+    // Advance timers to trigger reconnect
+    vi.advanceTimersByTime(1500)
+
+    // tokenRefreshFn should have been called
+    expect(tokenRefreshFn).toHaveBeenCalledTimes(1)
+
+    // Resolve the promise and verify the fresh token is used in the new socket URL
+    return tokenRefreshFn.mock.results[0].value.then(() => {
+      vi.advanceTimersByTime(0)
+      expect(MockWebSocket.latest().url).toContain(`token=${refreshedToken}`)
+    })
+  })
+
+  it('sequenceNumber resets to 0 on a fresh connect (not a reconnect)', () => {
+    const client = new WebSocketClient({
+      onMessage: vi.fn(),
+      onStateChange: vi.fn(),
+      onError: vi.fn(),
+    })
+
+    // First connection — send one message to advance sequenceNumber
+    client.connect('ws://localhost/ws/games/g1', 'tok-1')
+    const ws1 = MockWebSocket.latest()
+    ws1.simulateOpen()
+    client.send('CHAT', { message: 'hello', tableChat: true })
+    expect(JSON.parse(ws1.sentMessages[0]).sequenceNumber).toBe(1)
+
+    // Second fresh connect (not a reconnect) — sequenceNumber should reset
+    client.connect('ws://localhost/ws/games/g1', 'tok-2')
+    const ws2 = MockWebSocket.latest()
+    ws2.simulateOpen()
+    client.send('CHAT', { message: 'world', tableChat: true })
+    expect(JSON.parse(ws2.sentMessages[0]).sequenceNumber).toBe(1)
+  })
 })
 
 // ---------------------------------------------------------------------------
