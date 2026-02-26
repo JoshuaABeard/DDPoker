@@ -1467,6 +1467,44 @@ class WebSocketTournamentDirectorTest {
     }
 
     // -------------------------------------------------------------------------
+    // PLAYER_ACTED — isPreFlop_ race condition (fix: capture before invokeLater)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void playerActedPreFlopCapturedBeforeCommunityCards() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        requireTable();
+
+        // Dispatch PLAYER_ACTED but do NOT drain EDT yet — lambda is queued
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("playerId", 1L).put("playerName", "Alice").put("action", "RAISE").put("amount", 200)
+                .put("totalBet", 200).put("chipCount", 800).put("potTotal", 300);
+        wsTD.onMessage(
+                new WebSocketGameClient.InboundMessage(ServerMessageType.PLAYER_ACTED, "test-game-id", payload, null));
+
+        // Now dispatch COMMUNITY_CARDS_DEALT on the same (calling) thread —
+        // this sets isPreFlop_ = false BEFORE the queued PLAYER_ACTED lambda runs
+        ObjectNode ccPayload = mapper.createObjectNode();
+        ccPayload.put("tableId", 1).put("round", "FLOP");
+        ccPayload.putArray("cards").add("As").add("Kd").add("Qc");
+        ccPayload.putArray("allCommunityCards").add("As").add("Kd").add("Qc");
+        wsTD.onMessage(new WebSocketGameClient.InboundMessage(ServerMessageType.COMMUNITY_CARDS_DEALT, "test-game-id",
+                ccPayload, null));
+
+        // Now drain EDT — both lambdas execute
+        drainEdt();
+
+        // The RAISE action should have been tracked as a pre-flop action.
+        // Call onHandComplete() to commit stats, then verify via
+        // getTightness/getAggression.
+        WebSocketOpponentTracker tracker = wsTD.getOpponentTrackerForTest();
+        tracker.onHandComplete();
+        assertThat(tracker.getTightness(1)).isNotNaN();
+        assertThat(tracker.getAggression(1)).isEqualTo(1.0f);
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 

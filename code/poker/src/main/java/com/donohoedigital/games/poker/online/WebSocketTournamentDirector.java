@@ -296,6 +296,11 @@ public class WebSocketTournamentDirector extends BasePhase
         return tables_.get(tableId);
     }
 
+    /** Exposes the opponent tracker for unit testing. */
+    WebSocketOpponentTracker getOpponentTrackerForTest() {
+        return opponentTracker_;
+    }
+
     /**
      * Clears the tables map for testing, simulating the effect of {@link #start()}
      * being called at the beginning of a new game.
@@ -917,6 +922,7 @@ public class WebSocketTournamentDirector extends BasePhase
     }
 
     private void onPlayerActed(PlayerActedData d) {
+        final boolean preFlop = isPreFlop_;
         SwingUtilities.invokeLater(() -> {
             RemotePokerTable table = tables_.getOrDefault(d.tableId(), currentTable());
             if (table == null)
@@ -926,10 +932,10 @@ public class WebSocketTournamentDirector extends BasePhase
                 return;
 
             // Record pre-flop action for opponent style tracking (skip blinds/antes)
-            if (isPreFlop_) {
+            if (preFlop) {
                 String actionStr = d.action();
-                if (!"BLIND_BET".equalsIgnoreCase(actionStr) && !"ANTE".equalsIgnoreCase(actionStr)
-                        && !"BLIND_SM".equalsIgnoreCase(actionStr) && !"BLIND_BIG".equalsIgnoreCase(actionStr)) {
+                if (!"ANTE".equalsIgnoreCase(actionStr) && !"BLIND_SM".equalsIgnoreCase(actionStr)
+                        && !"BLIND_BIG".equalsIgnoreCase(actionStr)) {
                     opponentTracker_.onPreFlopAction((int) d.playerId(), actionStr);
                 }
             }
