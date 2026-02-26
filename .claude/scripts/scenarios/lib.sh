@@ -383,3 +383,256 @@ advance_non_betting() {
         REBUY_CHECK)     api_post_json /action '{"type":"DECLINE_REBUY"}' > /dev/null 2>&1 || true ;;
     esac
 }
+
+# ─── Puppet mode helpers ────────────────────────────────────────────────────
+
+# Enable puppet mode for a specific seat.
+puppet_seat() {
+    local seat="$1"
+    local result
+    result=$(api_post_json /players/puppet "{\"seat\":$seat,\"enabled\":true}") || {
+        log "WARN: puppet_seat $seat failed: $result"
+        return 1
+    }
+    local accepted
+    accepted=$(jget "$result" 'o.accepted||false')
+    if [[ "$accepted" != "true" ]]; then
+        log "WARN: puppet_seat $seat not accepted: $result"
+        return 1
+    fi
+    log "  OK: Puppeted seat $seat"
+}
+
+# Disable puppet mode for a specific seat.
+unpuppet_seat() {
+    local seat="$1"
+    api_post_json /players/puppet "{\"seat\":$seat,\"enabled\":false}" > /dev/null 2>&1
+}
+
+# Submit an action for a puppeted player.
+# Usage: puppet_action SEAT TYPE [AMOUNT]
+puppet_action() {
+    local seat="$1" type="$2" amount="${3:-0}"
+    local body
+    if [[ "$amount" -gt 0 ]]; then
+        body="{\"seat\":$seat,\"type\":\"$type\",\"amount\":$amount}"
+    else
+        body="{\"seat\":$seat,\"type\":\"$type\"}"
+    fi
+    local result
+    result=$(api_post_json /players/action "$body") || {
+        log "WARN: puppet_action seat=$seat type=$type failed: $result"
+        return 1
+    }
+    local accepted
+    accepted=$(jget "$result" 'o.accepted||false')
+    if [[ "$accepted" != "true" ]]; then
+        log "WARN: puppet_action seat=$seat type=$type not accepted: $result"
+        return 1
+    fi
+}
+
+# Enable puppet mode for all AI seats (non-human players).
+puppet_all() {
+    local state
+    state=$(api GET /state 2>/dev/null) || return 1
+    local seats
+    seats=$(jget "$state" '(o.tables&&o.tables[0]&&o.tables[0].players||[]).filter(p=>p&&!p.isHuman).map(p=>p.seat).join(",")')
+    IFS=',' read -ra seat_arr <<< "$seats"
+    for s in "${seat_arr[@]}"; do
+        [[ -n "$s" ]] && puppet_seat "$s"
+    done
+}
+
+# ─── Hand result helpers ────────────────────────────────────────────────────
+
+# Get the hand result JSON.
+get_hand_result() {
+    api GET /hand/result 2>/dev/null
+}
+
+# Wait for a hand result to be available (after showdown).
+wait_hand_result() {
+    local timeout="${1:-$STUCK_TIMEOUT}"
+    local start=$(date +%s)
+    while true; do
+        local result
+        result=$(api GET /hand/result 2>/dev/null || true)
+        if [[ -n "$result" ]]; then
+            local err
+            err=$(jget "$result" 'o.error||""')
+            if [[ -z "$err" ]]; then
+                printf '%s' "$result"
+                return 0
+            fi
+        fi
+        local elapsed=$(( $(date +%s) - start ))
+        if [[ $elapsed -gt $timeout ]]; then
+            log "Timed out waiting for hand result"
+            return 1
+        fi
+        sleep 0.3
+    done
+}
+
+# Assert the winner of pot N matches expected name.
+# Usage: assert_winner RESULT_JSON POT_NUM EXPECTED_NAME
+assert_winner() {
+    local result="$1" pot_num="$2" expected="$3"
+    local actual
+    actual=$(jget "$result" "(o.pots[$pot_num].winners[0]||{}).name||''")
+    if [[ "$actual" != "$expected" ]]; then
+        record_failure "Pot $pot_num winner: expected '$expected', got '$actual'"
+        return
+    fi
+    log "  OK: Pot $pot_num winner = $actual"
+}
+
+# Assert the hand description of the winner of pot N contains expected text.
+# Usage: assert_hand_description RESULT_JSON POT_NUM EXPECTED_SUBSTR
+assert_hand_description() {
+    local result="$1" pot_num="$2" expected="$3"
+    local actual
+    actual=$(jget "$result" "(o.pots[$pot_num].winners[0]||{}).handDescription||''")
+    if [[ "$actual" != *"$expected"* ]]; then
+        record_failure "Pot $pot_num hand description: expected to contain '$expected', got '$actual'"
+        return
+    fi
+    log "  OK: Pot $pot_num hand description contains '$expected' (full: '$actual')"
+}
+
+# Assert number of winners for a pot (for split pot testing).
+# Usage: assert_winner_count RESULT_JSON POT_NUM EXPECTED_COUNT
+assert_winner_count() {
+    local result="$1" pot_num="$2" expected="$3"
+    local actual
+    actual=$(jget "$result" "(o.pots[$pot_num].winners||[]).length")
+    if [[ "$actual" != "$expected" ]]; then
+        record_failure "Pot $pot_num winner count: expected $expected, got $actual"
+        return
+    fi
+    log "  OK: Pot $pot_num has $actual winner(s)"
+}
+
+# Assert a value from the state matches expected.
+# Usage: assert_state_field STATE_JSON EXPR EXPECTED DESC
+assert_state_field() {
+    local state="$1" expr="$2" expected="$3" desc="$4"
+    local actual
+    actual=$(jget "$state" "$expr")
+    if [[ "$actual" != "$expected" ]]; then
+        record_failure "$desc: expected '$expected', got '$actual'"
+        return
+    fi
+    log "  OK: $desc = $actual"
+}
+
+# ─── Turn management helpers ────────────────────────────────────────────────
+
+# Wait for any player's turn (human or puppet), return the state JSON.
+wait_any_turn() {
+    local timeout="${1:-$STUCK_TIMEOUT}"
+    local start=$(date +%s)
+    while true; do
+        local state
+        state=$(api GET /state 2>/dev/null) || { sleep 0.15; continue; }
+        local mode
+        mode=$(jget "$state" 'o.inputMode||"NONE"')
+
+        # Human betting turn
+        if echo "$mode" | grep -qE "^(CHECK_BET|CHECK_RAISE|CALL_RAISE)$"; then
+            printf '%s' "$state"
+            return 0
+        fi
+
+        # Puppet turn (detected via isPuppetTurn in currentAction)
+        local puppet_turn
+        puppet_turn=$(jget "$state" 'o.currentAction&&o.currentAction.isPuppetTurn||false')
+        if [[ "$puppet_turn" == "true" ]]; then
+            printf '%s' "$state"
+            return 0
+        fi
+
+        # Non-betting modes that need advancing
+        if echo "$mode" | grep -qE "^(DEAL|CONTINUE|CONTINUE_LOWER|REBUY_CHECK)$"; then
+            printf '%s' "$state"
+            return 0
+        fi
+
+        close_visible_dialog_if_any "wait_any_turn" > /dev/null 2>&1 || true
+
+        local elapsed=$(( $(date +%s) - start ))
+        if [[ $elapsed -gt $timeout ]]; then
+            log "Timed out waiting for any turn; current mode: $mode"
+            return 1
+        fi
+        sleep 0.15
+    done
+}
+
+# Play all players through to showdown (everyone checks/calls).
+# All non-human players must be puppeted. Handles DEAL/CONTINUE prompts.
+# Returns when a hand result is available from /hand/result.
+# Usage: play_to_showdown [TIMEOUT]
+play_to_showdown() {
+    local timeout="${1:-60}"
+    local start=$(date +%s)
+    while true; do
+        local state mode
+        state=$(api GET /state 2>/dev/null) || { sleep 0.15; continue; }
+        mode=$(jget "$state" 'o.inputMode||"NONE"')
+
+        close_visible_dialog_if_any "showdown-loop" > /dev/null 2>&1 || true
+
+        # Check if hand result is available (more reliable than checking gamePhase)
+        local hr
+        hr=$(api GET /hand/result 2>/dev/null || true)
+        if [[ -n "$hr" ]] && ! echo "$hr" | grep -q '"error"'; then
+            log "  Hand result available"
+            return 0
+        fi
+
+        # Human betting turn
+        local is_human
+        is_human=$(jget "$state" 'o.currentAction&&o.currentAction.isHumanTurn||false')
+        if [[ "$is_human" == "true" ]]; then
+            local avail
+            avail=$(jget "$state" '(o.currentAction&&o.currentAction.availableActions||[]).join(",")')
+            if echo "$avail" | grep -q "CHECK"; then
+                api_post_json /action '{"type":"CHECK"}' > /dev/null 2>&1 || true
+            else
+                api_post_json /action '{"type":"CALL"}' > /dev/null 2>&1 || true
+            fi
+        fi
+
+        # Puppet turn
+        local puppet_turn seat avail
+        puppet_turn=$(jget "$state" 'o.currentAction&&o.currentAction.isPuppetTurn||false')
+        if [[ "$puppet_turn" == "true" ]]; then
+            seat=$(jget "$state" 'o.currentAction.currentPlayerSeat')
+            avail=$(jget "$state" '(o.currentAction&&o.currentAction.availableActions||[]).join(",")')
+            if [[ -n "$seat" && "$seat" != "undefined" ]]; then
+                if echo "$avail" | grep -q "CHECK"; then
+                    puppet_action "$seat" "CHECK" || true
+                else
+                    puppet_action "$seat" "CALL" || true
+                fi
+            fi
+        fi
+
+        # Non-betting modes
+        case "$mode" in
+            DEAL)            api_post_json /action '{"type":"DEAL"}' > /dev/null 2>&1 || true ;;
+            CONTINUE)        api_post_json /action '{"type":"CONTINUE"}' > /dev/null 2>&1 || true ;;
+            CONTINUE_LOWER)  api_post_json /action '{"type":"CONTINUE_LOWER"}' > /dev/null 2>&1 || true ;;
+            REBUY_CHECK)     api_post_json /action '{"type":"DECLINE_REBUY"}' > /dev/null 2>&1 || true ;;
+        esac
+
+        local elapsed=$(( $(date +%s) - start ))
+        if [[ $elapsed -gt $timeout ]]; then
+            log "WARN: play_to_showdown timed out after ${timeout}s (mode=$mode)"
+            return 1
+        fi
+        sleep 0.15
+    done
+}
