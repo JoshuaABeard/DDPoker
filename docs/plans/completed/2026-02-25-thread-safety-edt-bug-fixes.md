@@ -1,5 +1,7 @@
 # Thread Safety, EDT, and Protocol Bug Fixes
 
+**Status:** COMPLETED (2026-02-25)
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Fix 32 bugs found in the desktop client and server: thread-safety violations, EDT blocking/violations, NPEs during table transitions, and protocol correctness issues.
