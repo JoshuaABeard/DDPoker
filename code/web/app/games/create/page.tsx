@@ -170,11 +170,12 @@ function CreateGameForm() {
         defaultSeconds: actionTimeoutSeconds,
       },
       aiPlayers: effectiveFill ? effectiveAiPlayerList : [],
+      // percent and prizePool are computed server-side for STANDARD type; send 0 as placeholders
       payout: { type: 'STANDARD', spots: payoutSpots, percent: 0, prizePool: 0, allocationType: 'PERCENT' },
       bounty: bountyEnabled ? { enabled: true, amount: bountyAmount } : undefined,
       boot: {
         bootSitout,
-        bootSitoutCount: bootAfterHands,
+        bootSitoutCount: bootAfterHands, // shared counter — sits-out and disconnected players use same threshold
         bootDisconnect,
         bootDisconnectCount: bootAfterHands,
       },
@@ -283,7 +284,7 @@ function CreateGameForm() {
                 id="startingChips"
                 type="number"
                 value={startingChips}
-                onChange={(e) => setStartingChips(Math.max(1, Number(e.target.value)))}
+                onChange={(e) => setStartingChips(Math.max(100, Number(e.target.value)))}
                 min={100}
                 max={1_000_000}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
