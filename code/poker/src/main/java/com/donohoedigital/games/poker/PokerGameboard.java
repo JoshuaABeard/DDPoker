@@ -248,7 +248,7 @@ public class PokerGameboard extends Gameboard {
     @Override
     public void repaintTerritory(Territory t, boolean bImmediate) {
         PokerTable table = game_.getCurrentTable();
-        if (table != null && table.isZipMode())
+        if (table == null || table.isZipMode())
             return;
 
         if (TESTING(EngineConstants.TESTING_DEBUG_REPAINT))

@@ -108,6 +108,8 @@ public class PokerCustomTerritoryDrawer implements CustomTerritoryDrawer {
     private void drawPot(Gameboard board, Graphics2D g, Rectangle territoryBounds) {
         // get hand
         PokerTable table = game_.getCurrentTable();
+        if (table == null)
+            return;
         HoldemHand hhand = table.getHoldemHand();
         if (hhand == null)
             return;

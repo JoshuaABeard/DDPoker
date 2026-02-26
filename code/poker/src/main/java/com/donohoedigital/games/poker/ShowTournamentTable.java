@@ -811,7 +811,7 @@ public class ShowTournamentTable extends ShowPokerTable
         }
 
         public void run() {
-            if (table_.isZipMode())
+            if (table_ == null || table_.isZipMode())
                 return;
             // logger.debug("Swingit: "+ nType);
             switch (nType) {

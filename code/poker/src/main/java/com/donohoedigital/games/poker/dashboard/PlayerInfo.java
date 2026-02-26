@@ -100,7 +100,7 @@ public class PlayerInfo extends DashboardItem implements TerritorySelectionListe
 
                 PokerTable table = last_.getTable();
                 int nLast = profile.getLastRebuyLevel();
-                if (table.getLevel() <= nLast) {
+                if (table != null && table.getLevel() <= nLast) {
                     int nMax = profile.getMaxRebuys();
                     int nRebuys = last_.getNumRebuys() + last_.getNumRebuysPending();
                     int nLeft = nMax - nRebuys;
