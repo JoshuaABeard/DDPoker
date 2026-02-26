@@ -6,7 +6,7 @@
 
 **DD Poker** is a Texas Hold'em poker simulator with a Java Swing desktop client and online multiplayer server. Community-maintained fork of DD Poker by Doug Donohoe (2003-2017).
 
-See `docs/architecture/DDPOKER-OVERVIEW.md` for full tech stack, module structure, and configuration details. Check `docs/memory.md` for known gotchas before starting non-trivial work.
+See [docs/architecture/DDPOKER-OVERVIEW.md](docs/architecture/DDPOKER-OVERVIEW.md) for full tech stack, module structure, and configuration details. Check [docs/memory.md](docs/memory.md) for known gotchas before starting non-trivial work.
 
 ### Quick Reference
 
@@ -64,7 +64,7 @@ curl -s -H "$H" -X POST -H "Content-Type: application/json" -d '{"type":"CALL"}'
 - `currentAction.isHumanTurn`: `true` when human action is needed
 - `currentAction.availableActions`: list of valid action types for the current mode
 
-See `docs/guides/desktop-client-testing.md` for the full reference: all endpoints, input mode table, polling patterns, enabling debug logging, and common failure modes.
+See [docs/guides/desktop-client-testing.md](docs/guides/desktop-client-testing.md) for the full reference: all endpoints, input mode table, polling patterns, enabling debug logging, and common failure modes.
 
 ## 2. Think Before Coding
 
@@ -78,7 +78,7 @@ See `docs/guides/desktop-client-testing.md` for the full reference: all endpoint
 ### When Principles Conflict
 
 Priorities (highest to lowest):
-1. **Privacy** — Never commit private data (see `.claude/SECURITY.md`)
+1. **Privacy** — Never commit private data (see [.claude/SECURITY.md](.claude/SECURITY.md))
 2. **Correctness** — Code must work and be tested
 3. **Completeness** — Finish what you start, no TODOs or stubs
 4. **Simplicity** — Prefer simple over complex
@@ -130,13 +130,13 @@ Priorities (highest to lowest):
 
 ## 4. Testing
 
-See `docs/guides/testing-guide.md` for project-specific frameworks, commands, and coverage thresholds.
+See [docs/guides/testing-guide.md](docs/guides/testing-guide.md) for project-specific frameworks, commands, and coverage thresholds.
 
 ## 5. Decisions
 
 Capture non-obvious technical decisions in the relevant plan under `docs/plans/` (and keep them when moved to `docs/plans/completed/`).
 
-If a decision creates a long-lived implementation gotcha, add a concise entry to `docs/memory.md`.
+If a decision creates a long-lived implementation gotcha, add a concise entry to [docs/memory.md](docs/memory.md).
 
 ## 6. Plans
 
@@ -156,7 +156,7 @@ Handled by superpowers: `requesting-code-review`, `receiving-code-review`.
 
 **ALWAYS review files for private information before committing to the public repository.**
 
-See `.claude/SECURITY.md` for the full checklist and commit workflow.
+See [.claude/SECURITY.md](.claude/SECURITY.md) for the full checklist and commit workflow.
 
 ## 10. Copyright & Licensing
 
@@ -167,7 +167,7 @@ When creating or modifying files:
 - **Substantially modified files**: Use dual copyright (Template 2)
 - **Minor changes/bug fixes**: Keep original copyright (Template 1)
 
-See `docs/guides/copyright-licensing-guide.md` for:
+See [docs/guides/copyright-licensing-guide.md](docs/guides/copyright-licensing-guide.md) for:
 - Complete copyright header templates
 - File-by-file decision guide
 - GPL-3.0 compliance requirements

@@ -139,6 +139,7 @@ See [docs/guides/developer-notes.md](docs/guides/developer-notes.md) for compreh
 - Running locally for development
 - Testing online multiplayer
 - Architecture overview
+- AI development instructions: [AGENTS.md](AGENTS.md)
 - Email configuration
 
 **Quick Start for Developers:**
