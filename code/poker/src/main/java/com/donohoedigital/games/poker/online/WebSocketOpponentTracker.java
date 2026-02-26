@@ -17,10 +17,9 @@
  */
 package com.donohoedigital.games.poker.online;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Tracks per-player pre-flop statistics from observed PLAYER_ACTED events in
@@ -32,12 +31,12 @@ import java.util.Set;
 public class WebSocketOpponentTracker {
 
     // Running totals per player
-    private final Map<Integer, PlayerStats> stats = new HashMap<>();
+    private final Map<Integer, PlayerStats> stats = new ConcurrentHashMap<>();
 
     // Per-hand tracking, cleared on each new hand
-    private final Map<Integer, Boolean> handFolded = new HashMap<>();
-    private final Map<Integer, Boolean> handRaised = new HashMap<>();
-    private final Set<Integer> handActors = new HashSet<>();
+    private final Map<Integer, Boolean> handFolded = new ConcurrentHashMap<>();
+    private final Map<Integer, Boolean> handRaised = new ConcurrentHashMap<>();
+    private final Set<Integer> handActors = ConcurrentHashMap.newKeySet();
 
     /** Call at start of each hand (HAND_STARTED). */
     public void onHandStart() {
@@ -102,6 +101,6 @@ public class WebSocketOpponentTracker {
     }
 
     private static class PlayerStats {
-        int handsActed, foldedPreFlop, raisedPreFlop, calledPreFlop;
+        volatile int handsActed, foldedPreFlop, raisedPreFlop, calledPreFlop;
     }
 }
