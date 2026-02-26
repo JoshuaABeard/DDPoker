@@ -947,7 +947,11 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onActionTimeout(ActionTimeoutData d) {
         SwingUtilities.invokeLater(() -> {
-            // Auto-action already applied server-side; treat like PLAYER_ACTED
+            // Notification-only: the subsequent PLAYER_ACTED message handles all
+            // state updates (chip count, folded, pot, action chat). This handler:
+            // 1. Clears the current player highlight
+            // 2. Hides action buttons if the local player timed out
+            // 3. Shows a "timed out" notification (not an action chat)
             RemotePokerTable table = tables_.getOrDefault(d.tableId(), currentTable());
             if (table == null)
                 return;
@@ -957,13 +961,13 @@ public class WebSocketTournamentDirector extends BasePhase
 
             hand.updateCurrentPlayer(HoldemHand.NO_CURRENT_PLAYER);
 
+            if (d.playerId() == localPlayerId_) {
+                game_.setInputMode(PokerTableInput.MODE_QUITSAVE);
+            }
+
             PokerPlayer player = findPlayer(d.playerId());
-            if (player == null)
-                return;
-            int handAction = mapWsStringToAction(d.autoAction());
-            HandAction action = new HandAction(player, hand.getRoundForDisplay(), handAction, 0);
-            table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ACTION, table, action));
-            deliverChatLocal(PokerConstants.CHAT_2, action.getChat(0, null, null), PokerConstants.CHAT_DEALER_MSG_ID);
+            String name = player != null ? player.getName() : "Player " + d.playerId();
+            deliverChatLocal(PokerConstants.CHAT_2, name + " timed out", PokerConstants.CHAT_DEALER_MSG_ID);
         });
     }
 

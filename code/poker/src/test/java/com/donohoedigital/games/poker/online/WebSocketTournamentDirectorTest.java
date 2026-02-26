@@ -20,6 +20,7 @@ package com.donohoedigital.games.poker.online;
 import com.donohoedigital.games.poker.GameClock;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerPlayer;
+import com.donohoedigital.games.poker.PokerTableInput;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
 import com.donohoedigital.games.poker.core.state.BettingRound;
@@ -336,17 +337,61 @@ class WebSocketTournamentDirectorTest {
     // -------------------------------------------------------------------------
 
     @Test
-    void actionTimeoutFiresPlayerActionEvent() throws Exception {
+    void actionTimeoutClearsCurrentPlayer() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        RemotePokerTable table = requireTable();
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("playerId", 1L).put("autoAction", "FOLD").put("tableId", 1);
+        dispatch(ServerMessageType.ACTION_TIMEOUT, payload);
+
+        assertThat(table.getRemoteHand().getCurrentPlayerIndex())
+                .isEqualTo(com.donohoedigital.games.poker.HoldemHand.NO_CURRENT_PLAYER);
+    }
+
+    @Test
+    void actionTimeoutDoesNotFirePlayerActionEvent() throws Exception {
         dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
         dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
         RemotePokerTable table = requireTable();
         List<Integer> events = collectEvents(table);
 
         ObjectNode payload = mapper.createObjectNode();
-        payload.put("playerId", 1L).put("autoAction", "FOLD");
+        payload.put("playerId", 1L).put("autoAction", "FOLD").put("tableId", 1);
         dispatch(ServerMessageType.ACTION_TIMEOUT, payload);
 
-        assertThat(events).contains(PokerTableEvent.TYPE_PLAYER_ACTION);
+        assertThat(events).doesNotContain(PokerTableEvent.TYPE_PLAYER_ACTION);
+    }
+
+    @Test
+    void actionTimeoutOnLocalPlayerHidesActionButtons() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        requireTable(); // skip if PropertyConfig not initialized
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("playerId", 1L).put("autoAction", "FOLD").put("tableId", 1);
+        dispatch(ServerMessageType.ACTION_TIMEOUT, payload);
+
+        Mockito.verify(mockGame).setInputMode(PokerTableInput.MODE_QUITSAVE);
+    }
+
+    @Test
+    void actionTimeoutShowsTimeoutChatNotActionChat() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        requireTable(); // skip if PropertyConfig not initialized
+
+        List<String> messages = new ArrayList<>();
+        wsTD.setChatHandler((fromPlayerID, chatType, message) -> messages.add(message));
+
+        ObjectNode payload = mapper.createObjectNode();
+        payload.put("playerId", 1L).put("autoAction", "FOLD").put("tableId", 1);
+        dispatch(ServerMessageType.ACTION_TIMEOUT, payload);
+
+        assertThat(messages).hasSize(1);
+        assertThat(messages.get(0)).containsIgnoringCase("timed out");
     }
 
     // -------------------------------------------------------------------------
