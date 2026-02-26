@@ -69,7 +69,7 @@ const MAX_HAND_HISTORY = 200
 export interface HandHistoryEntry {
   id: string
   handNumber: number
-  type: 'action' | 'deal' | 'community' | 'result' | 'hand_start'
+  type: 'action' | 'community' | 'result' | 'hand_start'
   playerName?: string
   action?: string
   amount?: number
@@ -433,11 +433,11 @@ function handleServerMessage(state: GameState, message: ServerMessage): GameStat
 
       default:
         console.warn('[gameReducer] Unknown server message type:', message.type)
-        return state
+        return { ...state, ...seqState }
     }
   } catch (err) {
     console.warn('[gameReducer] Error processing message:', message.type, err)
-    return state
+    return { ...state, ...seqState }
   }
 }
 

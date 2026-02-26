@@ -534,12 +534,14 @@ describe('gameReducer', () => {
   // Unknown message type
   // -------------------------------------------------------------------------
 
-  it('ignores unknown server message types (no crash)', () => {
-    const result = gameReducer(initialGameState, {
-      type: 'SERVER_MESSAGE',
-      message: msg('TOTALLY_UNKNOWN_TYPE', {}),
-    })
-    expect(result).toEqual(initialGameState)
+  it('ignores unknown server message types (no crash, updates sequence)', () => {
+    const message = { ...msg('TOTALLY_UNKNOWN_TYPE', {}), sequenceNumber: 99 }
+    const result = gameReducer(initialGameState, { type: 'SERVER_MESSAGE', message })
+    expect(result.lastSequenceNumber).toBe(99)
+    expect(result.sequenceGapDetected).toBe(false)
+    // All other state unchanged
+    expect(result.myPlayerId).toBeNull()
+    expect(result.gamePhase).toBe('lobby')
   })
 
   it('ignores malformed messages (no crash)', () => {
@@ -1228,6 +1230,24 @@ describe('gameReducer', () => {
       const message = { ...msg('HOLE_CARDS_DEALT', { cards: ['Ah', 'Kd'] }), sequenceNumber: 5 }
       const result = gameReducer(state, { type: 'SERVER_MESSAGE', message })
       expect(result.sequenceGapDetected).toBe(false)
+    })
+
+    it('resets sequenceGapDetected to false when gap is followed by consecutive message', () => {
+      // First, create a state with sequenceGapDetected = true
+      const stateWithGap = gameReducer(
+        { ...initialGameState, lastSequenceNumber: 5 },
+        { type: 'SERVER_MESSAGE', message: { ...msg('TIMER_UPDATE', { playerId: 1, secondsRemaining: 10 }), sequenceNumber: 7 } }
+      )
+      expect(stateWithGap.sequenceGapDetected).toBe(true)
+      expect(stateWithGap.lastSequenceNumber).toBe(7)
+
+      // Now send the next consecutive message (seq=8) — gap should clear
+      const recovered = gameReducer(
+        stateWithGap,
+        { type: 'SERVER_MESSAGE', message: { ...msg('TIMER_UPDATE', { playerId: 1, secondsRemaining: 9 }), sequenceNumber: 8 } }
+      )
+      expect(recovered.sequenceGapDetected).toBe(false)
+      expect(recovered.lastSequenceNumber).toBe(8)
     })
   })
 })
