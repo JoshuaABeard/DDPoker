@@ -185,7 +185,7 @@ docker run -d \
   ddpoker:latest
 ```
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for full list of environment variables.
+See [README.md](README.md) for full list of environment variables.
 
 ## Accessing Your Server
 
@@ -399,8 +399,8 @@ Create a scheduled task to deploy nightly builds:
 
 After successful deployment:
 
-1. **Configure Email** - See [EMAIL-CONFIGURATION.md](EMAIL-CONFIGURATION.md)
-2. **Set Admin Password** - See [DEPLOYMENT.md](DEPLOYMENT.md#admin-panel-configuration)
+1. **Configure Email** - See [email-configuration.md](email-configuration.md)
+2. **Set Admin Password** - See [README.md](README.md#admin-panel-configuration)
 3. **Test Client Connection** - Configure desktop client
 4. **Monitor Logs** - Watch for any errors
 5. **Setup Backups** - Automate database backups
@@ -408,6 +408,6 @@ After successful deployment:
 ## Support
 
 For issues or questions:
-- Check [DEPLOYMENT.md](DEPLOYMENT.md) for general Docker documentation
+- Check [README.md](README.md) for general Docker documentation
 - Review [../docs/guides/admin-panel.md](../docs/guides/admin-panel.md) for admin features
 - File issue at https://github.com/anthropics/claude-code/issues

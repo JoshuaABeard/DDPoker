@@ -127,7 +127,7 @@ Then access the admin panel at http://localhost:8080/admin
 
 For complete admin setup and usage guide, see [docs/guides/admin-panel.md](docs/guides/admin-panel.md).
 
-For complete Docker documentation, configuration options, and troubleshooting, see [docker/DEPLOYMENT.md](docker/DEPLOYMENT.md).
+For complete Docker documentation, configuration options, and troubleshooting, see [docker/README.md](docker/README.md).
 
 **Unraid Users:**
 DD Poker is available as an Unraid Community Application with built-in admin configuration. See [unraid/README.md](unraid/README.md) for installation instructions and the template at [unraid/DDPoker.xml](unraid/DDPoker.xml).

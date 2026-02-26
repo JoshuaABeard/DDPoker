@@ -1,12 +1,42 @@
-# DD Poker Docker Deployment
+# DD Poker - Docker Deployment Guide
 
-This directory contains all Docker-related files for DD Poker.
+This directory contains all Docker-related files for DD Poker. DDPoker runs in a **single Docker container** with an embedded H2 database, making deployment simple and self-contained. No external database required.
+
+## Architecture
+
+```
+  Desktop Client (Windows/Mac/Linux)
+       │ HTTP :8877, UDP :11886/:11889
+       ▼
+┌──────────────────────────────────────────────┐
+│  Single Docker Container                     │
+│                                              │
+│  ┌──────────────┐     ┌────────────────┐     │
+│  │ pokerserver  │     │   pokerweb     │     │
+│  │ :8877 (HTTP) │     │ :8080 (Jetty)  │     │
+│  │ :11886 (UDP) │     │ Wicket web UI  │     │
+│  │ :11889 (UDP) │     │                │     │
+│  └──────┬───────┘     └───────┬────────┘     │
+│         │                     │              │
+│         ▼                     ▼              │
+│  ┌────────────────────────────────────┐      │
+│  │   H2 Embedded Database (default)   │      │
+│  │   file:/data/poker                 │      │
+│  └────────────────────────────────────┘      │
+└──────────────────────────────────────────────┘
+         │
+         ▼ (Docker volume)
+    /data/poker.mv.db  (persistent)
+```
 
 ## Quick Start
 
-**Using Pre-built Image from Docker Hub:**
+### Option 1: Use Pre-Built Image (Recommended)
+
+**Prerequisites:** Docker Desktop installed and running
 
 ```bash
+# Run the latest version from Docker Hub
 docker run -d \
   --name ddpoker \
   -p 8080:8080 \
@@ -14,121 +44,535 @@ docker run -d \
   -p 11886:11886/udp \
   -p 11889:11889/udp \
   -v ddpoker_data:/data \
-  joshuaabeard/ddpoker:3.3.0-CommunityEdition
+  -v ddpoker_installers:/app/downloads \
+  joshuaabeard/ddpoker:latest
+
+# View logs
+docker logs -f ddpoker
+
+# Access the web interface
+# Open browser to: http://localhost:8080/online
 ```
 
-**Or with Docker Compose:**
+### Option 2: Build From Source
 
-From this directory (`docker/`):
-```bash
-docker compose up -d
-```
+**Prerequisites:**
+- Docker Desktop installed and running
+- Java 25+ and Maven 3.9+
+- DDPoker source code
 
-From the repository root:
 ```bash
+# 1. Build the Java project
+cd code
+mvn clean install -DskipTests
+
+# 2. Build and start Docker container
+cd ..
 docker compose -f docker/docker-compose.yml up -d
+
+# 3. View logs
+docker compose -f docker/docker-compose.yml logs -f
+
+# 4. Access the web interface
+# Open browser to: http://localhost:8080/online
 ```
 
-Docker Compose will automatically pull the image from Docker Hub if not available locally, or build it from source if you've cloned the repository.
+That's it! The server is now running with:
+- Game server API on port 8877
+- Web interface on port 8080
+- Chat server on UDP port 11886
+- Connection test on UDP port 11889
 
 ## Client Downloads
 
 The Docker container serves client downloads at `http://localhost:8080/downloads/`:
 
-### Available Files
+1. **DDPokerCE-3.3.0.jar** (~21 MB) — Universal JAR, requires Java 25. Run with: `java -jar DDPokerCE-3.3.0.jar`. Built automatically inside the container.
+2. **DDPokerCE-3.3.0.msi** (~98 MB) — Windows installer with bundled JRE, no Java required. Built separately; must be placed in `docker/downloads/` before building the image.
 
-1. **DDPokerCE-3.3.0.jar** (~21 MB)
-   - Universal JAR file (works on all platforms)
-   - Requires Java 25 to be installed separately
-   - Run with: `java -jar DDPokerCE-3.3.0.jar`
-   - Built automatically inside Docker container
+## Building with Installers
 
-2. **DDPokerCE-3.3.0.msi** (~98 MB)
-   - Windows installer with bundled Java runtime
-   - No Java installation required
-   - Built separately on Windows machine
-   - **Required before building Docker image** - must be placed in `docker/downloads/`
-
-## Building Locally with Installers
-
-The Docker image includes platform-specific installers (Windows MSI, macOS DMG, Linux DEB/RPM) that users can download from the web interface. Use the build script to handle installer management automatically.
-
-### Quick Build (Automated)
+Use the build script to automatically manage installer downloads:
 
 ```bash
 # From repository root
 ./docker/build-with-installers.sh
 ```
 
-**What it does:**
-1. Checks if installers exist in `docker/downloads/`
-2. Downloads missing installers from the latest GitHub Release
-3. Builds the Maven project
-4. Builds the Docker image
+This checks for installers in `docker/downloads/`, downloads any missing ones from the latest GitHub Release, builds the Maven project, and builds the Docker image. Requires `gh` CLI (authenticated) and Docker.
 
-**Prerequisites:**
-- GitHub CLI (`gh`) installed and authenticated
-- Docker and Docker Compose installed
+To build installers manually on each platform and copy them to `docker/downloads/`, then build:
 
-### Manual Build
-
-If you want to build installers locally before building the Docker image:
-
-**On each platform:**
 ```bash
-# Windows (MSI):
-cd code/poker
-mvn clean package assembly:single jpackage:jpackage -DskipTests
-cp target/dist/DDPokerCE-3.3.0.msi ../../docker/downloads/
-
-# macOS (DMG):
-cd code/poker
-mvn clean package assembly:single jpackage:jpackage -DskipTests
-cp target/dist/DDPokerCE-3.3.0.dmg ../../docker/downloads/
-
-# Linux (DEB + RPM):
-cd code/poker
-mvn clean package assembly:single jpackage:jpackage -DskipTests
-mvn jpackage:jpackage -Pinstaller-linux-rpm -DskipTests
-cp target/dist/*.deb target/dist/*.rpm ../../docker/downloads/
-```
-
-**Then build Docker image:**
-```bash
-# From repository root
 docker compose -f docker/docker-compose.yml build
 ```
 
-**Accessing Downloads:**
-Once the container is running, access installers at:
-- **Web Browser**: http://localhost:8080/downloads/
-- **Direct URLs**:
-  - JAR: http://localhost:8080/downloads/DDPokerCE-3.3.0.jar
-  - MSI: http://localhost:8080/downloads/DDPokerCE-3.3.0.msi
-  - DMG: http://localhost:8080/downloads/DDPokerCE-3.3.0.dmg
-  - DEB: http://localhost:8080/downloads/ddpoker-ce_3.3.0-1_amd64.deb
-  - RPM: http://localhost:8080/downloads/ddpoker-ce-3.3.0-1.x86_64.rpm
+See [docker/build-with-installers.sh](./build-with-installers.sh) for the full automated script.
 
-## Files
+## Ports Reference
 
-- **docker-compose.yml** - Docker Compose configuration with service definitions, ports, volumes, and environment variables
-- **Dockerfile** - Container image definition for building the DD Poker server
-- **entrypoint.sh** - Container startup script that manages both pokerserver and pokerweb processes
-- **DOCKER-HUB-PUBLISHING.md** - Guide for publishing Docker images to Docker Hub
+| Port | Protocol | Service | Purpose |
+|------|----------|---------|---------|
+| 8877 | TCP | pokerserver | Game API — desktop client connects here |
+| 8080 | TCP | pokerweb | Website — browse to http://localhost:8080/online |
+| 11886 | UDP | pokerserver | Chat server — client chat lobby |
+| 11889 | UDP | pokerserver | Connection test — client verifies connectivity |
 
-## Configuration
+### Known Limitation: UDP on Docker Desktop for Windows
 
-All configuration is managed through environment variables in `docker-compose.yml`. See the main documentation for details:
+**Important**: Docker Desktop for Windows has known issues with UDP port mapping. While TCP ports (8877, 8080) work fine, UDP ports (11886, 11889) may not forward correctly from the Windows host to the Linux container.
 
-- [DEPLOYMENT.md](./DEPLOYMENT.md) - Complete Docker deployment guide (includes client configuration)
-- [EMAIL-CONFIGURATION.md](./EMAIL-CONFIGURATION.md) - Email/SMTP setup
-- [DOCKER-HUB-PUBLISHING.md](./DOCKER-HUB-PUBLISHING.md) - Publishing to Docker Hub
+**Impact**: Chat functionality may timeout when connecting from a Windows client to the Docker container.
 
-## Local Overrides
+**Workarounds**:
+1. **Production deployments on Linux**: UDP works fine - no issues
+2. **Windows development testing**:
+   - Use WSL2 backend for Docker Desktop (better UDP support)
+   - Run client from inside WSL2 or a Linux VM
+   - Test chat functionality on CI/CD (Linux)
+3. **Future solution**: Convert chat from UDP to TCP
 
-For local development with secrets (SMTP passwords, etc.), create a `docker-compose.override.yml` file in the **repository root** (not in this directory). This file is gitignored and will be automatically merged with the main configuration.
+This is a Docker Desktop limitation, not a DDPoker issue. The game server itself works correctly.
 
-Example `../docker-compose.override.yml`:
+## Client Configuration
+
+This section explains how to configure the DD Poker desktop client to connect to your Dockerized server.
+
+### Prerequisites
+
+- Docker container running (via `docker compose up`)
+- DD Poker desktop client installed and built
+- Both services running on your local machine
+
+### Server Endpoints
+
+Your Docker container exposes the following services:
+
+| Service | Port | Protocol | Purpose |
+|---------|------|----------|---------|
+| Game Server API | 8877 | TCP | Desktop client connects here for game data |
+| Web Interface | 8080 | TCP | Browse to http://localhost:8080/online |
+| Chat Server | 11886 | UDP | In-game chat communication |
+| Connection Test | 11889 | UDP | Client verifies connectivity |
+
+### Client Configuration Steps
+
+#### 1. Launch the Desktop Client
+
+```bash
+# From your DDPoker repository root
+source ddpoker.rc
+poker
+```
+
+#### 2. Configure Online Server Settings
+
+1. In the game client, go to **Main Menu** → **Options**
+2. Navigate to the **Online** tab
+3. Select **Public Online Servers** section
+4. Configure the following settings:
+
+   - **Enable**: ☑ (Check this box)
+   - **Online Server**: `localhost:8877`
+   - **Chat Server**: `localhost:11886`
+
+5. Click **Test Connection** to verify connectivity
+   - You should see a success message
+   - If it fails, ensure Docker container is running: `docker compose ps`
+
+6. Click **OK** to save settings
+
+#### 3. Create an Online Profile
+
+1. From the Main Menu, go to **Online** → **Create Profile**
+2. Fill in the profile details:
+   - **Profile Name**: Your desired username
+   - **Email**: Your email address
+   - **Password**: Choose a secure password
+3. Click **Create Profile**
+
+**Note**: Email verification is not required in the Docker setup since SMTP is not configured by default.
+
+#### 4. Access the Online Game Portal
+
+You can view the web interface in your browser:
+
+1. Open http://localhost:8080/online
+2. You should see:
+   - List of available games
+   - List of online players
+   - Game statistics
+
+### Verification Steps
+
+#### Test Connection
+1. In the client, go to **Options** → **Online** → **Public Online Servers**
+2. Click **Test** button
+3. Should show "Connection Successful"
+
+#### Test Profile Login
+1. Go to **Online** → **Login**
+2. Enter your profile credentials
+3. You should be connected to the server
+
+#### View in Web Browser
+1. Open http://localhost:8080/online
+2. Your profile should appear in the "Online Players" list when logged in
+
+### Troubleshooting Client Connection
+
+#### Connection Refused
+**Problem**: Client can't connect to server
+
+**Solutions**:
+```bash
+# Check if container is running
+docker compose ps
+
+# Check container logs
+docker compose logs
+
+# Restart container
+docker compose restart
+```
+
+#### Chat Not Working
+**Problem**: Can't send/receive chat messages
+
+**Solutions**:
+- Verify UDP port 11886 is accessible
+- Check Windows Firewall isn't blocking UDP
+- Ensure Docker is exposing UDP ports correctly (see Known Limitation above)
+
+#### Profile Creation Fails
+**Problem**: Can't create profile
+
+**Solutions**:
+```bash
+# Check database is initialized
+docker compose exec ddpoker ls -la /data/
+
+# Check for errors in logs
+docker compose logs | grep -i error
+
+# Reset database (WARNING: deletes all data)
+docker compose down -v
+docker compose up
+```
+
+### Using a Remote Server
+
+If your Docker server is running on a different machine:
+
+1. Replace `localhost` with the server's IP address or hostname
+2. Ensure firewall allows:
+   - TCP port 8877 (inbound)
+   - UDP ports 11886 and 11889 (inbound)
+3. Configure client:
+   - **Online Server**: `<server-ip>:8877`
+   - **Chat Server**: `<server-ip>:11886`
+
+## Data Management
+
+### Persistent Storage
+
+Data is stored in a Docker named volume:
+
+```bash
+# View volume details
+docker volume inspect ddpoker_ddpoker_data
+
+# List volume contents
+docker compose exec ddpoker ls -lh /data/
+```
+
+### Backup Database
+
+```bash
+# Stop container
+docker compose down
+
+# Backup
+docker run --rm \
+  -v ddpoker_ddpoker_data:/data \
+  -v $(pwd):/backup \
+  alpine tar czf /backup/ddpoker-backup-$(date +%Y%m%d).tar.gz -C /data .
+
+# Restart
+docker compose up -d
+```
+
+### Restore Database
+
+```bash
+# Stop and remove container
+docker compose down
+
+# Remove old volume (WARNING: destroys data)
+docker volume rm ddpoker_ddpoker_data
+
+# Create new volume
+docker volume create ddpoker_ddpoker_data
+
+# Restore
+docker run --rm \
+  -v ddpoker_ddpoker_data:/data \
+  -v $(pwd):/backup \
+  alpine tar xzf /backup/ddpoker-backup-YYYYMMDD.tar.gz -C /data
+
+# Start
+docker compose up -d
+```
+
+### Reset Database
+
+```bash
+# WARNING: This deletes all data!
+docker compose down -v
+docker compose up -d
+```
+
+## Container Management
+
+### Common Commands
+
+```bash
+# Start container
+docker compose up -d
+
+# Stop container
+docker compose down
+
+# View logs (all)
+docker compose logs -f
+
+# View logs (last 50 lines)
+docker compose logs --tail=50
+
+# Restart container
+docker compose restart
+
+# Rebuild after code changes
+cd code && mvn clean install -DskipTests && cd ..
+docker compose build
+docker compose up -d
+
+# Execute command in container
+docker compose exec ddpoker sh
+
+# Check container status
+docker compose ps
+
+# View resource usage
+docker stats ddpoker-ddpoker-1
+```
+
+### Updating the Container
+
+After making code changes:
+
+```bash
+# 1. Rebuild Java project
+cd code
+mvn clean install -DskipTests
+
+# 2. Rebuild Docker image
+cd ..
+docker compose build
+
+# 3. Restart with new image (keeps data)
+docker compose up -d
+
+# 4. Verify
+docker compose logs --tail=100
+```
+
+## Troubleshooting
+
+### Container Won't Start
+
+**Check logs:**
+```bash
+docker compose logs
+```
+
+**Common issues:**
+- Port conflicts (8080, 8877, 11886, 11889 already in use)
+- Docker Desktop not running
+- Insufficient memory
+
+**Solutions:**
+```bash
+# Check if ports are in use
+netstat -an | grep -E "8080|8877|11886|11889"
+
+# Free up memory
+docker system prune -a
+
+# Restart Docker Desktop
+```
+
+### Website Not Loading
+
+**Test connectivity:**
+```bash
+curl http://localhost:8080/online
+```
+
+**Check if Jetty started:**
+```bash
+docker compose logs | grep -i "started.*jetty"
+```
+
+**Solutions:**
+- Ensure container is running: `docker compose ps`
+- Check firewall isn't blocking port 8080
+- Restart container: `docker compose restart`
+
+### High Memory Usage
+
+**Check memory:**
+```bash
+docker stats ddpoker-ddpoker-1
+```
+
+**Current JVM settings:**
+- pokerserver: `-Xms24m -Xmx96m`
+- pokerweb: `-Xms24m -Xmx96m`
+
+**Adjust in `docker/entrypoint.sh` if needed:**
+```bash
+# Increase max heap to 256MB
+-Xms24m -Xmx256m
+```
+
+## Email Configuration
+
+See [email-configuration.md](./email-configuration.md) for complete SMTP setup instructions to enable user activation emails.
+
+## Advanced Configuration
+
+### Environment Variables
+
+All configuration can be overridden via environment variables in `docker/docker-compose.yml`:
+
+```yaml
+environment:
+  # Database
+  DB_DRIVER: org.h2.Driver
+  DB_URL: "jdbc:h2:file:/data/poker;MODE=MySQL"
+  DB_USER: sa
+  DB_PASSWORD: ""
+
+  # Runtime directory (default: /data/work)
+  WORK: /data/work
+
+  # Admin panel access (optional)
+  ADMIN_USERNAME: admin
+  ADMIN_PASSWORD: your-secure-password
+
+  # Email configuration (optional)
+  SMTP_HOST: smtp.gmail.com
+  SMTP_PORT: 587
+  SMTP_USER: your-email@gmail.com
+  SMTP_PASSWORD: your-app-password
+  SMTP_AUTH: "true"
+  SMTP_STARTTLS_ENABLE: "true"
+  SMTP_FROM: your-email@gmail.com
+```
+
+### Admin Panel Configuration
+
+To enable server administration features (user search, ban management), configure admin credentials via environment variables:
+
+```yaml
+environment:
+  - ADMIN_USERNAME=admin
+  - ADMIN_PASSWORD=your-secure-password
+```
+
+**Features Available:**
+- User search and profile management at `/admin/search`
+- Ban list management at `/admin/banned`
+- Server monitoring and moderation tools
+
+**Password Management:**
+- If `ADMIN_PASSWORD` is not set, a random password will be auto-generated and logged to console
+- Check logs with: `docker logs ddpoker | grep "generated random password"`
+- The admin user profile is automatically created/updated on server startup
+
+**Security Best Practices:**
+- Use strong passwords (12+ characters, mixed case, numbers, symbols)
+- Change the default admin username to something unique
+- For public servers, use a reverse proxy with HTTPS
+- Consider IP whitelisting for admin access
+
+For complete admin panel documentation and usage guide, see [../docs/guides/admin-panel.md](../docs/guides/admin-panel.md).
+
+### Custom Ports
+
+To use different ports, edit `docker/docker-compose.yml`:
+
+```yaml
+ports:
+  - "9877:8877"  # Game server
+  - "9080:8080"  # Web interface
+  - "21886:11886/udp"  # Chat
+  - "21889:11889/udp"  # Connection test
+```
+
+**Note:** Internal ports (right side) should not change. Only map external ports (left side).
+
+### Resource Limits
+
+Add resource constraints in `docker/docker-compose.yml`:
+
+```yaml
+services:
+  ddpoker:
+    # ... existing config ...
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+```
+
+## Container Details
+
+### Base Image
+
+- **eclipse-temurin:25-jre** - Official Eclipse Temurin JRE 25 image
+- Lightweight (~300MB) with just the runtime, no build tools
+
+### What's Inside
+
+The container includes:
+- Compiled classes from all 22 DDPoker modules
+- All runtime dependencies (JARs)
+- Embedded Jetty 12.1.6 for web interface
+- Apache Wicket 10.8.0 framework
+- H2 database 2.3.232
+- Dual-process entrypoint script
+
+### Process Management
+
+The container runs two Java processes:
+1. **pokerserver** - Game server and chat (starts first)
+2. **pokerweb** - Embedded Jetty with Wicket webapp (starts 3 seconds later)
+
+Both processes are managed by `/app/entrypoint.sh`:
+- Handles graceful shutdown on SIGTERM/SIGINT
+- If one process dies, the other is stopped
+- Proper exit code propagation
+
+### Local Overrides
+
+For local development with secrets (SMTP passwords, etc.), create a `docker-compose.override.yml` in the **repository root** (gitignored, auto-merged with the main config):
+
 ```yaml
 services:
   ddpoker:
@@ -146,3 +590,28 @@ Then run from the repository root:
 ```bash
 docker compose -f docker/docker-compose.yml up -d
 ```
+
+## Files
+
+- **docker-compose.yml** — Service definitions, ports, volumes, and environment variables
+- **Dockerfile** — Container image definition
+- **entrypoint.sh** — Startup script managing both Java processes
+- **build-with-installers.sh** — Downloads missing installers and builds the image
+- **deploy-to-unraid.ps1** — PowerShell deployment script for Unraid
+- **[email-configuration.md](./email-configuration.md)** — Email/SMTP setup
+- **[docker-hub-publishing.md](./docker-hub-publishing.md)** — Publishing to Docker Hub
+- **[unraid-deployment.md](./unraid-deployment.md)** — Unraid-specific deployment guide
+
+## Summary
+
+The DDPoker Docker deployment provides:
+
+✅ Single container for entire stack
+✅ Embedded H2 database (no external DB needed)
+✅ Automatic schema initialization
+✅ Persistent data storage
+✅ Simple `docker compose up` deployment
+✅ Easy backup and restore
+✅ Production-ready with Jetty + Wicket
+
+Perfect for development, testing, and production deployment!

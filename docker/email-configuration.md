@@ -180,4 +180,4 @@ Then rebuild: `mvn clean install -DskipTests && docker compose up -d --build`
 
 - **Gmail App Passwords:** https://myaccount.google.com/apppasswords
 - **Jakarta Mail Docs:** https://eclipse-ee4j.github.io/mail/
-- **DD Poker Docker Guide:** [DEPLOYMENT.md](DEPLOYMENT.md)
+- **DD Poker Docker Guide:** [README.md](README.md)

@@ -164,7 +164,7 @@ Run the GitHub Actions workflow with "Push to Docker Hub" **unchecked** to test 
 - `docker/build-with-installers.sh` - Local build script
 - `docker/Dockerfile` - Docker image definition
 - `docker/docker-compose.yml` - Docker Compose configuration
-- `docker/DOCKER-HUB-PUBLISHING.md` - Detailed publishing guide
+- `docker/docker-hub-publishing.md` - Detailed publishing guide
 
 ## Related Decisions
 

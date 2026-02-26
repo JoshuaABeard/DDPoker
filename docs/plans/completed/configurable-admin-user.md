@@ -236,7 +236,7 @@ ENV ADMIN_USERNAME=
 ENV ADMIN_PASSWORD=
 ```
 
-#### DEPLOYMENT.md
+#### docker/README.md
 **File:** `docker/DEPLOYMENT.md`
 
 **Added "Admin Panel Configuration" section:**
