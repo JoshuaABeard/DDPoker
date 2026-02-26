@@ -64,13 +64,10 @@ public class GameConnectionManager {
      *            Player's profile ID
      */
     public void removeConnection(String gameId, long profileId) {
-        ConcurrentHashMap<Long, PlayerConnection> gameConnections = connections.get(gameId);
-        if (gameConnections != null) {
+        connections.computeIfPresent(gameId, (key, gameConnections) -> {
             gameConnections.remove(profileId);
-            if (gameConnections.isEmpty()) {
-                connections.remove(gameId);
-            }
-        }
+            return gameConnections.isEmpty() ? null : gameConnections;
+        });
     }
 
     /**
