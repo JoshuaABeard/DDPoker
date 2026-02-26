@@ -1649,8 +1649,8 @@ public class WebSocketTournamentDirector extends BasePhase
                 .isOptionOn(com.donohoedigital.games.poker.engine.PokerConstants.OPTION_CHEAT_NEVERBROKE);
         wsClient_.sendNeverBrokeDecision(accept);
         if (accept) {
-            deliverChatLocal(PokerConstants.CHAT_ALWAYS, "Never-broke activated: chips restored",
-                    PokerConstants.CHAT_DEALER_MSG_ID);
+            SwingUtilities.invokeLater(() -> deliverChatLocal(PokerConstants.CHAT_ALWAYS,
+                    "Never-broke activated: chips restored", PokerConstants.CHAT_DEALER_MSG_ID));
         }
     }
 
