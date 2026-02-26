@@ -32,9 +32,7 @@
  */
 package com.donohoedigital.games.poker.dashboard;
 
-import com.donohoedigital.base.Utils;
 import com.donohoedigital.config.PropertyConfig;
-import com.donohoedigital.games.engine.DiceRoller;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.Hand;
@@ -378,13 +376,15 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
             boolean canBet, int maxBet, int maxRaise) {
         if (impl_ == null || impl_.buttons_.size() == 0)
             return null;
-        String[] result = impl_._getAdvanceActionWS(canCheck, canBet, maxBet, canRaise, maxRaise);
+        String[] result = impl_._getAdvanceActionWS(canCheck, canBet, maxBet, canRaise, maxRaise, canAllIn,
+                allInAmount);
         if (result != null)
             impl_.clearButtons();
         return result;
     }
 
-    private String[] _getAdvanceActionWS(boolean canCheck, boolean canBet, int maxBet, boolean canRaise, int maxRaise) {
+    private String[] _getAdvanceActionWS(boolean canCheck, boolean canBet, int maxBet, boolean canRaise, int maxRaise,
+            boolean canAllIn, int allInAmount) {
         if (checkfold_.isSelected()) {
             return new String[]{canCheck ? "CHECK" : "FOLD", "0"};
         } else if (call_.isSelected()) {
@@ -398,7 +398,11 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
         } else if (raisepot_.isSelected() && canRaise) {
             return new String[]{"RAISE", String.valueOf(maxRaise)};
         } else if (allin_.isSelected()) {
-            return new String[]{"ALL_IN", "0"};
+            if (canAllIn) {
+                return new String[]{"ALL_IN", String.valueOf(allInAmount)};
+            } else {
+                return new String[]{"CALL", "0"};
+            }
         }
         return null;
     }
