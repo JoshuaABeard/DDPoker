@@ -127,6 +127,39 @@ class WebSocketGameClientTest {
     }
 
     @Test
+    void connectResetsSequenceCountersToZero() {
+        HttpClient httpClient = mock(HttpClient.class);
+        WebSocket.Builder builder = mock(WebSocket.Builder.class);
+        when(httpClient.newWebSocketBuilder()).thenReturn(builder);
+
+        WebSocket connectedWs = mock(WebSocket.class);
+        when(builder.buildAsync(any(URI.class), any(WebSocket.Listener.class)))
+                .thenReturn(CompletableFuture.completedFuture(connectedWs));
+
+        WebSocketGameClient client = new WebSocketGameClient(new ObjectMapper().registerModule(new JavaTimeModule()),
+                httpClient);
+        try {
+            // First connect
+            client.connect(11885, "game-1", "jwt-1").join();
+            assertThat(client.isConnected()).isTrue();
+
+            // Simulate having received messages up to sequence 50
+            client.setLastReceivedSequenceForTest(50);
+            assertThat(client.getLastReceivedSequenceForTest()).isEqualTo(50);
+
+            // Disconnect and reconnect to a new game
+            client.disconnect();
+            client.connect(11885, "game-2", "jwt-2").join();
+
+            // After connect(), lastReceivedSequence must be 0 so gap detection
+            // doesn't trigger on the first broadcast message
+            assertThat(client.getLastReceivedSequenceForTest()).isEqualTo(0);
+        } finally {
+            client.disconnect();
+        }
+    }
+
+    @Test
     void connect_newSessionInvalidatesPendingReconnectAttempts() throws InterruptedException {
         HttpClient httpClient = mock(HttpClient.class);
         WebSocket.Builder builder = mock(WebSocket.Builder.class);

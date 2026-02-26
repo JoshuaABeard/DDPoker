@@ -134,6 +134,8 @@ public class WebSocketGameClient {
         this.connected = false;
         this.reconnecting.set(false);
         this.reconnectCycle.incrementAndGet();
+        this.lastReceivedSequence.set(0);
+        this.sequenceCounter.set(0);
         // Recreate scheduler if it was shut down by a previous disconnect()
         if (scheduler.isShutdown()) {
             scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -244,6 +246,16 @@ public class WebSocketGameClient {
     /** Returns {@code true} if the WebSocket is currently connected. */
     public boolean isConnected() {
         return connected;
+    }
+
+    // Visible for testing
+    void setLastReceivedSequenceForTest(long value) {
+        lastReceivedSequence.set(value);
+    }
+
+    // Visible for testing
+    long getLastReceivedSequenceForTest() {
+        return lastReceivedSequence.get();
     }
 
     /** Closes the WebSocket connection without reconnecting. */
