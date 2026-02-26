@@ -181,8 +181,10 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                                 observerSnapshot = game.getObserverSnapshot(e.tableId());
                             }
                             if (observerSnapshot != null) {
-                                conn.sendMessage(converter.createGameStateMessage(gameId, observerSnapshot));
-                                conn.sendMessage(handStartedMsg);
+                                conn.sendMessage(converter.createGameStateMessage(gameId, observerSnapshot)
+                                        .withSequence(sequenceCounter.incrementAndGet()));
+                                conn.sendMessage(
+                                        handStartedMsg.withSequence(sequenceCounter.incrementAndGet()));
                             }
                             continue;
                         }
@@ -190,13 +192,16 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                         if (snapshot != null && snapshot.tableId() == e.tableId()) {
                             logger.debug("[BROADCAST] sending GAME_STATE + HAND_STARTED to player={} for table={}",
                                     conn.getProfileId(), e.tableId());
-                            conn.sendMessage(converter.createGameStateMessage(gameId, snapshot));
-                            conn.sendMessage(handStartedMsg);
+                            conn.sendMessage(converter.createGameStateMessage(gameId, snapshot)
+                                    .withSequence(sequenceCounter.incrementAndGet()));
+                            conn.sendMessage(
+                                    handStartedMsg.withSequence(sequenceCounter.incrementAndGet()));
                             // Send hole cards privately AFTER HAND_STARTED so they arrive
                             // after the client's TYPE_NEW_HAND fires (which resets card slots).
                             Card[] holeCards = snapshot.myHoleCards();
                             if (holeCards != null && holeCards.length > 0) {
-                                conn.sendMessage(converter.createHoleCardsMessage(gameId, holeCards));
+                                conn.sendMessage(converter.createHoleCardsMessage(gameId, holeCards)
+                                        .withSequence(sequenceCounter.incrementAndGet()));
                             }
                         }
                     }
