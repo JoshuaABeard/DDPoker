@@ -1201,16 +1201,13 @@ public class ShowTournamentTable extends ShowPokerTable
             buttonContinueLower_.setEnabled(bAllowContinueLower);
             buttonContinueLower_.setVisible(bAllowContinueLower);
             if (bAllowContinueLower) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        // in case not yet enabled, wait a bit
-                        // this seems like a hack, but in some cases
-                        // the request focus doesn't occur, and this
-                        // seems to fix it. Doh.
-                        if (!buttonContinueMiddle_.isEnabled()) {
-                            Utils.sleepMillis(100);
-                        }
+                SwingUtilities.invokeLater(() -> {
+                    if (buttonContinueLower_.isEnabled()) {
                         buttonContinueLower_.requestFocus();
+                    } else {
+                        javax.swing.Timer retry = new javax.swing.Timer(100, e -> buttonContinueLower_.requestFocus());
+                        retry.setRepeats(false);
+                        retry.start();
                     }
                 });
             }
@@ -1218,14 +1215,13 @@ public class ShowTournamentTable extends ShowPokerTable
             buttonContinueMiddle_.setEnabled(bAllowContinue);
             buttonContinueMiddle_.setVisible(bAllowContinue);
             if (bAllowContinue) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        // see note above
-                        if (!buttonContinueMiddle_.isEnabled()) {
-                            Utils.sleepMillis(100);
-                        }
-
+                SwingUtilities.invokeLater(() -> {
+                    if (buttonContinueMiddle_.isEnabled()) {
                         buttonContinueMiddle_.requestFocus();
+                    } else {
+                        javax.swing.Timer retry = new javax.swing.Timer(100, e -> buttonContinueMiddle_.requestFocus());
+                        retry.setRepeats(false);
+                        retry.start();
                     }
                 });
             }
