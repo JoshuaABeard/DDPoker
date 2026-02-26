@@ -104,25 +104,20 @@ public class ButtonDisplay extends ChainPhase implements Runnable {
         // get button
         ButtonPiece piece = getButton();
 
-        // if button in another region, remove it
-        final Territory old = piece.getTerritory();
-        if (old != null) {
-            old.removeGamePiece(piece);
-        }
-        t.addGamePiece(piece);
-
         // sleep
         if (nSleepMillis > 0)
             Utils.sleepMillis(nSleepMillis);
 
-        // repaint board
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                if (old != null)
-                    PokerUtils.getGameboard().repaintTerritory(old, false);
-                PokerUtils.getGameboard().repaintTerritory(t, false);
-
+        // move piece and repaint on EDT
+        SwingUtilities.invokeLater(() -> {
+            Territory old = piece.getTerritory();
+            if (old != null) {
+                old.removeGamePiece(piece);
             }
+            t.addGamePiece(piece);
+            if (old != null)
+                PokerUtils.getGameboard().repaintTerritory(old, false);
+            PokerUtils.getGameboard().repaintTerritory(t, false);
         });
     }
 
