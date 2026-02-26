@@ -142,6 +142,8 @@ Create an ADR when choosing between multiple valid approaches or making a non-ob
 
 Plans live in `docs/plans/`. Use `superpowers:brainstorming` for design exploration and `superpowers:writing-plans` for implementation plans.
 
+Completed plans are moved to `docs/plans/completed/` and marked with `**Status:** COMPLETED (<date>)`. Keep completed plans for historical reference — don't delete them.
+
 ## 7. Git Workflow
 
 Handled by superpowers: `using-git-worktrees`, `finishing-a-development-branch`.
