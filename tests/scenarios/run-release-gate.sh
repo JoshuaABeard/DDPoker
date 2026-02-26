@@ -18,6 +18,11 @@ SCRIPTS=(
     "test-heads-up.sh"
     "test-fold-every-hand.sh"
     "test-gameover-ranks.sh"
+    "test-hand-rankings.sh"
+    "test-pot-distribution.sh"
+    "test-hand-flow.sh"
+    "test-level-advance.sh"
+    "test-large-field.sh"
 )
 
 total=${#SCRIPTS[@]}
