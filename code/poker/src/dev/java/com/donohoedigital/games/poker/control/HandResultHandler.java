@@ -112,7 +112,7 @@ class HandResultHandler extends BaseHandler {
                 pr.put("name", player.getName());
                 pr.put("seat", player.getSeat());
                 pr.put("chipsAfter", player.getChipCount());
-                pr.put("isFolded", player.isFolded());
+                pr.put("isFolded", hand.wasPlayerFolded(player.getID()));
                 pr.put("isHuman", player.isHuman());
                 playerResults.add(pr);
             }

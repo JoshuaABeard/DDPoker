@@ -587,6 +587,10 @@ wait_any_turn() {
 # Returns when a hand result is available from /hand/result.
 # Usage: play_to_showdown [TIMEOUT] [MIN_HAND_NUM]
 # If MIN_HAND_NUM is provided, waits for handNumber > MIN_HAND_NUM.
+#
+# Card injection note: inject cards via /cards/inject BEFORE calling this
+# function. The game auto-deals the next hand immediately after showdown,
+# so injections must be staged while the current hand is still in progress.
 play_to_showdown() {
     local timeout="${1:-60}"
     local min_hand="${2:-0}"
