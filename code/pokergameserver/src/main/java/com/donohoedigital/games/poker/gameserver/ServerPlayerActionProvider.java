@@ -72,6 +72,7 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
     private final Consumer<GameEvent> timeoutPublisher;
     private volatile boolean zipMode = false;
     private final Set<Integer> puppetedPlayerIds = ConcurrentHashMap.newKeySet();
+    private volatile ActionRequest currentPuppetRequest;
 
     /**
      * Create a new server player action provider with no AI delay. Used by tests
@@ -232,6 +233,9 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
     /**
      * Get action for a puppeted AI player. Like getHumanAction but without
      * disconnect checking or session management — puppets are always "connected".
+     * Does NOT fire the actionRequestCallback (which would confuse the client into
+     * setting input mode for the human player). Instead, sets currentPuppetRequest
+     * so the /state endpoint can detect puppet turns.
      */
     private PlayerAction getPuppetAction(GamePlayerInfo player, ActionOptions options) {
         CompletableFuture<PlayerAction> future = new CompletableFuture<>();
@@ -239,8 +243,8 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
         pendingActions.put(player.getID(), pending);
         logger.debug("[PUPPET] stored pending action for playerId={}", player.getID());
 
-        // Notify via callback so the client-side state reflects the waiting puppet
-        actionRequestCallback.accept(new ActionRequest((ServerPlayer) player, options));
+        // Track the puppet request for state reporting (NOT the client callback)
+        currentPuppetRequest = new ActionRequest((ServerPlayer) player, options);
 
         try {
             PlayerAction action = timeoutSeconds > 0 ? future.get(timeoutSeconds, TimeUnit.SECONDS) : future.get();
@@ -251,8 +255,17 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
         } catch (Exception e) {
             return PlayerAction.fold();
         } finally {
+            currentPuppetRequest = null;
             pendingActions.remove(player.getID());
         }
+    }
+
+    /**
+     * Returns the current pending puppet action request, or null. Used by the state
+     * endpoint to detect puppet turns.
+     */
+    public ActionRequest getCurrentPuppetRequest() {
+        return currentPuppetRequest;
     }
 
     /**
