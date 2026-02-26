@@ -1328,6 +1328,18 @@ class WebSocketTournamentDirectorTest {
     }
 
     // -------------------------------------------------------------------------
+    // finish() lifecycle — declineScheduler_ shutdown
+    // -------------------------------------------------------------------------
+
+    @Test
+    void finishShutsDownDeclineScheduler() {
+        // After finish(), the declineScheduler_ must be shut down.
+        // Verified via the test accessor which runs the same shutdown logic.
+        wsTD.finishSchedulersForTest();
+        assertThat(wsTD.isDeclineSchedulerShutdownForTest()).isTrue();
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 

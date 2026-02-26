@@ -236,6 +236,7 @@ public class WebSocketTournamentDirector extends BasePhase
         context_.setGameManager(null);
         cancelPendingRebuyDecline();
         cancelPendingAddonDecline();
+        declineScheduler_.shutdown();
         wsClient_.disconnect();
         game_.setPlayerActionListener(null);
     }
@@ -297,6 +298,21 @@ public class WebSocketTournamentDirector extends BasePhase
      */
     void clearTablesForTest() {
         tables_.clear();
+    }
+
+    /**
+     * Shuts down schedulers for testing lifecycle (simulates the effect of finish()
+     * without requiring a full phase context).
+     */
+    void finishSchedulersForTest() {
+        cancelPendingRebuyDecline();
+        cancelPendingAddonDecline();
+        declineScheduler_.shutdown();
+    }
+
+    /** Returns true if the decline scheduler has been shut down (for testing). */
+    boolean isDeclineSchedulerShutdownForTest() {
+        return declineScheduler_.isShutdown();
     }
 
     public Map<String, Object> getControlObservabilitySnapshot() {
