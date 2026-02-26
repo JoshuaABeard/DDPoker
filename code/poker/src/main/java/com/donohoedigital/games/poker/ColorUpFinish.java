@@ -209,7 +209,7 @@ public class ColorUpFinish extends ChainPhase implements PlayerActionListener, R
      */
     private void moveToPhase2() {
         if (bPause_) {
-            game_.setInputMode(PokerTableInput.MODE_CONTINUE);
+            SwingUtilities.invokeLater(() -> game_.setInputMode(PokerTableInput.MODE_CONTINUE));
         } else {
             Thread t = new Thread(new ColorWait(ONLINE_WAIT_TENTHS), "ColorWait2");
             t.start();
