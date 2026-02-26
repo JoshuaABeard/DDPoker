@@ -39,6 +39,9 @@ test-*.js
 # Local runtime data
 /runtime/
 /data/
+.claude/test.json
+.claude/temp-statusline.ps1
+.claude/settings.local.json
 
 # Module-specific data directories
 code/pokerserver/data/

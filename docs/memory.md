@@ -8,7 +8,7 @@ Persistent knowledge discovered during development sessions. Read this at the st
 - Add entries when you discover something non-obvious that cost you time
 - Remove entries when they become obsolete (e.g., bug was fixed, dependency changed)
 - Keep entries concise — one line if possible
-- Don't duplicate what's already in guides or DDPOKER-OVERVIEW.md
+- Don't duplicate what's already in guides or `docs/architecture/DDPOKER-OVERVIEW.md`
 
 ---
 
@@ -87,7 +87,7 @@ Persistent knowledge discovered during development sessions. Read this at the st
 - [ci] CI runs on push to main and on PRs to main (2026-02-12)
 - [hooks] Claude Code `PostToolUse` hooks cause persistent "hook error" messages on Windows — even with a no-op `exit 0` script. Avoid using PostToolUse hooks entirely (2026-02-12)
 - [hooks] Claude Code `PreToolUse` hooks are unreliable on Windows — sometimes work, sometimes error. Don't use for git hooks (2026-02-12)
-- [hooks] Use git native hooks via `core.hooksPath = .claude/hooks` instead of Claude Code hooks for pre-commit/post-commit — works reliably across all worktrees (2026-02-12)
+- [hooks] Keep git native hooks under `.githooks/`; `.claude/hooks/pre-commit` and `.claude/hooks/post-commit` can remain lightweight shims for compatibility with older local `core.hooksPath` values (2026-02-26)
 - [hooks] Claude Code `SessionStart` hooks work on Windows when using PowerShell (`pwsh -NoProfile -File script.ps1`) instead of bash (2026-02-12)
 - [hooks] The `find` command in bash scripts on Windows behaves differently than Unix — use PowerShell `Get-ChildItem` for Windows-compatible hooks (2026-02-12)
 

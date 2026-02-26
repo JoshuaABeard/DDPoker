@@ -17,7 +17,7 @@ try {
 
     # Active plans
     Write-Host ""
-    $planDir = ".claude/plans"
+    $planDir = "docs/plans"
     if (Test-Path $planDir) {
         $activePlans = Get-ChildItem "$planDir/*.md" -ErrorAction SilentlyContinue | Where-Object {
             (Get-Content $_.FullName -Raw -ErrorAction SilentlyContinue) -match "Status.*(active|in.*progress)"

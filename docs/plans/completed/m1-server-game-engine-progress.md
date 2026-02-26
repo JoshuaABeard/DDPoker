@@ -2,7 +2,7 @@
 
 **Date:** 2026-02-16
 **Branch:** `feature-m1-server-game-engine`
-**Plan:** `.claude/plans/M1-SERVER-GAME-ENGINE.md`
+**Plan:** `docs/plans/completed/m1-server-game-engine.md`
 
 ---
 
@@ -399,9 +399,9 @@ All tests passing, no known bugs.
   - Hand ranking constants
 
 ### Documentation
-- `.claude/plans/M1-SERVER-GAME-ENGINE.md` - Master plan
-- `.claude/plans/SERVER-HOSTED-GAME-ENGINE.md` - Parent plan
-- `.claude/plans/PHASE7D-SERVER-AI-PROVIDER.md` - Completed prerequisite
+- `docs/plans/completed/m1-server-game-engine.md` - Master plan
+- `docs/plans/completed/server-hosted-game-engine.md` - Parent plan
+- `docs/plans/completed/phase7d-server-ai-provider.md` - Completed prerequisite
 
 ---
 

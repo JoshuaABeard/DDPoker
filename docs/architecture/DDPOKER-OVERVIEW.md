@@ -89,10 +89,13 @@ The project uses a layered properties system:
 
 ```
 ddpoker/
-  .claude/                 # Project documentation and guides
+  .claude/                 # Agent/runtime tooling configuration
+  .githooks/               # Repository git hooks (pre-commit, post-commit)
   code/                    # All Java source (Maven multi-module, 19 modules)
     pom.xml                # Parent POM
-  docs/                    # Technical documentation (AI whitepaper, etc.)
+  docs/                    # Technical documentation, guides, plans, archive
+  tests/
+    scenarios/             # Integration-style scenario scripts
   images/                  # Screenshots, logos (README assets)
   runtime/                 # Runtime files (messages, logs) - gitignored
   tools/
@@ -109,5 +112,5 @@ ddpoker/
 ## Known Quirks
 
 - **Password handling** - Server uses bcrypt hashing (migrated from legacy DES encryption). Forgot-password generates a new password and emails it.
-- **Test coverage** - 65% minimum enforced by JaCoCo. Core poker logic coverage is improving but still has gaps.
+- **Test coverage** - Parent POM threshold is intentionally 0.00; real enforcement is module-specific JaCoCo baselines.
 - **Embedded H2 database** - No passwords needed, automatic setup.
