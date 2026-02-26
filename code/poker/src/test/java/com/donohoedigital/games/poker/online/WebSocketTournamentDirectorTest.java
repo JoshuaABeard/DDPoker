@@ -212,6 +212,27 @@ class WebSocketTournamentDirectorTest {
         assertThat(events).contains(PokerTableEvent.TYPE_CLEANING_DONE);
     }
 
+    @Test
+    void handStartedClearsCommunityCards() throws Exception {
+        dispatch(ServerMessageType.GAME_STATE, buildGameState(1, 0, 1L));
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+        RemotePokerTable table = requireTable();
+
+        // Simulate flop — community cards are set
+        ObjectNode ccPayload = mapper.createObjectNode();
+        ccPayload.put("tableId", 1).put("round", "FLOP");
+        ccPayload.putArray("cards").add("As").add("Kd").add("Qc");
+        ccPayload.putArray("allCommunityCards").add("As").add("Kd").add("Qc");
+        dispatch(ServerMessageType.COMMUNITY_CARDS_DEALT, ccPayload);
+
+        assertThat(table.getRemoteHand().getCommunity().size()).isEqualTo(3);
+
+        // New hand starts — community cards must be cleared
+        dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
+
+        assertThat(table.getRemoteHand().getCommunity().size()).isEqualTo(0);
+    }
+
     // -------------------------------------------------------------------------
     // COMMUNITY_CARDS_DEALT
     // -------------------------------------------------------------------------

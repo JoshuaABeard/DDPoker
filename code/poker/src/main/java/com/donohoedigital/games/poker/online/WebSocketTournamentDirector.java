@@ -761,6 +761,7 @@ public class WebSocketTournamentDirector extends BasePhase
                 // Wins accumulate via remoteWins_.merge(), so without this clear the next
                 // hand's WIN overlay would show the sum of all previous win amounts.
                 hand.clearWins();
+                hand.updateCommunity(new Hand());
             }
             hand.updateRound(BettingRound.PRE_FLOP);
             hand.updateSmallBlindSeat(d.smallBlindSeat());
