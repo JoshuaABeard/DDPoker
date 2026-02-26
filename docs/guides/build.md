@@ -302,7 +302,7 @@ Includes both pokerserver and pokerweb. Access web interface at: http://localhos
 ### Second Client (for multiplayer testing)
 
 ```powershell
-.\tools\scripts\run-client-local-2.ps1
+.\tools\scripts\run-client-local-secondary.ps1
 ```
 
 ## Docker Deployment
