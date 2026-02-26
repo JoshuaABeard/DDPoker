@@ -182,7 +182,7 @@ SMTP_FROM=noreply@yourdomain.com
 ## Support
 
 - **Issues:** https://github.com/JoshuaABeard/DDPoker/issues
-- **Documentation:** See `DDPOKER-DOCKER.md` in repository for detailed technical documentation
+- **Documentation:** See [docker/README.md](../docker/README.md) for detailed technical documentation
 - **Source Code:** https://github.com/JoshuaABeard/DDPoker
 
 ## License
