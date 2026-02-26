@@ -50,6 +50,8 @@ export function HandHistory({ entries }: HandHistoryProps) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="hand-history-log"
         className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-gray-300 hover:text-white"
       >
         <span>Hand History</span>
@@ -58,6 +60,7 @@ export function HandHistory({ entries }: HandHistoryProps) {
 
       {open && (
         <div
+          id="hand-history-log"
           className="overflow-y-auto max-h-60 px-2 pb-2 space-y-0.5"
           role="log"
           aria-label="Hand history"

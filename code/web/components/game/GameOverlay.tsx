@@ -78,12 +78,22 @@ function CountdownTimer({ seconds }: { seconds: number }) {
  * XSS safety: all user strings rendered as text nodes.
  */
 export function GameOverlay(props: OverlayProps) {
+  const dialogLabel = {
+    rebuy: 'Rebuy Available',
+    addon: 'Add-On Available',
+    paused: 'Game Paused',
+    eliminated: 'You Have Been Eliminated',
+    'tab-replaced': 'Game Opened in Another Tab',
+    neverBroke: 'Never Broke Offer',
+    continueRunout: 'Continue Runout',
+  }[props.type]
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60"
       role="dialog"
       aria-modal="true"
-      aria-label="Game overlay"
+      aria-label={dialogLabel}
     >
       <div className="bg-gray-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 text-white text-center">
         {props.type === 'rebuy' && (

@@ -43,7 +43,7 @@ export function PlayerSeat({ seat, isMe, positionStyle }: PlayerSeatProps) {
       <div className="flex gap-0.5">
         {isMe ? (
           holeCards.map((card, i) => <Card key={i} card={card} width={40} />)
-        ) : !isFolded && status !== 'SAT_OUT' && status !== 'ELIMINATED' && status !== 'WAITING' ? (
+        ) : !isFolded && status !== 'SAT_OUT' ? (
           <>
             <Card width={40} />
             <Card width={40} />

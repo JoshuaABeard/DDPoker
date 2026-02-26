@@ -31,7 +31,6 @@ interface ActionPanelProps {
 export function ActionPanel({ options, potSize, onAction }: ActionPanelProps) {
   const [betAmount, setBetAmount] = useState(options.canRaise ? options.minRaise : options.minBet)
   const [pendingAction, setPendingAction] = useState<'bet' | 'raise' | null>(null)
-  const panelRef = useRef<HTMLDivElement>(null)
   const onActionRef = useRef(onAction)
   onActionRef.current = onAction
 
@@ -63,6 +62,12 @@ export function ActionPanel({ options, potSize, onAction }: ActionPanelProps) {
     return () => window.removeEventListener('keydown', handler)
   }, [options])
 
+  // Reset bet amount and pending action when options change (new hand)
+  useEffect(() => {
+    setBetAmount(options.canRaise ? options.minRaise : options.minBet)
+    setPendingAction(null)
+  }, [options])
+
   function handleFold() {
     onAction({ action: 'FOLD', amount: 0 })
   }
@@ -86,7 +91,6 @@ export function ActionPanel({ options, potSize, onAction }: ActionPanelProps) {
 
   return (
     <div
-      ref={panelRef}
       className="flex flex-col gap-2 bg-gray-900 bg-opacity-90 rounded-xl p-3 shadow-xl"
       role="region"
       aria-label="Action panel"

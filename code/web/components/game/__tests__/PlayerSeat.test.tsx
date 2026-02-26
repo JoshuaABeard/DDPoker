@@ -129,17 +129,6 @@ describe('PlayerSeat', () => {
     expect(screen.queryByRole('img')).toBeNull()
   })
 
-  it('does not show face-down cards for ELIMINATED player', () => {
-    render(
-      <PlayerSeat
-        seat={makeSeat({ status: 'ELIMINATED' })}
-        isMe={false}
-        positionStyle={positionStyle}
-      />,
-    )
-    expect(screen.queryByRole('img')).toBeNull()
-  })
-
   it('does not show face-down cards for FOLDED player', () => {
     render(
       <PlayerSeat

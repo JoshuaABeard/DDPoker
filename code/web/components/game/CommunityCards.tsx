@@ -21,8 +21,8 @@ export function CommunityCards({ cards, cardWidth = 65 }: CommunityCardsProps) {
 
   return (
     <div className="flex gap-1 items-center justify-center" role="region" aria-label="Community cards">
-      {cards.map((card, i) => (
-        <div key={i} className="transition-transform duration-300">
+      {cards.map((card) => (
+        <div key={card} className="transition-transform duration-300">
           <Card card={card} width={cardWidth} />
         </div>
       ))}
