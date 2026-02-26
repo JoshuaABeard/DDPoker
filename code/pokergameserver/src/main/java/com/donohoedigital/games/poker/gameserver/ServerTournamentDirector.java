@@ -119,6 +119,25 @@ public class ServerTournamentDirector implements Runnable {
     private volatile boolean paused;
     private volatile boolean shutdownRequested;
 
+    // Static accessor for the current game's director (practice mode only).
+    // Set when run() starts, cleared when it exits.
+    private static volatile ServerTournamentDirector currentDirector;
+
+    /**
+     * Returns the currently running director, or null if no game is active. Used by
+     * control server handlers to access the action provider.
+     */
+    public static ServerTournamentDirector getCurrent() {
+        return currentDirector;
+    }
+
+    /**
+     * Returns the action provider for submitting puppet/human actions.
+     */
+    public ServerPlayerActionProvider getActionProvider() {
+        return actionProvider;
+    }
+
     /**
      * Create a new server tournament director (test-compatible overload, no
      * rebuy/addon callbacks).
@@ -171,6 +190,7 @@ public class ServerTournamentDirector implements Runnable {
     @Override
     public void run() {
         running = true;
+        currentDirector = this;
         boolean fatalError = false;
         lifecycleCallback.accept(GameLifecycleEvent.STARTED);
 
@@ -199,6 +219,7 @@ public class ServerTournamentDirector implements Runnable {
             handleFatalError(e);
         } finally {
             running = false;
+            currentDirector = null;
             if (!fatalError) {
                 lifecycleCallback.accept(GameLifecycleEvent.COMPLETED);
             }
