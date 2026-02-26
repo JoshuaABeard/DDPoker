@@ -51,6 +51,10 @@ code/pokerserver/data/
 .idea/
 *.iml
 .obsidian/
+.classpath
+.project
+.factorypath
+.settings/
 
 # Compiled installers and binaries
 docker/downloads/
