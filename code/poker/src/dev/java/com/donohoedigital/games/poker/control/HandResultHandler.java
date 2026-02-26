@@ -19,17 +19,13 @@
  */
 package com.donohoedigital.games.poker.control;
 
-import com.donohoedigital.games.engine.GameContext;
-import com.donohoedigital.games.poker.HandInfo;
 import com.donohoedigital.games.poker.HandInfoFast;
-import com.donohoedigital.games.poker.HoldemHand;
-import com.donohoedigital.games.poker.PokerGame;
-import com.donohoedigital.games.poker.PokerMain;
-import com.donohoedigital.games.poker.PokerPlayer;
-import com.donohoedigital.games.poker.PokerTable;
-import com.donohoedigital.games.poker.Pot;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
+import com.donohoedigital.games.poker.gameserver.ServerGameTable;
+import com.donohoedigital.games.poker.gameserver.ServerHand;
+import com.donohoedigital.games.poker.gameserver.ServerPlayer;
+import com.donohoedigital.games.poker.gameserver.ServerTournamentDirector;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.util.ArrayList;
@@ -40,8 +36,16 @@ import java.util.Map;
 /**
  * {@code GET /hand/result} — returns the most recently completed hand's result
  * including winner, hand ranking, and pot breakdown.
+ * <p>
+ * Uses server-side data cached by {@link ServerTournamentDirector} after hand
+ * resolution, so results are available even after the table moves to the next hand.
  */
 class HandResultHandler extends BaseHandler {
+
+    /** Tracks which ServerHand we last built a result for, to avoid rebuilding. */
+    private volatile ServerHand lastProcessedHand;
+    /** Cached result map from the most recently completed hand. */
+    private volatile Map<String, Object> lastResult;
 
     HandResultHandler(String apiKey) {
         super(apiKey);
@@ -54,144 +58,147 @@ class HandResultHandler extends BaseHandler {
             return;
         }
 
-        PokerGame game = getGame();
-        if (game == null) {
+        ServerTournamentDirector director = ServerTournamentDirector.getCurrent();
+        if (director == null) {
             sendJson(exchange, 409, Map.of("error", "Conflict", "message", "No active game"));
             return;
         }
 
-        PokerTable table = game.getCurrentTable();
-        if (table == null) {
-            sendJson(exchange, 409, Map.of("error", "Conflict", "message", "No active table"));
-            return;
-        }
-
-        HoldemHand hand = table.getHoldemHand();
-        if (hand == null || hand.getEndDate() == 0) {
+        ServerHand resolvedHand = director.getLastResolvedHand();
+        if (resolvedHand == null) {
             sendJson(exchange, 409, Map.of("error", "Conflict", "message", "No completed hand available"));
             return;
         }
 
-        Map<String, Object> result = buildHandResult(hand, table);
-        sendJson(exchange, 200, result);
+        // Build result only once per resolved hand
+        if (resolvedHand != lastProcessedHand) {
+            lastResult = buildHandResult(resolvedHand, director.getLastResolvedTable(),
+                    director.getLastResolvedHandNum());
+            lastProcessedHand = resolvedHand;
+        }
+
+        sendJson(exchange, 200, lastResult);
     }
 
-    private Map<String, Object> buildHandResult(HoldemHand hand, PokerTable table) {
+    private Map<String, Object> buildHandResult(ServerHand hand, ServerGameTable table, int handNum) {
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("handNumber", table.getHandNum());
-        result.put("communityCards", cardsToList(hand.getCommunity()));
+        result.put("handNumber", handNum);
+
+        Card[] communityCards = hand.getCommunityCards();
+        result.put("communityCards", cardsToDisplayList(communityCards));
         result.put("isUncontested", hand.isUncontested());
 
-        // Pots
+        Hand communityHand = toHand(communityCards);
+
+        // Build pot results from resolution data
+        List<ServerHand.PotResolutionResult> resolutions = hand.getResolutionResults();
         List<Map<String, Object>> pots = new ArrayList<>();
-        int numPots = hand.getNumPots();
-        for (int i = 0; i < numPots; i++) {
-            Pot pot = hand.getPot(i);
-            if (pot.isOverbet()) {
-                continue; // skip overbet pots
-            }
-            pots.add(buildPotResult(pot, hand, i));
+        for (ServerHand.PotResolutionResult pr : resolutions) {
+            pots.add(buildPotResult(pr, hand, table, communityHand));
         }
         result.put("pots", pots);
 
-        // Player results
+        // Player results from the table
         List<Map<String, Object>> playerResults = new ArrayList<>();
-        int numPlayers = hand.getNumPlayers();
-        for (int i = 0; i < numPlayers; i++) {
-            PokerPlayer player = hand.getPlayerAt(i);
-            playerResults.add(buildPlayerResult(player, hand));
+        if (table != null) {
+            for (int seat = 0; seat < table.getSeats(); seat++) {
+                ServerPlayer player = table.getPlayer(seat);
+                if (player == null) continue;
+                // Only include players who had hole cards (participated in this hand)
+                List<Card> holeCards = hand.getPlayerCards(player.getID());
+                if (holeCards.isEmpty()) continue;
+
+                Map<String, Object> pr = new LinkedHashMap<>();
+                pr.put("name", player.getName());
+                pr.put("seat", player.getSeat());
+                pr.put("chipsAfter", player.getChipCount());
+                pr.put("isFolded", player.isFolded());
+                pr.put("isHuman", player.isHuman());
+                playerResults.add(pr);
+            }
         }
         result.put("playerResults", playerResults);
 
         return result;
     }
 
-    private Map<String, Object> buildPotResult(Pot pot, HoldemHand hand, int potNumber) {
+    private Map<String, Object> buildPotResult(ServerHand.PotResolutionResult pr, ServerHand hand,
+            ServerGameTable table, Hand communityHand) {
         Map<String, Object> potMap = new LinkedHashMap<>();
-        potMap.put("potNumber", potNumber);
-        potMap.put("chipCount", pot.getChipCount());
+        potMap.put("potNumber", pr.potIndex());
+        potMap.put("chipCount", pr.amount());
 
-        // Players in this pot
-        List<String> playerNames = new ArrayList<>();
-        for (PokerPlayer p : pot.getPlayers()) {
-            playerNames.add(p.getName());
-        }
-        potMap.put("players", playerNames);
-
-        // Winners
         List<Map<String, Object>> winners = new ArrayList<>();
-        for (PokerPlayer winner : pot.getWinners()) {
-            winners.add(buildHandDetails(winner, hand, true));
+        int share = pr.winnerIds().length > 0 ? pr.amount() / pr.winnerIds().length : 0;
+
+        for (int winnerId : pr.winnerIds()) {
+            Map<String, Object> winnerMap = new LinkedHashMap<>();
+
+            // Look up player name and seat from table
+            if (table != null) {
+                for (int seat = 0; seat < table.getSeats(); seat++) {
+                    ServerPlayer p = table.getPlayer(seat);
+                    if (p != null && p.getID() == winnerId) {
+                        winnerMap.put("name", p.getName());
+                        winnerMap.put("seat", p.getSeat());
+                        break;
+                    }
+                }
+            }
+
+            List<Card> holeCards = hand.getPlayerCards(winnerId);
+            winnerMap.put("holeCards", cardsToDisplayList(holeCards));
+
+            // Evaluate hand for description
+            if (communityHand != null && communityHand.size() >= 3 && !holeCards.isEmpty()) {
+                Hand playerHand = toHand(holeCards);
+                HandInfoFast fast = new HandInfoFast();
+                int score = fast.getScore(playerHand, communityHand);
+                winnerMap.put("handDescription", fast.toString());
+                winnerMap.put("score", score);
+            }
+
+            winnerMap.put("totalWin", share);
+            winners.add(winnerMap);
         }
         potMap.put("winners", winners);
-
-        // Losers: players in the pot who are not winners and not folded
-        List<Map<String, Object>> losers = new ArrayList<>();
-        for (PokerPlayer p : pot.getPlayers()) {
-            if (pot.getWinners().contains(p) || hand.isFolded(p)) {
-                continue;
-            }
-            losers.add(buildHandDetails(p, hand, false));
-        }
-        potMap.put("losers", losers);
 
         return potMap;
     }
 
-    private Map<String, Object> buildHandDetails(PokerPlayer player, HoldemHand hand, boolean includeWin) {
-        Map<String, Object> details = new LinkedHashMap<>();
-        details.put("name", player.getName());
-        details.put("seat", player.getSeat());
-        details.put("holeCards", cardsToList(player.getHand()));
-
-        HandInfo handInfo = player.getHandInfo();
-        if (handInfo != null) {
-            details.put("handType", handInfo.getHandTypeDesc());
-
-            // Use HandInfoFast for hand description string
-            HandInfoFast fast = new HandInfoFast();
-            fast.getScore(player.getHand(), hand.getCommunity());
-            details.put("handDescription", fast.toString());
-
-            details.put("bestHand", cardsToList(handInfo.getBest()));
-            details.put("score", handInfo.getScore());
+    private List<String> cardsToDisplayList(Card[] cards) {
+        List<String> list = new ArrayList<>();
+        if (cards == null) return list;
+        for (Card card : cards) {
+            list.add(card.getDisplay());
         }
-
-        if (includeWin) {
-            details.put("totalWin", hand.getWin(player));
-        }
-
-        return details;
+        return list;
     }
 
-    private Map<String, Object> buildPlayerResult(PokerPlayer player, HoldemHand hand) {
-        Map<String, Object> playerResult = new LinkedHashMap<>();
-        playerResult.put("name", player.getName());
-        playerResult.put("seat", player.getSeat());
-        playerResult.put("totalWin", hand.getWin(player));
-        playerResult.put("totalOverbet", hand.getOverbet(player));
-        playerResult.put("chipsAfter", player.getChipCount());
-        playerResult.put("isFolded", hand.isFolded(player));
-        return playerResult;
+    private List<String> cardsToDisplayList(List<Card> cards) {
+        List<String> list = new ArrayList<>();
+        if (cards == null) return list;
+        for (Card card : cards) {
+            list.add(card.getDisplay());
+        }
+        return list;
     }
 
-    private List<String> cardsToList(Hand hand) {
-        List<String> cards = new ArrayList<>();
-        if (hand == null) {
-            return cards;
+    private Hand toHand(Card[] cards) {
+        if (cards == null || cards.length == 0) return null;
+        Hand hand = new Hand();
+        for (Card card : cards) {
+            hand.addCard(card);
         }
-        for (int i = 0; i < hand.size(); i++) {
-            Card card = hand.getCard(i);
-            cards.add(card.getDisplay());
-        }
-        return cards;
+        return hand;
     }
 
-    private PokerGame getGame() {
-        PokerMain main = PokerMain.getPokerMain();
-        if (main == null) return null;
-        GameContext context = main.getDefaultContext();
-        if (context == null) return null;
-        return (PokerGame) context.getGame();
+    private Hand toHand(List<Card> cards) {
+        if (cards == null || cards.isEmpty()) return null;
+        Hand hand = new Hand();
+        for (Card card : cards) {
+            hand.addCard(card);
+        }
+        return hand;
     }
 }

@@ -123,6 +123,12 @@ public class ServerTournamentDirector implements Runnable {
     // Set when run() starts, cleared when it exits.
     private static volatile ServerTournamentDirector currentDirector;
 
+    // Last resolved hand and its table, cached after showdown for the control
+    // server.
+    private volatile ServerHand lastResolvedHand;
+    private volatile ServerGameTable lastResolvedTable;
+    private volatile int lastResolvedHandNum;
+
     /**
      * Returns the currently running director, or null if no game is active. Used by
      * control server handlers to access the action provider.
@@ -136,6 +142,28 @@ public class ServerTournamentDirector implements Runnable {
      */
     public ServerPlayerActionProvider getActionProvider() {
         return actionProvider;
+    }
+
+    /**
+     * Returns the last resolved hand (after showdown), or null if no hand has
+     * completed yet.
+     */
+    public ServerHand getLastResolvedHand() {
+        return lastResolvedHand;
+    }
+
+    /**
+     * Returns the table from the last resolved hand, for player lookups.
+     */
+    public ServerGameTable getLastResolvedTable() {
+        return lastResolvedTable;
+    }
+
+    /**
+     * Returns the hand number of the last resolved hand.
+     */
+    public int getLastResolvedHandNum() {
+        return lastResolvedHandNum;
     }
 
     /**
@@ -458,6 +486,11 @@ public class ServerTournamentDirector implements Runnable {
                 eventBus.publish(new GameEvent.ShowdownStarted(table.getNumber()));
                 GameHand hand = table.getHoldemHand();
                 if (hand instanceof ServerHand serverHand) {
+                    // Cache for the control server's /hand/result endpoint
+                    lastResolvedHand = serverHand;
+                    lastResolvedTable = (table instanceof ServerGameTable sgt) ? sgt : null;
+                    lastResolvedHandNum = table.getHandNum();
+
                     List<ServerHand.PotResolutionResult> potResults = serverHand.getResolutionResults();
                     for (int pi = 0; pi < potResults.size(); pi++) {
                         ServerHand.PotResolutionResult pr = potResults.get(pi);
