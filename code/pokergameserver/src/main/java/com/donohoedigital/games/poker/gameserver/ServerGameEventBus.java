@@ -84,9 +84,10 @@ public class ServerGameEventBus extends GameEventBus {
         super.publish(event);
 
         // 3. Broadcast to connected clients
-        if (broadcastCallback != null) {
+        Consumer<GameEvent> cb = broadcastCallback;
+        if (cb != null) {
             try {
-                broadcastCallback.accept(event);
+                cb.accept(event);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "Error in broadcast callback for event: " + event, e);
             }

@@ -85,7 +85,7 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
      * When true, broadcast AI hole cards after HAND_STARTED (aiFaceUp practice
      * option).
      */
-    private boolean aiFaceUp;
+    private volatile boolean aiFaceUp;
 
     /** Scheduler for periodic TIMER_UPDATE broadcasts during action timeouts. */
     private final ScheduledExecutorService timerScheduler;
@@ -303,12 +303,12 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                                 }
                                 winners = w;
                             }
-                            // Build showdown players — include all players who were in the hand
-                            // (not sitting out), so folded players' cards can be revealed too.
+                            // Build showdown players — only include players still in the hand
+                            // (not folded, not sitting out). Folded players' cards stay hidden.
                             List<ServerPlayer> allWithCards = new ArrayList<>();
                             for (int s = 0; s < sgt.getNumSeats(); s++) {
                                 ServerPlayer sp = sgt.getPlayer(s);
-                                if (sp != null && !sp.isSittingOut()) {
+                                if (sp != null && !sp.isSittingOut() && !sp.isFolded()) {
                                     allWithCards.add(sp);
                                 }
                             }
