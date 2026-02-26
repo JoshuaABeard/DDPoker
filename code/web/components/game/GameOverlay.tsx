@@ -7,6 +7,9 @@
 
 'use client'
 
+import { useState, useEffect } from 'react'
+import { formatChips } from '@/lib/utils'
+
 interface RebuyProps {
   type: 'rebuy'
   cost: number
@@ -39,20 +42,49 @@ interface TabReplaced {
   type: 'tab-replaced'
 }
 
-type OverlayProps = RebuyProps | AddonProps | PausedProps | EliminatedProps | TabReplaced
+interface NeverBrokeProps {
+  type: 'neverBroke'
+  timeoutSeconds: number
+  onDecision: (accept: boolean) => void
+}
 
-function formatChips(n: number): string {
-  return new Intl.NumberFormat('en-US').format(n)
+interface ContinueRunoutProps {
+  type: 'continueRunout'
+  onContinue: () => void
+}
+
+type OverlayProps =
+  | RebuyProps
+  | AddonProps
+  | PausedProps
+  | EliminatedProps
+  | TabReplaced
+  | NeverBrokeProps
+  | ContinueRunoutProps
+
+function CountdownTimer({ seconds }: { seconds: number }) {
+  const [remaining, setRemaining] = useState(seconds)
+  useEffect(() => {
+    const interval = setInterval(() => setRemaining((p) => Math.max(0, p - 1)), 1000)
+    return () => clearInterval(interval)
+  }, [seconds])
+  return <p className="text-yellow-400 text-sm mt-2">Time remaining: {remaining}s</p>
 }
 
 /**
- * Modal overlays for game events: rebuy, addon, pause, elimination, tab-replaced.
+ * Modal overlays for game events: rebuy, addon, pause, elimination, tab-replaced,
+ * neverBroke, continueRunout.
  *
  * XSS safety: all user strings rendered as text nodes.
  */
 export function GameOverlay(props: OverlayProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Game overlay"
+    >
       <div className="bg-gray-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 text-white text-center">
         {props.type === 'rebuy' && (
           <>
@@ -60,7 +92,8 @@ export function GameOverlay(props: OverlayProps) {
             <p className="text-gray-300 mb-4">
               Add {formatChips(props.chips)} chips for {formatChips(props.cost)}?
             </p>
-            <div className="flex gap-3 justify-center">
+            <CountdownTimer seconds={props.timeoutSeconds} />
+            <div className="flex gap-3 justify-center mt-4">
               <button
                 type="button"
                 onClick={() => props.onDecision(true)}
@@ -85,7 +118,8 @@ export function GameOverlay(props: OverlayProps) {
             <p className="text-gray-300 mb-4">
               Add {formatChips(props.chips)} chips for {formatChips(props.cost)}?
             </p>
-            <div className="flex gap-3 justify-center">
+            <CountdownTimer seconds={props.timeoutSeconds} />
+            <div className="flex gap-3 justify-center mt-4">
               <button
                 type="button"
                 onClick={() => props.onDecision(true)}
@@ -135,6 +169,39 @@ export function GameOverlay(props: OverlayProps) {
               This game session was taken over by another browser tab. Close this tab and continue
               there, or reload to rejoin.
             </p>
+          </>
+        )}
+
+        {props.type === 'neverBroke' && (
+          <>
+            <h2 className="text-xl font-bold mb-2">Never Broke Offer</h2>
+            <p className="text-gray-300 mb-3">
+              You have run out of chips. Would you like to continue playing at a reduced stack?
+            </p>
+            <CountdownTimer seconds={props.timeoutSeconds} />
+            <div className="flex gap-3 justify-center mt-4">
+              <button type="button" onClick={() => props.onDecision(true)}
+                className="px-5 py-2 bg-green-600 hover:bg-green-500 rounded-lg font-bold transition-colors">
+                Accept
+              </button>
+              <button type="button" onClick={() => props.onDecision(false)}
+                className="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition-colors">
+                Decline
+              </button>
+            </div>
+          </>
+        )}
+
+        {props.type === 'continueRunout' && (
+          <>
+            <h2 className="text-xl font-bold mb-2">Continue Runout</h2>
+            <p className="text-gray-300 mb-4">
+              All players are all-in. Continue dealing the remaining cards?
+            </p>
+            <button type="button" onClick={props.onContinue}
+              className="px-5 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg font-bold transition-colors">
+              Continue
+            </button>
           </>
         )}
       </div>

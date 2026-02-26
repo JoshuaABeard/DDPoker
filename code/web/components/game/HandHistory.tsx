@@ -8,14 +8,33 @@
 'use client'
 
 import { useState } from 'react'
-
-interface HandHistoryEntry {
-  id: string
-  text: string
-}
+import type { HandHistoryEntry } from '@/lib/game/gameReducer'
+import { formatChips } from '@/lib/utils'
 
 interface HandHistoryProps {
   entries: HandHistoryEntry[]
+}
+
+function renderEntry(entry: HandHistoryEntry): string {
+  switch (entry.type) {
+    case 'hand_start':
+      return `Hand #${entry.handNumber}`
+    case 'community':
+      return `${entry.round ?? 'Dealt'}: ${(entry.cards ?? []).join(' ')}`
+    case 'action': {
+      const amountStr = entry.amount && entry.amount > 0 ? ` ${formatChips(entry.amount)}` : ''
+      return `${entry.playerName ?? 'Player'}: ${entry.action ?? ''}${amountStr}`
+    }
+    case 'result': {
+      const winner = entry.winners?.[0]
+      if (winner) {
+        return `${winner.playerName} wins ${formatChips(winner.amount)} with ${winner.hand}`
+      }
+      return 'Hand complete'
+    }
+    default:
+      return ''
+  }
 }
 
 /**
@@ -48,8 +67,7 @@ export function HandHistory({ entries }: HandHistoryProps) {
           ) : (
             entries.map((entry) => (
               <div key={entry.id} className="text-xs text-gray-300">
-                {/* text is a text node — XSS safe */}
-                {entry.text}
+                {renderEntry(entry)}
               </div>
             ))
           )}

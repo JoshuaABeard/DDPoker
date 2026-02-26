@@ -88,10 +88,10 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
   const myIndex = currentTable.seats.findIndex((s) => s.playerId === myPlayerId)
   const seatCount = Math.max(currentTable.seats.length, 1)
 
-  function visualPosition(seatIndex: number): number {
+  function visualPosition(arrayIndex: number): number {
     const pos = myIndex < 0
-      ? seatIndex % 10
-      : ((seatIndex - myIndex + seatCount) % seatCount) % 10
+      ? arrayIndex % SEAT_POSITIONS.length
+      : ((arrayIndex - myIndex + seatCount) % seatCount) % SEAT_POSITIONS.length
     return pos >= 0 && pos < SEAT_POSITIONS.length ? pos : 0
   }
 
@@ -119,16 +119,16 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
       <TableFelt table={currentTable} />
 
       {/* Player seats — rotated so my seat is always at position 0 */}
-      {currentTable.seats.map((seat) => (
+      {currentTable.seats.map((seat, arrayIndex) => (
         <PlayerSeat
-          key={seat.seatIndex}
+          key={seat.playerId ?? arrayIndex}
           seat={{
             ...seat,
             // Reveal hole cards for the current player only
             holeCards: seat.playerId === myPlayerId ? holeCards : [],
           }}
           isMe={seat.playerId === myPlayerId}
-          positionStyle={SEAT_POSITIONS[visualPosition(seat.seatIndex)]}
+          positionStyle={SEAT_POSITIONS[visualPosition(arrayIndex)]}
         />
       ))}
 
@@ -155,9 +155,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
 
       {/* Hand history — top-right corner */}
       <div className="absolute top-12 right-3 z-10">
-        {/* Hand history entries are not yet tracked in game state;
-            the reducer will need a handHistory field in a future iteration. */}
-        <HandHistory entries={[]} />
+        <HandHistory entries={gameState.handHistory} />
       </div>
 
       {/* Chat panel — bottom-right corner */}

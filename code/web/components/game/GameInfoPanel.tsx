@@ -6,6 +6,7 @@
  */
 
 import type { BlindsData, BlindsSummary, BlindLevelConfig } from '@/lib/game/types'
+import { formatChips } from '@/lib/utils'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -47,10 +48,6 @@ function normalizeBlinds(blinds: BlindsData | BlindsSummary): { smallBlind: numb
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function formatChips(n: number): string {
-  return new Intl.NumberFormat('en-US').format(n)
-}
 
 function formatBlind(level: BlindLevelConfig): string {
   const ante = level.ante > 0 ? ` / ${formatChips(level.ante)}` : ''

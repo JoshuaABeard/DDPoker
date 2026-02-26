@@ -13,20 +13,16 @@ interface CommunityCardsProps {
 }
 
 /**
- * Displays up to 5 community cards (flop, turn, river).
- * Empty slots render face-down placeholders.
+ * Displays community cards (flop, turn, river).
+ * Returns null when no cards have been dealt — no empty placeholders.
  */
 export function CommunityCards({ cards, cardWidth = 65 }: CommunityCardsProps) {
-  const slots = Array.from({ length: 5 }, (_, i) => cards[i])
+  if (cards.length === 0) return null
 
   return (
     <div className="flex gap-1 items-center justify-center" role="region" aria-label="Community cards">
-      {slots.map((card, i) => (
-        <div
-          key={i}
-          className="transition-transform duration-300"
-          style={{ transform: card ? 'scale(1)' : 'scale(0.95)' }}
-        >
+      {cards.map((card, i) => (
+        <div key={i} className="transition-transform duration-300">
           <Card card={card} width={cardWidth} />
         </div>
       ))}

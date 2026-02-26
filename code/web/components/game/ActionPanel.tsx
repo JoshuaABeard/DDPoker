@@ -11,15 +11,12 @@ import { useEffect, useRef, useState } from 'react'
 import { BetSlider } from './BetSlider'
 import type { ActionOptionsData } from '@/lib/game/types'
 import type { PlayerActionData } from '@/lib/game/types'
+import { formatChips } from '@/lib/utils'
 
 interface ActionPanelProps {
   options: ActionOptionsData
   potSize: number
   onAction: (action: PlayerActionData) => void
-}
-
-function formatChips(n: number): string {
-  return new Intl.NumberFormat('en-US').format(n)
 }
 
 /**
@@ -35,6 +32,8 @@ export function ActionPanel({ options, potSize, onAction }: ActionPanelProps) {
   const [betAmount, setBetAmount] = useState(options.canRaise ? options.minRaise : options.minBet)
   const [pendingAction, setPendingAction] = useState<'bet' | 'raise' | null>(null)
   const panelRef = useRef<HTMLDivElement>(null)
+  const onActionRef = useRef(onAction)
+  onActionRef.current = onAction
 
   const showBetSlider = pendingAction === 'bet' || pendingAction === 'raise'
   const sliderMin = pendingAction === 'raise' ? options.minRaise : options.minBet
@@ -48,11 +47,11 @@ export function ActionPanel({ options, potSize, onAction }: ActionPanelProps) {
 
       switch (e.key.toLowerCase()) {
         case 'f':
-          if (options.canFold) handleFold()
+          if (options.canFold) onActionRef.current({ action: 'FOLD', amount: 0 })
           break
         case 'c':
-          if (options.canCheck) handleCheck()
-          else if (options.canCall) handleCall()
+          if (options.canCheck) onActionRef.current({ action: 'CHECK', amount: 0 })
+          else if (options.canCall) onActionRef.current({ action: 'CALL', amount: options.callAmount })
           break
         case 'r':
           if (options.canRaise) setPendingAction('raise')
@@ -62,7 +61,6 @@ export function ActionPanel({ options, potSize, onAction }: ActionPanelProps) {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options])
 
   function handleFold() {
