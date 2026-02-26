@@ -1,1 +1,0 @@
-Make sure everything is rebranded with DDPoker Community Edition

@@ -1,5 +1,7 @@
 # AssertJ Swing Regression Test Plan
 
+**Status:** COMPLETED
+
 ## ✅ COMPLETED - February 2026
 
 **Implementation Approach:** Integration Tests + Minimal UI Smoke Tests

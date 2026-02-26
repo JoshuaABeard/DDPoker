@@ -1,1 +1,0 @@
-lets review the use of copy write when creating customer files etc in the project

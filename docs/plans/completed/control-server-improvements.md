@@ -1,6 +1,6 @@
 # Plan: Control Server Improvements & Java Bug Fixes
 
-Status: completed
+**Status:** COMPLETED
 **Created:** 2026-02-23
 **Goal:** Fix Java client bugs uncovered by the scenario test suite and expand the dev control server API to enable comprehensive automated testing.
 
