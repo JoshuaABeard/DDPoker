@@ -1526,6 +1526,54 @@ class WebSocketTournamentDirectorTest {
     }
 
     // -------------------------------------------------------------------------
+    // applyTableData — SITTING_OUT players must not get blank cards (fix 4)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void applyTableDataSittingOutPlayerGetsNoCards() throws Exception {
+        // Build a GAME_STATE with a SITTING_OUT player at seat 1
+        ObjectNode gs = mapper.createObjectNode();
+        gs.put("status", "IN_PROGRESS").put("level", 0);
+        ObjectNode blinds = mapper.createObjectNode();
+        blinds.put("small", 50).put("big", 100).put("ante", 0);
+        gs.set("blinds", blinds);
+        gs.putNull("nextLevelIn");
+
+        ObjectNode t = mapper.createObjectNode();
+        t.put("tableId", 1).put("currentRound", "PRE_FLOP").put("handNumber", 1);
+        t.putArray("communityCards");
+        t.putArray("pots");
+        var seats = t.putArray("seats");
+
+        // Local player at seat 0 (ACTIVE)
+        ObjectNode seat0 = mapper.createObjectNode();
+        seat0.put("seatIndex", 0).put("playerId", 1L).put("playerName", "Alice").put("chipCount", 1000)
+                .put("status", "ACTIVE").put("isDealer", true).put("isSmallBlind", false).put("isBigBlind", false)
+                .put("currentBet", 0).put("isCurrentActor", false);
+        seat0.putArray("holeCards");
+        seats.add(seat0);
+
+        // Opponent at seat 1 (SITTING_OUT)
+        ObjectNode seat1 = mapper.createObjectNode();
+        seat1.put("seatIndex", 1).put("playerId", 2L).put("playerName", "Bob").put("chipCount", 1000)
+                .put("status", "SITTING_OUT").put("isDealer", false).put("isSmallBlind", false).put("isBigBlind", false)
+                .put("currentBet", 0).put("isCurrentActor", false);
+        seat1.putArray("holeCards");
+        seats.add(seat1);
+
+        gs.putArray("tables").add(t);
+        gs.putArray("players");
+
+        dispatch(ServerMessageType.GAME_STATE, gs);
+        RemotePokerTable table = requireTable();
+
+        // Find Bob (seat 1) and verify no blank cards
+        PokerPlayer bob = table.getPlayer(1);
+        assertThat(bob).isNotNull();
+        assertThat(bob.getHand().size()).isEqualTo(0);
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 

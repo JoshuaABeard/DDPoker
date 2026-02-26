@@ -2354,7 +2354,8 @@ public class WebSocketTournamentDirector extends BasePhase
                     if (sd.playerId() == localPlayerId_) {
                         localPlayerHasCards = true;
                     }
-                } else if (sd.playerId() != localPlayerId_ && !"FOLDED".equals(sd.status())) {
+                } else if (sd.playerId() != localPlayerId_ && !"FOLDED".equals(sd.status())
+                        && !"SITTING_OUT".equals(sd.status())) {
                     // Opponent in hand: add blank cards so face-down images are rendered
                     p.getHand().addCard(Card.BLANK);
                     p.getHand().addCard(Card.BLANK);
