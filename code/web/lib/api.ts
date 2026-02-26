@@ -64,7 +64,6 @@ async function apiFetch<T>(
 
   try {
     const response = await fetch(url, fetchOptions)
-    clearTimeout(timeoutId)
 
     if (!response.ok) {
       const errorData: ApiError = await response.json().catch(() => ({
@@ -79,9 +78,10 @@ async function apiFetch<T>(
       timestamp: new Date().toISOString(),
     }
   } catch (error) {
-    clearTimeout(timeoutId)
     console.error('API fetch error:', error)
     throw error
+  } finally {
+    clearTimeout(timeoutId)
   }
 }
 
@@ -514,8 +514,8 @@ export const adminApi = {
  */
 export async function checkApiHealth(): Promise<boolean> {
   try {
-    const response = await apiFetch<{ status: string }>('/api/health')
-    return !!response.data
+    await apiFetch<{ status: string }>('/api/health')
+    return true
   } catch {
     return false
   }

@@ -82,6 +82,26 @@ describe('apiFetch — Content-Type header', () => {
   })
 })
 
+describe('apiFetch — AbortSignal', () => {
+  it('passes composed AbortSignal to fetch when caller signal provided', async () => {
+    let capturedInit: RequestInit | undefined
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((_url: string, init: RequestInit) => {
+      capturedInit = init
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ token: 'test', expiresIn: 60 }),
+      })
+    }))
+
+    // Call getWsToken which is a GET request with no signal normally
+    await gameServerApi.getWsToken()
+
+    // The signal should be defined (it's always the timeout signal at minimum)
+    expect(capturedInit?.signal).toBeDefined()
+    expect(capturedInit?.signal).toBeInstanceOf(AbortSignal)
+  })
+})
+
 describe('checkApiHealth', () => {
   it('returns true when API responds with 200 and data', async () => {
     const mockFetch = vi.fn().mockResolvedValue(

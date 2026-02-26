@@ -224,6 +224,8 @@ describe('WebSocketClient', () => {
     client.connect('ws://localhost/ws/games/g1', 'tok')
     const ws = MockWebSocket.latest()
     ws.simulateOpen()
+    // Give client a reconnect token so scheduleReconnect can open a new socket
+    client.setReconnectToken('reconnect-tok')
 
     // Simulate unexpected server close
     ws.simulateClose(1006, 'Connection lost')
@@ -335,23 +337,25 @@ describe('WebSocketClient', () => {
     expect(handlersNulledBeforeClose).toBe(true)
   })
 
-  it('tokenRefreshFn is called during reconnect when no reconnectToken', () => {
+  it('tokenRefreshFn is called during reconnect when no reconnectToken', async () => {
     const refreshedToken = 'fresh-token-from-refresh'
     const tokenRefreshFn = vi.fn().mockResolvedValue(refreshedToken)
+    const onStateChange = vi.fn()
 
     const client = new WebSocketClient({
       onMessage: vi.fn(),
-      onStateChange: vi.fn(),
+      onStateChange,
       onError: vi.fn(),
       tokenRefreshFn,
     })
 
     // Connect without setting a reconnect token
     client.connect('ws://localhost/ws/games/g1', 'initial-token')
-    MockWebSocket.latest().simulateOpen()
+    const originalSocket = MockWebSocket.latest()
+    originalSocket.simulateOpen()
 
     // Simulate unexpected close — should trigger reconnect
-    MockWebSocket.latest().simulateClose(1006, 'Connection lost')
+    originalSocket.simulateClose(1006, 'Connection lost')
 
     // Advance timers to trigger reconnect
     vi.advanceTimersByTime(1500)
@@ -359,11 +363,14 @@ describe('WebSocketClient', () => {
     // tokenRefreshFn should have been called
     expect(tokenRefreshFn).toHaveBeenCalledTimes(1)
 
-    // Resolve the promise and verify the fresh token is used in the new socket URL
-    return tokenRefreshFn.mock.results[0].value.then(() => {
-      vi.advanceTimersByTime(0)
-      expect(MockWebSocket.latest().url).toContain(`token=${refreshedToken}`)
-    })
+    // Await the tokenRefreshFn promise to resolve before the socket is created
+    await vi.runAllTimersAsync()
+    // Now the new socket should exist
+    const newSocket = MockWebSocket.latest()
+    expect(newSocket).not.toBe(originalSocket)
+    expect(newSocket.url).toContain(`token=${refreshedToken}`)
+    newSocket.simulateOpen()
+    expect(onStateChange).toHaveBeenLastCalledWith('CONNECTED')
   })
 
   it('sequenceNumber resets to 0 on a fresh connect (not a reconnect)', () => {

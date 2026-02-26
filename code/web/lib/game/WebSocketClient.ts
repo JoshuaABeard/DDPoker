@@ -200,8 +200,6 @@ export class WebSocketClient {
         }).catch(() => {
           this.setState('DISCONNECTED')
         })
-      } else if (this.initialToken) {
-        this.openSocket(this.initialToken)
       } else {
         this.setState('DISCONNECTED')
       }

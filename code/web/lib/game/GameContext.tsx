@@ -82,7 +82,6 @@ export interface GameProviderProps {
 export function GameProvider({ gameId, serverBaseUrl, children }: GameProviderProps) {
   const [state, dispatch] = useReducer(gameReducer, initialGameState)
   const wsClientRef = useRef<WebSocketClient | null>(null)
-  const reconnectTokenRef = useRef<string | null>(null)
   // Ref to latest state so actions can access current values without stale closures
   const stateRef = useRef(state)
   stateRef.current = state
@@ -127,7 +126,6 @@ export function GameProvider({ gameId, serverBaseUrl, children }: GameProviderPr
             if (message.type === 'CONNECTED' && message.data) {
               const data = message.data as { reconnectToken?: string }
               if (data.reconnectToken) {
-                reconnectTokenRef.current = data.reconnectToken
                 client.setReconnectToken(data.reconnectToken)
               }
             }
