@@ -181,10 +181,10 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                                 observerSnapshot = game.getObserverSnapshot(e.tableId());
                             }
                             if (observerSnapshot != null) {
-                                conn.sendMessage(converter.createGameStateMessage(gameId, observerSnapshot)
-                                        .withSequence(sequenceCounter.incrementAndGet()));
-                                conn.sendMessage(
-                                        handStartedMsg.withSequence(sequenceCounter.incrementAndGet()));
+                                // No sequence: per-player sends must not advance the shared
+                                // broadcast counter (see player send comment below).
+                                conn.sendMessage(converter.createGameStateMessage(gameId, observerSnapshot));
+                                conn.sendMessage(handStartedMsg);
                             }
                             continue;
                         }
@@ -192,16 +192,19 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                         if (snapshot != null && snapshot.tableId() == e.tableId()) {
                             logger.debug("[BROADCAST] sending GAME_STATE + HAND_STARTED to player={} for table={}",
                                     conn.getProfileId(), e.tableId());
-                            conn.sendMessage(converter.createGameStateMessage(gameId, snapshot)
-                                    .withSequence(sequenceCounter.incrementAndGet()));
-                            conn.sendMessage(
-                                    handStartedMsg.withSequence(sequenceCounter.incrementAndGet()));
+                            // Per-player sends intentionally have no sequence number.
+                            // The shared sequenceCounter is for broadcast() calls that go to
+                            // all players simultaneously. If per-player sends also incremented
+                            // it, every player except the last in this loop would see a gap
+                            // on the next broadcast() (e.g. PLAYER_ACTED), triggering a
+                            // spurious state resync on every hand for multi-player games.
+                            conn.sendMessage(converter.createGameStateMessage(gameId, snapshot));
+                            conn.sendMessage(handStartedMsg);
                             // Send hole cards privately AFTER HAND_STARTED so they arrive
                             // after the client's TYPE_NEW_HAND fires (which resets card slots).
                             Card[] holeCards = snapshot.myHoleCards();
                             if (holeCards != null && holeCards.length > 0) {
-                                conn.sendMessage(converter.createHoleCardsMessage(gameId, holeCards)
-                                        .withSequence(sequenceCounter.incrementAndGet()));
+                                conn.sendMessage(converter.createHoleCardsMessage(gameId, holeCards));
                             }
                         }
                     }
@@ -486,7 +489,7 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                             for (int s = 0; s < sgt.getNumSeats(); s++) {
                                 ServerPlayer sp = sgt.getPlayer(s);
                                 if (sp != null && sp.getID() == e.playerId()) {
-                                    timeoutTableId = t;
+                                    timeoutTableId = t + 1; // t is 0-based; tableId is 1-based
                                     break outer;
                                 }
                             }
@@ -664,6 +667,17 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
             task.cancel(false);
             activeTimerTask = null;
         }
+    }
+
+    /**
+     * Shuts down this broadcaster. Cancels any active timer task and terminates the
+     * timer scheduler. Called by {@link GameWebSocketHandler} when the last player
+     * connection for this game closes, preventing the scheduler thread from leaking
+     * after the game ends.
+     */
+    public void shutdown() {
+        cancelActionTimer();
+        timerScheduler.shutdown();
     }
 
     private void broadcast(ServerMessage message) {

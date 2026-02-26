@@ -18,11 +18,13 @@
 package com.donohoedigital.games.poker.gameserver.websocket;
 
 import com.donohoedigital.games.poker.core.event.GameEvent;
+import com.donohoedigital.games.poker.core.state.ActionType;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
 import com.donohoedigital.games.poker.gameserver.GameStateSnapshot;
 import com.donohoedigital.games.poker.gameserver.ServerGameTable;
 import com.donohoedigital.games.poker.gameserver.ServerPlayer;
 import com.donohoedigital.games.poker.gameserver.ServerTournamentContext;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -474,5 +476,100 @@ class GameEventBroadcasterTest {
         assertTrue(first.contains("GAME_STATE"),
                 "First message must be GAME_STATE so tables_ is populated before hand state; got: " + first);
         assertTrue(second.contains("HAND_STARTED"), "Second message must be HAND_STARTED; got: " + second);
+    }
+
+    // ====================================
+    // Bug 3: ACTION_TIMEOUT must use 1-based tableId
+    // ====================================
+
+    @Test
+    void actionTimeout_sendsOneBasedTableId_forPlayerAtTable() throws Exception {
+        // Player 7 is seated at table 1 (number=1, stored at index 0 in the
+        // tournament).
+        // The broadcaster loops with 0-based index t, so it must send tableId = t+1 =
+        // 1.
+        ServerPlayer player = new ServerPlayer(7, "TimedOut", true, 0, 5000);
+        player.setSeat(0);
+        ServerGameTable sgt = new ServerGameTable(1, 6, null, 25, 50, 0);
+        sgt.addPlayer(player, 0);
+
+        ServerTournamentContext tournament = mock(ServerTournamentContext.class);
+        when(tournament.getNumTables()).thenReturn(1);
+        when(tournament.getTable(0)).thenReturn(sgt);
+
+        GameInstance game = mock(GameInstance.class);
+        when(game.getTournament()).thenReturn(tournament);
+
+        GameEventBroadcaster b = new GameEventBroadcaster("game-1", connectionManager, converter, game);
+        WebSocketSession session = mock(WebSocketSession.class);
+        when(session.isOpen()).thenReturn(true);
+        connectionManager.addConnection("game-1", 99L,
+                new PlayerConnection(session, 99L, "watcher", "game-1", objectMapper));
+
+        b.accept(new GameEvent.ActionTimeout(7, ActionType.FOLD));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(session).sendMessage(captor.capture());
+        String json = captor.getValue().getPayload();
+        JsonNode data = objectMapper.readTree(json).get("data");
+        assertEquals(1, data.get("tableId").asInt(),
+                "ACTION_TIMEOUT must use 1-based tableId matching table.getNumber(), not 0-based loop index");
+    }
+
+    // ====================================
+    // Bug 4: shutdown() must stop the timerScheduler
+    // ====================================
+
+    @Test
+    void shutdown_cancelsActiveTimerAndStopsScheduler() throws Exception {
+        makeConnectedPlayer(1L);
+        broadcaster.startActionTimer(1L, 60);
+        // shutdown() must not throw, even when a timer task is in flight
+        assertDoesNotThrow(() -> broadcaster.shutdown());
+        // cancelActionTimer() after shutdown must also be safe (no active task)
+        assertDoesNotThrow(() -> broadcaster.cancelActionTimer());
+    }
+
+    // ====================================
+    // Bug 2: per-player sends during HandStarted must have null sequenceNumber
+    // ====================================
+
+    @Test
+    void handStarted_perPlayerMessages_haveNullSequenceNumber() throws Exception {
+        // Per-player GAME_STATE / HAND_STARTED / HOLE_CARDS_DEALT messages sent during
+        // HandStarted must carry null sequenceNumber so they are excluded from the
+        // client's gap-detection counter. Without this, players who receive their
+        // per-player batch early see a gap when the next broadcast() arrives.
+        WebSocketSession session = mock(WebSocketSession.class);
+        when(session.isOpen()).thenReturn(true);
+        long profileId = 7L;
+        connectionManager.addConnection("game-1", profileId,
+                new PlayerConnection(session, profileId, "alice", "game-1", objectMapper));
+
+        GameStateSnapshot snapshot = new GameStateSnapshot(1, 3, null, null, List.of(), List.of(), -1, -1, -1, -1,
+                "PRE_FLOP", 1, 25, 50, 0, 0, 0, 0, 0);
+        GameInstance mockGame = mock(GameInstance.class);
+        when(mockGame.getGameStateSnapshot(profileId)).thenReturn(snapshot);
+
+        ServerTournamentContext mockCtx = mock(ServerTournamentContext.class);
+        when(mockCtx.getNumTables()).thenReturn(1);
+        ServerGameTable mockTable = mock(ServerGameTable.class);
+        when(mockTable.getNumSeats()).thenReturn(0);
+        when(mockCtx.getTable(0)).thenReturn(mockTable);
+        when(mockGame.getTournament()).thenReturn(mockCtx);
+
+        GameEventBroadcaster broadcasterWithGame = new GameEventBroadcaster("game-1", connectionManager, converter,
+                mockGame);
+        broadcasterWithGame.accept(new GameEvent.HandStarted(1, 3));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(session, atLeast(1)).sendMessage(captor.capture());
+        for (TextMessage msg : captor.getAllValues()) {
+            JsonNode root = objectMapper.readTree(msg.getPayload());
+            assertTrue(root.get("sequenceNumber").isNull(),
+                    "Per-player message sent during HAND_STARTED must have null sequenceNumber to avoid "
+                            + "false gap detection; type=" + root.get("type").asText() + " seq="
+                            + root.get("sequenceNumber"));
+        }
     }
 }

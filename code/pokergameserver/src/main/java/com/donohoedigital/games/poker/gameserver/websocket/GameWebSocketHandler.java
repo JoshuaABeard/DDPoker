@@ -401,6 +401,16 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
         if (connection != null) {
             log.debug("[WS-HANDLER] connection closed profileId={} gameId={} status={} observer={}",
                     connection.getProfileId(), connection.getGameId(), closeStatus, connection.isObserver());
+
+            // When a player reconnects from a new tab, afterConnectionEstablished closes
+            // the old session with CLOSE_CONNECTION_REPLACED (4409) *after* registering
+            // the new connection. If we called removeConnection/removePlayer here, we
+            // would boot the player that just successfully reconnected.
+            if (closeStatus.getCode() == CLOSE_CONNECTION_REPLACED) {
+                sessionConnections.remove(session.getId());
+                return;
+            }
+
             sessionConnections.remove(session.getId());
             connectionManager.removeConnection(connection.getGameId(), connection.getProfileId());
 
@@ -436,9 +446,13 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
                 connectionManager.broadcastToGame(connection.getGameId(), leftMsg);
             }
 
-            // Clean up per-game broadcaster when the last connection closes
+            // Clean up per-game broadcaster when the last connection closes.
+            // shutdown() cancels any active timer task and terminates the scheduler thread.
             if (connectionManager.getConnections(connection.getGameId()).isEmpty()) {
-                gameBroadcasters.remove(connection.getGameId());
+                GameEventBroadcaster removed = gameBroadcasters.remove(connection.getGameId());
+                if (removed != null) {
+                    removed.shutdown();
+                }
             }
         }
     }

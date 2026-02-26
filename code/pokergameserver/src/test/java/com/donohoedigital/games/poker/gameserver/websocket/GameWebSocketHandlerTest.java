@@ -223,6 +223,23 @@ class GameWebSocketHandlerTest {
         verify(gameInstance).removePlayer(PROFILE_ID);
     }
 
+    @Test
+    void afterConnectionClosed_withReplacedConnectionCode_doesNotRemovePlayer() throws Exception {
+        // Establish the original connection
+        when(gameInstance.getState()).thenReturn(GameInstanceState.IN_PROGRESS);
+        when(gameInstance.hasPlayer(PROFILE_ID)).thenReturn(true);
+        handler.afterConnectionEstablished(session);
+
+        // Simulate the old connection being closed with code 4409
+        // (CLOSE_CONNECTION_REPLACED),
+        // which happens when the player reconnects from a new tab. The new connection's
+        // afterConnectionEstablished has already re-registered the player — calling
+        // removePlayer here would boot the just-reconnected player from the game.
+        handler.afterConnectionClosed(session, new CloseStatus(4409, "Connection replaced by new session"));
+
+        verify(gameInstance, never()).removePlayer(PROFILE_ID);
+    }
+
     // ============================================================================================
     // Helpers
     // ============================================================================================
