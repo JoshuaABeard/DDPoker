@@ -75,7 +75,17 @@ public class ProfileController {
         String oldPassword = request.get("oldPassword");
         String newPassword = request.get("newPassword");
 
+        if (oldPassword == null || oldPassword.isEmpty() || newPassword == null || newPassword.isEmpty()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Old password and new password are required");
+            return ResponseEntity.badRequest().body(error);
+        }
+
         OnlineProfile profile = profileService.getOnlineProfileByName(username);
+        if (profile == null) {
+            return ResponseEntity.notFound().build();
+        }
 
         // Verify old password
         if (!passwordHashingService.checkPassword(oldPassword, profile.getPasswordHash())) {
@@ -101,6 +111,9 @@ public class ProfileController {
     @GetMapping("/aliases")
     public ResponseEntity<List<OnlineProfile>> getAliases(@AuthenticationPrincipal String username) {
         OnlineProfile profile = profileService.getOnlineProfileByName(username);
+        if (profile == null) {
+            return ResponseEntity.notFound().build();
+        }
         List<OnlineProfile> aliases = profileService.getAllOnlineProfilesForEmail(profile.getEmail(), username);
         return ResponseEntity.ok(aliases);
     }

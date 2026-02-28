@@ -113,9 +113,13 @@ public class OnlineProfileServiceImpl implements OnlineProfileService {
     @Transactional
     public void retire(String name) {
         OnlineProfile profile = dao.getByName(name);
+        if (profile == null) {
+            return;
+        }
         profile.setRetired(true);
         // Hash the retired marker password
         profile.setPasswordHash(passwordHashingService.hashPassword("__retired__"));
+        dao.update(profile);
     }
 
     @Transactional

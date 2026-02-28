@@ -275,7 +275,9 @@ public class AuthService {
     public String generateWsToken(Long profileId, String username) {
         long now = System.currentTimeMillis();
 
-        // Sliding-window rate limit: 5 requests per 60s per user
+        // Sliding-window rate limit: 5 requests per 60s per user.
+        // Check + record in a single atomic compute() to prevent TOCTOU races.
+        boolean[] rateLimited = {false};
         wsTokenRateLimits.compute(profileId, (id, timestamps) -> {
             if (timestamps == null) {
                 timestamps = new ArrayList<>();
@@ -283,19 +285,18 @@ public class AuthService {
             // Evict stale entries outside the window
             long windowStart = now - WS_TOKEN_RATE_WINDOW_MS;
             timestamps.removeIf(ts -> ts < windowStart);
+
+            if (timestamps.size() >= WS_TOKEN_RATE_LIMIT) {
+                rateLimited[0] = true;
+            } else {
+                timestamps.add(now);
+            }
             return timestamps;
         });
 
-        ArrayList<Long> timestamps = wsTokenRateLimits.get(profileId);
-        if (timestamps != null && timestamps.size() >= WS_TOKEN_RATE_LIMIT) {
+        if (rateLimited[0]) {
             return null;
         }
-
-        // Record this request
-        wsTokenRateLimits.computeIfPresent(profileId, (id, ts) -> {
-            ts.add(now);
-            return ts;
-        });
 
         return tokenProvider.generateScopedToken(username, profileId, "ws-connect", null, WS_TOKEN_TTL_MS);
     }

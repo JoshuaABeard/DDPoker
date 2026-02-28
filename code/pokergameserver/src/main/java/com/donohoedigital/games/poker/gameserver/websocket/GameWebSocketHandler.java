@@ -18,6 +18,8 @@
 package com.donohoedigital.games.poker.gameserver.websocket;
 
 import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -499,7 +501,10 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
         for (String param : query.split("&")) {
             if (param.startsWith("token=")) {
                 String value = param.substring("token=".length());
-                return value.isEmpty() ? null : value;
+                if (value.isEmpty()) {
+                    return null;
+                }
+                return URLDecoder.decode(value, StandardCharsets.UTF_8);
             }
         }
         return null;

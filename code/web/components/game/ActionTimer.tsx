@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface ActionTimerProps {
   /** Total timeout in seconds (from ACTION_REQUIRED). */
@@ -25,14 +25,22 @@ interface ActionTimerProps {
  */
 export function ActionTimer({ totalSeconds, remainingSeconds }: ActionTimerProps) {
   const [displaySeconds, setDisplaySeconds] = useState(remainingSeconds ?? totalSeconds)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  // Sync display when server sends an authoritative remaining value
   useEffect(() => {
     setDisplaySeconds(remainingSeconds ?? totalSeconds)
-    const interval = setInterval(() => {
+  }, [remainingSeconds, totalSeconds])
+
+  // Single stable interval that ticks every second
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
       setDisplaySeconds((prev) => Math.max(0, prev - 1))
     }, 1000)
-    return () => clearInterval(interval)
-  }, [remainingSeconds, totalSeconds])
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
+  }, [])
 
   const pct = totalSeconds > 0 ? Math.max(0, (displaySeconds / totalSeconds) * 100) : 0
   const color = pct > 50 ? '#22c55e' : pct > 25 ? '#eab308' : '#ef4444'

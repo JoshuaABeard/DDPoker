@@ -1019,7 +1019,7 @@ public class ServerHand implements GameHand {
      * </ul>
      */
     private void initPlayerIndex() {
-        if (isDone()) {
+        if (isDone() || playerOrder.isEmpty()) {
             currentPlayerIndex = NO_CURRENT_PLAYER;
             return;
         }
@@ -1050,7 +1050,7 @@ public class ServerHand implements GameHand {
      * Find next active player starting from given index.
      */
     private void playerActed(int startIndex) {
-        if (isDone()) {
+        if (isDone() || playerOrder.isEmpty()) {
             currentPlayerIndex = NO_CURRENT_PLAYER;
             return;
         }

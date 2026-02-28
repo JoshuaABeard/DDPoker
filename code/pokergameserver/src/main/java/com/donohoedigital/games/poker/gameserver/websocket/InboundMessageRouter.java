@@ -386,13 +386,12 @@ public class InboundMessageRouter {
         if (message == null) {
             return "";
         }
-        // Strip HTML tags
-        String sanitized = message.replaceAll(HTML_TAG_PATTERN, "");
-        // Enforce max length
-        if (sanitized.length() > CHAT_MAX_LENGTH) {
-            sanitized = sanitized.substring(0, CHAT_MAX_LENGTH);
+        // Enforce max length before regex to prevent CPU burn on oversized input
+        if (message.length() > CHAT_MAX_LENGTH) {
+            message = message.substring(0, CHAT_MAX_LENGTH);
         }
-        return sanitized;
+        // Strip HTML tags
+        return message.replaceAll(HTML_TAG_PATTERN, "");
     }
 
     private void sendError(PlayerConnection connection, String code, String message) {

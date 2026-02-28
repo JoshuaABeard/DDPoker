@@ -35,6 +35,10 @@ export function ActionPanel({ options, potSize, onAction }: ActionPanelProps) {
   const [pendingAction, setPendingAction] = useState<'bet' | 'raise' | null>(null)
   const onActionRef = useRef(onAction)
   onActionRef.current = onAction
+  const betAmountRef = useRef(betAmount)
+  betAmountRef.current = betAmount
+  const pendingActionRef = useRef(pendingAction)
+  pendingActionRef.current = pendingAction
 
   const showBetSlider = pendingAction === 'bet' || pendingAction === 'raise'
   const sliderMin = pendingAction === 'raise' ? options.minRaise : options.minBet
@@ -59,23 +63,24 @@ export function ActionPanel({ options, potSize, onAction }: ActionPanelProps) {
           else if (options.canBet) setPendingAction('bet')
           break
         case 'a':
-          if (!pendingAction && options.canAllIn) onActionRef.current({ action: 'ALL_IN', amount: options.allInAmount })
+          if (!pendingActionRef.current && options.canAllIn)
+            onActionRef.current({ action: 'ALL_IN', amount: options.allInAmount })
           break
         case 'enter':
-          if (pendingAction) {
-            const action = pendingAction === 'bet' ? 'BET' : 'RAISE'
-            onActionRef.current({ action, amount: betAmount })
+          if (pendingActionRef.current) {
+            const action = pendingActionRef.current === 'bet' ? 'BET' : 'RAISE'
+            onActionRef.current({ action, amount: betAmountRef.current })
             setPendingAction(null)
           }
           break
         case 'escape':
-          if (pendingAction) setPendingAction(null)
+          if (pendingActionRef.current) setPendingAction(null)
           break
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [options, pendingAction, betAmount])
+  }, [options])
 
   // Reset bet amount and pending action when options change (new hand)
   useEffect(() => {
