@@ -68,6 +68,12 @@ function CreateGameForm() {
     ...DEFAULT_AI_PLAYERS,
   ])
 
+  // Practice options
+  const [aiFaceUp, setAiFaceUp] = useState(false)
+  const [pauseAllin, setPauseAllin] = useState(false)
+  const [autoDeal, setAutoDeal] = useState(true)
+  const [zipMode, setZipMode] = useState(false)
+
   // Rebuys / addons
   const [allowRebuys, setAllowRebuys] = useState(false)
   const [rebuyCost, setRebuyCost] = useState(0)
@@ -198,6 +204,12 @@ function CreateGameForm() {
         enabled: lateRegistration,
         untilLevel: lateRegUntilLevel,
         chipMode: 'STARTING',
+      },
+      practiceConfig: {
+        aiFaceUp,
+        pauseAllinInteractive: pauseAllin,
+        autoDeal,
+        zipModeEnabled: zipMode,
       },
       password: password || undefined,
     }
@@ -740,6 +752,49 @@ function CreateGameForm() {
             </div>
           </div>
         </details>
+
+        {/* Practice Options — visible only in practice mode */}
+        {isPractice && (
+          <section className="space-y-3">
+            <h2 className="text-lg font-semibold border-b border-gray-200 pb-1">Practice Options</h2>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={aiFaceUp}
+                onChange={(e) => setAiFaceUp(e.target.checked)}
+                className="rounded"
+              />
+              <span>Show AI Cards <span className="text-gray-500">— Reveal AI hole cards face-up</span></span>
+            </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={pauseAllin}
+                onChange={(e) => setPauseAllin(e.target.checked)}
+                className="rounded"
+              />
+              <span>Pause on All-In <span className="text-gray-500">— Pause before dealing all-in runout</span></span>
+            </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoDeal}
+                onChange={(e) => setAutoDeal(e.target.checked)}
+                className="rounded"
+              />
+              <span>Auto Deal <span className="text-gray-500">— Automatically start next hand</span></span>
+            </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={zipMode}
+                onChange={(e) => setZipMode(e.target.checked)}
+                className="rounded"
+              />
+              <span>Fast Mode <span className="text-gray-500">— Skip animations and delays</span></span>
+            </label>
+          </section>
+        )}
 
         {error && (
           <p className="text-red-600 text-sm" role="alert">
