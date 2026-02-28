@@ -18,7 +18,9 @@ import { HandHistory } from './HandHistory'
 import { ChatPanel } from './ChatPanel'
 import { ObserverPanel } from './ObserverPanel'
 import { useMutedPlayers } from '@/lib/game/useMutedPlayers'
+import { useSoundEffects } from '@/lib/audio/useSoundEffects'
 import { ChipLeaderMini } from './ChipLeaderMini'
+import { VolumeControl } from './VolumeControl'
 import { Dialog } from '@/components/ui/Dialog'
 
 /**
@@ -77,6 +79,8 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
     gameState,
     chatMessages,
   } = state
+
+  useSoundEffects(state.handHistory, actionRequired != null)
 
   if (!currentTable || !gameState) {
     return (
@@ -200,7 +204,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
 
       {/* Task 6.7: sit-out / come-back toggle — shown when player has a seat */}
       {mySeat != null && (
-        <div className="absolute bottom-3 left-3 z-20">
+        <div className="absolute bottom-3 left-3 z-20 flex items-center gap-2">
           <button
             type="button"
             onClick={() => (isSatOut ? actions.sendComeBack() : actions.sendSitOut())}
@@ -208,6 +212,14 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
           >
             {isSatOut ? "I'm Back" : 'Sit Out'}
           </button>
+          <VolumeControl />
+        </div>
+      )}
+
+      {/* Volume control for observers (no seat) */}
+      {mySeat == null && (
+        <div className="absolute bottom-3 left-3 z-20">
+          <VolumeControl />
         </div>
       )}
 
