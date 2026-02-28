@@ -31,6 +31,14 @@ export interface GameInfoPanelProps {
   players?: GameInfoPlayer[]
   /** Called when the close button is clicked. Omit to hide the close button. */
   onClose?: () => void
+  /** Optional greeting message displayed below the header. */
+  greeting?: string
+  /** Minimum chip denomination. Displayed in the blinds section when > 0. */
+  minChip?: number
+  /** Rebuy status text (e.g. "3 allowed, 1000 chips"). Omit to hide. */
+  rebuyInfo?: string
+  /** Add-on status text (e.g. "1 allowed, 500 chips"). Omit to hide. */
+  addonInfo?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -72,6 +80,10 @@ export function GameInfoPanel({
   currentLevel,
   players,
   onClose,
+  greeting,
+  minChip,
+  rebuyInfo,
+  addonInfo,
 }: GameInfoPanelProps) {
   const sortedPlayers = players
     ? [...players].sort((a, b) => b.chipCount - a.chipCount)
@@ -101,6 +113,13 @@ export function GameInfoPanel({
         )}
       </div>
 
+      {/* Greeting */}
+      {greeting && (
+        <div className="px-4 py-2 border-b border-gray-700">
+          <p className="text-sm text-gray-400 italic">{greeting}</p>
+        </div>
+      )}
+
       {/* Current blinds */}
       <div className="px-4 py-3 border-b border-gray-700">
         <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">
@@ -114,7 +133,18 @@ export function GameInfoPanel({
             </span>
           )}
         </div>
+        {minChip != null && minChip > 0 && (
+          <div className="text-xs text-gray-400 mt-1">Min chip: {formatChips(minChip)}</div>
+        )}
       </div>
+
+      {/* Tournament details */}
+      {(rebuyInfo || addonInfo) && (
+        <div className="px-4 py-2 border-b border-gray-700 space-y-0.5">
+          {rebuyInfo && <div className="text-xs text-gray-400">Rebuys: {rebuyInfo}</div>}
+          {addonInfo && <div className="text-xs text-gray-400">Add-ons: {addonInfo}</div>}
+        </div>
+      )}
 
       {/* Blind structure */}
       {levels.length > 0 && (
