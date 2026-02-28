@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useGameState, useGameActions } from '@/lib/game/hooks'
 import { TournamentInfoBar } from './TournamentInfoBar'
 import { TableFelt } from './TableFelt'
@@ -26,6 +26,7 @@ import { ChipLeaderMini } from './ChipLeaderMini'
 import { VolumeControl } from './VolumeControl'
 import { ThemePicker } from './ThemePicker'
 import { Dialog } from '@/components/ui/Dialog'
+import { HandRankings } from './HandRankings'
 
 /**
  * 10 fixed seat positions around the oval (percentage coordinates).
@@ -75,6 +76,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
   const { cardBackId } = useCardBack()
   const { avatarId } = useAvatar()
   const [kickTarget, setKickTarget] = useState<{ playerId: number; playerName: string } | null>(null)
+  const [showHandRankings, setShowHandRankings] = useState(false)
 
   const {
     currentTable,
@@ -88,6 +90,16 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
   } = state
 
   useSoundEffects(state.handHistory, actionRequired != null)
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'h' || e.key === 'H') {
+        setShowHandRankings((v) => !v)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   if (!currentTable || !gameState) {
     return (
@@ -274,6 +286,9 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
           </div>
         </div>
       )}
+
+      {/* Hand rankings reference — toggled with H key */}
+      {showHandRankings && <HandRankings onClose={() => setShowHandRankings(false)} />}
 
       {/* Overlay modals (rebuy, addon, eliminated — injected by the play page) */}
       {overlay}
