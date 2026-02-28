@@ -16,9 +16,10 @@ import { CardBack } from './cardBacks'
 import { AvatarIcon } from './avatarIcons'
 import type { CardBackId } from '@/lib/theme/useCardBack'
 import type { AvatarId } from '@/lib/theme/useAvatar'
+import { useGamePrefs } from '@/lib/game/useGamePrefs'
 
-type Tab = 'Table' | 'Cards' | 'Avatar'
-const TABS: Tab[] = ['Table', 'Cards', 'Avatar']
+type Tab = 'Table' | 'Cards' | 'Avatar' | 'Gameplay'
+const TABS: Tab[] = ['Table', 'Cards', 'Avatar', 'Gameplay']
 
 export function ThemePicker() {
   const [open, setOpen] = useState(false)
@@ -28,6 +29,7 @@ export function ThemePicker() {
   const { themeId, setTheme } = useTheme()
   const { cardBackId, setCardBack } = useCardBack()
   const { avatarId, setAvatar } = useAvatar()
+  const { prefs, setPref } = useGamePrefs()
 
   // Close when clicking outside
   useEffect(() => {
@@ -132,6 +134,32 @@ export function ThemePicker() {
                   <AvatarIcon id={id} size={32} />
                 </button>
               ))}
+            </div>
+          )}
+
+          {/* Gameplay tab — game preferences */}
+          {tab === 'Gameplay' && (
+            <div className="space-y-3">
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="text-sm">Four-Color Deck</span>
+                <input type="checkbox" checked={prefs.fourColorDeck} onChange={(e) => setPref('fourColorDeck', e.target.checked)} className="w-4 h-4 rounded" />
+              </label>
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="text-sm">Check-Fold</span>
+                <input type="checkbox" checked={prefs.checkFold} onChange={(e) => setPref('checkFold', e.target.checked)} className="w-4 h-4 rounded" />
+              </label>
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="text-sm">Disable Shortcuts</span>
+                <input type="checkbox" checked={prefs.disableShortcuts} onChange={(e) => setPref('disableShortcuts', e.target.checked)} className="w-4 h-4 rounded" />
+              </label>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">Dealer Chat</span>
+                <select value={prefs.dealerChat} onChange={(e) => setPref('dealerChat', e.target.value as 'all' | 'actions' | 'none')} className="bg-gray-700 text-white text-xs rounded px-2 py-1">
+                  <option value="all">All</option>
+                  <option value="actions">Actions Only</option>
+                  <option value="none">None</option>
+                </select>
+              </div>
             </div>
           )}
         </div>
