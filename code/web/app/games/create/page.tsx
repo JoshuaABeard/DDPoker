@@ -120,6 +120,14 @@ function CreateGameForm() {
     })
   }
 
+  function addBreakLevel() {
+    setSelectedPreset('custom')
+    setBlindStructure((prev) => [
+      ...prev,
+      { smallBlind: 0, bigBlind: 0, ante: 0, minutes: 5, isBreak: true, gameType: 'NOLIMIT_HOLDEM' },
+    ])
+  }
+
   function removeBlindLevel(index: number) {
     setSelectedPreset('custom')
     setBlindStructure((prev) => prev.filter((_, i) => i !== index))
@@ -359,34 +367,46 @@ function CreateGameForm() {
               </thead>
               <tbody>
                 {blindStructure.map((level, i) => (
-                  <tr key={i} className="border-t border-gray-100">
-                    <td className="pr-2 py-1 text-gray-500">{i + 1}</td>
-                    <td className="pr-2 py-1">
-                      <input
-                        type="number"
-                        value={level.smallBlind}
-                        min={1}
-                        onChange={(e) => updateBlindLevel(i, 'smallBlind', Number(e.target.value))}
-                        className="w-20 border border-gray-300 rounded px-1 py-0.5"
-                      />
+                  <tr key={i} className={`border-t border-gray-100 ${level.isBreak ? 'bg-blue-900/50' : ''}`}>
+                    <td className="pr-2 py-1 text-gray-500">
+                      {level.isBreak ? (
+                        <span className="font-semibold text-blue-400">BREAK</span>
+                      ) : (
+                        i + 1
+                      )}
                     </td>
                     <td className="pr-2 py-1">
-                      <input
-                        type="number"
-                        value={level.bigBlind}
-                        min={1}
-                        onChange={(e) => updateBlindLevel(i, 'bigBlind', Number(e.target.value))}
-                        className="w-20 border border-gray-300 rounded px-1 py-0.5"
-                      />
+                      {!level.isBreak && (
+                        <input
+                          type="number"
+                          value={level.smallBlind}
+                          min={1}
+                          onChange={(e) => updateBlindLevel(i, 'smallBlind', Number(e.target.value))}
+                          className="w-20 border border-gray-300 rounded px-1 py-0.5"
+                        />
+                      )}
                     </td>
                     <td className="pr-2 py-1">
-                      <input
-                        type="number"
-                        value={level.ante}
-                        min={0}
-                        onChange={(e) => updateBlindLevel(i, 'ante', Number(e.target.value))}
-                        className="w-16 border border-gray-300 rounded px-1 py-0.5"
-                      />
+                      {!level.isBreak && (
+                        <input
+                          type="number"
+                          value={level.bigBlind}
+                          min={1}
+                          onChange={(e) => updateBlindLevel(i, 'bigBlind', Number(e.target.value))}
+                          className="w-20 border border-gray-300 rounded px-1 py-0.5"
+                        />
+                      )}
+                    </td>
+                    <td className="pr-2 py-1">
+                      {!level.isBreak && (
+                        <input
+                          type="number"
+                          value={level.ante}
+                          min={0}
+                          onChange={(e) => updateBlindLevel(i, 'ante', Number(e.target.value))}
+                          className="w-16 border border-gray-300 rounded px-1 py-0.5"
+                        />
+                      )}
                     </td>
                     <td className="pr-2 py-1">
                       <input
@@ -412,13 +432,22 @@ function CreateGameForm() {
               </tbody>
             </table>
           </div>
-          <button
-            type="button"
-            onClick={addBlindLevel}
-            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-          >
-            + Add Level
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={addBlindLevel}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              + Add Level
+            </button>
+            <button
+              type="button"
+              onClick={addBreakLevel}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              + Add Break
+            </button>
+          </div>
         </section>
 
         {/* Task 6.1 step 3 — Level Advance Mode */}

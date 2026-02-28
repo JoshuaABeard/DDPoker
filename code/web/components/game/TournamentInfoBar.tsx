@@ -5,7 +5,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
-import type { BlindsData } from '@/lib/game/types'
+import type { BlindsData, BlindLevelConfig } from '@/lib/game/types'
 import { formatChips } from '@/lib/utils'
 
 interface TournamentInfoBarProps {
@@ -19,6 +19,10 @@ interface TournamentInfoBarProps {
   playerRank?: number
   /** Game name — rendered as text, never HTML. */
   gameName: string
+  /** Full blind structure array for break hint calculation. */
+  blindStructure?: BlindLevelConfig[]
+  /** 0-based index of the current level. */
+  currentLevel?: number
 }
 
 function formatTime(seconds: number): string {
@@ -32,7 +36,19 @@ function formatTime(seconds: number): string {
  *
  * XSS safety: gameName rendered as text node only.
  */
-export function TournamentInfoBar({ level, blinds, nextLevelIn, playerCount, totalPlayers, playerRank, gameName }: TournamentInfoBarProps) {
+export function TournamentInfoBar({ level, blinds, nextLevelIn, playerCount, totalPlayers, playerRank, gameName, blindStructure, currentLevel }: TournamentInfoBarProps) {
+  // Compute "Break in N levels" hint
+  let breakHint: string | null = null
+  if (blindStructure && currentLevel != null) {
+    for (let i = currentLevel + 1; i < blindStructure.length; i++) {
+      if (blindStructure[i].isBreak) {
+        const levelsAway = i - currentLevel
+        breakHint = `Break in ${levelsAway} level${levelsAway === 1 ? '' : 's'}`
+        break
+      }
+    }
+  }
+
   return (
     <div className="flex items-center justify-between px-4 py-2 bg-gray-900 bg-opacity-80 text-white text-sm">
       <div className="font-semibold text-gray-300 truncate max-w-[200px]">{gameName}</div>
@@ -75,6 +91,10 @@ export function TournamentInfoBar({ level, blinds, nextLevelIn, playerCount, tot
             <span className="text-gray-400 text-xs">Rank </span>
             <span className="font-bold">{playerRank}</span>
           </div>
+        )}
+
+        {breakHint && (
+          <div className="text-blue-300 text-xs">{breakHint}</div>
         )}
       </div>
     </div>
