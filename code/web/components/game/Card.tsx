@@ -6,6 +6,8 @@
  */
 
 import Image from 'next/image'
+import { CardBack } from './cardBacks'
+import type { CardBackId } from '@/lib/theme/useCardBack'
 
 interface CardProps {
   /** Card code like "Ah", "Kd", "2c". Empty string or undefined = face-down. */
@@ -13,6 +15,8 @@ interface CardProps {
   /** Display width in pixels (height auto-proportioned). Default 70. */
   width?: number
   className?: string
+  /** Card back design to use when face-down. Default 'classic-red'. */
+  cardBackId?: CardBackId
 }
 
 /**
@@ -20,19 +24,26 @@ interface CardProps {
  *
  * Card codes use the format: rank (A,2-9,T,J,Q,K) + suit (h,d,c,s).
  * Maps to `public/images/cards/card_{code}.png`.
- * Face-down cards use `card_blank.png`.
+ * Face-down cards render an SVG card back design.
  *
  * XSS safety: card code is validated before use in the image path.
  * Only alphanumeric ASCII characters are accepted.
  */
-export function Card({ card, width = 70, className = '' }: CardProps) {
-  const imageFile = isValidCardCode(card) ? `card_${card}` : 'card_blank'
+export function Card({ card, width = 70, className = '', cardBackId = 'classic-red' }: CardProps) {
   const height = Math.round(width * (280 / 200)) // maintain 200x280 aspect ratio
+
+  if (!isValidCardCode(card)) {
+    return (
+      <span className={`inline-block select-none ${className}`} role="img" aria-label="Face-down card">
+        <CardBack id={cardBackId} width={width} height={height} />
+      </span>
+    )
+  }
 
   return (
     <Image
-      src={`/images/cards/${imageFile}.png`}
-      alt={isValidCardCode(card) ? formatCardAlt(card!) : 'Face-down card'}
+      src={`/images/cards/card_${card}.png`}
+      alt={formatCardAlt(card)}
       width={width}
       height={height}
       className={`select-none ${className}`}

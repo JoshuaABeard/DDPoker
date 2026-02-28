@@ -111,11 +111,12 @@ describe('PlayerSeat', () => {
         positionStyle={positionStyle}
       />,
     )
-    // Two face-down cards should render (blank card images)
+    // Two face-down cards should render (SVG card backs)
     const imgs = screen.getAllByRole('img')
     expect(imgs.length).toBe(2)
     imgs.forEach((img) => {
-      expect(img.getAttribute('src')).toContain('card_blank')
+      expect(img.getAttribute('aria-label')).toBe('Face-down card')
+      expect(img.querySelector('svg')).toBeTruthy()
     })
   })
 

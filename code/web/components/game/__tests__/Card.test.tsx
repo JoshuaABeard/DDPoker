@@ -28,9 +28,9 @@ vi.mock('next/image', () => ({
 describe('Card', () => {
   it('renders a face-down card when no card code is provided', () => {
     render(<Card />)
-    const img = screen.getByRole('img')
-    expect(img.getAttribute('src')).toBe('/images/cards/card_blank.png')
-    expect(img.getAttribute('alt')).toBe('Face-down card')
+    const el = screen.getByRole('img')
+    expect(el.getAttribute('aria-label')).toBe('Face-down card')
+    expect(el.querySelector('svg')).toBeTruthy()
   })
 
   it('renders the correct image for a valid card code', () => {
@@ -42,24 +42,24 @@ describe('Card', () => {
 
   it('renders a face-down card for an XSS attempt in card code', () => {
     render(<Card card='<script>alert(1)</script>' />)
-    const img = screen.getByRole('img')
-    expect(img.getAttribute('src')).toBe('/images/cards/card_blank.png')
-    expect(img.getAttribute('alt')).toBe('Face-down card')
+    const el = screen.getByRole('img')
+    expect(el.getAttribute('aria-label')).toBe('Face-down card')
+    expect(el.querySelector('svg')).toBeTruthy()
   })
 
   it('renders a face-down card for an empty string', () => {
     render(<Card card="" />)
-    expect(screen.getByRole('img').getAttribute('src')).toBe('/images/cards/card_blank.png')
+    expect(screen.getByRole('img').getAttribute('aria-label')).toBe('Face-down card')
   })
 
   it('renders a face-down card for a 1-character string', () => {
     render(<Card card="A" />)
-    expect(screen.getByRole('img').getAttribute('src')).toBe('/images/cards/card_blank.png')
+    expect(screen.getByRole('img').getAttribute('aria-label')).toBe('Face-down card')
   })
 
   it('renders a face-down card for a 3-character string', () => {
     render(<Card card="Ahh" />)
-    expect(screen.getByRole('img').getAttribute('src')).toBe('/images/cards/card_blank.png')
+    expect(screen.getByRole('img').getAttribute('aria-label')).toBe('Face-down card')
   })
 
   it('formats alt text correctly for all ranks and suits', () => {
