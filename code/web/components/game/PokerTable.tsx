@@ -95,6 +95,8 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable) return
       if (e.key === 'h' || e.key === 'H') {
         setShowHandRankings((v) => !v)
       }

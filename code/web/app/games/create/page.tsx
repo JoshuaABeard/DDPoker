@@ -56,7 +56,7 @@ function CreateGameForm() {
   const [blindStructure, setBlindStructure] = useState([...DEFAULT_BLIND_STRUCTURE])
 
   // Task 8 — blind preset selector
-  const [selectedPreset, setSelectedPreset] = useState<string>('standard')
+  const [selectedPreset, setSelectedPreset] = useState<string>('custom')
 
   // Task 6.1 step 3 — level advance mode
   const [levelAdvanceMode, setLevelAdvanceMode] = useState<'TIME' | 'HANDS'>('TIME')
