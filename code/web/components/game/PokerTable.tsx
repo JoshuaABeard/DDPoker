@@ -16,6 +16,9 @@ import { ActionPanel } from './ActionPanel'
 import { ActionTimer } from './ActionTimer'
 import { HandHistory } from './HandHistory'
 import { ChatPanel } from './ChatPanel'
+import { ObserverPanel } from './ObserverPanel'
+import { useMutedPlayers } from '@/lib/game/useMutedPlayers'
+import { ChipLeaderMini } from './ChipLeaderMini'
 import { Dialog } from '@/components/ui/Dialog'
 
 /**
@@ -61,6 +64,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
   const state = useGameState()
   const actions = useGameActions()
   const [chatOpen, setChatOpen] = useState(true)
+  const { mutedIds, mute, unmute } = useMutedPlayers()
   const [kickTarget, setKickTarget] = useState<{ playerId: number; playerName: string } | null>(null)
 
   const {
@@ -123,14 +127,10 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
         />
       </div>
 
-      {/* Task 6.8: observer count — shown when watchers are present */}
-      {state.observers.length > 0 && (
-        <div className="absolute top-12 left-3 z-10">
-          <span className="text-gray-400 text-xs">
-            {state.observers.length} watching
-          </span>
-        </div>
-      )}
+      {/* Observer panel — shown when watchers are present */}
+      <div className="absolute top-12 left-3 z-10">
+        <ObserverPanel observers={state.observers} />
+      </div>
 
       {/* Admin controls — visible to game owner only */}
       {state.isOwner && (
@@ -216,6 +216,20 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
         <HandHistory entries={state.handHistory} />
       </div>
 
+      {/* Mini chip standings — right side, below hand history */}
+      {currentTable.seats.length > 0 && (
+        <div className="absolute top-72 right-3 z-10">
+          <ChipLeaderMini
+            players={currentTable.seats.map((s) => ({
+              playerId: s.playerId,
+              name: s.playerName,
+              chipCount: s.chipCount,
+            }))}
+            myPlayerId={myPlayerId}
+          />
+        </div>
+      )}
+
       {/* Chat panel — bottom-right corner */}
       <div className="absolute bottom-3 right-3 z-10">
         <ChatPanel
@@ -223,6 +237,9 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
           onSend={actions.sendChat}
           open={chatOpen}
           onToggle={() => setChatOpen((v) => !v)}
+          mutedIds={mutedIds}
+          onMute={mute}
+          onUnmute={unmute}
         />
       </div>
 
