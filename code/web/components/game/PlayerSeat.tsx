@@ -7,6 +7,7 @@
 
 'use client'
 
+import { useRef, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Card } from './Card'
 import { DealerButton } from './DealerButton'
@@ -46,6 +47,21 @@ export function PlayerSeat({ seat, isMe, positionStyle, isAdmin, onKick, avatarI
   const isEmpty = !playerName
 
   if (isEmpty) return null
+
+  const prevChipCount = useRef(chipCount)
+  const [chipFlash, setChipFlash] = useState<'up' | 'down' | null>(null)
+
+  useEffect(() => {
+    if (prevChipCount.current !== chipCount && prevChipCount.current !== 0) {
+      setChipFlash(chipCount > prevChipCount.current ? 'up' : 'down')
+      const timer = setTimeout(() => setChipFlash(null), 1000)
+      prevChipCount.current = chipCount
+      return () => clearTimeout(timer)
+    }
+    prevChipCount.current = chipCount
+  }, [chipCount])
+
+  const chipFlashClass = chipFlash === 'up' ? 'text-green-400' : chipFlash === 'down' ? 'text-red-400' : 'text-gray-300'
 
   // Build hole card elements (face-up for me, face-down for active others, none for folded/sat-out)
   const holeCardElements: React.ReactNode[] = isMe
@@ -100,7 +116,7 @@ export function PlayerSeat({ seat, isMe, positionStyle, isAdmin, onKick, avatarI
         </div>
         {/* Name — text node only, no dangerouslySetInnerHTML */}
         <div className="font-semibold text-white truncate max-w-[80px]">{playerName}</div>
-        <div className="text-gray-300">{formatChips(chipCount)}</div>
+        <div className={`${chipFlashClass} transition-colors duration-300`}>{formatChips(chipCount)}</div>
 
         {/* Status badges */}
         <div className="flex justify-center gap-1 mt-0.5">
