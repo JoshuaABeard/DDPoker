@@ -5,6 +5,9 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
+'use client'
+
+import { motion, AnimatePresence } from 'framer-motion'
 import { Card } from './Card'
 
 interface CommunityCardsProps {
@@ -21,11 +24,18 @@ export function CommunityCards({ cards, cardWidth = 65 }: CommunityCardsProps) {
 
   return (
     <div className="flex gap-1 items-center justify-center" role="region" aria-label="Community cards">
-      {cards.map((card) => (
-        <div key={card} className="transition-transform duration-300">
-          <Card card={card} width={cardWidth} />
-        </div>
-      ))}
+      <AnimatePresence>
+        {cards.map((card, i) => (
+          <motion.div
+            key={card}
+            initial={{ opacity: 0, y: -20, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.3, delay: i < 3 ? i * 0.15 : 0 }}
+          >
+            <Card card={card} width={cardWidth} />
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   )
 }
