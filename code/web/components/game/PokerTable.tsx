@@ -18,6 +18,7 @@ import { HandHistory } from './HandHistory'
 import { ChatPanel } from './ChatPanel'
 import { ObserverPanel } from './ObserverPanel'
 import { useMutedPlayers } from '@/lib/game/useMutedPlayers'
+import { useTheme } from '@/lib/theme/useTheme'
 import { useSoundEffects } from '@/lib/audio/useSoundEffects'
 import { ChipLeaderMini } from './ChipLeaderMini'
 import { VolumeControl } from './VolumeControl'
@@ -67,6 +68,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
   const actions = useGameActions()
   const [chatOpen, setChatOpen] = useState(true)
   const { mutedIds, mute, unmute } = useMutedPlayers()
+  const { colors: feltColors } = useTheme()
   const [kickTarget, setKickTarget] = useState<{ playerId: number; playerName: string } | null>(null)
 
   const {
@@ -160,7 +162,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
       )}
 
       {/* Oval felt surface (community cards + pots) */}
-      <TableFelt table={currentTable} />
+      <TableFelt table={currentTable} colors={feltColors} />
 
       {/* Player seats — rotated so my seat is always at position 0 */}
       {currentTable.seats.map((seat, arrayIndex) => (

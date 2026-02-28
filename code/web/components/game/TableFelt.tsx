@@ -6,11 +6,20 @@
  */
 
 import type { TableData } from '@/lib/game/types'
+import type { ThemeColors } from '@/lib/theme/themes'
 import { CommunityCards } from './CommunityCards'
 import { PotDisplay } from './PotDisplay'
 
+const DEFAULT_COLORS: ThemeColors = {
+  center: '#2d5a1b',
+  mid: '#1e3d12',
+  edge: '#152d0d',
+  border: '#1a2e0f',
+}
+
 interface TableFeltProps {
   table: TableData
+  colors?: ThemeColors
 }
 
 /**
@@ -19,16 +28,16 @@ interface TableFeltProps {
  *
  * Uses a radial gradient and inset shadow to simulate the felt texture.
  */
-export function TableFelt({ table }: TableFeltProps) {
+export function TableFelt({ table, colors = DEFAULT_COLORS }: TableFeltProps) {
   return (
     <div
       className="absolute inset-x-[8%] inset-y-[15%] rounded-[50%] flex flex-col items-center justify-center gap-4"
       style={{
         background:
-          'radial-gradient(ellipse at center, #2d5a1b 0%, #1e3d12 60%, #152d0d 100%)',
+          `radial-gradient(ellipse at center, ${colors.center} 0%, ${colors.mid} 60%, ${colors.edge} 100%)`,
         boxShadow:
           'inset 0 0 80px rgba(0,0,0,0.5), 0 0 40px rgba(0,0,0,0.4)',
-        border: '4px solid #1a2e0f',
+        border: `4px solid ${colors.border}`,
       }}
       role="region"
       aria-label="Poker table felt"
