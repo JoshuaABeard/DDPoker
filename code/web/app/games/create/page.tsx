@@ -11,6 +11,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { Suspense, useState } from 'react'
 import { gameServerApi } from '@/lib/api'
 import type { GameConfigDto } from '@/lib/game/types'
+import { BLIND_PRESETS } from '@/lib/game/blindPresets'
 
 const DEFAULT_BLIND_STRUCTURE: GameConfigDto['blindStructure'] = [
   { smallBlind: 25,   bigBlind: 50,    ante: 0,   minutes: 15, isBreak: false, gameType: 'NOLIMIT_HOLDEM' },
@@ -53,6 +54,9 @@ function CreateGameForm() {
 
   // Task 6.1 step 2 — blind structure
   const [blindStructure, setBlindStructure] = useState([...DEFAULT_BLIND_STRUCTURE])
+
+  // Task 8 — blind preset selector
+  const [selectedPreset, setSelectedPreset] = useState<string>('standard')
 
   // Task 6.1 step 3 — level advance mode
   const [levelAdvanceMode, setLevelAdvanceMode] = useState<'TIME' | 'HANDS'>('TIME')
@@ -102,12 +106,14 @@ function CreateGameForm() {
     field: keyof GameConfigDto['blindStructure'][number],
     value: number | boolean | string,
   ) {
+    setSelectedPreset('custom')
     setBlindStructure((prev) =>
       prev.map((level, i) => (i === index ? { ...level, [field]: value } : level)),
     )
   }
 
   function addBlindLevel() {
+    setSelectedPreset('custom')
     setBlindStructure((prev) => {
       const last = prev[prev.length - 1] ?? DEFAULT_BLIND_STRUCTURE[0]
       return [...prev, { ...last }]
@@ -115,6 +121,7 @@ function CreateGameForm() {
   }
 
   function removeBlindLevel(index: number) {
+    setSelectedPreset('custom')
     setBlindStructure((prev) => prev.filter((_, i) => i !== index))
   }
 
@@ -313,6 +320,31 @@ function CreateGameForm() {
         {/* Task 6.1 step 2 — Blind Structure Editor */}
         <section className="space-y-3">
           <h2 className="text-lg font-semibold border-b border-gray-200 pb-1">Blind Structure</h2>
+          <div>
+            <label htmlFor="blindPreset" className="block text-sm font-medium mb-1">
+              Preset
+            </label>
+            <select
+              id="blindPreset"
+              value={selectedPreset}
+              onChange={(e) => {
+                const presetId = e.target.value
+                setSelectedPreset(presetId)
+                const preset = BLIND_PRESETS.find((p) => p.id === presetId)
+                if (preset) {
+                  setBlindStructure(preset.levels.map((l) => ({ ...l })))
+                }
+              }}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {BLIND_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} — {p.description}
+                </option>
+              ))}
+              <option value="custom">Custom</option>
+            </select>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse">
               <thead>
