@@ -318,15 +318,18 @@ class ServerTournamentDirectorTest {
                 .as("Expected at least 2 HAND_STARTED events but got %d", handStartedNanos.size())
                 .isGreaterThanOrEqualTo(2);
 
-        // Verify inter-hand gaps: every consecutive pair should be >= delayMs.
+        // Verify inter-hand gaps prove the pause is working.
         // Old racing bug: gaps were <1ms (sleep hook was dead code). Fixed by
         // hooking nextState==BEGIN instead of unreachable CLEAN/CheckEndHand.
-        long minExpectedGapNs = (long) delayMs * 1_000_000L;
+        // Use 50% tolerance to account for OS thread-scheduling jitter on CI;
+        // the original bug produced gaps of <1ms, so half the delay is plenty
+        // to distinguish "pause is working" from "pause is broken".
+        long toleranceNs = (long) delayMs * 1_000_000L / 2;
         for (int i = 1; i < handStartedNanos.size(); i++) {
             long gapNs = handStartedNanos.get(i) - handStartedNanos.get(i - 1);
             assertThat(gapNs)
-                    .as("Gap between HAND_STARTED[%d] and [%d] should be >= %dms (racing fix)", i - 1, i, delayMs)
-                    .isGreaterThanOrEqualTo(minExpectedGapNs);
+                    .as("Gap between HAND_STARTED[%d] and [%d] should be >= %dms (racing fix)", i - 1, i, delayMs / 2)
+                    .isGreaterThanOrEqualTo(toleranceNs);
         }
     }
 

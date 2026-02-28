@@ -452,10 +452,23 @@ public class PokerUtils extends EngineUtils {
     ///// Update display fields
     /////
 
-    static Color fgNormal = StylesConfig.getColor("clock.fg");
-    static Color bgNormal = StylesConfig.getColor("clock.bg");
-    static Color fgFlash = StylesConfig.getColor("clock.fg.flash");
-    static Color bgFlash = StylesConfig.getColor("clock.bg.flash");
+    // Lazy-initialized to avoid ExceptionInInitializerError when StylesConfig
+    // hasn't been loaded (e.g., headless CI). Only used by the clock UI below.
+    private static Color fgNormal;
+    private static Color bgNormal;
+    private static Color fgFlash;
+    private static Color bgFlash;
+    private static boolean clockColorsInitialized;
+
+    private static void ensureClockColors() {
+        if (!clockColorsInitialized) {
+            fgNormal = StylesConfig.getColor("clock.fg");
+            bgNormal = StylesConfig.getColor("clock.bg");
+            fgFlash = StylesConfig.getColor("clock.fg.flash");
+            bgFlash = StylesConfig.getColor("clock.bg.flash");
+            clockColorsInitialized = true;
+        }
+    }
 
     public static String getChipIcon(int nAmount) {
         String sIcon = "icon-blank";
@@ -581,6 +594,7 @@ public class PokerUtils extends EngineUtils {
         String sText = getTimeString(game);
 
         if (label != null) {
+            ensureClockColors();
             if (game.getGameClock().isFlash()) {
                 boolean bNormal = true;
                 if (nHours == 0 && nMinutes == 0 && nSeconds <= 10) {
