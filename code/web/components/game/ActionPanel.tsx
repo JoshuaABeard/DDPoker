@@ -17,6 +17,7 @@ interface ActionPanelProps {
   options: ActionOptionsData
   potSize: number
   onAction: (action: PlayerActionData) => void
+  disableShortcuts?: boolean
 }
 
 /**
@@ -30,7 +31,7 @@ interface ActionPanelProps {
  * - Enter: Confirm pending bet/raise
  * - Escape: Cancel pending bet/raise
  */
-export function ActionPanel({ options, potSize, onAction }: ActionPanelProps) {
+export function ActionPanel({ options, potSize, onAction, disableShortcuts }: ActionPanelProps) {
   const [betAmount, setBetAmount] = useState(options.canRaise ? options.minRaise : options.minBet)
   const [pendingAction, setPendingAction] = useState<'bet' | 'raise' | null>(null)
   const onActionRef = useRef(onAction)
@@ -45,6 +46,7 @@ export function ActionPanel({ options, potSize, onAction }: ActionPanelProps) {
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
+      if (disableShortcuts) return
 
       switch (e.key.toLowerCase()) {
         case 'f':
@@ -75,7 +77,7 @@ export function ActionPanel({ options, potSize, onAction }: ActionPanelProps) {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [options, pendingAction, betAmount])
+  }, [options, pendingAction, betAmount, disableShortcuts])
 
   // Reset bet amount and pending action when options change (new hand)
   useEffect(() => {

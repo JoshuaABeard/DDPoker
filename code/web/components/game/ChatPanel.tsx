@@ -70,6 +70,8 @@ interface ChatPanelProps {
   onMute?: (playerId: number) => void
   /** Called when user clicks unmute */
   onUnmute?: (playerId: number) => void
+  /** Dealer chat filter: 'all' shows everything, 'actions' same as all, 'none' hides dealer messages */
+  dealerChat?: 'all' | 'actions' | 'none'
 }
 
 /**
@@ -78,13 +80,15 @@ interface ChatPanelProps {
  * XSS safety: message content and playerName are rendered as React text nodes.
  * NEVER use dangerouslySetInnerHTML for any user-supplied content here.
  */
-export function ChatPanel({ messages, onSend, open, onToggle, mutedIds, onMute, onUnmute }: ChatPanelProps) {
+export function ChatPanel({ messages, onSend, open, onToggle, mutedIds, onMute, onUnmute, dealerChat }: ChatPanelProps) {
   const [input, setInput] = useState('')
   const listRef = useRef<HTMLDivElement>(null)
 
-  const visibleMessages = mutedIds && mutedIds.size > 0
-    ? messages.filter((m) => !mutedIds.has(m.playerId))
-    : messages
+  const visibleMessages = messages.filter((m) => {
+    if (mutedIds && mutedIds.size > 0 && mutedIds.has(m.playerId)) return false
+    if (m.tableChat && dealerChat === 'none') return false
+    return true
+  })
   const hiddenCount = messages.length - visibleMessages.length
 
   // Auto-scroll to bottom on new messages

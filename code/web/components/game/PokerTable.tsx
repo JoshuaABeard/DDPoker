@@ -81,6 +81,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
   const [kickTarget, setKickTarget] = useState<{ playerId: number; playerName: string } | null>(null)
   const [showHandRankings, setShowHandRankings] = useState(false)
   const [replayHand, setReplayHand] = useState<number | null>(null)
+  const [checkFoldQueued, setCheckFoldQueued] = useState(false)
 
   const {
     currentTable,
@@ -99,13 +100,31 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
     function handleKeyDown(e: KeyboardEvent) {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable) return
+      if (prefs.disableShortcuts) return
+
       if (e.key === 'h' || e.key === 'H') {
         setShowHandRankings((v) => !v)
+      }
+      // Check-fold pre-action: queue fold when it's not our turn
+      if ((e.key === 'f' || e.key === 'F') && prefs.checkFold && !actionRequired) {
+        setCheckFoldQueued((v) => !v)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [prefs.disableShortcuts, prefs.checkFold, actionRequired])
+
+  // Auto-execute check-fold when it's our turn and queued
+  useEffect(() => {
+    if (actionRequired && checkFoldQueued) {
+      if (actionRequired.canFold) {
+        actions.sendAction({ action: 'FOLD', amount: 0 })
+      } else if (actionRequired.canCheck) {
+        actions.sendAction({ action: 'CHECK', amount: 0 })
+      }
+      setCheckFoldQueued(false)
+    }
+  }, [actionRequired, checkFoldQueued, actions])
 
   if (!currentTable || !gameState) {
     return (
@@ -219,6 +238,13 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
         </div>
       )}
 
+      {/* Check/Fold queued indicator */}
+      {checkFoldQueued && (
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 px-3 py-1 bg-red-900/80 text-red-200 text-xs rounded-full">
+          Check/Fold Queued
+        </div>
+      )}
+
       {/* Action panel — shown only when it's this player's turn */}
       {actionRequired && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20">
@@ -226,6 +252,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
             options={actionRequired}
             potSize={potTotal}
             onAction={actions.sendAction}
+            disableShortcuts={prefs.disableShortcuts}
           />
         </div>
       )}
@@ -282,6 +309,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
           mutedIds={mutedIds}
           onMute={mute}
           onUnmute={unmute}
+          dealerChat={prefs.dealerChat}
         />
       </div>
 
