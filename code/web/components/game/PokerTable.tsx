@@ -19,9 +19,12 @@ import { ChatPanel } from './ChatPanel'
 import { ObserverPanel } from './ObserverPanel'
 import { useMutedPlayers } from '@/lib/game/useMutedPlayers'
 import { useTheme } from '@/lib/theme/useTheme'
+import { useCardBack } from '@/lib/theme/useCardBack'
+import { useAvatar } from '@/lib/theme/useAvatar'
 import { useSoundEffects } from '@/lib/audio/useSoundEffects'
 import { ChipLeaderMini } from './ChipLeaderMini'
 import { VolumeControl } from './VolumeControl'
+import { ThemePicker } from './ThemePicker'
 import { Dialog } from '@/components/ui/Dialog'
 
 /**
@@ -69,6 +72,8 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
   const [chatOpen, setChatOpen] = useState(true)
   const { mutedIds, mute, unmute } = useMutedPlayers()
   const { colors: feltColors } = useTheme()
+  const { cardBackId } = useCardBack()
+  const { avatarId } = useAvatar()
   const [kickTarget, setKickTarget] = useState<{ playerId: number; playerName: string } | null>(null)
 
   const {
@@ -180,6 +185,8 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
             const name = currentTable.seats.find((s) => s.playerId === playerId)?.playerName ?? 'Player'
             setKickTarget({ playerId, playerName: name })
           }}
+          cardBackId={cardBackId}
+          avatarId={seat.playerId === myPlayerId ? avatarId : undefined}
         />
       ))}
 
@@ -215,13 +222,15 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
             {isSatOut ? "I'm Back" : 'Sit Out'}
           </button>
           <VolumeControl />
+          <ThemePicker />
         </div>
       )}
 
       {/* Volume control for observers (no seat) */}
       {mySeat == null && (
-        <div className="absolute bottom-3 left-3 z-20">
+        <div className="absolute bottom-3 left-3 z-20 flex items-center gap-2">
           <VolumeControl />
+          <ThemePicker />
         </div>
       )}
 

@@ -9,6 +9,7 @@ import { Card } from './Card'
 import { DealerButton } from './DealerButton'
 import { AvatarIcon } from './avatarIcons'
 import type { SeatData } from '@/lib/game/types'
+import type { CardBackId } from '@/lib/theme/useCardBack'
 import { formatChips } from '@/lib/utils'
 
 interface PlayerSeatProps {
@@ -22,6 +23,8 @@ interface PlayerSeatProps {
   onKick?: (playerId: number) => void
   /** Avatar icon ID for this player */
   avatarId?: string
+  /** Card back design for face-down cards */
+  cardBackId?: CardBackId
 }
 
 /**
@@ -29,7 +32,7 @@ interface PlayerSeatProps {
  *
  * XSS safety: playerName and status strings are rendered as React text nodes only.
  */
-export function PlayerSeat({ seat, isMe, positionStyle, isAdmin, onKick, avatarId }: PlayerSeatProps) {
+export function PlayerSeat({ seat, isMe, positionStyle, isAdmin, onKick, avatarId, cardBackId }: PlayerSeatProps) {
   const { playerName, chipCount, status, isDealer, isSmallBlind, isBigBlind,
           currentBet, holeCards, isCurrentActor } = seat
 
@@ -49,11 +52,11 @@ export function PlayerSeat({ seat, isMe, positionStyle, isAdmin, onKick, avatarI
       {/* Hole cards — hidden for folded/sat-out/eliminated players; face-down for active others */}
       <div className="flex gap-0.5">
         {isMe ? (
-          holeCards.map((card, i) => <Card key={i} card={card} width={40} />)
+          holeCards.map((card, i) => <Card key={i} card={card} width={40} cardBackId={cardBackId} />)
         ) : !isFolded && status !== 'SAT_OUT' ? (
           <>
-            <Card width={40} />
-            <Card width={40} />
+            <Card width={40} cardBackId={cardBackId} />
+            <Card width={40} cardBackId={cardBackId} />
           </>
         ) : null}
       </div>
