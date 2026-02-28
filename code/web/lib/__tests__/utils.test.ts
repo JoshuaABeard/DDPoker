@@ -38,4 +38,20 @@ describe('formatHandHistoryForExport', () => {
     const output = formatHandHistoryForExport([])
     expect(output).toBe('')
   })
+
+  it('formats multiple winners for split pots', () => {
+    const entries: HandHistoryEntry[] = [
+      { id: '1', handNumber: 1, type: 'hand_start', timestamp: 1000 },
+      {
+        id: '2', handNumber: 1, type: 'result', timestamp: 1001,
+        winners: [
+          { playerName: 'Alice', amount: 500, hand: 'Flush' },
+          { playerName: 'Bob', amount: 500, hand: 'Flush' },
+        ],
+      },
+    ]
+    const output = formatHandHistoryForExport(entries)
+    expect(output).toContain('Alice wins 500 with Flush')
+    expect(output).toContain('Bob wins 500 with Flush')
+  })
 })

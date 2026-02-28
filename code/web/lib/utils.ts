@@ -30,9 +30,10 @@ export function formatHandHistoryForExport(entries: HandHistoryEntry[]): string 
         lines.push(`${entry.round ?? 'Dealt'}: ${(entry.cards ?? []).join(' ')}`)
         break
       case 'result': {
-        const winner = entry.winners?.[0]
-        if (winner) {
-          lines.push(`${winner.playerName} wins ${formatChips(winner.amount)} with ${winner.hand}`)
+        if (entry.winners && entry.winners.length > 0) {
+          for (const winner of entry.winners) {
+            lines.push(`${winner.playerName} wins ${formatChips(winner.amount)} with ${winner.hand}`)
+          }
         } else {
           lines.push('Hand complete')
         }

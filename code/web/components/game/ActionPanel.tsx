@@ -59,7 +59,7 @@ export function ActionPanel({ options, potSize, onAction }: ActionPanelProps) {
           else if (options.canBet) setPendingAction('bet')
           break
         case 'a':
-          if (options.canAllIn) onActionRef.current({ action: 'ALL_IN', amount: options.allInAmount })
+          if (!pendingAction && options.canAllIn) onActionRef.current({ action: 'ALL_IN', amount: options.allInAmount })
           break
         case 'enter':
           if (pendingAction) {

@@ -10,6 +10,54 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ChatEntry } from '@/lib/game/gameReducer'
 
+function MutedIndicator({
+  messages,
+  mutedIds,
+  onUnmute,
+}: {
+  messages: ChatEntry[]
+  mutedIds: Set<number>
+  onUnmute: (playerId: number) => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+
+  // Deduplicate muted player names from the actual messages
+  const mutedPlayers = new Map<number, string>()
+  for (const m of messages) {
+    if (mutedIds.has(m.playerId) && !mutedPlayers.has(m.playerId)) {
+      mutedPlayers.set(m.playerId, m.playerName)
+    }
+  }
+
+  return (
+    <div className="px-2 py-1 text-[10px] text-gray-500 border-t border-gray-700">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="hover:text-gray-300"
+      >
+        {mutedPlayers.size} muted player{mutedPlayers.size > 1 ? 's' : ''} ({[...mutedPlayers.values()].join(', ')})
+      </button>
+      {expanded && (
+        <div className="mt-1 space-y-0.5">
+          {[...mutedPlayers.entries()].map(([id, name]) => (
+            <div key={id} className="flex items-center justify-between">
+              <span className="text-gray-400">{name}</span>
+              <button
+                type="button"
+                onClick={() => onUnmute(id)}
+                className="text-blue-400 hover:text-blue-300"
+              >
+                Unmute
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 interface ChatPanelProps {
   messages: ChatEntry[]
   onSend: (message: string) => void
@@ -101,10 +149,12 @@ export function ChatPanel({ messages, onSend, open, onToggle, mutedIds, onMute, 
             ))}
           </div>
 
-          {hiddenCount > 0 && (
-            <div className="px-2 py-1 text-[10px] text-gray-500 border-t border-gray-700">
-              {hiddenCount} message{hiddenCount > 1 ? 's' : ''} from muted players hidden
-            </div>
+          {hiddenCount > 0 && onUnmute && (
+            <MutedIndicator
+              messages={messages}
+              mutedIds={mutedIds!}
+              onUnmute={onUnmute}
+            />
           )}
 
           {/* Input */}
