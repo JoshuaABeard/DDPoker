@@ -29,6 +29,7 @@ import { ThemePicker } from './ThemePicker'
 import { Dialog } from '@/components/ui/Dialog'
 import { HandRankings } from './HandRankings'
 import { HandReplay } from './HandReplay'
+import { Simulator } from './Simulator'
 
 /**
  * 10 fixed seat positions around the oval (percentage coordinates).
@@ -82,6 +83,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
   const [showHandRankings, setShowHandRankings] = useState(false)
   const [replayHand, setReplayHand] = useState<number | null>(null)
   const [checkFoldQueued, setCheckFoldQueued] = useState(false)
+  const [showSimulator, setShowSimulator] = useState(false)
 
   const {
     currentTable,
@@ -269,6 +271,14 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
           </button>
           <VolumeControl />
           <ThemePicker />
+          <button
+            type="button"
+            onClick={() => setShowSimulator(true)}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
+            aria-label="Open simulator"
+          >
+            Sim
+          </button>
         </div>
       )}
 
@@ -277,6 +287,14 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
         <div className="absolute bottom-3 left-3 z-20 flex items-center gap-2">
           <VolumeControl />
           <ThemePicker />
+          <button
+            type="button"
+            onClick={() => setShowSimulator(true)}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
+            aria-label="Open simulator"
+          >
+            Sim
+          </button>
         </div>
       )}
 
@@ -324,6 +342,15 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
 
       {/* Hand rankings reference — toggled with H key */}
       {showHandRankings && <HandRankings onClose={() => setShowHandRankings(false)} />}
+
+      {/* Poker simulator modal */}
+      {showSimulator && (
+        <Simulator
+          currentHoleCards={holeCards}
+          currentCommunityCards={currentTable.communityCards}
+          onClose={() => setShowSimulator(false)}
+        />
+      )}
 
       {/* Hand replay modal */}
       {replayHand !== null && (() => {
