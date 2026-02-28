@@ -43,7 +43,7 @@ export function TableFelt({ table, colors = DEFAULT_COLORS }: TableFeltProps) {
       aria-label="Poker table felt"
     >
       <CommunityCards cards={table.communityCards} />
-      <PotDisplay pots={table.pots} />
+      <PotDisplay pots={table.pots} seats={table.seats} />
     </div>
   )
 }
