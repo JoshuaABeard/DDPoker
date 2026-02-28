@@ -29,6 +29,7 @@ const LEGEND_ITEMS: { category: HandCategory; label: string }[] = [
   { category: 'premium', label: 'Premium' },
   { category: 'strong', label: 'Strong' },
   { category: 'playable', label: 'Playable' },
+  { category: 'marginal', label: 'Marginal' },
   { category: 'fold', label: 'Fold' },
 ]
 

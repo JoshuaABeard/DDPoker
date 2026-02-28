@@ -14,6 +14,8 @@ import { calculateEquity } from '@/lib/poker/equityCalculator'
 import { HAND_RANK_NAMES, HandRank } from '@/lib/poker/types'
 import { DashboardWidget } from './DashboardWidget'
 import { StartingHandsChart } from './StartingHandsChart'
+import { formatChips } from '@/lib/utils'
+import type { BlindsData } from '@/lib/game/types'
 
 interface DashboardProps {
   holeCards: string[]
@@ -22,8 +24,8 @@ interface DashboardProps {
   callAmount: number
   numOpponents: number
   level?: number
-  blinds?: string
-  nextLevelIn?: string
+  blinds?: BlindsData
+  nextLevelIn?: number | null
   playersRemaining?: number
   totalPlayers?: number
   playerRank?: number
@@ -100,8 +102,8 @@ export function Dashboard({
       <DashboardWidget title="Tournament Info" key="tournament-info">
         <div className="text-sm text-white space-y-0.5">
           {level != null && <p>Level: {level}</p>}
-          {blinds && <p>Blinds: {blinds}</p>}
-          {nextLevelIn && <p>Next level: {nextLevelIn}</p>}
+          {blinds && <p>Blinds: {formatChips(blinds.small)}/{formatChips(blinds.big)}{blinds.ante > 0 ? ` (ante ${formatChips(blinds.ante)})` : ''}</p>}
+          {nextLevelIn != null && <p>Next level: {Math.ceil(nextLevelIn / 60)}m</p>}
           {playersRemaining != null && (
             <p>Players: {playersRemaining}{totalPlayers != null ? ` / ${totalPlayers}` : ''}</p>
           )}

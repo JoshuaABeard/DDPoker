@@ -269,9 +269,10 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
         </div>
       )}
 
-      {/* Task 6.7: sit-out / come-back toggle — shown when player has a seat */}
-      {mySeat != null && (
-        <div className="absolute bottom-3 left-3 z-20 flex items-center gap-2">
+      {/* Bottom-left toolbar */}
+      <div className="absolute bottom-3 left-3 z-20 flex items-center gap-2">
+        {/* Sit-out toggle — shown when player has a seat */}
+        {mySeat != null && (
           <button
             type="button"
             onClick={() => (isSatOut ? actions.sendComeBack() : actions.sendSitOut())}
@@ -279,66 +280,34 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
           >
             {isSatOut ? "I'm Back" : 'Sit Out'}
           </button>
-          <VolumeControl />
-          <ThemePicker />
-          <button
-            type="button"
-            onClick={() => setShowSimulator(true)}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
-            aria-label="Open simulator"
-          >
-            Sim
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowAdvisor((v) => !v)}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
-            aria-label="Toggle advisor"
-          >
-            Advisor
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowDashboard((v) => !v)}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
-            aria-label="Toggle dashboard"
-          >
-            Dashboard
-          </button>
-        </div>
-      )}
-
-      {/* Volume control for observers (no seat) */}
-      {mySeat == null && (
-        <div className="absolute bottom-3 left-3 z-20 flex items-center gap-2">
-          <VolumeControl />
-          <ThemePicker />
-          <button
-            type="button"
-            onClick={() => setShowSimulator(true)}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
-            aria-label="Open simulator"
-          >
-            Sim
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowAdvisor((v) => !v)}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
-            aria-label="Toggle advisor"
-          >
-            Advisor
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowDashboard((v) => !v)}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
-            aria-label="Toggle dashboard"
-          >
-            Dashboard
-          </button>
-        </div>
-      )}
+        )}
+        <VolumeControl />
+        <ThemePicker />
+        <button
+          type="button"
+          onClick={() => setShowSimulator(true)}
+          className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
+          aria-label="Open simulator"
+        >
+          Sim
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowAdvisor((v) => !v)}
+          className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
+          aria-label="Toggle advisor"
+        >
+          Advisor
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowDashboard((v) => !v)}
+          className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
+          aria-label="Toggle dashboard"
+        >
+          Dashboard
+        </button>
+      </div>
 
       {/* Hand history — top-right corner */}
       <div className="absolute top-12 right-3 z-10">
