@@ -5,6 +5,9 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
+'use client'
+
+import { motion } from 'framer-motion'
 import { Card } from './Card'
 import { DealerButton } from './DealerButton'
 import { AvatarIcon } from './avatarIcons'
@@ -25,6 +28,8 @@ interface PlayerSeatProps {
   avatarId?: string
   /** Card back design for face-down cards */
   cardBackId?: CardBackId
+  /** When true, show a pulsing yellow glow ring animation */
+  isWinner?: boolean
 }
 
 /**
@@ -32,7 +37,7 @@ interface PlayerSeatProps {
  *
  * XSS safety: playerName and status strings are rendered as React text nodes only.
  */
-export function PlayerSeat({ seat, isMe, positionStyle, isAdmin, onKick, avatarId, cardBackId }: PlayerSeatProps) {
+export function PlayerSeat({ seat, isMe, positionStyle, isAdmin, onKick, avatarId, cardBackId, isWinner }: PlayerSeatProps) {
   const { playerName, chipCount, status, isDealer, isSmallBlind, isBigBlind,
           currentBet, holeCards, isCurrentActor } = seat
 
@@ -42,23 +47,40 @@ export function PlayerSeat({ seat, isMe, positionStyle, isAdmin, onKick, avatarI
 
   if (isEmpty) return null
 
+  // Build hole card elements (face-up for me, face-down for active others, none for folded/sat-out)
+  const holeCardElements: React.ReactNode[] = isMe
+    ? holeCards.map((card, i) => <Card key={i} card={card} width={40} cardBackId={cardBackId} />)
+    : !isFolded && status !== 'SAT_OUT'
+      ? [<Card key={0} width={40} cardBackId={cardBackId} />, <Card key={1} width={40} cardBackId={cardBackId} />]
+      : []
+
   return (
-    <div
-      className="absolute flex flex-col items-center gap-0.5"
+    <motion.div
+      className="absolute flex flex-col items-center gap-0.5 rounded-lg"
       style={{ transform: 'translate(-50%, -50%)', ...positionStyle }}
       role="region"
       aria-label={`${playerName}'s seat`}
+      animate={isWinner ? {
+        boxShadow: [
+          '0 0 0 0 rgba(234,179,8,0)',
+          '0 0 20px 4px rgba(234,179,8,0.6)',
+          '0 0 0 0 rgba(234,179,8,0)',
+        ],
+      } : undefined}
+      transition={isWinner ? { duration: 1.5, repeat: 1 } : undefined}
     >
       {/* Hole cards — hidden for folded/sat-out/eliminated players; face-down for active others */}
       <div className="flex gap-0.5">
-        {isMe ? (
-          holeCards.map((card, i) => <Card key={i} card={card} width={40} cardBackId={cardBackId} />)
-        ) : !isFolded && status !== 'SAT_OUT' ? (
-          <>
-            <Card width={40} cardBackId={cardBackId} />
-            <Card width={40} cardBackId={cardBackId} />
-          </>
-        ) : null}
+        {holeCardElements.map((card, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: i * 0.1 }}
+          >
+            {card}
+          </motion.div>
+        ))}
       </div>
 
       {/* Player info box */}
@@ -114,6 +136,6 @@ export function PlayerSeat({ seat, isMe, positionStyle, isAdmin, onKick, avatarI
       {currentBet > 0 && (
         <div className="text-yellow-300 text-xs font-bold">{formatChips(currentBet)}</div>
       )}
-    </div>
+    </motion.div>
   )
 }
