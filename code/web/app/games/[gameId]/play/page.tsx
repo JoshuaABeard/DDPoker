@@ -28,7 +28,7 @@ function PlayContent({ gameId }: { gameId: string }) {
   const [dismissedEliminated, setDismissedEliminated] = useState(false)
   const [infoOpen, setInfoOpen] = useState(false)
 
-  const { gamePhase, lobbyState, gameState, rebuyOffer, addonOffer, eliminatedPosition, error } = state
+  const { gamePhase, lobbyState, gameState, rebuyOffer, addonOffer, eliminatedPosition, error, neverBrokeOffer, continueRunoutPending } = state
 
   // Pick up game name from lobby state
   useEffect(() => {
@@ -94,6 +94,21 @@ function PlayContent({ gameId }: { gameId: string }) {
         chips={addonOffer.chips}
         timeoutSeconds={addonOffer.timeoutSeconds}
         onDecision={actions.sendAddonDecision}
+      />
+    )
+  } else if (neverBrokeOffer) {
+    overlay = (
+      <GameOverlay
+        type="neverBroke"
+        timeoutSeconds={neverBrokeOffer.timeoutSeconds}
+        onDecision={actions.sendNeverBrokeDecision}
+      />
+    )
+  } else if (continueRunoutPending) {
+    overlay = (
+      <GameOverlay
+        type="continueRunout"
+        onContinue={actions.sendContinueRunout}
       />
     )
   } else if (eliminatedPosition != null && !dismissedEliminated) {
