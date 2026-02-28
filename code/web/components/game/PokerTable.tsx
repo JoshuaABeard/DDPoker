@@ -16,6 +16,7 @@ import { ActionPanel } from './ActionPanel'
 import { ActionTimer } from './ActionTimer'
 import { HandHistory } from './HandHistory'
 import { ChatPanel } from './ChatPanel'
+import { Dialog } from '@/components/ui/Dialog'
 
 /**
  * 10 fixed seat positions around the oval (percentage coordinates).
@@ -60,6 +61,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
   const state = useGameState()
   const actions = useGameActions()
   const [chatOpen, setChatOpen] = useState(true)
+  const [kickTarget, setKickTarget] = useState<{ playerId: number; playerName: string } | null>(null)
 
   const {
     currentTable,
@@ -168,7 +170,10 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
           isMe={seat.playerId === myPlayerId}
           positionStyle={SEAT_POSITIONS[visualPosition(arrayIndex)]}
           isAdmin={state.isOwner}
-          onKick={actions.sendAdminKick}
+          onKick={(playerId) => {
+            const name = currentTable.seats.find((s) => s.playerId === playerId)?.playerName ?? 'Player'
+            setKickTarget({ playerId, playerName: name })
+          }}
         />
       ))}
 
@@ -232,6 +237,23 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
 
       {/* Overlay modals (rebuy, addon, eliminated — injected by the play page) */}
       {overlay}
+
+      {/* Kick confirmation dialog */}
+      {kickTarget && (
+        <Dialog
+          isOpen={true}
+          onClose={() => setKickTarget(null)}
+          onConfirm={() => {
+            actions.sendAdminKick(kickTarget.playerId)
+            setKickTarget(null)
+          }}
+          type="confirm"
+          title="Kick Player"
+          message={`Remove ${kickTarget.playerName} from the game?`}
+          confirmText="Kick"
+          cancelText="Cancel"
+        />
+      )}
     </div>
   )
 }
