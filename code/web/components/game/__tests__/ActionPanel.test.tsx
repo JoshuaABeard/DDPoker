@@ -241,3 +241,48 @@ describe('ActionPanel', () => {
     expect(callBtn.textContent).toContain('1,500,000')
   })
 })
+
+describe('keyboard shortcuts - extended', () => {
+  it('Enter key confirms pending raise', () => {
+    const onAction = vi.fn()
+    render(
+      <ActionPanel
+        options={makeOptions({ canRaise: true, minRaise: 200, maxRaise: 2000 })}
+        potSize={500}
+        onAction={onAction}
+      />,
+    )
+    // Press R to enter raise mode
+    fireEvent.keyDown(window, { key: 'r' })
+    // Press Enter to confirm
+    fireEvent.keyDown(window, { key: 'Enter' })
+    expect(onAction).toHaveBeenCalledWith({ action: 'RAISE', amount: 200 })
+  })
+
+  it('Escape cancels pending raise', () => {
+    render(
+      <ActionPanel
+        options={makeOptions({ canRaise: true, minRaise: 200, maxRaise: 2000 })}
+        potSize={500}
+        onAction={vi.fn()}
+      />,
+    )
+    fireEvent.keyDown(window, { key: 'r' })
+    expect(screen.getByTestId('bet-slider')).toBeTruthy()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByTestId('bet-slider')).toBeNull()
+  })
+
+  it('A key triggers all-in when available', () => {
+    const onAction = vi.fn()
+    render(
+      <ActionPanel
+        options={makeOptions({ canAllIn: true, allInAmount: 5000 })}
+        potSize={500}
+        onAction={onAction}
+      />,
+    )
+    fireEvent.keyDown(window, { key: 'a' })
+    expect(onAction).toHaveBeenCalledWith({ action: 'ALL_IN', amount: 5000 })
+  })
+})

@@ -25,8 +25,10 @@ interface ActionPanelProps {
  * Keyboard shortcuts (suppressed when any text input is focused):
  * - F: Fold
  * - C: Check / Call
- * - R: Raise (focuses bet slider)
- * - Enter: Confirm action
+ * - R: Raise / Bet (focuses bet slider)
+ * - A: All-in
+ * - Enter: Confirm pending bet/raise
+ * - Escape: Cancel pending bet/raise
  */
 export function ActionPanel({ options, potSize, onAction }: ActionPanelProps) {
   const [betAmount, setBetAmount] = useState(options.canRaise ? options.minRaise : options.minBet)
@@ -56,11 +58,24 @@ export function ActionPanel({ options, potSize, onAction }: ActionPanelProps) {
           if (options.canRaise) setPendingAction('raise')
           else if (options.canBet) setPendingAction('bet')
           break
+        case 'a':
+          if (options.canAllIn) onActionRef.current({ action: 'ALL_IN', amount: options.allInAmount })
+          break
+        case 'enter':
+          if (pendingAction) {
+            const action = pendingAction === 'bet' ? 'BET' : 'RAISE'
+            onActionRef.current({ action, amount: betAmount })
+            setPendingAction(null)
+          }
+          break
+        case 'escape':
+          if (pendingAction) setPendingAction(null)
+          break
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [options])
+  }, [options, pendingAction, betAmount])
 
   // Reset bet amount and pending action when options change (new hand)
   useEffect(() => {
