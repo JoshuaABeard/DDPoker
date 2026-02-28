@@ -30,6 +30,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { HandRankings } from './HandRankings'
 import { HandReplay } from './HandReplay'
 import { Simulator } from './Simulator'
+import { AdvisorPanel } from './AdvisorPanel'
 
 /**
  * 10 fixed seat positions around the oval (percentage coordinates).
@@ -84,6 +85,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
   const [replayHand, setReplayHand] = useState<number | null>(null)
   const [checkFoldQueued, setCheckFoldQueued] = useState(false)
   const [showSimulator, setShowSimulator] = useState(false)
+  const [showAdvisor, setShowAdvisor] = useState(false)
 
   const {
     currentTable,
@@ -106,6 +108,9 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
 
       if (e.key === 'h' || e.key === 'H') {
         setShowHandRankings((v) => !v)
+      }
+      if (e.key === 'v' || e.key === 'V') {
+        setShowAdvisor((v) => !v)
       }
       // Check-fold pre-action: queue fold when it's not our turn
       if ((e.key === 'f' || e.key === 'F') && prefs.checkFold && !actionRequired) {
@@ -279,6 +284,14 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
           >
             Sim
           </button>
+          <button
+            type="button"
+            onClick={() => setShowAdvisor((v) => !v)}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
+            aria-label="Toggle advisor"
+          >
+            Advisor
+          </button>
         </div>
       )}
 
@@ -294,6 +307,14 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
             aria-label="Open simulator"
           >
             Sim
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowAdvisor((v) => !v)}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
+            aria-label="Toggle advisor"
+          >
+            Advisor
           </button>
         </div>
       )}
@@ -349,6 +370,18 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
           currentHoleCards={holeCards}
           currentCommunityCards={currentTable.communityCards}
           onClose={() => setShowSimulator(false)}
+        />
+      )}
+
+      {/* AI Advisor panel — toggled with V key or toolbar button */}
+      {showAdvisor && holeCards.length > 0 && (
+        <AdvisorPanel
+          holeCards={holeCards}
+          communityCards={currentTable.communityCards ?? []}
+          potSize={potTotal}
+          callAmount={actionRequired?.callAmount ?? 0}
+          numOpponents={currentTable.seats.filter((s) => s.status === 'ACTIVE' || s.status === 'ALL_IN').length - 1}
+          onClose={() => setShowAdvisor(false)}
         />
       )}
 
