@@ -15,13 +15,15 @@ vi.mock('next/image', () => ({
     src,
     alt,
     width,
+    style,
   }: {
     src: string
     alt: string
     width: number
+    style?: React.CSSProperties
   }) => (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} width={width} />
+    <img src={src} alt={alt} width={width} style={style} />
   ),
 }))
 
@@ -97,5 +99,37 @@ describe('Card', () => {
   it('applies a custom width', () => {
     render(<Card card="Ah" width={40} />)
     expect(screen.getByRole('img').getAttribute('width')).toBe('40')
+  })
+
+  describe('fourColorDeck', () => {
+    it('does not apply a filter when fourColorDeck is false', () => {
+      render(<Card card="Kd" />)
+      const img = screen.getByRole('img') as HTMLImageElement
+      expect(img.style.filter).toBe('')
+    })
+
+    it('applies hue-rotate filter to diamonds when fourColorDeck is true', () => {
+      render(<Card card="Kd" fourColorDeck />)
+      const img = screen.getByRole('img') as HTMLImageElement
+      expect(img.style.filter).toBe('hue-rotate(240deg) saturate(1.5)')
+    })
+
+    it('applies hue-rotate filter to clubs when fourColorDeck is true', () => {
+      render(<Card card="9c" fourColorDeck />)
+      const img = screen.getByRole('img') as HTMLImageElement
+      expect(img.style.filter).toBe('hue-rotate(120deg) saturate(2) brightness(1.3)')
+    })
+
+    it('does not apply a filter to hearts when fourColorDeck is true', () => {
+      render(<Card card="Ah" fourColorDeck />)
+      const img = screen.getByRole('img') as HTMLImageElement
+      expect(img.style.filter).toBe('')
+    })
+
+    it('does not apply a filter to spades when fourColorDeck is true', () => {
+      render(<Card card="Qs" fourColorDeck />)
+      const img = screen.getByRole('img') as HTMLImageElement
+      expect(img.style.filter).toBe('')
+    })
   })
 })

@@ -17,6 +17,14 @@ interface CardProps {
   className?: string
   /** Card back design to use when face-down. Default 'classic-red'. */
   cardBackId?: CardBackId
+  /** When true, diamonds render blue and clubs render green. */
+  fourColorDeck?: boolean
+}
+
+/** CSS filters to recolor suits for four-color deck mode. */
+const FOUR_COLOR_FILTERS: Record<string, string> = {
+  d: 'hue-rotate(240deg) saturate(1.5)',         // red diamonds → blue
+  c: 'hue-rotate(120deg) saturate(2) brightness(1.3)', // black clubs → green
 }
 
 /**
@@ -29,7 +37,7 @@ interface CardProps {
  * XSS safety: card code is validated before use in the image path.
  * Only alphanumeric ASCII characters are accepted.
  */
-export function Card({ card, width = 70, className = '', cardBackId = 'classic-red' }: CardProps) {
+export function Card({ card, width = 70, className = '', cardBackId = 'classic-red', fourColorDeck }: CardProps) {
   const height = Math.round(width * (280 / 200)) // maintain 200x280 aspect ratio
 
   if (!isValidCardCode(card)) {
@@ -40,6 +48,9 @@ export function Card({ card, width = 70, className = '', cardBackId = 'classic-r
     )
   }
 
+  const suit = card[1]
+  const filter = fourColorDeck ? FOUR_COLOR_FILTERS[suit] : undefined
+
   return (
     <Image
       src={`/images/cards/card_${card}.png`}
@@ -47,7 +58,7 @@ export function Card({ card, width = 70, className = '', cardBackId = 'classic-r
       width={width}
       height={height}
       className={`select-none ${className}`}
-      style={{ imageRendering: 'crisp-edges' }}
+      style={{ imageRendering: 'crisp-edges', ...(filter ? { filter } : undefined) }}
     />
   )
 }

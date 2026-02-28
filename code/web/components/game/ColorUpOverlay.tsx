@@ -12,6 +12,8 @@ import type { ColorUpStartedData } from '@/lib/game/types'
 interface ColorUpOverlayProps {
   data: ColorUpStartedData
   seatNames: Record<number, string>
+  /** When true, diamonds render blue and clubs render green. */
+  fourColorDeck?: boolean
 }
 
 /**
@@ -19,7 +21,7 @@ interface ColorUpOverlayProps {
  *
  * XSS safety: all user strings rendered as text nodes.
  */
-export function ColorUpOverlay({ data, seatNames }: ColorUpOverlayProps) {
+export function ColorUpOverlay({ data, seatNames, fourColorDeck }: ColorUpOverlayProps) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60"
@@ -48,7 +50,7 @@ export function ColorUpOverlay({ data, seatNames }: ColorUpOverlayProps) {
                 <span className="font-semibold text-sm truncate">{name}</span>
                 <div className="flex items-center gap-1">
                   {player.cards.map((card) => (
-                    <Card key={card} card={card} width={28} />
+                    <Card key={card} card={card} width={28} fourColorDeck={fourColorDeck} />
                   ))}
                 </div>
                 <span className="text-sm">{resultLabel}</span>

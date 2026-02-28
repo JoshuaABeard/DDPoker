@@ -31,6 +31,8 @@ interface PlayerSeatProps {
   cardBackId?: CardBackId
   /** When true, show a pulsing yellow glow ring animation */
   isWinner?: boolean
+  /** When true, diamonds render blue and clubs render green. */
+  fourColorDeck?: boolean
 }
 
 /**
@@ -38,7 +40,7 @@ interface PlayerSeatProps {
  *
  * XSS safety: playerName and status strings are rendered as React text nodes only.
  */
-export function PlayerSeat({ seat, isMe, positionStyle, isAdmin, onKick, avatarId, cardBackId, isWinner }: PlayerSeatProps) {
+export function PlayerSeat({ seat, isMe, positionStyle, isAdmin, onKick, avatarId, cardBackId, isWinner, fourColorDeck }: PlayerSeatProps) {
   const { playerName, chipCount, status, isDealer, isSmallBlind, isBigBlind,
           currentBet, holeCards, isCurrentActor } = seat
 
@@ -66,7 +68,7 @@ export function PlayerSeat({ seat, isMe, positionStyle, isAdmin, onKick, avatarI
 
   // Build hole card elements (face-up for me, face-down for active others, none for folded/sat-out)
   const holeCardElements: React.ReactNode[] = isMe
-    ? holeCards.map((card, i) => <Card key={i} card={card} width={40} cardBackId={cardBackId} />)
+    ? holeCards.map((card, i) => <Card key={i} card={card} width={40} cardBackId={cardBackId} fourColorDeck={fourColorDeck} />)
     : !isFolded && status !== 'SAT_OUT'
       ? [<Card key={0} width={40} cardBackId={cardBackId} />, <Card key={1} width={40} cardBackId={cardBackId} />]
       : []

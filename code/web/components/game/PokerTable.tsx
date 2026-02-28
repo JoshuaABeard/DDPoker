@@ -21,6 +21,7 @@ import { useMutedPlayers } from '@/lib/game/useMutedPlayers'
 import { useTheme } from '@/lib/theme/useTheme'
 import { useCardBack } from '@/lib/theme/useCardBack'
 import { useAvatar } from '@/lib/theme/useAvatar'
+import { useGamePrefs } from '@/lib/game/useGamePrefs'
 import { useSoundEffects } from '@/lib/audio/useSoundEffects'
 import { ChipLeaderMini } from './ChipLeaderMini'
 import { VolumeControl } from './VolumeControl'
@@ -76,6 +77,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
   const { colors: feltColors } = useTheme()
   const { cardBackId } = useCardBack()
   const { avatarId } = useAvatar()
+  const { prefs } = useGamePrefs()
   const [kickTarget, setKickTarget] = useState<{ playerId: number; playerName: string } | null>(null)
   const [showHandRankings, setShowHandRankings] = useState(false)
   const [replayHand, setReplayHand] = useState<number | null>(null)
@@ -183,7 +185,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
       )}
 
       {/* Oval felt surface (community cards + pots) */}
-      <TableFelt table={currentTable} colors={feltColors} />
+      <TableFelt table={currentTable} colors={feltColors} fourColorDeck={prefs.fourColorDeck} />
 
       {/* Player seats — rotated so my seat is always at position 0 */}
       {currentTable.seats.map((seat, arrayIndex) => (
@@ -203,6 +205,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
           }}
           cardBackId={cardBackId}
           avatarId={seat.playerId === myPlayerId ? avatarId : undefined}
+          fourColorDeck={prefs.fourColorDeck}
         />
       ))}
 

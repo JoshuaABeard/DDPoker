@@ -20,6 +20,8 @@ const DEFAULT_COLORS: ThemeColors = {
 interface TableFeltProps {
   table: TableData
   colors?: ThemeColors
+  /** When true, diamonds render blue and clubs render green. */
+  fourColorDeck?: boolean
 }
 
 /**
@@ -28,7 +30,7 @@ interface TableFeltProps {
  *
  * Uses a radial gradient and inset shadow to simulate the felt texture.
  */
-export function TableFelt({ table, colors = DEFAULT_COLORS }: TableFeltProps) {
+export function TableFelt({ table, colors = DEFAULT_COLORS, fourColorDeck }: TableFeltProps) {
   return (
     <div
       className="absolute inset-x-[8%] inset-y-[15%] rounded-[50%] flex flex-col items-center justify-center gap-4"
@@ -42,7 +44,7 @@ export function TableFelt({ table, colors = DEFAULT_COLORS }: TableFeltProps) {
       role="region"
       aria-label="Poker table felt"
     >
-      <CommunityCards cards={table.communityCards} />
+      <CommunityCards cards={table.communityCards} fourColorDeck={fourColorDeck} />
       <PotDisplay pots={table.pots} seats={table.seats} />
     </div>
   )
