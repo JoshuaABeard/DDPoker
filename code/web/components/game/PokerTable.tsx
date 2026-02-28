@@ -27,6 +27,7 @@ import { VolumeControl } from './VolumeControl'
 import { ThemePicker } from './ThemePicker'
 import { Dialog } from '@/components/ui/Dialog'
 import { HandRankings } from './HandRankings'
+import { HandReplay } from './HandReplay'
 
 /**
  * 10 fixed seat positions around the oval (percentage coordinates).
@@ -77,6 +78,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
   const { avatarId } = useAvatar()
   const [kickTarget, setKickTarget] = useState<{ playerId: number; playerName: string } | null>(null)
   const [showHandRankings, setShowHandRankings] = useState(false)
+  const [replayHand, setReplayHand] = useState<number | null>(null)
 
   const {
     currentTable,
@@ -248,7 +250,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
 
       {/* Hand history — top-right corner */}
       <div className="absolute top-12 right-3 z-10">
-        <HandHistory entries={state.handHistory} />
+        <HandHistory entries={state.handHistory} onReplayHand={setReplayHand} />
       </div>
 
       {/* Mini chip standings — right side, below hand history */}
@@ -289,6 +291,14 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
 
       {/* Hand rankings reference — toggled with H key */}
       {showHandRankings && <HandRankings onClose={() => setShowHandRankings(false)} />}
+
+      {/* Hand replay modal */}
+      {replayHand !== null && (() => {
+        const filteredEntries = state.handHistory.filter((e) => e.handNumber === replayHand)
+        return filteredEntries.length > 0
+          ? <HandReplay entries={filteredEntries} onClose={() => setReplayHand(null)} />
+          : null
+      })()}
 
       {/* Overlay modals (rebuy, addon, eliminated — injected by the play page) */}
       {overlay}

@@ -13,6 +13,7 @@ import { formatChips, formatHandHistoryForExport } from '@/lib/utils'
 
 interface HandHistoryProps {
   entries: HandHistoryEntry[]
+  onReplayHand?: (handNumber: number) => void
 }
 
 function renderEntry(entry: HandHistoryEntry): string {
@@ -42,7 +43,7 @@ function renderEntry(entry: HandHistoryEntry): string {
  *
  * XSS safety: all entry text rendered as text nodes only.
  */
-export function HandHistory({ entries }: HandHistoryProps) {
+export function HandHistory({ entries, onReplayHand }: HandHistoryProps) {
   const [open, setOpen] = useState(false)
 
   function handleExport() {
@@ -94,7 +95,17 @@ export function HandHistory({ entries }: HandHistoryProps) {
         ) : (
           entries.map((entry) => (
             <div key={entry.id} className="text-xs text-gray-300">
-              {renderEntry(entry)}
+              {entry.type === 'hand_start' && onReplayHand ? (
+                <button
+                  type="button"
+                  onClick={() => onReplayHand(entry.handNumber)}
+                  className="text-blue-400 hover:underline cursor-pointer"
+                >
+                  {renderEntry(entry)}
+                </button>
+              ) : (
+                renderEntry(entry)
+              )}
             </div>
           ))
         )}
