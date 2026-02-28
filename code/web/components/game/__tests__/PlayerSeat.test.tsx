@@ -6,6 +6,7 @@
  */
 
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
 import { PlayerSeat } from '../PlayerSeat'
 import type { SeatData } from '@/lib/game/types'
@@ -153,5 +154,63 @@ describe('PlayerSeat', () => {
     // Should show actual card images, not blanks
     expect(imgs[0].getAttribute('src')).toContain('card_Ah')
     expect(imgs[1].getAttribute('src')).toContain('card_Kd')
+  })
+
+  it('shows kick button when isAdmin=true and isMe=false', () => {
+    const onKick = vi.fn()
+    render(
+      <PlayerSeat
+        seat={makeSeat()}
+        isMe={false}
+        positionStyle={positionStyle}
+        isAdmin={true}
+        onKick={onKick}
+      />,
+    )
+    expect(screen.getByRole('button', { name: /kick testplayer/i })).toBeTruthy()
+  })
+
+  it('does not show kick button when isAdmin=false', () => {
+    const onKick = vi.fn()
+    render(
+      <PlayerSeat
+        seat={makeSeat()}
+        isMe={false}
+        positionStyle={positionStyle}
+        isAdmin={false}
+        onKick={onKick}
+      />,
+    )
+    expect(screen.queryByRole('button', { name: /kick/i })).toBeNull()
+  })
+
+  it('does not show kick button on own seat even when admin', () => {
+    const onKick = vi.fn()
+    render(
+      <PlayerSeat
+        seat={makeSeat()}
+        isMe={true}
+        positionStyle={positionStyle}
+        isAdmin={true}
+        onKick={onKick}
+      />,
+    )
+    expect(screen.queryByRole('button', { name: /kick/i })).toBeNull()
+  })
+
+  it('calls onKick with playerId when kick button is clicked', async () => {
+    const user = userEvent.setup()
+    const onKick = vi.fn()
+    render(
+      <PlayerSeat
+        seat={makeSeat({ playerId: 42 })}
+        isMe={false}
+        positionStyle={positionStyle}
+        isAdmin={true}
+        onKick={onKick}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /kick/i }))
+    expect(onKick).toHaveBeenCalledWith(42)
   })
 })

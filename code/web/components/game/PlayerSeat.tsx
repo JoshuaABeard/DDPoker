@@ -15,6 +15,10 @@ interface PlayerSeatProps {
   isMe: boolean
   /** CSS position override for oval layout (e.g. { top: '10%', left: '50%' }) */
   positionStyle: React.CSSProperties
+  /** Whether the local player is the game owner/admin */
+  isAdmin?: boolean
+  /** Called when admin clicks kick on this seat */
+  onKick?: (playerId: number) => void
 }
 
 /**
@@ -22,7 +26,7 @@ interface PlayerSeatProps {
  *
  * XSS safety: playerName and status strings are rendered as React text nodes only.
  */
-export function PlayerSeat({ seat, isMe, positionStyle }: PlayerSeatProps) {
+export function PlayerSeat({ seat, isMe, positionStyle, isAdmin, onKick }: PlayerSeatProps) {
   const { playerName, chipCount, status, isDealer, isSmallBlind, isBigBlind,
           currentBet, holeCards, isCurrentActor } = seat
 
@@ -82,6 +86,16 @@ export function PlayerSeat({ seat, isMe, positionStyle }: PlayerSeatProps) {
             <span className="text-[9px] text-red-400 italic rounded px-1">Disconnected</span>
           )}
         </div>
+        {isAdmin && !isMe && onKick && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onKick(seat.playerId) }}
+            aria-label={`Kick ${playerName}`}
+            className="text-[9px] text-red-400 hover:text-red-300 mt-0.5"
+          >
+            Kick
+          </button>
+        )}
       </div>
 
       {/* Current bet */}

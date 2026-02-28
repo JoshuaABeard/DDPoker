@@ -130,6 +130,29 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
         </div>
       )}
 
+      {/* Admin controls — visible to game owner only */}
+      {state.isOwner && (
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+          {gameState.status === 'PAUSED' ? (
+            <button
+              type="button"
+              onClick={actions.sendAdminResume}
+              className="px-3 py-1 text-xs font-semibold rounded-lg bg-green-700 hover:bg-green-600 text-white"
+            >
+              Resume Game
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={actions.sendAdminPause}
+              className="px-3 py-1 text-xs font-semibold rounded-lg bg-yellow-700 hover:bg-yellow-600 text-white"
+            >
+              Pause Game
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Oval felt surface (community cards + pots) */}
       <TableFelt table={currentTable} />
 
@@ -144,6 +167,8 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
           }}
           isMe={seat.playerId === myPlayerId}
           positionStyle={SEAT_POSITIONS[visualPosition(arrayIndex)]}
+          isAdmin={state.isOwner}
+          onKick={actions.sendAdminKick}
         />
       ))}
 
