@@ -12,6 +12,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useGameState, useGameActions } from '@/lib/game/hooks'
 import { PokerTable } from '@/components/game/PokerTable'
 import { GameOverlay } from '@/components/game/GameOverlay'
+import { ColorUpOverlay } from '@/components/game/ColorUpOverlay'
 import { GameInfoPanel } from '@/components/game/GameInfoPanel'
 
 // ---------------------------------------------------------------------------
@@ -28,7 +29,7 @@ function PlayContent({ gameId }: { gameId: string }) {
   const [dismissedEliminated, setDismissedEliminated] = useState(false)
   const [infoOpen, setInfoOpen] = useState(false)
 
-  const { gamePhase, lobbyState, gameState, rebuyOffer, addonOffer, eliminatedPosition, error, neverBrokeOffer, continueRunoutPending } = state
+  const { gamePhase, lobbyState, gameState, rebuyOffer, addonOffer, eliminatedPosition, error, neverBrokeOffer, continueRunoutPending, colorUpData } = state
 
   // Pick up game name from lobby state
   useEffect(() => {
@@ -111,6 +112,12 @@ function PlayContent({ gameId }: { gameId: string }) {
         onContinue={actions.sendContinueRunout}
       />
     )
+  } else if (colorUpData) {
+    const seatNames: Record<number, string> = {}
+    if (gameState) {
+      gameState.players.forEach((p) => { seatNames[p.playerId] = p.name })
+    }
+    overlay = <ColorUpOverlay data={colorUpData} seatNames={seatNames} />
   } else if (eliminatedPosition != null && !dismissedEliminated) {
     overlay = (
       <GameOverlay

@@ -598,8 +598,8 @@ describe('gameReducer', () => {
       expect(initialGameState.observers).toEqual([])
     })
 
-    it('has colorUpInProgress defaulting to false', () => {
-      expect(initialGameState.colorUpInProgress).toBe(false)
+    it('has colorUpData defaulting to null', () => {
+      expect(initialGameState.colorUpData).toBeNull()
     })
 
     it('has neverBrokeOffer defaulting to null', () => {
@@ -889,21 +889,22 @@ describe('gameReducer', () => {
   })
 
   describe('COLOR_UP_STARTED / COLOR_UP_COMPLETED', () => {
-    it('sets colorUpInProgress to true on COLOR_UP_STARTED', () => {
+    it('stores colorUpData on COLOR_UP_STARTED', () => {
+      const colorUpData = { players: [], newMinChip: 25, tableId: 1 }
       const result = gameReducer(initialGameState, {
         type: 'SERVER_MESSAGE',
-        message: msg('COLOR_UP_STARTED', { players: [], newMinChip: 25, tableId: 1 }),
+        message: msg('COLOR_UP_STARTED', colorUpData),
       })
-      expect(result.colorUpInProgress).toBe(true)
+      expect(result.colorUpData).toEqual(colorUpData)
     })
 
-    it('sets colorUpInProgress to false on COLOR_UP_COMPLETED', () => {
-      const state = { ...initialGameState, colorUpInProgress: true }
+    it('clears colorUpData on COLOR_UP_COMPLETED', () => {
+      const state = { ...initialGameState, colorUpData: { players: [], newMinChip: 25, tableId: 1 } }
       const result = gameReducer(state, {
         type: 'SERVER_MESSAGE',
         message: msg('COLOR_UP_COMPLETED', { tableId: 1 }),
       })
-      expect(result.colorUpInProgress).toBe(false)
+      expect(result.colorUpData).toBeNull()
     })
   })
 

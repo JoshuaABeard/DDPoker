@@ -18,6 +18,7 @@ import type {
   ButtonMovedData,
   ChatMessageData,
   ChipsTransferredData,
+  ColorUpStartedData,
   CommunityCardsDealtData,
   ConnectedData,
   ConnectionState,
@@ -140,7 +141,7 @@ export interface GameState {
   observers: { observerId: number; observerName: string }[]
 
   // Color-up
-  colorUpInProgress: boolean
+  colorUpData: ColorUpStartedData | null
 
   // Overlay prompts
   neverBrokeOffer: { timeoutSeconds: number } | null
@@ -177,7 +178,7 @@ export const initialGameState: GameState = {
   playerRank: 0,
   handHistory: [],
   observers: [],
-  colorUpInProgress: false,
+  colorUpData: null,
   neverBrokeOffer: null,
   continueRunoutPending: false,
   lastSequenceNumber: null,
@@ -377,10 +378,10 @@ function handleServerMessage(state: GameState, message: ServerMessage): GameStat
         return { ...handleChipsTransferred(state, message.data as ChipsTransferredData), ...seqState }
 
       case 'COLOR_UP_STARTED':
-        return { ...state, colorUpInProgress: true, ...seqState }
+        return { ...state, colorUpData: message.data as ColorUpStartedData, ...seqState }
 
       case 'COLOR_UP_COMPLETED':
-        return { ...state, colorUpInProgress: false, ...seqState }
+        return { ...state, colorUpData: null, ...seqState }
 
       case 'AI_HOLE_CARDS':
         return { ...handleAiHoleCards(state, message.data as AiHoleCardsData), ...seqState }
