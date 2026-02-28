@@ -683,6 +683,7 @@ export interface BettingConfigDto {
 export interface AIPlayerConfigDto {
   name: string
   skillLevel: number
+  playStyle?: string
 }
 
 export interface PracticeConfigDto {

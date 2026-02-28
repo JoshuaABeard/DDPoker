@@ -21,6 +21,7 @@ import { useMutedPlayers } from '@/lib/game/useMutedPlayers'
 import { useTheme } from '@/lib/theme/useTheme'
 import { useCardBack } from '@/lib/theme/useCardBack'
 import { useAvatar } from '@/lib/theme/useAvatar'
+import { useGamePrefs } from '@/lib/game/useGamePrefs'
 import { useSoundEffects } from '@/lib/audio/useSoundEffects'
 import { ChipLeaderMini } from './ChipLeaderMini'
 import { VolumeControl } from './VolumeControl'
@@ -28,6 +29,9 @@ import { ThemePicker } from './ThemePicker'
 import { Dialog } from '@/components/ui/Dialog'
 import { HandRankings } from './HandRankings'
 import { HandReplay } from './HandReplay'
+import { Simulator } from './Simulator'
+import { AdvisorPanel } from './AdvisorPanel'
+import { Dashboard } from './Dashboard'
 
 /**
  * 10 fixed seat positions around the oval (percentage coordinates).
@@ -76,9 +80,14 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
   const { colors: feltColors } = useTheme()
   const { cardBackId } = useCardBack()
   const { avatarId } = useAvatar()
+  const { prefs } = useGamePrefs()
   const [kickTarget, setKickTarget] = useState<{ playerId: number; playerName: string } | null>(null)
   const [showHandRankings, setShowHandRankings] = useState(false)
   const [replayHand, setReplayHand] = useState<number | null>(null)
+  const [checkFoldQueued, setCheckFoldQueued] = useState(false)
+  const [showSimulator, setShowSimulator] = useState(false)
+  const [showAdvisor, setShowAdvisor] = useState(false)
+  const [showDashboard, setShowDashboard] = useState(false)
 
   const {
     currentTable,
@@ -97,13 +106,37 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
     function handleKeyDown(e: KeyboardEvent) {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable) return
+      if (prefs.disableShortcuts) return
+
       if (e.key === 'h' || e.key === 'H') {
         setShowHandRankings((v) => !v)
+      }
+      if (e.key === 'v' || e.key === 'V') {
+        setShowAdvisor((v) => !v)
+      }
+      if (e.key === 'd' || e.key === 'D') {
+        setShowDashboard((v) => !v)
+      }
+      // Check-fold pre-action: queue fold when it's not our turn
+      if ((e.key === 'f' || e.key === 'F') && prefs.checkFold && !actionRequired) {
+        setCheckFoldQueued((v) => !v)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [prefs.disableShortcuts, prefs.checkFold, actionRequired])
+
+  // Auto-execute check-fold when it's our turn and queued
+  useEffect(() => {
+    if (actionRequired && checkFoldQueued) {
+      if (actionRequired.canFold) {
+        actions.sendAction({ action: 'FOLD', amount: 0 })
+      } else if (actionRequired.canCheck) {
+        actions.sendAction({ action: 'CHECK', amount: 0 })
+      }
+      setCheckFoldQueued(false)
+    }
+  }, [actionRequired, checkFoldQueued, actions])
 
   if (!currentTable || !gameState) {
     return (
@@ -183,7 +216,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
       )}
 
       {/* Oval felt surface (community cards + pots) */}
-      <TableFelt table={currentTable} colors={feltColors} />
+      <TableFelt table={currentTable} colors={feltColors} fourColorDeck={prefs.fourColorDeck} />
 
       {/* Player seats — rotated so my seat is always at position 0 */}
       {currentTable.seats.map((seat, arrayIndex) => (
@@ -203,6 +236,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
           }}
           cardBackId={cardBackId}
           avatarId={seat.playerId === myPlayerId ? avatarId : undefined}
+          fourColorDeck={prefs.fourColorDeck}
         />
       ))}
 
@@ -216,6 +250,13 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
         </div>
       )}
 
+      {/* Check/Fold queued indicator */}
+      {checkFoldQueued && (
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 px-3 py-1 bg-red-900/80 text-red-200 text-xs rounded-full">
+          Check/Fold Queued
+        </div>
+      )}
+
       {/* Action panel — shown only when it's this player's turn */}
       {actionRequired && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20">
@@ -223,13 +264,15 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
             options={actionRequired}
             potSize={potTotal}
             onAction={actions.sendAction}
+            disableShortcuts={prefs.disableShortcuts}
           />
         </div>
       )}
 
-      {/* Task 6.7: sit-out / come-back toggle — shown when player has a seat */}
-      {mySeat != null && (
-        <div className="absolute bottom-3 left-3 z-20 flex items-center gap-2">
+      {/* Bottom-left toolbar */}
+      <div className="absolute bottom-3 left-3 z-20 flex items-center gap-2">
+        {/* Sit-out toggle — shown when player has a seat */}
+        {mySeat != null && (
           <button
             type="button"
             onClick={() => (isSatOut ? actions.sendComeBack() : actions.sendSitOut())}
@@ -237,18 +280,34 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
           >
             {isSatOut ? "I'm Back" : 'Sit Out'}
           </button>
-          <VolumeControl />
-          <ThemePicker />
-        </div>
-      )}
-
-      {/* Volume control for observers (no seat) */}
-      {mySeat == null && (
-        <div className="absolute bottom-3 left-3 z-20 flex items-center gap-2">
-          <VolumeControl />
-          <ThemePicker />
-        </div>
-      )}
+        )}
+        <VolumeControl />
+        <ThemePicker />
+        <button
+          type="button"
+          onClick={() => setShowSimulator(true)}
+          className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
+          aria-label="Open simulator"
+        >
+          Sim
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowAdvisor((v) => !v)}
+          className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
+          aria-label="Toggle advisor"
+        >
+          Advisor
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowDashboard((v) => !v)}
+          className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
+          aria-label="Toggle dashboard"
+        >
+          Dashboard
+        </button>
+      </div>
 
       {/* Hand history — top-right corner */}
       <div className="absolute top-12 right-3 z-10">
@@ -279,6 +338,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
           mutedIds={mutedIds}
           onMute={mute}
           onUnmute={unmute}
+          dealerChat={prefs.dealerChat}
         />
       </div>
 
@@ -293,6 +353,47 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
 
       {/* Hand rankings reference — toggled with H key */}
       {showHandRankings && <HandRankings onClose={() => setShowHandRankings(false)} />}
+
+      {/* Poker simulator modal */}
+      {showSimulator && (
+        <Simulator
+          currentHoleCards={holeCards}
+          currentCommunityCards={currentTable.communityCards}
+          onClose={() => setShowSimulator(false)}
+        />
+      )}
+
+      {/* AI Advisor panel — toggled with V key or toolbar button */}
+      {showAdvisor && holeCards.length > 0 && (
+        <AdvisorPanel
+          holeCards={holeCards}
+          communityCards={currentTable.communityCards ?? []}
+          potSize={potTotal}
+          callAmount={actionRequired?.callAmount ?? 0}
+          numOpponents={currentTable.seats.filter((s) => s.status === 'ACTIVE' || s.status === 'ALL_IN').length - 1}
+          onClose={() => setShowAdvisor(false)}
+        />
+      )}
+
+      {/* Dashboard panel — toggled with D key or toolbar button */}
+      {showDashboard && (
+        <div className="absolute top-12 right-56 bottom-3 z-30">
+          <Dashboard
+            holeCards={holeCards}
+            communityCards={currentTable.communityCards ?? []}
+            potSize={potTotal}
+            callAmount={actionRequired?.callAmount ?? 0}
+            numOpponents={currentTable.seats.filter((s) => s.status === 'ACTIVE' || s.status === 'ALL_IN').length - 1}
+            level={gameState.level}
+            blinds={gameState.blinds}
+            nextLevelIn={gameState.nextLevelIn}
+            playersRemaining={state.playersRemaining > 0 ? state.playersRemaining : undefined}
+            totalPlayers={state.totalPlayers > 0 ? state.totalPlayers : undefined}
+            playerRank={state.playerRank > 0 ? state.playerRank : undefined}
+            onClose={() => setShowDashboard(false)}
+          />
+        </div>
+      )}
 
       {/* Hand replay modal */}
       {replayHand !== null && (() => {

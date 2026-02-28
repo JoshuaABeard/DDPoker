@@ -13,13 +13,15 @@ import { Card } from './Card'
 interface CommunityCardsProps {
   cards: string[]
   cardWidth?: number
+  /** When true, diamonds render blue and clubs render green. */
+  fourColorDeck?: boolean
 }
 
 /**
  * Displays community cards (flop, turn, river).
  * Returns null when no cards have been dealt — no empty placeholders.
  */
-export function CommunityCards({ cards, cardWidth = 65 }: CommunityCardsProps) {
+export function CommunityCards({ cards, cardWidth = 65, fourColorDeck }: CommunityCardsProps) {
   if (cards.length === 0) return null
 
   return (
@@ -32,7 +34,7 @@ export function CommunityCards({ cards, cardWidth = 65 }: CommunityCardsProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.3, delay: i < 3 ? i * 0.15 : 0 }}
           >
-            <Card card={card} width={cardWidth} />
+            <Card card={card} width={cardWidth} fourColorDeck={fourColorDeck} />
           </motion.div>
         ))}
       </AnimatePresence>
