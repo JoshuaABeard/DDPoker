@@ -205,12 +205,12 @@ function CreateGameForm() {
         untilLevel: lateRegUntilLevel,
         chipMode: 'STARTING',
       },
-      practiceConfig: {
+      practiceConfig: isPractice ? {
         aiFaceUp,
         pauseAllinInteractive: pauseAllin,
         autoDeal,
         zipModeEnabled: zipMode,
-      },
+      } : undefined,
       password: password || undefined,
     }
   }

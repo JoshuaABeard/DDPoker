@@ -46,8 +46,7 @@ export function PlayerSeat({ seat, isMe, positionStyle, isAdmin, onKick, avatarI
   const isAllIn = status === 'ALL_IN'
   const isEmpty = !playerName
 
-  if (isEmpty) return null
-
+  // Hooks must be called before any conditional return (Rules of Hooks)
   const prevChipCount = useRef(chipCount)
   const [chipFlash, setChipFlash] = useState<'up' | 'down' | null>(null)
 
@@ -62,6 +61,8 @@ export function PlayerSeat({ seat, isMe, positionStyle, isAdmin, onKick, avatarI
   }, [chipCount])
 
   const chipFlashClass = chipFlash === 'up' ? 'text-green-400' : chipFlash === 'down' ? 'text-red-400' : 'text-gray-300'
+
+  if (isEmpty) return null
 
   // Build hole card elements (face-up for me, face-down for active others, none for folded/sat-out)
   const holeCardElements: React.ReactNode[] = isMe

@@ -214,4 +214,26 @@ describe('PlayerSeat', () => {
     await user.click(screen.getByRole('button', { name: /kick/i }))
     expect(onKick).toHaveBeenCalledWith(42)
   })
+
+  it('flashes green when chip count increases', () => {
+    const { rerender } = render(
+      <PlayerSeat seat={makeSeat({ chipCount: 1000 })} isMe={false} positionStyle={positionStyle} />,
+    )
+    rerender(
+      <PlayerSeat seat={makeSeat({ chipCount: 2000 })} isMe={false} positionStyle={positionStyle} />,
+    )
+    const chipEl = screen.getByText('2,000')
+    expect(chipEl.className).toContain('text-green-400')
+  })
+
+  it('flashes red when chip count decreases', () => {
+    const { rerender } = render(
+      <PlayerSeat seat={makeSeat({ chipCount: 1000 })} isMe={false} positionStyle={positionStyle} />,
+    )
+    rerender(
+      <PlayerSeat seat={makeSeat({ chipCount: 500 })} isMe={false} positionStyle={positionStyle} />,
+    )
+    const chipEl = screen.getByText('500')
+    expect(chipEl.className).toContain('text-red-400')
+  })
 })
