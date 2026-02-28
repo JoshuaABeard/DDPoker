@@ -158,6 +158,32 @@ describe('gameReducer', () => {
       expect(result.lobbyState?.name).toBe('Test Game')
       expect(result.lobbyState?.players).toHaveLength(1)
     })
+
+    it('sets isOwner true when myPlayerId matches ownerProfileId', () => {
+      const state = { ...initialGameState, myPlayerId: 1 }
+      const result = gameReducer(state, {
+        type: 'SERVER_MESSAGE',
+        message: msg('LOBBY_STATE', lobbyState),
+      })
+      expect(result.isOwner).toBe(true)
+    })
+
+    it('sets isOwner false when myPlayerId does not match ownerProfileId', () => {
+      const state = { ...initialGameState, myPlayerId: 99 }
+      const result = gameReducer(state, {
+        type: 'SERVER_MESSAGE',
+        message: msg('LOBBY_STATE', lobbyState),
+      })
+      expect(result.isOwner).toBe(false)
+    })
+
+    it('sets isOwner false when myPlayerId is null', () => {
+      const result = gameReducer(initialGameState, {
+        type: 'SERVER_MESSAGE',
+        message: msg('LOBBY_STATE', lobbyState),
+      })
+      expect(result.isOwner).toBe(false)
+    })
   })
 
   // -------------------------------------------------------------------------

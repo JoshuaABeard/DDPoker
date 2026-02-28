@@ -125,6 +125,7 @@ export interface GameState {
   /** Set when the current player is eliminated; position shown in overlay */
   eliminatedPosition: number | null
   error: string | null
+  isOwner: boolean
 
   // Tournament stats (from GAME_STATE)
   totalPlayers: number
@@ -169,6 +170,7 @@ export const initialGameState: GameState = {
   addonOffer: null,
   eliminatedPosition: null,
   error: null,
+  isOwner: false,
   totalPlayers: 0,
   playersRemaining: 0,
   numTables: 0,
@@ -466,6 +468,7 @@ function handleLobbyState(state: GameState, data: LobbyStateData): GameState {
     ...state,
     gamePhase: 'lobby',
     lobbyState: data,
+    isOwner: state.myPlayerId != null && state.myPlayerId === data.ownerProfileId,
     error: null,
   }
 }
