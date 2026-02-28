@@ -124,6 +124,26 @@ describe('useSoundEffects', () => {
     expect(mockPlaySound).not.toHaveBeenCalledWith('bell')
   })
 
+  it('plays bet on CALL action', () => {
+    const entries = [entry({ type: 'action', action: 'CALL' })]
+    const { rerender } = renderHook(
+      ({ h, a }) => useSoundEffects(h, a),
+      { initialProps: { h: [] as HandHistoryEntry[], a: false } },
+    )
+    rerender({ h: entries, a: false })
+    expect(mockPlaySound).toHaveBeenCalledWith('bet')
+  })
+
+  it('plays bet on ALL_IN action', () => {
+    const entries = [entry({ type: 'action', action: 'ALL_IN' })]
+    const { rerender } = renderHook(
+      ({ h, a }) => useSoundEffects(h, a),
+      { initialProps: { h: [] as HandHistoryEntry[], a: false } },
+    )
+    rerender({ h: entries, a: false })
+    expect(mockPlaySound).toHaveBeenCalledWith('bet')
+  })
+
   it('does not replay sounds for old entries', () => {
     const entries = [entry({ type: 'action', action: 'CHECK' })]
     const { rerender } = renderHook(
@@ -134,5 +154,22 @@ describe('useSoundEffects', () => {
     mockPlaySound.mockClear()
     rerender({ h: entries, a: false })
     expect(mockPlaySound).not.toHaveBeenCalled()
+  })
+
+  it('still plays sounds after history wraps past 200 entries', () => {
+    // Simulate a full 200-entry history
+    const full = Array.from({ length: 200 }, (_, i) =>
+      entry({ id: `old-${i}`, type: 'action', action: 'CHECK' }),
+    )
+    const { rerender } = renderHook(
+      ({ h, a }) => useSoundEffects(h, a),
+      { initialProps: { h: full, a: false } },
+    )
+    mockPlaySound.mockClear()
+
+    // Reducer trims oldest and appends new — length stays 200
+    const trimmed = [...full.slice(1), entry({ id: 'new-1', type: 'action', action: 'RAISE' })]
+    rerender({ h: trimmed, a: false })
+    expect(mockPlaySound).toHaveBeenCalledWith('raise')
   })
 })

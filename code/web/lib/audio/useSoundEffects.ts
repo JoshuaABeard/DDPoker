@@ -22,14 +22,20 @@ export function useSoundEffects(
   isMyTurn: boolean,
 ): void {
   const { playSound } = useAudio()
-  const prevRef = useRef({ historyLength: handHistory.length, isMyTurn })
+  const prevRef = useRef({ lastEntryId: handHistory.at(-1)?.id ?? null, isMyTurn })
 
   useEffect(() => {
     const prev = prevRef.current
 
-    // Process new hand history entries
-    if (handHistory.length > prev.historyLength) {
-      const newEntries = handHistory.slice(prev.historyLength)
+    // Find new entries since last seen (tracks by ID, not length,
+    // because the reducer trims handHistory to 200 entries via FIFO)
+    let startIdx = 0
+    if (prev.lastEntryId) {
+      const idx = handHistory.findIndex((e) => e.id === prev.lastEntryId)
+      startIdx = idx >= 0 ? idx + 1 : 0
+    }
+    const newEntries = handHistory.slice(startIdx)
+    if (newEntries.length > 0) {
       for (const e of newEntries) {
         switch (e.type) {
           case 'hand_start':
@@ -56,6 +62,6 @@ export function useSoundEffects(
       playSound('bell')
     }
 
-    prevRef.current = { historyLength: handHistory.length, isMyTurn }
+    prevRef.current = { lastEntryId: handHistory.at(-1)?.id ?? null, isMyTurn }
   }, [handHistory, isMyTurn, playSound])
 }
