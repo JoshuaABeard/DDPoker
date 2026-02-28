@@ -13,6 +13,16 @@ import { gameServerApi } from '@/lib/api'
 import type { GameConfigDto } from '@/lib/game/types'
 import { BLIND_PRESETS } from '@/lib/game/blindPresets'
 
+const SKILL_PRESETS = [
+  { label: 'Novice', value: 2 },
+  { label: 'Beginner', value: 4 },
+  { label: 'Intermediate', value: 6 },
+  { label: 'Advanced', value: 8 },
+  { label: 'Expert', value: 10 },
+] as const
+
+const PLAY_STYLES = ['Tight-Passive', 'Tight-Aggressive', 'Loose-Passive', 'Loose-Aggressive'] as const
+
 const DEFAULT_BLIND_STRUCTURE: GameConfigDto['blindStructure'] = [
   { smallBlind: 25,   bigBlind: 50,    ante: 0,   minutes: 15, isBreak: false, gameType: 'NOLIMIT_HOLDEM' },
   { smallBlind: 50,   bigBlind: 100,   ante: 0,   minutes: 15, isBreak: false, gameType: 'NOLIMIT_HOLDEM' },
@@ -26,15 +36,15 @@ const DEFAULT_BLIND_STRUCTURE: GameConfigDto['blindStructure'] = [
   { smallBlind: 800,  bigBlind: 1600,  ante: 200, minutes: 15, isBreak: false, gameType: 'NOLIMIT_HOLDEM' },
 ]
 
-const DEFAULT_AI_PLAYERS: Array<{ name: string; skillLevel: number }> = [
-  { name: 'AI 1', skillLevel: 5 },
-  { name: 'AI 2', skillLevel: 5 },
-  { name: 'AI 3', skillLevel: 5 },
-  { name: 'AI 4', skillLevel: 5 },
-  { name: 'AI 5', skillLevel: 5 },
-  { name: 'AI 6', skillLevel: 5 },
-  { name: 'AI 7', skillLevel: 5 },
-  { name: 'AI 8', skillLevel: 5 },
+const DEFAULT_AI_PLAYERS: Array<{ name: string; skillLevel: number; playStyle: string }> = [
+  { name: 'AI 1', skillLevel: 6, playStyle: 'Tight-Aggressive' },
+  { name: 'AI 2', skillLevel: 6, playStyle: 'Tight-Aggressive' },
+  { name: 'AI 3', skillLevel: 6, playStyle: 'Tight-Aggressive' },
+  { name: 'AI 4', skillLevel: 6, playStyle: 'Tight-Aggressive' },
+  { name: 'AI 5', skillLevel: 6, playStyle: 'Tight-Aggressive' },
+  { name: 'AI 6', skillLevel: 6, playStyle: 'Tight-Aggressive' },
+  { name: 'AI 7', skillLevel: 6, playStyle: 'Tight-Aggressive' },
+  { name: 'AI 8', skillLevel: 6, playStyle: 'Tight-Aggressive' },
 ]
 
 function CreateGameForm() {
@@ -64,7 +74,7 @@ function CreateGameForm() {
 
   // Task 6.4 step 2 — AI player list (replaces aiCount)
   const [fillComputer, setFillComputer] = useState(isPractice)
-  const [aiPlayerList, setAiPlayerList] = useState<Array<{ name: string; skillLevel: number }>>([
+  const [aiPlayerList, setAiPlayerList] = useState<Array<{ name: string; skillLevel: number; playStyle: string }>>([
     ...DEFAULT_AI_PLAYERS,
   ])
 
@@ -140,7 +150,7 @@ function CreateGameForm() {
   }
 
   // AI player list helpers
-  function updateAiPlayer(index: number, field: 'name' | 'skillLevel', value: string | number) {
+  function updateAiPlayer(index: number, field: 'name' | 'skillLevel' | 'playStyle', value: string | number) {
     setAiPlayerList((prev) =>
       prev.map((p, i) => (i === index ? { ...p, [field]: value } : p)),
     )
@@ -149,7 +159,7 @@ function CreateGameForm() {
   function addAiPlayer() {
     setAiPlayerList((prev) => [
       ...prev,
-      { name: `AI ${prev.length + 1}`, skillLevel: 5 },
+      { name: `AI ${prev.length + 1}`, skillLevel: 6, playStyle: 'Tight-Aggressive' },
     ])
   }
 
@@ -160,7 +170,7 @@ function CreateGameForm() {
   function buildConfig(overrides: Partial<{
     name: string
     fillComputer: boolean
-    aiPlayerList: Array<{ name: string; skillLevel: number }>
+    aiPlayerList: Array<{ name: string; skillLevel: number; playStyle: string }>
   }> = {}): GameConfigDto {
     const effectiveName = overrides.name ?? name
     const effectiveFill = overrides.fillComputer ?? fillComputer
@@ -551,37 +561,56 @@ function CreateGameForm() {
           </label>
           {fillComputer && (
             <div className="space-y-2">
-              {aiPlayerList.map((ai, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={ai.name}
-                    onChange={(e) => updateAiPlayer(i, 'name', e.target.value)}
-                    maxLength={40}
-                    placeholder={`AI ${i + 1}`}
-                    className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
-                  />
-                  <label className="text-xs text-gray-500 whitespace-nowrap">Skill</label>
-                  <input
-                    type="number"
-                    value={ai.skillLevel}
-                    min={1}
-                    max={10}
-                    onChange={(e) =>
-                      updateAiPlayer(i, 'skillLevel', Math.max(1, Math.min(10, Number(e.target.value))))
-                    }
-                    className="w-16 border border-gray-300 rounded px-2 py-1 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeAiPlayer(i)}
-                    disabled={aiPlayerList.length <= 1}
-                    className="text-red-500 hover:text-red-700 disabled:opacity-30 text-xs"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
+              {aiPlayerList.map((ai, i) => {
+                const currentPreset = SKILL_PRESETS.find((p) => p.value >= ai.skillLevel)?.label ?? 'Intermediate'
+                return (
+                  <div key={i} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={ai.name}
+                      onChange={(e) => updateAiPlayer(i, 'name', e.target.value)}
+                      maxLength={40}
+                      placeholder={`AI ${i + 1}`}
+                      className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+                    />
+                    <label className="text-xs text-gray-500 whitespace-nowrap">Skill</label>
+                    <select
+                      value={currentPreset}
+                      onChange={(e) => {
+                        const preset = SKILL_PRESETS.find((p) => p.label === e.target.value)
+                        if (preset) updateAiPlayer(i, 'skillLevel', preset.value)
+                      }}
+                      className="w-32 border border-gray-300 rounded px-2 py-1 text-sm"
+                    >
+                      {SKILL_PRESETS.map((p) => (
+                        <option key={p.label} value={p.label}>
+                          {p.label}
+                        </option>
+                      ))}
+                    </select>
+                    <label className="text-xs text-gray-500 whitespace-nowrap">Style</label>
+                    <select
+                      value={ai.playStyle}
+                      onChange={(e) => updateAiPlayer(i, 'playStyle', e.target.value)}
+                      className="w-40 border border-gray-300 rounded px-2 py-1 text-sm"
+                    >
+                      {PLAY_STYLES.map((style) => (
+                        <option key={style} value={style}>
+                          {style}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => removeAiPlayer(i)}
+                      disabled={aiPlayerList.length <= 1}
+                      className="text-red-500 hover:text-red-700 disabled:opacity-30 text-xs"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )
+              })}
               <button
                 type="button"
                 onClick={addAiPlayer}
