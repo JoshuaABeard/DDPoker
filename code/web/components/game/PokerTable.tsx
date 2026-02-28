@@ -31,6 +31,7 @@ import { HandRankings } from './HandRankings'
 import { HandReplay } from './HandReplay'
 import { Simulator } from './Simulator'
 import { AdvisorPanel } from './AdvisorPanel'
+import { Dashboard } from './Dashboard'
 
 /**
  * 10 fixed seat positions around the oval (percentage coordinates).
@@ -86,6 +87,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
   const [checkFoldQueued, setCheckFoldQueued] = useState(false)
   const [showSimulator, setShowSimulator] = useState(false)
   const [showAdvisor, setShowAdvisor] = useState(false)
+  const [showDashboard, setShowDashboard] = useState(false)
 
   const {
     currentTable,
@@ -111,6 +113,9 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
       }
       if (e.key === 'v' || e.key === 'V') {
         setShowAdvisor((v) => !v)
+      }
+      if (e.key === 'd' || e.key === 'D') {
+        setShowDashboard((v) => !v)
       }
       // Check-fold pre-action: queue fold when it's not our turn
       if ((e.key === 'f' || e.key === 'F') && prefs.checkFold && !actionRequired) {
@@ -292,6 +297,14 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
           >
             Advisor
           </button>
+          <button
+            type="button"
+            onClick={() => setShowDashboard((v) => !v)}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
+            aria-label="Toggle dashboard"
+          >
+            Dashboard
+          </button>
         </div>
       )}
 
@@ -315,6 +328,14 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
             aria-label="Toggle advisor"
           >
             Advisor
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowDashboard((v) => !v)}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-gray-700 hover:bg-gray-600 text-gray-200"
+            aria-label="Toggle dashboard"
+          >
+            Dashboard
           </button>
         </div>
       )}
@@ -383,6 +404,26 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
           numOpponents={currentTable.seats.filter((s) => s.status === 'ACTIVE' || s.status === 'ALL_IN').length - 1}
           onClose={() => setShowAdvisor(false)}
         />
+      )}
+
+      {/* Dashboard panel — toggled with D key or toolbar button */}
+      {showDashboard && (
+        <div className="absolute top-12 right-56 bottom-3 z-30">
+          <Dashboard
+            holeCards={holeCards}
+            communityCards={currentTable.communityCards ?? []}
+            potSize={potTotal}
+            callAmount={actionRequired?.callAmount ?? 0}
+            numOpponents={currentTable.seats.filter((s) => s.status === 'ACTIVE' || s.status === 'ALL_IN').length - 1}
+            level={gameState.level}
+            blinds={gameState.blinds}
+            nextLevelIn={gameState.nextLevelIn}
+            playersRemaining={state.playersRemaining > 0 ? state.playersRemaining : undefined}
+            totalPlayers={state.totalPlayers > 0 ? state.totalPlayers : undefined}
+            playerRank={state.playerRank > 0 ? state.playerRank : undefined}
+            onClose={() => setShowDashboard(false)}
+          />
+        </div>
       )}
 
       {/* Hand replay modal */}
