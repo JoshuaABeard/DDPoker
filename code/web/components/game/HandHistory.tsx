@@ -9,7 +9,7 @@
 
 import { useState } from 'react'
 import type { HandHistoryEntry } from '@/lib/game/gameReducer'
-import { formatChips } from '@/lib/utils'
+import { formatChips, formatHandHistoryForExport } from '@/lib/utils'
 
 interface HandHistoryProps {
   entries: HandHistoryEntry[]
@@ -45,18 +45,43 @@ function renderEntry(entry: HandHistoryEntry): string {
 export function HandHistory({ entries }: HandHistoryProps) {
   const [open, setOpen] = useState(false)
 
+  function handleExport() {
+    const text = formatHandHistoryForExport(entries)
+    if (!text) return
+    const blob = new Blob([text], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `hand-history-${Date.now()}.txt`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="bg-gray-900 bg-opacity-90 rounded-xl shadow-xl w-64">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-controls="hand-history-log"
-        className="flex items-center justify-between w-full px-3 py-2 text-sm font-semibold text-gray-300 hover:text-white"
-      >
-        <span>Hand History</span>
-        <span>{open ? '▾' : '▸'}</span>
-      </button>
+      <div className="flex items-center justify-between w-full px-3 py-2">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-controls="hand-history-log"
+          className="flex items-center gap-1 text-sm font-semibold text-gray-300 hover:text-white"
+        >
+          <span>Hand History</span>
+          <span>{open ? '▾' : '▸'}</span>
+        </button>
+        {entries.length > 0 && (
+          <button
+            type="button"
+            onClick={handleExport}
+            aria-label="Export hand history"
+            className="text-gray-500 hover:text-gray-300 text-xs"
+            title="Export hand history"
+          >
+            Export
+          </button>
+        )}
+      </div>
 
       <div
         id="hand-history-log"
