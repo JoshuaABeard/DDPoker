@@ -7,6 +7,7 @@
 
 import { Card } from './Card'
 import { DealerButton } from './DealerButton'
+import { AvatarIcon } from './avatarIcons'
 import type { SeatData } from '@/lib/game/types'
 import { formatChips } from '@/lib/utils'
 
@@ -19,6 +20,8 @@ interface PlayerSeatProps {
   isAdmin?: boolean
   /** Called when admin clicks kick on this seat */
   onKick?: (playerId: number) => void
+  /** Avatar icon ID for this player */
+  avatarId?: string
 }
 
 /**
@@ -26,7 +29,7 @@ interface PlayerSeatProps {
  *
  * XSS safety: playerName and status strings are rendered as React text nodes only.
  */
-export function PlayerSeat({ seat, isMe, positionStyle, isAdmin, onKick }: PlayerSeatProps) {
+export function PlayerSeat({ seat, isMe, positionStyle, isAdmin, onKick, avatarId }: PlayerSeatProps) {
   const { playerName, chipCount, status, isDealer, isSmallBlind, isBigBlind,
           currentBet, holeCards, isCurrentActor } = seat
 
@@ -64,6 +67,12 @@ export function PlayerSeat({ seat, isMe, positionStyle, isAdmin, onKick }: Playe
           isMe ? 'border border-blue-400' : '',
         ].join(' ')}
       >
+        {/* Avatar */}
+        <div className="flex justify-center mb-0.5">
+          <div className="w-7 h-7 bg-gray-600 rounded-full flex items-center justify-center overflow-hidden">
+            <AvatarIcon id={avatarId ?? 'spade'} size={28} />
+          </div>
+        </div>
         {/* Name — text node only, no dangerouslySetInnerHTML */}
         <div className="font-semibold text-white truncate max-w-[80px]">{playerName}</div>
         <div className="text-gray-300">{formatChips(chipCount)}</div>
