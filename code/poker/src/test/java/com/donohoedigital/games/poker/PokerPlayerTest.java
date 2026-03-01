@@ -21,8 +21,11 @@ package com.donohoedigital.games.poker;
 
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
+import com.donohoedigital.games.poker.engine.Hand;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -455,5 +458,611 @@ class PokerPlayerTest {
         assertThat(computer.isComputer()).isTrue();
         assertThat(human.isComputer()).isFalse();
         assertThat(game.isServerDriven()).isTrue();
+    }
+
+    // =================================================================
+    // Elimination and Observer State Tests
+    // =================================================================
+
+    @Test
+    void should_BeEliminated_When_EliminatedFlagSet() {
+        player.setEliminated(true);
+
+        assertThat(player.isEliminated()).isTrue();
+    }
+
+    @Test
+    void should_NotBeEliminated_When_Default() {
+        assertThat(player.isEliminated()).isFalse();
+    }
+
+    @Test
+    void should_ReturnEliminated_When_ZeroChipsAndEliminated() {
+        player.setChipCount(0);
+        player.setEliminated(true);
+
+        assertThat(player.isEliminated()).isTrue();
+        assertThat(player.getChipCount()).isZero();
+    }
+
+    @Test
+    void should_ClearEliminated_When_EliminationReverted() {
+        player.setEliminated(true);
+        player.setEliminated(false);
+
+        assertThat(player.isEliminated()).isFalse();
+    }
+
+    @Test
+    void should_BeObserver_When_ObserverFlagSet() {
+        player.setObserver(true);
+
+        assertThat(player.isObserver()).isTrue();
+    }
+
+    @Test
+    void should_NotBeObserver_When_Default() {
+        assertThat(player.isObserver()).isFalse();
+    }
+
+    @Test
+    void should_ClearObserver_When_ObserverReverted() {
+        player.setObserver(true);
+        player.setObserver(false);
+
+        assertThat(player.isObserver()).isFalse();
+    }
+
+    // =================================================================
+    // Fold and All-In State Tests
+    // =================================================================
+
+    @Test
+    void should_BeFolded_When_FoldedFlagSet() {
+        player.setFolded(true);
+
+        assertThat(player.isFolded()).isTrue();
+    }
+
+    @Test
+    void should_NotBeFolded_When_Default() {
+        assertThat(player.isFolded()).isFalse();
+    }
+
+    @Test
+    void should_ClearFolded_When_FoldReverted() {
+        player.setFolded(true);
+        player.setFolded(false);
+
+        assertThat(player.isFolded()).isFalse();
+    }
+
+    @Test
+    void should_BeAllIn_When_ChipsAreZero() {
+        // isAllIn() is based on chip count being exactly 0
+        player.setChipCount(0);
+
+        assertThat(player.isAllIn()).isTrue();
+    }
+
+    @Test
+    void should_NotBeAllIn_When_ChipsRemain() {
+        player.setChipCount(500);
+
+        assertThat(player.isAllIn()).isFalse();
+    }
+
+    @Test
+    void should_NotBeAllIn_When_NegativeChips() {
+        // Negative chips is not the same as all-in (which requires exactly 0)
+        player.setChipCount(-50);
+
+        assertThat(player.isAllIn()).isFalse();
+    }
+
+    // =================================================================
+    // Combined Money Operations Tests
+    // =================================================================
+
+    @Test
+    void should_CalculateTotalSpent_When_BuyinAndRebuyAndAddon() {
+        // Set buyin directly
+        player.setBuyin(100);
+
+        // Rebuy and addon require table context for events, so test via getters
+        // We can verify the total formula: getTotalSpent = buyin + rebuy + addon
+        assertThat(player.getTotalSpent()).isEqualTo(100);
+        assertThat(player.getRebuy()).isZero();
+        assertThat(player.getAddon()).isZero();
+    }
+
+    @Test
+    void should_TrackBountyCollected_When_BountiesAdded() {
+        // addBounty requires no table context
+        // But it adds to nPrize_ so we set buyin first for context
+        player.setBuyin(50);
+
+        // addBounty increments bountyCollected, bountyCount, and prize
+        player.addBounty(25);
+
+        assertThat(player.getBountyCollected()).isEqualTo(25);
+        assertThat(player.getBountyCount()).isEqualTo(1);
+        // bounty also adds to prize
+        assertThat(player.getPrize()).isEqualTo(25);
+    }
+
+    @Test
+    void should_AccumulateBounties_When_MultipleBountiesCollected() {
+        player.addBounty(25);
+        player.addBounty(50);
+
+        assertThat(player.getBountyCollected()).isEqualTo(75);
+        assertThat(player.getBountyCount()).isEqualTo(2);
+        assertThat(player.getPrize()).isEqualTo(75);
+    }
+
+    @Test
+    void should_IncludePrizeAndBounty_When_BothAwarded() {
+        player.setPrize(500);
+        player.addBounty(25);
+
+        // setPrize sets prize to 500, then addBounty adds 25 to prize
+        assertThat(player.getPrize()).isEqualTo(525);
+        assertThat(player.getBountyCollected()).isEqualTo(25);
+    }
+
+    // =================================================================
+    // Tournament Finish State Tests
+    // =================================================================
+
+    @Test
+    void should_SetPlace_When_FinishedTournament() {
+        player.setPlace(3);
+        player.setPrize(250);
+
+        assertThat(player.getPlace()).isEqualTo(3);
+        assertThat(player.getPrize()).isEqualTo(250);
+    }
+
+    @Test
+    void should_ReturnZeroPlace_When_NotFinished() {
+        assertThat(player.getPlace()).isZero();
+    }
+
+    @Test
+    void should_ReturnCorrectFinishOrder_When_MultiplePlayersFinish() {
+        PokerPlayer first = new PokerPlayer(1, "Winner", true);
+        first.setPlace(1);
+        first.setPrize(1000);
+
+        PokerPlayer second = new PokerPlayer(2, "Runner-Up", true);
+        second.setPlace(2);
+        second.setPrize(500);
+
+        PokerPlayer third = new PokerPlayer(3, "Third", true);
+        third.setPlace(3);
+        third.setPrize(250);
+
+        assertThat(first.getPlace()).isLessThan(second.getPlace());
+        assertThat(second.getPlace()).isLessThan(third.getPlace());
+        assertThat(first.getPrize()).isGreaterThan(second.getPrize());
+        assertThat(second.getPrize()).isGreaterThan(third.getPrize());
+    }
+
+    @Test
+    void should_AllowZeroPrize_When_FinishedOutOfMoney() {
+        player.setPlace(7);
+        player.setPrize(0);
+
+        assertThat(player.getPlace()).isEqualTo(7);
+        assertThat(player.getPrize()).isZero();
+    }
+
+    // =================================================================
+    // Online Settings Serialization Tests
+    // =================================================================
+
+    @Test
+    void should_PreserveSettings_When_OnlineSettingsMarshalledAndUnmarshalled() {
+        // Set non-default values for all online settings
+        player.setFolded(false); // avoid fireSettingsChanged NPE on table_
+        // Use direct field access through getOnlineSettings/setOnlineSettings
+        // which marshals: sittingOut, muckLosing, showWinning, askShowWinning,
+        // askShowLosing
+
+        // Get default settings serialized
+        String defaultSettings = player.getOnlineSettings();
+        assertThat(defaultSettings).isNotNull();
+
+        // Create another player and apply settings
+        PokerPlayer other = new PokerPlayer(2, "Other", true);
+        other.setOnlineSettings(defaultSettings);
+
+        // Defaults should match: sittingOut=false, muckLosing=true, showWinning=false
+        assertThat(other.isSittingOut()).isFalse();
+        assertThat(other.isMuckLosing()).isTrue();
+        assertThat(other.isShowWinning()).isFalse();
+        assertThat(other.isAskShowWinning()).isFalse();
+        assertThat(other.isAskShowLosing()).isFalse();
+    }
+
+    @Test
+    void should_SerializeOnlineSettings_When_SettingsString() {
+        // getOnlineSettings returns a serialized string representation
+        String settings = player.getOnlineSettings();
+
+        assertThat(settings).isNotNull();
+        assertThat(settings).isNotEmpty();
+    }
+
+    // =================================================================
+    // Disconnected and Sitting Out State Tests
+    // =================================================================
+
+    @Test
+    void should_BeDisconnected_When_DisconnectedFlagSet() {
+        player.setDisconnected(true);
+
+        assertThat(player.isDisconnected()).isTrue();
+    }
+
+    @Test
+    void should_NotBeDisconnected_When_Default() {
+        assertThat(player.isDisconnected()).isFalse();
+    }
+
+    @Test
+    void should_BeBooted_When_BootedFlagSet() {
+        player.setBooted(true);
+
+        assertThat(player.isBooted()).isTrue();
+    }
+
+    @Test
+    void should_NotBeBooted_When_Default() {
+        assertThat(player.isBooted()).isFalse();
+    }
+
+    // =================================================================
+    // Cards Exposed State Tests
+    // =================================================================
+
+    @Test
+    void should_HaveCardsExposed_When_ExposedFlagSet() {
+        player.setCardsExposed(true);
+
+        assertThat(player.isCardsExposed()).isTrue();
+    }
+
+    @Test
+    void should_NotHaveCardsExposed_When_Default() {
+        assertThat(player.isCardsExposed()).isFalse();
+    }
+
+    // =================================================================
+    // Hand Operations Tests
+    // =================================================================
+
+    @Test
+    void should_HaveEmptyHand_When_DefaultCreated() {
+        Hand hand = player.getHand();
+
+        assertThat(hand).isNotNull();
+        assertThat(hand.size()).isZero();
+    }
+
+    @Test
+    void should_ReturnNullHandInfo_When_NoTableContext() {
+        // getHandInfo needs both hand cards and a HoldemHand (table context)
+        HandInfo info = player.getHandInfo();
+
+        assertThat(info).isNull();
+    }
+
+    @Test
+    void should_RemoveHand_When_RemoveHandCalled() {
+        player.removeHand();
+
+        assertThat(player.getHand()).isNull();
+        assertThat(player.getHandSorted()).isNull();
+        assertThat(player.getHandInfo()).isNull();
+    }
+
+    @Test
+    void should_ReturnNullHoldemHand_When_NoTableAssigned() {
+        assertThat(player.getHoldemHand()).isNull();
+    }
+
+    // =================================================================
+    // Simulated Bet Tests
+    // =================================================================
+
+    @Test
+    void should_TrackSimulatedBet_When_BetAdded() {
+        player.setChipCount(1000);
+
+        int actual = player.addSimulatedBet(200);
+
+        assertThat(actual).isEqualTo(200);
+        assertThat(player.getSimulatedBet()).isEqualTo(200);
+        assertThat(player.getChipCount()).isEqualTo(800);
+    }
+
+    @Test
+    void should_CapSimulatedBet_When_BetExceedsChips() {
+        player.setChipCount(100);
+
+        int actual = player.addSimulatedBet(500);
+
+        assertThat(actual).isEqualTo(100);
+        assertThat(player.getSimulatedBet()).isEqualTo(100);
+        assertThat(player.getChipCount()).isZero();
+    }
+
+    @Test
+    void should_ReturnZeroSimulatedBet_When_Default() {
+        assertThat(player.getSimulatedBet()).isZero();
+    }
+
+    // =================================================================
+    // All-In Display and Score Tests
+    // =================================================================
+
+    @Test
+    void should_TrackAllInPercentage_When_Set() {
+        player.setAllInPerc("45.2%");
+
+        assertThat(player.getAllInPerc()).isEqualTo("45.2%");
+    }
+
+    @Test
+    void should_ReturnNullAllInPerc_When_Default() {
+        assertThat(player.getAllInPerc()).isNull();
+    }
+
+    @Test
+    void should_IncrementAllInWin_When_WinAdded() {
+        player.addAllInWin();
+        player.addAllInWin();
+
+        assertThat(player.getAllInWin()).isEqualTo(2);
+    }
+
+    @Test
+    void should_ClearAllInWin_When_Cleared() {
+        player.addAllInWin();
+        player.addAllInWin();
+
+        player.clearAllInWin();
+
+        assertThat(player.getAllInWin()).isZero();
+    }
+
+    @Test
+    void should_SetAllInScore_When_ScoreProvided() {
+        player.setAllInScore(85);
+
+        assertThat(player.getAllInScore()).isEqualTo(85);
+    }
+
+    // =================================================================
+    // Hands Played Tracking Tests
+    // =================================================================
+
+    @Test
+    void should_ReturnZeroHandsPlayed_When_Default() {
+        assertThat(player.getHandsPlayed()).isZero();
+    }
+
+    @Test
+    void should_ReturnZeroDisconnectedHands_When_Default() {
+        assertThat(player.getHandsPlayedDisconnected()).isZero();
+    }
+
+    @Test
+    void should_ReturnZeroSitoutHands_When_Default() {
+        assertThat(player.getHandsPlayedSitout()).isZero();
+    }
+
+    // =================================================================
+    // Position Constants Tests
+    // =================================================================
+
+    @Test
+    void should_ReturnPositionName_When_ValidPositionProvided() {
+        assertThat(PokerPlayer.getPositionName(PokerPlayer.EARLY)).isEqualTo("early");
+        assertThat(PokerPlayer.getPositionName(PokerPlayer.MIDDLE)).isEqualTo("middle");
+        assertThat(PokerPlayer.getPositionName(PokerPlayer.LATE)).isEqualTo("late");
+        assertThat(PokerPlayer.getPositionName(PokerPlayer.SMALL)).isEqualTo("small");
+        assertThat(PokerPlayer.getPositionName(PokerPlayer.BIG)).isEqualTo("big");
+    }
+
+    @Test
+    void should_ReturnNone_When_InvalidPositionProvided() {
+        assertThat(PokerPlayer.getPositionName(-1)).isEqualTo("none");
+        assertThat(PokerPlayer.getPositionName(99)).isEqualTo("none");
+    }
+
+    // =================================================================
+    // Player toString Tests
+    // =================================================================
+
+    @Test
+    void should_IncludeNameAndChips_When_ToStringCalled() {
+        player.setChipCount(1500);
+
+        String result = player.toString();
+
+        assertThat(result).contains("TestPlayer");
+        assertThat(result).contains("1500");
+    }
+
+    @Test
+    void should_ShowNoHand_When_HandRemoved() {
+        player.removeHand();
+
+        String result = player.toString();
+
+        assertThat(result).contains("[no hand]");
+    }
+
+    // =================================================================
+    // Waiting (Wait List) State Tests
+    // =================================================================
+
+    @Test
+    void should_NotBeWaiting_When_Default() {
+        assertThat(player.isWaiting()).isFalse();
+    }
+
+    @Test
+    void should_BeWaiting_When_WaitingFlagSet() {
+        player.setWaiting(true);
+
+        assertThat(player.isWaiting()).isTrue();
+        assertThat(player.getWaitListTimeStamp()).isGreaterThan(0);
+    }
+
+    @Test
+    void should_ClearWaitingTimestamp_When_WaitingCleared() {
+        player.setWaiting(true);
+        player.setWaiting(false);
+
+        assertThat(player.isWaiting()).isFalse();
+        assertThat(player.getWaitListTimeStamp()).isZero();
+    }
+
+    @Test
+    void should_RemoveHand_When_PutOnWaitList() {
+        // setWaiting(true) calls removeHand()
+        player.setWaiting(true);
+
+        assertThat(player.getHand()).isNull();
+    }
+
+    // =================================================================
+    // Player Type Tests
+    // =================================================================
+
+    @Test
+    void should_ReturnNullPlayerType_When_Default() {
+        assertThat(player.getPlayerType()).isNull();
+    }
+
+    // =================================================================
+    // Muck / Show Settings Tests
+    // =================================================================
+
+    @Test
+    void should_MuckLosing_When_Default() {
+        // Default is muckLosing = true
+        assertThat(player.isMuckLosing()).isTrue();
+    }
+
+    @Test
+    void should_NotShowWinning_When_Default() {
+        assertThat(player.isShowWinning()).isFalse();
+    }
+
+    @Test
+    void should_NotAskShowLosing_When_Default() {
+        assertThat(player.isAskShowLosing()).isFalse();
+    }
+
+    @Test
+    void should_NotAskShowWinning_When_Default() {
+        assertThat(player.isAskShowWinning()).isFalse();
+    }
+
+    // =================================================================
+    // Comparator Tests
+    // =================================================================
+
+    @Test
+    void should_SortByName_When_SortByNameComparatorUsed() {
+        PokerPlayer alice = new PokerPlayer(1, "Alice", true);
+        PokerPlayer bob = new PokerPlayer(2, "Bob", true);
+        PokerPlayer charlie = new PokerPlayer(3, "Charlie", true);
+
+        List<PokerPlayer> players = new java.util.ArrayList<>(java.util.List.of(charlie, alice, bob));
+        players.sort(PokerPlayer.SORTBYNAME);
+
+        assertThat(players.get(0).getName()).isEqualTo("Alice");
+        assertThat(players.get(1).getName()).isEqualTo("Bob");
+        assertThat(players.get(2).getName()).isEqualTo("Charlie");
+    }
+
+    // =================================================================
+    // Time Management Combined Tests
+    // =================================================================
+
+    @Test
+    void should_StoreThinkBankAndTimeoutIndependently() {
+        // ThinkBank and Timeout are stored in the same int field
+        // but in different parts (think bank in first million, timeout above)
+        player.setThinkBankMillis(30000);
+        player.setTimeoutMillis(60000);
+
+        // Both should be retrievable independently
+        assertThat(player.getThinkBankMillis()).isEqualTo(30000);
+        // Timeout is stored as tenths, so some truncation occurs
+        assertThat(player.getTimeoutMillis()).isEqualTo(60000);
+    }
+
+    @Test
+    void should_PreserveThinkBank_When_TimeoutChanged() {
+        player.setThinkBankMillis(15000);
+        player.setTimeoutMillis(120000);
+
+        // Changing timeout should not affect think bank
+        assertThat(player.getThinkBankMillis()).isEqualTo(15000);
+    }
+
+    @Test
+    void should_PreserveTimeout_When_ThinkBankChanged() {
+        player.setTimeoutMillis(90000);
+        player.setThinkBankMillis(25000);
+
+        // Changing think bank should not affect timeout
+        assertThat(player.getTimeoutMillis()).isEqualTo(90000);
+    }
+
+    // =================================================================
+    // isInHand State Test
+    // =================================================================
+
+    @Test
+    void should_NotBeInHand_When_PlayerFolded() {
+        // Even if we could be in a hand, folded players are not "in hand"
+        player.setFolded(true);
+
+        assertThat(player.isInHand()).isFalse();
+    }
+
+    // =================================================================
+    // Constructor Variants Tests
+    // =================================================================
+
+    @Test
+    void should_CreatePlayerWithProfile_When_ProfileConstructorUsed() {
+        PlayerProfile profile = new PlayerProfile("ProfilePlayer");
+        PokerPlayer profilePlayer = new PokerPlayer("key-123", 5, profile, true);
+
+        assertThat(profilePlayer.getName()).isEqualTo("ProfilePlayer");
+        assertThat(profilePlayer.getPlayerId()).isEqualTo("key-123");
+        assertThat(profilePlayer.getID()).isEqualTo(5);
+        assertThat(profilePlayer.isHuman()).isTrue();
+        assertThat(profilePlayer.getProfile()).isEqualTo(profile);
+        // Setting a profile auto-activates online
+        assertThat(profilePlayer.isOnlineActivated()).isTrue();
+    }
+
+    @Test
+    void should_CreateEmptyPlayer_When_DefaultConstructorUsed() {
+        PokerPlayer emptyPlayer = new PokerPlayer();
+
+        assertThat(emptyPlayer.getChipCount()).isZero();
+        assertThat(emptyPlayer.isEliminated()).isFalse();
+        assertThat(emptyPlayer.isFolded()).isFalse();
     }
 }
