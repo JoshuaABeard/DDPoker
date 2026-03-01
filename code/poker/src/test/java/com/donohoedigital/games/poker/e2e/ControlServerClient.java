@@ -60,7 +60,7 @@ import java.util.HashSet;
  * Does not import any classes from
  * {@code com.donohoedigital.games.poker.control}.
  */
-public class ControlServerClient {
+class ControlServerClient {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final String HEADER_KEY = "X-Control-Key";

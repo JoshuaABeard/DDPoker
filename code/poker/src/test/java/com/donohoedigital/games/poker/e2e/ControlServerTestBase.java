@@ -70,7 +70,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Tag("e2e")
 @Tag("slow")
-public abstract class ControlServerTestBase {
+abstract class ControlServerTestBase {
 
     private static final String PORT_FILE = "control-server.port";
     private static final String KEY_FILE = "control-server.key";
