@@ -2,6 +2,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 Joshua Beard and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,9 +50,20 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class PokerSimulatorPanel extends DDTabPanel implements DDProgressFeedback {
     static Logger logger = LogManager.getLogger(PokerSimulatorPanel.class);
+
+    // Hand type display order: best to worst, matching server HAND_TYPE_NAMES
+    private static final String[] HAND_TYPE_ORDER = {"ROYAL_FLUSH", "STRAIGHT_FLUSH", "FOUR_OF_A_KIND", "FULL_HOUSE",
+            "FLUSH", "STRAIGHT", "TRIPS", "TWO_PAIR", "ONE_PAIR", "HIGH_CARD"};
+
+    // Human-readable names for each hand type key
+    private static final Map<String, String> HAND_TYPE_LABELS = Map.of("ROYAL_FLUSH", "Royal Flush", "STRAIGHT_FLUSH",
+            "Straight Flush", "FOUR_OF_A_KIND", "Four of a Kind", "FULL_HOUSE", "Full House", "FLUSH", "Flush",
+            "STRAIGHT", "Straight", "TRIPS", "Three of a Kind", "TWO_PAIR", "Two Pair", "ONE_PAIR", "One Pair",
+            "HIGH_CARD", "High Card");
 
     private Hand pocket_;
     private Hand community_;
@@ -297,12 +309,30 @@ public class PokerSimulatorPanel extends DDTabPanel implements DDProgressFeedbac
 
         private String buildHtml(SimulationResult result) {
             StringBuilder sb = new StringBuilder();
+
+            // Win/tie/loss summary
             sb.append(PropertyConfig.getMessage("msg.simresult.header"));
             sb.append(PropertyConfig.getMessage("msg.simresult.row", PropertyConfig.getMessage("msg.sim.random"),
                     pocket_.toStringRankSuit(), PokerConstants.formatPercent(result.win()),
                     PokerConstants.formatPercent(result.loss()), PokerConstants.formatPercent(result.tie()),
                     result.iterations()));
             sb.append(PropertyConfig.getMessage("msg.simresult.footer"));
+
+            // Hand type distribution
+            Map<String, Double> breakdown = result.playerHandTypeBreakdown();
+            if (breakdown != null && !breakdown.isEmpty()) {
+                sb.append(PropertyConfig.getMessage("msg.simresult.handtype.header"));
+                for (String key : HAND_TYPE_ORDER) {
+                    Double pct = breakdown.get(key);
+                    if (pct != null && pct > 0) {
+                        String label = HAND_TYPE_LABELS.getOrDefault(key, key);
+                        sb.append(PropertyConfig.getMessage("msg.simresult.handtype.row", label,
+                                PokerConstants.formatPercent(pct)));
+                    }
+                }
+                sb.append(PropertyConfig.getMessage("msg.simresult.handtype.footer"));
+            }
+
             return sb.toString();
         }
     }
