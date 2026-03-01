@@ -34,7 +34,6 @@
  */
 package com.donohoedigital.games.poker.gameserver;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -59,38 +58,15 @@ import java.util.Map;
  *            map of hand type name to improvement probability (0-100), null on
  *            preflop or river; only entries with probability &gt; 0 are
  *            included
- * @param handPotential
- *            hand potential data (positive/negative percent and hand type
- *            breakdown), null on preflop or river
+ * @param positivePotential
+ *            percentage (0-100) of cases where we were behind an opponent and
+ *            ended up ahead after the next board card; null on preflop or river
+ * @param negativePotential
+ *            percentage (0-100) of cases where we were ahead of an opponent and
+ *            ended up behind after the next board card; null on preflop or
+ *            river
  */
 public record AdvisorResult(int handRank, String handDescription, double equity, double potOdds, String recommendation,
         String startingHandCategory, String startingHandNotation, Map<String, Double> improvementOdds,
-        HandPotentialResult handPotential) {
-
-    /**
-     * Hand potential data for the current position.
-     *
-     * @param positivePercent
-     *            % of remaining boards where the player's hand type improves
-     * @param negativePercent
-     *            % of remaining boards where the player's hand type worsens
-     * @param handTypeBreakdown
-     *            list of hand type entries showing how often each type appears
-     *            across remaining boards; only entries with percent &gt; 0 are
-     *            included
-     */
-    public record HandPotentialResult(double positivePercent, double negativePercent,
-            List<HandTypeEntry> handTypeBreakdown) {
-
-        /**
-         * A single hand type and its probability across remaining boards.
-         *
-         * @param type
-         *            hand type name (e.g. "ONE_PAIR", "FLUSH")
-         * @param percent
-         *            probability 0-100
-         */
-        public record HandTypeEntry(String type, double percent) {
-        }
-    }
+        Double positivePotential, Double negativePotential) {
 }
