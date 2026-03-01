@@ -33,11 +33,11 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.base.*;
-import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.config.*;
-import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.server.*;
+import com.donohoedigital.games.poker.gameserver.SimulationResult;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
@@ -45,7 +45,6 @@ import javax.swing.*;
 import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.math.*;
 import java.util.*;
 import java.util.List;
 
@@ -63,7 +62,6 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     private DDRadioButton allcombo_, simcombo_;
     private List<DDLabelBorder> opponents_ = new ArrayList<DDLabelBorder>();
     private boolean bStopRequested_ = false;
-    private boolean bIterWayBig_;
     private GlassButton run_, stop_;
 
     /**
@@ -272,46 +270,16 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     }
 
     /**
-     * update display - number of combos and results clearing if requested
+     * update display - results clearing if requested
      */
     public void updateDisplay(boolean bClearResults) {
-        HoldemHand hhand = sim_.hhand_;
-        PokerTable table = sim_.table_;
-
-        Hand[] hands = new Hand[numOpponents_.getSpinner().getValue() + 1];
-        for (int i = 0; i < hands.length; i++) {
-            hands[i] = table.getPlayer(i).getHand();
-        }
-
-        Hand community = hhand.getCommunity();
-        BigInteger num = HoldemSimulator.getNumberIterations(hands, community);
-        String sValue = num.toString();
-        bIterWayBig_ = (sValue.length() > 7);
-        long nNum = Long.MAX_VALUE;
-        if (!bIterWayBig_) {
-            nNum = num.longValue();
-        }
-        StringBuilder commas = new StringBuilder();
-        int nCnt = 0;
-        for (int i = sValue.length() - 1; i >= 0; i--) {
-            if (nCnt > 0 && nCnt % 3 == 0)
-                commas.append(",");
-            commas.append(sValue.charAt(i));
-            nCnt++;
-        }
-        commas = commas.reverse();
-
+        if (allcombo_ == null)
+            return; // UI not yet created
         if (bClearResults)
             clearResults();
-        allcombo_.setText(PropertyConfig.getMessage("msg.allcombos", commas));
-
-        // auto select all combo if it is 2,000,000 or less
-        if (nNum <= 2000000) {
-            allcombo_.setSelected(true);
-        } else {
-            simcombo_.setSelected(true);
-        }
-        numSims_.setEnabled(simcombo_.isSelected());
+        allcombo_.setText(PropertyConfig.getMessage("msg.allcombos.rest"));
+        simcombo_.setSelected(true);
+        numSims_.setEnabled(true);
     }
 
     /**
@@ -340,14 +308,9 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     }
 
     /**
-     * run iter, warn if too many results
+     * run exhaustive enumeration via server
      */
     private void runIterator() {
-        if (bIterWayBig_ && !EngineUtils.displayConfirmationDialog(context_, PropertyConfig.getMessage("msg.bigiter"),
-                "bigiter")) {
-            setFinalResult(null);
-            return;
-        }
         new UpdateThread(false).start();
     }
 
@@ -415,7 +378,7 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     }
 
     /**
-     * thread to run simulator
+     * thread to run simulator via server REST API
      */
     private class UpdateThread extends Thread {
         private boolean bSimulate;
@@ -427,50 +390,100 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
 
         @Override
         public void run() {
-            if (false && TESTING(EngineConstants.TESTING_PERFORMANCE))
-                Perf.start();
-
             HoldemHand hhand = sim_.hhand_;
             PokerTable table = sim_.table_;
 
-            Hand[] hands = new Hand[numOpponents_.getSpinner().getValue() + 1];
-            for (int i = 0; i < hands.length; i++) {
-                hands[i] = new Hand(table.getPlayer(i).getHand());
-                if (bSimulate)
-                    hands[i].removeBlank();
-                else
-                    replaceBlank(hands[i]);
+            int numPlayers = numOpponents_.getSpinner().getValue() + 1;
+
+            // Player 0 hole cards (non-blank)
+            List<String> holeCards = new ArrayList<>();
+            Hand playerHand = table.getPlayer(0).getHand();
+            for (int i = 0; i < playerHand.size(); i++) {
+                Card c = playerHand.getCard(i);
+                if (!c.isBlank())
+                    holeCards.add(c.toStringSingle());
             }
 
-            Hand community = new Hand(hhand.getCommunity());
-            if (bSimulate)
-                community.removeBlank();
-            else
-                replaceBlank(community);
-
-            if (bSimulate) {
-                HoldemSimulator.simulate(hands, community, numSims_.getSpinner().getValue(), progress_);
-            } else {
-                HoldemSimulator.iterate(hands, community, progress_);
+            // Community cards (non-blank)
+            List<String> communityCards = new ArrayList<>();
+            Hand community = hhand.getCommunity();
+            for (int i = 0; i < community.size(); i++) {
+                Card c = community.getCard(i);
+                if (!c.isBlank())
+                    communityCards.add(c.toStringSingle());
             }
 
-            if (false && TESTING(EngineConstants.TESTING_PERFORMANCE))
-                Perf.stop();
+            // Known opponent hands (non-blank pairs only)
+            List<List<String>> knownOpponentHands = new ArrayList<>();
+            for (int i = 1; i < numPlayers; i++) {
+                Hand oppHand = table.getPlayer(i).getHand();
+                List<String> oppCards = new ArrayList<>();
+                for (int j = 0; j < oppHand.size(); j++) {
+                    Card c = oppHand.getCard(j);
+                    if (!c.isBlank())
+                        oppCards.add(c.toStringSingle());
+                }
+                // Only include as known if both cards are specified
+                if (oppCards.size() == 2) {
+                    knownOpponentHands.add(oppCards);
+                }
+            }
+
+            if (holeCards.size() < 2) {
+                progress_.setFinalResult(null);
+                return;
+            }
+
+            // Set indeterminate progress while server runs
+            SwingUtilities.invokeLater(() -> progress_.getProgressBar().setIndeterminate(true));
+
+            try {
+                PokerMain pokerMain = (PokerMain) GameEngine.getGameEngine();
+                GameServerRestClient restClient = new GameServerRestClient(pokerMain.getEmbeddedServer().getPort());
+
+                int numOpponents = numPlayers - 1;
+                Integer iterations = bSimulate ? numSims_.getSpinner().getValue() : null;
+                Boolean exhaustive = bSimulate ? null : Boolean.TRUE;
+
+                SimulationResult result = restClient.simulate(holeCards, communityCards, numOpponents, iterations,
+                        knownOpponentHands, exhaustive);
+
+                // Build StatResult[] from server response
+                // result.win/tie/loss = player 0's equity
+                // result.opponentResults().get(i) = head-to-head vs opponent i
+                StatResult[] stats = new StatResult[numPlayers];
+                stats[0] = toStatResult(result.win(), result.tie(), result.loss());
+
+                List<SimulationResult.OpponentResult> oppResults = result.opponentResults();
+                for (int i = 1; i < numPlayers; i++) {
+                    int oppIdx = i - 1;
+                    if (oppResults != null && oppIdx < oppResults.size()) {
+                        SimulationResult.OpponentResult opp = oppResults.get(oppIdx);
+                        // opp.win() = opponent beats hero, opp.loss() = hero beats opponent
+                        stats[i] = toStatResult(opp.win(), opp.tie(), opp.loss());
+                    } else {
+                        stats[i] = null;
+                    }
+                }
+
+                progress_.setFinalResult(stats);
+            } catch (GameServerRestClient.GameServerClientException e) {
+                logger.warn("Simulation REST call failed: {}", e.getMessage());
+                progress_.setFinalResult(null);
+            } finally {
+                SwingUtilities.invokeLater(() -> progress_.getProgressBar().setIndeterminate(false));
+            }
         }
     }
 
     /**
-     * replace any blank cards with new blank cards so they can be modified w/out
-     * changing display
+     * Build a StatResult from win/tie/loss percentages (0-100). Scale to integer
+     * counts out of 10000 so calculated percentages match.
      */
-    private void replaceBlank(Hand hand) {
-        Card c;
-        for (int i = hand.size() - 1; i >= 0; i--) {
-            if (hand.getCard(i).isBlank()) {
-                c = new Card();
-                c.setValue(Card.BLANK);
-                hand.setCard(i, c);
-            }
-        }
+    private static StatResult toStatResult(double winPct, double tiePct, double lossPct) {
+        int win = (int) Math.round(winPct * 100);
+        int tie = (int) Math.round(tiePct * 100);
+        int lose = 10000 - win - tie;
+        return new StatResult("", win, lose, tie);
     }
 }

@@ -33,16 +33,26 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.config.PropertyConfig;
+import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
+import com.donohoedigital.games.poker.engine.PokerConstants;
+import com.donohoedigital.games.poker.gameserver.SimulationResult;
+import com.donohoedigital.games.poker.server.GameServerRestClient;
 import com.donohoedigital.gui.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PokerSimulatorPanel extends DDTabPanel implements DDProgressFeedback {
+    static Logger logger = LogManager.getLogger(PokerSimulatorPanel.class);
+
     private Hand pocket_;
     private Hand community_;
 
@@ -237,9 +247,11 @@ public class PokerSimulatorPanel extends DDTabPanel implements DDProgressFeedbac
     }
 
     public void setIntermediateResult(Object oResult) {
-        final StatResults stats_ = (StatResults) oResult;
+        if (oResult == null)
+            return;
+        final String html = (String) oResult;
         SwingUtilities.invokeLater(() -> {
-            htmlArea_.setText(stats_.toHTML());
+            htmlArea_.setText(html);
             htmlArea_.setCaretPosition(0); // scroll to top
         });
     }
@@ -249,8 +261,49 @@ public class PokerSimulatorPanel extends DDTabPanel implements DDProgressFeedbac
             super("UpdateThread");
         }
 
+        @Override
         public void run() {
-            HoldemSimulator.simulate(pocket_, community_, progress_);
+            List<String> holeCards = new ArrayList<>();
+            for (int i = 0; i < pocket_.size(); i++) {
+                Card c = pocket_.getCard(i);
+                if (!c.isBlank())
+                    holeCards.add(c.toStringSingle());
+            }
+
+            List<String> communityCards = new ArrayList<>();
+            if (community_ != null) {
+                for (int i = 0; i < community_.size(); i++) {
+                    Card c = community_.getCard(i);
+                    if (!c.isBlank())
+                        communityCards.add(c.toStringSingle());
+                }
+            }
+
+            SwingUtilities.invokeLater(() -> progress_.getProgressBar().setIndeterminate(true));
+            try {
+                PokerMain pokerMain = (PokerMain) GameEngine.getGameEngine();
+                GameServerRestClient restClient = new GameServerRestClient(pokerMain.getEmbeddedServer().getPort());
+
+                SimulationResult result = restClient.simulate(holeCards, communityCards, 1, 100000, null, null);
+                String html = buildHtml(result);
+                progress_.setFinalResult(html);
+            } catch (GameServerRestClient.GameServerClientException e) {
+                logger.warn("Simulation REST call failed: {}", e.getMessage());
+                progress_.setFinalResult(null);
+            } finally {
+                SwingUtilities.invokeLater(() -> progress_.getProgressBar().setIndeterminate(false));
+            }
+        }
+
+        private String buildHtml(SimulationResult result) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(PropertyConfig.getMessage("msg.simresult.header"));
+            sb.append(PropertyConfig.getMessage("msg.simresult.row", PropertyConfig.getMessage("msg.sim.random"),
+                    pocket_.toStringRankSuit(), PokerConstants.formatPercent(result.win()),
+                    PokerConstants.formatPercent(result.loss()), PokerConstants.formatPercent(result.tie()),
+                    result.iterations()));
+            sb.append(PropertyConfig.getMessage("msg.simresult.footer"));
+            return sb.toString();
         }
     }
 }
