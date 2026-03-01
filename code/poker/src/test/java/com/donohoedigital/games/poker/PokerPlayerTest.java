@@ -21,6 +21,7 @@ package com.donohoedigital.games.poker;
 
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
+import com.donohoedigital.games.poker.engine.Hand;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -455,5 +456,44 @@ class PokerPlayerTest {
         assertThat(computer.isComputer()).isTrue();
         assertThat(human.isComputer()).isFalse();
         assertThat(game.isServerDriven()).isTrue();
+    }
+
+    // =================================================================
+    // Hand Stats Cached Field Tests (handStrength_ / handPotential_)
+    // =================================================================
+
+    @Test
+    void should_ReturnNegativeOne_When_HandStrengthNotYetSet() {
+        assertThat(player.getHandStrength()).isEqualTo(-1f);
+    }
+
+    @Test
+    void should_ReturnNegativeOne_When_HandPotentialNotYetSet() {
+        assertThat(player.getHandPotential()).isEqualTo(-1f);
+    }
+
+    @Test
+    void should_ReturnSetValue_When_HandStrengthSet() {
+        player.setHandStrength(0.75f);
+
+        assertThat(player.getHandStrength()).isEqualTo(0.75f);
+    }
+
+    @Test
+    void should_ReturnSetValue_When_HandPotentialSet() {
+        player.setHandPotential(0.30f);
+
+        assertThat(player.getHandPotential()).isEqualTo(0.30f);
+    }
+
+    @Test
+    void should_ResetToNegativeOne_When_NewHandStarted() {
+        player.setHandStrength(0.75f);
+        player.setHandPotential(0.30f);
+
+        player.newHand(Hand.TYPE_NORMAL);
+
+        assertThat(player.getHandStrength()).isEqualTo(-1f);
+        assertThat(player.getHandPotential()).isEqualTo(-1f);
     }
 }
