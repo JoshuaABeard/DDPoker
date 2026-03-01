@@ -38,17 +38,13 @@
 
 package com.donohoedigital.games.poker.ai.gui;
 
-import com.donohoedigital.base.Utils;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.config.GamePhase;
 import com.donohoedigital.games.engine.DialogPhase;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.ai.AIOutcome;
 import com.donohoedigital.games.poker.ai.PlayerType;
-import com.donohoedigital.games.poker.ai.RuleEngine;
-import com.donohoedigital.games.poker.ai.V2Player;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.model.TournamentProfile;
@@ -57,18 +53,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
-import javax.swing.event.AncestorEvent;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
-import java.util.Collections;
-import java.util.Comparator;
-
-import static com.donohoedigital.config.DebugConfig.TESTING;
-import com.donohoedigital.games.poker.core.state.BettingRound;
 
 public class AdvisorInfoDialog extends DialogPhase {
     static Logger logger = LogManager.getLogger(AdvisorInfoDialog.class);
@@ -78,8 +65,6 @@ public class AdvisorInfoDialog extends DialogPhase {
     private TournamentProfile profile_;
     private DDTabbedPane tab_;
     private DDHtmlArea resultHTML_;
-
-    JComponent ladder_ = null;
 
     private ImageComponent ic_ = new ImageComponent("ddlogo20", 1.0d);
 
@@ -142,23 +127,9 @@ public class AdvisorInfoDialog extends DialogPhase {
         tab_.setOpaque(false);
         tab_.setBorder(BorderFactory.createEmptyBorder(5, 10, 10, 10));
 
-        SummaryTab summaryTab = new SummaryTab();
-        summaryTab.createUI();
-        tab_.addTab(PropertyConfig.getMessage("msg.advisortab.summary"), ic_, summaryTab, null);
-
         StrategyTab strategyTab = new StrategyTab();
         strategyTab.createUI();
         tab_.addTab(PropertyConfig.getMessage("msg.advisortab.strategy"), ic_, strategyTab, null);
-
-        if (TESTING(PokerConstants.TESTING_DEBUG_ADVISOR)) {
-            PlayersTab playersTab = new PlayersTab();
-            playersTab.createUI();
-            tab_.addTab(PropertyConfig.getMessage("msg.advisortab.players"), ic_, playersTab, null);
-
-            DebugTab debugTab = new DebugTab();
-            debugTab.createUI();
-            tab_.addTab("Debug", ic_, debugTab, null); // keep label out of config on purpose
-        }
 
         DDPanel base = new DDPanel();
 
@@ -175,149 +146,19 @@ public class AdvisorInfoDialog extends DialogPhase {
         if (p == null)
             return;
         HoldemHand hhand = game_.getCurrentTable().getHoldemHand();
-        V2Player ai = (V2Player) p.getPokerAI();
-        RuleEngine re = ai.getRuleEngine();
-        re.execute(ai);
-        resultHTML_.setText("&nbsp;" + p.getHand().toHTML() + "&nbsp;&nbsp;" + hhand.getCommunity().toHTML()
-                + "&nbsp;&nbsp;" + re.toHTML(p, true, false));
-    }
-
-    private class SummaryTab extends DDTabPanel {
-        DDLabelBorder situationBorder_;
-        DDLabelBorder factorsBorder_;
-
-        DDHtmlArea situationHtmlArea_;
-        DDHtmlArea factorsHtmlArea_;
-
-        public void createUI() {
-            situationHtmlArea_ = new DDHtmlArea(GuiManager.DEFAULT, "OptionsDialog");
-            factorsHtmlArea_ = new DDHtmlArea(GuiManager.DEFAULT, "OptionsDialog");
-
-            situationBorder_ = new DDLabelBorder("advisorsituation", "OptionsDialog");
-            factorsBorder_ = new DDLabelBorder("advisorfactors", "OptionsDialog");
-
-            situationHtmlArea_.setDisplayOnly(true);
-            factorsHtmlArea_.setDisplayOnly(true);
-
-            // situationHtmlArea_.setOpaque(true);
-            // situationHtmlArea_.setBackground(Color.DARK_GRAY);
-
-            factorsHtmlArea_.setOpaque(true);
-            factorsHtmlArea_.setBackground(Color.BLACK);
-            factorsHtmlArea_.setMargin(new Insets(4, 4, 4, 4));
-
-            situationHtmlArea_.setBorder(BorderFactory.createEmptyBorder());
-            // factorsHtmlArea_.setBorder(BorderFactory.createEmptyBorder());
-
-            DDScrollPane scroll;
-
-            scroll = new DDScrollPane(situationHtmlArea_, STYLE, null, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                    JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-            scroll.setOpaque(false);
-            scroll.setPreferredSize(new Dimension(600, 100));
-
-            situationBorder_.add(scroll);
-
-            scroll = new DDScrollPane(factorsHtmlArea_, STYLE, null, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                    JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-            scroll.setOpaque(false);
-            scroll.setPreferredSize(new Dimension(600, 250));
-
-            factorsBorder_.add(scroll);
-
-            add(situationBorder_, BorderLayout.NORTH);
-            add(factorsBorder_, BorderLayout.CENTER);
-
-            repaint();
-        }
-
-        public void ancestorAdded(AncestorEvent event) {
-            PokerPlayer p = getActivePlayer();
-            if (p == null) {
-                super.ancestorAdded(event);
-                return;
-            }
-
-            V2Player ai = (V2Player) p.getPokerAI();
-            ai.getRuleEngine().execute(ai);
-
-            situationHtmlArea_.setText(ai.getSituationHTML());
-            factorsHtmlArea_.setText(ai.getFactorsHTML());
-
-            super.ancestorAdded(event);
-        }
-    }
-
-    private class DebugTab extends DDTabPanel {
-        DDHtmlArea htmlArea_;
-
-        public void createUI() {
-            htmlArea_ = new DDHtmlArea(GuiManager.DEFAULT, "OptionsDialog");
-
-            htmlArea_.setDisplayOnly(true);
-            htmlArea_.setBorder(BorderFactory.createEmptyBorder(2, 3, 2, 3));
-
-            // scroll (use NORTH for correct sizing)
-            DDScrollPane scroll = new DDScrollPane(htmlArea_, STYLE, null, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                    JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-            scroll.setOpaque(false);
-            scroll.setPreferredSize(new Dimension(600, 400));
-            add(scroll, BorderLayout.CENTER);
-
-            repaint();
-        }
-
-        public void ancestorAdded(AncestorEvent event) {
-            PokerPlayer p = getActivePlayer();
-            if (p == null) {
-                super.ancestorAdded(event);
-                return;
-            }
-
-            V2Player ai = (V2Player) p.getPokerAI();
-
-            htmlArea_.setText(ai.getDebugText() + "<br>" + ai.getRuleEngine().getResultsTable());
-
-            super.ancestorAdded(event);
-        }
-    }
-
-    private class PlayersTab extends DDTabPanel {
-        public void createUI() {
-            PokerPlayer p = getActivePlayer();
-            if (p == null)
-                return;
-            V2Player ai = (V2Player) p.getPokerAI();
-
-            DDHtmlArea htmlArea = new DDHtmlArea(GuiManager.DEFAULT, "OptionsDialog");
-
-            htmlArea.setDisplayOnly(true);
-            htmlArea.setBorder(BorderFactory.createEmptyBorder(2, 3, 2, 3));
-
-            // scroll (use NORTH for correct sizing)
-            DDScrollPane scroll = new DDScrollPane(htmlArea, STYLE, null, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                    JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-            scroll.setOpaque(false);
-            scroll.setPreferredSize(new Dimension(600, 400));
-            add(scroll, BorderLayout.CENTER);
-
-            htmlArea.setText(ai.getPlayersInfoHTML());
-
-            repaint();
-        }
+        resultHTML_.setText("&nbsp;" + p.getHand().toHTML() + "&nbsp;&nbsp;" + hhand.getCommunity().toHTML());
     }
 
     private class StrategyTab extends DDTabPanel implements ChangeListener {
         PlayerTypeSlidersPanel slidersPanel_;
-        AdvisorGridPanel grid_ = null;
-        DDProgressBar progressBar_;
 
         public void createUI() {
             PokerPlayer p = getActivePlayer();
             if (p == null)
                 return;
-            V2Player ai = (V2Player) p.getPokerAI();
-            PlayerType playerType = ai.getPlayerType();
+            PlayerType playerType = p.getPlayerType();
+            if (playerType == null)
+                return;
             HandSelectionPanel handSelectionPanel = new HandSelectionPanel(playerType, STYLE);
             slidersPanel_ = new PlayerTypeSlidersPanel(STYLE);
             slidersPanel_.setItems(playerType.getSummaryNodes(false));
@@ -327,91 +168,17 @@ public class AdvisorInfoDialog extends DialogPhase {
 
             setPreferredWidth(700);
 
-            grid_ = new AdvisorGridPanel();
-            grid_.setPreferredSize(new Dimension(209, 209));
-            grid_.setEnabled(false);
-            grid_.setBorder(BorderFactory.createEmptyBorder(16, 4, 0, 4));
-            DDLabelBorder gridBorder = new DDLabelBorder("handmatrix", STYLE);
-            gridBorder.add(GuiUtils.CENTER(grid_), BorderLayout.CENTER);
-            slidersPanel_.add(gridBorder, BorderLayout.EAST);
-
-            grid_.setPreFlop(ai.getRound() == BettingRound.PRE_FLOP.toLegacy());
-
-            progressBar_ = new DDProgressBar(GuiManager.DEFAULT, "PokerStats", false);
-            // progressBar_.setBackground(Color.BLACK);
-            progressBar_.setOpaque(true);
-
-            grid_.addMouseMotionListener(new MouseMotionListener() {
-                public void mouseDragged(MouseEvent e) {
-                }
-                public void mouseMoved(MouseEvent e) {
-
-                    if (updateThread_ != null)
-                        return; // for now, no mouseover while computing
-
-                    PokerPlayer p = getActivePlayer();
-                    if (p == null)
-                        return;
-                    String sOutcome = grid_.getOutcomeString(e);
-                    if (sOutcome == null) {
-                        int outcome = grid_.getOutcome(e);
-                        sOutcome = (outcome >= 0) ? RuleEngine.getOutcomeLabel(outcome) : null;
-                    }
-                    String sHand = grid_.getHand(e);
-                    grid_.setToolTipText((sOutcome == null) ? sHand : sHand + " - " + sOutcome);
-                    if (sOutcome != null) {
-                        slidersPanel_.getHelpPanel()
-                                .setText(PropertyConfig.getMessage("help.strat",
-                                        PropertyConfig.getMessage("msg.advisor.handmatrix"),
-                                        PropertyConfig.getMessage("msg.advisor.handmatrix.mouseover", sHand,
-                                                Utils.encodeHTML(p.getPlayerType().getName()), sOutcome)));
-                    } else {
-                        slidersPanel_.getHelpPanel().setText("");
-                        grid_.setToolTipText(null);
-                    }
-                }
-            });
-
-            grid_.addMouseListener(new MouseListener() {
-                public void mouseClicked(MouseEvent e) {
-                }
-
-                public void mousePressed(MouseEvent e) {
-                }
-
-                public void mouseReleased(MouseEvent e) {
-                }
-
-                public void mouseEntered(MouseEvent e) {
-                }
-
-                public void mouseExited(MouseEvent e) {
-                    slidersPanel_.getHelpPanel().setText("");
-                }
-            });
-
             repaint();
         }
 
-        public void ancestorAdded(AncestorEvent event) {
+        public void ancestorAdded(javax.swing.event.AncestorEvent event) {
             HandSelectionPanel.changeListener = this;
             PlayerTypeSlidersPanel.changeListener = this;
-
-            if (grid_ != null)
-                updateGrid(grid_, progressBar_);
         }
 
-        public void ancestorRemoved(AncestorEvent event) {
+        public void ancestorRemoved(javax.swing.event.AncestorEvent event) {
             HandSelectionPanel.changeListener = null;
             PlayerTypeSlidersPanel.changeListener = null;
-
-            if (updateThread_ != null) {
-                updateThread_.abort = true;
-                try {
-                    updateThread_.join();
-                } catch (InterruptedException e) {
-                }
-            }
         }
 
         public void stateChanged(ChangeEvent e) {
@@ -423,217 +190,13 @@ public class AdvisorInfoDialog extends DialogPhase {
             PokerPlayer p = getActivePlayer();
             if (p == null)
                 return;
-            V2Player ai = (V2Player) p.getPokerAI();
-            PlayerType playerType = ai.getPlayerType();
+            PlayerType playerType = p.getPlayerType();
+            if (playerType == null)
+                return;
             playerType.setName(PropertyConfig.getMessage("msg.advisor.profilename"));
             playerType.save();
 
-            if (updateThread_ != null) {
-                updateThread_.abort = true;
-                try {
-                    updateThread_.join();
-                } catch (InterruptedException ie) {
-                }
-            }
-
             updateResult();
-
-            if (grid_ != null)
-                updateGrid(grid_, progressBar_);
         }
-    }
-
-    private UpdateThread updateThread_ = null;
-
-    private class UpdateThread extends Thread {
-        boolean abort = false;
-
-        PokerGame game_;
-        AdvisorGridPanel grid_;
-        DDProgressBar progressBar_;
-        JComponent progressPanel_;
-
-        public UpdateThread(PokerGame game, AdvisorGridPanel grid, DDProgressBar progressBar) {
-            super("HandMatrixUpdateThread");
-            game_ = game;
-            grid_ = grid;
-            progressBar_ = progressBar;
-        }
-
-        public void run() {
-            PokerPlayer p = getActivePlayer();
-            if (p == null) {
-                updateThread_ = null;
-                return;
-            }
-
-            V2Player ai = (V2Player) p.getPokerAI();
-
-            RuleEngine re = ai.getRuleEngine();
-
-            Hand pocket = p.getHand();
-            Hand backup = new Hand(pocket);
-
-            if (ai.getRound() == BettingRound.PRE_FLOP.toLegacy()) {
-                boolean suited;
-
-                for (int rank1 = Card.TWO; rank1 <= Card.ACE; ++rank1) {
-                    for (int rank2 = Card.TWO; rank2 <= Card.ACE; ++rank2) {
-                        suited = (rank1 > rank2);
-                        pocket.clear();
-                        pocket.addCard(Card.getCard(CardSuit.CLUBS, rank1));
-                        pocket.addCard(Card.getCard(suited ? CardSuit.CLUBS : CardSuit.DIAMONDS, rank2));
-                        // ai.computeOdds();
-                        re.execute(ai);
-                        AIOutcome outcome = re.getOutcome();
-                        String outcomeString = (outcome == null) ? null : outcome.toHTML(2);
-                        grid_.setOutcome(rank1, rank2, suited, re.getStrongestOutcome(), outcomeString);
-                    }
-                }
-
-                GuiUtils.invoke(new Runnable() {
-                    public void run() {
-                        grid_.repaint();
-                    }
-                });
-            } else {
-                grid_.clear();
-
-                GuiUtils.invoke(new Runnable() {
-                    public void run() {
-                        grid_.repaint();
-                    }
-                });
-
-                progressBar_.setPercentDone(0);
-
-                GuiUtils.invoke(new Runnable() {
-                    public void run() {
-                        progressPanel_ = GuiUtils.CENTER(progressBar_);
-                        grid_.add(progressPanel_, BorderLayout.CENTER);
-                    }
-                });
-
-                Hand community = ai.getCommunity();
-
-                Deck deck = new Deck(false);
-                deck.removeCards(community);
-                Collections.sort(deck, new Comparator() {
-                    public int compare(Object o1, Object o2) {
-                        return ((Card) o2).getRank() * 4 - ((Card) o2).getSuit() - ((Card) o1).getRank() * 4
-                                + ((Card) o1).getSuit();
-                    }
-                    public boolean equals(Object obj) {
-                        return compare(this, obj) == 0;
-                    }
-                });
-
-                pocket.clear();
-                pocket.addCard(Card.BLANK);
-                pocket.addCard(Card.BLANK);
-
-                int suitEquivalenceValues[] = new int[13 * 13];
-
-                int suitCount = community.getNumSuits();
-
-                boolean suitEquivalence;
-                int suitEquivalenceIndex = -1;
-
-                // RuleEngine.matrix = true;
-                // ai.noPotential = true;
-
-                Card card1;
-                Card card2;
-                int outcome;
-
-                int total = deck.size() * (deck.size() - 1) / 2;
-                int count = 0;
-
-                int deckSize = deck.size();
-
-                long before = System.currentTimeMillis();
-
-                for (int i = 0; i < deckSize; ++i) {
-                    card1 = deck.getCard(i);
-                    pocket.setCard(0, card1);
-
-                    for (int j = i + 1; j < deckSize && !abort; ++j) {
-                        card2 = deck.getCard(j);
-                        pocket.setCard(1, card2);
-
-                        if (pocket.isSuited()) {
-                            suitEquivalence = (suitCount == 4)
-                                    || ((suitCount == 3) && !community.containsSuit(card1.getSuit()));
-                        } else {
-                            // TODO: add cases where not enough cards in one of my suits
-                            suitEquivalence = (suitCount > 2)
-                                    || ((suitCount == 2) && !community.containsSuit(card1.getSuit())
-                                            && !community.containsSuit(card2.getSuit()));
-                        }
-
-                        outcome = -1;
-
-                        if (suitEquivalence) {
-                            suitEquivalenceIndex = (card1.getRank() - Card.TWO) * 13 + card2.getRank() - Card.TWO;
-                            outcome = suitEquivalenceValues[suitEquivalenceIndex] - 1;
-                        }
-
-                        if (outcome < 0) {
-                            // System.out.println(pocket.toString() + " - computing");
-
-                            // ai.computeOdds();
-                            re.execute(ai);
-                            outcome = re.getStrongestOutcome();
-
-                            if (suitEquivalence) {
-                                suitEquivalenceValues[suitEquivalenceIndex] = outcome + 1;
-                            }
-                        } else {
-                            // System.out.println(pocket.toString() + " - skipping");
-                        }
-
-                        grid_.setOutcome(pocket, outcome);
-
-                        ++count;
-
-                        GuiUtils.invoke(new Runnable() {
-                            public void run() {
-                                grid_.repaint(500);
-                            }
-                        });
-
-                        progressBar_.setPercentDone((count * 100) / total);
-                    }
-                }
-
-                long after = System.currentTimeMillis();
-
-                // System.out.println("Elapsed time: " + ((after - before) / 1000) + "
-                // seconds.");
-
-                // ai.noPotential = false;
-                // RuleEngine.matrix = false;
-
-                GuiUtils.invoke(new Runnable() {
-                    public void run() {
-                        grid_.remove(progressPanel_);
-                        grid_.repaint();
-                    }
-                });
-            }
-
-            pocket.clear();
-            pocket.addAll(backup);
-            ai.computeOdds();
-            re.execute(ai);
-
-            updateThread_ = null;
-        }
-    }
-
-    private void updateGrid(AdvisorGridPanel grid, DDProgressBar progressBar) {
-        updateThread_ = new UpdateThread(game_, grid, progressBar);
-        updateThread_.setPriority(Thread.MIN_PRIORITY);
-        updateThread_.start();
     }
 }

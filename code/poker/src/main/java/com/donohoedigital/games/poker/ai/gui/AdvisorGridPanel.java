@@ -174,24 +174,24 @@ public class AdvisorGridPanel extends DDPanel {
             return Color.BLACK;
 
         switch (getValue(card1, card2)) {
-            case RuleEngine.OUTCOME_FOLD :
+            case AIConstants.OUTCOME_FOLD :
                 return colors_[1];
-            case RuleEngine.OUTCOME_CHECK_RAISE :
-            case RuleEngine.OUTCOME_SLOW_PLAY :
+            case AIConstants.OUTCOME_CHECK_RAISE :
+            case AIConstants.OUTCOME_SLOW_PLAY :
                 return colors_[2];
-            case RuleEngine.OUTCOME_CHECK :
-            case RuleEngine.OUTCOME_LIMP :
-            case RuleEngine.OUTCOME_CALL :
+            case AIConstants.OUTCOME_CHECK :
+            case AIConstants.OUTCOME_LIMP :
+            case AIConstants.OUTCOME_CALL :
                 return colors_[3];
-            case RuleEngine.OUTCOME_CONTINUATION_BET :
-            case RuleEngine.OUTCOME_STEAL :
-            case RuleEngine.OUTCOME_SEMI_BLUFF :
-            case RuleEngine.OUTCOME_TRAP :
+            case AIConstants.OUTCOME_CONTINUATION_BET :
+            case AIConstants.OUTCOME_STEAL :
+            case AIConstants.OUTCOME_SEMI_BLUFF :
+            case AIConstants.OUTCOME_TRAP :
                 return colors_[4];
-            case RuleEngine.OUTCOME_ALL_IN :
-            case RuleEngine.OUTCOME_OPEN_POT :
-            case RuleEngine.OUTCOME_BET :
-            case RuleEngine.OUTCOME_RAISE :
+            case AIConstants.OUTCOME_ALL_IN :
+            case AIConstants.OUTCOME_OPEN_POT :
+            case AIConstants.OUTCOME_BET :
+            case AIConstants.OUTCOME_RAISE :
                 return colors_[5];
             default :
                 return Color.BLACK;
@@ -320,7 +320,7 @@ public class AdvisorGridPanel extends DDPanel {
         Hand exemplar = getExemplar(e);
 
         if (exemplar == null) {
-            return RuleEngine.OUTCOME_NONE;
+            return AIConstants.OUTCOME_NONE;
         } else {
             return outcomes_.get(exemplar) - 1;
         }

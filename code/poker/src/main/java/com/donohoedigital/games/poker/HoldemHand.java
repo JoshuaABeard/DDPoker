@@ -423,7 +423,7 @@ public class HoldemHand implements DataMarshal, GameHand {
                         // nRandom + " called " + nToCall);
                     } else if (nRandom <= 9997) {
                         nTotalPot += p.addSimulatedBet(nToCall);
-                        nRaise = V1Player.getRaise(nBigBlind);
+                        nRaise = getSimulatedRaise(nBigBlind);
                         nRaise = p.addSimulatedBet(nRaise);
                         nBet += nRaise;
                         nTotalPot += nRaise;
@@ -445,7 +445,7 @@ public class HoldemHand implements DataMarshal, GameHand {
                         // logger.debug(table.getName() + " player " + p.getName() + " random: " +
                         // nRandom + " checked");
                     } else if (nRandom <= 9996) {
-                        nRaise = V1Player.getRaise(nBigBlind);
+                        nRaise = getSimulatedRaise(nBigBlind);
                         nRaise = p.addSimulatedBet(nRaise);
                         nBet += nRaise;
                         nTotalPot += nRaise;
@@ -497,6 +497,14 @@ public class HoldemHand implements DataMarshal, GameHand {
 
         // logger.debug(table.getName() + " **************************************
         // player " + p.getName() + " won " + nTotalPot);
+    }
+
+    /**
+     * Returns a simulated raise amount: 75% chance of 3x big blind, 25% chance of
+     * 4x big blind.
+     */
+    private static int getSimulatedRaise(int nBigBlind) {
+        return DiceRoller.rollDieInt(100) < 75 ? nBigBlind * 3 : nBigBlind * 4;
     }
 
     /**

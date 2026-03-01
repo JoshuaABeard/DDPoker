@@ -115,24 +115,19 @@ public class DashboardPlayerInfo extends DashboardItem implements TerritorySelec
      * update display
      */
     protected void updateInfo() {
-        if (last_ != null && !last_.isObserver() && last_.getOpponentModel() != null) {
-            OpponentModel model = last_.getOpponentModel();
-            StringBuilder buf = new StringBuilder();
-
-            float tightness = model.getPreFlopTightness(-1, Float.NaN);
-            float aggression = model.getPreFlopAggression(-1, Float.NaN);
+        if (last_ != null && !last_.isObserver()) {
+            float tightness = Float.NaN;
+            float aggression = Float.NaN;
 
             WebSocketOpponentTracker tracker = game_.getWebSocketOpponentTracker();
             if (tracker != null) {
-                float wsT = tracker.getTightness(last_.getID());
-                float wsA = tracker.getAggression(last_.getID());
-                if (!Float.isNaN(wsT))
-                    tightness = wsT;
-                if (!Float.isNaN(wsA))
-                    aggression = wsA;
+                tightness = tracker.getTightness(last_.getID());
+                aggression = tracker.getAggression(last_.getID());
             }
 
             styleQuadsPanel_.setValues(tightness, aggression);
+
+            StringBuilder buf = new StringBuilder();
 
             String sDisplay = Utils.encodeHTML(last_.getName());
             buf.append(PropertyConfig.getMessage("msg.playerstyle", sDisplay));

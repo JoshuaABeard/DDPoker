@@ -32,11 +32,9 @@
  */
 package com.donohoedigital.games.poker.dashboard;
 
-import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.ai.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.gui.*;
@@ -44,17 +42,13 @@ import com.donohoedigital.gui.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import com.donohoedigital.games.poker.core.state.BettingRound;
 
 public class DashboardAdvisor extends DashboardItem {
     JScrollPane scroll_;
     DDHtmlArea htmlAdvice_;
     String title_;
     String advice_;
-    String verboseAdvice_;
-    int playerID_;
 
-    boolean bVerbose_ = TESTING(PokerConstants.TESTING_ADVISOR_VERBOSE);
     public static final String NOADVICE = PropertyConfig.getMessage("msg.advisor.noadvice");
     public static final String NOADVICETITLE = PropertyConfig.getMessage("msg.advisor.noadvice.title");
 
@@ -76,6 +70,14 @@ public class DashboardAdvisor extends DashboardItem {
      */
     public static String getCurrentTitle() {
         return currentTitle_;
+    }
+
+    /**
+     * Sets the current advice from an external source (e.g. server ADVISOR_UPDATE).
+     */
+    public static void setCurrentAdvice(String advice, String title) {
+        currentAdvice_ = advice;
+        currentTitle_ = title;
     }
 
     private DDPanel buttons_;
@@ -106,19 +108,6 @@ public class DashboardAdvisor extends DashboardItem {
                 if (phase instanceof Bet) {
                     // Practice mode: Bet phase handles AI action directly
                     ((Bet) phase).doAI();
-                } else if (game_.getPlayerActionListener() != null) {
-                    // WebSocket mode: no Bet phase; route AI action through PlayerActionListener
-                    PokerTable table = game_.getCurrentTable();
-                    if (table == null)
-                        return;
-                    HoldemHand hh = table.getHoldemHand();
-                    PokerPlayer pp = (hh == null) ? null : hh.getCurrentPlayer();
-                    if (pp != null && pp.isHumanControlled() && pp.getPokerAI() != null) {
-                        HandAction aiAction = pp.getAction(false);
-                        if (aiAction != null) {
-                            game_.playerActionPerformed(toPokerGameAction(aiAction.getAction()), aiAction.getAmount());
-                        }
-                    }
                 }
             }
         });
@@ -129,10 +118,6 @@ public class DashboardAdvisor extends DashboardItem {
                 context_.processPhaseNow("AdvisorInfoDialog", null);
             }
         });
-
-        /*
-         * ExplicitLayout layout = new ExplicitLayout(); base.setLayout(layout);
-         */
 
         htmlAdvice_ = new DDHtmlArea(GuiManager.DEFAULT, STYLE);
         htmlAdvice_.setPreferredSize(new Dimension(100, 100));
@@ -151,61 +136,22 @@ public class DashboardAdvisor extends DashboardItem {
         buttons_.add(actButton_);
         base.add(GuiUtils.CENTER(buttons_), BorderLayout.SOUTH);
 
-        /*
-         * Expression width = ContainerEF.width(base); Expression height =
-         * MathEF.constant(150);
-         *
-         * base.add(scroll_, new ExplicitConstraints(scroll_, MathEF.constant(0),
-         * MathEF.constant(0), width, height )); layout.setPreferredLayoutSize(width,
-         * height);
-         */
-
         return base;
-    }
-
-    private static int toPokerGameAction(int handAction) {
-        return switch (handAction) {
-            case HandAction.ACTION_FOLD -> PokerGame.ACTION_FOLD;
-            case HandAction.ACTION_CHECK, HandAction.ACTION_CHECK_RAISE -> PokerGame.ACTION_CHECK;
-            case HandAction.ACTION_CALL -> PokerGame.ACTION_CALL;
-            case HandAction.ACTION_BET -> PokerGame.ACTION_BET;
-            case HandAction.ACTION_RAISE -> PokerGame.ACTION_RAISE;
-            default -> PokerGame.ACTION_FOLD;
-        };
     }
 
     @Override
     protected void updateInfo() {
-        PokerTable table = game_.getCurrentTable();
-        if (table == null) {
-            currentAdvice_ = NOADVICE;
-            currentTitle_ = NOADVICETITLE;
-            htmlAdvice_.setText(NOADVICE);
-            buttons_.setVisible(false);
-            return;
-        }
-        HoldemHand hh = table.getHoldemHand();
-        PokerPlayer pp = (hh == null) ? null : hh.getCurrentPlayer();
-        Hand h = (pp == null) ? null : pp.getHand();
-        PokerAI ai = (pp == null) ? null : pp.getPokerAI();
-
         advice_ = NOADVICE;
         title_ = NOADVICETITLE;
 
-        if ((hh != null) && (pp != null) && (h != null) && (ai != null) && hh.getTable() != null
-                && !hh.isAllInShowdown() && !hh.isDone() && (hh.getRound() != BettingRound.NONE)
-                && (hh.getRound() != BettingRound.SHOWDOWN) && !pp.isFolded() && pp.isHumanControlled()
-                && (h.getType() == Hand.TYPE_NORMAL && !h.containsCard(Card.BLANK)) && (ai instanceof V2Player)) {
-            V2Player p = (V2Player) ai;
-            RuleEngine re = p.getRuleEngine();
-            re.execute(p);
-            advice_ = re.toHTML(p.getPokerPlayer(), true, true);
-            title_ = PropertyConfig
-                    .getMessage("msg.advisor.action." + HandAction.getActionName(re.getAction().getType()));
+        // Check if server-pushed advice is available
+        String serverAdvice = currentAdvice_;
+        String serverTitle = currentTitle_;
+        if (serverAdvice != null && !NOADVICE.equals(serverAdvice)) {
+            advice_ = serverAdvice;
+            title_ = serverTitle;
         }
 
-        currentAdvice_ = advice_;
-        currentTitle_ = title_;
         htmlAdvice_.setText(advice_);
         buttons_.setVisible(!NOADVICE.equals(advice_));
     }

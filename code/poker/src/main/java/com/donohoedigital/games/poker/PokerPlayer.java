@@ -222,13 +222,10 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     }
 
     /**
-     * Set PokerAI type.
+     * Set player type (AI profile for this player).
      */
     public void setPlayerType(PlayerType playerType) {
-        if (playerType != playerType_) {
-            playerType_ = playerType;
-            createPokerAI();
-        }
+        playerType_ = playerType;
     }
 
     /**
@@ -239,129 +236,10 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     }
 
     /**
-     * create ai for the player
+     * No-op. AI creation was removed; AI decisions are now handled by the embedded
+     * server engine via ServerAIProvider.
      */
     public void createPokerAI() {
-        // never create AI for players who are not seated
-        if (table_ == null)
-            return;
-
-        // no player type implies remote player - will be instantiated lazily
-        if (playerType_ == null)
-            return;
-
-        // When the embedded server drives the game, AI decisions are made
-        // server-side by ServerAIProvider. Skip local AI creation for computer
-        // players to avoid unnecessary overhead. Human players still get an
-        // advisor AI for the "Advisor" dashboard hint feature.
-        if (table_.getGame() != null && table_.getGame().isServerDriven() && isComputer())
-            return;
-
-        // don't create AI for computer-only tables that are not being observed
-        if (table_.isAllComputer() && !table_.isCurrent())
-            return;
-
-        // don't create AI if no ai in tournament and no advisors
-        if (!isAIUsed())
-            return;
-
-        // get existing poker ai
-        PokerAI ai = getPokerAI();
-
-        // just set the player type if existing AI is the right class
-        if ((ai != null) && (ai.getPlayerType().getAIClassName().equals(playerType_.getAIClassName()))) {
-            if (ai.getPlayerType() != playerType_) {
-                if (DebugConfig.isTestingOn())
-                    logger.debug("Updating player type on existing AI. (" + playerType_.getName() + ") for player "
-                            + getName());
-                ai.setPlayerType(playerType_);
-            }
-        }
-        // instantiate a new AI
-        else {
-            if (DebugConfig.isTestingOn())
-                logger.debug("Creating new AI. (" + playerType_.getName() + ") for player " + getName());
-            setPokerAI(PokerAI.createPokerAI(playerType_));
-        }
-    }
-
-    /**
-     * is ai used for this player in this game?
-     */
-    private boolean isAIUsed() {
-        if (table_ == null)
-            return false;
-        PokerGame game = table_.getGame();
-        TournamentProfile profile = game.getProfile();
-        return !(game.isOnlineGame() && ((!profile.isFillComputer() && !profile.isAllowAdvisor())
-                || (!table_.isCurrent() && !game.getHost().isLocallyControlled())));
-
-    }
-
-    /**
-     * Convienence method which casts to PokerAI
-     */
-    public PokerAI getPokerAI() {
-        PokerAI ai = (PokerAI) getGameAI();
-
-        if ((ai == null) && (playerType_ == null) && isAIUsed()) {
-            // When server-driven, computer players don't need local AI —
-            // the server handles their decisions via ServerAIProvider.
-            if (table_ != null && table_.getGame() != null && table_.getGame().isServerDriven() && isComputer()) {
-                return null;
-            }
-            // this is for online game guests
-            if (isLocallyControlled() && isHuman() && !isObserver()) {
-                playerType_ = PlayerType.getAdvisor();
-                if (DebugConfig.isTestingOn())
-                    logger.debug("Lazily creating advisor: " + playerType_.getName() + " for " + getName());
-                ai = PokerAI.createPokerAI(playerType_);
-                setPokerAI(ai);
-            } else {
-                if (DebugConfig.isTestingOn())
-                    logger.debug("Lazily instantiating dummy ai for player " + getName());
-                ai = new PokerAI();
-                ai.init();
-                setPokerAI(ai);
-            }
-        }
-
-        return ai;
-    }
-
-    /**
-     * Set PokerAI - private because actual instantiation is cleverly managed.
-     */
-    public void setPokerAI(PokerAI ai) {
-        if (ai != null) {
-            PokerPlayer player = ai.getPokerPlayer();
-
-            if ((player != null) && (player != this)) {
-                throw new ApplicationError("PokerAI objects cannot be shared by multiple players.");
-            }
-        }
-
-        PokerAI old = (PokerAI) getGameAI(); // call getGameAI to avoid infinite recursion
-
-        if (old != ai) {
-            if (old != null) {
-                old.setPokerPlayer(null);
-            }
-
-            if (ai != null) {
-                ai.setPokerPlayer(this);
-            }
-
-            if (ai == null && DebugConfig.isTestingOn()) {
-                logger.debug("AI cleared for " + getName());
-            }
-
-            super.setGameAI(ai);
-        }
-    }
-
-    public void setGameAI(GameAI ai) {
-        throw new ApplicationError("Use PokerPlayer.setPokerAI(), which has critical side effects.");
     }
 
     /**
@@ -784,7 +662,7 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
      */
     public void setTable(PokerTable table, int nSeat) {
         if (table == null) {
-            setPokerAI(null);
+            super.setGameAI(null);
             table_ = null;
             nSeat_ = PokerTable.NO_SEAT;
             return;
@@ -1565,23 +1443,11 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     }
 
     /**
-     * Return action AI would take. This can be called for a human player to get a
-     * "hint" if desired.
+     * Return action AI would take. AI decisions are now handled by the embedded
+     * server engine. This method returns fold as a safe fallback.
      */
     public HandAction getAction(boolean bQuick) {
-        try {
-            // // TODO - TESTING - make first AI to act raise all in
-            // if (getHoldemHand().getRound() == BettingRound.PRE_FLOP &&
-            // getHoldemHand().getRaiser() == null)
-            // {
-            // return new HandAction(this, getHoldemHand().getRound(),
-            // HandAction.ACTION_RAISE, Integer.MAX_VALUE, "testing");
-            // }
-            return getPokerAI().getHandAction(bQuick);
-        } catch (Throwable e) {
-            logger.error("AI exception caught. Return 'fold' to keep the game going:\n" + Utils.formatExceptionText(e));
-            return new HandAction(this, getHoldemHand().getRound().toLegacy(), HandAction.ACTION_FOLD, "aierror");
-        }
+        return new HandAction(this, getHoldemHand().getRound().toLegacy(), HandAction.ACTION_FOLD, "no-local-ai");
     }
 
     /**
@@ -1869,20 +1735,12 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
             }
         }
 
-        // do AI check here because isLocallyControlled() driven off of key.
-        // If the poker AI is not null and this is a practice game load,
-        // check to see if human's advisor needs to be updated.
+        // Update human's advisor player type on practice game load
         boolean bOnline = state.getFile() == null;
-        GameAI gameAI = getGameAI();
-        if (gameAI != null && !bOnline) {
-            if (isLocallyControlled() && isHuman()) {
-                PokerAI pokerAI = getPokerAI();
-                PlayerType playerType = pokerAI.getPlayerType();
-                PlayerType preferredAdvisor = PlayerType.getAdvisor();
-
-                if (playerType.compareTo(preferredAdvisor) != 0) {
-                    setPlayerType(preferredAdvisor);
-                }
+        if (!bOnline && isLocallyControlled() && isHuman()) {
+            PlayerType preferredAdvisor = PlayerType.getAdvisor();
+            if (playerType_ == null || playerType_.compareTo(preferredAdvisor) != 0) {
+                setPlayerType(preferredAdvisor);
             }
         }
     }
@@ -2127,14 +1985,9 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     }
 
     /**
-     * Game loaded - notify AI
+     * Game loaded - no-op since AI is now server-driven.
      */
     public void gameLoaded() {
-        PokerAI ai = getPokerAI();
-
-        if (ai != null) {
-            ai.gameLoaded();
-        }
     }
 
     // debug
@@ -2143,14 +1996,4 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
 
     @SuppressWarnings({"PublicField"})
     public int nBadMsgs_;
-
-    public OpponentModel getOpponentModel() {
-        PokerAI ai = getPokerAI();
-
-        if (ai != null) {
-            return ai.getOpponentModel();
-        } else {
-            return null;
-        }
-    }
 }

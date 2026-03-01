@@ -38,4 +38,21 @@ public interface AIConstants {
     public static final int HOH_ORANGE = 2;
     public static final int HOH_YELLOW = 3;
     public static final int HOH_GREEN = 4;
+
+    // Outcome constants (previously in RuleEngine)
+    int OUTCOME_NONE = -1;
+    int OUTCOME_FOLD = 0;
+    int OUTCOME_CHECK = 1;
+    int OUTCOME_LIMP = 2;
+    int OUTCOME_STEAL = 3;
+    int OUTCOME_OPEN_POT = 4;
+    int OUTCOME_CALL = 5;
+    int OUTCOME_RAISE = 6;
+    int OUTCOME_SEMI_BLUFF = 7;
+    int OUTCOME_TRAP = 8;
+    int OUTCOME_SLOW_PLAY = 9;
+    int OUTCOME_CHECK_RAISE = 10;
+    int OUTCOME_BET = 11;
+    int OUTCOME_ALL_IN = 12;
+    int OUTCOME_CONTINUATION_BET = 13;
 }

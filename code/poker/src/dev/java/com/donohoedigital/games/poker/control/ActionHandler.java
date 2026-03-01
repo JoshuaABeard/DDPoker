@@ -247,7 +247,7 @@ class ActionHandler extends BaseHandler {
             } else if (game.getPlayerActionListener() != null) {
                 HoldemHand hh = game.getCurrentTable() != null ? game.getCurrentTable().getHoldemHand() : null;
                 PokerPlayer pp = (hh == null) ? null : hh.getCurrentPlayer();
-                if (pp != null && pp.isHumanControlled() && pp.getPokerAI() != null) {
+                if (pp != null && pp.isHumanControlled()) {
                     HandAction aiAction = pp.getAction(false);
                     if (aiAction != null) {
                         game.playerActionPerformed(

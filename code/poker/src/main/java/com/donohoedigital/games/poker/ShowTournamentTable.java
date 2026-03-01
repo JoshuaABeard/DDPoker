@@ -41,7 +41,6 @@ import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.PlayerType;
-import com.donohoedigital.games.poker.ai.PokerAI;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.dashboard.*;
 import com.donohoedigital.games.poker.engine.*;
@@ -2154,7 +2153,7 @@ public class ShowTournamentTable extends ShowPokerTable
             super(sStyle, t);
             point_ = point;
             bAdvisor_ = bAdvisor;
-            text_ = PropertyConfig.getMessage("menuitem.playertype", player.getPokerAI().getPlayerType().getName());
+            text_ = PropertyConfig.getMessage("menuitem.playertype", player.getPlayerType().getName());
             setText(text_);
             setIcon(playertypeIcon_);
             addActionListener(this);
@@ -2203,7 +2202,7 @@ public class ShowTournamentTable extends ShowPokerTable
     private class SelectAdvisorType extends SelectPlayerType {
         SelectAdvisorType(String sStyle, Territory t, Point point) {
             super(sStyle, t, point, true);
-            text_ = PropertyConfig.getMessage("menuitem.advisortype", player.getPokerAI().getPlayerType().getName());
+            text_ = PropertyConfig.getMessage("menuitem.advisortype", player.getPlayerType().getName());
             setText(text_);
             setIcon(advisorIcon_);
         }
@@ -2223,8 +2222,7 @@ public class ShowTournamentTable extends ShowPokerTable
             player_ = player;
             playerType_ = playerType;
             setText(playerType_.getName());
-            PokerAI ai = (PokerAI) player_.getGameAI();
-            PlayerType previous = ai.getPlayerType();
+            PlayerType previous = player_.getPlayerType();
             boolean checked;
 
             if (bAdvisor) {

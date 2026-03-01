@@ -427,7 +427,7 @@ class PokerPlayerTest {
     // =================================================================
 
     @Test
-    void should_ReturnNullPokerAI_When_ComputerPlayerInServerDrivenMode() {
+    void should_ReturnNullGameAI_When_ComputerPlayerInServerDrivenMode() {
         PokerGame game = new PokerGame(null);
         game.setWebSocketConfig("game-123", "jwt", 8080);
 
@@ -438,9 +438,9 @@ class PokerPlayerTest {
         PokerPlayer aiPlayer = new PokerPlayer(2, "Computer 1", false);
         aiPlayer.setTable(table, 0);
 
-        // getPokerAI() should return null for computer players in server-driven mode
+        // getGameAI() should return null for computer players in server-driven mode
         // because ServerAIProvider handles AI decisions on the server
-        assertThat(aiPlayer.getPokerAI()).isNull();
+        assertThat(aiPlayer.getGameAI()).isNull();
     }
 
     @Test

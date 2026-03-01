@@ -1463,11 +1463,10 @@ public class PokerTable implements ObjectID, GameTable {
         PokerPlayer p;
         for (int i = 0; i < PokerConstants.SEATS; i++) {
             p = getPlayer(i);
-            // use getGameAI to avoid extra logic in getPokerAI()
             if (p != null && p.getGameAI() != null) {
                 if (DebugConfig.isTestingOn())
                     logger.debug("Clearing left-over ai on " + p.getName());
-                p.setPokerAI(null);
+                p.setGameAI(null);
             }
         }
     }
@@ -1744,18 +1743,7 @@ public class PokerTable implements ObjectID, GameTable {
                 continue;
 
             if (isRebuyAllowed(p, nLevel)) {
-                boolean bWantsRebuy;
-                PokerAI ai = p.getPokerAI();
-                if (ai != null) {
-                    bWantsRebuy = ai.isRebuy();
-                } else {
-                    // for computer players with no AI instantiated, do simple
-                    // check with basically the same logic
-                    bWantsRebuy = V1Player.WantsRebuy(p, DiceRoller.rollDieInt(100));
-                }
-
-                if (bWantsRebuy) {
-                    // logger.debug(p.getName() + " rebought at " + getName());
+                if (wantsRebuy(p)) {
                     p.addRebuy(nAmount, nChips, false);
                     rebuyList_.add(p);
                 }
@@ -1783,22 +1771,45 @@ public class PokerTable implements ObjectID, GameTable {
             if (!isAddonAllowed(p))
                 continue;
 
-            boolean bWantsAddon;
-            PokerAI ai = p.getPokerAI();
-            if (ai != null) {
-                bWantsAddon = ai.isAddon();
-            } else {
-                // for computer players with no AI instantiated, do simple
-                // check with basically the same logic
-                bWantsAddon = V1Player.WantsAddon(p, DiceRoller.rollDieInt(100), profile);
-            }
-
-            if (bWantsAddon) {
-                // logger.debug(p.getName() + " added on");
+            if (wantsAddon(p, profile)) {
                 p.addAddon(nAmount, nChips);
                 addonList_.add(p);
             }
         }
+    }
+
+    /**
+     * Rebuy decision logic for AI players.
+     */
+    private static boolean wantsRebuy(PokerPlayer player) {
+        int nNumRebuys = player.getNumRebuys();
+        if (nNumRebuys >= 5)
+            return false;
+        int nRebuyPropensity = DiceRoller.rollDieInt(100);
+        if (nRebuyPropensity <= 25)
+            return true;
+        if (nRebuyPropensity <= 50)
+            return nNumRebuys < 3;
+        if (nRebuyPropensity <= 75)
+            return nNumRebuys < 2;
+        if (nRebuyPropensity <= 90)
+            return nNumRebuys < 1;
+        return false;
+    }
+
+    /**
+     * Addon decision logic for AI players.
+     */
+    private static boolean wantsAddon(PokerPlayer player, TournamentProfile profile) {
+        int nBuyin = profile.getBuyinChips();
+        int nAddonPropensity = DiceRoller.rollDieInt(100);
+        if (nAddonPropensity < 25)
+            return true;
+        if (nAddonPropensity < 50)
+            return player.getChipCount() < (3 * nBuyin);
+        if (nAddonPropensity < 75)
+            return player.getChipCount() < (2 * nBuyin);
+        return false;
     }
 
     /**

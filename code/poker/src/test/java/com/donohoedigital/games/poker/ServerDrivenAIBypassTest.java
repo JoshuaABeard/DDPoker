@@ -32,8 +32,8 @@ import static org.assertj.core.api.Assertions.*;
  * In server-driven mode (practice games via
  * {@link com.donohoedigital.games.poker.online.WebSocketTournamentDirector}),
  * AI decisions are made server-side by {@code ServerAIProvider}. The desktop
- * client should not create local {@code PokerAI} instances for computer players
- * or attempt to compute AI actions locally.
+ * client should not create local AI instances for computer players or attempt
+ * to compute AI actions locally.
  */
 class ServerDrivenAIBypassTest {
 
@@ -100,7 +100,7 @@ class ServerDrivenAIBypassTest {
     }
 
     // =================================================================
-    // PokerPlayer.getPokerAI() bypass
+    // PokerPlayer.getGameAI() bypass
     // =================================================================
 
     @Test
@@ -108,8 +108,8 @@ class ServerDrivenAIBypassTest {
         game.setWebSocketConfig("game-1", "jwt", 9999);
         PokerPlayer aiPlayer = seatPlayer(game, 0, "Computer 1", false);
 
-        // getPokerAI() should return null — server handles AI decisions
-        assertThat(aiPlayer.getPokerAI()).isNull();
+        // getGameAI() should return null — server handles AI decisions
+        assertThat(aiPlayer.getGameAI()).isNull();
     }
 
     @Test
@@ -117,7 +117,7 @@ class ServerDrivenAIBypassTest {
         game.setWebSocketConfig("game-1", "jwt", 9999);
         PokerPlayer humanPlayer = seatPlayer(game, 0, "Human", true);
 
-        // The server-driven guard in getPokerAI() only blocks computer players.
+        // The server-driven guard in getGameAI() only blocks computer players.
         // Verify the human player would not be blocked by the guard condition.
         assertThat(humanPlayer.isHuman()).isTrue();
         assertThat(humanPlayer.isComputer()).isFalse();
@@ -159,8 +159,6 @@ class ServerDrivenAIBypassTest {
         // Computer players: no local AI
         assertThat(computer1.getGameAI()).isNull();
         assertThat(computer2.getGameAI()).isNull();
-        assertThat(computer1.getPokerAI()).isNull();
-        assertThat(computer2.getPokerAI()).isNull();
 
         // Human player: not blocked by server-driven guard
         assertThat(human.isHuman()).isTrue();

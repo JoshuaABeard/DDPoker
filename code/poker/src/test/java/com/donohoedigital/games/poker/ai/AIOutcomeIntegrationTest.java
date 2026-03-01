@@ -129,7 +129,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase {
 
         int strongest = outcome.getStrongestOutcome(NO_POT_ACTION);
 
-        assertThat(strongest).isEqualTo(RuleEngine.OUTCOME_CHECK);
+        assertThat(strongest).isEqualTo(AIConstants.OUTCOME_CHECK);
     }
 
     @Test
@@ -138,7 +138,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase {
 
         int strongest = outcome.getStrongestOutcome(RAISED_POT);
 
-        assertThat(strongest).isEqualTo(RuleEngine.OUTCOME_FOLD);
+        assertThat(strongest).isEqualTo(AIConstants.OUTCOME_FOLD);
     }
 
     @Test
@@ -147,7 +147,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase {
 
         int strongest = outcome.getStrongestOutcome(RAISED_POT);
 
-        assertThat(strongest).isEqualTo(RuleEngine.OUTCOME_CALL);
+        assertThat(strongest).isEqualTo(AIConstants.OUTCOME_CALL);
     }
 
     @Test
@@ -157,7 +157,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase {
         int strongest = outcome.getStrongestOutcome(NO_POT_ACTION);
 
         // Should return either BET or OPEN_POT depending on round
-        assertThat(strongest).isIn(RuleEngine.OUTCOME_BET, RuleEngine.OUTCOME_OPEN_POT);
+        assertThat(strongest).isIn(AIConstants.OUTCOME_BET, AIConstants.OUTCOME_OPEN_POT);
     }
 
     @Test
@@ -166,7 +166,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase {
 
         int strongest = outcome.getStrongestOutcome(RAISED_POT);
 
-        assertThat(strongest).isEqualTo(RuleEngine.OUTCOME_RAISE);
+        assertThat(strongest).isEqualTo(AIConstants.OUTCOME_RAISE);
     }
 
     // ========================================
@@ -179,7 +179,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase {
 
         int selected = outcome.selectOutcome(NO_POT_ACTION);
 
-        assertThat(selected).isEqualTo(RuleEngine.OUTCOME_CHECK);
+        assertThat(selected).isEqualTo(AIConstants.OUTCOME_CHECK);
     }
 
     @Test
@@ -188,7 +188,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase {
 
         int selected = outcome.selectOutcome(RAISED_POT);
 
-        assertThat(selected).isEqualTo(RuleEngine.OUTCOME_CALL);
+        assertThat(selected).isEqualTo(AIConstants.OUTCOME_CALL);
     }
 
     @Test
@@ -197,7 +197,7 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase {
 
         int selected = outcome.selectOutcome(RAISED_POT);
 
-        assertThat(selected).isEqualTo(RuleEngine.OUTCOME_RAISE);
+        assertThat(selected).isEqualTo(AIConstants.OUTCOME_RAISE);
     }
 
     @Test
@@ -211,11 +211,11 @@ class AIOutcomeIntegrationTest extends IntegrationTestBase {
 
         for (int i = 0; i < 100; i++) {
             int selected = outcome.selectOutcome(RAISED_POT);
-            if (selected == RuleEngine.OUTCOME_FOLD)
+            if (selected == AIConstants.OUTCOME_FOLD)
                 hasCheckFold = true;
-            if (selected == RuleEngine.OUTCOME_CALL)
+            if (selected == AIConstants.OUTCOME_CALL)
                 hasCall = true;
-            if (selected == RuleEngine.OUTCOME_RAISE)
+            if (selected == AIConstants.OUTCOME_RAISE)
                 hasBetRaise = true;
         }
 

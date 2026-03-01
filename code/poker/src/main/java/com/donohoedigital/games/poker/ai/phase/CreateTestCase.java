@@ -38,109 +38,28 @@
 
 package com.donohoedigital.games.poker.ai.phase;
 
-import com.donohoedigital.config.*;
-import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.ai.*;
 import com.donohoedigital.gui.*;
-import org.apache.logging.log4j.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
 
+/**
+ * Previously allowed creating AI test cases using the local
+ * V2Player/RuleEngine. Now that AI decisions are handled by the embedded server
+ * engine, the local rule engine is no longer available. This dialog is retained
+ * as a placeholder since it is referenced in gamedef.xml.
+ */
 public class CreateTestCase extends DialogPhase {
-    static Logger logger = LogManager.getLogger(CreateTestCase.class);
 
-    private PokerGame game_;
-    private PokerTable table_;
-    private HoldemHand hhand_;
-    private PokerPlayer player_;
-    private ListPanel outcomeList_;
-
-    /**
-     * init phase
-     */
-    public void init(GameEngine engine, GameContext context, GamePhase gamephase) {
-        game_ = (PokerGame) context.getGame();
-        table_ = game_.getCurrentTable();
-        hhand_ = table_.getHoldemHand();
-        player_ = hhand_.getCurrentPlayer();
-
-        super.init(engine, context, gamephase);
-    }
-
-    /**
-     * end game
-     */
     public JComponent createDialogContents() {
         DDPanel base = new DDPanel(GuiManager.DEFAULT, STYLE);
-        outcomeList_ = new ListPanel(OutcomeItemPanel.class, STYLE);
-        outcomeList_.setSelectedIcon(ImageConfig.getImageIcon("pokericon16png"));
-        RuleEngine ruleEngine = ((V2Player) player_.getPokerAI()).getRuleEngine();
-        outcomeList_.setItems(ruleEngine.getEligibleOutcomeNames());
-        outcomeList_.setSelectedItem(ruleEngine.getStrongestOutcomeName());
         base.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
         base.setLayout(new BorderLayout(16, 16));
-        base.add(outcomeList_, BorderLayout.CENTER);
         base.setPreferredSize(new Dimension(200, 200));
-
-        this.getMatchingButton("results").addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                AITest.test(context_);
-            }
-        });
-
+        DDLabel label = new DDLabel(GuiManager.DEFAULT, STYLE);
+        label.setText("AI test case creation is not available (server-driven AI).");
+        base.add(label, BorderLayout.CENTER);
         return base;
-    }
-
-    public static class OutcomeItemPanel extends ListItemPanel {
-        private DDLabel label_;
-
-        public OutcomeItemPanel(ListPanel panel, Object item, String sStyle) {
-            super(panel, item, sStyle);
-
-            label_ = new DDLabel(GuiManager.DEFAULT, sStyle);
-
-            add(label_, BorderLayout.CENTER);
-        }
-
-        public void update() {
-            label_.setText(RuleEngine.getOutcomeLabel((String) item_));
-        }
-
-        public void setIcon(ImageIcon icon) {
-            label_.setIcon(icon);
-        }
-    }
-
-    public void finish() {
-
-        GameButton button = (GameButton) getResult();
-
-        if (button.getName().equals("okay")) {
-            File fDir = AITest.getTestCaseDir();
-
-            GameState newSave = GameStateFactory.createGameState(null, fDir, "testcase", "ddpokersave", null);
-
-            // prevent issues during online updates from other clients
-            synchronized (game_.isOnlineGame() ? context_.getGameManager().getSaveLockObject() : this) {
-                game_.saveGame(newSave);
-                game_.writeGame(newSave);
-            }
-
-            try {
-                FileWriter fw = new FileWriter(newSave.getFile().getAbsolutePath() + ".expect");
-                fw.write((String) outcomeList_.getSelectedItem());
-                fw.write("\n");
-                fw.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        super.finish();
     }
 }

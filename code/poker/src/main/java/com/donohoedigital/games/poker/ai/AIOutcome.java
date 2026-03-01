@@ -296,24 +296,24 @@ public class AIOutcome {
         if (checkFold > call) {
             if (checkFold > betRaise) {
                 if (potStatus == PokerConstants.NO_POT_ACTION) {
-                    return RuleEngine.OUTCOME_CHECK;
+                    return AIConstants.OUTCOME_CHECK;
                 } else {
-                    return RuleEngine.OUTCOME_FOLD;
+                    return AIConstants.OUTCOME_FOLD;
                 }
             }
         } else {
             if (call > betRaise) {
-                return RuleEngine.OUTCOME_CALL;
+                return AIConstants.OUTCOME_CALL;
             }
         }
 
         if (potStatus == PokerConstants.NO_POT_ACTION) {
             if (round_ == BettingRound.PRE_FLOP.toLegacy())
-                return RuleEngine.OUTCOME_OPEN_POT;
+                return AIConstants.OUTCOME_OPEN_POT;
             else
-                return RuleEngine.OUTCOME_BET;
+                return AIConstants.OUTCOME_BET;
         } else {
-            return RuleEngine.OUTCOME_RAISE;
+            return AIConstants.OUTCOME_RAISE;
         }
     }
 
@@ -325,18 +325,18 @@ public class AIOutcome {
 
         if (v < checkFold) {
             if (potStatus == PokerConstants.NO_POT_ACTION) {
-                return RuleEngine.OUTCOME_CHECK;
+                return AIConstants.OUTCOME_CHECK;
             } else {
-                return RuleEngine.OUTCOME_FOLD;
+                return AIConstants.OUTCOME_FOLD;
             }
 
         } else if (v < checkFold + call) {
-            return RuleEngine.OUTCOME_CALL;
+            return AIConstants.OUTCOME_CALL;
         } else {
             if (potStatus == PokerConstants.NO_POT_ACTION) {
-                return RuleEngine.OUTCOME_BET;
+                return AIConstants.OUTCOME_BET;
             } else {
-                return RuleEngine.OUTCOME_RAISE;
+                return AIConstants.OUTCOME_RAISE;
             }
         }
     }

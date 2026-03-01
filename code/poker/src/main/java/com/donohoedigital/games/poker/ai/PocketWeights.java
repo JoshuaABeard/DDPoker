@@ -373,10 +373,8 @@ public class PocketWeights {
 
     private class PreFlopActor {
         public Tuple compute(PokerPlayer player, int card1, int card2, float handStrength, Tuple tuple) {
-            OpponentModel model = player.getOpponentModel();
-
             int startingPosition = player.getStartingPositionCategory();
-            float tightness = model.getPreFlopTightness(startingPosition, .5f);
+            float tightness = .5f;
             // float aggression = 2*model.getPreFlopAggression(startingPosition, .5f);
 
             int tightnessBiasIndex = Math.round((0.5f - ((tightness > 0.5f) ? (tightness - 0.5f) : tightness)) / 0.05f);
@@ -392,9 +390,9 @@ public class PocketWeights {
 
             float adjustedHandStrength = handStrength + foldStrengthDelta;
 
-            int startingOrder = player.getPokerAI().getStartingOrder();
+            int startingOrder = player.getSeat();
 
-            int numPlayers = player.getPokerAI().getNumPlayers();
+            int numPlayers = player.getTable() != null ? player.getTable().getNumOccupiedSeats() : PokerConstants.SEATS;
 
             float positionAdjustment = (float) (startingOrder + PokerConstants.SEATS - numPlayers)
                     / PokerConstants.SEATS;
@@ -509,7 +507,6 @@ public class PocketWeights {
         int x;
         int y;
 
-        OpponentModel model = player.getOpponentModel();
         int position = player.getStartingPositionCategory();
 
         for (int i = 1; i < 52; ++i) {

@@ -268,17 +268,12 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
     }
 
     /**
-     * ai
+     * AI action. Now that local AI is removed, this folds as a safe fallback. In
+     * server-driven mode, AI decisions are handled by the embedded server engine
+     * and this method should not be called for computer players.
      */
     public void doAI() {
-        // if no AI, just fold (online, auto pilot case)
-        if (TESTING(PokerConstants.TESTING_AUTOPILOT) && player_.getPokerAI() == null) {
-            handleAction(fold());
-        }
-        // otherwise do player action
-        else {
-            handleAction(player_.getAction(false));
-        }
+        handleAction(player_.getAction(false));
     }
 
     /**
