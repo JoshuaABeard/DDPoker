@@ -919,6 +919,128 @@ class ServerHandTest {
         assertEquals(15000, total, "Chip conservation must hold");
     }
 
+    // === Heads-Up Edge Case Tests ===
+
+    @Test
+    void testHeadsUp_ButtonPostsSB_OpponentPostsBB() {
+        // Button posts SB (50), opponent posts BB (100)
+        // Button at seat 0 → sbSeat=0, bbSeat=1
+        ServerPlayer btn = new ServerPlayer(1, "Button", true, 0, 1000);
+        ServerPlayer bb = new ServerPlayer(2, "BB", true, 0, 1000);
+        btn.setSeat(0);
+        bb.setSeat(1);
+        MockServerGameTable t = new MockServerGameTable(2);
+        t.addPlayer(btn, 0);
+        t.addPlayer(bb, 1);
+        ServerHand hand = new ServerHand(t, 1, 50, 100, 0, 0, 0, 1);
+        hand.deal();
+
+        // Button posted SB (50), opponent posted BB (100), pot = 150
+        assertEquals(950, btn.getChipCount(), "Button should have 1000-50=950 after posting SB");
+        assertEquals(900, bb.getChipCount(), "BB should have 1000-100=900 after posting BB");
+        assertEquals(150, hand.getPotSize(), "Pot should be 50+100=150 after blinds");
+    }
+
+    @Test
+    void testHeadsUp_PreflopActionOrder_ButtonActsFirst() {
+        // In heads-up, button/SB acts first preflop
+        ServerPlayer btn = new ServerPlayer(1, "Button", true, 0, 1000);
+        ServerPlayer bb = new ServerPlayer(2, "BB", true, 0, 1000);
+        btn.setSeat(0);
+        bb.setSeat(1);
+        MockServerGameTable t = new MockServerGameTable(2);
+        t.addPlayer(btn, 0);
+        t.addPlayer(bb, 1);
+        ServerHand hand = new ServerHand(t, 1, 50, 100, 0, 0, 0, 1);
+        hand.deal();
+
+        // Button (SB) should act first preflop in heads-up
+        assertEquals(btn, hand.getCurrentPlayerWithInit(), "Button/SB should act first preflop in heads-up");
+    }
+
+    @Test
+    void testHeadsUp_PostflopActionOrder_BBActsFirst() {
+        // In heads-up, BB (non-button) acts first postflop
+        ServerPlayer btn = new ServerPlayer(1, "Button", true, 0, 1000);
+        ServerPlayer bb = new ServerPlayer(2, "BB", true, 0, 1000);
+        btn.setSeat(0);
+        bb.setSeat(1);
+        MockServerGameTable t = new MockServerGameTable(2);
+        t.addPlayer(btn, 0);
+        t.addPlayer(bb, 1);
+        ServerHand hand = new ServerHand(t, 1, 50, 100, 0, 0, 0, 1);
+        hand.deal();
+
+        // Complete preflop: btn (SB) calls, bb checks
+        hand.applyPlayerAction(btn, PlayerAction.call());
+        hand.applyPlayerAction(bb, PlayerAction.check());
+
+        hand.advanceRound(); // → FLOP
+
+        // BB (non-button) should act first postflop
+        assertEquals(bb, hand.getCurrentPlayerWithInit(), "BB should act first postflop in heads-up");
+    }
+
+    @Test
+    void testHeadsUp_PartialBlind_ShortStackedSB() {
+        // Button/SB has only 30 chips (less than 50 SB)
+        ServerPlayer btn = new ServerPlayer(1, "Button", true, 0, 30);
+        ServerPlayer bb = new ServerPlayer(2, "BB", true, 0, 1000);
+        btn.setSeat(0);
+        bb.setSeat(1);
+        MockServerGameTable t = new MockServerGameTable(2);
+        t.addPlayer(btn, 0);
+        t.addPlayer(bb, 1);
+        ServerHand hand = new ServerHand(t, 1, 50, 100, 0, 0, 0, 1);
+        hand.deal();
+
+        // Button should be all-in with 0 chips (posted all 30)
+        assertEquals(0, btn.getChipCount(), "Short-stacked SB should be all-in with 0 chips");
+        assertTrue(btn.isAllIn(), "Short-stacked SB should be marked all-in");
+        assertEquals(30, hand.getActualSmallBlindPosted(), "Actual SB posted should be 30 (all the short stack had)");
+
+        // Chip conservation: 30 + 1000 = 1030 total
+        int totalChips = btn.getChipCount() + bb.getChipCount() + hand.getPotSize();
+        assertEquals(1030, totalChips, "Chip conservation: btn + bb + pot should equal 1030");
+    }
+
+    @Test
+    void testHeadsUp_AllInPreflopFromSB_Resolution() {
+        // Button/SB (500 chips) goes all-in, BB (1000 chips) calls.
+        // BB has AA (wins).
+        ServerPlayer btn = new ServerPlayer(1, "Button", true, 0, 500);
+        ServerPlayer bb = new ServerPlayer(2, "BB", true, 0, 1000);
+        btn.setSeat(0);
+        bb.setSeat(1);
+        MockServerGameTable t = new MockServerGameTable(2);
+        t.addPlayer(btn, 0);
+        t.addPlayer(bb, 1);
+
+        // Button (seat 0) gets 2♦3♦ (loses), BB (seat 1) gets A♠A♥ (wins)
+        ServerDeck deck = headsUpDeck(Card.DIAMONDS_2, Card.DIAMONDS_3, Card.SPADES_A, Card.HEARTS_A);
+        ServerHand hand = new ServerHand(t, 1, 50, 100, 0, 0, 0, 1, deck);
+        hand.deal();
+
+        // Button (SB, 450 remaining after posting 50) raises all-in
+        hand.applyPlayerAction(btn, PlayerAction.raise(450));
+        // BB (900 remaining after posting 100) calls
+        hand.applyPlayerAction(bb, PlayerAction.call());
+
+        // Advance through all rounds to showdown
+        while (hand.getRound() != BettingRound.SHOWDOWN) {
+            hand.advanceRound();
+        }
+        hand.resolve();
+
+        // BB wins pot of 1000 (2 × 500). BB had 500 remaining + 1000 pot = 1500.
+        assertEquals(1500, bb.getChipCount(), "BB (AA) should have 500 remaining + 1000 pot = 1500");
+        assertEquals(0, btn.getChipCount(), "Button should have 0 after losing all-in");
+
+        // Chip conservation: 500 + 1000 = 1500 total
+        int totalChips = btn.getChipCount() + bb.getChipCount();
+        assertEquals(1500, totalChips, "Chip conservation must hold");
+    }
+
     /**
      * Mock table for testing. Implements ServerHand.MockTable interface.
      */
