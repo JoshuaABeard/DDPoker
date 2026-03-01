@@ -62,6 +62,7 @@ class BorderTestHelper {
 
     private static final Unsafe UNSAFE;
     private static final Field TERRITORY_NAME_FIELD;
+    private static final Field TERRITORY_BORDERS_FIELD;
 
     static {
         try {
@@ -78,6 +79,11 @@ class BorderTestHelper {
 
             TERRITORY_NAME_FIELD = Territory.class.getDeclaredField("sName_");
             TERRITORY_NAME_FIELD.setAccessible(true);
+
+            // Unsafe.allocateInstance skips field initializers, so myBorders_ is null.
+            // We capture the field so createTerritory() can inject a fresh BorderArrayList.
+            TERRITORY_BORDERS_FIELD = Territory.class.getDeclaredField("myBorders_");
+            TERRITORY_BORDERS_FIELD.setAccessible(true);
         } catch (Exception e) {
             throw new ExceptionInInitializerError(e);
         }
@@ -127,13 +133,18 @@ class BorderTestHelper {
     }
 
     /**
-     * Creates a minimal Territory with only its name set. Bypasses the constructor
-     * to avoid needing a configured Areas singleton.
+     * Creates a minimal Territory with its name and an empty border list set.
+     * Bypasses the constructor to avoid needing a configured Areas singleton.
+     *
+     * <p>
+     * {@code Unsafe.allocateInstance} skips all field initializers, so
+     * {@code myBorders_} would be {@code null} without explicit injection.
      */
     static Territory createTerritory(String name) {
         try {
             Territory t = (Territory) UNSAFE.allocateInstance(Territory.class);
             TERRITORY_NAME_FIELD.set(t, name);
+            TERRITORY_BORDERS_FIELD.set(t, new BorderArrayList(2));
             return t;
         } catch (Exception e) {
             throw new RuntimeException("Failed to create test Territory: " + name, e);
@@ -166,5 +177,19 @@ class BorderTestHelper {
         Territory t1 = createTerritory(name1);
         Territory t2 = createTerritory(name2);
         return new Border(t1, t2, enclosed, num);
+    }
+
+    /**
+     * Creates an empty Territories collection without requiring XML or Areas
+     * infrastructure. Uses Unsafe to bypass the Territories(XML) constructor; the
+     * underlying TreeMap state initialises lazily on first put, so this is safe for
+     * add/get/size operations.
+     */
+    static Territories createTerritories() {
+        try {
+            return (Territories) UNSAFE.allocateInstance(Territories.class);
+        } catch (InstantiationException e) {
+            throw new RuntimeException("Failed to create test Territories", e);
+        }
     }
 }
