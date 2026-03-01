@@ -219,4 +219,72 @@ class PokerSimulationServiceTest {
         double sum = result.win() + result.tie() + result.loss();
         assertEquals(100.0, sum, 0.1, "Opponent Win + Tie + Loss should sum to ~100, got " + sum);
     }
+
+    private void assertPercentagesSumTo100(SimulationResult.HandResult result) {
+        double sum = result.win() + result.tie() + result.loss();
+        assertEquals(100.0, sum, 0.1, "Hand Win + Tie + Loss should sum to ~100, got " + sum);
+    }
+
+    // --- Multi-hand showdown ---
+
+    @Test
+    void multiHand_AAvsKK_returnsPerHandEquity() {
+        List<List<String>> hands = List.of(List.of("Ah", "Ad"), List.of("Kh", "Kd"));
+        SimulationResult result = service.simulateMultiHand(hands, List.of(), 10000);
+        assertNotNull(result.handResults());
+        assertEquals(2, result.handResults().size());
+        assertTrue(result.handResults().get(0).win() > 70.0,
+                "AA should win > 70%, got " + result.handResults().get(0).win());
+        assertTrue(result.handResults().get(1).win() > 10.0,
+                "KK should win > 10%, got " + result.handResults().get(1).win());
+        assertPercentagesSumTo100(result.handResults().get(0));
+        assertPercentagesSumTo100(result.handResults().get(1));
+    }
+
+    @Test
+    void multiHand_withCommunity_deterministicOnRiver() {
+        List<List<String>> hands = List.of(List.of("Ah", "Kh"), List.of("2c", "7d"));
+        List<String> community = List.of("Ac", "Kc", "3s", "8d", "Jh");
+        SimulationResult result = service.simulateMultiHand(hands, community, 1000);
+        assertEquals(100.0, result.handResults().get(0).win(), 0.01); // AK has two pair
+        assertEquals(0.0, result.handResults().get(1).win(), 0.01);
+    }
+
+    @Test
+    void multiHand_threeWay_percentagesSumTo100() {
+        List<List<String>> hands = List.of(List.of("Ah", "Ad"), List.of("Kh", "Kd"), List.of("Qh", "Qd"));
+        SimulationResult result = service.simulateMultiHand(hands, List.of(), 5000);
+        assertEquals(3, result.handResults().size());
+        for (SimulationResult.HandResult hr : result.handResults()) {
+            assertPercentagesSumTo100(hr);
+        }
+    }
+
+    @Test
+    void multiHand_tieScenario() {
+        // Board straight for both, no better hand possible
+        List<List<String>> hands = List.of(List.of("2s", "3c"), List.of("4s", "5c"));
+        List<String> community = List.of("Ts", "Jc", "Qd", "Kh", "Ah");
+        SimulationResult result = service.simulateMultiHand(hands, community, 1000);
+        assertEquals(100.0, result.handResults().get(0).tie(), 0.01);
+        assertEquals(100.0, result.handResults().get(1).tie(), 0.01);
+    }
+
+    @Test
+    void multiHand_duplicateCards_rejected() {
+        List<List<String>> hands = List.of(List.of("Ah", "Ad"), List.of("Ah", "Kd"));
+        assertThrows(IllegalArgumentException.class, () -> service.simulateMultiHand(hands, List.of(), 1000));
+    }
+
+    @Test
+    void multiHand_lessThanTwoHands_rejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.simulateMultiHand(List.of(List.of("Ah", "Ad")), List.of(), 1000));
+    }
+
+    @Test
+    void multiHand_wrongCardCount_rejected() {
+        List<List<String>> hands = List.of(List.of("Ah", "Ad", "Kh"), List.of("2c", "3c"));
+        assertThrows(IllegalArgumentException.class, () -> service.simulateMultiHand(hands, List.of(), 1000));
+    }
 }

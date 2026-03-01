@@ -40,11 +40,24 @@ import java.util.List;
  * Result of a Monte Carlo poker equity simulation.
  */
 public record SimulationResult(double win, double tie, double loss, int iterations,
-        List<OpponentResult> opponentResults) {
+        List<OpponentResult> opponentResults, List<HandResult> handResults) {
+
+    /**
+     * Constructor for single-hand mode (no handResults).
+     */
+    public SimulationResult(double win, double tie, double loss, int iterations, List<OpponentResult> opponentResults) {
+        this(win, tie, loss, iterations, opponentResults, null);
+    }
 
     /**
      * Per-opponent result breakdown.
      */
     public record OpponentResult(double win, double tie, double loss) {
+    }
+
+    /**
+     * Per-hand result for multi-hand showdown mode.
+     */
+    public record HandResult(double win, double tie, double loss) {
     }
 }

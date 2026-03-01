@@ -180,6 +180,123 @@ public class PokerSimulationService {
     }
 
     /**
+     * Run a multi-hand showdown simulation comparing multiple known hands.
+     *
+     * @param hands
+     *            list of 2+ hands, each containing 2 card strings
+     * @param communityCards
+     *            community cards (0-5), may be null or empty
+     * @param iterations
+     *            number of Monte Carlo iterations (100-100000)
+     * @return simulation result with per-hand win/tie/loss percentages
+     */
+    public SimulationResult simulateMultiHand(List<List<String>> hands, List<String> communityCards, int iterations) {
+        if (hands == null || hands.size() < 2) {
+            throw new IllegalArgumentException("Multi-hand simulation requires at least 2 hands");
+        }
+
+        List<List<Card>> parsedHands = hands.stream().map(this::parseCards).toList();
+        List<Card> community = communityCards != null && !communityCards.isEmpty()
+                ? parseCards(communityCards)
+                : List.of();
+
+        // Validate each hand has exactly 2 cards
+        for (int i = 0; i < parsedHands.size(); i++) {
+            if (parsedHands.get(i).size() != 2) {
+                throw new IllegalArgumentException(
+                        "Each hand must have exactly 2 cards, hand " + i + " has " + parsedHands.get(i).size());
+            }
+        }
+
+        // Validate no duplicates across all hands + community
+        Set<Integer> seen = new HashSet<>();
+        for (List<Card> hand : parsedHands) {
+            for (Card c : hand) {
+                if (!seen.add(c.getIndex())) {
+                    throw new IllegalArgumentException("Duplicate card at index: " + c.getIndex());
+                }
+            }
+        }
+        for (Card c : community) {
+            if (!seen.add(c.getIndex())) {
+                throw new IllegalArgumentException("Duplicate card at index: " + c.getIndex());
+            }
+        }
+
+        int numHands = parsedHands.size();
+        int communityNeeded = 5 - community.size();
+
+        // Build remaining deck
+        List<Card> remainingDeck = new ArrayList<>(52 - seen.size());
+        for (int i = 0; i < 52; i++) {
+            if (!seen.contains(i)) {
+                remainingDeck.add(Card.getCard(i));
+            }
+        }
+
+        int[] wins = new int[numHands];
+        int[] ties = new int[numHands];
+        int[] losses = new int[numHands];
+
+        Random rng = new Random();
+        ServerHandEvaluator evaluator = new ServerHandEvaluator();
+        List<Card> shuffled = new ArrayList<>(remainingDeck);
+
+        for (int iter = 0; iter < iterations; iter++) {
+            Collections.shuffle(shuffled, rng);
+            int dealIndex = 0;
+
+            // Deal remaining community cards
+            List<Card> board = new ArrayList<>(community);
+            for (int j = 0; j < communityNeeded; j++) {
+                board.add(shuffled.get(dealIndex++));
+            }
+
+            // Evaluate all hands
+            int[] scores = new int[numHands];
+            int bestScore = Integer.MIN_VALUE;
+            for (int h = 0; h < numHands; h++) {
+                scores[h] = evaluator.getScore(parsedHands.get(h), board);
+                if (scores[h] > bestScore) {
+                    bestScore = scores[h];
+                }
+            }
+
+            // Count winners (may be multiple for ties)
+            int winnerCount = 0;
+            for (int h = 0; h < numHands; h++) {
+                if (scores[h] == bestScore) {
+                    winnerCount++;
+                }
+            }
+
+            // Assign win/tie/loss
+            for (int h = 0; h < numHands; h++) {
+                if (scores[h] == bestScore) {
+                    if (winnerCount > 1) {
+                        ties[h]++;
+                    } else {
+                        wins[h]++;
+                    }
+                } else {
+                    losses[h]++;
+                }
+            }
+        }
+
+        // Build per-hand results
+        List<SimulationResult.HandResult> handResults = new ArrayList<>(numHands);
+        for (int h = 0; h < numHands; h++) {
+            handResults.add(new SimulationResult.HandResult((double) wins[h] / iterations * 100,
+                    (double) ties[h] / iterations * 100, (double) losses[h] / iterations * 100));
+        }
+
+        // Overall result uses first hand as the "player"
+        return new SimulationResult((double) wins[0] / iterations * 100, (double) ties[0] / iterations * 100,
+                (double) losses[0] / iterations * 100, iterations, null, handResults);
+    }
+
+    /**
      * Parse string card representations to Card objects.
      *
      * @param cardStrings

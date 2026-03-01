@@ -60,13 +60,20 @@ public class SimulationController {
     private PokerSimulationService simulationService;
 
     /**
-     * Run a Monte Carlo equity simulation.
+     * Run a Monte Carlo equity simulation. Supports single-hand mode (holeCards +
+     * numOpponents) and multi-hand showdown mode (allHands).
      */
     @PostMapping("/simulate")
     public ResponseEntity<?> simulate(@Valid @RequestBody SimulationRequest request) {
         try {
-            SimulationResult result = simulationService.simulate(request.holeCards(), request.communityCards(),
-                    request.numOpponents(), request.iterations(), request.knownOpponentHands());
+            SimulationResult result;
+            if (request.allHands() != null && !request.allHands().isEmpty()) {
+                result = simulationService.simulateMultiHand(request.allHands(), request.communityCards(),
+                        request.iterations());
+            } else {
+                result = simulationService.simulate(request.holeCards(), request.communityCards(),
+                        request.numOpponents(), request.iterations(), request.knownOpponentHands());
+            }
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
