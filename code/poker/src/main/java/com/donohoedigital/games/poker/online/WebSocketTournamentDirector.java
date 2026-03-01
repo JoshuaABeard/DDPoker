@@ -22,6 +22,7 @@ import com.donohoedigital.games.engine.BasePhase;
 import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.engine.GameManager;
 import com.donohoedigital.games.poker.*;
+import com.donohoedigital.games.poker.dashboard.AdvisorState;
 import com.donohoedigital.games.poker.dashboard.AdvanceAction;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Card;
@@ -733,6 +734,7 @@ public class WebSocketTournamentDirector extends BasePhase
     private void onHandStarted(HandStartedData d) {
         logger.debug("[HAND_STARTED] dealer={}", d.dealerSeat());
         isPreFlop_ = true;
+        AdvisorState.clear();
         opponentTracker_.onHandStart();
         SwingUtilities.invokeLater(() -> {
             showdownStarted_ = false;
@@ -1853,9 +1855,7 @@ public class WebSocketTournamentDirector extends BasePhase
     }
 
     private void onAdvisorUpdate(ServerMessageData.AdvisorData d) {
-        com.donohoedigital.games.poker.dashboard.ImproveOdds.setCurrentImprovementOdds(d.improvementOdds());
-        com.donohoedigital.games.poker.dashboard.ImproveOdds.setCurrentPotential(d.positivePotential(),
-                d.negativePotential());
+        AdvisorState.update(d.improvementOdds(), d.positivePotential(), d.negativePotential());
         SwingUtilities.invokeLater(() -> {
             RemotePokerTable table = currentTable();
             if (table != null) {

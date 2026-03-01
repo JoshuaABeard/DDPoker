@@ -47,16 +47,6 @@ import java.util.Map;
 public class ImproveOdds extends Odds {
     String sTotal_;
 
-    // Server-provided improvement odds stored by WebSocketTournamentDirector.
-    // null means not yet received or not applicable (preflop/river).
-    // An empty map means applicable but no improvements possible.
-    private static volatile Map<String, Double> currentImprovementOdds_;
-
-    // Server-provided hand potential stored by WebSocketTournamentDirector.
-    // null means not yet received or not applicable (preflop/river).
-    private static volatile Double currentPositivePotential_ = null;
-    private static volatile Double currentNegativePotential_ = null;
-
     // Ordered hand-type keys matching ascending rank (TRIPS through ROYAL_FLUSH)
     private static final String[] HAND_TYPE_KEYS = {"TRIPS", "STRAIGHT", "FLUSH", "FULL_HOUSE", "FOUR_OF_A_KIND",
             "STRAIGHT_FLUSH", "ROYAL_FLUSH"};
@@ -64,31 +54,6 @@ public class ImproveOdds extends Odds {
     // Corresponding HandInfo integer constants for display label lookup
     private static final int[] HAND_TYPE_INTS = {HandInfo.TRIPS, HandInfo.STRAIGHT, HandInfo.FLUSH, HandInfo.FULL_HOUSE,
             HandInfo.QUADS, HandInfo.STRAIGHT_FLUSH, HandInfo.ROYAL_FLUSH};
-
-    /**
-     * Called by WebSocketTournamentDirector when an ADVISOR_UPDATE message arrives.
-     * Passing null clears the cached data (preflop / river / between hands).
-     */
-    public static void setCurrentImprovementOdds(Map<String, Double> odds) {
-        currentImprovementOdds_ = odds;
-    }
-
-    /**
-     * Called by WebSocketTournamentDirector when an ADVISOR_UPDATE message arrives.
-     * Passing null clears the cached data (preflop / river / between hands).
-     */
-    public static void setCurrentPotential(Double positive, Double negative) {
-        currentPositivePotential_ = positive;
-        currentNegativePotential_ = negative;
-    }
-
-    public static Double getCurrentPositivePotential() {
-        return currentPositivePotential_;
-    }
-
-    public static Double getCurrentNegativePotential() {
-        return currentNegativePotential_;
-    }
 
     public ImproveOdds(GameContext context) {
         super(context, "improveodds");
@@ -140,7 +105,7 @@ public class ImproveOdds extends Odds {
         }
 
         // Read server-provided improvement odds
-        Map<String, Double> odds = currentImprovementOdds_;
+        Map<String, Double> odds = AdvisorState.getImprovementOdds();
         if (odds == null) {
             // Data not yet received from server — show nothing
             return "";
