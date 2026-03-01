@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <li>Default propagation: Missing game types and minutes use defaults
  * </ol>
  */
-public class LevelValidatorTest {
+class LevelValidatorTest {
 
     /**
      * Minimum ante as a percentage of small blind (5%), derived from
@@ -270,7 +270,7 @@ public class LevelValidatorTest {
     // ========== Rounding Tests ==========
 
     @Test
-    public void should_RoundBlinds_WhenValuesAreSmall() {
+    public void should_NotRoundBlinds_When_ValuesAreUnder100() {
         // Given: blinds with odd values at or below 100 (increment = 1, no rounding)
         Map<String, String> rawData = new HashMap<>();
         rawData.put("small1", "47");
@@ -426,7 +426,7 @@ public class LevelValidatorTest {
     }
 
     @Test
-    public void should_HandleAllBreakLevels_ByAddingDefault() {
+    public void should_AddDefaultNonBreakLevel_When_AllLevelsAreBreaks() {
         // Given: only break levels defined
         Map<String, String> rawData = new HashMap<>();
         rawData.put("ante1", String.valueOf(TournamentProfile.BREAK_ANTE_VALUE));
@@ -449,6 +449,28 @@ public class LevelValidatorTest {
             }
         }
         assertThat(hasNonBreak).isTrue();
+    }
+
+    @Test
+    public void should_IgnoreLevels_When_LevelNumberExceedsMaximum() {
+        // Given: levels defined beyond MAX_LEVELS (40)
+        Map<String, String> rawData = new HashMap<>();
+        rawData.put("small1", "10");
+        rawData.put("big1", "20");
+        // Level 41 exceeds MAX_LEVELS and should be silently ignored
+        rawData.put("small41", "100");
+        rawData.put("big41", "200");
+
+        LevelValidator validator = new LevelValidator();
+
+        // When: validate
+        List<LevelValidator.LevelData> levels = validator.validateAndNormalize(rawData, 10,
+                PokerConstants.DE_NO_LIMIT_HOLDEM);
+
+        // Then: only the valid level within range should appear (level 41 is dropped)
+        assertThat(levels).hasSize(1);
+        assertThat(levels.get(0).smallBlind).isEqualTo(10);
+        assertThat(levels.get(0).bigBlind).isEqualTo(20);
     }
 
     @Test
@@ -516,7 +538,7 @@ public class LevelValidatorTest {
     // ========== LevelData toString() Tests ==========
 
     @Test
-    public void should_FormatBreakLevel_InToString() {
+    public void should_IncludeBreakKeyword_When_LevelIsBreak() {
         // Given: a break level
         Map<String, String> rawData = new HashMap<>();
         rawData.put("ante1", String.valueOf(TournamentProfile.BREAK_ANTE_VALUE));
@@ -537,7 +559,7 @@ public class LevelValidatorTest {
     }
 
     @Test
-    public void should_FormatNormalLevel_InToString() {
+    public void should_ShowBlindsAndAnte_When_LevelIsNormal() {
         // Given: a normal level with all fields
         Map<String, String> rawData = new HashMap<>();
         rawData.put("ante1", "5");

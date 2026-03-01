@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Also handles house take in two modes: - HOUSE_PERC: Percentage of total pool
  * - HOUSE_AMOUNT: Fixed amount per player
  */
-public class PayoutCalculatorTest {
+class PayoutCalculatorTest {
 
     // ========== getNumSpots() Tests ==========
 
@@ -273,7 +273,7 @@ public class PayoutCalculatorTest {
     // ========== getPrizePool() Tests ==========
 
     @Test
-    public void should_CalculatePrizePool_FromBuyinAndPlayers() {
+    public void should_CalculatePrizePool_When_MultiplePlayersEnter() {
         // Given: 100 players, $100 buyin, 10% house
         DMTypedHashMap map = new DMTypedHashMap();
         map.setInteger("numplayers", 100);
@@ -290,7 +290,7 @@ public class PayoutCalculatorTest {
     }
 
     @Test
-    public void should_CalculatePrizePool_WithFixedHouseTake() {
+    public void should_DeductHouseTake_When_FixedAmountSpecified() {
         // Given: 100 players, $100 buyin, $5 house per player
         DMTypedHashMap map = new DMTypedHashMap();
         map.setInteger("numplayers", 100);
@@ -401,7 +401,7 @@ public class PayoutCalculatorTest {
     }
 
     @Test
-    public void should_HandleZeroHouseTake() {
+    public void should_ReturnFullPool_When_HouseTakeIsZero() {
         // Given: no house take
         DMTypedHashMap map = new DMTypedHashMap();
         map.setInteger("housecuttype", PokerConstants.HOUSE_PERC);
@@ -417,7 +417,7 @@ public class PayoutCalculatorTest {
     }
 
     @Test
-    public void should_Return0ForNonExistentSpot() {
+    public void should_Return0_When_SpotDoesNotExist() {
         // Given: 3 spots defined
         DMTypedHashMap map = new DMTypedHashMap();
         map.setInteger("payout", PokerConstants.PAYOUT_SPOTS);
@@ -430,5 +430,40 @@ public class PayoutCalculatorTest {
 
         // Then: should return 0
         assertThat(fourth).isEqualTo(0);
+    }
+
+    @Test
+    public void should_Return0ForAllSpots_When_SinglePlayerEnters() {
+        // Given: single player, 1 payout spot, buy-in 1000, no spot amount defined
+        // When no spotamount1 is stored, getSpot(1) returns 0, so the payout is 0
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("payout", PokerConstants.PAYOUT_SPOTS);
+        map.setInteger("payoutspots", 1);
+        // spotamount1 intentionally not set
+
+        PayoutCalculator calc = new PayoutCalculator(map);
+
+        // When: get payout for spot 1 with a 1000 prize pool
+        int winner = calc.getPayout(1, 1, 1000);
+
+        // Then: returns 0 because no spot amount is stored in the map
+        assertThat(winner).isEqualTo(0);
+    }
+
+    @Test
+    public void should_GiveWinnerFullPool_When_PrizePoolIsZero() {
+        // Given: 0 prize pool (0 buy-in * N players) with 1 payout spot
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("payout", PokerConstants.PAYOUT_SPOTS);
+        map.setInteger("payoutspots", 1);
+        map.setString("spotamount1", "0");
+
+        PayoutCalculator calc = new PayoutCalculator(map);
+
+        // When: get payout for spot 1 with a 0 prize pool
+        int winner = calc.getPayout(1, 1, 0);
+
+        // Then: all spots return 0 (no pool to distribute)
+        assertThat(winner).isEqualTo(0);
     }
 }
