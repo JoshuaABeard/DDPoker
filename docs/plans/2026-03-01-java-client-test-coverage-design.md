@@ -66,9 +66,8 @@ Medium:
 
 | Class | Lines | Dependencies | Test Strategy |
 |-------|-------|-------------|---------------|
-| `HoldemExpert` | 245 | Card, HandSorted (engine) | Test all 169 hand group lookups, Sklansky rankings 1-9 |
 | `HandFutures` | 321 | HandInfoFaster, Hand, Deck | Test flush/straight/gutshot draws, improvement odds |
-| `HandLadder` | 339 | Hand, HandProbabilityMatrix | Test probability distribution, hand rank counts |
+| `HandLadder` | 339 | Hand | Test probability distribution, hand rank counts |
 | `PokerStats` | 335 | PokerGame, TournamentProfile | Integration-style: init ConfigManager, run simulations |
 
 ### Tier 2 — Extract Logic from Phase Classes
