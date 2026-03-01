@@ -1,9 +1,20 @@
 #!/usr/bin/env bash
 # run-release-gate.sh — Execute release-gate scenario scripts sequentially.
+#
+# Builds and launches the game JVM once, then passes --skip-build --skip-launch
+# to each individual script so they reuse the running instance.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source lib.sh for build/launch/cleanup infrastructure.
+# The cleanup trap will kill the JVM when this script exits.
+source "$SCRIPT_DIR/lib.sh"
+lib_parse_args "$@"
+
+# Build once and launch the game JVM once.
+lib_launch
 
 SCRIPTS=(
     "test-app-launch.sh"
@@ -36,7 +47,7 @@ for script in "${SCRIPTS[@]}"; do
     path="$SCRIPT_DIR/$script"
     echo
     echo "--- Running: $script ---"
-    if bash "$path" "$@"; then
+    if bash "$path" --skip-build --skip-launch "$@"; then
         echo "PASS: $script"
         passed=$((passed + 1))
     else
