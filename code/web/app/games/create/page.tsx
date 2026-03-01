@@ -8,8 +8,9 @@
 'use client'
 
 import { useSearchParams, useRouter } from 'next/navigation'
-import { Suspense, useState } from 'react'
-import { gameServerApi } from '@/lib/api'
+import { Suspense, useEffect, useState } from 'react'
+import { gameServerApi, templateApi } from '@/lib/api'
+import type { TemplateDto } from '@/lib/types'
 import type { GameConfigDto } from '@/lib/game/types'
 import { BLIND_PRESETS } from '@/lib/game/blindPresets'
 
@@ -116,6 +117,17 @@ function CreateGameForm() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  // Template management
+  const [templates, setTemplates] = useState<TemplateDto[]>([])
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('')
+  const [templateName, setTemplateName] = useState('')
+  const [showSaveDialog, setShowSaveDialog] = useState(false)
+  const [templateLoading, setTemplateLoading] = useState(false)
+
+  useEffect(() => {
+    templateApi.list().then(setTemplates).catch(() => {})
+  }, [])
+
   // Blind structure helpers
   function updateBlindLevel(
     index: number,
@@ -165,6 +177,85 @@ function CreateGameForm() {
 
   function removeAiPlayer(index: number) {
     setAiPlayerList((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  function gatherConfig() {
+    return {
+      maxPlayers, startingChips, defaultGameType, blindStructure, levelAdvanceMode,
+      handsPerLevel, fillComputer, aiPlayerList, payoutSpots, bountyEnabled, bountyAmount,
+      allowRebuys, rebuyCost, rebuyChips, rebuyLimit, allowAddon, addonCost, addonChips,
+      actionTimeoutSeconds, bootSitout, bootDisconnect, bootAfterHands,
+      lateRegistration, lateRegUntilLevel, aiFaceUp, pauseAllin, autoDeal, zipMode,
+    }
+  }
+
+  function loadTemplate(id: string) {
+    const template = templates.find(t => t.id === Number(id))
+    if (!template) return
+    const cfg = JSON.parse(template.config)
+    setMaxPlayers(cfg.maxPlayers ?? 9)
+    setBuyIn(cfg.buyIn ?? 0)
+    setStartingChips(cfg.startingChips ?? 10000)
+    setDefaultGameType(cfg.defaultGameType ?? 'NOLIMIT_HOLDEM')
+    setBlindStructure(cfg.blindStructure ?? [...DEFAULT_BLIND_STRUCTURE])
+    setSelectedPreset('custom')
+    setLevelAdvanceMode(cfg.levelAdvanceMode ?? 'TIME')
+    setHandsPerLevel(cfg.handsPerLevel ?? 20)
+    setFillComputer(cfg.fillComputer ?? isPractice)
+    setAiPlayerList(cfg.aiPlayerList ?? [...DEFAULT_AI_PLAYERS])
+    setPayoutSpots(cfg.payoutSpots ?? 3)
+    setBountyEnabled(cfg.bountyEnabled ?? false)
+    setBountyAmount(cfg.bountyAmount ?? 0)
+    setAllowRebuys(cfg.allowRebuys ?? false)
+    setRebuyCost(cfg.rebuyCost ?? 0)
+    setRebuyChips(cfg.rebuyChips ?? 10000)
+    setRebuyLimit(cfg.rebuyLimit ?? 2)
+    setAllowAddon(cfg.allowAddon ?? false)
+    setAddonCost(cfg.addonCost ?? 0)
+    setAddonChips(cfg.addonChips ?? 5000)
+    setActionTimeoutSeconds(cfg.actionTimeoutSeconds ?? 30)
+    setBootSitout(cfg.bootSitout ?? false)
+    setBootDisconnect(cfg.bootDisconnect ?? false)
+    setBootAfterHands(cfg.bootAfterHands ?? 3)
+    setLateRegistration(cfg.lateRegistration ?? false)
+    setLateRegUntilLevel(cfg.lateRegUntilLevel ?? 3)
+    setAiFaceUp(cfg.aiFaceUp ?? false)
+    setPauseAllin(cfg.pauseAllin ?? false)
+    setAutoDeal(cfg.autoDeal ?? true)
+    setZipMode(cfg.zipMode ?? false)
+  }
+
+  async function saveAsTemplate() {
+    if (!templateName.trim()) return
+    setTemplateLoading(true)
+    try {
+      const config = gatherConfig()
+      const created = await templateApi.create(templateName.trim(), config)
+      setTemplates(prev => [created, ...prev])
+      setTemplateName('')
+      setShowSaveDialog(false)
+      setSelectedTemplateId(String(created.id))
+    } catch (e) {
+      console.error('Failed to save template:', e)
+    } finally {
+      setTemplateLoading(false)
+    }
+  }
+
+  async function deleteTemplate() {
+    const id = Number(selectedTemplateId)
+    if (!id) return
+    if (!confirm('Delete this template?')) return
+    setTemplateLoading(true)
+    try {
+      await templateApi.delete(id)
+      setTemplates(prev => prev.filter(t => t.id !== id))
+      setSelectedTemplateId('')
+    } catch (e) {
+      console.error('Failed to delete template:', e)
+    } finally {
+      setTemplateLoading(false)
+    }
   }
 
   function buildConfig(overrides: Partial<{
@@ -275,6 +366,73 @@ function CreateGameForm() {
       )}
 
       <form onSubmit={handleCreate} className="space-y-6">
+        {/* Template Management */}
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Templates</h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={selectedTemplateId}
+              onChange={(e) => setSelectedTemplateId(e.target.value)}
+              className="flex-1 min-w-[200px] rounded border-gray-300 text-sm"
+            >
+              <option value="">-- Select Template --</option>
+              {templates.map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => loadTemplate(selectedTemplateId)}
+              disabled={!selectedTemplateId || templateLoading}
+              className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            >
+              Load
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSaveDialog(true)}
+              disabled={templateLoading}
+              className="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+            >
+              Save Current Settings
+            </button>
+            <button
+              type="button"
+              onClick={deleteTemplate}
+              disabled={!selectedTemplateId || templateLoading}
+              className="px-3 py-1.5 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+            >
+              Delete
+            </button>
+          </div>
+          {showSaveDialog && (
+            <div className="mt-3 flex items-center gap-2">
+              <input
+                type="text"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                placeholder="Template name"
+                className="flex-1 rounded border-gray-300 text-sm"
+              />
+              <button
+                type="button"
+                onClick={saveAsTemplate}
+                disabled={!templateName.trim() || templateLoading}
+                className="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowSaveDialog(false); setTemplateName('') }}
+                className="px-3 py-1.5 text-sm bg-gray-400 text-white rounded hover:bg-gray-500"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Basic settings */}
         <section className="space-y-4">
           <h2 className="text-lg font-semibold border-b border-gray-200 pb-1">Basic Settings</h2>
