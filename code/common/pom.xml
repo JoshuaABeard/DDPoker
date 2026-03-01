@@ -129,7 +129,7 @@
   <build>
     <plugins>
       <!-- Jacoco Coverage Enforcement -->
-      <!-- Baseline: 5% instruction coverage -->
+      <!-- Raised after Phase 5: actual 17.9%, threshold = actual - 5% (large module) -->
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
@@ -147,7 +147,7 @@
                     <limit>
                       <counter>INSTRUCTION</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.05</minimum>
+                      <minimum>0.13</minimum>
                     </limit>
                   </limits>
                 </rule>

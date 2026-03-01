@@ -1,7 +1,9 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
- * DD Poker - Community Edition
+ * DD Poker - Source Code
  * Copyright (c) 2026 Joshua Beard and contributors
+ *
+ * This file is part of DD Poker, originally created by Doug Donohoe.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,15 +17,28 @@
  *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
+ * graphics, text, and documentation found in this repository (including but not
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
+ * without explicit written permission for any uses not covered by this License.
+ * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
+ * in the root directory of this project.
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
+ * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.model;
 
 import com.donohoedigital.comms.DMTypedHashMap;
 import com.donohoedigital.games.poker.engine.PokerConstants;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for PayoutCalculator - centralizes payout calculation across all modes.
@@ -38,7 +53,7 @@ import static org.junit.Assert.*;
  * Also handles house take in two modes: - HOUSE_PERC: Percentage of total pool
  * - HOUSE_AMOUNT: Fixed amount per player
  */
-public class PayoutCalculatorTest {
+class PayoutCalculatorTest {
 
     // ========== getNumSpots() Tests ==========
 
@@ -55,7 +70,7 @@ public class PayoutCalculatorTest {
         int spots = calc.getNumSpots();
 
         // Then: should return 10
-        assertEquals(10, spots);
+        assertThat(spots).isEqualTo(10);
     }
 
     @Test
@@ -72,7 +87,7 @@ public class PayoutCalculatorTest {
         int spots = calc.getNumSpots();
 
         // Then: should return 10 (10% of 100)
-        assertEquals(10, spots);
+        assertThat(spots).isEqualTo(10);
     }
 
     @Test
@@ -89,7 +104,7 @@ public class PayoutCalculatorTest {
         int spots = calc.getNumSpots();
 
         // Then: should round up to 10
-        assertEquals(10, spots);
+        assertThat(spots).isEqualTo(10);
     }
 
     @Test
@@ -106,7 +121,7 @@ public class PayoutCalculatorTest {
         int spots = calc.getNumSpots();
 
         // Then: should return 10 (10000 / 1000)
-        assertEquals(10, spots);
+        assertThat(spots).isEqualTo(10);
     }
 
     @Test
@@ -123,7 +138,7 @@ public class PayoutCalculatorTest {
         int spots = calc.getNumSpots();
 
         // Then: should return 11 (10 full + 1 partial)
-        assertEquals(11, spots);
+        assertThat(spots).isEqualTo(11);
     }
 
     // ========== House Take Tests ==========
@@ -141,7 +156,7 @@ public class PayoutCalculatorTest {
         int pool = calc.getPoolAfterHouseTake(10000);
 
         // Then: should be 9,000 (10,000 - 10%)
-        assertEquals(9000, pool);
+        assertThat(pool).isEqualTo(9000);
     }
 
     @Test
@@ -158,7 +173,7 @@ public class PayoutCalculatorTest {
         int pool = calc.getPoolAfterHouseTake(10000);
 
         // Then: should be 9,000 (10,000 - 100*10)
-        assertEquals(9000, pool);
+        assertThat(pool).isEqualTo(9000);
     }
 
     // ========== getPayout() Tests ==========
@@ -182,9 +197,9 @@ public class PayoutCalculatorTest {
         int third = calc.getPayout(3, 3, 10000);
 
         // Then: should parse through "$" prefix and return correct amounts
-        assertEquals(5000, first);
-        assertEquals(3000, second);
-        assertEquals(2000, third);
+        assertThat(first).isEqualTo(5000);
+        assertThat(second).isEqualTo(3000);
+        assertThat(third).isEqualTo(2000);
     }
 
     @Test
@@ -205,9 +220,9 @@ public class PayoutCalculatorTest {
         int third = calc.getPayout(3, 3, 10000);
 
         // Then: should return spot amounts
-        assertEquals(5000, first);
-        assertEquals(3000, second);
-        assertEquals(2000, third);
+        assertThat(first).isEqualTo(5000);
+        assertThat(second).isEqualTo(3000);
+        assertThat(third).isEqualTo(2000);
     }
 
     @Test
@@ -228,7 +243,7 @@ public class PayoutCalculatorTest {
         int first = calc.getPayout(1, 3, 10000);
 
         // Then: should be 5,000 (10,000 - 3,000 - 2,000) to avoid rounding error
-        assertEquals(5000, first);
+        assertThat(first).isEqualTo(5000);
     }
 
     @Test
@@ -245,7 +260,7 @@ public class PayoutCalculatorTest {
         int last = calc.getPayout(11, 11, 10500);
 
         // Then: should be 500 (remainder)
-        assertEquals(500, last);
+        assertThat(last).isEqualTo(500);
     }
 
     @Test
@@ -263,14 +278,14 @@ public class PayoutCalculatorTest {
         int tenth = calc.getPayout(10, 11, 10500);
 
         // Then: should be full amount (1000)
-        assertEquals(1000, first);
-        assertEquals(1000, tenth);
+        assertThat(first).isEqualTo(1000);
+        assertThat(tenth).isEqualTo(1000);
     }
 
     // ========== getPrizePool() Tests ==========
 
     @Test
-    public void should_CalculatePrizePool_FromBuyinAndPlayers() {
+    public void should_CalculatePrizePool_When_MultiplePlayersEnter() {
         // Given: 100 players, $100 buyin, 10% house
         DMTypedHashMap map = new DMTypedHashMap();
         map.setInteger("numplayers", 100);
@@ -283,11 +298,11 @@ public class PayoutCalculatorTest {
         int pool = calc.getPrizePool(100, 100);
 
         // Then: should be 9,000 (10,000 - 10%)
-        assertEquals(9000, pool);
+        assertThat(pool).isEqualTo(9000);
     }
 
     @Test
-    public void should_CalculatePrizePool_WithFixedHouseTake() {
+    public void should_DeductHouseTake_When_FixedAmountSpecified() {
         // Given: 100 players, $100 buyin, $5 house per player
         DMTypedHashMap map = new DMTypedHashMap();
         map.setInteger("numplayers", 100);
@@ -300,7 +315,84 @@ public class PayoutCalculatorTest {
         int pool = calc.getPrizePool(100, 100);
 
         // Then: should be 9,500 (10,000 - 100*5)
-        assertEquals(9500, pool);
+        assertThat(pool).isEqualTo(9500);
+    }
+
+    // ========== Heads-Up Tests ==========
+
+    @Test
+    public void should_GiveWinnerEverything_WhenHeadsUp() {
+        // Given: heads-up (2 players), winner-take-all: 1 payout spot
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("payout", PokerConstants.PAYOUT_SPOTS);
+        map.setInteger("payoutspots", 1);
+        map.setString("spotamount1", "2000"); // full prize pool
+
+        PayoutCalculator calc = new PayoutCalculator(map);
+
+        // When: winner (1st of 2) collects payout; 2nd place is outside the spots
+        int winner = calc.getPayout(1, 1, 2000);
+        int loser = calc.getPayout(2, 1, 2000);
+
+        // Then: winner takes all, loser gets nothing
+        assertThat(winner).isEqualTo(2000);
+        assertThat(loser).isEqualTo(0);
+    }
+
+    // ========== Full Table Tests ==========
+
+    @Test
+    public void should_PayTopThree_WhenFullTableOfNine() {
+        // Given: full table of 9 players, top 3 paid, fixed spot amounts
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("payout", PokerConstants.PAYOUT_SPOTS);
+        map.setInteger("payoutspots", 3);
+        map.setString("spotamount1", "4500"); // 50% of 9000
+        map.setString("spotamount2", "2700"); // 30% of 9000
+        map.setString("spotamount3", "1800"); // 20% of 9000
+
+        PayoutCalculator calc = new PayoutCalculator(map);
+
+        // When: calculate payouts for all 9 players
+        int first = calc.getPayout(1, 3, 9000);
+        int second = calc.getPayout(2, 3, 9000);
+        int third = calc.getPayout(3, 3, 9000);
+        int fourth = calc.getPayout(4, 3, 9000);
+
+        // Then: top 3 receive their amounts, 4th and below receive nothing
+        assertThat(first).isEqualTo(4500);
+        assertThat(second).isEqualTo(2700);
+        assertThat(third).isEqualTo(1800);
+        assertThat(fourth).isEqualTo(0);
+    }
+
+    // ========== Rounding and Sum-to-100% Tests ==========
+
+    @Test
+    public void should_SumToFullPool_WhenUsingPercentAllocation() {
+        // Given: 3 payout spots with percentages that must sum to 100%
+        // 1st=50%, 2nd=30%, 3rd=20% — 1st gets remainder to avoid rounding drift
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("payout", PokerConstants.PAYOUT_PERC);
+        map.setInteger("alloc", PokerConstants.ALLOC_PERC);
+        map.setInteger("payoutspots", 3);
+        map.setString("spotamount1", "0"); // 1st gets remainder
+        map.setString("spotamount2", "30"); // 30% of pool
+        map.setString("spotamount3", "20"); // 20% of pool
+
+        PayoutCalculator calc = new PayoutCalculator(map);
+        int prizePool = 10000;
+
+        // When: sum all payouts
+        int first = calc.getPayout(1, 3, prizePool);
+        int second = calc.getPayout(2, 3, prizePool);
+        int third = calc.getPayout(3, 3, prizePool);
+
+        // Then: exact amounts are correct and sum exactly to the full prize pool
+        assertThat(second).isEqualTo(3000);
+        assertThat(third).isEqualTo(2000);
+        assertThat(first).isEqualTo(5000); // remainder: 10000 - 3000 - 2000
+        assertThat(first + second + third).isEqualTo(prizePool);
     }
 
     // ========== Edge Cases ==========
@@ -317,11 +409,11 @@ public class PayoutCalculatorTest {
         int spots = calc.getNumSpots();
 
         // Then: should default to 1
-        assertEquals(1, spots);
+        assertThat(spots).isEqualTo(1);
     }
 
     @Test
-    public void should_HandleZeroHouseTake() {
+    public void should_ReturnFullPool_When_HouseTakeIsZero() {
         // Given: no house take
         DMTypedHashMap map = new DMTypedHashMap();
         map.setInteger("housecuttype", PokerConstants.HOUSE_PERC);
@@ -333,11 +425,11 @@ public class PayoutCalculatorTest {
         int pool = calc.getPoolAfterHouseTake(10000);
 
         // Then: should be full amount
-        assertEquals(10000, pool);
+        assertThat(pool).isEqualTo(10000);
     }
 
     @Test
-    public void should_Return0ForNonExistentSpot() {
+    public void should_Return0_When_SpotDoesNotExist() {
         // Given: 3 spots defined
         DMTypedHashMap map = new DMTypedHashMap();
         map.setInteger("payout", PokerConstants.PAYOUT_SPOTS);
@@ -349,6 +441,41 @@ public class PayoutCalculatorTest {
         int fourth = calc.getPayout(4, 3, 10000);
 
         // Then: should return 0
-        assertEquals(0, fourth);
+        assertThat(fourth).isEqualTo(0);
+    }
+
+    @Test
+    public void should_Return0ForAllSpots_When_SinglePlayerEnters() {
+        // Given: single player, 1 payout spot, buy-in 1000, no spot amount defined
+        // When no spotamount1 is stored, getSpot(1) returns 0, so the payout is 0
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("payout", PokerConstants.PAYOUT_SPOTS);
+        map.setInteger("payoutspots", 1);
+        // spotamount1 intentionally not set
+
+        PayoutCalculator calc = new PayoutCalculator(map);
+
+        // When: get payout for spot 1 with a 1000 prize pool
+        int winner = calc.getPayout(1, 1, 1000);
+
+        // Then: returns 0 because no spot amount is stored in the map
+        assertThat(winner).isEqualTo(0);
+    }
+
+    @Test
+    public void should_GiveWinnerFullPool_When_PrizePoolIsZero() {
+        // Given: 0 prize pool (0 buy-in * N players) with 1 payout spot
+        DMTypedHashMap map = new DMTypedHashMap();
+        map.setInteger("payout", PokerConstants.PAYOUT_SPOTS);
+        map.setInteger("payoutspots", 1);
+        map.setString("spotamount1", "0");
+
+        PayoutCalculator calc = new PayoutCalculator(map);
+
+        // When: get payout for spot 1 with a 0 prize pool
+        int winner = calc.getPayout(1, 1, 0);
+
+        // Then: all spots return 0 (no pool to distribute)
+        assertThat(winner).isEqualTo(0);
     }
 }

@@ -27,6 +27,9 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.donohoedigital.games.poker.gameserver.dto.GameSettingsRequest;
+import com.donohoedigital.games.poker.gameserver.dto.KickRequest;
+import com.donohoedigital.games.poker.gameserver.dto.LobbyPlayerInfo;
 import com.donohoedigital.games.poker.gameserver.dto.LoginRequest;
 import com.donohoedigital.games.poker.gameserver.dto.RegisterRequest;
 
@@ -183,5 +186,68 @@ class DtoValidationTest {
         LoginRequest req = new LoginRequest("alice", "password123", true);
         Set<ConstraintViolation<LoginRequest>> violations = validator.validate(req);
         assertTrue(violations.isEmpty(), "Valid request with rememberMe=true should pass");
+    }
+
+    // ====================================
+    // KickRequest
+    // ====================================
+
+    @Test
+    void kickRequest_validProfileId_noViolations() {
+        KickRequest req = new KickRequest(42L);
+        Set<ConstraintViolation<KickRequest>> violations = validator.validate(req);
+        assertTrue(violations.isEmpty(), "Valid KickRequest should have no violations");
+    }
+
+    @Test
+    void kickRequest_nullProfileId_fails() {
+        KickRequest req = new KickRequest(null);
+        Set<ConstraintViolation<KickRequest>> violations = validator.validate(req);
+        assertFalse(violations.isEmpty(), "Null profileId should fail validation");
+    }
+
+    @Test
+    void kickRequest_profileId_isAccessible() {
+        KickRequest req = new KickRequest(99L);
+        assertTrue(req.profileId() == 99L, "profileId accessor must return supplied value");
+    }
+
+    // ====================================
+    // LobbyPlayerInfo
+    // ====================================
+
+    @Test
+    void lobbyPlayerInfo_holdsNameAndRole() {
+        LobbyPlayerInfo info = new LobbyPlayerInfo("Alice", "PLAYER");
+        assertTrue("Alice".equals(info.name()), "name accessor must return supplied value");
+        assertTrue("PLAYER".equals(info.role()), "role accessor must return supplied value");
+    }
+
+    @Test
+    void lobbyPlayerInfo_aiRole() {
+        LobbyPlayerInfo aiInfo = new LobbyPlayerInfo("Bot1", "AI");
+        assertTrue("AI".equals(aiInfo.role()));
+    }
+
+    // ====================================
+    // GameSettingsRequest
+    // ====================================
+
+    @Test
+    void gameSettingsRequest_holdsAllOptionalFields() {
+        GameSettingsRequest req = new GameSettingsRequest("My Game", 8, null, "secret");
+        assertTrue("My Game".equals(req.name()), "name accessor must return supplied value");
+        assertTrue(8 == req.maxPlayers(), "maxPlayers accessor must return supplied value");
+        assertTrue("secret".equals(req.password()), "password accessor must return supplied value");
+    }
+
+    @Test
+    void gameSettingsRequest_allNullFieldsAllowed() {
+        // All fields are optional (nullable) — null request is valid for no-op update
+        GameSettingsRequest req = new GameSettingsRequest(null, null, null, null);
+        assertTrue(req.name() == null);
+        assertTrue(req.maxPlayers() == null);
+        assertTrue(req.profile() == null);
+        assertTrue(req.password() == null);
     }
 }

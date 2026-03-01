@@ -60,13 +60,24 @@
       <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>5.11.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>3.27.0</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
     <plugins>
       <!-- Jacoco Coverage Enforcement -->
-      <!-- Baseline: 0% instruction coverage - no tests yet -->
-      <!-- Enforcement disabled until tests are written -->
+      <!-- Raised after Phase 5: actual 1.2%, threshold = 1% (Swing module, minimal coverage) -->
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
@@ -84,7 +95,7 @@
                     <limit>
                       <counter>INSTRUCTION</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.00</minimum>
+                      <minimum>0.01</minimum>
                     </limit>
                   </limits>
                 </rule>

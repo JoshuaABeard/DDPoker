@@ -894,4 +894,29 @@ class GameEventBroadcasterTest {
         assertDoesNotThrow(() -> broadcaster.startActionTimer(2L, 30));
         broadcaster.shutdown();
     }
+
+    @Test
+    void setAiFaceUp_doesNotThrow() {
+        // setAiFaceUp must be callable without throwing; the flag affects AI card
+        // broadcasting after HAND_STARTED events.
+        assertDoesNotThrow(() -> broadcaster.setAiFaceUp(true));
+        assertDoesNotThrow(() -> broadcaster.setAiFaceUp(false));
+    }
+
+    @Test
+    void nextSequence_incrementsMonotonically() {
+        long seq1 = broadcaster.nextSequence();
+        long seq2 = broadcaster.nextSequence();
+        long seq3 = broadcaster.nextSequence();
+
+        assertTrue(seq2 > seq1, "nextSequence must return monotonically increasing values");
+        assertTrue(seq3 > seq2, "nextSequence must return monotonically increasing values");
+    }
+
+    @Test
+    void broadcastGameState_withNullGame_doesNothing() {
+        // Broadcaster without game reference must not throw when broadcastGameState
+        // is called; it simply returns early.
+        assertDoesNotThrow(() -> broadcaster.broadcastGameState());
+    }
 }

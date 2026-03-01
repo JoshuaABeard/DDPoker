@@ -41,5 +41,8 @@
     <class>com.donohoedigital.games.poker.model.TournamentHistory</class>
     <class>com.donohoedigital.games.poker.model.PasswordResetToken</class>
     <class>com.donohoedigital.games.poker.model.TournamentTemplate</class>
+    <class>com.donohoedigital.games.poker.gameserver.persistence.entity.BanEntity</class>
+    <class>com.donohoedigital.games.poker.gameserver.persistence.entity.GameEventEntity</class>
+    <class>com.donohoedigital.games.poker.gameserver.persistence.entity.GameInstanceEntity</class>
   </persistence-unit>
 </persistence>

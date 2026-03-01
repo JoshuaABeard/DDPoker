@@ -238,6 +238,17 @@ class ServerGameEventBusTest {
     }
 
     @Test
+    void testConstructorWithNullStoreThrows() {
+        assertThrows(IllegalArgumentException.class, () -> new ServerGameEventBus(null));
+    }
+
+    @Test
+    void testGetEventStore_returnsOriginalStore() {
+        assertNotNull(eventBus.getEventStore());
+        assertEquals(eventStore, eventBus.getEventStore());
+    }
+
+    @Test
     void testBroadcastCallbackExceptionDoesNotPropagate() {
         // Set a broadcast callback that throws
         eventBus.setBroadcastCallback(event -> {

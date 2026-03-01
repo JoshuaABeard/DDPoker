@@ -60,6 +60,12 @@
     <!-- specify each class since the auto-detection is a pain -->
     <class>com.donohoedigital.games.poker.model.OnlineProfile</class>
     <class>com.donohoedigital.games.poker.model.PasswordResetToken</class>
+    <class>com.donohoedigital.games.poker.model.OnlineGame</class>
+    <class>com.donohoedigital.games.poker.model.TournamentHistory</class>
+    <class>com.donohoedigital.games.poker.model.TournamentTemplate</class>
+    <class>com.donohoedigital.games.poker.gameserver.persistence.entity.BanEntity</class>
+    <class>com.donohoedigital.games.poker.gameserver.persistence.entity.GameEventEntity</class>
+    <class>com.donohoedigital.games.poker.gameserver.persistence.entity.GameInstanceEntity</class>
     <properties>
       <!--<property name="hibernate.archive.autodetection" value="class, hbm"/>-->
       <property name="hibernate.show_sql" value="true"/>
