@@ -2,6 +2,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 Joshua Beard and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -436,6 +437,7 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
 
             // Set indeterminate progress while server runs
             SwingUtilities.invokeLater(() -> progress_.getProgressBar().setIndeterminate(true));
+            SwingUtilities.invokeLater(() -> stop_.setEnabled(false));
 
             try {
                 PokerMain pokerMain = (PokerMain) GameEngine.getGameEngine();
@@ -472,6 +474,7 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
                 progress_.setFinalResult(null);
             } finally {
                 SwingUtilities.invokeLater(() -> progress_.getProgressBar().setIndeterminate(false));
+                SwingUtilities.invokeLater(() -> stop_.setEnabled(true));
             }
         }
     }
@@ -483,7 +486,7 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     private static StatResult toStatResult(double winPct, double tiePct, double lossPct) {
         int win = (int) Math.round(winPct * 100);
         int tie = (int) Math.round(tiePct * 100);
-        int lose = 10000 - win - tie;
+        int lose = (int) Math.round(lossPct * 100);
         return new StatResult("", win, lose, tie);
     }
 }
