@@ -38,3 +38,33 @@ describe('calculateEquity', () => {
     expect(result.loss).toBeGreaterThan(0)
   })
 })
+
+describe('known opponent hands', () => {
+  it('AA vs known 72o has ~88%+ equity', () => {
+    const result = calculateEquity(['Ah', 'Ad'], [], 1, 5000, [['7c', '2s']])
+    expect(result.win).toBeGreaterThan(85)
+  })
+
+  it('returns per-opponent breakdown when opponents specified', () => {
+    const result = calculateEquity(['Ah', 'Ad'], [], 2, 1000, [['Kh', 'Ks']])
+    expect(result.opponentResults).toBeDefined()
+    expect(result.opponentResults).toHaveLength(2)
+    // First opponent (KK) should have some win percentage
+    expect(result.opponentResults![0].win).toBeGreaterThan(0)
+  })
+
+  it('mixes known and random opponents', () => {
+    // 1 known + 1 random = 2 total opponents
+    const result = calculateEquity(['Ah', 'Ad'], [], 2, 1000, [['Kh', 'Ks']])
+    expect(result.opponentResults).toHaveLength(2)
+    const total = result.win + result.tie + result.loss
+    expect(total).toBeGreaterThan(99)
+    expect(total).toBeLessThan(101)
+  })
+
+  it('works with no known opponents (backward compatible)', () => {
+    const result = calculateEquity(['Ah', 'Ad'], [], 1, 1000)
+    expect(result.opponentResults).toBeUndefined()
+    expect(result.win).toBeGreaterThan(75)
+  })
+})
