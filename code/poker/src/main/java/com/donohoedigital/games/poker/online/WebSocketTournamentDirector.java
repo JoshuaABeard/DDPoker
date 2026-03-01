@@ -1855,7 +1855,7 @@ public class WebSocketTournamentDirector extends BasePhase
     }
 
     private void onAdvisorUpdate(ServerMessageData.AdvisorData d) {
-        AdvisorState.update(d.improvementOdds(), d.positivePotential(), d.negativePotential());
+        AdvisorState.update(d.improvementOdds(), d.positivePotential(), d.negativePotential(), d.equity());
         SwingUtilities.invokeLater(() -> {
             RemotePokerTable table = currentTable();
             if (table != null) {

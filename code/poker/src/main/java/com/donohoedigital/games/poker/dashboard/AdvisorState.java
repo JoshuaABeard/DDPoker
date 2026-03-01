@@ -45,20 +45,24 @@ public final class AdvisorState {
     private static volatile Map<String, Double> improvementOdds_ = null;
     private static volatile Double positivePotential_ = null;
     private static volatile Double negativePotential_ = null;
+    private static volatile Double equity_ = null;
 
     private AdvisorState() {
     }
 
-    public static void update(Map<String, Double> improvementOdds, Double positivePotential, Double negativePotential) {
+    public static void update(Map<String, Double> improvementOdds, Double positivePotential, Double negativePotential,
+            Double equity) {
         improvementOdds_ = improvementOdds;
         positivePotential_ = positivePotential;
         negativePotential_ = negativePotential;
+        equity_ = equity;
     }
 
     public static void clear() {
         improvementOdds_ = null;
         positivePotential_ = null;
         negativePotential_ = null;
+        equity_ = null;
     }
 
     public static Map<String, Double> getImprovementOdds() {
@@ -69,5 +73,8 @@ public final class AdvisorState {
     }
     public static Double getNegativePotential() {
         return negativePotential_;
+    }
+    public static Double getEquity() {
+        return equity_;
     }
 }
