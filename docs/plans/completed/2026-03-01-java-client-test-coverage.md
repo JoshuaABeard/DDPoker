@@ -1,5 +1,7 @@
 # Java Client Test Coverage Implementation Plan
 
+**Status:** COMPLETED (2026-03-01)
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Raise JUnit test coverage to 80%+ on non-UI code across poker family modules (pokerengine, pokergamecore, poker).
