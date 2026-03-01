@@ -77,7 +77,6 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
     private PokerStatsPanel riverstats_ = null;
     private PokerStatsPanel handstrength_ = null;
     private PokerSimulatorPanel simulations_ = null;
-    private PokerStatsPanel ladder_ = null;
     private boolean bShowAllAi_ = false;
     private boolean bCustomized_ = false;
     private String STYLE;
@@ -178,9 +177,6 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
 
         riverstats_ = new PokerStatsPanel(PokerStatsPanel.RIVER);
         tab_.addTab("msg.riverstats", ic, ic, riverstats_);
-
-        ladder_ = new PokerStatsPanel(PokerStatsPanel.LADDER);
-        tab_.addTab("msg.handladder", ic, ic, ladder_);
 
         // hand strength
         handstrength_ = new PokerStatsPanel(PokerStatsPanel.STRENGTH);
@@ -452,8 +448,6 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
             turnstats_.updateStats(pocket, community);
         if (riverstats_.isSelectedTab())
             riverstats_.updateStats(pocket, community);
-        if (ladder_.isSelectedTab())
-            ladder_.updateStats(pocket, community);
         context_.getWindow().repaint();
     }
 

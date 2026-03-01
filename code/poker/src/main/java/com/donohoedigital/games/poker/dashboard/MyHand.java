@@ -36,6 +36,7 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
+import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.gui.*;
@@ -208,14 +209,11 @@ public class MyHand extends DashboardItem {
                 community.add(allcommunity.getCard(i));
             }
 
-            HandSorted csorted = new HandSorted(community);
-
-            // get hand
-            HandInfo info_ = new HandInfo(asViewedBy, asViewedBy.getHandSorted(), csorted);
-            fast_.getScore(hand, community);
-            Hand best = info_.getBest();
-            sHand_ = PropertyConfig.getMessage("msg.myhand.postflop", best.toHTML(), fast_.toString(", ", false));
-            sHandTitle_ = best.toStringRank();
+            // get hand type and best-rank string via pokergamecore evaluator
+            int score = fast_.getScore(hand, community);
+            sHand_ = PropertyConfig.getMessage("msg.myhand.postflop", hand.toHTML(),
+                    HandTypeDisplay.toDisplayString(fast_, ", "));
+            sHandTitle_ = HandTypeDisplay.getBestRankString(score);
         }
     }
 }

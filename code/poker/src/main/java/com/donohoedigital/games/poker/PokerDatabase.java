@@ -47,6 +47,7 @@ import java.math.*;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
+import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
@@ -1577,7 +1578,7 @@ public class PokerDatabase {
 
                 if (!community.isEmpty()) {
                     info.getScore(hand, community);
-                    handShown = "&nbsp;-&nbsp;" + info.toString(", ", false);
+                    handShown = "&nbsp;-&nbsp;" + HandTypeDisplay.toDisplayString(info, ", ");
                 }
             } else {
                 handHTML = "<DDCARD FACEUP=\"false\"><DDCARD FACEUP=\"false\">";
@@ -1839,7 +1840,7 @@ public class PokerDatabase {
 
                 if (!community.isEmpty()) {
                     info.getScore(hand, community);
-                    handShown = "&nbsp;-&nbsp;" + info.toString(", ", false);
+                    handShown = "&nbsp;-&nbsp;" + HandTypeDisplay.toDisplayString(info, ", ");
                 }
             } else {
                 handHTML = "<DDCARD FACEUP=\"false\"><DDCARD FACEUP=\"false\">";

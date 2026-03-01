@@ -22,7 +22,6 @@ package com.donohoedigital.games.poker.server;
 import com.donohoedigital.games.poker.core.*;
 import com.donohoedigital.games.poker.core.ai.*;
 import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.HandPotential;
 
 import java.util.List;
 
@@ -252,11 +251,10 @@ public class ServerV2AIContext extends ServerAIContext implements V2AIContext {
         if (pocket == null || community == null || community.size() < 3) {
             return 0;
         }
-        HandPotential hp = new HandPotential(pocket, community);
-        // Nut flush draw with two cards = turn + river combined counts
-        int turnCount = hp.getHandCount(HandPotential.NUT_FLUSH_DRAW_WITH_TWO_CARDS, 0);
-        int riverCount = (community.size() == 3) ? hp.getHandCount(HandPotential.NUT_FLUSH_DRAW_WITH_TWO_CARDS, 1) : 0;
-        return turnCount + riverCount;
+        HandInfoFast fast = new HandInfoFast();
+        fast.getScore(pocket, community);
+        // Return flush outs (9) when holding the nut flush draw
+        return fast.hasNutFlushDraw() ? 9 : 0;
     }
 
     @Override
@@ -264,15 +262,10 @@ public class ServerV2AIContext extends ServerAIContext implements V2AIContext {
         if (pocket == null || community == null || community.size() < 3) {
             return 0;
         }
-        HandPotential hp = new HandPotential(pocket, community);
-        // Second nut + weak flush draws
-        int secondNutTurn = hp.getHandCount(HandPotential.SECOND_NUT_FLUSH_DRAW_WITH_TWO_CARDS, 0);
-        int weakTurn = hp.getHandCount(HandPotential.WEAK_FLUSH_DRAW_WITH_TWO_CARDS, 0);
-        int secondNutRiver = (community.size() == 3)
-                ? hp.getHandCount(HandPotential.SECOND_NUT_FLUSH_DRAW_WITH_TWO_CARDS, 1)
-                : 0;
-        int weakRiver = (community.size() == 3) ? hp.getHandCount(HandPotential.WEAK_FLUSH_DRAW_WITH_TWO_CARDS, 1) : 0;
-        return secondNutTurn + weakTurn + secondNutRiver + weakRiver;
+        HandInfoFast fast = new HandInfoFast();
+        fast.getScore(pocket, community);
+        // Return flush outs (9) when holding a non-nut flush draw
+        return (fast.has2ndNutFlushDraw() || fast.hasWeakFlushDraw()) ? 9 : 0;
     }
 
     @Override
@@ -280,11 +273,11 @@ public class ServerV2AIContext extends ServerAIContext implements V2AIContext {
         if (pocket == null || community == null || community.size() < 3) {
             return 0;
         }
-        HandPotential hp = new HandPotential(pocket, community);
-        // Approximate: use 8-out straight draws as nut straight draws
-        int turnCount = hp.getHandCount(HandPotential.STRAIGHT_DRAW_8_OUTS, 0);
-        int riverCount = (community.size() == 3) ? hp.getHandCount(HandPotential.STRAIGHT_DRAW_8_OUTS, 1) : 0;
-        return turnCount + riverCount;
+        HandInfoFast fast = new HandInfoFast();
+        fast.getScore(pocket, community);
+        // An open-ended (8-out) straight draw is treated as the nut straight draw
+        int outs = fast.getStraightDrawOuts();
+        return (fast.hasStraightDraw() && outs >= 8) ? outs : 0;
     }
 
     @Override
@@ -292,15 +285,11 @@ public class ServerV2AIContext extends ServerAIContext implements V2AIContext {
         if (pocket == null || community == null || community.size() < 3) {
             return 0;
         }
-        HandPotential hp = new HandPotential(pocket, community);
-        // 6-out, 4-out, and 3-out straight draws
-        int turn6 = hp.getHandCount(HandPotential.STRAIGHT_DRAW_6_OUTS, 0);
-        int turn4 = hp.getHandCount(HandPotential.STRAIGHT_DRAW_4_OUTS, 0);
-        int turn3 = hp.getHandCount(HandPotential.STRAIGHT_DRAW_3_OUTS, 0);
-        int river6 = (community.size() == 3) ? hp.getHandCount(HandPotential.STRAIGHT_DRAW_6_OUTS, 1) : 0;
-        int river4 = (community.size() == 3) ? hp.getHandCount(HandPotential.STRAIGHT_DRAW_4_OUTS, 1) : 0;
-        int river3 = (community.size() == 3) ? hp.getHandCount(HandPotential.STRAIGHT_DRAW_3_OUTS, 1) : 0;
-        return turn6 + turn4 + turn3 + river6 + river4 + river3;
+        HandInfoFast fast = new HandInfoFast();
+        fast.getScore(pocket, community);
+        // A gutshot or weaker straight draw (< 8 outs) is treated as non-nut
+        int outs = fast.getStraightDrawOuts();
+        return (fast.hasStraightDraw() && outs < 8) ? outs : 0;
     }
 
     // === Table State (V2-specific) ===

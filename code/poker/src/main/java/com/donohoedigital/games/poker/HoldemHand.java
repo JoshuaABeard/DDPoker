@@ -2404,8 +2404,8 @@ public class HoldemHand implements DataMarshal, GameHand {
     }
 
     /**
-     * pre-resolve pot, creating HandInfo for each player and figuring out winners,
-     * losers who don't have to show.
+     * pre-resolve pot, computing hand score for each player and figuring out
+     * winners, losers who don't have to show.
      */
     public void preResolve(boolean bDoWinnersLosers) {
         setPlayerOrder(true, ROUND_SHOWDOWN);
@@ -2631,7 +2631,6 @@ public class HoldemHand implements DataMarshal, GameHand {
     private void preResolvePot(int nPotNum, List<PokerPlayer> winners, List<PokerPlayer> losers) {
         Pot pot = getPot(nPotNum);
         PokerPlayer player;
-        HandInfo info;
 
         // get info for each player in pot.
         // This iterates in showdown order.
@@ -2643,14 +2642,14 @@ public class HoldemHand implements DataMarshal, GameHand {
                 continue;
             if (!pot.isInPot(player))
                 continue;
-            info = player.getHandInfo();
+            int score = player.getHandScore();
 
             // if score is greater than or equal to the highest score,
             // this player's cards should be exposed
-            if (info.getScore() >= nHighScore) {
-                if (info.getScore() > nHighScore)
+            if (score >= nHighScore) {
+                if (score > nHighScore)
                     winners.clear();
-                nHighScore = info.getScore();
+                nHighScore = score;
                 winners.add(player);
             }
             // this loser doesn't have to show hand unless in
@@ -2667,7 +2666,6 @@ public class HoldemHand implements DataMarshal, GameHand {
     private void resolvePot(int nPotNum, boolean bUncontested) {
         Pot pot = getPot(nPotNum);
         PokerPlayer player;
-        HandInfo info;
         List<PokerPlayer> winners = new ArrayList<>();
 
         // get info for each player in pot.
@@ -2681,12 +2679,12 @@ public class HoldemHand implements DataMarshal, GameHand {
                 continue;
             if (!pot.isInPot(player))
                 continue;
-            info = player.getHandInfo();
+            int score = player.getHandScore();
 
             // if score is greater than or equal to the highest score,
             // this player's cards should be exposed
-            if (info.getScore() >= nHighScore) {
-                nHighScore = info.getScore();
+            if (score >= nHighScore) {
+                nHighScore = score;
                 if (!bUncontested || player.isShowWinning())
                     player.setCardsExposed(true);
             } else if (!player.isMuckLosing()) {
@@ -2719,9 +2717,8 @@ public class HoldemHand implements DataMarshal, GameHand {
                 continue;
             if (!pot.isInPot(player))
                 continue;
-            info = player.getHandInfo();
-            if (info.getScore() == nHighScore) {
-                winners.add(info.getPlayer());
+            if (player.getHandScore() == nHighScore) {
+                winners.add(player);
             }
         }
 
@@ -3342,19 +3339,6 @@ public class HoldemHand implements DataMarshal, GameHand {
         }
 
         return false;
-    }
-
-    //
-    // AI common data
-    //
-    private PocketWeights pw_;
-
-    public PocketWeights getPocketWeights() {
-        return pw_;
-    }
-
-    public void setPocketWeights(PocketWeights pw) {
-        pw_ = pw;
     }
 
     // === GameHand Interface Implementation (V2 AI Support) ===

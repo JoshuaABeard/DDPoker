@@ -40,8 +40,16 @@ import java.awt.*;
 import java.awt.event.*;
 
 public class AdvisorGridPanel extends DDPanel {
-    private PocketMatrixByte outcomes_ = new PocketMatrixByte();
-    private PocketMatrixString outcomeStrings_ = new PocketMatrixString();
+    private static final int MATRIX_SZ = 1326; // C(52,2)
+
+    /** Compact byte matrix indexed by triangular index over card pairs. */
+    private final byte[] outcomes_ = new byte[MATRIX_SZ];
+    /** Compact String matrix indexed by triangular index over card pairs. */
+    private final String[] outcomeStrings_ = new String[MATRIX_SZ];
+
+    private static int matrixIndex(int i, int j) {
+        return (i > j) ? (i * (i + 1)) / 2 + j - i : (j * (j + 1)) / 2 + i - j;
+    }
 
     private boolean bPreFlop_ = true;
     private boolean bMinorGrid_ = true;
@@ -59,20 +67,24 @@ public class AdvisorGridPanel extends DDPanel {
     }
 
     public void setOutcome(Hand hand, int outcome) {
-        outcomes_.set(hand, (byte) (outcome + 1));
+        Card c0 = hand.getCard(0);
+        Card c1 = hand.getCard(1);
+        outcomes_[matrixIndex(c0.getIndex(), c1.getIndex())] = (byte) (outcome + 1);
     }
 
     public void setOutcome(int rank1, int rank2, boolean suited, int outcome, String outcomeString) {
         if (suited) {
             for (int suit = CardSuit.CLUBS_RANK; suit <= CardSuit.SPADES_RANK; ++suit) {
-                outcomes_.set(Card.getCard(suit, rank1), Card.getCard(suit, rank2), (byte) (outcome + 1));
-                outcomeStrings_.set(Card.getCard(suit, rank1), Card.getCard(suit, rank2), outcomeString);
+                int idx = matrixIndex(Card.getCard(suit, rank1).getIndex(), Card.getCard(suit, rank2).getIndex());
+                outcomes_[idx] = (byte) (outcome + 1);
+                outcomeStrings_[idx] = outcomeString;
             }
         } else {
             for (int suit1 = CardSuit.DIAMONDS_RANK; suit1 <= CardSuit.SPADES_RANK; ++suit1) {
                 for (int suit2 = CardSuit.CLUBS_RANK; suit2 < suit1; ++suit2) {
-                    outcomes_.set(Card.getCard(suit1, rank1), Card.getCard(suit2, rank2), (byte) (outcome + 1));
-                    outcomeStrings_.set(Card.getCard(suit1, rank1), Card.getCard(suit2, rank2), outcomeString);
+                    int idx = matrixIndex(Card.getCard(suit1, rank1).getIndex(), Card.getCard(suit2, rank2).getIndex());
+                    outcomes_[idx] = (byte) (outcome + 1);
+                    outcomeStrings_[idx] = outcomeString;
                 }
             }
         }
@@ -166,7 +178,7 @@ public class AdvisorGridPanel extends DDPanel {
             Color.YELLOW.darker().darker(), Color.YELLOW.darker(), Color.GREEN.darker().darker(), Color.GREEN.darker()};
 
     public int getValue(int card1, int card2) {
-        return outcomes_.get(card1, card2) - 1;
+        return outcomes_[matrixIndex(card1, card2)] - 1;
     }
 
     protected Color getColor(int card1, int card2) {
@@ -322,7 +334,8 @@ public class AdvisorGridPanel extends DDPanel {
         if (exemplar == null) {
             return AIConstants.OUTCOME_NONE;
         } else {
-            return outcomes_.get(exemplar) - 1;
+            int idx = matrixIndex(exemplar.getCard(0).getIndex(), exemplar.getCard(1).getIndex());
+            return outcomes_[idx] - 1;
         }
     }
 
@@ -332,11 +345,12 @@ public class AdvisorGridPanel extends DDPanel {
         if (exemplar == null) {
             return null;
         } else {
-            return outcomeStrings_.get(exemplar);
+            int idx = matrixIndex(exemplar.getCard(0).getIndex(), exemplar.getCard(1).getIndex());
+            return outcomeStrings_[idx];
         }
     }
 
     public void clear() {
-        outcomes_.clear((byte) 0);
+        java.util.Arrays.fill(outcomes_, (byte) 0);
     }
 }

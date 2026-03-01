@@ -218,7 +218,6 @@ public class PokerStats {
         PokerPlayer player;
         int nAmount;
         String sResult;
-        HandInfo info;
         for (int i = 0; i < hhand_.getNumPlayers(); i++) {
             player = hhand_.getPlayerAt(i);
             if (player.isFolded())
@@ -227,9 +226,10 @@ public class PokerStats {
             nAmount = hhand_.getWin(player);
 
             if (DEBUG) {
-                info = player.getHandInfo();
+                int score = player.getHandScore();
                 sResult = player.getName() + " " + fHole.form(player.getHand().toStringSuited()) + " "
-                        + fType.form(info.getHandTypeDesc()) + " " + fBest.form(info.getBest().toString());
+                        + fType.form(HandTypeDisplay.getHandTypeDesc(HandTypeDisplay.getTypeFromScore(score))) + " "
+                        + fBest.form(HandTypeDisplay.getBestRankString(score));
                 if (nAmount > 0) {
                     sResult += " WIN " + nAmount;
                 }

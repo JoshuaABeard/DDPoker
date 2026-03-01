@@ -20,8 +20,6 @@
 package com.donohoedigital.games.poker.control;
 
 import com.donohoedigital.games.engine.GameContext;
-import com.donohoedigital.games.poker.HandFutures;
-import com.donohoedigital.games.poker.HandInfo;
 import com.donohoedigital.games.poker.HoldemHand;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
@@ -33,10 +31,9 @@ import com.donohoedigital.games.poker.dashboard.DashboardAdvisor;
 import com.donohoedigital.games.poker.dashboard.DashboardItem;
 import com.donohoedigital.games.poker.dashboard.DashboardManager;
 import com.donohoedigital.games.poker.dashboard.DashboardPanel;
+import com.donohoedigital.games.poker.dashboard.AdvisorState;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.engine.HandInfoFaster;
-import com.donohoedigital.games.poker.engine.HandSorted;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.sun.net.httpserver.HttpExchange;
@@ -430,34 +427,19 @@ class UiDashboardWidgetsHandler extends BaseHandler {
     }
 
     private static Double computeImproveOdds(HoldemHand hand, PokerPlayer human) {
-        if (hand == null || human == null || human.getHand() == null) {
+        // Improvement odds are now provided by the server via ADVISOR_UPDATE WebSocket messages.
+        // Read from AdvisorState which is populated when the server sends advisor data.
+        java.util.Map<String, Double> improvementOdds = AdvisorState.getCurrentImprovementOdds();
+        if (improvementOdds == null || improvementOdds.isEmpty()) {
             return null;
         }
-
-        int round = hand.getRoundForDisplay();
-        Hand community = hand.getCommunityForDisplay();
-        if ((round != HoldemHand.ROUND_FLOP && round != HoldemHand.ROUND_TURN)
-                || community == null || community.size() < 3) {
-            return null;
-        }
-
-        try {
-            HandInfoFaster fast = new HandInfoFaster();
-            HandSorted csorted = new HandSorted(community);
-            HandInfo info = new HandInfo(human, human.getHandSorted(), csorted);
-            HandFutures futures = new HandFutures(fast, human.getHand(), community);
-
-            double total = 0.0d;
-            for (int i = Math.max(info.getHandType() + 1, HandInfo.TRIPS); i <= HandInfo.ROYAL_FLUSH; i++) {
-                double d = futures.getOddsImproveTo(i);
-                if (d > 0.0d) {
-                    total += d;
-                }
+        double total = 0.0d;
+        for (double d : improvementOdds.values()) {
+            if (d > 0.0d) {
+                total += d;
             }
-            return total;
-        } catch (Exception ignored) {
-            return null;
         }
+        return total > 0.0d ? total : null;
     }
 
     private static Map<String, Object> myHandData(SnapshotState state) {

@@ -45,7 +45,6 @@ import javax.swing.*;
 import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.math.*;
 import java.util.*;
 import java.util.List;
 
@@ -283,35 +282,12 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
             hands[i] = table.getPlayer(i).getHand();
         }
 
-        Hand community = hhand.getCommunity();
-        BigInteger num = HoldemSimulator.getNumberIterations(hands, community);
-        String sValue = num.toString();
-        bIterWayBig_ = (sValue.length() > 7);
-        long nNum = Long.MAX_VALUE;
-        if (!bIterWayBig_) {
-            nNum = num.longValue();
-        }
-        StringBuilder commas = new StringBuilder();
-        int nCnt = 0;
-        for (int i = sValue.length() - 1; i >= 0; i--) {
-            if (nCnt > 0 && nCnt % 3 == 0)
-                commas.append(",");
-            commas.append(sValue.charAt(i));
-            nCnt++;
-        }
-        commas = commas.reverse();
-
         if (bClearResults)
             clearResults();
-        allcombo_.setText(PropertyConfig.getMessage("msg.allcombos", commas));
-
-        // auto select all combo if it is 2,000,000 or less
-        if (nNum <= 2000000) {
-            allcombo_.setSelected(true);
-        } else {
-            simcombo_.setSelected(true);
-        }
-        numSims_.setEnabled(simcombo_.isSelected());
+        // Simulation not available - disable iteration count display
+        allcombo_.setText(PropertyConfig.getMessage("msg.allcombos", "N/A"));
+        simcombo_.setSelected(true);
+        numSims_.setEnabled(true);
     }
 
     /**
@@ -427,35 +403,7 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
 
         @Override
         public void run() {
-            if (false && TESTING(EngineConstants.TESTING_PERFORMANCE))
-                Perf.start();
-
-            HoldemHand hhand = sim_.hhand_;
-            PokerTable table = sim_.table_;
-
-            Hand[] hands = new Hand[numOpponents_.getSpinner().getValue() + 1];
-            for (int i = 0; i < hands.length; i++) {
-                hands[i] = new Hand(table.getPlayer(i).getHand());
-                if (bSimulate)
-                    hands[i].removeBlank();
-                else
-                    replaceBlank(hands[i]);
-            }
-
-            Hand community = new Hand(hhand.getCommunity());
-            if (bSimulate)
-                community.removeBlank();
-            else
-                replaceBlank(community);
-
-            if (bSimulate) {
-                HoldemSimulator.simulate(hands, community, numSims_.getSpinner().getValue(), progress_);
-            } else {
-                HoldemSimulator.iterate(hands, community, progress_);
-            }
-
-            if (false && TESTING(EngineConstants.TESTING_PERFORMANCE))
-                Perf.stop();
+            // Showdown simulation will be available in a future update.
         }
     }
 

@@ -19,7 +19,6 @@
  */
 package com.donohoedigital.games.poker.control;
 
-import com.donohoedigital.games.poker.HoldemSimulator;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -102,20 +101,11 @@ class SimulatorHandler extends BaseHandler {
             }
         }
 
-        // HoldemSimulator.precision is a logarithmic scale (DEFAULT=4), not a raw iteration count.
-        // Use the 3-argument overload which applies DEFAULT_PRECISION internally.
-        var results = HoldemSimulator.simulate(hole, community, null);
-
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("holeCards", holeCardsToStrings(hole));
         response.put("community", holeCardsToStrings(community));
-
-        if (results != null) {
-            // StatResults contains per-hand-group data; extract overall win rate
-            response.put("completed", true);
-        } else {
-            response.put("completed", false);
-        }
+        response.put("completed", false);
+        response.put("message", "Simulation removed from control server; use POST /api/v1/poker/simulate instead");
 
         sendJson(exchange, 200, response);
     }

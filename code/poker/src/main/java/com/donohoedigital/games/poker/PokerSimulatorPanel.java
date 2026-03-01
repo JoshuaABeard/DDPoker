@@ -250,7 +250,8 @@ public class PokerSimulatorPanel extends DDTabPanel implements DDProgressFeedbac
         }
 
         public void run() {
-            HoldemSimulator.simulate(pocket_, community_, progress_);
+            SwingUtilities.invokeLater(() -> htmlArea_
+                    .setText("<html><body>Simulation will be available in a future update.</body></html>"));
         }
     }
 }

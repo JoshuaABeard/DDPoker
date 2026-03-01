@@ -33,23 +33,23 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.config.PropertyConfig;
+import com.donohoedigital.games.poker.dashboard.AdvisorState;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
+import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
-import com.donohoedigital.games.poker.core.state.BettingRound;
-
+import java.util.Map;
 public class PokerStatsPanel extends DDTabPanel {
     static Logger logger = LogManager.getLogger(PokerStatsPanel.class);
 
     public static final int FLOP = 1;
     public static final int TURN = 2;
     public static final int RIVER = 3;
-    public static final int LADDER = 4;
     public static final int STRENGTH = 5;
 
     private DDScrollPane scroll_;
@@ -127,10 +127,6 @@ public class PokerStatsPanel extends DDTabPanel {
                 nMin = 5;
                 sMsg = PropertyConfig.getMessage("msg.sim.river");
                 break;
-            case LADDER :
-                nMin = 5;
-                sMsg = PropertyConfig.getMessage("msg.sim.ladder");
-                break;
             case STRENGTH :
                 nMin = 5;
                 sMsg = PropertyConfig.getMessage("msg.sim.strength");
@@ -184,9 +180,6 @@ public class PokerStatsPanel extends DDTabPanel {
                     else if (com == 5)
                         sText = PropertyConfig.getMessage("msg.sim.seenriver");
                     break;
-                case LADDER :
-                    // ladder is good anytime
-                    break;
                 case STRENGTH :
                     if (com < 3)
                         sText = PropertyConfig.getMessage("msg.sim.needflop.3");
@@ -229,47 +222,103 @@ public class PokerStatsPanel extends DDTabPanel {
      * thread generates info then updates html
      */
     private class UpdateThread extends Thread {
-        HandStrength strength_;
-        HandPotential potential_;
 
         public UpdateThread() {
             super("UpdateThread");
         }
 
         public void run() {
-            switch (mode_) {
-                case STRENGTH :
-                    strength_ = new HandStrength();
-                    break;
-
-                case LADDER :
-                    break;
-
-                default :
-                    potential_ = new HandPotential(pocket_, community_);
-            }
-
+            String html = generateStats();
             SwingUtilities.invokeLater(() -> {
-                switch (mode_) {
-                    case FLOP :
-                        htmlArea_.setText(potential_.toHTML(BettingRound.FLOP.toLegacy()));
-                        break;
-                    case TURN :
-                        htmlArea_.setText(potential_.toHTML(BettingRound.TURN.toLegacy()));
-                        break;
-                    case RIVER :
-                        htmlArea_.setText(potential_.toHTML(BettingRound.RIVER.toLegacy()));
-                        break;
-                    case LADDER :
-                        htmlArea_
-                                .setText("<html><body>Hand ladder will be available in a future update.</body></html>");
-                        break;
-                    case STRENGTH :
-                        htmlArea_.setText(strength_.toHTML(pocket_, community_, 9));
-                        break;
-                }
+                htmlArea_.setText(html);
                 htmlArea_.setCaretPosition(0); // scroll to top
             });
+        }
+
+        private String generateStats() {
+            switch (mode_) {
+                case FLOP :
+                case TURN :
+                case RIVER :
+                    return generatePotentialStats();
+                case STRENGTH :
+                    return generateStrengthStats();
+                default :
+                    return "<html><body>No data available.</body></html>";
+            }
+        }
+
+        private String generatePotentialStats() {
+            Double posPot = AdvisorState.getCurrentPositivePotential();
+            Double negPot = AdvisorState.getCurrentNegativePotential();
+            double equity = AdvisorState.getCurrentEquity();
+            Map<String, Double> improvementOdds = AdvisorState.getCurrentImprovementOdds();
+
+            if (posPot == null && negPot == null && improvementOdds == null) {
+                return "<html><body>Hand potential data not yet available. "
+                        + "Play a hand to see statistics.</body></html>";
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("<html><body>");
+            sb.append("<table cellpadding='2'>");
+
+            if (posPot != null) {
+                sb.append("<tr><td><b>Positive Potential:</b></td><td>").append(PokerConstants.formatPercent(posPot))
+                        .append("</td></tr>");
+            }
+            if (negPot != null) {
+                sb.append("<tr><td><b>Negative Potential:</b></td><td>").append(PokerConstants.formatPercent(negPot))
+                        .append("</td></tr>");
+            }
+            sb.append("<tr><td><b>Equity:</b></td><td>").append(PokerConstants.formatPercent(equity))
+                    .append("</td></tr>");
+
+            if (improvementOdds != null && !improvementOdds.isEmpty()) {
+                sb.append("<tr><td colspan='2'>&nbsp;</td></tr>");
+                sb.append("<tr><td colspan='2'><b>Improvement Odds:</b></td></tr>");
+                for (Map.Entry<String, Double> entry : improvementOdds.entrySet()) {
+                    if (entry.getValue() > 0) {
+                        sb.append("<tr><td>&nbsp;&nbsp;").append(entry.getKey()).append(":</td><td>")
+                                .append(PokerConstants.formatPercent(entry.getValue())).append("</td></tr>");
+                    }
+                }
+            }
+
+            sb.append("</table></body></html>");
+            return sb.toString();
+        }
+
+        private String generateStrengthStats() {
+            double equity = AdvisorState.getCurrentEquity();
+            double potOdds = AdvisorState.getCurrentPotOdds();
+
+            if (equity == 0 && potOdds == 0) {
+                return "<html><body>Hand strength data not yet available. "
+                        + "Play a hand to see statistics.</body></html>";
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("<html><body>");
+            sb.append("<table cellpadding='2'>");
+            sb.append("<tr><td><b>Hand Equity:</b></td><td>").append(PokerConstants.formatPercent(equity))
+                    .append("</td></tr>");
+            sb.append("<tr><td><b>Pot Odds:</b></td><td>").append(PokerConstants.formatPercent(potOdds))
+                    .append("</td></tr>");
+
+            Double posPot = AdvisorState.getCurrentPositivePotential();
+            Double negPot = AdvisorState.getCurrentNegativePotential();
+            if (posPot != null) {
+                sb.append("<tr><td><b>Positive Potential:</b></td><td>").append(PokerConstants.formatPercent(posPot))
+                        .append("</td></tr>");
+            }
+            if (negPot != null) {
+                sb.append("<tr><td><b>Negative Potential:</b></td><td>").append(PokerConstants.formatPercent(negPot))
+                        .append("</td></tr>");
+            }
+
+            sb.append("</table></body></html>");
+            return sb.toString();
         }
     }
 

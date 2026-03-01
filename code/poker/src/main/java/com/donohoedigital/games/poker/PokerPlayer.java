@@ -47,6 +47,7 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.*;
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.dashboard.AdvisorState;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.engine.*;
@@ -107,7 +108,6 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     private boolean bBooted_ = false;
 
     // transient info
-    private HandInfo handInfo_;
     private PlayerProfile profile_;
     private boolean bLoadProfileNeeded_ = false;
     private String sAllInPerc_ = null;
@@ -722,7 +722,6 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     public void removeHand() {
         hand_ = null;
         handSorted_ = null;
-        handInfo_ = null;
     }
 
     /*
@@ -733,8 +732,6 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
         hand_ = new Hand(cType);
         if (cType == Hand.TYPE_NORMAL)
             nHandsPlayed_++;
-        nLastCalcFingerprint_ = -1;
-        nLastCalcPotRound_ = -1;
         nChipsAtStart_ = nChips_; // track for resolving ties when exiting tournament
         sAllInPerc_ = null;
         bFolded_ = false;
@@ -1254,17 +1251,18 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     }
 
     /**
-     * Get hand info (lazy creation)
+     * Get the hand score for this player's current hand against the community
+     * cards. Returns 0 if cards are not available.
      */
-    public HandInfo getHandInfo() {
-        if (handInfo_ == null) {
-            HandSorted sorted = getHandSorted();
-            HoldemHand hhand = getHoldemHand();
-            if (sorted != null && hhand != null) {
-                handInfo_ = new HandInfo(this, sorted, hhand.getCommunitySorted());
-            }
-        }
-        return handInfo_;
+    public int getHandScore() {
+        HandSorted sorted = getHandSorted();
+        HoldemHand hhand = getHoldemHand();
+        if (sorted == null || hhand == null)
+            return 0;
+        HandSorted comm = hhand.getCommunitySorted();
+        if (comm == null)
+            return 0;
+        return HandTypeDisplay.getHandScore(sorted, comm);
     }
 
     ////
@@ -1625,7 +1623,6 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
         nChipsAtStart_ = entry.removeIntToken();
         hand_ = (Hand) entry.removeToken();
         handSorted_ = null; // new hand, so null out (created on demand)
-        handInfo_ = null; // new hand, so null out (created on demand)
         nPosition_ = entry.removeIntToken();
         nStartingPositionCat_ = entry.removeIntToken();
         nPrize_ = entry.removeIntToken();
@@ -1749,108 +1746,60 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     ////// AI stats
     //////
 
-    private float nStrength_;
-    private int nNumStraights_;
-    private long nLastCalcFingerprint_ = 0;
-
     /**
-     * hand strength - return -1 if this player is folded, or there is no hand, or
-     * if no community cards are out
+     * Hand strength from server-provided advisor data. Returns the equity value
+     * from the last ADVISOR_UPDATE WebSocket message (0.0-1.0), or -1 if not
+     * available (folded, pre-flop, or no community cards).
      */
     public float getHandStrength() {
+        if (isFolded())
+            return -1;
         HoldemHand hhand = getHoldemHand();
         if (hhand == null)
             return -1;
-
-        // if folded
-        if (isFolded())
-            return -1;
-
-        // if too early a round, indicate
         HandSorted comm = hhand.getCommunitySorted();
-        if (comm.size() < 3)
+        if (comm == null || comm.size() < 3)
             return -1;
-
-        long fingerprint = comm.fingerprint() | getHand().fingerprint();
-        // if already calc'd this round, return it
-        if (fingerprint == nLastCalcFingerprint_)
-            return nStrength_;
-
-        // new calc
-        HandStrength hs = new HandStrength();
-        nStrength_ = hs.getStrength(getHandSorted(), comm, hhand.getNumWithCards() - 1);
-        nNumStraights_ = hs.getNumStraights();
-        nLastCalcFingerprint_ = fingerprint;
-
-        return nStrength_;
+        return (float) (AdvisorState.getCurrentEquity() / 100.0);
     }
 
     /**
-     * hand strength ancilliary - return number of straights made by opponents
-     * during last call to getHandStrength()
-     */
-    public int getOppNumStraights() {
-        return nNumStraights_;
-    }
-
-    private float nPotential_;
-    private int nLastCalcPotRound_ = -1;
-
-    /**
-     * hand strength - return -1 if this player is folded, or there is no hand, or
-     * if no community cards are out
+     * Hand potential from server-provided advisor data. Returns the positive
+     * potential value from the last ADVISOR_UPDATE message (0.0-1.0), or -1 if not
+     * available.
      */
     public float getHandPotential() {
+        if (isFolded())
+            return -1;
         HoldemHand hhand = getHoldemHand();
         if (hhand == null)
             return -1;
-
-        // if folded
-        if (isFolded())
-            return -1;
-
-        // only do potential after flop & turn
         int nRound = hhand.getRound().toLegacy();
         if (nRound != BettingRound.FLOP.toLegacy() && nRound != BettingRound.TURN.toLegacy())
             return -1;
-
-        // if already calced this round, return it
-        if (nRound == nLastCalcPotRound_)
-            return nPotential_;
-
-        // do calc
-        nPotential_ = HandPotential.getPotential(getHandSorted(), hhand.getCommunitySorted());
-        nLastCalcPotRound_ = hhand.getRound().toLegacy();
-
-        return nPotential_;
+        Double potential = AdvisorState.getCurrentPositivePotential();
+        return potential != null ? potential.floatValue() : -1;
     }
 
     /**
-     * Hand potential - debug (only returns if calc'd
+     * Hand potential display value (same as {@link #getHandPotential()} — kept for
+     * API compatibility).
      */
     public float getHandPotentialDisplay() {
-        HoldemHand hhand = getHoldemHand();
-        if (hhand == null)
-            return -1;
-
-        // if folded
-        if (isFolded())
-            return -1;
-
-        // only do potential after flop & turn
-        int nRound = hhand.getRound().toLegacy();
-        if (nRound != BettingRound.FLOP.toLegacy() && nRound != BettingRound.TURN.toLegacy())
-            return -1;
-
-        return nPotential_;
+        return getHandPotential();
     }
 
     /**
-     * Get effective hand strength
+     * Get effective hand strength: hs + (1 - hs) * hp
      */
     public float getEffectiveHandStrength() {
         float hs = getHandStrength();
-        return hs + (1 - hs) * getHandPotential();
+        float hp = getHandPotential();
+        if (hs < 0)
+            return -1;
+        if (hp < 0)
+            return hs;
+        return hs + (1 - hs) * hp;
     }
 
     // instances for sorting

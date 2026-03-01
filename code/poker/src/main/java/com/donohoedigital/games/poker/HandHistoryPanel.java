@@ -46,6 +46,7 @@ import java.awt.event.*;
 import java.sql.*;
 import java.util.*;
 import java.util.List;
+import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 
 public class HandHistoryPanel extends DDPanel {
@@ -375,7 +376,7 @@ public class HandHistoryPanel extends DDPanel {
 
                 if (community.size() > 0) {
                     info.getScore(hand, community);
-                    handShown = "&nbsp;-&nbsp;" + info.toString(", ", false);
+                    handShown = "&nbsp;-&nbsp;" + HandTypeDisplay.toDisplayString(info, ", ");
                 }
             } else {
                 handHTML = "<DDCARD FACEUP=\"false\"><DDCARD FACEUP=\"false\">";

@@ -752,20 +752,11 @@ class PokerPlayerTest {
     }
 
     @Test
-    void should_ReturnNullHandInfo_When_NoTableContext() {
-        // getHandInfo needs both hand cards and a HoldemHand (table context)
-        HandInfo info = player.getHandInfo();
-
-        assertThat(info).isNull();
-    }
-
-    @Test
     void should_RemoveHand_When_RemoveHandCalled() {
         player.removeHand();
 
         assertThat(player.getHand()).isNull();
         assertThat(player.getHandSorted()).isNull();
-        assertThat(player.getHandInfo()).isNull();
     }
 
     @Test
