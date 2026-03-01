@@ -1,6 +1,8 @@
 /*
+ * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2026 Joshua Beard and contributors
+ *
  * This file is part of DD Poker, originally created by Doug Donohoe.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -13,12 +15,22 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * For the full License text, please see the LICENSE.txt file
+ * in the root directory of this project.
  *
- * Non-commercial use of DD Poker artwork, logos, and other creative assets
- * is permitted under CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/).
- * Commercial use is prohibited without written permission.
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
+ * graphics, text, and documentation found in this repository (including but not
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
+ * without explicit written permission for any uses not covered by this License.
+ * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
+ * in the root directory of this project.
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
+ * doug [at] donohoe [dot] info.
+ * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.model;
 
@@ -225,7 +237,9 @@ class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: ante should be enforced to >= previous (if not zero)
-        assertThat(levels.get(1).ante >= levels.get(0).ante || levels.get(1).ante == 0).isTrue();
+        assertThat(levels.get(1).ante).satisfiesAnyOf(
+                ante -> assertThat(ante).isGreaterThanOrEqualTo(levels.get(0).ante),
+                ante -> assertThat(ante).isEqualTo(0));
     }
 
     // ========== Ante Bounds Tests ==========
@@ -441,14 +455,7 @@ class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: should add a non-break level
-        boolean hasNonBreak = false;
-        for (LevelValidator.LevelData level : levels) {
-            if (!level.isBreak) {
-                hasNonBreak = true;
-                break;
-            }
-        }
-        assertThat(hasNonBreak).isTrue();
+        assertThat(levels).anySatisfy(level -> assertThat(level.isBreak).isFalse());
     }
 
     @Test
