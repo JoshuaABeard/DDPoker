@@ -44,7 +44,6 @@ import com.donohoedigital.config.*;
 import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.ai.*;
 import com.donohoedigital.games.poker.core.GameHand;
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.PlayerAction;
@@ -3339,19 +3338,6 @@ public class HoldemHand implements DataMarshal, GameHand {
         }
 
         return false;
-    }
-
-    //
-    // AI common data
-    //
-    private PocketWeights pw_;
-
-    public PocketWeights getPocketWeights() {
-        return pw_;
-    }
-
-    public void setPocketWeights(PocketWeights pw) {
-        pw_ = pw;
     }
 
     // === GameHand Interface Implementation (V2 AI Support) ===

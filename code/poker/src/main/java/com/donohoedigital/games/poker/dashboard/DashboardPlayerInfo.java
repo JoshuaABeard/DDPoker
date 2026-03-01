@@ -33,12 +33,10 @@
 package com.donohoedigital.games.poker.dashboard;
 
 import com.donohoedigital.config.*;
-import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.online.*;
-import com.donohoedigital.games.poker.ai.*;
 import com.donohoedigital.games.poker.ai.gui.*;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.config.*;
@@ -53,7 +51,6 @@ public class DashboardPlayerInfo extends DashboardItem implements TerritorySelec
     private DDPanel stylePanel_;
     private StyleQuadrantsGridPanel styleQuadsPanel_;
     private DDHtmlArea styleSummaryLabel_;
-    private WeightGridPanel weightGrid_;
     PokerPlayer last_;
 
     public DashboardPlayerInfo(GameContext context) {
@@ -78,12 +75,6 @@ public class DashboardPlayerInfo extends DashboardItem implements TerritorySelec
         ((BorderLayout) base.getLayout()).setVgap(4);
 
         base.add(stylePanel_, BorderLayout.NORTH);
-
-        if (TESTING(PokerConstants.TESTING_HAND_WEIGHT_GRID)) {
-            weightGrid_ = new WeightGridPanel();
-            weightGrid_.setPreferredSize(new Dimension(200, 200));
-            base.add(weightGrid_, BorderLayout.SOUTH);
-        }
 
         return base;
     }
@@ -159,11 +150,6 @@ public class DashboardPlayerInfo extends DashboardItem implements TerritorySelec
             }
 
             styleSummaryLabel_.setText(buf.toString());
-
-            if (TESTING(PokerConstants.TESTING_HAND_WEIGHT_GRID)) {
-                weightGrid_.setPlayer(last_);
-                weightGrid_.repaint();
-            }
         } else {
             styleSummaryLabel_.setText(PropertyConfig.getMessage("msg.playerstyle.none"));
             styleQuadsPanel_.setValues(Float.NaN, Float.NaN);
