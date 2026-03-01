@@ -36,7 +36,9 @@ package com.donohoedigital.games.poker.gameserver;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import com.donohoedigital.games.poker.engine.Card;
@@ -57,6 +59,10 @@ public class AdvisorService implements HandScoreConstants {
 
     private static final String[] RANK_LABELS = {"", "", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K",
             "A"};
+
+    /** Hand type names indexed by HandScoreConstants type values (1-10). */
+    private static final String[] HAND_TYPE_NAMES = {"", "HIGH_CARD", "ONE_PAIR", "TWO_PAIR", "TRIPS", "STRAIGHT",
+            "FLUSH", "FULL_HOUSE", "FOUR_OF_A_KIND", "STRAIGHT_FLUSH", "ROYAL_FLUSH"};
 
     /**
      * 13x13 grid of starting hand categories. Row = first rank (A=0, K=1, ...,
@@ -146,8 +152,74 @@ public class AdvisorService implements HandScoreConstants {
             startingHandNotation = getHandNotation(gridPos[0], gridPos[1]);
         }
 
+        // Improvement odds (flop/turn only)
+        Map<String, Double> improvementOdds = calculateImprovementOdds(holeCards, communityCards, handType);
+
         return new AdvisorResult(handRank, handDescription, equity, potOdds, recommendation, startingHandCategory,
-                startingHandNotation);
+                startingHandNotation, improvementOdds);
+    }
+
+    /**
+     * Calculate improvement odds by enumerating all possible next cards. Returns
+     * null on preflop (0-2 community cards) or river (5 community cards).
+     */
+    private Map<String, Double> calculateImprovementOdds(Card[] holeCards, Card[] communityCards, int currentHandType) {
+        int communitySize = communityCards.length;
+        if (communitySize < 3 || communitySize >= 5) {
+            return null;
+        }
+
+        // Build remaining deck
+        long knownFingerprint = 0L;
+        for (Card c : holeCards) {
+            knownFingerprint |= c.fingerprint();
+        }
+        for (Card c : communityCards) {
+            knownFingerprint |= c.fingerprint();
+        }
+
+        List<Card> remainingDeck = new ArrayList<>(52);
+        for (int suit = CardSuit.CLUBS_RANK; suit <= CardSuit.SPADES_RANK; suit++) {
+            for (int rank = Card.TWO; rank <= Card.ACE; rank++) {
+                Card card = Card.getCard(suit, rank);
+                if ((card.fingerprint() & knownFingerprint) == 0L) {
+                    remainingDeck.add(card);
+                }
+            }
+        }
+
+        // Count improvements per hand type
+        int[] counts = new int[ROYAL_FLUSH + 1];
+        int total = remainingDeck.size();
+
+        ServerHandEvaluator evaluator = new ServerHandEvaluator();
+        List<Card> holeList = List.of(holeCards);
+
+        // Try each remaining card as the next community card
+        List<Card> extendedCommunity = new ArrayList<>(communitySize + 1);
+        for (Card c : communityCards) {
+            extendedCommunity.add(c);
+        }
+        extendedCommunity.add(null); // placeholder for the new card
+
+        for (Card nextCard : remainingDeck) {
+            extendedCommunity.set(communitySize, nextCard);
+            int newScore = evaluator.getScore(holeList, extendedCommunity);
+            int newType = newScore / SCORE_BASE;
+            if (newType > currentHandType) {
+                counts[newType]++;
+            }
+        }
+
+        // Convert to percentages, include only > 0
+        Map<String, Double> odds = new LinkedHashMap<>();
+        for (int type = PAIR; type <= ROYAL_FLUSH; type++) {
+            if (counts[type] > 0) {
+                odds.put(HAND_TYPE_NAMES[type], (double) counts[type] / total * 100.0);
+            }
+        }
+
+        return odds.isEmpty() ? null : odds;
     }
 
     /**

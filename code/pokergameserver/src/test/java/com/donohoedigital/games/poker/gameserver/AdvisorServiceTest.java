@@ -435,4 +435,58 @@ class AdvisorServiceTest {
         assertEquals("72o", result.startingHandNotation());
         assertEquals("fold", result.startingHandCategory());
     }
+
+    // --- Improvement odds ---
+
+    @Test
+    void improvementOdds_flopWithFlushDraw_includesFlushOdds() {
+        // Ah 2h on a board of Kh 7h 3c = flush draw (9 outs)
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("2h")};
+        Card[] community = {Card.getCard("Kh"), Card.getCard("7h"), Card.getCard("3c")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500, seededRandom);
+        assertNotNull(result.improvementOdds());
+        assertTrue(result.improvementOdds().containsKey("FLUSH"));
+        assertTrue(result.improvementOdds().get("FLUSH") > 15.0,
+                "Flush odds should be > 15%, got: " + result.improvementOdds().get("FLUSH"));
+    }
+
+    @Test
+    void improvementOdds_turnWithFlushDraw_includesFlushOdds() {
+        // Ah 2h on Kh 7h 3c 9d = flush draw on turn (9 outs from 46 cards)
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("2h")};
+        Card[] community = {Card.getCard("Kh"), Card.getCard("7h"), Card.getCard("3c"), Card.getCard("9d")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500, seededRandom);
+        assertNotNull(result.improvementOdds());
+        assertTrue(result.improvementOdds().containsKey("FLUSH"));
+        assertTrue(result.improvementOdds().get("FLUSH") > 15.0,
+                "Flush odds should be > 15%, got: " + result.improvementOdds().get("FLUSH"));
+    }
+
+    @Test
+    void improvementOdds_river_returnsNull() {
+        // 5 community cards = river, no improvement possible
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("Kh")};
+        Card[] community = {Card.getCard("2c"), Card.getCard("7d"), Card.getCard("Js"), Card.getCard("3h"),
+                Card.getCard("9c")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500, seededRandom);
+        assertNull(result.improvementOdds());
+    }
+
+    @Test
+    void improvementOdds_preflop_returnsNull() {
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("Kh")};
+        Card[] community = {};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500, seededRandom);
+        assertNull(result.improvementOdds());
+    }
+
+    @Test
+    void improvementOdds_flopWithStraightDraw_includesStraightOdds() {
+        // 9h 8c on 7d 6s 2h = open-ended straight draw (8 outs)
+        Card[] hole = {Card.getCard("9h"), Card.getCard("8c")};
+        Card[] community = {Card.getCard("7d"), Card.getCard("6s"), Card.getCard("2h")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500, seededRandom);
+        assertNotNull(result.improvementOdds());
+        assertTrue(result.improvementOdds().containsKey("STRAIGHT"), "Should include STRAIGHT improvement odds");
+    }
 }

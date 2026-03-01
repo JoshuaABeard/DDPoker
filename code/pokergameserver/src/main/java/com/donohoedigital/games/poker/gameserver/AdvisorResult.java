@@ -34,6 +34,8 @@
  */
 package com.donohoedigital.games.poker.gameserver;
 
+import java.util.Map;
+
 /**
  * Result of advisor computation for a player's hand.
  *
@@ -52,7 +54,10 @@ package com.donohoedigital.games.poker.gameserver;
  *            post-flop
  * @param startingHandNotation
  *            e.g. "AKs", "AA", "72o" or null post-flop
+ * @param improvementOdds
+ *            map of hand type name to improvement percentage (0-100), null on
+ *            preflop/river
  */
 public record AdvisorResult(int handRank, String handDescription, double equity, double potOdds, String recommendation,
-        String startingHandCategory, String startingHandNotation) {
+        String startingHandCategory, String startingHandNotation, Map<String, Double> improvementOdds) {
 }
