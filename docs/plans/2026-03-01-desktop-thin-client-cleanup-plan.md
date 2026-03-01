@@ -677,6 +677,34 @@ not a user-facing feature."
 
 ### Task 12: Delete Remaining Client-Side Poker Math Libraries
 
+**Status: PARTIALLY COMPLETED (2026-03-01)**
+
+**Completed (commits 62a17303, 26e83f80):**
+- Deleted: `HandLadder.java`, `ai/PocketOdds.java`, `ai/PocketRanks.java`, `ai/PocketScores.java`, `ai/SimpleBias.java`, `ai/PocketMatrixFloat.java`, `ai/PocketMatrixInt.java`, `ai/PocketMatrixShort.java`
+- Deleted their test files
+- Cleaned up `PokerStats.java`: removed dead DEBUG block that used `HandInfo`
+- Cleaned up `UiDashboardWidgetsHandler.java`: replaced local `HandFutures`/`HandInfo`-based `computeImproveOdds()` with server-provided data from `AdvisorState`
+
+**Blocked — non-trivial callers prevent deletion:**
+
+`HandInfo.java`, `HandInfoFast.java`, `HandStrength.java`, `HandFutures.java`, `HandPotential.java` are used by `ServerAIContext.java` in `pokerserver` to implement the server-side V1 AI algorithm. That class uses:
+- `HandInfoFast.getTypeFromScore()`, `HandInfoFast.getCards()`, `new HandInfoFast()` — hand type and rank extraction
+- `HandInfo.isOurHandInvolved()`, `HandInfo.isNutFlush()` — static utility methods
+- `HandStrength` — hand strength Monte Carlo simulation
+- `HandFutures` — improvement odds Monte Carlo simulation
+- `HandInfo.FLUSH`, `HandInfo.TRIPS` — hand type constants
+
+These cannot be removed without replacing the V1 server AI's hand evaluation with pokergamecore equivalents (`HandInfoFaster`, `PureHandPotential`, etc.). That is a separate engineering task.
+
+Additionally:
+- `HoldemHand.java` uses `HandInfo` for core pot resolution (`preResolvePot`, `resolvePot`) — can only replace with `HandInfoFaster` if `getBest()` replacement is found
+- `Showdown.java`, `WebSocketTournamentDirector.java`, `MyHand.java` use `HandInfo.getBest()` for display — `HandInfoFaster` has no `getBest()` equivalent
+- `ImpExpParadise.java`, `PokerDatabase.java`, `HandHistoryPanel.java` use `HandInfoFast` for hand export/display
+- `PokerPlayer.java` uses `HandStrength` and `HandPotential` for local hand evaluation used in `HandStrengthDash` display
+- `SimulatorHandler.java` (dev) uses `HoldemSimulator` — plan said to delegate to server REST API, but desktop doesn't have that client
+
+`PocketMatrixByte.java` and `PocketMatrixString.java` are kept because `AdvisorGridPanel.java` (a UI panel) uses them.
+
 **Files to DELETE (production):**
 - `code/poker/src/main/java/com/donohoedigital/games/poker/HoldemSimulator.java` (820 lines)
 - `code/poker/src/main/java/com/donohoedigital/games/poker/HandStrength.java` (289 lines)
