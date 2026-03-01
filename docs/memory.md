@@ -33,11 +33,9 @@ Persistent knowledge discovered during development sessions. Read this at the st
 ## Game Engine
 
 - [pokerengine] `TournamentProfile.setLevel()` sets blind/ante values but does NOT set `PARAM_LASTLEVEL`. Without it, `BlindStructure` defaults `lastlevel` to 0 and returns 0 for all blinds/antes. Fix: call `profile.getMap().setInteger(TournamentProfile.PARAM_LASTLEVEL, N)` after defining levels (2026-02-18)
-- [poker] AI code (`AIOutcome`, `BetRange`, `ClientStrategyProvider`) uses `Math.random()` — not `DiceRoller` — so `DiceRoller.setSeed()` does not guarantee deterministic AI behavior (2026-02-18)
-- [poker] For all-AI tables, `PokerTable.createPokerAI()` only runs when `(!isAllComputer() || isCurrent()) && !isSimulation()`. Call `game.setCurrentTable(table)` to trigger AI initialization (2026-02-18)
+- [poker] Client-side AI classes (`PokerAI`, `V1Player`, `V2Player`, `RuleEngine`, `AIOutcome`, `BetRange`, etc.) were removed in the AI consolidation (2026-03-01). AI now runs server-side via `ServerAIProvider` (2026-03-01)
 - [poker] `HoldemHand.bet/call/raise/fold/check()` only record hand history — they do NOT deduct chips from the player. Chip deduction is done by `PokerPlayer.bet/call/raise/fold/check()`. Always drive hand actions through `PokerPlayer.processAction(HandAction)` to get both; calling hand methods directly silently breaks chip conservation (2026-02-19)
 - [poker] `HoldemHand.getAmountToCall(GamePlayerInfo)` blindly casts its argument to `PokerPlayer` — passing any other `GamePlayerInfo` (e.g. `ClientV2AIContext.PokerPlayerAdapter`) causes `ClassCastException`. Use `HoldemHand.getCall(PokerPlayer)` with an unwrapped player instead (2026-02-19)
-- [poker] `V2Player.getBetAmount()` calls `re.getBetRange()` which can return null (e.g. when no bet range is configured for the situation). The return value must be null-checked; returning 0 is safe because `PokerAI.getHandAction()` falls back to `call + minRaise` when `getBetAmount()` returns 0 (2026-02-19)
 - [poker] `BlindStructure` reads the key `"doubleafterlast"` to decide whether to double blinds past the last defined level, but `TournamentProfile.PARAM_DOUBLE` is the string `"double"` — a pre-existing key mismatch. Set `"doubleafterlast"` directly on the profile map when this behaviour is needed (2026-02-19)
 
 ## Configuration
