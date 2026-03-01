@@ -21,8 +21,8 @@ package com.donohoedigital.games.poker.server;
 
 import com.donohoedigital.games.poker.core.*;
 import com.donohoedigital.games.poker.core.ai.*;
+import com.donohoedigital.games.poker.engine.Deck;
 import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.HandPotential;
 
 import java.util.List;
 
@@ -252,11 +252,7 @@ public class ServerV2AIContext extends ServerAIContext implements V2AIContext {
         if (pocket == null || community == null || community.size() < 3) {
             return 0;
         }
-        HandPotential hp = new HandPotential(pocket, community);
-        // Nut flush draw with two cards = turn + river combined counts
-        int turnCount = hp.getHandCount(HandPotential.NUT_FLUSH_DRAW_WITH_TWO_CARDS, 0);
-        int riverCount = (community.size() == 3) ? hp.getHandCount(HandPotential.NUT_FLUSH_DRAW_WITH_TWO_CARDS, 1) : 0;
-        return turnCount + riverCount;
+        return countDrawBoards(pocket, community, DrawType.NUT_FLUSH_TWO_CARDS);
     }
 
     @Override
@@ -264,15 +260,7 @@ public class ServerV2AIContext extends ServerAIContext implements V2AIContext {
         if (pocket == null || community == null || community.size() < 3) {
             return 0;
         }
-        HandPotential hp = new HandPotential(pocket, community);
-        // Second nut + weak flush draws
-        int secondNutTurn = hp.getHandCount(HandPotential.SECOND_NUT_FLUSH_DRAW_WITH_TWO_CARDS, 0);
-        int weakTurn = hp.getHandCount(HandPotential.WEAK_FLUSH_DRAW_WITH_TWO_CARDS, 0);
-        int secondNutRiver = (community.size() == 3)
-                ? hp.getHandCount(HandPotential.SECOND_NUT_FLUSH_DRAW_WITH_TWO_CARDS, 1)
-                : 0;
-        int weakRiver = (community.size() == 3) ? hp.getHandCount(HandPotential.WEAK_FLUSH_DRAW_WITH_TWO_CARDS, 1) : 0;
-        return secondNutTurn + weakTurn + secondNutRiver + weakRiver;
+        return countDrawBoards(pocket, community, DrawType.NON_NUT_FLUSH_TWO_CARDS);
     }
 
     @Override
@@ -280,11 +268,7 @@ public class ServerV2AIContext extends ServerAIContext implements V2AIContext {
         if (pocket == null || community == null || community.size() < 3) {
             return 0;
         }
-        HandPotential hp = new HandPotential(pocket, community);
-        // Approximate: use 8-out straight draws as nut straight draws
-        int turnCount = hp.getHandCount(HandPotential.STRAIGHT_DRAW_8_OUTS, 0);
-        int riverCount = (community.size() == 3) ? hp.getHandCount(HandPotential.STRAIGHT_DRAW_8_OUTS, 1) : 0;
-        return turnCount + riverCount;
+        return countDrawBoards(pocket, community, DrawType.STRAIGHT_8_OUTS);
     }
 
     @Override
@@ -292,15 +276,84 @@ public class ServerV2AIContext extends ServerAIContext implements V2AIContext {
         if (pocket == null || community == null || community.size() < 3) {
             return 0;
         }
-        HandPotential hp = new HandPotential(pocket, community);
-        // 6-out, 4-out, and 3-out straight draws
-        int turn6 = hp.getHandCount(HandPotential.STRAIGHT_DRAW_6_OUTS, 0);
-        int turn4 = hp.getHandCount(HandPotential.STRAIGHT_DRAW_4_OUTS, 0);
-        int turn3 = hp.getHandCount(HandPotential.STRAIGHT_DRAW_3_OUTS, 0);
-        int river6 = (community.size() == 3) ? hp.getHandCount(HandPotential.STRAIGHT_DRAW_6_OUTS, 1) : 0;
-        int river4 = (community.size() == 3) ? hp.getHandCount(HandPotential.STRAIGHT_DRAW_4_OUTS, 1) : 0;
-        int river3 = (community.size() == 3) ? hp.getHandCount(HandPotential.STRAIGHT_DRAW_3_OUTS, 1) : 0;
-        return turn6 + turn4 + turn3 + river6 + river4 + river3;
+        return countDrawBoards(pocket, community, DrawType.STRAIGHT_NON_8_OUTS);
+    }
+
+    private enum DrawType {
+        NUT_FLUSH_TWO_CARDS, NON_NUT_FLUSH_TWO_CARDS, STRAIGHT_8_OUTS, STRAIGHT_NON_8_OUTS
+    }
+
+    /**
+     * Count board continuations (turn-only for 4-card community, turn+river for
+     * 3-card community) where pocket+extended_community exhibits the given draw.
+     * Mirrors the enumeration logic from HandPotential.calculate().
+     */
+    private int countDrawBoards(Hand pocket, Hand community, DrawType drawType) {
+        Deck deck = new Deck(false);
+        deck.removeCards(pocket);
+        deck.removeCards(community);
+
+        HandInfoFast infoHand = new HandInfoFast();
+        int count = 0;
+        int commSize = community.size();
+        int deckSize = deck.size();
+
+        if (commSize == 3) {
+            // Turn: enumerate one card added to the 3-card community
+            Hand turnComm = new Hand(community);
+            turnComm.addCard(deck.getCard(0)); // pre-size to 4
+            for (int i = 0; i < deckSize; i++) {
+                turnComm.setCard(3, deck.getCard(i));
+                infoHand.getScore(pocket, turnComm);
+                if (matchesDraw(infoHand, drawType)) {
+                    count++;
+                }
+            }
+
+            // River: enumerate all two-card combinations added to the 3-card community
+            Hand riverComm = new Hand(community);
+            riverComm.addCard(deck.getCard(0)); // pre-size to 5
+            riverComm.addCard(deck.getCard(1));
+            for (int i = 0; i < deckSize - 1; i++) {
+                riverComm.setCard(3, deck.getCard(i));
+                for (int j = i + 1; j < deckSize; j++) {
+                    riverComm.setCard(4, deck.getCard(j));
+                    infoHand.getScore(pocket, riverComm);
+                    if (matchesDraw(infoHand, drawType)) {
+                        count++;
+                    }
+                }
+            }
+        } else {
+            // Turn (4-card community): enumerate one card
+            Hand extComm = new Hand(community);
+            extComm.addCard(deck.getCard(0)); // pre-size to 5
+            for (int i = 0; i < deckSize; i++) {
+                extComm.setCard(commSize, deck.getCard(i));
+                infoHand.getScore(pocket, extComm);
+                if (matchesDraw(infoHand, drawType)) {
+                    count++;
+                }
+            }
+        }
+
+        return count;
+    }
+
+    private boolean matchesDraw(HandInfoFast info, DrawType drawType) {
+        switch (drawType) {
+            case NUT_FLUSH_TWO_CARDS :
+                return info.hasFlushDraw() && info.getFlushDrawPocketsPlayed() == 2 && info.hasNutFlushDraw();
+            case NON_NUT_FLUSH_TWO_CARDS :
+                return info.hasFlushDraw() && info.getFlushDrawPocketsPlayed() == 2 && !info.hasNutFlushDraw();
+            case STRAIGHT_8_OUTS :
+                return info.getStraightDrawOuts() == 8;
+            case STRAIGHT_NON_8_OUTS :
+                int outs = info.getStraightDrawOuts();
+                return outs == 6 || outs == 4 || outs == 3;
+            default :
+                return false;
+        }
     }
 
     // === Table State (V2-specific) ===

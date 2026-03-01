@@ -32,10 +32,12 @@
  */
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.base.Format;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 
 import java.util.*;
 import com.donohoedigital.games.poker.core.state.BettingRound;
@@ -60,7 +62,6 @@ public class Showdown {
         PokerPlayer player;
         ResultsPiece piece;
         Territory t;
-        HandInfo info;
         boolean bUncontested = hhand.isUncontested();
         boolean bShowRiver = PokerUtils.isCheatOn(context, PokerConstants.OPTION_CHEAT_RABBITHUNT);
         boolean bShowWin = PokerUtils.isCheatOn(context, PokerConstants.OPTION_CHEAT_SHOWWINNINGHAND);
@@ -96,9 +97,10 @@ public class Showdown {
                         piece.setResult(ResultsPiece.ALLIN,
                                 PropertyConfig.getMessage("msg.hand.allin", player.getHand().toStringRank()));
                     } else {
-                        info = new HandInfo(player, player.getHandSorted(), hhand.getCommunitySorted());
+                        Hand best = HandUtils.getBestFive(player.getHandSorted(), hhand.getCommunitySorted());
+                        int type = handType(player.getHandSorted(), hhand.getCommunitySorted());
                         piece.setResult(ResultsPiece.ALLIN, PropertyConfig.getMessage("msg.hand.allin",
-                                info.getHandTypeDesc(), info.getBest().toStringRank()));
+                                PropertyConfig.getMessage("msg.hand." + type), best.toStringRank()));
                     }
                 }
                 continue;
@@ -113,11 +115,12 @@ public class Showdown {
             if (player.isFolded()) {
                 if (player.showFoldedHand()) {
                     int nRound = hhand.getFoldRound(player);
-                    info = new HandInfo(player, player.getHandSorted(), hhand.getCommunitySorted());
+                    Hand best = HandUtils.getBestFive(player.getHandSorted(), hhand.getCommunitySorted());
+                    int type = handType(player.getHandSorted(), hhand.getCommunitySorted());
                     String sRound = PropertyConfig.getMessage("msg.round." + nRound);
                     piece.setResult(ResultsPiece.FOLD,
                             PropertyConfig.getMessage(bShowHandTypeFold ? "msg.hand.fold" : "msg.hand.fold.noshow",
-                                    sRound, info.getHandTypeDesc(), info.getBest().toStringRank()));
+                                    sRound, PropertyConfig.getMessage("msg.hand." + type), best.toStringRank()));
                     PokerUtils.showCards(player, true);
                 } else {
                     // online game - use disconnected logic so we don't remove
@@ -159,18 +162,24 @@ public class Showdown {
                 bShowHandTypeLocal = true;
 
             // get hand info (requires >=3 community cards; null for pre-flop uncontested)
-            info = hhand.getCommunitySorted().size() >= 3 ? player.getHandInfo() : null;
+            String handTypeDesc = "";
+            String bestRank = "";
+            if (hhand.getCommunitySorted().size() >= 3) {
+                int type = handType(player.getHandSorted(), hhand.getCommunitySorted());
+                Hand best = HandUtils.getBestFive(player.getHandSorted(), hhand.getCommunitySorted());
+                handTypeDesc = PropertyConfig.getMessage("msg.hand." + type);
+                bestRank = best.toStringRank();
+            }
 
             // overbet / win text
             if (nTotal > 0) {
                 sResult = PropertyConfig.getMessage(bShowHandTypeLocal ? "msg.hand.win" : "msg.hand.win.noshow",
-                        info != null ? info.getHandTypeDesc() : "", info != null ? info.getBest().toStringRank() : "",
-                        nTotal);
+                        handTypeDesc, bestRank, nTotal);
             }
             // lose text
             else {
-                sResult = PropertyConfig.getMessage(bShowCards ? "msg.hand.lose" : "msg.hand.lose.muck",
-                        info != null ? info.getHandTypeDesc() : "", info != null ? info.getBest().toStringRank() : "");
+                sResult = PropertyConfig.getMessage(bShowCards ? "msg.hand.lose" : "msg.hand.lose.muck", handTypeDesc,
+                        bestRank);
             }
 
             // placard choice
@@ -209,12 +218,11 @@ public class Showdown {
         PokerPlayer player;
         ResultsPiece piece;
         Territory t;
-        HandInfo info;
 
         // we know next card before we display it, so do all in
         // percentages based on community cards before current cards
         HandSorted comm = new HandSorted(bAllCardsDisplayed ? hhand.getCommunity() : hhand.getCommunityForDisplay());
-        HandStrength.doAllInPercentages(hhand, comm);
+        doAllInPercentages(hhand, comm);
 
         int nMax = 0;
         for (int i = 0; i < hhand.getNumPlayers(); i++) {
@@ -243,13 +251,116 @@ public class Showdown {
                     piece.setResult(nResult, PropertyConfig.getMessage("msg.hand.allin.pre", player.getAllInPerc(),
                             player.getHand().toStringRank()));
                 } else {
-                    info = new HandInfo(player, player.getHandSorted(), comm);
+                    Hand best = HandUtils.getBestFive(player.getHandSorted(), new HandSorted(comm));
+                    int type = handType(player.getHandSorted(), new HandSorted(comm));
                     piece.setResult(nResult, PropertyConfig.getMessage("msg.hand.allin", player.getAllInPerc(),
-                            info.getHandTypeDesc(), info.getBest().toStringRank()));
+                            PropertyConfig.getMessage("msg.hand." + type), best.toStringRank()));
                 }
             }
         }
 
         PokerUtils.getPokerGameboard().repaintAll();
+    }
+
+    /** Get hand type integer from hole cards and community cards. */
+    private static int handType(HandSorted hole, HandSorted community) {
+        HandInfoFast fast = new HandInfoFast();
+        int score = fast.getScore(hole, community);
+        return HandInfoFast.getTypeFromScore(score);
+    }
+
+    private static final Format fPerc_ = new Format("%2.1f");
+
+    /**
+     * Calculate all-in win percentages for each non-folded player. Ported from
+     * HandStrength.doAllInPercentages().
+     */
+    private static void doAllInPercentages(HoldemHand hhand, Hand community) {
+        int nNumPlayers = hhand.getNumPlayers();
+        PokerPlayer player;
+        int nComm = community.size();
+        int MORE = 5 - nComm;
+
+        // too expensive to calculate all 5 card boards, so just estimate from the flop
+        if (MORE > 3)
+            MORE = 3;
+
+        HandInfoFaster FAST = new HandInfoFaster();
+        Hand commcopy = new Hand(community);
+
+        // get remaining cards (new deck less hole, community)
+        Deck deck = new Deck(false);
+        deck.removeCards(community);
+        for (int i = 0; i < nNumPlayers; i++) {
+            player = hhand.getPlayerAt(i);
+            player.clearAllInWin();
+            if (player.isFolded())
+                continue;
+            deck.removeCards(player.getHand());
+        }
+
+        int nSize = deck.size();
+        int nNumHands = 0;
+
+        for (int next1 = 0; next1 < (nSize - (MORE - 1)); next1++) {
+            if (MORE >= 1) {
+                commcopy.addCard(deck.getCard(next1));
+                if (MORE >= 2) {
+                    for (int next2 = next1 + 1; next2 < (nSize - (MORE - 2)); next2++) {
+                        commcopy.addCard(deck.getCard(next2));
+                        if (MORE >= 3) {
+                            for (int next3 = next2 + 1; next3 < (nSize - (MORE - 3)); next3++) {
+                                commcopy.addCard(deck.getCard(next3));
+                                scoreAllIn(FAST, hhand, commcopy);
+                                nNumHands++;
+                                commcopy.removeCard(commcopy.size() - 1);
+                            }
+                        } else {
+                            scoreAllIn(FAST, hhand, commcopy);
+                            nNumHands++;
+                        }
+                        commcopy.removeCard(commcopy.size() - 1);
+                    }
+                } else {
+                    scoreAllIn(FAST, hhand, commcopy);
+                    nNumHands++;
+                }
+                commcopy.removeCard(commcopy.size() - 1);
+            } else {
+                scoreAllIn(FAST, hhand, commcopy);
+                nNumHands++;
+            }
+        }
+
+        for (int i = 0; i < nNumPlayers; i++) {
+            player = hhand.getPlayerAt(i);
+            if (player.isFolded())
+                continue;
+            float d = 100.0f * (float) player.getAllInWin() / (float) nNumHands;
+            player.setAllInPerc(fPerc_.form(d));
+        }
+    }
+
+    private static void scoreAllIn(HandInfoFaster FAST, HoldemHand hhand, Hand comm) {
+        int nNumPlayers = hhand.getNumPlayers();
+        PokerPlayer player;
+        int maxscore = 0;
+        for (int i = 0; i < nNumPlayers; i++) {
+            player = hhand.getPlayerAt(i);
+            if (player.isFolded())
+                continue;
+            int score = FAST.getScore(player.getHand(), comm);
+            player.setAllInScore(score);
+            if (score > maxscore)
+                maxscore = score;
+        }
+        for (int i = 0; i < nNumPlayers; i++) {
+            player = hhand.getPlayerAt(i);
+            if (player.isFolded())
+                continue;
+            if (player.getAllInScore() == maxscore) {
+                player.addAllInWin();
+            }
+        }
     }
 }

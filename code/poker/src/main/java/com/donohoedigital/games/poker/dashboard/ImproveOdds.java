@@ -51,9 +51,10 @@ public class ImproveOdds extends Odds {
     private static final String[] HAND_TYPE_KEYS = {"TRIPS", "STRAIGHT", "FLUSH", "FULL_HOUSE", "FOUR_OF_A_KIND",
             "STRAIGHT_FLUSH", "ROYAL_FLUSH"};
 
-    // Corresponding HandInfo integer constants for display label lookup
-    private static final int[] HAND_TYPE_INTS = {HandInfo.TRIPS, HandInfo.STRAIGHT, HandInfo.FLUSH, HandInfo.FULL_HOUSE,
-            HandInfo.QUADS, HandInfo.STRAIGHT_FLUSH, HandInfo.ROYAL_FLUSH};
+    // Corresponding hand type integer constants for display label lookup
+    private static final int[] HAND_TYPE_INTS = {HandScoreConstants.TRIPS, HandScoreConstants.STRAIGHT,
+            HandScoreConstants.FLUSH, HandScoreConstants.FULL_HOUSE, HandScoreConstants.QUADS,
+            HandScoreConstants.STRAIGHT_FLUSH, HandScoreConstants.ROYAL_FLUSH};
 
     public ImproveOdds(GameContext context) {
         super(context, "improveodds");
@@ -125,8 +126,8 @@ public class ImproveOdds extends Odds {
                 continue;
             nCnt++;
             dTotal += d;
-            sb.append(PropertyConfig.getMessage("msg.odds.imptype", HandInfo.getHandTypeDesc(HAND_TYPE_INTS[i]),
-                    PokerConstants.formatPercent(d)));
+            sb.append(PropertyConfig.getMessage("msg.odds.imptype",
+                    PropertyConfig.getMessage("msg.hand." + HAND_TYPE_INTS[i]), PokerConstants.formatPercent(d)));
         }
 
         if (sb.length() > 0) {

@@ -38,6 +38,7 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
+import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 import com.donohoedigital.gui.*;
 import com.zookitec.layout.*;
 
@@ -211,10 +212,9 @@ public class MyHand extends DashboardItem {
             HandSorted csorted = new HandSorted(community);
 
             // get hand
-            HandInfo info_ = new HandInfo(asViewedBy, asViewedBy.getHandSorted(), csorted);
             fast_.getScore(hand, community);
-            Hand best = info_.getBest();
-            sHand_ = PropertyConfig.getMessage("msg.myhand.postflop", best.toHTML(), fast_.toString(", ", false));
+            Hand best = HandUtils.getBestFive(asViewedBy.getHandSorted(), csorted);
+            sHand_ = PropertyConfig.getMessage("msg.myhand.postflop", best.toHTML(), HandHistoryPanel.handDesc(fast_));
             sHandTitle_ = best.toStringRank();
         }
     }

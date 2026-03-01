@@ -19,7 +19,8 @@
  */
 package com.donohoedigital.games.poker.control;
 
-import com.donohoedigital.games.poker.HandInfoFast;
+import com.donohoedigital.games.poker.core.ai.HandInfoFast;
+import com.donohoedigital.games.poker.HandHistoryPanel;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.gameserver.ServerGameTable;
@@ -154,7 +155,7 @@ class HandResultHandler extends BaseHandler {
                 Hand playerHand = toHand(holeCards);
                 HandInfoFast fast = new HandInfoFast();
                 int score = fast.getScore(playerHand, communityHand);
-                winnerMap.put("handDescription", fast.toString());
+                winnerMap.put("handDescription", HandHistoryPanel.handDesc(fast));
                 winnerMap.put("score", score);
             }
 

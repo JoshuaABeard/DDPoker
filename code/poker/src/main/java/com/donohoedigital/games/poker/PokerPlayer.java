@@ -107,7 +107,7 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     private boolean bBooted_ = false;
 
     // transient info
-    private HandInfo handInfo_;
+    private int handScore_ = -1;
     private PlayerProfile profile_;
     private boolean bLoadProfileNeeded_ = false;
     private String sAllInPerc_ = null;
@@ -722,7 +722,7 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     public void removeHand() {
         hand_ = null;
         handSorted_ = null;
-        handInfo_ = null;
+        handScore_ = -1;
     }
 
     /*
@@ -1254,17 +1254,30 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     }
 
     /**
-     * Get hand info (lazy creation)
+     * Get cached hand score (lazy evaluation using pokergamecore HandInfoFast).
      */
-    public HandInfo getHandInfo() {
-        if (handInfo_ == null) {
+    public int getHandScore() {
+        if (handScore_ < 0) {
             HandSorted sorted = getHandSorted();
             HoldemHand hhand = getHoldemHand();
             if (sorted != null && hhand != null) {
-                handInfo_ = new HandInfo(this, sorted, hhand.getCommunitySorted());
+                com.donohoedigital.games.poker.core.ai.HandInfoFast fast = new com.donohoedigital.games.poker.core.ai.HandInfoFast();
+                handScore_ = fast.getScore(sorted, hhand.getCommunitySorted());
             }
         }
-        return handInfo_;
+        return handScore_;
+    }
+
+    /**
+     * Get the best 5-card hand for this player.
+     */
+    public Hand getBestFive() {
+        HandSorted sorted = getHandSorted();
+        HoldemHand hhand = getHoldemHand();
+        if (sorted != null && hhand != null) {
+            return HandUtils.getBestFive(sorted, hhand.getCommunitySorted());
+        }
+        return new Hand();
     }
 
     ////
@@ -1625,7 +1638,7 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
         nChipsAtStart_ = entry.removeIntToken();
         hand_ = (Hand) entry.removeToken();
         handSorted_ = null; // new hand, so null out (created on demand)
-        handInfo_ = null; // new hand, so null out (created on demand)
+        handScore_ = -1; // new hand, so null out (created on demand)
         nPosition_ = entry.removeIntToken();
         nStartingPositionCat_ = entry.removeIntToken();
         nPrize_ = entry.removeIntToken();
@@ -1776,10 +1789,40 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
         if (fingerprint == nLastCalcFingerprint_)
             return nStrength_;
 
-        // new calc
-        HandStrength hs = new HandStrength();
-        nStrength_ = hs.getStrength(getHandSorted(), comm, hhand.getNumWithCards() - 1);
-        nNumStraights_ = hs.getNumStraights();
+        // enumerate all possible opponent hole card pairs and compare scores
+        HandInfoFaster fast = new HandInfoFaster();
+        Hand holecopy = new Hand(getHandSorted());
+        int ourscore = fast.getScore(holecopy, comm);
+
+        Deck deck = new Deck(false);
+        deck.removeCards(getHand());
+        deck.removeCards(comm);
+
+        float nAhead = 0;
+        float nTied = 0;
+        float nBehind = 0;
+        int numStraights = 0;
+        int nSize = deck.size();
+        for (int i = 0; i < nSize - 1; i++) {
+            for (int j = i + 1; j < nSize; j++) {
+                holecopy.setCard(0, deck.getCard(i));
+                holecopy.setCard(1, deck.getCard(j));
+                int oppscore = fast.getScore(holecopy, comm);
+                if (ourscore > oppscore)
+                    nAhead++;
+                else if (ourscore == oppscore)
+                    nTied++;
+                else
+                    nBehind++;
+                if (oppscore / HandScoreConstants.SCORE_BASE == HandScoreConstants.STRAIGHT)
+                    numStraights++;
+            }
+        }
+
+        float strength = (nAhead + nTied / 2) / (nAhead + nTied + nBehind);
+        int nOpponents = hhand.getNumWithCards() - 1;
+        nStrength_ = (float) Math.pow(strength, Math.max(1, nOpponents));
+        nNumStraights_ = numStraights;
         nLastCalcFingerprint_ = fingerprint;
 
         return nStrength_;
@@ -1818,8 +1861,76 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
         if (nRound == nLastCalcPotRound_)
             return nPotential_;
 
-        // do calc
-        nPotential_ = HandPotential.getPotential(getHandSorted(), hhand.getCommunitySorted());
+        // calculate positive potential inline (ported from HandPotential.getPotential)
+        Hand hole = getHandSorted();
+        Hand community = hhand.getCommunitySorted();
+
+        float[][] hp = new float[3][3];
+        float[] hpTotal = new float[3];
+        Hand holecopy = new Hand(hole);
+        Hand commcopy = new Hand(community);
+        int nComm = community.size();
+        int MORE = 5 - nComm;
+        if (MORE == 2)
+            MORE = 1; // use 1 look-ahead card
+
+        HandInfoFaster fast = new HandInfoFaster();
+        int ourscore = fast.getScore(hole, community);
+
+        Deck deck = new Deck(false);
+        deck.removeCards(hole);
+        deck.removeCards(community);
+
+        int nSize = deck.size();
+        int AHEAD = 0, TIED = 1, BEHIND = 2;
+
+        for (int i = 0; i < nSize - 1; i++) {
+            for (int j = i + 1; j < nSize; j++) {
+                holecopy.setCard(0, deck.getCard(i));
+                holecopy.setCard(1, deck.getCard(j));
+                int oppscore = fast.getScore(holecopy, community);
+
+                int index = ourscore > oppscore ? AHEAD : (ourscore == oppscore ? TIED : BEHIND);
+
+                int nEND = MORE == 1 ? nSize : nSize - 1;
+                for (int next1 = 0; next1 < nEND; next1++) {
+                    if (next1 == i || next1 == j)
+                        continue;
+                    commcopy.addCard(deck.getCard(next1));
+
+                    for (int next2 = next1 + 1; next2 < nSize; next2++) {
+                        if (MORE == 2) {
+                            if (next2 == i || next2 == j)
+                                continue;
+                            commcopy.addCard(deck.getCard(next2));
+                        }
+
+                        hpTotal[index]++;
+
+                        int ourbest = fast.getScore(hole, commcopy);
+                        int oppbest = fast.getScore(holecopy, commcopy);
+                        if (ourbest > oppbest)
+                            hp[index][AHEAD]++;
+                        else if (ourbest == oppbest)
+                            hp[index][TIED]++;
+                        else
+                            hp[index][BEHIND]++;
+
+                        if (MORE == 2)
+                            commcopy.removeCard(commcopy.size() - 1);
+                        if (MORE == 1)
+                            break;
+                    }
+
+                    commcopy.removeCard(commcopy.size() - 1);
+                }
+            }
+        }
+
+        float ppot = (hp[BEHIND][AHEAD] + hp[BEHIND][TIED] / 2 + hp[TIED][AHEAD] / 2)
+                / (hpTotal[BEHIND] + hpTotal[TIED] / 2);
+
+        nPotential_ = ppot;
         nLastCalcPotRound_ = hhand.getRound().toLegacy();
 
         return nPotential_;

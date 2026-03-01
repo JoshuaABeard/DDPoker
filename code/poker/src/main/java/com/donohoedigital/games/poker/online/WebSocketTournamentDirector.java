@@ -25,8 +25,10 @@ import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.dashboard.AdvisorState;
 import com.donohoedigital.games.poker.dashboard.AdvanceAction;
 import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
+import com.donohoedigital.games.poker.engine.HandScoreConstants;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData;
@@ -1998,9 +2000,11 @@ public class WebSocketTournamentDirector extends BasePhase
             if (winner != null && hand != null && winner.getHand() != null && winner.getHand().size() >= 2
                     && hand.getCommunity() != null && hand.getCommunity().size() >= 3) {
                 try {
-                    HandInfo info = new HandInfo(winner, winner.getHandSorted(), hand.getCommunitySorted());
-                    handClass = handClassName(info.getHandType());
-                    handDescription = info.getHandTypeDesc();
+                    HandInfoFast fast = new HandInfoFast();
+                    int score = fast.getScore(winner.getHandSorted(), hand.getCommunitySorted());
+                    int handType = HandInfoFast.getTypeFromScore(score);
+                    handClass = handClassName(handType);
+                    handDescription = PropertyConfig.getMessage("msg.hand." + handType);
                 } catch (Exception e) {
                     logger.debug("[HAND_RESULT] could not evaluate winner hand for {}", name, e);
                 }
@@ -2054,16 +2058,16 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private String handClassName(int handType) {
         return switch (handType) {
-            case HandInfo.ROYAL_FLUSH -> "ROYAL_FLUSH";
-            case HandInfo.STRAIGHT_FLUSH -> "STRAIGHT_FLUSH";
-            case HandInfo.QUADS -> "QUADS";
-            case HandInfo.FULL_HOUSE -> "FULL_HOUSE";
-            case HandInfo.FLUSH -> "FLUSH";
-            case HandInfo.STRAIGHT -> "STRAIGHT";
-            case HandInfo.TRIPS -> "TRIPS";
-            case HandInfo.TWO_PAIR -> "TWO_PAIR";
-            case HandInfo.PAIR -> "PAIR";
-            case HandInfo.HIGH_CARD -> "HIGH_CARD";
+            case HandScoreConstants.ROYAL_FLUSH -> "ROYAL_FLUSH";
+            case HandScoreConstants.STRAIGHT_FLUSH -> "STRAIGHT_FLUSH";
+            case HandScoreConstants.QUADS -> "QUADS";
+            case HandScoreConstants.FULL_HOUSE -> "FULL_HOUSE";
+            case HandScoreConstants.FLUSH -> "FLUSH";
+            case HandScoreConstants.STRAIGHT -> "STRAIGHT";
+            case HandScoreConstants.TRIPS -> "TRIPS";
+            case HandScoreConstants.TWO_PAIR -> "TWO_PAIR";
+            case HandScoreConstants.PAIR -> "PAIR";
+            case HandScoreConstants.HIGH_CARD -> "HIGH_CARD";
             default -> "UNKNOWN";
         };
     }

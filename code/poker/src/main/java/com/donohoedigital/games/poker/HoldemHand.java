@@ -2627,7 +2627,6 @@ public class HoldemHand implements DataMarshal, GameHand {
     private void preResolvePot(int nPotNum, List<PokerPlayer> winners, List<PokerPlayer> losers) {
         Pot pot = getPot(nPotNum);
         PokerPlayer player;
-        HandInfo info;
 
         // get info for each player in pot.
         // This iterates in showdown order.
@@ -2639,14 +2638,14 @@ public class HoldemHand implements DataMarshal, GameHand {
                 continue;
             if (!pot.isInPot(player))
                 continue;
-            info = player.getHandInfo();
+            int score = player.getHandScore();
 
             // if score is greater than or equal to the highest score,
             // this player's cards should be exposed
-            if (info.getScore() >= nHighScore) {
-                if (info.getScore() > nHighScore)
+            if (score >= nHighScore) {
+                if (score > nHighScore)
                     winners.clear();
-                nHighScore = info.getScore();
+                nHighScore = score;
                 winners.add(player);
             }
             // this loser doesn't have to show hand unless in
@@ -2663,7 +2662,6 @@ public class HoldemHand implements DataMarshal, GameHand {
     private void resolvePot(int nPotNum, boolean bUncontested) {
         Pot pot = getPot(nPotNum);
         PokerPlayer player;
-        HandInfo info;
         List<PokerPlayer> winners = new ArrayList<>();
 
         // get info for each player in pot.
@@ -2677,12 +2675,12 @@ public class HoldemHand implements DataMarshal, GameHand {
                 continue;
             if (!pot.isInPot(player))
                 continue;
-            info = player.getHandInfo();
+            int score = player.getHandScore();
 
             // if score is greater than or equal to the highest score,
             // this player's cards should be exposed
-            if (info.getScore() >= nHighScore) {
-                nHighScore = info.getScore();
+            if (score >= nHighScore) {
+                nHighScore = score;
                 if (!bUncontested || player.isShowWinning())
                     player.setCardsExposed(true);
             } else if (!player.isMuckLosing()) {
@@ -2715,9 +2713,8 @@ public class HoldemHand implements DataMarshal, GameHand {
                 continue;
             if (!pot.isInPot(player))
                 continue;
-            info = player.getHandInfo();
-            if (info.getScore() == nHighScore) {
-                winners.add(info.getPlayer());
+            if (player.getHandScore() == nHighScore) {
+                winners.add(player);
             }
         }
 

@@ -19,9 +19,10 @@
  */
 package com.donohoedigital.games.poker.control;
 
-import com.donohoedigital.games.poker.HoldemSimulator;
 import com.donohoedigital.games.poker.engine.Card;
+import com.donohoedigital.games.poker.engine.Deck;
 import com.donohoedigital.games.poker.engine.Hand;
+import com.donohoedigital.games.poker.engine.HandInfoFaster;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpExchange;
 
@@ -102,20 +103,40 @@ class SimulatorHandler extends BaseHandler {
             }
         }
 
-        // HoldemSimulator.precision is a logarithmic scale (DEFAULT=4), not a raw iteration count.
-        // Use the 3-argument overload which applies DEFAULT_PRECISION internally.
-        var results = HoldemSimulator.simulate(hole, community, null);
+        // Compute win rate via Monte Carlo enumeration of opponent hands
+        HandInfoFaster fast = new HandInfoFaster();
+        Hand holecopy = new Hand(hole);
+        int ourscore = fast.getScore(holecopy, community);
+
+        Deck deck = new Deck(false);
+        deck.removeCards(hole);
+        deck.removeCards(community);
+
+        long win = 0, tie = 0, lose = 0;
+        int nSize = deck.size();
+        for (int i = 0; i < nSize - 1; i++) {
+            for (int j = i + 1; j < nSize; j++) {
+                holecopy.setCard(0, deck.getCard(i));
+                holecopy.setCard(1, deck.getCard(j));
+                int oppscore = fast.getScore(holecopy, community);
+                if (ourscore > oppscore) win++;
+                else if (ourscore == oppscore) tie++;
+                else lose++;
+            }
+        }
+
+        long total = win + tie + lose;
+        double winPct = total > 0 ? 100.0 * win / total : 0.0;
+        double tiePct = total > 0 ? 100.0 * tie / total : 0.0;
+        double losePct = total > 0 ? 100.0 * lose / total : 0.0;
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("holeCards", holeCardsToStrings(hole));
         response.put("community", holeCardsToStrings(community));
-
-        if (results != null) {
-            // StatResults contains per-hand-group data; extract overall win rate
-            response.put("completed", true);
-        } else {
-            response.put("completed", false);
-        }
+        response.put("completed", true);
+        response.put("win", winPct);
+        response.put("tie", tiePct);
+        response.put("lose", losePct);
 
         sendJson(exchange, 200, response);
     }

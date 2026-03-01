@@ -25,6 +25,7 @@ import com.donohoedigital.games.poker.engine.Hand;
 import org.junit.jupiter.api.Test;
 
 import static com.donohoedigital.games.poker.engine.Card.*;
+import static com.donohoedigital.games.poker.engine.HandScoreConstants.*;
 import static org.assertj.core.api.Assertions.*;
 
 /**
@@ -49,8 +50,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.ROYAL_FLUSH);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(ROYAL_FLUSH);
         assertThat(score).isEqualTo(10000014); // 10*BASE + 14*H0 (Ace=14)
     }
 
@@ -65,8 +66,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.ROYAL_FLUSH);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(ROYAL_FLUSH);
         assertThat(score).isEqualTo(10000014);
     }
 
@@ -81,8 +82,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.ROYAL_FLUSH);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(ROYAL_FLUSH);
         assertThat(score).isEqualTo(10000014);
     }
 
@@ -99,8 +100,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.STRAIGHT_FLUSH);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(STRAIGHT_FLUSH);
         assertThat(score).isEqualTo(9000013); // 9*BASE + 13*H0 (King=13)
     }
 
@@ -115,8 +116,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.STRAIGHT_FLUSH);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(STRAIGHT_FLUSH);
         assertThat(score).isEqualTo(9000005); // 9*BASE + 5*H0 (5-high)
     }
 
@@ -131,8 +132,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.STRAIGHT_FLUSH);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(STRAIGHT_FLUSH);
         assertThat(score).isEqualTo(9000006); // 9*BASE + 6*H0 (6-high beats 5-high)
     }
 
@@ -149,8 +150,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.QUADS);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(QUADS);
         assertThat(score).isEqualTo(8000135); // 8*BASE + 8*H1 + 7*H0
     }
 
@@ -165,10 +166,10 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.QUADS);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(QUADS);
         // 8*BASE + 8*H1 + 14*H0
-        int expectedScore = 8 * HandInfo.BASE + 8 * HandInfo.H1 + 14 * HandInfo.H0;
+        int expectedScore = 8 * SCORE_BASE + 8 * H1 + 14 * H0;
         assertThat(score).isEqualTo(expectedScore);
     }
 
@@ -183,8 +184,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.QUADS);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(QUADS);
         // Should be Aces quads with King kicker
         assertThat(score).isGreaterThan(8000000).isLessThan(9000000);
     }
@@ -202,8 +203,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.FULL_HOUSE);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(FULL_HOUSE);
         assertThat(score).isEqualTo(7000140); // 7*BASE + 8*H1 + 12*H0 (8s full of Queens)
     }
 
@@ -218,8 +219,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.FULL_HOUSE);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(FULL_HOUSE);
         assertThat(score).isEqualTo(7000200); // 7*BASE + 12*H1 + 8*H0 (Queens full of 8s)
     }
 
@@ -234,8 +235,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.FULL_HOUSE);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(FULL_HOUSE);
         // Should be > 7000200 (Queens full)
         assertThat(score).isGreaterThan(7000200);
     }
@@ -253,8 +254,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.FLUSH);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(FLUSH);
         assertThat(score).isEqualTo(6904104); // K-Q-J-T-8 flush
     }
 
@@ -269,8 +270,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.FLUSH);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(FLUSH);
         // Should use A-K-Q-J-9, not include 3 or 2
         assertThat(score).isGreaterThan(6900000);
     }
@@ -286,8 +287,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.FLUSH);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(FLUSH);
         assertThat(score).isEqualTo(6904103); // K-Q-J-T-7 flush (lower than K-Q-J-T-8)
     }
 
@@ -304,8 +305,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.STRAIGHT);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(STRAIGHT);
         assertThat(score).isEqualTo(5000006); // 5*BASE + 6*H0
     }
 
@@ -320,8 +321,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.STRAIGHT);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(STRAIGHT);
         assertThat(score).isEqualTo(5000005); // 5*BASE + 5*H0
     }
 
@@ -336,8 +337,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.STRAIGHT);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(STRAIGHT);
         assertThat(score).isGreaterThan(5000006); // Should be 9-high
     }
 
@@ -352,8 +353,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.STRAIGHT);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(STRAIGHT);
         assertThat(score).isEqualTo(5000008); // 8-high straight
     }
 
@@ -370,8 +371,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.TRIPS);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(TRIPS);
         assertThat(score).isEqualTo(4002267); // 4*BASE + 8*H2 + 13*H1 + 11*H0
     }
 
@@ -386,8 +387,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.TRIPS);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(TRIPS);
         // Should have ace and king as kickers
         assertThat(score).isGreaterThan(4000000).isLessThan(5000000);
     }
@@ -405,8 +406,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.TWO_PAIR);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(TWO_PAIR);
         // Aces and Kings with Queen kicker
         assertThat(score).isGreaterThan(3000000).isLessThan(4000000);
     }
@@ -422,8 +423,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.TWO_PAIR);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(TWO_PAIR);
         // Should be Aces and Kings (not Queens)
         assertThat(score).isGreaterThan(3000000);
     }
@@ -439,8 +440,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.TWO_PAIR);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(TWO_PAIR);
         // Should have ace kicker
         assertThat(score).isGreaterThan(3000000).isLessThan(4000000);
     }
@@ -458,8 +459,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.PAIR);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(PAIR);
         assertThat(score).isEqualTo(2028376); // 2*BASE + 6*H3 + 14*H2 + 13*H1 + 8*H0
     }
 
@@ -474,8 +475,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.PAIR);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(PAIR);
         // Should use A-K-Q as kickers
         assertThat(score).isGreaterThan(2000000).isLessThan(3000000);
     }
@@ -493,8 +494,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.HIGH_CARD);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(HIGH_CARD);
         assertThat(score).isEqualTo(1973958); // A-K-Q-8-6
     }
 
@@ -509,8 +510,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.HIGH_CARD);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(HIGH_CARD);
         // Should use A-K-Q-J-9
         assertThat(score).isGreaterThan(1973958);
     }
@@ -527,8 +528,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, null);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.PAIR);
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(PAIR);
     }
 
     @Test
@@ -544,8 +545,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert - Should still evaluate correctly, skipping blank
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.PAIR); // Pair of aces
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(PAIR); // Pair of aces
     }
 
     @Test
@@ -559,8 +560,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.STRAIGHT); // A-K-Q-J-T straight
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(STRAIGHT); // A-K-Q-J-T straight
     }
 
     @Test
@@ -574,8 +575,8 @@ class HandInfoFasterTest {
         int score = evaluator.getScore(hole, community);
 
         // Assert
-        int handType = score / HandInfo.BASE;
-        assertThat(handType).isEqualTo(HandInfo.STRAIGHT); // 6-high straight
+        int handType = score / SCORE_BASE;
+        assertThat(handType).isEqualTo(STRAIGHT); // 6-high straight
     }
 
     // ===== Scoring System Tests =====
