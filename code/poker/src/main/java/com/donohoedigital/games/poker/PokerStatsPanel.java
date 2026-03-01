@@ -231,7 +231,6 @@ public class PokerStatsPanel extends DDTabPanel {
     private class UpdateThread extends Thread {
         HandStrength strength_;
         HandPotential potential_;
-        HandLadder ladder_;
 
         public UpdateThread() {
             super("UpdateThread");
@@ -239,12 +238,11 @@ public class PokerStatsPanel extends DDTabPanel {
 
         public void run() {
             switch (mode_) {
-                case LADDER :
-                    ladder_ = new HandLadder(pocket_, community_, null);
-                    break;
-
                 case STRENGTH :
                     strength_ = new HandStrength();
+                    break;
+
+                case LADDER :
                     break;
 
                 default :
@@ -263,7 +261,8 @@ public class PokerStatsPanel extends DDTabPanel {
                         htmlArea_.setText(potential_.toHTML(BettingRound.RIVER.toLegacy()));
                         break;
                     case LADDER :
-                        htmlArea_.setText(ladder_.toHTML());
+                        htmlArea_
+                                .setText("<html><body>Hand ladder will be available in a future update.</body></html>");
                         break;
                     case STRENGTH :
                         htmlArea_.setText(strength_.toHTML(pocket_, community_, 9));
