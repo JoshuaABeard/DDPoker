@@ -630,6 +630,10 @@ public class WebSocketTournamentDirector extends BasePhase
                     ServerMessageData.PlayerMovedData d = parse(data, ServerMessageData.PlayerMovedData.class);
                     onPlayerMoved(d);
                 }
+                case ADVISOR_UPDATE -> {
+                    ServerMessageData.AdvisorData d = parse(data, ServerMessageData.AdvisorData.class);
+                    onAdvisorUpdate(d);
+                }
             }
         } catch (Exception e) {
             logger.error("Error handling {} message", type, e);
@@ -1845,6 +1849,16 @@ public class WebSocketTournamentDirector extends BasePhase
             if (table == null)
                 return;
             table.fireEvent(PokerTableEvent.TYPE_CLEANING_DONE);
+        });
+    }
+
+    private void onAdvisorUpdate(ServerMessageData.AdvisorData d) {
+        com.donohoedigital.games.poker.dashboard.ImproveOdds.setCurrentImprovementOdds(d.improvementOdds());
+        SwingUtilities.invokeLater(() -> {
+            RemotePokerTable table = currentTable();
+            if (table != null) {
+                table.fireEvent(PokerTableEvent.TYPE_DEALER_ACTION);
+            }
         });
     }
 

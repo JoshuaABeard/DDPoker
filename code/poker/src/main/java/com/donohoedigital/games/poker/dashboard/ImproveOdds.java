@@ -38,12 +38,35 @@ import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 
+import java.util.Map;
+
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Mar 18, 2005 Time: 4:40:33 PM
  * To change this template use File | Settings | File Templates.
  */
 public class ImproveOdds extends Odds {
     String sTotal_;
+
+    // Server-provided improvement odds stored by WebSocketTournamentDirector.
+    // null means not yet received or not applicable (preflop/river).
+    // An empty map means applicable but no improvements possible.
+    private static volatile Map<String, Double> currentImprovementOdds_;
+
+    // Ordered hand-type keys matching ascending rank (TRIPS through ROYAL_FLUSH)
+    private static final String[] HAND_TYPE_KEYS = {"TRIPS", "STRAIGHT", "FLUSH", "FULL_HOUSE", "FOUR_OF_A_KIND",
+            "STRAIGHT_FLUSH", "ROYAL_FLUSH"};
+
+    // Corresponding HandInfo integer constants for display label lookup
+    private static final int[] HAND_TYPE_INTS = {HandInfo.TRIPS, HandInfo.STRAIGHT, HandInfo.FLUSH, HandInfo.FULL_HOUSE,
+            HandInfo.QUADS, HandInfo.STRAIGHT_FLUSH, HandInfo.ROYAL_FLUSH};
+
+    /**
+     * Called by WebSocketTournamentDirector when an ADVISOR_UPDATE message arrives.
+     * Passing null clears the cached data (preflop / river / between hands).
+     */
+    public static void setCurrentImprovementOdds(Map<String, Double> odds) {
+        currentImprovementOdds_ = odds;
+    }
 
     public ImproveOdds(GameContext context) {
         super(context, "improveodds");
@@ -74,59 +97,59 @@ public class ImproveOdds extends Odds {
     protected String getDisplay(int nRound, HoldemHand hhand, PokerPlayer asViewedBy, Hand hand) {
         sTotal_ = null;
 
-        // get community cards
-        Hand community = hhand.getCommunityForDisplay();
-        HandSorted csorted = new HandSorted(community);
-        nRound = hhand.getRoundForDisplay();
-
         // pre-flop, or insufficient community cards.
-        // In WebSocket mode getCommunityForDisplay() can return an empty hand when
-        // the round has advanced on the server before the COMMUNITY_CARDS_DEALT
-        // message arrives. HandInfo.categorize() crashes with < 3 community cards.
+        Hand community = hhand.getCommunityForDisplay();
+        nRound = hhand.getRoundForDisplay();
         if (nRound == BettingRound.PRE_FLOP.toLegacy() || community.size() < 3) {
             return "";
         }
 
-        // hand info
-        HandInfoFaster fast = new HandInfoFaster();
-        HandInfo info = new HandInfo(asViewedBy, asViewedBy.getHandSorted(), csorted);
-        HandFutures fut = null;
-
-        // switch based on round
+        // river / showdown: no improvements possible
         switch (nRound) {
-            case HoldemHand.ROUND_FLOP :
-            case HoldemHand.ROUND_TURN :
-                // HandFutures.DEBUG = true;
-                fut = new HandFutures(fast, hand, community);
-                // HandFutures.DEBUG = false;
-                StringBuilder sb = new StringBuilder();
-                double d;
-                double dTotal = 0.0;
-                int nCnt = 0;
-                for (int i = Math.max(info.getHandType() + 1, HandInfo.TRIPS); i <= HandInfo.ROYAL_FLUSH; i++) {
-                    d = fut.getOddsImproveTo(i);
-                    if (d == 0.0d)
-                        continue;
-                    nCnt++;
-                    dTotal += d;
-                    sb.append(PropertyConfig.getMessage("msg.odds.imptype", HandInfo.getHandTypeDesc(i),
-                            PokerConstants.formatPercent(d)));
-                }
-                if (sb.length() > 0) {
-                    sb.insert(0, PropertyConfig.getMessage("msg.odds.table.start"));
-                    sTotal_ = PokerConstants.formatPercent(dTotal);
-                    if (nCnt > 1) {
-                        sb.append(PropertyConfig.getMessage("msg.odds.total", sTotal_));
-                    }
-                    sb.append(PropertyConfig.getMessage("msg.odds.table.end"));
-                    return sb.toString();
-                }
-                break;
-
             case HoldemHand.ROUND_RIVER :
             case HoldemHand.ROUND_SHOWDOWN :
             default :
+                sTotal_ = "0";
+                return PropertyConfig.getMessage("msg.odds.imptype.none");
+
+            case HoldemHand.ROUND_FLOP :
+            case HoldemHand.ROUND_TURN :
                 break;
+        }
+
+        // Read server-provided improvement odds
+        Map<String, Double> odds = currentImprovementOdds_;
+        if (odds == null) {
+            // Data not yet received from server — show nothing
+            return "";
+        }
+
+        if (odds.isEmpty()) {
+            sTotal_ = "0";
+            return PropertyConfig.getMessage("msg.odds.imptype.none");
+        }
+
+        StringBuilder sb = new StringBuilder();
+        double dTotal = 0.0;
+        int nCnt = 0;
+        for (int i = 0; i < HAND_TYPE_KEYS.length; i++) {
+            Double d = odds.get(HAND_TYPE_KEYS[i]);
+            if (d == null || d == 0.0)
+                continue;
+            nCnt++;
+            dTotal += d;
+            sb.append(PropertyConfig.getMessage("msg.odds.imptype", HandInfo.getHandTypeDesc(HAND_TYPE_INTS[i]),
+                    PokerConstants.formatPercent(d)));
+        }
+
+        if (sb.length() > 0) {
+            sb.insert(0, PropertyConfig.getMessage("msg.odds.table.start"));
+            sTotal_ = PokerConstants.formatPercent(dTotal);
+            if (nCnt > 1) {
+                sb.append(PropertyConfig.getMessage("msg.odds.total", sTotal_));
+            }
+            sb.append(PropertyConfig.getMessage("msg.odds.table.end"));
+            return sb.toString();
         }
 
         sTotal_ = "0";
