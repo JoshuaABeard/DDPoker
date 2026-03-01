@@ -176,7 +176,6 @@ public class AdvisorService implements HandScoreConstants {
         }
 
         int communityNeeded = 5 - communityCards.length;
-        int cardsNeeded = communityNeeded + numOpponents * 2;
 
         int wins = 0;
         int ties = 0;
