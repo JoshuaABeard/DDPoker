@@ -532,12 +532,6 @@ describe('PokerTable', () => {
     expect(screen.queryByTestId('test-overlay')).toBeNull()
   })
 
-  // --- Check-fold queued indicator ---
-
-  it('shows Check/Fold queued indicator when F key pressed with checkFold pref and no actionRequired', () => {
-    // Need to re-mock useGamePrefs with checkFold: true
-    // We do this via a separate describe block — see below
-  })
 })
 
 describe('PokerTable - check-fold shortcut', () => {
