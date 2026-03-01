@@ -36,7 +36,7 @@ import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.dashboard.*;
 
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.CommunityCardCalculator.CommunityCardVisibility;
 
 /**
  * Static display helpers for dealing community cards to the board. Phase
@@ -45,6 +45,9 @@ import com.donohoedigital.games.poker.core.state.BettingRound;
  * @author Doug Donohoe
  */
 public class DealCommunity {
+
+    private static final String[] FLOP_POINTS = {CardPiece.POINT_FLOP1, CardPiece.POINT_FLOP2, CardPiece.POINT_FLOP3,
+            CardPiece.POINT_FLOP4, CardPiece.POINT_FLOP5};
 
     private DealCommunity() {
     }
@@ -61,34 +64,20 @@ public class DealCommunity {
         HandAction last = hhand.getLastAction();
         int nLastBettingRound = last != null ? last.getRound() : HoldemHand.ROUND_PRE_FLOP;
 
-        // these flags match above
         int nNumWithCards = hhand.getNumWithCards();
         boolean bRabbitHunt = PokerUtils.isCheatOn(table.getGame().getGameContext(),
                 PokerConstants.OPTION_CHEAT_RABBITHUNT);
-        boolean bDrawnNormal = nNumWithCards > 1;
-        boolean bDrawn = bRabbitHunt || bDrawnNormal;
 
         // all-in-showdown happening, so only show cards up to previous round
-        // due to the way saves are done, DealCommunity is called again which
-        // will re-display the placards (this is why we don't call initial a sync()
-        // from the GamePrefsDialog)
         int nRound = hhand.getRoundForDisplay();
 
-        // all cases fall through on purpose
-        boolean bCardDealt;
-        switch (nRound) {
-            case HoldemHand.ROUND_SHOWDOWN :
-            case HoldemHand.ROUND_RIVER :
-                bCardDealt = nLastBettingRound >= BettingRound.RIVER.toLegacy();
-                addCard(table, CardPiece.POINT_FLOP5, 4, bDrawnNormal || bCardDealt, bDrawn || bCardDealt, false);
-            case HoldemHand.ROUND_TURN :
-                bCardDealt = nLastBettingRound >= BettingRound.TURN.toLegacy();
-                addCard(table, CardPiece.POINT_FLOP4, 3, bDrawnNormal || bCardDealt, bDrawn || bCardDealt, false);
-            case HoldemHand.ROUND_FLOP :
-                bCardDealt = nLastBettingRound >= BettingRound.FLOP.toLegacy();
-                addCard(table, CardPiece.POINT_FLOP3, 2, bDrawnNormal || bCardDealt, bDrawn || bCardDealt, false);
-                addCard(table, CardPiece.POINT_FLOP2, 1, bDrawnNormal || bCardDealt, bDrawn || bCardDealt, false);
-                addCard(table, CardPiece.POINT_FLOP1, 0, bDrawnNormal || bCardDealt, bDrawn || bCardDealt, false);
+        CommunityCardVisibility visibility = CommunityCardCalculator.calculateVisibility(nRound, nLastBettingRound,
+                nNumWithCards, bRabbitHunt);
+
+        for (int i = 0; i < 5; i++) {
+            if (visibility.active()[i]) {
+                addCard(table, FLOP_POINTS[i], i, visibility.drawnNormal()[i], visibility.drawn()[i], false);
+            }
         }
 
         // update dash item to match
