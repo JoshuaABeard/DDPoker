@@ -147,4 +147,36 @@ class DatabaseGameEventStoreTest {
         // First store should see new event too
         assertThat(store1.getEvents()).hasSize(4);
     }
+
+    @Test
+    void testConstructorWithNullGameIdThrows() {
+        assertThatThrownBy(() -> new DatabaseGameEventStore(null, repository))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Game ID");
+    }
+
+    @Test
+    void testConstructorWithBlankGameIdThrows() {
+        assertThatThrownBy(() -> new DatabaseGameEventStore("  ", repository))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Game ID");
+    }
+
+    @Test
+    void testConstructorWithNullRepositoryThrows() {
+        assertThatThrownBy(() -> new DatabaseGameEventStore("game-x", null))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Repository");
+    }
+
+    @Test
+    void testAppendNullEventThrows() {
+        DatabaseGameEventStore store = new DatabaseGameEventStore("game-null-test", repository);
+
+        assertThatThrownBy(() -> store.append(null)).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Event cannot be null");
+    }
+
+    @Test
+    void testGetGameId_returnsCorrectId() {
+        DatabaseGameEventStore store = new DatabaseGameEventStore("game-id-test", repository);
+        assertThat(store.getGameId()).isEqualTo("game-id-test");
+    }
 }

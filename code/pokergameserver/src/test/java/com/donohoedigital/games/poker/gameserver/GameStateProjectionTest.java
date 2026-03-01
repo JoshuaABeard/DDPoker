@@ -179,4 +179,89 @@ class GameStateProjectionTest {
                 .findFirst().orElseThrow();
         assertFalse(aliceState.sittingOut());
     }
+
+    @Test
+    void testForObserver_withoutHand_returnsAllPlayers() {
+        GameStateSnapshot snapshot = GameStateProjection.forObserver(table, null);
+
+        assertNotNull(snapshot);
+        assertEquals(1, snapshot.tableId());
+        assertEquals(3, snapshot.players().size());
+        assertNull(snapshot.communityCards());
+        assertTrue(snapshot.pots().isEmpty());
+    }
+
+    @Test
+    void testForObserver_noHoleCardsExposed() {
+        // Observers should never see any player's hole cards
+        GameStateSnapshot snapshot = GameStateProjection.forObserver(table, null);
+
+        for (GameStateSnapshot.PlayerState playerState : snapshot.players()) {
+            assertNull(playerState.holeCards(), "SECURITY: Observer must never see hole cards");
+        }
+    }
+
+    @Test
+    void testForObserver_includesAllPlayerNames() {
+        GameStateSnapshot snapshot = GameStateProjection.forObserver(table, null);
+
+        List<String> names = snapshot.players().stream().map(GameStateSnapshot.PlayerState::playerName).toList();
+        assertTrue(names.contains("Alice"));
+        assertTrue(names.contains("Bob"));
+        assertTrue(names.contains("Charlie"));
+    }
+
+    @Test
+    void testForObserver_includesChipCounts() {
+        GameStateSnapshot snapshot = GameStateProjection.forObserver(table, null);
+
+        for (GameStateSnapshot.PlayerState playerState : snapshot.players()) {
+            assertEquals(1000, playerState.chipCount());
+        }
+    }
+
+    @Test
+    void testForObserver_playerRankIsZero() {
+        // Observer projections do not compute player rank
+        GameStateSnapshot snapshot = GameStateProjection.forObserver(table, null);
+        assertEquals(0, snapshot.playerRank());
+    }
+
+    @Test
+    void testForShowdown_withoutHand_returnsAllPlayers() {
+        GameStateSnapshot snapshot = GameStateProjection.forShowdown(table, null, 1);
+
+        assertNotNull(snapshot);
+        assertEquals(3, snapshot.players().size());
+        assertNull(snapshot.myHoleCards());
+        assertNull(snapshot.communityCards());
+    }
+
+    @Test
+    void testForShowdown_noHoleCardsWithoutHand() {
+        GameStateSnapshot snapshot = GameStateProjection.forShowdown(table, null, 1);
+
+        for (GameStateSnapshot.PlayerState playerState : snapshot.players()) {
+            assertNull(playerState.holeCards(), "Without an active hand, hole cards must be null at showdown");
+        }
+    }
+
+    @Test
+    void testForShowdown_currentActorSeatIsMinusOne() {
+        // At showdown no player is acting
+        GameStateSnapshot snapshot = GameStateProjection.forShowdown(table, null, 1);
+        assertEquals(-1, snapshot.currentActorSeat());
+    }
+
+    @Test
+    void testForObserver_tournamentStats_withContext() {
+        // The projection should expose tournament-wide stats when a context is present
+        GameStateSnapshot snapshot = GameStateProjection.forObserver(table, null);
+
+        // With 3 active players (none finished, none sitting out), totalPlayers and
+        // playersRemaining should be populated from the ServerTournamentContext.
+        assertEquals(3, snapshot.totalPlayers());
+        // numTables reflects the single table in this test setup
+        assertEquals(1, snapshot.numTables());
+    }
 }

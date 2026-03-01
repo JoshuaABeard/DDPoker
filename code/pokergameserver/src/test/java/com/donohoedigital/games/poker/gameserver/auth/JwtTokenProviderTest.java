@@ -124,4 +124,44 @@ class JwtTokenProviderTest {
 
         assertThat(shortProvider.validateToken(token)).isFalse();
     }
+
+    @Test
+    void testGenerateScopedToken_wsConnect_hasJti() {
+        String token = provider.generateScopedToken("alice", 42L, "ws-connect", null, 60_000L);
+
+        assertThat(token).isNotNull();
+        assertThat(provider.validateToken(token)).isTrue();
+        assertThat(provider.getScopeFromToken(token)).isEqualTo("ws-connect");
+        assertThat(provider.getJtiFromToken(token)).isNotNull();
+        assertThat(provider.getGameIdFromToken(token)).isNull();
+    }
+
+    @Test
+    void testGenerateScopedToken_reconnect_hasGameId() {
+        String token = provider.generateScopedToken("bob", 7L, "reconnect", "game-xyz", 86_400_000L);
+
+        assertThat(token).isNotNull();
+        assertThat(provider.validateToken(token)).isTrue();
+        assertThat(provider.getScopeFromToken(token)).isEqualTo("reconnect");
+        assertThat(provider.getGameIdFromToken(token)).isEqualTo("game-xyz");
+        assertThat(provider.getJtiFromToken(token)).isNotNull();
+    }
+
+    @Test
+    void testGenerateScopedToken_validationOnlyModeThrows() throws Exception {
+        Path publicKeyPath = tempDir.resolve("jwt-public.pem");
+        JwtTokenProvider validationProvider = new JwtTokenProvider(null, publicKeyPath, 3600000L, 604800000L);
+
+        assertThatThrownBy(() -> validationProvider.generateScopedToken("user", 1L, "ws-connect", null, 60_000L))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("validation-only mode");
+    }
+
+    @Test
+    void testGetClaimsFromToken_returnsSubjectAndProfileId() {
+        String token = provider.generateToken("charlie", 99L, false);
+
+        var claims = provider.getClaims(token);
+        assertThat(claims.getSubject()).isEqualTo("charlie");
+        assertThat(claims.get("profileId", Long.class)).isEqualTo(99L);
+    }
 }

@@ -193,4 +193,33 @@ class InMemoryGameEventStoreTest {
         eventStore.append(new GameEvent.HandStarted(0, 3));
         assertEquals(1L, eventStore.getEvents().get(0).sequenceNumber());
     }
+
+    @Test
+    void testConstructorWithNullGameIdThrows() {
+        assertThrows(IllegalArgumentException.class, () -> new InMemoryGameEventStore(null));
+    }
+
+    @Test
+    void testConstructorWithBlankGameIdThrows() {
+        assertThrows(IllegalArgumentException.class, () -> new InMemoryGameEventStore("  "));
+    }
+
+    @Test
+    void testGetCurrentSequenceNumber_incrementsWithEachAppend() {
+        assertEquals(0L, eventStore.getCurrentSequenceNumber());
+        eventStore.append(new GameEvent.HandStarted(0, 1));
+        assertEquals(1L, eventStore.getCurrentSequenceNumber());
+        eventStore.append(new GameEvent.HandStarted(0, 2));
+        assertEquals(2L, eventStore.getCurrentSequenceNumber());
+    }
+
+    @Test
+    void testGetCurrentSequenceNumber_resetsAfterClear() {
+        eventStore.append(new GameEvent.HandStarted(0, 1));
+        eventStore.append(new GameEvent.HandStarted(0, 2));
+        assertEquals(2L, eventStore.getCurrentSequenceNumber());
+
+        eventStore.clear();
+        assertEquals(0L, eventStore.getCurrentSequenceNumber());
+    }
 }
