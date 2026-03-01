@@ -41,31 +41,16 @@ import java.util.Map;
  * Result of a poker equity simulation (Monte Carlo or exhaustive).
  *
  * <p>
- * <b>Single-player mode</b> (used when {@code handResults} is null):
  * {@code win}, {@code tie}, {@code loss}, {@code opponentResults}, and
  * {@code playerHandTypeBreakdown} contain the simulation percentages for the
  * player against opponents.
- *
- * <p>
- * <b>Multi-hand showdown mode</b> (used when {@code handResults} is non-null):
- * {@code handResults} contains per-hand win/tie/loss percentages. The top-level
- * {@code win}, {@code tie}, and {@code loss} fields are always {@code 0.0},
- * {@code opponentResults} is null, and {@code playerHandTypeBreakdown} is null
- * in this mode.
  */
 public record SimulationResult(double win, double tie, double loss, int iterations,
-        List<OpponentResult> opponentResults, Map<String, Double> playerHandTypeBreakdown,
-        List<HandResult> handResults) {
+        List<OpponentResult> opponentResults, Map<String, Double> playerHandTypeBreakdown) {
 
     /**
      * Per-opponent result breakdown.
      */
     public record OpponentResult(double win, double tie, double loss) {
-    }
-
-    /**
-     * Per-hand result for multi-hand showdown simulation.
-     */
-    public record HandResult(double win, double tie, double loss) {
     }
 }

@@ -63,39 +63,21 @@ public class SimulationController {
      * Run a poker equity simulation.
      *
      * <p>
-     * When {@code allHands} is present in the request, multi-hand showdown mode is
-     * used and {@code holeCards}/{@code numOpponents} are ignored. The
-     * {@code iterations} field is required for multi-hand mode.
+     * Provide either {@code iterations} (100-100000) for Monte Carlo mode, or
+     * {@code exhaustive=true} to enumerate all possible board completions.
      */
     @PostMapping("/simulate")
     public ResponseEntity<?> simulate(@Valid @RequestBody SimulationRequest request) {
-        // Multi-hand showdown mode: allHands takes precedence
-        if (request.allHands() != null && !request.allHands().isEmpty()) {
-            if (request.iterations() == null) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "iterations (100-100000) must be provided for multi-hand mode"));
-            }
-            try {
-                SimulationResult result = simulationService.simulateMultiHand(request.allHands(),
-                        request.communityCards(), request.iterations());
-                return ResponseEntity.ok(result);
-            } catch (IllegalArgumentException e) {
-                return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-            }
-        }
-
-        // Single-player mode
         if (request.holeCards() == null) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "holeCards must be provided for single-player mode"));
+            return ResponseEntity.badRequest().body(Map.of("error", "holeCards must be provided"));
         }
-        if (request.iterations() == null) {
+        if (!Boolean.TRUE.equals(request.exhaustive()) && request.iterations() == null) {
             return ResponseEntity.badRequest().body(Map.of("error", "iterations (100-100000) must be provided"));
         }
 
         try {
             SimulationResult result = simulationService.simulate(request.holeCards(), request.communityCards(),
-                    request.numOpponents(), request.iterations(), request.knownOpponentHands(), null);
+                    request.numOpponents(), request.iterations(), request.knownOpponentHands(), request.exhaustive());
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

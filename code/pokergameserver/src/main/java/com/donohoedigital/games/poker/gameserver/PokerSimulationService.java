@@ -50,8 +50,7 @@ import com.donohoedigital.games.poker.engine.HandScoreConstants;
 
 /**
  * Poker equity simulation service. Supports Monte Carlo and exhaustive
- * simulation for a single player vs opponents, and multi-hand showdown
- * simulation.
+ * simulation for a single player vs opponents.
  */
 @Service
 public class PokerSimulationService implements HandScoreConstants {
@@ -327,7 +326,7 @@ public class PokerSimulationService implements HandScoreConstants {
         }
 
         return new SimulationResult((double) wins / iters * 100, (double) ties / iters * 100,
-                (double) losses / iters * 100, iters, opponentResults, breakdown, null);
+                (double) losses / iters * 100, iters, opponentResults, breakdown);
     }
 
     /**
@@ -414,109 +413,6 @@ public class PokerSimulationService implements HandScoreConstants {
     }
 
     /**
-     * Run a multi-hand showdown simulation. All hands are known; no random
-     * opponents.
-     *
-     * @param hands
-     *            list of 2-card hands (each hand is a list of 2 card strings)
-     * @param communityCards
-     *            community cards (0-5), may be null or empty
-     * @param iterations
-     *            number of Monte Carlo iterations; ignored when all 5 community
-     *            cards are already provided (deterministic result)
-     * @return simulation result with per-hand win/tie/loss percentages in
-     *         {@link SimulationResult#handResults()}
-     * @throws IllegalArgumentException
-     *             if any card is duplicated across hands and community
-     */
-    public SimulationResult simulateMultiHand(List<List<String>> hands, List<String> communityCards, int iterations) {
-        List<List<Card>> parsedHands = hands.stream().map(this::parseCards).toList();
-        List<Card> community = communityCards != null ? parseCards(communityCards) : List.of();
-
-        for (int i = 0; i < parsedHands.size(); i++) {
-            if (parsedHands.get(i).size() != 2) {
-                throw new IllegalArgumentException(
-                        "Each hand must have exactly 2 cards, hand " + i + " has " + parsedHands.get(i).size());
-            }
-        }
-
-        validateNoDuplicatesMultiHand(parsedHands, community);
-
-        List<Card> remainingDeck = buildRemainingDeckMultiHand(parsedHands, community);
-
-        int communityNeeded = 5 - community.size();
-        int numHands = parsedHands.size();
-        int iters = iterations;
-
-        int[] wins = new int[numHands];
-        int[] ties = new int[numHands];
-        int[] losses = new int[numHands];
-
-        ServerHandEvaluator evaluator = new ServerHandEvaluator();
-
-        if (communityNeeded == 0) {
-            iters = 1;
-            evaluateMultiHandBoard(parsedHands, community, evaluator, wins, ties, losses);
-        } else {
-            Random rng = new Random();
-            List<Card> shuffled = new ArrayList<>(remainingDeck);
-            for (int iter = 0; iter < iters; iter++) {
-                Collections.shuffle(shuffled, rng);
-                List<Card> board = new ArrayList<>(community);
-                for (int j = 0; j < communityNeeded; j++) {
-                    board.add(shuffled.get(j));
-                }
-                evaluateMultiHandBoard(parsedHands, board, evaluator, wins, ties, losses);
-            }
-        }
-
-        List<SimulationResult.HandResult> handResults = new ArrayList<>(numHands);
-        for (int i = 0; i < numHands; i++) {
-            handResults.add(new SimulationResult.HandResult((double) wins[i] / iters * 100,
-                    (double) ties[i] / iters * 100, (double) losses[i] / iters * 100));
-        }
-
-        return new SimulationResult(0, 0, 0, iters, null, null, handResults);
-    }
-
-    /**
-     * Evaluate one board runout for a multi-hand showdown, updating win/tie/loss
-     * counters.
-     */
-    private void evaluateMultiHandBoard(List<List<Card>> hands, List<Card> board, ServerHandEvaluator evaluator,
-            int[] wins, int[] ties, int[] losses) {
-        int numHands = hands.size();
-        int[] scores = new int[numHands];
-        int maxScore = 0;
-
-        for (int i = 0; i < numHands; i++) {
-            scores[i] = evaluator.getScore(hands.get(i), board);
-            if (scores[i] > maxScore) {
-                maxScore = scores[i];
-            }
-        }
-
-        int topCount = 0;
-        for (int i = 0; i < numHands; i++) {
-            if (scores[i] == maxScore) {
-                topCount++;
-            }
-        }
-
-        for (int i = 0; i < numHands; i++) {
-            if (scores[i] == maxScore) {
-                if (topCount == 1) {
-                    wins[i]++;
-                } else {
-                    ties[i]++;
-                }
-            } else {
-                losses[i]++;
-            }
-        }
-    }
-
-    /**
      * Parse string card representations to Card objects.
      *
      * @param cardStrings
@@ -558,22 +454,6 @@ public class PokerSimulationService implements HandScoreConstants {
         }
     }
 
-    private void validateNoDuplicatesMultiHand(List<List<Card>> hands, List<Card> community) {
-        Set<Integer> seen = new HashSet<>();
-        for (List<Card> hand : hands) {
-            for (Card c : hand) {
-                if (!seen.add(c.getIndex())) {
-                    throw new IllegalArgumentException("Duplicate card at index: " + c.getIndex());
-                }
-            }
-        }
-        for (Card c : community) {
-            if (!seen.add(c.getIndex())) {
-                throw new IllegalArgumentException("Duplicate card at index: " + c.getIndex());
-            }
-        }
-    }
-
     private List<Card> buildRemainingDeck(List<Card> hole, List<Card> community, List<List<Card>> knownOppHands) {
         Set<Integer> usedIndices = new HashSet<>();
         for (Card c : hole) {
@@ -586,26 +466,6 @@ public class PokerSimulationService implements HandScoreConstants {
             for (Card c : oppHand) {
                 usedIndices.add(c.getIndex());
             }
-        }
-
-        List<Card> remaining = new ArrayList<>(52 - usedIndices.size());
-        for (int i = 0; i < 52; i++) {
-            if (!usedIndices.contains(i)) {
-                remaining.add(Card.getCard(i));
-            }
-        }
-        return remaining;
-    }
-
-    private List<Card> buildRemainingDeckMultiHand(List<List<Card>> hands, List<Card> community) {
-        Set<Integer> usedIndices = new HashSet<>();
-        for (List<Card> hand : hands) {
-            for (Card c : hand) {
-                usedIndices.add(c.getIndex());
-            }
-        }
-        for (Card c : community) {
-            usedIndices.add(c.getIndex());
         }
 
         List<Card> remaining = new ArrayList<>(52 - usedIndices.size());

@@ -45,7 +45,6 @@ export interface EquityResult {
   loss: number
   iterations: number
   opponentResults?: { win: number; tie: number; loss: number }[]
-  playerHandTypeBreakdown?: Record<string, number>
 }
 
 /** Rank values: 2=2, 3=3, ..., T=10, J=11, Q=12, K=13, A=14 */

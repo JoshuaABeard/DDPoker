@@ -341,16 +341,14 @@ export const gameServerApi = {
   },
 
   /**
-   * Run a poker equity simulation (Monte Carlo or exhaustive enumeration).
-   * Provide either iterations (100-100000) or exhaustive=true.
+   * Run a Monte Carlo equity simulation.
    */
   simulate: async (params: {
     holeCards: string[]
     communityCards: string[]
     numOpponents: number
-    iterations?: number
+    iterations: number
     knownOpponentHands?: string[][]
-    exhaustive?: boolean
   }): Promise<EquityResult> => {
     const response = await apiFetch<EquityResult>('/api/v1/poker/simulate', {
       method: 'POST',

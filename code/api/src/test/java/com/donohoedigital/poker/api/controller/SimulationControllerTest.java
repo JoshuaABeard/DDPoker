@@ -169,30 +169,4 @@ class SimulationControllerTest {
         assertTrue(body.get("error").contains("iterations"));
     }
 
-    @Test
-    void simulate_multiHand_returnsHandResults() {
-        SimulationRequest request = new SimulationRequest(List.of("Ah", "As"), List.of(), 1, 1000, null,
-                List.of(List.of("Ah", "Ad"), List.of("Kh", "Kd")));
-
-        ResponseEntity<?> response = controller.simulate(request);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        SimulationResult result = (SimulationResult) response.getBody();
-        assertNotNull(result.handResults());
-        assertEquals(2, result.handResults().size());
-    }
-
-    @Test
-    @SuppressWarnings("unchecked")
-    void simulate_multiHand_noIterations_returnsBadRequest() {
-        SimulationRequest request = new SimulationRequest(List.of("Ah", "As"), List.of(), 1, null, null,
-                List.of(List.of("Ah", "Ad"), List.of("Kh", "Kd")));
-
-        ResponseEntity<?> response = controller.simulate(request);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        Map<String, String> body = (Map<String, String>) response.getBody();
-        assertNotNull(body);
-        assertTrue(body.get("error").contains("iterations"));
-    }
 }
