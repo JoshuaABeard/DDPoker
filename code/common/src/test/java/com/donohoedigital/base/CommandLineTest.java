@@ -38,7 +38,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -69,7 +69,9 @@ class CommandLineTest {
         setStaticField("sParamName_", "[file]");
         setStaticField("sParamUsage_", "[file 1] ... [file N]");
         setStaticField("sParamDesc_", "a file");
-        setStaticField("htOpts_", new HashMap<String, Object>());
+        Field htOptsField = CommandLine.class.getDeclaredField("htOpts_");
+        htOptsField.setAccessible(true);
+        ((Map<?, ?>) htOptsField.get(null)).clear();
         setStaticField("htValues_", new TypedHashMap());
         setStaticField("saRemainingArgs_", null);
         setStaticField("sMacFileArg_", null);

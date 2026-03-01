@@ -225,7 +225,7 @@ class TypedHashMapTest {
     // -----------------------------------------------------------------------
 
     @Test
-    void should_CopyAllEntries_When_ConstructedFromExistingMap() {
+    void should_CopyAllEntries_When_PutAllUsed() {
         map.setString("name", "Bob");
         map.setInteger("age", 30);
 
