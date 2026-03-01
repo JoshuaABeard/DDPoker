@@ -1,8 +1,6 @@
 /*
- * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2026 Joshua Beard and contributors
- *
  * This file is part of DD Poker, originally created by Doug Donohoe.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,31 +13,21 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * For the full License text, please see the LICENSE.txt file
- * in the root directory of this project.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
- * graphics, text, and documentation found in this repository (including but not
- * limited to written documentation, website content, and marketing materials)
- * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
- * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
- * without explicit written permission for any uses not covered by this License.
- * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
- * in the root directory of this project.
- *
- * For inquiries regarding commercial licensing of this source code or
- * the use of names, logos, images, text, or other assets, please contact
- * doug [at] donohoe [dot] info.
- * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+ * Non-commercial use of DD Poker artwork, logos, and other creative assets
+ * is permitted under CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/).
+ * Commercial use is prohibited without written permission.
  */
 package com.donohoedigital.games.poker.model;
 
 import com.donohoedigital.games.poker.engine.PokerConstants;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for LevelValidator - validates and normalizes tournament blind level
@@ -58,6 +46,13 @@ import static org.junit.Assert.*;
  * </ol>
  */
 public class LevelValidatorTest {
+
+    /**
+     * Minimum ante as a percentage of small blind (5%), derived from
+     * LevelValidator's normalizeLevels() which uses
+     * {@code (int)(smallBlind * 0.05f)}.
+     */
+    private static final float ANTE_MIN_PERCENT = 0.05f;
 
     // ========== Gap Consolidation Tests ==========
 
@@ -84,10 +79,10 @@ public class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: should have 3 consecutive levels
-        assertEquals("Should have 3 levels", 3, levels.size());
-        assertEquals("First level number should be 1", 1, levels.get(0).levelNum);
-        assertEquals("Second level number should be 2", 2, levels.get(1).levelNum);
-        assertEquals("Third level number should be 3", 3, levels.get(2).levelNum);
+        assertThat(levels).hasSize(3);
+        assertThat(levels.get(0).levelNum).isEqualTo(1);
+        assertThat(levels.get(1).levelNum).isEqualTo(2);
+        assertThat(levels.get(2).levelNum).isEqualTo(3);
     }
 
     @Test
@@ -106,10 +101,10 @@ public class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: blind values should be preserved (just renumbered)
-        assertEquals(5, levels.get(0).smallBlind);
-        assertEquals(10, levels.get(0).bigBlind);
-        assertEquals(25, levels.get(1).smallBlind);
-        assertEquals(50, levels.get(1).bigBlind);
+        assertThat(levels.get(0).smallBlind).isEqualTo(5);
+        assertThat(levels.get(0).bigBlind).isEqualTo(10);
+        assertThat(levels.get(1).smallBlind).isEqualTo(25);
+        assertThat(levels.get(1).bigBlind).isEqualTo(50);
     }
 
     // ========== Missing Blind Fill-In Tests ==========
@@ -128,12 +123,13 @@ public class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: big blind should be small * 2
-        assertEquals("Big blind should be 2x small", 20, levels.get(0).bigBlind);
+        assertThat(levels.get(0).bigBlind).isEqualTo(20);
     }
 
     @Test
     public void should_FillMissingSmallBlind_FromBigBlind() {
-        // Given: level with big blind but no small blind
+        // Given: level with big blind (20) but no small blind
+        // LevelValidator sets smallBlind = bigBlind / 2 when bigBlind > 2
         Map<String, String> rawData = new HashMap<>();
         rawData.put("big1", "20");
         // small1 is missing
@@ -144,9 +140,8 @@ public class LevelValidatorTest {
         List<LevelValidator.LevelData> levels = validator.validateAndNormalize(rawData, 10,
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
-        // Then: small blind should be big / 2 (or adjusted)
-        assertTrue("Small blind should be positive", levels.get(0).smallBlind > 0);
-        assertTrue("Small blind should be <= big", levels.get(0).smallBlind <= levels.get(0).bigBlind);
+        // Then: small blind should be exactly big / 2 = 10
+        assertThat(levels.get(0).smallBlind).isEqualTo(10);
     }
 
     @Test
@@ -165,8 +160,8 @@ public class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: level 2 should inherit blinds from level 1
-        assertEquals("Level 2 small should match level 1", levels.get(0).smallBlind, levels.get(1).smallBlind);
-        assertEquals("Level 2 big should match level 1", levels.get(0).bigBlind, levels.get(1).bigBlind);
+        assertThat(levels.get(1).smallBlind).isEqualTo(levels.get(0).smallBlind);
+        assertThat(levels.get(1).bigBlind).isEqualTo(levels.get(0).bigBlind);
     }
 
     // ========== Monotonic Increasing Enforcement Tests ==========
@@ -187,8 +182,8 @@ public class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: level 2 blinds should be >= level 1 blinds
-        assertTrue("Level 2 small should be >= level 1 small", levels.get(1).smallBlind >= levels.get(0).smallBlind);
-        assertTrue("Level 2 big should be >= level 1 big", levels.get(1).bigBlind >= levels.get(0).bigBlind);
+        assertThat(levels.get(1).smallBlind).isGreaterThanOrEqualTo(levels.get(0).smallBlind);
+        assertThat(levels.get(1).bigBlind).isGreaterThanOrEqualTo(levels.get(0).bigBlind);
     }
 
     @Test
@@ -209,7 +204,7 @@ public class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: ante can go back to 0
-        assertEquals("Ante can return to 0", 0, levels.get(1).ante);
+        assertThat(levels.get(1).ante).isEqualTo(0);
     }
 
     @Test
@@ -230,15 +225,14 @@ public class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: ante should be enforced to >= previous (if not zero)
-        assertTrue("Ante should not decrease unless going to 0",
-                levels.get(1).ante >= levels.get(0).ante || levels.get(1).ante == 0);
+        assertThat(levels.get(1).ante >= levels.get(0).ante || levels.get(1).ante == 0).isTrue();
     }
 
     // ========== Ante Bounds Tests ==========
 
     @Test
     public void should_EnforceMinimumAnte_At5PercentOfSmallBlind() {
-        // Given: ante is very small (less than 5% of small blind)
+        // Given: ante is very small (less than 5% of small blind = 5)
         Map<String, String> rawData = new HashMap<>();
         rawData.put("ante1", "1"); // Less than 5% of 100
         rawData.put("small1", "100");
@@ -251,8 +245,8 @@ public class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: ante should be at least 5% of small blind
-        int expectedMinAnte = (int) (100 * 0.05);
-        assertTrue("Ante should be >= 5% of small blind", levels.get(0).ante >= expectedMinAnte);
+        int expectedMinAnte = (int) (100 * ANTE_MIN_PERCENT);
+        assertThat(levels.get(0).ante).isGreaterThanOrEqualTo(expectedMinAnte);
     }
 
     @Test
@@ -270,14 +264,14 @@ public class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: ante should not exceed small blind
-        assertTrue("Ante should not exceed small blind", levels.get(0).ante <= levels.get(0).smallBlind);
+        assertThat(levels.get(0).ante).isLessThanOrEqualTo(levels.get(0).smallBlind);
     }
 
     // ========== Rounding Tests ==========
 
     @Test
-    public void should_RoundBlinds_ToAppropriateIncrements() {
-        // Given: blinds with odd values
+    public void should_RoundBlinds_WhenValuesAreSmall() {
+        // Given: blinds with odd values at or below 100 (increment = 1, no rounding)
         Map<String, String> rawData = new HashMap<>();
         rawData.put("small1", "47");
         rawData.put("big1", "93");
@@ -288,26 +282,30 @@ public class LevelValidatorTest {
         List<LevelValidator.LevelData> levels = validator.validateAndNormalize(rawData, 10,
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
-        // Then: blinds should be rounded up to next increment
-        // At scale <= 100, increment is 1 (so rounds up: 47->47, 93->93, already valid)
-        // At scale 101-500, increment is 5
-        // Test that rounding occurred (values rounded up)
-        int small = levels.get(0).smallBlind;
-        int big = levels.get(0).bigBlind;
+        // Then: at scale <= 100, increment is 1 so values are unchanged
+        assertThat(levels.get(0).smallBlind).isEqualTo(47);
+        assertThat(levels.get(0).bigBlind).isEqualTo(93);
+    }
 
-        assertTrue("Small blind should be >= original", small >= 47);
-        assertTrue("Big blind should be >= original", big >= 93);
-
-        // Test with larger values that should round to 5
-        rawData.clear();
+    @Test
+    public void should_RoundBlinds_ToNearestFive_WhenValuesAreInHundreds() {
+        // Given: blinds with odd values in the 101-500 range (increment = 5)
+        // Rounding uses integer division: remainder >= (increment/2) rounds up.
+        // 103: remainder=3, 3 >= (5/2=2) -> round up -> 105
+        // 207: remainder=2, 2 >= (5/2=2) -> round up -> 210
+        Map<String, String> rawData = new HashMap<>();
         rawData.put("small1", "103");
         rawData.put("big1", "207");
 
-        levels = validator.validateAndNormalize(rawData, 10, PokerConstants.DE_NO_LIMIT_HOLDEM);
+        LevelValidator validator = new LevelValidator();
 
-        // At scale 101-500, should round to multiples of 5
-        assertTrue("Larger small blind should be rounded to 5", levels.get(0).smallBlind % 5 == 0);
-        assertTrue("Larger big blind should be rounded to 5", levels.get(0).bigBlind % 5 == 0);
+        // When: validate
+        List<LevelValidator.LevelData> levels = validator.validateAndNormalize(rawData, 10,
+                PokerConstants.DE_NO_LIMIT_HOLDEM);
+
+        // Then: values should be rounded to multiples of 5
+        assertThat(levels.get(0).smallBlind).isEqualTo(105);
+        assertThat(levels.get(0).bigBlind).isEqualTo(210);
     }
 
     // ========== Break Level Tests ==========
@@ -326,8 +324,8 @@ public class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: should be marked as break
-        assertTrue("Level should be marked as break", levels.get(0).isBreak);
-        assertEquals("Break should have minutes", 10, levels.get(0).minutes);
+        assertThat(levels.get(0).isBreak).isTrue();
+        assertThat(levels.get(0).minutes).isEqualTo(10);
     }
 
     @Test
@@ -348,8 +346,8 @@ public class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: break should not have blinds
-        assertEquals("Break should have no small blind", 0, levels.get(1).smallBlind);
-        assertEquals("Break should have no big blind", 0, levels.get(1).bigBlind);
+        assertThat(levels.get(1).smallBlind).isEqualTo(0);
+        assertThat(levels.get(1).bigBlind).isEqualTo(0);
     }
 
     // ========== Default Propagation Tests ==========
@@ -369,7 +367,7 @@ public class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: should use default minutes (stored as 0, meaning use default)
-        assertEquals("Should use default minutes (0 = use default)", 0, levels.get(0).minutes);
+        assertThat(levels.get(0).minutes).isEqualTo(0);
     }
 
     @Test
@@ -387,7 +385,7 @@ public class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: should preserve custom minutes
-        assertEquals("Should preserve custom minutes", 20, levels.get(0).minutes);
+        assertThat(levels.get(0).minutes).isEqualTo(20);
     }
 
     @Test
@@ -404,7 +402,7 @@ public class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: should use default game type (stored as null, meaning use default)
-        assertNull("Should use default game type (null = use default)", levels.get(0).gameType);
+        assertThat(levels.get(0).gameType).isNull();
     }
 
     // ========== Edge Cases ==========
@@ -421,10 +419,10 @@ public class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: should create a default level 1
-        assertEquals("Should have 1 default level", 1, levels.size());
-        assertEquals("Level number should be 1", 1, levels.get(0).levelNum);
-        assertTrue("Should have positive small blind", levels.get(0).smallBlind > 0);
-        assertTrue("Should have positive big blind", levels.get(0).bigBlind > 0);
+        assertThat(levels).hasSize(1);
+        assertThat(levels.get(0).levelNum).isEqualTo(1);
+        assertThat(levels.get(0).smallBlind).isGreaterThan(0);
+        assertThat(levels.get(0).bigBlind).isGreaterThan(0);
     }
 
     @Test
@@ -450,7 +448,7 @@ public class LevelValidatorTest {
                 break;
             }
         }
-        assertTrue("Should have at least one non-break level", hasNonBreak);
+        assertThat(hasNonBreak).isTrue();
     }
 
     @Test
@@ -468,7 +466,7 @@ public class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: minutes should be capped at MAX_MINUTES
-        assertTrue("Minutes should not exceed MAX_MINUTES", levels.get(0).minutes <= TournamentProfile.MAX_MINUTES);
+        assertThat(levels.get(0).minutes).isLessThanOrEqualTo(TournamentProfile.MAX_MINUTES);
     }
 
     // ========== Integration Tests ==========
@@ -500,19 +498,19 @@ public class LevelValidatorTest {
                 PokerConstants.DE_NO_LIMIT_HOLDEM);
 
         // Then: should have 4 levels (consolidated from 1,3,5,7)
-        assertEquals("Should have 4 levels", 4, levels.size());
+        assertThat(levels).hasSize(4);
 
         // Verify consolidation
-        assertEquals(1, levels.get(0).levelNum);
-        assertEquals(2, levels.get(1).levelNum);
-        assertEquals(3, levels.get(2).levelNum);
-        assertEquals(4, levels.get(3).levelNum);
+        assertThat(levels.get(0).levelNum).isEqualTo(1);
+        assertThat(levels.get(1).levelNum).isEqualTo(2);
+        assertThat(levels.get(2).levelNum).isEqualTo(3);
+        assertThat(levels.get(3).levelNum).isEqualTo(4);
 
         // Verify break
-        assertTrue("Level 3 should be break", levels.get(2).isBreak);
+        assertThat(levels.get(2).isBreak).isTrue();
 
         // Verify monotonic blinds (excluding breaks)
-        assertTrue("Level 4 big should be >= level 2 big", levels.get(3).bigBlind >= levels.get(1).bigBlind);
+        assertThat(levels.get(3).bigBlind).isGreaterThanOrEqualTo(levels.get(1).bigBlind);
     }
 
     // ========== LevelData toString() Tests ==========
@@ -532,10 +530,10 @@ public class LevelValidatorTest {
 
         // Then: toString should show BREAK format
         String result = levels.get(0).toString();
-        assertNotNull("toString should not be null", result);
-        assertTrue("toString should contain 'BREAK'", result.contains("BREAK"));
-        assertTrue("toString should contain level number", result.contains("Level"));
-        assertTrue("toString should contain minutes", result.contains("15"));
+        assertThat(result).isNotNull();
+        assertThat(result).contains("BREAK");
+        assertThat(result).contains("Level");
+        assertThat(result).contains("15");
     }
 
     @Test
@@ -556,12 +554,12 @@ public class LevelValidatorTest {
 
         // Then: toString should show full level details
         String result = levels.get(0).toString();
-        assertNotNull("toString should not be null", result);
-        assertTrue("toString should contain 'Level'", result.contains("Level"));
-        assertTrue("toString should contain 'Ante'", result.contains("Ante"));
-        assertTrue("toString should contain 'Small'", result.contains("Small"));
-        assertTrue("toString should contain 'Big'", result.contains("Big"));
-        assertTrue("toString should contain 'Minutes'", result.contains("Minutes"));
-        assertTrue("toString should contain 'Type'", result.contains("Type"));
+        assertThat(result).isNotNull();
+        assertThat(result).contains("Level");
+        assertThat(result).contains("Ante");
+        assertThat(result).contains("Small");
+        assertThat(result).contains("Big");
+        assertThat(result).contains("Minutes");
+        assertThat(result).contains("Type");
     }
 }
