@@ -240,7 +240,7 @@ public class PokerStatsPanel extends DDTabPanel {
         public void run() {
             switch (mode_) {
                 case LADDER :
-                    ladder_ = new HandLadder(pocket_, community_, null);
+                    ladder_ = new HandLadder(pocket_, community_);
                     break;
 
                 case STRENGTH :

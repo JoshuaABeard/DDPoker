@@ -33,7 +33,6 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.base.*;
-import com.donohoedigital.games.poker.ai.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.config.*;
 
@@ -61,12 +60,10 @@ public class HandLadder {
     private int totalCount_;
 
     HandInfoFast handInfo_ = new HandInfoFast();
-    HandProbabilityMatrix matrix_;
 
-    public HandLadder(Hand pocket, Hand community, HandProbabilityMatrix matrix) {
+    public HandLadder(Hand pocket, Hand community) {
         pocket_ = pocket;
         community_ = community;
-        matrix_ = matrix;
 
         ladder_ = new HandList[7];
 
