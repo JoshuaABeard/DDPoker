@@ -122,7 +122,7 @@ class BorderPointTest {
     void should_HaveNoBorders_When_NewlyCreated() {
         BorderPoint point = new BorderPoint(1, 2);
 
-        assertThat(point.getBorders().size()).isEqualTo(0);
+        assertThat(point.getBorders()).isEmpty();
     }
 
     @Test
@@ -131,7 +131,7 @@ class BorderPointTest {
         Border border = BorderTestHelper.createBorder("X", "Y");
         point.addBorder(border);
 
-        assertThat(point.getBorders().size()).isEqualTo(1);
+        assertThat(point.getBorders()).hasSize(1);
         assertThat(point.getBorders().getBorder(0)).isSameAs(border);
     }
 
@@ -142,7 +142,7 @@ class BorderPointTest {
         point.addBorder(border);
         point.addBorder(border);
 
-        assertThat(point.getBorders().size()).isEqualTo(1);
+        assertThat(point.getBorders()).hasSize(1);
     }
 
     // ========== toString / longDesc Tests ==========

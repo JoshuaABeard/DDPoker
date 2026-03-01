@@ -75,9 +75,10 @@ class BorderTest {
 
     @Test
     void should_HaveGivenNumber_When_ConstructedWithExplicitNumber() {
-        Border border = BorderTestHelper.createBorder("Alpha", "Beta", false, 3);
+        int expectedNum = 3;
+        Border border = BorderTestHelper.createBorder("Alpha", "Beta", false, expectedNum);
 
-        assertThat(border.getNumber()).isEqualTo(3);
+        assertThat(border.getNumber()).isEqualTo(expectedNum);
     }
 
     // ========== Point Collection Tests ==========
@@ -127,7 +128,7 @@ class BorderTest {
 
         assertThat(border.size()).isEqualTo(0);
         // point should no longer reference this border
-        assertThat(point.getBorders().size()).isEqualTo(0);
+        assertThat(point.getBorders()).isEmpty();
     }
 
     @Test

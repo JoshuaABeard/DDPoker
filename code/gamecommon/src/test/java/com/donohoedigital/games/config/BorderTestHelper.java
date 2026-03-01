@@ -65,6 +65,8 @@ class BorderTestHelper {
 
     static {
         try {
+            // sun.misc.Unsafe is in jdk.unsupported which opens sun.misc to unnamed modules
+            // by default
             Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
             unsafeField.setAccessible(true);
             UNSAFE = (Unsafe) unsafeField.get(null);
