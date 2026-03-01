@@ -487,4 +487,66 @@ class AdvisorServiceTest {
         assertThat(result.positivePotential()).isNull();
         assertThat(result.negativePotential()).isNull();
     }
+
+    @Test
+    void handPotential_preflop_returnsNull() {
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("Kh")};
+        Card[] community = {};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.positivePotential()).isNull();
+        assertThat(result.negativePotential()).isNull();
+    }
+
+    @Test
+    void handPotential_turn_isNotNull() {
+        // 4 community cards (turn) — both fields should be non-null
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("2h")};
+        Card[] community = {Card.getCard("Kh"), Card.getCard("7h"), Card.getCard("3c"), Card.getCard("9d")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.positivePotential()).isNotNull();
+        assertThat(result.negativePotential()).isNotNull();
+    }
+
+    @Test
+    void handPotential_positiveIsNonNegative() {
+        // Flush draw on flop — positive potential should be in [0, 100]
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("2h")};
+        Card[] community = {Card.getCard("Kh"), Card.getCard("7h"), Card.getCard("3c")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.positivePotential()).isNotNull();
+        assertThat(result.positivePotential()).isBetween(0.0, 100.0);
+    }
+
+    @Test
+    void handPotential_negativeIsNonNegative() {
+        // Flush draw on flop — negative potential should be in [0, 100]
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("2h")};
+        Card[] community = {Card.getCard("Kh"), Card.getCard("7h"), Card.getCard("3c")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.negativePotential()).isNotNull();
+        assertThat(result.negativePotential()).isBetween(0.0, 100.0);
+    }
+
+    @Test
+    void handPotential_royalFlush_zeroPositivePercent() {
+        // Royal flush on a 5-card river board — service returns null (river), so
+        // positive potential is null
+        Card[] hole = {Card.getCard("As"), Card.getCard("Ks")};
+        Card[] community = {Card.getCard("Qs"), Card.getCard("Js"), Card.getCard("Ts"), Card.getCard("2h"),
+                Card.getCard("3c")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        // River board: hand potential is null (no next card to improve to)
+        assertThat(result.positivePotential()).isNull();
+    }
+
+    @Test
+    void handPotential_highCard_withOpenEndedStraightDraw_hasPositivePotential() {
+        // 9h 8h on flop of 7c 6d 2s — open-ended straight draw (needs 5 or T),
+        // high-card hand
+        Card[] hole = {Card.getCard("9h"), Card.getCard("8h")};
+        Card[] community = {Card.getCard("7c"), Card.getCard("6d"), Card.getCard("2s")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.positivePotential()).isNotNull();
+        assertThat(result.positivePotential()).isGreaterThan(0.0);
+    }
 }
