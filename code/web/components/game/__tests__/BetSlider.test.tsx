@@ -73,4 +73,12 @@ describe('BetSlider', () => {
     expect(rangeInput.getAttribute('max')).toBe('1000')
     expect((rangeInput as HTMLInputElement).value).toBe('500')
   })
+
+  it('range input change fires onChange', () => {
+    const onChange = vi.fn()
+    render(<BetSlider min={100} max={1000} value={500} potSize={400} onChange={onChange} />)
+    const slider = screen.getByRole('slider')
+    fireEvent.change(slider, { target: { value: '300' } })
+    expect(onChange).toHaveBeenCalledWith(300)
+  })
 })

@@ -36,6 +36,7 @@ describe('GameOverlay - tab-replaced', () => {
     render(<GameOverlay type="tab-replaced" />)
     const dialog = screen.getByRole('dialog')
     expect(dialog.getAttribute('aria-label')).toBe('Game Opened in Another Tab')
+    expect(screen.getByText(/taken over by another browser tab/i)).toBeTruthy()
   })
 })
 
