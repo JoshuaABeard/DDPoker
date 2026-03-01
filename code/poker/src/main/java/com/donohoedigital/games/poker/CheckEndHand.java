@@ -64,19 +64,19 @@ public class CheckEndHand extends ChainPhase {
     // Game-over result states (inlined from deleted GameOverChecker)
     // -------------------------------------------------------------------------
 
-    private enum GameOverResult {
+    enum GameOverResult {
         CONTINUE, REBUY_OFFERED, GAME_OVER, TOURNAMENT_WON, NEVER_BROKE_ACTIVE
     }
 
-    private static boolean isHumanBroke(PokerPlayer human) {
+    static boolean isHumanBroke(PokerPlayer human) {
         return human.getChipCount() == 0 && !human.isObserver();
     }
 
-    private static boolean shouldOfferRebuy(PokerPlayer human, PokerTable table) {
+    static boolean shouldOfferRebuy(PokerPlayer human, PokerTable table) {
         return human.getChipCount() == 0 && !human.isObserver() && table.isRebuyAllowed(human);
     }
 
-    private static GameOverResult checkGameOverStatus(PokerGame game, PokerPlayer human, PokerTable table,
+    static GameOverResult checkGameOverStatus(PokerGame game, PokerPlayer human, PokerTable table,
             boolean neverBrokeCheatActive) {
         boolean bOnline = game.isOnlineGame();
 
@@ -98,7 +98,7 @@ public class CheckEndHand extends ChainPhase {
         return GameOverResult.CONTINUE;
     }
 
-    private static int calculateNeverBrokeTransfer(int chipLeaderAmount, int tableMinChip) {
+    static int calculateNeverBrokeTransfer(int chipLeaderAmount, int tableMinChip) {
         int nAdd = chipLeaderAmount / 2;
         nAdd -= nAdd % tableMinChip;
         return nAdd;
