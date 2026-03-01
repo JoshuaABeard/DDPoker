@@ -80,7 +80,18 @@ public class PokerSimulationService {
         // Validate no duplicate cards
         validateNoDuplicates(hole, community, knownOppHands);
 
+        for (List<Card> oppHand : knownOppHands) {
+            if (oppHand.size() != 2) {
+                throw new IllegalArgumentException(
+                        "Each opponent hand must have exactly 2 cards, got " + oppHand.size());
+            }
+        }
+
         int randomOpponents = numOpponents - knownOppHands.size();
+        if (randomOpponents < 0) {
+            throw new IllegalArgumentException("Number of known opponent hands (" + knownOppHands.size()
+                    + ") exceeds numOpponents (" + numOpponents + ")");
+        }
         int communityNeeded = 5 - community.size();
 
         // Build remaining deck (remove all known cards)

@@ -178,6 +178,24 @@ class PokerSimulationServiceTest {
     }
 
     @Test
+    void knownOpponentHandsExceedNumOpponents_rejected() {
+        // 2 known opponents but numOpponents = 1
+        assertThrows(IllegalArgumentException.class, () -> service.simulate(List.of("Ah", "As"), List.of(), 1, 1000,
+                List.of(List.of("Kh", "Ks"), List.of("Qh", "Qs"))));
+    }
+
+    @Test
+    void knownOpponentHandWithWrongCardCount_rejected() {
+        // Opponent hand with 1 card instead of 2
+        assertThrows(IllegalArgumentException.class,
+                () -> service.simulate(List.of("Ah", "As"), List.of(), 1, 1000, List.of(List.of("Kh"))));
+
+        // Opponent hand with 3 cards
+        assertThrows(IllegalArgumentException.class,
+                () -> service.simulate(List.of("Ah", "As"), List.of(), 1, 1000, List.of(List.of("Kh", "Ks", "Qh"))));
+    }
+
+    @Test
     void parseCards_validCards() {
         List<com.donohoedigital.games.poker.engine.Card> cards = service.parseCards(List.of("Ah", "Kd", "Qs", "Jc"));
         assertEquals(4, cards.size());
