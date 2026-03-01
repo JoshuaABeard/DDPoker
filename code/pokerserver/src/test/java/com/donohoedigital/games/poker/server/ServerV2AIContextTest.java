@@ -20,6 +20,7 @@
 package com.donohoedigital.games.poker.server;
 
 import com.donohoedigital.games.poker.core.*;
+import com.donohoedigital.games.poker.core.ai.AIConstants;
 import com.donohoedigital.games.poker.core.ai.StrategyProvider;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.CardSuit;
@@ -669,5 +670,89 @@ class ServerV2AIContextTest {
 
         // Should default to no-limit (false)
         assertThat(context.isLimit()).isFalse();
+    }
+
+    @Test
+    void getStartingPositionCategory_returnsSmallBlindForSB() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        // 9-seat table, button at seat 0
+        when(table.getSeats()).thenReturn(9);
+        when(table.getButton()).thenReturn(0);
+        when(table.getNumOccupiedSeats()).thenReturn(9);
+
+        // SB at seat 1 (1 from button), BB at seat 2 (2 from button)
+        GamePlayerInfo sb = mock(GamePlayerInfo.class);
+        GamePlayerInfo bb = mock(GamePlayerInfo.class);
+        when(table.getSeat(sb)).thenReturn(1);
+        when(table.getSeat(bb)).thenReturn(2);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, hand, tournament, aiPlayer, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getStartingPositionCategory(sb)).isEqualTo(AIConstants.POSITION_SMALL);
+        assertThat(context.getStartingPositionCategory(bb)).isEqualTo(AIConstants.POSITION_BIG);
+    }
+
+    @Test
+    void getStartingPositionCategory_returnsCorrectNonBlindPositions() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        // 9-seat table, button at seat 0
+        when(table.getSeats()).thenReturn(9);
+        when(table.getButton()).thenReturn(0);
+        when(table.getNumOccupiedSeats()).thenReturn(9);
+
+        // Button at seat 0
+        GamePlayerInfo button = mock(GamePlayerInfo.class);
+        when(table.getSeat(button)).thenReturn(0);
+
+        // UTG at seat 3 (first to act pre-flop)
+        GamePlayerInfo utg = mock(GamePlayerInfo.class);
+        when(table.getSeat(utg)).thenReturn(3);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, hand, tournament, aiPlayer, strategy,
+                new ServerOpponentTracker());
+
+        // Button should be LATE (not blind)
+        assertThat(context.getStartingPositionCategory(button)).isEqualTo(AIConstants.POSITION_LATE);
+
+        // UTG (distance 3) should be EARLY in a 9-player game
+        assertThat(context.getStartingPositionCategory(utg)).isEqualTo(AIConstants.POSITION_EARLY);
+    }
+
+    @Test
+    void getStartingPositionCategory_headsUp_buttonIsSB() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        // 2 players, button at seat 0
+        when(table.getSeats()).thenReturn(9);
+        when(table.getButton()).thenReturn(0);
+        when(table.getNumOccupiedSeats()).thenReturn(2);
+
+        GamePlayerInfo button = mock(GamePlayerInfo.class);
+        GamePlayerInfo other = mock(GamePlayerInfo.class);
+        when(table.getSeat(button)).thenReturn(0);
+        when(table.getSeat(other)).thenReturn(3);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, hand, tournament, aiPlayer, strategy,
+                new ServerOpponentTracker());
+
+        // In heads-up, button is small blind
+        assertThat(context.getStartingPositionCategory(button)).isEqualTo(AIConstants.POSITION_SMALL);
+        // Other player is big blind
+        assertThat(context.getStartingPositionCategory(other)).isEqualTo(AIConstants.POSITION_BIG);
     }
 }

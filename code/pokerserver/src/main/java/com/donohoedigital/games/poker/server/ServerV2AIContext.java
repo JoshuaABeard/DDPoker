@@ -307,26 +307,59 @@ public class ServerV2AIContext extends ServerAIContext implements V2AIContext {
 
     @Override
     public int getStartingPositionCategory(GamePlayerInfo player) {
-        // Position categories based on distance from button (early/middle/late/blind)
+        // Match client PokerAI.getStartingPositionCategory() position mapping.
+        // Returns AIConstants.POSITION_* values used by opponent model and AI
+        // algorithms.
         if (player == null || getTable() == null) {
-            return 0;
+            return AIConstants.POSITION_EARLY;
         }
+
+        int numPlayers = getTable().getNumOccupiedSeats();
+
+        // Heads-up: button is SB, other player is BB
+        if (numPlayers == 2) {
+            return isButton(player) ? AIConstants.POSITION_SMALL : AIConstants.POSITION_BIG;
+        }
+
+        // Check blinds first
+        if (isSmallBlind(player)) {
+            return AIConstants.POSITION_SMALL;
+        }
+        if (isBigBlind(player)) {
+            return AIConstants.POSITION_BIG;
+        }
+
+        // For non-blind seats, determine pre-flop action order position.
+        // Pre-flop action starts at UTG (3 seats after button) and goes clockwise
+        // to the button. nPosition is 0-based action order (UTG=0, Button=last).
         int seat = getSeat(player);
         int button = getTable().getButton();
         int numSeats = getTable().getSeats();
-
-        // Calculate position relative to button
         int distanceFromButton = (seat - button + numSeats) % numSeats;
 
-        // Map to position category (0=blind, 1=early, 2=middle, 3=late)
-        if (distanceFromButton == 1 || distanceFromButton == 2) {
-            return 0; // Blinds
-        } else if (distanceFromButton <= 4) {
-            return 1; // Early
-        } else if (distanceFromButton <= 7) {
-            return 2; // Middle
+        // Convert distance to pre-flop action order position.
+        // Pre-flop: UTG(dist 3)=0, dist 4=1, ..., Button(dist 0)=last non-blind
+        int nPosition;
+        if (distanceFromButton == 0) {
+            // Button: last non-blind to act
+            nPosition = numPlayers - 3;
+        } else if (distanceFromButton >= 3) {
+            nPosition = distanceFromButton - 3;
         } else {
-            return 3; // Late
+            // Distance 1 or 2 but not identified as blind (e.g., empty seats
+            // shifted the blind positions). Treat as early position.
+            return AIConstants.POSITION_EARLY;
+        }
+
+        // Match client thresholds: numPlayers - nPosition = players remaining behind
+        // (inclusive)
+        int playersRemaining = numPlayers - nPosition;
+        if (playersRemaining >= 8) {
+            return AIConstants.POSITION_EARLY;
+        } else if (playersRemaining >= 5) {
+            return AIConstants.POSITION_MIDDLE;
+        } else {
+            return AIConstants.POSITION_LATE;
         }
     }
 
