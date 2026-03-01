@@ -319,14 +319,14 @@
             <configuration>
               <rules>
                 <!-- Main poker package - baseline 15%, target 40% -->
-                <!-- Current: 19% - Increase minimum as coverage improves -->
+                <!-- Current: 21.7% - Increase minimum as coverage improves -->
                 <rule>
                   <element>PACKAGE</element>
                   <limits>
                     <limit>
                       <counter>INSTRUCTION</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.15</minimum>
+                      <minimum>0.19</minimum>
                     </limit>
                   </limits>
                   <includes>
@@ -341,14 +341,14 @@
                   </excludes>
                 </rule>
 
-                <!-- AI package - 50% minimum -->
+                <!-- AI package - 79% minimum -->
                 <rule>
                   <element>PACKAGE</element>
                   <limits>
                     <limit>
                       <counter>INSTRUCTION</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.50</minimum>
+                      <minimum>0.79</minimum>
                     </limit>
                   </limits>
                   <includes>
