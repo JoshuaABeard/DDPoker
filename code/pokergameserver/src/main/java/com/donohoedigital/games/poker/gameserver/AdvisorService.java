@@ -155,8 +155,13 @@ public class AdvisorService implements HandScoreConstants {
         // Improvement odds (flop/turn only)
         Map<String, Double> improvementOdds = calculateImprovementOdds(holeCards, communityCards, handType);
 
+        // Hand potential (flop/turn only)
+        double[] potential = calculateHandPotential(holeCards, communityCards, random);
+        Double positivePotential = potential != null ? potential[0] : null;
+        Double negativePotential = potential != null ? potential[1] : null;
+
         return new AdvisorResult(handRank, handDescription, equity, potOdds, recommendation, startingHandCategory,
-                startingHandNotation, improvementOdds);
+                startingHandNotation, improvementOdds, positivePotential, negativePotential);
     }
 
     /**
@@ -220,6 +225,118 @@ public class AdvisorService implements HandScoreConstants {
         }
 
         return odds.isEmpty() ? null : odds;
+    }
+
+    /** Number of sampled opponent hands for hand potential calculation. */
+    private static final int POTENTIAL_SAMPLES = 200;
+
+    /**
+     * Calculate hand potential (positive and negative) by sampling opponent hands.
+     * Returns [positivePotential, negativePotential] as percentages (0-100), or
+     * null on preflop (0-2 community) or river (5 community).
+     */
+    private double[] calculateHandPotential(Card[] holeCards, Card[] communityCards, Random random) {
+        int communitySize = communityCards.length;
+        if (communitySize < 3 || communitySize >= 5) {
+            return null;
+        }
+
+        // Build remaining deck
+        long knownFingerprint = 0L;
+        for (Card c : holeCards) {
+            knownFingerprint |= c.fingerprint();
+        }
+        for (Card c : communityCards) {
+            knownFingerprint |= c.fingerprint();
+        }
+
+        List<Card> remainingDeck = new ArrayList<>(52);
+        for (int suit = CardSuit.CLUBS_RANK; suit <= CardSuit.SPADES_RANK; suit++) {
+            for (int rank = Card.TWO; rank <= Card.ACE; rank++) {
+                Card card = Card.getCard(suit, rank);
+                if ((card.fingerprint() & knownFingerprint) == 0L) {
+                    remainingDeck.add(card);
+                }
+            }
+        }
+
+        int deckSize = remainingDeck.size();
+        ServerHandEvaluator eval = new ServerHandEvaluator();
+        List<Card> holeList = List.of(holeCards);
+        List<Card> communityList = new ArrayList<>(List.of(communityCards));
+
+        // Current player score
+        int ourScore = eval.getScore(holeList, communityList);
+
+        // Transition counters: [current_state][future_state]
+        // States: 0=AHEAD, 1=TIED, 2=BEHIND
+        double[][] hp = new double[3][3];
+        double[] hpTotal = new double[3];
+
+        // Sample random opponent hands
+        List<Card> shuffled = new ArrayList<>(remainingDeck);
+        int samples = Math.min(POTENTIAL_SAMPLES, deckSize * (deckSize - 1) / 2);
+
+        for (int s = 0; s < samples; s++) {
+            Collections.shuffle(shuffled, random);
+            Card oppCard1 = shuffled.get(0);
+            Card oppCard2 = shuffled.get(1);
+            List<Card> oppHole = List.of(oppCard1, oppCard2);
+
+            // Current state vs this opponent
+            int oppScore = eval.getScore(oppHole, communityList);
+            int currentState;
+            if (ourScore > oppScore) {
+                currentState = 0; // AHEAD
+            } else if (ourScore == oppScore) {
+                currentState = 1; // TIED
+            } else {
+                currentState = 2; // BEHIND
+            }
+
+            // Enumerate future board cards (one card ahead)
+            List<Card> futureCommunity = new ArrayList<>(communityList);
+            futureCommunity.add(null); // placeholder
+
+            long oppFingerprint = oppCard1.fingerprint() | oppCard2.fingerprint();
+            for (Card nextCard : remainingDeck) {
+                if ((nextCard.fingerprint() & oppFingerprint) != 0L) {
+                    continue; // card is in opponent's hand
+                }
+                futureCommunity.set(communitySize, nextCard);
+
+                int ourFutureScore = eval.getScore(holeList, futureCommunity);
+                int oppFutureScore = eval.getScore(oppHole, futureCommunity);
+
+                int futureState;
+                if (ourFutureScore > oppFutureScore) {
+                    futureState = 0; // AHEAD
+                } else if (ourFutureScore == oppFutureScore) {
+                    futureState = 1; // TIED
+                } else {
+                    futureState = 2; // BEHIND
+                }
+
+                hp[currentState][futureState]++;
+                hpTotal[currentState]++;
+            }
+        }
+
+        // Positive potential: behind -> ahead (+ partial credit for ties)
+        double ppot = 0.0;
+        double ppotDenom = hpTotal[2] + hpTotal[1] / 2.0;
+        if (ppotDenom > 0) {
+            ppot = (hp[2][0] + hp[2][1] / 2.0 + hp[1][0] / 2.0) / ppotDenom * 100.0;
+        }
+
+        // Negative potential: ahead -> behind (+ partial credit for ties)
+        double npot = 0.0;
+        double npotDenom = hpTotal[0] + hpTotal[1] / 2.0;
+        if (npotDenom > 0) {
+            npot = (hp[0][2] + hp[0][1] / 2.0 + hp[1][2] / 2.0) / npotDenom * 100.0;
+        }
+
+        return new double[]{ppot, npot};
     }
 
     /**

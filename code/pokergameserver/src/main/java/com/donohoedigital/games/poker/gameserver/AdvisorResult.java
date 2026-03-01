@@ -57,7 +57,14 @@ import java.util.Map;
  * @param improvementOdds
  *            map of hand type name to improvement percentage (0-100), null on
  *            preflop/river
+ * @param positivePotential
+ *            probability (0-100) of behind hands moving ahead, null on
+ *            preflop/river
+ * @param negativePotential
+ *            probability (0-100) of ahead hands falling behind, null on
+ *            preflop/river
  */
 public record AdvisorResult(int handRank, String handDescription, double equity, double potOdds, String recommendation,
-        String startingHandCategory, String startingHandNotation, Map<String, Double> improvementOdds) {
+        String startingHandCategory, String startingHandNotation, Map<String, Double> improvementOdds,
+        Double positivePotential, Double negativePotential) {
 }
