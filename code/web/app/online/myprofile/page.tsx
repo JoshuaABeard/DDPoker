@@ -13,6 +13,7 @@ import { LoginForm } from '@/components/auth/LoginForm'
 import { PasswordChangeForm } from '@/components/profile/PasswordChangeForm'
 import { AliasManagement } from '@/components/profile/AliasManagement'
 import { profileApi } from '@/lib/api'
+import { PlayerStatsSection } from '@/components/profile/PlayerStatsSection'
 
 export default function MyProfilePage() {
   const { user, isLoading, isAuthenticated } = useAuth()
@@ -91,6 +92,8 @@ export default function MyProfilePage() {
         <PasswordChangeForm />
 
         <AliasManagement aliases={aliases} />
+
+        <PlayerStatsSection username={user.username} />
 
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold mb-4">Quick Links</h2>
