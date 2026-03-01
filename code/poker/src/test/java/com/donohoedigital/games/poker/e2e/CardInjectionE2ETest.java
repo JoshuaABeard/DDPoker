@@ -165,13 +165,13 @@ class CardInjectionE2ETest extends ControlServerTestBase {
     }
 
     // -------------------------------------------------------------------------
-    // Test 4: Injection accepted before game start takes effect when dealt
+    // Test 4: Injection in DEAL mode (before cards are dealt) takes effect when
+    // dealt
     // -------------------------------------------------------------------------
 
     @Test
-    void should_AcceptInjection_When_GameNotStarted() throws Exception {
-        // Start a new game — @BeforeEach already started one; restart to test the
-        // "inject before deal" case by injecting immediately in DEAL mode (before
+    void should_InjectInDealMode_When_BeforeCardsAreDealt() throws Exception {
+        // @BeforeEach already started a game; inject immediately in DEAL mode (before
         // any cards have been dealt for this hand).
         JsonNode stateBeforeDeal = client().getState();
         assertEquals("DEAL", stateBeforeDeal.path("inputMode").asText(),

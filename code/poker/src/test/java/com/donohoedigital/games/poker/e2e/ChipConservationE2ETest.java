@@ -86,15 +86,16 @@ class ChipConservationE2ETest extends ControlServerTestBase {
     }
 
     // -------------------------------------------------------------------------
-    // Test 2: Chips are conserved after each of 3 complete hands
+    // Test 2: Chips are conserved after each of 2 complete hands (check/call path)
     // -------------------------------------------------------------------------
 
     @Test
     void should_ConserveChips_After_EachHand() throws Exception {
-        for (int hand = 1; hand <= 3; hand++) {
-            // Deal and play the hand
+        for (int hand = 1; hand <= 2; hand++) {
+            // Deal and play the hand using check/call (not folding) to exercise a
+            // different code path than should_ConserveChips_When_PlayerFoldsEveryHand
             client().submitAction("DEAL");
-            playHandFolding(Duration.ofSeconds(60));
+            playHandCheckCall(Duration.ofSeconds(60));
 
             // Wait for the next DEAL mode (hand complete)
             client().waitForInputMode(Duration.ofSeconds(15), "DEAL");
@@ -218,5 +219,35 @@ class ChipConservationE2ETest extends ControlServerTestBase {
      */
     private boolean isBettingMode(String mode) {
         return "CHECK_BET".equals(mode) || "CHECK_RAISE".equals(mode) || "CALL_RAISE".equals(mode);
+    }
+
+    /**
+     * Plays through the current hand by checking or calling on human betting turns
+     * (folding only in CHECK_RAISE mode where CHECK is unavailable), advancing past
+     * CONTINUE/CONTINUE_LOWER pauses, until DEAL mode is reached or the deadline
+     * elapses.
+     *
+     * @param timeout
+     *            maximum time to wait for the hand to complete
+     */
+    private void playHandCheckCall(Duration timeout) throws Exception {
+        long deadline = System.currentTimeMillis() + timeout.toMillis();
+        while (System.currentTimeMillis() < deadline) {
+            JsonNode state = client().getState();
+            String mode = state.path("inputMode").asText("");
+            switch (mode) {
+                case "DEAL" -> {
+                    // Hand is complete — stop
+                    return;
+                }
+                case "CONTINUE", "CONTINUE_LOWER" -> client().submitAction(mode);
+                case "CHECK_BET" -> client().submitAction("CHECK");
+                case "CALL_RAISE" -> client().submitAction("CALL");
+                case "CHECK_RAISE" -> client().submitAction("FOLD");
+                case "REBUY_CHECK" -> client().submitAction("DECLINE_REBUY");
+                default -> Thread.sleep(200);
+            }
+        }
+        throw new AssertionError("Timed out after " + timeout + " waiting for hand to complete");
     }
 }

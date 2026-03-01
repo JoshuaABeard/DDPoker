@@ -177,9 +177,7 @@ class ActionValidationE2ETest extends ControlServerTestBase {
     void should_AcceptContinue_When_ModeIsContinue() throws Exception {
         // Deal the hand first, then wait for CONTINUE mode (end of a betting street)
         client().submitAction("DEAL");
-        client().waitForInputMode(Duration.ofSeconds(30), "CONTINUE", "CONTINUE_LOWER");
-
-        JsonNode state = client().getState();
+        JsonNode state = client().waitForInputMode(Duration.ofSeconds(30), "CONTINUE", "CONTINUE_LOWER");
         String mode = state.path("inputMode").asText("");
 
         JsonNode result = client().submitAction(mode);
