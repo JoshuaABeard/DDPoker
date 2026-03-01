@@ -30,12 +30,24 @@ export function Simulator({ currentHoleCards, currentCommunityCards, onClose }: 
   const [results, setResults] = useState<EquityResult | null>(null)
   const [isCalculating, setIsCalculating] = useState(false)
   const [activeSlot, setActiveSlot] = useState<SlotType | null>(null)
+  const [opponentHands, setOpponentHands] = useState<(string | null)[][]>([])
+  const [activeOpponentSlot, setActiveOpponentSlot] = useState<{ oppIndex: number; cardIndex: number } | null>(null)
+  const [showOpponentHands, setShowOpponentHands] = useState(false)
+
+  useEffect(() => {
+    setOpponentHands(prev => {
+      const next = [...prev]
+      while (next.length < opponents) next.push([null, null])
+      return next.slice(0, opponents)
+    })
+  }, [opponents])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
-        if (activeSlot) {
+        if (activeSlot || activeOpponentSlot) {
           setActiveSlot(null)
+          setActiveOpponentSlot(null)
         } else {
           onClose()
         }
@@ -43,11 +55,12 @@ export function Simulator({ currentHoleCards, currentCommunityCards, onClose }: 
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose, activeSlot])
+  }, [onClose, activeSlot, activeOpponentSlot])
 
   const allSelected = [
     ...holeCards.filter((c): c is string => c !== null),
     ...communityCards.filter((c): c is string => c !== null),
+    ...opponentHands.flatMap(h => h.filter((c): c is string => c !== null)),
   ]
 
   const holeCardCount = holeCards.filter((c) => c !== null).length
@@ -56,6 +69,7 @@ export function Simulator({ currentHoleCards, currentCommunityCards, onClose }: 
   function handleSlotClick(slot: SlotType) {
     const card = slot.kind === 'hole' ? holeCards[slot.index] : communityCards[slot.index]
     if (card) return // slot already filled — use clear button instead
+    setActiveOpponentSlot(null) // clear opponent slot
     setActiveSlot(slot)
   }
 
@@ -98,6 +112,9 @@ export function Simulator({ currentHoleCards, currentCommunityCards, onClose }: 
   function handleClearAll() {
     setHoleCards([null, null])
     setCommunityCards([null, null, null, null, null])
+    setOpponentHands([])
+    setShowOpponentHands(false)
+    setActiveOpponentSlot(null)
     setResults(null)
     setActiveSlot(null)
   }
@@ -117,14 +134,46 @@ export function Simulator({ currentHoleCards, currentCommunityCards, onClose }: 
     setActiveSlot(null)
   }
 
+  function handleOpponentCardSelect(card: string) {
+    if (!activeOpponentSlot) return
+    const { oppIndex, cardIndex } = activeOpponentSlot
+    setOpponentHands(prev => {
+      const next = prev.map(h => [...h])
+      next[oppIndex][cardIndex] = card
+      return next
+    })
+    setActiveOpponentSlot(null)
+    setResults(null)
+  }
+
+  function handleClearOpponentSlot(oppIndex: number, cardIndex: number) {
+    setOpponentHands(prev => {
+      const next = prev.map(h => [...h])
+      next[oppIndex][cardIndex] = null
+      return next
+    })
+    setResults(null)
+  }
+
+  function handleClearOpponent(oppIndex: number) {
+    setOpponentHands(prev => {
+      const next = prev.map(h => [...h])
+      next[oppIndex] = [null, null]
+      return next
+    })
+    setResults(null)
+  }
+
   function handleCalculate() {
     const hole = holeCards.filter((c): c is string => c !== null)
     if (hole.length < 2) return
     const community = communityCards.filter((c): c is string => c !== null)
+    const known = opponentHands
+      .filter(h => h[0] !== null && h[1] !== null)
+      .map(h => h as string[])
 
     setIsCalculating(true)
-    // Run synchronously (Web Worker can be added later)
-    const result = calculateEquity(hole, community, opponents, 10000)
+    const result = calculateEquity(hole, community, opponents, 10000, known.length > 0 ? known : undefined)
     setResults(result)
     setIsCalculating(false)
   }
@@ -192,12 +241,15 @@ export function Simulator({ currentHoleCards, currentCommunityCards, onClose }: 
         </div>
 
         {/* Card picker */}
-        {activeSlot && (
+        {(activeSlot || activeOpponentSlot) && (
           <div className="mb-4">
             <CardPicker
               usedCards={allSelected}
-              onSelect={handleCardSelect}
-              onClose={() => setActiveSlot(null)}
+              onSelect={activeOpponentSlot ? handleOpponentCardSelect : handleCardSelect}
+              onClose={() => {
+                setActiveSlot(null)
+                setActiveOpponentSlot(null)
+              }}
             />
           </div>
         )}
@@ -249,6 +301,57 @@ export function Simulator({ currentHoleCards, currentCommunityCards, onClose }: 
           </div>
         </div>
 
+        {/* Specify Opponent Hands toggle */}
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={() => setShowOpponentHands(!showOpponentHands)}
+            className="text-sm text-blue-400 hover:text-blue-300"
+          >
+            {showOpponentHands ? 'Hide Opponent Hands' : 'Specify Opponent Hands'}
+          </button>
+        </div>
+
+        {/* Opponent hand slots */}
+        {showOpponentHands && (
+          <div className="mb-4 space-y-2">
+            {opponentHands.map((hand, oppIndex) => (
+              <div key={oppIndex} className="flex items-center gap-2">
+                <span className="text-xs text-gray-400 w-16">Opp {oppIndex + 1}:</span>
+                <div className="flex gap-1">
+                  {hand.map((card, cardIndex) => (
+                    <CardSlot
+                      key={`opp-${oppIndex}-${cardIndex}`}
+                      card={card}
+                      label={`Opponent ${oppIndex + 1} card ${cardIndex + 1}`}
+                      isActive={activeOpponentSlot?.oppIndex === oppIndex && activeOpponentSlot?.cardIndex === cardIndex}
+                      onClick={() => {
+                        if (card) return
+                        setActiveSlot(null) // clear player slot
+                        setActiveOpponentSlot({ oppIndex, cardIndex })
+                      }}
+                      onClear={() => handleClearOpponentSlot(oppIndex, cardIndex)}
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleClearOpponent(oppIndex)}
+                  className="text-xs text-gray-500 hover:text-gray-300"
+                >
+                  Clear
+                </button>
+                {hand[0] !== null && hand[1] !== null && (
+                  <span className="text-xs text-green-400">Set</span>
+                )}
+                {(hand[0] === null) !== (hand[1] === null) && (
+                  <span className="text-xs text-yellow-400">Partial</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Calculate button */}
         <button
           type="button"
@@ -283,6 +386,21 @@ export function Simulator({ currentHoleCards, currentCommunityCards, onClose }: 
             <div className="text-center text-gray-500 text-xs">
               Simulations: {results.iterations.toLocaleString()}
             </div>
+            {results.opponentResults && (
+              <div className="mt-3 border-t border-gray-700 pt-3">
+                <div className="text-xs text-gray-400 mb-2">Per-Opponent Breakdown</div>
+                <div className="space-y-1">
+                  {results.opponentResults.map((opp, i) => (
+                    <div key={i} className="flex items-center gap-3 text-xs">
+                      <span className="text-gray-400 w-14">Opp {i + 1}:</span>
+                      <span className="text-green-400">W {opp.win.toFixed(1)}%</span>
+                      <span className="text-yellow-400">T {opp.tie.toFixed(1)}%</span>
+                      <span className="text-red-400">L {opp.loss.toFixed(1)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
