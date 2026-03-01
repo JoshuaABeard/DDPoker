@@ -320,7 +320,7 @@ public class ServerPlayerActionProvider implements PlayerActionProvider {
      *            current action options
      * @return validated action
      */
-    private PlayerAction validateAction(PlayerAction action, ActionOptions options) {
+    PlayerAction validateAction(PlayerAction action, ActionOptions options) {
         return switch (action.actionType()) {
             case FOLD -> options.canFold() ? action : PlayerAction.fold();
             case CHECK -> options.canCheck() ? action : PlayerAction.fold();
