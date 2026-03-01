@@ -468,6 +468,9 @@ describe('PokerTable', () => {
     // holeCards = ['Ah', 'Kd'] by default, so advisor should appear
     fireEvent.keyDown(window, { key: 'v' })
     expect(screen.getByTestId('advisor-panel')).toBeTruthy()
+
+    fireEvent.keyDown(window, { key: 'v' })
+    expect(screen.queryByTestId('advisor-panel')).toBeNull()
   })
 
   it('N key calls sendContinueRunout when continueRunoutPending is true', () => {
@@ -555,5 +558,29 @@ describe('PokerTable - check-fold shortcut', () => {
 
     fireEvent.keyDown(window, { key: 'f' })
     expect(screen.getByText('Check/Fold Queued')).toBeTruthy()
+  })
+})
+
+describe('PokerTable - keyboard shortcuts disabled', () => {
+  beforeEach(() => {
+    vi.resetModules()
+  })
+
+  it('keyboard shortcuts have no effect when disableShortcuts is true', async () => {
+    vi.doMock('@/lib/game/useGamePrefs', () => ({
+      useGamePrefs: () => ({
+        prefs: { fourColorDeck: false, disableShortcuts: true, checkFold: false, dealerChat: true },
+      }),
+    }))
+
+    const { PokerTable: FreshPokerTable } = await import('../PokerTable')
+
+    render(<FreshPokerTable gameName="Test Game" />)
+
+    fireEvent.keyDown(window, { key: 'h' })
+    expect(screen.queryByTestId('hand-rankings')).toBeNull()
+
+    fireEvent.keyDown(window, { key: 'd' })
+    expect(screen.queryByTestId('dashboard')).toBeNull()
   })
 })
