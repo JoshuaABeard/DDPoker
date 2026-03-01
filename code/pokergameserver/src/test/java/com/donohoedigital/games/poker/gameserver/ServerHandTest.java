@@ -919,6 +919,21 @@ class ServerHandTest {
         assertEquals(15000, total, "Chip conservation must hold");
     }
 
+    // === All-In Player Skipping Tests ===
+
+    @Test
+    void testAllInPlayer_SkippedForAction() {
+        ServerHand hand = new ServerHand(table, 1, 50, 100, 0, 0, 1, 2);
+        hand.deal();
+
+        // Alice goes all-in
+        hand.applyPlayerAction(alice, PlayerAction.raise(5000));
+
+        // Next player to act should NOT be alice (she's all-in)
+        ServerPlayer next = (ServerPlayer) hand.getCurrentPlayerWithInit();
+        assertNotEquals(alice, next, "All-in player should be skipped for action");
+    }
+
     // === Heads-Up Edge Case Tests ===
 
     @Test

@@ -203,6 +203,55 @@ class ServerPlayerActionProviderTest {
         assertEquals(ActionType.CHECK, action.actionType());
     }
 
+    @Test
+    void testDisconnectedPlayer_PastGracePeriod_AutoFoldsImmediately() {
+        ServerPlayer humanPlayer = createHumanPlayer(2, "Human");
+
+        // Register a disconnected session that has exceeded the grace turn limit
+        ServerPlayerSession session = new ServerPlayerSession(2L, "Human", false, 0);
+        session.connect();
+        session.disconnect();
+        // Exceed the grace turn limit (disconnectGraceTurns=2 in setUp)
+        session.incrementConsecutiveTimeouts();
+        session.incrementConsecutiveTimeouts();
+        playerSessions.put(2L, session);
+
+        ActionOptions options = createOptions(true, false, true, 100);
+
+        // Should auto-fold immediately without waiting for timeout
+        long start = System.currentTimeMillis();
+        PlayerAction action = provider.getAction(humanPlayer, options);
+        long elapsedMs = System.currentTimeMillis() - start;
+
+        assertEquals(ActionType.FOLD, action.actionType(), "Disconnected player past grace period should auto-fold");
+        assertTrue(elapsedMs < 500,
+                "Auto-fold should be immediate, not wait for timeout (elapsed=" + elapsedMs + "ms)");
+    }
+
+    @Test
+    void testDisconnectedPlayer_WithinGracePeriod_WaitsForTimeout() {
+        ServerPlayer humanPlayer = createHumanPlayer(2, "Human");
+
+        // Register a disconnected session within grace period
+        ServerPlayerSession session = new ServerPlayerSession(2L, "Human", false, 0);
+        session.connect();
+        session.disconnect();
+        // Only 1 timeout, grace limit is 2 — still within grace
+        session.incrementConsecutiveTimeouts();
+        playerSessions.put(2L, session);
+
+        ActionOptions options = createOptions(true, false, true, 100);
+
+        // Should wait for timeout (1 second) then auto-fold
+        long start = System.currentTimeMillis();
+        PlayerAction action = provider.getAction(humanPlayer, options);
+        long elapsedMs = System.currentTimeMillis() - start;
+
+        assertEquals(ActionType.FOLD, action.actionType(),
+                "Disconnected player within grace period should still auto-fold on timeout");
+        assertTrue(elapsedMs >= 800, "Should wait for timeout before auto-folding (elapsed=" + elapsedMs + "ms)");
+    }
+
     // === Action Validation ===
 
     @Test
