@@ -64,7 +64,7 @@ class GamePlayerListTest {
     }
 
     @Test
-    void should_ReturnTrue_When_ListIsEmptyAndContainsPlayerChecked() {
+    void should_ReturnFalse_When_ListIsEmptyAndContainsPlayerChecked() {
         GamePlayer player = new GamePlayer(1, "Alice");
 
         assertThat(list.containsPlayer(player)).isFalse();
@@ -85,6 +85,11 @@ class GamePlayerListTest {
         list.addPlayer(alice);
 
         assertThat(list.getPlayerAt(0)).isSameAs(alice);
+    }
+
+    @Test
+    void should_ThrowException_When_GetPlayerAtCalledWithInvalidIndex() {
+        assertThatThrownBy(() -> list.getPlayerAt(0)).isInstanceOf(IndexOutOfBoundsException.class);
     }
 
     @Test
