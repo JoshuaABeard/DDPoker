@@ -326,7 +326,6 @@ public class PokerConstants {
     public static final String TESTING_ALLOW_CHANGE_LEVEL = "settings.debug.changelevel";
     public static final String TESTING_MATRIX_POST_FLOP = "settings.debug.matrixpostflop";
     public static final String TESTING_LOG_AI = "settings.debug.logai";
-    public static final String TESTING_HAND_WEIGHT_GRID = "settings.debug.handweightgrid";
     public static final String TESTING_CHAT_AI = "settings.debug.chatai";
     public static final String TESTING_SPLIT_HUMANS = "settings.debug.onlinesplithumans";
     public static final String TESTING_ONLINE_AI_NO_WAIT = "settings.debug.onlineainowait";
