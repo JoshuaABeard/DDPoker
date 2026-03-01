@@ -60,7 +60,7 @@ public class PokerSimulationService implements HandScoreConstants {
     static final long EXHAUSTIVE_COMBO_LIMIT = 10_000;
 
     private static final String[] HAND_TYPE_NAMES = {null, // index 0 unused
-            "HIGH_CARD", "ONE_PAIR", "TWO_PAIR", "THREE_OF_A_KIND", "STRAIGHT", "FLUSH", "FULL_HOUSE", "FOUR_OF_A_KIND",
+            "HIGH_CARD", "ONE_PAIR", "TWO_PAIR", "TRIPS", "STRAIGHT", "FLUSH", "FULL_HOUSE", "FOUR_OF_A_KIND",
             "STRAIGHT_FLUSH", "ROYAL_FLUSH"};
 
     /**
@@ -111,6 +111,10 @@ public class PokerSimulationService implements HandScoreConstants {
 
         List<Card> remainingDeck = buildRemainingDeck(hole, community, knownOppHands);
         int communityNeeded = 5 - community.size();
+
+        if (!Boolean.TRUE.equals(exhaustive) && iterations == null) {
+            throw new IllegalArgumentException("iterations must be provided for Monte Carlo mode");
+        }
 
         if (Boolean.TRUE.equals(exhaustive)) {
             return runExhaustive(hole, community, knownOppHands, remainingDeck, numOpponents, communityNeeded,

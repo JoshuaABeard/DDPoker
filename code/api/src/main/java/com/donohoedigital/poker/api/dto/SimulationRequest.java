@@ -38,7 +38,6 @@ import java.util.List;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -50,7 +49,7 @@ import jakarta.validation.constraints.Size;
  * showdown mode is used and {@code holeCards}/{@code numOpponents} are ignored.
  * Each entry in {@code allHands} must be a list of exactly 2 card strings.
  */
-public record SimulationRequest(@NotNull @Size(min = 2, max = 2) List<String> holeCards,
+public record SimulationRequest(@Size(min = 2, max = 2) List<String> holeCards,
         @Size(max = 5) List<String> communityCards, @Min(1) @Max(9) int numOpponents,
         @Min(100) @Max(100000) Integer iterations, List<List<String>> knownOpponentHands, List<List<String>> allHands) {
 }

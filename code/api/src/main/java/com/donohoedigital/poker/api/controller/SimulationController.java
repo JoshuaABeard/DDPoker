@@ -85,6 +85,10 @@ public class SimulationController {
         }
 
         // Single-player mode
+        if (request.holeCards() == null) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "holeCards must be provided for single-player mode"));
+        }
         if (request.iterations() == null) {
             return ResponseEntity.badRequest().body(Map.of("error", "iterations (100-100000) must be provided"));
         }

@@ -306,6 +306,33 @@ class PokerSimulationServiceTest {
         assertPercentagesSumTo100(result);
     }
 
+    @Test
+    void simulate_nullIterations_monteCarloMode_throwsIllegalArgument() {
+        // iterations is null and exhaustive is null -> must throw, not NPE
+        assertThrows(IllegalArgumentException.class,
+                () -> service.simulate(List.of("Ah", "Kh"), List.of(), 1, null, null, null));
+    }
+
+    @Test
+    void simulate_exhaustiveMode_riverWithKnownOpponent() {
+        // River board, exhaustive mode with a known opponent
+        List<String> holeCards = List.of("Ah", "Kh");
+        List<String> communityCards = List.of("2c", "3d", "4s", "5h", "7c");
+        SimulationResult result = service.simulate(holeCards, communityCards, 1, null, null, true);
+        assertPercentagesSumTo100(result);
+    }
+
+    @Test
+    void simulate_exhaustiveMode_nullIterations_doesNotThrow() {
+        // Exhaustive mode should work fine when iterations is null (it is ignored)
+        List<String> holeCards = List.of("Ah", "As");
+        List<String> communityCards = List.of("Qh", "Jd", "9c", "5s", "2d");
+        SimulationResult result = service.simulate(holeCards, communityCards, 1, null, List.of(List.of("Kh", "Ks")),
+                true);
+        assertEquals(100.0, result.win(), 0.01);
+        assertEquals(1, result.iterations());
+    }
+
     // -------------------------------------------------------------------------
     // countExhaustiveCombos() unit tests
     // -------------------------------------------------------------------------
