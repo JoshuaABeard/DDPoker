@@ -106,6 +106,17 @@ class ScaleConstraintsTest {
     }
 
     @Test
+    void should_NotBeEqual_When_FontDiffers() {
+        java.awt.Font f1 = new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12);
+        java.awt.Font f2 = new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12);
+        ScaleConstraints c1 = new ScaleConstraints(0.0, 0.0, 1.0, f1);
+        ScaleConstraints c2 = new ScaleConstraints(0.0, 0.0, 1.0, f2);
+        // equals uses reference equality (==) for font, so two distinct Font instances
+        // with the same properties are NOT equal per the current implementation
+        assertThat(c1).isNotEqualTo(c2);
+    }
+
+    @Test
     void should_ProduceDeepCopy_When_CloneIsCalled() {
         ScaleConstraints original = new ScaleConstraints(0.1d, 0.2d, 0.5d, null);
         ScaleConstraints clone = (ScaleConstraints) original.clone();
