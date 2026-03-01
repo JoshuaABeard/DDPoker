@@ -1,6 +1,6 @@
 # Java Client Test Coverage Design
 
-**Status:** ACTIVE
+**Status:** COMPLETED (2026-03-01)
 **Date:** 2026-03-01
 **Goal:** Raise JUnit test coverage to 80%+ on non-UI code across poker family modules (pokerengine, pokergamecore, poker).
 
