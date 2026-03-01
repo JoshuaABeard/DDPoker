@@ -71,7 +71,7 @@ export function AdvisorPanel({
   const { handRank, handDescription, equity, potOdds, recommendation, startingHandCategory, startingHandNotation } = advisorData
 
   // Determine recommendation color (default to green for free-check type messages)
-  const recommendationColor = RECOMMENDATION_COLORS[recommendation] ?? (recommendation.toLowerCase().includes('check') ? 'text-green-400' : 'text-green-400')
+  const recommendationColor = RECOMMENDATION_COLORS[recommendation] ?? 'text-green-400'
 
   return (
     <div
