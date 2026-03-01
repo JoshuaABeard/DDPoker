@@ -726,7 +726,8 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
         }
         int potSize = hand.getPotSize();
 
-        // Count active players (non-folded, non-sitting-out) and find human players to notify
+        // Count active players (non-folded, non-sitting-out) and find human players to
+        // notify
         List<ServerPlayer> humanPlayers = new ArrayList<>();
         int activePlayers = 0;
         for (int s = 0; s < sgt.getNumSeats(); s++) {

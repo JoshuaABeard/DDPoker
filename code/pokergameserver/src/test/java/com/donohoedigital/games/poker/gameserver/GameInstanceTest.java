@@ -33,12 +33,15 @@ package com.donohoedigital.games.poker.gameserver;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.donohoedigital.games.poker.core.GameHand;
+import com.donohoedigital.games.poker.core.PlayerAction;
 import com.donohoedigital.games.poker.core.event.GameEvent;
 import com.donohoedigital.games.poker.gameserver.GameConfig.*;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -431,6 +434,96 @@ class GameInstanceTest {
         assertTrue(elapsed >= 1000, "Should have waited ~1 second for timeout");
         assertTrue(elapsed < 3000, "Should not have waited too long");
     }
+
+    // ====================================
+    // AIProviderFactory Tests
+    // ====================================
+
+    /**
+     * When an AIProviderFactory is provided, GameInstance uses it instead of the
+     * fallback random AI. Verifies the factory is invoked during start().
+     */
+    @Test
+    void testCustomAIProviderFactoryIsUsed() throws Exception {
+        AtomicBoolean factoryCalled = new AtomicBoolean(false);
+
+        AIProviderFactory factory = (players, skillLevels, table, tournament) -> {
+            factoryCalled.set(true);
+            // Return a simple check/fold AI - just proves the factory was called
+            return new AIProviderResult(
+                    (player, options) -> options.canCheck() ? PlayerAction.check() : PlayerAction.fold());
+        };
+
+        GameInstance game = GameInstance.create("test-factory", 100L, config, properties, factory);
+        game.transitionToWaitingForPlayers();
+        game.addPlayer(1, "AI-1", true, 4);
+        game.addPlayer(2, "AI-2", true, 4);
+        game.start(executor);
+
+        assertTrue(factoryCalled.get(), "AIProviderFactory should be invoked during start()");
+        game.shutdown();
+    }
+
+    /**
+     * When an AIProviderFactory returns a newHandCallback, it is wired to the
+     * director and invoked at the start of each hand.
+     */
+    @Test
+    void testNewHandCallbackIsInvoked() throws Exception {
+        AtomicReference<GameHand> capturedHand = new AtomicReference<>();
+
+        AIProviderFactory factory = (players, skillLevels, table, tournament) -> {
+            // AI that always calls or checks - ensures game progresses to completion
+            // via blind escalation and showdowns
+            var provider = (com.donohoedigital.games.poker.core.PlayerActionProvider) (player, options) -> {
+                if (options.canCall())
+                    return PlayerAction.call();
+                if (options.canCheck())
+                    return PlayerAction.check();
+                return PlayerAction.fold();
+            };
+            return new AIProviderResult(provider, capturedHand::set);
+        };
+
+        GameInstance game = GameInstance.create("test-callback", 100L, config, properties, factory);
+        game.transitionToWaitingForPlayers();
+        game.addPlayer(1, "AI-1", true, 4);
+        game.addPlayer(2, "AI-2", true, 4);
+        game.start(executor);
+
+        // Wait for the callback to fire (proves it was wired correctly).
+        // We don't need to wait for the full game to complete — just for the
+        // first hand to start, which triggers the newHandCallback.
+        long start = System.currentTimeMillis();
+        while (capturedHand.get() == null && System.currentTimeMillis() - start < 30000) {
+            Thread.sleep(10);
+        }
+        assertNotNull(capturedHand.get(), "newHandCallback should have been invoked with a GameHand");
+
+        game.shutdown();
+    }
+
+    /**
+     * When no AIProviderFactory is provided (null), GameInstance falls back to the
+     * simple random AI and the game still runs to completion.
+     */
+    @Test
+    void testFallbackRandomAIWhenNoFactory() throws Exception {
+        GameInstance game = GameInstance.create("test-fallback", 100L, config, properties, null);
+        game.transitionToWaitingForPlayers();
+        game.addPlayer(1, "AI-1", true, 4);
+        game.addPlayer(2, "AI-2", true, 4);
+        game.start(executor);
+
+        boolean completed = awaitState(game, state -> state == GameInstanceState.COMPLETED, 120000);
+        assertTrue(completed, "Game with fallback random AI should complete");
+
+        game.shutdown();
+    }
+
+    // ====================================
+    // Helper Methods
+    // ====================================
 
     private GameConfig createTestConfig() {
         // 6 blind levels for hands-based testing

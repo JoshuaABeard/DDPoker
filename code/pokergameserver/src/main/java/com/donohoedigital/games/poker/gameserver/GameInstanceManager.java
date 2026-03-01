@@ -52,12 +52,18 @@ import java.util.stream.Collectors;
 public class GameInstanceManager {
 
     private final GameServerProperties properties;
+    private final AIProviderFactory aiProviderFactory;
     private final ConcurrentHashMap<String, GameInstance> games = new ConcurrentHashMap<>();
     private final ScheduledExecutorService executor;
     private volatile boolean shutdown = false;
 
     public GameInstanceManager(GameServerProperties properties) {
+        this(properties, null);
+    }
+
+    public GameInstanceManager(GameServerProperties properties, AIProviderFactory aiProviderFactory) {
         this.properties = properties;
+        this.aiProviderFactory = aiProviderFactory;
         this.executor = Executors.newScheduledThreadPool(properties.threadPoolSize());
 
         // Schedule periodic cleanup of completed games (every minute)
@@ -99,7 +105,7 @@ public class GameInstanceManager {
         }
 
         String gameId = generateGameId();
-        GameInstance instance = GameInstance.create(gameId, ownerProfileId, config, properties);
+        GameInstance instance = GameInstance.create(gameId, ownerProfileId, config, properties, aiProviderFactory);
         games.put(gameId, instance);
 
         return instance;

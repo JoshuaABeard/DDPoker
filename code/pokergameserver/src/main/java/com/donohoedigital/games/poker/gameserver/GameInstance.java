@@ -31,14 +31,15 @@
  */
 package com.donohoedigital.games.poker.gameserver;
 
+import com.donohoedigital.games.poker.core.GameHand;
 import com.donohoedigital.games.poker.core.PlayerAction;
 import com.donohoedigital.games.poker.core.PlayerActionProvider;
 import com.donohoedigital.games.poker.core.TournamentEngine;
 import com.donohoedigital.games.poker.gameserver.GameConfig.BlindLevel;
+import com.donohoedigital.games.poker.gameserver.dto.LobbyPlayerInfo;
 import java.time.Instant;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -50,8 +51,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import com.donohoedigital.games.poker.gameserver.dto.LobbyPlayerInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates one running game. Owns the ServerTournamentDirector, player
@@ -97,17 +100,24 @@ public class GameInstance {
     // Pending interactive continue during all-in runout (null when not waiting)
     private volatile CompletableFuture<Void> pendingContinue;
 
+    // Optional factory for creating strategic AI providers. When null, falls
+    // back to a simple random AI.
+    private final AIProviderFactory aiProviderFactory;
+
     // Private constructor - use create() factory method
-    private GameInstance(String gameId, long ownerProfileId, GameConfig config, GameServerProperties properties) {
+    private GameInstance(String gameId, long ownerProfileId, GameConfig config, GameServerProperties properties,
+            AIProviderFactory aiProviderFactory) {
         this.gameId = gameId;
         this.ownerProfileId = ownerProfileId;
         this.config = config;
         this.properties = properties;
+        this.aiProviderFactory = aiProviderFactory;
         this.state = GameInstanceState.CREATED;
     }
 
     /**
-     * Create a new GameInstance.
+     * Create a new GameInstance with no AI provider factory (uses simple random
+     * AI).
      *
      * @param gameId
      *            unique game identifier
@@ -121,7 +131,28 @@ public class GameInstance {
      */
     public static GameInstance create(String gameId, long ownerProfileId, GameConfig config,
             GameServerProperties properties) {
-        return new GameInstance(gameId, ownerProfileId, config, properties);
+        return new GameInstance(gameId, ownerProfileId, config, properties, null);
+    }
+
+    /**
+     * Create a new GameInstance with a strategic AI provider factory.
+     *
+     * @param gameId
+     *            unique game identifier
+     * @param ownerProfileId
+     *            profile ID of the game owner
+     * @param config
+     *            game configuration
+     * @param properties
+     *            server properties
+     * @param aiProviderFactory
+     *            factory for creating AI action providers; null uses simple random
+     *            AI
+     * @return new GameInstance in CREATED state
+     */
+    public static GameInstance create(String gameId, long ownerProfileId, GameConfig config,
+            GameServerProperties properties, AIProviderFactory aiProviderFactory) {
+        return new GameInstance(gameId, ownerProfileId, config, properties, aiProviderFactory);
     }
 
     // ====================================
@@ -200,14 +231,6 @@ public class GameInstance {
                 eventBus = new ServerGameEventBus(eventStore);
             }
 
-            PlayerActionProvider aiProvider = createSimpleAI();
-            int aiDelayMs = config.practiceConfig() != null && config.practiceConfig().aiActionDelayMs() != null
-                    ? config.practiceConfig().aiActionDelayMs()
-                    : properties.aiActionDelayMs();
-            actionProvider = new ServerPlayerActionProvider(aiProvider, this::onActionRequest,
-                    properties.actionTimeoutSeconds(), properties.disconnectGraceTurns(), playerSessions, aiDelayMs,
-                    eventBus::publish);
-
             // Determine number of tables (1 table per 10 players, minimum 1)
             int numTables = Math.max(1, (players.size() + 9) / 10);
 
@@ -241,6 +264,8 @@ public class GameInstance {
             int lastRebuyLevel = config.rebuys() != null && config.rebuys().enabled() ? config.rebuys().lastLevel() : 0;
             boolean addons = config.addons() != null && config.addons().enabled();
 
+            // Create tournament BEFORE AI provider so the factory can access
+            // table and tournament context.
             tournament = new ServerTournamentContext(players, numTables, startingChips, smallBlinds, bigBlinds, antes,
                     levelMinutes, breakLevels, false, // practice mode
                     maxRebuys, lastRebuyLevel, addons, properties.actionTimeoutSeconds(), levelAdvanceMode,
@@ -255,9 +280,41 @@ public class GameInstance {
                         addonLevel);
             }
 
+            // Create AI provider — use the strategic factory if available,
+            // otherwise fall back to simple random AI for tests.
+            PlayerActionProvider aiProvider;
+            Consumer<GameHand> newHandCallback = null;
+            if (aiProviderFactory != null) {
+                Map<Integer, Integer> skillLevels = new HashMap<>();
+                for (ServerPlayerSession session : playerSessions.values()) {
+                    skillLevels.put(toIntId(session.getProfileId()), session.getSkillLevel());
+                }
+                AIProviderResult result = aiProviderFactory.create(new ArrayList<>(players), skillLevels,
+                        tournament.getTable(0), tournament);
+                aiProvider = result.provider();
+                newHandCallback = result.newHandCallback();
+            } else {
+                aiProvider = createSimpleAI();
+            }
+
+            int aiDelayMs = config.practiceConfig() != null && config.practiceConfig().aiActionDelayMs() != null
+                    ? config.practiceConfig().aiActionDelayMs()
+                    : properties.aiActionDelayMs();
+            actionProvider = new ServerPlayerActionProvider(aiProvider, this::onActionRequest,
+                    properties.actionTimeoutSeconds(), properties.disconnectGraceTurns(), playerSessions, aiDelayMs,
+                    eventBus::publish);
+
             TournamentEngine engine = new TournamentEngine(eventBus, actionProvider);
             director = new ServerTournamentDirector(engine, tournament, eventBus, actionProvider, properties,
                     this::onLifecycleEvent, this::offerRebuy, this::offerAddon);
+
+            // Wire new-hand callback so the AI provider can update its hand
+            // reference at the start of each hand. The callback is set on the
+            // director (not the provider) because the director controls the
+            // game loop lifecycle.
+            if (newHandCallback != null) {
+                director.setNewHandCallback(newHandCallback);
+            }
 
             if (config.practiceConfig() != null) {
                 GameConfig.PracticeConfig pc = config.practiceConfig();
@@ -845,12 +902,9 @@ public class GameInstance {
     }
 
     /**
-     * Create a simple random AI provider.
-     * <p>
-     * This implementation provides basic AI functionality sufficient for testing
-     * and validating the game engine infrastructure. It randomly selects from
-     * available actions (check, call, fold, bet, raise) without strategic
-     * decision-making. ServerAIProvider integration is a future milestone.
+     * Create a simple random AI provider used as a fallback when no
+     * {@link AIProviderFactory} is configured. In production, the factory provides
+     * strategic AI (ServerAIProvider with skill-based routing).
      */
     private PlayerActionProvider createSimpleAI() {
         Random random = new Random();

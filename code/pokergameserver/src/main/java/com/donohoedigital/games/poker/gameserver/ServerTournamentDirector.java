@@ -97,6 +97,16 @@ public class ServerTournamentDirector implements Runnable {
         this.neverBrokeCallback = cb;
     }
 
+    // Optional callback invoked at the start of each new hand so that AI
+    // providers can update their hand reference. Uses a setter (like
+    // neverBrokeCallback) because the callback is wired by GameInstance after
+    // construction.
+    private Consumer<GameHand> newHandCallback;
+
+    public void setNewHandCallback(Consumer<GameHand> cb) {
+        this.newHandCallback = cb;
+    }
+
     // Optional callback that blocks the director thread until the human clicks
     // Continue during an all-in runout. When null, falls back to timed sleep.
     private IntConsumer waitForContinueCallback;
@@ -417,6 +427,11 @@ public class ServerTournamentDirector implements Runnable {
             if ("TD.DealDisplayHand".equals(result.phaseToRun())) {
                 // New hand starting — exit zip mode so delays resume for the next hand.
                 actionProvider.setZipMode(false);
+                // Notify AI provider of the new hand so it can update its state
+                // before any action requests arrive.
+                if (newHandCallback != null) {
+                    newHandCallback.accept(table.getHoldemHand());
+                }
                 eventBus.publish(new GameEvent.HandStarted(table.getNumber(), table.getHandNum()));
                 // Publish PlayerActed events for antes and blinds so clients see chip
                 // deductions before the first ACTION_REQUIRED arrives.

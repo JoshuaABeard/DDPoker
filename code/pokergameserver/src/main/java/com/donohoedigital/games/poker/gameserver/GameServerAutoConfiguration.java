@@ -31,6 +31,7 @@
  */
 package com.donohoedigital.games.poker.gameserver;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -52,10 +53,14 @@ public class GameServerAutoConfiguration {
      *
      * @param properties
      *            game server configuration properties
+     * @param aiProviderFactory
+     *            optional AI provider factory; when absent, games use simple random
+     *            AI
      * @return GameInstanceManager instance
      */
     @Bean
-    public GameInstanceManager gameInstanceManager(GameServerProperties properties) {
-        return new GameInstanceManager(properties);
+    public GameInstanceManager gameInstanceManager(GameServerProperties properties,
+            ObjectProvider<AIProviderFactory> aiProviderFactory) {
+        return new GameInstanceManager(properties, aiProviderFactory.getIfAvailable());
     }
 }
