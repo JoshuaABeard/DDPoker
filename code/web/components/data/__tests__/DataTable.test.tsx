@@ -63,31 +63,37 @@ describe('DataTable', () => {
   })
 
   it('highlights the currentUser row when highlightField matches', () => {
-    const { container } = render(
+    render(
       <DataTable data={rows} columns={columns} currentUser="Alice" highlightField="name" />,
     )
-    const trs = container.querySelectorAll('tbody tr')
-    // Alice is row 0 — should have the highlight class
-    expect(trs[0].className).toContain('bg-[var(--bg-khaki)]')
+    const allRows = screen.getAllByRole('row').filter((r) => r.closest('tbody'))
+    // Alice is row 0 — should have aria-current="row"
+    expect(allRows[0].getAttribute('aria-current')).toBe('row')
     // Bob is not the current user
-    expect(trs[1].className).not.toContain('bg-[var(--bg-khaki)]')
+    expect(allRows[1].getAttribute('aria-current')).toBeNull()
   })
 
   it('does not highlight any row when currentUser does not match', () => {
-    const { container } = render(
+    render(
       <DataTable data={rows} columns={columns} currentUser="Zara" highlightField="name" />,
     )
-    container.querySelectorAll('tbody tr').forEach((tr) => {
-      expect(tr.className).not.toContain('bg-[var(--bg-khaki)]')
-    })
+    screen
+      .getAllByRole('row')
+      .filter((r) => r.closest('tbody'))
+      .forEach((tr) => {
+        expect(tr.getAttribute('aria-current')).toBeNull()
+      })
   })
 
   it('uses keyField for row keys (renders without errors)', () => {
-    // If keyField works correctly the component renders without duplicate-key warnings
-    expect(() =>
-      render(<DataTable data={rows} columns={columns} keyField="id" />),
-    ).not.toThrow()
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    render(<DataTable data={rows} columns={columns} keyField="id" />)
+    const reactKeyWarning = errorSpy.mock.calls.find(
+      (args) => typeof args[0] === 'string' && args[0].includes('key'),
+    )
+    expect(reactKeyWarning).toBeUndefined()
     expect(screen.getByText('Alice')).toBeTruthy()
+    errorSpy.mockRestore()
   })
 
   it('calls custom render function for each row', () => {

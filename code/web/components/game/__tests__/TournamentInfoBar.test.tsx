@@ -5,7 +5,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import { TournamentInfoBar } from '../TournamentInfoBar'
 import type { BlindsData, BlindLevelConfig } from '@/lib/game/types'
@@ -28,7 +28,8 @@ describe('TournamentInfoBar', () => {
 
   it('renders level number', () => {
     render(<TournamentInfoBar {...defaultProps} />)
-    expect(screen.getByText('3')).toBeTruthy()
+    const levelSection = screen.getByRole('generic', { name: 'Level' })
+    expect(within(levelSection).getByText('3')).toBeTruthy()
   })
 
   it('renders small and big blinds formatted', () => {
@@ -77,7 +78,8 @@ describe('TournamentInfoBar', () => {
 
   it('shows player rank when provided', () => {
     render(<TournamentInfoBar {...defaultProps} playerRank={2} />)
-    expect(screen.getByText('2')).toBeTruthy()
+    const rankSection = screen.getByRole('generic', { name: 'Rank' })
+    expect(within(rankSection).getByText('2')).toBeTruthy()
   })
 
   it('hides rank when playerRank is not provided', () => {

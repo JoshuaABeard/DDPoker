@@ -54,7 +54,7 @@ export function TournamentInfoBar({ level, blinds, nextLevelIn, playerCount, tot
       <div className="font-semibold text-gray-300 truncate max-w-[200px]">{gameName}</div>
 
       <div className="flex gap-4 items-center">
-        <div>
+        <div aria-label="Level">
           <span className="text-gray-400 text-xs">Level </span>
           <span className="font-bold">{level}</span>
         </div>
@@ -87,7 +87,7 @@ export function TournamentInfoBar({ level, blinds, nextLevelIn, playerCount, tot
         )}
 
         {playerRank != null && (
-          <div>
+          <div aria-label="Rank">
             <span className="text-gray-400 text-xs">Rank </span>
             <span className="font-bold">{playerRank}</span>
           </div>
