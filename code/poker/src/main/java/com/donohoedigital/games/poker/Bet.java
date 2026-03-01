@@ -190,6 +190,16 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
         }
         // Computer controlled player at active table
         else {
+            // When the embedded server drives the game, AI decisions are
+            // handled server-side by ServerAIProvider. The Bet phase should
+            // never be invoked for AI players in this mode (the WSTD
+            // renders PLAYER_ACTED events directly). Guard against it.
+            if (game_.isServerDriven()) {
+                logger.warn("Bet.process() called for AI player {} in server-driven mode — skipping local AI",
+                        player_.getName());
+                return;
+            }
+
             // no button actions
             game_.setInputMode(PokerTableInput.MODE_QUITSAVE);
 

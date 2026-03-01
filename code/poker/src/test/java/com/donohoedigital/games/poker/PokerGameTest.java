@@ -763,6 +763,41 @@ class PokerGameTest {
     }
 
     // =================================================================
+    // Server-Driven Mode Tests
+    // =================================================================
+
+    @Test
+    void should_NotBeServerDriven_When_NoWebSocketConfigSet() {
+        assertThat(game.isServerDriven()).isFalse();
+    }
+
+    @Test
+    void should_BeServerDriven_When_WebSocketConfigSet() {
+        game.setWebSocketConfig("game-123", "jwt-token", 8080);
+
+        assertThat(game.isServerDriven()).isTrue();
+    }
+
+    @Test
+    void should_BeServerDriven_When_WebSocketConfigSetWithObserver() {
+        game.setWebSocketConfig("game-456", "jwt-token", 8080, true);
+
+        assertThat(game.isServerDriven()).isTrue();
+    }
+
+    @Test
+    void should_ReturnWebSocketConfig_When_ConfigSet() {
+        game.setWebSocketConfig("game-123", "jwt-token", 8080);
+
+        PokerGame.WebSocketConfig config = game.getWebSocketConfig();
+        assertThat(config).isNotNull();
+        assertThat(config.gameId()).isEqualTo("game-123");
+        assertThat(config.jwt()).isEqualTo("jwt-token");
+        assertThat(config.port()).isEqualTo(8080);
+        assertThat(config.observer()).isFalse();
+    }
+
+    // =================================================================
     // Test Helper Methods
     // =================================================================
 

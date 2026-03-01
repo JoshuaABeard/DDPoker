@@ -674,6 +674,16 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         return webSocketConfig_;
     }
 
+    /**
+     * Returns {@code true} when the game loop is driven by the embedded server (via
+     * {@link com.donohoedigital.games.poker.online.WebSocketTournamentDirector}).
+     * In this mode, AI decisions are made server-side by {@code ServerAIProvider}
+     * and should not be computed locally.
+     */
+    public boolean isServerDriven() {
+        return webSocketConfig_ != null;
+    }
+
     private WebSocketOpponentTracker wsOpponentTracker_;
 
     public WebSocketOpponentTracker getWebSocketOpponentTracker() {

@@ -421,4 +421,39 @@ class PokerPlayerTest {
         int average = PokerPlayer.calculateAverageChips(game);
         assertThat(average).isEqualTo(0);
     }
+
+    // =================================================================
+    // Server-Driven AI Bypass Tests
+    // =================================================================
+
+    @Test
+    void should_ReturnNullPokerAI_When_ComputerPlayerInServerDrivenMode() {
+        PokerGame game = new PokerGame(null);
+        game.setWebSocketConfig("game-123", "jwt", 8080);
+
+        PokerTable table = new PokerTable(game, 1);
+        game.addTable(table);
+        game.setCurrentTable(table);
+
+        PokerPlayer aiPlayer = new PokerPlayer(2, "Computer 1", false);
+        aiPlayer.setTable(table, 0);
+
+        // getPokerAI() should return null for computer players in server-driven mode
+        // because ServerAIProvider handles AI decisions on the server
+        assertThat(aiPlayer.getPokerAI()).isNull();
+    }
+
+    @Test
+    void should_IdentifyComputerVsHuman_When_ServerDrivenMode() {
+        PokerGame game = new PokerGame(null);
+        game.setWebSocketConfig("game-123", "jwt", 8080);
+
+        PokerPlayer computer = new PokerPlayer(2, "Computer 1", false);
+        PokerPlayer human = new PokerPlayer(1, "Human", true);
+
+        // The server-driven AI bypass guard checks isComputer()
+        assertThat(computer.isComputer()).isTrue();
+        assertThat(human.isComputer()).isFalse();
+        assertThat(game.isServerDriven()).isTrue();
+    }
 }

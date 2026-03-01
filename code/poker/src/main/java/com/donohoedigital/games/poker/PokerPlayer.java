@@ -250,6 +250,13 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
         if (playerType_ == null)
             return;
 
+        // When the embedded server drives the game, AI decisions are made
+        // server-side by ServerAIProvider. Skip local AI creation for computer
+        // players to avoid unnecessary overhead. Human players still get an
+        // advisor AI for the "Advisor" dashboard hint feature.
+        if (table_.getGame() != null && table_.getGame().isServerDriven() && isComputer())
+            return;
+
         // don't create AI for computer-only tables that are not being observed
         if (table_.isAllComputer() && !table_.isCurrent())
             return;
@@ -298,6 +305,11 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
         PokerAI ai = (PokerAI) getGameAI();
 
         if ((ai == null) && (playerType_ == null) && isAIUsed()) {
+            // When server-driven, computer players don't need local AI —
+            // the server handles their decisions via ServerAIProvider.
+            if (table_ != null && table_.getGame() != null && table_.getGame().isServerDriven() && isComputer()) {
+                return null;
+            }
             // this is for online game guests
             if (isLocallyControlled() && isHuman() && !isObserver()) {
                 playerType_ = PlayerType.getAdvisor();
