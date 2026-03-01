@@ -409,6 +409,128 @@ class ServerOpponentTrackerTest {
         assertThat(model2.getHandsPlayed()).isEqualTo(5);
     }
 
+    // === Limp vs Call-Raise Tests ===
+
+    @Test
+    void callBBWithNoRaise_countedAsLimp() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo player = createMockPlayer(1);
+
+        // Player calls the BB with no prior raise — this is a limp
+        tracker.onHandStart(player, 1000);
+        tracker.onPlayerAction(player, HandAction.ACTION_CALL, 100, 0, AIConstants.POSITION_LATE);
+        tracker.onHandEnd(player);
+
+        V2OpponentModel model = tracker.getModel(1);
+        // 1 limp out of 1 hand = 100%
+        assertThat(model.getHandsLimpedPercent(0.0f)).isCloseTo(1.0f, within(0.01f));
+    }
+
+    @Test
+    void callAfterRaise_notCountedAsLimp() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo raiser = createMockPlayer(1);
+        GamePlayerInfo caller = createMockPlayer(2);
+
+        // Both players start the hand
+        tracker.onHandStart(raiser, 1000);
+        tracker.onHandStart(caller, 1000);
+
+        // Player 1 raises
+        tracker.onPlayerAction(raiser, HandAction.ACTION_RAISE, 200, 0, AIConstants.POSITION_EARLY);
+
+        // Player 2 calls the raise — NOT a limp
+        tracker.onPlayerAction(caller, HandAction.ACTION_CALL, 200, 0, AIConstants.POSITION_LATE);
+
+        tracker.onHandEnd(raiser);
+        tracker.onHandEnd(caller);
+
+        V2OpponentModel callerModel = tracker.getModel(2);
+        // Call after raise should NOT be counted as a limp
+        assertThat(callerModel.getHandsLimpedPercent(0.0f)).isCloseTo(0.0f, within(0.01f));
+        // But it should still be counted as a paid hand (call)
+        assertThat(callerModel.getHandsPaidPercent(0.0f)).isCloseTo(1.0f, within(0.01f));
+    }
+
+    @Test
+    void foldAfterRaise_notCountedAsFoldUnraised() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo raiser = createMockPlayer(1);
+        GamePlayerInfo folder = createMockPlayer(2);
+
+        tracker.onHandStart(raiser, 1000);
+        tracker.onHandStart(folder, 1000);
+
+        // Player 1 raises
+        tracker.onPlayerAction(raiser, HandAction.ACTION_RAISE, 200, 0, AIConstants.POSITION_EARLY);
+
+        // Player 2 folds after the raise — NOT a fold-unraised
+        tracker.onPlayerAction(folder, HandAction.ACTION_FOLD, 0, 0, AIConstants.POSITION_LATE);
+
+        tracker.onHandEnd(raiser);
+        tracker.onHandEnd(folder);
+
+        V2OpponentModel folderModel = tracker.getModel(2);
+        // Fold after raise should NOT be counted as fold-unraised
+        assertThat(folderModel.getHandsFoldedUnraisedPercent(0.0f)).isCloseTo(0.0f, within(0.01f));
+    }
+
+    @Test
+    void limpedPercent_onlyReflectsTrueLimps() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo raiser = createMockPlayer(1);
+        GamePlayerInfo caller = createMockPlayer(2);
+
+        // Hand 1: No raise — caller limps
+        tracker.onHandStart(raiser, 1000);
+        tracker.onHandStart(caller, 1000);
+        tracker.onPlayerAction(raiser, HandAction.ACTION_FOLD, 0, 0, AIConstants.POSITION_EARLY);
+        tracker.onPlayerAction(caller, HandAction.ACTION_CALL, 100, 0, AIConstants.POSITION_LATE);
+        tracker.onHandEnd(raiser);
+        tracker.onHandEnd(caller);
+
+        // Hand 2: Raise occurred — caller calls but it's not a limp
+        tracker.onHandStart(raiser, 1000);
+        tracker.onHandStart(caller, 1000);
+        tracker.onPlayerAction(raiser, HandAction.ACTION_RAISE, 200, 0, AIConstants.POSITION_EARLY);
+        tracker.onPlayerAction(caller, HandAction.ACTION_CALL, 200, 0, AIConstants.POSITION_LATE);
+        tracker.onHandEnd(raiser);
+        tracker.onHandEnd(caller);
+
+        V2OpponentModel callerModel = tracker.getModel(2);
+        // Only 1 limp out of 2 hands = 50%
+        assertThat(callerModel.getHandsLimpedPercent(0.0f)).isCloseTo(0.5f, within(0.01f));
+        // But 2 paid hands out of 2 = 100%
+        assertThat(callerModel.getHandsPaidPercent(0.0f)).isCloseTo(1.0f, within(0.01f));
+    }
+
+    @Test
+    void raisedPreFlop_resetsPerHand() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo raiser = createMockPlayer(1);
+        GamePlayerInfo caller = createMockPlayer(2);
+
+        // Hand 1: Raise occurred
+        tracker.onHandStart(raiser, 1000);
+        tracker.onHandStart(caller, 1000);
+        tracker.onPlayerAction(raiser, HandAction.ACTION_RAISE, 200, 0, AIConstants.POSITION_EARLY);
+        tracker.onPlayerAction(caller, HandAction.ACTION_CALL, 200, 0, AIConstants.POSITION_LATE);
+        tracker.onHandEnd(raiser);
+        tracker.onHandEnd(caller);
+
+        // Hand 2: No raise — caller's call should be a limp
+        tracker.onHandStart(raiser, 1000);
+        tracker.onHandStart(caller, 1000);
+        tracker.onPlayerAction(raiser, HandAction.ACTION_FOLD, 0, 0, AIConstants.POSITION_EARLY);
+        tracker.onPlayerAction(caller, HandAction.ACTION_CALL, 100, 0, AIConstants.POSITION_LATE);
+        tracker.onHandEnd(raiser);
+        tracker.onHandEnd(caller);
+
+        V2OpponentModel callerModel = tracker.getModel(2);
+        // 1 limp out of 2 hands = 50% (hand 2 was a limp, hand 1 was not)
+        assertThat(callerModel.getHandsLimpedPercent(0.0f)).isCloseTo(0.5f, within(0.01f));
+    }
+
     // === Helper Methods ===
 
     private GamePlayerInfo createMockPlayer(int id) {

@@ -37,6 +37,10 @@ public class ServerOpponentTracker {
 
     private final Map<Integer, MutableOpponentStats> playerStats = new ConcurrentHashMap<>();
 
+    // Table-level flag: has any player raised pre-flop in the current hand?
+    // This affects all players' limp/fold-unraised classification.
+    private boolean raisedPreFlop = false;
+
     /**
      * Record the start of a new hand for a player.
      *
@@ -48,6 +52,7 @@ public class ServerOpponentTracker {
     public void onHandStart(GamePlayerInfo player, int chipCount) {
         MutableOpponentStats stats = playerStats.computeIfAbsent(player.getID(), k -> new MutableOpponentStats());
         stats.onHandStart(chipCount);
+        raisedPreFlop = false;
     }
 
     /**
@@ -67,7 +72,13 @@ public class ServerOpponentTracker {
     public void onPlayerAction(GamePlayerInfo player, int action, int amount, int round, int positionCategory) {
         MutableOpponentStats stats = playerStats.get(player.getID());
         if (stats != null) {
-            stats.recordAction(action, amount, round, positionCategory);
+            stats.recordAction(action, amount, round, positionCategory, raisedPreFlop);
+            // Track table-level raise after recording (so the raiser's own action
+            // sees raisedPreFlop=false for their raise, which is correct — raising
+            // is not limping regardless)
+            if (round == 0 && action == HandAction.ACTION_RAISE) {
+                raisedPreFlop = true;
+            }
         }
     }
 
@@ -200,7 +211,7 @@ public class ServerOpponentTracker {
             this.actedPreFlop = false;
         }
 
-        void recordAction(int action, int amount, int round, int positionCategory) {
+        void recordAction(int action, int amount, int round, int positionCategory, boolean raisedPreFlop) {
             if (!inHand) {
                 return;
             }
@@ -219,13 +230,15 @@ public class ServerOpponentTracker {
                         preFlopRaises[pos]++;
                         break;
                     case HandAction.ACTION_CALL :
-                        // Distinguish limp (call BB) from call raise
-                        // Simplified: treat all calls as limps for now
-                        preFlopLimps[pos]++;
                         preFlopCalls[pos]++;
+                        if (!raisedPreFlop) {
+                            preFlopLimps[pos]++;
+                        }
                         break;
                     case HandAction.ACTION_FOLD :
-                        preFlopFoldsUnraised[pos]++;
+                        if (!raisedPreFlop) {
+                            preFlopFoldsUnraised[pos]++;
+                        }
                         break;
                 }
             } else if (round >= 1 && round <= 3) {
