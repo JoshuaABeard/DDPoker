@@ -5,14 +5,26 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
+import React from 'react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { AliasManagement } from '../AliasManagement'
 
 vi.mock('@/components/ui/Dialog', () => ({
-  Dialog: ({ isOpen, onClose, onConfirm, title }: any) =>
+  Dialog: ({
+    isOpen,
+    onClose,
+    onConfirm,
+    title,
+  }: {
+    isOpen: boolean
+    onClose: () => void
+    onConfirm: () => void
+    title: string
+    children?: React.ReactNode
+  }) =>
     isOpen ? (
-      <div data-testid="dialog" role="dialog">
+      <div role="dialog">
         <p>{title}</p>
         <button onClick={onConfirm}>Confirm</button>
         <button onClick={onClose}>Cancel</button>
@@ -53,12 +65,12 @@ describe('AliasManagement', () => {
 
   it('opens dialog when Retire button is clicked', () => {
     render(<AliasManagement aliases={ACTIVE_ALIASES} />)
-    expect(screen.queryByTestId('dialog')).toBeNull()
+    expect(screen.queryByRole('dialog')).toBeNull()
 
     const retireButtons = screen.getAllByRole('button', { name: /retire/i })
     fireEvent.click(retireButtons[0])
 
-    expect(screen.getByTestId('dialog')).toBeTruthy()
+    expect(screen.getByRole('dialog')).toBeTruthy()
   })
 
   it('closes dialog when Cancel is clicked', async () => {
@@ -66,12 +78,12 @@ describe('AliasManagement', () => {
 
     const retireButtons = screen.getAllByRole('button', { name: /retire/i })
     fireEvent.click(retireButtons[0])
-    expect(screen.getByTestId('dialog')).toBeTruthy()
+    expect(screen.getByRole('dialog')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
 
     await waitFor(() => {
-      expect(screen.queryByTestId('dialog')).toBeNull()
+      expect(screen.queryByRole('dialog')).toBeNull()
     })
   })
 
