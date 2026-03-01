@@ -42,7 +42,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests for PokerSimulationService Monte Carlo equity calculator.
+ * Tests for PokerSimulationService Monte Carlo equity calculator and multi-hand
+ * showdown simulation.
  */
 class PokerSimulationServiceTest {
 
@@ -53,9 +54,13 @@ class PokerSimulationServiceTest {
         service = new PokerSimulationService();
     }
 
+    // -------------------------------------------------------------------------
+    // Monte Carlo simulate() tests
+    // -------------------------------------------------------------------------
+
     @Test
     void aaVsOneRandomOpponent_winPercentAbove80() {
-        SimulationResult result = service.simulate(List.of("Ah", "As"), List.of(), 1, 10000, null);
+        SimulationResult result = service.simulate(List.of("Ah", "As"), List.of(), 1, 10000, null, null);
 
         assertTrue(result.win() > 80, "AA should win > 80% vs 1 random opponent, got " + result.win());
         assertPercentagesSumTo100(result);
@@ -66,25 +71,23 @@ class PokerSimulationServiceTest {
     @Test
     void aaVsKkKnown_winPercentAround80() {
         SimulationResult result = service.simulate(List.of("Ah", "As"), List.of(), 1, 10000,
-                List.of(List.of("Kh", "Ks")));
+                List.of(List.of("Kh", "Ks")), null);
 
         assertTrue(result.win() > 75, "AA vs KK should win > 75%, got " + result.win());
         assertTrue(result.win() < 90, "AA vs KK should win < 90%, got " + result.win());
         assertPercentagesSumTo100(result);
 
-        // Should have per-opponent results since known hands were provided
         assertNotNull(result.opponentResults());
         assertEquals(1, result.opponentResults().size());
 
         SimulationResult.OpponentResult oppResult = result.opponentResults().get(0);
         assertPercentagesSumTo100(oppResult);
-        // Opponent's win% should be complementary to player's loss%
         assertEquals(result.loss(), oppResult.win(), 0.01);
     }
 
     @Test
     void preFlopWithTwoOpponents_percentagesSumTo100() {
-        SimulationResult result = service.simulate(List.of("Th", "Ts"), List.of(), 2, 5000, null);
+        SimulationResult result = service.simulate(List.of("Th", "Ts"), List.of(), 2, 5000, null, null);
 
         assertPercentagesSumTo100(result);
         assertTrue(result.win() > 0);
@@ -93,10 +96,8 @@ class PokerSimulationServiceTest {
 
     @Test
     void fullBoard_deterministicResult() {
-        // AA vs KK with full board: Qh Jd 9c 5s 2d - no help for either
-        // AA should win 100% here
         SimulationResult result = service.simulate(List.of("Ah", "As"), List.of("Qh", "Jd", "9c", "5s", "2d"), 1, 1000,
-                List.of(List.of("Kh", "Ks")));
+                List.of(List.of("Kh", "Ks")), null);
 
         assertEquals(100.0, result.win(), 0.01);
         assertEquals(0.0, result.loss(), 0.01);
@@ -105,11 +106,8 @@ class PokerSimulationServiceTest {
 
     @Test
     void fullBoard_tieScenario() {
-        // Same straight for both players on the board
-        // Board: Ts Jc Qd Kh Ah - both have broadway straight
-        // Player: 2s 3c, Opponent: 4s 5c - board straight is best for both
         SimulationResult result = service.simulate(List.of("2s", "3c"), List.of("Ts", "Jc", "Qd", "Kh", "Ah"), 1, 1000,
-                List.of(List.of("4s", "5c")));
+                List.of(List.of("4s", "5c")), null);
 
         assertEquals(0.0, result.loss(), 0.01);
         assertEquals(100.0, result.tie(), 0.01);
@@ -118,7 +116,7 @@ class PokerSimulationServiceTest {
 
     @Test
     void zeroCommunityCards_preFlopSimulation() {
-        SimulationResult result = service.simulate(List.of("Ah", "Kh"), List.of(), 1, 5000, null);
+        SimulationResult result = service.simulate(List.of("Ah", "Kh"), List.of(), 1, 5000, null, null);
 
         assertPercentagesSumTo100(result);
         assertTrue(result.win() > 0);
@@ -127,50 +125,46 @@ class PokerSimulationServiceTest {
 
     @Test
     void fiveCommunityCards_fullBoard() {
-        // Player has flush draw that completes
         SimulationResult result = service.simulate(List.of("Ah", "Kh"), List.of("Qh", "Jh", "Th", "2c", "3d"), 1, 1000,
-                List.of(List.of("As", "Ks")));
+                List.of(List.of("As", "Ks")), null);
 
-        // Player has a royal flush, opponent has two pair at best
         assertEquals(100.0, result.win(), 0.01);
     }
 
     @Test
     void duplicateCards_rejected() {
-        // Same card in hole cards
         assertThrows(IllegalArgumentException.class,
-                () -> service.simulate(List.of("Ah", "Ah"), List.of(), 1, 1000, null));
+                () -> service.simulate(List.of("Ah", "Ah"), List.of(), 1, 1000, null, null));
     }
 
     @Test
     void duplicateCardAcrossHoleAndCommunity_rejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> service.simulate(List.of("Ah", "Kh"), List.of("Ah"), 1, 1000, null));
+                () -> service.simulate(List.of("Ah", "Kh"), List.of("Ah"), 1, 1000, null, null));
     }
 
     @Test
     void duplicateCardAcrossHoleAndOpponent_rejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> service.simulate(List.of("Ah", "Kh"), List.of(), 1, 1000, List.of(List.of("Ah", "Ks"))));
+                () -> service.simulate(List.of("Ah", "Kh"), List.of(), 1, 1000, List.of(List.of("Ah", "Ks")), null));
     }
 
     @Test
     void invalidCardFormat_rejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> service.simulate(List.of("Xx", "Yy"), List.of(), 1, 1000, null));
+                () -> service.simulate(List.of("Xx", "Yy"), List.of(), 1, 1000, null, null));
     }
 
     @Test
     void invalidCardSingleChar_rejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> service.simulate(List.of("A", "K"), List.of(), 1, 1000, null));
+                () -> service.simulate(List.of("A", "K"), List.of(), 1, 1000, null, null));
     }
 
     @Test
     void knownOpponentWithRandomOpponents_mixedResults() {
-        // 1 known opponent + 1 random = 2 total opponents
         SimulationResult result = service.simulate(List.of("Ah", "As"), List.of(), 2, 5000,
-                List.of(List.of("Kh", "Ks")));
+                List.of(List.of("Kh", "Ks")), null);
 
         assertPercentagesSumTo100(result);
         assertNotNull(result.opponentResults());
@@ -179,20 +173,17 @@ class PokerSimulationServiceTest {
 
     @Test
     void knownOpponentHandsExceedNumOpponents_rejected() {
-        // 2 known opponents but numOpponents = 1
         assertThrows(IllegalArgumentException.class, () -> service.simulate(List.of("Ah", "As"), List.of(), 1, 1000,
-                List.of(List.of("Kh", "Ks"), List.of("Qh", "Qs"))));
+                List.of(List.of("Kh", "Ks"), List.of("Qh", "Qs")), null));
     }
 
     @Test
     void knownOpponentHandWithWrongCardCount_rejected() {
-        // Opponent hand with 1 card instead of 2
         assertThrows(IllegalArgumentException.class,
-                () -> service.simulate(List.of("Ah", "As"), List.of(), 1, 1000, List.of(List.of("Kh"))));
+                () -> service.simulate(List.of("Ah", "As"), List.of(), 1, 1000, List.of(List.of("Kh")), null));
 
-        // Opponent hand with 3 cards
-        assertThrows(IllegalArgumentException.class,
-                () -> service.simulate(List.of("Ah", "As"), List.of(), 1, 1000, List.of(List.of("Kh", "Ks", "Qh"))));
+        assertThrows(IllegalArgumentException.class, () -> service.simulate(List.of("Ah", "As"), List.of(), 1, 1000,
+                List.of(List.of("Kh", "Ks", "Qh")), null));
     }
 
     @Test
@@ -203,11 +194,78 @@ class PokerSimulationServiceTest {
 
     @Test
     void parseCards_caseInsensitive() {
-        // Card.getCard handles case-insensitive input
         List<com.donohoedigital.games.poker.engine.Card> lower = service.parseCards(List.of("ah", "kd"));
         List<com.donohoedigital.games.poker.engine.Card> upper = service.parseCards(List.of("Ah", "Kd"));
         assertEquals(lower.get(0), upper.get(0));
         assertEquals(lower.get(1), upper.get(1));
+    }
+
+    // -------------------------------------------------------------------------
+    // Multi-hand showdown tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void multiHand_AAvsKK_returnsPerHandEquity() {
+        List<List<String>> hands = List.of(List.of("Ah", "Ad"), List.of("Kh", "Kd"));
+        SimulationResult result = service.simulateMultiHand(hands, List.of(), 10000);
+        assertNotNull(result.handResults());
+        assertEquals(2, result.handResults().size());
+        assertTrue(result.handResults().get(0).win() > 70.0,
+                "AA should win > 70% vs KK, got " + result.handResults().get(0).win());
+        assertTrue(result.handResults().get(1).win() > 10.0,
+                "KK should win > 10% vs AA, got " + result.handResults().get(1).win());
+    }
+
+    @Test
+    void multiHand_withCommunity_deterministicOnRiver() {
+        List<List<String>> hands = List.of(List.of("Ah", "Kh"), List.of("2c", "7d"));
+        List<String> community = List.of("Ac", "Kc", "3s", "8d", "Jh");
+        SimulationResult result = service.simulateMultiHand(hands, community, 1000);
+        assertEquals(100.0, result.handResults().get(0).win(), 0.01, "AK with two pair on full board should win 100%");
+    }
+
+    @Test
+    void multiHand_perHandWinTieLossSumTo100() {
+        List<List<String>> hands = List.of(List.of("Ah", "As"), List.of("Kh", "Ks"), List.of("Qh", "Qs"));
+        SimulationResult result = service.simulateMultiHand(hands, List.of(), 5000);
+        assertNotNull(result.handResults());
+        assertEquals(3, result.handResults().size());
+        for (SimulationResult.HandResult hr : result.handResults()) {
+            double sum = hr.win() + hr.tie() + hr.loss();
+            assertEquals(100.0, sum, 0.5, "Each hand's win+tie+loss should sum to ~100, got " + sum);
+        }
+    }
+
+    @Test
+    void multiHand_tieScenario_boardStraightDominates() {
+        List<List<String>> hands = List.of(List.of("2s", "3c"), List.of("4s", "5c"));
+        List<String> community = List.of("Ts", "Jc", "Qd", "Kh", "Ah");
+        SimulationResult result = service.simulateMultiHand(hands, community, 100);
+        assertEquals(100.0, result.handResults().get(0).tie(), 0.01);
+        assertEquals(100.0, result.handResults().get(1).tie(), 0.01);
+        assertEquals(0.0, result.handResults().get(0).win(), 0.01);
+        assertEquals(0.0, result.handResults().get(1).win(), 0.01);
+    }
+
+    @Test
+    void multiHand_duplicateCardAcrossHands_rejected() {
+        List<List<String>> hands = List.of(List.of("Ah", "Kh"), List.of("Ah", "Qs"));
+        assertThrows(IllegalArgumentException.class, () -> service.simulateMultiHand(hands, List.of(), 1000));
+    }
+
+    @Test
+    void multiHand_duplicateCardInCommunity_rejected() {
+        List<List<String>> hands = List.of(List.of("Ah", "Kh"), List.of("Qh", "Qs"));
+        assertThrows(IllegalArgumentException.class, () -> service.simulateMultiHand(hands, List.of("Ah"), 1000));
+    }
+
+    @Test
+    void multiHand_singleHand_returnsOneResult() {
+        List<List<String>> hands = List.of(List.of("Ah", "As"));
+        SimulationResult result = service.simulateMultiHand(hands, List.of(), 1000);
+        assertNotNull(result.handResults());
+        assertEquals(1, result.handResults().size());
+        assertEquals(100.0, result.handResults().get(0).win(), 0.01);
     }
 
     private void assertPercentagesSumTo100(SimulationResult result) {

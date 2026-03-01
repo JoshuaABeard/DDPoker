@@ -68,7 +68,7 @@ class SimulationControllerTest {
 
     @Test
     void simulate_validRequest_returnsOk() {
-        SimulationRequest request = new SimulationRequest(List.of("Ah", "As"), List.of(), 1, 1000, null);
+        SimulationRequest request = new SimulationRequest(List.of("Ah", "As"), List.of(), 1, 1000, null, null);
 
         ResponseEntity<?> response = controller.simulate(request);
 
@@ -83,7 +83,8 @@ class SimulationControllerTest {
 
     @Test
     void simulate_withCommunityCards_returnsOk() {
-        SimulationRequest request = new SimulationRequest(List.of("Ah", "Kh"), List.of("Qh", "Jh", "Th"), 1, 500, null);
+        SimulationRequest request = new SimulationRequest(List.of("Ah", "Kh"), List.of("Qh", "Jh", "Th"), 1, 500, null,
+                null);
 
         ResponseEntity<?> response = controller.simulate(request);
 
@@ -94,7 +95,7 @@ class SimulationControllerTest {
     @Test
     void simulate_withKnownOpponents_returnsOpponentResults() {
         SimulationRequest request = new SimulationRequest(List.of("Ah", "As"), List.of(), 1, 1000,
-                List.of(List.of("Kh", "Ks")));
+                List.of(List.of("Kh", "Ks")), null);
 
         ResponseEntity<?> response = controller.simulate(request);
 
@@ -107,7 +108,7 @@ class SimulationControllerTest {
     @Test
     @SuppressWarnings("unchecked")
     void simulate_duplicateCards_returnsBadRequest() {
-        SimulationRequest request = new SimulationRequest(List.of("Ah", "Ah"), List.of(), 1, 1000, null);
+        SimulationRequest request = new SimulationRequest(List.of("Ah", "Ah"), List.of(), 1, 1000, null, null);
 
         ResponseEntity<?> response = controller.simulate(request);
 
@@ -120,7 +121,7 @@ class SimulationControllerTest {
     @Test
     @SuppressWarnings("unchecked")
     void simulate_invalidCardFormat_returnsBadRequest() {
-        SimulationRequest request = new SimulationRequest(List.of("Xx", "Yy"), List.of(), 1, 1000, null);
+        SimulationRequest request = new SimulationRequest(List.of("Xx", "Yy"), List.of(), 1, 1000, null, null);
 
         ResponseEntity<?> response = controller.simulate(request);
 
@@ -133,7 +134,7 @@ class SimulationControllerTest {
     @Test
     void simulate_fullBoard_deterministicResult() {
         SimulationRequest request = new SimulationRequest(List.of("Ah", "As"), List.of("Qh", "Jd", "9c", "5s", "2d"), 1,
-                100, List.of(List.of("Kh", "Ks")));
+                100, List.of(List.of("Kh", "Ks")), null);
 
         ResponseEntity<?> response = controller.simulate(request);
 
@@ -145,7 +146,7 @@ class SimulationControllerTest {
     @Test
     void simulate_multipleOpponents_returnsCorrectCount() {
         SimulationRequest request = new SimulationRequest(List.of("Ah", "As"), List.of(), 3, 500,
-                List.of(List.of("Kh", "Ks")));
+                List.of(List.of("Kh", "Ks")), null);
 
         ResponseEntity<?> response = controller.simulate(request);
 
@@ -153,5 +154,45 @@ class SimulationControllerTest {
         SimulationResult result = (SimulationResult) response.getBody();
         assertNotNull(result.opponentResults());
         assertEquals(3, result.opponentResults().size());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void simulate_noIterations_returnsBadRequest() {
+        SimulationRequest request = new SimulationRequest(List.of("Ah", "As"), List.of(), 1, null, null, null);
+
+        ResponseEntity<?> response = controller.simulate(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        Map<String, String> body = (Map<String, String>) response.getBody();
+        assertNotNull(body);
+        assertTrue(body.get("error").contains("iterations"));
+    }
+
+    @Test
+    void simulate_multiHand_returnsHandResults() {
+        SimulationRequest request = new SimulationRequest(List.of("Ah", "As"), List.of(), 1, 1000, null,
+                List.of(List.of("Ah", "Ad"), List.of("Kh", "Kd")));
+
+        ResponseEntity<?> response = controller.simulate(request);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        SimulationResult result = (SimulationResult) response.getBody();
+        assertNotNull(result.handResults());
+        assertEquals(2, result.handResults().size());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void simulate_multiHand_noIterations_returnsBadRequest() {
+        SimulationRequest request = new SimulationRequest(List.of("Ah", "As"), List.of(), 1, null, null,
+                List.of(List.of("Ah", "Ad"), List.of("Kh", "Kd")));
+
+        ResponseEntity<?> response = controller.simulate(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        Map<String, String> body = (Map<String, String>) response.getBody();
+        assertNotNull(body);
+        assertTrue(body.get("error").contains("iterations"));
     }
 }
