@@ -61,4 +61,43 @@ class OnlineServerUrlTest {
         assertThat(OnlineServerUrl.buildApiUri("example.com:8877", "/api/v1/games?pageSize=1").toString())
                 .isEqualTo("http://example.com:8877/api/v1/games?pageSize=1");
     }
+
+    @Test
+    void normalizeBaseUrl_returnsNullForNullInput() {
+        assertThat(OnlineServerUrl.normalizeBaseUrl(null)).isNull();
+    }
+
+    @Test
+    void normalizeBaseUrl_returnsNullForMissingHost() {
+        // URI with scheme but no host
+        assertThat(OnlineServerUrl.normalizeBaseUrl("http://")).isNull();
+    }
+
+    @Test
+    void buildApiUri_returnsNullWhenApiPathIsNull() {
+        assertThat(OnlineServerUrl.buildApiUri("example.com:8877", null)).isNull();
+    }
+
+    @Test
+    void buildApiUri_returnsNullWhenApiPathIsBlank() {
+        assertThat(OnlineServerUrl.buildApiUri("example.com:8877", "   ")).isNull();
+    }
+
+    @Test
+    void buildApiUri_prependsSlashIfMissing() {
+        assertThat(OnlineServerUrl.buildApiUri("example.com:8877", "api/v1/games").toString())
+                .isEqualTo("http://example.com:8877/api/v1/games");
+    }
+
+    @Test
+    void normalizeBaseUrl_returnsNullForInvalidUri() {
+        // URI with spaces causes IllegalArgumentException
+        assertThat(OnlineServerUrl.normalizeBaseUrl("http://example .com:8877")).isNull();
+    }
+
+    @Test
+    void buildApiUri_returnsNullForInvalidBaseUrl() {
+        // completely invalid value for base URL
+        assertThat(OnlineServerUrl.buildApiUri("ftp://not-valid", "/api")).isNull();
+    }
 }

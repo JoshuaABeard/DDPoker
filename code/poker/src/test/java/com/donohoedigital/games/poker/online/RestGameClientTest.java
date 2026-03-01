@@ -55,6 +55,23 @@ class RestGameClientTest {
     }
 
     @Test
+    void restGameClientException_messageConstructor() {
+        RestGameClient.RestGameClientException ex = new RestGameClient.RestGameClientException("test error");
+
+        assertThat(ex.getMessage()).isEqualTo("test error");
+        assertThat(ex.getCause()).isNull();
+    }
+
+    @Test
+    void restGameClientException_messageCauseConstructor() {
+        RuntimeException cause = new RuntimeException("root cause");
+        RestGameClient.RestGameClientException ex = new RestGameClient.RestGameClientException("wrapped", cause);
+
+        assertThat(ex.getMessage()).isEqualTo("wrapped");
+        assertThat(ex.getCause()).isSameAs(cause);
+    }
+
+    @Test
     void listGames_acceptsHostPortBaseUrlWithoutScheme() {
         AtomicReference<String> path = new AtomicReference<>();
         AtomicReference<String> auth = new AtomicReference<>();

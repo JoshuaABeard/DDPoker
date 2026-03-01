@@ -23,7 +23,8 @@ import com.donohoedigital.games.poker.CommunityCardCalculator.CommunityCardVisib
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class CommunityCardCalculatorTest {
 
@@ -156,8 +157,71 @@ class CommunityCardCalculatorTest {
     }
 
     // =================================================================
+    // CommunityCardVisibility record validation
+    // =================================================================
+
+    @Nested
+    class VisibilityRecordValidation {
+
+        @Test
+        void should_ThrowIllegalArgument_When_ActiveArrayTooShort() {
+            assertThatThrownBy(() -> new CommunityCardVisibility(new boolean[4], new boolean[5], new boolean[5]))
+                    .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("5");
+        }
+
+        @Test
+        void should_ThrowIllegalArgument_When_DrawnNormalArrayTooShort() {
+            assertThatThrownBy(() -> new CommunityCardVisibility(new boolean[5], new boolean[4], new boolean[5]))
+                    .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("5");
+        }
+
+        @Test
+        void should_ThrowIllegalArgument_When_DrawnArrayTooShort() {
+            assertThatThrownBy(() -> new CommunityCardVisibility(new boolean[5], new boolean[5], new boolean[4]))
+                    .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("5");
+        }
+
+        @Test
+        void should_AcceptExactly5Elements_When_AllArraysCorrectSize() {
+            CommunityCardVisibility v = new CommunityCardVisibility(new boolean[5], new boolean[5], new boolean[5]);
+            assertThat(v.active()).hasSize(5);
+            assertThat(v.drawnNormal()).hasSize(5);
+            assertThat(v.drawn()).hasSize(5);
+        }
+    }
+
+    // =================================================================
     // Edge cases
     // =================================================================
+
+    @Nested
+    class ShowdownRound {
+
+        @Test
+        void should_DrawAllCards_When_ShowdownAndSinglePlayerAndCardDealt() {
+            // displayRound=SHOWDOWN, numWithCards=1 (bDrawnNormal=false), lastBetting=RIVER
+            CommunityCardVisibility v = CommunityCardCalculator.calculateVisibility(SHOWDOWN, RIVER, 1, false);
+
+            // bCardDealt is true for each card since lastBetting >= each street
+            assertThat(v.active()).containsExactly(true, true, true, true, true);
+            assertThat(v.drawnNormal()).containsExactly(true, true, true, true, true);
+            assertThat(v.drawn()).containsExactly(true, true, true, true, true);
+        }
+
+        @Test
+        void should_HaveFlopCardsOnly_When_ShowdownWithOnlyFlopDealt() {
+            // displayRound=SHOWDOWN, lastBetting=FLOP, numWithCards=1, no rabbit
+            CommunityCardVisibility v = CommunityCardCalculator.calculateVisibility(SHOWDOWN, FLOP, 1, false);
+
+            // bDrawnNormal=false, bDrawn=false
+            // river: bCardDealt = (1 >= 3) = false; drawnNormal=false, drawn=false
+            // turn: bCardDealt = (1 >= 2) = false; drawnNormal=false, drawn=false
+            // flop: bCardDealt = (1 >= 1) = true; drawnNormal=true, drawn=true
+            assertThat(v.active()).containsExactly(true, true, true, true, true);
+            assertThat(v.drawnNormal()).containsExactly(true, true, true, false, false);
+            assertThat(v.drawn()).containsExactly(true, true, true, false, false);
+        }
+    }
 
     @Nested
     class EdgeCases {
