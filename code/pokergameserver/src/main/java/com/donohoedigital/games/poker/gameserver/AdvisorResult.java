@@ -34,6 +34,9 @@
  */
 package com.donohoedigital.games.poker.gameserver;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Result of advisor computation for a player's hand.
  *
@@ -52,7 +55,42 @@ package com.donohoedigital.games.poker.gameserver;
  *            post-flop
  * @param startingHandNotation
  *            e.g. "AKs", "AA", "72o" or null post-flop
+ * @param improvementOdds
+ *            map of hand type name to improvement probability (0-100), null on
+ *            preflop or river; only entries with probability &gt; 0 are
+ *            included
+ * @param handPotential
+ *            hand potential data (positive/negative percent and hand type
+ *            breakdown), null on preflop or river
  */
 public record AdvisorResult(int handRank, String handDescription, double equity, double potOdds, String recommendation,
-        String startingHandCategory, String startingHandNotation) {
+        String startingHandCategory, String startingHandNotation, Map<String, Double> improvementOdds,
+        HandPotentialResult handPotential) {
+
+    /**
+     * Hand potential data for the current position.
+     *
+     * @param positivePercent
+     *            % of remaining boards where the player's hand type improves
+     * @param negativePercent
+     *            % of remaining boards where the player's hand type worsens
+     * @param handTypeBreakdown
+     *            list of hand type entries showing how often each type appears
+     *            across remaining boards; only entries with percent &gt; 0 are
+     *            included
+     */
+    public record HandPotentialResult(double positivePercent, double negativePercent,
+            List<HandTypeEntry> handTypeBreakdown) {
+
+        /**
+         * A single hand type and its probability across remaining boards.
+         *
+         * @param type
+         *            hand type name (e.g. "ONE_PAIR", "FLUSH")
+         * @param percent
+         *            probability 0-100
+         */
+        public record HandTypeEntry(String type, double percent) {
+        }
+    }
 }

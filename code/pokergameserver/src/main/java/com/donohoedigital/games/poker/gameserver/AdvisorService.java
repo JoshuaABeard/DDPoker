@@ -36,8 +36,13 @@ package com.donohoedigital.games.poker.gameserver;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+
+import com.donohoedigital.games.poker.gameserver.AdvisorResult.HandPotentialResult;
+import com.donohoedigital.games.poker.gameserver.AdvisorResult.HandPotentialResult.HandTypeEntry;
 
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.CardSuit;
@@ -146,8 +151,193 @@ public class AdvisorService implements HandScoreConstants {
             startingHandNotation = getHandNotation(gridPos[0], gridPos[1]);
         }
 
+        // Improvement odds (flop/turn only)
+        Map<String, Double> improvementOdds = computeImprovementOdds(holeCards, communityCards, handType);
+
+        // Hand potential (flop/turn only)
+        HandPotentialResult handPotential = computeHandPotential(holeCards, communityCards, handType);
+
         return new AdvisorResult(handRank, handDescription, equity, potOdds, recommendation, startingHandCategory,
-                startingHandNotation);
+                startingHandNotation, improvementOdds, handPotential);
+    }
+
+    /**
+     * Map from HandScoreConstants hand type integer to hand type name. Index 0 is
+     * unused (no hand type 0). Index 1 = HIGH_CARD. Used by improvementOdds (skips
+     * null/HIGH_CARD entries since it is not an improvement target) and by
+     * handPotential breakdown (includes all non-null entries).
+     */
+    private static final String[] HAND_TYPE_NAMES = {null, // 0 - unused
+            "HIGH_CARD", // 1 - HIGH_CARD
+            "ONE_PAIR", // 2 - PAIR
+            "TWO_PAIR", // 3 - TWO_PAIR
+            "TRIPS", // 4 - TRIPS
+            "STRAIGHT", // 5 - STRAIGHT
+            "FLUSH", // 6 - FLUSH
+            "FULL_HOUSE", // 7 - FULL_HOUSE
+            "FOUR_OF_A_KIND", // 8 - QUADS
+            "STRAIGHT_FLUSH", // 9 - STRAIGHT_FLUSH
+            "ROYAL_FLUSH", // 10 - ROYAL_FLUSH
+    };
+
+    /**
+     * Compute improvement odds by enumerating remaining deck cards. Only meaningful
+     * on flop (3 community cards) or turn (4 community cards). Returns null
+     * otherwise.
+     *
+     * @param holeCards
+     *            player's hole cards
+     * @param communityCards
+     *            current community cards
+     * @param currentHandType
+     *            current hand type integer (from HandScoreConstants)
+     * @return map of hand type name to improvement percentage, or null
+     */
+    private Map<String, Double> computeImprovementOdds(Card[] holeCards, Card[] communityCards, int currentHandType) {
+        int numCommunity = communityCards.length;
+        if (numCommunity != 3 && numCommunity != 4) {
+            return null;
+        }
+
+        // Build fingerprint of known cards
+        long knownFingerprint = 0L;
+        for (Card c : holeCards) {
+            knownFingerprint |= c.fingerprint();
+        }
+        for (Card c : communityCards) {
+            knownFingerprint |= c.fingerprint();
+        }
+
+        // Build remaining deck
+        List<Card> remainingDeck = new ArrayList<>(52);
+        for (int suit = CardSuit.CLUBS_RANK; suit <= CardSuit.SPADES_RANK; suit++) {
+            for (int rank = Card.TWO; rank <= Card.ACE; rank++) {
+                Card card = Card.getCard(suit, rank);
+                if ((card.fingerprint() & knownFingerprint) == 0L) {
+                    remainingDeck.add(card);
+                }
+            }
+        }
+
+        // Count improvements for each hand type
+        int[] improvementCounts = new int[HAND_TYPE_NAMES.length];
+        List<Card> holeList = List.of(holeCards);
+        List<Card> trialCommunity = new ArrayList<>(numCommunity + 1);
+
+        for (Card drawCard : remainingDeck) {
+            trialCommunity.clear();
+            for (Card c : communityCards) {
+                trialCommunity.add(c);
+            }
+            trialCommunity.add(drawCard);
+
+            ServerHandEvaluator eval = new ServerHandEvaluator();
+            int newScore = eval.getScore(holeList, trialCommunity);
+            int newHandType = newScore / SCORE_BASE;
+
+            if (newHandType > currentHandType && newHandType < HAND_TYPE_NAMES.length) {
+                improvementCounts[newHandType]++;
+            }
+        }
+
+        // Convert counts to percentages
+        int total = remainingDeck.size();
+        Map<String, Double> result = new HashMap<>();
+        for (int i = 2; i < HAND_TYPE_NAMES.length; i++) {
+            if (improvementCounts[i] > 0 && HAND_TYPE_NAMES[i] != null) {
+                result.put(HAND_TYPE_NAMES[i], (double) improvementCounts[i] / total * 100.0);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Compute hand potential by enumerating remaining deck cards. Only meaningful
+     * on flop (3 community cards) or turn (4 community cards). Returns null
+     * otherwise.
+     *
+     * <p>
+     * positivePercent = % of remaining cards where the player's hand type improves
+     * vs current. negativePercent = % where it worsens. handTypeBreakdown = for
+     * each hand type that appears, what % of remaining cards lead to it.
+     *
+     * @param holeCards
+     *            player's hole cards
+     * @param communityCards
+     *            current community cards
+     * @param currentHandType
+     *            current hand type integer (from HandScoreConstants)
+     * @return hand potential result, or null
+     */
+    private HandPotentialResult computeHandPotential(Card[] holeCards, Card[] communityCards, int currentHandType) {
+        int numCommunity = communityCards.length;
+        if (numCommunity != 3 && numCommunity != 4) {
+            return null;
+        }
+
+        // Build fingerprint of known cards
+        long knownFingerprint = 0L;
+        for (Card c : holeCards) {
+            knownFingerprint |= c.fingerprint();
+        }
+        for (Card c : communityCards) {
+            knownFingerprint |= c.fingerprint();
+        }
+
+        // Build remaining deck
+        List<Card> remainingDeck = new ArrayList<>(52);
+        for (int suit = CardSuit.CLUBS_RANK; suit <= CardSuit.SPADES_RANK; suit++) {
+            for (int rank = Card.TWO; rank <= Card.ACE; rank++) {
+                Card card = Card.getCard(suit, rank);
+                if ((card.fingerprint() & knownFingerprint) == 0L) {
+                    remainingDeck.add(card);
+                }
+            }
+        }
+
+        // Count hand types and direction changes across remaining cards
+        int[] handTypeCounts = new int[HAND_TYPE_NAMES.length];
+        int positiveCount = 0;
+        int negativeCount = 0;
+
+        List<Card> holeList = List.of(holeCards);
+        List<Card> trialCommunity = new ArrayList<>(numCommunity + 1);
+
+        for (Card drawCard : remainingDeck) {
+            trialCommunity.clear();
+            for (Card c : communityCards) {
+                trialCommunity.add(c);
+            }
+            trialCommunity.add(drawCard);
+
+            ServerHandEvaluator eval = new ServerHandEvaluator();
+            int newScore = eval.getScore(holeList, trialCommunity);
+            int newHandType = newScore / SCORE_BASE;
+
+            if (newHandType > 0 && newHandType < handTypeCounts.length) {
+                handTypeCounts[newHandType]++;
+            }
+
+            if (newHandType > currentHandType) {
+                positiveCount++;
+            } else if (newHandType < currentHandType) {
+                negativeCount++;
+            }
+        }
+
+        // Convert counts to percentages
+        int total = remainingDeck.size();
+        double positivePercent = (double) positiveCount / total * 100.0;
+        double negativePercent = (double) negativeCount / total * 100.0;
+
+        List<HandTypeEntry> breakdown = new ArrayList<>();
+        for (int i = 1; i < HAND_TYPE_NAMES.length; i++) {
+            if (handTypeCounts[i] > 0 && HAND_TYPE_NAMES[i] != null) {
+                breakdown.add(new HandTypeEntry(HAND_TYPE_NAMES[i], (double) handTypeCounts[i] / total * 100.0));
+            }
+        }
+
+        return new HandPotentialResult(positivePercent, negativePercent, breakdown);
     }
 
     /**

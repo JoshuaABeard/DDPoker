@@ -34,6 +34,7 @@
  */
 package com.donohoedigital.games.poker.gameserver;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Random;
@@ -434,5 +435,134 @@ class AdvisorServiceTest {
 
         assertEquals("72o", result.startingHandNotation());
         assertEquals("fold", result.startingHandCategory());
+    }
+
+    // --- Improvement odds ---
+
+    @Test
+    void improvementOdds_flopWithFlushDraw_includesFlushOdds() {
+        // Ah 2h on a board of Kh 7h 3c = flush draw (9 outs)
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("2h")};
+        Card[] community = {Card.getCard("Kh"), Card.getCard("7h"), Card.getCard("3c")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.improvementOdds()).isNotNull();
+        assertThat(result.improvementOdds().get("FLUSH")).isGreaterThan(15.0); // ~19.1%
+    }
+
+    @Test
+    void improvementOdds_river_returnsNull() {
+        // 5 community cards = river, no improvement possible
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("Kh")};
+        Card[] community = {Card.getCard("2c"), Card.getCard("7d"), Card.getCard("Js"), Card.getCard("3h"),
+                Card.getCard("9c")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.improvementOdds()).isNull();
+    }
+
+    @Test
+    void improvementOdds_preflop_returnsNull() {
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("Kh")};
+        Card[] community = {};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.improvementOdds()).isNull();
+    }
+
+    // --- Hand potential ---
+
+    @Test
+    void handPotential_preflop_returnsNull() {
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("Kh")};
+        Card[] community = {};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.handPotential()).isNull();
+    }
+
+    @Test
+    void handPotential_river_returnsNull() {
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("Kh")};
+        Card[] community = {Card.getCard("2c"), Card.getCard("7d"), Card.getCard("Js"), Card.getCard("3h"),
+                Card.getCard("9c")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.handPotential()).isNull();
+    }
+
+    @Test
+    void handPotential_flop_isNotNull() {
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("2h")};
+        Card[] community = {Card.getCard("Kh"), Card.getCard("7h"), Card.getCard("3c")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.handPotential()).isNotNull();
+    }
+
+    @Test
+    void handPotential_turn_isNotNull() {
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("2h")};
+        Card[] community = {Card.getCard("Kh"), Card.getCard("7h"), Card.getCard("3c"), Card.getCard("5s")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.handPotential()).isNotNull();
+    }
+
+    @Test
+    void handPotential_breakdownSumsToHundredPercent() {
+        // AhKh on Kd 7s 3c — currently one pair
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("Kh")};
+        Card[] community = {Card.getCard("Kd"), Card.getCard("7s"), Card.getCard("3c")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        AdvisorResult.HandPotentialResult hp = result.handPotential();
+        assertThat(hp).isNotNull();
+
+        double breakdownSum = hp.handTypeBreakdown().stream()
+                .mapToDouble(AdvisorResult.HandPotentialResult.HandTypeEntry::percent).sum();
+        assertThat(breakdownSum).isCloseTo(100.0, org.assertj.core.data.Offset.offset(0.01));
+    }
+
+    @Test
+    void handPotential_positiveAndNegativeDoNotExceedHundred() {
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("Kh")};
+        Card[] community = {Card.getCard("Kd"), Card.getCard("7s"), Card.getCard("3c")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        AdvisorResult.HandPotentialResult hp = result.handPotential();
+        assertThat(hp).isNotNull();
+        assertThat(hp.positivePercent()).isGreaterThanOrEqualTo(0.0);
+        assertThat(hp.negativePercent()).isGreaterThanOrEqualTo(0.0);
+        assertThat(hp.positivePercent() + hp.negativePercent()).isLessThanOrEqualTo(100.0 + 0.01);
+    }
+
+    @Test
+    void handPotential_flushDraw_hasPositivePotential() {
+        // Ah 2h on Kh 7h 3c = flush draw — ~9 outs = ~19% to hit flush on turn
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("2h")};
+        Card[] community = {Card.getCard("Kh"), Card.getCard("7h"), Card.getCard("3c")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        AdvisorResult.HandPotentialResult hp = result.handPotential();
+        assertThat(hp).isNotNull();
+        assertThat(hp.positivePercent()).isGreaterThan(10.0);
+    }
+
+    @Test
+    void handPotential_breakdown_containsOnePairAndFlush() {
+        // Ah 2h on Kh 7h 3c — currently high card, breakdown must include pair and
+        // flush
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("2h")};
+        Card[] community = {Card.getCard("Kh"), Card.getCard("7h"), Card.getCard("3c")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        AdvisorResult.HandPotentialResult hp = result.handPotential();
+        assertThat(hp).isNotNull();
+
+        java.util.List<String> types = hp.handTypeBreakdown().stream()
+                .map(AdvisorResult.HandPotentialResult.HandTypeEntry::type).toList();
+        assertThat(types).contains("ONE_PAIR");
+        assertThat(types).contains("FLUSH");
+    }
+
+    @Test
+    void handPotential_royalFlush_zeroPositivePercent() {
+        // Ah Kh on Qh Jh Th — already royal flush, no card can improve hand type
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("Kh")};
+        Card[] community = {Card.getCard("Qh"), Card.getCard("Jh"), Card.getCard("Th")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        AdvisorResult.HandPotentialResult hp = result.handPotential();
+        assertThat(hp).isNotNull();
+        assertThat(hp.positivePercent()).isEqualTo(0.0);
     }
 }
