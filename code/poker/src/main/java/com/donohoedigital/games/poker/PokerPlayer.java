@@ -1807,7 +1807,10 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
      */
     public float getEffectiveHandStrength() {
         float hs = getHandStrength();
-        return hs + (1 - hs) * getHandPotential();
+        float hp = getHandPotential();
+        if (hp < 0)
+            return hs; // potential not yet available, use raw strength
+        return hs + (1 - hs) * hp;
     }
 
     // instances for sorting

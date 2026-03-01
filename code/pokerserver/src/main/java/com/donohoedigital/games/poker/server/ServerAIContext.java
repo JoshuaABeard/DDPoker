@@ -513,7 +513,10 @@ public class ServerAIContext implements AIContext {
             return false;
         }
 
-        // Count suits - flush draw = exactly 2 of same suit
+        // Matches original V1Player logic: bFlushDraw = (_comm.getHighestSuited() == 2)
+        // getHighestSuited() returns the MAX suit count, so we check the maximum.
+        // Exactly 2 = flush draw possible; 3+ is threeFlush (a separate, stronger
+        // signal).
         int[] suitCounts = new int[4];
         for (Card card : communityCards) {
             if (card != null) {
@@ -521,13 +524,14 @@ public class ServerAIContext implements AIContext {
             }
         }
 
+        int maxSuitCount = 0;
         for (int count : suitCounts) {
-            if (count == 2) {
-                return true;
+            if (count > maxSuitCount) {
+                maxSuitCount = count;
             }
         }
 
-        return false;
+        return maxSuitCount == 2;
     }
 
     @Override
@@ -536,18 +540,10 @@ public class ServerAIContext implements AIContext {
             return false;
         }
 
-        // Use HandInfoFast to detect straight draws
+        // Use HandSorted.hasStraightDraw() on community cards only, matching the
+        // original V1Player logic: bStraightDraw = _comm.hasStraightDraw()
         Hand community = toHand(communityCards);
-        HandInfoFast hif = new HandInfoFast();
-
-        // Need to call getScore to populate straight draw information
-        // Use dummy hole cards
-        Hand dummyHole = new Hand(2);
-        dummyHole.addCard(new Card(CardSuit.CLUBS, Card.TWO));
-        dummyHole.addCard(new Card(CardSuit.DIAMONDS, Card.THREE));
-
-        hif.getScore(dummyHole, community);
-        return hif.hasStraightDraw();
+        return new HandSorted(community).hasStraightDraw();
     }
 
     @Override
