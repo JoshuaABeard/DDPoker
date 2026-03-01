@@ -117,6 +117,13 @@ describe('LoginForm', () => {
     expect(mockPush).not.toHaveBeenCalled()
   })
 
+  it('calls clearError when username input changes', () => {
+    mockError = 'Some error'
+    render(<LoginForm />)
+    fireEvent.change(screen.getByLabelText(/username/i), { target: { value: 'newvalue' } })
+    expect(mockClearError).toHaveBeenCalled()
+  })
+
   it('blocks open redirect with //evil.com and falls back to /online', async () => {
     mockLogin.mockResolvedValue(true)
     mockSearchParams = new URLSearchParams('returnUrl=//evil.com')
