@@ -40,5 +40,6 @@
     <class>com.donohoedigital.games.poker.model.OnlineGame</class>
     <class>com.donohoedigital.games.poker.model.TournamentHistory</class>
     <class>com.donohoedigital.games.poker.model.PasswordResetToken</class>
+    <class>com.donohoedigital.games.poker.model.TournamentTemplate</class>
   </persistence-unit>
 </persistence>

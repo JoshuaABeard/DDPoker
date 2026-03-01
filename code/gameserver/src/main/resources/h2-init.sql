@@ -68,3 +68,14 @@ CREATE INDEX IF NOT EXISTS whi_end_date ON wan_history(whi_end_date);
 CREATE INDEX IF NOT EXISTS whi_player_type ON wan_history(whi_player_type);
 CREATE INDEX IF NOT EXISTS whi_is_ended ON wan_history(whi_is_ended);
 
+CREATE TABLE IF NOT EXISTS wan_template (
+    wtp_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    wtp_profile_id INT NOT NULL,
+    wtp_name VARCHAR(100) NOT NULL,
+    wtp_config TEXT NOT NULL,
+    wtp_create_date DATETIME NOT NULL,
+    wtp_modify_date DATETIME NOT NULL,
+    FOREIGN KEY (wtp_profile_id) REFERENCES wan_profile(wpr_id)
+);
+CREATE INDEX IF NOT EXISTS wtp_profile_id ON wan_template(wtp_profile_id);
+
