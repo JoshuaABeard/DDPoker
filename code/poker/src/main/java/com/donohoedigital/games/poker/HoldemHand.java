@@ -82,10 +82,6 @@ public class HoldemHand implements DataMarshal, GameHand {
     public static final int ROUND_RIVER = 3;
     public static final int ROUND_SHOWDOWN = 4;
 
-    // TESTING
-    private static final String sDealPlayableHands_ = null;
-    // private static String sDealPlayableHands_ = "Sklansky";
-
     /**
      * Get name for debugging
      */
@@ -513,31 +509,6 @@ public class HoldemHand implements DataMarshal, GameHand {
 
         // get num seats at table with players
         int nNum = table_.getNumOccupiedSeats();
-
-        // noinspection ConstantValue
-        if (sDealPlayableHands_ != null) {
-            HandSelectionScheme scheme = HandSelectionScheme.getByName(sDealPlayableHands_);
-
-            int nSeat = table_.getNextSeatAfterButton();
-
-            for (int i = 0; i < nNum; i++) {
-                player = table_.getPlayerRequired(nSeat);
-
-                hand = player.newHand(Hand.TYPE_NORMAL);
-
-                do {
-                    deck_.addRandom(hand);
-                    hand.clear();
-
-                    hand.addCard(deck_.nextCard());
-                    hand.addCard(deck_.nextCard());
-                } while (scheme.getHandStrength(hand) == 0);
-
-                nSeat = table_.getNextSeat(nSeat);
-            }
-
-            return;
-        }
 
         // deal 2 cards
         for (int c = 0; c < nNumCards; c++) {

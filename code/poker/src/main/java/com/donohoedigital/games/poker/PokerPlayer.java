@@ -1140,39 +1140,6 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
                 && (isHuman() || (hhand.getTotalBet(this) - hhand.getAnteSmallBlind(this)) > 0);
     }
 
-    public void processAction(HandAction action) {
-        // process it (we do it this way because we might want to get the
-        // action w/out processing it - i.e., for help or hints)
-        switch (action.getAction()) {
-            case HandAction.ACTION_FOLD :
-                fold(action.getDebug(), action.getSubAmount());
-                break;
-
-            case HandAction.ACTION_CHECK :
-                check(action.getDebug());
-                break;
-
-            case HandAction.ACTION_CHECK_RAISE :
-                checkraise(action.getDebug());
-                break;
-
-            case HandAction.ACTION_BET :
-                bet(action.getAmount(), action.getDebug());
-                break;
-
-            case HandAction.ACTION_CALL :
-                call(action.getDebug());
-                break;
-
-            case HandAction.ACTION_RAISE :
-                raise(action.getAmount(), action.getDebug());
-                break;
-
-            default :
-                ApplicationError.assertTrue(false, "Unknown HandAction action: " + action.getAction());
-        }
-    }
-
     /**
      * ante
      */
