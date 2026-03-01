@@ -5,8 +5,8 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
-import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { Simulator } from '../Simulator'
 
 // Mock the Card component to avoid image loading in tests
@@ -14,17 +14,33 @@ vi.mock('../Card', () => ({
   Card: ({ card }: { card?: string }) => <span data-testid={`card-img-${card}`}>{card}</span>,
 }))
 
-// Mock the equity calculator to avoid slow computation in tests
-vi.mock('@/lib/poker/equityCalculator', () => ({
-  calculateEquity: vi.fn(() => ({
-    win: 65.3,
-    tie: 2.1,
-    loss: 32.6,
-    iterations: 10000,
-  })),
-}))
+const mockResult = {
+  win: 65.3,
+  tie: 2.1,
+  loss: 32.6,
+  iterations: 10000,
+}
+
+function mockFetchSuccess(result = mockResult) {
+  global.fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    json: () => Promise.resolve(result),
+  })
+}
+
+function mockFetchError() {
+  global.fetch = vi.fn().mockResolvedValue({
+    ok: false,
+    status: 500,
+  })
+}
 
 describe('Simulator', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    mockFetchSuccess()
+  })
+
   it('renders with title "Poker Simulator"', () => {
     render(<Simulator onClose={vi.fn()} />)
     expect(screen.getByText('Poker Simulator')).toBeDefined()
@@ -65,23 +81,128 @@ describe('Simulator', () => {
     expect((calcButton as HTMLButtonElement).disabled).toBe(true)
   })
 
-  it('shows results after calculation', () => {
+  it('shows results after calculation', async () => {
     render(
       <Simulator
         currentHoleCards={['Ah', 'Kd']}
         onClose={vi.fn()}
       />,
     )
-    // Load hole cards from game
     fireEvent.click(screen.getByText('Load from Game'))
-    // Calculate
     fireEvent.click(screen.getByText('Calculate'))
-    // Check results are displayed
-    expect(screen.getByTestId('results')).toBeDefined()
+
+    await waitFor(() => {
+      expect(screen.getByTestId('results')).toBeDefined()
+    })
     expect(screen.getByText('65.3%')).toBeDefined()
     expect(screen.getByText('2.1%')).toBeDefined()
     expect(screen.getByText('32.6%')).toBeDefined()
     expect(screen.getByText(/10,000/)).toBeDefined()
+  })
+
+  it('sends correct request body to server', async () => {
+    render(
+      <Simulator
+        currentHoleCards={['Ah', 'Kd']}
+        currentCommunityCards={['Qs', 'Jc', '2h']}
+        onClose={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByText('Load from Game'))
+    fireEvent.click(screen.getByText('Calculate'))
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledOnce()
+    })
+
+    const [url, options] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0]
+    expect(url).toBe('/api/v1/poker/simulate')
+    expect(options.method).toBe('POST')
+    expect(options.headers).toEqual({ 'Content-Type': 'application/json' })
+
+    const body = JSON.parse(options.body)
+    expect(body.holeCards).toEqual(['Ah', 'Kd'])
+    expect(body.communityCards).toEqual(['Qs', 'Jc', '2h'])
+    expect(body.numOpponents).toBe(1)
+    expect(body.iterations).toBe(10000)
+  })
+
+  it('shows loading state during calculation', async () => {
+    let resolveResponse: (value: unknown) => void
+    global.fetch = vi.fn().mockReturnValue(
+      new Promise((resolve) => {
+        resolveResponse = resolve
+      }),
+    )
+
+    render(
+      <Simulator
+        currentHoleCards={['Ah', 'Kd']}
+        onClose={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByText('Load from Game'))
+    fireEvent.click(screen.getByText('Calculate'))
+
+    expect(screen.getByText('Calculating...')).toBeDefined()
+
+    resolveResponse!({
+      ok: true,
+      json: () => Promise.resolve(mockResult),
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('Calculate')).toBeDefined()
+    })
+  })
+
+  it('handles server error gracefully', async () => {
+    mockFetchError()
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    render(
+      <Simulator
+        currentHoleCards={['Ah', 'Kd']}
+        onClose={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByText('Load from Game'))
+    fireEvent.click(screen.getByText('Calculate'))
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith('Simulation error:', expect.any(Error))
+    })
+    // Button should be re-enabled after error
+    expect((screen.getByText('Calculate') as HTMLButtonElement).disabled).toBe(false)
+    // No results should be displayed
+    expect(screen.queryByTestId('results')).toBeNull()
+
+    consoleSpy.mockRestore()
+  })
+
+  it('displays opponent results when returned', async () => {
+    mockFetchSuccess({
+      win: 75.3,
+      tie: 1.2,
+      loss: 23.5,
+      iterations: 10000,
+      opponentResults: [{ win: 75.3, tie: 1.2, loss: 23.5 }],
+    })
+
+    render(
+      <Simulator
+        currentHoleCards={['Ah', 'Kd']}
+        onClose={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByText('Load from Game'))
+    fireEvent.click(screen.getByText('Calculate'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('results')).toBeDefined()
+    })
+    expect(screen.getByText('Per-Opponent Breakdown')).toBeDefined()
+    expect(screen.getByText('75.3% W')).toBeDefined()
   })
 
   it('does not show Load from Game button without game cards', () => {

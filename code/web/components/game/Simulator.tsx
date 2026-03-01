@@ -10,7 +10,6 @@
 import { useEffect, useState } from 'react'
 import { CardPicker } from './CardPicker'
 import { Card } from './Card'
-import { calculateEquity } from '@/lib/poker/equityCalculator'
 import type { EquityResult } from '@/lib/poker/types'
 
 interface SimulatorProps {
@@ -150,7 +149,7 @@ export function Simulator({ currentHoleCards, currentCommunityCards, onClose }: 
     setActiveSlot(null)
   }
 
-  function handleCalculate() {
+  async function handleCalculate() {
     const hole = holeCards.filter((c): c is string => c !== null)
     if (hole.length < 2) return
     const community = communityCards.filter((c): c is string => c !== null)
@@ -159,9 +158,26 @@ export function Simulator({ currentHoleCards, currentCommunityCards, onClose }: 
       : []
 
     setIsCalculating(true)
-    const result = calculateEquity(hole, community, opponents, 10000, known.length > 0 ? known : undefined)
-    setResults(result)
-    setIsCalculating(false)
+    try {
+      const response = await fetch('/api/v1/poker/simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          holeCards: hole,
+          communityCards: community,
+          numOpponents: opponents,
+          iterations: 10000,
+          knownOpponentHands: known.length > 0 ? known : undefined,
+        }),
+      })
+      if (!response.ok) throw new Error('Simulation failed')
+      const result = await response.json()
+      setResults(result)
+    } catch (error) {
+      console.error('Simulation error:', error)
+    } finally {
+      setIsCalculating(false)
+    }
   }
 
   const hasGameCards =
