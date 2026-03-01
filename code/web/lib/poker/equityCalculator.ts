@@ -21,7 +21,7 @@ export function calculateEquity(
   iterations: number = 10000,
   knownOpponentHands?: string[][],
 ): EquityResult {
-  const knownOppHands = knownOpponentHands || []
+  const knownOppHands = knownOpponentHands ?? []
   const randomOpponents = numOpponents - knownOppHands.length
 
   // Remove all known cards from deck
