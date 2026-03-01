@@ -32,7 +32,7 @@ Zero poker calculation code on client.
 
 ## Three-Phase Approach
 
-### Phase 1: Dead Code + Duplicate Removal (~3,060 lines)
+### Phase 1: Dead Code Removal (~1,840 production lines + ~3,195 test lines)
 
 Low risk. Delete unreferenced code and their tests. No behavior changes.
 
@@ -40,32 +40,31 @@ Low risk. Delete unreferenced code and their tests. No behavior changes.
 
 | File | Lines | Reason |
 |------|-------|--------|
-| `HandStrength.java` | 289 | Zero references in production code |
-| `HoldemExpert.java` | 245 | Only referenced in comments |
-| `OtherTables.java` | 433 | Zero references |
-| `HandLadder.java` | 339 | Created in PokerStatsPanel but never rendered |
-| `ai/AIOutcome.java` | 366 | Old AI decision logic — callers removed |
-| `ai/BetRange.java` | 270 | Old bet sizing — callers removed |
-| `ai/BooleanTracker.java` | 215 | Old tracking — callers removed |
-| `ai/FloatTracker.java` | 197 | Old tracking — callers removed |
-| `ai/PocketRanks.java` | 186 | No production usage; duplicate exists in pokergamecore |
-| `ai/PocketScores.java` | 164 | No production usage; duplicate exists in pokergamecore |
-| `ai/HandProbabilityMatrix.java` | 119 | Mostly commented-out; zero callers |
+| `HoldemExpert.java` | 245 | Only referenced in comments (HoldemHand.java:2387-2388) |
+| `OtherTables.java` | 433 | Only referenced in comments (ServerTournamentDirector, ShowTournamentTable, TournamentEngine) |
+| `ai/AIOutcome.java` | 365 | Old AI decision logic — callers removed in AI consolidation |
+| `ai/BetRange.java` | 269 | Old bet sizing — callers removed in AI consolidation |
+| `ai/BooleanTracker.java` | 214 | Old tracking — callers removed in AI consolidation |
+| `ai/FloatTracker.java` | 196 | Old tracking — callers removed in AI consolidation |
+| `ai/HandProbabilityMatrix.java` | 118 | Mostly commented-out; zero callers |
+
+**NOT dead (moved to Phase 3):**
+- `HandStrength.java` — used by `PokerPlayer.getHandStrength()`, `ServerAIContext`, `PokerStatsPanel`
+- `HandLadder.java` — used by `PokerStatsPanel`
+- `ai/PocketRanks.java` — used transitively by `PocketWeights` -> `WeightGridPanel`
+- `ai/PocketScores.java` — used transitively by `PocketOdds` -> `PocketWeights`
 
 **Test files to delete:**
 
-| File | Reason |
-|------|--------|
-| `HandStrengthTest.java` | Tests dead class |
-| `ai/AIOutcomeIntegrationTest.java` | Tests dead class |
-| `ai/BetRangeTest.java` | Tests dead class |
-| `ai/BooleanTrackerTest.java` | Tests dead class |
-| `ai/FloatTrackerTest.java` | Tests dead class |
-| `ai/PocketRanksTest.java` | Tests dead class |
-| `ai/PocketScoresTest.java` | Tests dead class |
-| `ai/HandProbabilityMatrixTest.java` | Tests dead class |
+| File | Lines | Reason |
+|------|-------|--------|
+| `ai/AIOutcomeIntegrationTest.java` | 364 | Tests dead class |
+| `ai/BetRangeTest.java` | 518 | Tests dead class |
+| `ai/BooleanTrackerTest.java` | 749 | Tests dead class |
+| `ai/FloatTrackerTest.java` | 762 | Tests dead class |
+| `ai/HandProbabilityMatrixTest.java` | 802 | Tests dead class |
 
-**Cleanup:** Remove any imports or commented-out references to deleted classes in remaining files. Remove `HandLadder` usage from `PokerStatsPanel`.
+**Cleanup:** Remove commented-out references to deleted classes. Update `docs/memory.md` entry about `AIOutcome`/`BetRange`.
 
 ### Phase 2: Extend Server APIs
 
@@ -138,20 +137,24 @@ Switch each desktop UI panel to consume server-provided data, then delete the cl
 | File | Lines |
 |------|-------|
 | `HoldemSimulator.java` | 820 |
+| `HandStrength.java` | 289 |
 | `HandPotential.java` | 778 |
 | `HandFutures.java` | 321 |
 | `HandInfo.java` | 1,039 |
 | `HandInfoFast.java` | 835 |
+| `HandLadder.java` | 339 |
 | `ai/PocketWeights.java` | 711 |
 | `ai/PocketOdds.java` | 208 |
+| `ai/PocketRanks.java` | 185 |
+| `ai/PocketScores.java` | 163 |
 | `ai/SimpleBias.java` | 219 |
-| `ai/PocketMatrixByte.java` | ~100 |
-| `ai/PocketMatrixFloat.java` | ~100 |
-| `ai/PocketMatrixInt.java` | ~100 |
-| `ai/PocketMatrixShort.java` | ~100 |
-| `ai/PocketMatrixString.java` | ~100 |
+| `ai/PocketMatrixByte.java` | 106 |
+| `ai/PocketMatrixFloat.java` | 114 |
+| `ai/PocketMatrixInt.java` | 106 |
+| `ai/PocketMatrixShort.java` | 106 |
+| `ai/PocketMatrixString.java` | 106 |
 
-**Test files to delete:** Corresponding test classes for all of the above.
+**Test files to delete:** Corresponding test classes for all of the above, including `HandStrengthTest.java`, `PocketRanksTest.java`, `PocketScoresTest.java`, `PocketOddsTest.java`.
 
 **WeightGridPanel removal:** `WeightGridPanel` in `ai/gui/` is the sole consumer of `PocketWeights`. It's an AI debugging visualization (shows inferred opponent hand distributions). Remove the panel and its `gamedef.xml` registration. The `ai/gui/` package has other panels (`PlayerTypeDialog`, `HandSelectionPanel`, etc.) that are UI-only config editors — those stay.
 
