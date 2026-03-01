@@ -174,5 +174,8 @@ public enum ServerMessageType {
     CLEANING_DONE,
 
     /** Player moved from one table to another during table consolidation */
-    PLAYER_MOVED
+    PLAYER_MOVED,
+
+    /** Advisor data update sent privately to human players */
+    ADVISOR_UPDATE
 }

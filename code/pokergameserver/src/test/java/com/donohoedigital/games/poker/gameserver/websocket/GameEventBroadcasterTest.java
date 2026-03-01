@@ -19,6 +19,7 @@ package com.donohoedigital.games.poker.gameserver.websocket;
 
 import com.donohoedigital.games.poker.core.event.GameEvent;
 import com.donohoedigital.games.poker.core.state.ActionType;
+import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.CardSuit;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
@@ -675,6 +676,209 @@ class GameEventBroadcasterTest {
     // ====================================
     // Bug C: cancelActionTimer must be idempotent (no orphaned task on re-entry)
     // ====================================
+
+    // ====================================
+    // ADVISOR_UPDATE: sent to human players after key events
+    // ====================================
+
+    /**
+     * Helper: create a mock game with one human and one AI player at table 1, both
+     * with hole cards, and a ServerHand with configurable community cards. Returns
+     * the broadcaster. The human player is ID=1 (profileId=1), AI is ID=2. Uses
+     * real Card objects so AdvisorService hand evaluation works correctly.
+     */
+    private GameEventBroadcaster createAdvisorTestBroadcaster(Card[] communityCards) throws Exception {
+        // Human player (ID=1), AI player (ID=2)
+        ServerPlayer humanPlayer = new ServerPlayer(1, "Human", true, 0, 5000);
+        humanPlayer.setSeat(0);
+        ServerPlayer aiPlayer = new ServerPlayer(2, "Bot", false, 5, 5000);
+        aiPlayer.setSeat(1);
+
+        ServerHand mockHand = mock(ServerHand.class);
+        when(mockHand.getPlayerCards(1)).thenReturn(List.of(Card.HEARTS_A, Card.HEARTS_K));
+        when(mockHand.getPlayerCards(2)).thenReturn(List.of(Card.SPADES_A, Card.SPADES_K));
+        when(mockHand.getCommunityCards()).thenReturn(communityCards);
+        when(mockHand.getPotSize()).thenReturn(150);
+        when(mockHand.getAmountToCall(humanPlayer)).thenReturn(50);
+
+        ServerGameTable mockTable = mock(ServerGameTable.class);
+        when(mockTable.getNumSeats()).thenReturn(2);
+        when(mockTable.getPlayer(0)).thenReturn(humanPlayer);
+        when(mockTable.getPlayer(1)).thenReturn(aiPlayer);
+        when(mockTable.getHoldemHand()).thenReturn(mockHand);
+        when(mockTable.getButton()).thenReturn(0);
+
+        ServerTournamentContext mockCtx = mock(ServerTournamentContext.class);
+        when(mockCtx.getNumTables()).thenReturn(1);
+        when(mockCtx.getTable(0)).thenReturn(mockTable);
+
+        GameInstance mockGame = mock(GameInstance.class);
+        when(mockGame.getTournament()).thenReturn(mockCtx);
+
+        // Human player at profileId=1, connected to game
+        GameStateSnapshot snapshot = new GameStateSnapshot(1, 1, null, null, List.of(), List.of(), 0, -1, -1, -1,
+                "PRE_FLOP", 1, 25, 50, 0, 0, 0, 0, 0);
+        when(mockGame.getGameStateSnapshot(1L)).thenReturn(snapshot);
+
+        return new GameEventBroadcaster("game-1", connectionManager, converter, mockGame);
+    }
+
+    @Test
+    void advisorUpdate_sentToHumanPlayer_afterHandStarted() throws Exception {
+        // Connect a human player
+        WebSocketSession humanSession = mock(WebSocketSession.class);
+        when(humanSession.isOpen()).thenReturn(true);
+        connectionManager.addConnection("game-1", 1L,
+                new PlayerConnection(humanSession, 1L, "Human", "game-1", objectMapper));
+
+        GameEventBroadcaster b = createAdvisorTestBroadcaster(null);
+        b.accept(new GameEvent.HandStarted(1, 1));
+
+        // Verify ADVISOR_UPDATE was sent to the human player
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(humanSession, atLeast(1)).sendMessage(captor.capture());
+
+        boolean foundAdvisor = captor.getAllValues().stream()
+                .anyMatch(msg -> msg.getPayload().contains("ADVISOR_UPDATE"));
+        assertTrue(foundAdvisor, "Human player should receive ADVISOR_UPDATE after HAND_STARTED");
+    }
+
+    @Test
+    void advisorUpdate_notSentToAiPlayer() throws Exception {
+        // Connect both human (profileId=1) and AI (profileId=2)
+        WebSocketSession humanSession = mock(WebSocketSession.class);
+        when(humanSession.isOpen()).thenReturn(true);
+        connectionManager.addConnection("game-1", 1L,
+                new PlayerConnection(humanSession, 1L, "Human", "game-1", objectMapper));
+
+        WebSocketSession aiSession = mock(WebSocketSession.class);
+        when(aiSession.isOpen()).thenReturn(true);
+        connectionManager.addConnection("game-1", 2L,
+                new PlayerConnection(aiSession, 2L, "Bot", "game-1", objectMapper));
+
+        // Use PLAYER_ACTED which broadcasts to all, then sends advisor privately.
+        // AI should receive the broadcast PLAYER_ACTED but NOT ADVISOR_UPDATE.
+        GameEventBroadcaster b = createAdvisorTestBroadcaster(null);
+        b.accept(new GameEvent.PlayerActed(1, 2, ActionType.CALL, 50));
+
+        // AI player should receive PLAYER_ACTED broadcast but NOT ADVISOR_UPDATE
+        ArgumentCaptor<TextMessage> aiCaptor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(aiSession, atLeast(1)).sendMessage(aiCaptor.capture());
+        boolean aiGotAdvisor = aiCaptor.getAllValues().stream()
+                .anyMatch(msg -> msg.getPayload().contains("ADVISOR_UPDATE"));
+        assertFalse(aiGotAdvisor, "AI player must NOT receive ADVISOR_UPDATE");
+    }
+
+    @Test
+    void advisorUpdate_sentAfterCommunityCardsDealt() throws Exception {
+        WebSocketSession humanSession = mock(WebSocketSession.class);
+        when(humanSession.isOpen()).thenReturn(true);
+        connectionManager.addConnection("game-1", 1L,
+                new PlayerConnection(humanSession, 1L, "Human", "game-1", objectMapper));
+
+        // getCommunityCards returns null; the broadcaster handles null gracefully for
+        // both the broadcast payload and the advisor computation.
+        GameEventBroadcaster b = createAdvisorTestBroadcaster(null);
+        b.accept(new GameEvent.CommunityCardsDealt(1, BettingRound.FLOP));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(humanSession, atLeast(1)).sendMessage(captor.capture());
+
+        boolean foundAdvisor = captor.getAllValues().stream()
+                .anyMatch(msg -> msg.getPayload().contains("ADVISOR_UPDATE"));
+        assertTrue(foundAdvisor, "Human player should receive ADVISOR_UPDATE after COMMUNITY_CARDS_DEALT");
+    }
+
+    @Test
+    void advisorUpdate_sentAfterPlayerActed() throws Exception {
+        WebSocketSession humanSession = mock(WebSocketSession.class);
+        when(humanSession.isOpen()).thenReturn(true);
+        connectionManager.addConnection("game-1", 1L,
+                new PlayerConnection(humanSession, 1L, "Human", "game-1", objectMapper));
+
+        GameEventBroadcaster b = createAdvisorTestBroadcaster(null);
+        b.accept(new GameEvent.PlayerActed(1, 2, ActionType.CALL, 50));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(humanSession, atLeast(1)).sendMessage(captor.capture());
+
+        boolean foundAdvisor = captor.getAllValues().stream()
+                .anyMatch(msg -> msg.getPayload().contains("ADVISOR_UPDATE"));
+        assertTrue(foundAdvisor, "Human player should receive ADVISOR_UPDATE after PLAYER_ACTED");
+    }
+
+    @Test
+    void advisorUpdate_notSentToFoldedPlayer() throws Exception {
+        // Folded human player (ID=1), active AI player (ID=2)
+        ServerPlayer foldedHuman = new ServerPlayer(1, "Folded", true, 0, 5000);
+        foldedHuman.setSeat(0);
+        foldedHuman.setFolded(true);
+        ServerPlayer aiPlayer = new ServerPlayer(2, "Bot", false, 5, 5000);
+        aiPlayer.setSeat(1);
+
+        ServerHand mockHand = mock(ServerHand.class);
+        when(mockHand.getPlayerCards(1)).thenReturn(List.of(Card.HEARTS_A, Card.HEARTS_K));
+        when(mockHand.getPlayerCards(2)).thenReturn(List.of(Card.SPADES_A, Card.SPADES_K));
+        when(mockHand.getCommunityCards()).thenReturn(null);
+        when(mockHand.getPotSize()).thenReturn(100);
+
+        ServerGameTable mockTable = mock(ServerGameTable.class);
+        when(mockTable.getNumSeats()).thenReturn(2);
+        when(mockTable.getPlayer(0)).thenReturn(foldedHuman);
+        when(mockTable.getPlayer(1)).thenReturn(aiPlayer);
+        when(mockTable.getHoldemHand()).thenReturn(mockHand);
+
+        ServerTournamentContext mockCtx = mock(ServerTournamentContext.class);
+        when(mockCtx.getNumTables()).thenReturn(1);
+        when(mockCtx.getTable(0)).thenReturn(mockTable);
+
+        GameInstance mockGame = mock(GameInstance.class);
+        when(mockGame.getTournament()).thenReturn(mockCtx);
+
+        WebSocketSession humanSession = mock(WebSocketSession.class);
+        when(humanSession.isOpen()).thenReturn(true);
+        connectionManager.addConnection("game-1", 1L,
+                new PlayerConnection(humanSession, 1L, "Folded", "game-1", objectMapper));
+
+        GameEventBroadcaster b = new GameEventBroadcaster("game-1", connectionManager, converter, mockGame);
+        b.accept(new GameEvent.CommunityCardsDealt(1, BettingRound.FLOP));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(humanSession, atLeast(1)).sendMessage(captor.capture());
+
+        boolean foundAdvisor = captor.getAllValues().stream()
+                .anyMatch(msg -> msg.getPayload().contains("ADVISOR_UPDATE"));
+        assertFalse(foundAdvisor, "Folded human player must NOT receive ADVISOR_UPDATE");
+    }
+
+    @Test
+    void advisorUpdate_containsExpectedFields() throws Exception {
+        WebSocketSession humanSession = mock(WebSocketSession.class);
+        when(humanSession.isOpen()).thenReturn(true);
+        connectionManager.addConnection("game-1", 1L,
+                new PlayerConnection(humanSession, 1L, "Human", "game-1", objectMapper));
+
+        GameEventBroadcaster b = createAdvisorTestBroadcaster(null);
+        b.accept(new GameEvent.PlayerActed(1, 2, ActionType.CALL, 50));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(humanSession, atLeast(1)).sendMessage(captor.capture());
+
+        String advisorJson = captor.getAllValues().stream().map(TextMessage::getPayload)
+                .filter(p -> p.contains("ADVISOR_UPDATE")).findFirst()
+                .orElseThrow(() -> new AssertionError("No ADVISOR_UPDATE message found"));
+
+        JsonNode root = objectMapper.readTree(advisorJson);
+        assertEquals("ADVISOR_UPDATE", root.get("type").asText());
+        JsonNode data = root.get("data");
+        assertNotNull(data.get("handRank"));
+        assertNotNull(data.get("equity"));
+        assertNotNull(data.get("potOdds"));
+        assertNotNull(data.get("recommendation"));
+        // Pre-flop should have starting hand data
+        assertNotNull(data.get("startingHandCategory"));
+        assertNotNull(data.get("startingHandNotation"));
+    }
 
     @Test
     void cancelActionTimer_isIdempotentAfterStartAndCancel() throws Exception {

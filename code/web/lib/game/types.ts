@@ -71,6 +71,7 @@ export type ServerMessageType =
   | 'TABLE_STATE_CHANGED'
   | 'CLEANING_DONE'
   | 'PLAYER_MOVED'
+  | 'ADVISOR_UPDATE'
 
 // ============================================================================
 // Client message types
@@ -546,6 +547,16 @@ export interface PlayerMovedData {
   playerName: string
   fromTableId: number
   toTableId: number
+}
+
+export interface AdvisorData {
+  handRank: number | null
+  handDescription: string | null
+  equity: number
+  potOdds: number
+  recommendation: string
+  startingHandCategory: string | null
+  startingHandNotation: string | null
 }
 
 // ============================================================================

@@ -42,6 +42,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 import com.donohoedigital.games.poker.engine.Card;
+import com.donohoedigital.games.poker.gameserver.AdvisorResult;
+import com.donohoedigital.games.poker.gameserver.AdvisorService;
 
 /**
  * Bridges the ServerGameEventBus to WebSocket connections.
@@ -64,9 +66,13 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
 
     private static final Logger logger = LoggerFactory.getLogger(GameEventBroadcaster.class);
 
+    /** Monte Carlo iterations for advisor equity calculation. */
+    private static final int ADVISOR_ITERATIONS = 500;
+
     private final String gameId;
     private final GameConnectionManager connectionManager;
     private final OutboundMessageConverter converter;
+    private final AdvisorService advisorService = new AdvisorService();
 
     /**
      * Optional game reference used to send per-player GAME_STATE snapshots before
@@ -208,6 +214,9 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                             }
                         }
                     }
+                    // Send advisor updates to human players after they received hole cards
+                    sendAdvisorUpdates(e.tableId());
+
                     // If aiFaceUp, broadcast AI hole cards after all players received HAND_STARTED
                     if (aiFaceUp && game.getTournament() != null && e.tableId() > 0
                             && (e.tableId() - 1) < game.getTournament().getNumTables()) {
@@ -268,6 +277,7 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 broadcast(ServerMessage.of(ServerMessageType.PLAYER_ACTED, gameId,
                     new ServerMessageData.PlayerActedData(e.playerId(), playerName, e.action().name(), e.amount(),
                         totalBet, chipCount, potTotal, e.tableId())));
+                sendAdvisorUpdates(e.tableId());
             }
             case GameEvent.CommunityCardsDealt e -> {
                 // Look up actual community cards from the live hand at broadcast time.
@@ -286,6 +296,7 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 broadcast(ServerMessage.of(ServerMessageType.COMMUNITY_CARDS_DEALT, gameId,
                         new ServerMessageData.CommunityCardsDealtData(e.round().name(), allCommunityCards,
                                 allCommunityCards, e.tableId())));
+                sendAdvisorUpdates(e.tableId());
             }
             case GameEvent.HandCompleted e -> {
                 int handNum = 0;
@@ -688,6 +699,69 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
     public void shutdown() {
         cancelActionTimer();
         timerScheduler.shutdown();
+    }
+
+    /**
+     * Sends ADVISOR_UPDATE privately to each connected human player at the given
+     * table who is still in the hand (not folded, not sitting out). Requires a game
+     * reference with a valid tournament and table.
+     */
+    private void sendAdvisorUpdates(int tableId) {
+        if (game == null || game.getTournament() == null || tableId <= 0
+                || (tableId - 1) >= game.getTournament().getNumTables()) {
+            return;
+        }
+        Object gt = game.getTournament().getTable(tableId - 1);
+        if (!(gt instanceof ServerGameTable sgt)) {
+            return;
+        }
+        ServerHand hand = (ServerHand) sgt.getHoldemHand();
+        if (hand == null) {
+            return;
+        }
+
+        Card[] communityCards = hand.getCommunityCards();
+        if (communityCards == null) {
+            communityCards = new Card[0];
+        }
+        int potSize = hand.getPotSize();
+
+        // Count active opponents (non-folded, non-sitting-out, non-all-in players)
+        // and find human players to notify
+        List<ServerPlayer> humanPlayers = new ArrayList<>();
+        int activePlayers = 0;
+        for (int s = 0; s < sgt.getNumSeats(); s++) {
+            ServerPlayer sp = sgt.getPlayer(s);
+            if (sp != null && !sp.isFolded() && !sp.isSittingOut()) {
+                activePlayers++;
+                if (sp.isHuman()) {
+                    humanPlayers.add(sp);
+                }
+            }
+        }
+
+        for (ServerPlayer human : humanPlayers) {
+            List<Card> holeCards = hand.getPlayerCards(human.getID());
+            if (holeCards.isEmpty()) {
+                continue;
+            }
+            int callAmount = hand.getAmountToCall(human);
+            int numOpponents = activePlayers - 1;
+            if (numOpponents < 1) {
+                numOpponents = 1;
+            }
+
+            AdvisorResult result = advisorService.compute(holeCards.toArray(new Card[0]), communityCards, potSize,
+                    callAmount, numOpponents, ADVISOR_ITERATIONS);
+
+            ServerMessage advisorMsg = ServerMessage.of(ServerMessageType.ADVISOR_UPDATE, gameId,
+                    new ServerMessageData.AdvisorData(result.handRank(), result.handDescription(), result.equity(),
+                            result.potOdds(), result.recommendation(), result.startingHandCategory(),
+                            result.startingHandNotation()));
+
+            // Send privately to this human player
+            connectionManager.sendToPlayer(gameId, human.getID(), advisorMsg);
+        }
     }
 
     private void broadcast(ServerMessage message) {
