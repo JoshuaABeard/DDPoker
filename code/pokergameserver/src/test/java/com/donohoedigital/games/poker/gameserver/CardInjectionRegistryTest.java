@@ -23,6 +23,7 @@ import com.donohoedigital.games.poker.engine.Card;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 
 import java.util.List;
 
@@ -31,7 +32,15 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests for {@link CardInjectionRegistry} and the seeded {@link ServerDeck}
  * constructor.
+ *
+ * <p>
+ * {@code @Isolated} prevents this test class from running in parallel with
+ * other test classes, since {@link CardInjectionRegistry} uses JVM-wide static
+ * state that would be corrupted by concurrent game-simulation tests calling
+ * {@code takeDeck()} on their own {@code ServerGameTable} instances.
+ * </p>
  */
+@Isolated
 class CardInjectionRegistryTest {
 
     @BeforeEach
