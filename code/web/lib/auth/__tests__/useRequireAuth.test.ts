@@ -82,8 +82,9 @@ describe('useRequireAuth', () => {
   it('does not redirect while still loading', () => {
     mockUseAuth.mockReturnValue(buildAuthState({ isLoading: true }))
 
-    renderHook(() => useRequireAuth())
+    const { result } = renderHook(() => useRequireAuth())
 
+    expect(result.current.isLoading).toBe(true)
     expect(mockRouterPush).not.toHaveBeenCalled()
   })
 
