@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { ReactNode } from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { LoginForm } from '../LoginForm'
 
@@ -32,7 +33,7 @@ vi.mock('next/navigation', () => ({
 }))
 
 vi.mock('next/link', () => ({
-  default: ({ href, children }: { href: string; children: React.ReactNode }) => (
+  default: ({ href, children }: { href: string; children: ReactNode }) => (
     <a href={href}>{children}</a>
   ),
 }))
@@ -113,8 +114,8 @@ describe('LoginForm', () => {
 
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalled()
+      expect(mockPush).not.toHaveBeenCalled()
     })
-    expect(mockPush).not.toHaveBeenCalled()
   })
 
   it('calls clearError when username input changes', () => {
