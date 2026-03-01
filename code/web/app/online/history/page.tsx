@@ -13,6 +13,7 @@ import { FilterForm } from '@/components/filters/FilterForm'
 import { tournamentApi } from '@/lib/api'
 import { mapTournamentEntry, calculateTournamentStats } from '@/lib/mappers'
 import { toBackendPage, buildPaginationResult } from '@/lib/pagination'
+import type { TournamentStats } from '@/lib/types'
 
 export const metadata: Metadata = {
   title: 'Tournament History - DD Poker',
@@ -32,21 +33,13 @@ interface TournamentEntry {
   mode: string
 }
 
-interface PlayerStats {
-  totalGames: number
-  totalWins: number
-  totalPrize: number
-  avgPlacement: number
-  winRate: number
-}
-
 async function getTournamentHistory(
   playerName: string,
   page: number,
   filters: { begin?: string; end?: string }
 ): Promise<{
   entries: TournamentEntry[]
-  stats: PlayerStats
+  stats: TournamentStats
   totalPages: number
   totalItems: number
 }> {
