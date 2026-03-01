@@ -96,7 +96,7 @@
   <build>
     <plugins>
       <!-- Jacoco Coverage Enforcement -->
-      <!-- Baseline: 71% instruction coverage (actual ~76%, minus 5% buffer) -->
+      <!-- Baseline: 77% instruction coverage (actual ~82%, minus 5% buffer) -->
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
