@@ -33,15 +33,16 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.config.PropertyConfig;
+import com.donohoedigital.games.poker.dashboard.AdvisorState;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
+import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
-import com.donohoedigital.games.poker.core.state.BettingRound;
 
 public class PokerStatsPanel extends DDTabPanel {
     static Logger logger = LogManager.getLogger(PokerStatsPanel.class);
@@ -49,7 +50,6 @@ public class PokerStatsPanel extends DDTabPanel {
     public static final int FLOP = 1;
     public static final int TURN = 2;
     public static final int RIVER = 3;
-    public static final int LADDER = 4;
     public static final int STRENGTH = 5;
 
     private DDScrollPane scroll_;
@@ -127,10 +127,6 @@ public class PokerStatsPanel extends DDTabPanel {
                 nMin = 5;
                 sMsg = PropertyConfig.getMessage("msg.sim.river");
                 break;
-            case LADDER :
-                nMin = 5;
-                sMsg = PropertyConfig.getMessage("msg.sim.ladder");
-                break;
             case STRENGTH :
                 nMin = 5;
                 sMsg = PropertyConfig.getMessage("msg.sim.strength");
@@ -184,9 +180,6 @@ public class PokerStatsPanel extends DDTabPanel {
                     else if (com == 5)
                         sText = PropertyConfig.getMessage("msg.sim.seenriver");
                     break;
-                case LADDER :
-                    // ladder is good anytime
-                    break;
                 case STRENGTH :
                     if (com < 3)
                         sText = PropertyConfig.getMessage("msg.sim.needflop.3");
@@ -229,48 +222,43 @@ public class PokerStatsPanel extends DDTabPanel {
      * thread generates info then updates html
      */
     private class UpdateThread extends Thread {
-        HandStrength strength_;
-        HandPotential potential_;
-        HandLadder ladder_;
 
         public UpdateThread() {
             super("UpdateThread");
         }
 
         public void run() {
-            switch (mode_) {
-                case LADDER :
-                    ladder_ = new HandLadder(pocket_, community_);
-                    break;
-
-                case STRENGTH :
-                    strength_ = new HandStrength();
-                    break;
-
-                default :
-                    potential_ = new HandPotential(pocket_, community_);
-            }
-
             SwingUtilities.invokeLater(() -> {
                 switch (mode_) {
                     case FLOP :
-                        htmlArea_.setText(potential_.toHTML(BettingRound.FLOP.toLegacy()));
-                        break;
                     case TURN :
-                        htmlArea_.setText(potential_.toHTML(BettingRound.TURN.toLegacy()));
-                        break;
                     case RIVER :
-                        htmlArea_.setText(potential_.toHTML(BettingRound.RIVER.toLegacy()));
-                        break;
-                    case LADDER :
-                        htmlArea_.setText(ladder_.toHTML());
+                        htmlArea_.setText(buildPotentialHTML());
                         break;
                     case STRENGTH :
-                        htmlArea_.setText(strength_.toHTML(pocket_, community_, 9));
+                        htmlArea_.setText(buildEquityHTML());
                         break;
                 }
                 htmlArea_.setCaretPosition(0); // scroll to top
             });
+        }
+
+        private String buildEquityHTML() {
+            Double equity = AdvisorState.getEquity();
+            if (equity == null) {
+                return PropertyConfig.getMessage("msg.sim.waiting");
+            }
+            return PropertyConfig.getMessage("msg.sim.equity", PokerConstants.formatPercent(equity));
+        }
+
+        private String buildPotentialHTML() {
+            Double pos = AdvisorState.getPositivePotential();
+            Double neg = AdvisorState.getNegativePotential();
+            if (pos == null || neg == null) {
+                return PropertyConfig.getMessage("msg.sim.waiting");
+            }
+            return PropertyConfig.getMessage("msg.sim.potential", PokerConstants.formatPercent(pos),
+                    PokerConstants.formatPercent(neg));
         }
     }
 
