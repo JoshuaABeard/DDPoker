@@ -207,7 +207,7 @@ public class EmbeddedGameServer {
      * when the profile has not changed. Package-private for testing.
      */
     String getJwtForProfile(PlayerProfile profile) {
-        String key = profile.getFileName() + ":" + profile.getCreateDate();
+        String key = profile.getName() + ":" + profile.getFileName() + ":" + profile.getCreateDate();
         if (key.equals(cachedProfileKey_) && cachedJwt_ != null) {
             return cachedJwt_;
         }
