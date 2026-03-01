@@ -923,6 +923,35 @@ class GameEventBroadcasterTest {
     }
 
     @Test
+    void sendAdvisorUpdates_onPreflop_improvementOddsIsNull() throws Exception {
+        // Preflop scenario: null community cards. improvementOdds, positivePotential,
+        // and negativePotential cannot be computed without board cards, so they must
+        // serialize as JSON null — locking down the wire contract.
+        WebSocketSession humanSession = mock(WebSocketSession.class);
+        when(humanSession.isOpen()).thenReturn(true);
+        connectionManager.addConnection("game-1", 1L,
+                new PlayerConnection(humanSession, 1L, "Human", "game-1", objectMapper));
+
+        GameEventBroadcaster b = createAdvisorTestBroadcaster(null);
+        b.accept(new GameEvent.PlayerActed(1, 2, ActionType.CALL, 50));
+
+        ArgumentCaptor<TextMessage> captor = ArgumentCaptor.forClass(TextMessage.class);
+        verify(humanSession, atLeast(1)).sendMessage(captor.capture());
+
+        String advisorJson = captor.getAllValues().stream().map(TextMessage::getPayload)
+                .filter(p -> p.contains("ADVISOR_UPDATE")).findFirst()
+                .orElseThrow(() -> new AssertionError("No ADVISOR_UPDATE message found"));
+
+        JsonNode data = objectMapper.readTree(advisorJson).get("data");
+        assertTrue(data.get("improvementOdds").isNull(),
+                "improvementOdds must be JSON null on preflop (no community cards)");
+        assertTrue(data.get("positivePotential").isNull(),
+                "positivePotential must be JSON null on preflop (no community cards)");
+        assertTrue(data.get("negativePotential").isNull(),
+                "negativePotential must be JSON null on preflop (no community cards)");
+    }
+
+    @Test
     void cancelActionTimer_isIdempotentAfterStartAndCancel() throws Exception {
         // Regression guard for the TOCTOU race: calling cancelActionTimer twice
         // (e.g. once from the timer callback and once from startActionTimer) must
