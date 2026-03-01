@@ -128,6 +128,9 @@ export interface TournamentStats {
   totalGames: number
   totalWins: number
   totalPrize: number
+  totalBuyIn: number
+  profitLoss: number
+  bestFinish: number
   avgPlacement: number
   winRate: number
 }

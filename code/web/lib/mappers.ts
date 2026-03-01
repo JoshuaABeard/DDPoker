@@ -50,6 +50,9 @@ export function calculateTournamentStats(entries: TournamentHistoryDto[]) {
       totalGames: 0,
       totalWins: 0,
       totalPrize: 0,
+      totalBuyIn: 0,
+      profitLoss: 0,
+      bestFinish: 0,
       avgPlacement: 0,
       winRate: 0,
     }
@@ -57,13 +60,18 @@ export function calculateTournamentStats(entries: TournamentHistoryDto[]) {
 
   const totalWins = entries.filter((e) => (e.placement || e.place) === 1).length
   const totalPrize = entries.reduce((sum, e) => sum + (e.prize || 0), 0)
+  const totalBuyIn = entries.reduce((sum, e) => sum + (e.buyIn || 0), 0)
   const avgPlacement =
     entries.reduce((sum, e) => sum + (e.placement || e.place || 0), 0) / entries.length
+  const bestFinish = Math.min(...entries.map((e) => e.placement || e.place || Infinity))
 
   return {
     totalGames: entries.length,
     totalWins,
     totalPrize,
+    totalBuyIn,
+    profitLoss: totalPrize - totalBuyIn,
+    bestFinish: bestFinish === Infinity ? 0 : bestFinish,
     avgPlacement,
     winRate: (totalWins / entries.length) * 100,
   }
