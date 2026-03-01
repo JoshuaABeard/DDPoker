@@ -146,12 +146,42 @@ public class PokerStatsPanel extends DDTabPanel {
     }
 
     /**
-     * run update thread
+     * update stats on EDT
      */
     public void updateStats() {
         if (checkRequiredCards()) {
-            new UpdateThread().start();
+            SwingUtilities.invokeLater(() -> {
+                switch (mode_) {
+                    case FLOP :
+                    case TURN :
+                    case RIVER :
+                        htmlArea_.setText(buildPotentialHTML());
+                        break;
+                    case STRENGTH :
+                        htmlArea_.setText(buildEquityHTML());
+                        break;
+                }
+                htmlArea_.setCaretPosition(0); // scroll to top
+            });
         }
+    }
+
+    private String buildEquityHTML() {
+        Double equity = AdvisorState.getEquity();
+        if (equity == null) {
+            return PropertyConfig.getMessage("msg.sim.waiting");
+        }
+        return PropertyConfig.getMessage("msg.sim.equity", PokerConstants.formatPercent(equity));
+    }
+
+    private String buildPotentialHTML() {
+        Double pos = AdvisorState.getPositivePotential();
+        Double neg = AdvisorState.getNegativePotential();
+        if (pos == null || neg == null) {
+            return PropertyConfig.getMessage("msg.sim.waiting");
+        }
+        return PropertyConfig.getMessage("msg.sim.potential", PokerConstants.formatPercent(pos),
+                PokerConstants.formatPercent(neg));
     }
 
     /**
@@ -216,50 +246,6 @@ public class PokerStatsPanel extends DDTabPanel {
         // update
         updateHeader();
         updateStats();
-    }
-
-    /**
-     * thread generates info then updates html
-     */
-    private class UpdateThread extends Thread {
-
-        public UpdateThread() {
-            super("UpdateThread");
-        }
-
-        public void run() {
-            SwingUtilities.invokeLater(() -> {
-                switch (mode_) {
-                    case FLOP :
-                    case TURN :
-                    case RIVER :
-                        htmlArea_.setText(buildPotentialHTML());
-                        break;
-                    case STRENGTH :
-                        htmlArea_.setText(buildEquityHTML());
-                        break;
-                }
-                htmlArea_.setCaretPosition(0); // scroll to top
-            });
-        }
-
-        private String buildEquityHTML() {
-            Double equity = AdvisorState.getEquity();
-            if (equity == null) {
-                return PropertyConfig.getMessage("msg.sim.waiting");
-            }
-            return PropertyConfig.getMessage("msg.sim.equity", PokerConstants.formatPercent(equity));
-        }
-
-        private String buildPotentialHTML() {
-            Double pos = AdvisorState.getPositivePotential();
-            Double neg = AdvisorState.getNegativePotential();
-            if (pos == null || neg == null) {
-                return PropertyConfig.getMessage("msg.sim.waiting");
-            }
-            return PropertyConfig.getMessage("msg.sim.potential", PokerConstants.formatPercent(pos),
-                    PokerConstants.formatPercent(neg));
-        }
     }
 
 }
