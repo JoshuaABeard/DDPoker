@@ -20,6 +20,7 @@ import type {
   PlayerSearchDto,
   ProfileAlias,
   RegisterRequest,
+  TemplateDto,
   TournamentHistoryDto,
   TournamentHistoryEntry,
 } from './types'
@@ -414,6 +415,36 @@ export const tournamentApi = {
   getDetails: async (tournamentId: number): Promise<TournamentHistoryEntry> => {
     const response = await apiFetch<TournamentHistoryEntry>(`/api/tournaments/${tournamentId}`)
     return response.data
+  },
+}
+
+/**
+ * Tournament Template API
+ */
+export const templateApi = {
+  list: async (): Promise<TemplateDto[]> => {
+    const response = await apiFetch<TemplateDto[]>('/api/profile/templates')
+    return response.data
+  },
+
+  create: async (name: string, config: object): Promise<TemplateDto> => {
+    const response = await apiFetch<TemplateDto>('/api/profile/templates', {
+      method: 'POST',
+      body: JSON.stringify({ name, config: JSON.stringify(config) }),
+    })
+    return response.data
+  },
+
+  update: async (id: number, name: string, config: object): Promise<TemplateDto> => {
+    const response = await apiFetch<TemplateDto>(`/api/profile/templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ name, config: JSON.stringify(config) }),
+    })
+    return response.data
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await apiFetch<void>(`/api/profile/templates/${id}`, { method: 'DELETE' })
   },
 }
 

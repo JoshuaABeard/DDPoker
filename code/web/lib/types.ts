@@ -164,6 +164,14 @@ export interface TournamentHistoryDto {
   gameType?: string
 }
 
+export interface TemplateDto {
+  id: number
+  name: string
+  config: string
+  createdDate: string
+  modifiedDate: string
+}
+
 export interface OnlineProfileDto {
   id: number
   name?: string
