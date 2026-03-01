@@ -1,6 +1,6 @@
 # Web Client Feature Parity Round 4 — Design
 
-**Status:** APPROVED (2026-02-27)
+**Status:** COMPLETED (2026-02-28)
 **Depends on:** None (all features are additive)
 **Scope:** 6 features across practice game UX, tournament display, and gameplay polish
 
