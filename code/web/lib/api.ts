@@ -31,6 +31,7 @@ import type {
   PracticeGameResponseDto,
   WsTokenResponseDto,
 } from './game/types'
+import type { EquityResult } from './poker/types'
 
 /**
  * Base fetch wrapper with error handling
@@ -335,6 +336,23 @@ export const gameServerApi = {
   observeGame: async (gameId: string): Promise<GameJoinResponseDto> => {
     const response = await apiFetch<GameJoinResponseDto>(`/api/v1/games/${gameId}/observe`, {
       method: 'POST',
+    })
+    return response.data
+  },
+
+  /**
+   * Run a Monte Carlo equity simulation.
+   */
+  simulate: async (params: {
+    holeCards: string[]
+    communityCards: string[]
+    numOpponents: number
+    iterations: number
+    knownOpponentHands?: string[][]
+  }): Promise<EquityResult> => {
+    const response = await apiFetch<EquityResult>('/api/v1/poker/simulate', {
+      method: 'POST',
+      body: JSON.stringify(params),
     })
     return response.data
   },

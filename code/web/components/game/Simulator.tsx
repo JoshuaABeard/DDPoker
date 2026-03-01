@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react'
 import { CardPicker } from './CardPicker'
 import { Card } from './Card'
+import { gameServerApi } from '@/lib/api'
 import type { EquityResult } from '@/lib/poker/types'
 
 interface SimulatorProps {
@@ -31,6 +32,7 @@ export function Simulator({ currentHoleCards, currentCommunityCards, onClose }: 
   const [opponents, setOpponents] = useState(1)
   const [results, setResults] = useState<EquityResult | null>(null)
   const [isCalculating, setIsCalculating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [activeSlot, setActiveSlot] = useState<SlotType | null>(null)
   const [opponentHands, setOpponentHands] = useState<(string | null)[][]>([[null, null]])
   const [showOpponentHands, setShowOpponentHands] = useState(false)
@@ -158,23 +160,19 @@ export function Simulator({ currentHoleCards, currentCommunityCards, onClose }: 
       : []
 
     setIsCalculating(true)
+    setError(null)
     try {
-      const response = await fetch('/api/v1/poker/simulate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          holeCards: hole,
-          communityCards: community,
-          numOpponents: opponents,
-          iterations: 10000,
-          knownOpponentHands: known.length > 0 ? known : undefined,
-        }),
+      const result = await gameServerApi.simulate({
+        holeCards: hole,
+        communityCards: community,
+        numOpponents: opponents,
+        iterations: 10000,
+        knownOpponentHands: known.length > 0 ? known : undefined,
       })
-      if (!response.ok) throw new Error('Simulation failed')
-      const result = await response.json()
       setResults(result)
-    } catch (error) {
-      console.error('Simulation error:', error)
+    } catch (err) {
+      console.error('Simulation error:', err)
+      setError('Simulation failed. Please try again.')
     } finally {
       setIsCalculating(false)
     }
@@ -365,6 +363,13 @@ export function Simulator({ currentHoleCards, currentCommunityCards, onClose }: 
         >
           {isCalculating ? 'Calculating...' : 'Calculate'}
         </button>
+
+        {/* Error message */}
+        {error && (
+          <div className="text-red-400 text-sm text-center mb-4" role="alert">
+            {error}
+          </div>
+        )}
 
         {/* Results */}
         {results && (

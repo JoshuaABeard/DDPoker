@@ -14,6 +14,15 @@ vi.mock('../Card', () => ({
   Card: ({ card }: { card?: string }) => <span data-testid={`card-img-${card}`}>{card}</span>,
 }))
 
+// Mock the API module following project conventions
+vi.mock('@/lib/api', () => ({
+  gameServerApi: {
+    simulate: vi.fn(),
+  },
+}))
+
+import { gameServerApi } from '@/lib/api'
+
 const mockResult = {
   win: 65.3,
   tie: 2.1,
@@ -21,24 +30,18 @@ const mockResult = {
   iterations: 10000,
 }
 
-function mockFetchSuccess(result = mockResult) {
-  global.fetch = vi.fn().mockResolvedValue({
-    ok: true,
-    json: () => Promise.resolve(result),
-  })
+function mockSimulateSuccess(result = mockResult) {
+  vi.mocked(gameServerApi.simulate).mockResolvedValue(result)
 }
 
-function mockFetchError() {
-  global.fetch = vi.fn().mockResolvedValue({
-    ok: false,
-    status: 500,
-  })
+function mockSimulateError() {
+  vi.mocked(gameServerApi.simulate).mockRejectedValue(new Error('Simulation failed'))
 }
 
 describe('Simulator', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
-    mockFetchSuccess()
+    mockSimulateSuccess()
   })
 
   it('renders with title "Poker Simulator"', () => {
@@ -112,26 +115,21 @@ describe('Simulator', () => {
     fireEvent.click(screen.getByText('Calculate'))
 
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledOnce()
+      expect(gameServerApi.simulate).toHaveBeenCalledOnce()
     })
 
-    const [url, options] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0]
-    expect(url).toBe('/api/v1/poker/simulate')
-    expect(options.method).toBe('POST')
-    expect(options.headers).toEqual({ 'Content-Type': 'application/json' })
-
-    const body = JSON.parse(options.body)
-    expect(body.holeCards).toEqual(['Ah', 'Kd'])
-    expect(body.communityCards).toEqual(['Qs', 'Jc', '2h'])
-    expect(body.numOpponents).toBe(1)
-    expect(body.iterations).toBe(10000)
+    const params = vi.mocked(gameServerApi.simulate).mock.calls[0][0]
+    expect(params.holeCards).toEqual(['Ah', 'Kd'])
+    expect(params.communityCards).toEqual(['Qs', 'Jc', '2h'])
+    expect(params.numOpponents).toBe(1)
+    expect(params.iterations).toBe(10000)
   })
 
   it('shows loading state during calculation', async () => {
-    let resolveResponse: (value: unknown) => void
-    global.fetch = vi.fn().mockReturnValue(
+    let resolveSimulate: (value: unknown) => void
+    vi.mocked(gameServerApi.simulate).mockReturnValue(
       new Promise((resolve) => {
-        resolveResponse = resolve
+        resolveSimulate = resolve
       }),
     )
 
@@ -146,18 +144,15 @@ describe('Simulator', () => {
 
     expect(screen.getByText('Calculating...')).toBeDefined()
 
-    resolveResponse!({
-      ok: true,
-      json: () => Promise.resolve(mockResult),
-    })
+    resolveSimulate!(mockResult)
 
     await waitFor(() => {
       expect(screen.getByText('Calculate')).toBeDefined()
     })
   })
 
-  it('handles server error gracefully', async () => {
-    mockFetchError()
+  it('handles server error gracefully and displays error message', async () => {
+    mockSimulateError()
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     render(
@@ -172,6 +167,9 @@ describe('Simulator', () => {
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith('Simulation error:', expect.any(Error))
     })
+    // Error message should be displayed to the user
+    expect(screen.getByRole('alert')).toBeDefined()
+    expect(screen.getByText('Simulation failed. Please try again.')).toBeDefined()
     // Button should be re-enabled after error
     expect((screen.getByText('Calculate') as HTMLButtonElement).disabled).toBe(false)
     // No results should be displayed
@@ -180,8 +178,37 @@ describe('Simulator', () => {
     consoleSpy.mockRestore()
   })
 
+  it('clears error on next successful calculation', async () => {
+    mockSimulateError()
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    render(
+      <Simulator
+        currentHoleCards={['Ah', 'Kd']}
+        onClose={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByText('Load from Game'))
+    fireEvent.click(screen.getByText('Calculate'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Simulation failed. Please try again.')).toBeDefined()
+    })
+
+    // Now succeed
+    mockSimulateSuccess()
+    fireEvent.click(screen.getByText('Calculate'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('results')).toBeDefined()
+    })
+    expect(screen.queryByText('Simulation failed. Please try again.')).toBeNull()
+
+    consoleSpy.mockRestore()
+  })
+
   it('displays opponent results when returned', async () => {
-    mockFetchSuccess({
+    mockSimulateSuccess({
       win: 75.3,
       tie: 1.2,
       loss: 23.5,
