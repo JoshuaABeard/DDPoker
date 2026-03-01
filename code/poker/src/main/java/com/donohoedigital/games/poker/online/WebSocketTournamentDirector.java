@@ -1854,6 +1854,8 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onAdvisorUpdate(ServerMessageData.AdvisorData d) {
         com.donohoedigital.games.poker.dashboard.ImproveOdds.setCurrentImprovementOdds(d.improvementOdds());
+        com.donohoedigital.games.poker.dashboard.ImproveOdds.setCurrentPotential(d.positivePotential(),
+                d.negativePotential());
         SwingUtilities.invokeLater(() -> {
             RemotePokerTable table = currentTable();
             if (table != null) {
