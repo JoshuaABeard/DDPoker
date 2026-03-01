@@ -740,6 +740,11 @@ public class WebSocketTournamentDirector extends BasePhase
         opponentTracker_.onHandStart();
         SwingUtilities.invokeLater(() -> {
             showdownStarted_ = false;
+            PokerPlayer human = game_.getHumanPlayer();
+            if (human != null) {
+                human.setHandStrength(-1f);
+                human.setHandPotential(-1f);
+            }
             // Apply to all tables (HAND_STARTED is per-table; we apply to the current
             // table)
             RemotePokerTable table = currentTable();
@@ -1859,6 +1864,11 @@ public class WebSocketTournamentDirector extends BasePhase
     private void onAdvisorUpdate(ServerMessageData.AdvisorData d) {
         SwingUtilities.invokeLater(() -> {
             AdvisorState.update(d.improvementOdds(), d.positivePotential(), d.negativePotential(), d.equity());
+            PokerPlayer human = game_.getHumanPlayer();
+            if (human != null) {
+                human.setHandStrength((float) (d.equity() / 100.0));
+                human.setHandPotential(d.positivePotential() != null ? d.positivePotential().floatValue() : -1f);
+            }
             RemotePokerTable table = currentTable();
             if (table != null) {
                 table.fireEvent(PokerTableEvent.TYPE_DEALER_ACTION);

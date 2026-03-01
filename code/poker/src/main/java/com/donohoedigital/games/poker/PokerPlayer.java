@@ -733,8 +733,8 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
         hand_ = new Hand(cType);
         if (cType == Hand.TYPE_NORMAL)
             nHandsPlayed_++;
-        nLastCalcFingerprint_ = -1;
-        nLastCalcPotRound_ = -1;
+        handStrength_ = -1;
+        handPotential_ = -1;
         nChipsAtStart_ = nChips_; // track for resolving ties when exiting tournament
         sAllInPerc_ = null;
         bFolded_ = false;
@@ -1762,198 +1762,44 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     ////// AI stats
     //////
 
-    private float nStrength_;
-    private int nNumStraights_;
-    private long nLastCalcFingerprint_ = 0;
+    private float handStrength_ = -1;
+    private float handPotential_ = -1;
 
     /**
-     * hand strength - return -1 if this player is folded, or there is no hand, or
-     * if no community cards are out
+     * Set hand strength from server-cached data.
+     */
+    public void setHandStrength(float handStrength) {
+        handStrength_ = handStrength;
+    }
+
+    /**
+     * Set hand potential from server-cached data.
+     */
+    public void setHandPotential(float handPotential) {
+        handPotential_ = handPotential;
+    }
+
+    /**
+     * Hand strength - returns the server-cached value, or -1 if not available
+     * (folded, no hand, pre-flop, or server data not yet received).
      */
     public float getHandStrength() {
-        HoldemHand hhand = getHoldemHand();
-        if (hhand == null)
-            return -1;
-
-        // if folded
-        if (isFolded())
-            return -1;
-
-        // if too early a round, indicate
-        HandSorted comm = hhand.getCommunitySorted();
-        if (comm.size() < 3)
-            return -1;
-
-        long fingerprint = comm.fingerprint() | getHand().fingerprint();
-        // if already calc'd this round, return it
-        if (fingerprint == nLastCalcFingerprint_)
-            return nStrength_;
-
-        // enumerate all possible opponent hole card pairs and compare scores
-        HandInfoFaster fast = new HandInfoFaster();
-        Hand holecopy = new Hand(getHandSorted());
-        int ourscore = fast.getScore(holecopy, comm);
-
-        Deck deck = new Deck(false);
-        deck.removeCards(getHand());
-        deck.removeCards(comm);
-
-        float nAhead = 0;
-        float nTied = 0;
-        float nBehind = 0;
-        int numStraights = 0;
-        int nSize = deck.size();
-        for (int i = 0; i < nSize - 1; i++) {
-            for (int j = i + 1; j < nSize; j++) {
-                holecopy.setCard(0, deck.getCard(i));
-                holecopy.setCard(1, deck.getCard(j));
-                int oppscore = fast.getScore(holecopy, comm);
-                if (ourscore > oppscore)
-                    nAhead++;
-                else if (ourscore == oppscore)
-                    nTied++;
-                else
-                    nBehind++;
-                if (oppscore / HandScoreConstants.SCORE_BASE == HandScoreConstants.STRAIGHT)
-                    numStraights++;
-            }
-        }
-
-        float strength = (nAhead + nTied / 2) / (nAhead + nTied + nBehind);
-        int nOpponents = hhand.getNumWithCards() - 1;
-        nStrength_ = (float) Math.pow(strength, Math.max(1, nOpponents));
-        nNumStraights_ = numStraights;
-        nLastCalcFingerprint_ = fingerprint;
-
-        return nStrength_;
+        return handStrength_;
     }
 
     /**
-     * hand strength ancilliary - return number of straights made by opponents
-     * during last call to getHandStrength()
-     */
-    public int getOppNumStraights() {
-        return nNumStraights_;
-    }
-
-    private float nPotential_;
-    private int nLastCalcPotRound_ = -1;
-
-    /**
-     * hand strength - return -1 if this player is folded, or there is no hand, or
-     * if no community cards are out
+     * Hand potential - returns the server-cached value, or -1 if not available
+     * (folded, no hand, not flop/turn, or server data not yet received).
      */
     public float getHandPotential() {
-        HoldemHand hhand = getHoldemHand();
-        if (hhand == null)
-            return -1;
-
-        // if folded
-        if (isFolded())
-            return -1;
-
-        // only do potential after flop & turn
-        int nRound = hhand.getRound().toLegacy();
-        if (nRound != BettingRound.FLOP.toLegacy() && nRound != BettingRound.TURN.toLegacy())
-            return -1;
-
-        // if already calced this round, return it
-        if (nRound == nLastCalcPotRound_)
-            return nPotential_;
-
-        // calculate positive potential inline (ported from HandPotential.getPotential)
-        Hand hole = getHandSorted();
-        Hand community = hhand.getCommunitySorted();
-
-        float[][] hp = new float[3][3];
-        float[] hpTotal = new float[3];
-        Hand holecopy = new Hand(hole);
-        Hand commcopy = new Hand(community);
-        int nComm = community.size();
-        int MORE = 5 - nComm;
-        if (MORE == 2)
-            MORE = 1; // use 1 look-ahead card
-
-        HandInfoFaster fast = new HandInfoFaster();
-        int ourscore = fast.getScore(hole, community);
-
-        Deck deck = new Deck(false);
-        deck.removeCards(hole);
-        deck.removeCards(community);
-
-        int nSize = deck.size();
-        int AHEAD = 0, TIED = 1, BEHIND = 2;
-
-        for (int i = 0; i < nSize - 1; i++) {
-            for (int j = i + 1; j < nSize; j++) {
-                holecopy.setCard(0, deck.getCard(i));
-                holecopy.setCard(1, deck.getCard(j));
-                int oppscore = fast.getScore(holecopy, community);
-
-                int index = ourscore > oppscore ? AHEAD : (ourscore == oppscore ? TIED : BEHIND);
-
-                int nEND = MORE == 1 ? nSize : nSize - 1;
-                for (int next1 = 0; next1 < nEND; next1++) {
-                    if (next1 == i || next1 == j)
-                        continue;
-                    commcopy.addCard(deck.getCard(next1));
-
-                    for (int next2 = next1 + 1; next2 < nSize; next2++) {
-                        if (MORE == 2) {
-                            if (next2 == i || next2 == j)
-                                continue;
-                            commcopy.addCard(deck.getCard(next2));
-                        }
-
-                        hpTotal[index]++;
-
-                        int ourbest = fast.getScore(hole, commcopy);
-                        int oppbest = fast.getScore(holecopy, commcopy);
-                        if (ourbest > oppbest)
-                            hp[index][AHEAD]++;
-                        else if (ourbest == oppbest)
-                            hp[index][TIED]++;
-                        else
-                            hp[index][BEHIND]++;
-
-                        if (MORE == 2)
-                            commcopy.removeCard(commcopy.size() - 1);
-                        if (MORE == 1)
-                            break;
-                    }
-
-                    commcopy.removeCard(commcopy.size() - 1);
-                }
-            }
-        }
-
-        float ppot = (hp[BEHIND][AHEAD] + hp[BEHIND][TIED] / 2 + hp[TIED][AHEAD] / 2)
-                / (hpTotal[BEHIND] + hpTotal[TIED] / 2);
-
-        nPotential_ = ppot;
-        nLastCalcPotRound_ = hhand.getRound().toLegacy();
-
-        return nPotential_;
+        return handPotential_;
     }
 
     /**
-     * Hand potential - debug (only returns if calc'd
+     * Hand potential - debug display value (same as getHandPotential()).
      */
     public float getHandPotentialDisplay() {
-        HoldemHand hhand = getHoldemHand();
-        if (hhand == null)
-            return -1;
-
-        // if folded
-        if (isFolded())
-            return -1;
-
-        // only do potential after flop & turn
-        int nRound = hhand.getRound().toLegacy();
-        if (nRound != BettingRound.FLOP.toLegacy() && nRound != BettingRound.TURN.toLegacy())
-            return -1;
-
-        return nPotential_;
+        return handPotential_;
     }
 
     /**
