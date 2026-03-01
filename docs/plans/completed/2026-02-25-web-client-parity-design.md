@@ -1,6 +1,6 @@
 # Web Client Protocol & Core UI Parity
 
-**Status:** APPROVED (2026-02-25)
+**Status:** COMPLETED (2026-03-01)
 **Scope:** Fix all protocol mismatches, handle all server message types, fix bugs, add missing core gameplay features.
 **Approach:** Bottom-up — types → reducer → WebSocket → components → routing → features.
 

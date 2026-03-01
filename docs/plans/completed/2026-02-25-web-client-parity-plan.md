@@ -1,5 +1,7 @@
 # Web Client Protocol & Core UI Parity — Implementation Plan
 
+**Status:** COMPLETED (2026-03-01)
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Fix all protocol mismatches between the web client and Java server, handle all 47 server message types, fix all reducer/WebSocket/component bugs, restructure routing, and add missing core gameplay features.
