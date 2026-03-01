@@ -940,9 +940,7 @@ public class ShowTournamentTable extends ShowPokerTable
                 break;
 
             case PokerTableEvent.TYPE_CLEANING_DONE :
-                // set null so pot is redrawn empty (duplicates OtherTables, but
-                // this event is called upon change *to* STATE_CLEAN, which
-                // then invokes OtherTables - redundancy is okay)
+                // set null so pot is redrawn empty; called upon change *to* STATE_CLEAN
                 table.setHoldemHand(null);
                 PokerUtils.setNewHand();
                 PokerUtils.clearCards(false);

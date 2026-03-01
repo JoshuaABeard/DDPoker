@@ -2381,11 +2381,8 @@ public class HoldemHand implements DataMarshal, GameHand {
     /**
      * debug print history
      */
-    @SuppressWarnings("CommentedOutCode")
     private void debugPrint(HandAction action) {
         PokerPlayer player = action.getPlayer();
-        // int nRank = HoldemExpert.getSklanskyRank(player.getHandSorted());
-        // int nGroup = HoldemExpert.getGroupFromRank(nRank);
         logger.debug("{}{} {}", player.isHuman() ? "HU: " : "AI: ", action.toString(false),
                 (action.getAction() == HandAction.ACTION_FOLD) ? "" : getCommunity().toString());
     }
