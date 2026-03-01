@@ -23,6 +23,7 @@ import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.engine.GameManager;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.dashboard.AdvanceAction;
+import com.donohoedigital.games.poker.dashboard.AdvisorState;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
@@ -630,6 +631,10 @@ public class WebSocketTournamentDirector extends BasePhase
                     ServerMessageData.PlayerMovedData d = parse(data, ServerMessageData.PlayerMovedData.class);
                     onPlayerMoved(d);
                 }
+                case ADVISOR_UPDATE -> {
+                    ServerMessageData.AdvisorData d = parse(data, ServerMessageData.AdvisorData.class);
+                    onAdvisorUpdate(d);
+                }
             }
         } catch (Exception e) {
             logger.error("Error handling {} message", type, e);
@@ -730,6 +735,7 @@ public class WebSocketTournamentDirector extends BasePhase
         logger.debug("[HAND_STARTED] dealer={}", d.dealerSeat());
         isPreFlop_ = true;
         opponentTracker_.onHandStart();
+        AdvisorState.clear();
         SwingUtilities.invokeLater(() -> {
             showdownStarted_ = false;
             // Apply to all tables (HAND_STARTED is per-table; we apply to the current
@@ -1466,6 +1472,21 @@ public class WebSocketTournamentDirector extends BasePhase
         });
     }
 
+    private void onAdvisorUpdate(ServerMessageData.AdvisorData d) {
+        // Store recommendation text and full advisor data for dashboard widgets
+        AdvisorState.setCurrentAdvice(d.recommendation(), d.handDescription());
+        AdvisorState.setAdvisorData(d.equity(), d.potOdds(), d.improvementOdds(), d.positivePotential(),
+                d.negativePotential());
+
+        // Fire table event so dashboard widgets refresh
+        SwingUtilities.invokeLater(() -> {
+            RemotePokerTable table = currentTable();
+            if (table != null) {
+                table.fireEvent(PokerTableEvent.TYPE_DEALER_ACTION);
+            }
+        });
+    }
+
     private void onPlayerDisconnected(PlayerDisconnectedData d) {
         SwingUtilities.invokeLater(() -> {
             PokerPlayer player = findPlayer(d.playerId());
@@ -1982,9 +2003,10 @@ public class WebSocketTournamentDirector extends BasePhase
             if (winner != null && hand != null && winner.getHand() != null && winner.getHand().size() >= 2
                     && hand.getCommunity() != null && hand.getCommunity().size() >= 3) {
                 try {
-                    HandInfo info = new HandInfo(winner, winner.getHandSorted(), hand.getCommunitySorted());
-                    handClass = handClassName(info.getHandType());
-                    handDescription = info.getHandTypeDesc();
+                    int score = winner.getHandScore();
+                    int handType = HandTypeDisplay.getTypeFromScore(score);
+                    handClass = handClassName(handType);
+                    handDescription = HandTypeDisplay.getHandTypeDesc(handType);
                 } catch (Exception e) {
                     logger.debug("[HAND_RESULT] could not evaluate winner hand for {}", name, e);
                 }
@@ -2038,16 +2060,16 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private String handClassName(int handType) {
         return switch (handType) {
-            case HandInfo.ROYAL_FLUSH -> "ROYAL_FLUSH";
-            case HandInfo.STRAIGHT_FLUSH -> "STRAIGHT_FLUSH";
-            case HandInfo.QUADS -> "QUADS";
-            case HandInfo.FULL_HOUSE -> "FULL_HOUSE";
-            case HandInfo.FLUSH -> "FLUSH";
-            case HandInfo.STRAIGHT -> "STRAIGHT";
-            case HandInfo.TRIPS -> "TRIPS";
-            case HandInfo.TWO_PAIR -> "TWO_PAIR";
-            case HandInfo.PAIR -> "PAIR";
-            case HandInfo.HIGH_CARD -> "HIGH_CARD";
+            case HandTypeDisplay.ROYAL_FLUSH -> "ROYAL_FLUSH";
+            case HandTypeDisplay.STRAIGHT_FLUSH -> "STRAIGHT_FLUSH";
+            case HandTypeDisplay.QUADS -> "QUADS";
+            case HandTypeDisplay.FULL_HOUSE -> "FULL_HOUSE";
+            case HandTypeDisplay.FLUSH -> "FLUSH";
+            case HandTypeDisplay.STRAIGHT -> "STRAIGHT";
+            case HandTypeDisplay.TRIPS -> "TRIPS";
+            case HandTypeDisplay.TWO_PAIR -> "TWO_PAIR";
+            case HandTypeDisplay.PAIR -> "PAIR";
+            case HandTypeDisplay.HIGH_CARD -> "HIGH_CARD";
             default -> "UNKNOWN";
         };
     }

@@ -38,6 +38,8 @@ import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 
+import java.util.Map;
+
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Mar 18, 2005 Time: 4:40:33 PM
  * To change this template use File | Settings | File Templates.
@@ -74,59 +76,41 @@ public class ImproveOdds extends Odds {
     protected String getDisplay(int nRound, HoldemHand hhand, PokerPlayer asViewedBy, Hand hand) {
         sTotal_ = null;
 
-        // get community cards
-        Hand community = hhand.getCommunityForDisplay();
-        HandSorted csorted = new HandSorted(community);
         nRound = hhand.getRoundForDisplay();
 
-        // pre-flop, or insufficient community cards.
-        // In WebSocket mode getCommunityForDisplay() can return an empty hand when
-        // the round has advanced on the server before the COMMUNITY_CARDS_DEALT
-        // message arrives. HandInfo.categorize() crashes with < 3 community cards.
-        if (nRound == BettingRound.PRE_FLOP.toLegacy() || community.size() < 3) {
-            return "";
+        // pre-flop or river: nothing to show
+        if (nRound == BettingRound.PRE_FLOP.toLegacy() || nRound == HoldemHand.ROUND_RIVER
+                || nRound == HoldemHand.ROUND_SHOWDOWN) {
+            sTotal_ = "0";
+            return PropertyConfig.getMessage("msg.odds.imptype.none");
         }
 
-        // hand info
-        HandInfoFaster fast = new HandInfoFaster();
-        HandInfo info = new HandInfo(asViewedBy, asViewedBy.getHandSorted(), csorted);
-        HandFutures fut = null;
+        // Read server-provided improvement odds from ADVISOR_UPDATE
+        Map<String, Double> improvementOdds = AdvisorState.getCurrentImprovementOdds();
+        if (improvementOdds == null || improvementOdds.isEmpty()) {
+            sTotal_ = "0";
+            return PropertyConfig.getMessage("msg.odds.imptype.none");
+        }
 
-        // switch based on round
-        switch (nRound) {
-            case HoldemHand.ROUND_FLOP :
-            case HoldemHand.ROUND_TURN :
-                // HandFutures.DEBUG = true;
-                fut = new HandFutures(fast, hand, community);
-                // HandFutures.DEBUG = false;
-                StringBuilder sb = new StringBuilder();
-                double d;
-                double dTotal = 0.0;
-                int nCnt = 0;
-                for (int i = Math.max(info.getHandType() + 1, HandInfo.TRIPS); i <= HandInfo.ROYAL_FLUSH; i++) {
-                    d = fut.getOddsImproveTo(i);
-                    if (d == 0.0d)
-                        continue;
-                    nCnt++;
-                    dTotal += d;
-                    sb.append(PropertyConfig.getMessage("msg.odds.imptype", HandInfo.getHandTypeDesc(i),
-                            PokerConstants.formatPercent(d)));
-                }
-                if (sb.length() > 0) {
-                    sb.insert(0, PropertyConfig.getMessage("msg.odds.table.start"));
-                    sTotal_ = PokerConstants.formatPercent(dTotal);
-                    if (nCnt > 1) {
-                        sb.append(PropertyConfig.getMessage("msg.odds.total", sTotal_));
-                    }
-                    sb.append(PropertyConfig.getMessage("msg.odds.table.end"));
-                    return sb.toString();
-                }
-                break;
-
-            case HoldemHand.ROUND_RIVER :
-            case HoldemHand.ROUND_SHOWDOWN :
-            default :
-                break;
+        StringBuilder sb = new StringBuilder();
+        double dTotal = 0.0;
+        int nCnt = 0;
+        for (Map.Entry<String, Double> entry : improvementOdds.entrySet()) {
+            double d = entry.getValue();
+            if (d == 0.0d)
+                continue;
+            nCnt++;
+            dTotal += d;
+            sb.append(PropertyConfig.getMessage("msg.odds.imptype", entry.getKey(), PokerConstants.formatPercent(d)));
+        }
+        if (sb.length() > 0) {
+            sb.insert(0, PropertyConfig.getMessage("msg.odds.table.start"));
+            sTotal_ = PokerConstants.formatPercent(dTotal);
+            if (nCnt > 1) {
+                sb.append(PropertyConfig.getMessage("msg.odds.total", sTotal_));
+            }
+            sb.append(PropertyConfig.getMessage("msg.odds.table.end"));
+            return sb.toString();
         }
 
         sTotal_ = "0";
