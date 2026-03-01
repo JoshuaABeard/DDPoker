@@ -8,6 +8,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { Simulator } from '../Simulator'
+import type { EquityResult } from '@/lib/poker/types'
 
 // Mock the Card component to avoid image loading in tests
 vi.mock('../Card', () => ({
@@ -23,14 +24,14 @@ vi.mock('@/lib/api', () => ({
 
 import { gameServerApi } from '@/lib/api'
 
-const mockResult = {
+const mockResult: EquityResult = {
   win: 65.3,
   tie: 2.1,
   loss: 32.6,
   iterations: 10000,
 }
 
-function mockSimulateSuccess(result = mockResult) {
+function mockSimulateSuccess(result: EquityResult = mockResult) {
   vi.mocked(gameServerApi.simulate).mockResolvedValue(result)
 }
 
@@ -126,7 +127,7 @@ describe('Simulator', () => {
   })
 
   it('shows loading state during calculation', async () => {
-    let resolveSimulate: (value: unknown) => void
+    let resolveSimulate: (value: EquityResult) => void
     vi.mocked(gameServerApi.simulate).mockReturnValue(
       new Promise((resolve) => {
         resolveSimulate = resolve
