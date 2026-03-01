@@ -77,6 +77,13 @@
       <version>5.11.0</version>
       <scope>test</scope>
     </dependency>
+    <!-- JUnit Vintage Engine - allows JUnit 5 to run JUnit 4 tests -->
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <version>5.11.0</version>
+      <scope>test</scope>
+    </dependency>
     <!-- AssertJ for fluent assertions -->
     <dependency>
       <groupId>org.assertj</groupId>
@@ -89,7 +96,7 @@
   <build>
     <plugins>
       <!-- Jacoco Coverage Enforcement -->
-      <!-- Baseline: 2% instruction coverage -->
+      <!-- Baseline: 71% instruction coverage (actual ~76%, minus 5% buffer) -->
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
@@ -107,7 +114,7 @@
                     <limit>
                       <counter>INSTRUCTION</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.02</minimum>
+                      <minimum>0.71</minimum>
                     </limit>
                   </limits>
                 </rule>
