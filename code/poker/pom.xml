@@ -306,7 +306,7 @@
       <!-- See profiles: installer-windows, installer-mac, installer-linux-deb, installer-linux-rpm -->
 
       <!-- Jacoco Coverage Enforcement -->
-      <!-- Overrides parent POM's 65% threshold with package-specific rules -->
+      <!-- Overrides parent POM's threshold with package-specific rules -->
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
@@ -318,8 +318,7 @@
             </goals>
             <configuration>
               <rules>
-                <!-- Main poker package - baseline 15%, target 40% -->
-                <!-- Current: 21.7% - Increase minimum as coverage improves -->
+                <!-- Main poker package - actual 20.2%, threshold kept at 19% (Swing-heavy, large module) -->
                 <rule>
                   <element>PACKAGE</element>
                   <limits>
@@ -341,14 +340,14 @@
                   </excludes>
                 </rule>
 
-                <!-- AI package - 79% minimum -->
+                <!-- AI package - raised after Phase 5: actual 82.8%, threshold = actual - 3% -->
                 <rule>
                   <element>PACKAGE</element>
                   <limits>
                     <limit>
                       <counter>INSTRUCTION</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.79</minimum>
+                      <minimum>0.80</minimum>
                     </limit>
                   </limits>
                   <includes>
