@@ -1,7 +1,9 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
- * DD Poker - Community Edition
+ * DD Poker - Source Code
  * Copyright (c) 2026 Joshua Beard and contributors
+ *
+ * This file is part of DD Poker, originally created by Doug Donohoe.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,6 +17,19 @@
  *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
+ * graphics, text, and documentation found in this repository (including but not
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
+ * without explicit written permission for any uses not covered by this License.
+ * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
+ * in the root directory of this project.
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
+ * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.config;
@@ -71,13 +86,6 @@ class GameStateEntryTest {
     // ========== Empty Constructor Tests ==========
 
     @Test
-    void should_CreateEntry_When_DefaultConstructorUsed() {
-        GameStateEntry entry = new GameStateEntry();
-
-        assertThat(entry).isNotNull();
-    }
-
-    @Test
     void should_ReturnNegativeOne_When_IDNotSet() {
         GameStateEntry entry = new GameStateEntry();
 
@@ -124,7 +132,7 @@ class GameStateEntryTest {
 
     @Test
     void should_StoreObjectAndID_When_ConstructedWithObjectID() {
-        TestObject obj = new TestObject(42);
+        TestObject obj = new TestObject(42); // arbitrary ID for ObjectID round-trip test
         GameStateEntry entry = new GameStateEntry(state, obj, ConfigConstants.SAVE_PLAYER);
 
         assertThat(entry.getObject()).isSameAs(obj);
@@ -157,7 +165,7 @@ class GameStateEntryTest {
     // ========== Token List Inheritance Tests ==========
 
     @Test
-    void should_HasNoTokens_When_CreatedEmpty() {
+    void should_HaveNoTokens_When_CreatedEmpty() {
         GameStateEntry entry = new GameStateEntry();
 
         assertThat(entry.hasMoreTokens()).isFalse();
@@ -213,17 +221,13 @@ class GameStateEntryTest {
     }
 
     @Test
-    void should_IncludeTypeCharInMarshalOutput_When_EntryHasType() {
+    void should_IncludeTypeCharInMarshalOutput_When_EntryHasType() throws Exception {
         GameStateEntry entry = new GameStateEntry(state, null, ConfigConstants.SAVE_PLAYER);
         // add an extra token to verify full format
         entry.addToken(77);
 
         StringWriter sw = new StringWriter();
-        try {
-            entry.write(state, sw);
-        } catch (Exception e) {
-            fail("write() should not throw", e);
-        }
+        entry.write(state, sw);
         String result = sw.toString();
 
         assertThat(result.charAt(0)).isEqualTo(ConfigConstants.SAVE_PLAYER);
@@ -249,12 +253,12 @@ class GameStateEntryTest {
         GameStateEntry entry = new GameStateEntry();
         // type char '@', then integer token 7, then string token "world"
         // DataMarshaller encodes int as "i7" and string as "sworld"
-        String wireData = "@:i7:sworld";
+        String wireData = ConfigConstants.SAVE_GAMENAME + ":i7:sworld";
         EscapeStringTokenizer tokenizer = new EscapeStringTokenizer(wireData, TokenizedList.TOKEN_DELIM);
 
         entry.read(state, tokenizer, TokenizedList.TOKEN_READ_ALL);
 
-        assertThat(entry.getType()).isEqualTo('@');
+        assertThat(entry.getType()).isEqualTo(ConfigConstants.SAVE_GAMENAME);
         assertThat(entry.removeIntToken()).isEqualTo(7);
         assertThat(entry.removeStringToken()).isEqualTo("world");
     }
