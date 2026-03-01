@@ -98,6 +98,7 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
     myPlayerId,
     gameState,
     chatMessages,
+    continueRunoutPending,
   } = state
 
   useSoundEffects(state.handHistory, actionRequired != null)
@@ -121,10 +122,14 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
       if ((e.key === 'f' || e.key === 'F') && prefs.checkFold && !actionRequired) {
         setCheckFoldQueued((v) => !v)
       }
+      // N key: advance past continue-runout overlay
+      if ((e.key === 'n' || e.key === 'N') && continueRunoutPending) {
+        actions.sendContinueRunout()
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [prefs.disableShortcuts, prefs.checkFold, actionRequired])
+  }, [prefs.disableShortcuts, prefs.checkFold, actionRequired, continueRunoutPending, actions])
 
   // Auto-execute check-fold when it's our turn and queued
   useEffect(() => {
