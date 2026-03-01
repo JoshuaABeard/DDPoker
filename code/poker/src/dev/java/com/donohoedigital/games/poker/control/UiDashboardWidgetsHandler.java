@@ -20,8 +20,6 @@
 package com.donohoedigital.games.poker.control;
 
 import com.donohoedigital.games.engine.GameContext;
-import com.donohoedigital.games.poker.HandFutures;
-import com.donohoedigital.games.poker.HandInfo;
 import com.donohoedigital.games.poker.HoldemHand;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
@@ -29,14 +27,13 @@ import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.PokerTable;
 import com.donohoedigital.games.poker.PokerTableInput;
 import com.donohoedigital.games.poker.PokerUtils;
+import com.donohoedigital.games.poker.dashboard.AdvisorState;
 import com.donohoedigital.games.poker.dashboard.DashboardAdvisor;
 import com.donohoedigital.games.poker.dashboard.DashboardItem;
 import com.donohoedigital.games.poker.dashboard.DashboardManager;
 import com.donohoedigital.games.poker.dashboard.DashboardPanel;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.engine.HandInfoFaster;
-import com.donohoedigital.games.poker.engine.HandSorted;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.sun.net.httpserver.HttpExchange;
@@ -425,39 +422,22 @@ class UiDashboardWidgetsHandler extends BaseHandler {
         data.put("round", round);
         data.put("communityCardCount", communityCards);
         data.put("expectedImproveOdds", expectedCompute);
-        data.put("totalImprovePercent", computeImproveOdds(hand, human));
+        data.put("totalImprovePercent", computeImproveOdds());
         return data;
     }
 
-    private static Double computeImproveOdds(HoldemHand hand, PokerPlayer human) {
-        if (hand == null || human == null || human.getHand() == null) {
+    private static Double computeImproveOdds() {
+        // Improvement odds are computed server-side and broadcast via ADVISOR_UPDATE.
+        // Read from AdvisorState (same source used by the ImproveOdds dashboard widget).
+        java.util.Map<String, Double> odds = AdvisorState.getImprovementOdds();
+        if (odds == null) {
             return null;
         }
-
-        int round = hand.getRoundForDisplay();
-        Hand community = hand.getCommunityForDisplay();
-        if ((round != HoldemHand.ROUND_FLOP && round != HoldemHand.ROUND_TURN)
-                || community == null || community.size() < 3) {
-            return null;
+        double total = 0.0d;
+        for (double d : odds.values()) {
+            total += d;
         }
-
-        try {
-            HandInfoFaster fast = new HandInfoFaster();
-            HandSorted csorted = new HandSorted(community);
-            HandInfo info = new HandInfo(human, human.getHandSorted(), csorted);
-            HandFutures futures = new HandFutures(fast, human.getHand(), community);
-
-            double total = 0.0d;
-            for (int i = Math.max(info.getHandType() + 1, HandInfo.TRIPS); i <= HandInfo.ROYAL_FLUSH; i++) {
-                double d = futures.getOddsImproveTo(i);
-                if (d > 0.0d) {
-                    total += d;
-                }
-            }
-            return total;
-        } catch (Exception ignored) {
-            return null;
-        }
+        return total;
     }
 
     private static Map<String, Object> myHandData(SnapshotState state) {
