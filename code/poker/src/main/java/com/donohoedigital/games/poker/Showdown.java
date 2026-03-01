@@ -69,8 +69,7 @@ public class Showdown {
         boolean bAIFaceUp = PokerUtils.isCheatOn(context, PokerConstants.OPTION_CHEAT_AIFACEUP);
         boolean bSeenRiver = hhand.isActionInRound(BettingRound.RIVER.toLegacy());
         boolean bShowCards;
-        boolean bShowHandType = !bUncontested || ((bShowRiver || bSeenRiver) && bShowWin);
-        boolean bShowHandTypeFold = !bUncontested || bShowRiver || bSeenRiver;
+        boolean bShowHandTypeFold = ShowdownCalculator.shouldShowHandTypeFold(bUncontested, bShowRiver, bSeenRiver);
         boolean bShowHandTypeLocal;
 
         // display results
@@ -144,19 +143,11 @@ public class Showdown {
 
             // determine whether cards and hand types are shown
 
-            bShowCards = player.isCardsExposed() || (!bUncontested && (bShowMuck && !bWon)) || (bShowWin && bWon)
-                    || (player.isHuman() && player.isLocallyControlled() && bHumanUp)
-                    || (player.isComputer() && bAIFaceUp);
+            bShowCards = ShowdownCalculator.shouldShowCards(player.isCardsExposed(), bUncontested, bShowMuck, bWon,
+                    bShowWin, player.isHuman(), player.isLocallyControlled(), bHumanUp, player.isComputer(), bAIFaceUp);
 
-            bShowHandTypeLocal = bShowHandType;
-            // human cards are always known to user (mouse over hole cards immaterial),
-            // so show handtype if showing river
-            if (player.isHuman() && bShowRiver)
-                bShowHandTypeLocal = true;
-
-            // uncontested, but winning player is showing hand
-            if (bUncontested && player.isShowWinning() && (bShowRiver || bSeenRiver))
-                bShowHandTypeLocal = true;
+            bShowHandTypeLocal = ShowdownCalculator.shouldShowHandType(bUncontested, bShowRiver, bSeenRiver, bShowWin,
+                    player.isHuman(), player.isShowWinning());
 
             // get hand info (requires >=3 community cards; null for pre-flop uncontested)
             info = hhand.getCommunitySorted().size() >= 3 ? player.getHandInfo() : null;
@@ -174,15 +165,7 @@ public class Showdown {
             }
 
             // placard choice
-            if (nTotal == 0) {
-                nResult = ResultsPiece.LOSE;
-            } else {
-                if (nOverbet == nTotal) {
-                    nResult = ResultsPiece.OVERBET;
-                } else {
-                    nResult = ResultsPiece.WIN;
-                }
-            }
+            nResult = ShowdownCalculator.determineResultType(nTotal, nOverbet);
             piece.setResult(nResult, sResult);
             PokerUtils.showCards(player, bShowCards);
         }
