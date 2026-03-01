@@ -221,6 +221,7 @@ public class AdvisorService implements HandScoreConstants {
         int[] improvementCounts = new int[HAND_TYPE_NAMES.length];
         List<Card> holeList = List.of(holeCards);
         List<Card> trialCommunity = new ArrayList<>(numCommunity + 1);
+        ServerHandEvaluator eval = new ServerHandEvaluator();
 
         for (Card drawCard : remainingDeck) {
             trialCommunity.clear();
@@ -229,7 +230,6 @@ public class AdvisorService implements HandScoreConstants {
             }
             trialCommunity.add(drawCard);
 
-            ServerHandEvaluator eval = new ServerHandEvaluator();
             int newScore = eval.getScore(holeList, trialCommunity);
             int newHandType = newScore / SCORE_BASE;
 
