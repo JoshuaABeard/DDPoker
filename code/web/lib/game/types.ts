@@ -557,6 +557,9 @@ export interface AdvisorData {
   recommendation: string
   startingHandCategory: string | null
   startingHandNotation: string | null
+  improvementOdds: Record<string, number> | null
+  positivePotential: number | null
+  negativePotential: number | null
 }
 
 // ============================================================================

@@ -757,7 +757,8 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
             ServerMessage advisorMsg = ServerMessage.of(ServerMessageType.ADVISOR_UPDATE, gameId,
                     new ServerMessageData.AdvisorData(result.handRank(), result.handDescription(), result.equity(),
                             result.potOdds(), result.recommendation(), result.startingHandCategory(),
-                            result.startingHandNotation()));
+                            result.startingHandNotation(), result.improvementOdds(), result.positivePotential(),
+                            result.negativePotential()));
 
             // Send privately to this human player
             connectionManager.sendToPlayer(gameId, human.getID(), advisorMsg);

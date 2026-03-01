@@ -335,6 +335,7 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
 
     /** Advisor data sent privately to human players after hand state changes. */
     record AdvisorData(Integer handRank, String handDescription, double equity, double potOdds, String recommendation,
-            String startingHandCategory, String startingHandNotation) implements ServerMessageData {
+            String startingHandCategory, String startingHandNotation, java.util.Map<String, Double> improvementOdds,
+            Double positivePotential, Double negativePotential) implements ServerMessageData {
     }
 }
