@@ -1066,6 +1066,69 @@ describe('gameReducer', () => {
     })
   })
 
+  describe('ADVISOR_UPDATE', () => {
+    it('stores advisorData from server message', () => {
+      const advisorData = {
+        handRank: 2,
+        handDescription: 'Two Pair, Aces and Kings',
+        equity: 73.8,
+        potOdds: 16.7,
+        recommendation: 'Raise or Call',
+        startingHandCategory: null,
+        startingHandNotation: null,
+      }
+      const result = gameReducer(initialGameState, {
+        type: 'SERVER_MESSAGE',
+        message: msg('ADVISOR_UPDATE', advisorData),
+      })
+      expect(result.advisorData).toEqual(advisorData)
+    })
+
+    it('replaces previous advisorData on subsequent updates', () => {
+      const first = {
+        handRank: 1, handDescription: 'One Pair', equity: 50.0, potOdds: 10.0,
+        recommendation: 'Call', startingHandCategory: null, startingHandNotation: null,
+      }
+      const second = {
+        handRank: 5, handDescription: 'Flush', equity: 85.0, potOdds: 20.0,
+        recommendation: 'Raise or Call', startingHandCategory: null, startingHandNotation: null,
+      }
+      let state = gameReducer(initialGameState, {
+        type: 'SERVER_MESSAGE',
+        message: msg('ADVISOR_UPDATE', first),
+      })
+      state = gameReducer(state, {
+        type: 'SERVER_MESSAGE',
+        message: msg('ADVISOR_UPDATE', second),
+      })
+      expect(state.advisorData).toEqual(second)
+    })
+  })
+
+  describe('HAND_STARTED clears advisorData', () => {
+    it('resets advisorData to null on new hand', () => {
+      const table = makeTable()
+      const state: GameState = {
+        ...stateWithTable(1, table),
+        advisorData: {
+          handRank: 2, handDescription: 'Two Pair', equity: 70.0, potOdds: 15.0,
+          recommendation: 'Call', startingHandCategory: null, startingHandNotation: null,
+        },
+      }
+      const result = gameReducer(state, {
+        type: 'SERVER_MESSAGE',
+        message: msg('HAND_STARTED', {
+          handNumber: 2,
+          dealerSeat: 0,
+          smallBlindSeat: 1,
+          bigBlindSeat: 2,
+          blindsPosted: [],
+        }),
+      })
+      expect(result.advisorData).toBeNull()
+    })
+  })
+
   describe('PLAYER_MOVED', () => {
     it('removes moved player from our table when they are not us', () => {
       const table = makeTable()

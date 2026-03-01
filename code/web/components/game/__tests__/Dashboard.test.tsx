@@ -8,25 +8,7 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { Dashboard } from '../Dashboard'
-import { HandRank } from '@/lib/poker/types'
-
-// Mock poker math functions
-vi.mock('@/lib/poker/handEvaluator', () => ({
-  evaluateHand: vi.fn(() => ({
-    rank: HandRank.ONE_PAIR,
-    kickers: [14, 13, 12],
-    description: 'One Pair, Aces',
-  })),
-}))
-
-vi.mock('@/lib/poker/equityCalculator', () => ({
-  calculateEquity: vi.fn(() => ({
-    win: 55.0,
-    tie: 2.0,
-    loss: 43.0,
-    iterations: 1000,
-  })),
-}))
+import type { AdvisorData } from '@/lib/game/types'
 
 vi.mock('../StartingHandsChart', () => ({
   StartingHandsChart: ({ compact }: { compact?: boolean }) => (
@@ -34,12 +16,22 @@ vi.mock('../StartingHandsChart', () => ({
   ),
 }))
 
+const defaultAdvisorData: AdvisorData = {
+  handRank: 1, // ONE_PAIR
+  handDescription: 'One Pair, Aces',
+  equity: 57.0,
+  potOdds: 16.7,
+  recommendation: 'Raise or Call',
+  startingHandCategory: null,
+  startingHandNotation: null,
+}
+
 const defaultProps = {
+  advisorData: defaultAdvisorData,
   holeCards: ['Ah', 'Kd'],
   communityCards: ['As', '7c', '2h'],
   potSize: 500,
   callAmount: 100,
-  numOpponents: 2,
   level: 3,
   blinds: { small: 50, big: 100, ante: 10 },
   nextLevelIn: 720,
@@ -74,10 +66,20 @@ describe('Dashboard', () => {
   // Widget rendering
   // -------------------------------------------------------------------------
 
-  it('renders hand strength widget with hand rank name', () => {
+  it('renders hand strength widget with hand rank name from server data', () => {
     render(<Dashboard {...defaultProps} />)
     expect(screen.getByText('Hand Strength')).toBeDefined()
     expect(screen.getByText('One Pair')).toBeDefined()
+  })
+
+  it('shows equity in hand strength widget from server data', () => {
+    render(<Dashboard {...defaultProps} />)
+    expect(screen.getByText(/57\.0% equity/)).toBeDefined()
+  })
+
+  it('shows "Waiting for cards..." when advisorData is null', () => {
+    render(<Dashboard {...defaultProps} advisorData={null} />)
+    expect(screen.getByText('Waiting for cards...')).toBeDefined()
   })
 
   it('renders pot odds widget with call amount', () => {

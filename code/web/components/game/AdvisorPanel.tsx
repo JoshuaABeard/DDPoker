@@ -7,24 +7,15 @@
 
 'use client'
 
-import { useMemo } from 'react'
-import { evaluateHand } from '@/lib/poker/handEvaluator'
-import { calculateEquity } from '@/lib/poker/equityCalculator'
-import { holeCardsToGrid, STARTING_HAND_CATEGORIES, HAND_LABELS } from '@/lib/poker/startingHands'
 import { HAND_RANK_NAMES, HandRank } from '@/lib/poker/types'
 import { StartingHandsChart } from './StartingHandsChart'
+import type { AdvisorData } from '@/lib/game/types'
 
 interface AdvisorPanelProps {
-  /** Current hole cards */
+  /** Server-computed advisor data (null before first update) */
+  advisorData: AdvisorData | null
+  /** Current hole cards (for starting hands chart) */
   holeCards: string[]
-  /** Current community cards */
-  communityCards: string[]
-  /** Current pot size */
-  potSize: number
-  /** Amount needed to call (0 if can check) */
-  callAmount: number
-  /** Number of active opponents */
-  numOpponents: number
   onClose: () => void
 }
 
@@ -41,64 +32,46 @@ const STRENGTH_COLORS: Record<number, string> = {
   9: 'bg-emerald-300',
 }
 
+const RECOMMENDATION_COLORS: Record<string, string> = {
+  'Raise or Call': 'text-green-400',
+  'Consider calling': 'text-yellow-400',
+  'Consider folding': 'text-red-400',
+}
+
 export function AdvisorPanel({
+  advisorData,
   holeCards,
-  communityCards,
-  potSize,
-  callAmount,
-  numOpponents,
   onClose,
 }: AdvisorPanelProps) {
-  const allCards = useMemo(() => [...holeCards, ...communityCards], [holeCards, communityCards])
+  if (!advisorData) {
+    return (
+      <div
+        className="absolute top-12 right-64 z-30 w-[280px] max-h-[calc(100%-4rem)] overflow-y-auto rounded-xl bg-black/85 border border-gray-700 shadow-2xl"
+        role="complementary"
+        aria-label="AI Advisor"
+      >
+        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-700">
+          <h2 className="text-sm font-bold text-white">AI Advisor</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-400 hover:text-white text-lg leading-none"
+            aria-label="Close advisor"
+          >
+            &times;
+          </button>
+        </div>
+        <div className="p-4">
+          <p className="text-sm text-gray-500 italic">Waiting for data...</p>
+        </div>
+      </div>
+    )
+  }
 
-  // Hand evaluation (only meaningful with 5+ cards)
-  const handResult = useMemo(() => {
-    if (allCards.length >= 5) {
-      return evaluateHand(allCards)
-    }
-    return null
-  }, [allCards])
+  const { handRank, handDescription, equity, potOdds, recommendation, startingHandCategory, startingHandNotation } = advisorData
 
-  // Equity calculation (2000 iterations for responsiveness)
-  const equity = useMemo(() => {
-    if (holeCards.length === 2 && numOpponents > 0) {
-      return calculateEquity(holeCards, communityCards, numOpponents, 2000)
-    }
-    return null
-  }, [holeCards, communityCards, numOpponents])
-
-  const equityPct = equity ? equity.win + equity.tie : 0
-
-  // Pot odds
-  const potOdds = callAmount > 0 ? (callAmount / (potSize + callAmount)) * 100 : 0
-
-  // Starting hand info (preflop only)
-  const startingHand = useMemo(() => {
-    if (communityCards.length === 0 && holeCards.length === 2) {
-      const { row, col } = holeCardsToGrid(holeCards)
-      const category = STARTING_HAND_CATEGORIES[row][col]
-      const r1 = HAND_LABELS[row]
-      const r2 = HAND_LABELS[col]
-      let notation: string
-      if (row === col) notation = `${r1}${r2}`
-      else if (col > row) notation = `${r1}${r2}s`
-      else notation = `${r2}${r1}o`
-      return { notation, category }
-    }
-    return null
-  }, [holeCards, communityCards])
-
-  // Recommendation
-  const recommendation = useMemo(() => {
-    if (callAmount === 0) {
-      return { text: 'Check — no cost to see more cards', color: 'text-green-400' }
-    }
-    if (!equity) return null
-    const diff = equityPct - potOdds
-    if (diff > 10) return { text: 'Raise or Call', color: 'text-green-400' }
-    if (diff > 0) return { text: 'Consider calling', color: 'text-yellow-400' }
-    return { text: 'Consider folding', color: 'text-red-400' }
-  }, [callAmount, equity, equityPct, potOdds])
+  // Determine recommendation color (default to green for free-check type messages)
+  const recommendationColor = RECOMMENDATION_COLORS[recommendation] ?? (recommendation.toLowerCase().includes('check') ? 'text-green-400' : 'text-green-400')
 
   return (
     <div
@@ -123,16 +96,16 @@ export function AdvisorPanel({
         {/* Section 1: Hand Strength */}
         <section>
           <h3 className="text-xs font-semibold text-gray-400 uppercase mb-1">Hand Strength</h3>
-          {handResult ? (
+          {handRank != null && handDescription ? (
             <div>
-              <p className="text-sm text-white mb-1">{handResult.description}</p>
+              <p className="text-sm text-white mb-1">{handDescription}</p>
               <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full ${STRENGTH_COLORS[handResult.rank] ?? 'bg-gray-500'}`}
-                  style={{ width: `${((handResult.rank + 1) / 10) * 100}%` }}
+                  className={`h-full rounded-full ${STRENGTH_COLORS[handRank] ?? 'bg-gray-500'}`}
+                  style={{ width: `${((handRank + 1) / 10) * 100}%` }}
                 />
               </div>
-              <p className="text-[10px] text-gray-500 mt-0.5">{HAND_RANK_NAMES[handResult.rank as HandRank]}</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">{HAND_RANK_NAMES[handRank as HandRank]}</p>
             </div>
           ) : (
             <p className="text-sm text-gray-500 italic">Waiting for flop...</p>
@@ -142,41 +115,40 @@ export function AdvisorPanel({
         {/* Section 2: Equity */}
         <section>
           <h3 className="text-xs font-semibold text-gray-400 uppercase mb-1">Equity</h3>
-          {equity ? (
+          {equity > 0 ? (
             <p className="text-sm text-white">
-              Equity: {equityPct.toFixed(1)}%{' '}
-              <span className="text-gray-400">(vs {numOpponents} opponent{numOpponents !== 1 ? 's' : ''})</span>
+              Equity: {equity.toFixed(1)}%
             </p>
           ) : (
-            <p className="text-sm text-gray-500 italic">Need hole cards and opponents</p>
+            <p className="text-sm text-gray-500 italic">No equity data</p>
           )}
         </section>
 
         {/* Section 3: Pot Odds */}
         <section>
           <h3 className="text-xs font-semibold text-gray-400 uppercase mb-1">Pot Odds</h3>
-          {callAmount === 0 ? (
+          {potOdds === 0 ? (
             <p className="text-sm text-green-400">Free check</p>
-          ) : equity ? (
+          ) : equity > 0 ? (
             <div>
               <p className="text-sm text-white">
-                Pot Odds: {potOdds.toFixed(1)}% — Equity: {equityPct.toFixed(1)}% —{' '}
-                <span className={equityPct > potOdds ? 'text-green-400' : 'text-red-400'}>
-                  {equityPct > potOdds ? '+EV' : '-EV'} Call
+                Pot Odds: {potOdds.toFixed(1)}% — Equity: {equity.toFixed(1)}% —{' '}
+                <span className={equity > potOdds ? 'text-green-400' : 'text-red-400'}>
+                  {equity > potOdds ? '+EV' : '-EV'} Call
                 </span>
               </p>
             </div>
           ) : (
-            <p className="text-sm text-gray-500">Call: {callAmount} into {potSize} pot</p>
+            <p className="text-sm text-gray-500">Pot Odds: {potOdds.toFixed(1)}%</p>
           )}
         </section>
 
         {/* Section 4: Starting Hand (preflop only) */}
-        {startingHand && (
+        {startingHandNotation && startingHandCategory && (
           <section>
             <h3 className="text-xs font-semibold text-gray-400 uppercase mb-1">Starting Hand</h3>
             <p className="text-sm text-white mb-2">
-              {startingHand.notation} — <span className="capitalize">{startingHand.category}</span>
+              {startingHandNotation} — <span className="capitalize">{startingHandCategory}</span>
             </p>
             <StartingHandsChart currentHand={holeCards} compact />
           </section>
@@ -186,7 +158,7 @@ export function AdvisorPanel({
         {recommendation && (
           <section>
             <h3 className="text-xs font-semibold text-gray-400 uppercase mb-1">Recommendation</h3>
-            <p className={`text-sm font-semibold ${recommendation.color}`}>{recommendation.text}</p>
+            <p className={`text-sm font-semibold ${recommendationColor}`}>{recommendation}</p>
           </section>
         )}
       </div>

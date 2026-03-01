@@ -8,26 +8,7 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { AdvisorPanel } from '../AdvisorPanel'
-import { HandRank } from '@/lib/poker/types'
-
-// Mock poker math functions to avoid slow Monte Carlo in tests
-vi.mock('@/lib/poker/handEvaluator', () => ({
-  evaluateHand: vi.fn(() => ({
-    rank: HandRank.TWO_PAIR,
-    kickers: [14, 13, 12],
-    description: 'Two Pair, Aces and Kings',
-  })),
-  compareHands: vi.fn(() => 1),
-}))
-
-vi.mock('@/lib/poker/equityCalculator', () => ({
-  calculateEquity: vi.fn(() => ({
-    win: 72.3,
-    tie: 1.5,
-    loss: 26.2,
-    iterations: 2000,
-  })),
-}))
+import type { AdvisorData } from '@/lib/game/types'
 
 vi.mock('../StartingHandsChart', () => ({
   StartingHandsChart: ({ compact }: { compact?: boolean }) => (
@@ -35,12 +16,19 @@ vi.mock('../StartingHandsChart', () => ({
   ),
 }))
 
+const defaultAdvisorData: AdvisorData = {
+  handRank: 2, // TWO_PAIR
+  handDescription: 'Two Pair, Aces and Kings',
+  equity: 73.8,
+  potOdds: 16.7,
+  recommendation: 'Raise or Call',
+  startingHandCategory: null,
+  startingHandNotation: null,
+}
+
 const defaultProps = {
+  advisorData: defaultAdvisorData,
   holeCards: ['Ah', 'Kd'],
-  communityCards: ['As', 'Kc', '2h'],
-  potSize: 1000,
-  callAmount: 200,
-  numOpponents: 3,
   onClose: vi.fn(),
 }
 
@@ -58,16 +46,33 @@ describe('AdvisorPanel', () => {
   })
 
   // -------------------------------------------------------------------------
+  // Null advisorData (waiting state)
+  // -------------------------------------------------------------------------
+
+  it('shows "Waiting for data..." when advisorData is null', () => {
+    render(<AdvisorPanel {...defaultProps} advisorData={null} />)
+    expect(screen.getByText('Waiting for data...')).toBeDefined()
+  })
+
+  it('close button works when advisorData is null', () => {
+    const onClose = vi.fn()
+    render(<AdvisorPanel {...defaultProps} advisorData={null} onClose={onClose} />)
+    fireEvent.click(screen.getByLabelText('Close advisor'))
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  // -------------------------------------------------------------------------
   // Hand Strength section
   // -------------------------------------------------------------------------
 
-  it('shows hand description when 5+ cards available', () => {
+  it('shows hand description from server data', () => {
     render(<AdvisorPanel {...defaultProps} />)
     expect(screen.getByText('Two Pair, Aces and Kings')).toBeDefined()
   })
 
-  it('shows "Waiting for flop..." when fewer than 5 cards', () => {
-    render(<AdvisorPanel {...defaultProps} communityCards={['As']} />)
+  it('shows "Waiting for flop..." when handRank is null', () => {
+    const data: AdvisorData = { ...defaultAdvisorData, handRank: null, handDescription: null }
+    render(<AdvisorPanel {...defaultProps} advisorData={data} />)
     expect(screen.getByText('Waiting for flop...')).toBeDefined()
   })
 
@@ -75,17 +80,16 @@ describe('AdvisorPanel', () => {
   // Equity section
   // -------------------------------------------------------------------------
 
-  it('shows equity percentage with opponent count', () => {
+  it('shows equity percentage from server data', () => {
     render(<AdvisorPanel {...defaultProps} />)
-    // 72.3 + 1.5 = 73.8% — appears in both Equity and Pot Odds sections
     const matches = screen.getAllByText(/73\.8%/)
     expect(matches.length).toBeGreaterThanOrEqual(1)
-    expect(screen.getByText(/3 opponents/)).toBeDefined()
   })
 
-  it('shows fallback when no opponents', () => {
-    render(<AdvisorPanel {...defaultProps} numOpponents={0} />)
-    expect(screen.getByText('Need hole cards and opponents')).toBeDefined()
+  it('shows "No equity data" when equity is 0', () => {
+    const data: AdvisorData = { ...defaultAdvisorData, equity: 0 }
+    render(<AdvisorPanel {...defaultProps} advisorData={data} />)
+    expect(screen.getByText('No equity data')).toBeDefined()
   })
 
   // -------------------------------------------------------------------------
@@ -93,29 +97,43 @@ describe('AdvisorPanel', () => {
   // -------------------------------------------------------------------------
 
   it('shows pot odds and +EV indicator when equity > pot odds', () => {
-    // potOdds = 200 / (1000+200) = 16.7%, equity = 73.8% => +EV
     render(<AdvisorPanel {...defaultProps} />)
-    // "Pot Odds" appears as both section heading and inline text
     const potOddsMatches = screen.getAllByText(/Pot Odds/)
     expect(potOddsMatches.length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText(/\+EV/)).toBeDefined()
   })
 
-  it('shows "Free check" when callAmount is 0', () => {
-    render(<AdvisorPanel {...defaultProps} callAmount={0} />)
+  it('shows "Free check" when potOdds is 0', () => {
+    const data: AdvisorData = { ...defaultAdvisorData, potOdds: 0, recommendation: 'Check — no cost to see more cards' }
+    render(<AdvisorPanel {...defaultProps} advisorData={data} />)
     expect(screen.getByText('Free check')).toBeDefined()
+  })
+
+  it('shows -EV indicator when equity < pot odds', () => {
+    const data: AdvisorData = { ...defaultAdvisorData, equity: 10, potOdds: 25 }
+    render(<AdvisorPanel {...defaultProps} advisorData={data} />)
+    expect(screen.getByText(/-EV/)).toBeDefined()
   })
 
   // -------------------------------------------------------------------------
   // Starting Hand section (preflop only)
   // -------------------------------------------------------------------------
 
-  it('shows starting hand chart when on preflop', () => {
-    render(<AdvisorPanel {...defaultProps} communityCards={[]} />)
+  it('shows starting hand chart when server provides starting hand data', () => {
+    const data: AdvisorData = {
+      ...defaultAdvisorData,
+      handRank: null,
+      handDescription: null,
+      startingHandNotation: 'AKo',
+      startingHandCategory: 'premium',
+    }
+    render(<AdvisorPanel {...defaultProps} advisorData={data} />)
     expect(screen.getByTestId('starting-hands-chart')).toBeDefined()
+    expect(screen.getByText(/AKo/)).toBeDefined()
+    expect(screen.getByText(/premium/i)).toBeDefined()
   })
 
-  it('does not show starting hand chart post-flop', () => {
+  it('does not show starting hand chart when server provides no starting hand data', () => {
     render(<AdvisorPanel {...defaultProps} />)
     expect(screen.queryByTestId('starting-hands-chart')).toBeNull()
   })
@@ -124,19 +142,22 @@ describe('AdvisorPanel', () => {
   // Recommendation section
   // -------------------------------------------------------------------------
 
-  it('shows recommendation when equity data is available', () => {
-    // equity (73.8%) > potOdds (16.7%) by >10, so "Raise or Call"
+  it('shows recommendation from server data', () => {
     render(<AdvisorPanel {...defaultProps} />)
     expect(screen.getByText('Raise or Call')).toBeDefined()
   })
 
-  it('shows "Check" recommendation when callAmount is 0', () => {
-    render(<AdvisorPanel {...defaultProps} callAmount={0} />)
-    expect(screen.getByText(/Check/)).toBeDefined()
+  it('shows "Consider folding" recommendation with red styling', () => {
+    const data: AdvisorData = { ...defaultAdvisorData, recommendation: 'Consider folding' }
+    render(<AdvisorPanel {...defaultProps} advisorData={data} />)
+    const el = screen.getByText('Consider folding')
+    expect(el.className).toContain('text-red-400')
   })
 
-  it('renders with singular "opponent" for 1 opponent', () => {
-    render(<AdvisorPanel {...defaultProps} numOpponents={1} />)
-    expect(screen.getByText(/1 opponent\b/)).toBeDefined()
+  it('shows "Consider calling" recommendation with yellow styling', () => {
+    const data: AdvisorData = { ...defaultAdvisorData, recommendation: 'Consider calling' }
+    render(<AdvisorPanel {...defaultProps} advisorData={data} />)
+    const el = screen.getByText('Consider calling')
+    expect(el.className).toContain('text-yellow-400')
   })
 })

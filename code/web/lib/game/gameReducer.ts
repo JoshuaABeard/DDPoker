@@ -14,6 +14,7 @@ import type {
   ActionOptionsData,
   ActionRequiredData,
   AddonOfferedData,
+  AdvisorData,
   AiHoleCardsData,
   ButtonMovedData,
   ChatMessageData,
@@ -143,6 +144,9 @@ export interface GameState {
   // Color-up
   colorUpData: ColorUpStartedData | null
 
+  // Advisor data (server-computed)
+  advisorData: AdvisorData | null
+
   // Overlay prompts
   neverBrokeOffer: { timeoutSeconds: number } | null
   continueRunoutPending: boolean
@@ -179,6 +183,7 @@ export const initialGameState: GameState = {
   handHistory: [],
   observers: [],
   colorUpData: null,
+  advisorData: null,
   neverBrokeOffer: null,
   continueRunoutPending: false,
   lastSequenceNumber: null,
@@ -434,6 +439,9 @@ function handleServerMessage(state: GameState, message: ServerMessage): GameStat
       case 'PLAYER_MOVED':
         return { ...handlePlayerMoved(state, message.data as PlayerMovedData), ...seqState }
 
+      case 'ADVISOR_UPDATE':
+        return { ...state, advisorData: message.data as AdvisorData, ...seqState }
+
       default:
         console.warn('[gameReducer] Unknown server message type:', message.type)
         return { ...state, ...seqState }
@@ -577,6 +585,7 @@ function handleHandStarted(state: GameState, data: HandStartedData): GameState {
     actionTimer: null,
     rebuyOffer: null,
     addonOffer: null,
+    advisorData: null,
     currentTable: updatedTable,
     handHistory: [...state.handHistory, handStartEntry].slice(-MAX_HAND_HISTORY),
   }

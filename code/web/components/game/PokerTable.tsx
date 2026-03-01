@@ -371,11 +371,8 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
       {/* AI Advisor panel — toggled with V key or toolbar button */}
       {showAdvisor && holeCards.length > 0 && (
         <AdvisorPanel
+          advisorData={state.advisorData}
           holeCards={holeCards}
-          communityCards={currentTable.communityCards ?? []}
-          potSize={potTotal}
-          callAmount={actionRequired?.callAmount ?? 0}
-          numOpponents={currentTable.seats.filter((s) => s.status === 'ACTIVE' || s.status === 'ALL_IN').length - 1}
           onClose={() => setShowAdvisor(false)}
         />
       )}
@@ -384,11 +381,11 @@ export function PokerTable({ gameName, overlay }: PokerTableProps) {
       {showDashboard && (
         <div className="absolute top-12 right-56 bottom-3 z-30">
           <Dashboard
+            advisorData={state.advisorData}
             holeCards={holeCards}
             communityCards={currentTable.communityCards ?? []}
             potSize={potTotal}
             callAmount={actionRequired?.callAmount ?? 0}
-            numOpponents={currentTable.seats.filter((s) => s.status === 'ACTIVE' || s.status === 'ALL_IN').length - 1}
             level={gameState.level}
             blinds={gameState.blinds}
             nextLevelIn={gameState.nextLevelIn}

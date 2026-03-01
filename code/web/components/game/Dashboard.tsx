@@ -7,22 +7,20 @@
 
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useDashboard } from '@/lib/game/useDashboard'
-import { evaluateHand } from '@/lib/poker/handEvaluator'
-import { calculateEquity } from '@/lib/poker/equityCalculator'
 import { HAND_RANK_NAMES, HandRank } from '@/lib/poker/types'
 import { DashboardWidget } from './DashboardWidget'
 import { StartingHandsChart } from './StartingHandsChart'
 import { formatChips } from '@/lib/utils'
-import type { BlindsData } from '@/lib/game/types'
+import type { AdvisorData, BlindsData } from '@/lib/game/types'
 
 interface DashboardProps {
+  advisorData: AdvisorData | null
   holeCards: string[]
   communityCards: string[]
   potSize: number
   callAmount: number
-  numOpponents: number
   level?: number
   blinds?: BlindsData
   nextLevelIn?: number | null
@@ -33,11 +31,11 @@ interface DashboardProps {
 }
 
 export function Dashboard({
+  advisorData,
   holeCards,
   communityCards,
   potSize,
   callAmount,
-  numOpponents,
   level,
   blinds,
   nextLevelIn,
@@ -49,24 +47,9 @@ export function Dashboard({
   const { widgets, toggleWidget, moveWidget, resetToDefaults } = useDashboard()
   const [showSettings, setShowSettings] = useState(false)
 
-  const allCards = useMemo(() => [...holeCards, ...communityCards], [holeCards, communityCards])
-
-  const handResult = useMemo(() => {
-    if (allCards.length >= 5) {
-      return evaluateHand(allCards)
-    }
-    return null
-  }, [allCards])
-
-  const equity = useMemo(() => {
-    if (holeCards.length === 2 && numOpponents > 0) {
-      return calculateEquity(holeCards, communityCards, numOpponents, 1000)
-    }
-    return null
-  }, [holeCards, communityCards, numOpponents])
-
-  const equityPct = equity ? equity.win + equity.tie : 0
-  const potOdds = callAmount > 0 ? (callAmount / (potSize + callAmount)) * 100 : 0
+  const handRank = advisorData?.handRank ?? null
+  const equity = advisorData?.equity ?? 0
+  const potOdds = advisorData?.potOdds ?? (callAmount > 0 ? (callAmount / (potSize + callAmount)) * 100 : 0)
 
   function isVisible(id: string): boolean {
     return widgets.find((w) => w.id === id)?.visible ?? false
@@ -75,13 +58,13 @@ export function Dashboard({
   const widgetRenderers: Record<string, () => React.ReactNode> = {
     'hand-strength': () => (
       <DashboardWidget title="Hand Strength" key="hand-strength">
-        {handResult ? (
+        {handRank != null ? (
           <div className="flex items-baseline gap-2">
-            <span className="text-sm text-white">{HAND_RANK_NAMES[handResult.rank as HandRank]}</span>
-            <span className="text-xs text-gray-400">{equityPct.toFixed(1)}% equity</span>
+            <span className="text-sm text-white">{HAND_RANK_NAMES[handRank as HandRank]}</span>
+            <span className="text-xs text-gray-400">{equity.toFixed(1)}% equity</span>
           </div>
-        ) : equity ? (
-          <div className="text-sm text-white">{equityPct.toFixed(1)}% equity</div>
+        ) : equity > 0 ? (
+          <div className="text-sm text-white">{equity.toFixed(1)}% equity</div>
         ) : (
           <p className="text-xs text-gray-500 italic">Waiting for cards...</p>
         )}
