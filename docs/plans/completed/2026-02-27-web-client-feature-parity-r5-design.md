@@ -1,6 +1,6 @@
 # Web Client Feature Parity Round 5 — Design
 
-**Status:** APPROVED (2026-02-27)
+**Status:** COMPLETED (2026-02-28)
 **Depends on:** None (all features are client-only)
 **Scope:** 8 components across game preferences, shortcuts, AI config, poker math, starting hands, simulator, advisor, and dashboard
 
