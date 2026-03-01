@@ -48,7 +48,7 @@ class ServerHandFuzzTest {
     private static final int MAX_ACTIONS_PER_HAND = 100;
 
     /** Maximum hands per game (safety). */
-    private static final int MAX_HANDS_PER_GAME = 50;
+    private static final int MAX_HANDS_PER_GAME = 100;
 
     // ============================== Infrastructure ==============================
 
@@ -497,6 +497,335 @@ class ServerHandFuzzTest {
                 }
                 return generateBet(hand, player, rng);
             }
+        }
+    }
+
+    /**
+     * Passive action generator: always check (if possible) or call (if facing a
+     * bet). Never fold, bet, or raise.
+     */
+    private PlayerAction generatePassiveAction(ServerHand hand, ServerPlayer player) {
+        int amountToCall = hand.getAmountToCall(player);
+
+        if (amountToCall > 0) {
+            return PlayerAction.call();
+        }
+        return PlayerAction.check();
+    }
+
+    /**
+     * Play one complete hand where all players check or call only (passive play).
+     */
+    private boolean playOneHandPassive(ServerHand hand, List<ServerPlayer> players) {
+        hand.deal();
+
+        while (!hand.isUncontested()) {
+            int safetyCounter = 0;
+            while (!hand.isDone() && safetyCounter < MAX_ACTIONS_PER_HAND) {
+                ServerPlayer current = (ServerPlayer) hand.getCurrentPlayerWithInit();
+                if (current == null)
+                    break;
+
+                PlayerAction action = generatePassiveAction(hand, current);
+                hand.applyPlayerAction(current, action);
+                safetyCounter++;
+            }
+
+            if (hand.isUncontested())
+                break;
+            if (hand.getRound() == BettingRound.RIVER)
+                break;
+            hand.advanceRound();
+        }
+
+        while (hand.getRound() != BettingRound.SHOWDOWN) {
+            hand.advanceRound();
+        }
+
+        hand.resolve();
+        return true;
+    }
+
+    // ====================== Additional Edge-Case Fuzz Tests ======================
+
+    /**
+     * Half micro-stacks (1-2 BB), half deep-stacks (50-100 BB). 4-6 players.
+     * Stresses all-in side pot calculation with extreme stack disparity.
+     */
+    @RepeatedTest(100)
+    void fuzz_microStacks_vs_deepStacks(RepetitionInfo info) {
+        long seed = BASE_SEED + 40000 + info.getCurrentRepetition();
+        Random rng = new Random(seed);
+
+        int numPlayers = 4 + rng.nextInt(3); // 4-6
+        int bigBlind = 100;
+        int smallBlind = 50;
+
+        List<ServerPlayer> players = new ArrayList<>();
+        for (int i = 0; i < numPlayers; i++) {
+            int stack;
+            if (i < numPlayers / 2) {
+                // Micro-stack: 1-2 big blinds (100-200 chips)
+                stack = bigBlind + rng.nextInt(bigBlind + 1); // 100-200
+            } else {
+                // Deep stack: 50-100 big blinds (5000-10000 chips)
+                stack = 50 * bigBlind + rng.nextInt(51 * bigBlind); // 5000-10000
+            }
+            ServerPlayer p = new ServerPlayer(i + 1, "P" + (i + 1), false, 0, stack);
+            p.setSeat(i);
+            players.add(p);
+        }
+
+        int expectedTotal = players.stream().mapToInt(ServerPlayer::getChipCount).sum();
+
+        for (int h = 0; h < 5; h++) {
+            long playersWithChips = players.stream().filter(p -> p.getChipCount() > 0).count();
+            if (playersWithChips < 2)
+                break;
+
+            int button = h % numPlayers;
+            int[] blinds = blindSeats(button, numPlayers);
+
+            if (players.get(blinds[0]).getChipCount() == 0 || players.get(blinds[1]).getChipCount() == 0) {
+                continue;
+            }
+
+            MockServerGameTable table = setupTable(players, button);
+            ServerHand hand = new ServerHand(table, h + 1, smallBlind, bigBlind, 0, button, blinds[0], blinds[1]);
+
+            playOneHand(hand, players, rng);
+            assertInvariants(hand, players, expectedTotal, h + 1, seed);
+        }
+    }
+
+    /**
+     * 4 players, starting stacks 1000. Blinds escalate by 50% each hand starting at
+     * 10/20. By hand 10 blinds exceed any stack, forcing all-ins from blinds.
+     */
+    @RepeatedTest(100)
+    void fuzz_rapidBlindEscalation(RepetitionInfo info) {
+        long seed = BASE_SEED + 50000 + info.getCurrentRepetition();
+        Random rng = new Random(seed);
+
+        int numPlayers = 4;
+        int startingStack = 1000;
+        int baseSB = 10;
+
+        List<ServerPlayer> players = new ArrayList<>();
+        for (int i = 0; i < numPlayers; i++) {
+            ServerPlayer p = new ServerPlayer(i + 1, "P" + (i + 1), false, 0, startingStack);
+            p.setSeat(i);
+            players.add(p);
+        }
+
+        int expectedTotal = players.stream().mapToInt(ServerPlayer::getChipCount).sum();
+
+        for (int h = 0; h < 10; h++) {
+            long playersWithChips = players.stream().filter(p -> p.getChipCount() > 0).count();
+            if (playersWithChips < 2)
+                break;
+
+            int smallBlind = (int) (baseSB * Math.pow(1.5, h));
+            int bigBlind = smallBlind * 2;
+
+            int button = h % numPlayers;
+            int[] blinds = blindSeats(button, numPlayers);
+
+            if (players.get(blinds[0]).getChipCount() == 0 || players.get(blinds[1]).getChipCount() == 0) {
+                continue;
+            }
+
+            MockServerGameTable table = setupTable(players, button);
+            ServerHand hand = new ServerHand(table, h + 1, smallBlind, bigBlind, 0, button, blinds[0], blinds[1]);
+
+            playOneHand(hand, players, rng);
+            assertInvariants(hand, players, expectedTotal, h + 1, seed);
+        }
+    }
+
+    /**
+     * 2 players, random stacks (500-2000). Play until one player busts or 100
+     * hands. Assert that winner has all the chips.
+     */
+    @RepeatedTest(100)
+    void fuzz_playToBust_headsUp(RepetitionInfo info) {
+        long seed = BASE_SEED + 60000 + info.getCurrentRepetition();
+        Random rng = new Random(seed);
+
+        int bigBlind = 20 + rng.nextInt(5) * 10; // 20-60
+        int smallBlind = bigBlind / 2;
+
+        int stack1 = 500 + rng.nextInt(1501); // 500-2000
+        int stack2 = 500 + rng.nextInt(1501); // 500-2000
+
+        List<ServerPlayer> players = new ArrayList<>();
+        ServerPlayer p1 = new ServerPlayer(1, "HU1", false, 0, stack1);
+        ServerPlayer p2 = new ServerPlayer(2, "HU2", false, 0, stack2);
+        p1.setSeat(0);
+        p2.setSeat(1);
+        players.add(p1);
+        players.add(p2);
+
+        int expectedTotal = p1.getChipCount() + p2.getChipCount();
+        boolean busted = false;
+
+        for (int h = 0; h < MAX_HANDS_PER_GAME; h++) {
+            if (p1.getChipCount() == 0 || p2.getChipCount() == 0) {
+                busted = true;
+                break;
+            }
+
+            int button = h % 2;
+            int sbSeat = button;
+            int bbSeat = (button + 1) % 2;
+
+            MockServerGameTable table = setupTable(players, button);
+            ServerHand hand = new ServerHand(table, h + 1, smallBlind, bigBlind, 0, button, sbSeat, bbSeat);
+
+            playOneHand(hand, players, rng);
+            assertInvariants(hand, players, expectedTotal, h + 1, seed);
+        }
+
+        // Check termination condition after loop
+        if (p1.getChipCount() == 0 || p2.getChipCount() == 0) {
+            busted = true;
+        }
+
+        assertTrue(busted, "Game did not terminate within " + MAX_HANDS_PER_GAME + " hands (seed=" + seed + ")");
+
+        // Winner has all the chips
+        ServerPlayer winner = p1.getChipCount() > 0 ? p1 : p2;
+        assertEquals(expectedTotal, winner.getChipCount(), "Winner should have all chips (seed=" + seed + ")");
+    }
+
+    /**
+     * 9 players (full table), 1000 chips each, blinds 25/50. Play 3 hands. Stresses
+     * multi-way pot splitting with max players.
+     */
+    @RepeatedTest(100)
+    void fuzz_maxPlayers_fullTable(RepetitionInfo info) {
+        long seed = BASE_SEED + 70000 + info.getCurrentRepetition();
+        Random rng = new Random(seed);
+
+        int numPlayers = 9;
+        int stack = 1000;
+        int bigBlind = 50;
+        int smallBlind = 25;
+
+        List<ServerPlayer> players = new ArrayList<>();
+        for (int i = 0; i < numPlayers; i++) {
+            ServerPlayer p = new ServerPlayer(i + 1, "P" + (i + 1), false, 0, stack);
+            p.setSeat(i);
+            players.add(p);
+        }
+
+        int expectedTotal = players.stream().mapToInt(ServerPlayer::getChipCount).sum();
+
+        for (int h = 0; h < 3; h++) {
+            long playersWithChips = players.stream().filter(p -> p.getChipCount() > 0).count();
+            if (playersWithChips < 2)
+                break;
+
+            int button = h % numPlayers;
+            int[] blinds = blindSeats(button, numPlayers);
+
+            if (players.get(blinds[0]).getChipCount() == 0 || players.get(blinds[1]).getChipCount() == 0) {
+                continue;
+            }
+
+            MockServerGameTable table = setupTable(players, button);
+            ServerHand hand = new ServerHand(table, h + 1, smallBlind, bigBlind, 0, button, blinds[0], blinds[1]);
+
+            playOneHand(hand, players, rng);
+            assertInvariants(hand, players, expectedTotal, h + 1, seed);
+        }
+    }
+
+    /**
+     * 3-6 players with antes set to 20-50% of the big blind. Play 5 hands. Antes
+     * must be included in chip conservation.
+     */
+    @RepeatedTest(100)
+    void fuzz_antesWithBlinds(RepetitionInfo info) {
+        long seed = BASE_SEED + 80000 + info.getCurrentRepetition();
+        Random rng = new Random(seed);
+
+        int numPlayers = 3 + rng.nextInt(4); // 3-6
+        int bigBlind = (2 + rng.nextInt(9)) * 10; // 20-100
+        int smallBlind = bigBlind / 2;
+        // Ante = 20-50% of big blind
+        int ante = bigBlind / 5 + rng.nextInt(bigBlind * 3 / 10 + 1); // ~20-50% of BB
+
+        List<ServerPlayer> players = new ArrayList<>();
+        for (int i = 0; i < numPlayers; i++) {
+            int stack = 500 + rng.nextInt(4501); // 500-5000
+            ServerPlayer p = new ServerPlayer(i + 1, "P" + (i + 1), false, 0, stack);
+            p.setSeat(i);
+            players.add(p);
+        }
+
+        int expectedTotal = players.stream().mapToInt(ServerPlayer::getChipCount).sum();
+
+        for (int h = 0; h < 5; h++) {
+            long playersWithChips = players.stream().filter(p -> p.getChipCount() > 0).count();
+            if (playersWithChips < 2)
+                break;
+
+            int button = h % numPlayers;
+            int[] blinds = blindSeats(button, numPlayers);
+
+            if (players.get(blinds[0]).getChipCount() == 0 || players.get(blinds[1]).getChipCount() == 0) {
+                continue;
+            }
+
+            MockServerGameTable table = setupTable(players, button);
+            ServerHand hand = new ServerHand(table, h + 1, smallBlind, bigBlind, ante, button, blinds[0], blinds[1]);
+
+            playOneHand(hand, players, rng);
+            assertInvariants(hand, players, expectedTotal, h + 1, seed);
+        }
+    }
+
+    /**
+     * 3-5 players, 2000 chips each, blinds 50/100. All players check or call only.
+     * Every hand goes to showdown with max players (maximum showdown stress test).
+     */
+    @RepeatedTest(100)
+    void fuzz_allCheckToShowdown(RepetitionInfo info) {
+        long seed = BASE_SEED + 90000 + info.getCurrentRepetition();
+        Random rng = new Random(seed);
+
+        int numPlayers = 3 + rng.nextInt(3); // 3-5
+        int stack = 2000;
+        int bigBlind = 100;
+        int smallBlind = 50;
+
+        List<ServerPlayer> players = new ArrayList<>();
+        for (int i = 0; i < numPlayers; i++) {
+            ServerPlayer p = new ServerPlayer(i + 1, "P" + (i + 1), false, 0, stack);
+            p.setSeat(i);
+            players.add(p);
+        }
+
+        int expectedTotal = players.stream().mapToInt(ServerPlayer::getChipCount).sum();
+
+        for (int h = 0; h < 10; h++) {
+            long playersWithChips = players.stream().filter(p -> p.getChipCount() > 0).count();
+            if (playersWithChips < 2)
+                break;
+
+            int button = h % numPlayers;
+            int[] blinds = blindSeats(button, numPlayers);
+
+            if (players.get(blinds[0]).getChipCount() == 0 || players.get(blinds[1]).getChipCount() == 0) {
+                continue;
+            }
+
+            MockServerGameTable table = setupTable(players, button);
+            ServerHand hand = new ServerHand(table, h + 1, smallBlind, bigBlind, 0, button, blinds[0], blinds[1]);
+
+            playOneHandPassive(hand, players);
+            assertInvariants(hand, players, expectedTotal, h + 1, seed);
         }
     }
 }
