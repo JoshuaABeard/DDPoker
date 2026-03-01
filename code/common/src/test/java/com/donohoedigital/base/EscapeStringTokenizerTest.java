@@ -87,7 +87,7 @@ class EscapeStringTokenizerTest {
     }
 
     @Test
-    void should_ReturnSingleEmptyString_When_InputIsEmptyString() {
+    void should_ReturnNoTokens_When_InputIsEmptyString() {
         // An empty string has no characters → no tokens at all
         EscapeStringTokenizer tok = new EscapeStringTokenizer("", ",");
 
@@ -113,7 +113,7 @@ class EscapeStringTokenizerTest {
     }
 
     @Test
-    void should_DecodeDecimalEscape_When_ThreeDigitOctalStyleValueUsed() {
+    void should_DecodeDecimalEscape_When_ThreeDigitNumericEscapeUsed() {
         // \065 is the decimal value 65 = 'A'
         EscapeStringTokenizer tok = new EscapeStringTokenizer("\\065BC", ",");
 

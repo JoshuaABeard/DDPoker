@@ -82,23 +82,25 @@ class ZipUtilTest {
     void should_ReturnEntryName_When_ZipContainsSingleEntry() throws IOException {
         File zip = buildZip("hello.txt", "Hello World");
         ZipUtil zu = new ZipUtil(zip);
-
-        String name = zu.getNextFileName();
-        zu.close();
-
-        assertThat(name).isEqualTo("hello.txt");
+        try {
+            String name = zu.getNextFileName();
+            assertThat(name).isEqualTo("hello.txt");
+        } finally {
+            zu.close();
+        }
     }
 
     @Test
     void should_ReturnNullAfterAllEntries_When_NoMoreEntriesExist() throws IOException {
         File zip = buildZip("a.txt", "aaa");
         ZipUtil zu = new ZipUtil(zip);
-
-        zu.getNextFileName(); // consume the single entry
-        String second = zu.getNextFileName(); // nothing left
-        zu.close();
-
-        assertThat(second).isNull();
+        try {
+            zu.getNextFileName(); // consume the single entry
+            String second = zu.getNextFileName(); // nothing left
+            assertThat(second).isNull();
+        } finally {
+            zu.close();
+        }
     }
 
     @Test
@@ -106,61 +108,62 @@ class ZipUtilTest {
         String content = "Hello World";
         File zip = buildZip("data.txt", content);
         ZipUtil zu = new ZipUtil(zip);
-        zu.getNextFileName();
-
-        byte[] bytes = zu.getByteContents();
-        zu.close();
-
-        assertThat(bytes).isEqualTo(content.getBytes(StandardCharsets.UTF_8));
+        try {
+            zu.getNextFileName();
+            byte[] bytes = zu.getByteContents();
+            assertThat(bytes).isEqualTo(content.getBytes(StandardCharsets.UTF_8));
+        } finally {
+            zu.close();
+        }
     }
 
     @Test
     void should_ReturnNullByteContents_When_NoEntrySelected() throws IOException {
         File zip = buildZip("a.txt", "ignored");
         ZipUtil zu = new ZipUtil(zip);
-        // intentionally do NOT call getNextFileName()
-
-        byte[] bytes = zu.getByteContents();
-        zu.close();
-
-        assertThat(bytes).isNull();
+        try {
+            // intentionally do NOT call getNextFileName()
+            byte[] bytes = zu.getByteContents();
+            assertThat(bytes).isNull();
+        } finally {
+            zu.close();
+        }
     }
 
     @Test
     void should_IterateAllEntries_When_ZipContainsMultipleFiles() throws IOException {
         File zip = buildZip("first.txt", "alpha", "second.txt", "beta", "third.txt", "gamma");
         ZipUtil zu = new ZipUtil(zip);
-
-        assertThat(zu.getNextFileName()).isEqualTo("first.txt");
-        assertThat(zu.getNextFileName()).isEqualTo("second.txt");
-        assertThat(zu.getNextFileName()).isEqualTo("third.txt");
-        assertThat(zu.getNextFileName()).isNull();
-
-        zu.close();
+        try {
+            assertThat(zu.getNextFileName()).isEqualTo("first.txt");
+            assertThat(zu.getNextFileName()).isEqualTo("second.txt");
+            assertThat(zu.getNextFileName()).isEqualTo("third.txt");
+            assertThat(zu.getNextFileName()).isNull();
+        } finally {
+            zu.close();
+        }
     }
 
     @Test
     void should_ReturnStringBufferContents_When_TextEntryIsRead() throws IOException {
         File zip = buildZip("readme.txt", "line1\nline2\n");
         ZipUtil zu = new ZipUtil(zip);
-        zu.getNextFileName();
-
-        StringBuilder sb = zu.getStringBufferContents();
-        zu.close();
-
-        assertThat(sb).isNotNull();
-        assertThat(sb.toString()).contains("line1").contains("line2");
+        try {
+            zu.getNextFileName();
+            StringBuilder sb = zu.getStringBufferContents();
+            assertThat(sb).isNotNull();
+            assertThat(sb.toString()).contains("line1").contains("line2");
+        } finally {
+            zu.close();
+        }
     }
 
     @Test
-    void should_ThrowZipException_When_FileIsNotAValidZip() {
-        File notAZip = tempDir.resolve("corrupt.zip").toFile();
+    void should_ThrowZipException_When_FileIsNotAValidZip() throws IOException {
+        File notAZip = tempDir.resolve("invalid.zip").toFile();
         try (FileOutputStream fos = new FileOutputStream(notAZip)) {
-            fos.write(new byte[]{0x00, 0x01, 0x02, 0x03});
-        } catch (IOException e) {
-            fail("Could not create corrupt file: " + e.getMessage());
+            fos.write("not a zip file".getBytes());
         }
-
         assertThatThrownBy(() -> new ZipUtil(notAZip)).isInstanceOf(ZipException.class);
     }
 }

@@ -183,6 +183,11 @@ class FormatTest {
         assertThat(Format.atoi("abc")).isEqualTo(0);
     }
 
+    @Test
+    void should_ThrowException_When_AtoiCalledWithNullInput() {
+        assertThatThrownBy(() -> Format.atoi(null)).isInstanceOf(NullPointerException.class);
+    }
+
     // -----------------------------------------------------------------------
     // atof()
     // -----------------------------------------------------------------------
