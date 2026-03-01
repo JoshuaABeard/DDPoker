@@ -62,7 +62,7 @@ public class ServerOpponentTracker {
      * @param round
      *            Betting round (0=preflop, 1=flop, 2=turn, 3=river)
      * @param positionCategory
-     *            Position category (0=blind, 1=early, 2=middle, 3=late)
+     *            Position category (AIConstants.POSITION_*)
      */
     public void onPlayerAction(GamePlayerInfo player, int action, int amount, int round, int positionCategory) {
         MutableOpponentStats stats = playerStats.get(player.getID());
@@ -158,19 +158,24 @@ public class ServerOpponentTracker {
     /**
      * Mutable opponent statistics that implements V2OpponentModel. Accumulates
      * statistics across hands and provides frequencies as floats (0.0-1.0).
+     * <p>
+     * Pre-flop stats are tracked per position category matching AIConstants:
+     * EARLY=0, MIDDLE=1, LATE=2, LAST=3, SMALL=4, BIG=5.
      */
     private static class MutableOpponentStats implements V2OpponentModel {
+
+        private static final int NUM_POSITIONS = 6;
 
         // Hand tracking
         private int handsPlayed = 0;
         private int chipCountAtStart = 0;
 
-        // Pre-flop stats (per position category 0-3)
-        private final int[] preFlopRaises = new int[4];
-        private final int[] preFlopCalls = new int[4];
-        private final int[] preFlopLimps = new int[4];
-        private final int[] preFlopFoldsUnraised = new int[4];
-        private final int[] preFlopHandsByPosition = new int[4];
+        // Pre-flop stats (per position category, indexed by AIConstants.POSITION_*)
+        private final int[] preFlopRaises = new int[NUM_POSITIONS];
+        private final int[] preFlopCalls = new int[NUM_POSITIONS];
+        private final int[] preFlopLimps = new int[NUM_POSITIONS];
+        private final int[] preFlopFoldsUnraised = new int[NUM_POSITIONS];
+        private final int[] preFlopHandsByPosition = new int[NUM_POSITIONS];
 
         // Post-flop stats (per round 1-3: flop, turn, river)
         private final int[] postFlopActions = new int[3]; // Bet/raise
@@ -201,24 +206,26 @@ public class ServerOpponentTracker {
             }
 
             if (round == 0) {
-                // Pre-flop
+                // Pre-flop: clamp position to valid range
+                int pos = (positionCategory >= 0 && positionCategory < NUM_POSITIONS) ? positionCategory : 0;
+
                 if (!actedPreFlop) {
                     actedPreFlop = true;
-                    preFlopHandsByPosition[positionCategory]++;
+                    preFlopHandsByPosition[pos]++;
                 }
 
                 switch (action) {
                     case HandAction.ACTION_RAISE :
-                        preFlopRaises[positionCategory]++;
+                        preFlopRaises[pos]++;
                         break;
                     case HandAction.ACTION_CALL :
                         // Distinguish limp (call BB) from call raise
                         // Simplified: treat all calls as limps for now
-                        preFlopLimps[positionCategory]++;
-                        preFlopCalls[positionCategory]++;
+                        preFlopLimps[pos]++;
+                        preFlopCalls[pos]++;
                         break;
                     case HandAction.ACTION_FOLD :
-                        preFlopFoldsUnraised[positionCategory]++;
+                        preFlopFoldsUnraised[pos]++;
                         break;
                 }
             } else if (round >= 1 && round <= 3) {
@@ -273,7 +280,7 @@ public class ServerOpponentTracker {
 
         @Override
         public float getPreFlopTightness(int position, float defVal) {
-            if (position < 0 || position >= 4) {
+            if (position < 0 || position >= NUM_POSITIONS) {
                 return defVal;
             }
             int handsAtPos = preFlopHandsByPosition[position];
@@ -288,7 +295,7 @@ public class ServerOpponentTracker {
 
         @Override
         public float getPreFlopAggression(int position, float defVal) {
-            if (position < 0 || position >= 4) {
+            if (position < 0 || position >= NUM_POSITIONS) {
                 return defVal;
             }
             int voluntaryHands = preFlopRaises[position] + preFlopCalls[position];
@@ -360,7 +367,7 @@ public class ServerOpponentTracker {
             }
             // Sum all voluntary pre-flop actions across positions
             int paidHands = 0;
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < NUM_POSITIONS; i++) {
                 paidHands += preFlopRaises[i] + preFlopCalls[i];
             }
             return (float) paidHands / handsPlayed;
@@ -372,7 +379,7 @@ public class ServerOpponentTracker {
                 return defVal;
             }
             int limpedHands = 0;
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < NUM_POSITIONS; i++) {
                 limpedHands += preFlopLimps[i];
             }
             return (float) limpedHands / handsPlayed;
@@ -384,7 +391,7 @@ public class ServerOpponentTracker {
                 return defVal;
             }
             int foldedHands = 0;
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < NUM_POSITIONS; i++) {
                 foldedHands += preFlopFoldsUnraised[i];
             }
             return (float) foldedHands / handsPlayed;
@@ -412,7 +419,7 @@ public class ServerOpponentTracker {
                 return defVal;
             }
             int raisedHands = 0;
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < NUM_POSITIONS; i++) {
                 raisedHands += preFlopRaises[i];
             }
             return (float) raisedHands / handsPlayed;

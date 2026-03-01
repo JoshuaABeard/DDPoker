@@ -20,6 +20,7 @@
 package com.donohoedigital.games.poker.server;
 
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import com.donohoedigital.games.poker.core.ai.AIConstants;
 import com.donohoedigital.games.poker.core.ai.V2OpponentModel;
 import com.donohoedigital.games.poker.HandAction;
 import org.junit.jupiter.api.Test;
@@ -264,28 +265,121 @@ class ServerOpponentTrackerTest {
     }
 
     @Test
-    void positionCategory_variesByPosition() {
+    void positionCategory_smallBlindAndBigBlind_trackedSeparately() {
         ServerOpponentTracker tracker = new ServerOpponentTracker();
         GamePlayerInfo player = createMockPlayer(1);
 
-        // Position 0 (blinds)
-        tracker.onHandStart(player, 1000);
-        tracker.onPlayerAction(player, HandAction.ACTION_RAISE, 100, 0, 0);
-        tracker.onHandEnd(player);
+        // Small blind: raise every time (aggressive)
+        for (int i = 0; i < 5; i++) {
+            tracker.onHandStart(player, 1000);
+            tracker.onPlayerAction(player, HandAction.ACTION_RAISE, 100, 0, AIConstants.POSITION_SMALL);
+            tracker.onHandEnd(player);
+        }
 
-        // Position 3 (late)
-        tracker.onHandStart(player, 1000);
-        tracker.onPlayerAction(player, HandAction.ACTION_RAISE, 100, 0, 3);
-        tracker.onHandEnd(player);
+        // Big blind: fold every time (tight)
+        for (int i = 0; i < 5; i++) {
+            tracker.onHandStart(player, 1000);
+            tracker.onPlayerAction(player, HandAction.ACTION_FOLD, 0, 0, AIConstants.POSITION_BIG);
+            tracker.onHandEnd(player);
+        }
 
         V2OpponentModel model = tracker.getModel(1);
-        // Should track per-position frequencies separately
-        float blindTightness = model.getPreFlopTightness(0, 0.5f);
-        float lateTightness = model.getPreFlopTightness(3, 0.5f);
 
-        // Both should return reasonable values (may be same if logic is simplified)
-        assertThat(blindTightness).isBetween(0.0f, 1.0f);
-        assertThat(lateTightness).isBetween(0.0f, 1.0f);
+        // Small blind: raised 5/5 = 0% tight (always played)
+        float sbTightness = model.getPreFlopTightness(AIConstants.POSITION_SMALL, 0.5f);
+        assertThat(sbTightness).isCloseTo(0.0f, within(0.01f));
+
+        // Big blind: folded 5/5 = 100% tight
+        float bbTightness = model.getPreFlopTightness(AIConstants.POSITION_BIG, 0.5f);
+        assertThat(bbTightness).isCloseTo(1.0f, within(0.01f));
+
+        // They must be different
+        assertThat(sbTightness).isNotCloseTo(bbTightness, within(0.01f));
+    }
+
+    @Test
+    void positionCategory_smallBlindAggression_trackedSeparately() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo player = createMockPlayer(1);
+
+        // Small blind: always raise (100% aggressive)
+        for (int i = 0; i < 5; i++) {
+            tracker.onHandStart(player, 1000);
+            tracker.onPlayerAction(player, HandAction.ACTION_RAISE, 100, 0, AIConstants.POSITION_SMALL);
+            tracker.onHandEnd(player);
+        }
+
+        // Big blind: always call (0% aggressive)
+        for (int i = 0; i < 5; i++) {
+            tracker.onHandStart(player, 1000);
+            tracker.onPlayerAction(player, HandAction.ACTION_CALL, 100, 0, AIConstants.POSITION_BIG);
+            tracker.onHandEnd(player);
+        }
+
+        V2OpponentModel model = tracker.getModel(1);
+
+        float sbAggression = model.getPreFlopAggression(AIConstants.POSITION_SMALL, 0.5f);
+        assertThat(sbAggression).isCloseTo(1.0f, within(0.01f));
+
+        float bbAggression = model.getPreFlopAggression(AIConstants.POSITION_BIG, 0.5f);
+        assertThat(bbAggression).isCloseTo(0.0f, within(0.01f));
+
+        assertThat(sbAggression).isNotCloseTo(bbAggression, within(0.01f));
+    }
+
+    @Test
+    void positionCategory_allSixPositions_trackedIndependently() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo player = createMockPlayer(1);
+
+        // Record raises at each of the 6 positions
+        int[] positions = {AIConstants.POSITION_EARLY, AIConstants.POSITION_MIDDLE, AIConstants.POSITION_LATE,
+                AIConstants.POSITION_LAST, AIConstants.POSITION_SMALL, AIConstants.POSITION_BIG};
+
+        for (int pos : positions) {
+            tracker.onHandStart(player, 1000);
+            tracker.onPlayerAction(player, HandAction.ACTION_RAISE, 100, 0, pos);
+            tracker.onHandEnd(player);
+        }
+
+        V2OpponentModel model = tracker.getModel(1);
+
+        // Each position should have recorded the raise (tightness = 0, aggression = 1)
+        for (int pos : positions) {
+            float tightness = model.getPreFlopTightness(pos, 0.5f);
+            assertThat(tightness).as("tightness at position %d", pos).isCloseTo(0.0f, within(0.01f));
+
+            float aggression = model.getPreFlopAggression(pos, 0.5f);
+            assertThat(aggression).as("aggression at position %d", pos).isCloseTo(1.0f, within(0.01f));
+        }
+    }
+
+    @Test
+    void positionCategory_earlyVsLate_trackedSeparately() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo player = createMockPlayer(1);
+
+        // Early: always fold (tight)
+        for (int i = 0; i < 5; i++) {
+            tracker.onHandStart(player, 1000);
+            tracker.onPlayerAction(player, HandAction.ACTION_FOLD, 0, 0, AIConstants.POSITION_EARLY);
+            tracker.onHandEnd(player);
+        }
+
+        // Late: always raise (loose)
+        for (int i = 0; i < 5; i++) {
+            tracker.onHandStart(player, 1000);
+            tracker.onPlayerAction(player, HandAction.ACTION_RAISE, 100, 0, AIConstants.POSITION_LATE);
+            tracker.onHandEnd(player);
+        }
+
+        V2OpponentModel model = tracker.getModel(1);
+
+        float earlyTightness = model.getPreFlopTightness(AIConstants.POSITION_EARLY, 0.5f);
+        assertThat(earlyTightness).isCloseTo(1.0f, within(0.01f));
+
+        float lateTightness = model.getPreFlopTightness(AIConstants.POSITION_LATE, 0.5f);
+        assertThat(lateTightness).isCloseTo(0.0f, within(0.01f));
     }
 
     @Test
