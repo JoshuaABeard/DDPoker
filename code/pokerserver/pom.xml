@@ -50,9 +50,10 @@
 
   <dependencyManagement>
     <dependencies>
-      <!-- jjwt-jackson (transitive via poker) forces jackson-databind to 2.12.7.1, but
-           jackson-datatype-jsr310 (from Spring Boot via poker) requires 2.19.x.
-           Pin all three core Jackson artifacts to resolve the conflict. -->
+      <!-- NOTE: jjwt-jackson no longer appears as a transitive dependency now that the
+           'poker' module was removed. This pinning block may be removable, but is kept
+           here until explicitly verified safe to drop. Previously, jjwt-jackson forced
+           jackson-databind to 2.12.7.1, conflicting with jackson-datatype-jsr310 2.19.x. -->
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
