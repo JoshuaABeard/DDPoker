@@ -17,12 +17,7 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker;
-
-import com.donohoedigital.games.poker.engine.Card;
-import com.donohoedigital.games.poker.engine.CardSuit;
-import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.engine.HandSorted;
+package com.donohoedigital.games.poker.engine;
 
 import java.util.ArrayList;
 
