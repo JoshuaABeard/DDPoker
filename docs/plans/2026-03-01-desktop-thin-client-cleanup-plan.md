@@ -1,6 +1,6 @@
 # Desktop Thin-Client Cleanup Implementation Plan
 
-**Status:** READY
+**Status:** COMPLETED (2026-03-02) — all 13 tasks implemented as part of feature/desktop-thin-client-cleanup merge
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 

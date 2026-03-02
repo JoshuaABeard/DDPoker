@@ -2,6 +2,8 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
+**Status:** COMPLETED (2026-03-02) — all 8 tasks implemented as part of feature/desktop-thin-client-cleanup merge.
+
 **Goal:** Fix 8 bugs in the desktop thin client WebSocket system (messaging, event processing, UI updates, resource management).
 
 **Architecture:** All bugs are in the client-side `poker` module (`WebSocketTournamentDirector`, `WebSocketGameClient`) and do not require server-side changes. Fixes are surgical: each targets a specific handler or lifecycle method. The `ActionTimeoutData` record already provides `playerId`, `autoAction`, and `tableId` — no server schema changes needed.

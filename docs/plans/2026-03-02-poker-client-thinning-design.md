@@ -1,6 +1,6 @@
 # Design: Poker Desktop Client Thinning
 
-**Status:** approved — pending implementation plan
+**Status:** COMPLETED (2026-03-02) — implementation plan written and executed (see 2026-03-02-poker-client-thinning-plan.md)
 **Created:** 2026-03-02
 **Scope:** `code/poker` (desktop client), `code/pokerengine` (shared engine), `code/pokerserver` (backend)
 

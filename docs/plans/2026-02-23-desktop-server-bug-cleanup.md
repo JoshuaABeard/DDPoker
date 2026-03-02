@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Status:** active
+**Status:** COMPLETED (2026-03-02) — all bugs fixed across feature/desktop-thin-client-cleanup work
 **Created:** 2026-02-23
 **Scope:** `code/poker` (desktop client) and `code/pokerserver` (server)
 
