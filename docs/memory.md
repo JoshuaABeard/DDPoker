@@ -39,6 +39,7 @@ Persistent knowledge discovered during development sessions. Read this at the st
 - [poker] `HoldemHand.getAmountToCall(GamePlayerInfo)` blindly casts its argument to `PokerPlayer` — passing any other `GamePlayerInfo` (e.g. `ClientV2AIContext.PokerPlayerAdapter`) causes `ClassCastException`. Use `HoldemHand.getCall(PokerPlayer)` with an unwrapped player instead (2026-02-19)
 - [poker] `BlindStructure` reads the key `"doubleafterlast"` to decide whether to double blinds past the last defined level, but `TournamentProfile.PARAM_DOUBLE` is the string `"double"` — a pre-existing key mismatch. Set `"doubleafterlast"` directly on the profile map when this behaviour is needed (2026-02-19)
 - [pokerengine/pokerserver] `PokerActionConstants.ACTION_FOLD == 0` and `AIContext.ACTION_NONE == 0` share the same integer value but mean different things. Code that mixes these two namespaces when checking for "no action recorded" will silently misinterpret a fold as "no action". Never compare `PokerActionConstants` values against `AIContext` constants in the same method (2026-03-02)
+- [poker] Phase D ChainPhase audit (2026-03-02): TD.CheckEndHand runs only in practice game (authoritative there). TD.NewLevelActions, TD.Bet are dead code as phases — never triggered by TournamentEngine. TD.ColorUp/ColorUpFinish run only in practice game. No client-side logic was duplicating server-authoritative behavior in the online WS path.
 
 ## Configuration
 
