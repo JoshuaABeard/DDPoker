@@ -71,7 +71,7 @@ public class PokerGameStateDelegate implements GameStateDelegate {
         PokerGame pgame = (PokerGame) game;
         int nNum = pgame.getNumTables();
         for (int i = 0; i < nNum; i++) {
-            state.setId(pgame.getTable(i));
+            state.setId((PokerTable) pgame.getTable(i));
         }
     }
 

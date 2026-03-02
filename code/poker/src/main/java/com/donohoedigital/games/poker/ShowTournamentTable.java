@@ -678,7 +678,7 @@ public class ShowTournamentTable extends ShowPokerTable
         game_.addPropertyChangeListener(PokerGame.PROP_CURRENT_TABLE, this);
         board_.addTerritorySelectionListener(this);
         board_.setTerritorySelectionMode(Gameboard.SELECTION_MODE_MULTIPLE);
-        trackTable(game_.getCurrentTable(), false);
+        trackTable((PokerTable) game_.getCurrentTable(), false);
     }
 
     /**
@@ -763,7 +763,7 @@ public class ShowTournamentTable extends ShowPokerTable
 
         // table changed
         if (name.equals(PokerGame.PROP_CURRENT_TABLE)) {
-            trackTable(game_.getCurrentTable(), true);
+            trackTable((PokerTable) game_.getCurrentTable(), true);
         }
     }
 
@@ -859,7 +859,7 @@ public class ShowTournamentTable extends ShowPokerTable
      * handle changes to table by repainting as appropriate
      */
     public void tableEventOccurred(PokerTableEvent event) {
-        PokerTable table = event.getTable();
+        ClientPokerTable table = event.getTable();
         HoldemHand hhand = table.getHoldemHand();
 
         if (PokerConstants.DEBUG_EVENT_DISPLAY)
@@ -934,14 +934,15 @@ public class ShowTournamentTable extends ShowPokerTable
             case PokerTableEvent.TYPE_BUTTON_MOVED :
                 // if button moved while dealing for button, ignore since it will
                 // be moved via a specific phase, along with the cards display
-                if (table.getTableStateInt() == PokerTable.STATE_DEAL_FOR_BUTTON)
+                PokerTable pokerTable = (PokerTable) table;
+                if (pokerTable.getTableStateInt() == PokerTable.STATE_DEAL_FOR_BUTTON)
                     break;
-                GuiUtils.invoke(new SwingIt(table, SWING_DISPLAY_BUTTON));
+                GuiUtils.invoke(new SwingIt(pokerTable, SWING_DISPLAY_BUTTON));
                 break;
 
             case PokerTableEvent.TYPE_CLEANING_DONE :
                 // set null so pot is redrawn empty; called upon change *to* STATE_CLEAN
-                table.setHoldemHand(null);
+                ((PokerTable) table).setHoldemHand(null);
                 PokerUtils.setNewHand();
                 PokerUtils.clearCards(false);
                 PokerUtils.clearResults(context_, false);
@@ -1279,7 +1280,7 @@ public class ShowTournamentTable extends ShowPokerTable
         // see if no more rebuys for human. If so, remove rebuy button
         PokerGame game = (PokerGame) context_.getGame();
         PokerPlayer human = game.getHumanPlayer();
-        PokerTable table = human.getTable();
+        PokerTable table = (PokerTable) human.getTable();
         if (human.isObserver() || human.isEliminated() || table.isRebuyDone(human)) {
             buttonbase_.remove(buttonRebuy_);
             buttonRebuy_ = null;

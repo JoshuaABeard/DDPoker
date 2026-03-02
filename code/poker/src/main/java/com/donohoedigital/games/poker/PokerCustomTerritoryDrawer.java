@@ -42,6 +42,7 @@ import com.donohoedigital.base.*;
 import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import org.apache.logging.log4j.*;
 
 import java.awt.*;
@@ -107,7 +108,7 @@ public class PokerCustomTerritoryDrawer implements CustomTerritoryDrawer {
      */
     private void drawPot(Gameboard board, Graphics2D g, Rectangle territoryBounds) {
         // get hand
-        PokerTable table = game_.getCurrentTable();
+        ClientPokerTable table = game_.getCurrentTable();
         if (table == null)
             return;
         HoldemHand hhand = table.getHoldemHand();

@@ -37,6 +37,7 @@ import com.donohoedigital.comms.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
@@ -84,7 +85,7 @@ public class DashboardItem
     protected GameContext context_;
 
     // table we are tracking and events we are interested in
-    private PokerTable table_;
+    private ClientPokerTable table_;
     private int nTableEvents_ = 0;
 
     /**
@@ -324,7 +325,7 @@ public class DashboardItem
      * trackTableEvents()). By default, calls updateInfo()
      */
     @SuppressWarnings({"UnusedDeclaration"})
-    protected void tableChanged(PokerTable newTable) {
+    protected void tableChanged(ClientPokerTable newTable) {
         if (isDisplayed())
             updateAll();
     }
@@ -485,7 +486,7 @@ public class DashboardItem
     /**
      * track table
      */
-    private void trackTable(PokerTable table) {
+    private void trackTable(ClientPokerTable table) {
         // PokerTableListener listener = bTableEventsInSwing_ ? listener_ : this;
         PokerTableListener listener = listener_;
 

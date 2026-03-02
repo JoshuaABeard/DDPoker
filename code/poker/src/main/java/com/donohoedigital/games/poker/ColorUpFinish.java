@@ -77,7 +77,7 @@ public class ColorUpFinish extends ChainPhase implements PlayerActionListener, R
      */
     public void process() {
         game_ = (PokerGame) context_.getGame();
-        table_ = game_.getCurrentTable();
+        table_ = (PokerTable) game_.getCurrentTable();
 
         // pause game if not autopilot, not online game and if pref is set
         bPause_ = !TESTING(PokerConstants.TESTING_AUTOPILOT) && !game_.isOnlineGame()

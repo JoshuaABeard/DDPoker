@@ -112,7 +112,7 @@ public class SwingEventBus extends GameEventBus {
     private PokerTableEvent convertToLegacy(GameEvent event) {
         // Extract table ID from event (most events have tableId)
         int tableId = getTableId(event);
-        PokerTable table = tableId >= 0 && game != null ? game.getTable(tableId) : null;
+        ClientPokerTable table = tableId >= 0 && game != null ? game.getTableByNumber(tableId) : null;
 
         if (table == null) {
             return null; // Can't convert without table

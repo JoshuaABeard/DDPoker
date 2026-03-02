@@ -50,6 +50,7 @@ import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.server.*;
 
 import java.io.*;
@@ -62,7 +63,7 @@ import java.util.*;
 public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     // info about this player
     private boolean bHuman_;
-    private PokerTable table_;
+    private ClientPokerTable table_;
     private int nSeat_;
     private int nChips_;
     private int nChipsAtStart_;
@@ -658,9 +659,9 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     }
 
     /**
-     * Set the table we are at (done from PokerTable)
+     * Set the table we are at (done from PokerTable or RemotePokerTable)
      */
-    public void setTable(PokerTable table, int nSeat) {
+    public void setTable(ClientPokerTable table, int nSeat) {
         if (table == null) {
             super.setGameAI(null);
             table_ = null;
@@ -681,7 +682,7 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     /**
      * Get the table we are at
      */
-    public PokerTable getTable() {
+    public ClientPokerTable getTable() {
         return table_;
     }
 
@@ -1632,7 +1633,7 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
         PokerSaveDetails pdetails = (PokerSaveDetails) state.getSaveDetails().getCustomInfo();
 
         bHuman_ = entry.removeBooleanToken();
-        table_ = (PokerTable) state.getObject(entry.removeIntegerToken());
+        table_ = (ClientPokerTable) state.getObject(entry.removeIntegerToken());
         nSeat_ = entry.removeIntToken();
         nChips_ = entry.removeIntToken();
         nChipsAtStart_ = entry.removeIntToken();

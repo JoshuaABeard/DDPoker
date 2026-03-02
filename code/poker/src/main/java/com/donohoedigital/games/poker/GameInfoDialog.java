@@ -46,6 +46,7 @@ import com.donohoedigital.games.engine.DialogPhase;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.poker.model.TournamentProfile;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -161,7 +162,7 @@ public class GameInfoDialog extends DialogPhase {
             BindArray bindArray = new BindArray();
             bindArray.addValue(Types.INTEGER, PokerDatabase.storeTournament(game_));
 
-            PokerTable currentTable = game_.getCurrentTable();
+            ClientPokerTable currentTable = game_.getCurrentTable();
             HoldemHand hhand = currentTable != null ? currentTable.getHoldemHand() : null;
 
             if (hhand == null || hhand.isStoredInDatabase()) {

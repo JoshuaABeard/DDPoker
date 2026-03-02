@@ -35,6 +35,7 @@ package com.donohoedigital.games.poker.dashboard;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.engine.*;
@@ -86,7 +87,7 @@ public class UpNext extends DashboardItem {
         // if a current table exists, use level in that table instead
         // Note: this check shouldn't be necessary unless this item is
         // used in the poker clock functionality
-        PokerTable table = game_.getCurrentTable();
+        ClientPokerTable table = game_.getCurrentTable();
         if (table != null)
             nLevel = table.getLevel();
 

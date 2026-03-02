@@ -127,7 +127,7 @@ public class PokerUtils extends EngineUtils {
     /**
      * Get territory associated with the given seat
      */
-    public static Territory getTerritoryForTableSeat(PokerTable table, int nSeat) {
+    public static Territory getTerritoryForTableSeat(ClientPokerTable table, int nSeat) {
         return getTerritoryForDisplaySeat(table.getDisplaySeat(nSeat));
     }
 
@@ -147,7 +147,7 @@ public class PokerUtils extends EngineUtils {
     /**
      * Get seat associated with the given territory
      */
-    public static int getTableSeatForTerritory(PokerTable table, Territory t) {
+    public static int getTableSeatForTerritory(ClientPokerTable table, Territory t) {
         int nDisplaySeat = getDisplaySeatForTerritory(t);
         if (nDisplaySeat == -1)
             return -1;
@@ -161,7 +161,7 @@ public class PokerUtils extends EngineUtils {
         if (t == null)
             return null;
         PokerGame game = (PokerGame) context.getGame();
-        PokerTable table = game.getCurrentTable();
+        ClientPokerTable table = game.getCurrentTable();
         int nDisplaySeat = t.getUserInt();
         if (nDisplaySeat == -1)
             return null;
@@ -247,7 +247,7 @@ public class PokerUtils extends EngineUtils {
             if (game.isClockMode())
                 return false;
 
-            PokerTable table = game.getCurrentTable();
+            ClientPokerTable table = game.getCurrentTable();
             if (table == null)
                 return false;
 
@@ -351,7 +351,7 @@ public class PokerUtils extends EngineUtils {
     private static void setConnectionStatus(GameContext context, PokerPlayer p, boolean bClearIfConnected,
             boolean repaint) {
         PokerGame game = (PokerGame) context.getGame();
-        PokerTable table = game.getCurrentTable();
+        ClientPokerTable table = game.getCurrentTable();
         if (table == null || table != p.getTable())
             return;
 
@@ -583,7 +583,7 @@ public class PokerUtils extends EngineUtils {
      * display time in given label, return text string of time
      */
     public static String updateTime(PokerGame game, DDText label) {
-        PokerTable table = game.getCurrentTable();
+        ClientPokerTable table = game.getCurrentTable();
         if (table != null && table.isZipMode())
             return null;
 
@@ -635,7 +635,7 @@ public class PokerUtils extends EngineUtils {
      *            amount to round
      * @return chips rounded to nearest multiple of table min chip
      */
-    public static int roundAmountMinChip(PokerTable table, int chips) {
+    public static int roundAmountMinChip(ClientPokerTable table, int chips) {
         int nNewAmount = chips;
         int nMinChip = table.getMinChip();
         if (nMinChip <= 0)

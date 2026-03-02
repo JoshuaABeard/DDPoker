@@ -254,7 +254,7 @@ class PokerGameTest {
         PokerTable table = createTestTable(5);
         game.addTable(table);
 
-        PokerTable found = game.getTableByNumber(5);
+        PokerTable found = (PokerTable) game.getTableByNumber(5);
 
         assertThat(found).isEqualTo(table);
     }

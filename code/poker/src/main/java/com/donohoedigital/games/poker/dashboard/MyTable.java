@@ -35,8 +35,8 @@ package com.donohoedigital.games.poker.dashboard;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.poker.PokerPlayer;
-import com.donohoedigital.games.poker.PokerTable;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
@@ -66,7 +66,7 @@ public class MyTable extends DashboardItem {
     }
 
     protected Object getDynamicTitleParam() {
-        PokerTable table = game_.getCurrentTable();
+        ClientPokerTable table = game_.getCurrentTable();
         return table != null ? table.getNumber() + 1 : 1;
     }
 
@@ -78,7 +78,7 @@ public class MyTable extends DashboardItem {
      * update level
      */
     protected void updateInfo() {
-        PokerTable table = game_.getCurrentTable();
+        ClientPokerTable table = game_.getCurrentTable();
         PokerPlayer human = game_.getHumanPlayer();
         if (table == null || human == null)
             return;
@@ -93,7 +93,7 @@ public class MyTable extends DashboardItem {
             sMsgKey = bObs ? "msg.mytable.obs" : "msg.mytable";
         }
 
-        PokerTable humanTable = human.getTable();
+        ClientPokerTable humanTable = human.getTable();
         int tableNum = humanTable != null ? humanTable.getNumber() + 1 : table.getNumber() + 1;
         labelInfo_
                 .setText(PropertyConfig.getMessage(sMsgKey, tableNum, bObs ? null : human.getSeat() + 1, "" + nHandNum) // use

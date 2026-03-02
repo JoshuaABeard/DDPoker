@@ -41,6 +41,7 @@ import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.engine.Phase;
 import com.donohoedigital.games.engine.ProfileList;
 import com.donohoedigital.games.poker.model.TournamentProfile;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
@@ -490,7 +491,7 @@ public class ShowPokerNightTable extends ShowPokerTable
         int nNextLevel = nLevel + 1;
 
         // if a current table exists, use level in that game instead
-        PokerTable table = game_.getCurrentTable();
+        ClientPokerTable table = game_.getCurrentTable();
         if (table != null)
             nLevel = table.getLevel();
 

@@ -119,7 +119,7 @@ public class CheckEndHand extends ChainPhase {
      */
     public static boolean isGameOver(PokerGame game, boolean bDoRebuyAndCleanup, PokerDirector td) {
         PokerPlayer human = game.getHumanPlayer();
-        PokerTable table = game.getCurrentTable();
+        PokerTable table = (PokerTable) game.getCurrentTable();
 
         boolean bGameOver = false;
         boolean bOnline = game.isOnlineGame();

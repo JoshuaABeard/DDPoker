@@ -21,6 +21,7 @@ package com.donohoedigital.games.poker.control;
 
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.poker.*;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.sun.net.httpserver.HttpExchange;
@@ -103,7 +104,7 @@ class ValidateHandler extends BaseHandler {
             return result;
         }
 
-        List<PokerTable> tables = game.getTables();
+        List<ClientPokerTable> tables = game.getTables();
         int buyinPerPlayer = game.getStartingChips();
         // Profile holds the original configured player count (constant throughout game).
         // game.getNumPlayers() may shrink as players are eliminated and removed.
@@ -115,7 +116,7 @@ class ValidateHandler extends BaseHandler {
         int visiblePlayerCount = 0;
 
         if (tables != null) {
-            for (PokerTable table : tables) {
+            for (ClientPokerTable table : tables) {
                 Map<String, Object> tableResult = buildTableChipInfo(table);
                 tableResults.add(tableResult);
                 grandTotalChips += (int) tableResult.get("playerChips");
@@ -163,7 +164,7 @@ class ValidateHandler extends BaseHandler {
         return result;
     }
 
-    private Map<String, Object> buildTableChipInfo(PokerTable table) {
+    private Map<String, Object> buildTableChipInfo(ClientPokerTable table) {
         int playerChips = 0;
         int numSeated = 0;
         for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
@@ -197,7 +198,7 @@ class ValidateHandler extends BaseHandler {
 
         if (!isBettingMode) return true;
 
-        PokerTable table = game.getCurrentTable();
+        ClientPokerTable table = game.getCurrentTable();
         if (table == null) {
             warnings.add("inputMode is " + ActionHandler.inputModeToString(inputMode)
                     + " but no current table is set");

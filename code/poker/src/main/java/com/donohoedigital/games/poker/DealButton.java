@@ -50,6 +50,6 @@ public class DealButton extends ChainPhase {
         PokerDirector td = (PokerDirector) context_.getGameManager();
         PokerGame game = (PokerGame) context_.getGame();
         game.setInputMode(PokerTableInput.MODE_QUITSAVE);
-        td.doDeal(game.getCurrentTable());
+        td.doDeal((PokerTable) game.getCurrentTable());
     }
 }

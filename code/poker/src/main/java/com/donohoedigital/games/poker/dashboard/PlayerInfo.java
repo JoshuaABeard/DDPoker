@@ -39,9 +39,9 @@ import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.Gameboard;
 import com.donohoedigital.games.engine.TerritorySelectionListener;
 import com.donohoedigital.games.poker.PokerPlayer;
-import com.donohoedigital.games.poker.PokerTable;
 import com.donohoedigital.games.poker.PokerUtils;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.donohoedigital.gui.DDLabel;
 import com.donohoedigital.gui.GuiManager;
@@ -98,7 +98,7 @@ public class PlayerInfo extends DashboardItem implements TerritorySelectionListe
             if (profile.isRebuys()) {
                 Object what = null;
 
-                PokerTable table = last_.getTable();
+                ClientPokerTable table = last_.getTable();
                 int nLast = profile.getLastRebuyLevel();
                 if (table != null && table.getLevel() <= nLast) {
                     int nMax = profile.getMaxRebuys();

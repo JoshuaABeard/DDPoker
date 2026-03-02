@@ -23,7 +23,7 @@ import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
 import com.donohoedigital.games.poker.PokerPlayer;
-import com.donohoedigital.games.poker.PokerTable;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.core.PlayerAction;
 import com.donohoedigital.games.poker.gameserver.ServerPlayerActionProvider;
@@ -90,7 +90,7 @@ class PuppetActionHandler extends BaseHandler {
             return;
         }
 
-        PokerTable table = game.getCurrentTable();
+        ClientPokerTable table = game.getCurrentTable();
         if (table == null) {
             sendJson(exchange, 409, Map.of("error", "Conflict", "message", "No active game"));
             return;

@@ -414,7 +414,6 @@ public class ServerTournamentContext implements TournamentContext {
         return timeoutSeconds;
     }
 
-    @Override
     public GameTable getCurrentTable() {
         // For server, return first table by default
         return tables.isEmpty() ? null : tables.get(0);

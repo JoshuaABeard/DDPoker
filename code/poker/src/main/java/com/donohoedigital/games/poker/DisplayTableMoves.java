@@ -56,7 +56,7 @@ public class DisplayTableMoves extends ChainPhase {
 
     public void process() {
         game_ = (PokerGame) context_.getGame();
-        PokerTable table = game_.getCurrentTable();
+        PokerTable table = (PokerTable) game_.getCurrentTable();
         List<PokerPlayer> moved = table.getAddedList();
 
         // moved players

@@ -23,6 +23,7 @@ import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.Phase;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.ai.PlayerType;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.dashboard.DashboardAdvisor;
 import com.donohoedigital.games.poker.engine.Card;
@@ -95,7 +96,7 @@ class StateHandler extends BaseHandler {
             ServerPlayerActionProvider provider = director.getActionProvider();
             Set<Integer> puppetedIds = provider.getPuppetedPlayerIds();
             List<Integer> puppetedSeats = new ArrayList<>();
-            PokerTable currentTable = game.getCurrentTable();
+            ClientPokerTable currentTable = game.getCurrentTable();
             if (currentTable != null) {
                 for (int s = 0; s < PokerConstants.SEATS; s++) {
                     PokerPlayer pp = currentTable.getPlayer(s);
@@ -122,12 +123,12 @@ class StateHandler extends BaseHandler {
         if (game.isClockMode()) return "CLOCK";
         int inputMode = game.getInputMode();
         if (inputMode == PokerTableInput.MODE_NONE) return "NONE";
-        List<PokerTable> tables = game.getTables();
+        List<ClientPokerTable> tables = game.getTables();
         if (tables == null || tables.isEmpty()) return "LOBBY";
         // Prefer the current table (set by WebSocketTournamentDirector) over tables.get(0)
         // which may be an unrelated loaded game when multiple tables exist in the context.
-        PokerTable current = game.getCurrentTable();
-        PokerTable table = (current != null) ? current : tables.get(0);
+        ClientPokerTable current = game.getCurrentTable();
+        ClientPokerTable table = (current != null) ? current : tables.get(0);
         HoldemHand hand = table.getHoldemHand();
         if (hand == null) return "BETWEEN_HANDS";
         return switch (hand.getRound()) {
@@ -160,9 +161,9 @@ class StateHandler extends BaseHandler {
         t.put("isGameOver", game.isGameOver());
 
         // Hand number from the current table (0 = no hand yet dealt)
-        PokerTable currentTable = game.getCurrentTable();
+        ClientPokerTable currentTable = game.getCurrentTable();
         if (currentTable == null) {
-            List<PokerTable> tables = game.getTables();
+            List<ClientPokerTable> tables = game.getTables();
             currentTable = (tables != null && !tables.isEmpty()) ? tables.get(0) : null;
         }
         t.put("handNumber", currentTable != null ? currentTable.getHandNum() : 0);
@@ -193,10 +194,10 @@ class StateHandler extends BaseHandler {
         t.put("standings", buildTournamentStandings(game));
 
         // Chip leaderboard (top players across all tables)
-        List<PokerTable> allTables = game.getTables();
+        List<ClientPokerTable> allTables = game.getTables();
         if (allTables != null && !allTables.isEmpty()) {
             List<Map<String, Object>> leaders = new ArrayList<>();
-            for (PokerTable tbl : allTables) {
+            for (ClientPokerTable tbl : allTables) {
                 for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
                     PokerPlayer p = tbl.getPlayer(seat);
                     if (p != null && !p.isEliminated()) {
@@ -227,16 +228,16 @@ class StateHandler extends BaseHandler {
     }
 
     private List<Map<String, Object>> buildTables(PokerGame game) {
-        List<PokerTable> tables = game.getTables();
+        List<ClientPokerTable> tables = game.getTables();
         if (tables == null) return List.of();
         List<Map<String, Object>> result = new ArrayList<>();
-        for (PokerTable table : tables) {
+        for (ClientPokerTable table : tables) {
             result.add(buildTable(table, game));
         }
         return result;
     }
 
-    private Map<String, Object> buildTable(PokerTable table, PokerGame game) {
+    private Map<String, Object> buildTable(ClientPokerTable table, PokerGame game) {
         Map<String, Object> t = new LinkedHashMap<>();
         t.put("id", table.getNumber());
         t.put("dealerSeat", table.getButton());
@@ -423,7 +424,7 @@ class StateHandler extends BaseHandler {
         if (!isHumanTurn) return action;
 
         PokerPlayer human = game.getHumanPlayer();
-        PokerTable table = game.getCurrentTable();
+        ClientPokerTable table = game.getCurrentTable();
         HoldemHand hand = table != null ? table.getHoldemHand() : null;
 
         if (human != null) {
@@ -457,7 +458,7 @@ class StateHandler extends BaseHandler {
         action.put("advisorTitle", DashboardAdvisor.getCurrentTitle());
 
         // Current player info (for puppet mode)
-        PokerTable actionTable = game.getCurrentTable();
+        ClientPokerTable actionTable = game.getCurrentTable();
         if (actionTable != null) {
             HoldemHand actionHand = actionTable.getHoldemHand();
             if (actionHand != null) {
@@ -487,7 +488,7 @@ class StateHandler extends BaseHandler {
         return result;
     }
 
-    private Map<String, Object> buildChipConservation(PokerTable table, HoldemHand hand) {
+    private Map<String, Object> buildChipConservation(ClientPokerTable table, HoldemHand hand) {
         int playerTotal = 0;
         for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
             PokerPlayer player = table.getPlayer(seat);
@@ -503,7 +504,7 @@ class StateHandler extends BaseHandler {
         return cc;
     }
 
-    private Map<String, Object> buildCurrentBets(PokerTable table, HoldemHand hand) {
+    private Map<String, Object> buildCurrentBets(ClientPokerTable table, HoldemHand hand) {
         Map<String, Object> bets = new LinkedHashMap<>();
         for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
             PokerPlayer player = table.getPlayer(seat);

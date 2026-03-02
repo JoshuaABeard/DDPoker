@@ -543,7 +543,7 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
         boolean bCardsChanged = false;
 
         if (game != null) {
-            table = game.getCurrentTable();
+            table = (PokerTable) game.getCurrentTable();
             if (table != null) {
                 hhand = table.getHoldemHand();
             }

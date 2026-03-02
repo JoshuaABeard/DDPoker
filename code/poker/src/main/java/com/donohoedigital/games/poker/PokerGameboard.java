@@ -220,7 +220,7 @@ public class PokerGameboard extends Gameboard {
         if (PokerUtils.isPot(t)) {
             String sMsg = "";
 
-            PokerTable table = game_.getCurrentTable();
+            ClientPokerTable table = game_.getCurrentTable();
             HoldemHand hhand = table.getHoldemHand();
 
             if (hhand != null) {
@@ -247,7 +247,7 @@ public class PokerGameboard extends Gameboard {
      */
     @Override
     public void repaintTerritory(Territory t, boolean bImmediate) {
-        PokerTable table = game_.getCurrentTable();
+        ClientPokerTable table = game_.getCurrentTable();
         if (table == null || table.isZipMode())
             return;
 
@@ -268,13 +268,14 @@ public class PokerGameboard extends Gameboard {
                 HoldemHand hhand = table.getHoldemHand();
 
                 // coloring up mode
-                if (table.isColoringUpDisplay()) {
+                PokerTable pokerTable = (PokerTable) table;
+                if (pokerTable.isColoringUpDisplay()) {
                     color = PokerDisplayAdapter.cCurrent_;
                     int nAmount = 0;
                     if (player.isWonChipRace()) {
                         sText = PropertyConfig
                                 .getMessage(player.isBrokeChipRace() ? "msg.oddchips.broke" : "msg.oddchips.won");
-                        nAmount = table.getNextMinChip();
+                        nAmount = pokerTable.getNextMinChip();
                     } else {
                         int nOdd = player.getOddChips();
                         sText = PropertyConfig.getMessage(nOdd == 0

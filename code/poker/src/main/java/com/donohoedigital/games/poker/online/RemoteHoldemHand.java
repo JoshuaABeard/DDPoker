@@ -64,7 +64,7 @@ public class RemoteHoldemHand extends HoldemHand {
     private final Map<Integer, Integer> remoteWins_ = new HashMap<>();
     private int remoteSmallBlindSeat_ = NO_CURRENT_PLAYER;
     private int remoteBigBlindSeat_ = NO_CURRENT_PLAYER;
-    private PokerTable ownerTable_;
+    private ClientPokerTable ownerTable_;
 
     /**
      * Creates a remote hand with no-arg parent constructor. Calls
@@ -149,17 +149,31 @@ public class RemoteHoldemHand extends HoldemHand {
     }
 
     /**
-     * Returns the {@link PokerTable} that owns this hand. Overrides the parent
-     * which reads the {@code table_} field (never set via the no-arg constructor
-     * path). Set by {@link RemotePokerTable#setRemoteHand}.
+     * Returns the table that owns this hand as a {@link PokerTable}. Overrides the
+     * parent which reads the {@code table_} field (never set via the no-arg
+     * constructor path). Set by {@link RemotePokerTable#setRemoteHand}.
+     *
+     * <p>
+     * In the remote path {@code ownerTable_} is a {@link RemotePokerTable} (a
+     * {@link ClientPokerTable}). The cast to {@link PokerTable} is safe only when
+     * the hand belongs to a real {@code PokerTable}; callers in the online UI path
+     * should use {@link #getClientTable()} instead.
      */
     @Override
     public PokerTable getTable() {
+        return ownerTable_ instanceof PokerTable ? (PokerTable) ownerTable_ : null;
+    }
+
+    /**
+     * Returns the owning table as a {@link ClientPokerTable}. Works for both local
+     * and remote tables.
+     */
+    public ClientPokerTable getClientTable() {
         return ownerTable_;
     }
 
     /** Called by {@link RemotePokerTable#setRemoteHand} to back-link the table. */
-    void setOwnerTable(PokerTable table) {
+    void setOwnerTable(ClientPokerTable table) {
         ownerTable_ = table;
     }
 

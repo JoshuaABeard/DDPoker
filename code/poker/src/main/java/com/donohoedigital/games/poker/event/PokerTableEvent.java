@@ -41,6 +41,7 @@ package com.donohoedigital.games.poker.event;
 import com.donohoedigital.base.*;
 import com.donohoedigital.comms.*;
 import com.donohoedigital.games.poker.*;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 
 /**
  *
@@ -81,7 +82,7 @@ public class PokerTableEvent implements DataMarshal {
 
     // members
     private int nType_;
-    private PokerTable table_;
+    private ClientPokerTable table_;
     private PokerPlayer player_;
     private HandAction action_;
     private int nOne_ = NOT_DEFINED;
@@ -206,7 +207,7 @@ public class PokerTableEvent implements DataMarshal {
     /**
      * Various poker table events
      */
-    public PokerTableEvent(int nType, PokerTable table) {
+    public PokerTableEvent(int nType, ClientPokerTable table) {
         nType_ = nType;
         table_ = table;
         ApplicationError.assertNotNull(table_, "Poker table must be non-null", null);
@@ -215,7 +216,7 @@ public class PokerTableEvent implements DataMarshal {
     /**
      * Player added/removed events
      */
-    public PokerTableEvent(int nType, PokerTable table, PokerPlayer player, int nSeat) {
+    public PokerTableEvent(int nType, ClientPokerTable table, PokerPlayer player, int nSeat) {
         this(nType, table);
         player_ = player;
         nOne_ = nSeat;
@@ -224,7 +225,7 @@ public class PokerTableEvent implements DataMarshal {
     /**
      * Button moved events and other old value/new value events
      */
-    public PokerTableEvent(int nType, PokerTable table, int nOld, int nNew) {
+    public PokerTableEvent(int nType, ClientPokerTable table, int nOld, int nNew) {
         this(nType, table);
         nOne_ = nOld;
         nTwo_ = nNew;
@@ -233,7 +234,8 @@ public class PokerTableEvent implements DataMarshal {
     /**
      * Player rebuy/addon events
      */
-    public PokerTableEvent(int nType, PokerTable table, PokerPlayer player, int nCash, int nChips, boolean bPending) {
+    public PokerTableEvent(int nType, ClientPokerTable table, PokerPlayer player, int nCash, int nChips,
+            boolean bPending) {
         this(nType, table);
         nOne_ = nCash;
         nTwo_ = nChips;
@@ -244,7 +246,7 @@ public class PokerTableEvent implements DataMarshal {
     /**
      * Dealer action events
      */
-    public PokerTableEvent(int nType, PokerTable table, int nValue) {
+    public PokerTableEvent(int nType, ClientPokerTable table, int nValue) {
         this(nType, table);
         nOne_ = nValue;
     }
@@ -252,7 +254,7 @@ public class PokerTableEvent implements DataMarshal {
     /**
      * Hand action events
      */
-    public PokerTableEvent(int nType, PokerTable table, HandAction action) {
+    public PokerTableEvent(int nType, ClientPokerTable table, HandAction action) {
         this(nType, table);
         action_ = action;
         player_ = action_.getPlayer();
@@ -266,9 +268,9 @@ public class PokerTableEvent implements DataMarshal {
     }
 
     /**
-     * Get poker table this event was generated from. Always non-null
+     * Get the table this event was generated from. Always non-null.
      */
-    public PokerTable getTable() {
+    public ClientPokerTable getTable() {
         return table_;
     }
 

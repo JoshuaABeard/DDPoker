@@ -442,7 +442,7 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
 
         msg_.setText("");
         if (mgr_ != null)
-            mgr_.sendChat(sMsg, game_.getCurrentTable(), null);
+            mgr_.sendChat(sMsg, (PokerTable) game_.getCurrentTable(), null);
 
         displayMessage(local_.getID(), PokerConstants.CHAT_ALWAYS, sMsg, true);
     }
@@ -469,7 +469,7 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
      * Send all chat message
      */
     private void sendChatPrivate(int nToID) {
-        PokerTable localTable = local_ != null ? local_.getTable() : null;
+        ClientPokerTable localTable = local_ != null ? local_.getTable() : null;
         String tableName = localTable != null ? localTable.getName() : "";
         String sMsg = PropertyConfig.getMessage(nToID == PokerPlayer.HOST_ID ? "msg.chat.tohost" : "msg.chat.replyhost",
                 Utils.encodeHTML(msg_.getText()), tableName);

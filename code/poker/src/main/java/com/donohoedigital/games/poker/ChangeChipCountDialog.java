@@ -42,6 +42,7 @@ import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
@@ -59,7 +60,7 @@ public class ChangeChipCountDialog extends DialogPhase {
 
     private PokerPlayer player_;
     private DDNumberSpinner amount_;
-    private PokerTable table_;
+    private ClientPokerTable table_;
 
     /**
      * create chat ui

@@ -82,7 +82,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
     public void process() {
         // get player, table and current hand
         game_ = (PokerGame) context_.getGame();
-        table_ = game_.getCurrentTable();
+        table_ = (PokerTable) game_.getCurrentTable();
         hhand_ = table_.getHoldemHand();
         player_ = hhand_.getCurrentPlayer();
         nRound_ = hhand_.getRound().toLegacy();

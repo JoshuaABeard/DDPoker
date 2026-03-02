@@ -41,6 +41,7 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
@@ -93,7 +94,7 @@ public class SidePotsDialog extends DialogPhase {
      */
     private void setPots() {
         nSide = 0;
-        PokerTable currentTable = game_.getCurrentTable();
+        ClientPokerTable currentTable = game_.getCurrentTable();
         HoldemHand hhand = currentTable != null ? currentTable.getHoldemHand() : null;
         if (hhand == null)
             return;

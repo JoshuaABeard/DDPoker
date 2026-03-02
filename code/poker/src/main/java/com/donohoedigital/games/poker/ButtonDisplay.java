@@ -75,7 +75,7 @@ public class ButtonDisplay extends ChainPhase implements Runnable {
      */
     public void process() {
         game_ = (PokerGame) context_.getGame();
-        table_ = game_.getCurrentTable();
+        table_ = (PokerTable) game_.getCurrentTable();
 
         Thread tButton = new Thread(this, "ButtonDisplay");
         tButton.start();

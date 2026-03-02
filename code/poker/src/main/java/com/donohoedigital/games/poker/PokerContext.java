@@ -155,11 +155,11 @@ public class PokerContext extends GameContext {
         if (game == null)
             return;
 
-        PokerTable current = game.getCurrentTable();
+        PokerTable current = (PokerTable) game.getCurrentTable();
         PokerTable t;
         HoldemHand hhand;
         for (int i = 0; i < game.getNumTables(); i++) {
-            t = game.getTable(i);
+            t = (PokerTable) game.getTable(i);
             if (t.isAllComputer())
                 continue;
 

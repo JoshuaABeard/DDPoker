@@ -88,7 +88,7 @@ public class ObserversDash extends DashboardItem {
      * update observer list
      */
     protected void updateInfo() {
-        PokerTable table = game_.getCurrentTable();
+        PokerTable table = (PokerTable) game_.getCurrentTable();
         obsPanel_.removeAll();
 
         // inline count - it can change during update

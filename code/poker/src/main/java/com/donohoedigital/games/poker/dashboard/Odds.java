@@ -36,6 +36,7 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
@@ -65,7 +66,7 @@ public abstract class Odds extends DashboardItem {
      */
     @Override
     public void tableEventOccurred(PokerTableEvent event) {
-        PokerTable table = event.getTable();
+        ClientPokerTable table = event.getTable();
 
         if (table.isZipMode() || !isDisplayed())
             return;
@@ -121,7 +122,7 @@ public abstract class Odds extends DashboardItem {
     @Override
     protected void updateInfo() {
         // init
-        PokerTable table = game_.getCurrentTable();
+        ClientPokerTable table = game_.getCurrentTable();
         HoldemHand hhand = table.getHoldemHand();
         PokerPlayer asViewedBy = game_.getHumanPlayer();
 

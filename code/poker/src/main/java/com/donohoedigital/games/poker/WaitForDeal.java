@@ -42,6 +42,7 @@ import com.donohoedigital.config.*;
 import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import org.apache.logging.log4j.*;
 
 /**
@@ -59,7 +60,7 @@ public class WaitForDeal extends ChainPhase {
         game.setInputMode(PokerTableInput.MODE_DEAL);
 
         // show dialog about pressing D to begin
-        PokerTable table = game.getCurrentTable();
+        ClientPokerTable table = game.getCurrentTable();
         if (table != null && table.getHandNum() == 0) {
             // show info dialog
             if (!TESTING(PokerConstants.TESTING_AUTOPILOT_INIT)) {

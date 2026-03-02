@@ -38,7 +38,7 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
-import com.donohoedigital.games.poker.HandUtils;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 import com.donohoedigital.gui.*;
 import com.zookitec.layout.*;
@@ -118,7 +118,7 @@ public class MyHand extends DashboardItem {
             return;
         }
 
-        PokerTable table = event.getTable();
+        ClientPokerTable table = event.getTable();
         if (!table.isZipMode()) {
             super.tableEventOccurred(event);
         }
@@ -167,7 +167,7 @@ public class MyHand extends DashboardItem {
     }
 
     protected void updateMessages() {
-        PokerTable table = game_.getCurrentTable();
+        ClientPokerTable table = game_.getCurrentTable();
         HoldemHand hhand = table.getHoldemHand();
         PokerPlayer asViewedBy = game_.getHumanPlayer();
         Hand hand = asViewedBy.getHand();

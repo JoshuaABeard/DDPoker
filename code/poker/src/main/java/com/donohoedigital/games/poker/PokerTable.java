@@ -62,7 +62,7 @@ import com.donohoedigital.games.poker.core.state.BettingRound;
  *
  * @author donohoe
  */
-public class PokerTable implements ObjectID, GameTable {
+public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     static Logger logger = LogManager.getLogger(PokerTable.class);
 
     // no seat

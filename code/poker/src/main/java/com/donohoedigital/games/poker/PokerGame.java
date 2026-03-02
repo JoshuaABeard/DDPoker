@@ -55,6 +55,7 @@ import java.io.*;
 import java.security.*;
 import java.util.*;
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import com.donohoedigital.games.poker.core.GameTable;
 import com.donohoedigital.games.poker.core.TournamentContext;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 
@@ -105,7 +106,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     public static final String PROP_PLAYER_FINISHED = "_busted_";
 
     // game info
-    private DMArrayList<PokerTable> tables_ = new DMArrayList<PokerTable>();
+    private DMArrayList<ClientPokerTable> tables_ = new DMArrayList<ClientPokerTable>();
     private TournamentProfile profile_;
     private int nLevel_ = 0;
     private boolean bClockMode_ = false;
@@ -131,7 +132,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     private boolean bPublic_;
     private int nPort_;
     private int nOnlineMode_ = MODE_NONE;
-    private PokerTable currentTable_;
+    private ClientPokerTable currentTable_;
     private int lastHandSaved_ = 0;
     private int nNumOut_ = 0;
 
@@ -361,7 +362,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     @Override
     public void removeObserver(GamePlayer player) {
         PokerPlayer pokerPlayer = ((PokerPlayer) player);
-        PokerTable table = pokerPlayer.getTable();
+        PokerTable table = (PokerTable) pokerPlayer.getTable();
         if (table != null)
             table.removeObserver(pokerPlayer);
         super.removeObserver(player);
@@ -423,7 +424,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         // not in the game's own player list (which still holds the PracticeGameLauncher
         // placeholder). Scan the current table's seats to find the human player.
         if (webSocketConfig_ != null) {
-            PokerTable table = getCurrentTable();
+            ClientPokerTable table = getCurrentTable();
             if (table != null) {
                 for (int s = 0; s < PokerConstants.SEATS; s++) {
                     PokerPlayer p = table.getPlayer(s);
@@ -527,11 +528,11 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     /**
      * Set current poker table
      */
-    public void setCurrentTable(PokerTable current) {
+    public void setCurrentTable(ClientPokerTable current) {
         if (current == currentTable_)
             return;
 
-        PokerTable old = currentTable_;
+        ClientPokerTable old = currentTable_;
         currentTable_ = current;
 
         if (old != null)
@@ -545,7 +546,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     /**
      * Get poker table being displayed
      */
-    public PokerTable getCurrentTable() {
+    public ClientPokerTable getCurrentTable() {
         return currentTable_;
     }
 
@@ -586,27 +587,29 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      * Add a table to the list of tables maintained by the game. Added table passed
      * as "new" value in PROP_TABLES event.
      */
-    public void addTable(PokerTable table) {
+    public void addTable(ClientPokerTable table) {
         tables_.add(table);
         firePropertyChange(PROP_TABLES, null, table);
 
     }
 
     /**
-     * Get table at index
+     * Get table at index (TournamentContext implementation — returns GameTable).
+     * The tables_ list stores PokerTable objects which implement both GameTable and
+     * ClientPokerTable.
      */
-    public PokerTable getTable(int i) {
-        return tables_.get(i);
+    @Override
+    public GameTable getTable(int i) {
+        return (PokerTable) tables_.get(i);
     }
 
     /**
      * Get table by number
      */
-    public PokerTable getTableByNumber(int nTableNum) {
-        PokerTable table;
+    public ClientPokerTable getTableByNumber(int nTableNum) {
         int nNum = getNumTables();
         for (int i = 0; i < nNum; i++) {
-            table = getTable(i);
+            ClientPokerTable table = (ClientPokerTable) getTable(i);
             if (table.getNumber() == nTableNum) {
                 return table;
             }
@@ -618,7 +621,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      * Remove table from tournament. Removed table passed as "old" value in
      * PROP_TABLES event.
      */
-    public void removeTable(PokerTable table) {
+    public void removeTable(ClientPokerTable table) {
         tables_.remove(table);
         table.setRemoved(true);
         firePropertyChange(PROP_TABLES, table, null);
@@ -627,7 +630,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     /**
      * Get array of tables
      */
-    public List<PokerTable> getTables() {
+    public List<ClientPokerTable> getTables() {
         return tables_;
     }
 
@@ -934,7 +937,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
             return false;
         }
         PokerPlayer pokerPlayer = (PokerPlayer) player;
-        return !pokerPlayer.getTable().isRebuyDone(pokerPlayer);
+        return !((PokerTable) pokerPlayer.getTable()).isRebuyDone(pokerPlayer);
     }
 
     /**
@@ -1216,10 +1219,8 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         nextLevel();
 
         // set initial min chip now that its been set
-        PokerTable table;
         for (int i = 0; i < getNumTables(); i++) {
-            table = getTable(i);
-            table.setMinChip(getMinChip());
+            ((PokerTable) getTable(i)).setMinChip(getMinChip());
         }
 
         // init DDMessage MsgState
@@ -1358,11 +1359,11 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         // if host is an observer, assign to table 1
         PokerPlayer host = getHost();
         if (host.isObserver()) {
-            getTable(0).addObserver(host);
+            ((PokerTable) getTable(0)).addObserver(host);
         }
 
         // assign observers tables
-        PokerTable hostTable = host.getTable();
+        PokerTable hostTable = (PokerTable) host.getTable();
         nNumPlayers = getNumObservers();
         PokerPlayer obs;
         for (int i = 0; i < nNumPlayers; i++) {
@@ -1638,7 +1639,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
             PokerTable table;
             HoldemHand hhand;
             for (int i = getNumTables() - 1; i >= 0; i--) {
-                table = getTable(i);
+                table = (PokerTable) getTable(i);
                 hhand = table.getHoldemHand();
                 if (hhand == null)
                     continue;
@@ -1662,7 +1663,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      */
     public void debugPrintTables(boolean bShort) {
         for (int i = 0; i < getNumTables(); i++) {
-            logger.debug(getTable(i).toString(bShort));
+            logger.debug(((PokerTable) getTable(i)).toString(bShort));
         }
     }
 
@@ -2015,7 +2016,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
             }
         }
 
-        // player saving for
+        // player saving for (save/load path: always local PokerTable, never remote)
         PokerTable table;
         PokerPlayer playerForSave = null;
         boolean bSaveOtherTable = false;
@@ -2023,7 +2024,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         int nPlayerID = pdetails.getPlayerID();
         if (nPlayerID != PokerSaveDetails.NO_PLAYER) {
             playerForSave = getPokerPlayerFromID(nPlayerID);
-            tableForPlayer = playerForSave.getTable();
+            tableForPlayer = (PokerTable) playerForSave.getTable();
         }
 
         // num tables
@@ -2038,7 +2039,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
 
             case SaveDetails.SAVE_DIRTY :
                 for (int i = 0; i < nNumTables; i++) {
-                    table = getTable(i);
+                    table = (PokerTable) getTable(i);
                     if (table.isDirty()) {
                         nNum++;
                         if (playerForSave != null && table != tableForPlayer)
@@ -2087,7 +2088,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         switch (pdetails.getSaveTables()) {
             case SaveDetails.SAVE_ALL :
                 for (int i = 0; i < nNumTables; i++) {
-                    table = getTable(i);
+                    table = (PokerTable) getTable(i);
                     table.addGameStateEntry(state);
                 }
                 break;
@@ -2095,7 +2096,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
             case SaveDetails.SAVE_DIRTY :
 
                 for (int i = 0; i < nNumTables; i++) {
-                    table = getTable(i);
+                    table = (PokerTable) getTable(i);
                     if (table.isDirty()) {
                         table.addGameStateEntry(state);
                     }
@@ -2161,7 +2162,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
 
         // only load current table for ALL (file loads)
         if (pdetails.getSaveTables() == SaveDetails.SAVE_ALL && !pdetails.isSetCurrentTableToLocal()) {
-            currentTable_ = (PokerTable) state.getObjectNullOkay(entry.removeIntegerToken());
+            currentTable_ = (ClientPokerTable) state.getObjectNullOkay(entry.removeIntegerToken());
         }
 
         // 2.0 additions
@@ -2186,7 +2187,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         int[] removed = pdetails.getRemovedTables();
         if (removed != null) {
             for (int aRemoved : removed) {
-                table = getTableByNumber(aRemoved);
+                table = (PokerTable) getTableByNumber(aRemoved);
                 removeTable(table);
                 if (PokerConstants.DEBUG_CLEANUP_TABLE) {
                     logger.debug("Removed on load: " + table.getName());
@@ -2239,7 +2240,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
 
         // go through all tables
         for (int i = getNumTables() - 1; i >= 0; i--) {
-            getTable(i).gameLoaded();
+            ((PokerTable) getTable(i)).gameLoaded();
         }
     }
 

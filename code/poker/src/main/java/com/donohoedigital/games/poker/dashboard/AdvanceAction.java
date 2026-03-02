@@ -38,6 +38,7 @@ import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
@@ -144,7 +145,7 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
                 clearButtons();
         }
 
-        PokerTable table = event.getTable();
+        ClientPokerTable table = event.getTable();
         if (!table.isZipMode()) {
             super.tableEventOccurred(event);
         }
@@ -190,7 +191,7 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
         }
 
         // init
-        PokerTable table = game_.getCurrentTable();
+        ClientPokerTable table = game_.getCurrentTable();
         HoldemHand hhand = table.getHoldemHand();
         Hand hand = human.getHand();
 
@@ -411,7 +412,7 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
      * get action indicated by player
      */
     private HandAction _getAdvanceAction() {
-        PokerTable table = game_.getCurrentTable();
+        ClientPokerTable table = game_.getCurrentTable();
         HoldemHand hhand = table.getHoldemHand();
         int nRound = hhand.getRound().toLegacy();
         PokerPlayer human = game_.getHumanPlayer();

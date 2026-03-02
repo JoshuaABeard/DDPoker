@@ -101,7 +101,7 @@ public class GamePrefsDialog extends OptionMenuDialog {
         }
 
         // get cards for human player
-        PokerTable table = game.getCurrentTable();
+        PokerTable table = (PokerTable) game.getCurrentTable();
         if (table == null)
             return;
         HoldemHand hhand = table.getHoldemHand();

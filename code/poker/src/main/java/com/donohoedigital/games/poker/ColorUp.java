@@ -72,7 +72,7 @@ public class ColorUp extends ChainPhase {
     public void process() {
         // get info
         game_ = (PokerGame) context_.getGame();
-        table_ = game_.getCurrentTable();
+        table_ = (PokerTable) game_.getCurrentTable();
 
         // if doing current table, show pop-up
         if (table_.isColoringUp()) {

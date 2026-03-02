@@ -179,7 +179,7 @@ class ServerDrivenAIBypassTest {
             g.addTable(table);
             g.setCurrentTable(table);
         } else {
-            table = g.getCurrentTable();
+            table = (PokerTable) g.getCurrentTable();
         }
 
         PokerPlayer player = new PokerPlayer(seat + 1, name, isHuman);

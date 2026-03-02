@@ -17,68 +17,130 @@
  */
 package com.donohoedigital.games.poker.online;
 
+import com.donohoedigital.base.ApplicationError;
+import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.poker.HoldemHand;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.PokerTable;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
+import com.donohoedigital.games.poker.event.PokerTableListener;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Thin view model for a poker table driven by WebSocket state updates.
  *
  * <p>
- * Extends {@link PokerTable} and overrides ~15 getters to return simple stored
- * fields populated from server-to-client WebSocket messages. Contains zero
- * poker logic. The existing Swing UI reads it identically to a real
- * {@code PokerTable}.
- *
- * <p>
- * The parent constructor {@code super(game, nNum)} is safe: it only assigns
- * three fields plus a PropertyConfig string lookup.
+ * Implements {@link ClientPokerTable} directly — no longer extends
+ * {@link PokerTable}. All state is stored in local fields populated from
+ * server-to-client WebSocket messages. Contains zero poker logic. The existing
+ * Swing UI reads it identically to a real {@code PokerTable} via the
+ * {@code ClientPokerTable} interface.
  *
  * <p>
  * State is updated atomically by {@link #updateFromState} and
  * {@link #setRemoteHand}. Events are fired explicitly by the caller (typically
  * {@code WebSocketTournamentDirector}) after state is fully updated.
  */
-public class RemotePokerTable extends PokerTable {
+public class RemotePokerTable implements ClientPokerTable {
 
     private static final Logger logger = LogManager.getLogger(RemotePokerTable.class);
 
-    /** Remote-state storage — never null after construction. */
+    // -------------------------------------------------------------------------
+    // Identity fields (replaces super(game, nNum) from PokerTable)
+    // -------------------------------------------------------------------------
+    private final PokerGame game_;
+    private final int nNum_;
+    private final String sName_;
+
+    // -------------------------------------------------------------------------
+    // Remote-state storage — never null after construction
+    // -------------------------------------------------------------------------
     private final PokerPlayer[] remotePlayers_ = new PokerPlayer[PokerConstants.SEATS];
     private RemoteHoldemHand remoteHand_;
-    private int remoteButton_ = NO_SEAT;
+    private int remoteButton_ = PokerTable.NO_SEAT;
+    private int nMinChip_ = 0;
+    private int nHandNum_ = 0;
+
+    // -------------------------------------------------------------------------
+    // Listener infrastructure (copied from PokerTable — no superclass available)
+    // -------------------------------------------------------------------------
+    private List<ListenerInfo> listeners_ = new ArrayList<>();
+
+    private static class ListenerInfo {
+        static final ListenerInfo NULL_LISTENER = new ListenerInfo(null, 0);
+
+        PokerTableListener listener;
+        int nTypes;
+
+        ListenerInfo(PokerTableListener listener, int nTypes) {
+            this.listener = listener;
+            this.nTypes = nTypes;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof ListenerInfo))
+                return false;
+            ListenerInfo info = (ListenerInfo) o;
+            return info.listener == listener;
+        }
+
+        @Override
+        public int hashCode() {
+            return listener == null ? 0 : listener.hashCode();
+        }
+    }
 
     /**
      * Creates a new remote table view model.
      *
      * @param game
-     *            the containing poker game (used by PokerTable infrastructure)
+     *            the containing poker game
      * @param nNum
-     *            the table number / ID, forwarded to PokerTable
+     *            the table number / ID
      */
     public RemotePokerTable(PokerGame game, int nNum) {
-        super(game, nNum);
+        game_ = game;
+        nNum_ = nNum;
+        sName_ = PropertyConfig.getMessage("msg.table.name", nNum_);
     }
 
     // -------------------------------------------------------------------------
-    // Overridden getters (return remote-state values, not local-engine values)
+    // ClientPokerTable — identity and structure
     // -------------------------------------------------------------------------
 
-    /** Returns the remote hand (populated by WebSocket messages). */
     @Override
-    public HoldemHand getHoldemHand() {
-        return remoteHand_;
+    public int getNumber() {
+        return nNum_;
     }
+
+    @Override
+    public String getName() {
+        return sName_;
+    }
+
+    @Override
+    public PokerGame getGame() {
+        return game_;
+    }
+
+    @Override
+    public int getSeats() {
+        return game_ == null ? 10 : game_.getSeats();
+    }
+
+    // -------------------------------------------------------------------------
+    // ClientPokerTable — seat / player access
+    // -------------------------------------------------------------------------
 
     /**
      * Returns the player at the given seat, or {@code null} if the seat is empty.
-     * Overrides the parent because the parent's {@code players_[]} is
-     * package-private and not accessible from this subpackage.
      */
     @Override
     public PokerPlayer getPlayer(int nSeat) {
@@ -105,13 +167,232 @@ public class RemotePokerTable extends PokerTable {
     }
 
     // -------------------------------------------------------------------------
+    // ClientPokerTable — display helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns the display seat for the given table seat, adjusting so the local
+     * human player appears at seat 5 (index 4). Matches {@code PokerTable}
+     * behaviour.
+     */
+    @Override
+    public int getDisplaySeat(int nSeat) {
+        nSeat += getSeatOffset();
+        if (nSeat >= PokerConstants.SEATS) {
+            nSeat -= PokerConstants.SEATS;
+        } else if (nSeat < 0) {
+            nSeat += PokerConstants.SEATS;
+        }
+        return nSeat;
+    }
+
+    /**
+     * Returns the table seat for the given display seat (reverse of
+     * {@link #getDisplaySeat}).
+     */
+    @Override
+    public int getTableSeat(int nDisplaySeat) {
+        nDisplaySeat -= getSeatOffset();
+        if (nDisplaySeat >= PokerConstants.SEATS) {
+            nDisplaySeat -= PokerConstants.SEATS;
+        } else if (nDisplaySeat < 0) {
+            nDisplaySeat += PokerConstants.SEATS;
+        }
+        return nDisplaySeat;
+    }
+
+    /**
+     * Returns the seat offset so that the local human player appears at seat 5.
+     * Matches {@code PokerTable.getSeatOffset()}.
+     */
+    public int getSeatOffset() {
+        int nSeat = PokerTable.NO_SEAT;
+        for (int i = 0; i < PokerConstants.SEATS; i++) {
+            PokerPlayer player = remotePlayers_[i];
+            if (player == null)
+                continue;
+            if (player.isLocallyControlled() && player.isHuman()) {
+                nSeat = i;
+            }
+        }
+        if (nSeat == PokerTable.NO_SEAT)
+            return 0;
+        return 4 - nSeat; // seat 5 is index 4
+    }
+
+    // -------------------------------------------------------------------------
+    // ClientPokerTable — hand access
+    // -------------------------------------------------------------------------
+
+    /** Returns the remote hand (populated by WebSocket messages). */
+    @Override
+    public HoldemHand getHoldemHand() {
+        return remoteHand_;
+    }
+
+    // -------------------------------------------------------------------------
+    // ClientPokerTable — game-play state
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns the current level from the game. Remote tables don't maintain their
+     * own level counter — it is read from the game profile via the game object.
+     */
+    @Override
+    public int getLevel() {
+        return game_ != null ? game_.getLevel() : 1;
+    }
+
+    /**
+     * Returns the minimum chip denomination. Stored in a local field set by
+     * {@link #setMinChip} (called from WebSocketTournamentDirector) which mirrors
+     * the value from {@code game_.getMinChip()}.
+     */
+    @Override
+    public int getMinChip() {
+        return nMinChip_;
+    }
+
+    /**
+     * Sets the minimum chip denomination. Called by
+     * {@code WebSocketTournamentDirector} when the level changes.
+     *
+     * @param n
+     *            the new minimum chip value
+     */
+    public void setMinChip(int n) {
+        nMinChip_ = n;
+    }
+
+    /**
+     * Returns the hand number for the current/most-recent hand. Updated by
+     * {@code WebSocketTournamentDirector} each time a new hand starts. Returns 0 if
+     * no hand has been dealt yet.
+     */
+    @Override
+    public int getHandNum() {
+        return nHandNum_;
+    }
+
+    /**
+     * Sets the hand number. Called by {@code WebSocketTournamentDirector} when a
+     * new hand starts.
+     *
+     * @param n
+     *            the hand number from the server
+     */
+    public void setHandNum(int n) {
+        nHandNum_ = n;
+    }
+
+    /**
+     * Returns {@code true} — in the remote (online) path the local client is always
+     * the "current" table.
+     */
+    @Override
+    public boolean isCurrent() {
+        return true;
+    }
+
+    /**
+     * Returns {@code false} — remote tables never use zip/fast-forward mode.
+     */
+    @Override
+    public boolean isZipMode() {
+        return false;
+    }
+
+    /**
+     * Returns {@code true} — this table is driven by WebSocket remote state.
+     */
+    @Override
+    public boolean isRemoteTable() {
+        return true;
+    }
+
+    /**
+     * No-op for remote tables — {@link #isCurrent()} always returns {@code true} in
+     * the remote path. Exists to satisfy the {@link ClientPokerTable} interface so
+     * {@code PokerGame.setCurrentTable} can call it on both local and remote tables
+     * uniformly.
+     */
+    @Override
+    public void setCurrent(boolean b) {
+        // Remote tables are always "current" — no internal state to update.
+    }
+
+    /**
+     * Marks this table as removed and fires a
+     * {@link PokerTableEvent#TYPE_TABLE_REMOVED} event so listeners (e.g. table
+     * list UI) can react.
+     *
+     * @param b
+     *            {@code true} to mark the table as removed
+     */
+    @Override
+    public void setRemoved(boolean b) {
+        if (b) {
+            firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_TABLE_REMOVED, this));
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // ClientPokerTable — listener management
+    // -------------------------------------------------------------------------
+
+    @Override
+    public synchronized void addPokerTableListener(PokerTableListener l, int nTypes) {
+        ListenerInfo nu = new ListenerInfo(l, nTypes);
+        int old = listeners_.indexOf(nu);
+        if (old != -1) {
+            nu = listeners_.get(old);
+            ApplicationError.assertTrue(nu.listener == l, "Mismatched listeners", null);
+            nu.nTypes |= nTypes;
+        } else {
+            listeners_.add(nu);
+        }
+    }
+
+    @Override
+    public synchronized void removePokerTableListener(PokerTableListener l, int nTypes) {
+        ListenerInfo nu = new ListenerInfo(l, nTypes);
+        int old = listeners_.indexOf(nu);
+        if (old != -1) {
+            nu = listeners_.get(old);
+            ApplicationError.assertTrue(nu.listener == l, "Mismatched listeners", null);
+            nu.nTypes &= ~nTypes;
+            if (nu.nTypes == 0) {
+                listeners_.set(old, ListenerInfo.NULL_LISTENER);
+            }
+        }
+    }
+
+    @Override
+    public synchronized void firePokerTableEvent(PokerTableEvent event) {
+        ListenerInfo info;
+        int nSize = listeners_.size();
+        for (int i = 0; i < nSize;) {
+            info = listeners_.get(i);
+            if (info == ListenerInfo.NULL_LISTENER) {
+                listeners_.remove(i);
+                --nSize;
+            } else {
+                if ((info.nTypes & event.getType()) > 0) {
+                    info.listener.tableEventOccurred(event);
+                }
+                i++;
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // State update methods (called by WebSocketTournamentDirector)
     // -------------------------------------------------------------------------
 
     /**
      * Updates the player array from a server-provided seat list. Replaces all seats
-     * atomically. Does NOT fire events — call {@link #firePokerTableEvent} after
-     * all updates are applied.
+     * atomically. Does NOT fire events — call {@link #fireEvent} after all updates
+     * are applied.
      *
      * @param players
      *            array of players indexed by seat, null entries = empty seat
@@ -175,9 +456,7 @@ public class RemotePokerTable extends PokerTable {
     }
 
     /**
-     * Fires a {@link PokerTableEvent} on this table. Delegates to the inherited
-     * {@link PokerTable#firePokerTableEvent} which dispatches to all registered
-     * {@code PokerTableListener}s.
+     * Fires a {@link PokerTableEvent} on this table with no extra parameters.
      *
      * @param eventType
      *            one of the {@code PokerTableEvent.TYPE_*} constants
@@ -185,14 +464,6 @@ public class RemotePokerTable extends PokerTable {
     public void fireEvent(int eventType) {
         logger.debug("[RemotePokerTable] table={} fireEvent type={}", getNumber(), eventType);
         firePokerTableEvent(new PokerTableEvent(eventType, this));
-    }
-
-    /**
-     * Returns {@code true} — this table is driven by WebSocket remote state.
-     */
-    @Override
-    public boolean isRemoteTable() {
-        return true;
     }
 
     /**

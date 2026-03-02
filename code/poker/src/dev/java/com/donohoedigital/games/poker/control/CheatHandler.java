@@ -25,6 +25,7 @@ import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
 import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.PokerTable;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.sun.net.httpserver.HttpExchange;
@@ -175,7 +176,7 @@ class CheatHandler extends BaseHandler {
             return;
         }
 
-        PokerTable table = game.getCurrentTable();
+        PokerTable table = (PokerTable) game.getCurrentTable();
         int finalSeat = seat;
         SwingUtilities.invokeLater(() -> table.setButton(finalSeat));
         sendJson(exchange, 200, Map.of("accepted", true, "action", "setButton", "seat", finalSeat));
@@ -219,10 +220,10 @@ class CheatHandler extends BaseHandler {
 
             // Collect all chips from AI players and give them to the human
             int totalChips = human.getChipCount();
-            List<PokerTable> tables = game.getTables();
+            List<ClientPokerTable> tables = game.getTables();
             if (tables == null) return;
 
-            for (PokerTable table : tables) {
+            for (ClientPokerTable table : tables) {
                 for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
                     PokerPlayer p = table.getPlayer(seat);
                     if (p != null && !p.isHuman() && !p.isEliminated()) {
@@ -283,7 +284,7 @@ class CheatHandler extends BaseHandler {
      * range or unoccupied.
      */
     private PokerPlayer getPlayerAtSeat(PokerGame game, int seat) {
-        PokerTable table = game.getCurrentTable();
+        ClientPokerTable table = game.getCurrentTable();
         if (table == null) return null;
         if (seat < 0 || seat >= table.getSeats()) return null;
         return table.getPlayer(seat);

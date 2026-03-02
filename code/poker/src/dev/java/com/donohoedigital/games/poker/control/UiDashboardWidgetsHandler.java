@@ -24,7 +24,7 @@ import com.donohoedigital.games.poker.HoldemHand;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
 import com.donohoedigital.games.poker.PokerPlayer;
-import com.donohoedigital.games.poker.PokerTable;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.PokerTableInput;
 import com.donohoedigital.games.poker.PokerUtils;
 import com.donohoedigital.games.poker.dashboard.AdvisorState;
@@ -161,9 +161,9 @@ class UiDashboardWidgetsHandler extends BaseHandler {
                     false, 0, "NONE", "NONE", stamp.updatedAtMs(), stamp.stateSeq());
         }
 
-        PokerTable table = game.getCurrentTable();
+        ClientPokerTable table = game.getCurrentTable();
         if (table == null) {
-            List<PokerTable> tables = game.getTables();
+            List<ClientPokerTable> tables = game.getTables();
             table = (tables != null && !tables.isEmpty()) ? tables.get(0) : null;
         }
         HoldemHand hand = table != null ? table.getHoldemHand() : null;
@@ -182,7 +182,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
                 humanTurn, handNumber, round, inputModeName, stamp.updatedAtMs(), stamp.stateSeq());
     }
 
-    private static String buildFingerprint(PokerGame game, PokerTable table, HoldemHand hand, PokerPlayer human,
+    private static String buildFingerprint(PokerGame game, ClientPokerTable table, HoldemHand hand, PokerPlayer human,
             int inputMode, int handNumber, String round, boolean humanTurn) {
         int tableId = table != null ? table.getNumber() : -1;
         int level = Math.max(1, game.getLevel());
@@ -462,7 +462,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
 
     private static Map<String, Object> myTableData(SnapshotState state) {
         Map<String, Object> data = new LinkedHashMap<>();
-        PokerTable table = state.table();
+        ClientPokerTable table = state.table();
         PokerPlayer human = state.human();
 
         data.put("tableId", table != null ? table.getNumber() : -1);
@@ -624,7 +624,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
 
     private record SnapshotState(
             PokerGame game,
-            PokerTable table,
+            ClientPokerTable table,
             HoldemHand hand,
             PokerPlayer human,
             TournamentProfile profile,

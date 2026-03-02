@@ -124,9 +124,6 @@ public interface TournamentContext {
      */
     int getTimeoutForRound(int round);
 
-    /** @return the current table (the one being displayed in UI) */
-    GameTable getCurrentTable();
-
     /** @return default timeout in seconds for player actions */
     int getTimeoutSeconds();
 

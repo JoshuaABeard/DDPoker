@@ -587,10 +587,6 @@ class V1AlgorithmTest {
             return 30;
         }
         @Override
-        public GameTable getCurrentTable() {
-            return null;
-        }
-        @Override
         public int getTimeoutSeconds() {
             return 30;
         }

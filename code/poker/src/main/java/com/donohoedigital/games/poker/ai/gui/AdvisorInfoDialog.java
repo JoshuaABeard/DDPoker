@@ -45,6 +45,7 @@ import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.ai.PlayerType;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.model.TournamentProfile;
@@ -73,7 +74,7 @@ public class AdvisorInfoDialog extends DialogPhase {
      * chain (table, hand, player) is missing.
      */
     private PokerPlayer getActivePlayer() {
-        PokerTable table = game_.getCurrentTable();
+        ClientPokerTable table = game_.getCurrentTable();
         if (table == null)
             return null;
         HoldemHand hh = table.getHoldemHand();
@@ -102,7 +103,7 @@ public class AdvisorInfoDialog extends DialogPhase {
         PokerPlayer player = getActivePlayer();
         if (player == null)
             return;
-        PokerTable table = game_.getCurrentTable();
+        ClientPokerTable table = game_.getCurrentTable();
         table.firePokerTableEvent(
                 new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_AI_CHANGED, table, player, player.getSeat()));
     }

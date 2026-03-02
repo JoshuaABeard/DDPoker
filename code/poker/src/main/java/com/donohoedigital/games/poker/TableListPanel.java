@@ -115,7 +115,7 @@ public class TableListPanel extends DDTabPanel implements ChangeListener, Action
         for (int i = 0; i < nNumDisplay; i++) {
             tables_[i] = new TablePanel();
             tbls_.add(tables_[i]);
-            tables_[i].updateTable(game_.getTable(i), isShowType());
+            tables_[i].updateTable((PokerTable) game_.getTable(i), isShowType());
         }
         base.add(tbls_, BorderLayout.CENTER);
 
@@ -165,7 +165,7 @@ public class TableListPanel extends DDTabPanel implements ChangeListener, Action
     public void stateChanged(ChangeEvent e) {
         int nStart = slider_ == null ? 0 : slider_.getValue();
         for (TablePanel table : tables_) {
-            table.updateTable(game_.getTable(nStart++), isShowType());
+            table.updateTable((PokerTable) game_.getTable(nStart++), isShowType());
         }
     }
 

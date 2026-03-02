@@ -684,7 +684,7 @@ public class WebSocketTournamentDirector extends BasePhase
             // WebSocket connection (setup tables from setupTournament, and any stale
             // RemotePokerTable instances left from a previous game attempt).
             if (tables_.isEmpty()) {
-                for (PokerTable local : new ArrayList<>(game_.getTables())) {
+                for (ClientPokerTable local : new ArrayList<>(game_.getTables())) {
                     game_.removeTable(local);
                     logger.debug("[GAME_STATE EDT] removed local setup table: {}", local.getName());
                 }
@@ -755,6 +755,7 @@ public class WebSocketTournamentDirector extends BasePhase
                 return;
             }
 
+            table.setHandNum(d.handNumber());
             HandResultCapture capture = handResultCaptureByTable_.computeIfAbsent(table.getNumber(),
                     k -> new HandResultCapture());
             capture.resetForHand(d.handNumber(), snapshotStartPayoutBySeat(table));
@@ -2309,7 +2310,7 @@ public class WebSocketTournamentDirector extends BasePhase
         if (tables_.isEmpty())
             return null;
         // Prefer the game's current table if it is one of ours
-        PokerTable current = game_.getCurrentTable();
+        ClientPokerTable current = game_.getCurrentTable();
         if (current instanceof RemotePokerTable rpt && tables_.containsValue(rpt)) {
             return rpt;
         }
