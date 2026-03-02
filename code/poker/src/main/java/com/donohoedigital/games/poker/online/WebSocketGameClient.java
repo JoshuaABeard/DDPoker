@@ -68,6 +68,7 @@ public class WebSocketGameClient {
     private final AtomicLong reconnectCycle = new AtomicLong(0);
 
     private String wsUrl;
+    private String serverHost;
     private int serverPort;
     private String gameId;
     private volatile String reconnectToken;
@@ -113,19 +114,23 @@ public class WebSocketGameClient {
     /**
      * Connects to the game server WebSocket endpoint.
      *
+     * @param serverHost
+     *            hostname or IP address of the server (e.g. "localhost" or
+     *            "game.example.com")
      * @param serverPort
-     *            port of the embedded server
+     *            port of the server
      * @param gameId
      *            game identifier returned by the REST API
      * @param jwt
      *            JWT token for authentication
      * @return future that completes when the connection is established
      */
-    public CompletableFuture<Void> connect(int serverPort, String gameId, String jwt) {
+    public CompletableFuture<Void> connect(String serverHost, int serverPort, String gameId, String jwt) {
         // JWT is passed as a query parameter — the WebSocket initial handshake is an
         // HTTP GET, so custom request headers are not supported. This is standard
         // practice for WebSocket auth. Acceptable for embedded (localhost-only) mode;
         // for remote servers the token appears in server access logs (see M6 notes).
+        this.serverHost = serverHost;
         this.serverPort = serverPort;
         this.gameId = gameId;
         this.wsUrl = buildWsUrl(jwt);
@@ -276,7 +281,7 @@ public class WebSocketGameClient {
     // -------------------------------------------------------------------------
 
     private String buildWsUrl(String token) {
-        return "ws://localhost:" + serverPort + "/ws/games/" + gameId + "?token=" + token;
+        return "ws://" + serverHost + ":" + serverPort + "/ws/games/" + gameId + "?token=" + token;
     }
 
     private CompletableFuture<Void> openConnection() {

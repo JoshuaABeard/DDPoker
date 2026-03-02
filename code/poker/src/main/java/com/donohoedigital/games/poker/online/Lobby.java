@@ -205,7 +205,7 @@ public class Lobby extends BasePhase {
 
         wsClient_ = new WebSocketGameClient();
         wsClient_.setMessageHandler(this::onLobbyMessage);
-        wsClient_.connect(config.port(), gameId_, config.jwt()).whenComplete((v, ex) -> {
+        wsClient_.connect(config.host(), config.port(), gameId_, config.jwt()).whenComplete((v, ex) -> {
             if (ex != null) {
                 logger.warn("WebSocket lobby connection failed, falling back to REST polling: {}", ex.getMessage());
                 SwingUtilities.invokeLater(this::startPolling);
@@ -465,7 +465,8 @@ public class Lobby extends BasePhase {
         if (game_ == null || game_.getWebSocketConfig() == null) {
             return null;
         }
-        String wsUrl = "ws://localhost:" + game_.getWebSocketConfig().port() + "/ws/games/" + gameId_;
+        String wsUrl = "ws://" + game_.getWebSocketConfig().host() + ":" + game_.getWebSocketConfig().port()
+                + "/ws/games/" + gameId_;
 
         DDLabelBorder urlBorder = new DDLabelBorder("lobby.url", STYLE);
         urlBorder.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 5, 3));

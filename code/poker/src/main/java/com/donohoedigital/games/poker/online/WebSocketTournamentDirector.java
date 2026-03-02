@@ -87,6 +87,7 @@ public class WebSocketTournamentDirector extends BasePhase
     private PokerGame game_;
 
     // Filled from PokerGame.getWebSocketConfig() in start()
+    private String serverHost_;
     private int serverPort_;
     private String gameId_;
     private String jwt_;
@@ -190,12 +191,13 @@ public class WebSocketTournamentDirector extends BasePhase
             throw new IllegalStateException("WebSocketTournamentDirector started without a WebSocketConfig — "
                     + "call game.setWebSocketConfig() before launching this phase");
         }
+        serverHost_ = config.host();
         serverPort_ = config.port();
         gameId_ = config.gameId();
         jwt_ = config.jwt();
 
         wsClient_.setMessageHandler(this::onMessage);
-        wsClient_.connect(serverPort_, gameId_, jwt_);
+        wsClient_.connect(serverHost_, serverPort_, gameId_, jwt_);
 
         // Route player UI actions to WebSocket; hide buttons immediately on click.
         // NOTE: the listener receives PokerGame.ACTION_* constants (e.g.
