@@ -85,19 +85,20 @@ public class OnlineMenu extends MenuPhase {
     @Override
     public void start() {
         if (!RestAuthClient.getInstance().hasSession()) {
-            if (!promptLogin()) {
-                context_.processPhase("StartMenu"); // go back to main menu on cancel/failure
-                return;
-            }
+            showLoginDialog();
+            return;
         }
         super.start();
     }
 
     /**
-     * Shows a username/password dialog and attempts login against the configured
-     * central server. Returns true on success, false on cancel or failure.
+     * Shows a username/password credential dialog. If the user enters credentials
+     * and clicks OK, fires a background thread to attempt login. On success,
+     * re-invokes {@link #start()} (which will now find an active session and show
+     * the menu). On failure, shows an error and lets the user try again (by calling
+     * showLoginDialog again) or cancel back to StartMenu.
      */
-    private boolean promptLogin() {
+    private void showLoginDialog() {
         String node = Prefs.NODE_OPTIONS + engine_.getPrefsNodeName();
         String server = Prefs.getUserPrefs(node).get(EngineConstants.OPTION_ONLINE_SERVER, "");
         String baseUrl = OnlineServerUrl.normalizeBaseUrl(server);
@@ -105,7 +106,8 @@ public class OnlineMenu extends MenuPhase {
         if (baseUrl == null) {
             JOptionPane.showMessageDialog(null, PropertyConfig.getMessage("msg.online.noserver"),
                     PropertyConfig.getMessage("msg.online.login.title"), JOptionPane.WARNING_MESSAGE);
-            return false;
+            context_.processPhase("StartMenu");
+            return;
         }
 
         JTextField userField = new JTextField(20);
@@ -118,18 +120,30 @@ public class OnlineMenu extends MenuPhase {
                 JOptionPane.PLAIN_MESSAGE);
 
         if (result != JOptionPane.OK_OPTION) {
-            return false;
+            context_.processPhase("StartMenu");
+            return;
         }
 
-        try {
-            RestAuthClient.getInstance().login(baseUrl, userField.getText().trim(),
-                    new String(passField.getPassword()));
-            return true;
-        } catch (RestAuthClient.RestAuthException ex) {
-            JOptionPane.showMessageDialog(null, ex.getMessage(), PropertyConfig.getMessage("msg.online.login.title"),
-                    JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
+        // Capture credentials before handing off to background thread
+        final String capturedBaseUrl = baseUrl;
+        final String username = userField.getText().trim();
+        final char[] password = passField.getPassword();
+
+        // Fire login off the EDT
+        Thread t = new Thread(() -> {
+            try {
+                RestAuthClient.getInstance().login(capturedBaseUrl, username, new String(password));
+                SwingUtilities.invokeLater(this::start); // session is now cached — start() will call super.start()
+            } catch (RestAuthClient.RestAuthException ex) {
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(null, ex.getMessage(),
+                            PropertyConfig.getMessage("msg.online.login.title"), JOptionPane.ERROR_MESSAGE);
+                    showLoginDialog(); // retry: show the dialog again
+                });
+            }
+        }, "OnlineMenu-Login");
+        t.setDaemon(true);
+        t.start();
     }
 
     // No processButton override needed - no lobby check in new architecture
