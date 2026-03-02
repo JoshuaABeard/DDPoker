@@ -1,25 +1,41 @@
 /*
- * ============================================================================================
+ * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
- * Copyright (c) 2026  DD Poker Community
+ * Copyright (c) 2026 Joshua Beard and contributors
  *
- * This program is free software: you can redistribute it and/or modify it under the terms
- * of the GNU General Public License as published by the Free Software Foundation, either
- * version 3 of the License, or (at your option) any later version.
+ * This file is part of DD Poker, originally created by Doug Donohoe.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * You should have received a copy of the GNU General Public License along with this program.
- * If not, see <http://www.gnu.org/licenses/>.
- * ============================================================================================
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * For the full License text, please see the LICENSE.txt file
+ * in the root directory of this project.
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
+ * graphics, text, and documentation found in this repository (including but not
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
+ * without explicit written permission for any uses not covered by this License.
+ * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
+ * in the root directory of this project.
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
+ * doug [at] donohoe [dot] info.
+ * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.poker.HandAction;
 import com.donohoedigital.games.poker.PokerPlayer;
-import com.donohoedigital.games.poker.PokerTable;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.HandSorted;
 import com.donohoedigital.games.poker.core.state.BettingRound;
@@ -76,21 +92,6 @@ public class RemoteHoldemHand implements ClientHoldemHand {
     // -------------------------------------------------------------------------
     // ClientHoldemHand — table linkage
     // -------------------------------------------------------------------------
-
-    /**
-     * Returns the table that owns this hand as a {@link PokerTable}. Set by
-     * {@link RemotePokerTable#setRemoteHand}.
-     *
-     * <p>
-     * In the remote path {@code ownerTable_} is a {@link RemotePokerTable} (a
-     * {@link ClientPokerTable}). The cast to {@link PokerTable} is safe only when
-     * the hand belongs to a real {@code PokerTable}; callers in the online UI path
-     * should use {@link #getClientTable()} instead.
-     */
-    @Override
-    public PokerTable getTable() {
-        return ownerTable_ instanceof PokerTable ? (PokerTable) ownerTable_ : null;
-    }
 
     /**
      * Returns the owning table as a {@link ClientPokerTable}. Works for both local

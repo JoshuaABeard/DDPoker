@@ -36,7 +36,6 @@ package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.poker.HandAction;
 import com.donohoedigital.games.poker.PokerPlayer;
-import com.donohoedigital.games.poker.PokerTable;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.HandSorted;
@@ -60,12 +59,6 @@ public interface ClientHoldemHand {
     // -------------------------------------------------------------------------
     // Table linkage
     // -------------------------------------------------------------------------
-
-    /**
-     * Returns the owning table as a {@link PokerTable}, or {@code null} if the
-     * table is a remote-only view.
-     */
-    PokerTable getTable();
 
     /**
      * Returns the owning table as a {@link ClientPokerTable}. Works for both local
