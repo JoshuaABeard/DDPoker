@@ -315,7 +315,7 @@ public class OnlineConfiguration extends BasePhase implements ActionListener {
 
                     DMTypedHashMap params = new DMTypedHashMap();
                     params.setBoolean("host", Boolean.TRUE);
-                    context_.processPhase("Lobby", params);
+                    context_.processPhase("Lobby.Host", params);
                 });
             } catch (EmbeddedGameServer.EmbeddedServerStartupException ex) {
                 logger.error("Failed to start embedded server for hosting", ex);

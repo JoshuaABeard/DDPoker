@@ -195,7 +195,7 @@ public class FindGames extends ListGames {
                         int port = extractPort(response.wsUrl());
                         game.setWebSocketConfig(response.gameId(),
                                 ((PokerMain) engine_).getEmbeddedServer().getLocalUserJwt(), port);
-                        context_.processPhase("Lobby");
+                        context_.processPhase("Lobby.Player");
                     });
                 } catch (Exception ex) {
                     logger.error("Failed to join game: {}", ex.getMessage());
@@ -232,7 +232,7 @@ public class FindGames extends ListGames {
                                 ? response.token()
                                 : ((PokerMain) engine_).getEmbeddedServer().getLocalUserJwt();
                         game.setWebSocketConfig(response.gameId(), jwt, port, true);
-                        context_.processPhase("Lobby");
+                        context_.processPhase("Lobby.Player");
                     });
                 } catch (Exception ex) {
                     logger.error("Failed to observe game: {}", ex.getMessage());
