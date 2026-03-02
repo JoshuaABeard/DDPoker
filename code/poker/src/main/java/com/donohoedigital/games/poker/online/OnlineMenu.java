@@ -82,5 +82,55 @@ public class OnlineMenu extends MenuPhase {
         profilepanel.add(label);
     }
 
+    @Override
+    public void start() {
+        if (!RestAuthClient.getInstance().hasSession()) {
+            if (!promptLogin()) {
+                context_.processPhase("StartMenu"); // go back to main menu on cancel/failure
+                return;
+            }
+        }
+        super.start();
+    }
+
+    /**
+     * Shows a username/password dialog and attempts login against the configured
+     * central server. Returns true on success, false on cancel or failure.
+     */
+    private boolean promptLogin() {
+        String node = Prefs.NODE_OPTIONS + engine_.getPrefsNodeName();
+        String server = Prefs.getUserPrefs(node).get(EngineConstants.OPTION_ONLINE_SERVER, "");
+        String baseUrl = OnlineServerUrl.normalizeBaseUrl(server);
+
+        if (baseUrl == null) {
+            JOptionPane.showMessageDialog(null, PropertyConfig.getMessage("msg.online.noserver"),
+                    PropertyConfig.getMessage("msg.online.login.title"), JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+
+        JTextField userField = new JTextField(20);
+        JPasswordField passField = new JPasswordField(20);
+        int result = JOptionPane.showConfirmDialog(null,
+                new Object[]{PropertyConfig.getMessage("msg.online.login.prompt", baseUrl),
+                        PropertyConfig.getMessage("msg.online.login.username"), userField,
+                        PropertyConfig.getMessage("msg.online.login.password"), passField},
+                PropertyConfig.getMessage("msg.online.login.title"), JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
+
+        if (result != JOptionPane.OK_OPTION) {
+            return false;
+        }
+
+        try {
+            RestAuthClient.getInstance().login(baseUrl, userField.getText().trim(),
+                    new String(passField.getPassword()));
+            return true;
+        } catch (RestAuthClient.RestAuthException ex) {
+            JOptionPane.showMessageDialog(null, ex.getMessage(), PropertyConfig.getMessage("msg.online.login.title"),
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+    }
+
     // No processButton override needed - no lobby check in new architecture
 }
