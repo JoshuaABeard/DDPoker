@@ -110,11 +110,9 @@ public class NewLevelActions extends ChainPhase implements CancelablePhase {
                 sMsg = PropertyConfig.getMessage("msg.dialog.break", nNextLevel, profile.getMinutes(nNextLevel));
                 EngineUtils.displayInformationDialog(context_, sMsg, "msg.windowtitle.break", "newbreak", "nobreak");
             } else {
-                int nAnte = profile.getAnte(nNextLevel);
-                int nBig = profile.getBigBlind(nNextLevel);
-                int nSmall = profile.getSmallBlind(nNextLevel);
-                String sKey = nAnte > 0 ? "msg.dialog.next.ante" : "msg.dialog.next";
-                sMsg = PropertyConfig.getMessage(sKey, nNextLevel, nSmall, nBig, nAnte);
+                // Blind/ante values are server-authoritative and delivered via the
+                // LEVEL_CHANGED WebSocket message. The client does not compute them.
+                sMsg = PropertyConfig.getMessage("msg.dialog.next", nNextLevel, 0, 0, 0);
                 EngineUtils.displayInformationDialog(context_, Utils.fixHtmlTextFor15(sMsg), "msg.windowtitle.level",
                         "newlevel", "nolevel");
             }
