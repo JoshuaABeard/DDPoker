@@ -58,7 +58,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Pre-game waiting room for online host games.
  *
  * <p>
- * Connects to the embedded server via WebSocket for real-time lobby updates
+ * Connects to the central server via WebSocket for real-time lobby updates
  * (player joins/leaves/kicks, settings changes, game start). Falls back to REST
  * polling if WebSocket connection fails. REST is still used for one-shot
  * operations like startGame() and cancelGame().
@@ -432,22 +432,16 @@ public class Lobby extends BasePhase {
             disconnectWebSocket();
             finishPolling();
 
-            // perform blocking cleanup (deregister, cancel) off-EDT then navigate
+            // perform cancel off-EDT then navigate
             boolean host = bHost_;
-            EmbeddedGameServer embeddedServer = host ? ((PokerMain) engine_).getEmbeddedServer() : null;
-            String gameId = gameId_;
+            final String gameId = gameId_;
+            final RestGameClient client = restClient_;
             Thread t = new Thread(() -> {
-                CommunityGameRegistration reg = OnlineConfiguration.getActiveRegistration();
-                if (reg != null) {
-                    reg.deregister();
-                    OnlineConfiguration.clearActiveRegistration();
-                }
-                if (host && embeddedServer != null && gameId != null) {
+                if (host && client != null && gameId != null) {
                     try {
-                        new RestGameClient("http://localhost:" + embeddedServer.getPort(),
-                                embeddedServer.getLocalUserJwt()).cancelGame(gameId);
+                        client.cancelGame(gameId);
                     } catch (Exception ex) {
-                        logger.warn("Failed to cancel game on server: {}", ex.getMessage());
+                        logger.warn("Failed to cancel game on central server: {}", ex.getMessage());
                     }
                 }
                 SwingUtilities.invokeLater(context_::restart);
