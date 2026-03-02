@@ -1251,7 +1251,8 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     public HoldemHand getHoldemHand() {
         if (table_ == null)
             return null;
-        return table_.getHoldemHand();
+        com.donohoedigital.games.poker.online.ClientHoldemHand h = table_.getHoldemHand();
+        return h instanceof HoldemHand ? (HoldemHand) h : null;
     }
 
     /**

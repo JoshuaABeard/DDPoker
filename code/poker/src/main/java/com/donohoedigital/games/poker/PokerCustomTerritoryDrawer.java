@@ -42,6 +42,7 @@ import com.donohoedigital.base.*;
 import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import org.apache.logging.log4j.*;
 
@@ -111,7 +112,7 @@ public class PokerCustomTerritoryDrawer implements CustomTerritoryDrawer {
         ClientPokerTable table = game_.getCurrentTable();
         if (table == null)
             return;
-        HoldemHand hhand = table.getHoldemHand();
+        ClientHoldemHand hhand = table.getHoldemHand();
         if (hhand == null)
             return;
 

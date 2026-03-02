@@ -36,6 +36,7 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
 
@@ -72,7 +73,7 @@ public abstract class Odds extends DashboardItem {
             return;
 
         boolean bUpdateOdds = false;
-        HoldemHand hhand = table.getHoldemHand();
+        ClientHoldemHand hhand = table.getHoldemHand();
         if (hhand == null)
             return; // saw NPE on Linux in line XX below ... timing issue?
 
@@ -123,7 +124,7 @@ public abstract class Odds extends DashboardItem {
     protected void updateInfo() {
         // init
         ClientPokerTable table = game_.getCurrentTable();
-        HoldemHand hhand = table.getHoldemHand();
+        ClientHoldemHand hhand = table.getHoldemHand();
         PokerPlayer asViewedBy = game_.getHumanPlayer();
 
         // update message text and update labels
@@ -134,7 +135,7 @@ public abstract class Odds extends DashboardItem {
     /**
      * Update odds display
      */
-    protected String updateOdds(HoldemHand hhand, PokerPlayer asViewedBy, boolean bMouseOver) {
+    protected String updateOdds(ClientHoldemHand hhand, PokerPlayer asViewedBy, boolean bMouseOver) {
         // no hand
         if (hhand == null
         // || (!bMouseOver && asViewedBy.isHuman() &&
@@ -155,5 +156,5 @@ public abstract class Odds extends DashboardItem {
 
     }
 
-    protected abstract String getDisplay(int nRound, HoldemHand hhand, PokerPlayer asViewedBy, Hand hand);
+    protected abstract String getDisplay(int nRound, ClientHoldemHand hhand, PokerPlayer asViewedBy, Hand hand);
 }

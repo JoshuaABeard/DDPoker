@@ -21,6 +21,7 @@ package com.donohoedigital.games.poker.control;
 
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.poker.*;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.model.TournamentProfile;
@@ -175,7 +176,7 @@ class ValidateHandler extends BaseHandler {
             }
         }
 
-        HoldemHand hand = table.getHoldemHand();
+        ClientHoldemHand hand = table.getHoldemHand();
         int inPot = hand != null ? hand.getTotalPotChipCount() : 0;
         int total = playerChips + inPot;
 
@@ -204,7 +205,7 @@ class ValidateHandler extends BaseHandler {
                     + " but no current table is set");
             return false;
         }
-        HoldemHand hand = table.getHoldemHand();
+        ClientHoldemHand hand = table.getHoldemHand();
         if (hand == null) {
             warnings.add("inputMode is " + ActionHandler.inputModeToString(inputMode)
                     + " but no hand is active on table " + table.getNumber());

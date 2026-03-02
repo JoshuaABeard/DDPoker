@@ -19,7 +19,6 @@ package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.base.ApplicationError;
 import com.donohoedigital.config.PropertyConfig;
-import com.donohoedigital.games.poker.HoldemHand;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.PokerTable;
@@ -226,7 +225,7 @@ public class RemotePokerTable implements ClientPokerTable {
 
     /** Returns the remote hand (populated by WebSocket messages). */
     @Override
-    public HoldemHand getHoldemHand() {
+    public RemoteHoldemHand getHoldemHand() {
         return remoteHand_;
     }
 

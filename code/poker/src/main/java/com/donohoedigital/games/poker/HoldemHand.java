@@ -52,6 +52,8 @@ import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.poker.model.*;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import org.apache.logging.log4j.*;
 
 import java.util.*;
@@ -61,7 +63,7 @@ import java.util.*;
  */
 @SuppressWarnings({"SynchronizeOnNonFinalField"})
 @DataCoder('*')
-public class HoldemHand implements DataMarshal, GameHand {
+public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     // DESIGN NOTE: added synchronized around any pots_/history_ to avoid concurrent
     // modification
     // error when drawing UI (for v3.0p1). Sigh. This whole poker engine needs a
@@ -199,6 +201,16 @@ public class HoldemHand implements DataMarshal, GameHand {
      * Get table this hand is on
      */
     public PokerTable getTable() {
+        return table_;
+    }
+
+    /**
+     * Returns the owning table as a {@link ClientPokerTable}. Since
+     * {@link PokerTable} also implements {@link ClientPokerTable}, this is the same
+     * as {@link #getTable()}.
+     */
+    @Override
+    public ClientPokerTable getClientTable() {
         return table_;
     }
 

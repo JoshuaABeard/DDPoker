@@ -95,7 +95,10 @@ public class SidePotsDialog extends DialogPhase {
     private void setPots() {
         nSide = 0;
         ClientPokerTable currentTable = game_.getCurrentTable();
-        HoldemHand hhand = currentTable != null ? currentTable.getHoldemHand() : null;
+        com.donohoedigital.games.poker.online.ClientHoldemHand clientHand = currentTable != null
+                ? currentTable.getHoldemHand()
+                : null;
+        HoldemHand hhand = clientHand instanceof HoldemHand ? (HoldemHand) clientHand : null;
         if (hhand == null)
             return;
         int nNum = hhand.getNumPots();

@@ -45,6 +45,7 @@ import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.ai.PlayerType;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
@@ -77,7 +78,7 @@ public class AdvisorInfoDialog extends DialogPhase {
         ClientPokerTable table = game_.getCurrentTable();
         if (table == null)
             return null;
-        HoldemHand hh = table.getHoldemHand();
+        ClientHoldemHand hh = table.getHoldemHand();
         if (hh == null)
             return null;
         return hh.getCurrentPlayer();
@@ -146,7 +147,7 @@ public class AdvisorInfoDialog extends DialogPhase {
         PokerPlayer p = getActivePlayer();
         if (p == null)
             return;
-        HoldemHand hhand = game_.getCurrentTable().getHoldemHand();
+        ClientHoldemHand hhand = game_.getCurrentTable().getHoldemHand();
         resultHTML_.setText("&nbsp;" + p.getHand().toHTML() + "&nbsp;&nbsp;" + hhand.getCommunity().toHTML());
     }
 

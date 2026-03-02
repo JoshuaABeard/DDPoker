@@ -221,7 +221,7 @@ public class PokerGameboard extends Gameboard {
             String sMsg = "";
 
             ClientPokerTable table = game_.getCurrentTable();
-            HoldemHand hhand = table.getHoldemHand();
+            ClientHoldemHand hhand = table.getHoldemHand();
 
             if (hhand != null) {
                 sMsg = PropertyConfig.getMessage("msg.pot", hhand.getTotalPotChipCount());
@@ -265,7 +265,7 @@ public class PokerGameboard extends Gameboard {
             Color color = fireGetTerritoryLabelColor(t);
             int nChipAmount = 0;
             if (player != null) {
-                HoldemHand hhand = table.getHoldemHand();
+                ClientHoldemHand hhand = table.getHoldemHand();
 
                 // coloring up mode
                 PokerTable pokerTable = (PokerTable) table;

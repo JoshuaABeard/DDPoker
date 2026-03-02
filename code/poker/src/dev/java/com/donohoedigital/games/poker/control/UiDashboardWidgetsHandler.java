@@ -20,7 +20,7 @@
 package com.donohoedigital.games.poker.control;
 
 import com.donohoedigital.games.engine.GameContext;
-import com.donohoedigital.games.poker.HoldemHand;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
 import com.donohoedigital.games.poker.PokerPlayer;
@@ -166,7 +166,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
             List<ClientPokerTable> tables = game.getTables();
             table = (tables != null && !tables.isEmpty()) ? tables.get(0) : null;
         }
-        HoldemHand hand = table != null ? table.getHoldemHand() : null;
+        ClientHoldemHand hand = table != null ? table.getHoldemHand() : null;
         PokerPlayer human = game.getHumanPlayer();
         TournamentProfile profile = game.getProfile();
         int inputMode = game.getInputMode();
@@ -182,12 +182,12 @@ class UiDashboardWidgetsHandler extends BaseHandler {
                 humanTurn, handNumber, round, inputModeName, stamp.updatedAtMs(), stamp.stateSeq());
     }
 
-    private static String buildFingerprint(PokerGame game, ClientPokerTable table, HoldemHand hand, PokerPlayer human,
+    private static String buildFingerprint(PokerGame game, ClientPokerTable table, ClientHoldemHand hand, PokerPlayer human,
             int inputMode, int handNumber, String round, boolean humanTurn) {
         int tableId = table != null ? table.getNumber() : -1;
         int level = Math.max(1, game.getLevel());
         int pot = hand != null ? hand.getTotalPotChipCount() : 0;
-        int callAmount = (hand != null && human != null) ? hand.getAmountToCall(human) : 0;
+        int callAmount = (hand != null && human != null) ? hand.getCall(human) : 0;
         PokerPlayer current = hand != null ? hand.getCurrentPlayer() : null;
         int currentSeat = current != null ? current.getSeat() : -1;
         int playersRemaining = game.getNumPlayers() - game.getNumPlayersOut();
@@ -379,7 +379,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
 
     private static Map<String, Object> potOddsData(SnapshotState state) {
         Map<String, Object> data = new LinkedHashMap<>();
-        HoldemHand hand = state.hand();
+        ClientHoldemHand hand = state.hand();
         PokerPlayer human = state.human();
 
         if (hand == null || human == null) {
@@ -391,7 +391,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
             return data;
         }
 
-        int callAmount = hand.getAmountToCall(human);
+        int callAmount = hand.getCall(human);
         int pot = hand.getTotalPotChipCount();
         data.put("pot", pot);
         data.put("callAmount", callAmount);
@@ -412,7 +412,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
 
     private static Map<String, Object> improveOddsData(SnapshotState state) {
         Map<String, Object> data = new LinkedHashMap<>();
-        HoldemHand hand = state.hand();
+        ClientHoldemHand hand = state.hand();
         PokerPlayer human = state.human();
 
         int communityCards = hand != null ? hand.getCommunity().size() : 0;
@@ -625,7 +625,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
     private record SnapshotState(
             PokerGame game,
             ClientPokerTable table,
-            HoldemHand hand,
+            ClientHoldemHand hand,
             PokerPlayer human,
             TournamentProfile profile,
             boolean humanTurn,

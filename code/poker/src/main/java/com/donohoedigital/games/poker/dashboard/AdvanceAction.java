@@ -38,6 +38,7 @@ import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
 
@@ -192,7 +193,7 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
 
         // init
         ClientPokerTable table = game_.getCurrentTable();
-        HoldemHand hhand = table.getHoldemHand();
+        ClientHoldemHand hhand = table.getHoldemHand();
         Hand hand = human.getHand();
 
         // if observer, just display message once
@@ -413,7 +414,7 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
      */
     private HandAction _getAdvanceAction() {
         ClientPokerTable table = game_.getCurrentTable();
-        HoldemHand hhand = table.getHoldemHand();
+        ClientHoldemHand hhand = table.getHoldemHand();
         int nRound = hhand.getRound().toLegacy();
         PokerPlayer human = game_.getHumanPlayer();
         int nAction;

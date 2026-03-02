@@ -46,6 +46,7 @@ import com.donohoedigital.games.engine.DialogPhase;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.poker.model.TournamentProfile;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.LogManager;
@@ -163,11 +164,16 @@ public class GameInfoDialog extends DialogPhase {
             bindArray.addValue(Types.INTEGER, PokerDatabase.storeTournament(game_));
 
             ClientPokerTable currentTable = game_.getCurrentTable();
-            HoldemHand hhand = currentTable != null ? currentTable.getHoldemHand() : null;
+            ClientHoldemHand clientHand = currentTable != null ? currentTable.getHoldemHand() : null;
 
-            if (hhand == null || hhand.isStoredInDatabase()) {
-                hhand = null;
+            if (clientHand == null || clientHand.isStoredInDatabase()) {
+                clientHand = null;
             }
+
+            // HandHistoryPanel requires HoldemHand (persistence path); remote hands are
+            // never
+            // stored in the database and clientHand will be null for remote tables.
+            HoldemHand hhand = clientHand instanceof HoldemHand ? (HoldemHand) clientHand : null;
 
             add(new HandHistoryPanel(context_, STYLE, "HND_TOURNAMENT_ID=?", bindArray, hhand, 9), BorderLayout.CENTER);
         }

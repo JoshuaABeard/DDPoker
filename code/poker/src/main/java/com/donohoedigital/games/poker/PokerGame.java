@@ -2323,7 +2323,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         setInputMode(nMode, null, null);
     }
 
-    public void setInputMode(int nMode, HoldemHand hhand, PokerPlayer player) {
+    public void setInputMode(int nMode, ClientHoldemHand hhand, PokerPlayer player) {
         if (input_ != null) {
             input_.setInputMode(nMode, hhand, player);
         }

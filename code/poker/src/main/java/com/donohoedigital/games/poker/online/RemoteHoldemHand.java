@@ -18,7 +18,6 @@
 package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.poker.HandAction;
-import com.donohoedigital.games.poker.HoldemHand;
 import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.PokerTable;
 import com.donohoedigital.games.poker.engine.Hand;
@@ -36,14 +35,9 @@ import java.util.Map;
  * Thin view model for a poker hand driven by WebSocket state updates.
  *
  * <p>
- * Extends {@link HoldemHand} using its no-arg constructor (which exists for
- * deserialization) and overrides ~10 getters to return simple stored fields
- * populated from server-to-client messages. Contains zero poker logic.
- *
- * <p>
- * The no-arg constructor avoids the normal constructor's wasteful creation of a
- * Deck, pots list, community cards, and blind lookups that are irrelevant for a
- * remote hand. The Swing UI reads getters identically to the originals.
+ * Implements {@link ClientHoldemHand} directly — no longer extends
+ * {@link com.donohoedigital.games.poker.HoldemHand}. All state comes from
+ * WebSocket messages; contains zero poker logic.
  *
  * <p>
  * State is updated by {@code updateRound}, {@code updateCommunity},
@@ -51,7 +45,13 @@ import java.util.Map;
  * {@code updatePlayerOrder}. All update methods are non-firing — the caller
  * (WebSocketTournamentDirector) fires events after state is fully applied.
  */
-public class RemoteHoldemHand extends HoldemHand {
+public class RemoteHoldemHand implements ClientHoldemHand {
+
+    /**
+     * Sentinel value meaning "no current player". Mirrors
+     * {@code HoldemHand.NO_CURRENT_PLAYER}.
+     */
+    public static final int NO_CURRENT_PLAYER = -999;
 
     private BettingRound remoteRound_ = BettingRound.PRE_FLOP;
     private Hand remoteCommunity_ = new Hand();
@@ -64,31 +64,188 @@ public class RemoteHoldemHand extends HoldemHand {
     private final Map<Integer, Integer> remoteWins_ = new HashMap<>();
     private int remoteSmallBlindSeat_ = NO_CURRENT_PLAYER;
     private int remoteBigBlindSeat_ = NO_CURRENT_PLAYER;
+    private int remoteSmallBlind_;
+    private int remoteBigBlind_;
+    private int remoteAnte_;
     private ClientPokerTable ownerTable_;
 
-    /**
-     * Creates a remote hand with no-arg parent constructor. Calls
-     * {@code initHandLists()} so that any {@code synchronized(pots_)} or
-     * {@code synchronized(history_)} methods in the parent that are not overridden
-     * here operate on non-null lists rather than NPE.
-     */
+    /** Creates a remote hand. */
     public RemoteHoldemHand() {
-        super();
-        initHandLists();
     }
 
     // -------------------------------------------------------------------------
-    // Overridden getters (return remote-state values)
+    // ClientHoldemHand — table linkage
     // -------------------------------------------------------------------------
 
     /**
-     * Returns the server-provided bet for this player in the current round.
-     * Overrides to avoid NPE from {@code synchronized(history_)} in the parent; the
-     * no-arg HoldemHand constructor leaves {@code history_} null.
+     * Returns the table that owns this hand as a {@link PokerTable}. Set by
+     * {@link RemotePokerTable#setRemoteHand}.
+     *
+     * <p>
+     * In the remote path {@code ownerTable_} is a {@link RemotePokerTable} (a
+     * {@link ClientPokerTable}). The cast to {@link PokerTable} is safe only when
+     * the hand belongs to a real {@code PokerTable}; callers in the online UI path
+     * should use {@link #getClientTable()} instead.
      */
+    @Override
+    public PokerTable getTable() {
+        return ownerTable_ instanceof PokerTable ? (PokerTable) ownerTable_ : null;
+    }
+
+    /**
+     * Returns the owning table as a {@link ClientPokerTable}. Works for both local
+     * and remote tables.
+     */
+    @Override
+    public ClientPokerTable getClientTable() {
+        return ownerTable_;
+    }
+
+    /** Called by {@link RemotePokerTable#setRemoteHand} to back-link the table. */
+    void setOwnerTable(ClientPokerTable table) {
+        ownerTable_ = table;
+    }
+
+    // -------------------------------------------------------------------------
+    // ClientHoldemHand — betting round
+    // -------------------------------------------------------------------------
+
+    @Override
+    public BettingRound getRound() {
+        return remoteRound_;
+    }
+
+    /**
+     * Returns the legacy int for the server-provided round so
+     * {@link com.donohoedigital.games.poker.DealCommunity#syncCards} can switch on
+     * it.
+     */
+    @Override
+    public int getRoundForDisplay() {
+        return remoteRound_.toLegacy();
+    }
+
+    // -------------------------------------------------------------------------
+    // ClientHoldemHand — community cards
+    // -------------------------------------------------------------------------
+
+    @Override
+    public Hand getCommunity() {
+        return remoteCommunity_;
+    }
+
+    /**
+     * Returns the community cards. For the remote hand there is no all-in showdown
+     * state tracking, so this is the same as {@link #getCommunity()}.
+     */
+    @Override
+    public Hand getCommunityForDisplay() {
+        return remoteCommunity_;
+    }
+
+    @Override
+    public HandSorted getCommunitySorted() {
+        if (remoteCommunitySorted_.fingerprint() != remoteCommunity_.fingerprint()) {
+            remoteCommunitySorted_ = new HandSorted(remoteCommunity_);
+        }
+        return remoteCommunitySorted_;
+    }
+
+    // -------------------------------------------------------------------------
+    // ClientHoldemHand — players
+    // -------------------------------------------------------------------------
+
+    @Override
+    public int getNumPlayers() {
+        return remotePlayers_.size();
+    }
+
+    /** Returns the number of players who have not yet folded. */
+    @Override
+    public int getNumWithCards() {
+        int count = 0;
+        for (PokerPlayer p : remotePlayers_) {
+            if (!p.isFolded())
+                count++;
+        }
+        return count;
+    }
+
+    @Override
+    public PokerPlayer getPlayerAt(int index) {
+        if (index < 0 || index >= remotePlayers_.size())
+            return null;
+        return remotePlayers_.get(index);
+    }
+
+    @Override
+    public int getCurrentPlayerIndex() {
+        return remoteCurrentPlayerIndex_;
+    }
+
+    @Override
+    public PokerPlayer getCurrentPlayer() {
+        if (remoteCurrentPlayerIndex_ < 0 || remoteCurrentPlayerIndex_ >= remotePlayers_.size()) {
+            return null;
+        }
+        return remotePlayers_.get(remoteCurrentPlayerIndex_);
+    }
+
+    // -------------------------------------------------------------------------
+    // ClientHoldemHand — pot / chips
+    // -------------------------------------------------------------------------
+
+    @Override
+    public int getTotalPotChipCount() {
+        return remotePotTotal_;
+    }
+
+    // -------------------------------------------------------------------------
+    // ClientHoldemHand — bet / call amounts
+    // -------------------------------------------------------------------------
+
+    /** Returns the server-provided bet for this player in the current round. */
     @Override
     public int getBet(PokerPlayer player, int nRound) {
         return remoteBets_.getOrDefault(player.getID(), 0);
+    }
+
+    /**
+     * Returns the server-provided bet for this player (round is ignored for
+     * remote).
+     */
+    @Override
+    public int getBet(PokerPlayer player) {
+        return remoteBets_.getOrDefault(player.getID(), 0);
+    }
+
+    /**
+     * Returns the highest bet in the current round (the amount a caller must
+     * match). Derived by scanning the remote bets map.
+     */
+    @Override
+    public int getBet() {
+        int max = 0;
+        for (int v : remoteBets_.values()) {
+            if (v > max)
+                max = v;
+        }
+        return max;
+    }
+
+    /**
+     * Returns the amount the given player needs to add to call the current bet,
+     * using the server-provided call amount from action options when available.
+     */
+    @Override
+    public int getCall(PokerPlayer player) {
+        if (remoteOptions_ != null) {
+            return remoteOptions_.callAmount();
+        }
+        // Fallback: compute from bets
+        int highBet = getBet();
+        int playerBet = getBet(player);
+        return Math.max(0, highBet - playerBet);
     }
 
     /** Returns the server-provided min bet, or 0 if no options are stored. */
@@ -122,125 +279,128 @@ public class RemoteHoldemHand extends HoldemHand {
     }
 
     /**
-     * Returns {@code false} — the remote hand has no action history. Overrides to
-     * avoid NPE from {@code synchronized(history_)} in the parent.
+     * Returns the minimum chip denomination for this hand, delegating to the owning
+     * table.
      */
+    @Override
+    public int getMinChip() {
+        return ownerTable_ != null ? ownerTable_.getMinChip() : 1;
+    }
+
+    // -------------------------------------------------------------------------
+    // ClientHoldemHand — game type
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns the game type constant for this hand. Delegates to the owning table's
+     * game profile at the current level.
+     */
+    @Override
+    public int getGameType() {
+        if (ownerTable_ != null && ownerTable_.getGame() != null) {
+            return ownerTable_.getGame().getProfile().getGameType(ownerTable_.getLevel());
+        }
+        return 0;
+    }
+
+    // -------------------------------------------------------------------------
+    // ClientHoldemHand — odds
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns the pot odds for the given player as a value 0–100. Uses the
+     * server-provided call amount when action options are available.
+     */
+    @Override
+    public float getPotOdds(PokerPlayer player) {
+        int nCall = getCall(player);
+        int nPot = getTotalPotChipCount();
+        if (nCall <= 0 || (nCall + nPot) == 0) {
+            return 0.0f;
+        }
+        return 100.0f * ((float) nCall / ((float) nCall + (float) nPot));
+    }
+
+    // -------------------------------------------------------------------------
+    // ClientHoldemHand — state flags
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns {@code false} — the remote hand does not track all-in showdown state
+     * separately; the UI derives this from player chip counts.
+     */
+    @Override
+    public boolean isAllInShowdown() {
+        return false;
+    }
+
+    /**
+     * Returns {@code false} — remote hands are view models and are never stored in
+     * the local hand history database.
+     */
+    @Override
+    public boolean isStoredInDatabase() {
+        return false;
+    }
+
+    // -------------------------------------------------------------------------
+    // ClientHoldemHand — action history
+    // -------------------------------------------------------------------------
+
+    /** Delegates to {@link PokerPlayer#isFolded()}. */
+    @Override
+    public boolean isFolded(PokerPlayer player) {
+        return player.isFolded();
+    }
+
+    /** Returns {@code false} — the remote hand has no action history. */
     @Override
     public boolean hasPlayerActed(PokerPlayer player) {
         return false;
     }
 
     /**
-     * Returns an empty list — the remote hand has no action history. Overrides to
-     * avoid NPE from {@code synchronized(history_)} in the parent.
+     * Returns {@code HandAction#ACTION_NONE} — the remote hand has no action
+     * history.
      */
+    @Override
+    public int getLastAction(PokerPlayer player) {
+        return HandAction.ACTION_NONE;
+    }
+
+    /** Returns an empty list — the remote hand has no action history. */
     @Override
     public List<HandAction> getHistoryCopy() {
         return Collections.emptyList();
     }
 
-    /**
-     * Returns 0 — the remote hand has no action history. Overrides to avoid NPE
-     * from {@code synchronized(history_)} in the parent.
-     */
+    /** Returns 0 — the remote hand has no action history. */
     @Override
     public int getHistorySize() {
         return 0;
     }
 
+    /** Returns 0 — the remote hand has no action history to sum bets from. */
+    @Override
+    public int getTotalBet(PokerPlayer player) {
+        return 0;
+    }
+
     /**
-     * Returns the table that owns this hand as a {@link PokerTable}. Overrides the
-     * parent which reads the {@code table_} field (never set via the no-arg
-     * constructor path). Set by {@link RemotePokerTable#setRemoteHand}.
-     *
-     * <p>
-     * In the remote path {@code ownerTable_} is a {@link RemotePokerTable} (a
-     * {@link ClientPokerTable}). The cast to {@link PokerTable} is safe only when
-     * the hand belongs to a real {@code PokerTable}; callers in the online UI path
-     * should use {@link #getClientTable()} instead.
+     * Returns 0 — the remote hand has no action history to count prior raises from.
      */
     @Override
-    public PokerTable getTable() {
-        return ownerTable_ instanceof PokerTable ? (PokerTable) ownerTable_ : null;
+    public int getNumPriorRaises(PokerPlayer player) {
+        return 0;
     }
+
+    // -------------------------------------------------------------------------
+    // ClientHoldemHand — win recording
+    // -------------------------------------------------------------------------
 
     /**
-     * Returns the owning table as a {@link ClientPokerTable}. Works for both local
-     * and remote tables.
-     */
-    public ClientPokerTable getClientTable() {
-        return ownerTable_;
-    }
-
-    /** Called by {@link RemotePokerTable#setRemoteHand} to back-link the table. */
-    void setOwnerTable(ClientPokerTable table) {
-        ownerTable_ = table;
-    }
-
-    @Override
-    public BettingRound getRound() {
-        return remoteRound_;
-    }
-
-    /**
-     * Overrides the parent which reads {@code nRound_} directly (never set in
-     * remote mode). Returns the legacy int for the server-provided round so
-     * {@link com.donohoedigital.games.poker.DealCommunity#syncCards} can switch on
-     * it.
-     */
-    @Override
-    public int getRoundForDisplay() {
-        return remoteRound_.toLegacy();
-    }
-
-    @Override
-    public Hand getCommunity() {
-        return remoteCommunity_;
-    }
-
-    @Override
-    public HandSorted getCommunitySorted() {
-        if (remoteCommunitySorted_.fingerprint() != remoteCommunity_.fingerprint()) {
-            remoteCommunitySorted_ = new HandSorted(remoteCommunity_);
-        }
-        return remoteCommunitySorted_;
-    }
-
-    @Override
-    public int getNumPlayers() {
-        return remotePlayers_.size();
-    }
-
-    @Override
-    public PokerPlayer getPlayerAt(int index) {
-        if (index < 0 || index >= remotePlayers_.size())
-            return null;
-        return remotePlayers_.get(index);
-    }
-
-    @Override
-    public int getCurrentPlayerIndex() {
-        return remoteCurrentPlayerIndex_;
-    }
-
-    @Override
-    public PokerPlayer getCurrentPlayer() {
-        if (remoteCurrentPlayerIndex_ < 0 || remoteCurrentPlayerIndex_ >= remotePlayers_.size()) {
-            return null;
-        }
-        return remotePlayers_.get(remoteCurrentPlayerIndex_);
-    }
-
-    @Override
-    public int getTotalPotChipCount() {
-        return remotePotTotal_;
-    }
-
-    /**
-     * Records a win for the given player. Overrides to avoid {@code addHistory()},
-     * which fires a {@code TYPE_PLAYER_ACTION} event on {@code table_} — a field
-     * that is {@code null} in remote mode (no-arg constructor never sets it).
-     * Accumulated so that split-pot wins are summed correctly.
+     * Records a win for the given player. Accumulated so that split-pot wins are
+     * summed correctly.
      */
     @Override
     public void wins(PokerPlayer player, int nChips, int nPot) {
@@ -249,13 +409,45 @@ public class RemoteHoldemHand extends HoldemHand {
 
     /**
      * Returns the total chips won by this player in the current hand, or {@code 0}.
-     * Overrides to read from the remote wins map instead of {@code history_} (which
-     * would also work, but only if {@code addHistory()} didn't throw first due to
-     * {@code table_} being {@code null}).
      */
     @Override
     public int getWin(PokerPlayer player) {
         return remoteWins_.getOrDefault(player.getID(), 0);
+    }
+
+    // -------------------------------------------------------------------------
+    // Blind / ante accessors (mirrors HoldemHand, set by
+    // WebSocketTournamentDirector)
+    // -------------------------------------------------------------------------
+
+    /** Sets the small blind amount for display purposes. */
+    public void setSmallBlind(int n) {
+        remoteSmallBlind_ = n;
+    }
+
+    /** Sets the big blind amount for display purposes. */
+    public void setBigBlind(int n) {
+        remoteBigBlind_ = n;
+    }
+
+    /** Sets the ante amount for display purposes. */
+    public void setAnte(int n) {
+        remoteAnte_ = n;
+    }
+
+    /** Returns the small blind amount. */
+    public int getSmallBlind() {
+        return remoteSmallBlind_;
+    }
+
+    /** Returns the big blind amount. */
+    public int getBigBlind() {
+        return remoteBigBlind_;
+    }
+
+    /** Returns the ante amount. */
+    public int getAnte() {
+        return remoteAnte_;
     }
 
     // -------------------------------------------------------------------------

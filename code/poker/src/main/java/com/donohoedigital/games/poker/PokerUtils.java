@@ -251,7 +251,7 @@ public class PokerUtils extends EngineUtils {
             if (table == null)
                 return false;
 
-            HoldemHand hhand = table.getHoldemHand();
+            ClientHoldemHand hhand = table.getHoldemHand();
             if (hhand == null)
                 return false;
 

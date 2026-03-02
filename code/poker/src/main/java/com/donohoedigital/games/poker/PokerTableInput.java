@@ -32,6 +32,8 @@
  */
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
+
 public interface PokerTableInput {
     int MODE_RECHECK = -2; // special mode to redo settings
     int MODE_INIT = -1;
@@ -45,7 +47,7 @@ public interface PokerTableInput {
     int MODE_CONTINUE = 7; // for color-up
     int MODE_REBUY_CHECK = 8; // rebuy button check
 
-    void setInputMode(int nMode, HoldemHand hhand, PokerPlayer player);
+    void setInputMode(int nMode, ClientHoldemHand hhand, PokerPlayer player);
 
     public int getInputMode();
 }

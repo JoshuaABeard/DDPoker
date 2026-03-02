@@ -23,7 +23,7 @@ import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.Phase;
 import com.donohoedigital.games.poker.Bet;
 import com.donohoedigital.games.poker.HandAction;
-import com.donohoedigital.games.poker.HoldemHand;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
 import com.donohoedigital.games.poker.PokerPlayer;
@@ -245,7 +245,7 @@ class ActionHandler extends BaseHandler {
             if (phase instanceof Bet bet) {
                 bet.doAI();
             } else if (game.getPlayerActionListener() != null) {
-                HoldemHand hh = game.getCurrentTable() != null ? game.getCurrentTable().getHoldemHand() : null;
+                ClientHoldemHand hh = game.getCurrentTable() != null ? game.getCurrentTable().getHoldemHand() : null;
                 PokerPlayer pp = (hh == null) ? null : hh.getCurrentPlayer();
                 if (pp != null && pp.isHumanControlled()) {
                     HandAction aiAction = pp.getAction(false);

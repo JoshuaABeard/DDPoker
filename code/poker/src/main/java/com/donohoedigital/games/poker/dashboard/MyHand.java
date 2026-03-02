@@ -38,6 +38,7 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 import com.donohoedigital.gui.*;
@@ -168,7 +169,7 @@ public class MyHand extends DashboardItem {
 
     protected void updateMessages() {
         ClientPokerTable table = game_.getCurrentTable();
-        HoldemHand hhand = table.getHoldemHand();
+        ClientHoldemHand hhand = table.getHoldemHand();
         PokerPlayer asViewedBy = game_.getHumanPlayer();
         Hand hand = asViewedBy.getHand();
 

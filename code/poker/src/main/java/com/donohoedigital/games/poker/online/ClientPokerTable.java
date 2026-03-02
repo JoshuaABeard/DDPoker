@@ -34,7 +34,6 @@
  */
 package com.donohoedigital.games.poker.online;
 
-import com.donohoedigital.games.poker.HoldemHand;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
@@ -116,7 +115,7 @@ public interface ClientPokerTable {
     // -------------------------------------------------------------------------
 
     /** Returns the current hand, or {@code null} if no hand is in progress. */
-    HoldemHand getHoldemHand();
+    ClientHoldemHand getHoldemHand();
 
     // -------------------------------------------------------------------------
     // Game-play state

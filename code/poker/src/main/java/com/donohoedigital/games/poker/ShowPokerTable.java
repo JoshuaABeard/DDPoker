@@ -43,6 +43,7 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.dashboard.*;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
@@ -730,7 +731,7 @@ public abstract class ShowPokerTable extends ChainPhase
     /**
      * Set input mode
      */
-    public void setInputMode(int nMode, HoldemHand hhand, PokerPlayer player) {
+    public void setInputMode(int nMode, ClientHoldemHand hhand, PokerPlayer player) {
         nInputMode_ = nMode;
     }
 

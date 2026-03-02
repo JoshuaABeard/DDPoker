@@ -34,6 +34,7 @@ package com.donohoedigital.games.poker;
 
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.poker.dashboard.AdvisorState;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
@@ -73,7 +74,7 @@ public class PokerStatsPanel extends DDTabPanel {
 
         if (player != null) {
             ClientPokerTable table = player.getTable();
-            HoldemHand hand = table.getHoldemHand();
+            ClientHoldemHand hand = table.getHoldemHand();
             pocket_ = player.getHand();
             community_ = hand.getCommunityForDisplay();
         }

@@ -860,7 +860,7 @@ public class ShowTournamentTable extends ShowPokerTable
      */
     public void tableEventOccurred(PokerTableEvent event) {
         ClientPokerTable table = event.getTable();
-        HoldemHand hhand = table.getHoldemHand();
+        ClientHoldemHand hhand = table.getHoldemHand();
 
         if (PokerConstants.DEBUG_EVENT_DISPLAY)
             logger.debug("Event received: " + event.toString());
@@ -1012,7 +1012,7 @@ public class ShowTournamentTable extends ShowPokerTable
      * Setup buttons on pokertable based on current mode
      */
     @Override
-    public void setInputMode(int nMode, HoldemHand hhand, PokerPlayer player) {
+    public void setInputMode(int nMode, ClientHoldemHand hhand, PokerPlayer player) {
         int nOldMode = getInputMode();
 
         // recheck - set to same value, so fudge old mode so we don't skip out early
@@ -1308,7 +1308,7 @@ public class ShowTournamentTable extends ShowPokerTable
     /**
      * Do raise button
      */
-    private void setBetRaiseButton(HoldemHand hhand, PokerPlayer player, boolean bRaise) {
+    private void setBetRaiseButton(ClientHoldemHand hhand, PokerPlayer player, boolean bRaise) {
         boolean bEnabled = false;
         int nMax = 0;
 
