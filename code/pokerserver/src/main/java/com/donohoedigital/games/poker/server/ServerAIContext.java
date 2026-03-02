@@ -34,7 +34,7 @@
  */
 package com.donohoedigital.games.poker.server;
 
-import com.donohoedigital.games.poker.HandAction;
+import com.donohoedigital.games.poker.engine.PokerActionConstants;
 import com.donohoedigital.games.poker.core.*;
 import com.donohoedigital.games.poker.core.ai.AIContext;
 import com.donohoedigital.games.poker.core.ai.HandInfoFast;
@@ -122,7 +122,7 @@ public class ServerAIContext implements AIContext {
      * @param player
      *            Player who acted
      * @param action
-     *            Action taken (HandAction constants)
+     *            Action taken (PokerActionConstants)
      * @param amount
      *            Amount bet/raised
      * @param round
@@ -131,7 +131,7 @@ public class ServerAIContext implements AIContext {
     public void onPlayerAction(GamePlayerInfo player, int action, int amount, int round) {
         playerActionsPerRound.computeIfAbsent(player.getID(), k -> new int[4])[round] = action;
 
-        if (action == HandAction.ACTION_BET || action == HandAction.ACTION_RAISE) {
+        if (action == PokerActionConstants.ACTION_BET || action == PokerActionConstants.ACTION_RAISE) {
             lastBetAmount = amount;
         }
 

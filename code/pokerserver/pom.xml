@@ -89,7 +89,7 @@
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
-      <artifactId>poker</artifactId>
+      <artifactId>pokergameserver</artifactId>
       <version>3.3.0-CommunityEdition</version>
     </dependency>
     <dependency>

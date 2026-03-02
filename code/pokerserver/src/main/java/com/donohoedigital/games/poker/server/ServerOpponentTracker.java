@@ -21,7 +21,7 @@ package com.donohoedigital.games.poker.server;
 
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.ai.V2OpponentModel;
-import com.donohoedigital.games.poker.HandAction;
+import com.donohoedigital.games.poker.engine.PokerActionConstants;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,7 +61,7 @@ public class ServerOpponentTracker {
      * @param player
      *            Player taking action
      * @param action
-     *            Action type (HandAction.ACTION_*)
+     *            Action type (PokerActionConstants.ACTION_*)
      * @param amount
      *            Amount bet/raised/called
      * @param round
@@ -76,7 +76,7 @@ public class ServerOpponentTracker {
             // Track table-level raise after recording (so the raiser's own action
             // sees raisedPreFlop=false for their raise, which is correct — raising
             // is not limping regardless)
-            if (round == 0 && action == HandAction.ACTION_RAISE) {
+            if (round == 0 && action == PokerActionConstants.ACTION_RAISE) {
                 raisedPreFlop = true;
             }
         }
@@ -226,16 +226,16 @@ public class ServerOpponentTracker {
                 }
 
                 switch (action) {
-                    case HandAction.ACTION_RAISE :
+                    case PokerActionConstants.ACTION_RAISE :
                         preFlopRaises[pos]++;
                         break;
-                    case HandAction.ACTION_CALL :
+                    case PokerActionConstants.ACTION_CALL :
                         preFlopCalls[pos]++;
                         if (!raisedPreFlop) {
                             preFlopLimps[pos]++;
                         }
                         break;
-                    case HandAction.ACTION_FOLD :
+                    case PokerActionConstants.ACTION_FOLD :
                         if (!raisedPreFlop) {
                             preFlopFoldsUnraised[pos]++;
                         }
@@ -247,20 +247,20 @@ public class ServerOpponentTracker {
                 postFlopRounds[idx]++;
 
                 switch (action) {
-                    case HandAction.ACTION_BET :
+                    case PokerActionConstants.ACTION_BET :
                         postFlopActions[idx]++;
                         postFlopOpens[idx]++;
                         totalBets++;
                         break;
-                    case HandAction.ACTION_RAISE :
+                    case PokerActionConstants.ACTION_RAISE :
                         postFlopActions[idx]++;
                         postFlopRaises[idx]++;
                         totalBets++;
                         break;
-                    case HandAction.ACTION_CHECK :
+                    case PokerActionConstants.ACTION_CHECK :
                         postFlopChecks[idx]++;
                         break;
-                    case HandAction.ACTION_FOLD :
+                    case PokerActionConstants.ACTION_FOLD :
                         // Check-fold tracked separately via previous check
                         if (postFlopChecks[idx] > 0) {
                             postFlopCheckFolds[idx]++;

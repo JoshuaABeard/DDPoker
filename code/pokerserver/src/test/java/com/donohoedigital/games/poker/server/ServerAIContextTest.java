@@ -23,6 +23,7 @@ import com.donohoedigital.games.poker.core.*;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.CardSuit;
+import com.donohoedigital.games.poker.engine.PokerActionConstants;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
@@ -527,10 +528,10 @@ class ServerAIContextTest {
 
         ServerAIContext context = new ServerAIContext(table, hand, tournament, aiPlayer, new ServerOpponentTracker());
 
-        context.onPlayerAction(player, com.donohoedigital.games.poker.HandAction.ACTION_BET, 100, 1);
+        context.onPlayerAction(player, PokerActionConstants.ACTION_BET, 100, 1);
 
         int lastAction = context.getLastActionInRound(player, 1);
-        assertThat(lastAction).isEqualTo(com.donohoedigital.games.poker.HandAction.ACTION_BET);
+        assertThat(lastAction).isEqualTo(PokerActionConstants.ACTION_BET);
     }
 
     @Test
@@ -546,8 +547,8 @@ class ServerAIContextTest {
 
         ServerAIContext context = new ServerAIContext(table, hand, tournament, aiPlayer, new ServerOpponentTracker());
 
-        context.onPlayerAction(player, com.donohoedigital.games.poker.HandAction.ACTION_BET, 100, 1);
-        context.onPlayerAction(player, com.donohoedigital.games.poker.HandAction.ACTION_RAISE, 200, 1);
+        context.onPlayerAction(player, PokerActionConstants.ACTION_BET, 100, 1);
+        context.onPlayerAction(player, PokerActionConstants.ACTION_RAISE, 200, 1);
 
         int amount = context.getAmountBetThisRound(player);
         assertThat(amount).isEqualTo(300); // 100 + 200
@@ -568,8 +569,8 @@ class ServerAIContextTest {
 
         ServerAIContext context = new ServerAIContext(table, hand, tournament, aiPlayer, new ServerOpponentTracker());
 
-        context.onPlayerAction(player1, com.donohoedigital.games.poker.HandAction.ACTION_BET, 100, 1);
-        context.onPlayerAction(player2, com.donohoedigital.games.poker.HandAction.ACTION_RAISE, 250, 1);
+        context.onPlayerAction(player1, PokerActionConstants.ACTION_BET, 100, 1);
+        context.onPlayerAction(player2, PokerActionConstants.ACTION_RAISE, 250, 1);
 
         int lastBet = context.getLastBetAmount();
         assertThat(lastBet).isEqualTo(250); // Last raise amount
@@ -590,7 +591,7 @@ class ServerAIContextTest {
 
         ServerAIContext context = new ServerAIContext(table, hand1, tournament, aiPlayer, new ServerOpponentTracker());
 
-        context.onPlayerAction(player, com.donohoedigital.games.poker.HandAction.ACTION_BET, 100, 1);
+        context.onPlayerAction(player, PokerActionConstants.ACTION_BET, 100, 1);
         assertThat(context.getAmountBetThisRound(player)).isEqualTo(100);
 
         // New hand should clear tracking
@@ -614,15 +615,15 @@ class ServerAIContextTest {
         ServerAIContext context = new ServerAIContext(table, hand, tournament, aiPlayer, new ServerOpponentTracker());
 
         // Bet on flop
-        context.onPlayerAction(player, com.donohoedigital.games.poker.HandAction.ACTION_BET, 100, 1);
+        context.onPlayerAction(player, PokerActionConstants.ACTION_BET, 100, 1);
         // Raise on turn
-        context.onPlayerAction(player, com.donohoedigital.games.poker.HandAction.ACTION_RAISE, 200, 2);
+        context.onPlayerAction(player, PokerActionConstants.ACTION_RAISE, 200, 2);
 
         int flopAction = context.getLastActionInRound(player, 1);
         int turnAction = context.getLastActionInRound(player, 2);
 
-        assertThat(flopAction).isEqualTo(com.donohoedigital.games.poker.HandAction.ACTION_BET);
-        assertThat(turnAction).isEqualTo(com.donohoedigital.games.poker.HandAction.ACTION_RAISE);
+        assertThat(flopAction).isEqualTo(PokerActionConstants.ACTION_BET);
+        assertThat(turnAction).isEqualTo(PokerActionConstants.ACTION_RAISE);
     }
 
     @Test
@@ -641,7 +642,7 @@ class ServerAIContextTest {
         // Simulate opponent playing hands
         for (int i = 0; i < 5; i++) {
             tracker.onHandStart(opponent, 1000);
-            tracker.onPlayerAction(opponent, com.donohoedigital.games.poker.HandAction.ACTION_RAISE, 100, 0, 2);
+            tracker.onPlayerAction(opponent, PokerActionConstants.ACTION_RAISE, 100, 0, 2);
             tracker.onHandEnd(opponent);
         }
 

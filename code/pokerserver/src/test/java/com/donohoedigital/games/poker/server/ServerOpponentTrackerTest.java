@@ -22,7 +22,7 @@ package com.donohoedigital.games.poker.server;
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.ai.AIConstants;
 import com.donohoedigital.games.poker.core.ai.V2OpponentModel;
-import com.donohoedigital.games.poker.HandAction;
+import com.donohoedigital.games.poker.engine.PokerActionConstants;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
@@ -48,7 +48,7 @@ class ServerOpponentTrackerTest {
         GamePlayerInfo player = createMockPlayer(1);
 
         tracker.onHandStart(player, 1000);
-        tracker.onPlayerAction(player, HandAction.ACTION_RAISE, 100, 0, 2);
+        tracker.onPlayerAction(player, PokerActionConstants.ACTION_RAISE, 100, 0, 2);
         tracker.onHandEnd(player);
 
         V2OpponentModel model = tracker.getModel(1);
@@ -63,7 +63,7 @@ class ServerOpponentTrackerTest {
         // Play 3 hands
         for (int i = 0; i < 3; i++) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_CALL, 100, 0, 2);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_CALL, 100, 0, 2);
             tracker.onHandEnd(player);
         }
 
@@ -79,12 +79,12 @@ class ServerOpponentTrackerTest {
         // Raise 3 times, fold 2 times
         for (int i = 0; i < 3; i++) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_RAISE, 100, 0, 2);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_RAISE, 100, 0, 2);
             tracker.onHandEnd(player);
         }
         for (int i = 0; i < 2; i++) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_FOLD, 0, 0, 2);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_FOLD, 0, 0, 2);
             tracker.onHandEnd(player);
         }
 
@@ -102,12 +102,12 @@ class ServerOpponentTrackerTest {
         // Limp 2 times, fold 3 times
         for (int i = 0; i < 2; i++) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_CALL, 100, 0, 2);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_CALL, 100, 0, 2);
             tracker.onHandEnd(player);
         }
         for (int i = 0; i < 3; i++) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_FOLD, 0, 0, 2);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_FOLD, 0, 0, 2);
             tracker.onHandEnd(player);
         }
 
@@ -125,11 +125,11 @@ class ServerOpponentTrackerTest {
         // Fold unraised 4 times, call 1 time
         for (int i = 0; i < 4; i++) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_FOLD, 0, 0, 2);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_FOLD, 0, 0, 2);
             tracker.onHandEnd(player);
         }
         tracker.onHandStart(player, 1000);
-        tracker.onPlayerAction(player, HandAction.ACTION_CALL, 100, 0, 2);
+        tracker.onPlayerAction(player, PokerActionConstants.ACTION_CALL, 100, 0, 2);
         tracker.onHandEnd(player);
 
         V2OpponentModel model = tracker.getModel(1);
@@ -146,13 +146,13 @@ class ServerOpponentTrackerTest {
         // Act on flop 3 times
         for (int i = 0; i < 3; i++) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_BET, 100, 1, 2); // Flop
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_BET, 100, 1, 2); // Flop
             tracker.onHandEnd(player);
         }
         // Check on flop 2 times
         for (int i = 0; i < 2; i++) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_CHECK, 0, 1, 2); // Flop
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_CHECK, 0, 1, 2); // Flop
             tracker.onHandEnd(player);
         }
 
@@ -170,15 +170,15 @@ class ServerOpponentTrackerTest {
         // Check-fold 3 times on turn
         for (int i = 0; i < 3; i++) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_CHECK, 0, 2, 2); // Turn
-            tracker.onPlayerAction(player, HandAction.ACTION_FOLD, 0, 2, 2); // Turn
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_CHECK, 0, 2, 2); // Turn
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_FOLD, 0, 2, 2); // Turn
             tracker.onHandEnd(player);
         }
         // Check-call 2 times on turn
         for (int i = 0; i < 2; i++) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_CHECK, 0, 2, 2); // Turn
-            tracker.onPlayerAction(player, HandAction.ACTION_CALL, 100, 2, 2); // Turn
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_CHECK, 0, 2, 2); // Turn
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_CALL, 100, 2, 2); // Turn
             tracker.onHandEnd(player);
         }
 
@@ -202,7 +202,7 @@ class ServerOpponentTrackerTest {
         // Normal bet 3 times
         for (int i = 0; i < 3; i++) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_BET, 100, 1, 2);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_BET, 100, 1, 2);
             tracker.onHandEnd(player);
         }
 
@@ -226,8 +226,8 @@ class ServerOpponentTrackerTest {
         // Bet-call 2 times
         for (int i = 0; i < 2; i++) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_BET, 100, 1, 2);
-            tracker.onPlayerAction(player, HandAction.ACTION_CALL, 100, 1, 2);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_BET, 100, 1, 2);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_CALL, 100, 1, 2);
             tracker.onHandEnd(player);
         }
 
@@ -272,14 +272,14 @@ class ServerOpponentTrackerTest {
         // Small blind: raise every time (aggressive)
         for (int i = 0; i < 5; i++) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_RAISE, 100, 0, AIConstants.POSITION_SMALL);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_RAISE, 100, 0, AIConstants.POSITION_SMALL);
             tracker.onHandEnd(player);
         }
 
         // Big blind: fold every time (tight)
         for (int i = 0; i < 5; i++) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_FOLD, 0, 0, AIConstants.POSITION_BIG);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_FOLD, 0, 0, AIConstants.POSITION_BIG);
             tracker.onHandEnd(player);
         }
 
@@ -305,14 +305,14 @@ class ServerOpponentTrackerTest {
         // Small blind: always raise (100% aggressive)
         for (int i = 0; i < 5; i++) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_RAISE, 100, 0, AIConstants.POSITION_SMALL);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_RAISE, 100, 0, AIConstants.POSITION_SMALL);
             tracker.onHandEnd(player);
         }
 
         // Big blind: always call (0% aggressive)
         for (int i = 0; i < 5; i++) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_CALL, 100, 0, AIConstants.POSITION_BIG);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_CALL, 100, 0, AIConstants.POSITION_BIG);
             tracker.onHandEnd(player);
         }
 
@@ -338,7 +338,7 @@ class ServerOpponentTrackerTest {
 
         for (int pos : positions) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_RAISE, 100, 0, pos);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_RAISE, 100, 0, pos);
             tracker.onHandEnd(player);
         }
 
@@ -362,14 +362,14 @@ class ServerOpponentTrackerTest {
         // Early: always fold (tight)
         for (int i = 0; i < 5; i++) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_FOLD, 0, 0, AIConstants.POSITION_EARLY);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_FOLD, 0, 0, AIConstants.POSITION_EARLY);
             tracker.onHandEnd(player);
         }
 
         // Late: always raise (loose)
         for (int i = 0; i < 5; i++) {
             tracker.onHandStart(player, 1000);
-            tracker.onPlayerAction(player, HandAction.ACTION_RAISE, 100, 0, AIConstants.POSITION_LATE);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_RAISE, 100, 0, AIConstants.POSITION_LATE);
             tracker.onHandEnd(player);
         }
 
@@ -391,14 +391,14 @@ class ServerOpponentTrackerTest {
         // Player 1 plays 3 hands
         for (int i = 0; i < 3; i++) {
             tracker.onHandStart(player1, 1000);
-            tracker.onPlayerAction(player1, HandAction.ACTION_RAISE, 100, 0, 2);
+            tracker.onPlayerAction(player1, PokerActionConstants.ACTION_RAISE, 100, 0, 2);
             tracker.onHandEnd(player1);
         }
 
         // Player 2 plays 5 hands
         for (int i = 0; i < 5; i++) {
             tracker.onHandStart(player2, 1000);
-            tracker.onPlayerAction(player2, HandAction.ACTION_CALL, 100, 0, 2);
+            tracker.onPlayerAction(player2, PokerActionConstants.ACTION_CALL, 100, 0, 2);
             tracker.onHandEnd(player2);
         }
 
@@ -418,7 +418,7 @@ class ServerOpponentTrackerTest {
 
         // Player calls the BB with no prior raise — this is a limp
         tracker.onHandStart(player, 1000);
-        tracker.onPlayerAction(player, HandAction.ACTION_CALL, 100, 0, AIConstants.POSITION_LATE);
+        tracker.onPlayerAction(player, PokerActionConstants.ACTION_CALL, 100, 0, AIConstants.POSITION_LATE);
         tracker.onHandEnd(player);
 
         V2OpponentModel model = tracker.getModel(1);
@@ -437,10 +437,10 @@ class ServerOpponentTrackerTest {
         tracker.onHandStart(caller, 1000);
 
         // Player 1 raises
-        tracker.onPlayerAction(raiser, HandAction.ACTION_RAISE, 200, 0, AIConstants.POSITION_EARLY);
+        tracker.onPlayerAction(raiser, PokerActionConstants.ACTION_RAISE, 200, 0, AIConstants.POSITION_EARLY);
 
         // Player 2 calls the raise — NOT a limp
-        tracker.onPlayerAction(caller, HandAction.ACTION_CALL, 200, 0, AIConstants.POSITION_LATE);
+        tracker.onPlayerAction(caller, PokerActionConstants.ACTION_CALL, 200, 0, AIConstants.POSITION_LATE);
 
         tracker.onHandEnd(raiser);
         tracker.onHandEnd(caller);
@@ -462,10 +462,10 @@ class ServerOpponentTrackerTest {
         tracker.onHandStart(folder, 1000);
 
         // Player 1 raises
-        tracker.onPlayerAction(raiser, HandAction.ACTION_RAISE, 200, 0, AIConstants.POSITION_EARLY);
+        tracker.onPlayerAction(raiser, PokerActionConstants.ACTION_RAISE, 200, 0, AIConstants.POSITION_EARLY);
 
         // Player 2 folds after the raise — NOT a fold-unraised
-        tracker.onPlayerAction(folder, HandAction.ACTION_FOLD, 0, 0, AIConstants.POSITION_LATE);
+        tracker.onPlayerAction(folder, PokerActionConstants.ACTION_FOLD, 0, 0, AIConstants.POSITION_LATE);
 
         tracker.onHandEnd(raiser);
         tracker.onHandEnd(folder);
@@ -484,16 +484,16 @@ class ServerOpponentTrackerTest {
         // Hand 1: No raise — caller limps
         tracker.onHandStart(raiser, 1000);
         tracker.onHandStart(caller, 1000);
-        tracker.onPlayerAction(raiser, HandAction.ACTION_FOLD, 0, 0, AIConstants.POSITION_EARLY);
-        tracker.onPlayerAction(caller, HandAction.ACTION_CALL, 100, 0, AIConstants.POSITION_LATE);
+        tracker.onPlayerAction(raiser, PokerActionConstants.ACTION_FOLD, 0, 0, AIConstants.POSITION_EARLY);
+        tracker.onPlayerAction(caller, PokerActionConstants.ACTION_CALL, 100, 0, AIConstants.POSITION_LATE);
         tracker.onHandEnd(raiser);
         tracker.onHandEnd(caller);
 
         // Hand 2: Raise occurred — caller calls but it's not a limp
         tracker.onHandStart(raiser, 1000);
         tracker.onHandStart(caller, 1000);
-        tracker.onPlayerAction(raiser, HandAction.ACTION_RAISE, 200, 0, AIConstants.POSITION_EARLY);
-        tracker.onPlayerAction(caller, HandAction.ACTION_CALL, 200, 0, AIConstants.POSITION_LATE);
+        tracker.onPlayerAction(raiser, PokerActionConstants.ACTION_RAISE, 200, 0, AIConstants.POSITION_EARLY);
+        tracker.onPlayerAction(caller, PokerActionConstants.ACTION_CALL, 200, 0, AIConstants.POSITION_LATE);
         tracker.onHandEnd(raiser);
         tracker.onHandEnd(caller);
 
@@ -513,16 +513,16 @@ class ServerOpponentTrackerTest {
         // Hand 1: Raise occurred
         tracker.onHandStart(raiser, 1000);
         tracker.onHandStart(caller, 1000);
-        tracker.onPlayerAction(raiser, HandAction.ACTION_RAISE, 200, 0, AIConstants.POSITION_EARLY);
-        tracker.onPlayerAction(caller, HandAction.ACTION_CALL, 200, 0, AIConstants.POSITION_LATE);
+        tracker.onPlayerAction(raiser, PokerActionConstants.ACTION_RAISE, 200, 0, AIConstants.POSITION_EARLY);
+        tracker.onPlayerAction(caller, PokerActionConstants.ACTION_CALL, 200, 0, AIConstants.POSITION_LATE);
         tracker.onHandEnd(raiser);
         tracker.onHandEnd(caller);
 
         // Hand 2: No raise — caller's call should be a limp
         tracker.onHandStart(raiser, 1000);
         tracker.onHandStart(caller, 1000);
-        tracker.onPlayerAction(raiser, HandAction.ACTION_FOLD, 0, 0, AIConstants.POSITION_EARLY);
-        tracker.onPlayerAction(caller, HandAction.ACTION_CALL, 100, 0, AIConstants.POSITION_LATE);
+        tracker.onPlayerAction(raiser, PokerActionConstants.ACTION_FOLD, 0, 0, AIConstants.POSITION_EARLY);
+        tracker.onPlayerAction(caller, PokerActionConstants.ACTION_CALL, 100, 0, AIConstants.POSITION_LATE);
         tracker.onHandEnd(raiser);
         tracker.onHandEnd(caller);
 
