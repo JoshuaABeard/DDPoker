@@ -40,7 +40,6 @@ import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.gameserver.dto.GameJoinResponse;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.model.util.*;
-import com.donohoedigital.games.poker.server.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
@@ -51,8 +50,8 @@ import java.beans.*;
 import java.util.List;
 
 /**
- * Displays the list of online games available to join, fetched from the
- * embedded game server REST API.
+ * Displays the list of online games available to join, fetched from the central
+ * game server REST API.
  */
 public class FindGames extends ListGames {
 
@@ -192,9 +191,11 @@ public class FindGames extends ListGames {
                     GameJoinResponse response = restClient_.joinGame(gameId, null);
                     SwingUtilities.invokeLater(() -> {
                         PokerGame game = (PokerGame) context_.getGame();
-                        int port = extractPort(response.wsUrl());
-                        game.setWebSocketConfig(response.gameId(),
-                                ((PokerMain) engine_).getEmbeddedServer().getLocalUserJwt(), port);
+                        java.net.URI wsUri = java.net.URI.create(response.wsUrl());
+                        String wsHost = wsUri.getHost();
+                        int wsPort = wsUri.getPort();
+                        String cachedJwt = RestAuthClient.getInstance().getCachedJwt();
+                        game.setWebSocketConfig(response.gameId(), cachedJwt, wsHost, wsPort);
                         context_.processPhase("Lobby");
                     });
                 } catch (Exception ex) {
@@ -226,12 +227,13 @@ public class FindGames extends ListGames {
                     GameJoinResponse response = restClient_.observeGame(gameId);
                     SwingUtilities.invokeLater(() -> {
                         PokerGame game = (PokerGame) context_.getGame();
-                        int port = extractPort(response.wsUrl());
-                        // Use the observe-scoped token from the server response
-                        String jwt = response.token() != null
+                        java.net.URI wsUri = java.net.URI.create(response.wsUrl());
+                        String wsHost = wsUri.getHost();
+                        int wsPort = wsUri.getPort();
+                        String observeJwt = response.token() != null
                                 ? response.token()
-                                : ((PokerMain) engine_).getEmbeddedServer().getLocalUserJwt();
-                        game.setWebSocketConfig(response.gameId(), jwt, port, true);
+                                : RestAuthClient.getInstance().getCachedJwt();
+                        game.setWebSocketConfig(response.gameId(), observeJwt, wsHost, wsPort, true);
                         context_.processPhase("Lobby");
                     });
                 } catch (Exception ex) {
@@ -477,40 +479,56 @@ public class FindGames extends ListGames {
     }
 
     /**
-     * Fetch the current game list from the embedded server REST API.
+     * Fetch the current game list from the central server REST API.
      *
      * @param faceless
      *            if {@code true}, suppress any UI progress dialog
      * @return list of available games
      */
     private OnlineGameList getGameList(boolean faceless) {
-        EmbeddedGameServer embeddedServer = ((PokerMain) engine_).getEmbeddedServer();
-        if (embeddedServer == null || !embeddedServer.isRunning()) {
-            logger.warn("Embedded server not running — returning empty game list");
+        String baseUrl = getCentralServerUrl();
+        String jwt = RestAuthClient.getInstance().getCachedJwt();
+
+        if (baseUrl == null || jwt == null) {
+            logger.warn("Central server not configured or not logged in — returning empty game list");
             return new OnlineGameList();
         }
 
-        String baseUrl = "http://localhost:" + embeddedServer.getPort();
-        String jwt = embeddedServer.getLocalUserJwt();
-
-        // Cache the RestGameClient so HttpClient's connection pool is reused across
-        // refreshes; update the JWT each time in case it changed.
         if (restClient_ == null) {
             restClient_ = new RestGameClient(baseUrl, jwt);
         } else {
             restClient_.setJwt(jwt);
         }
 
-        String serverHost = "localhost:" + embeddedServer.getPort();
+        java.net.URI serverUri;
+        try {
+            serverUri = new java.net.URI(baseUrl);
+        } catch (java.net.URISyntaxException e) {
+            logger.warn("Invalid central server URL: {}", baseUrl);
+            return new OnlineGameList();
+        }
+        String serverHost = serverUri.getHost() + (serverUri.getPort() > 0 ? ":" + serverUri.getPort() : "");
         GameSummaryConverter converter = new GameSummaryConverter(serverHost);
 
         List<com.donohoedigital.games.poker.gameserver.dto.GameSummary> summaries;
         try {
             summaries = restClient_.listGames();
         } catch (RestGameClient.RestGameClientException e) {
-            logger.warn("Failed to fetch game list: {}", e.getMessage());
+            logger.warn("Failed to fetch game list from central server: {}", e.getMessage());
             return new OnlineGameList();
         }
         return converter.convertAll(summaries);
+    }
+
+    /** Returns the configured central server HTTP base URL, or null if not set. */
+    private String getCentralServerUrl() {
+        try {
+            String node = Prefs.NODE_OPTIONS + engine_.getPrefsNodeName();
+            String server = Prefs.getUserPrefs(node).get(EngineConstants.OPTION_ONLINE_SERVER, "");
+            return OnlineServerUrl.normalizeBaseUrl(server);
+        } catch (Exception e) {
+            logger.warn("Could not read central server URL from preferences", e);
+            return null;
+        }
     }
 }
