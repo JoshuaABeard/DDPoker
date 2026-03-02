@@ -43,7 +43,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Map;
+
 public class PokerStatsPanel extends DDTabPanel {
     static Logger logger = LogManager.getLogger(PokerStatsPanel.class);
 
@@ -146,12 +146,42 @@ public class PokerStatsPanel extends DDTabPanel {
     }
 
     /**
-     * run update thread
+     * update stats on EDT
      */
     public void updateStats() {
         if (checkRequiredCards()) {
-            new UpdateThread().start();
+            SwingUtilities.invokeLater(() -> {
+                switch (mode_) {
+                    case FLOP :
+                    case TURN :
+                    case RIVER :
+                        htmlArea_.setText(buildPotentialHTML());
+                        break;
+                    case STRENGTH :
+                        htmlArea_.setText(buildEquityHTML());
+                        break;
+                }
+                htmlArea_.setCaretPosition(0); // scroll to top
+            });
         }
+    }
+
+    private String buildEquityHTML() {
+        Double equity = AdvisorState.getEquity();
+        if (equity == null) {
+            return PropertyConfig.getMessage("msg.sim.waiting");
+        }
+        return PropertyConfig.getMessage("msg.sim.equity", PokerConstants.formatPercent(equity));
+    }
+
+    private String buildPotentialHTML() {
+        Double pos = AdvisorState.getPositivePotential();
+        Double neg = AdvisorState.getNegativePotential();
+        if (pos == null || neg == null) {
+            return PropertyConfig.getMessage("msg.sim.waiting");
+        }
+        return PropertyConfig.getMessage("msg.sim.potential", PokerConstants.formatPercent(pos),
+                PokerConstants.formatPercent(neg));
     }
 
     /**
@@ -216,110 +246,6 @@ public class PokerStatsPanel extends DDTabPanel {
         // update
         updateHeader();
         updateStats();
-    }
-
-    /**
-     * thread generates info then updates html
-     */
-    private class UpdateThread extends Thread {
-
-        public UpdateThread() {
-            super("UpdateThread");
-        }
-
-        public void run() {
-            String html = generateStats();
-            SwingUtilities.invokeLater(() -> {
-                htmlArea_.setText(html);
-                htmlArea_.setCaretPosition(0); // scroll to top
-            });
-        }
-
-        private String generateStats() {
-            switch (mode_) {
-                case FLOP :
-                case TURN :
-                case RIVER :
-                    return generatePotentialStats();
-                case STRENGTH :
-                    return generateStrengthStats();
-                default :
-                    return "<html><body>No data available.</body></html>";
-            }
-        }
-
-        private String generatePotentialStats() {
-            Double posPot = AdvisorState.getCurrentPositivePotential();
-            Double negPot = AdvisorState.getCurrentNegativePotential();
-            double equity = AdvisorState.getCurrentEquity();
-            Map<String, Double> improvementOdds = AdvisorState.getCurrentImprovementOdds();
-
-            if (posPot == null && negPot == null && improvementOdds == null) {
-                return "<html><body>Hand potential data not yet available. "
-                        + "Play a hand to see statistics.</body></html>";
-            }
-
-            StringBuilder sb = new StringBuilder();
-            sb.append("<html><body>");
-            sb.append("<table cellpadding='2'>");
-
-            if (posPot != null) {
-                sb.append("<tr><td><b>Positive Potential:</b></td><td>").append(PokerConstants.formatPercent(posPot))
-                        .append("</td></tr>");
-            }
-            if (negPot != null) {
-                sb.append("<tr><td><b>Negative Potential:</b></td><td>").append(PokerConstants.formatPercent(negPot))
-                        .append("</td></tr>");
-            }
-            sb.append("<tr><td><b>Equity:</b></td><td>").append(PokerConstants.formatPercent(equity))
-                    .append("</td></tr>");
-
-            if (improvementOdds != null && !improvementOdds.isEmpty()) {
-                sb.append("<tr><td colspan='2'>&nbsp;</td></tr>");
-                sb.append("<tr><td colspan='2'><b>Improvement Odds:</b></td></tr>");
-                for (Map.Entry<String, Double> entry : improvementOdds.entrySet()) {
-                    if (entry.getValue() > 0) {
-                        sb.append("<tr><td>&nbsp;&nbsp;").append(entry.getKey()).append(":</td><td>")
-                                .append(PokerConstants.formatPercent(entry.getValue())).append("</td></tr>");
-                    }
-                }
-            }
-
-            sb.append("</table></body></html>");
-            return sb.toString();
-        }
-
-        private String generateStrengthStats() {
-            double equity = AdvisorState.getCurrentEquity();
-            double potOdds = AdvisorState.getCurrentPotOdds();
-
-            if (equity == 0 && potOdds == 0) {
-                return "<html><body>Hand strength data not yet available. "
-                        + "Play a hand to see statistics.</body></html>";
-            }
-
-            StringBuilder sb = new StringBuilder();
-            sb.append("<html><body>");
-            sb.append("<table cellpadding='2'>");
-            sb.append("<tr><td><b>Hand Equity:</b></td><td>").append(PokerConstants.formatPercent(equity))
-                    .append("</td></tr>");
-            sb.append("<tr><td><b>Pot Odds:</b></td><td>").append(PokerConstants.formatPercent(potOdds))
-                    .append("</td></tr>");
-
-            Double posPot = AdvisorState.getCurrentPositivePotential();
-            Double negPot = AdvisorState.getCurrentNegativePotential();
-            if (posPot != null) {
-                sb.append("<tr><td><b>Positive Potential:</b></td><td>").append(PokerConstants.formatPercent(posPot))
-                        .append("</td></tr>");
-            }
-            if (negPot != null) {
-                sb.append("<tr><td><b>Negative Potential:</b></td><td>").append(PokerConstants.formatPercent(negPot))
-                        .append("</td></tr>");
-            }
-
-            sb.append("</table></body></html>");
-            return sb.toString();
-        }
     }
 
 }

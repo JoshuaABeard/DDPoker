@@ -36,7 +36,7 @@ package com.donohoedigital.games.poker.gameserver;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -59,10 +59,6 @@ public class AdvisorService implements HandScoreConstants {
 
     private static final String[] RANK_LABELS = {"", "", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K",
             "A"};
-
-    /** Hand type names indexed by HandScoreConstants type values (1-10). */
-    private static final String[] HAND_TYPE_NAMES = {"", "HIGH_CARD", "ONE_PAIR", "TWO_PAIR", "TRIPS", "STRAIGHT",
-            "FLUSH", "FULL_HOUSE", "FOUR_OF_A_KIND", "STRAIGHT_FLUSH", "ROYAL_FLUSH"};
 
     /**
      * 13x13 grid of starting hand categories. Row = first rank (A=0, K=1, ...,
@@ -153,95 +149,55 @@ public class AdvisorService implements HandScoreConstants {
         }
 
         // Improvement odds (flop/turn only)
-        Map<String, Double> improvementOdds = calculateImprovementOdds(holeCards, communityCards, handType);
+        Map<String, Double> improvementOdds = computeImprovementOdds(holeCards, communityCards, handType);
 
         // Hand potential (flop/turn only)
-        double[] potential = calculateHandPotential(holeCards, communityCards, random);
-        Double positivePotential = potential != null ? potential[0] : null;
-        Double negativePotential = potential != null ? potential[1] : null;
+        double[] handPotential = computeHandPotential(holeCards, communityCards, random);
+        Double positivePotential = handPotential == null ? null : handPotential[0];
+        Double negativePotential = handPotential == null ? null : handPotential[1];
 
         return new AdvisorResult(handRank, handDescription, equity, potOdds, recommendation, startingHandCategory,
                 startingHandNotation, improvementOdds, positivePotential, negativePotential);
     }
 
     /**
-     * Calculate improvement odds by enumerating all possible next cards. Returns
-     * null on preflop (0-2 community cards) or river (5 community cards).
+     * Map from HandScoreConstants hand type integer to hand type name. Index 0 is
+     * unused (no hand type 0). Index 1 = HIGH_CARD. Used by improvementOdds (skips
+     * null/HIGH_CARD entries since it is not an improvement target).
      */
-    private Map<String, Double> calculateImprovementOdds(Card[] holeCards, Card[] communityCards, int currentHandType) {
-        int communitySize = communityCards.length;
-        if (communitySize < 3 || communitySize >= 5) {
-            return null;
-        }
-
-        // Build remaining deck
-        long knownFingerprint = 0L;
-        for (Card c : holeCards) {
-            knownFingerprint |= c.fingerprint();
-        }
-        for (Card c : communityCards) {
-            knownFingerprint |= c.fingerprint();
-        }
-
-        List<Card> remainingDeck = new ArrayList<>(52);
-        for (int suit = CardSuit.CLUBS_RANK; suit <= CardSuit.SPADES_RANK; suit++) {
-            for (int rank = Card.TWO; rank <= Card.ACE; rank++) {
-                Card card = Card.getCard(suit, rank);
-                if ((card.fingerprint() & knownFingerprint) == 0L) {
-                    remainingDeck.add(card);
-                }
-            }
-        }
-
-        // Count improvements per hand type
-        int[] counts = new int[ROYAL_FLUSH + 1];
-        int total = remainingDeck.size();
-
-        ServerHandEvaluator evaluator = new ServerHandEvaluator();
-        List<Card> holeList = List.of(holeCards);
-
-        // Try each remaining card as the next community card
-        List<Card> extendedCommunity = new ArrayList<>(communitySize + 1);
-        for (Card c : communityCards) {
-            extendedCommunity.add(c);
-        }
-        extendedCommunity.add(null); // placeholder for the new card
-
-        for (Card nextCard : remainingDeck) {
-            extendedCommunity.set(communitySize, nextCard);
-            int newScore = evaluator.getScore(holeList, extendedCommunity);
-            int newType = newScore / SCORE_BASE;
-            if (newType > currentHandType) {
-                counts[newType]++;
-            }
-        }
-
-        // Convert to percentages, include only > 0
-        Map<String, Double> odds = new LinkedHashMap<>();
-        for (int type = PAIR; type <= ROYAL_FLUSH; type++) {
-            if (counts[type] > 0) {
-                odds.put(HAND_TYPE_NAMES[type], (double) counts[type] / total * 100.0);
-            }
-        }
-
-        return odds.isEmpty() ? null : odds;
-    }
-
-    /** Number of sampled opponent hands for hand potential calculation. */
-    private static final int POTENTIAL_SAMPLES = 200;
+    private static final String[] HAND_TYPE_NAMES = {null, // 0 - unused
+            "HIGH_CARD", // 1 - HIGH_CARD
+            "ONE_PAIR", // 2 - PAIR
+            "TWO_PAIR", // 3 - TWO_PAIR
+            "TRIPS", // 4 - TRIPS
+            "STRAIGHT", // 5 - STRAIGHT
+            "FLUSH", // 6 - FLUSH
+            "FULL_HOUSE", // 7 - FULL_HOUSE
+            "FOUR_OF_A_KIND", // 8 - QUADS
+            "STRAIGHT_FLUSH", // 9 - STRAIGHT_FLUSH
+            "ROYAL_FLUSH", // 10 - ROYAL_FLUSH
+    };
 
     /**
-     * Calculate hand potential (positive and negative) by sampling opponent hands.
-     * Returns [positivePotential, negativePotential] as percentages (0-100), or
-     * null on preflop (0-2 community) or river (5 community).
+     * Compute improvement odds by enumerating remaining deck cards. Only meaningful
+     * on flop (3 community cards) or turn (4 community cards). Returns null
+     * otherwise.
+     *
+     * @param holeCards
+     *            player's hole cards
+     * @param communityCards
+     *            current community cards
+     * @param currentHandType
+     *            current hand type integer (from HandScoreConstants)
+     * @return map of hand type name to improvement percentage, or null
      */
-    private double[] calculateHandPotential(Card[] holeCards, Card[] communityCards, Random random) {
-        int communitySize = communityCards.length;
-        if (communitySize < 3 || communitySize >= 5) {
+    private Map<String, Double> computeImprovementOdds(Card[] holeCards, Card[] communityCards, int currentHandType) {
+        int numCommunity = communityCards.length;
+        if (numCommunity != 3 && numCommunity != 4) {
             return null;
         }
 
-        // Build remaining deck
+        // Build fingerprint of known cards
         long knownFingerprint = 0L;
         for (Card c : holeCards) {
             knownFingerprint |= c.fingerprint();
@@ -250,6 +206,7 @@ public class AdvisorService implements HandScoreConstants {
             knownFingerprint |= c.fingerprint();
         }
 
+        // Build remaining deck
         List<Card> remainingDeck = new ArrayList<>(52);
         for (int suit = CardSuit.CLUBS_RANK; suit <= CardSuit.SPADES_RANK; suit++) {
             for (int rank = Card.TWO; rank <= Card.ACE; rank++) {
@@ -260,83 +217,178 @@ public class AdvisorService implements HandScoreConstants {
             }
         }
 
-        int deckSize = remainingDeck.size();
+        // Count improvements for each hand type
+        int[] improvementCounts = new int[HAND_TYPE_NAMES.length];
+        List<Card> holeList = List.of(holeCards);
+        List<Card> trialCommunity = new ArrayList<>(numCommunity + 1);
+        ServerHandEvaluator eval = new ServerHandEvaluator();
+
+        for (Card drawCard : remainingDeck) {
+            trialCommunity.clear();
+            for (Card c : communityCards) {
+                trialCommunity.add(c);
+            }
+            trialCommunity.add(drawCard);
+
+            int newScore = eval.getScore(holeList, trialCommunity);
+            int newHandType = newScore / SCORE_BASE;
+
+            if (newHandType > currentHandType && newHandType < HAND_TYPE_NAMES.length) {
+                improvementCounts[newHandType]++;
+            }
+        }
+
+        // Convert counts to percentages
+        int total = remainingDeck.size();
+        Map<String, Double> result = new HashMap<>();
+        for (int i = 2; i < HAND_TYPE_NAMES.length; i++) {
+            if (improvementCounts[i] > 0 && HAND_TYPE_NAMES[i] != null) {
+                result.put(HAND_TYPE_NAMES[i], (double) improvementCounts[i] / total * 100.0);
+            }
+        }
+        return result;
+    }
+
+    private static final int AHEAD = 0;
+    private static final int TIED = 1;
+    private static final int BEHIND = 2;
+    private static final int NUM_HAND_POTENTIAL_SAMPLES = 200;
+
+    /**
+     * Compute hand potential using opponent-sampling (Sklansky-Malmuth algorithm).
+     * Only meaningful on flop (3 community cards) or turn (4 community cards).
+     * Returns null otherwise.
+     *
+     * <p>
+     * Samples 200 random opponent hands, tracks behind-&gt;ahead transitions
+     * (positive potential) and ahead-&gt;behind transitions (negative potential)
+     * after the next board card.
+     *
+     * @param holeCards
+     *            player's hole cards
+     * @param communityCards
+     *            current community cards
+     * @param random
+     *            random source for opponent hand sampling
+     * @return double[2] with {positivePotential%, negativePotential%}, or null
+     */
+    private double[] computeHandPotential(Card[] holeCards, Card[] communityCards, Random random) {
+        int numCommunity = communityCards.length;
+        if (numCommunity != 3 && numCommunity != 4) {
+            return null;
+        }
+
+        // Build fingerprint of known cards
+        long knownFingerprint = 0L;
+        for (Card c : holeCards) {
+            knownFingerprint |= c.fingerprint();
+        }
+        for (Card c : communityCards) {
+            knownFingerprint |= c.fingerprint();
+        }
+
+        // Build remaining deck
+        List<Card> remainingDeck = new ArrayList<>(52);
+        for (int suit = CardSuit.CLUBS_RANK; suit <= CardSuit.SPADES_RANK; suit++) {
+            for (int rank = Card.TWO; rank <= Card.ACE; rank++) {
+                Card card = Card.getCard(suit, rank);
+                if ((card.fingerprint() & knownFingerprint) == 0L) {
+                    remainingDeck.add(card);
+                }
+            }
+        }
+
+        List<Card> shuffled = new ArrayList<>(remainingDeck);
+
+        // hp[currentRelation][futureRelation]: transition counts
+        int[][] hp = new int[3][3];
+        int[] hpTotal = new int[3];
+
         ServerHandEvaluator eval = new ServerHandEvaluator();
         List<Card> holeList = List.of(holeCards);
-        List<Card> communityList = new ArrayList<>(List.of(communityCards));
+        List<Card> currentCommunity = List.of(communityCards);
 
-        // Current player score
-        int ourScore = eval.getScore(holeList, communityList);
+        // Evaluate our current score with current community
+        int ourCurrentScore = eval.getScore(holeList, currentCommunity);
 
-        // Transition counters: [current_state][future_state]
-        // States: 0=AHEAD, 1=TIED, 2=BEHIND
-        double[][] hp = new double[3][3];
-        double[] hpTotal = new double[3];
-
-        // Sample random opponent hands
-        List<Card> shuffled = new ArrayList<>(remainingDeck);
-        int samples = Math.min(POTENTIAL_SAMPLES, deckSize * (deckSize - 1) / 2);
-
-        for (int s = 0; s < samples; s++) {
+        for (int sample = 0; sample < NUM_HAND_POTENTIAL_SAMPLES; sample++) {
             Collections.shuffle(shuffled, random);
+
+            // Pick 2 cards as opponent hole cards
             Card oppCard1 = shuffled.get(0);
             Card oppCard2 = shuffled.get(1);
             List<Card> oppHole = List.of(oppCard1, oppCard2);
 
-            // Current state vs this opponent
-            int oppScore = eval.getScore(oppHole, communityList);
-            int currentState;
-            if (ourScore > oppScore) {
-                currentState = 0; // AHEAD
-            } else if (ourScore == oppScore) {
-                currentState = 1; // TIED
+            // Evaluate opponent's current score
+            int oppCurrentScore = eval.getScore(oppHole, currentCommunity);
+
+            // Determine current relation
+            int relation;
+            if (ourCurrentScore > oppCurrentScore) {
+                relation = AHEAD;
+            } else if (ourCurrentScore == oppCurrentScore) {
+                relation = TIED;
             } else {
-                currentState = 2; // BEHIND
+                relation = BEHIND;
             }
 
-            // Enumerate future board cards (one card ahead)
-            List<Card> futureCommunity = new ArrayList<>(communityList);
-            futureCommunity.add(null); // placeholder
-
+            // Build fingerprint of opponent cards to exclude from future cards
             long oppFingerprint = oppCard1.fingerprint() | oppCard2.fingerprint();
-            for (Card nextCard : remainingDeck) {
-                if ((nextCard.fingerprint() & oppFingerprint) != 0L) {
-                    continue; // card is in opponent's hand
+
+            // Enumerate future board cards (cards not in hole, community, or opp hand)
+            List<Card> futureDeck = new ArrayList<>(remainingDeck.size() - 2);
+            for (Card c : remainingDeck) {
+                if ((c.fingerprint() & oppFingerprint) == 0L) {
+                    futureDeck.add(c);
                 }
-                futureCommunity.set(communitySize, nextCard);
+            }
 
-                int ourFutureScore = eval.getScore(holeList, futureCommunity);
-                int oppFutureScore = eval.getScore(oppHole, futureCommunity);
+            List<Card> futureComm = new ArrayList<>(numCommunity + 1);
+            for (Card c : communityCards) {
+                futureComm.add(c);
+            }
 
-                int futureState;
+            for (Card futureCard : futureDeck) {
+                futureComm.add(futureCard);
+
+                int ourFutureScore = eval.getScore(holeList, futureComm);
+                int oppFutureScore = eval.getScore(oppHole, futureComm);
+
+                int futureRelation;
                 if (ourFutureScore > oppFutureScore) {
-                    futureState = 0; // AHEAD
+                    futureRelation = AHEAD;
                 } else if (ourFutureScore == oppFutureScore) {
-                    futureState = 1; // TIED
+                    futureRelation = TIED;
                 } else {
-                    futureState = 2; // BEHIND
+                    futureRelation = BEHIND;
                 }
 
-                hp[currentState][futureState]++;
-                hpTotal[currentState]++;
+                hp[relation][futureRelation]++;
+                hpTotal[relation]++;
+
+                futureComm.remove(futureComm.size() - 1);
             }
         }
 
-        // Positive potential: behind -> ahead (+ partial credit for ties)
-        double ppot = 0.0;
-        double ppotDenom = hpTotal[2] + hpTotal[1] / 2.0;
-        if (ppotDenom > 0) {
-            ppot = (hp[2][0] + hp[2][1] / 2.0 + hp[1][0] / 2.0) / ppotDenom * 100.0;
+        // Positive potential: were behind, ended up ahead
+        double positivePotential;
+        int totalBehind = hpTotal[BEHIND];
+        if (totalBehind == 0) {
+            positivePotential = 0.0;
+        } else {
+            positivePotential = (double) hp[BEHIND][AHEAD] / totalBehind * 100.0;
         }
 
-        // Negative potential: ahead -> behind (+ partial credit for ties)
-        double npot = 0.0;
-        double npotDenom = hpTotal[0] + hpTotal[1] / 2.0;
-        if (npotDenom > 0) {
-            npot = (hp[0][2] + hp[0][1] / 2.0 + hp[1][2] / 2.0) / npotDenom * 100.0;
+        // Negative potential: were ahead, ended up behind
+        double negativePotential;
+        int totalAhead = hpTotal[AHEAD];
+        if (totalAhead == 0) {
+            negativePotential = 0.0;
+        } else {
+            negativePotential = (double) hp[AHEAD][BEHIND] / totalAhead * 100.0;
         }
 
-        return new double[]{ppot, npot};
+        return new double[]{positivePotential, negativePotential};
     }
 
     /**

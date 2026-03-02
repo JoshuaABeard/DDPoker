@@ -27,11 +27,11 @@ import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.PokerTable;
 import com.donohoedigital.games.poker.PokerTableInput;
 import com.donohoedigital.games.poker.PokerUtils;
+import com.donohoedigital.games.poker.dashboard.AdvisorState;
 import com.donohoedigital.games.poker.dashboard.DashboardAdvisor;
 import com.donohoedigital.games.poker.dashboard.DashboardItem;
 import com.donohoedigital.games.poker.dashboard.DashboardManager;
 import com.donohoedigital.games.poker.dashboard.DashboardPanel;
-import com.donohoedigital.games.poker.dashboard.AdvisorState;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.PokerConstants;
@@ -422,24 +422,22 @@ class UiDashboardWidgetsHandler extends BaseHandler {
         data.put("round", round);
         data.put("communityCardCount", communityCards);
         data.put("expectedImproveOdds", expectedCompute);
-        data.put("totalImprovePercent", computeImproveOdds(hand, human));
+        data.put("totalImprovePercent", computeImproveOdds());
         return data;
     }
 
-    private static Double computeImproveOdds(HoldemHand hand, PokerPlayer human) {
-        // Improvement odds are now provided by the server via ADVISOR_UPDATE WebSocket messages.
-        // Read from AdvisorState which is populated when the server sends advisor data.
-        java.util.Map<String, Double> improvementOdds = AdvisorState.getCurrentImprovementOdds();
-        if (improvementOdds == null || improvementOdds.isEmpty()) {
+    private static Double computeImproveOdds() {
+        // Improvement odds are computed server-side and broadcast via ADVISOR_UPDATE.
+        // Read from AdvisorState (same source used by the ImproveOdds dashboard widget).
+        java.util.Map<String, Double> odds = AdvisorState.getImprovementOdds();
+        if (odds == null) {
             return null;
         }
         double total = 0.0d;
-        for (double d : improvementOdds.values()) {
-            if (d > 0.0d) {
-                total += d;
-            }
+        for (double d : odds.values()) {
+            total += d;
         }
-        return total > 0.0d ? total : null;
+        return total;
     }
 
     private static Map<String, Object> myHandData(SnapshotState state) {

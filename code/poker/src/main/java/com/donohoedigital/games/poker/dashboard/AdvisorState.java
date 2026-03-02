@@ -1,12 +1,35 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
- * DD Poker - Community Edition
- * Copyright (c) 2026 DD Poker Community Contributors
+ * DD Poker - Source Code
+ * Copyright (c) 2026 Joshua Beard and contributors
+ *
+ * This file is part of DD Poker, originally created by Doug Donohoe.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * For the full License text, please see the LICENSE.txt file
+ * in the root directory of this project.
+ *
+ * The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
+ * graphics, text, and documentation found in this repository (including but not
+ * limited to written documentation, website content, and marketing materials)
+ * are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+ * 4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
+ * without explicit written permission for any uses not covered by this License.
+ * For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
+ * in the root directory of this project.
+ *
+ * For inquiries regarding commercial licensing of this source code or
+ * the use of names, logos, images, text, or other assets, please contact
+ * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.dashboard;
@@ -14,72 +37,44 @@ package com.donohoedigital.games.poker.dashboard;
 import java.util.Map;
 
 /**
- * Static holder for server-provided advisor data from ADVISOR_UPDATE WebSocket
- * messages. Separated from {@link DashboardAdvisor} to avoid class-loading
- * issues in tests (DashboardAdvisor has PropertyConfig static initializers).
+ * Singleton holder for advisor data received from ADVISOR_UPDATE WebSocket
+ * messages. Data flows: WebSocketTournamentDirector → AdvisorState → dashboard
+ * widgets (ImproveOdds, PokerStatsPanel).
  */
-public class AdvisorState {
+public final class AdvisorState {
+    private static volatile Map<String, Double> improvementOdds_ = null;
+    private static volatile Double positivePotential_ = null;
+    private static volatile Double negativePotential_ = null;
+    private static volatile Double equity_ = null;
 
-    private static volatile String currentAdvice_ = null;
-    private static volatile String currentTitle_ = null;
-    private static volatile double currentEquity_ = 0;
-    private static volatile double currentPotOdds_ = 0;
-    private static volatile Map<String, Double> currentImprovementOdds_ = null;
-    private static volatile Double currentPositivePotential_ = null;
-    private static volatile Double currentNegativePotential_ = null;
-
-    public static String getCurrentAdvice() {
-        return currentAdvice_;
+    private AdvisorState() {
     }
 
-    public static String getCurrentTitle() {
-        return currentTitle_;
-    }
-
-    public static Map<String, Double> getCurrentImprovementOdds() {
-        return currentImprovementOdds_;
-    }
-
-    public static double getCurrentEquity() {
-        return currentEquity_;
-    }
-
-    public static double getCurrentPotOdds() {
-        return currentPotOdds_;
-    }
-
-    public static Double getCurrentPositivePotential() {
-        return currentPositivePotential_;
-    }
-
-    public static Double getCurrentNegativePotential() {
-        return currentNegativePotential_;
-    }
-
-    public static void setCurrentAdvice(String advice, String title) {
-        currentAdvice_ = advice;
-        currentTitle_ = title;
-    }
-
-    public static void setAdvisorData(double equity, double potOdds, Map<String, Double> improvementOdds,
-            Double positivePotential, Double negativePotential) {
-        currentEquity_ = equity;
-        currentPotOdds_ = potOdds;
-        currentImprovementOdds_ = improvementOdds;
-        currentPositivePotential_ = positivePotential;
-        currentNegativePotential_ = negativePotential;
+    public static void update(Map<String, Double> improvementOdds, Double positivePotential, Double negativePotential,
+            Double equity) {
+        improvementOdds_ = improvementOdds;
+        positivePotential_ = positivePotential;
+        negativePotential_ = negativePotential;
+        equity_ = equity;
     }
 
     public static void clear() {
-        currentAdvice_ = null;
-        currentTitle_ = null;
-        currentEquity_ = 0;
-        currentPotOdds_ = 0;
-        currentImprovementOdds_ = null;
-        currentPositivePotential_ = null;
-        currentNegativePotential_ = null;
+        improvementOdds_ = null;
+        positivePotential_ = null;
+        negativePotential_ = null;
+        equity_ = null;
     }
 
-    private AdvisorState() {
+    public static Map<String, Double> getImprovementOdds() {
+        return improvementOdds_;
+    }
+    public static Double getPositivePotential() {
+        return positivePotential_;
+    }
+    public static Double getNegativePotential() {
+        return negativePotential_;
+    }
+    public static Double getEquity() {
+        return equity_;
     }
 }

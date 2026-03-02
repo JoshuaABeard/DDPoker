@@ -318,8 +318,7 @@ public class TournamentEngine {
             // TournamentDirector:
             // - cleanTables(table, !bOneLeft) - removes eliminated players, processes wait
             // list
-            // - OtherTables.consolidateTables() - multi-table consolidation algorithm (~200
-            // lines)
+            // - Multi-table consolidation algorithm (~200 lines)
             // - TDClean event gathering and tracking - requires mutable event listener
             // infrastructure
             // - Observer management and movement - UI-specific player visibility

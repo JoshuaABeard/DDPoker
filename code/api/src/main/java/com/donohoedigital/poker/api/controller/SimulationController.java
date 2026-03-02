@@ -50,7 +50,7 @@ import com.donohoedigital.poker.api.dto.SimulationRequest;
 import jakarta.validation.Valid;
 
 /**
- * REST endpoint for Monte Carlo poker equity simulation.
+ * REST endpoint for poker equity simulation.
  */
 @RestController
 @RequestMapping("/api/v1/poker")
@@ -60,20 +60,24 @@ public class SimulationController {
     private PokerSimulationService simulationService;
 
     /**
-     * Run a Monte Carlo equity simulation. Supports single-hand mode (holeCards +
-     * numOpponents) and multi-hand showdown mode (allHands).
+     * Run a poker equity simulation.
+     *
+     * <p>
+     * Provide either {@code iterations} (100-100000) for Monte Carlo mode, or
+     * {@code exhaustive=true} to enumerate all possible board completions.
      */
     @PostMapping("/simulate")
     public ResponseEntity<?> simulate(@Valid @RequestBody SimulationRequest request) {
+        if (request.holeCards() == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "holeCards must be provided"));
+        }
+        if (!Boolean.TRUE.equals(request.exhaustive()) && request.iterations() == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "iterations (100-100000) must be provided"));
+        }
+
         try {
-            SimulationResult result;
-            if (request.allHands() != null && !request.allHands().isEmpty()) {
-                result = simulationService.simulateMultiHand(request.allHands(), request.communityCards(),
-                        request.iterations());
-            } else {
-                result = simulationService.simulate(request.holeCards(), request.communityCards(),
-                        request.numOpponents(), request.iterations(), request.knownOpponentHands());
-            }
+            SimulationResult result = simulationService.simulate(request.holeCards(), request.communityCards(),
+                    request.numOpponents(), request.iterations(), request.knownOpponentHands(), request.exhaustive());
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

@@ -18,6 +18,7 @@
 package com.donohoedigital.games.poker.gameserver.websocket.message;
 
 import java.util.List;
+import java.util.Map;
 
 import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
 
@@ -335,7 +336,7 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
 
     /** Advisor data sent privately to human players after hand state changes. */
     record AdvisorData(Integer handRank, String handDescription, double equity, double potOdds, String recommendation,
-            String startingHandCategory, String startingHandNotation, java.util.Map<String, Double> improvementOdds,
+            String startingHandCategory, String startingHandNotation, Map<String, Double> improvementOdds,
             Double positivePotential, Double negativePotential) implements ServerMessageData {
     }
 }

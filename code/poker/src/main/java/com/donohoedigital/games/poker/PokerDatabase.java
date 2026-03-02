@@ -40,6 +40,7 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.impexp.*;
 import com.donohoedigital.games.poker.model.*;
+import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 import org.apache.logging.log4j.*;
 
 import java.io.*;
@@ -47,7 +48,6 @@ import java.math.*;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
-import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 import com.donohoedigital.games.poker.core.state.BettingRound;
 
 /**
@@ -1578,7 +1578,7 @@ public class PokerDatabase {
 
                 if (!community.isEmpty()) {
                     info.getScore(hand, community);
-                    handShown = "&nbsp;-&nbsp;" + HandTypeDisplay.toDisplayString(info, ", ");
+                    handShown = "&nbsp;-&nbsp;" + HandHistoryPanel.handDesc(info);
                 }
             } else {
                 handHTML = "<DDCARD FACEUP=\"false\"><DDCARD FACEUP=\"false\">";
@@ -1840,7 +1840,7 @@ public class PokerDatabase {
 
                 if (!community.isEmpty()) {
                     info.getScore(hand, community);
-                    handShown = "&nbsp;-&nbsp;" + HandTypeDisplay.toDisplayString(info, ", ");
+                    handShown = "&nbsp;-&nbsp;" + HandHistoryPanel.handDesc(info);
                 }
             } else {
                 handHTML = "<DDCARD FACEUP=\"false\"><DDCARD FACEUP=\"false\">";

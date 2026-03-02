@@ -47,7 +47,6 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.*;
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.state.BettingRound;
-import com.donohoedigital.games.poker.dashboard.AdvisorState;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.engine.*;
@@ -108,6 +107,7 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     private boolean bBooted_ = false;
 
     // transient info
+    private int handScore_ = -1;
     private PlayerProfile profile_;
     private boolean bLoadProfileNeeded_ = false;
     private String sAllInPerc_ = null;
@@ -722,6 +722,7 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     public void removeHand() {
         hand_ = null;
         handSorted_ = null;
+        handScore_ = -1;
     }
 
     /*
@@ -732,6 +733,8 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
         hand_ = new Hand(cType);
         if (cType == Hand.TYPE_NORMAL)
             nHandsPlayed_++;
+        handStrength_ = -1;
+        handPotential_ = -1;
         nChipsAtStart_ = nChips_; // track for resolving ties when exiting tournament
         sAllInPerc_ = null;
         bFolded_ = false;
@@ -1251,18 +1254,30 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     }
 
     /**
-     * Get the hand score for this player's current hand against the community
-     * cards. Returns 0 if cards are not available.
+     * Get cached hand score (lazy evaluation using pokergamecore HandInfoFast).
      */
     public int getHandScore() {
+        if (handScore_ < 0) {
+            HandSorted sorted = getHandSorted();
+            HoldemHand hhand = getHoldemHand();
+            if (sorted != null && hhand != null) {
+                com.donohoedigital.games.poker.core.ai.HandInfoFast fast = new com.donohoedigital.games.poker.core.ai.HandInfoFast();
+                handScore_ = fast.getScore(sorted, hhand.getCommunitySorted());
+            }
+        }
+        return handScore_;
+    }
+
+    /**
+     * Get the best 5-card hand for this player.
+     */
+    public Hand getBestFive() {
         HandSorted sorted = getHandSorted();
         HoldemHand hhand = getHoldemHand();
-        if (sorted == null || hhand == null)
-            return 0;
-        HandSorted comm = hhand.getCommunitySorted();
-        if (comm == null)
-            return 0;
-        return HandTypeDisplay.getHandScore(sorted, comm);
+        if (sorted != null && hhand != null) {
+            return HandUtils.getBestFive(sorted, hhand.getCommunitySorted());
+        }
+        return new Hand();
     }
 
     ////
@@ -1623,6 +1638,7 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
         nChipsAtStart_ = entry.removeIntToken();
         hand_ = (Hand) entry.removeToken();
         handSorted_ = null; // new hand, so null out (created on demand)
+        handScore_ = -1; // new hand, so null out (created on demand)
         nPosition_ = entry.removeIntToken();
         nStartingPositionCat_ = entry.removeIntToken();
         nPrize_ = entry.removeIntToken();
@@ -1746,59 +1762,54 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
     ////// AI stats
     //////
 
+    private float handStrength_ = -1;
+    private float handPotential_ = -1;
+
     /**
-     * Hand strength from server-provided advisor data. Returns the equity value
-     * from the last ADVISOR_UPDATE WebSocket message (0.0-1.0), or -1 if not
-     * available (folded, pre-flop, or no community cards).
+     * Set hand strength from server-cached data.
+     */
+    public void setHandStrength(float handStrength) {
+        handStrength_ = handStrength;
+    }
+
+    /**
+     * Set hand potential from server-cached data.
+     */
+    public void setHandPotential(float handPotential) {
+        handPotential_ = handPotential;
+    }
+
+    /**
+     * Hand strength - returns the server-cached value, or -1 if not available
+     * (folded, no hand, pre-flop, or server data not yet received).
      */
     public float getHandStrength() {
-        if (isFolded())
-            return -1;
-        HoldemHand hhand = getHoldemHand();
-        if (hhand == null)
-            return -1;
-        HandSorted comm = hhand.getCommunitySorted();
-        if (comm == null || comm.size() < 3)
-            return -1;
-        return (float) (AdvisorState.getCurrentEquity() / 100.0);
+        return handStrength_;
     }
 
     /**
-     * Hand potential from server-provided advisor data. Returns the positive
-     * potential value from the last ADVISOR_UPDATE message (0.0-1.0), or -1 if not
-     * available.
+     * Hand potential - returns the server-cached value, or -1 if not available
+     * (folded, no hand, not flop/turn, or server data not yet received).
      */
     public float getHandPotential() {
-        if (isFolded())
-            return -1;
-        HoldemHand hhand = getHoldemHand();
-        if (hhand == null)
-            return -1;
-        int nRound = hhand.getRound().toLegacy();
-        if (nRound != BettingRound.FLOP.toLegacy() && nRound != BettingRound.TURN.toLegacy())
-            return -1;
-        Double potential = AdvisorState.getCurrentPositivePotential();
-        return potential != null ? potential.floatValue() : -1;
+        return handPotential_;
     }
 
     /**
-     * Hand potential display value (same as {@link #getHandPotential()} — kept for
-     * API compatibility).
+     * Hand potential - debug display value (same as getHandPotential()).
      */
     public float getHandPotentialDisplay() {
-        return getHandPotential();
+        return handPotential_;
     }
 
     /**
-     * Get effective hand strength: hs + (1 - hs) * hp
+     * Get effective hand strength
      */
     public float getEffectiveHandStrength() {
         float hs = getHandStrength();
         float hp = getHandPotential();
-        if (hs < 0)
-            return -1;
         if (hp < 0)
-            return hs;
+            return hs; // potential not yet available, use raw strength
         return hs + (1 - hs) * hp;
     }
 

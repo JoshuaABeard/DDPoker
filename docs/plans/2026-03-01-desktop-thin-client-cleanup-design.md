@@ -1,6 +1,6 @@
 # Desktop Thin-Client Cleanup Design
 
-**Status:** APPROVED
+**Status:** COMPLETED (2026-03-01)
 **Goal:** Remove all poker logic from the desktop client. The client becomes pure UI + WebSocket communication — zero poker math, zero game rules, zero AI support code.
 
 ## Motivation

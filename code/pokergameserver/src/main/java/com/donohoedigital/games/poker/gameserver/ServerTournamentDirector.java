@@ -707,11 +707,6 @@ public class ServerTournamentDirector implements Runnable {
     /**
      * Consolidate tables in multi-table tournaments. Moves players from tables with
      * too few players to other active tables.
-     *
-     * <p>
-     * This is a simplified consolidation algorithm based on HeadlessGameRunnerTest.
-     * For production, Option A (extract OtherTables.consolidateTables() to
-     * pokergamecore) is recommended.
      */
     private void consolidateTables() {
         for (int i = 0; i < tournament.getNumTables(); i++) {

@@ -20,6 +20,7 @@
 package com.donohoedigital.games.poker.control;
 
 import com.donohoedigital.games.poker.core.ai.HandInfoFast;
+import com.donohoedigital.games.poker.HandHistoryPanel;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.gameserver.ServerGameTable;
@@ -154,7 +155,7 @@ class HandResultHandler extends BaseHandler {
                 Hand playerHand = toHand(holeCards);
                 HandInfoFast fast = new HandInfoFast();
                 int score = fast.getScore(playerHand, communityHand);
-                winnerMap.put("handDescription", handTypeName(HandInfoFast.getTypeFromScore(score)));
+                winnerMap.put("handDescription", HandHistoryPanel.handDesc(fast));
                 winnerMap.put("score", score);
             }
 
@@ -164,22 +165,6 @@ class HandResultHandler extends BaseHandler {
         potMap.put("winners", winners);
 
         return potMap;
-    }
-
-    private static String handTypeName(int type) {
-        return switch (type) {
-            case HandInfoFast.ROYAL_FLUSH -> "Royal Flush";
-            case HandInfoFast.STRAIGHT_FLUSH -> "Straight Flush";
-            case HandInfoFast.QUADS -> "Four of a Kind";
-            case HandInfoFast.FULL_HOUSE -> "Full House";
-            case HandInfoFast.FLUSH -> "Flush";
-            case HandInfoFast.STRAIGHT -> "Straight";
-            case HandInfoFast.TRIPS -> "Three of a Kind";
-            case HandInfoFast.TWO_PAIR -> "Two Pair";
-            case HandInfoFast.PAIR -> "One Pair";
-            case HandInfoFast.HIGH_CARD -> "High Card";
-            default -> "Unknown";
-        };
     }
 
     private List<String> cardsToDisplayList(Card[] cards) {

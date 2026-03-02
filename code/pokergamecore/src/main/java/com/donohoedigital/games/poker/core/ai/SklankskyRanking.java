@@ -46,8 +46,6 @@ import java.util.ArrayList;
  * <p>
  * Extracted from {@code HoldemExpert} to be Swing-free for use in pure AI
  * algorithms.
- *
- * @see com.donohoedigital.games.poker.HoldemExpert
  */
 public class SklankskyRanking {
 

@@ -22,11 +22,13 @@ import com.donohoedigital.games.engine.BasePhase;
 import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.engine.GameManager;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.dashboard.AdvanceAction;
 import com.donohoedigital.games.poker.dashboard.AdvisorState;
+import com.donohoedigital.games.poker.dashboard.AdvanceAction;
 import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
+import com.donohoedigital.games.poker.engine.HandScoreConstants;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData;
@@ -734,10 +736,15 @@ public class WebSocketTournamentDirector extends BasePhase
     private void onHandStarted(HandStartedData d) {
         logger.debug("[HAND_STARTED] dealer={}", d.dealerSeat());
         isPreFlop_ = true;
-        opponentTracker_.onHandStart();
         AdvisorState.clear();
+        opponentTracker_.onHandStart();
         SwingUtilities.invokeLater(() -> {
             showdownStarted_ = false;
+            PokerPlayer human = game_.getHumanPlayer();
+            if (human != null) {
+                human.setHandStrength(-1f);
+                human.setHandPotential(-1f);
+            }
             // Apply to all tables (HAND_STARTED is per-table; we apply to the current
             // table)
             RemotePokerTable table = currentTable();
@@ -1472,21 +1479,6 @@ public class WebSocketTournamentDirector extends BasePhase
         });
     }
 
-    private void onAdvisorUpdate(ServerMessageData.AdvisorData d) {
-        // Store recommendation text and full advisor data for dashboard widgets
-        AdvisorState.setCurrentAdvice(d.recommendation(), d.handDescription());
-        AdvisorState.setAdvisorData(d.equity(), d.potOdds(), d.improvementOdds(), d.positivePotential(),
-                d.negativePotential());
-
-        // Fire table event so dashboard widgets refresh
-        SwingUtilities.invokeLater(() -> {
-            RemotePokerTable table = currentTable();
-            if (table != null) {
-                table.fireEvent(PokerTableEvent.TYPE_DEALER_ACTION);
-            }
-        });
-    }
-
     private void onPlayerDisconnected(PlayerDisconnectedData d) {
         SwingUtilities.invokeLater(() -> {
             PokerPlayer player = findPlayer(d.playerId());
@@ -1869,6 +1861,21 @@ public class WebSocketTournamentDirector extends BasePhase
         });
     }
 
+    private void onAdvisorUpdate(ServerMessageData.AdvisorData d) {
+        SwingUtilities.invokeLater(() -> {
+            AdvisorState.update(d.improvementOdds(), d.positivePotential(), d.negativePotential(), d.equity());
+            PokerPlayer human = game_.getHumanPlayer();
+            if (human != null) {
+                human.setHandStrength((float) (d.equity() / 100.0));
+                human.setHandPotential(d.positivePotential() != null ? d.positivePotential().floatValue() : -1f);
+            }
+            RemotePokerTable table = currentTable();
+            if (table != null) {
+                table.fireEvent(PokerTableEvent.TYPE_DEALER_ACTION);
+            }
+        });
+    }
+
     private void onContinueRunout() {
         SwingUtilities.invokeLater(() -> {
             // Re-register the player action listener if it was cleared by Bet.finish() at
@@ -2003,10 +2010,11 @@ public class WebSocketTournamentDirector extends BasePhase
             if (winner != null && hand != null && winner.getHand() != null && winner.getHand().size() >= 2
                     && hand.getCommunity() != null && hand.getCommunity().size() >= 3) {
                 try {
-                    int score = winner.getHandScore();
-                    int handType = HandTypeDisplay.getTypeFromScore(score);
+                    HandInfoFast fast = new HandInfoFast();
+                    int score = fast.getScore(winner.getHandSorted(), hand.getCommunitySorted());
+                    int handType = HandInfoFast.getTypeFromScore(score);
                     handClass = handClassName(handType);
-                    handDescription = HandTypeDisplay.getHandTypeDesc(handType);
+                    handDescription = PropertyConfig.getMessage("msg.hand." + handType);
                 } catch (Exception e) {
                     logger.debug("[HAND_RESULT] could not evaluate winner hand for {}", name, e);
                 }
@@ -2060,16 +2068,16 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private String handClassName(int handType) {
         return switch (handType) {
-            case HandTypeDisplay.ROYAL_FLUSH -> "ROYAL_FLUSH";
-            case HandTypeDisplay.STRAIGHT_FLUSH -> "STRAIGHT_FLUSH";
-            case HandTypeDisplay.QUADS -> "QUADS";
-            case HandTypeDisplay.FULL_HOUSE -> "FULL_HOUSE";
-            case HandTypeDisplay.FLUSH -> "FLUSH";
-            case HandTypeDisplay.STRAIGHT -> "STRAIGHT";
-            case HandTypeDisplay.TRIPS -> "TRIPS";
-            case HandTypeDisplay.TWO_PAIR -> "TWO_PAIR";
-            case HandTypeDisplay.PAIR -> "PAIR";
-            case HandTypeDisplay.HIGH_CARD -> "HIGH_CARD";
+            case HandScoreConstants.ROYAL_FLUSH -> "ROYAL_FLUSH";
+            case HandScoreConstants.STRAIGHT_FLUSH -> "STRAIGHT_FLUSH";
+            case HandScoreConstants.QUADS -> "QUADS";
+            case HandScoreConstants.FULL_HOUSE -> "FULL_HOUSE";
+            case HandScoreConstants.FLUSH -> "FLUSH";
+            case HandScoreConstants.STRAIGHT -> "STRAIGHT";
+            case HandScoreConstants.TRIPS -> "TRIPS";
+            case HandScoreConstants.TWO_PAIR -> "TWO_PAIR";
+            case HandScoreConstants.PAIR -> "PAIR";
+            case HandScoreConstants.HIGH_CARD -> "HIGH_CARD";
             default -> "UNKNOWN";
         };
     }

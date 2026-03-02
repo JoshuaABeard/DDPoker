@@ -33,7 +33,6 @@
 package com.donohoedigital.games.poker.dashboard;
 
 import com.donohoedigital.config.*;
-import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
@@ -151,7 +150,6 @@ public class DashboardPlayerInfo extends DashboardItem implements TerritorySelec
             }
 
             styleSummaryLabel_.setText(buf.toString());
-
         } else {
             styleSummaryLabel_.setText(PropertyConfig.getMessage("msg.playerstyle.none"));
             styleQuadsPanel_.setValues(Float.NaN, Float.NaN);

@@ -47,6 +47,15 @@ import java.util.Map;
 public class ImproveOdds extends Odds {
     String sTotal_;
 
+    // Ordered hand-type keys matching ascending rank (TRIPS through ROYAL_FLUSH)
+    private static final String[] HAND_TYPE_KEYS = {"TRIPS", "STRAIGHT", "FLUSH", "FULL_HOUSE", "FOUR_OF_A_KIND",
+            "STRAIGHT_FLUSH", "ROYAL_FLUSH"};
+
+    // Corresponding hand type integer constants for display label lookup
+    private static final int[] HAND_TYPE_INTS = {HandScoreConstants.TRIPS, HandScoreConstants.STRAIGHT,
+            HandScoreConstants.FLUSH, HandScoreConstants.FULL_HOUSE, HandScoreConstants.QUADS,
+            HandScoreConstants.STRAIGHT_FLUSH, HandScoreConstants.ROYAL_FLUSH};
+
     public ImproveOdds(GameContext context) {
         super(context, "improveodds");
         setDynamicTitle(true);
@@ -76,18 +85,34 @@ public class ImproveOdds extends Odds {
     protected String getDisplay(int nRound, HoldemHand hhand, PokerPlayer asViewedBy, Hand hand) {
         sTotal_ = null;
 
+        // pre-flop, or insufficient community cards.
+        Hand community = hhand.getCommunityForDisplay();
         nRound = hhand.getRoundForDisplay();
-
-        // pre-flop or river: nothing to show
-        if (nRound == BettingRound.PRE_FLOP.toLegacy() || nRound == HoldemHand.ROUND_RIVER
-                || nRound == HoldemHand.ROUND_SHOWDOWN) {
-            sTotal_ = "0";
-            return PropertyConfig.getMessage("msg.odds.imptype.none");
+        if (nRound == BettingRound.PRE_FLOP.toLegacy() || community.size() < 3) {
+            return "";
         }
 
-        // Read server-provided improvement odds from ADVISOR_UPDATE
-        Map<String, Double> improvementOdds = AdvisorState.getCurrentImprovementOdds();
-        if (improvementOdds == null || improvementOdds.isEmpty()) {
+        // river / showdown: no improvements possible
+        switch (nRound) {
+            case HoldemHand.ROUND_RIVER :
+            case HoldemHand.ROUND_SHOWDOWN :
+            default :
+                sTotal_ = "0";
+                return PropertyConfig.getMessage("msg.odds.imptype.none");
+
+            case HoldemHand.ROUND_FLOP :
+            case HoldemHand.ROUND_TURN :
+                break;
+        }
+
+        // Read server-provided improvement odds
+        Map<String, Double> odds = AdvisorState.getImprovementOdds();
+        if (odds == null) {
+            // Data not yet received from server — show nothing
+            return "";
+        }
+
+        if (odds.isEmpty()) {
             sTotal_ = "0";
             return PropertyConfig.getMessage("msg.odds.imptype.none");
         }
@@ -95,14 +120,16 @@ public class ImproveOdds extends Odds {
         StringBuilder sb = new StringBuilder();
         double dTotal = 0.0;
         int nCnt = 0;
-        for (Map.Entry<String, Double> entry : improvementOdds.entrySet()) {
-            double d = entry.getValue();
-            if (d == 0.0d)
+        for (int i = 0; i < HAND_TYPE_KEYS.length; i++) {
+            Double d = odds.get(HAND_TYPE_KEYS[i]);
+            if (d == null || d == 0.0)
                 continue;
             nCnt++;
             dTotal += d;
-            sb.append(PropertyConfig.getMessage("msg.odds.imptype", entry.getKey(), PokerConstants.formatPercent(d)));
+            sb.append(PropertyConfig.getMessage("msg.odds.imptype",
+                    PropertyConfig.getMessage("msg.hand." + HAND_TYPE_INTS[i]), PokerConstants.formatPercent(d)));
         }
+
         if (sb.length() > 0) {
             sb.insert(0, PropertyConfig.getMessage("msg.odds.table.start"));
             sTotal_ = PokerConstants.formatPercent(dTotal);

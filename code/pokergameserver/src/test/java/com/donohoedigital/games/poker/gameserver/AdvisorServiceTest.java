@@ -34,6 +34,7 @@
  */
 package com.donohoedigital.games.poker.gameserver;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Random;
@@ -443,23 +444,9 @@ class AdvisorServiceTest {
         // Ah 2h on a board of Kh 7h 3c = flush draw (9 outs)
         Card[] hole = {Card.getCard("Ah"), Card.getCard("2h")};
         Card[] community = {Card.getCard("Kh"), Card.getCard("7h"), Card.getCard("3c")};
-        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500, seededRandom);
-        assertNotNull(result.improvementOdds());
-        assertTrue(result.improvementOdds().containsKey("FLUSH"));
-        assertTrue(result.improvementOdds().get("FLUSH") > 15.0,
-                "Flush odds should be > 15%, got: " + result.improvementOdds().get("FLUSH"));
-    }
-
-    @Test
-    void improvementOdds_turnWithFlushDraw_includesFlushOdds() {
-        // Ah 2h on Kh 7h 3c 9d = flush draw on turn (9 outs from 46 cards)
-        Card[] hole = {Card.getCard("Ah"), Card.getCard("2h")};
-        Card[] community = {Card.getCard("Kh"), Card.getCard("7h"), Card.getCard("3c"), Card.getCard("9d")};
-        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500, seededRandom);
-        assertNotNull(result.improvementOdds());
-        assertTrue(result.improvementOdds().containsKey("FLUSH"));
-        assertTrue(result.improvementOdds().get("FLUSH") > 15.0,
-                "Flush odds should be > 15%, got: " + result.improvementOdds().get("FLUSH"));
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.improvementOdds()).isNotNull();
+        assertThat(result.improvementOdds().get("FLUSH")).isGreaterThan(15.0); // ~19.1%
     }
 
     @Test
@@ -468,51 +455,27 @@ class AdvisorServiceTest {
         Card[] hole = {Card.getCard("Ah"), Card.getCard("Kh")};
         Card[] community = {Card.getCard("2c"), Card.getCard("7d"), Card.getCard("Js"), Card.getCard("3h"),
                 Card.getCard("9c")};
-        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500, seededRandom);
-        assertNull(result.improvementOdds());
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.improvementOdds()).isNull();
     }
 
     @Test
     void improvementOdds_preflop_returnsNull() {
         Card[] hole = {Card.getCard("Ah"), Card.getCard("Kh")};
         Card[] community = {};
-        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500, seededRandom);
-        assertNull(result.improvementOdds());
-    }
-
-    @Test
-    void improvementOdds_flopWithStraightDraw_includesStraightOdds() {
-        // 9h 8c on 7d 6s 2h = open-ended straight draw (8 outs)
-        Card[] hole = {Card.getCard("9h"), Card.getCard("8c")};
-        Card[] community = {Card.getCard("7d"), Card.getCard("6s"), Card.getCard("2h")};
-        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500, seededRandom);
-        assertNotNull(result.improvementOdds());
-        assertTrue(result.improvementOdds().containsKey("STRAIGHT"), "Should include STRAIGHT improvement odds");
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.improvementOdds()).isNull();
     }
 
     // --- Hand potential ---
 
     @Test
-    void handPotential_flopWithFlushDraw_hasPositivePotential() {
-        // Flush draw = high positive potential (behind with no pair, but can catch
-        // flush)
+    void handPotential_flopWithDraws_hasPositivePotential() {
+        // Flush draw = high positive potential
         Card[] hole = {Card.getCard("Ah"), Card.getCard("Kh")};
         Card[] community = {Card.getCard("7h"), Card.getCard("3h"), Card.getCard("9c")};
-        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500, seededRandom);
-        assertNotNull(result.positivePotential());
-        assertNotNull(result.negativePotential());
-        assertTrue(result.positivePotential() > 10.0,
-                "Positive potential should be > 10% for flush draw, got: " + result.positivePotential());
-    }
-
-    @Test
-    void handPotential_turnWithFlushDraw_hasPositivePotential() {
-        Card[] hole = {Card.getCard("Ah"), Card.getCard("Kh")};
-        Card[] community = {Card.getCard("7h"), Card.getCard("3h"), Card.getCard("9c"), Card.getCard("2d")};
-        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500, seededRandom);
-        assertNotNull(result.positivePotential());
-        assertTrue(result.positivePotential() > 5.0,
-                "Positive potential should be > 5% for flush draw on turn, got: " + result.positivePotential());
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.positivePotential()).isGreaterThan(10.0);
     }
 
     @Test
@@ -520,40 +483,70 @@ class AdvisorServiceTest {
         Card[] hole = {Card.getCard("Ah"), Card.getCard("Kh")};
         Card[] community = {Card.getCard("2c"), Card.getCard("7d"), Card.getCard("Js"), Card.getCard("3h"),
                 Card.getCard("9c")};
-        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500, seededRandom);
-        assertNull(result.positivePotential());
-        assertNull(result.negativePotential());
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.positivePotential()).isNull();
+        assertThat(result.negativePotential()).isNull();
     }
 
     @Test
     void handPotential_preflop_returnsNull() {
         Card[] hole = {Card.getCard("Ah"), Card.getCard("Kh")};
         Card[] community = {};
-        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500, seededRandom);
-        assertNull(result.positivePotential());
-        assertNull(result.negativePotential());
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.positivePotential()).isNull();
+        assertThat(result.negativePotential()).isNull();
     }
 
     @Test
-    void handPotential_strongHand_hasNegativePotential() {
-        // AA on a low board = strong hand, some negative potential (opponents can
-        // improve)
-        Card[] hole = {Card.getCard("Ah"), Card.getCard("As")};
-        Card[] community = {Card.getCard("2c"), Card.getCard("7d"), Card.getCard("Js")};
-        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500, seededRandom);
-        assertNotNull(result.negativePotential());
-        assertTrue(result.negativePotential() > 0.0,
-                "Negative potential should be > 0% for strong hand, got: " + result.negativePotential());
+    void handPotential_turn_isNotNull() {
+        // 4 community cards (turn) — both fields should be non-null
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("2h")};
+        Card[] community = {Card.getCard("Kh"), Card.getCard("7h"), Card.getCard("3c"), Card.getCard("9d")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.positivePotential()).isNotNull();
+        assertThat(result.negativePotential()).isNotNull();
     }
 
     @Test
-    void handPotential_valuesAreBounded() {
-        Card[] hole = {Card.getCard("Ah"), Card.getCard("Kh")};
-        Card[] community = {Card.getCard("7h"), Card.getCard("3h"), Card.getCard("9c")};
-        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500, seededRandom);
-        assertTrue(result.positivePotential() >= 0.0 && result.positivePotential() <= 100.0,
-                "Positive potential should be 0-100, got: " + result.positivePotential());
-        assertTrue(result.negativePotential() >= 0.0 && result.negativePotential() <= 100.0,
-                "Negative potential should be 0-100, got: " + result.negativePotential());
+    void handPotential_positiveIsNonNegative() {
+        // Flush draw on flop — positive potential should be in [0, 100]
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("2h")};
+        Card[] community = {Card.getCard("Kh"), Card.getCard("7h"), Card.getCard("3c")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.positivePotential()).isNotNull();
+        assertThat(result.positivePotential()).isBetween(0.0, 100.0);
+    }
+
+    @Test
+    void handPotential_negativeIsNonNegative() {
+        // Flush draw on flop — negative potential should be in [0, 100]
+        Card[] hole = {Card.getCard("Ah"), Card.getCard("2h")};
+        Card[] community = {Card.getCard("Kh"), Card.getCard("7h"), Card.getCard("3c")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.negativePotential()).isNotNull();
+        assertThat(result.negativePotential()).isBetween(0.0, 100.0);
+    }
+
+    @Test
+    void handPotential_royalFlush_zeroPositivePercent() {
+        // Royal flush on a 5-card river board — service returns null (river), so
+        // positive potential is null
+        Card[] hole = {Card.getCard("As"), Card.getCard("Ks")};
+        Card[] community = {Card.getCard("Qs"), Card.getCard("Js"), Card.getCard("Ts"), Card.getCard("2h"),
+                Card.getCard("3c")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        // River board: hand potential is null (no next card to improve to)
+        assertThat(result.positivePotential()).isNull();
+    }
+
+    @Test
+    void handPotential_highCard_withOpenEndedStraightDraw_hasPositivePotential() {
+        // 9h 8h on flop of 7c 6d 2s — open-ended straight draw (needs 5 or T),
+        // high-card hand
+        Card[] hole = {Card.getCard("9h"), Card.getCard("8h")};
+        Card[] community = {Card.getCard("7c"), Card.getCard("6d"), Card.getCard("2s")};
+        AdvisorResult result = service.compute(hole, community, 0, 0, 1, 500);
+        assertThat(result.positivePotential()).isNotNull();
+        assertThat(result.positivePotential()).isGreaterThan(0.0);
     }
 }

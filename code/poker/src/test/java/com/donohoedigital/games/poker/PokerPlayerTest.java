@@ -1056,4 +1056,43 @@ class PokerPlayerTest {
         assertThat(emptyPlayer.isEliminated()).isFalse();
         assertThat(emptyPlayer.isFolded()).isFalse();
     }
+
+    // =================================================================
+    // Hand Stats Cached Field Tests (handStrength_ / handPotential_)
+    // =================================================================
+
+    @Test
+    void should_ReturnNegativeOne_When_HandStrengthNotYetSet() {
+        assertThat(player.getHandStrength()).isEqualTo(-1f);
+    }
+
+    @Test
+    void should_ReturnNegativeOne_When_HandPotentialNotYetSet() {
+        assertThat(player.getHandPotential()).isEqualTo(-1f);
+    }
+
+    @Test
+    void should_ReturnSetValue_When_HandStrengthSet() {
+        player.setHandStrength(0.75f);
+
+        assertThat(player.getHandStrength()).isEqualTo(0.75f);
+    }
+
+    @Test
+    void should_ReturnSetValue_When_HandPotentialSet() {
+        player.setHandPotential(0.30f);
+
+        assertThat(player.getHandPotential()).isEqualTo(0.30f);
+    }
+
+    @Test
+    void should_ResetToNegativeOne_When_NewHandStarted() {
+        player.setHandStrength(0.75f);
+        player.setHandPotential(0.30f);
+
+        player.newHand(Hand.TYPE_NORMAL);
+
+        assertThat(player.getHandStrength()).isEqualTo(-1f);
+        assertThat(player.getHandPotential()).isEqualTo(-1f);
+    }
 }

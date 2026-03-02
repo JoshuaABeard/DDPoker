@@ -34,12 +34,13 @@
  */
 package com.donohoedigital.games.poker.server;
 
-import com.donohoedigital.games.poker.*;
+import com.donohoedigital.games.poker.HandAction;
 import com.donohoedigital.games.poker.core.*;
 import com.donohoedigital.games.poker.core.ai.AIContext;
 import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.CardSuit;
+import com.donohoedigital.games.poker.engine.Deck;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.HandInfoFaster;
 import com.donohoedigital.games.poker.engine.HandScoreConstants;
@@ -480,7 +481,7 @@ public class ServerAIContext implements AIContext {
         int score = handEvaluator.getScore(hole, community);
         int suit = handEvaluator.getLastMajorSuit();
 
-        // Check if hole cards are part of the best hand
+        // strictTwoPair = false for standard checking
         return isOurHandInvolved(hole, score, suit, false);
     }
 
@@ -512,7 +513,10 @@ public class ServerAIContext implements AIContext {
             return false;
         }
 
-        // Count suits - flush draw = exactly 2 of same suit
+        // Matches original V1Player logic: bFlushDraw = (_comm.getHighestSuited() == 2)
+        // getHighestSuited() returns the MAX suit count, so we check the maximum.
+        // Exactly 2 = flush draw possible; 3+ is threeFlush (a separate, stronger
+        // signal).
         int[] suitCounts = new int[4];
         for (Card card : communityCards) {
             if (card != null) {
@@ -520,13 +524,14 @@ public class ServerAIContext implements AIContext {
             }
         }
 
+        int maxSuitCount = 0;
         for (int count : suitCounts) {
-            if (count == 2) {
-                return true;
+            if (count > maxSuitCount) {
+                maxSuitCount = count;
             }
         }
 
-        return false;
+        return maxSuitCount == 2;
     }
 
     @Override
@@ -535,18 +540,10 @@ public class ServerAIContext implements AIContext {
             return false;
         }
 
-        // Use pokergamecore HandInfoFast to detect straight draws
+        // Use HandSorted.hasStraightDraw() on community cards only, matching the
+        // original V1Player logic: bStraightDraw = _comm.hasStraightDraw()
         Hand community = toHand(communityCards);
-        HandInfoFast hif = new HandInfoFast(); // pokergamecore.HandInfoFast
-
-        // Need to call getScore to populate straight draw information
-        // Use dummy hole cards
-        Hand dummyHole = new Hand(2);
-        dummyHole.addCard(new Card(CardSuit.CLUBS, Card.TWO));
-        dummyHole.addCard(new Card(CardSuit.DIAMONDS, Card.THREE));
-
-        hif.getScore(dummyHole, community);
-        return hif.hasStraightDraw();
+        return new HandSorted(community).hasStraightDraw();
     }
 
     @Override
@@ -555,17 +552,37 @@ public class ServerAIContext implements AIContext {
             return 0;
         }
 
-        // Approximate: count ranks in 4 or 5 consecutive values on community board
-        // to estimate straight possibilities (conservative heuristic)
         Hand community = toHand(communityCards);
-        HandInfoFast hif = new HandInfoFast(); // pokergamecore.HandInfoFast
+
+        // Create dummy hole cards for calculation (we're just analyzing board)
         Hand dummyHole = new Hand(2);
         dummyHole.addCard(new Card(CardSuit.CLUBS, Card.TWO));
         dummyHole.addCard(new Card(CardSuit.DIAMONDS, Card.THREE));
-        hif.getScore(dummyHole, community);
-        // If the board already supports a straight draw, assume ~1-2 opponents could
-        // have it
-        return hif.hasStraightDraw() ? Math.max(1, currentHand.getNumWithCards() / 3) : 0;
+
+        // Enumerate all possible opponent hole card pairs from remaining deck
+        // and count how many result in a straight for the opponent
+        HandInfoFaster fast = new HandInfoFaster();
+        Hand holecopy = new Hand(dummyHole);
+
+        Deck deck = new Deck(false);
+        deck.removeCards(dummyHole);
+        deck.removeCards(community);
+
+        int numStraights = 0;
+        int nSize = deck.size();
+        for (int i = 0; i < nSize - 1; i++) {
+            for (int j = i + 1; j < nSize; j++) {
+                holecopy.setCard(0, deck.getCard(i));
+                holecopy.setCard(1, deck.getCard(j));
+                int oppscore = fast.getScore(holecopy, community);
+                int nType = HandInfoFast.getTypeFromScore(oppscore);
+                if (nType == HandScoreConstants.STRAIGHT) {
+                    numStraights++;
+                }
+            }
+        }
+
+        return numStraights;
     }
 
     @Override
@@ -591,20 +608,61 @@ public class ServerAIContext implements AIContext {
             return 0.0; // No improvement possible on river
         }
 
-        // Use pokergamecore HandInfoFast for draw-based improvement odds estimate
+        // Enumerate remaining deck cards and check if hand type improves
         Hand hole = toHand(holeCards);
         Hand community = toHand(communityCards);
 
-        HandInfoFast fast = new HandInfoFast(); // pokergamecore.HandInfoFast
-        fast.getScore(hole, community);
-        // Estimate improvement odds based on draw presence
-        if (fast.hasFlushDraw()) {
-            return 0.35; // ~9 outs flush draw
-        } else if (fast.hasStraightDraw()) {
-            int outs = fast.getStraightDrawOuts();
-            return outs >= 8 ? 0.32 : 0.17; // open-ended vs gutshot
+        int ourscore = handEvaluator.getScore(hole, community);
+        int ourtype = HandInfoFast.getTypeFromScore(ourscore);
+
+        Deck deck = new Deck(false);
+        deck.removeCards(hole);
+        deck.removeCards(community);
+
+        int nComm = community == null ? 0 : community.size();
+        int MORE = 5 - nComm;
+        if (MORE < 1 || MORE > 2) {
+            return 0.0;
         }
-        return 0.10; // conservative default (pick up a pair, etc.)
+
+        Hand commcopy = new Hand(community);
+        int nTotal = 0;
+        int nTypeImprovements = 0;
+        int nSize = deck.size();
+        int nEND = MORE == 1 ? nSize : nSize - 1;
+
+        for (int next1 = 0; next1 < nEND; next1++) {
+            commcopy.addCard(deck.getCard(next1));
+
+            for (int next2 = next1 + 1; MORE == 1 || next2 < nSize; next2++) {
+                if (MORE == 2) {
+                    commcopy.addCard(deck.getCard(next2));
+                }
+
+                nTotal++;
+
+                int newscore = handEvaluator.getScore(hole, commcopy);
+                int nType = HandInfoFast.getTypeFromScore(newscore);
+                if (nType > ourtype && isOurHandInvolved(hole, newscore, handEvaluator.getLastMajorSuit(),
+                        ourtype != HandScoreConstants.HIGH_CARD)) {
+                    nTypeImprovements++;
+                }
+
+                if (MORE == 2) {
+                    commcopy.removeCard(commcopy.size() - 1);
+                }
+                if (MORE == 1) {
+                    break;
+                }
+            }
+
+            commcopy.removeCard(commcopy.size() - 1);
+        }
+
+        if (nTotal == 0) {
+            return 0.0;
+        }
+        return (double) nTypeImprovements / nTotal;
     }
 
     @Override
@@ -612,8 +670,7 @@ public class ServerAIContext implements AIContext {
         Hand hole = toHand(holeCards);
         Hand community = toHand(communityCards);
 
-        // Inline nut flush check: find highest missing suit card in hole cards
-        return isNutFlush(hole, new HandSorted(community), majorSuit, nCards);
+        return isNutFlushImpl(hole, new HandSorted(community), majorSuit, nCards);
     }
 
     @Override
@@ -625,15 +682,35 @@ public class ServerAIContext implements AIContext {
         Hand hole = toHand(holeCards);
         Hand community = toHand(communityCards);
 
-        // Approximate hand strength using hand type score ranking
-        HandInfoFast fast = new HandInfoFast(); // pokergamecore.HandInfoFast
-        int score = fast.getScore(hole, community);
-        int handType = HandInfoFast.getTypeFromScore(score);
-        // Normalize hand type (1-10) to approximate hand strength (0.0-1.0)
-        // Adjust for number of opponents: more opponents = lower effective strength
-        double baseStrength = (handType - 1.0) / 9.0;
-        double opponentFactor = Math.pow(baseStrength, Math.max(1, numOpponents));
-        return opponentFactor;
+        // Monte Carlo: enumerate all possible opponent hole card pairs
+        HandInfoFaster fast = new HandInfoFaster();
+        Hand holecopy = new Hand(hole);
+        int ourscore = fast.getScore(holecopy, community);
+
+        Deck deck = new Deck(false);
+        deck.removeCards(hole);
+        deck.removeCards(community);
+
+        float nAhead = 0;
+        float nTied = 0;
+        float nBehind = 0;
+        int nSize = deck.size();
+        for (int i = 0; i < nSize - 1; i++) {
+            for (int j = i + 1; j < nSize; j++) {
+                holecopy.setCard(0, deck.getCard(i));
+                holecopy.setCard(1, deck.getCard(j));
+                int oppscore = fast.getScore(holecopy, community);
+                if (ourscore > oppscore)
+                    nAhead++;
+                else if (ourscore == oppscore)
+                    nTied++;
+                else
+                    nBehind++;
+            }
+        }
+
+        float strength = (nAhead + nTied / 2) / (nAhead + nTied + nBehind);
+        return Math.pow(strength, Math.max(1, numOpponents));
     }
 
     @Override
@@ -676,13 +753,9 @@ public class ServerAIContext implements AIContext {
         return Math.round(openFreq * 100);
     }
 
-    // =========================================================================
-    // Private helpers (inlined from deleted HandInfo static methods)
-    // =========================================================================
-
     /**
-     * Returns true if the hole cards participate in the best hand described by
-     * {@code score}/{@code suit}. Inlined from HandInfo.isOurHandInvolved().
+     * Return true if the given hole cards are part of the "significant" part of the
+     * hand type. Ported from HandInfo.isOurHandInvolved().
      */
     private static boolean isOurHandInvolved(Hand hole, int score, int suit, boolean bStrictTwoPair) {
         int[] cards = new int[5];
@@ -691,52 +764,51 @@ public class ServerAIContext implements AIContext {
 
         switch (nType) {
             case HandScoreConstants.HIGH_CARD :
-            case HandScoreConstants.PAIR :
-            case HandScoreConstants.TRIPS :
-            case HandScoreConstants.QUADS :
                 return hole.isInHand(cards[0]);
-
+            case HandScoreConstants.PAIR :
+                return hole.isInHand(cards[0]);
             case HandScoreConstants.TWO_PAIR :
                 if (bStrictTwoPair)
                     return hole.isInHand(cards[0]) && hole.isInHand(cards[1]);
                 else
                     return hole.isInHand(cards[0]) || hole.isInHand(cards[1]);
-
+            case HandScoreConstants.TRIPS :
+                return hole.isInHand(cards[0]);
             case HandScoreConstants.STRAIGHT :
                 return hole.isInHand(cards[0]) || hole.isInHand(cards[0] - 1) || hole.isInHand(cards[0] - 2)
                         || hole.isInHand(cards[0] - 3) || hole.isInHand(cards[0] > 5 ? cards[0] - 4 : Card.ACE);
-
             case HandScoreConstants.FLUSH :
                 return hole.isInHand(cards[0], suit) || hole.isInHand(cards[1], suit) || hole.isInHand(cards[2], suit)
                         || hole.isInHand(cards[3], suit) || hole.isInHand(cards[4], suit);
-
             case HandScoreConstants.FULL_HOUSE :
                 return hole.isInHand(cards[0]) || hole.isInHand(cards[1]);
-
+            case HandScoreConstants.QUADS :
+                return hole.isInHand(cards[0]);
             case HandScoreConstants.STRAIGHT_FLUSH :
             case HandScoreConstants.ROYAL_FLUSH :
                 return hole.isInHand(cards[0], suit) || hole.isInHand(cards[0] - 1, suit)
                         || hole.isInHand(cards[0] - 2, suit) || hole.isInHand(cards[0] - 3, suit)
                         || hole.isInHand(cards[0] > 5 ? cards[0] - 4 : Card.ACE, suit);
-
             default :
                 return false;
         }
     }
 
     /**
-     * Returns true if {@code hole} contains the nut flush (or within top
-     * {@code nCards} flush hands) for {@code nSuit} given the community. Inlined
-     * from HandInfo.isNutFlush().
+     * Return true if the hole cards contain the nut flush (or top-N flush cards).
+     * Ported from HandInfo.isNutFlush().
      */
-    private static boolean isNutFlush(Hand hole, HandSorted community, int nSuit, int nCards) {
+    private static boolean isNutFlushImpl(Hand hole, HandSorted community, int nSuit, int nCards) {
         int nNeedCard = 10;
         for (int i = Card.ACE; i >= Card.JACK; i--) {
-            if (!community.isInHand(i, nSuit)) {
+            if (community.isInHand(i, nSuit)) {
+                // continue to next
+            } else {
                 nNeedCard = i;
                 break;
             }
         }
+
         while (nCards > 0) {
             if (!community.isInHand(nNeedCard, nSuit)) {
                 if (hole.isInHand(nNeedCard, nSuit))

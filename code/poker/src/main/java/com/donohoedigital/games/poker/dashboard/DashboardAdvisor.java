@@ -52,11 +52,16 @@ public class DashboardAdvisor extends DashboardItem {
     public static final String NOADVICE = PropertyConfig.getMessage("msg.advisor.noadvice");
     public static final String NOADVICETITLE = PropertyConfig.getMessage("msg.advisor.noadvice.title");
 
+    // Static state readable by the dev control server (StateHandler) without
+    // navigating the UI tree.
+    private static volatile String currentAdvice_ = null;
+    private static volatile String currentTitle_ = null;
+
     /**
      * Returns the most recently computed advice text, or null if not yet available.
      */
     public static String getCurrentAdvice() {
-        return AdvisorState.getCurrentAdvice();
+        return currentAdvice_;
     }
 
     /**
@@ -64,14 +69,15 @@ public class DashboardAdvisor extends DashboardItem {
      * available.
      */
     public static String getCurrentTitle() {
-        return AdvisorState.getCurrentTitle();
+        return currentTitle_;
     }
 
     /**
      * Sets the current advice from an external source (e.g. server ADVISOR_UPDATE).
      */
     public static void setCurrentAdvice(String advice, String title) {
-        AdvisorState.setCurrentAdvice(advice, title);
+        currentAdvice_ = advice;
+        currentTitle_ = title;
     }
 
     private DDPanel buttons_;
@@ -139,8 +145,8 @@ public class DashboardAdvisor extends DashboardItem {
         title_ = NOADVICETITLE;
 
         // Check if server-pushed advice is available
-        String serverAdvice = AdvisorState.getCurrentAdvice();
-        String serverTitle = AdvisorState.getCurrentTitle();
+        String serverAdvice = currentAdvice_;
+        String serverTitle = currentTitle_;
         if (serverAdvice != null && !NOADVICE.equals(serverAdvice)) {
             advice_ = serverAdvice;
             title_ = serverTitle;

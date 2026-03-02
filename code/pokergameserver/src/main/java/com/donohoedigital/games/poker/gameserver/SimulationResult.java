@@ -35,29 +35,22 @@
 package com.donohoedigital.games.poker.gameserver;
 
 import java.util.List;
+import java.util.Map;
 
 /**
- * Result of a Monte Carlo poker equity simulation.
+ * Result of a poker equity simulation (Monte Carlo or exhaustive).
+ *
+ * <p>
+ * {@code win}, {@code tie}, {@code loss}, {@code opponentResults}, and
+ * {@code playerHandTypeBreakdown} contain the simulation percentages for the
+ * player against opponents.
  */
 public record SimulationResult(double win, double tie, double loss, int iterations,
-        List<OpponentResult> opponentResults, List<HandResult> handResults) {
-
-    /**
-     * Constructor for single-hand mode (no handResults).
-     */
-    public SimulationResult(double win, double tie, double loss, int iterations, List<OpponentResult> opponentResults) {
-        this(win, tie, loss, iterations, opponentResults, null);
-    }
+        List<OpponentResult> opponentResults, Map<String, Double> playerHandTypeBreakdown) {
 
     /**
      * Per-opponent result breakdown.
      */
     public record OpponentResult(double win, double tie, double loss) {
-    }
-
-    /**
-     * Per-hand result for multi-hand showdown mode.
-     */
-    public record HandResult(double win, double tie, double loss) {
     }
 }

@@ -41,16 +41,13 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 
 /**
- * Request DTO for Monte Carlo poker equity simulation.
+ * Request DTO for poker equity simulation.
  *
  * <p>
- * Two modes:
- * <ul>
- * <li>Single-hand: provide {@code holeCards} + {@code numOpponents}</li>
- * <li>Multi-hand: provide {@code allHands} (list of 2+ hands)</li>
- * </ul>
+ * Provide either {@code iterations} (100-100000) for Monte Carlo mode, or
+ * {@code exhaustive=true} to enumerate all possible board completions.
  */
-public record SimulationRequest(List<String> holeCards, @Size(max = 5) List<String> communityCards,
-        @Min(1) @Max(9) int numOpponents, @Min(100) @Max(100000) int iterations, List<List<String>> knownOpponentHands,
-        List<List<String>> allHands) {
+public record SimulationRequest(@Size(min = 2, max = 2) List<String> holeCards,
+        @Size(max = 5) List<String> communityCards, @Min(1) @Max(9) int numOpponents,
+        @Min(100) @Max(100000) Integer iterations, List<List<String>> knownOpponentHands, Boolean exhaustive) {
 }

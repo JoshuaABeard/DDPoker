@@ -38,7 +38,6 @@
 
 package com.donohoedigital.games.poker;
 
-import com.donohoedigital.base.Format;
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
 import com.donohoedigital.config.LoggingConfig;
@@ -58,11 +57,6 @@ public class PokerStats {
     private static Logger logger;
 
     static boolean DEBUG = false;
-
-    // formatting
-    static Format fType = new Format("%-14s");
-    static Format fHole = new Format("%-8s");
-    static Format fBest = new Format("%-22s");
 
     // members
     private final PokerTable table_;
@@ -217,26 +211,12 @@ public class PokerStats {
         // process results
         PokerPlayer player;
         int nAmount;
-        String sResult;
         for (int i = 0; i < hhand_.getNumPlayers(); i++) {
             player = hhand_.getPlayerAt(i);
             if (player.isFolded())
                 continue;
 
             nAmount = hhand_.getWin(player);
-
-            if (DEBUG) {
-                int score = player.getHandScore();
-                sResult = player.getName() + " " + fHole.form(player.getHand().toStringSuited()) + " "
-                        + fType.form(HandTypeDisplay.getHandTypeDesc(HandTypeDisplay.getTypeFromScore(score))) + " "
-                        + fBest.form(HandTypeDisplay.getBestRankString(score));
-                if (nAmount > 0) {
-                    sResult += " WIN " + nAmount;
-                }
-
-                if (DEBUG)
-                    logger.debug(sResult);
-            }
 
             // subtract the bet
             nAmount -= HandStat.BET;

@@ -18,6 +18,7 @@
 package com.donohoedigital.games.poker.server;
 
 import com.donohoedigital.games.poker.gameserver.GameConfig;
+import com.donohoedigital.games.poker.gameserver.SimulationResult;
 import com.donohoedigital.games.poker.gameserver.controller.TournamentProfileConverter;
 import com.donohoedigital.games.poker.gameserver.dto.CreateGameResponse;
 import com.donohoedigital.games.poker.gameserver.dto.GameListResponse;
@@ -161,6 +162,82 @@ public class GameServerRestClient {
             throw e;
         } catch (Exception e) {
             throw new GameServerClientException("Failed to list games", e);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Simulation endpoint (no auth required)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Run a poker equity simulation on the embedded server.
+     *
+     * <p>
+     * For single-player mode provide {@code holeCards} (2 cards),
+     * {@code numOpponents}, and either {@code iterations} (Monte Carlo) or
+     * {@code exhaustive=true}.
+     *
+     * <p>
+     * For showdown mode also supply {@code knownOpponentHands} (list of 2-card
+     * lists).
+     *
+     * @param holeCards
+     *            player's hole cards as single-char rank + suit strings (e.g. "Ah",
+     *            "Th")
+     * @param communityCards
+     *            community cards (0-5), may be null
+     * @param numOpponents
+     *            total number of opponents (1-9)
+     * @param iterations
+     *            Monte Carlo iteration count (100-100000); null when exhaustive is
+     *            true
+     * @param knownOpponentHands
+     *            known opponent hole card pairs, may be null
+     * @param exhaustive
+     *            when true, enumerate all board completions; iterations is ignored
+     * @return simulation result with win/tie/loss percentages
+     * @throws GameServerClientException
+     *             if the HTTP call fails or the server returns an error
+     */
+    public SimulationResult simulate(List<String> holeCards, List<String> communityCards, int numOpponents,
+            Integer iterations, List<List<String>> knownOpponentHands, Boolean exhaustive) {
+        try {
+            StringBuilder body = new StringBuilder();
+            body.append("{");
+            body.append("\"holeCards\":").append(OBJECT_MAPPER.writeValueAsString(holeCards));
+            if (communityCards != null && !communityCards.isEmpty()) {
+                body.append(",\"communityCards\":").append(OBJECT_MAPPER.writeValueAsString(communityCards));
+            }
+            body.append(",\"numOpponents\":").append(numOpponents);
+            if (iterations != null) {
+                body.append(",\"iterations\":").append(iterations);
+            }
+            if (knownOpponentHands != null && !knownOpponentHands.isEmpty()) {
+                body.append(",\"knownOpponentHands\":").append(OBJECT_MAPPER.writeValueAsString(knownOpponentHands));
+            }
+            if (Boolean.TRUE.equals(exhaustive)) {
+                body.append(",\"exhaustive\":true");
+            }
+            body.append("}");
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:" + port + "/api/v1/poker/simulate"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body.toString())).build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new GameServerClientException(
+                        "Simulate returned " + response.statusCode() + ": " + response.body());
+            }
+
+            SimulationResult result = OBJECT_MAPPER.readValue(response.body(), SimulationResult.class);
+            logger.debug("Simulate ok win={} tie={} loss={}", result.win(), result.tie(), result.loss());
+            return result;
+        } catch (GameServerClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new GameServerClientException("Failed to run simulation", e);
         }
     }
 

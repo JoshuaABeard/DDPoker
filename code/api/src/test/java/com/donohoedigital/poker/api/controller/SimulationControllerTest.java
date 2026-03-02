@@ -155,4 +155,18 @@ class SimulationControllerTest {
         assertNotNull(result.opponentResults());
         assertEquals(3, result.opponentResults().size());
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void simulate_noIterations_returnsBadRequest() {
+        SimulationRequest request = new SimulationRequest(List.of("Ah", "As"), List.of(), 1, null, null, null);
+
+        ResponseEntity<?> response = controller.simulate(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        Map<String, String> body = (Map<String, String>) response.getBody();
+        assertNotNull(body);
+        assertTrue(body.get("error").contains("iterations"));
+    }
+
 }

@@ -17,6 +17,7 @@
  */
 package com.donohoedigital.games.poker.server;
 
+import com.donohoedigital.games.poker.gameserver.SimulationResult;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
@@ -160,5 +161,65 @@ class GameServerRestClientTest {
 
         assertThatThrownBy(() -> client.listGames("jwt"))
                 .isInstanceOf(GameServerRestClient.GameServerClientException.class).hasMessageContaining("503");
+    }
+
+    @Test
+    void simulateReturnsResult() {
+        testServer.createContext("/api/v1/poker/simulate", exchange -> {
+            String json = "{\"win\":45.2,\"tie\":3.1,\"loss\":51.7,\"iterations\":100000,"
+                    + "\"opponentResults\":null,\"playerHandTypeBreakdown\":{}}";
+            byte[] response = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, response.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(response);
+            }
+        });
+
+        SimulationResult result = client.simulate(List.of("Ah", "Ad"), List.of(), 1, 100000, null, null);
+
+        assertThat(result.win()).isEqualTo(45.2);
+        assertThat(result.tie()).isEqualTo(3.1);
+        assertThat(result.loss()).isEqualTo(51.7);
+        assertThat(result.iterations()).isEqualTo(100000);
+    }
+
+    @Test
+    void simulateSendsCorrectRequestBody() {
+        AtomicReference<String> capturedBody = new AtomicReference<>();
+        testServer.createContext("/api/v1/poker/simulate", exchange -> {
+            capturedBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            String json = "{\"win\":50.0,\"tie\":2.0,\"loss\":48.0,\"iterations\":1000,"
+                    + "\"opponentResults\":null,\"playerHandTypeBreakdown\":{}}";
+            byte[] response = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, response.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(response);
+            }
+        });
+
+        client.simulate(List.of("Kh", "Kd"), List.of("Ah", "2c", "7s"), 2, 1000, null, null);
+
+        assertThat(capturedBody.get()).contains("\"holeCards\"");
+        assertThat(capturedBody.get()).contains("Kh");
+        assertThat(capturedBody.get()).contains("\"communityCards\"");
+        assertThat(capturedBody.get()).contains("\"numOpponents\":2");
+        assertThat(capturedBody.get()).contains("\"iterations\":1000");
+    }
+
+    @Test
+    void simulateThrowsOnServerError() {
+        testServer.createContext("/api/v1/poker/simulate", exchange -> {
+            byte[] response = "{\"error\":\"too many combos\"}".getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(400, response.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(response);
+            }
+        });
+
+        assertThatThrownBy(() -> client.simulate(List.of("Ah", "Ad"), List.of(), 1, 100000, null, null))
+                .isInstanceOf(GameServerRestClient.GameServerClientException.class).hasMessageContaining("400");
     }
 }
