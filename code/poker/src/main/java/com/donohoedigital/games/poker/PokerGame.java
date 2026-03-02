@@ -595,12 +595,21 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
 
     /**
      * Get table at index (TournamentContext implementation — returns GameTable).
-     * The tables_ list stores PokerTable objects which implement both GameTable and
-     * ClientPokerTable.
+     *
+     * <p>
+     * In practice and online-game paths, all table elements are {@link PokerTable}
+     * instances. In WebSocket paths, elements may be
+     * {@link com.donohoedigital.games.poker.online.RemotePokerTable} (which does
+     * not extend {@link PokerTable}); in that case, use
+     * {@link #getTableByNumber(int)} instead.
      */
     @Override
     public GameTable getTable(int i) {
-        return (PokerTable) tables_.get(i);
+        ClientPokerTable t = tables_.get(i);
+        if (t instanceof PokerTable)
+            return (PokerTable) t;
+        throw new IllegalStateException(
+                "getTable(" + i + ") called on a non-engine table. " + "Use getTableByNumber() in WebSocket paths.");
     }
 
     /**
@@ -609,7 +618,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     public ClientPokerTable getTableByNumber(int nTableNum) {
         int nNum = getNumTables();
         for (int i = 0; i < nNum; i++) {
-            ClientPokerTable table = (ClientPokerTable) getTable(i);
+            ClientPokerTable table = tables_.get(i);
             if (table.getNumber() == nTableNum) {
                 return table;
             }

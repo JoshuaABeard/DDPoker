@@ -94,6 +94,8 @@ public class PokerTableEvent implements DataMarshal {
         list.demarshal(state, sData);
 
         nType_ = list.removeIntToken();
+        // Safe cast: the serialized game-state path only persists PokerTable instances,
+        // not RemotePokerTable. Remote tables are not deserialized via DataCoder.
         table_ = (PokerTable) state.getObject(list.removeIntegerToken());
         player_ = (PokerPlayer) state.getObject(list.removeIntegerToken());
         action_ = (HandAction) list.removeToken();
