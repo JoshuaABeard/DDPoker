@@ -189,13 +189,18 @@ public class FindGames extends ListGames {
             Thread t = new Thread(() -> {
                 try {
                     GameJoinResponse response = restClient_.joinGame(gameId, null);
+                    String wsUrlStr = response.wsUrl();
+                    if (wsUrlStr == null) {
+                        throw new IllegalStateException("Server returned join response with no WebSocket URL");
+                    }
+                    java.net.URI wsUri = java.net.URI.create(wsUrlStr);
+                    final String joinHost = wsUri.getHost();
+                    int wsPortRaw = wsUri.getPort();
+                    final int joinPort = (wsPortRaw == -1) ? ("wss".equals(wsUri.getScheme()) ? 443 : 80) : wsPortRaw;
                     SwingUtilities.invokeLater(() -> {
                         PokerGame game = (PokerGame) context_.getGame();
-                        java.net.URI wsUri = java.net.URI.create(response.wsUrl());
-                        String wsHost = wsUri.getHost();
-                        int wsPort = wsUri.getPort();
                         String cachedJwt = RestAuthClient.getInstance().getCachedJwt();
-                        game.setWebSocketConfig(response.gameId(), cachedJwt, wsHost, wsPort);
+                        game.setWebSocketConfig(response.gameId(), cachedJwt, joinHost, joinPort);
                         context_.processPhase("Lobby");
                     });
                 } catch (Exception ex) {
@@ -225,15 +230,22 @@ public class FindGames extends ListGames {
             Thread t = new Thread(() -> {
                 try {
                     GameJoinResponse response = restClient_.observeGame(gameId);
+                    String obsWsUrlStr = response.wsUrl();
+                    if (obsWsUrlStr == null) {
+                        throw new IllegalStateException("Server returned join response with no WebSocket URL");
+                    }
+                    java.net.URI obsWsUri = java.net.URI.create(obsWsUrlStr);
+                    final String obsHost = obsWsUri.getHost();
+                    int obsPortRaw = obsWsUri.getPort();
+                    final int obsPort = (obsPortRaw == -1)
+                            ? ("wss".equals(obsWsUri.getScheme()) ? 443 : 80)
+                            : obsPortRaw;
                     SwingUtilities.invokeLater(() -> {
                         PokerGame game = (PokerGame) context_.getGame();
-                        java.net.URI wsUri = java.net.URI.create(response.wsUrl());
-                        String wsHost = wsUri.getHost();
-                        int wsPort = wsUri.getPort();
                         String observeJwt = response.token() != null
                                 ? response.token()
                                 : RestAuthClient.getInstance().getCachedJwt();
-                        game.setWebSocketConfig(response.gameId(), observeJwt, wsHost, wsPort, true);
+                        game.setWebSocketConfig(response.gameId(), observeJwt, obsHost, obsPort, true);
                         context_.processPhase("Lobby");
                     });
                 } catch (Exception ex) {

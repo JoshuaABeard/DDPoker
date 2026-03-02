@@ -42,6 +42,7 @@ import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.gameserver.*;
+import com.donohoedigital.games.poker.gameserver.controller.TournamentProfileConverter;
 import com.donohoedigital.games.poker.gameserver.dto.*;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.server.*;
@@ -87,8 +88,6 @@ public class OnlineConfiguration extends BasePhase implements ActionListener {
 
     // Hosting state
     private String lanIp_;
-    private int port_;
-    private RestGameClient restClient_;
     private volatile boolean openLobbyInFlight_;
 
     /** Active WAN registration, if the host posted to the public game list. */
@@ -102,17 +101,6 @@ public class OnlineConfiguration extends BasePhase implements ActionListener {
 
         // detect LAN IP
         lanIp_ = CommunityHostingConfig.detectLanIp();
-
-        // get port from embedded server (already started for practice games)
-        EmbeddedGameServer embeddedServer = ((PokerMain) engine_).getEmbeddedServer();
-        port_ = (embeddedServer != null && embeddedServer.isRunning())
-                ? embeddedServer.getPort()
-                : CommunityHostingConfig.DEFAULT_COMMUNITY_PORT;
-
-        // build the RestGameClient for the embedded server
-        if (embeddedServer != null && embeddedServer.isRunning()) {
-            restClient_ = new RestGameClient("http://localhost:" + port_, embeddedServer.getLocalUserJwt());
-        }
 
         // create main panel
         menu_ = new MenuBackground(gamephase);
@@ -245,9 +233,14 @@ public class OnlineConfiguration extends BasePhase implements ActionListener {
                 GameSummary summary = client.createGame(gameConfig);
                 String gameId = summary.gameId();
 
-                java.net.URI wsUri = java.net.URI.create(summary.wsUrl());
+                String wsUrlStr = summary.wsUrl();
+                if (wsUrlStr == null) {
+                    throw new IllegalStateException("Server returned game summary with no WebSocket URL");
+                }
+                java.net.URI wsUri = java.net.URI.create(wsUrlStr);
                 String wsHost = wsUri.getHost();
-                int wsPort = wsUri.getPort();
+                int wsPortRaw = wsUri.getPort();
+                final int wsPort = (wsPortRaw == -1) ? ("wss".equals(wsUri.getScheme()) ? 443 : 80) : wsPortRaw;
 
                 SwingUtilities.invokeLater(() -> {
                     openLobbyInFlight_ = false;
@@ -261,7 +254,7 @@ public class OnlineConfiguration extends BasePhase implements ActionListener {
                     context_.processPhase("Lobby.Host", params);
                 });
             } catch (Exception ex) {
-                logger.error("Failed to create game on central server: {}", ex.getMessage());
+                logger.error("Failed to create game on central server", ex);
                 SwingUtilities.invokeLater(() -> {
                     openLobbyInFlight_ = false;
                     setHostingControlsEnabled(true);
@@ -289,7 +282,7 @@ public class OnlineConfiguration extends BasePhase implements ActionListener {
     private GameConfig buildGameConfig() {
         PokerGame game = (PokerGame) context_.getGame();
         TournamentProfile profile = game.getProfile();
-        com.donohoedigital.games.poker.gameserver.controller.TournamentProfileConverter converter = new com.donohoedigital.games.poker.gameserver.controller.TournamentProfileConverter();
+        TournamentProfileConverter converter = new TournamentProfileConverter();
         return converter.convert(profile);
     }
 
