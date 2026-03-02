@@ -116,11 +116,14 @@ public class Lobby extends BasePhase {
             gameId_ = game_.getWebSocketConfig().gameId();
         }
 
-        // setup REST client for polling
-        EmbeddedGameServer embeddedServer = ((PokerMain) engine_).getEmbeddedServer();
-        if (embeddedServer != null && embeddedServer.isRunning()) {
-            restClient_ = new RestGameClient("http://localhost:" + embeddedServer.getPort(),
-                    embeddedServer.getLocalUserJwt());
+        // setup REST client for one-shot operations (startGame, cancelGame) and polling
+        // fallback
+        String jwt = RestAuthClient.getInstance().getCachedJwt();
+        String baseUrl = getCentralServerUrl();
+        if (baseUrl != null && jwt != null) {
+            restClient_ = new RestGameClient(baseUrl, jwt);
+        } else {
+            logger.warn("Lobby: no central server URL or JWT — lobby REST operations will fail");
         }
 
         // create main panel
@@ -483,6 +486,22 @@ public class Lobby extends BasePhase {
         wrapper.setLayout(new BorderLayout());
         wrapper.add(urlBorder, BorderLayout.CENTER);
         return wrapper;
+    }
+
+    // =========================================================================
+    // Helpers
+    // =========================================================================
+
+    /** Returns the configured central server HTTP base URL, or null if not set. */
+    private String getCentralServerUrl() {
+        try {
+            String node = Prefs.NODE_OPTIONS + engine_.getPrefsNodeName();
+            String server = Prefs.getUserPrefs(node).get(EngineConstants.OPTION_ONLINE_SERVER, "");
+            return OnlineServerUrl.normalizeBaseUrl(server);
+        } catch (Exception e) {
+            logger.warn("Could not read central server URL from preferences", e);
+            return null;
+        }
     }
 
     // =========================================================================
