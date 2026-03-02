@@ -651,22 +651,37 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     // -------------------------------------------------------------------------
 
     /** Immutable connection parameters for WebSocketTournamentDirector. */
-    public record WebSocketConfig(String gameId, String jwt, int port, boolean observer) {
+    public record WebSocketConfig(String gameId, String jwt, String host, int port, boolean observer) {
+        /** Convenience constructor for embedded/localhost server. */
         public WebSocketConfig(String gameId, String jwt, int port) {
-            this(gameId, jwt, port, false);
+            this(gameId, jwt, "localhost", port, false);
+        }
+        /** Convenience constructor for embedded/localhost server with observer flag. */
+        public WebSocketConfig(String gameId, String jwt, int port, boolean observer) {
+            this(gameId, jwt, "localhost", port, observer);
         }
     }
 
     private WebSocketConfig webSocketConfig_;
 
-    /** Stores the WebSocket connection parameters before the WsTD phase starts. */
+    /** Set config for embedded (practice) server — host defaults to localhost. */
     public void setWebSocketConfig(String gameId, String jwt, int port) {
-        webSocketConfig_ = new WebSocketConfig(gameId, jwt, port, false);
+        webSocketConfig_ = new WebSocketConfig(gameId, jwt, port);
     }
 
-    /** Stores WebSocket connection parameters with observer flag. */
+    /** Set config for embedded (practice) server with observer flag. */
     public void setWebSocketConfig(String gameId, String jwt, int port, boolean observer) {
         webSocketConfig_ = new WebSocketConfig(gameId, jwt, port, observer);
+    }
+
+    /** Set config for central server — caller provides explicit host. */
+    public void setWebSocketConfig(String gameId, String jwt, String host, int port) {
+        webSocketConfig_ = new WebSocketConfig(gameId, jwt, host, port, false);
+    }
+
+    /** Set config for central server with observer flag. */
+    public void setWebSocketConfig(String gameId, String jwt, String host, int port, boolean observer) {
+        webSocketConfig_ = new WebSocketConfig(gameId, jwt, host, port, observer);
     }
 
     /** Returns the WebSocket connection parameters, or null if not yet set. */
