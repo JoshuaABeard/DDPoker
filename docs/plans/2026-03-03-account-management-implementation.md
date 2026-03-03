@@ -809,8 +809,10 @@ After successful password validation, reset:
 
 ```java
 profile.setFailedLoginAttempts(0);
-// Do NOT reset lockoutCount here — it's a rolling 24h counter (resets via scheduled cleanup or admin)
+profile.setLockoutCount(0);
 ```
+
+> **Note:** Per design doc Section 12, **both** `failedLoginAttempts` AND `lockoutCount` reset to 0 on successful login. Resetting `lockoutCount` on success means the progressive delay restarts from 5 min if the user later accumulates failures again. The earlier comment saying "do NOT reset lockoutCount" was incorrect.
 
 Add `retryAfterSeconds` to `RestAuthException` if not already there (check the class — if it only has a `String message`, add a `long retryAfterSeconds` field and a two-arg constructor).
 
