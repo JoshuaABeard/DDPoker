@@ -1688,7 +1688,6 @@ class HeadlessGameRunnerTest {
             return 30; // 30 seconds for all rounds
         }
 
-        @Override
         public GameTable getCurrentTable() {
             return table;
         }
@@ -1859,7 +1858,6 @@ class HeadlessGameRunnerTest {
             return 30;
         }
 
-        @Override
         public GameTable getCurrentTable() {
             return tables.isEmpty() ? null : tables.get(0);
         }
