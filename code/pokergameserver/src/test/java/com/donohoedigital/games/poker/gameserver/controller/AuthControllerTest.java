@@ -35,6 +35,10 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.donohoedigital.games.poker.gameserver.auth.JwtProperties;
 import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
+import com.donohoedigital.games.poker.gameserver.dto.RequestEmailChangeResponse;
+import com.donohoedigital.games.poker.gameserver.dto.ResendVerificationResponse;
+import com.donohoedigital.games.poker.gameserver.dto.VerifyEmailResponse;
+import com.donohoedigital.games.poker.gameserver.persistence.repository.OnlineProfileRepository;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
 
 @WebMvcTest
@@ -46,6 +50,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private OnlineProfileRepository profileRepository;
 
     static class TestConfig {
         @Bean
@@ -115,5 +122,67 @@ class AuthControllerTest {
     void testLogout() throws Exception {
         mockMvc.perform(post("/api/v1/auth/logout")).andExpect(status().isOk())
                 .andExpect(cookie().maxAge("DDPoker-JWT", 0));
+    }
+
+    @Test
+    void verifyEmail_withValidToken_returns200() throws Exception {
+        when(authService.verifyEmail("good-token")).thenReturn(new VerifyEmailResponse(true, "fresh-jwt", null));
+
+        mockMvc.perform(get("/api/v1/auth/verify-email").param("token", "good-token")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true)).andExpect(jsonPath("$.token").value("fresh-jwt"));
+    }
+
+    @Test
+    void verifyEmail_withInvalidToken_returns400() throws Exception {
+        when(authService.verifyEmail("bad-token"))
+                .thenReturn(new VerifyEmailResponse(false, null, "Invalid verification token"));
+
+        mockMvc.perform(get("/api/v1/auth/verify-email").param("token", "bad-token")).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("Invalid verification token"));
+    }
+
+    @Test
+    void resendVerification_whenAuthenticated_returns200() throws Exception {
+        when(authService.resendVerification("testuser"))
+                .thenReturn(new ResendVerificationResponse(true, "Verification email sent"));
+
+        mockMvc.perform(post("/api/v1/auth/resend-verification")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void resendVerification_whenRateLimited_returns429() throws Exception {
+        when(authService.resendVerification("testuser")).thenReturn(
+                new ResendVerificationResponse(false, "Please wait before requesting another verification email"));
+
+        mockMvc.perform(post("/api/v1/auth/resend-verification")).andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    void changeEmail_withValidEmail_returns200() throws Exception {
+        when(authService.requestEmailChange(eq("testuser"), anyString()))
+                .thenReturn(new RequestEmailChangeResponse(true, "Confirmation email sent to new address"));
+
+        mockMvc.perform(put("/api/v1/auth/email").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"new@example.com\"}")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void checkUsername_whenAvailable_returnsTrue() throws Exception {
+        when(profileRepository.existsByName("newuser")).thenReturn(false);
+
+        mockMvc.perform(get("/api/v1/auth/check-username").param("username", "newuser")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.available").value(true));
+    }
+
+    @Test
+    void checkUsername_whenTaken_returnsFalse() throws Exception {
+        when(profileRepository.existsByName("takenuser")).thenReturn(true);
+
+        mockMvc.perform(get("/api/v1/auth/check-username").param("username", "takenuser")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.available").value(false));
     }
 }
