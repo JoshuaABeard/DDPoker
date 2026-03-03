@@ -29,7 +29,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.mindrot.jbcrypt.BCrypt;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
@@ -45,6 +48,8 @@ import com.donohoedigital.games.poker.model.OnlineProfile;
  */
 @Service
 public class AuthService {
+
+    private static final Logger log = LogManager.getLogger(AuthService.class);
 
     /**
      * Thrown when a password reset token is invalid, expired, or already used. All
@@ -77,6 +82,9 @@ public class AuthService {
     private final BanService banService;
     private final JwtTokenProvider tokenProvider;
     private final SecureRandom secureRandom = new SecureRandom();
+
+    @Autowired(required = false)
+    private EmailService emailService;
 
     /** In-memory rate limit: normalized email → last request time (epoch ms). */
     private final ConcurrentHashMap<String, Long> forgotPasswordRateLimits = new ConcurrentHashMap<>();
@@ -113,6 +121,10 @@ public class AuthService {
      * @return login response with token if successful
      */
     public LoginResponse register(String username, String password, String email) {
+        // Password strength validation
+        if (password.length() < 8 || password.length() > 128) {
+            return new LoginResponse(false, null, null, null, null, false, "Password must be 8-128 characters", null);
+        }
         if (banService.isEmailBanned(email)) {
             return new LoginResponse(false, null, null, null, null, false, "This email address is banned", null);
         }
@@ -130,9 +142,32 @@ public class AuthService {
         profile.setUuid(java.util.UUID.randomUUID().toString());
         profile = profileRepository.save(profile);
 
+        // Generate verification token
+        String verificationToken = generateVerificationToken();
+        long expiry = System.currentTimeMillis() + (7L * 24 * 60 * 60 * 1000); // 7 days
+        profile.setEmailVerificationToken(verificationToken);
+        profile.setEmailVerificationTokenExpiry(expiry);
+        profileRepository.save(profile);
+
+        // Send verification email (non-blocking — if email fails, registration still
+        // succeeds)
+        if (emailService != null) {
+            try {
+                emailService.sendVerificationEmail(email, username, verificationToken);
+            } catch (Exception e) {
+                log.warn("Failed to send verification email to {}: {}", email, e.getMessage());
+            }
+        }
+
         // New registrations are always unverified
         String token = tokenProvider.generateToken(username, profile.getId(), false, false);
         return new LoginResponse(true, token, profile.getId(), username, email, false, null, null);
+    }
+
+    private String generateVerificationToken() {
+        byte[] bytes = new byte[48]; // 48 bytes → 64 Base64URL chars
+        new java.security.SecureRandom().nextBytes(bytes);
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     /** Lock durations in ms indexed by lockoutCount (1-based; index 0 unused). */

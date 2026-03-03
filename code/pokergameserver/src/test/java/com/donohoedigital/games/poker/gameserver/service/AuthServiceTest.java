@@ -20,6 +20,8 @@
 package com.donohoedigital.games.poker.gameserver.service;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +57,9 @@ class AuthServiceTest {
     @Autowired
     private AuthService authService;
 
+    @Autowired
+    private EmailService emailService;
+
     @org.springframework.context.annotation.Configuration
     static class TestConfig {
         @org.springframework.context.annotation.Bean
@@ -74,6 +79,11 @@ class AuthServiceTest {
         @org.springframework.context.annotation.Bean
         public BanService banService(BanRepository banRepository) {
             return new BanService(banRepository);
+        }
+
+        @org.springframework.context.annotation.Bean
+        public EmailService emailService() {
+            return mock(EmailService.class);
         }
 
         @org.springframework.context.annotation.Bean
@@ -108,7 +118,7 @@ class AuthServiceTest {
         existing.setUuid(java.util.UUID.randomUUID().toString());
         profileRepository.save(existing);
 
-        LoginResponse response = authService.register("existing", "newpass", "different@example.com");
+        LoginResponse response = authService.register("existing", "newpass1!", "different@example.com");
 
         assertThat(response.success()).isFalse();
         assertThat(response.message()).contains("already exists");
@@ -381,5 +391,68 @@ class AuthServiceTest {
 
         OnlineProfile updated = profileRepository.findByName("thirdlockuser").orElseThrow();
         assertThat(updated.getLockoutCount()).isEqualTo(3);
+    }
+
+    // -------------------------------------------------------------------------
+    // Password strength and email verification tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void register_withShortPassword_returnsError() {
+        LoginResponse response = authService.register("shortpwuser", "abc1234", "shortpw@example.com");
+
+        assertThat(response.success()).isFalse();
+        assertThat(response.message()).contains("8-128");
+    }
+
+    @Test
+    void register_withLongPassword_returnsError() {
+        String longPassword = "a".repeat(129);
+        LoginResponse response = authService.register("longpwuser", longPassword, "longpw@example.com");
+
+        assertThat(response.success()).isFalse();
+        assertThat(response.message()).contains("8-128");
+    }
+
+    @Test
+    void register_withValidPassword_storesVerificationToken() {
+        long beforeMs = System.currentTimeMillis();
+
+        authService.register("tokenuser", "validpass1", "tokenuser@example.com");
+
+        OnlineProfile profile = profileRepository.findByName("tokenuser").orElseThrow();
+        assertThat(profile.getEmailVerificationToken()).isNotNull();
+        assertThat(profile.getEmailVerificationToken()).hasSize(64);
+        assertThat(profile.getEmailVerificationTokenExpiry()).isNotNull();
+        long expectedExpiry = beforeMs + (7L * 24 * 60 * 60 * 1000);
+        assertThat(profile.getEmailVerificationTokenExpiry()).isBetween(expectedExpiry - 5000, expectedExpiry + 5000);
+    }
+
+    @Test
+    void register_withValidPassword_callsEmailService() {
+        authService.register("emailcalluser", "validpass2", "emailcall@example.com");
+
+        OnlineProfile profile = profileRepository.findByName("emailcalluser").orElseThrow();
+        verify(emailService).sendVerificationEmail("emailcall@example.com", "emailcalluser",
+                profile.getEmailVerificationToken());
+    }
+
+    @Test
+    void register_withValidPassword_returnsEmailVerifiedFalse() {
+        LoginResponse response = authService.register("verifyfalseuser", "validpass3", "verifyfalse@example.com");
+
+        assertThat(response.success()).isTrue();
+        assertThat(response.emailVerified()).isFalse();
+    }
+
+    @Test
+    void register_whenEmailServiceFails_registrationStillSucceeds() {
+        doThrow(new RuntimeException("SMTP connection refused")).when(emailService).sendVerificationEmail(anyString(),
+                anyString(), anyString());
+
+        LoginResponse response = authService.register("emailfailuser", "validpass4", "emailfail@example.com");
+
+        assertThat(response.success()).isTrue();
+        assertThat(response.token()).isNotNull();
     }
 }
