@@ -47,6 +47,14 @@ import java.util.Date;
 public class OnlineProfile implements BaseModel<Long> {
     private DMTypedHashMap data_;
 
+    private boolean emailVerified = false;
+    private String emailVerificationToken;
+    private Long emailVerificationTokenExpiry;
+    private String pendingEmail;
+    private int failedLoginAttempts = 0;
+    private Long lockedUntil;
+    private int lockoutCount = 0;
+
     /**
      * Dummy types
      */
@@ -192,6 +200,69 @@ public class OnlineProfile implements BaseModel<Long> {
 
     public void setModifyDate(Date date) {
         data_.setLongFromDate(PROFILE_MODIFY_DATE, date);
+    }
+
+    @Column(name = "email_verified", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
+    @Column(name = "email_verification_token", unique = true)
+    public String getEmailVerificationToken() {
+        return emailVerificationToken;
+    }
+
+    public void setEmailVerificationToken(String emailVerificationToken) {
+        this.emailVerificationToken = emailVerificationToken;
+    }
+
+    @Column(name = "email_verification_token_expiry")
+    public Long getEmailVerificationTokenExpiry() {
+        return emailVerificationTokenExpiry;
+    }
+
+    public void setEmailVerificationTokenExpiry(Long emailVerificationTokenExpiry) {
+        this.emailVerificationTokenExpiry = emailVerificationTokenExpiry;
+    }
+
+    @Column(name = "pending_email")
+    public String getPendingEmail() {
+        return pendingEmail;
+    }
+
+    public void setPendingEmail(String pendingEmail) {
+        this.pendingEmail = pendingEmail;
+    }
+
+    @Column(name = "failed_login_attempts", nullable = false, columnDefinition = "INTEGER DEFAULT 0")
+    public int getFailedLoginAttempts() {
+        return failedLoginAttempts;
+    }
+
+    public void setFailedLoginAttempts(int failedLoginAttempts) {
+        this.failedLoginAttempts = failedLoginAttempts;
+    }
+
+    @Column(name = "locked_until")
+    public Long getLockedUntil() {
+        return lockedUntil;
+    }
+
+    public void setLockedUntil(Long lockedUntil) {
+        this.lockedUntil = lockedUntil;
+    }
+
+    @Column(name = "lockout_count", nullable = false, columnDefinition = "INTEGER DEFAULT 0")
+    public int getLockoutCount() {
+        return lockoutCount;
+    }
+
+    public void setLockoutCount(int lockoutCount) {
+        this.lockoutCount = lockoutCount;
     }
 
     /**
