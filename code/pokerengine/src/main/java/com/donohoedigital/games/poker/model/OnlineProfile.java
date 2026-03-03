@@ -202,7 +202,7 @@ public class OnlineProfile implements BaseModel<Long> {
         data_.setLongFromDate(PROFILE_MODIFY_DATE, date);
     }
 
-    @Column(name = "email_verified", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @Column(name = "wpr_email_verified", nullable = false)
     public boolean isEmailVerified() {
         return emailVerified;
     }
@@ -211,7 +211,7 @@ public class OnlineProfile implements BaseModel<Long> {
         this.emailVerified = emailVerified;
     }
 
-    @Column(name = "email_verification_token", unique = true)
+    @Column(name = "wpr_email_verification_token", unique = true)
     public String getEmailVerificationToken() {
         return emailVerificationToken;
     }
@@ -220,7 +220,7 @@ public class OnlineProfile implements BaseModel<Long> {
         this.emailVerificationToken = emailVerificationToken;
     }
 
-    @Column(name = "email_verification_token_expiry")
+    @Column(name = "wpr_email_verification_token_expiry")
     public Long getEmailVerificationTokenExpiry() {
         return emailVerificationTokenExpiry;
     }
@@ -229,7 +229,7 @@ public class OnlineProfile implements BaseModel<Long> {
         this.emailVerificationTokenExpiry = emailVerificationTokenExpiry;
     }
 
-    @Column(name = "pending_email")
+    @Column(name = "wpr_pending_email")
     public String getPendingEmail() {
         return pendingEmail;
     }
@@ -238,7 +238,7 @@ public class OnlineProfile implements BaseModel<Long> {
         this.pendingEmail = pendingEmail;
     }
 
-    @Column(name = "failed_login_attempts", nullable = false, columnDefinition = "INTEGER DEFAULT 0")
+    @Column(name = "wpr_failed_login_attempts", nullable = false)
     public int getFailedLoginAttempts() {
         return failedLoginAttempts;
     }
@@ -247,7 +247,7 @@ public class OnlineProfile implements BaseModel<Long> {
         this.failedLoginAttempts = failedLoginAttempts;
     }
 
-    @Column(name = "locked_until")
+    @Column(name = "wpr_locked_until")
     public Long getLockedUntil() {
         return lockedUntil;
     }
@@ -256,7 +256,7 @@ public class OnlineProfile implements BaseModel<Long> {
         this.lockedUntil = lockedUntil;
     }
 
-    @Column(name = "lockout_count", nullable = false, columnDefinition = "INTEGER DEFAULT 0")
+    @Column(name = "wpr_lockout_count", nullable = false)
     public int getLockoutCount() {
         return lockoutCount;
     }
