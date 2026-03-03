@@ -55,7 +55,7 @@ class WebSocketGameClientTest {
                 httpClient);
 
         try {
-            CompletableFuture<Void> connectFuture = client.connect(11885, "game-1", "jwt-1");
+            CompletableFuture<Void> connectFuture = client.connect("localhost", 11885, "game-1", "jwt-1");
 
             assertThatThrownBy(connectFuture::join).isInstanceOf(CompletionException.class)
                     .hasRootCauseMessage("connect failed");
@@ -84,13 +84,13 @@ class WebSocketGameClientTest {
                 httpClient);
         try {
             // First game: connect then disconnect
-            client.connect(11885, "game-1", "jwt-1").join();
+            client.connect("localhost", 11885, "game-1", "jwt-1").join();
             assertThat(client.isConnected()).isTrue();
             client.disconnect();
             assertThat(client.isConnected()).isFalse();
 
             // Second game: connect fails, should trigger reconnect attempts
-            client.connect(11885, "game-2", "jwt-2");
+            client.connect("localhost", 11885, "game-2", "jwt-2");
 
             // Should see at least 3 buildAsync calls: success + failure + 1 reconnect
             // attempt
@@ -113,13 +113,13 @@ class WebSocketGameClientTest {
         WebSocketGameClient client = new WebSocketGameClient(new ObjectMapper().registerModule(new JavaTimeModule()),
                 httpClient);
         try {
-            client.connect(11885, "game-1", "jwt-1").join();
+            client.connect("localhost", 11885, "game-1", "jwt-1").join();
             assertThat(client.isConnected()).isTrue();
             client.disconnect();
             assertThat(client.isConnected()).isFalse();
 
             // Second game: connect should succeed
-            client.connect(11885, "game-2", "jwt-2").join();
+            client.connect("localhost", 11885, "game-2", "jwt-2").join();
             assertThat(client.isConnected()).isTrue();
         } finally {
             client.disconnect();
@@ -140,7 +140,7 @@ class WebSocketGameClientTest {
                 httpClient);
         try {
             // First connect
-            client.connect(11885, "game-1", "jwt-1").join();
+            client.connect("localhost", 11885, "game-1", "jwt-1").join();
             assertThat(client.isConnected()).isTrue();
 
             // Simulate having received messages up to sequence 50
@@ -149,7 +149,7 @@ class WebSocketGameClientTest {
 
             // Disconnect and reconnect to a new game
             client.disconnect();
-            client.connect(11885, "game-2", "jwt-2").join();
+            client.connect("localhost", 11885, "game-2", "jwt-2").join();
 
             // After connect(), lastReceivedSequence must be 0 so gap detection
             // doesn't trigger on the first broadcast message
@@ -177,17 +177,48 @@ class WebSocketGameClientTest {
                 httpClient);
 
         try {
-            CompletableFuture<Void> failedConnect = client.connect(11885, "game-1", "jwt-1");
+            CompletableFuture<Void> failedConnect = client.connect("localhost", 11885, "game-1", "jwt-1");
             assertThatThrownBy(failedConnect::join).isInstanceOf(CompletionException.class)
                     .hasRootCauseMessage("connect failed");
 
-            client.connect(11885, "game-2", "jwt-2").join();
+            client.connect("localhost", 11885, "game-2", "jwt-2").join();
 
             verify(builder, timeout(1000).times(2)).buildAsync(any(URI.class), any(WebSocket.Listener.class));
 
             Thread.sleep(1200);
             verify(builder, times(2)).buildAsync(any(URI.class), any(WebSocket.Listener.class));
             assertThat(client.isConnected()).isTrue();
+        } finally {
+            client.disconnect();
+        }
+    }
+
+    @Test
+    void connect_usesProvidedHostInWsUrl() {
+        // Capture the URI passed to buildAsync and assert it contains the non-localhost
+        // host.
+        HttpClient httpClient = mock(HttpClient.class);
+        WebSocket.Builder builder = mock(WebSocket.Builder.class);
+        when(httpClient.newWebSocketBuilder()).thenReturn(builder);
+
+        WebSocket connectedWs = mock(WebSocket.class);
+        when(builder.buildAsync(any(URI.class), any(WebSocket.Listener.class)))
+                .thenReturn(CompletableFuture.completedFuture(connectedWs));
+
+        WebSocketGameClient client = new WebSocketGameClient(new ObjectMapper().registerModule(new JavaTimeModule()),
+                httpClient);
+        try {
+            client.connect("game.example.com", 9090, "abc", "tok").join();
+
+            // Capture the URI that was passed to buildAsync
+            org.mockito.ArgumentCaptor<URI> uriCaptor = org.mockito.ArgumentCaptor.forClass(URI.class);
+            verify(builder).buildAsync(uriCaptor.capture(), any(WebSocket.Listener.class));
+
+            URI uri = uriCaptor.getValue();
+            assertThat(uri.getHost()).isEqualTo("game.example.com");
+            assertThat(uri.getPort()).isEqualTo(9090);
+            assertThat(uri.getPath()).isEqualTo("/ws/games/abc");
+            assertThat(uri.getQuery()).isEqualTo("token=tok");
         } finally {
             client.disconnect();
         }

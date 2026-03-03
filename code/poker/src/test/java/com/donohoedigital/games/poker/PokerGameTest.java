@@ -793,8 +793,30 @@ class PokerGameTest {
         assertThat(config).isNotNull();
         assertThat(config.gameId()).isEqualTo("game-123");
         assertThat(config.jwt()).isEqualTo("jwt-token");
+        assertThat(config.host()).isEqualTo("localhost");
         assertThat(config.port()).isEqualTo(8080);
         assertThat(config.observer()).isFalse();
+    }
+
+    @Test
+    void should_StoreExplicitHost_When_CentralServerConfigSet() {
+        game.setWebSocketConfig("game-456", "jwt-xyz", "game.example.com", 9090);
+
+        PokerGame.WebSocketConfig config = game.getWebSocketConfig();
+        assertThat(config.gameId()).isEqualTo("game-456");
+        assertThat(config.jwt()).isEqualTo("jwt-xyz");
+        assertThat(config.host()).isEqualTo("game.example.com");
+        assertThat(config.port()).isEqualTo(9090);
+        assertThat(config.observer()).isFalse();
+    }
+
+    @Test
+    void should_StoreExplicitHostAndObserver_When_CentralServerObserverConfigSet() {
+        game.setWebSocketConfig("game-789", "jwt-obs", "game.example.com", 9090, true);
+
+        PokerGame.WebSocketConfig config = game.getWebSocketConfig();
+        assertThat(config.host()).isEqualTo("game.example.com");
+        assertThat(config.observer()).isTrue();
     }
 
     // =================================================================

@@ -78,6 +78,24 @@ public final class OnlineServerUrl {
     }
 
     /**
+     * Converts an HTTP(S) base URL to its WebSocket equivalent.
+     * {@code http://host:port} becomes {@code ws://host:port}.
+     * {@code https://host:port} becomes {@code wss://host:port}. Returns
+     * {@code null} for null input.
+     */
+    public static String toWsBaseUrl(String httpBaseUrl) {
+        if (httpBaseUrl == null)
+            return null;
+        if (httpBaseUrl.startsWith("https://")) {
+            return "wss://" + httpBaseUrl.substring("https://".length());
+        }
+        if (httpBaseUrl.startsWith("http://")) {
+            return "ws://" + httpBaseUrl.substring("http://".length());
+        }
+        return null;
+    }
+
+    /**
      * Builds a REST API URI from a configured server value and API path.
      */
     public static URI buildApiUri(String configuredServer, String apiPath) {

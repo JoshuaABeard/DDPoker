@@ -82,5 +82,69 @@ public class OnlineMenu extends MenuPhase {
         profilepanel.add(label);
     }
 
+    @Override
+    public void start() {
+        if (!RestAuthClient.getInstance().hasSession()) {
+            showLoginDialog();
+            return;
+        }
+        super.start();
+    }
+
+    /**
+     * Shows a username/password credential dialog. If the user enters credentials
+     * and clicks OK, fires a background thread to attempt login. On success,
+     * re-invokes {@link #start()} (which will now find an active session and show
+     * the menu). On failure, shows an error and lets the user try again (by calling
+     * showLoginDialog again) or cancel back to StartMenu.
+     */
+    private void showLoginDialog() {
+        String node = Prefs.NODE_OPTIONS + engine_.getPrefsNodeName();
+        String server = Prefs.getUserPrefs(node).get(EngineConstants.OPTION_ONLINE_SERVER, "");
+        String baseUrl = OnlineServerUrl.normalizeBaseUrl(server);
+
+        if (baseUrl == null) {
+            JOptionPane.showMessageDialog(null, PropertyConfig.getMessage("msg.online.noserver"),
+                    PropertyConfig.getMessage("msg.online.login.title"), JOptionPane.WARNING_MESSAGE);
+            context_.processPhase("StartMenu");
+            return;
+        }
+
+        JTextField userField = new JTextField(20);
+        JPasswordField passField = new JPasswordField(20);
+        int result = JOptionPane.showConfirmDialog(null,
+                new Object[]{PropertyConfig.getMessage("msg.online.login.prompt", baseUrl),
+                        PropertyConfig.getMessage("msg.online.login.username"), userField,
+                        PropertyConfig.getMessage("msg.online.login.password"), passField},
+                PropertyConfig.getMessage("msg.online.login.title"), JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
+
+        if (result != JOptionPane.OK_OPTION) {
+            context_.processPhase("StartMenu");
+            return;
+        }
+
+        // Capture credentials before handing off to background thread
+        final String capturedBaseUrl = baseUrl;
+        final String username = userField.getText().trim();
+        final char[] password = passField.getPassword();
+
+        // Fire login off the EDT
+        Thread t = new Thread(() -> {
+            try {
+                RestAuthClient.getInstance().login(capturedBaseUrl, username, new String(password));
+                SwingUtilities.invokeLater(this::start); // session is now cached — start() will call super.start()
+            } catch (RestAuthClient.RestAuthException ex) {
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(null, ex.getMessage(),
+                            PropertyConfig.getMessage("msg.online.login.title"), JOptionPane.ERROR_MESSAGE);
+                    showLoginDialog(); // retry: show the dialog again
+                });
+            }
+        }, "OnlineMenu-Login");
+        t.setDaemon(true);
+        t.start();
+    }
+
     // No processButton override needed - no lobby check in new architecture
 }

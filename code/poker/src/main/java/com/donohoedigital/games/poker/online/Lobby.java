@@ -58,7 +58,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Pre-game waiting room for online host games.
  *
  * <p>
- * Connects to the embedded server via WebSocket for real-time lobby updates
+ * Connects to the central server via WebSocket for real-time lobby updates
  * (player joins/leaves/kicks, settings changes, game start). Falls back to REST
  * polling if WebSocket connection fails. REST is still used for one-shot
  * operations like startGame() and cancelGame().
@@ -116,11 +116,14 @@ public class Lobby extends BasePhase {
             gameId_ = game_.getWebSocketConfig().gameId();
         }
 
-        // setup REST client for polling
-        EmbeddedGameServer embeddedServer = ((PokerMain) engine_).getEmbeddedServer();
-        if (embeddedServer != null && embeddedServer.isRunning()) {
-            restClient_ = new RestGameClient("http://localhost:" + embeddedServer.getPort(),
-                    embeddedServer.getLocalUserJwt());
+        // setup REST client for one-shot operations (startGame, cancelGame) and polling
+        // fallback
+        String jwt = RestAuthClient.getInstance().getCachedJwt();
+        String baseUrl = getCentralServerUrl();
+        if (baseUrl != null && jwt != null) {
+            restClient_ = new RestGameClient(baseUrl, jwt);
+        } else {
+            logger.warn("Lobby: no central server URL or JWT — lobby REST operations will fail");
         }
 
         // create main panel
@@ -205,7 +208,7 @@ public class Lobby extends BasePhase {
 
         wsClient_ = new WebSocketGameClient();
         wsClient_.setMessageHandler(this::onLobbyMessage);
-        wsClient_.connect(config.port(), gameId_, config.jwt()).whenComplete((v, ex) -> {
+        wsClient_.connect(config.host(), config.port(), gameId_, config.jwt()).whenComplete((v, ex) -> {
             if (ex != null) {
                 logger.warn("WebSocket lobby connection failed, falling back to REST polling: {}", ex.getMessage());
                 SwingUtilities.invokeLater(this::startPolling);
@@ -429,22 +432,16 @@ public class Lobby extends BasePhase {
             disconnectWebSocket();
             finishPolling();
 
-            // perform blocking cleanup (deregister, cancel) off-EDT then navigate
+            // perform cancel off-EDT then navigate
             boolean host = bHost_;
-            EmbeddedGameServer embeddedServer = host ? ((PokerMain) engine_).getEmbeddedServer() : null;
-            String gameId = gameId_;
+            final String gameId = gameId_;
+            final RestGameClient client = restClient_;
             Thread t = new Thread(() -> {
-                CommunityGameRegistration reg = OnlineConfiguration.getActiveRegistration();
-                if (reg != null) {
-                    reg.deregister();
-                    OnlineConfiguration.clearActiveRegistration();
-                }
-                if (host && embeddedServer != null && gameId != null) {
+                if (host && client != null && gameId != null) {
                     try {
-                        new RestGameClient("http://localhost:" + embeddedServer.getPort(),
-                                embeddedServer.getLocalUserJwt()).cancelGame(gameId);
+                        client.cancelGame(gameId);
                     } catch (Exception ex) {
-                        logger.warn("Failed to cancel game on server: {}", ex.getMessage());
+                        logger.warn("Failed to cancel game on central server: {}", ex.getMessage());
                     }
                 }
                 SwingUtilities.invokeLater(context_::restart);
@@ -465,7 +462,8 @@ public class Lobby extends BasePhase {
         if (game_ == null || game_.getWebSocketConfig() == null) {
             return null;
         }
-        String wsUrl = "ws://localhost:" + game_.getWebSocketConfig().port() + "/ws/games/" + gameId_;
+        String wsUrl = "ws://" + game_.getWebSocketConfig().host() + ":" + game_.getWebSocketConfig().port()
+                + "/ws/games/" + gameId_;
 
         DDLabelBorder urlBorder = new DDLabelBorder("lobby.url", STYLE);
         urlBorder.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 5, 3));
@@ -482,6 +480,22 @@ public class Lobby extends BasePhase {
         wrapper.setLayout(new BorderLayout());
         wrapper.add(urlBorder, BorderLayout.CENTER);
         return wrapper;
+    }
+
+    // =========================================================================
+    // Helpers
+    // =========================================================================
+
+    /** Returns the configured central server HTTP base URL, or null if not set. */
+    private String getCentralServerUrl() {
+        try {
+            String node = Prefs.NODE_OPTIONS + engine_.getPrefsNodeName();
+            String server = Prefs.getUserPrefs(node).get(EngineConstants.OPTION_ONLINE_SERVER, "");
+            return OnlineServerUrl.normalizeBaseUrl(server);
+        } catch (Exception e) {
+            logger.warn("Could not read central server URL from preferences", e);
+            return null;
+        }
     }
 
     // =========================================================================

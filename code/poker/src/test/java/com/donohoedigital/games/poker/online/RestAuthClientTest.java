@@ -321,4 +321,33 @@ class RestAuthClientTest {
                 .isInstanceOf(RestAuthClient.RestAuthException.class)
                 .hasMessageContaining("Invalid or expired reset token");
     }
+
+    // -------------------------------------------------------------------------
+    // session cache
+    // -------------------------------------------------------------------------
+
+    @Test
+    void cacheSession_storesJwtAndServerUrl() {
+        RestAuthClient c = new RestAuthClient();
+        c.cacheSession("http://server:8080", "jwt-abc");
+        assertThat(c.getCachedJwt()).isEqualTo("jwt-abc");
+        assertThat(c.getCachedServerUrl()).isEqualTo("http://server:8080");
+        assertThat(c.hasSession()).isTrue();
+    }
+
+    @Test
+    void clearSession_removesCache() {
+        RestAuthClient c = new RestAuthClient();
+        c.cacheSession("http://server:8080", "jwt-abc");
+        c.clearSession();
+        assertThat(c.hasSession()).isFalse();
+        assertThat(c.getCachedJwt()).isNull();
+        assertThat(c.getCachedServerUrl()).isNull();
+    }
+
+    @Test
+    void hasSession_returnsFalse_whenNoCacheSet() {
+        RestAuthClient c = new RestAuthClient();
+        assertThat(c.hasSession()).isFalse();
+    }
 }

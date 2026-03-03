@@ -64,6 +64,9 @@ public class RestAuthClient {
 
     private final HttpClient http;
 
+    private volatile String cachedJwt_;
+    private volatile String cachedServerUrl_;
+
     /** Returns the shared singleton instance. */
     public static RestAuthClient getInstance() {
         return INSTANCE;
@@ -77,6 +80,49 @@ public class RestAuthClient {
     /** Test constructor — allows injecting a custom {@link HttpClient}. */
     RestAuthClient(HttpClient http) {
         this.http = http;
+    }
+
+    // -------------------------------------------------------------------------
+    // Session cache
+    // -------------------------------------------------------------------------
+
+    /**
+     * Stores the JWT and server URL from a successful login. Package-private for
+     * testing.
+     */
+    void cacheSession(String serverUrl, String jwt) {
+        this.cachedServerUrl_ = serverUrl;
+        this.cachedJwt_ = jwt;
+    }
+
+    /**
+     * Returns the cached JWT from the last successful login, or {@code null} if not
+     * logged in.
+     */
+    public String getCachedJwt() {
+        return cachedJwt_;
+    }
+
+    /**
+     * Returns the cached server URL from the last successful login, or {@code null}
+     * if not logged in.
+     */
+    public String getCachedServerUrl() {
+        return cachedServerUrl_;
+    }
+
+    /**
+     * Returns {@code true} if a JWT is currently cached (i.e. the user is logged
+     * in).
+     */
+    public boolean hasSession() {
+        return cachedJwt_ != null;
+    }
+
+    /** Clears the cached JWT and server URL. */
+    public void clearSession() {
+        cachedJwt_ = null;
+        cachedServerUrl_ = null;
     }
 
     /**
@@ -104,6 +150,7 @@ public class RestAuthClient {
             if (!result.success()) {
                 throw new RestAuthException(result.message() != null ? result.message() : "Login failed");
             }
+            cacheSession(serverUrl, result.token());
             return result;
         } catch (RestAuthException e) {
             throw e;
@@ -325,6 +372,7 @@ public class RestAuthClient {
      *            JWT bearer token
      */
     public void logout(String serverUrl, String jwt) {
+        clearSession();
         try {
             HttpRequest request = HttpRequest.newBuilder().uri(URI.create(serverUrl + "/api/v1/auth/logout"))
                     .header("Authorization", "Bearer " + jwt).POST(HttpRequest.BodyPublishers.noBody()).build();

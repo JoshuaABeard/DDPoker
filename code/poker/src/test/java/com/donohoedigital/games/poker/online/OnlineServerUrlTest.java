@@ -100,4 +100,21 @@ class OnlineServerUrlTest {
         // completely invalid value for base URL
         assertThat(OnlineServerUrl.buildApiUri("ftp://not-valid", "/api")).isNull();
     }
+
+    @Test
+    void toWsBaseUrl_convertsHttpToWs() {
+        assertThat(OnlineServerUrl.toWsBaseUrl("http://server.example.com:8080"))
+                .isEqualTo("ws://server.example.com:8080");
+    }
+
+    @Test
+    void toWsBaseUrl_convertsHttpsToWss() {
+        assertThat(OnlineServerUrl.toWsBaseUrl("https://server.example.com:443"))
+                .isEqualTo("wss://server.example.com:443");
+    }
+
+    @Test
+    void toWsBaseUrl_returnsNullForNull() {
+        assertThat(OnlineServerUrl.toWsBaseUrl(null)).isNull();
+    }
 }

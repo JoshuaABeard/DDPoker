@@ -42,6 +42,7 @@ import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.gameserver.*;
+import com.donohoedigital.games.poker.gameserver.controller.TournamentProfileConverter;
 import com.donohoedigital.games.poker.gameserver.dto.*;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.server.*;
@@ -87,8 +88,6 @@ public class OnlineConfiguration extends BasePhase implements ActionListener {
 
     // Hosting state
     private String lanIp_;
-    private int port_;
-    private RestGameClient restClient_;
     private volatile boolean openLobbyInFlight_;
 
     /** Active WAN registration, if the host posted to the public game list. */
@@ -102,17 +101,6 @@ public class OnlineConfiguration extends BasePhase implements ActionListener {
 
         // detect LAN IP
         lanIp_ = CommunityHostingConfig.detectLanIp();
-
-        // get port from embedded server (already started for practice games)
-        EmbeddedGameServer embeddedServer = ((PokerMain) engine_).getEmbeddedServer();
-        port_ = (embeddedServer != null && embeddedServer.isRunning())
-                ? embeddedServer.getPort()
-                : CommunityHostingConfig.DEFAULT_COMMUNITY_PORT;
-
-        // build the RestGameClient for the embedded server
-        if (embeddedServer != null && embeddedServer.isRunning()) {
-            restClient_ = new RestGameClient("http://localhost:" + port_, embeddedServer.getLocalUserJwt());
-        }
 
         // create main panel
         menu_ = new MenuBackground(gamephase);
@@ -222,131 +210,80 @@ public class OnlineConfiguration extends BasePhase implements ActionListener {
     }
 
     private void doOpenLobby() {
-        // start embedded server in external/community mode if not yet running
-        EmbeddedGameServer embeddedServer = ((PokerMain) engine_).getEmbeddedServer();
-        if (embeddedServer == null) {
-            EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.hostonline.noserver"));
+        String baseUrl = getCentralServerUrl();
+        String jwt = RestAuthClient.getInstance().getCachedJwt();
+
+        if (baseUrl == null) {
+            EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.online.noserver"));
+            return;
+        }
+        if (jwt == null) {
+            EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.online.notloggedin"));
             return;
         }
 
-        // get the TournamentProfile selected in the previous step
-        PokerGame game = (PokerGame) context_.getGame();
-        if (game == null) {
-            logger.error("No game set in context — cannot open lobby");
-            return;
-        }
-        TournamentProfile profile = game.getProfile();
-
-        // convert TournamentProfile to GameConfig and create game on server
-        com.donohoedigital.games.poker.gameserver.controller.TournamentProfileConverter converter = new com.donohoedigital.games.poker.gameserver.controller.TournamentProfileConverter();
-        GameConfig gameConfig = converter.convert(profile);
-
-        String publicIp = publicIpText_.getText().trim();
-        boolean postPublicList = cbxPublicList_.isSelected();
-        boolean hostAsObserver = cbxObserver_.isSelected();
+        GameConfig gameConfig = buildGameConfig();
 
         openLobbyInFlight_ = true;
         setHostingControlsEnabled(false);
 
         Thread t = new Thread(() -> {
             try {
-                if (!embeddedServer.isRunning()) {
-                    embeddedServer.start(CommunityHostingConfig.DEFAULT_COMMUNITY_PORT);
-                }
-
-                int runningPort = embeddedServer.getPort();
-                String localJwt = embeddedServer.getLocalUserJwt();
-                RestGameClient localClient = new RestGameClient("http://localhost:" + runningPort, localJwt);
-
-                GameSummary summary = localClient.createGame(gameConfig);
+                RestGameClient client = new RestGameClient(baseUrl, jwt);
+                GameSummary summary = client.createGame(gameConfig);
                 String gameId = summary.gameId();
-                String wsUrl = summary.wsUrl();
 
-                CommunityGameRegistration registration = null;
-                if (postPublicList) {
-                    String publicWsUrl = publicIp.isEmpty()
-                            ? wsUrl
-                            : CommunityHostingConfig.buildGameUrl(publicIp, runningPort, gameId);
-                    PlayerProfile playerProfile = PlayerProfileOptions.getDefaultProfile();
-                    String gameName = (playerProfile != null) ? playerProfile.getName() + "'s Game" : profile.getName();
-                    String wanNode = Prefs.NODE_OPTIONS + context_.getGameEngine().getPrefsNodeName();
-                    String wanServerPref = Prefs.getUserPrefs(wanNode).get(EngineConstants.OPTION_ONLINE_SERVER, "");
-                    String wanBaseUrl = OnlineServerUrl.normalizeBaseUrl(wanServerPref);
-                    if (wanBaseUrl != null) {
-                        RestGameClient wanClient = new RestGameClient(wanBaseUrl, localJwt);
-                        registration = new CommunityGameRegistration(wanClient);
-                        try {
-                            registration.register(gameName, publicWsUrl, null);
-                        } catch (Exception ex) {
-                            logger.warn("Failed to post game to public list: {}", ex.getMessage());
-                            registration = null;
-                        }
-                    } else if (!wanServerPref.isEmpty()) {
-                        logger.warn("Invalid online server preference for WAN registration: {}", wanServerPref);
-                    }
+                String wsUrlStr = summary.wsUrl();
+                if (wsUrlStr == null) {
+                    throw new IllegalStateException("Server returned game summary with no WebSocket URL");
                 }
+                java.net.URI wsUri = java.net.URI.create(wsUrlStr);
+                String wsHost = wsUri.getHost();
+                int wsPortRaw = wsUri.getPort();
+                final int wsPort = (wsPortRaw == -1) ? ("wss".equals(wsUri.getScheme()) ? 443 : 80) : wsPortRaw;
 
-                CommunityGameRegistration finalRegistration = registration;
                 SwingUtilities.invokeLater(() -> {
                     openLobbyInFlight_ = false;
                     setHostingControlsEnabled(true);
 
-                    port_ = runningPort;
-                    restClient_ = localClient;
-
-                    game.setWebSocketConfig(gameId, localJwt, runningPort);
-
-                    if (wsUrl != null) {
-                        lanUrlText_.setText(wsUrl);
-                    }
-                    if (!publicIp.isEmpty()) {
-                        publicUrlText_.setText(CommunityHostingConfig.buildGameUrl(publicIp, runningPort, gameId));
-                    }
-
-                    activeRegistration_ = finalRegistration;
-
-                    if (hostAsObserver) {
-                        PokerPlayer host = game.getHost();
-                        if (host != null) {
-                            game.removePlayer(host);
-                            game.getTable(0).addObserver(host);
-                        }
-                    }
+                    PokerGame game = (PokerGame) context_.getGame();
+                    game.setWebSocketConfig(gameId, jwt, wsHost, wsPort);
 
                     DMTypedHashMap params = new DMTypedHashMap();
                     params.setBoolean("host", Boolean.TRUE);
                     context_.processPhase("Lobby.Host", params);
                 });
-            } catch (EmbeddedGameServer.EmbeddedServerStartupException ex) {
-                logger.error("Failed to start embedded server for hosting", ex);
-                SwingUtilities.invokeLater(() -> {
-                    openLobbyInFlight_ = false;
-                    setHostingControlsEnabled(true);
-                    EngineUtils.displayInformationDialog(context_,
-                            PropertyConfig.getMessage("msg.hostonline.startfail", ex.getMessage()));
-                });
-            } catch (RestGameClient.RestGameClientException ex) {
-                logger.error("Failed to create game on server", ex);
-                SwingUtilities.invokeLater(() -> {
-                    openLobbyInFlight_ = false;
-                    setHostingControlsEnabled(true);
-                    EngineUtils.displayInformationDialog(context_,
-                            PropertyConfig.getMessage("msg.hostonline.createfail", ex.getMessage()));
-                });
             } catch (Exception ex) {
-                logger.error("Unexpected failure while opening lobby", ex);
+                logger.error("Failed to create game on central server", ex);
                 SwingUtilities.invokeLater(() -> {
                     openLobbyInFlight_ = false;
                     setHostingControlsEnabled(true);
-                    String detail = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
                     EngineUtils.displayInformationDialog(context_,
-                            PropertyConfig.getMessage("msg.hostonline.createfail", detail));
+                            PropertyConfig.getMessage("msg.online.createfail", ex.getMessage()));
                 });
             }
-        }, "OpenLobby");
-
+        }, "OnlineConfig-CreateGame");
         t.setDaemon(true);
         t.start();
+    }
+
+    /** Returns the configured central server HTTP base URL, or null if not set. */
+    private String getCentralServerUrl() {
+        try {
+            String node = Prefs.NODE_OPTIONS + engine_.getPrefsNodeName();
+            String server = Prefs.getUserPrefs(node).get(EngineConstants.OPTION_ONLINE_SERVER, "");
+            return OnlineServerUrl.normalizeBaseUrl(server);
+        } catch (Exception e) {
+            logger.warn("Could not read central server URL from preferences", e);
+            return null;
+        }
+    }
+
+    private GameConfig buildGameConfig() {
+        PokerGame game = (PokerGame) context_.getGame();
+        TournamentProfile profile = game.getProfile();
+        TournamentProfileConverter converter = new TournamentProfileConverter();
+        return converter.convert(profile);
     }
 
     private void setHostingControlsEnabled(boolean enabled) {
