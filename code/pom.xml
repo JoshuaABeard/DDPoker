@@ -50,16 +50,13 @@
     <module>jsp</module>
     <module>server</module>
     <module>udp</module>
-    <module>tools</module>
     <module>gamecommon</module>
     <module>gameengine</module>
     <module>gameserver</module>
     <module>gametools</module>
-    <module>ddpoker</module>
     <module>pokerengine</module>
     <module>pokergamecore</module>
     <module>pokergameserver</module>
-    <module>pokernetwork</module>
     <module>poker</module>
     <module>pokerserver</module>
     <module>api</module>
@@ -226,7 +223,6 @@
             <!-- Exclude generated/legacy files from formatting -->
             <excludes>
               <exclude>**/generated/**/*.java</exclude>
-              <exclude>**/proto/**/*.java</exclude>
             </excludes>
           </java>
           <!-- POM formatting disabled - too noisy for existing codebase -->

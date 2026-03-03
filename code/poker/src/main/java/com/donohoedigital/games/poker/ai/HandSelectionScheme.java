@@ -183,7 +183,7 @@ public class HandSelectionScheme extends BaseProfile {
         return getHandStrength(holeCards.getCard(0), holeCards.getCard(1));
     }
 
-    public float getHandStrength(com.ddpoker.Card card1, com.ddpoker.Card card2) {
+    public float getHandStrength(Card card1, Card card2) {
         int rank1 = card1.getRank();
         int rank2 = card2.getRank();
 

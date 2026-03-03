@@ -42,10 +42,10 @@ public class CardSuit implements Comparable<CardSuit> {
 
     // numbered based on bridge rank / reverse alphabetical
     public static final int UNKNOWN_RANK = -1;
-    public static final int CLUBS_RANK = com.ddpoker.Card.CLUBS;
-    public static final int DIAMONDS_RANK = com.ddpoker.Card.DIAMONDS;
-    public static final int HEARTS_RANK = com.ddpoker.Card.HEARTS;
-    public static final int SPADES_RANK = com.ddpoker.Card.SPADES;
+    public static final int CLUBS_RANK = Card.CLUBS;
+    public static final int DIAMONDS_RANK = Card.DIAMONDS;
+    public static final int HEARTS_RANK = Card.HEARTS;
+    public static final int SPADES_RANK = Card.SPADES;
 
     public static final CardSuit UNKNOWN = new CardSuit(UNKNOWN_RANK, "unknown");
     public static final CardSuit CLUBS = new CardSuit(CLUBS_RANK, "club");

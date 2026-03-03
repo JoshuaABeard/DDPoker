@@ -838,7 +838,7 @@ public class CardPiece extends PokerGamePiece {
 
             if (card.getCardSuit() == CardSuit.SPADES) {
                 switch (card.getRank()) {
-                    case com.ddpoker.Card.JACK :
+                    case Card.JACK :
                         if (stylized) {
                             return FaceCards.Style_Jack_Spades;
                         }

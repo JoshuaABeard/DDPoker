@@ -47,7 +47,25 @@ import com.donohoedigital.config.*;
  * @author Doug Donohoe
  */
 @DataCoder('C')
-public class Card extends com.ddpoker.Card implements DataMarshal, Comparable<Card> {
+public class Card implements DataMarshal, Comparable<Card> {
+    public static final int ACE = 14;
+    public static final int KING = 13;
+    public static final int QUEEN = 12;
+    public static final int JACK = 11;
+    public static final int TEN = 10;
+    public static final int NINE = 9;
+    public static final int EIGHT = 8;
+    public static final int SEVEN = 7;
+    public static final int SIX = 6;
+    public static final int FIVE = 5;
+    public static final int FOUR = 4;
+    public static final int THREE = 3;
+    public static final int TWO = 2;
+    public static final int CLUBS = 0;
+    public static final int DIAMONDS = 1;
+    public static final int HEARTS = 2;
+    public static final int SPADES = 3;
+
     // unknown rank
     public static final int UNKNOWN = 0;
 
@@ -536,7 +554,6 @@ public class Card extends com.ddpoker.Card implements DataMarshal, Comparable<Ca
      *         <li>Card.TWO</li>
      *         </ul>
      */
-    @Override
     public int getRank() {
         return rank_;
     }
@@ -552,7 +569,6 @@ public class Card extends com.ddpoker.Card implements DataMarshal, Comparable<Ca
      *         <li>Card.SPADES</li>
      *         </ul>
      */
-    @Override
     public int getSuit() {
         return suit_;
     }
