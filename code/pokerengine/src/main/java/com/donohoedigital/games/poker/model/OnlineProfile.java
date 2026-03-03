@@ -229,7 +229,7 @@ public class OnlineProfile implements BaseModel<Long> {
         this.emailVerificationTokenExpiry = emailVerificationTokenExpiry;
     }
 
-    @Column(name = "wpr_pending_email")
+    @Column(name = "wpr_pending_email", unique = true)
     public String getPendingEmail() {
         return pendingEmail;
     }

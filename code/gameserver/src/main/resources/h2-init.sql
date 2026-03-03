@@ -31,6 +31,7 @@ ALTER TABLE IF EXISTS wan_profile ADD COLUMN IF NOT EXISTS wpr_failed_login_atte
 ALTER TABLE IF EXISTS wan_profile ADD COLUMN IF NOT EXISTS wpr_locked_until BIGINT;
 ALTER TABLE IF EXISTS wan_profile ADD COLUMN IF NOT EXISTS wpr_lockout_count INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE IF EXISTS wan_profile ADD CONSTRAINT IF NOT EXISTS uq_wpr_email_verification_token UNIQUE (wpr_email_verification_token);
+ALTER TABLE IF EXISTS wan_profile ADD CONSTRAINT IF NOT EXISTS uq_wpr_pending_email UNIQUE (wpr_pending_email);
 
 CREATE TABLE IF NOT EXISTS wan_game (
     wgm_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,

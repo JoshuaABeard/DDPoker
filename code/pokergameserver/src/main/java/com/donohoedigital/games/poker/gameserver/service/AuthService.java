@@ -138,7 +138,7 @@ public class AuthService {
 
         OnlineProfile profile = new OnlineProfile();
         profile.setName(username);
-        profile.setEmail(email);
+        profile.setEmail(email.trim().toLowerCase());
         profile.setPasswordHash(BCrypt.hashpw(password, BCrypt.gensalt()));
         profile.setUuid(java.util.UUID.randomUUID().toString());
         profile = profileRepository.save(profile);
@@ -598,6 +598,11 @@ public class AuthService {
      * @return response with success status and optional error message
      */
     public RequestEmailChangeResponse requestEmailChange(String username, String newEmail) {
+        // Normalize email before any checks or persistence
+        if (newEmail != null) {
+            newEmail = newEmail.trim().toLowerCase();
+        }
+
         OnlineProfile profile = profileRepository.findByName(username).orElse(null);
         if (profile == null) {
             return new RequestEmailChangeResponse(false, "Profile not found");
@@ -615,12 +620,12 @@ public class AuthService {
 
         // Check if another account already has this as their confirmed email
         if (profileRepository.findByEmail(newEmail).isPresent()) {
-            return new RequestEmailChangeResponse(false, "Email already in use");
+            return new RequestEmailChangeResponse(false, "Email address not available");
         }
 
         // Check if another account already has this as their pending email
         if (profileRepository.findByPendingEmail(newEmail).isPresent()) {
-            return new RequestEmailChangeResponse(false, "Email already in use");
+            return new RequestEmailChangeResponse(false, "Email address not available");
         }
 
         String token = generateVerificationToken();

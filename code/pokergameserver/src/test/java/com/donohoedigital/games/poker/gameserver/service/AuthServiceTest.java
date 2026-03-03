@@ -693,7 +693,7 @@ class AuthServiceTest {
         RequestEmailChangeResponse response = authService.requestEmailChange("requesteruser", "taken@example.com");
 
         assertThat(response.success()).isFalse();
-        assertThat(response.message()).contains("Email already in use");
+        assertThat(response.message()).contains("Email address not available");
 
         // pendingEmail must not have been set
         OnlineProfile unchanged = profileRepository.findByName("requesteruser").orElseThrow();
@@ -714,7 +714,7 @@ class AuthServiceTest {
         RequestEmailChangeResponse response = authService.requestEmailChange("requester2", "pending@example.com");
 
         assertThat(response.success()).isFalse();
-        assertThat(response.message()).contains("Email already in use");
+        assertThat(response.message()).contains("Email address not available");
 
         OnlineProfile unchanged = profileRepository.findByName("requester2").orElseThrow();
         assertThat(unchanged.getPendingEmail()).isNull();
@@ -724,9 +724,11 @@ class AuthServiceTest {
     void requestEmailChange_withSameAsCurrentEmail_returnsError() {
         createProfile("sameemailuser", "pass");
 
-        // createProfile sets email to sameemailuser@example.com
+        // createProfile sets email to sameemailuser@example.com; use mixed-case to
+        // verify
+        // normalization catches the duplicate even when case differs
         RequestEmailChangeResponse response = authService.requestEmailChange("sameemailuser",
-                "sameemailuser@example.com");
+                "SameEmailUser@Example.COM");
 
         assertThat(response.success()).isFalse();
         assertThat(response.message()).isNotBlank();
