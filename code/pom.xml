@@ -49,7 +49,6 @@
     <module>db</module>
     <module>jsp</module>
     <module>server</module>
-    <module>udp</module>
     <module>gamecommon</module>
     <module>gameengine</module>
     <module>gameserver</module>
