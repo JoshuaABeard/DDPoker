@@ -46,12 +46,14 @@ class LoginRateLimitFilterTest {
 
     private MockHttpServletRequest loginRequest(String ip) {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+        request.setServletPath("/api/v1/auth/login");
         request.setRemoteAddr(ip);
         return request;
     }
 
     private MockHttpServletRequest loginRequestXff(String xff) {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+        request.setServletPath("/api/v1/auth/login");
         request.addHeader("X-Forwarded-For", xff);
         request.setRemoteAddr("10.0.0.1");
         return request;

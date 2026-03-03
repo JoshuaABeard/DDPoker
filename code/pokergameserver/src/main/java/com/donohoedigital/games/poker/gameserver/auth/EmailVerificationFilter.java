@@ -49,7 +49,7 @@ public class EmailVerificationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
-        if (EXEMPT_PATHS.contains(request.getRequestURI())) {
+        if (EXEMPT_PATHS.contains(request.getServletPath())) {
             chain.doFilter(request, response);
             return;
         }

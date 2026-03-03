@@ -66,6 +66,7 @@ class EmailVerificationFilterTest {
         setAuthentication("alice", false);
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/game/lobby");
+        request.setServletPath("/api/v1/game/lobby");
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockFilterChain chain = new MockFilterChain();
 
@@ -81,13 +82,14 @@ class EmailVerificationFilterTest {
         setAuthentication("alice", true);
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/game/lobby");
+        request.setServletPath("/api/v1/game/lobby");
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockFilterChain chain = new MockFilterChain();
 
         filter.doFilter(request, response, chain);
 
         assertThat(chain.getRequest()).isNotNull();
-        assertThat(response.getStatus()).isNotEqualTo(403);
+        assertThat(response.getStatus()).isEqualTo(200);
     }
 
     @Test
@@ -95,6 +97,7 @@ class EmailVerificationFilterTest {
         setAuthentication("alice", false);
 
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/auth/register");
+        request.setServletPath("/api/v1/auth/register");
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockFilterChain chain = new MockFilterChain();
 
@@ -108,6 +111,7 @@ class EmailVerificationFilterTest {
         setAuthentication("alice", false);
 
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+        request.setServletPath("/api/v1/auth/login");
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockFilterChain chain = new MockFilterChain();
 
@@ -121,6 +125,7 @@ class EmailVerificationFilterTest {
         setAuthentication("alice", false);
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/auth/verify-email");
+        request.setServletPath("/api/v1/auth/verify-email");
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockFilterChain chain = new MockFilterChain();
 
@@ -134,6 +139,7 @@ class EmailVerificationFilterTest {
         // No authentication set in SecurityContext
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/game/lobby");
+        request.setServletPath("/api/v1/game/lobby");
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockFilterChain chain = new MockFilterChain();
 
@@ -147,6 +153,7 @@ class EmailVerificationFilterTest {
         setAuthentication("bob", false);
 
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/game/action");
+        request.setServletPath("/api/v1/game/action");
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockFilterChain chain = new MockFilterChain();
 
@@ -164,6 +171,7 @@ class EmailVerificationFilterTest {
         setAuthentication("alice", false);
 
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/auth/resend-verification");
+        request.setServletPath("/api/v1/auth/resend-verification");
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockFilterChain chain = new MockFilterChain();
 
@@ -180,6 +188,7 @@ class EmailVerificationFilterTest {
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/game/lobby");
+        request.setServletPath("/api/v1/game/lobby");
         MockHttpServletResponse response = new MockHttpServletResponse();
         MockFilterChain chain = new MockFilterChain();
 
