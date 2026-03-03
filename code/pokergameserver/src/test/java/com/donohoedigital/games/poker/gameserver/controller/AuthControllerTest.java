@@ -103,6 +103,15 @@ class AuthControllerTest {
     }
 
     @Test
+    void login_whenAccountLocked_returns423() throws Exception {
+        when(authService.login(anyString(), anyString(), anyBoolean()))
+                .thenReturn(new LoginResponse(false, null, null, null, null, false, null, 120L));
+
+        mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"username\":\"testuser\",\"password\":\"password123\"}")).andExpect(status().isLocked());
+    }
+
+    @Test
     void testLogout() throws Exception {
         mockMvc.perform(post("/api/v1/auth/logout")).andExpect(status().isOk())
                 .andExpect(cookie().maxAge("DDPoker-JWT", 0));
