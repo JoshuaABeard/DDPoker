@@ -37,6 +37,7 @@ import org.springframework.stereotype.Service;
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
 import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
 import com.donohoedigital.games.poker.gameserver.dto.ProfileResponse;
+import com.donohoedigital.games.poker.gameserver.dto.RequestEmailChangeResponse;
 import com.donohoedigital.games.poker.gameserver.dto.ResendVerificationResponse;
 import com.donohoedigital.games.poker.gameserver.dto.VerifyEmailResponse;
 import com.donohoedigital.games.poker.model.PasswordResetToken;
@@ -576,5 +577,66 @@ public class AuthService {
         }
 
         return new ResendVerificationResponse(true, "Verification email sent");
+    }
+
+    /**
+     * Initiate an email address change for an authenticated user.
+     *
+     * <p>
+     * Validates the new email, checks it is not already claimed by another account
+     * (either as a confirmed email or as a pending email), sets it as the user's
+     * pending email, and sends a confirmation link to the new address.
+     *
+     * <p>
+     * Sending the confirmation email is non-fatal: if it fails, the method still
+     * returns success so the pending email and verification token are committed.
+     *
+     * @param username
+     *            the authenticated user's username (from JWT)
+     * @param newEmail
+     *            the new email address the user wants to use
+     * @return response with success status and optional error message
+     */
+    public RequestEmailChangeResponse requestEmailChange(String username, String newEmail) {
+        OnlineProfile profile = profileRepository.findByName(username).orElse(null);
+        if (profile == null) {
+            return new RequestEmailChangeResponse(false, "Profile not found");
+        }
+
+        // Basic format validation: non-blank and contains '@'
+        if (newEmail == null || newEmail.isBlank() || !newEmail.contains("@")) {
+            return new RequestEmailChangeResponse(false, "Invalid email address");
+        }
+
+        // Reject if new email is the same as the current confirmed email
+        if (newEmail.equalsIgnoreCase(profile.getEmail())) {
+            return new RequestEmailChangeResponse(false, "New email must be different from current email");
+        }
+
+        // Check if another account already has this as their confirmed email
+        if (profileRepository.findByEmail(newEmail).isPresent()) {
+            return new RequestEmailChangeResponse(false, "Email already in use");
+        }
+
+        // Check if another account already has this as their pending email
+        if (profileRepository.findByPendingEmail(newEmail).isPresent()) {
+            return new RequestEmailChangeResponse(false, "Email already in use");
+        }
+
+        String token = generateVerificationToken();
+        long expiry = System.currentTimeMillis() + VERIFICATION_TOKEN_TTL_MS;
+
+        profile.setPendingEmail(newEmail);
+        profile.setEmailVerificationToken(token);
+        profile.setEmailVerificationTokenExpiry(expiry);
+        profileRepository.save(profile);
+
+        try {
+            emailService.sendEmailChangeConfirmation(newEmail, username, token);
+        } catch (Exception e) {
+            log.warn("Failed to send email change confirmation to {}: {}", newEmail, e.getMessage());
+        }
+
+        return new RequestEmailChangeResponse(true, "Confirmation email sent to new address");
     }
 }

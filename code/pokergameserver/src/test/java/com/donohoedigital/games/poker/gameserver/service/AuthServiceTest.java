@@ -31,6 +31,7 @@ import org.springframework.test.context.ContextConfiguration;
 
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
 import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
+import com.donohoedigital.games.poker.gameserver.dto.RequestEmailChangeResponse;
 import com.donohoedigital.games.poker.gameserver.dto.ResendVerificationResponse;
 import com.donohoedigital.games.poker.gameserver.dto.VerifyEmailResponse;
 import com.donohoedigital.games.poker.gameserver.persistence.TestJpaConfiguration;
@@ -654,5 +655,96 @@ class AuthServiceTest {
         assertThat(response.success()).isTrue();
         verify(emailService).sendVerificationEmail(eq("afterratelimit@example.com"), eq("afterratelimituser"),
                 anyString());
+    }
+
+    // -------------------------------------------------------------------------
+    // requestEmailChange tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void requestEmailChange_withValidNewEmail_setsPendingEmailAndSendsConfirmation() {
+        OnlineProfile profile = createProfile("emailchangeuser", "pass");
+
+        RequestEmailChangeResponse response = authService.requestEmailChange("emailchangeuser", "newemail@example.com");
+
+        assertThat(response.success()).isTrue();
+
+        OnlineProfile updated = profileRepository.findByName("emailchangeuser").orElseThrow();
+        assertThat(updated.getPendingEmail()).isEqualTo("newemail@example.com");
+        assertThat(updated.getEmailVerificationToken()).isNotNull();
+        assertThat(updated.getEmailVerificationTokenExpiry()).isNotNull();
+        assertThat(updated.getEmailVerificationTokenExpiry())
+                .isGreaterThan(System.currentTimeMillis() + 6L * 24 * 60 * 60 * 1000);
+
+        verify(emailService).sendEmailChangeConfirmation(eq("newemail@example.com"), eq("emailchangeuser"),
+                anyString());
+    }
+
+    @Test
+    void requestEmailChange_withAlreadyUsedEmail_returnsError() {
+        // Another account already holds the target email as their confirmed email
+        OnlineProfile other = createProfile("otheremailuser", "pass");
+        // createProfile sets email to username@example.com; we need a custom email
+        other.setEmail("taken@example.com");
+        profileRepository.save(other);
+
+        OnlineProfile requester = createProfile("requesteruser", "pass");
+
+        RequestEmailChangeResponse response = authService.requestEmailChange("requesteruser", "taken@example.com");
+
+        assertThat(response.success()).isFalse();
+        assertThat(response.message()).contains("Email already in use");
+
+        // pendingEmail must not have been set
+        OnlineProfile unchanged = profileRepository.findByName("requesteruser").orElseThrow();
+        assertThat(unchanged.getPendingEmail()).isNull();
+    }
+
+    @Test
+    void requestEmailChange_withPendingEmailInUse_returnsError() {
+        // Another account already has the target address as their pendingEmail
+        OnlineProfile other = createProfile("pendingowner", "pass");
+        other.setPendingEmail("pending@example.com");
+        other.setEmailVerificationToken("some-token-pending");
+        other.setEmailVerificationTokenExpiry(System.currentTimeMillis() + 7L * 24 * 60 * 60 * 1000);
+        profileRepository.save(other);
+
+        OnlineProfile requester = createProfile("requester2", "pass");
+
+        RequestEmailChangeResponse response = authService.requestEmailChange("requester2", "pending@example.com");
+
+        assertThat(response.success()).isFalse();
+        assertThat(response.message()).contains("Email already in use");
+
+        OnlineProfile unchanged = profileRepository.findByName("requester2").orElseThrow();
+        assertThat(unchanged.getPendingEmail()).isNull();
+    }
+
+    @Test
+    void requestEmailChange_withSameAsCurrentEmail_returnsError() {
+        createProfile("sameemailuser", "pass");
+
+        // createProfile sets email to sameemailuser@example.com
+        RequestEmailChangeResponse response = authService.requestEmailChange("sameemailuser",
+                "sameemailuser@example.com");
+
+        assertThat(response.success()).isFalse();
+        assertThat(response.message()).isNotBlank();
+    }
+
+    @Test
+    void requestEmailChange_emailServiceFailure_stillReturnsSuccess() {
+        doThrow(new RuntimeException("SMTP error")).when(emailService).sendEmailChangeConfirmation(anyString(),
+                anyString(), anyString());
+
+        createProfile("emailfailchange", "pass");
+
+        RequestEmailChangeResponse response = authService.requestEmailChange("emailfailchange",
+                "failchange@example.com");
+
+        assertThat(response.success()).isTrue();
+
+        OnlineProfile updated = profileRepository.findByName("emailfailchange").orElseThrow();
+        assertThat(updated.getPendingEmail()).isEqualTo("failchange@example.com");
     }
 }
