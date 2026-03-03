@@ -22,5 +22,6 @@ package com.donohoedigital.games.poker.gameserver.dto;
 /**
  * Response DTO for login/register operations.
  */
-public record LoginResponse(boolean success, String token, Long profileId, String username, String message) {
+public record LoginResponse(boolean success, String token, Long profileId, String username, String email,
+        boolean emailVerified, String message) {
 }

@@ -208,8 +208,57 @@ class JwtAuthenticationFilterTest {
     @Test
     void jwtAuthenticationToken_should_storeProfileId() {
         JwtAuthenticationFilter.JwtAuthenticationToken token = new JwtAuthenticationFilter.JwtAuthenticationToken(
-                "alice", 77L);
+                "alice", 77L, false);
         assertThat(token.getProfileId()).isEqualTo(77L);
         assertThat(token.getPrincipal()).isEqualTo("alice");
+    }
+
+    @Test
+    void jwtAuthenticationToken_should_storeEmailVerified() {
+        JwtAuthenticationFilter.JwtAuthenticationToken tokenTrue = new JwtAuthenticationFilter.JwtAuthenticationToken(
+                "alice", 77L, true);
+        assertThat(tokenTrue.isEmailVerified()).isTrue();
+
+        JwtAuthenticationFilter.JwtAuthenticationToken tokenFalse = new JwtAuthenticationFilter.JwtAuthenticationToken(
+                "bob", 88L, false);
+        assertThat(tokenFalse.isEmailVerified()).isFalse();
+    }
+
+    @Test
+    void should_setEmailVerifiedTrue_when_tokenContainsEmailVerifiedTrue() throws Exception {
+        when(tokenProvider.validateToken(VALID_TOKEN)).thenReturn(true);
+        when(tokenProvider.getUsernameFromToken(VALID_TOKEN)).thenReturn(USERNAME);
+        when(tokenProvider.getProfileIdFromToken(VALID_TOKEN)).thenReturn(PROFILE_ID);
+        when(tokenProvider.getEmailVerifiedFromToken(VALID_TOKEN)).thenReturn(true);
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Bearer " + VALID_TOKEN);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(request, response, chain);
+
+        JwtAuthenticationFilter.JwtAuthenticationToken auth = (JwtAuthenticationFilter.JwtAuthenticationToken) SecurityContextHolder
+                .getContext().getAuthentication();
+        assertThat(auth.isEmailVerified()).isTrue();
+    }
+
+    @Test
+    void should_setEmailVerifiedFalse_when_tokenContainsEmailVerifiedFalse() throws Exception {
+        when(tokenProvider.validateToken(VALID_TOKEN)).thenReturn(true);
+        when(tokenProvider.getUsernameFromToken(VALID_TOKEN)).thenReturn(USERNAME);
+        when(tokenProvider.getProfileIdFromToken(VALID_TOKEN)).thenReturn(PROFILE_ID);
+        when(tokenProvider.getEmailVerifiedFromToken(VALID_TOKEN)).thenReturn(false);
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Bearer " + VALID_TOKEN);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(request, response, chain);
+
+        JwtAuthenticationFilter.JwtAuthenticationToken auth = (JwtAuthenticationFilter.JwtAuthenticationToken) SecurityContextHolder
+                .getContext().getAuthentication();
+        assertThat(auth.isEmailVerified()).isFalse();
     }
 }

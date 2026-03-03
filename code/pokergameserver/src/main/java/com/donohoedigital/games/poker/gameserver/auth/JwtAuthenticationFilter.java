@@ -59,9 +59,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null && tokenProvider.validateToken(token)) {
             String username = tokenProvider.getUsernameFromToken(token);
             Long profileId = tokenProvider.getProfileIdFromToken(token);
+            boolean emailVerified = tokenProvider.getEmailVerifiedFromToken(token);
 
             // Create authentication object with profileId as principal
-            JwtAuthenticationToken authentication = new JwtAuthenticationToken(username, profileId);
+            JwtAuthenticationToken authentication = new JwtAuthenticationToken(username, profileId, emailVerified);
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -94,18 +95,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Custom authentication token that includes profile ID.
+     * Custom authentication token that includes profile ID and email verified
+     * status.
      */
     public static class JwtAuthenticationToken extends UsernamePasswordAuthenticationToken {
         private final Long profileId;
+        private final boolean emailVerified;
 
-        public JwtAuthenticationToken(String username, Long profileId) {
+        public JwtAuthenticationToken(String username, Long profileId, boolean emailVerified) {
             super(username, null, Collections.emptyList());
             this.profileId = profileId;
+            this.emailVerified = emailVerified;
         }
 
         public Long getProfileId() {
             return profileId;
+        }
+
+        public boolean isEmailVerified() {
+            return emailVerified;
         }
     }
 }

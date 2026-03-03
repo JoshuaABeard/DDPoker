@@ -114,13 +114,13 @@ public class AuthService {
      */
     public LoginResponse register(String username, String password, String email) {
         if (banService.isEmailBanned(email)) {
-            return new LoginResponse(false, null, null, null, "This email address is banned");
+            return new LoginResponse(false, null, null, null, null, false, "This email address is banned");
         }
         if (profileRepository.existsByName(username)) {
-            return new LoginResponse(false, null, null, null, "Username already exists");
+            return new LoginResponse(false, null, null, null, null, false, "Username already exists");
         }
         if (profileRepository.existsByEmail(email)) {
-            return new LoginResponse(false, null, null, null, "Email already in use");
+            return new LoginResponse(false, null, null, null, null, false, "Email already in use");
         }
 
         OnlineProfile profile = new OnlineProfile();
@@ -130,8 +130,9 @@ public class AuthService {
         profile.setUuid(java.util.UUID.randomUUID().toString());
         profile = profileRepository.save(profile);
 
-        String token = tokenProvider.generateToken(username, profile.getId(), false);
-        return new LoginResponse(true, token, profile.getId(), username, null);
+        // New registrations are always unverified
+        String token = tokenProvider.generateToken(username, profile.getId(), false, false);
+        return new LoginResponse(true, token, profile.getId(), username, email, false, null);
     }
 
     /**
@@ -148,20 +149,21 @@ public class AuthService {
     public LoginResponse login(String username, String password, boolean rememberMe) {
         OnlineProfile profile = profileRepository.findByName(username).orElse(null);
         if (profile == null) {
-            return new LoginResponse(false, null, null, null, "Invalid username or password");
+            return new LoginResponse(false, null, null, null, null, false, "Invalid username or password");
         }
         if (!BCrypt.checkpw(password, profile.getPasswordHash())) {
-            return new LoginResponse(false, null, null, null, "Invalid username or password");
+            return new LoginResponse(false, null, null, null, null, false, "Invalid username or password");
         }
         if (profile.isRetired()) {
-            return new LoginResponse(false, null, null, null, "This account has been retired");
+            return new LoginResponse(false, null, null, null, null, false, "This account has been retired");
         }
         if (banService.isProfileBanned(profile.getId())) {
-            return new LoginResponse(false, null, null, null, "This account is banned");
+            return new LoginResponse(false, null, null, null, null, false, "This account is banned");
         }
 
-        String token = tokenProvider.generateToken(username, profile.getId(), rememberMe);
-        return new LoginResponse(true, token, profile.getId(), username, null);
+        boolean emailVerified = profile.isEmailVerified();
+        String token = tokenProvider.generateToken(username, profile.getId(), rememberMe, emailVerified);
+        return new LoginResponse(true, token, profile.getId(), username, profile.getEmail(), emailVerified, null);
     }
 
     /**

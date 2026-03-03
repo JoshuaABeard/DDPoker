@@ -164,4 +164,26 @@ class JwtTokenProviderTest {
         assertThat(claims.getSubject()).isEqualTo("charlie");
         assertThat(claims.get("profileId", Long.class)).isEqualTo(99L);
     }
+
+    @Test
+    void testGenerateToken_withEmailVerifiedTrue_returnsTrue() {
+        String token = provider.generateToken("testuser", 123L, false, true);
+
+        assertThat(provider.getEmailVerifiedFromToken(token)).isTrue();
+    }
+
+    @Test
+    void testGenerateToken_withEmailVerifiedFalse_returnsFalse() {
+        String token = provider.generateToken("testuser", 123L, false, false);
+
+        assertThat(provider.getEmailVerifiedFromToken(token)).isFalse();
+    }
+
+    @Test
+    void testGenerateToken_backwardCompat_defaultsEmailVerifiedFalse() {
+        // The 3-arg overload should default emailVerified to false
+        String token = provider.generateToken("testuser", 123L, false);
+
+        assertThat(provider.getEmailVerifiedFromToken(token)).isFalse();
+    }
 }

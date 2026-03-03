@@ -59,7 +59,7 @@ class AuthControllerTest {
     @Test
     void testRegisterSuccess() throws Exception {
         when(authService.register(anyString(), anyString(), anyString()))
-                .thenReturn(new LoginResponse(true, "test-token", 1L, "testuser", null));
+                .thenReturn(new LoginResponse(true, "test-token", 1L, "testuser", "testuser@example.com", false, null));
 
         mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\":\"testuser\",\"password\":\"password123\",\"email\":\"test@example.com\"}"))
@@ -71,7 +71,7 @@ class AuthControllerTest {
     @Test
     void testRegisterFailure() throws Exception {
         when(authService.register(anyString(), anyString(), anyString()))
-                .thenReturn(new LoginResponse(false, null, null, null, "Username already exists"));
+                .thenReturn(new LoginResponse(false, null, null, null, null, false, "Username already exists"));
 
         mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\":\"existing\",\"password\":\"password\",\"email\":\"test@example.com\"}"))
@@ -82,7 +82,7 @@ class AuthControllerTest {
     @Test
     void testLoginSuccess() throws Exception {
         when(authService.login(anyString(), anyString(), anyBoolean()))
-                .thenReturn(new LoginResponse(true, "test-token", 1L, "testuser", null));
+                .thenReturn(new LoginResponse(true, "test-token", 1L, "testuser", "testuser@example.com", true, null));
 
         mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\":\"testuser\",\"password\":\"password123\",\"rememberMe\":false}"))
@@ -94,7 +94,7 @@ class AuthControllerTest {
     @Test
     void testLoginFailure() throws Exception {
         when(authService.login(anyString(), anyString(), anyBoolean()))
-                .thenReturn(new LoginResponse(false, null, null, null, "Invalid username or password"));
+                .thenReturn(new LoginResponse(false, null, null, null, null, false, "Invalid username or password"));
 
         mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\":\"testuser\",\"password\":\"wrongpass\",\"rememberMe\":false}"))
