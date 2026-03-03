@@ -67,8 +67,14 @@ public class GameServerSecurityAutoConfiguration {
     }
 
     @Bean
+    public EmailVerificationFilter emailVerificationFilter() {
+        return new EmailVerificationFilter();
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter,
-            LoginRateLimitFilter loginRateLimitFilter, CorsProperties corsProperties) throws Exception {
+            LoginRateLimitFilter loginRateLimitFilter, EmailVerificationFilter emailVerificationFilter,
+            CorsProperties corsProperties) throws Exception {
         http.csrf(csrf -> csrf.disable()) // JWT is immune to CSRF
                 .cors(cors -> {
                     if (!corsProperties.getAllowedOrigins().isEmpty()) {
@@ -86,7 +92,8 @@ public class GameServerSecurityAutoConfiguration {
                         .requestMatchers("/api/v1/**").authenticated() // All other API endpoints require auth
                         .anyRequest().permitAll() // Allow non-API requests
                 ).addFilterBefore(loginRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(emailVerificationFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }
