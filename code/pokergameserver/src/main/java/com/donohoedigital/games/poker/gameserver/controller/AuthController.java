@@ -83,6 +83,8 @@ public class AuthController {
         if (result.success()) {
             setAuthCookie(response, result.token());
             return ResponseEntity.ok(result);
+        } else if (result.retryAfterSeconds() != null) {
+            return ResponseEntity.status(423).body(result);
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(result);
         }

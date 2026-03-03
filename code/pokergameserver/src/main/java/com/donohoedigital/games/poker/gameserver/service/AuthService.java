@@ -114,13 +114,13 @@ public class AuthService {
      */
     public LoginResponse register(String username, String password, String email) {
         if (banService.isEmailBanned(email)) {
-            return new LoginResponse(false, null, null, null, null, false, "This email address is banned");
+            return new LoginResponse(false, null, null, null, null, false, "This email address is banned", null);
         }
         if (profileRepository.existsByName(username)) {
-            return new LoginResponse(false, null, null, null, null, false, "Username already exists");
+            return new LoginResponse(false, null, null, null, null, false, "Username already exists", null);
         }
         if (profileRepository.existsByEmail(email)) {
-            return new LoginResponse(false, null, null, null, null, false, "Email already in use");
+            return new LoginResponse(false, null, null, null, null, false, "Email already in use", null);
         }
 
         OnlineProfile profile = new OnlineProfile();
@@ -132,11 +132,39 @@ public class AuthService {
 
         // New registrations are always unverified
         String token = tokenProvider.generateToken(username, profile.getId(), false, false);
-        return new LoginResponse(true, token, profile.getId(), username, email, false, null);
+        return new LoginResponse(true, token, profile.getId(), username, email, false, null, null);
+    }
+
+    /** Lock durations in ms indexed by lockoutCount (1-based; index 0 unused). */
+    static final long[] LOCK_DURATIONS_MS = {0L, // index 0: unused
+            5L * 60 * 1000, // 1st lockout: 5 minutes
+            15L * 60 * 1000, // 2nd lockout: 15 minutes
+            60L * 60 * 1000 // 3rd lockout: 1 hour
+            // 4th+ lockout: Long.MAX_VALUE (requires admin unlock)
+    };
+
+    /**
+     * Returns the lock duration in ms for the given lockout count.
+     *
+     * <p>
+     * Counts 1–3 use progressive durations. Count 4 and above produce
+     * {@code Long.MAX_VALUE}, requiring admin intervention to unlock.
+     */
+    static long getLockDuration(int lockoutCount) {
+        if (lockoutCount >= LOCK_DURATIONS_MS.length) {
+            return Long.MAX_VALUE;
+        }
+        return LOCK_DURATIONS_MS[lockoutCount];
     }
 
     /**
      * Authenticate user and generate JWT token.
+     *
+     * <p>
+     * Enforces progressive account lockout on repeated failed attempts. After 5
+     * failures the account is locked for an escalating duration. Returns a locked
+     * response (with {@code retryAfterSeconds} set) if the account is currently
+     * locked.
      *
      * @param username
      *            the username
@@ -144,26 +172,66 @@ public class AuthService {
      *            the plain text password
      * @param rememberMe
      *            whether to use extended token expiration
-     * @return login response with token if successful
+     * @return login response with token if successful, or failure/locked response
      */
     public LoginResponse login(String username, String password, boolean rememberMe) {
         OnlineProfile profile = profileRepository.findByName(username).orElse(null);
         if (profile == null) {
-            return new LoginResponse(false, null, null, null, null, false, "Invalid username or password");
+            return new LoginResponse(false, null, null, null, null, false, "Invalid username or password", null);
         }
+
+        long now = System.currentTimeMillis();
+
+        // STEP 1: Check if account is currently locked
+        if (profile.getLockedUntil() != null && now < profile.getLockedUntil()) {
+            long retryAfterSeconds = (profile.getLockedUntil() - now) / 1000;
+            return new LoginResponse(false, null, null, null, null, false, "Account is locked", retryAfterSeconds);
+        }
+
+        // STEP 2: Auto-unlock if lock period has elapsed — clear lockedUntil, keep
+        // lockoutCount
+        if (profile.getLockedUntil() != null) {
+            profile.setLockedUntil(null);
+            profileRepository.save(profile);
+        }
+
+        // STEP 3/4: Validate password
         if (!BCrypt.checkpw(password, profile.getPasswordHash())) {
-            return new LoginResponse(false, null, null, null, null, false, "Invalid username or password");
+            // Failed password — increment counter and possibly lock
+            profile.setFailedLoginAttempts(profile.getFailedLoginAttempts() + 1);
+            if (profile.getFailedLoginAttempts() >= 5) {
+                profile.setLockoutCount(profile.getLockoutCount() + 1);
+                long lockDurationMs = getLockDuration(profile.getLockoutCount());
+                long lockedUntil = lockDurationMs == Long.MAX_VALUE ? Long.MAX_VALUE : now + lockDurationMs;
+                profile.setLockedUntil(lockedUntil);
+                profile.setFailedLoginAttempts(0);
+                profileRepository.save(profile);
+                long retryAfterSeconds = lockDurationMs == Long.MAX_VALUE
+                        ? Long.MAX_VALUE / 1000
+                        : lockDurationMs / 1000;
+                return new LoginResponse(false, null, null, null, null, false, "Account is locked", retryAfterSeconds);
+            }
+            profileRepository.save(profile);
+            return new LoginResponse(false, null, null, null, null, false, "Invalid username or password", null);
         }
+
+        // Password correct — check retired/banned before resetting counters
         if (profile.isRetired()) {
-            return new LoginResponse(false, null, null, null, null, false, "This account has been retired");
+            return new LoginResponse(false, null, null, null, null, false, "This account has been retired", null);
         }
         if (banService.isProfileBanned(profile.getId())) {
-            return new LoginResponse(false, null, null, null, null, false, "This account is banned");
+            return new LoginResponse(false, null, null, null, null, false, "This account is banned", null);
         }
+
+        // STEP 3 success: reset counters
+        profile.setFailedLoginAttempts(0);
+        profile.setLockoutCount(0);
+        profile.setLockedUntil(null);
+        profileRepository.save(profile);
 
         boolean emailVerified = profile.isEmailVerified();
         String token = tokenProvider.generateToken(username, profile.getId(), rememberMe, emailVerified);
-        return new LoginResponse(true, token, profile.getId(), username, profile.getEmail(), emailVerified, null);
+        return new LoginResponse(true, token, profile.getId(), username, profile.getEmail(), emailVerified, null, null);
     }
 
     /**
