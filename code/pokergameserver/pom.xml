@@ -162,6 +162,13 @@
             </exclusions>
         </dependency>
 
+        <!-- Spring Boot Mail (optional - host app provides mail sender) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- H2 database (runtime, optional) -->
         <dependency>
             <groupId>com.h2database</groupId>
