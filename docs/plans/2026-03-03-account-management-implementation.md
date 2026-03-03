@@ -934,6 +934,8 @@ git add code/pokergameserver/src/main/java/com/donohoedigital/games/poker/gamese
 git commit -m "feat(pokergameserver): send verification email on register, add password strength validation"
 ```
 
+**Implementation note:** Password strength validation (too short / too long) returns `LoginResponse(false, ...)` rather than throwing an exception. This matches the pattern used by all other `register()` validation failures (banned email, duplicate username, duplicate email) and keeps the controller layer simple — all failures are uniform `LoginResponse` values.
+
 ---
 
 ## Task 9: AuthService — verifyEmail + resendVerification

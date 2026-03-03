@@ -89,8 +89,8 @@ class AuthServiceTest {
         @org.springframework.context.annotation.Bean
         public AuthService authService(OnlineProfileRepository profileRepository,
                 PasswordResetTokenRepository resetTokenRepository, BanService banService,
-                JwtTokenProvider tokenProvider) {
-            return new AuthService(profileRepository, resetTokenRepository, banService, tokenProvider);
+                JwtTokenProvider tokenProvider, EmailService emailService) {
+            return new AuthService(profileRepository, resetTokenRepository, banService, tokenProvider, emailService);
         }
     }
 
@@ -199,7 +199,7 @@ class AuthServiceTest {
         ban.setReason("Email ban");
         banRepository.save(ban);
 
-        LoginResponse response = authService.register("newuser", "password", "banned@example.com");
+        LoginResponse response = authService.register("newuser", "password123", "banned@example.com");
 
         assertThat(response.success()).isFalse();
         assertThat(response.message()).contains("banned");

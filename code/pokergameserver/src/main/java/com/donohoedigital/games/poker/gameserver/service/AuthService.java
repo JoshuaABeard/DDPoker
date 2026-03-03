@@ -32,7 +32,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mindrot.jbcrypt.BCrypt;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
@@ -81,10 +80,8 @@ public class AuthService {
     private final PasswordResetTokenRepository resetTokenRepository;
     private final BanService banService;
     private final JwtTokenProvider tokenProvider;
+    private final EmailService emailService;
     private final SecureRandom secureRandom = new SecureRandom();
-
-    @Autowired(required = false)
-    private EmailService emailService;
 
     /** In-memory rate limit: normalized email → last request time (epoch ms). */
     private final ConcurrentHashMap<String, Long> forgotPasswordRateLimits = new ConcurrentHashMap<>();
@@ -102,11 +99,12 @@ public class AuthService {
     private final ConcurrentHashMap<String, Long> usedJtis = new ConcurrentHashMap<>();
 
     public AuthService(OnlineProfileRepository profileRepository, PasswordResetTokenRepository resetTokenRepository,
-            BanService banService, JwtTokenProvider tokenProvider) {
+            BanService banService, JwtTokenProvider tokenProvider, EmailService emailService) {
         this.profileRepository = profileRepository;
         this.resetTokenRepository = resetTokenRepository;
         this.banService = banService;
         this.tokenProvider = tokenProvider;
+        this.emailService = emailService;
     }
 
     /**
@@ -151,12 +149,10 @@ public class AuthService {
 
         // Send verification email (non-blocking — if email fails, registration still
         // succeeds)
-        if (emailService != null) {
-            try {
-                emailService.sendVerificationEmail(email, username, verificationToken);
-            } catch (Exception e) {
-                log.warn("Failed to send verification email to {}: {}", email, e.getMessage());
-            }
+        try {
+            emailService.sendVerificationEmail(email, username, verificationToken);
+        } catch (Exception e) {
+            log.warn("Failed to send verification email to {}: {}", email, e.getMessage());
         }
 
         // New registrations are always unverified
@@ -166,8 +162,8 @@ public class AuthService {
 
     private String generateVerificationToken() {
         byte[] bytes = new byte[48]; // 48 bytes → 64 Base64URL chars
-        new java.security.SecureRandom().nextBytes(bytes);
-        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        secureRandom.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     /** Lock durations in ms indexed by lockoutCount (1-based; index 0 unused). */
