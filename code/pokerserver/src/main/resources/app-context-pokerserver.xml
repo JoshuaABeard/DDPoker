@@ -49,11 +49,8 @@
     <constructor-arg value="${app.type}"/>
   </bean>
 
-  <bean id="servlet" class="com.donohoedigital.games.server.EngineServlet"/>
-
   <bean id="server" class="com.donohoedigital.games.poker.server.PokerServer" init-method="init"
         depends-on="configManager">
-    <property name="servlet" ref="servlet"/>
     <property name="configLoadRequired" value="false"/>
     <!-- use of configManager means configLoad not needed -->
   </bean>

@@ -224,11 +224,12 @@ public abstract class GameServer extends Thread {
         initConfig();
 
         // let servlet do config-based inits
-        ApplicationError.assertNotNull(servlet_, "Servlet must be set");
-        servlet_.afterConfigInit();
+        if (servlet_ != null) {
+            servlet_.afterConfigInit();
 
-        // setup debugging
-        DEBUG_ONLINE = servlet_.isDebugOn();
+            // setup debugging
+            DEBUG_ONLINE = servlet_.isDebugOn();
+        }
 
         // get startup settings and create thread pool
         SLEEP_UNAVAIL = PropertyConfig.getRequiredIntegerProperty("settings.server.noworker.sleep.millis");
@@ -539,7 +540,9 @@ public abstract class GameServer extends Thread {
         }
 
         // cleanup servlet
-        servlet_.destroy();
+        if (servlet_ != null) {
+            servlet_.destroy();
+        }
 
         logger.info("Gameserver Done.");
     }
