@@ -47,7 +47,6 @@
     <module>mail</module>
     <module>gui</module>
     <module>db</module>
-    <module>jsp</module>
     <module>server</module>
     <module>gamecommon</module>
     <module>gameengine</module>
