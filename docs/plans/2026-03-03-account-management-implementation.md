@@ -1076,6 +1076,8 @@ git add code/pokergameserver/src/main/java/com/donohoedigital/games/poker/gamese
 git commit -m "feat(pokergameserver): add verifyEmail and resendVerification to AuthService"
 ```
 
+**Decision:** `verifyEmail()` and `resendVerification()` return DTO responses on failure (matching the `register()` and `login()` error-response pattern) rather than throwing exceptions. `RestAuthException` was not created — it is not needed.
+
 ---
 
 ## Task 10: AuthService — email change

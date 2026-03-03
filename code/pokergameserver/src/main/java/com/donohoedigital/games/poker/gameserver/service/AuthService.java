@@ -144,7 +144,7 @@ public class AuthService {
 
         // Generate verification token
         String verificationToken = generateVerificationToken();
-        long expiry = System.currentTimeMillis() + (7L * 24 * 60 * 60 * 1000); // 7 days
+        long expiry = System.currentTimeMillis() + VERIFICATION_TOKEN_TTL_MS;
         profile.setEmailVerificationToken(verificationToken);
         profile.setEmailVerificationTokenExpiry(expiry);
         profileRepository.save(profile);
@@ -510,7 +510,8 @@ public class AuthService {
             return new VerifyEmailResponse(false, null, "Invalid verification token");
         }
 
-        if (System.currentTimeMillis() > profile.getEmailVerificationTokenExpiry()) {
+        Long expiry = profile.getEmailVerificationTokenExpiry();
+        if (expiry == null || System.currentTimeMillis() > expiry) {
             return new VerifyEmailResponse(false, null, "Verification token has expired");
         }
 
@@ -567,10 +568,11 @@ public class AuthService {
         profile.setEmailVerificationTokenExpiry(expiry);
         profileRepository.save(profile);
 
+        String targetEmail = profile.getPendingEmail() != null ? profile.getPendingEmail() : profile.getEmail();
         try {
-            emailService.sendVerificationEmail(profile.getEmail(), username, verificationToken);
+            emailService.sendVerificationEmail(targetEmail, username, verificationToken);
         } catch (Exception e) {
-            log.warn("Failed to send verification email to {}: {}", profile.getEmail(), e.getMessage());
+            log.warn("Failed to send verification email to {}: {}", targetEmail, e.getMessage());
         }
 
         return new ResendVerificationResponse(true, "Verification email sent");

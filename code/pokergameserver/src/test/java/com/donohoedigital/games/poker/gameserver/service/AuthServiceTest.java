@@ -62,6 +62,9 @@ class AuthServiceTest {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private JwtTokenProvider tokenProvider;
+
     @org.springframework.context.annotation.Configuration
     static class TestConfig {
         @org.springframework.context.annotation.Bean
@@ -494,7 +497,7 @@ class AuthServiceTest {
 
         assertThat(response.success()).isFalse();
         assertThat(response.token()).isNull();
-        assertThat(response.message()).isNotBlank();
+        assertThat(response.message()).contains("Invalid");
     }
 
     @Test
@@ -514,7 +517,26 @@ class AuthServiceTest {
 
         assertThat(response.success()).isFalse();
         assertThat(response.token()).isNull();
-        assertThat(response.message()).isNotBlank();
+        assertThat(response.message()).contains("expired");
+    }
+
+    @Test
+    void verifyEmail_withNullExpiry_returnsError() {
+        OnlineProfile profile = new OnlineProfile();
+        profile.setName("nullexpiryuser");
+        profile.setEmail("nullexpiry@example.com");
+        profile.setPasswordHash(org.mindrot.jbcrypt.BCrypt.hashpw("pass", org.mindrot.jbcrypt.BCrypt.gensalt()));
+        profile.setUuid(java.util.UUID.randomUUID().toString());
+        profile.setEmailVerified(false);
+        profile.setEmailVerificationToken("null-expiry-token");
+        profile.setEmailVerificationTokenExpiry(null);
+        profileRepository.save(profile);
+
+        VerifyEmailResponse response = authService.verifyEmail("null-expiry-token");
+
+        assertThat(response.success()).isFalse();
+        assertThat(response.token()).isNull();
+        assertThat(response.message()).contains("expired");
     }
 
     @Test
@@ -525,6 +547,7 @@ class AuthServiceTest {
 
         assertThat(response.success()).isTrue();
         assertThat(response.token()).isNotNull();
+        assertThat(tokenProvider.getEmailVerifiedFromToken(response.token())).isTrue();
     }
 
     @Test
