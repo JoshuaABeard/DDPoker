@@ -31,6 +31,8 @@ import org.springframework.test.context.ContextConfiguration;
 
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
 import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
+import com.donohoedigital.games.poker.gameserver.dto.ResendVerificationResponse;
+import com.donohoedigital.games.poker.gameserver.dto.VerifyEmailResponse;
 import com.donohoedigital.games.poker.gameserver.persistence.TestJpaConfiguration;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.BanRepository;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.OnlineProfileRepository;
@@ -454,5 +456,180 @@ class AuthServiceTest {
 
         assertThat(response.success()).isTrue();
         assertThat(response.token()).isNotNull();
+    }
+
+    // -------------------------------------------------------------------------
+    // verifyEmail tests
+    // -------------------------------------------------------------------------
+
+    private OnlineProfile createUnverifiedProfileWithToken(String username, String email) {
+        OnlineProfile profile = new OnlineProfile();
+        profile.setName(username);
+        profile.setEmail(email);
+        profile.setPasswordHash(org.mindrot.jbcrypt.BCrypt.hashpw("pass", org.mindrot.jbcrypt.BCrypt.gensalt()));
+        profile.setUuid(java.util.UUID.randomUUID().toString());
+        profile.setEmailVerified(false);
+        profile.setEmailVerificationToken("valid-token-" + username);
+        profile.setEmailVerificationTokenExpiry(System.currentTimeMillis() + 7L * 24 * 60 * 60 * 1000);
+        return profileRepository.save(profile);
+    }
+
+    @Test
+    void verifyEmail_withValidToken_setsEmailVerifiedAndClearsToken() {
+        createUnverifiedProfileWithToken("verifyuser1", "verifyuser1@example.com");
+
+        VerifyEmailResponse response = authService.verifyEmail("valid-token-verifyuser1");
+
+        assertThat(response.success()).isTrue();
+
+        OnlineProfile updated = profileRepository.findByName("verifyuser1").orElseThrow();
+        assertThat(updated.isEmailVerified()).isTrue();
+        assertThat(updated.getEmailVerificationToken()).isNull();
+        assertThat(updated.getEmailVerificationTokenExpiry()).isNull();
+    }
+
+    @Test
+    void verifyEmail_withUnknownToken_returnsError() {
+        VerifyEmailResponse response = authService.verifyEmail("nonexistent-token");
+
+        assertThat(response.success()).isFalse();
+        assertThat(response.token()).isNull();
+        assertThat(response.message()).isNotBlank();
+    }
+
+    @Test
+    void verifyEmail_withExpiredToken_returnsError() {
+        OnlineProfile profile = new OnlineProfile();
+        profile.setName("expiredverifyuser");
+        profile.setEmail("expiredverify@example.com");
+        profile.setPasswordHash(org.mindrot.jbcrypt.BCrypt.hashpw("pass", org.mindrot.jbcrypt.BCrypt.gensalt()));
+        profile.setUuid(java.util.UUID.randomUUID().toString());
+        profile.setEmailVerified(false);
+        profile.setEmailVerificationToken("expired-token");
+        // Set expiry in the past
+        profile.setEmailVerificationTokenExpiry(System.currentTimeMillis() - 1000);
+        profileRepository.save(profile);
+
+        VerifyEmailResponse response = authService.verifyEmail("expired-token");
+
+        assertThat(response.success()).isFalse();
+        assertThat(response.token()).isNull();
+        assertThat(response.message()).isNotBlank();
+    }
+
+    @Test
+    void verifyEmail_withValidToken_returnsFreshJwt() {
+        createUnverifiedProfileWithToken("verifyuser2", "verifyuser2@example.com");
+
+        VerifyEmailResponse response = authService.verifyEmail("valid-token-verifyuser2");
+
+        assertThat(response.success()).isTrue();
+        assertThat(response.token()).isNotNull();
+    }
+
+    @Test
+    void verifyEmail_withPendingEmail_swapsEmailAndClears() {
+        OnlineProfile profile = new OnlineProfile();
+        profile.setName("pendingemailuser");
+        profile.setEmail("old@example.com");
+        profile.setPasswordHash(org.mindrot.jbcrypt.BCrypt.hashpw("pass", org.mindrot.jbcrypt.BCrypt.gensalt()));
+        profile.setUuid(java.util.UUID.randomUUID().toString());
+        profile.setEmailVerified(true); // already verified; now changing email
+        profile.setPendingEmail("new@example.com");
+        profile.setEmailVerificationToken("email-change-token");
+        profile.setEmailVerificationTokenExpiry(System.currentTimeMillis() + 7L * 24 * 60 * 60 * 1000);
+        profileRepository.save(profile);
+
+        VerifyEmailResponse response = authService.verifyEmail("email-change-token");
+
+        assertThat(response.success()).isTrue();
+
+        OnlineProfile updated = profileRepository.findByName("pendingemailuser").orElseThrow();
+        assertThat(updated.getEmail()).isEqualTo("new@example.com");
+        assertThat(updated.getPendingEmail()).isNull();
+        assertThat(updated.isEmailVerified()).isTrue();
+        assertThat(updated.getEmailVerificationToken()).isNull();
+    }
+
+    // -------------------------------------------------------------------------
+    // resendVerification tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void resendVerification_whenUnverified_sendsEmailAndReturnsSuccess() {
+        // Create profile with token issued more than 5 minutes ago so rate limit passes
+        OnlineProfile profile = new OnlineProfile();
+        profile.setName("resenduser1");
+        profile.setEmail("resend1@example.com");
+        profile.setPasswordHash(org.mindrot.jbcrypt.BCrypt.hashpw("pass", org.mindrot.jbcrypt.BCrypt.gensalt()));
+        profile.setUuid(java.util.UUID.randomUUID().toString());
+        profile.setEmailVerified(false);
+        // Token issued 10 minutes ago → expiry = issuedAt + 7 days
+        long issuedAt = System.currentTimeMillis() - 10L * 60 * 1000;
+        profile.setEmailVerificationToken("old-token");
+        profile.setEmailVerificationTokenExpiry(issuedAt + 7L * 24 * 60 * 60 * 1000);
+        profileRepository.save(profile);
+
+        ResendVerificationResponse response = authService.resendVerification("resenduser1");
+
+        assertThat(response.success()).isTrue();
+        verify(emailService).sendVerificationEmail(eq("resend1@example.com"), eq("resenduser1"), anyString());
+    }
+
+    @Test
+    void resendVerification_whenAlreadyVerified_returnsError() {
+        OnlineProfile profile = new OnlineProfile();
+        profile.setName("alreadyverifieduser");
+        profile.setEmail("alreadyverified@example.com");
+        profile.setPasswordHash(org.mindrot.jbcrypt.BCrypt.hashpw("pass", org.mindrot.jbcrypt.BCrypt.gensalt()));
+        profile.setUuid(java.util.UUID.randomUUID().toString());
+        profile.setEmailVerified(true);
+        profileRepository.save(profile);
+
+        ResendVerificationResponse response = authService.resendVerification("alreadyverifieduser");
+
+        assertThat(response.success()).isFalse();
+        assertThat(response.message()).contains("already verified");
+    }
+
+    @Test
+    void resendVerification_withinRateLimit_returnsError() {
+        // Token issued just now → within 5-minute rate limit window
+        OnlineProfile profile = new OnlineProfile();
+        profile.setName("ratelimituser");
+        profile.setEmail("ratelimit@example.com");
+        profile.setPasswordHash(org.mindrot.jbcrypt.BCrypt.hashpw("pass", org.mindrot.jbcrypt.BCrypt.gensalt()));
+        profile.setUuid(java.util.UUID.randomUUID().toString());
+        profile.setEmailVerified(false);
+        long issuedAt = System.currentTimeMillis(); // just now
+        profile.setEmailVerificationToken("recent-token");
+        profile.setEmailVerificationTokenExpiry(issuedAt + 7L * 24 * 60 * 60 * 1000);
+        profileRepository.save(profile);
+
+        ResendVerificationResponse response = authService.resendVerification("ratelimituser");
+
+        assertThat(response.success()).isFalse();
+        assertThat(response.message()).isNotBlank();
+    }
+
+    @Test
+    void resendVerification_afterRateLimitExpiry_succeedsAndSendsEmail() {
+        // Token issued 6 minutes ago → rate limit has passed
+        OnlineProfile profile = new OnlineProfile();
+        profile.setName("afterratelimituser");
+        profile.setEmail("afterratelimit@example.com");
+        profile.setPasswordHash(org.mindrot.jbcrypt.BCrypt.hashpw("pass", org.mindrot.jbcrypt.BCrypt.gensalt()));
+        profile.setUuid(java.util.UUID.randomUUID().toString());
+        profile.setEmailVerified(false);
+        long issuedAt = System.currentTimeMillis() - 6L * 60 * 1000; // 6 minutes ago
+        profile.setEmailVerificationToken("old-token-2");
+        profile.setEmailVerificationTokenExpiry(issuedAt + 7L * 24 * 60 * 60 * 1000);
+        profileRepository.save(profile);
+
+        ResendVerificationResponse response = authService.resendVerification("afterratelimituser");
+
+        assertThat(response.success()).isTrue();
+        verify(emailService).sendVerificationEmail(eq("afterratelimit@example.com"), eq("afterratelimituser"),
+                anyString());
     }
 }

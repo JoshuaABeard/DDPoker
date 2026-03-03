@@ -37,6 +37,8 @@ import org.springframework.stereotype.Service;
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
 import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
 import com.donohoedigital.games.poker.gameserver.dto.ProfileResponse;
+import com.donohoedigital.games.poker.gameserver.dto.ResendVerificationResponse;
+import com.donohoedigital.games.poker.gameserver.dto.VerifyEmailResponse;
 import com.donohoedigital.games.poker.model.PasswordResetToken;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.OnlineProfileRepository;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.PasswordResetTokenRepository;
@@ -477,5 +479,100 @@ public class AuthService {
             return false;
         }
         return true;
+    }
+
+    /** Verification token TTL: 7 days in milliseconds. */
+    static final long VERIFICATION_TOKEN_TTL_MS = 7L * 24 * 60 * 60 * 1000;
+
+    /** Resend rate limit: 1 per 5 minutes. */
+    static final long RESEND_RATE_LIMIT_MS = 5L * 60 * 1000;
+
+    /**
+     * Verify an email address using a one-time verification token.
+     *
+     * <p>
+     * If the profile has a {@code pendingEmail}, this is treated as an email-change
+     * confirmation: the pending email becomes the canonical email and
+     * {@code pendingEmail} is cleared. Otherwise the profile's existing email is
+     * simply marked as verified.
+     *
+     * <p>
+     * On success a fresh JWT with {@code emailVerified=true} is returned.
+     *
+     * @param token
+     *            the email verification token
+     * @return response with success status, fresh JWT (on success), and optional
+     *         error message
+     */
+    public VerifyEmailResponse verifyEmail(String token) {
+        OnlineProfile profile = profileRepository.findByEmailVerificationToken(token).orElse(null);
+        if (profile == null) {
+            return new VerifyEmailResponse(false, null, "Invalid verification token");
+        }
+
+        if (System.currentTimeMillis() > profile.getEmailVerificationTokenExpiry()) {
+            return new VerifyEmailResponse(false, null, "Verification token has expired");
+        }
+
+        // Email-change confirmation: swap pending email into canonical email field
+        if (profile.getPendingEmail() != null) {
+            profile.setEmail(profile.getPendingEmail());
+            profile.setPendingEmail(null);
+        }
+
+        profile.setEmailVerified(true);
+        profile.setEmailVerificationToken(null);
+        profile.setEmailVerificationTokenExpiry(null);
+        profileRepository.save(profile);
+
+        String freshToken = tokenProvider.generateToken(profile.getName(), profile.getId(), false, true);
+        return new VerifyEmailResponse(true, freshToken, null);
+    }
+
+    /**
+     * Resend the email verification message for an authenticated user.
+     *
+     * <p>
+     * Rate-limited to one resend per 5 minutes. Returns an error if the email is
+     * already verified.
+     *
+     * @param username
+     *            the authenticated user's username (from JWT)
+     * @return response with success status and optional error message
+     */
+    public ResendVerificationResponse resendVerification(String username) {
+        OnlineProfile profile = profileRepository.findByName(username).orElse(null);
+        if (profile == null) {
+            return new ResendVerificationResponse(false, "Profile not found");
+        }
+
+        if (profile.isEmailVerified()) {
+            return new ResendVerificationResponse(false, "Email already verified");
+        }
+
+        // Rate limit: allow at most 1 resend per 5 minutes.
+        // The token expiry encodes when the token was issued:
+        // issuedAt = expiry - VERIFICATION_TOKEN_TTL_MS
+        if (profile.getEmailVerificationTokenExpiry() != null) {
+            long issuedAt = profile.getEmailVerificationTokenExpiry() - VERIFICATION_TOKEN_TTL_MS;
+            if (System.currentTimeMillis() < issuedAt + RESEND_RATE_LIMIT_MS) {
+                return new ResendVerificationResponse(false,
+                        "Please wait before requesting another verification email");
+            }
+        }
+
+        String verificationToken = generateVerificationToken();
+        long expiry = System.currentTimeMillis() + VERIFICATION_TOKEN_TTL_MS;
+        profile.setEmailVerificationToken(verificationToken);
+        profile.setEmailVerificationTokenExpiry(expiry);
+        profileRepository.save(profile);
+
+        try {
+            emailService.sendVerificationEmail(profile.getEmail(), username, verificationToken);
+        } catch (Exception e) {
+            log.warn("Failed to send verification email to {}: {}", profile.getEmail(), e.getMessage());
+        }
+
+        return new ResendVerificationResponse(true, "Verification email sent");
     }
 }
