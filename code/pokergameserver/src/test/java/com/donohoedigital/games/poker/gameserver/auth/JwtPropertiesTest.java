@@ -56,15 +56,15 @@ class JwtPropertiesTest {
     }
 
     @Test
-    void should_haveOneHourExpiration_byDefault() {
+    void should_haveTwentyFourHourExpiration_byDefault() {
         JwtProperties props = new JwtProperties();
-        assertThat(props.getExpiration()).isEqualTo(3600000L); // 1 hour in ms
+        assertThat(props.getExpiration()).isEqualTo(86400000L); // 24 hours in ms
     }
 
     @Test
-    void should_haveSevenDayRememberMeExpiration_byDefault() {
+    void should_haveThirtyDayRememberMeExpiration_byDefault() {
         JwtProperties props = new JwtProperties();
-        assertThat(props.getRememberMeExpiration()).isEqualTo(604800000L); // 7 days in ms
+        assertThat(props.getRememberMeExpiration()).isEqualTo(2592000000L); // 30 days in ms
     }
 
     @Test

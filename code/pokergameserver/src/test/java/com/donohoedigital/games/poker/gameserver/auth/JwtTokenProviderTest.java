@@ -46,7 +46,7 @@ class JwtTokenProviderTest {
         JwtKeyManager.savePublicKey(keyPair.getPublic(), publicKeyPath);
 
         // Create provider in issuing mode (has both keys)
-        provider = new JwtTokenProvider(privateKeyPath, publicKeyPath, 3600000L, 604800000L);
+        provider = new JwtTokenProvider(privateKeyPath, publicKeyPath, 86400000L, 2592000000L);
     }
 
     @Test
@@ -64,6 +64,17 @@ class JwtTokenProviderTest {
 
         assertThat(token).isNotNull();
         assertThat(provider.validateToken(token)).isTrue();
+    }
+
+    @Test
+    void testRememberMeTokenHasLongerExpirationThanStandardToken() {
+        String standardToken = provider.generateToken("testuser", 123L, false);
+        String rememberMeToken = provider.generateToken("testuser", 123L, true);
+
+        long standardExp = provider.getClaims(standardToken).getExpiration().getTime();
+        long rememberMeExp = provider.getClaims(rememberMeToken).getExpiration().getTime();
+
+        assertThat(rememberMeExp).isGreaterThan(standardExp);
     }
 
     @Test
@@ -91,7 +102,7 @@ class JwtTokenProviderTest {
     void testValidationOnlyMode() throws Exception {
         // Create validation-only provider (public key only)
         Path publicKeyPath = tempDir.resolve("jwt-public.pem");
-        JwtTokenProvider validationProvider = new JwtTokenProvider(null, publicKeyPath, 3600000L, 604800000L);
+        JwtTokenProvider validationProvider = new JwtTokenProvider(null, publicKeyPath, 86400000L, 2592000000L);
 
         // Generate token with full provider
         String token = provider.generateToken("testuser", 123L, false);
@@ -150,7 +161,7 @@ class JwtTokenProviderTest {
     @Test
     void testGenerateScopedToken_validationOnlyModeThrows() throws Exception {
         Path publicKeyPath = tempDir.resolve("jwt-public.pem");
-        JwtTokenProvider validationProvider = new JwtTokenProvider(null, publicKeyPath, 3600000L, 604800000L);
+        JwtTokenProvider validationProvider = new JwtTokenProvider(null, publicKeyPath, 86400000L, 2592000000L);
 
         assertThatThrownBy(() -> validationProvider.generateScopedToken("user", 1L, "ws-connect", null, 60_000L))
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("validation-only mode");

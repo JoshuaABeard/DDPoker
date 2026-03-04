@@ -301,8 +301,9 @@ public class StartupScreen extends JDialog {
      *
      * <p>
      * Before displaying the dialog, attempts silent re-authentication using a
-     * persisted JWT. If the JWT is valid the dialog is not shown and
-     * {@link ScreenResult#AUTHENTICATED} is returned immediately.
+     * persisted JWT. If the JWT is valid the dialog is dismissed automatically and
+     * {@link ScreenResult#AUTHENTICATED} is returned. The check is performed on a
+     * background thread to avoid blocking the EDT.
      *
      * @return the screen result
      */
@@ -310,19 +311,27 @@ public class StartupScreen extends JDialog {
         // Attempt silent re-auth from a persisted JWT before showing the dialog.
         Optional<String> saved = RestAuthClient.getInstance().loadPersistedJwt(profileName);
         if (saved.isPresent()) {
-            try {
-                String savedJwt = saved.get();
-                RestAuthClient.getInstance().setCachedJwt(savedJwt);
-                RestAuthClient.getInstance().getCurrentUser(serverUrl, savedJwt);
-                // Silent re-auth succeeded — return without showing the dialog.
-                jwt = savedJwt;
-                result = ScreenResult.AUTHENTICATED;
-                return result;
-            } catch (RestAuthClient.RestAuthException e) {
-                logger.debug("Persisted JWT invalid or expired, clearing: {}", e.getMessage());
-                RestAuthClient.getInstance().clearPersistedJwt(profileName);
-                RestAuthClient.getInstance().clearSession();
-            }
+            final String savedJwt = saved.get();
+            setInputEnabled(false); // disable UI while checking in the background
+            new Thread(() -> {
+                try {
+                    RestAuthClient.getInstance().setCachedJwt(savedJwt);
+                    RestAuthClient.getInstance().getCurrentUser(serverUrl, savedJwt); // off-EDT
+                    // Silent re-auth succeeded — store JWT and close the dialog.
+                    SwingUtilities.invokeLater(() -> {
+                        jwt = savedJwt;
+                        result = ScreenResult.AUTHENTICATED;
+                        dispose();
+                    });
+                } catch (RestAuthClient.RestAuthException e) {
+                    logger.debug("Persisted JWT invalid or expired, clearing: {}", e.getMessage());
+                    RestAuthClient.getInstance().clearPersistedJwt(profileName);
+                    RestAuthClient.getInstance().clearSession();
+                    SwingUtilities.invokeLater(() -> setInputEnabled(true)); // show the sign-in form
+                }
+            }, "startup-jwt-check").start();
+            super.setVisible(true); // show dialog (inputs disabled) and block until disposed or enabled
+            return result;
         }
 
         setVisible(true); // blocks because the dialog is modal

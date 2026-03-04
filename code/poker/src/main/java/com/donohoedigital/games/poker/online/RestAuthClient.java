@@ -526,13 +526,23 @@ public class RestAuthClient {
     /**
      * Log out the current session. Best-effort — swallows exceptions.
      *
+     * <p>
+     * Clears the in-memory session. If a {@code profileName} is provided, also
+     * deletes the persisted JWT so "Remember Me" auto-login is cancelled.
+     *
      * @param serverUrl
      *            base URL of the server
      * @param jwt
      *            JWT bearer token
+     * @param profileName
+     *            the local profile name whose persisted JWT should be removed, or
+     *            {@code null} if no persisted JWT needs to be cleared
      */
-    public void logout(String serverUrl, String jwt) {
+    public void logout(String serverUrl, String jwt, String profileName) {
         clearSession();
+        if (profileName != null) {
+            clearPersistedJwt(profileName);
+        }
         try {
             HttpRequest request = HttpRequest.newBuilder().uri(URI.create(serverUrl + "/api/v1/auth/logout"))
                     .header("Authorization", "Bearer " + jwt).POST(HttpRequest.BodyPublishers.noBody()).build();
@@ -541,6 +551,20 @@ public class RestAuthClient {
         } catch (Exception e) {
             logger.warn("Failed to logout", e);
         }
+    }
+
+    /**
+     * Log out the current session without clearing a persisted JWT. Provided for
+     * backward compatibility; prefer {@link #logout(String, String, String)} when
+     * the profile name is available.
+     *
+     * @param serverUrl
+     *            base URL of the server
+     * @param jwt
+     *            JWT bearer token
+     */
+    public void logout(String serverUrl, String jwt) {
+        logout(serverUrl, jwt, null);
     }
 
     /**
