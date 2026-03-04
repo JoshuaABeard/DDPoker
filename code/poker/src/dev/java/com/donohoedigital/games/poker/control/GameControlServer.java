@@ -207,6 +207,11 @@ public class GameControlServer {
         server.createContext("/players/puppet",  new PuppetHandler(apiKey));
         server.createContext("/players/action",  new PuppetActionHandler(apiKey));
         server.createContext("/hand/result",     new HandResultHandler(apiKey));
+        server.createContext("/online/login",  new OnlineLoginHandler(apiKey));
+        server.createContext("/online/host",   new OnlineHostHandler(apiKey));
+        server.createContext("/online/lobby",  new OnlineLobbyHandler(apiKey));
+        server.createContext("/online/start",  new OnlineStartHandler(apiKey));
+        server.createContext("/online/join",   new OnlineJoinHandler(apiKey));
 
         server.start();
 

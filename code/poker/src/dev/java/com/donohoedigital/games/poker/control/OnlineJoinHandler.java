@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2026 DD Poker Community
+ * Licensed under GPL-3.0. See LICENSE.txt.
+ */
+package com.donohoedigital.games.poker.control;
+
+import com.donohoedigital.games.poker.PokerGame;
+import com.donohoedigital.games.poker.PokerMain;
+import com.donohoedigital.games.poker.gameserver.dto.GameJoinResponse;
+import com.donohoedigital.games.poker.online.RestAuthClient;
+import com.donohoedigital.games.poker.online.RestGameClient;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.sun.net.httpserver.HttpExchange;
+
+import javax.swing.SwingUtilities;
+import java.net.URI;
+import java.util.Map;
+
+/**
+ * POST /online/join — join an existing game and navigate to Lobby.Player.
+ *
+ * <p>Request body:
+ * <pre>{"gameId":"abc123"}</pre>
+ *
+ * <p>Response on success:
+ * <pre>{"gameId":"abc123","wsUrl":"ws://localhost:19877/ws/games/abc123"}</pre>
+ */
+class OnlineJoinHandler extends BaseHandler {
+
+    OnlineJoinHandler(String apiKey) {
+        super(apiKey);
+    }
+
+    @Override
+    protected void handleAuthenticated(HttpExchange exchange) throws Exception {
+        if (!"POST".equals(exchange.getRequestMethod())) {
+            sendJson(exchange, 405, Map.of("error", "MethodNotAllowed"));
+            return;
+        }
+
+        RestAuthClient auth = RestAuthClient.getInstance();
+        if (!auth.hasSession()) {
+            sendJson(exchange, 401, Map.of("error", "Unauthorized",
+                    "message", "No cached session. Call POST /online/login first."));
+            return;
+        }
+
+        String body = readRequestBodyAsString(exchange);
+        JsonNode req = MAPPER.readTree(body.isBlank() ? "{}" : body);
+        String gameId = req.path("gameId").asText(null);
+
+        if (gameId == null || gameId.isBlank()) {
+            sendJson(exchange, 400, Map.of("error", "BadRequest", "message", "gameId is required"));
+            return;
+        }
+
+        RestGameClient restClient = new RestGameClient(auth.getCachedServerUrl(), auth.getCachedJwt());
+        GameJoinResponse resp;
+        try {
+            resp = restClient.joinGame(gameId, null);
+        } catch (RestGameClient.RestGameClientException ex) {
+            sendJson(exchange, 502, Map.of("error", "JoinFailed", "message", ex.getMessage()));
+            return;
+        }
+
+        URI wsUri = URI.create(resp.wsUrl());
+        String host = wsUri.getHost();
+        int port = wsUri.getPort();
+        String jwt = auth.getCachedJwt();
+
+        SwingUtilities.invokeAndWait(() -> {
+            PokerGame game = (PokerGame) PokerMain.getPokerMain().getDefaultContext().getGame();
+            if (game == null) return;
+            game.setWebSocketConfig(resp.gameId(), jwt, host, port);
+            PokerMain.getPokerMain().getDefaultContext().processPhase("Lobby.Player");
+        });
+
+        sendJson(exchange, 200, Map.of("gameId", resp.gameId(), "wsUrl", resp.wsUrl()));
+    }
+}

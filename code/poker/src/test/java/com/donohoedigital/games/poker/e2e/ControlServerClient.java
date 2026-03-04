@@ -290,4 +290,92 @@ class ControlServerClient {
             throw new AssertionError("Expected 2xx from " + path + " but got " + status + ": " + resp.body());
         }
     }
+
+    private JsonNode postJson(String path, JsonNode body) throws Exception {
+        String json = MAPPER.writeValueAsString(body);
+        HttpRequest req = HttpRequest.newBuilder().uri(URI.create(baseUrl + path)).header(HEADER_KEY, apiKey)
+                .header(HEADER_CONTENT_TYPE, APPLICATION_JSON).POST(HttpRequest.BodyPublishers.ofString(json)).build();
+        HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
+        return MAPPER.readTree(resp.body());
+    }
+
+    private JsonNode getJson(String path) throws Exception {
+        HttpRequest req = HttpRequest.newBuilder().uri(URI.create(baseUrl + path)).header(HEADER_KEY, apiKey).GET()
+                .build();
+        HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
+        return MAPPER.readTree(resp.body());
+    }
+
+    // -------------------------------------------------------------------------
+    // Online game management
+    // -------------------------------------------------------------------------
+
+    /**
+     * POST /online/login — authenticate against the central server.
+     */
+    public JsonNode onlineLogin(String serverUrl, String username, String password) throws Exception {
+        return postJson("/online/login", MAPPER.createObjectNode().put("serverUrl", serverUrl).put("username", username)
+                .put("password", password));
+    }
+
+    /**
+     * POST /online/host — create a game on the central server and navigate to
+     * Lobby.Host.
+     */
+    public JsonNode onlineHost(JsonNode config) throws Exception {
+        return postJson("/online/host", config);
+    }
+
+    /**
+     * GET /online/lobby — return current lobby state.
+     */
+    public JsonNode onlineLobby() throws Exception {
+        return getJson("/online/lobby");
+    }
+
+    /**
+     * POST /online/start — start the hosted game.
+     */
+    public JsonNode onlineStart() throws Exception {
+        return postJson("/online/start", MAPPER.createObjectNode());
+    }
+
+    /**
+     * POST /online/join — join an existing game.
+     */
+    public JsonNode onlineJoin(String gameId) throws Exception {
+        return postJson("/online/join", MAPPER.createObjectNode().put("gameId", gameId));
+    }
+
+    /**
+     * Returns a minimal valid GameConfig JSON node for E2E test game creation. 4
+     * players, 1500 chips, 10/20 blinds, zero AI delays, auto-deal enabled.
+     */
+    public static ObjectNode minimalOnlineGameConfig() {
+        ObjectNode cfg = MAPPER.createObjectNode();
+        cfg.put("name", "E2E Test Game");
+        cfg.put("maxPlayers", 4);
+        cfg.put("maxOnlinePlayers", 4);
+        cfg.put("startingChips", 1500);
+        cfg.put("fillComputer", true);
+        cfg.put("doubleAfterLastLevel", true);
+
+        ObjectNode level = MAPPER.createObjectNode();
+        level.put("smallBlind", 10);
+        level.put("bigBlind", 20);
+        level.put("ante", 0);
+        level.put("minutes", 5);
+        level.put("isBreak", false);
+        level.put("gameType", "NOLIMIT_HOLDEM");
+        cfg.set("blindStructure", MAPPER.createArrayNode().add(level));
+
+        ObjectNode practice = MAPPER.createObjectNode();
+        practice.put("aiActionDelayMs", 0);
+        practice.put("handResultPauseMs", 100);
+        practice.put("allInRunoutPauseMs", 0);
+        practice.put("autoDeal", true);
+        cfg.set("practiceConfig", practice);
+
+        return cfg;
+    }
 }
