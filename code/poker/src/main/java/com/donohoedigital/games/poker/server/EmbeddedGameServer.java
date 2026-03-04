@@ -87,6 +87,12 @@ public class EmbeddedGameServer {
      * {@code embedded} profile active. Blocks until the server is ready (typically
      * 1-2 seconds).
      *
+     * <p>
+     * Binding is intentionally unrestricted (all interfaces) in this mode because
+     * the random port is not advertised outside the local process — only the
+     * desktop client JVM connects to it. Use {@link #start(int)} when a fixed port
+     * is required; that overload binds to {@code 127.0.0.1} explicitly.
+     *
      * @throws EmbeddedServerStartupException
      *             if the server fails to start
      */
@@ -111,7 +117,7 @@ public class EmbeddedGameServer {
         startInternal(port, true);
     }
 
-    private void startInternal(Integer port, boolean bindAllInterfaces) throws EmbeddedServerStartupException {
+    private void startInternal(Integer port, boolean localhostOnly) throws EmbeddedServerStartupException {
         if (running) {
             return;
         }
@@ -126,7 +132,7 @@ public class EmbeddedGameServer {
             SpringApplication app = new SpringApplication(EmbeddedServerConfig.class);
             app.setAdditionalProfiles("embedded");
             app.setHeadless(false); // Running inside a Swing application
-            Properties props = buildStartupProperties(port, bindAllInterfaces);
+            Properties props = buildStartupProperties(port, localhostOnly);
             if (!props.isEmpty()) {
                 app.setDefaultProperties(props);
             }
@@ -134,7 +140,7 @@ public class EmbeddedGameServer {
             this.port = resolvePort();
             running = true;
             logger.info("Embedded game server started on port {}{}", this.port,
-                    bindAllInterfaces ? " (localhost only)" : "");
+                    localhostOnly ? " (localhost only)" : "");
         } catch (Exception e) {
             throw new EmbeddedServerStartupException("Failed to start embedded Spring Boot server", e);
         }
@@ -250,16 +256,16 @@ public class EmbeddedGameServer {
      *
      * <ul>
      * <li>When {@code port} is non-null, {@code server.port} is set.</li>
-     * <li>When {@code bindAllInterfaces} is {@code true}, {@code server.address} is
-     * set to {@code 127.0.0.1} (localhost-only binding).</li>
+     * <li>When {@code localhostOnly} is {@code true}, {@code server.address} is set
+     * to {@code 127.0.0.1} (localhost-only binding).</li>
      * </ul>
      */
-    Properties buildStartupProperties(Integer port, boolean bindAllInterfaces) {
+    Properties buildStartupProperties(Integer port, boolean localhostOnly) {
         Properties props = new Properties();
         if (port != null) {
             props.setProperty("server.port", String.valueOf(port));
         }
-        if (bindAllInterfaces) {
+        if (localhostOnly) {
             props.setProperty("server.address", "127.0.0.1");
         }
         return props;

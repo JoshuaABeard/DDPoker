@@ -49,9 +49,10 @@ class EmbeddedGameServerBindingTest {
     }
 
     @Test
-    void localhostAddressIsNot0000() {
-        Properties props = server.buildStartupProperties(8080, true);
+    void specificPortWithoutLocalhostRestrictionDoesNotSetServerAddress() {
+        Properties props = server.buildStartupProperties(8080, false);
 
-        assertThat(props.getProperty("server.address")).isNotEqualTo("0.0.0.0");
+        assertThat(props.getProperty("server.address")).isNull();
+        assertThat(props.getProperty("server.port")).isEqualTo("8080");
     }
 }
