@@ -41,6 +41,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Optional;
 
 /**
  * Startup screen shown when the last-used profile is an online profile.
@@ -69,8 +70,10 @@ public class StartupScreen extends JDialog {
 
     private final String serverUrl;
     private final String username;
+    private final String profileName;
 
     private JPasswordField passwordField;
+    private JCheckBox rememberMeCheckBox;
     private JLabel errorLabel;
     private JButton signInButton;
 
@@ -90,11 +93,14 @@ public class StartupScreen extends JDialog {
      *            the base URL of the server (e.g. {@code http://localhost:8877})
      * @param username
      *            the username of the last-used online profile
+     * @param profileName
+     *            the local profile name, used to locate the persisted JWT
      */
-    public StartupScreen(Frame parent, String serverUrl, String username) {
+    public StartupScreen(Frame parent, String serverUrl, String username, String profileName) {
         super(parent, "DD Poker", true);
         this.serverUrl = serverUrl;
         this.username = username;
+        this.profileName = profileName;
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setResizable(false);
 
@@ -114,6 +120,21 @@ public class StartupScreen extends JDialog {
         } else {
             setLocationByPlatform(true);
         }
+    }
+
+    /**
+     * Constructs the startup screen with {@code profileName} equal to
+     * {@code username}. Provided for backward compatibility.
+     *
+     * @param parent
+     *            parent frame; may be null
+     * @param serverUrl
+     *            the base URL of the server
+     * @param username
+     *            the username of the last-used online profile
+     */
+    public StartupScreen(Frame parent, String serverUrl, String username) {
+        this(parent, serverUrl, username, username);
     }
 
     // -------------------------------------------------------------------------
@@ -163,11 +184,15 @@ public class StartupScreen extends JDialog {
         gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
+        rememberMeCheckBox = new JCheckBox("Remember me");
+        panel.add(rememberMeCheckBox, gbc);
+
+        gbc.gridy = 2;
         errorLabel = new JLabel(" ");
         errorLabel.setForeground(Color.RED);
         panel.add(errorLabel, gbc);
 
-        gbc.gridy = 2;
+        gbc.gridy = 3;
         signInButton = new JButton("Sign In");
         signInButton.addActionListener(e -> doSignIn());
         panel.add(signInButton, gbc);
@@ -207,13 +232,14 @@ public class StartupScreen extends JDialog {
             return;
         }
 
+        boolean rememberMe = rememberMeCheckBox.isSelected();
         setInputEnabled(false);
 
         Thread t = new Thread(() -> {
             LoginResponse resp;
             String error = null;
             try {
-                resp = RestAuthClient.getInstance().login(serverUrl, username, password);
+                resp = RestAuthClient.getInstance().login(serverUrl, username, password, rememberMe);
             } catch (RestAuthClient.RestAuthException ex) {
                 error = ex.getMessage() != null ? ex.getMessage() : "Invalid username or password";
                 resp = null;
@@ -232,6 +258,9 @@ public class StartupScreen extends JDialog {
                 jwt = finalResp.token();
                 profileId = finalResp.profileId();
                 email = finalResp.email();
+                if (rememberMe) {
+                    RestAuthClient.getInstance().persistJwt(profileName, jwt);
+                }
                 result = ScreenResult.AUTHENTICATED;
                 dispose();
             });
@@ -242,6 +271,7 @@ public class StartupScreen extends JDialog {
 
     private void setInputEnabled(boolean enabled) {
         passwordField.setEnabled(enabled);
+        rememberMeCheckBox.setEnabled(enabled);
         signInButton.setEnabled(enabled);
     }
 
@@ -269,9 +299,32 @@ public class StartupScreen extends JDialog {
     /**
      * Shows the dialog modally and blocks until the user makes a selection.
      *
+     * <p>
+     * Before displaying the dialog, attempts silent re-authentication using a
+     * persisted JWT. If the JWT is valid the dialog is not shown and
+     * {@link ScreenResult#AUTHENTICATED} is returned immediately.
+     *
      * @return the screen result
      */
     public ScreenResult showAndWait() {
+        // Attempt silent re-auth from a persisted JWT before showing the dialog.
+        Optional<String> saved = RestAuthClient.getInstance().loadPersistedJwt(profileName);
+        if (saved.isPresent()) {
+            try {
+                String savedJwt = saved.get();
+                RestAuthClient.getInstance().setCachedJwt(savedJwt);
+                RestAuthClient.getInstance().getCurrentUser(serverUrl, savedJwt);
+                // Silent re-auth succeeded — return without showing the dialog.
+                jwt = savedJwt;
+                result = ScreenResult.AUTHENTICATED;
+                return result;
+            } catch (RestAuthClient.RestAuthException e) {
+                logger.debug("Persisted JWT invalid or expired, clearing: {}", e.getMessage());
+                RestAuthClient.getInstance().clearPersistedJwt(profileName);
+                RestAuthClient.getInstance().clearSession();
+            }
+        }
+
         setVisible(true); // blocks because the dialog is modal
         return result;
     }

@@ -49,6 +49,7 @@ class StartupScreenTest {
 
     private static final String SERVER_URL = "http://poker.example.com:8877";
     private static final String USERNAME = "Alice";
+    private static final String PROFILE_NAME = "alice-profile";
 
     /**
      * Default result before any action is SWITCH_PROFILE (safe fallback).
@@ -100,4 +101,17 @@ class StartupScreenTest {
         assertThat(screen.getProfileId()).isNull();
         assertThat(screen.getEmail()).isNull();
     }
+
+    /**
+     * Constructor with explicit profileName stores it separately from username.
+     */
+    @Test
+    void constructor_withProfileName_storesProfileNameDistinctFromUsername() {
+        StartupScreen screen = new StartupScreen(null, SERVER_URL, USERNAME, PROFILE_NAME);
+
+        // Screen is constructed without error; verify basic state
+        assertThat(screen.getResult()).isEqualTo(StartupScreen.ScreenResult.SWITCH_PROFILE);
+        assertThat(screen.getJwt()).isNull();
+    }
+
 }

@@ -19,15 +19,22 @@
  */
 package com.donohoedigital.games.poker.online;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.donohoedigital.games.config.GameConfigUtils;
 import com.donohoedigital.games.poker.gameserver.dto.ChangePasswordRequest;
 import com.donohoedigital.games.poker.gameserver.dto.EmailChangeRequest;
 import com.donohoedigital.games.poker.gameserver.dto.ForgotPasswordRequest;
@@ -67,7 +74,16 @@ public class RestAuthClient {
 
     private static final RestAuthClient INSTANCE = new RestAuthClient();
 
+    private static final String JWT_FILE = "auth.token";
+
     private final HttpClient http;
+
+    /**
+     * Base directory used to resolve profile JWT files. {@code null} in production
+     * — falls back to {@link GameConfigUtils#getSaveDir()}/profiles. Set via the
+     * test constructor to use a temp directory.
+     */
+    private final Path jwtBaseDir;
 
     private volatile String cachedJwt_;
     private volatile String cachedServerUrl_;
@@ -81,11 +97,23 @@ public class RestAuthClient {
     /** Production constructor. */
     public RestAuthClient() {
         this.http = HttpClient.newHttpClient();
+        this.jwtBaseDir = null;
     }
 
     /** Test constructor — allows injecting a custom {@link HttpClient}. */
     RestAuthClient(HttpClient http) {
         this.http = http;
+        this.jwtBaseDir = null;
+    }
+
+    /**
+     * Test constructor — allows injecting both a custom {@link HttpClient} and a
+     * base directory for JWT persistence, avoiding any dependency on
+     * {@link GameConfigUtils}.
+     */
+    RestAuthClient(HttpClient http, Path jwtBaseDir) {
+        this.http = http;
+        this.jwtBaseDir = jwtBaseDir;
     }
 
     // -------------------------------------------------------------------------
@@ -132,6 +160,17 @@ public class RestAuthClient {
     }
 
     /**
+     * Sets the cached JWT directly. Used when restoring a persisted JWT on startup
+     * for silent re-authentication.
+     *
+     * @param jwt
+     *            the JWT to cache
+     */
+    public void setCachedJwt(String jwt) {
+        this.cachedJwt_ = jwt;
+    }
+
+    /**
      * Returns {@code true} if the currently cached session has a verified email
      * address.
      */
@@ -139,8 +178,94 @@ public class RestAuthClient {
         return cachedEmailVerified_;
     }
 
+    // -------------------------------------------------------------------------
+    // JWT persistence (Remember Me)
+    // -------------------------------------------------------------------------
+
     /**
-     * Authenticate with username and password.
+     * Persist the JWT to disk in the profile directory for "Remember Me" support.
+     * The file is written with owner-only read permissions (best effort on
+     * Windows).
+     *
+     * @param profileName
+     *            the name of the profile (used to locate the profile directory)
+     * @param jwt
+     *            the JWT to persist
+     */
+    public void persistJwt(String profileName, String jwt) {
+        try {
+            Path dir = getProfileDir(profileName);
+            Files.createDirectories(dir);
+            Path file = dir.resolve(JWT_FILE);
+            Files.writeString(file, jwt, StandardCharsets.UTF_8, StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
+            // Restrict to owner-only read (best effort on Windows)
+            File f = file.toFile();
+            f.setReadable(false, false);
+            f.setReadable(true, true);
+            f.setWritable(false, false);
+            f.setWritable(true, true);
+        } catch (IOException e) {
+            logger.warn("Could not persist JWT for profile {}: {}", profileName, e.getMessage());
+        }
+    }
+
+    /**
+     * Load a persisted JWT from the profile directory. Returns empty if no file
+     * exists or the stored value is malformed.
+     *
+     * @param profileName
+     *            the name of the profile
+     * @return the persisted JWT, or empty if not found/invalid
+     */
+    public Optional<String> loadPersistedJwt(String profileName) {
+        try {
+            Path dir = getProfileDir(profileName);
+            Path file = dir.resolve(JWT_FILE);
+            if (!Files.exists(file))
+                return Optional.empty();
+            String jwt = Files.readString(file, StandardCharsets.UTF_8).trim();
+            // Basic sanity: a JWT has exactly 3 base64url parts separated by '.'
+            if (jwt.split("\\.", -1).length != 3)
+                return Optional.empty();
+            return Optional.of(jwt);
+        } catch (IOException e) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Delete the persisted JWT for the profile (called on logout).
+     *
+     * @param profileName
+     *            the name of the profile
+     */
+    public void clearPersistedJwt(String profileName) {
+        try {
+            Path dir = getProfileDir(profileName);
+            Files.deleteIfExists(dir.resolve(JWT_FILE));
+        } catch (IOException e) {
+            logger.warn("Could not clear persisted JWT for profile {}: {}", profileName, e.getMessage());
+        }
+    }
+
+    /**
+     * Returns the directory used to store per-profile JWT files.
+     *
+     * <p>
+     * In production the directory is
+     * {@code <GameConfigUtils.getSaveDir()>/profiles/<profileName>}. In tests a
+     * {@code jwtBaseDir} injected via the package-private constructor is used
+     * instead, avoiding any dependency on the application framework.
+     */
+    Path getProfileDir(String profileName) {
+        Path base = (jwtBaseDir != null) ? jwtBaseDir : GameConfigUtils.getSaveDir().toPath().resolve("profiles");
+        return base.resolve(profileName);
+    }
+
+    /**
+     * Authenticate with username and password (rememberMe defaults to
+     * {@code false}).
      *
      * @param serverUrl
      *            base URL of the server (e.g. {@code http://localhost:8080})
@@ -153,8 +278,27 @@ public class RestAuthClient {
      *             if authentication fails or network error occurs
      */
     public LoginResponse login(String serverUrl, String username, String password) {
+        return login(serverUrl, username, password, false);
+    }
+
+    /**
+     * Authenticate with username and password.
+     *
+     * @param serverUrl
+     *            base URL of the server (e.g. {@code http://localhost:8080})
+     * @param username
+     *            the username
+     * @param password
+     *            the plain-text password
+     * @param rememberMe
+     *            if {@code true}, requests an extended-lifetime JWT (30 days)
+     * @return login response including JWT token and profile ID
+     * @throws RestAuthException
+     *             if authentication fails or network error occurs
+     */
+    public LoginResponse login(String serverUrl, String username, String password, boolean rememberMe) {
         try {
-            LoginRequest req = new LoginRequest(username, password, false);
+            LoginRequest req = new LoginRequest(username, password, rememberMe);
             HttpRequest request = HttpRequest.newBuilder().uri(URI.create(serverUrl + "/api/v1/auth/login"))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(OBJECT_MAPPER.writeValueAsString(req))).build();

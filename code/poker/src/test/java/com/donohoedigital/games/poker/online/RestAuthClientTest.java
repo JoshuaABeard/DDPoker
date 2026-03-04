@@ -25,11 +25,15 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
 import com.donohoedigital.games.poker.gameserver.dto.ProfileResponse;
@@ -688,5 +692,141 @@ class RestAuthClientTest {
     void hasSession_returnsFalse_whenNoCacheSet() {
         RestAuthClient c = new RestAuthClient();
         assertThat(c.hasSession()).isFalse();
+    }
+
+    // -------------------------------------------------------------------------
+    // setCachedJwt
+    // -------------------------------------------------------------------------
+
+    @Test
+    void setCachedJwt_storesJwtInCache() {
+        RestAuthClient c = new RestAuthClient();
+        c.setCachedJwt("direct-jwt");
+        assertThat(c.getCachedJwt()).isEqualTo("direct-jwt");
+        assertThat(c.hasSession()).isTrue();
+    }
+
+    // -------------------------------------------------------------------------
+    // JWT persistence (Remember Me)
+    // -------------------------------------------------------------------------
+
+    @TempDir
+    Path tempDir;
+
+    @Test
+    void persistJwt_writesFileToProfileDirectory() throws IOException {
+        RestAuthClient c = new RestAuthClient(null, tempDir);
+        String jwt = "header.payload.signature";
+
+        c.persistJwt("alice", jwt);
+
+        Path expected = tempDir.resolve("alice").resolve("auth.token");
+        assertThat(Files.exists(expected)).isTrue();
+        assertThat(Files.readString(expected)).isEqualTo(jwt);
+    }
+
+    @Test
+    void loadPersistedJwt_returnsJwtWhenFileExists() throws IOException {
+        RestAuthClient c = new RestAuthClient(null, tempDir);
+        String jwt = "aaa.bbb.ccc";
+        Path dir = tempDir.resolve("bob");
+        Files.createDirectories(dir);
+        Files.writeString(dir.resolve("auth.token"), jwt);
+
+        Optional<String> result = c.loadPersistedJwt("bob");
+
+        assertThat(result).isPresent();
+        assertThat(result.get()).isEqualTo(jwt);
+    }
+
+    @Test
+    void loadPersistedJwt_returnsEmptyWhenNoFile() {
+        RestAuthClient c = new RestAuthClient(null, tempDir);
+
+        Optional<String> result = c.loadPersistedJwt("nobody");
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void loadPersistedJwt_returnsEmptyForMalformedContent() throws IOException {
+        RestAuthClient c = new RestAuthClient(null, tempDir);
+        Path dir = tempDir.resolve("charlie");
+        Files.createDirectories(dir);
+        Files.writeString(dir.resolve("auth.token"), "not-a-jwt");
+
+        Optional<String> result = c.loadPersistedJwt("charlie");
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void loadPersistedJwt_returnsEmptyForTwoPartToken() throws IOException {
+        RestAuthClient c = new RestAuthClient(null, tempDir);
+        Path dir = tempDir.resolve("dave");
+        Files.createDirectories(dir);
+        Files.writeString(dir.resolve("auth.token"), "header.payload");
+
+        Optional<String> result = c.loadPersistedJwt("dave");
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void clearPersistedJwt_deletesFile() throws IOException {
+        RestAuthClient c = new RestAuthClient(null, tempDir);
+        Path dir = tempDir.resolve("eve");
+        Files.createDirectories(dir);
+        Path tokenFile = dir.resolve("auth.token");
+        Files.writeString(tokenFile, "x.y.z");
+
+        c.clearPersistedJwt("eve");
+
+        assertThat(Files.exists(tokenFile)).isFalse();
+    }
+
+    @Test
+    void clearPersistedJwt_doesNotThrowWhenFileAbsent() {
+        RestAuthClient c = new RestAuthClient(null, tempDir);
+
+        assertThatNoException().isThrownBy(() -> c.clearPersistedJwt("nobody"));
+    }
+
+    @Test
+    void login_withRememberMeTrue_sendsRememberMeInRequestBody() throws IOException {
+        AtomicReference<String> capturedBody = new AtomicReference<>();
+        testServer.createContext("/api/v1/auth/login", exchange -> {
+            capturedBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            String json = "{\"success\":true,\"token\":\"t\",\"profileId\":1,\"username\":\"u\",\"email\":\"u@e.com\",\"emailVerified\":false,\"message\":null,\"retryAfterSeconds\":null}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        client.login(serverUrl, "u", "p", true);
+
+        assertThat(capturedBody.get()).contains("\"rememberMe\":true");
+    }
+
+    @Test
+    void login_withRememberMeFalse_sendsRememberMeFalseInRequestBody() throws IOException {
+        AtomicReference<String> capturedBody = new AtomicReference<>();
+        testServer.createContext("/api/v1/auth/login", exchange -> {
+            capturedBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            String json = "{\"success\":true,\"token\":\"t\",\"profileId\":1,\"username\":\"u\",\"email\":\"u@e.com\",\"emailVerified\":false,\"message\":null,\"retryAfterSeconds\":null}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        client.login(serverUrl, "u", "p", false);
+
+        assertThat(capturedBody.get()).contains("\"rememberMe\":false");
     }
 }
