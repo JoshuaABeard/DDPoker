@@ -19,6 +19,7 @@
  */
 package com.donohoedigital.games.poker.ui;
 
+import com.donohoedigital.config.ConfigManager;
 import com.donohoedigital.games.config.BaseProfile;
 import com.donohoedigital.games.poker.PlayerProfile;
 import org.apache.logging.log4j.LogManager;
@@ -190,6 +191,9 @@ public class ProfilePickerDialog extends JDialog {
 
     private void loadProfiles() {
         listModel.clear();
+        if (ConfigManager.getConfigManager() == null) {
+            return;
+        }
         List<BaseProfile> profiles = PlayerProfile.getProfileList();
         if (profiles != null) {
             for (BaseProfile bp : profiles) {
