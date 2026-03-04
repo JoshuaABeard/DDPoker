@@ -211,8 +211,19 @@ public class PokerStartMenu extends StartMenu {
         // Get default profile (may be null for first-time users)
         profile_ = PlayerProfileOptions.getDefaultProfile();
 
+        // TODO: wire into startup flow — if profile_ is non-null and isOnline(),
+        // show StartupScreen to authenticate before proceeding. See
+        // com.donohoedigital.games.poker.ui.StartupScreen. After AUTHENTICATED result,
+        // set profile_.setJwt(...) and profile_.setProfileId(...). On SWITCH_PROFILE,
+        // clear profile_ so the FirstRunWizard / profile picker path is taken instead.
+
         // First-time user - create a new profile
         if (profile_ == null) {
+            // TODO: wire into startup flow — replace this block with FirstRunWizard when
+            // no profiles exist. After wizard completes with LOCAL_PROFILE_CREATED or
+            // ONLINE_PROFILE_CREATED, call list.rememberProfile(profile_) to persist the
+            // selection. See PokerStartMenu.profileCheck() and
+            // com.donohoedigital.games.poker.ui.FirstRunWizard for details.
             ProfileList list = PlayerProfileOptions.getPlayerProfileList(engine_, context_);
             profile_ = (PlayerProfile) list.newProfile("startmenu");
             if (profile_ != null) {
