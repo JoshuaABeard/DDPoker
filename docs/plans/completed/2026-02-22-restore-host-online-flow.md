@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Status:** proposed
+**Status:** SUPERSEDED (2026-03-04) — absorbed into `2026-03-02-cross-play-foundation-plan.md`. The embedded-server hosting model was dropped; all structural content (gamedef.xml phases, HostStart, pokergameserver DTOs, RestGameClient methods, lobby polling) was incorporated into the cross-play plan with a central-server architecture.
 **Created:** 2026-02-22
 
 ---

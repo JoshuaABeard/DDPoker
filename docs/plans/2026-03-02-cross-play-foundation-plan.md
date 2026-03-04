@@ -8,6 +8,8 @@
 
 **Tech Stack:** Java 25, Java Swing, `java.net.http.WebSocket`, JUnit 5, Maven (`mvn test -P dev -pl poker`)
 
+**Supersedes:** `2026-02-22-restore-host-online-flow.md` (archived). The restore-host plan assumed an embedded-server hosting model. This plan uses central server exclusively; the structural pieces from restore-host (gamedef.xml phases, HostStart, pokergameserver DTOs, RestGameClient methods) are incorporated here.
+
 ---
 
 ## Background
@@ -32,12 +34,19 @@ Two phase-name bugs were already fixed (commit `d659a64f`):
 | `code/poker/src/main/java/com/donohoedigital/games/poker/online/WebSocketGameClient.java` | WebSocket connection; `connect(int port, ...)` hardcodes localhost |
 | `code/poker/src/main/java/com/donohoedigital/games/poker/online/WebSocketTournamentDirector.java` | Active-game WebSocket handler; reads `config.port()` |
 | `code/poker/src/main/java/com/donohoedigital/games/poker/online/RestAuthClient.java` | Login/logout — currently stateless (no JWT cache) |
+| `code/poker/src/main/java/com/donohoedigital/games/poker/online/RestGameClient.java` | REST game operations — missing createGame/startGame/cancelGame/getGameSummary |
 | `code/poker/src/main/java/com/donohoedigital/games/poker/online/FindGames.java` | Lists and joins games; uses embedded server URL+JWT |
 | `code/poker/src/main/java/com/donohoedigital/games/poker/online/OnlineConfiguration.java` | Starts embedded server; must call central server `createGame` instead |
 | `code/poker/src/main/java/com/donohoedigital/games/poker/online/Lobby.java` | Pre-game lobby; builds `restClient_` from embedded server |
 | `code/poker/src/main/java/com/donohoedigital/games/poker/online/OnlineMenu.java` | Online entry point; needs login gate |
+| `code/poker/src/main/java/com/donohoedigital/games/poker/online/HostStart.java` | Countdown before InitializeOnlineGame — deleted in M7, needs restoration |
 | `code/poker/src/main/java/com/donohoedigital/games/poker/online/OnlineServerUrl.java` | Utility: normalizes configured server string to `http://host:port` |
 | `code/poker/src/main/java/com/donohoedigital/games/poker/server/PracticeGameLauncher.java` | Sets `WebSocketConfig` for practice games — must keep using localhost |
+| `code/poker/src/main/resources/config/poker/gamedef.xml` | Phase definitions — needs OnlineMenu, OnlineConfiguration, Lobby.Host/Player, HostStart |
+| `code/pokergameserver/src/main/java/.../dto/GameSummary.java` | Needs `players` list added |
+| `code/pokergameserver/src/main/java/.../dto/LobbyPlayerInfo.java` | New record — name + role |
+| `code/pokergameserver/src/main/java/.../service/GameService.java` | Populate players in getGameSummary() |
+| `code/pokergameserver/src/main/java/.../GameInstance.java` | Add getConnectedPlayers() |
 
 ---
 
@@ -99,7 +108,7 @@ public void setWebSocketConfig(String gameId, String jwt, String host, int port,
 **Step 3: Compile to verify no existing callers break**
 
 ```bash
-cd /c/Repos/DDPoker/code && mvn compile -pl poker -am -q
+cd code && mvn compile -pl poker -am -q
 ```
 
 Expected: SUCCESS (existing callers use the 2-arg and 3-arg convenience constructors, which still exist).
@@ -153,18 +162,16 @@ void connect_usesProvidedHostInUrl() throws Exception {
 **Step 2: Run to verify it fails**
 
 ```bash
-cd /c/Repos/DDPoker/code && mvn test -pl poker -Dtest=WebSocketGameClientTest#connect_usesProvidedHostInUrl -q
+cd code && mvn test -pl poker -Dtest=WebSocketGameClientTest#connect_usesProvidedHostInUrl -q
 ```
 
 Expected: FAIL — method `connect(String, int, String, String)` does not exist.
 
 **Step 3: Add `host` parameter to `connect()` in `WebSocketGameClient`**
 
-Change the `connect` signature and the `buildWsUrl` helper. The existing `serverPort` field becomes `serverHost` + `serverPort`:
-
 ```java
 // Change field (around line 71):
-private String serverHost;   // was not present before
+private String serverHost;
 private int serverPort;
 
 // Change connect() signature (around line 124):
@@ -184,7 +191,7 @@ private String buildWsUrl(String token) {
 
 **Step 4: Update callers**
 
-In `Lobby.java` (around line 208) — change:
+In `Lobby.java` (around line 208):
 ```java
 // OLD:
 wsClient_.connect(config.port(), gameId_, config.jwt())
@@ -192,25 +199,25 @@ wsClient_.connect(config.port(), gameId_, config.jwt())
 wsClient_.connect(config.host(), config.port(), gameId_, config.jwt())
 ```
 
-In `WebSocketTournamentDirector.java` (around line 193-198) — add `serverHost_` field and change the connect call:
+In `WebSocketTournamentDirector.java` (around line 193-198):
 ```java
 // Add field near serverPort_:
 private String serverHost_;
 
-// In start(), after reading config (around line 193):
+// In start(), after reading config:
 serverHost_ = config.host();
 serverPort_ = config.port();
 gameId_ = config.gameId();
 jwt_ = config.jwt();
 
-// Change connect call (around line 198):
+// Change connect call:
 wsClient_.connect(serverHost_, serverPort_, gameId_, jwt_);
 ```
 
 **Step 5: Run the new test**
 
 ```bash
-cd /c/Repos/DDPoker/code && mvn test -pl poker -Dtest=WebSocketGameClientTest#connect_usesProvidedHostInUrl -q
+cd code && mvn test -pl poker -Dtest=WebSocketGameClientTest#connect_usesProvidedHostInUrl -q
 ```
 
 Expected: PASS
@@ -218,7 +225,7 @@ Expected: PASS
 **Step 6: Run full poker tests**
 
 ```bash
-cd /c/Repos/DDPoker/code && mvn test -P dev -pl poker -q
+cd code && mvn test -P dev -pl poker -q
 ```
 
 Expected: all tests pass.
@@ -237,7 +244,7 @@ git commit -m "feat(online): pass host through WebSocket connect so central serv
 
 ## Task 3: Add JWT caching to `RestAuthClient`
 
-The `login()` method returns the JWT but the caller (profile-switch dialog) discards it after one use. The online flow needs to retrieve the JWT later without re-prompting. Add an in-memory session cache to the singleton.
+The `login()` method returns the JWT but the caller discards it after one use. The online flow needs to retrieve the JWT later without re-prompting. Add an in-memory session cache to the singleton.
 
 **Files:**
 - Modify: `code/poker/src/main/java/com/donohoedigital/games/poker/online/RestAuthClient.java`
@@ -245,19 +252,11 @@ The `login()` method returns the JWT but the caller (profile-switch dialog) disc
 
 **Step 1: Write the failing test**
 
-Find or create `RestAuthClientTest.java`. Add:
-
 ```java
 @Test
 void login_cachesJwtAndServerUrl() {
-    // This test calls the real constructor with a mocked HTTP layer.
-    // RestAuthClient uses Jackson + HttpClient internally.
-    // We test the caching contract, not the HTTP call itself.
-    RestAuthClient client = new RestAuthClient();   // fresh instance, not singleton
-
-    // Manually seed the cache via the package-private setter we'll add:
+    RestAuthClient client = new RestAuthClient();
     client.cacheSession("http://server:8080", "jwt-abc");
-
     assertThat(client.getCachedJwt()).isEqualTo("jwt-abc");
     assertThat(client.getCachedServerUrl()).isEqualTo("http://server:8080");
     assertThat(client.hasSession()).isTrue();
@@ -276,30 +275,24 @@ void clearSession_removesCache() {
 **Step 2: Run to verify failure**
 
 ```bash
-cd /c/Repos/DDPoker/code && mvn test -pl poker -Dtest=RestAuthClientTest -q
+cd code && mvn test -pl poker -Dtest=RestAuthClientTest -q
 ```
 
 Expected: FAIL — `cacheSession`, `getCachedJwt`, `hasSession` don't exist.
 
 **Step 3: Add session cache to `RestAuthClient`**
 
-Add fields and methods:
-
 ```java
-// New fields (thread-safe; login can be called from background threads):
 private volatile String cachedJwt_;
 private volatile String cachedServerUrl_;
 
-/** Called by login() and externally for testing. Package-private. */
 void cacheSession(String serverUrl, String jwt) {
     this.cachedServerUrl_ = serverUrl;
     this.cachedJwt_ = jwt;
 }
 
 public String getCachedJwt() { return cachedJwt_; }
-
 public String getCachedServerUrl() { return cachedServerUrl_; }
-
 public boolean hasSession() { return cachedJwt_ != null; }
 
 public void clearSession() {
@@ -308,31 +301,25 @@ public void clearSession() {
 }
 ```
 
-Update `login()` to cache on success (after the existing HTTP call, before returning):
-
+Update `login()` to cache on success:
 ```java
-public LoginResponse login(String serverUrl, String username, String password)
-        throws RestAuthException {
-    // ... existing HTTP logic ...
-    LoginResponse response = OBJECT_MAPPER.readValue(body, LoginResponse.class);
-    cacheSession(serverUrl, response.jwt());   // ← ADD THIS LINE
-    return response;
-}
+LoginResponse response = OBJECT_MAPPER.readValue(body, LoginResponse.class);
+cacheSession(serverUrl, response.jwt());   // ADD
+return response;
 ```
 
-Also update `logout()` to clear the cache:
-
+Update `logout()` to clear the cache:
 ```java
 public void logout(String serverUrl, String jwt) {
-    clearSession();   // ← ADD THIS LINE
-    // ... rest of existing logout logic ...
+    clearSession();   // ADD
+    // ... rest unchanged ...
 }
 ```
 
 **Step 4: Run the new tests**
 
 ```bash
-cd /c/Repos/DDPoker/code && mvn test -pl poker -Dtest=RestAuthClientTest -q
+cd code && mvn test -pl poker -Dtest=RestAuthClientTest -q
 ```
 
 Expected: PASS
@@ -347,9 +334,9 @@ git commit -m "feat(online): cache JWT in RestAuthClient after login for use in 
 
 ---
 
-## Task 4: Add a `getCentralServerUrl()` helper to `OnlineServerUrl`
+## Task 4: Add `toWsBaseUrl` helper to `OnlineServerUrl`
 
-Multiple classes need to read the configured central server URL from preferences. Centralise this in `OnlineServerUrl` so there's one place to change.
+Multiple classes need to convert an HTTP base URL to WebSocket. Centralise in `OnlineServerUrl`.
 
 **Files:**
 - Modify: `code/poker/src/main/java/com/donohoedigital/games/poker/online/OnlineServerUrl.java`
@@ -379,7 +366,7 @@ void toWsBaseUrl_returnsNullForNull() {
 **Step 2: Run to verify failure**
 
 ```bash
-cd /c/Repos/DDPoker/code && mvn test -pl poker -Dtest=OnlineServerUrlTest -q
+cd code && mvn test -pl poker -Dtest=OnlineServerUrlTest -q
 ```
 
 Expected: FAIL — `toWsBaseUrl` doesn't exist.
@@ -387,20 +374,12 @@ Expected: FAIL — `toWsBaseUrl` doesn't exist.
 **Step 3: Add `toWsBaseUrl` to `OnlineServerUrl`**
 
 ```java
-/**
- * Converts an HTTP(S) base URL to its WebSocket equivalent.
- * {@code http://host:port} → {@code ws://host:port}
- * {@code https://host:port} → {@code wss://host:port}
- * Returns {@code null} for null input.
- */
 public static String toWsBaseUrl(String httpBaseUrl) {
     if (httpBaseUrl == null) return null;
-    if (httpBaseUrl.startsWith("https://")) {
+    if (httpBaseUrl.startsWith("https://"))
         return "wss://" + httpBaseUrl.substring("https://".length());
-    }
-    if (httpBaseUrl.startsWith("http://")) {
+    if (httpBaseUrl.startsWith("http://"))
         return "ws://" + httpBaseUrl.substring("http://".length());
-    }
     return null;
 }
 ```
@@ -408,7 +387,7 @@ public static String toWsBaseUrl(String httpBaseUrl) {
 **Step 4: Run the new tests**
 
 ```bash
-cd /c/Repos/DDPoker/code && mvn test -pl poker -Dtest=OnlineServerUrlTest -q
+cd code && mvn test -pl poker -Dtest=OnlineServerUrlTest -q
 ```
 
 Expected: PASS
@@ -423,7 +402,77 @@ git commit -m "feat(online): add toWsBaseUrl helper to OnlineServerUrl"
 
 ---
 
-## Task 5: Rework `FindGames` to use the central server
+## Task 5: Add missing `RestGameClient` methods
+
+`OnlineConfiguration` (Task 7) and `Lobby` (Task 9) call `createGame()`, `startGame()`, `cancelGame()`, and `getGameSummary()`. These methods do not yet exist. Add them before wiring up the callers.
+
+**Files:**
+- Modify: `code/poker/src/main/java/com/donohoedigital/games/poker/online/RestGameClient.java`
+- Test: `code/poker/src/test/java/com/donohoedigital/games/poker/online/RestGameClientTest.java`
+
+**Step 1: Read `RestGameClient` to understand existing HTTP call patterns**
+
+(Read the file; do not skip — the `RestGameClientException`, JSON handling, and auth header pattern must be consistent with existing methods.)
+
+**Step 2: Add four methods**
+
+```java
+/**
+ * Creates a new game on the central server.
+ * POST /api/v1/games
+ */
+public GameSummary createGame(GameConfig config) throws RestGameClientException {
+    // POST JSON body; parse GameSummary response
+}
+
+/**
+ * Starts a lobby game (host-only).
+ * POST /api/v1/games/{gameId}/start
+ */
+public void startGame(String gameId) throws RestGameClientException {
+    // POST with empty body; 200 = success
+}
+
+/**
+ * Cancels a game (host-only).
+ * DELETE /api/v1/games/{gameId}
+ */
+public void cancelGame(String gameId) throws RestGameClientException {
+    // DELETE request
+}
+
+/**
+ * Returns a game summary including connected player list.
+ * GET /api/v1/games/{gameId}
+ */
+public GameSummary getGameSummary(String gameId) throws RestGameClientException {
+    // GET; parse GameSummary
+}
+```
+
+**Step 3: Write tests**
+
+Mock `HttpClient` (same pattern as existing `RestGameClientTest`). Verify each method sends the correct HTTP verb and path, and that `createGame()`/`getGameSummary()` parse the JSON response correctly.
+
+**Step 4: Run tests**
+
+```bash
+cd code && mvn test -pl poker -Dtest=RestGameClientTest -P dev -q
+```
+
+Expected: PASS
+
+**Step 5: Commit**
+
+```bash
+git add code/poker/src/main/java/com/donohoedigital/games/poker/online/RestGameClient.java \
+        code/poker/src/test/java/com/donohoedigital/games/poker/online/RestGameClientTest.java
+git commit -m "feat(online): add createGame, startGame, cancelGame, getGameSummary to RestGameClient"
+```
+
+---
+
+## Task 6: Rework `FindGames` to use the central server
 
 `FindGames.fetchGames()` currently returns an empty list if the embedded server is not running. It must instead connect to the central server.
 
@@ -452,10 +501,7 @@ game.setWebSocketConfig(response.gameId(),
 
 **Step 1: Add a `getCentralServerUrl()` helper method to `FindGames`**
 
-Add a private helper (same pattern as `ChangePasswordDialog.getServerUrl()`):
-
 ```java
-/** Returns the configured central server HTTP base URL, or null if not set. */
 private String getCentralServerUrl() {
     try {
         String node = Prefs.NODE_OPTIONS + engine_.getPrefsNodeName();
@@ -471,8 +517,6 @@ private String getCentralServerUrl() {
 Required imports: `com.donohoedigital.config.Prefs`, `com.donohoedigital.games.engine.EngineConstants`.
 
 **Step 2: Rewrite `fetchGames()`**
-
-Replace the entire method body:
 
 ```java
 private OnlineGameList fetchGames() {
@@ -513,8 +557,6 @@ private OnlineGameList fetchGames() {
 
 **Step 3: Fix the join action to use central server JWT and host**
 
-In the join button handler (around line 192–198), replace:
-
 ```java
 // OLD:
 int port = extractPort(response.wsUrl());
@@ -529,7 +571,7 @@ String jwt = RestAuthClient.getInstance().getCachedJwt();
 game.setWebSocketConfig(response.gameId(), jwt, wsHost, wsPort);
 ```
 
-Apply the same fix to the observe action (around line 226–234):
+Apply the same fix to the observe action:
 
 ```java
 // OLD:
@@ -549,12 +591,12 @@ String jwt = response.token() != null
 game.setWebSocketConfig(response.gameId(), jwt, wsHost, wsPort, true);
 ```
 
-The `extractPort()` private method can stay (it may be used elsewhere) but is no longer called from the join/observe paths.
+The `extractPort()` private method can stay (may be used elsewhere) but is no longer called from the join/observe paths.
 
 **Step 4: Compile**
 
 ```bash
-cd /c/Repos/DDPoker/code && mvn compile -pl poker -am -q
+cd code && mvn compile -pl poker -am -q
 ```
 
 Expected: SUCCESS
@@ -568,44 +610,18 @@ git commit -m "feat(online): FindGames uses central server REST API and JWT inst
 
 ---
 
-## Task 6: Rework `OnlineConfiguration` to create game on central server
+## Task 7: Rework `OnlineConfiguration` to create game on central server
 
-`OnlineConfiguration.doOpenLobby()` currently starts the embedded server as an externally-accessible host. Replace with a REST `createGame` call to the central server.
+`OnlineConfiguration.doOpenLobby()` currently starts the embedded server. Replace with a REST `createGame` call to the central server.
 
 **Files:**
 - Modify: `code/poker/src/main/java/com/donohoedigital/games/poker/online/OnlineConfiguration.java`
+- Modify: `code/poker/src/main/resources/config/poker/gamedef.xml`
+- Modify: `code/poker/src/main/resources/config/poker/client.properties`
 
-**Background — current `doOpenLobby()` (around line 270–320):**
-
-```java
-// CURRENT (simplified):
-embeddedServer.start(CommunityHostingConfig.getPort(), ...);   // REMOVE
-int runningPort = embeddedServer.getPort();                    // REMOVE
-String localJwt = embeddedServer.getLocalUserJwt();           // REPLACE
-RestGameClient localClient = new RestGameClient("http://localhost:" + runningPort, localJwt);
-GameSummary summary = localClient.createGame(gameConfig);
-// WAN registration logic ...                                  // REMOVE
-game.setWebSocketConfig(gameId, localJwt, runningPort);        // REPLACE
-```
-
-**Step 1: Add `getCentralServerUrl()` helper** (same pattern as Task 5):
-
-```java
-private String getCentralServerUrl() {
-    try {
-        String node = Prefs.NODE_OPTIONS + engine_.getPrefsNodeName();
-        String server = Prefs.getUserPrefs(node).get(EngineConstants.OPTION_ONLINE_SERVER, "");
-        return OnlineServerUrl.normalizeBaseUrl(server);
-    } catch (Exception e) {
-        logger.warn("Could not read central server URL from preferences", e);
-        return null;
-    }
-}
-```
+**Step 1: Add `getCentralServerUrl()` helper** (same pattern as Task 6)
 
 **Step 2: Rewrite `doOpenLobby()`**
-
-Replace the method body with:
 
 ```java
 private void doOpenLobby() {
@@ -623,18 +639,14 @@ private void doOpenLobby() {
         return;
     }
 
-    // Build GameConfig from the selected TournamentProfile.
-    // TournamentOptions (parent class) already populated profile_ by this point.
     GameConfig gameConfig = buildGameConfig();
 
-    // Run the REST call off the EDT.
     Thread t = new Thread(() -> {
         try {
             RestGameClient client = new RestGameClient(baseUrl, jwt);
             GameSummary summary = client.createGame(gameConfig);
             String gameId = summary.gameId();
 
-            // Parse WebSocket host from the server's wsUrl.
             java.net.URI wsUri = java.net.URI.create(summary.wsUrl());
             String wsHost = wsUri.getHost();
             int wsPort = wsUri.getPort();
@@ -661,11 +673,8 @@ private void doOpenLobby() {
 
 **Step 3: Add `buildGameConfig()` helper**
 
-This converts the `TournamentProfile` (already selected by the parent `TournamentOptions` step) into a `GameConfig` for the REST API. The existing `OnlineConfiguration` already has access to the profile — extract what's needed:
-
 ```java
 private GameConfig buildGameConfig() {
-    // profile_ is inherited from TournamentOptions and populated before doOpenLobby()
     return new GameConfig(
             profile_.getName(),
             profile_.getNumPlayers(),
@@ -675,72 +684,186 @@ private GameConfig buildGameConfig() {
 }
 ```
 
-Check that `GameConfig` and the existing `createGame()` contract are satisfied — `RestGameClient.createGame(GameConfig)` calls `POST /api/v1/games`. The `GameConfig` record is in `pokergameserver` module.
+**Step 4: Add message keys to `client.properties`**
 
-**Step 4: Add missing message keys to `client.properties`**
-
-File: `code/poker/src/main/resources/config/poker/client.properties`
-
-Add:
 ```properties
 msg.online.noserver=No online server configured. Go to Options \u2192 Online to set a server URL.
 msg.online.notloggedin=You are not logged in to the online server. Switch to an online profile first.
 msg.online.createfail=Could not create game: {0}
 ```
 
-**Step 5: Remove now-dead imports and fields**
+**Step 5: Add phase definitions to `gamedef.xml`**
+
+Add or verify the following phase entries (restore from M7 git history if missing: `git show 9ef67fe3:code/poker/src/main/resources/config/poker/gamedef.xml`).
+
+Also update `online.phase` from `FindGames` to `OnlineMenu` so clicking "Online" from the start menu goes to the new landing page.
+
+```xml
+<!-- ONLINE MENU -->
+<phase name="OnlineMenu" class="com.donohoedigital.games.poker.online.OnlineMenu" extends="Menu">
+  <param name="menubox-title" boolvalue="true"/>
+  <param name="menubox-title-prop" strvalue="msg.title.OnlineMenu"/>
+  <param name="menubox-help-name" strvalue="onlinemenu"/>
+  <param name="default-button" strvalue="hostonline"/>
+  <param name="profile.phase" strvalue="PlayerProfileOptions"/>
+  <paramlist name="buttons">
+    <strvalue>hostonline:OnlineOptions</strvalue>
+    <strvalue>joinonline:FindGames</strvalue>
+    <strvalue>loadgameonline:LoadOnlineGameMenu</strvalue>
+    <strvalue>website:LaunchOnlineWebsite</strvalue>
+    <strvalue>forums:LaunchOnlineForums</strvalue>
+    <strvalue>helpdetail:Help:online</strvalue>
+    <strvalue>cancelprev:PreviousPhase</strvalue>
+  </paramlist>
+</phase>
+
+<!-- ONLINE CONFIGURATION (setup 2 of 2) -->
+<phase name="OnlineConfiguration" extends="TournamentOptions"
+       class="com.donohoedigital.games.poker.online.OnlineConfiguration">
+  <param name="menubox-title-prop" strvalue="msg.title.OnlineConfiguration"/>
+  <param name="menubox-help-name" strvalue="onlineconfig"/>
+  <param name="default-button" strvalue="okaybegin"/>
+  <param name="profile.phase" strvalue="PlayerProfileOptions"/>
+  <paramlist name="buttons">
+    <strvalue>okaybegin:Lobby.Host</strvalue>
+    <strvalue>helpdetail:Help:hostonline</strvalue>
+    <strvalue>cancelprev:PreviousPhase</strvalue>
+  </paramlist>
+</phase>
+
+<!-- LOBBY (host view) -->
+<phase name="Lobby.Host" extends="TournamentOptions"
+       class="com.donohoedigital.games.poker.online.Lobby">
+  <param name="host" boolvalue="true"/>
+  <param name="menubox-title-prop" strvalue="msg.title.Lobby.Host"/>
+  <param name="menubox-help-name" strvalue="lobby.host"/>
+  <paramlist name="buttons">
+    <strvalue>okaystart:HostStart</strvalue>
+    <strvalue>editonlinegame</strvalue>
+    <strvalue>options:GamePrefsDialog</strvalue>
+    <strvalue>helpdetail:Help:hostonline</strvalue>
+    <strvalue>canceltourney</strvalue>
+  </paramlist>
+</phase>
+
+<!-- LOBBY (joining player view) -->
+<phase name="Lobby.Player" extends="Lobby.Host">
+  <param name="host" boolvalue="false"/>
+  <param name="menubox-title-prop" strvalue="msg.title.Lobby.Player"/>
+  <param name="menubox-help-name" strvalue="lobby.player"/>
+  <param name="default-button" strvalue="NONE"/>
+  <paramlist name="buttons">
+    <strvalue>info:GameInfoDialogLobby</strvalue>
+    <strvalue>options:GamePrefsDialog</strvalue>
+    <strvalue>helpdetail:Help:joinonline</strvalue>
+    <strvalue>cancelleave:PreviousPhase</strvalue>
+  </paramlist>
+</phase>
+
+<!-- HOST START (countdown + begin) -->
+<phase name="HostStart" class="com.donohoedigital.games.poker.online.HostStart">
+  <param name="next-phase" strvalue="InitializeOnlineGame"/>
+</phase>
+```
+
+**Step 6: Remove now-dead imports and fields**
 
 Remove any imports or fields related to:
 - `CommunityHostingConfig`
 - `CommunityGameRegistration`
 - `EmbeddedGameServer.start()`
 - `LanManager` (if referenced)
-- LAN/public IP display fields (`lanIpField_`, `publicIpField_`, etc.) — only if they exist and are unused after the rewrite
+- LAN/public IP display fields (`lanIpField_`, `publicIpField_`, etc.) — only if unused after the rewrite
 
 Do not remove anything used by the parent `TournamentOptions` class.
 
-**Step 6: Compile**
+**Step 7: Compile**
 
 ```bash
-cd /c/Repos/DDPoker/code && mvn compile -pl poker -am -q
+cd code && mvn compile -pl poker -am -q
 ```
 
 Expected: SUCCESS
 
-**Step 7: Commit**
+**Step 8: Commit**
 
 ```bash
 git add code/poker/src/main/java/com/donohoedigital/games/poker/online/OnlineConfiguration.java \
+        code/poker/src/main/resources/config/poker/gamedef.xml \
         code/poker/src/main/resources/config/poker/client.properties
-git commit -m "feat(online): OnlineConfiguration creates game on central server instead of starting embedded host"
+git commit -m "feat(online): OnlineConfiguration creates game on central server; add phase definitions"
 ```
 
 ---
 
-## Task 7: Fix `Lobby` to use central server REST client
+## Task 8: Restore `HostStart.java`
 
-`Lobby.java` initialises `restClient_` from the embedded server. For the central server flow the lobby must use the central server URL and the cached JWT.
+`HostStart` provides a countdown sequence before navigating to `InitializeOnlineGame`. It was deleted in M7. Restore a simplified version adapted to the central server architecture.
+
+**Files:**
+- Create: `code/poker/src/main/java/com/donohoedigital/games/poker/online/HostStart.java`
+
+**Step 1: Restore from M7 git history**
+
+```bash
+git show 9ef67fe3:code/poker/src/main/java/com/donohoedigital/games/poker/online/HostStart.java > /tmp/HostStart.java.orig
+```
+
+Review the original. Remove:
+- `LanManager.wakeAliveThread()` calls
+- AI fill logic (server handles seat filling)
+- Any `OnlineManager`, `PokerURL`, or P2P networking references
+
+Keep:
+- Countdown timer (3-2-1) posting director chat messages
+- `nextPhase()` → `InitializeOnlineGame` on countdown completion
+
+**Step 2: Adapt the class**
+
+The adapted `HostStart` should:
+1. On `start()`: begin a 3-second countdown using a Swing `Timer`
+2. Each second: add a director message to the lobby chat panel (e.g., "Game starting in 3...", "2...", "1...")
+3. On countdown complete: call `context_.processPhase("InitializeOnlineGame")`
+
+**Step 3: Compile**
+
+```bash
+cd code && mvn compile -pl poker -am -q
+```
+
+Expected: SUCCESS
+
+**Step 4: Commit**
+
+```bash
+git add code/poker/src/main/java/com/donohoedigital/games/poker/online/HostStart.java
+git commit -m "feat(online): restore HostStart countdown phase for central server game start"
+```
+
+---
+
+## Task 9: Fix `Lobby` to use central server REST client, polling, and cancel
+
+`Lobby.java` initialises `restClient_` from the embedded server and has no player list polling. Update to use the central server, add 2-second polling, and cancel the game on exit.
 
 **Files:**
 - Modify: `code/poker/src/main/java/com/donohoedigital/games/poker/online/Lobby.java`
 
 **Step 1: Locate `restClient_` initialisation**
 
-Search for the line in `Lobby.java` that builds `restClient_` using the embedded server (look for `embeddedServer.getPort()` or `embeddedServer.getLocalUserJwt()`).
+Search for the line that builds `restClient_` using the embedded server (look for `embeddedServer.getPort()` or `embeddedServer.getLocalUserJwt()`).
 
 **Step 2: Replace embedded server REST client with central server**
 
-Replace:
-
 ```java
-// OLD (whatever form it takes):
+// OLD:
 EmbeddedGameServer embeddedServer = ((PokerMain) engine_).getEmbeddedServer();
 restClient_ = new RestGameClient("http://localhost:" + embeddedServer.getPort(),
                                   embeddedServer.getLocalUserJwt());
 
 // NEW:
 String jwt = RestAuthClient.getInstance().getCachedJwt();
-String baseUrl = getCentralServerUrl();   // same helper as Tasks 5+6
+String baseUrl = getCentralServerUrl();
 if (baseUrl != null && jwt != null) {
     restClient_ = new RestGameClient(baseUrl, jwt);
 } else {
@@ -748,47 +871,161 @@ if (baseUrl != null && jwt != null) {
 }
 ```
 
-**Step 3: Add `getCentralServerUrl()` to `Lobby`**
+**Step 3: Add `getCentralServerUrl()` to `Lobby`** (same helper as Tasks 6 and 7)
 
-Same helper as Tasks 5 and 6 — copy/paste. (This repeated pattern is a candidate for a future shared utility, but YAGNI for now: three copies is acceptable until it actually causes pain.)
+**Step 4: Add player list polling**
 
-**Step 4: Compile**
+Add field: `private javax.swing.Timer playerPollTimer_;`
+
+In `start()`, after the REST client is set up:
+
+```java
+playerPollTimer_ = new javax.swing.Timer(2000, e -> refreshPlayerList());
+playerPollTimer_.start();
+```
+
+Add method:
+
+```java
+private void refreshPlayerList() {
+    String gameId = ((PokerGame) context_.getGame()).getWebSocketConfig().gameId();
+    try {
+        GameSummary summary = restClient_.getGameSummary(gameId);
+        updatePlayerTable(summary.players());
+    } catch (RestGameClient.RestGameClientException e) {
+        logger.warn("Failed to poll lobby player list: {}", e.getMessage());
+    }
+}
+```
+
+In `finish()`, stop the timer:
+
+```java
+if (playerPollTimer_ != null) {
+    playerPollTimer_.stop();
+    playerPollTimer_ = null;
+}
+```
+
+**Step 5: Cancel game on lobby exit (host only)**
+
+In the cancel/leave action handler:
+
+```java
+if (isHost_) {
+    String gameId = ((PokerGame) context_.getGame()).getWebSocketConfig().gameId();
+    if (gameId != null) {
+        try {
+            restClient_.cancelGame(gameId);
+        } catch (RestGameClient.RestGameClientException e) {
+            logger.warn("Failed to cancel game on server during lobby exit: {}", e.getMessage());
+        }
+    }
+}
+context_.restart();
+```
+
+**Step 6: Compile**
 
 ```bash
-cd /c/Repos/DDPoker/code && mvn compile -pl poker -am -q
+cd code && mvn compile -pl poker -am -q
 ```
 
 Expected: SUCCESS
 
-**Step 5: Commit**
+**Step 7: Commit**
 
 ```bash
 git add code/poker/src/main/java/com/donohoedigital/games/poker/online/Lobby.java
-git commit -m "feat(online): Lobby uses central server REST client for startGame/cancelGame/polling"
+git commit -m "feat(online): Lobby uses central server REST client, adds 2s polling and cancelGame on exit"
 ```
 
 ---
 
-## Task 8: Add login gate to `OnlineMenu`
+## Task 10: Add player list to `GameSummary` in `pokergameserver`
 
-If the user enters the online flow without a cached JWT (e.g., first launch, or session cleared), present a login dialog before showing the menu. If login fails or is cancelled, navigate back to the previous phase.
+The Lobby polls `GET /api/v1/games/{gameId}` to refresh its player list. The current `GameSummary` DTO does not include connected players. Add `LobbyPlayerInfo` and wire it in.
+
+**Files:**
+- Create: `code/pokergameserver/src/main/java/com/donohoedigital/games/poker/gameserver/dto/LobbyPlayerInfo.java`
+- Modify: `code/pokergameserver/src/main/java/com/donohoedigital/games/poker/gameserver/dto/GameSummary.java`
+- Modify: `code/pokergameserver/src/main/java/com/donohoedigital/games/poker/gameserver/service/GameService.java`
+- Modify: `code/pokergameserver/src/main/java/com/donohoedigital/games/poker/gameserver/GameInstance.java`
+- Test: `code/pokergameserver/src/test/java/com/donohoedigital/games/poker/gameserver/service/GameServiceTest.java`
+
+**Step 1: Create `LobbyPlayerInfo`**
+
+```java
+package com.donohoedigital.games.poker.gameserver.dto;
+
+/**
+ * A player connected to a game lobby.
+ *
+ * @param name display name
+ * @param role "PLAYER" or "OBSERVER"
+ */
+public record LobbyPlayerInfo(String name, String role) {}
+```
+
+**Step 2: Add `players` field to `GameSummary`**
+
+Add `List<LobbyPlayerInfo> players()` to the existing record/class. Default to empty list when not set.
+
+**Step 3: Add `getConnectedPlayers()` to `GameInstance`**
+
+Returns the current `ServerPlayerSession` entries as a list. `ServerPlayerSession` already tracks player name and observer status.
+
+**Step 4: Populate players in `GameService.getGameSummary()`**
+
+```java
+List<LobbyPlayerInfo> players = instance.getConnectedPlayers().stream()
+    .map(s -> new LobbyPlayerInfo(s.getPlayerName(), s.isObserver() ? "OBSERVER" : "PLAYER"))
+    .toList();
+// include in GameSummary construction
+```
+
+**Step 5: Write tests**
+
+In `GameServiceTest`, verify `getGameSummary()` returns correct player names and roles when sessions are present, and returns an empty list when no players are connected.
+
+**Step 6: Compile and test**
+
+```bash
+cd code && mvn test -pl pokergameserver -P dev -q
+```
+
+Expected: PASS
+
+**Step 7: Commit**
+
+```bash
+git add code/pokergameserver/src/main/java/com/donohoedigital/games/poker/gameserver/dto/LobbyPlayerInfo.java \
+        code/pokergameserver/src/main/java/com/donohoedigital/games/poker/gameserver/dto/GameSummary.java \
+        code/pokergameserver/src/main/java/com/donohoedigital/games/poker/gameserver/service/GameService.java \
+        code/pokergameserver/src/main/java/com/donohoedigital/games/poker/gameserver/GameInstance.java \
+        code/pokergameserver/src/test/java/com/donohoedigital/games/poker/gameserver/service/GameServiceTest.java
+git commit -m "feat(pokergameserver): add LobbyPlayerInfo DTO and players list to GameSummary"
+```
+
+---
+
+## Task 11: Add login gate to `OnlineMenu`
+
+If the user enters the online flow without a cached JWT, present a login dialog. If login fails or is cancelled, navigate back.
 
 **Files:**
 - Modify: `code/poker/src/main/java/com/donohoedigital/games/poker/online/OnlineMenu.java`
 
 **Step 1: Read `OnlineMenu.java`**
 
-It is a small phase (~87 lines). It extends a menu base class and overrides `init()` to display the player profile.
+Small phase (~87 lines). Extends a menu base class and overrides `init()` to display the player profile.
 
 **Step 2: Override `start()` to check session**
-
-Add to `OnlineMenu.java`:
 
 ```java
 @Override
 public void start() {
     if (!RestAuthClient.getInstance().hasSession()) {
-        // Prompt for login before showing the menu.
         if (!promptLogin()) {
             context_.processPhase("PreviousPhase");
             return;
@@ -797,18 +1034,13 @@ public void start() {
     super.start();
 }
 
-/**
- * Shows a username/password dialog and attempts login against the configured
- * central server. Returns true on success, false on cancel or failure.
- */
 private boolean promptLogin() {
     String node = Prefs.NODE_OPTIONS + engine_.getPrefsNodeName();
     String server = Prefs.getUserPrefs(node).get(EngineConstants.OPTION_ONLINE_SERVER, "");
     String baseUrl = OnlineServerUrl.normalizeBaseUrl(server);
 
     if (baseUrl == null) {
-        JOptionPane.showMessageDialog(
-                null,
+        JOptionPane.showMessageDialog(null,
                 PropertyConfig.getMessage("msg.online.noserver"),
                 PropertyConfig.getMessage("msg.online.login.title"),
                 JOptionPane.WARNING_MESSAGE);
@@ -817,8 +1049,7 @@ private boolean promptLogin() {
 
     JTextField userField = new JTextField(20);
     JPasswordField passField = new JPasswordField(20);
-    int result = JOptionPane.showConfirmDialog(
-            null,
+    int result = JOptionPane.showConfirmDialog(null,
             new Object[]{
                 PropertyConfig.getMessage("msg.online.login.prompt", baseUrl),
                 PropertyConfig.getMessage("msg.online.login.username"), userField,
@@ -828,18 +1059,14 @@ private boolean promptLogin() {
             JOptionPane.OK_CANCEL_OPTION,
             JOptionPane.PLAIN_MESSAGE);
 
-    if (result != JOptionPane.OK_OPTION) {
-        return false;
-    }
+    if (result != JOptionPane.OK_OPTION) return false;
 
     try {
         RestAuthClient.getInstance().login(baseUrl, userField.getText().trim(),
                 new String(passField.getPassword()));
         return true;
     } catch (RestAuthClient.RestAuthException ex) {
-        JOptionPane.showMessageDialog(
-                null,
-                ex.getMessage(),
+        JOptionPane.showMessageDialog(null, ex.getMessage(),
                 PropertyConfig.getMessage("msg.online.login.title"),
                 JOptionPane.ERROR_MESSAGE);
         return false;
@@ -861,7 +1088,7 @@ msg.online.login.password=Password:
 **Step 4: Compile**
 
 ```bash
-cd /c/Repos/DDPoker/code && mvn compile -pl poker -am -q
+cd code && mvn compile -pl poker -am -q
 ```
 
 Expected: SUCCESS
@@ -876,12 +1103,12 @@ git commit -m "feat(online): gate OnlineMenu behind central server login check"
 
 ---
 
-## Task 9: Full build and test verification
+## Task 12: Full build and test verification
 
 **Step 1: Run full poker module tests**
 
 ```bash
-cd /c/Repos/DDPoker/code && mvn test -P dev -pl poker -q
+cd code && mvn test -P dev -pl poker -q
 ```
 
 Expected: all tests pass.
@@ -889,7 +1116,7 @@ Expected: all tests pass.
 **Step 2: Run full project build**
 
 ```bash
-cd /c/Repos/DDPoker/code && mvn test -P dev -q
+cd code && mvn test -P dev -q
 ```
 
 Expected: all modules pass.
@@ -900,9 +1127,9 @@ If any compilation warnings appeared and were fixed, commit them here.
 
 ---
 
-## Task 10: Manual end-to-end verification
+## Task 13: Manual end-to-end verification
 
-These cannot be automated with the current test harness. Record results as comments on this plan.
+These cannot be automated with the current test harness.
 
 ### Prerequisites
 - Central server running (Docker or local `mvn clean package -DskipTests && java -jar ...`)
@@ -917,7 +1144,7 @@ These cannot be automated with the current test harness. Record results as comme
 3. Verify: desktop shows `Lobby.Player` with at least one player visible
 4. Web client: click Start
 5. Verify: both clients transition to active game table
-6. Play one hand to completion (fold or call through to showdown)
+6. Play one hand to completion
 7. Verify: results screen appears on both clients
 
 ### Scenario B: Desktop creates, Web joins
