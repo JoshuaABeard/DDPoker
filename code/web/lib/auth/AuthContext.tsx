@@ -13,7 +13,9 @@ import { clearAuthUser, getAuthUser, setAuthUser, type StoredAuthUser } from './
 
 interface AuthUser {
   username: string
+  email: string
   isAdmin: boolean
+  emailVerified: boolean
 }
 
 interface AuthState {
@@ -59,7 +61,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setState({
             user: {
               username: authResponse.username,
-              isAdmin: authResponse.admin || false
+              email: authResponse.email ?? '',
+              isAdmin: authResponse.admin || false,
+              emailVerified: authResponse.emailVerified ?? false,
             },
             isAuthenticated: true,
             isLoading: false,
@@ -109,10 +113,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
         setAuthUser(storedUser, rememberMe)
 
-        // Set full user info in state (including isAdmin from API response)
+        // Set full user info in state (including isAdmin and emailVerified from API response)
         const user: AuthUser = {
           username: response.username,
+          email: response.email ?? '',
           isAdmin: response.admin || false,
+          emailVerified: response.emailVerified ?? false,
         }
 
         setState({

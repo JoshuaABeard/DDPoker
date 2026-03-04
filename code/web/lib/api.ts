@@ -4,7 +4,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
-import { config, getApiUrl } from './config'
+import { config, getApiUrl, GAME_SERVER_URL } from './config'
 import type {
   ApiError,
   ApiResponse,
@@ -88,14 +88,14 @@ async function apiFetch<T>(
 }
 
 /**
- * Authentication API
+ * Authentication API — all calls go to the game server at GAME_SERVER_URL.
  */
 export const authApi = {
   /**
    * Log in a user
    */
   login: async (credentials: LoginRequest): Promise<AuthResponse> => {
-    const response = await apiFetch<AuthResponse>('/api/auth/login', {
+    const response = await apiFetch<AuthResponse>('/api/v1/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     })
@@ -117,7 +117,7 @@ export const authApi = {
    * Log out the current user
    */
   logout: async (): Promise<void> => {
-    await apiFetch<void>('/api/auth/logout', {
+    await apiFetch<void>('/api/v1/auth/logout', {
       method: 'POST',
     })
   },
@@ -127,7 +127,7 @@ export const authApi = {
    */
   getCurrentUser: async (): Promise<AuthResponse | null> => {
     try {
-      const response = await apiFetch<AuthResponse>('/api/auth/me')
+      const response = await apiFetch<AuthResponse>('/api/v1/auth/me')
       return response.data
     } catch (error) {
       console.error('Failed to get current user:', error)
@@ -136,15 +136,73 @@ export const authApi = {
   },
 
   /**
-   * Request password reset - sends password to registered email
+   * Request password reset - sends a reset email to the user
    */
   forgotPassword: async (username: string): Promise<{ success: boolean; message: string }> => {
-    const response = await apiFetch<{ success: boolean; message: string }>('/api/profile/forgot-password', {
+    const response = await apiFetch<{ success: boolean; message: string }>('/api/v1/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ username }),
     })
     return response.data
   },
+
+  /**
+   * Change the current user's password
+   */
+  changePassword: (currentPassword: string, newPassword: string): Promise<Response> =>
+    fetch(`${GAME_SERVER_URL}/api/v1/auth/change-password`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword, newPassword }),
+      credentials: 'include',
+    }),
+
+  /**
+   * Verify the user's email address using the token from the verification email
+   */
+  verifyEmail: (token: string): Promise<Response> =>
+    fetch(`${GAME_SERVER_URL}/api/v1/auth/verify-email?token=${encodeURIComponent(token)}`, {
+      credentials: 'include',
+    }),
+
+  /**
+   * Resend the email verification message to the current user
+   */
+  resendVerification: (): Promise<Response> =>
+    fetch(`${GAME_SERVER_URL}/api/v1/auth/resend-verification`, {
+      method: 'POST',
+      credentials: 'include',
+    }),
+
+  /**
+   * Check whether a username is available
+   */
+  checkUsername: (username: string): Promise<Response> =>
+    fetch(`${GAME_SERVER_URL}/api/v1/auth/check-username?username=${encodeURIComponent(username)}`, {
+      credentials: 'include',
+    }),
+
+  /**
+   * Request an email address change
+   */
+  changeEmail: (email: string): Promise<Response> =>
+    fetch(`${GAME_SERVER_URL}/api/v1/auth/email`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+      credentials: 'include',
+    }),
+
+  /**
+   * Reset the user's password using a reset token
+   */
+  resetPassword: (token: string, password: string): Promise<Response> =>
+    fetch(`${GAME_SERVER_URL}/api/v1/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, password }),
+      credentials: 'include',
+    }),
 }
 
 /**
