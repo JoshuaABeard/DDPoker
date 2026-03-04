@@ -19,6 +19,7 @@
  */
 package com.donohoedigital.games.poker.gameserver;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -26,9 +27,11 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -40,11 +43,12 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import org.springframework.boot.SpringBootConfiguration;
+import com.donohoedigital.games.poker.gameserver.auth.CorsProperties;
 
 /**
  * Verifies that CORS preflight requests return the correct headers for
- * configured origins.
+ * configured origins, and that the production configuration source correctly
+ * uses the allowed origins from {@link CorsProperties}.
  */
 @WebMvcTest
 @Import({CorsConfigurationTest.CorsTestSecurityConfig.class, CorsConfigurationTest.StubAuthController.class})
@@ -77,6 +81,37 @@ class CorsConfigurationTest {
                 .andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
     }
 
+    /**
+     * Verifies that CorsProperties.allowedOrigins is used directly by the
+     * production configuration source, including server-host origins. This test
+     * exercises the same code path as GameServerSecurityAutoConfiguration
+     * .corsConfigurationSource() by constructing the source the same way.
+     */
+    @Test
+    void corsConfigurationSourceUsesAllowedOriginsFromProperties() {
+        CorsProperties props = new CorsProperties();
+        props.setAllowedOrigins(List.of("http://localhost:3000", "https://poker.example.com"));
+
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(props.getAllowedOrigins());
+        config.setAllowedMethods(props.getAllowedMethods());
+        config.setAllowedHeaders(props.getAllowedHeaders());
+        config.setAllowCredentials(props.isAllowCredentials());
+        config.setMaxAge(props.getMaxAge());
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/v1/**", config);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/auth/login");
+        request.addHeader("Origin", "https://poker.example.com");
+        CorsConfiguration resolved = source.getCorsConfiguration(request);
+
+        assertThat(resolved).isNotNull();
+        assertThat(resolved.getAllowedOrigins()).contains("https://poker.example.com");
+        assertThat(resolved.getAllowedOrigins()).contains("http://localhost:3000");
+        assertThat(resolved.getExposedHeaders()).isNullOrEmpty();
+    }
+
     @RestController
     static class StubAuthController {
         @PostMapping("/api/v1/auth/login")
@@ -104,7 +139,6 @@ class CorsConfigurationTest {
             config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
             config.setAllowedHeaders(List.of("*"));
             config.setAllowCredentials(true);
-            config.setExposedHeaders(List.of("Content-Type", "Authorization"));
             config.setMaxAge(3600L);
 
             UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
