@@ -10,27 +10,25 @@ Bottom-up module sweep to systematically raise every module's test coverage floo
 prioritized by testability and impact. Five phases, each self-contained and deliverable,
 with JaCoCo thresholds raised after each phase to lock in gains.
 
-**Estimated total:** ~320 new tests across 5 phases.
+**Estimated total:** ~260 new tests across 5 phases. _(Revised from 320: `udp` module deleted in legacy cleanup 2026-03-04.)_
 
 ## Current State
 
 | Module           | Coverage | Threshold | Test Files |
 |------------------|----------|-----------|------------|
 | poker (AI pkg)   | 50%      | 0.50      | High       |
-| jsp              | 37%      | 0.37      | 2          |
 | pokergameserver  | 36%      | 0.36      | 60+        |
 | poker (main)     | 19%      | 0.15      | 72         |
-| wicket           | 12%      | 0.12      | 2          |
 | gameserver       | 9%       | 0.09      | 4          |
-| pokerwicket      | 9%       | 0.09      | 2          |
 | common           | 5%       | 0.05      | 23+        |
 | db               | 4%       | 0.04      | 0          |
 | pokerengine      | 2%       | 0.02      | 1          |
 | server           | 1%       | 0.01      | 0          |
-| udp              | 1%       | 0.01      | 0          |
 | gui              | 0%       | 0.00      | 0          |
 | gamecommon       | 0%       | 0.00      | 0          |
 | gameengine       | 0%       | 0.00      | 0          |
+
+_Note: `jsp`, `wicket`, `pokerwicket`, and `udp` modules were deleted in the legacy cleanup (2026-03-04)._
 
 ## Design Decisions
 
@@ -43,9 +41,11 @@ with JaCoCo thresholds raised after each phase to lock in gains.
   and `@Tag("slow")` to exclude from fast builds.
 - **Module-by-module JaCoCo thresholds** raised after each phase to prevent regression.
 
-## Phase 1: gamecommon + udp (~120 tests)
+## Phase 1: gamecommon (~60-70 tests)
 
-**Priority:** Highest ROI — zero-coverage modules with pure, deterministic, testable logic.
+**Priority:** Highest ROI — zero-coverage module with pure, deterministic, testable logic.
+
+_Note: `udp` was deleted in the legacy cleanup (2026-03-04) and is no longer a target._
 
 ### gamecommon (60-70 tests)
 
@@ -61,21 +61,9 @@ Target classes:
 - **`GameboardConfig`, `GamedefConfig`** — config parsing from XML, defaults.
 - **`SaveDetails`, `SaveFile`** — save metadata accessors, file path handling.
 
-### udp (50-60 tests)
-
-Target classes:
-
-- **`IncomingQueue`, `OutgoingQueue`** — FIFO ordering, capacity limits, empty queue behavior.
-- **`AckList`** — acknowledgment tracking, timeout expiry, duplicate detection.
-- **`UDPMessage`** — message structure, serialization/deserialization round-trips.
-- **`ByteData`, `UDPData`** — binary data encoding/decoding, boundary values.
-- **`UDPLink`** — connection lifecycle state machine (created → connected → closed).
-- **`UDPLinkMonitor`** — health check logic, timeout detection.
-
 ### Expected coverage lift
 
 - gamecommon: 0% → ~45%
-- udp: 1% → ~50%
 
 ## Phase 2: common + server (~65 tests)
 
@@ -222,7 +210,6 @@ and prevent regression:
 | Module           | Current | After Phase | New Threshold |
 |------------------|---------|-------------|---------------|
 | gamecommon       | 0.00    | Phase 1     | 0.40          |
-| udp              | 0.01    | Phase 1     | 0.45          |
 | common           | 0.05    | Phase 2     | 0.20          |
 | server           | 0.01    | Phase 2     | 0.35          |
 | pokerengine      | 0.02    | Phase 3     | 0.15          |

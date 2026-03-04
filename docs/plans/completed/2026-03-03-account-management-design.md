@@ -1,6 +1,6 @@
 # Account Management Design
 
-**Status:** APPROVED — pending implementation plan
+**Status:** COMPLETED (2026-03-04)
 **Date:** 2026-03-03
 
 ## Goals

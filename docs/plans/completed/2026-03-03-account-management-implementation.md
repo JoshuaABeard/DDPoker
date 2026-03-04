@@ -2,6 +2,8 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
+**Status:** COMPLETED (2026-03-04)
+
 **Goal:** Implement full account lifecycle management — email verification, embedded server localhost restriction, unified auth API, account lockout, and client UX flows for both the web client and Java thin client.
 
 **Architecture:** All authoritative auth lives in `pokergameserver` (`/api/v1/auth/*`). The legacy `api` module auth layer is deleted outright. Both clients (web + desktop) call the game server API. Email verification gates WAN features; practice mode (embedded server) remains accessible to unverified users.
