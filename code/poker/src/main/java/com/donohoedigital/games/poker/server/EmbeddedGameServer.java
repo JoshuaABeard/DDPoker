@@ -95,15 +95,15 @@ public class EmbeddedGameServer {
     }
 
     /**
-     * Starts the embedded Spring Boot server on a specific port, bound to all
-     * network interfaces for external access.
+     * Starts the embedded Spring Boot server on a specific port, bound to
+     * {@code 127.0.0.1} to prevent external access.
      *
      * <p>
-     * Used for community hosting where a predictable port is required for port
-     * forwarding. Port 0 retains random-port behavior.
+     * Used when a predictable port is required (e.g. for local tooling). Port 0
+     * retains random-port behavior.
      *
      * @param port
-     *            the port to listen on (default community port: 11885)
+     *            the port to listen on
      * @throws EmbeddedServerStartupException
      *             if the server fails to start
      */
@@ -126,21 +126,15 @@ public class EmbeddedGameServer {
             SpringApplication app = new SpringApplication(EmbeddedServerConfig.class);
             app.setAdditionalProfiles("embedded");
             app.setHeadless(false); // Running inside a Swing application
-            if (port != null || bindAllInterfaces) {
-                Properties props = new Properties();
-                if (port != null) {
-                    props.setProperty("server.port", String.valueOf(port));
-                }
-                if (bindAllInterfaces) {
-                    props.setProperty("server.address", "0.0.0.0");
-                }
+            Properties props = buildStartupProperties(port, bindAllInterfaces);
+            if (!props.isEmpty()) {
                 app.setDefaultProperties(props);
             }
             context = app.run();
             this.port = resolvePort();
             running = true;
             logger.info("Embedded game server started on port {}{}", this.port,
-                    bindAllInterfaces ? " (external access)" : "");
+                    bindAllInterfaces ? " (localhost only)" : "");
         } catch (Exception e) {
             throw new EmbeddedServerStartupException("Failed to start embedded Spring Boot server", e);
         }
@@ -249,6 +243,27 @@ public class EmbeddedGameServer {
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * Builds the Spring Boot startup properties for the given port and binding
+     * mode. Package-private for testing.
+     *
+     * <ul>
+     * <li>When {@code port} is non-null, {@code server.port} is set.</li>
+     * <li>When {@code bindAllInterfaces} is {@code true}, {@code server.address} is
+     * set to {@code 127.0.0.1} (localhost-only binding).</li>
+     * </ul>
+     */
+    Properties buildStartupProperties(Integer port, boolean bindAllInterfaces) {
+        Properties props = new Properties();
+        if (port != null) {
+            props.setProperty("server.port", String.valueOf(port));
+        }
+        if (bindAllInterfaces) {
+            props.setProperty("server.address", "127.0.0.1");
+        }
+        return props;
+    }
 
     /**
      * Generates the RSA key pair and saves it to {@code <config-dir>/jwt/} if it
