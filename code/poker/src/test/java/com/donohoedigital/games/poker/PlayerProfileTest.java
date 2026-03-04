@@ -419,4 +419,45 @@ class PlayerProfileTest {
 
         assertThat(online.getEmail()).isEqualTo("user@example.com");
     }
+
+    // =================================================================
+    // serverUrl Field Tests
+    // =================================================================
+
+    @Test
+    void should_ReturnNullServerUrl_When_NotSet() {
+        assertThat(profile.getServerUrl()).isNull();
+    }
+
+    @Test
+    void should_StoreServerUrl_When_Set() {
+        profile.setServerUrl("http://poker.example.com:8877");
+
+        assertThat(profile.getServerUrl()).isEqualTo("http://poker.example.com:8877");
+    }
+
+    @Test
+    void should_UpdateServerUrl_When_SetTwice() {
+        profile.setServerUrl("http://first.example.com");
+        profile.setServerUrl("http://second.example.com");
+
+        assertThat(profile.getServerUrl()).isEqualTo("http://second.example.com");
+    }
+
+    @Test
+    void should_ClearServerUrl_When_NullSet() {
+        profile.setServerUrl("http://poker.example.com:8877");
+        profile.setServerUrl(null);
+
+        assertThat(profile.getServerUrl()).isNull();
+    }
+
+    @Test
+    void should_CopyServerUrl_When_CopyConstructorUsed() {
+        profile.setServerUrl("http://poker.example.com:8877");
+
+        PlayerProfile copy = new PlayerProfile(profile, "CopyUser");
+
+        assertThat(copy.getServerUrl()).isEqualTo("http://poker.example.com:8877");
+    }
 }

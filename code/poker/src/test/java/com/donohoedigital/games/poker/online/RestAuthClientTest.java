@@ -511,6 +511,23 @@ class RestAuthClientTest {
                 .isInstanceOf(RestAuthClient.RestAuthException.class).hasMessageContaining("Already verified");
     }
 
+    @Test
+    void resendVerification_rateLimited_throwsResendRateLimitedException() {
+        testServer.createContext("/api/v1/auth/resend-verification", exchange -> {
+            String json = "{\"success\":false,\"rateLimited\":true,\"message\":\"Please wait before requesting another verification email\"}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(429, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        client.cacheSession(serverUrl, "my-jwt");
+        assertThatThrownBy(() -> client.resendVerification(serverUrl))
+                .isInstanceOf(RestAuthClient.ResendRateLimitedException.class).hasMessageContaining("Please wait");
+    }
+
     // -------------------------------------------------------------------------
     // checkUsername
     // -------------------------------------------------------------------------

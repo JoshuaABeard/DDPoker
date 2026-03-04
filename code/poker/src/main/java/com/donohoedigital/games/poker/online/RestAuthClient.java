@@ -451,8 +451,11 @@ public class RestAuthClient {
             ResendVerificationResponse result = OBJECT_MAPPER.readValue(response.body(),
                     ResendVerificationResponse.class);
             if (!result.success()) {
-                throw new RestAuthException(
-                        result.message() != null ? result.message() : "Failed to resend verification email");
+                String msg = result.message() != null ? result.message() : "Failed to resend verification email";
+                if (result.rateLimited()) {
+                    throw new ResendRateLimitedException(msg);
+                }
+                throw new RestAuthException(msg);
             }
         } catch (RestAuthException e) {
             throw e;
@@ -539,6 +542,16 @@ public class RestAuthClient {
 
         public RestAuthException(String message, Throwable cause) {
             super(message, cause);
+        }
+    }
+
+    /**
+     * Thrown by {@link #resendVerification} when the server rejects the request
+     * because the user has already requested a verification email recently.
+     */
+    public static class ResendRateLimitedException extends RestAuthException {
+        public ResendRateLimitedException(String message) {
+            super(message);
         }
     }
 }

@@ -174,6 +174,34 @@ public class PlayerProfileIntegrationTest {
         assertThat(testProfileNames).containsExactly("TestAlpha", "TestBravo", "TestZulu");
     }
 
+    @Test
+    void should_PersistServerUrl_When_ProfileSavedAndLoaded() {
+        // Create a profile with a server URL and save it
+        PlayerProfile profile = new PlayerProfile("TestServerUrl");
+        profile.initCheck();
+        profile.initFile();
+        profile.setCreateDate();
+        profile.setEmail("user@example.com");
+        profile.setServerUrl("http://poker.example.com:8877");
+        profile.save();
+
+        // Load the profile from file and verify serverUrl is preserved
+        PlayerProfile loaded = new PlayerProfile(profile.getFile(), true);
+
+        assertThat(loaded.getServerUrl()).isEqualTo("http://poker.example.com:8877");
+    }
+
+    @Test
+    void should_LoadNullServerUrl_When_ProfileHasNoServerUrl() {
+        // Create a profile without a server URL
+        PlayerProfile profile = createAndSaveProfile("TestNoServerUrl");
+
+        // Load and verify serverUrl is null
+        PlayerProfile loaded = new PlayerProfile(profile.getFile(), true);
+
+        assertThat(loaded.getServerUrl()).isNull();
+    }
+
     // Helper method
     private PlayerProfile createAndSaveProfile(String name) {
         PlayerProfile profile = new PlayerProfile(name);

@@ -61,6 +61,7 @@ public class PlayerProfile extends BaseProfile {
     private boolean bActivated_;
     private String sEmail_;
     private String sPassword_;
+    private String serverUrl_;
 
     // in-memory only (not serialized): REST session state
     private transient String jwt_;
@@ -138,6 +139,7 @@ public class PlayerProfile extends BaseProfile {
         bActivated_ = tp.bActivated_;
         sEmail_ = tp.sEmail_;
         sPassword_ = tp.sPassword_;
+        serverUrl_ = tp.serverUrl_;
         nWins_ = tp.nWins_;
         nActionCnt_ = tp.nActionCnt_;
         rounds_ = tp.rounds_;
@@ -233,6 +235,21 @@ public class PlayerProfile extends BaseProfile {
      */
     public void setEmail(String sEmail) {
         sEmail_ = sEmail;
+    }
+
+    /**
+     * Get the server URL for this online profile (e.g.
+     * "http://poker.example.com:8877"). Null for local profiles.
+     */
+    public String getServerUrl() {
+        return serverUrl_;
+    }
+
+    /**
+     * Set the server URL for this online profile.
+     */
+    public void setServerUrl(String serverUrl) {
+        serverUrl_ = serverUrl;
     }
 
     /**
@@ -418,6 +435,7 @@ public class PlayerProfile extends BaseProfile {
         bActivated_ = info.removeBooleanToken();
         sEmail_ = info.removeStringToken();
         sPassword_ = info.removeStringToken();
+        serverUrl_ = info.hasMoreTokens() ? info.removeStringToken() : null;
 
         // stats
         TokenizedList stats = new TokenizedList();
@@ -458,6 +476,7 @@ public class PlayerProfile extends BaseProfile {
         info.addToken(bActivated_);
         info.addToken(sEmail_);
         info.addToken(sPassword_);
+        info.addToken(serverUrl_);
         writer.write(info.marshal(null));
         writeEndEntry(writer);
 
