@@ -34,7 +34,8 @@ import type {
 import type { EquityResult } from './poker/types'
 
 /**
- * Base fetch wrapper with error handling
+ * Base fetch wrapper with timeout and error handling.
+ * Throws on non-2xx responses.
  */
 async function apiFetch<T>(
   endpoint: string,
@@ -88,6 +89,47 @@ async function apiFetch<T>(
 }
 
 /**
+ * Like apiFetch but returns the raw Response rather than parsing JSON and
+ * throwing on non-2xx. Used for endpoints that return meaningful bodies on
+ * 400/429 (e.g., auth endpoints that callers inspect directly).
+ * Applies the same timeout and credentials as apiFetch.
+ */
+async function apiFetchRaw(
+  path: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const url = `${GAME_SERVER_URL}${path}`
+
+  const defaultHeaders: HeadersInit = {}
+  if (options.body) {
+    defaultHeaders['Content-Type'] = 'application/json'
+  }
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), config.apiTimeout)
+
+  const signals: AbortSignal[] = [controller.signal]
+  if (options.signal) signals.push(options.signal)
+  const composedSignal = signals.length > 1 ? AbortSignal.any(signals) : controller.signal
+
+  const fetchOptions: RequestInit = {
+    credentials: 'include',
+    ...options,
+    signal: composedSignal,
+    headers: {
+      ...defaultHeaders,
+      ...options.headers,
+    },
+  }
+
+  try {
+    return await fetch(url, fetchOptions)
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+/**
  * Authentication API — all calls go to the game server at GAME_SERVER_URL.
  */
 export const authApi = {
@@ -105,8 +147,8 @@ export const authApi = {
   /**
    * Register a new user
    */
-  register: async (userData: RegisterRequest): Promise<PlayerProfile> => {
-    const response = await apiFetch<PlayerProfile>('/api/auth/register', {
+  register: async (userData: RegisterRequest): Promise<AuthResponse> => {
+    const response = await apiFetch<AuthResponse>('/api/v1/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
     })
@@ -150,58 +192,45 @@ export const authApi = {
    * Change the current user's password
    */
   changePassword: (currentPassword: string, newPassword: string): Promise<Response> =>
-    fetch(`${GAME_SERVER_URL}/api/v1/auth/change-password`, {
+    apiFetchRaw('/api/v1/auth/change-password', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ currentPassword, newPassword }),
-      credentials: 'include',
     }),
 
   /**
    * Verify the user's email address using the token from the verification email
    */
   verifyEmail: (token: string): Promise<Response> =>
-    fetch(`${GAME_SERVER_URL}/api/v1/auth/verify-email?token=${encodeURIComponent(token)}`, {
-      credentials: 'include',
-    }),
+    apiFetchRaw(`/api/v1/auth/verify-email?token=${encodeURIComponent(token)}`),
 
   /**
    * Resend the email verification message to the current user
    */
   resendVerification: (): Promise<Response> =>
-    fetch(`${GAME_SERVER_URL}/api/v1/auth/resend-verification`, {
-      method: 'POST',
-      credentials: 'include',
-    }),
+    apiFetchRaw('/api/v1/auth/resend-verification', { method: 'POST' }),
 
   /**
    * Check whether a username is available
    */
   checkUsername: (username: string): Promise<Response> =>
-    fetch(`${GAME_SERVER_URL}/api/v1/auth/check-username?username=${encodeURIComponent(username)}`, {
-      credentials: 'include',
-    }),
+    apiFetchRaw(`/api/v1/auth/check-username?username=${encodeURIComponent(username)}`),
 
   /**
    * Request an email address change
    */
   changeEmail: (email: string): Promise<Response> =>
-    fetch(`${GAME_SERVER_URL}/api/v1/auth/email`, {
+    apiFetchRaw('/api/v1/auth/email', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
-      credentials: 'include',
     }),
 
   /**
    * Reset the user's password using a reset token
    */
   resetPassword: (token: string, password: string): Promise<Response> =>
-    fetch(`${GAME_SERVER_URL}/api/v1/auth/reset-password`, {
+    apiFetchRaw('/api/v1/auth/reset-password', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token, password }),
-      credentials: 'include',
     }),
 }
 

@@ -190,6 +190,7 @@ describe('authApi — game server endpoints', () => {
     expect(url).toContain('/api/v1/auth/change-password')
     expect((init?.method ?? 'GET').toUpperCase()).toBe('PUT')
     expect(JSON.parse(init.body as string)).toMatchObject({ currentPassword: 'oldpw', newPassword: 'newpw' })
+    expect(init.credentials).toBe('include')
   })
 
   it('verifyEmail — GETs /api/v1/auth/verify-email?token=...', async () => {
@@ -198,9 +199,10 @@ describe('authApi — game server endpoints', () => {
 
     await authApi.verifyEmail('tok123')
 
-    const [url] = mockFetch.mock.calls[0] as [string, RequestInit]
+    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit]
     expect(url).toContain('/api/v1/auth/verify-email')
     expect(url).toContain('token=tok123')
+    expect(init.credentials).toBe('include')
   })
 
   it('resendVerification — POSTs to /api/v1/auth/resend-verification', async () => {
@@ -212,6 +214,7 @@ describe('authApi — game server endpoints', () => {
     const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit]
     expect(url).toContain('/api/v1/auth/resend-verification')
     expect((init?.method ?? 'GET').toUpperCase()).toBe('POST')
+    expect(init.credentials).toBe('include')
   })
 
   it('checkUsername — GETs /api/v1/auth/check-username?username=...', async () => {
@@ -220,9 +223,10 @@ describe('authApi — game server endpoints', () => {
 
     await authApi.checkUsername('alice')
 
-    const [url] = mockFetch.mock.calls[0] as [string, RequestInit]
+    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit]
     expect(url).toContain('/api/v1/auth/check-username')
     expect(url).toContain('username=alice')
+    expect(init.credentials).toBe('include')
   })
 
   it('changeEmail — PUTs to /api/v1/auth/email with email in body', async () => {
@@ -235,6 +239,7 @@ describe('authApi — game server endpoints', () => {
     expect(url).toContain('/api/v1/auth/email')
     expect((init?.method ?? 'GET').toUpperCase()).toBe('PUT')
     expect(JSON.parse(init.body as string)).toMatchObject({ email: 'newemail@example.com' })
+    expect(init.credentials).toBe('include')
   })
 
   it('resetPassword — POSTs to /api/v1/auth/reset-password with token and password', async () => {
@@ -247,5 +252,6 @@ describe('authApi — game server endpoints', () => {
     expect(url).toContain('/api/v1/auth/reset-password')
     expect((init?.method ?? 'GET').toUpperCase()).toBe('POST')
     expect(JSON.parse(init.body as string)).toMatchObject({ token: 'reset-token', password: 'newpassword' })
+    expect(init.credentials).toBe('include')
   })
 })

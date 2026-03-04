@@ -81,10 +81,10 @@ describe('authApi', () => {
     expect(result.username).toBe('alice')
   })
 
-  it('register — POSTs to /api/auth/register', async () => {
-    const fn = mockFetch({ id: 1, name: 'alice', isActive: true, createdAt: '2026-01-01' })
+  it('register — POSTs to /api/v1/auth/register', async () => {
+    const fn = mockFetch({ success: true, message: null, username: 'alice', email: 'a@b.com', emailVerified: false })
     await authApi.register({ username: 'alice', email: 'a@b.com', password: 'pw' })
-    expect(capturedUrl(fn)).toContain('/api/auth/register')
+    expect(capturedUrl(fn)).toContain('/api/v1/auth/register')
     expect(capturedMethod(fn)).toBe('POST')
   })
 
