@@ -658,6 +658,22 @@ class AuthServiceTest {
     }
 
     // -------------------------------------------------------------------------
+    // isUsernameAvailable tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void isUsernameAvailable_whenUserExists_returnsFalse() {
+        createProfile("existingusername", "pass");
+
+        assertThat(authService.isUsernameAvailable("existingusername")).isFalse();
+    }
+
+    @Test
+    void isUsernameAvailable_whenUserDoesNotExist_returnsTrue() {
+        assertThat(authService.isUsernameAvailable("nonexistentusername")).isTrue();
+    }
+
+    // -------------------------------------------------------------------------
     // requestEmailChange tests
     // -------------------------------------------------------------------------
 

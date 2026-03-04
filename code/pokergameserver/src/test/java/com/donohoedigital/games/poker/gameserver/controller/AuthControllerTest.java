@@ -38,7 +38,6 @@ import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
 import com.donohoedigital.games.poker.gameserver.dto.RequestEmailChangeResponse;
 import com.donohoedigital.games.poker.gameserver.dto.ResendVerificationResponse;
 import com.donohoedigital.games.poker.gameserver.dto.VerifyEmailResponse;
-import com.donohoedigital.games.poker.gameserver.persistence.repository.OnlineProfileRepository;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
 
 @WebMvcTest
@@ -50,9 +49,6 @@ class AuthControllerTest {
 
     @MockitoBean
     private AuthService authService;
-
-    @MockitoBean
-    private OnlineProfileRepository profileRepository;
 
     static class TestConfig {
         @Bean
@@ -145,7 +141,7 @@ class AuthControllerTest {
     @Test
     void resendVerification_whenAuthenticated_returns200() throws Exception {
         when(authService.resendVerification("testuser"))
-                .thenReturn(new ResendVerificationResponse(true, "Verification email sent"));
+                .thenReturn(new ResendVerificationResponse(true, false, "Verification email sent"));
 
         mockMvc.perform(post("/api/v1/auth/resend-verification")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -153,8 +149,8 @@ class AuthControllerTest {
 
     @Test
     void resendVerification_whenRateLimited_returns429() throws Exception {
-        when(authService.resendVerification("testuser")).thenReturn(
-                new ResendVerificationResponse(false, "Please wait before requesting another verification email"));
+        when(authService.resendVerification("testuser")).thenReturn(new ResendVerificationResponse(false, true,
+                "Please wait before requesting another verification email"));
 
         mockMvc.perform(post("/api/v1/auth/resend-verification")).andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.success").value(false));
@@ -171,8 +167,14 @@ class AuthControllerTest {
     }
 
     @Test
+    void changeEmail_withBlankEmail_returns400() throws Exception {
+        mockMvc.perform(put("/api/v1/auth/email").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void checkUsername_whenAvailable_returnsTrue() throws Exception {
-        when(profileRepository.existsByName("newuser")).thenReturn(false);
+        when(authService.isUsernameAvailable("newuser")).thenReturn(true);
 
         mockMvc.perform(get("/api/v1/auth/check-username").param("username", "newuser")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.available").value(true));
@@ -180,7 +182,7 @@ class AuthControllerTest {
 
     @Test
     void checkUsername_whenTaken_returnsFalse() throws Exception {
-        when(profileRepository.existsByName("takenuser")).thenReturn(true);
+        when(authService.isUsernameAvailable("takenuser")).thenReturn(false);
 
         mockMvc.perform(get("/api/v1/auth/check-username").param("username", "takenuser")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.available").value(false));

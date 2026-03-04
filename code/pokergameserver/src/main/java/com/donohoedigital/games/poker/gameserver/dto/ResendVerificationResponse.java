@@ -24,7 +24,8 @@ package com.donohoedigital.games.poker.gameserver.dto;
  *
  * <p>
  * On success {@code success} is true. On failure {@code success} is false and
- * {@code message} describes the error.
+ * {@code message} describes the error. {@code rateLimited} is true when the
+ * failure is specifically due to the resend rate limit being exceeded.
  */
-public record ResendVerificationResponse(boolean success, String message) {
+public record ResendVerificationResponse(boolean success, boolean rateLimited, String message) {
 }

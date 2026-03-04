@@ -545,11 +545,11 @@ public class AuthService {
     public ResendVerificationResponse resendVerification(String username) {
         OnlineProfile profile = profileRepository.findByName(username).orElse(null);
         if (profile == null) {
-            return new ResendVerificationResponse(false, "Profile not found");
+            return new ResendVerificationResponse(false, false, "Profile not found");
         }
 
         if (profile.isEmailVerified()) {
-            return new ResendVerificationResponse(false, "Email already verified");
+            return new ResendVerificationResponse(false, false, "Email already verified");
         }
 
         // Rate limit: allow at most 1 resend per 5 minutes.
@@ -558,7 +558,7 @@ public class AuthService {
         if (profile.getEmailVerificationTokenExpiry() != null) {
             long issuedAt = profile.getEmailVerificationTokenExpiry() - VERIFICATION_TOKEN_TTL_MS;
             if (System.currentTimeMillis() < issuedAt + RESEND_RATE_LIMIT_MS) {
-                return new ResendVerificationResponse(false,
+                return new ResendVerificationResponse(false, true,
                         "Please wait before requesting another verification email");
             }
         }
@@ -576,7 +576,18 @@ public class AuthService {
             log.warn("Failed to send verification email to {}: {}", targetEmail, e.getMessage());
         }
 
-        return new ResendVerificationResponse(true, "Verification email sent");
+        return new ResendVerificationResponse(true, false, "Verification email sent");
+    }
+
+    /**
+     * Check whether a username is available for registration.
+     *
+     * @param username
+     *            the username to check
+     * @return true if the username is not yet taken
+     */
+    public boolean isUsernameAvailable(String username) {
+        return profileRepository.findByName(username).isEmpty();
     }
 
     /**

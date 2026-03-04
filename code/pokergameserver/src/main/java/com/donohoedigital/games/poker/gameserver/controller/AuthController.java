@@ -51,7 +51,6 @@ import com.donohoedigital.games.poker.gameserver.dto.ResendVerificationResponse;
 import com.donohoedigital.games.poker.gameserver.dto.ResetPasswordRequest;
 import com.donohoedigital.games.poker.gameserver.dto.UsernameCheckResponse;
 import com.donohoedigital.games.poker.gameserver.dto.VerifyEmailResponse;
-import com.donohoedigital.games.poker.gameserver.persistence.repository.OnlineProfileRepository;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
 
 /**
@@ -62,14 +61,11 @@ import com.donohoedigital.games.poker.gameserver.service.AuthService;
 public class AuthController {
 
     private final AuthService authService;
-    private final OnlineProfileRepository profileRepository;
     private final String cookieName;
     private final Environment environment;
 
-    public AuthController(AuthService authService, OnlineProfileRepository profileRepository,
-            JwtProperties jwtProperties, Environment environment) {
+    public AuthController(AuthService authService, JwtProperties jwtProperties, Environment environment) {
         this.authService = authService;
-        this.profileRepository = profileRepository;
         this.cookieName = jwtProperties.getCookieName();
         this.environment = environment;
     }
@@ -221,7 +217,7 @@ public class AuthController {
         ResendVerificationResponse result = authService.resendVerification(username);
         if (result.success()) {
             return ResponseEntity.ok(result);
-        } else if (result.message() != null && result.message().startsWith("Please wait")) {
+        } else if (result.rateLimited()) {
             return ResponseEntity.status(429).body(result);
         } else {
             return ResponseEntity.badRequest().body(result);
@@ -232,12 +228,11 @@ public class AuthController {
      * Request an email address change for the authenticated user.
      *
      * <p>
-     * Sends a confirmation link to the new address. Returns 200 with the response
-     * body in all cases (success=true or false); the client reads the body to
-     * determine outcome. This mirrors the {@link #register} pattern.
+     * Sends a confirmation link to the new address. Returns 200 on success, 400 on
+     * validation failure or service error.
      */
     @PutMapping("/email")
-    public ResponseEntity<RequestEmailChangeResponse> changeEmail(@RequestBody EmailChangeRequest request,
+    public ResponseEntity<RequestEmailChangeResponse> changeEmail(@Valid @RequestBody EmailChangeRequest request,
             Authentication authentication) {
         String username = authentication.getName();
         RequestEmailChangeResponse result = authService.requestEmailChange(username, request.email());
@@ -258,8 +253,7 @@ public class AuthController {
      */
     @GetMapping("/check-username")
     public ResponseEntity<UsernameCheckResponse> checkUsername(@RequestParam(name = "username") String username) {
-        boolean available = !profileRepository.existsByName(username);
-        return ResponseEntity.ok(new UsernameCheckResponse(available));
+        return ResponseEntity.ok(new UsernameCheckResponse(authService.isUsernameAvailable(username)));
     }
 
     // -------------------------------------------------------------------------

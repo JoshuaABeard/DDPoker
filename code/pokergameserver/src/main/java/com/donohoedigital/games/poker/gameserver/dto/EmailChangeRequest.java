@@ -19,8 +19,11 @@
  */
 package com.donohoedigital.games.poker.gameserver.dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+
 /**
  * Request DTO for the change-email endpoint.
  */
-public record EmailChangeRequest(String email) {
+public record EmailChangeRequest(@NotBlank @Email String email) {
 }
