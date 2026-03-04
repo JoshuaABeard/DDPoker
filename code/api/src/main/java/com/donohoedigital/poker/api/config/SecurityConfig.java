@@ -57,15 +57,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
-                        .requestMatchers("/api/auth/**").permitAll().requestMatchers("/api/games/**").permitAll()
-                        .requestMatchers("/api/leaderboard/**").permitAll().requestMatchers("/api/history/**")
-                        .permitAll().requestMatchers("/api/search/**").permitAll().requestMatchers("/api/downloads/**")
-                        .permitAll().requestMatchers("/api/rss/**").permitAll()
-                        // IMPORTANT: Password reset must be permitAll() and come BEFORE /api/profile/**
-                        // authenticated() rule
-                        // Spring Security evaluates matchers in order - more specific rules must
-                        // precede general rules
-                        .requestMatchers("/api/profile/forgot-password").permitAll()
+                        .requestMatchers("/api/games/**").permitAll().requestMatchers("/api/leaderboard/**").permitAll()
+                        .requestMatchers("/api/history/**").permitAll().requestMatchers("/api/search/**").permitAll()
+                        .requestMatchers("/api/downloads/**").permitAll().requestMatchers("/api/rss/**").permitAll()
                         // Protected endpoints
                         .requestMatchers("/api/profile/**").authenticated().requestMatchers("/api/admin/**")
                         .hasRole("ADMIN")
