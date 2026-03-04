@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,7 +68,7 @@ class RestAuthClientTest {
     @Test
     void login_success_returnsLoginResponse() throws IOException {
         testServer.createContext("/api/v1/auth/login", exchange -> {
-            String json = "{\"success\":true,\"token\":\"tok123\",\"profileId\":42,\"username\":\"Alice\",\"message\":null}";
+            String json = "{\"success\":true,\"token\":\"tok123\",\"profileId\":42,\"username\":\"Alice\",\"email\":\"alice@example.com\",\"emailVerified\":false,\"message\":null,\"retryAfterSeconds\":null}";
             byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, bytes.length);
@@ -82,12 +83,48 @@ class RestAuthClientTest {
         assertThat(resp.token()).isEqualTo("tok123");
         assertThat(resp.profileId()).isEqualTo(42L);
         assertThat(resp.username()).isEqualTo("Alice");
+        assertThat(resp.email()).isEqualTo("alice@example.com");
+        assertThat(resp.emailVerified()).isFalse();
+    }
+
+    @Test
+    void login_parsesEmailVerified_andSetsCache() throws IOException {
+        testServer.createContext("/api/v1/auth/login", exchange -> {
+            String json = "{\"success\":true,\"token\":\"tok123\",\"profileId\":42,\"username\":\"Alice\",\"email\":\"alice@example.com\",\"emailVerified\":true,\"message\":null,\"retryAfterSeconds\":null}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        client.login(serverUrl, "Alice", "password");
+
+        assertThat(client.isEmailVerified()).isTrue();
+    }
+
+    @Test
+    void login_emailVerifiedFalse_setsCache() throws IOException {
+        testServer.createContext("/api/v1/auth/login", exchange -> {
+            String json = "{\"success\":true,\"token\":\"tok123\",\"profileId\":42,\"username\":\"Alice\",\"email\":\"alice@example.com\",\"emailVerified\":false,\"message\":null,\"retryAfterSeconds\":null}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        client.login(serverUrl, "Alice", "password");
+
+        assertThat(client.isEmailVerified()).isFalse();
     }
 
     @Test
     void login_failure_throwsRestAuthException() {
         testServer.createContext("/api/v1/auth/login", exchange -> {
-            String json = "{\"success\":false,\"token\":null,\"profileId\":null,\"username\":null,\"message\":\"Invalid username or password\"}";
+            String json = "{\"success\":false,\"token\":null,\"profileId\":null,\"username\":null,\"email\":null,\"emailVerified\":false,\"message\":\"Invalid username or password\",\"retryAfterSeconds\":null}";
             byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(401, bytes.length);
@@ -103,10 +140,10 @@ class RestAuthClientTest {
 
     @Test
     void login_sendsJsonBody() throws IOException {
-        java.util.concurrent.atomic.AtomicReference<String> capturedBody = new java.util.concurrent.atomic.AtomicReference<>();
+        AtomicReference<String> capturedBody = new AtomicReference<>();
         testServer.createContext("/api/v1/auth/login", exchange -> {
             capturedBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
-            String json = "{\"success\":true,\"token\":\"t\",\"profileId\":1,\"username\":\"u\",\"message\":null}";
+            String json = "{\"success\":true,\"token\":\"t\",\"profileId\":1,\"username\":\"u\",\"email\":\"u@e.com\",\"emailVerified\":false,\"message\":null,\"retryAfterSeconds\":null}";
             byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, bytes.length);
@@ -128,7 +165,7 @@ class RestAuthClientTest {
     @Test
     void register_success_returnsLoginResponse() throws IOException {
         testServer.createContext("/api/v1/auth/register", exchange -> {
-            String json = "{\"success\":true,\"token\":\"tok456\",\"profileId\":99,\"username\":\"Bob\",\"message\":null}";
+            String json = "{\"success\":true,\"token\":\"tok456\",\"profileId\":99,\"username\":\"Bob\",\"email\":\"bob@example.com\",\"emailVerified\":false,\"message\":null,\"retryAfterSeconds\":null}";
             byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, bytes.length);
@@ -142,12 +179,31 @@ class RestAuthClientTest {
         assertThat(resp.success()).isTrue();
         assertThat(resp.token()).isEqualTo("tok456");
         assertThat(resp.profileId()).isEqualTo(99L);
+        assertThat(resp.email()).isEqualTo("bob@example.com");
+        assertThat(resp.emailVerified()).isFalse();
+    }
+
+    @Test
+    void register_parsesEmailVerified_andSetsCache() throws IOException {
+        testServer.createContext("/api/v1/auth/register", exchange -> {
+            String json = "{\"success\":true,\"token\":\"tok456\",\"profileId\":99,\"username\":\"Bob\",\"email\":\"bob@example.com\",\"emailVerified\":false,\"message\":null,\"retryAfterSeconds\":null}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        client.register(serverUrl, "Bob", "pass1234", "bob@example.com");
+
+        assertThat(client.isEmailVerified()).isFalse();
     }
 
     @Test
     void register_duplicate_throwsRestAuthException() {
         testServer.createContext("/api/v1/auth/register", exchange -> {
-            String json = "{\"success\":false,\"token\":null,\"profileId\":null,\"username\":null,\"message\":\"Username already exists\"}";
+            String json = "{\"success\":false,\"token\":null,\"profileId\":null,\"username\":null,\"email\":null,\"emailVerified\":false,\"message\":\"Username already exists\",\"retryAfterSeconds\":null}";
             byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(400, bytes.length);
@@ -158,6 +214,16 @@ class RestAuthClientTest {
 
         assertThatThrownBy(() -> client.register(serverUrl, "Bob", "pass1234", "bob@example.com"))
                 .isInstanceOf(RestAuthClient.RestAuthException.class).hasMessageContaining("Username already exists");
+    }
+
+    // -------------------------------------------------------------------------
+    // isEmailVerified
+    // -------------------------------------------------------------------------
+
+    @Test
+    void isEmailVerified_returnsFalse_byDefault() {
+        RestAuthClient c = new RestAuthClient();
+        assertThat(c.isEmailVerified()).isFalse();
     }
 
     // -------------------------------------------------------------------------
@@ -185,7 +251,7 @@ class RestAuthClientTest {
 
     @Test
     void getCurrentUser_sendsAuthHeader() {
-        java.util.concurrent.atomic.AtomicReference<String> capturedAuth = new java.util.concurrent.atomic.AtomicReference<>();
+        AtomicReference<String> capturedAuth = new AtomicReference<>();
         testServer.createContext("/api/v1/auth/me", exchange -> {
             capturedAuth.set(exchange.getRequestHeaders().getFirst("Authorization"));
             String json = "{\"id\":1,\"username\":\"u\",\"email\":\"u@e.com\",\"retired\":false}";
@@ -320,6 +386,262 @@ class RestAuthClientTest {
         assertThatThrownBy(() -> client.resetPassword(serverUrl, "bad-token", "newpass12"))
                 .isInstanceOf(RestAuthClient.RestAuthException.class)
                 .hasMessageContaining("Invalid or expired reset token");
+    }
+
+    // -------------------------------------------------------------------------
+    // verifyEmail
+    // -------------------------------------------------------------------------
+
+    @Test
+    void verifyEmail_success_updatesCachedJwtAndSetsEmailVerified() throws IOException {
+        testServer.createContext("/api/v1/auth/verify-email", exchange -> {
+            String query = exchange.getRequestURI().getQuery();
+            assertThat(query).contains("token=abc123");
+            String json = "{\"success\":true,\"token\":\"new-jwt\",\"message\":null}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        client.cacheSession(serverUrl, "old-jwt");
+        client.verifyEmail(serverUrl, "abc123");
+
+        assertThat(client.getCachedJwt()).isEqualTo("new-jwt");
+        assertThat(client.isEmailVerified()).isTrue();
+    }
+
+    @Test
+    void verifyEmail_sendsGetRequest() throws IOException {
+        AtomicReference<String> capturedMethod = new AtomicReference<>();
+        AtomicReference<String> capturedQuery = new AtomicReference<>();
+        testServer.createContext("/api/v1/auth/verify-email", exchange -> {
+            capturedMethod.set(exchange.getRequestMethod());
+            capturedQuery.set(exchange.getRequestURI().getQuery());
+            String json = "{\"success\":true,\"token\":\"new-jwt\",\"message\":null}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        client.verifyEmail(serverUrl, "mytoken");
+
+        assertThat(capturedMethod.get()).isEqualTo("GET");
+        assertThat(capturedQuery.get()).isEqualTo("token=mytoken");
+    }
+
+    @Test
+    void verifyEmail_failure_throwsRestAuthException() {
+        testServer.createContext("/api/v1/auth/verify-email", exchange -> {
+            String json = "{\"success\":false,\"token\":null,\"message\":\"Invalid or expired token\"}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(400, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        assertThatThrownBy(() -> client.verifyEmail(serverUrl, "bad-token"))
+                .isInstanceOf(RestAuthClient.RestAuthException.class).hasMessageContaining("Invalid or expired token");
+    }
+
+    // -------------------------------------------------------------------------
+    // resendVerification
+    // -------------------------------------------------------------------------
+
+    @Test
+    void resendVerification_success_doesNotThrow() {
+        testServer.createContext("/api/v1/auth/resend-verification", exchange -> {
+            String json = "{\"success\":true,\"rateLimited\":false,\"message\":null}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        client.cacheSession(serverUrl, "my-jwt");
+        assertThatNoException().isThrownBy(() -> client.resendVerification(serverUrl));
+    }
+
+    @Test
+    void resendVerification_sendsPostWithAuthHeader() {
+        AtomicReference<String> capturedMethod = new AtomicReference<>();
+        AtomicReference<String> capturedAuth = new AtomicReference<>();
+        testServer.createContext("/api/v1/auth/resend-verification", exchange -> {
+            capturedMethod.set(exchange.getRequestMethod());
+            capturedAuth.set(exchange.getRequestHeaders().getFirst("Authorization"));
+            String json = "{\"success\":true,\"rateLimited\":false,\"message\":null}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        client.cacheSession(serverUrl, "bearer-token");
+        client.resendVerification(serverUrl);
+
+        assertThat(capturedMethod.get()).isEqualTo("POST");
+        assertThat(capturedAuth.get()).isEqualTo("Bearer bearer-token");
+    }
+
+    @Test
+    void resendVerification_failure_throwsRestAuthException() {
+        testServer.createContext("/api/v1/auth/resend-verification", exchange -> {
+            String json = "{\"success\":false,\"rateLimited\":false,\"message\":\"Already verified\"}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(400, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        client.cacheSession(serverUrl, "my-jwt");
+        assertThatThrownBy(() -> client.resendVerification(serverUrl))
+                .isInstanceOf(RestAuthClient.RestAuthException.class).hasMessageContaining("Already verified");
+    }
+
+    // -------------------------------------------------------------------------
+    // checkUsername
+    // -------------------------------------------------------------------------
+
+    @Test
+    void checkUsername_available_returnsTrue() {
+        testServer.createContext("/api/v1/auth/check-username", exchange -> {
+            String json = "{\"available\":true}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        boolean result = client.checkUsername(serverUrl, "newuser");
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    void checkUsername_taken_returnsFalse() {
+        testServer.createContext("/api/v1/auth/check-username", exchange -> {
+            String json = "{\"available\":false}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        boolean result = client.checkUsername(serverUrl, "takenuser");
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void checkUsername_sendsGetWithUsernameParam() {
+        AtomicReference<String> capturedMethod = new AtomicReference<>();
+        AtomicReference<String> capturedQuery = new AtomicReference<>();
+        testServer.createContext("/api/v1/auth/check-username", exchange -> {
+            capturedMethod.set(exchange.getRequestMethod());
+            capturedQuery.set(exchange.getRequestURI().getQuery());
+            String json = "{\"available\":true}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        client.checkUsername(serverUrl, "alice");
+
+        assertThat(capturedMethod.get()).isEqualTo("GET");
+        assertThat(capturedQuery.get()).isEqualTo("username=alice");
+    }
+
+    @Test
+    void checkUsername_serverError_throwsRestAuthException() {
+        testServer.createContext("/api/v1/auth/check-username", exchange -> {
+            exchange.sendResponseHeaders(500, 0);
+            exchange.getResponseBody().close();
+        });
+
+        assertThatThrownBy(() -> client.checkUsername(serverUrl, "alice"))
+                .isInstanceOf(RestAuthClient.RestAuthException.class);
+    }
+
+    // -------------------------------------------------------------------------
+    // requestEmailChange
+    // -------------------------------------------------------------------------
+
+    @Test
+    void requestEmailChange_success_doesNotThrow() {
+        testServer.createContext("/api/v1/auth/email", exchange -> {
+            String json = "{\"success\":true,\"message\":null}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        client.cacheSession(serverUrl, "my-jwt");
+        assertThatNoException().isThrownBy(() -> client.requestEmailChange(serverUrl, "new@example.com"));
+    }
+
+    @Test
+    void requestEmailChange_sendsPutWithAuthHeaderAndBody() {
+        AtomicReference<String> capturedMethod = new AtomicReference<>();
+        AtomicReference<String> capturedAuth = new AtomicReference<>();
+        AtomicReference<String> capturedBody = new AtomicReference<>();
+        testServer.createContext("/api/v1/auth/email", exchange -> {
+            capturedMethod.set(exchange.getRequestMethod());
+            capturedAuth.set(exchange.getRequestHeaders().getFirst("Authorization"));
+            capturedBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            String json = "{\"success\":true,\"message\":null}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        client.cacheSession(serverUrl, "bearer-token");
+        client.requestEmailChange(serverUrl, "new@example.com");
+
+        assertThat(capturedMethod.get()).isEqualTo("PUT");
+        assertThat(capturedAuth.get()).isEqualTo("Bearer bearer-token");
+        assertThat(capturedBody.get()).contains("\"email\"");
+        assertThat(capturedBody.get()).contains("new@example.com");
+    }
+
+    @Test
+    void requestEmailChange_failure_throwsRestAuthException() {
+        testServer.createContext("/api/v1/auth/email", exchange -> {
+            String json = "{\"success\":false,\"message\":\"Email already in use\"}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(400, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        client.cacheSession(serverUrl, "my-jwt");
+        assertThatThrownBy(() -> client.requestEmailChange(serverUrl, "taken@example.com"))
+                .isInstanceOf(RestAuthClient.RestAuthException.class).hasMessageContaining("Email already in use");
     }
 
     // -------------------------------------------------------------------------

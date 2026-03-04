@@ -29,13 +29,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.donohoedigital.games.poker.gameserver.dto.ChangePasswordRequest;
+import com.donohoedigital.games.poker.gameserver.dto.EmailChangeRequest;
 import com.donohoedigital.games.poker.gameserver.dto.ForgotPasswordRequest;
 import com.donohoedigital.games.poker.gameserver.dto.LoginRequest;
 import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
 import com.donohoedigital.games.poker.gameserver.dto.ProfileResponse;
 import com.donohoedigital.games.poker.gameserver.dto.RegisterRequest;
+import com.donohoedigital.games.poker.gameserver.dto.RequestEmailChangeResponse;
+import com.donohoedigital.games.poker.gameserver.dto.ResendVerificationResponse;
 import com.donohoedigital.games.poker.gameserver.dto.ResetPasswordRequest;
 import com.donohoedigital.games.poker.gameserver.dto.UpdateProfileRequest;
+import com.donohoedigital.games.poker.gameserver.dto.UsernameCheckResponse;
+import com.donohoedigital.games.poker.gameserver.dto.VerifyEmailResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -66,6 +71,7 @@ public class RestAuthClient {
 
     private volatile String cachedJwt_;
     private volatile String cachedServerUrl_;
+    private volatile boolean cachedEmailVerified_;
 
     /** Returns the shared singleton instance. */
     public static RestAuthClient getInstance() {
@@ -126,6 +132,14 @@ public class RestAuthClient {
     }
 
     /**
+     * Returns {@code true} if the currently cached session has a verified email
+     * address.
+     */
+    public boolean isEmailVerified() {
+        return cachedEmailVerified_;
+    }
+
+    /**
      * Authenticate with username and password.
      *
      * @param serverUrl
@@ -151,6 +165,7 @@ public class RestAuthClient {
                 throw new RestAuthException(result.message() != null ? result.message() : "Login failed");
             }
             cacheSession(serverUrl, result.token());
+            cachedEmailVerified_ = result.emailVerified();
             return result;
         } catch (RestAuthException e) {
             throw e;
@@ -187,6 +202,7 @@ public class RestAuthClient {
             if (!result.success()) {
                 throw new RestAuthException(result.message() != null ? result.message() : "Registration failed");
             }
+            cachedEmailVerified_ = result.emailVerified();
             return result;
         } catch (RestAuthException e) {
             throw e;
@@ -380,6 +396,132 @@ public class RestAuthClient {
             http.send(request, HttpResponse.BodyHandlers.discarding());
         } catch (Exception e) {
             logger.warn("Failed to logout", e);
+        }
+    }
+
+    /**
+     * Verify email using the token from the verification email.
+     *
+     * <p>
+     * On success, updates {@code cachedJwt_} with the new token (which has
+     * {@code emailVerified=true}) and sets {@code cachedEmailVerified_} to
+     * {@code true}.
+     *
+     * @param serverUrl
+     *            base URL of the server
+     * @param token
+     *            the one-time token from the verification email
+     * @throws RestAuthException
+     *             if the token is invalid, expired, or the request fails
+     */
+    public void verifyEmail(String serverUrl, String token) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(serverUrl + "/api/v1/auth/verify-email?token=" + token)).GET().build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            VerifyEmailResponse result = OBJECT_MAPPER.readValue(response.body(), VerifyEmailResponse.class);
+            if (!result.success()) {
+                throw new RestAuthException(result.message() != null ? result.message() : "Email verification failed");
+            }
+            cachedJwt_ = result.token();
+            cachedEmailVerified_ = true;
+        } catch (RestAuthException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RestAuthException("Failed to verify email", e);
+        }
+    }
+
+    /**
+     * Request a new verification email for the current account.
+     *
+     * @param serverUrl
+     *            base URL of the server
+     * @throws RestAuthException
+     *             if the request fails (e.g. already verified, rate-limited)
+     */
+    public void resendVerification(String serverUrl) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(serverUrl + "/api/v1/auth/resend-verification"))
+                    .header("Authorization", "Bearer " + cachedJwt_).POST(HttpRequest.BodyPublishers.noBody()).build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            ResendVerificationResponse result = OBJECT_MAPPER.readValue(response.body(),
+                    ResendVerificationResponse.class);
+            if (!result.success()) {
+                throw new RestAuthException(
+                        result.message() != null ? result.message() : "Failed to resend verification email");
+            }
+        } catch (RestAuthException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RestAuthException("Failed to resend verification email", e);
+        }
+    }
+
+    /**
+     * Check if a username is available for registration.
+     *
+     * @param serverUrl
+     *            base URL of the server
+     * @param username
+     *            the username to check
+     * @return {@code true} if the username is available, {@code false} if taken
+     * @throws RestAuthException
+     *             if the request fails
+     */
+    public boolean checkUsername(String serverUrl, String username) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(serverUrl + "/api/v1/auth/check-username?username=" + username)).GET().build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new RestAuthException("Check username failed (HTTP " + response.statusCode() + ")");
+            }
+            UsernameCheckResponse result = OBJECT_MAPPER.readValue(response.body(), UsernameCheckResponse.class);
+            return result.available();
+        } catch (RestAuthException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RestAuthException("Failed to check username", e);
+        }
+    }
+
+    /**
+     * Request an email address change for the current account.
+     *
+     * <p>
+     * Sends a confirmation link to the new address. The change is not applied until
+     * the user clicks the link.
+     *
+     * @param serverUrl
+     *            base URL of the server
+     * @param newEmail
+     *            the desired new email address
+     * @throws RestAuthException
+     *             if the request fails (e.g. email already in use)
+     */
+    public void requestEmailChange(String serverUrl, String newEmail) {
+        try {
+            EmailChangeRequest req = new EmailChangeRequest(newEmail);
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(serverUrl + "/api/v1/auth/email"))
+                    .header("Content-Type", "application/json").header("Authorization", "Bearer " + cachedJwt_)
+                    .PUT(HttpRequest.BodyPublishers.ofString(OBJECT_MAPPER.writeValueAsString(req))).build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            RequestEmailChangeResponse result = OBJECT_MAPPER.readValue(response.body(),
+                    RequestEmailChangeResponse.class);
+            if (!result.success()) {
+                throw new RestAuthException(
+                        result.message() != null ? result.message() : "Failed to request email change");
+            }
+        } catch (RestAuthException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RestAuthException("Failed to request email change", e);
         }
     }
 
