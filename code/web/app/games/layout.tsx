@@ -28,6 +28,10 @@ export default function GamesLayout({ children }: { children: React.ReactNode })
     }
   }, [isLoading, user, router])
 
+  if (isLoading || !user || !user.emailVerified) {
+    return null
+  }
+
   return (
     <SidebarLayout sections={gamesSidebarData}>
       {children}
