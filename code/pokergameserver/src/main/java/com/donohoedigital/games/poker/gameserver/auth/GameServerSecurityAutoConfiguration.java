@@ -21,7 +21,12 @@ package com.donohoedigital.games.poker.gameserver.auth;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -46,6 +51,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableConfigurationProperties({JwtProperties.class, CorsProperties.class})
 @EnableWebSecurity
 public class GameServerSecurityAutoConfiguration {
+
+    @Value("${app.base-url:localhost}")
+    private String baseUrl;
 
     @Bean
     public JwtTokenProvider jwtTokenProvider(JwtProperties properties) {
@@ -100,10 +108,19 @@ public class GameServerSecurityAutoConfiguration {
 
     private CorsConfigurationSource corsConfigurationSource(CorsProperties properties) {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(properties.getAllowedOrigins());
+
+        List<String> origins = new ArrayList<>(properties.getAllowedOrigins());
+        String derivedOrigin = "https://" + baseUrl;
+        if (!origins.contains(derivedOrigin)) {
+            origins.add(derivedOrigin);
+        }
+        configuration.setAllowedOrigins(
+                origins.stream().map(String::trim).filter(s -> !s.isBlank()).distinct().collect(Collectors.toList()));
+
         configuration.setAllowedMethods(properties.getAllowedMethods());
         configuration.setAllowedHeaders(properties.getAllowedHeaders());
         configuration.setAllowCredentials(properties.isAllowCredentials());
+        configuration.setExposedHeaders(Arrays.asList("Content-Type", "Authorization"));
         configuration.setMaxAge(properties.getMaxAge());
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
