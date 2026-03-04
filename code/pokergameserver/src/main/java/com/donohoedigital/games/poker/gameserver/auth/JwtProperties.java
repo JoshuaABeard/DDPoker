@@ -38,14 +38,14 @@ public class JwtProperties {
     private String publicKeyPath;
 
     /**
-     * Token expiration in milliseconds (regular login). Default: 1 hour.
+     * Token expiration in milliseconds (regular login). Default: 24 hours.
      */
-    private long expiration = 3600000L;
+    private long expiration = 86400000L;
 
     /**
-     * Token expiration in milliseconds (remember me). Default: 7 days.
+     * Token expiration in milliseconds (remember me). Default: 30 days.
      */
-    private long rememberMeExpiration = 604800000L;
+    private long rememberMeExpiration = 2592000000L;
 
     /**
      * Cookie name for JWT token. Default: "DDPoker-JWT".

@@ -82,7 +82,7 @@ public class TestRestrictedSecurityConfiguration {
             String header = request.getHeader("Authorization");
             if (header != null && header.startsWith("Bearer ")) {
                 JwtAuthenticationFilter.JwtAuthenticationToken auth = new JwtAuthenticationFilter.JwtAuthenticationToken(
-                        "testuser", 1L);
+                        "testuser", 1L, false);
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
             try {

@@ -23,6 +23,17 @@ export const config = {
 }
 
 /**
+ * Base URL of the game server (pokergameserver).
+ *
+ * Set NEXT_PUBLIC_GAME_SERVER_URL in .env.local (development) or the
+ * deployment environment. Example:
+ *   NEXT_PUBLIC_GAME_SERVER_URL=http://poker.yourdomain.com:8877
+ *
+ * Defaults to localhost for local development.
+ */
+export const GAME_SERVER_URL = process.env.NEXT_PUBLIC_GAME_SERVER_URL ?? 'http://localhost:8877'
+
+/**
  * Get the full API URL for an endpoint
  * @param endpoint - The API endpoint path (e.g., '/api/players')
  * @returns The full URL to the API endpoint

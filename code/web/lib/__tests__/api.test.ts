@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { gameServerApi, checkApiHealth } from '../api'
+import { authApi, gameServerApi, checkApiHealth } from '../api'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -121,5 +121,137 @@ describe('checkApiHealth', () => {
     const result = await checkApiHealth()
 
     expect(result).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// authApi — game server endpoints
+// ---------------------------------------------------------------------------
+
+describe('authApi — game server endpoints', () => {
+  it('login — POSTs to /api/v1/auth/login', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(
+      makeFetchResponse({ success: true, message: null, username: 'alice', email: 'alice@example.com', emailVerified: false })
+    )
+    vi.stubGlobal('fetch', mockFetch)
+
+    await authApi.login({ username: 'alice', password: 'pw', rememberMe: false })
+
+    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/api/v1/auth/login')
+    expect((init?.method ?? 'GET').toUpperCase()).toBe('POST')
+  })
+
+  it('logout — POSTs to /api/v1/auth/logout', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(makeFetchResponse({}))
+    vi.stubGlobal('fetch', mockFetch)
+
+    await authApi.logout()
+
+    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/api/v1/auth/logout')
+    expect((init?.method ?? 'GET').toUpperCase()).toBe('POST')
+  })
+
+  it('getCurrentUser — GETs /api/v1/auth/me', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(
+      makeFetchResponse({ success: true, message: null, username: 'alice', email: 'alice@example.com', emailVerified: true })
+    )
+    vi.stubGlobal('fetch', mockFetch)
+
+    const result = await authApi.getCurrentUser()
+
+    const [url] = mockFetch.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/api/v1/auth/me')
+    expect(result?.username).toBe('alice')
+  })
+
+  it('forgotPassword — POSTs to /api/v1/auth/forgot-password', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(
+      makeFetchResponse({ success: true, message: 'sent' })
+    )
+    vi.stubGlobal('fetch', mockFetch)
+
+    await authApi.forgotPassword('alice@example.com')
+
+    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/api/v1/auth/forgot-password')
+    expect((init?.method ?? 'GET').toUpperCase()).toBe('POST')
+    expect(JSON.parse(init.body as string)).toMatchObject({ email: 'alice@example.com' })
+  })
+
+  it('changePassword — PUTs to /api/v1/auth/change-password', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(makeFetchResponse({}))
+    vi.stubGlobal('fetch', mockFetch)
+
+    await authApi.changePassword('oldpw', 'newpw')
+
+    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/api/v1/auth/change-password')
+    expect((init?.method ?? 'GET').toUpperCase()).toBe('PUT')
+    expect(JSON.parse(init.body as string)).toMatchObject({ currentPassword: 'oldpw', newPassword: 'newpw' })
+    expect(init.credentials).toBe('include')
+  })
+
+  it('verifyEmail — GETs /api/v1/auth/verify-email?token=...', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(makeFetchResponse({ success: true }))
+    vi.stubGlobal('fetch', mockFetch)
+
+    await authApi.verifyEmail('tok123')
+
+    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/api/v1/auth/verify-email')
+    expect(url).toContain('token=tok123')
+    expect(init.credentials).toBe('include')
+  })
+
+  it('resendVerification — POSTs to /api/v1/auth/resend-verification', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(makeFetchResponse({ success: true }))
+    vi.stubGlobal('fetch', mockFetch)
+
+    await authApi.resendVerification()
+
+    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/api/v1/auth/resend-verification')
+    expect((init?.method ?? 'GET').toUpperCase()).toBe('POST')
+    expect(init.credentials).toBe('include')
+  })
+
+  it('checkUsername — GETs /api/v1/auth/check-username?username=...', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(makeFetchResponse({ available: true }))
+    vi.stubGlobal('fetch', mockFetch)
+
+    await authApi.checkUsername('alice')
+
+    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/api/v1/auth/check-username')
+    expect(url).toContain('username=alice')
+    expect(init.credentials).toBe('include')
+  })
+
+  it('changeEmail — PUTs to /api/v1/auth/email with email in body', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(makeFetchResponse({ success: true }))
+    vi.stubGlobal('fetch', mockFetch)
+
+    await authApi.changeEmail('newemail@example.com')
+
+    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/api/v1/auth/email')
+    expect((init?.method ?? 'GET').toUpperCase()).toBe('PUT')
+    expect(JSON.parse(init.body as string)).toMatchObject({ email: 'newemail@example.com' })
+    expect(init.credentials).toBe('include')
+  })
+
+  it('resetPassword — POSTs to /api/v1/auth/reset-password with token and password', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(makeFetchResponse({ success: true }))
+    vi.stubGlobal('fetch', mockFetch)
+
+    await authApi.resetPassword('reset-token', 'newpassword')
+
+    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain('/api/v1/auth/reset-password')
+    expect((init?.method ?? 'GET').toUpperCase()).toBe('POST')
+    expect(JSON.parse(init.body as string)).toMatchObject({ token: 'reset-token', password: 'newpassword' })
+    expect(init.credentials).toBe('include')
   })
 })

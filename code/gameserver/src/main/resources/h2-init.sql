@@ -22,6 +22,17 @@ CREATE UNIQUE INDEX IF NOT EXISTS wpr_uuid ON wan_profile(wpr_uuid);
 ALTER TABLE IF EXISTS wan_profile DROP COLUMN IF EXISTS wpr_license_key;
 ALTER TABLE IF EXISTS wan_profile DROP COLUMN IF EXISTS wpr_is_activated;
 
+-- Migration: Add account management columns
+ALTER TABLE IF EXISTS wan_profile ADD COLUMN IF NOT EXISTS wpr_email_verified BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE IF EXISTS wan_profile ADD COLUMN IF NOT EXISTS wpr_email_verification_token VARCHAR(255);
+ALTER TABLE IF EXISTS wan_profile ADD COLUMN IF NOT EXISTS wpr_email_verification_token_expiry BIGINT;
+ALTER TABLE IF EXISTS wan_profile ADD COLUMN IF NOT EXISTS wpr_pending_email VARCHAR(255);
+ALTER TABLE IF EXISTS wan_profile ADD COLUMN IF NOT EXISTS wpr_failed_login_attempts INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE IF EXISTS wan_profile ADD COLUMN IF NOT EXISTS wpr_locked_until BIGINT;
+ALTER TABLE IF EXISTS wan_profile ADD COLUMN IF NOT EXISTS wpr_lockout_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE IF EXISTS wan_profile ADD CONSTRAINT IF NOT EXISTS uq_wpr_email_verification_token UNIQUE (wpr_email_verification_token);
+ALTER TABLE IF EXISTS wan_profile ADD CONSTRAINT IF NOT EXISTS uq_wpr_pending_email UNIQUE (wpr_pending_email);
+
 CREATE TABLE IF NOT EXISTS wan_game (
     wgm_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     wgm_url VARCHAR(64) NOT NULL,

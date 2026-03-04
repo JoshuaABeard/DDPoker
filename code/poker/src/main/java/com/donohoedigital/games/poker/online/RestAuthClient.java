@@ -19,23 +19,35 @@
  */
 package com.donohoedigital.games.poker.online;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.donohoedigital.games.config.GameConfigUtils;
 import com.donohoedigital.games.poker.gameserver.dto.ChangePasswordRequest;
+import com.donohoedigital.games.poker.gameserver.dto.EmailChangeRequest;
 import com.donohoedigital.games.poker.gameserver.dto.ForgotPasswordRequest;
 import com.donohoedigital.games.poker.gameserver.dto.LoginRequest;
 import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
 import com.donohoedigital.games.poker.gameserver.dto.ProfileResponse;
 import com.donohoedigital.games.poker.gameserver.dto.RegisterRequest;
+import com.donohoedigital.games.poker.gameserver.dto.RequestEmailChangeResponse;
+import com.donohoedigital.games.poker.gameserver.dto.ResendVerificationResponse;
 import com.donohoedigital.games.poker.gameserver.dto.ResetPasswordRequest;
 import com.donohoedigital.games.poker.gameserver.dto.UpdateProfileRequest;
+import com.donohoedigital.games.poker.gameserver.dto.UsernameCheckResponse;
+import com.donohoedigital.games.poker.gameserver.dto.VerifyEmailResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -62,10 +74,20 @@ public class RestAuthClient {
 
     private static final RestAuthClient INSTANCE = new RestAuthClient();
 
+    private static final String JWT_FILE = "auth.token";
+
     private final HttpClient http;
+
+    /**
+     * Base directory used to resolve profile JWT files. {@code null} in production
+     * — falls back to {@link GameConfigUtils#getSaveDir()}/profiles. Set via the
+     * test constructor to use a temp directory.
+     */
+    private final Path jwtBaseDir;
 
     private volatile String cachedJwt_;
     private volatile String cachedServerUrl_;
+    private volatile boolean cachedEmailVerified_;
 
     /** Returns the shared singleton instance. */
     public static RestAuthClient getInstance() {
@@ -75,11 +97,23 @@ public class RestAuthClient {
     /** Production constructor. */
     public RestAuthClient() {
         this.http = HttpClient.newHttpClient();
+        this.jwtBaseDir = null;
     }
 
     /** Test constructor — allows injecting a custom {@link HttpClient}. */
     RestAuthClient(HttpClient http) {
         this.http = http;
+        this.jwtBaseDir = null;
+    }
+
+    /**
+     * Test constructor — allows injecting both a custom {@link HttpClient} and a
+     * base directory for JWT persistence, avoiding any dependency on
+     * {@link GameConfigUtils}.
+     */
+    RestAuthClient(HttpClient http, Path jwtBaseDir) {
+        this.http = http;
+        this.jwtBaseDir = jwtBaseDir;
     }
 
     // -------------------------------------------------------------------------
@@ -126,7 +160,112 @@ public class RestAuthClient {
     }
 
     /**
-     * Authenticate with username and password.
+     * Sets the cached JWT directly. Used when restoring a persisted JWT on startup
+     * for silent re-authentication.
+     *
+     * @param jwt
+     *            the JWT to cache
+     */
+    public void setCachedJwt(String jwt) {
+        this.cachedJwt_ = jwt;
+    }
+
+    /**
+     * Returns {@code true} if the currently cached session has a verified email
+     * address.
+     */
+    public boolean isEmailVerified() {
+        return cachedEmailVerified_;
+    }
+
+    // -------------------------------------------------------------------------
+    // JWT persistence (Remember Me)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Persist the JWT to disk in the profile directory for "Remember Me" support.
+     * The file is written with owner-only read permissions (best effort on
+     * Windows).
+     *
+     * @param profileName
+     *            the name of the profile (used to locate the profile directory)
+     * @param jwt
+     *            the JWT to persist
+     */
+    public void persistJwt(String profileName, String jwt) {
+        try {
+            Path dir = getProfileDir(profileName);
+            Files.createDirectories(dir);
+            Path file = dir.resolve(JWT_FILE);
+            Files.writeString(file, jwt, StandardCharsets.UTF_8, StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
+            // Restrict to owner-only read (best effort on Windows)
+            File f = file.toFile();
+            f.setReadable(false, false);
+            f.setReadable(true, true);
+            f.setWritable(false, false);
+            f.setWritable(true, true);
+        } catch (IOException e) {
+            logger.warn("Could not persist JWT for profile {}: {}", profileName, e.getMessage());
+        }
+    }
+
+    /**
+     * Load a persisted JWT from the profile directory. Returns empty if no file
+     * exists or the stored value is malformed.
+     *
+     * @param profileName
+     *            the name of the profile
+     * @return the persisted JWT, or empty if not found/invalid
+     */
+    public Optional<String> loadPersistedJwt(String profileName) {
+        try {
+            Path dir = getProfileDir(profileName);
+            Path file = dir.resolve(JWT_FILE);
+            if (!Files.exists(file))
+                return Optional.empty();
+            String jwt = Files.readString(file, StandardCharsets.UTF_8).trim();
+            // Basic sanity: a JWT has exactly 3 base64url parts separated by '.'
+            if (jwt.split("\\.", -1).length != 3)
+                return Optional.empty();
+            return Optional.of(jwt);
+        } catch (IOException e) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Delete the persisted JWT for the profile (called on logout).
+     *
+     * @param profileName
+     *            the name of the profile
+     */
+    public void clearPersistedJwt(String profileName) {
+        try {
+            Path dir = getProfileDir(profileName);
+            Files.deleteIfExists(dir.resolve(JWT_FILE));
+        } catch (IOException e) {
+            logger.warn("Could not clear persisted JWT for profile {}: {}", profileName, e.getMessage());
+        }
+    }
+
+    /**
+     * Returns the directory used to store per-profile JWT files.
+     *
+     * <p>
+     * In production the directory is
+     * {@code <GameConfigUtils.getSaveDir()>/profiles/<profileName>}. In tests a
+     * {@code jwtBaseDir} injected via the package-private constructor is used
+     * instead, avoiding any dependency on the application framework.
+     */
+    Path getProfileDir(String profileName) {
+        Path base = (jwtBaseDir != null) ? jwtBaseDir : GameConfigUtils.getSaveDir().toPath().resolve("profiles");
+        return base.resolve(profileName);
+    }
+
+    /**
+     * Authenticate with username and password (rememberMe defaults to
+     * {@code false}).
      *
      * @param serverUrl
      *            base URL of the server (e.g. {@code http://localhost:8080})
@@ -139,8 +278,27 @@ public class RestAuthClient {
      *             if authentication fails or network error occurs
      */
     public LoginResponse login(String serverUrl, String username, String password) {
+        return login(serverUrl, username, password, false);
+    }
+
+    /**
+     * Authenticate with username and password.
+     *
+     * @param serverUrl
+     *            base URL of the server (e.g. {@code http://localhost:8080})
+     * @param username
+     *            the username
+     * @param password
+     *            the plain-text password
+     * @param rememberMe
+     *            if {@code true}, requests an extended-lifetime JWT (30 days)
+     * @return login response including JWT token and profile ID
+     * @throws RestAuthException
+     *             if authentication fails or network error occurs
+     */
+    public LoginResponse login(String serverUrl, String username, String password, boolean rememberMe) {
         try {
-            LoginRequest req = new LoginRequest(username, password, false);
+            LoginRequest req = new LoginRequest(username, password, rememberMe);
             HttpRequest request = HttpRequest.newBuilder().uri(URI.create(serverUrl + "/api/v1/auth/login"))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(OBJECT_MAPPER.writeValueAsString(req))).build();
@@ -151,6 +309,7 @@ public class RestAuthClient {
                 throw new RestAuthException(result.message() != null ? result.message() : "Login failed");
             }
             cacheSession(serverUrl, result.token());
+            cachedEmailVerified_ = result.emailVerified();
             return result;
         } catch (RestAuthException e) {
             throw e;
@@ -187,6 +346,7 @@ public class RestAuthClient {
             if (!result.success()) {
                 throw new RestAuthException(result.message() != null ? result.message() : "Registration failed");
             }
+            cachedEmailVerified_ = result.emailVerified();
             return result;
         } catch (RestAuthException e) {
             throw e;
@@ -366,13 +526,23 @@ public class RestAuthClient {
     /**
      * Log out the current session. Best-effort — swallows exceptions.
      *
+     * <p>
+     * Clears the in-memory session. If a {@code profileName} is provided, also
+     * deletes the persisted JWT so "Remember Me" auto-login is cancelled.
+     *
      * @param serverUrl
      *            base URL of the server
      * @param jwt
      *            JWT bearer token
+     * @param profileName
+     *            the local profile name whose persisted JWT should be removed, or
+     *            {@code null} if no persisted JWT needs to be cleared
      */
-    public void logout(String serverUrl, String jwt) {
+    public void logout(String serverUrl, String jwt, String profileName) {
         clearSession();
+        if (profileName != null) {
+            clearPersistedJwt(profileName);
+        }
         try {
             HttpRequest request = HttpRequest.newBuilder().uri(URI.create(serverUrl + "/api/v1/auth/logout"))
                     .header("Authorization", "Bearer " + jwt).POST(HttpRequest.BodyPublishers.noBody()).build();
@@ -380,6 +550,149 @@ public class RestAuthClient {
             http.send(request, HttpResponse.BodyHandlers.discarding());
         } catch (Exception e) {
             logger.warn("Failed to logout", e);
+        }
+    }
+
+    /**
+     * Log out the current session without clearing a persisted JWT. Provided for
+     * backward compatibility; prefer {@link #logout(String, String, String)} when
+     * the profile name is available.
+     *
+     * @param serverUrl
+     *            base URL of the server
+     * @param jwt
+     *            JWT bearer token
+     */
+    public void logout(String serverUrl, String jwt) {
+        logout(serverUrl, jwt, null);
+    }
+
+    /**
+     * Verify email using the token from the verification email.
+     *
+     * <p>
+     * On success, updates {@code cachedJwt_} with the new token (which has
+     * {@code emailVerified=true}) and sets {@code cachedEmailVerified_} to
+     * {@code true}.
+     *
+     * @param serverUrl
+     *            base URL of the server
+     * @param token
+     *            the one-time token from the verification email
+     * @throws RestAuthException
+     *             if the token is invalid, expired, or the request fails
+     */
+    public void verifyEmail(String serverUrl, String token) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(serverUrl + "/api/v1/auth/verify-email?token=" + token)).GET().build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            VerifyEmailResponse result = OBJECT_MAPPER.readValue(response.body(), VerifyEmailResponse.class);
+            if (!result.success()) {
+                throw new RestAuthException(result.message() != null ? result.message() : "Email verification failed");
+            }
+            cachedJwt_ = result.token();
+            cachedEmailVerified_ = true;
+        } catch (RestAuthException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RestAuthException("Failed to verify email", e);
+        }
+    }
+
+    /**
+     * Request a new verification email for the current account.
+     *
+     * @param serverUrl
+     *            base URL of the server
+     * @throws RestAuthException
+     *             if the request fails (e.g. already verified, rate-limited)
+     */
+    public void resendVerification(String serverUrl) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(serverUrl + "/api/v1/auth/resend-verification"))
+                    .header("Authorization", "Bearer " + cachedJwt_).POST(HttpRequest.BodyPublishers.noBody()).build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            ResendVerificationResponse result = OBJECT_MAPPER.readValue(response.body(),
+                    ResendVerificationResponse.class);
+            if (!result.success()) {
+                String msg = result.message() != null ? result.message() : "Failed to resend verification email";
+                if (result.rateLimited()) {
+                    throw new ResendRateLimitedException(msg);
+                }
+                throw new RestAuthException(msg);
+            }
+        } catch (RestAuthException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RestAuthException("Failed to resend verification email", e);
+        }
+    }
+
+    /**
+     * Check if a username is available for registration.
+     *
+     * @param serverUrl
+     *            base URL of the server
+     * @param username
+     *            the username to check
+     * @return {@code true} if the username is available, {@code false} if taken
+     * @throws RestAuthException
+     *             if the request fails
+     */
+    public boolean checkUsername(String serverUrl, String username) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(serverUrl + "/api/v1/auth/check-username?username=" + username)).GET().build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new RestAuthException("Check username failed (HTTP " + response.statusCode() + ")");
+            }
+            UsernameCheckResponse result = OBJECT_MAPPER.readValue(response.body(), UsernameCheckResponse.class);
+            return result.available();
+        } catch (RestAuthException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RestAuthException("Failed to check username", e);
+        }
+    }
+
+    /**
+     * Request an email address change for the current account.
+     *
+     * <p>
+     * Sends a confirmation link to the new address. The change is not applied until
+     * the user clicks the link.
+     *
+     * @param serverUrl
+     *            base URL of the server
+     * @param newEmail
+     *            the desired new email address
+     * @throws RestAuthException
+     *             if the request fails (e.g. email already in use)
+     */
+    public void requestEmailChange(String serverUrl, String newEmail) {
+        try {
+            EmailChangeRequest req = new EmailChangeRequest(newEmail);
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(serverUrl + "/api/v1/auth/email"))
+                    .header("Content-Type", "application/json").header("Authorization", "Bearer " + cachedJwt_)
+                    .PUT(HttpRequest.BodyPublishers.ofString(OBJECT_MAPPER.writeValueAsString(req))).build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            RequestEmailChangeResponse result = OBJECT_MAPPER.readValue(response.body(),
+                    RequestEmailChangeResponse.class);
+            if (!result.success()) {
+                throw new RestAuthException(
+                        result.message() != null ? result.message() : "Failed to request email change");
+            }
+        } catch (RestAuthException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RestAuthException("Failed to request email change", e);
         }
     }
 
@@ -397,6 +710,16 @@ public class RestAuthClient {
 
         public RestAuthException(String message, Throwable cause) {
             super(message, cause);
+        }
+    }
+
+    /**
+     * Thrown by {@link #resendVerification} when the server rejects the request
+     * because the user has already requested a verification email recently.
+     */
+    public static class ResendRateLimitedException extends RestAuthException {
+        public ResendRateLimitedException(String message) {
+            super(message);
         }
     }
 }

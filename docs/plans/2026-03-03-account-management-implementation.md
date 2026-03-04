@@ -809,8 +809,10 @@ After successful password validation, reset:
 
 ```java
 profile.setFailedLoginAttempts(0);
-// Do NOT reset lockoutCount here — it's a rolling 24h counter (resets via scheduled cleanup or admin)
+profile.setLockoutCount(0);
 ```
+
+> **Note:** Per design doc Section 12, **both** `failedLoginAttempts` AND `lockoutCount` reset to 0 on successful login. Resetting `lockoutCount` on success means the progressive delay restarts from 5 min if the user later accumulates failures again. The earlier comment saying "do NOT reset lockoutCount" was incorrect.
 
 Add `retryAfterSeconds` to `RestAuthException` if not already there (check the class — if it only has a `String message`, add a `long retryAfterSeconds` field and a two-arg constructor).
 
@@ -931,6 +933,8 @@ Expected: PASS.
 git add code/pokergameserver/src/main/java/com/donohoedigital/games/poker/gameserver/service/AuthService.java
 git commit -m "feat(pokergameserver): send verification email on register, add password strength validation"
 ```
+
+**Implementation note:** Password strength validation (too short / too long) returns `LoginResponse(false, ...)` rather than throwing an exception. This matches the pattern used by all other `register()` validation failures (banned email, duplicate username, duplicate email) and keeps the controller layer simple — all failures are uniform `LoginResponse` values.
 
 ---
 
@@ -1071,6 +1075,8 @@ Expected: PASS.
 git add code/pokergameserver/src/main/java/com/donohoedigital/games/poker/gameserver/service/AuthService.java
 git commit -m "feat(pokergameserver): add verifyEmail and resendVerification to AuthService"
 ```
+
+**Decision:** `verifyEmail()` and `resendVerification()` return DTO responses on failure (matching the `register()` and `login()` error-response pattern) rather than throwing exceptions. `RestAuthException` was not created — it is not needed.
 
 ---
 

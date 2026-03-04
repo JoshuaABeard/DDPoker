@@ -19,6 +19,8 @@
  */
 package com.donohoedigital.poker.api.controller;
 
+import com.donohoedigital.games.poker.gameserver.persistence.repository.OnlineProfileRepository;
+import com.donohoedigital.games.poker.gameserver.service.EmailService;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 import com.donohoedigital.games.poker.service.OnlineProfileService;
 
@@ -26,12 +28,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Admin endpoints - profile search. All endpoints require ROLE_ADMIN.
+ * Admin endpoints - profile search and account management. All endpoints
+ * require ROLE_ADMIN.
  */
 @RestController
 @RequestMapping("/api/admin")
@@ -39,6 +44,12 @@ public class AdminController {
 
     @Autowired
     private OnlineProfileService profileService;
+
+    @Autowired
+    private OnlineProfileRepository profileRepository;
+
+    @Autowired(required = false)
+    private EmailService emailService;
 
     /**
      * Search profiles (admin).
@@ -62,5 +73,53 @@ public class AdminController {
         response.put("pageSize", pageSize);
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Manually mark a profile as email-verified. Clears any pending token.
+     */
+    @PostMapping("/profiles/{id}/verify")
+    public ResponseEntity<Void> manuallyVerify(@PathVariable Long id) {
+        OnlineProfile p = profileRepository.findById(id).orElseThrow();
+        p.setEmailVerified(true);
+        p.setEmailVerificationToken(null);
+        p.setEmailVerificationTokenExpiry(null);
+        profileRepository.save(p);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Clear account lockout for a profile.
+     */
+    @PostMapping("/profiles/{id}/unlock")
+    public ResponseEntity<Void> unlockAccount(@PathVariable Long id) {
+        OnlineProfile p = profileRepository.findById(id).orElseThrow();
+        p.setLockedUntil(null);
+        p.setFailedLoginAttempts(0);
+        p.setLockoutCount(0);
+        profileRepository.save(p);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Trigger a new verification email for an unverified profile. Returns 400 if
+     * the profile is already verified.
+     */
+    @PostMapping("/profiles/{id}/resend-verification")
+    public ResponseEntity<Void> adminResendVerification(@PathVariable Long id) {
+        OnlineProfile p = profileRepository.findById(id).orElseThrow();
+        if (p.isEmailVerified()) {
+            return ResponseEntity.badRequest().build();
+        }
+        byte[] bytes = new byte[48];
+        new SecureRandom().nextBytes(bytes);
+        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        p.setEmailVerificationToken(token);
+        p.setEmailVerificationTokenExpiry(System.currentTimeMillis() + 7L * 24 * 60 * 60 * 1000);
+        profileRepository.save(p);
+        if (emailService != null) {
+            emailService.sendVerificationEmail(p.getEmail(), p.getName(), token);
+        }
+        return ResponseEntity.ok().build();
     }
 }

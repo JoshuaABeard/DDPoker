@@ -10,6 +10,7 @@ import { Suspense } from 'react'
 import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
 import { AdminSearchForm } from './AdminSearchForm'
+import { ProfileActionsCell } from './ProfileActionsCell'
 import { adminApi } from '@/lib/api'
 import { toBackendPage, buildPaginationResult } from '@/lib/pagination'
 
@@ -25,6 +26,8 @@ interface OnlineProfile {
   createdAt: string
   lastLogin?: string
   isActive: boolean
+  emailVerified: boolean
+  lockedUntil?: number | null
 }
 
 async function searchProfiles(
@@ -50,6 +53,8 @@ async function searchProfiles(
       createdAt: p.createdAt || p.createDate || new Date().toISOString(),
       lastLogin: p.lastLogin,
       isActive: p.isActive !== false,
+      emailVerified: p.emailVerified === true,
+      lockedUntil: p.lockedUntil,
     }))
     const result = buildPaginationResult(mapped, total, page, 50)
     return {
@@ -124,15 +129,53 @@ export default async function OnlineProfileSearchPage({
       render: (profile: OnlineProfile) => (
         <span
           className={`px-2 py-1 rounded text-xs font-semibold ${
-            profile.isActive
-              ? 'bg-green-100 text-green-800'
-              : 'bg-gray-100 text-gray-800'
+            profile.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
           }`}
         >
           {profile.isActive ? 'Active' : 'Inactive'}
         </span>
       ),
       align: 'center' as const,
+    },
+    {
+      key: 'emailVerified',
+      header: 'Email Verified',
+      render: (profile: OnlineProfile) => (
+        <span
+          className={`px-2 py-1 rounded text-xs font-semibold ${
+            profile.emailVerified ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}
+        >
+          {profile.emailVerified ? 'Verified' : 'Unverified'}
+        </span>
+      ),
+      align: 'center' as const,
+    },
+    {
+      key: 'lockedUntil',
+      header: 'Lock Status',
+      render: (profile: OnlineProfile) => {
+        const isLocked = profile.lockedUntil != null && profile.lockedUntil > Date.now()
+        if (!isLocked) return <span className="text-xs text-gray-500">Unlocked</span>
+        const until = new Date(profile.lockedUntil!)
+        return (
+          <span className="px-2 py-1 rounded text-xs font-semibold bg-orange-100 text-orange-800">
+            Locked until {until.toLocaleDateString()}
+          </span>
+        )
+      },
+      align: 'center' as const,
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (profile: OnlineProfile) => (
+        <ProfileActionsCell
+          id={profile.id}
+          emailVerified={profile.emailVerified}
+          lockedUntil={profile.lockedUntil}
+        />
+      ),
     },
   ]
 

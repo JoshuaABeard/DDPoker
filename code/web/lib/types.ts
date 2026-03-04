@@ -72,9 +72,13 @@ export interface LoginRequest {
 
 export interface AuthResponse {
   success: boolean
-  message: string
+  message: string | null
   username?: string
+  email?: string
+  emailVerified?: boolean
   admin?: boolean
+  profileId?: number
+  retryAfterSeconds?: number | null
 }
 
 export interface RegisterRequest {
@@ -181,6 +185,8 @@ export interface OnlineProfileDto {
   createDate?: string
   lastLogin?: string
   isActive?: boolean
+  emailVerified?: boolean
+  lockedUntil?: number | null
 }
 
 export interface BannedKeyDto {

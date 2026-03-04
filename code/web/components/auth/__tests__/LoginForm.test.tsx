@@ -60,6 +60,13 @@ describe('LoginForm', () => {
     expect(screen.getByRole('button', { name: /log in/i })).toBeTruthy()
   })
 
+  it('renders Forgot password link with href /forgot', () => {
+    render(<LoginForm />)
+    const link = screen.getByRole('link', { name: /forgot your password/i })
+    expect(link).toBeTruthy()
+    expect((link as HTMLAnchorElement).href).toContain('/forgot')
+  })
+
   it('disables inputs and shows "Logging in..." when isLoading is true', () => {
     mockIsLoading = true
     render(<LoginForm />)
@@ -77,8 +84,8 @@ describe('LoginForm', () => {
     expect(alert.textContent).toContain('Invalid credentials')
   })
 
-  it('redirects to /online on successful login without returnUrl', async () => {
-    mockLogin.mockResolvedValue(true)
+  it('redirects to /online on successful login with verified email and no returnUrl', async () => {
+    mockLogin.mockResolvedValue({ success: true, emailVerified: true })
     render(<LoginForm />)
 
     fireEvent.change(screen.getByLabelText(/username/i), { target: { value: 'testuser' } })
@@ -90,8 +97,8 @@ describe('LoginForm', () => {
     })
   })
 
-  it('redirects to valid returnUrl on successful login', async () => {
-    mockLogin.mockResolvedValue(true)
+  it('redirects to valid returnUrl on successful login with verified email', async () => {
+    mockLogin.mockResolvedValue({ success: true, emailVerified: true })
     mockSearchParams = new URLSearchParams('returnUrl=/dashboard')
     render(<LoginForm />)
 
@@ -104,8 +111,21 @@ describe('LoginForm', () => {
     })
   })
 
+  it('redirects to /verify-email-pending on successful login with unverified email', async () => {
+    mockLogin.mockResolvedValue({ success: true, emailVerified: false })
+    render(<LoginForm />)
+
+    fireEvent.change(screen.getByLabelText(/username/i), { target: { value: 'testuser' } })
+    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'password123' } })
+    fireEvent.submit(screen.getByRole('button', { name: /log in/i }).closest('form')!)
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/verify-email-pending')
+    })
+  })
+
   it('does not redirect on failed login', async () => {
-    mockLogin.mockResolvedValue(false)
+    mockLogin.mockResolvedValue({ success: false })
     render(<LoginForm />)
 
     fireEvent.change(screen.getByLabelText(/username/i), { target: { value: 'testuser' } })
@@ -126,7 +146,7 @@ describe('LoginForm', () => {
   })
 
   it('blocks open redirect with //evil.com and falls back to /online', async () => {
-    mockLogin.mockResolvedValue(true)
+    mockLogin.mockResolvedValue({ success: true, emailVerified: true })
     mockSearchParams = new URLSearchParams('returnUrl=//evil.com')
     render(<LoginForm />)
 

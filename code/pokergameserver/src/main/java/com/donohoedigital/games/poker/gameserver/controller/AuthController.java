@@ -29,8 +29,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -38,12 +40,17 @@ import jakarta.validation.Valid;
 
 import com.donohoedigital.games.poker.gameserver.auth.JwtAuthenticationFilter;
 import com.donohoedigital.games.poker.gameserver.auth.JwtProperties;
+import com.donohoedigital.games.poker.gameserver.dto.EmailChangeRequest;
 import com.donohoedigital.games.poker.gameserver.dto.ForgotPasswordRequest;
 import com.donohoedigital.games.poker.gameserver.dto.LoginRequest;
 import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
 import com.donohoedigital.games.poker.gameserver.dto.ProfileResponse;
 import com.donohoedigital.games.poker.gameserver.dto.RegisterRequest;
+import com.donohoedigital.games.poker.gameserver.dto.RequestEmailChangeResponse;
+import com.donohoedigital.games.poker.gameserver.dto.ResendVerificationResponse;
 import com.donohoedigital.games.poker.gameserver.dto.ResetPasswordRequest;
+import com.donohoedigital.games.poker.gameserver.dto.UsernameCheckResponse;
+import com.donohoedigital.games.poker.gameserver.dto.VerifyEmailResponse;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
 
 /**
@@ -83,6 +90,8 @@ public class AuthController {
         if (result.success()) {
             setAuthCookie(response, result.token());
             return ResponseEntity.ok(result);
+        } else if (result.retryAfterSeconds() != null) {
+            return ResponseEntity.status(423).body(result);
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(result);
         }
@@ -175,6 +184,76 @@ public class AuthController {
         } catch (AuthService.InvalidResetTokenException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
+    }
+
+    /**
+     * Verify an email address using a one-time token received via email.
+     *
+     * <p>
+     * This endpoint is unauthenticated — it is exempt from
+     * {@code EmailVerificationFilter}. Returns 200 on success and 400 on failure
+     * (invalid/expired token).
+     */
+    @GetMapping("/verify-email")
+    public ResponseEntity<VerifyEmailResponse> verifyEmail(@RequestParam(name = "token") String token) {
+        VerifyEmailResponse result = authService.verifyEmail(token);
+        if (result.success()) {
+            return ResponseEntity.ok(result);
+        } else {
+            return ResponseEntity.badRequest().body(result);
+        }
+    }
+
+    /**
+     * Resend the email verification message to the authenticated user.
+     *
+     * <p>
+     * Returns 429 if the user has already requested a resend within the rate-limit
+     * window, 400 for other failures (e.g. already verified), and 200 on success.
+     */
+    @PostMapping("/resend-verification")
+    public ResponseEntity<ResendVerificationResponse> resendVerification(Authentication authentication) {
+        String username = authentication.getName();
+        ResendVerificationResponse result = authService.resendVerification(username);
+        if (result.success()) {
+            return ResponseEntity.ok(result);
+        } else if (result.rateLimited()) {
+            return ResponseEntity.status(429).body(result);
+        } else {
+            return ResponseEntity.badRequest().body(result);
+        }
+    }
+
+    /**
+     * Request an email address change for the authenticated user.
+     *
+     * <p>
+     * Sends a confirmation link to the new address. Returns 200 on success, 400 on
+     * validation failure or service error.
+     */
+    @PutMapping("/email")
+    public ResponseEntity<RequestEmailChangeResponse> changeEmail(@Valid @RequestBody EmailChangeRequest request,
+            Authentication authentication) {
+        String username = authentication.getName();
+        RequestEmailChangeResponse result = authService.requestEmailChange(username, request.email());
+        if (result.success()) {
+            return ResponseEntity.ok(result);
+        } else {
+            return ResponseEntity.badRequest().body(result);
+        }
+    }
+
+    /**
+     * Check whether a username is available for registration.
+     *
+     * <p>
+     * This endpoint is unauthenticated. Returns {@code { "available": true/false
+     * }}. No detail is given on why a username is unavailable, to prevent
+     * enumeration.
+     */
+    @GetMapping("/check-username")
+    public ResponseEntity<UsernameCheckResponse> checkUsername(@RequestParam(name = "username") String username) {
+        return ResponseEntity.ok(new UsernameCheckResponse(authService.isUsernameAvailable(username)));
     }
 
     // -------------------------------------------------------------------------

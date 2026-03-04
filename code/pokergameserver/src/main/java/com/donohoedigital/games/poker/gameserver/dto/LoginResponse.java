@@ -21,6 +21,11 @@ package com.donohoedigital.games.poker.gameserver.dto;
 
 /**
  * Response DTO for login/register operations.
+ *
+ * <p>
+ * When {@code retryAfterSeconds} is non-null the account is locked. The caller
+ * should return HTTP 423 (Locked) with this body.
  */
-public record LoginResponse(boolean success, String token, Long profileId, String username, String message) {
+public record LoginResponse(boolean success, String token, Long profileId, String username, String email,
+        boolean emailVerified, String message, Long retryAfterSeconds) {
 }

@@ -17,26 +17,15 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.poker.api.dto;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+package com.donohoedigital.games.poker.gameserver.dto;
 
 /**
- * Request DTO for forgot password endpoint.
+ * Response DTO for the resend-verification operation.
+ *
+ * <p>
+ * On success {@code success} is true. On failure {@code success} is false and
+ * {@code message} describes the error. {@code rateLimited} is true when the
+ * failure is specifically due to the resend rate limit being exceeded.
  */
-public class ForgotPasswordRequest {
-    @NotBlank(message = "Username is required")
-    @Size(min = 3, max = 32, message = "Username must be 3-32 characters")
-    @Pattern(regexp = "^[a-zA-Z0-9_-]+$", message = "Username contains invalid characters")
-    private String username;
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
+public record ResendVerificationResponse(boolean success, boolean rateLimited, String message) {
 }

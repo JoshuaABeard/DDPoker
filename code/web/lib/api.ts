@@ -4,7 +4,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
-import { config, getApiUrl } from './config'
+import { config, getApiUrl, GAME_SERVER_URL } from './config'
 import type {
   ApiError,
   ApiResponse,
@@ -34,7 +34,8 @@ import type {
 import type { EquityResult } from './poker/types'
 
 /**
- * Base fetch wrapper with error handling
+ * Base fetch wrapper with timeout and error handling.
+ * Throws on non-2xx responses.
  */
 async function apiFetch<T>(
   endpoint: string,
@@ -88,14 +89,55 @@ async function apiFetch<T>(
 }
 
 /**
- * Authentication API
+ * Like apiFetch but returns the raw Response rather than parsing JSON and
+ * throwing on non-2xx. Used for endpoints that return meaningful bodies on
+ * 400/429 (e.g., auth endpoints that callers inspect directly).
+ * Applies the same timeout and credentials as apiFetch.
+ */
+async function apiFetchRaw(
+  path: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const url = `${GAME_SERVER_URL}${path}`
+
+  const defaultHeaders: HeadersInit = {}
+  if (options.body) {
+    defaultHeaders['Content-Type'] = 'application/json'
+  }
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), config.apiTimeout)
+
+  const signals: AbortSignal[] = [controller.signal]
+  if (options.signal) signals.push(options.signal)
+  const composedSignal = signals.length > 1 ? AbortSignal.any(signals) : controller.signal
+
+  const fetchOptions: RequestInit = {
+    credentials: 'include',
+    ...options,
+    signal: composedSignal,
+    headers: {
+      ...defaultHeaders,
+      ...options.headers,
+    },
+  }
+
+  try {
+    return await fetch(url, fetchOptions)
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+/**
+ * Authentication API — all calls go to the game server at GAME_SERVER_URL.
  */
 export const authApi = {
   /**
    * Log in a user
    */
   login: async (credentials: LoginRequest): Promise<AuthResponse> => {
-    const response = await apiFetch<AuthResponse>('/api/auth/login', {
+    const response = await apiFetch<AuthResponse>('/api/v1/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     })
@@ -105,8 +147,8 @@ export const authApi = {
   /**
    * Register a new user
    */
-  register: async (userData: RegisterRequest): Promise<PlayerProfile> => {
-    const response = await apiFetch<PlayerProfile>('/api/auth/register', {
+  register: async (userData: RegisterRequest): Promise<AuthResponse> => {
+    const response = await apiFetch<AuthResponse>('/api/v1/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
     })
@@ -117,7 +159,7 @@ export const authApi = {
    * Log out the current user
    */
   logout: async (): Promise<void> => {
-    await apiFetch<void>('/api/auth/logout', {
+    await apiFetch<void>('/api/v1/auth/logout', {
       method: 'POST',
     })
   },
@@ -127,7 +169,7 @@ export const authApi = {
    */
   getCurrentUser: async (): Promise<AuthResponse | null> => {
     try {
-      const response = await apiFetch<AuthResponse>('/api/auth/me')
+      const response = await apiFetch<AuthResponse>('/api/v1/auth/me')
       return response.data
     } catch (error) {
       console.error('Failed to get current user:', error)
@@ -136,15 +178,60 @@ export const authApi = {
   },
 
   /**
-   * Request password reset - sends password to registered email
+   * Request password reset - sends a reset email to the user
    */
-  forgotPassword: async (username: string): Promise<{ success: boolean; message: string }> => {
-    const response = await apiFetch<{ success: boolean; message: string }>('/api/profile/forgot-password', {
+  forgotPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
+    const response = await apiFetch<{ success: boolean; message: string }>('/api/v1/auth/forgot-password', {
       method: 'POST',
-      body: JSON.stringify({ username }),
+      body: JSON.stringify({ email }),
     })
     return response.data
   },
+
+  /**
+   * Change the current user's password
+   */
+  changePassword: (currentPassword: string, newPassword: string): Promise<Response> =>
+    apiFetchRaw('/api/v1/auth/change-password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
+
+  /**
+   * Verify the user's email address using the token from the verification email
+   */
+  verifyEmail: (token: string): Promise<Response> =>
+    apiFetchRaw(`/api/v1/auth/verify-email?token=${encodeURIComponent(token)}`),
+
+  /**
+   * Resend the email verification message to the current user
+   */
+  resendVerification: (): Promise<Response> =>
+    apiFetchRaw('/api/v1/auth/resend-verification', { method: 'POST' }),
+
+  /**
+   * Check whether a username is available
+   */
+  checkUsername: (username: string): Promise<Response> =>
+    apiFetchRaw(`/api/v1/auth/check-username?username=${encodeURIComponent(username)}`),
+
+  /**
+   * Request an email address change
+   */
+  changeEmail: (email: string): Promise<Response> =>
+    apiFetchRaw('/api/v1/auth/email', {
+      method: 'PUT',
+      body: JSON.stringify({ email }),
+    }),
+
+  /**
+   * Reset the user's password using a reset token
+   */
+  resetPassword: (token: string, password: string): Promise<Response> =>
+    apiFetchRaw('/api/v1/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    }),
 }
 
 /**
@@ -565,6 +652,28 @@ export const adminApi = {
     await apiFetch<void>(`/api/admin/bans/${encodeURIComponent(key)}`, {
       method: 'DELETE',
     })
+  },
+
+  /**
+   * Manually mark a profile as email-verified and clear any pending token.
+   */
+  verifyProfile: async (id: number): Promise<void> => {
+    await apiFetch<void>(`/api/admin/profiles/${id}/verify`, { method: 'POST' })
+  },
+
+  /**
+   * Clear account lockout for a profile (reset failed attempts and lockout fields).
+   */
+  unlockProfile: async (id: number): Promise<void> => {
+    await apiFetch<void>(`/api/admin/profiles/${id}/unlock`, { method: 'POST' })
+  },
+
+  /**
+   * Generate a new verification token and send the verification email.
+   * Returns a rejected promise if the profile is already verified (400).
+   */
+  resendVerification: async (id: number): Promise<void> => {
+    await apiFetch<void>(`/api/admin/profiles/${id}/resend-verification`, { method: 'POST' })
   },
 }
 

@@ -49,6 +49,8 @@ Persistent knowledge discovered during development sessions. Read this at the st
 ## Security & Auth
 
 - [auth] Passwords are bcrypt one-way hashes; account recovery must use reset flows, never plaintext recovery (2026-02-26)
+- [auth] `OnlineProfile.lockedUntil = Long.MAX_VALUE` is the sentinel for a permanent (admin-required) lockout. Never convert this value to `java.time.Instant` or `LocalDateTime` — it overflows both (2026-03-03)
+- [auth] `AuthService.login()` has a read-modify-write race on `failedLoginAttempts`/`lockoutCount`: concurrent logins can corrupt the counter. Future fix: add JPA `@Version` optimistic lock to `OnlineProfile` (tracked as future enhancement) (2026-03-03)
 
 ## Networking
 

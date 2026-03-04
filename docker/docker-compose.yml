@@ -54,6 +54,10 @@ services:
       # - SMTP_STARTTLS_ENABLE=true
       # - SMTP_FROM=your-email@outlook.com
 
+      # CORS configuration for browser clients
+      # Add the web client origin if different from SERVER_HOST
+      # Example: - CORS_ALLOWED_ORIGINS=https://poker.yourdomain.com
+
       # Admin user configuration (required for admin panel access)
       # Set these to enable access to /admin pages for managing users and bans
       # - ADMIN_USERNAME=admin

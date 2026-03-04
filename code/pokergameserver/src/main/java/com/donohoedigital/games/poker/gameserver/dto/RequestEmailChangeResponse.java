@@ -17,43 +17,14 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.poker.api.dto;
-
-import jakarta.validation.constraints.NotBlank;
+package com.donohoedigital.games.poker.gameserver.dto;
 
 /**
- * Login request DTO.
+ * Response DTO for the request-email-change operation.
+ *
+ * <p>
+ * On success {@code success} is true. On failure {@code success} is false and
+ * {@code message} describes the error.
  */
-public class LoginRequest {
-    @NotBlank
-    private String username;
-
-    @NotBlank
-    private String password;
-
-    private boolean rememberMe;
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public boolean isRememberMe() {
-        return rememberMe;
-    }
-
-    public void setRememberMe(boolean rememberMe) {
-        this.rememberMe = rememberMe;
-    }
+public record RequestEmailChangeResponse(boolean success, String message) {
 }

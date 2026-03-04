@@ -79,19 +79,40 @@ public class JwtTokenProvider {
      *            the profile ID
      * @param rememberMe
      *            whether to use extended expiration
+     * @param emailVerified
+     *            whether the user's email address has been verified
      * @return the JWT token
      * @throws IllegalStateException
      *             if in validation-only mode
      */
-    public String generateToken(String username, Long profileId, boolean rememberMe) {
+    public String generateToken(String username, Long profileId, boolean rememberMe, boolean emailVerified) {
         if (privateKey == null) {
             throw new IllegalStateException("Cannot generate tokens in validation-only mode");
         }
 
         long expirationTime = rememberMe ? rememberMeExpiration : expiration;
 
-        return Jwts.builder().subject(username).claim("profileId", profileId).issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expirationTime)).signWith(privateKey).compact();
+        return Jwts.builder().subject(username).claim("profileId", profileId).claim("emailVerified", emailVerified)
+                .issuedAt(new Date()).expiration(new Date(System.currentTimeMillis() + expirationTime))
+                .signWith(privateKey).compact();
+    }
+
+    /**
+     * Generate a JWT token (issuing mode only). Email verified defaults to
+     * {@code false}.
+     *
+     * @param username
+     *            the username (subject)
+     * @param profileId
+     *            the profile ID
+     * @param rememberMe
+     *            whether to use extended expiration
+     * @return the JWT token
+     * @throws IllegalStateException
+     *             if in validation-only mode
+     */
+    public String generateToken(String username, Long profileId, boolean rememberMe) {
+        return generateToken(username, profileId, rememberMe, false);
     }
 
     /**
@@ -130,6 +151,19 @@ public class JwtTokenProvider {
      */
     public Long getProfileIdFromToken(String token) {
         return getClaims(token).get("profileId", Long.class);
+    }
+
+    /**
+     * Extract email verified status from token.
+     *
+     * @param token
+     *            the JWT token
+     * @return {@code true} if the email verified claim is present and true,
+     *         {@code false} otherwise
+     */
+    public boolean getEmailVerifiedFromToken(String token) {
+        Boolean emailVerified = getClaims(token).get("emailVerified", Boolean.class);
+        return Boolean.TRUE.equals(emailVerified);
     }
 
     /**

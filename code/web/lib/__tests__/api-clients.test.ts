@@ -72,33 +72,33 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('authApi', () => {
-  it('login — POSTs to /api/auth/login with credentials', async () => {
-    const fn = mockFetch({ success: true, message: 'ok', username: 'alice' })
+  it('login — POSTs to /api/v1/auth/login with credentials', async () => {
+    const fn = mockFetch({ success: true, message: 'ok', username: 'alice', email: 'alice@example.com', emailVerified: false })
     const result = await authApi.login({ username: 'alice', password: 'pw', rememberMe: false })
-    expect(capturedUrl(fn)).toContain('/api/auth/login')
+    expect(capturedUrl(fn)).toContain('/api/v1/auth/login')
     expect(capturedMethod(fn)).toBe('POST')
     expect(capturedBody(fn)).toMatchObject({ username: 'alice', password: 'pw' })
     expect(result.username).toBe('alice')
   })
 
-  it('register — POSTs to /api/auth/register', async () => {
-    const fn = mockFetch({ id: 1, name: 'alice', isActive: true, createdAt: '2026-01-01' })
+  it('register — POSTs to /api/v1/auth/register', async () => {
+    const fn = mockFetch({ success: true, message: null, username: 'alice', email: 'a@b.com', emailVerified: false })
     await authApi.register({ username: 'alice', email: 'a@b.com', password: 'pw' })
-    expect(capturedUrl(fn)).toContain('/api/auth/register')
+    expect(capturedUrl(fn)).toContain('/api/v1/auth/register')
     expect(capturedMethod(fn)).toBe('POST')
   })
 
-  it('logout — POSTs to /api/auth/logout', async () => {
+  it('logout — POSTs to /api/v1/auth/logout', async () => {
     const fn = mockFetch({})
     await authApi.logout()
-    expect(capturedUrl(fn)).toContain('/api/auth/logout')
+    expect(capturedUrl(fn)).toContain('/api/v1/auth/logout')
     expect(capturedMethod(fn)).toBe('POST')
   })
 
-  it('getCurrentUser — GETs /api/auth/me and returns user', async () => {
-    const fn = mockFetch({ success: true, message: '', username: 'bob' })
+  it('getCurrentUser — GETs /api/v1/auth/me and returns user', async () => {
+    const fn = mockFetch({ success: true, message: '', username: 'bob', email: 'bob@example.com', emailVerified: true })
     const result = await authApi.getCurrentUser()
-    expect(capturedUrl(fn)).toContain('/api/auth/me')
+    expect(capturedUrl(fn)).toContain('/api/v1/auth/me')
     expect(result?.username).toBe('bob')
   })
 
@@ -108,12 +108,12 @@ describe('authApi', () => {
     expect(result).toBeNull()
   })
 
-  it('forgotPassword — POSTs to /api/profile/forgot-password', async () => {
+  it('forgotPassword — POSTs to /api/v1/auth/forgot-password', async () => {
     const fn = mockFetch({ success: true, message: 'sent' })
-    const result = await authApi.forgotPassword('alice')
-    expect(capturedUrl(fn)).toContain('/api/profile/forgot-password')
+    const result = await authApi.forgotPassword('alice@example.com')
+    expect(capturedUrl(fn)).toContain('/api/v1/auth/forgot-password')
     expect(capturedMethod(fn)).toBe('POST')
-    expect(capturedBody(fn)).toMatchObject({ username: 'alice' })
+    expect(capturedBody(fn)).toMatchObject({ email: 'alice@example.com' })
     expect(result.success).toBe(true)
   })
 })

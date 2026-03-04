@@ -65,6 +65,24 @@ public interface OnlineProfileRepository extends JpaRepository<OnlineProfile, Lo
     Optional<OnlineProfile> findByEmail(String email);
 
     /**
+     * Find a profile by email verification token.
+     *
+     * @param token
+     *            the email verification token
+     * @return the profile, if found
+     */
+    Optional<OnlineProfile> findByEmailVerificationToken(String token);
+
+    /**
+     * Find a profile by pending (unconfirmed) email address.
+     *
+     * @param pendingEmail
+     *            the pending email address
+     * @return the profile, if found
+     */
+    Optional<OnlineProfile> findByPendingEmail(String pendingEmail);
+
+    /**
      * Check if a username already exists.
      *
      * @param name

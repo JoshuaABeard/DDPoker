@@ -65,7 +65,7 @@ public class TestSecurityConfiguration {
                 FilterChain filterChain) throws ServletException, IOException {
             // Create a test JWT authentication token
             JwtAuthenticationFilter.JwtAuthenticationToken authentication = new JwtAuthenticationFilter.JwtAuthenticationToken(
-                    "testuser", 1L);
+                    "testuser", 1L, false);
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
             try {
