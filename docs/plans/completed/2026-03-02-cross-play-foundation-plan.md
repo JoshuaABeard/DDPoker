@@ -2,6 +2,8 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
+**Status:** COMPLETED (2026-03-04) — All 11 implementation tasks completed and merged to main via `e17f43f6`. Full build passes. Task 13 (manual E2E) deferred to live testing.
+
 **Goal:** Enable the Java desktop client to create and join online games on the central game server so desktop and web clients can play together.
 
 **Architecture:** The embedded server is practice-only. For all online play, both clients hit the central `pokergameserver` via REST (`/api/v1/games/*`) and WebSocket (`/ws/games/{gameId}`). The desktop user authenticates against the central server; their JWT is cached in `RestAuthClient` and threaded through the online flow.
