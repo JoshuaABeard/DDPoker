@@ -19,8 +19,6 @@
  */
 package com.donohoedigital.poker.api.config;
 
-import com.mchange.v2.c3p0.ComboPooledDataSource;
-import java.beans.PropertyVetoException;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -34,8 +32,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
- * Database configuration for DD Poker API. Replaces app-context-gameserver.xml
- * with Spring Boot compatible configuration.
+ * Database configuration for DD Poker API. Uses Spring Boot auto-configured
+ * HikariCP datasource; wires the legacy persistence XML for entity scanning.
  */
 @Configuration
 @EnableTransactionManagement
@@ -44,39 +42,11 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableJpaRepositories(basePackages = "com.donohoedigital.games.poker.gameserver.persistence.repository")
 public class DatabaseConfig {
 
-    @Value("${db.driver:org.h2.Driver}")
-    private String dbDriver;
-
-    @Value("${db.url:jdbc:h2:/data/poker}")
-    private String dbUrl;
-
-    @Value("${db.user:sa}")
-    private String dbUser;
-
-    @Value("${db.password:}")
-    private String dbPassword;
-
     @Value("${jpa.persistence.location:classpath:META-INF/persistence-pokerserver.xml}")
     private String persistenceLocation;
 
     @Value("${jpa.persistence.name:poker}")
     private String persistenceName;
-
-    @Bean
-    public DataSource dataSource() throws PropertyVetoException {
-        ComboPooledDataSource dataSource = new ComboPooledDataSource();
-        dataSource.setDriverClass(dbDriver);
-        dataSource.setJdbcUrl(dbUrl);
-        dataSource.setUser(dbUser);
-        dataSource.setPassword(dbPassword);
-        dataSource.setInitialPoolSize(1);
-        dataSource.setMinPoolSize(1);
-        dataSource.setMaxPoolSize(5);
-        dataSource.setMaxIdleTime(21600); // 6 hours
-        dataSource.setAcquireIncrement(1);
-        dataSource.setAcquireRetryAttempts(0);
-        return dataSource;
-    }
 
     @Bean
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
@@ -90,7 +60,6 @@ public class DatabaseConfig {
         vendorAdapter.setGenerateDdl(true);
         em.setJpaVendorAdapter(vendorAdapter);
 
-        // Hibernate specific settings
         java.util.Properties properties = new java.util.Properties();
         properties.setProperty("hibernate.hbm2ddl.auto", "update");
         properties.setProperty("hibernate.show_sql", "false");
