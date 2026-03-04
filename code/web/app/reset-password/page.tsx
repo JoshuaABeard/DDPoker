@@ -7,18 +7,28 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { authApi } from '@/lib/api'
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const params = useSearchParams()
   const router = useRouter()
-  const token = params.get('token') ?? ''
+  const token = params.get('token')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
+
+  if (!token) {
+    return (
+      <main>
+        <h1>Invalid link</h1>
+        <p>No reset token provided.</p>
+        <a href="/forgot">Request a new reset link</a>
+      </main>
+    )
+  }
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -74,5 +84,13 @@ export default function ResetPasswordPage() {
         <button type="submit">Reset password</button>
       </form>
     </main>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<main><p>Loading…</p></main>}>
+      <ResetPasswordContent />
+    </Suspense>
   )
 }

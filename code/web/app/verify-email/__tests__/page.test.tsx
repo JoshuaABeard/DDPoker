@@ -51,11 +51,13 @@ describe('VerifyEmailPage', () => {
   })
 
   it('shows error message and resend link on failure', async () => {
-    vi.mocked(authApi.verifyEmail).mockResolvedValue(
-      new Response(JSON.stringify({ message: 'Token expired.' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      })
+    vi.mocked(authApi.verifyEmail).mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ message: 'Token expired.' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
     )
     render(<VerifyEmailPage />)
 

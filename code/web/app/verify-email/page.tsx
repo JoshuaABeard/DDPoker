@@ -7,11 +7,11 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { authApi } from '@/lib/api'
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const params = useSearchParams()
   const router = useRouter()
   const token = params.get('token')
@@ -51,5 +51,13 @@ export default function VerifyEmailPage() {
     <main>
       <p>Verifying…</p>
     </main>
+  )
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<main><p>Loading…</p></main>}>
+      <VerifyEmailContent />
+    </Suspense>
   )
 }
