@@ -653,6 +653,28 @@ export const adminApi = {
       method: 'DELETE',
     })
   },
+
+  /**
+   * Manually mark a profile as email-verified and clear any pending token.
+   */
+  verifyProfile: async (id: number): Promise<void> => {
+    await apiFetch<void>(`/api/admin/profiles/${id}/verify`, { method: 'POST' })
+  },
+
+  /**
+   * Clear account lockout for a profile (reset failed attempts and lockout fields).
+   */
+  unlockProfile: async (id: number): Promise<void> => {
+    await apiFetch<void>(`/api/admin/profiles/${id}/unlock`, { method: 'POST' })
+  },
+
+  /**
+   * Generate a new verification token and send the verification email.
+   * Returns a rejected promise if the profile is already verified (400).
+   */
+  resendVerification: async (id: number): Promise<void> => {
+    await apiFetch<void>(`/api/admin/profiles/${id}/resend-verification`, { method: 'POST' })
+  },
 }
 
 /**

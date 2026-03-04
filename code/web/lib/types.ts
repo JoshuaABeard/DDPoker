@@ -185,6 +185,8 @@ export interface OnlineProfileDto {
   createDate?: string
   lastLogin?: string
   isActive?: boolean
+  emailVerified?: boolean
+  lockedUntil?: number | null
 }
 
 export interface BannedKeyDto {
