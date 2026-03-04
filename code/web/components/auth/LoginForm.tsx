@@ -23,10 +23,14 @@ export function LoginForm() {
     e.preventDefault()
     clearError()
 
-    const success = await login(username, password, rememberMe)
+    const result = await login(username, password, rememberMe)
 
     // Only redirect if login was successful
-    if (success) {
+    if (result.success) {
+      if (result.emailVerified === false) {
+        router.push('/verify-email-pending')
+        return
+      }
       // Validate returnUrl to prevent open redirect attacks
       const raw = searchParams.get('returnUrl') || '/online'
       const returnUrl = raw.startsWith('/') && !raw.startsWith('//') && !raw.startsWith('/\\') ? raw : '/online'

@@ -25,8 +25,13 @@ interface AuthState {
   error: string | null
 }
 
+interface LoginResult {
+  success: boolean
+  emailVerified?: boolean
+}
+
 interface AuthContextValue extends AuthState {
-  login: (username: string, password: string, rememberMe: boolean) => Promise<boolean>
+  login: (username: string, password: string, rememberMe: boolean) => Promise<LoginResult>
   logout: () => Promise<void>
   checkAuthStatus: () => Promise<void>
   clearError: () => void
@@ -96,7 +101,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Log in a user
    * @returns true if login successful, false otherwise
    */
-  const login = useCallback(async (username: string, password: string, rememberMe: boolean): Promise<boolean> => {
+  const login = useCallback(async (username: string, password: string, rememberMe: boolean): Promise<LoginResult> => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }))
 
     try {
@@ -113,12 +118,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
         setAuthUser(storedUser, rememberMe)
 
+        const emailVerified = response.emailVerified ?? false
+
         // Set full user info in state (including isAdmin and emailVerified from API response)
         const user: AuthUser = {
           username: response.username,
           email: response.email ?? '',
           isAdmin: response.admin || false,
-          emailVerified: response.emailVerified ?? false,
+          emailVerified,
         }
 
         setState({
@@ -127,14 +134,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
           isLoading: false,
           error: null,
         })
-        return true
+        return { success: true, emailVerified }
       } else {
         setState((prev) => ({
           ...prev,
           isLoading: false,
           error: response.message || 'Login failed',
         }))
-        return false
+        return { success: false }
       }
     } catch (error) {
       setState((prev) => ({
@@ -142,7 +149,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isLoading: false,
         error: error instanceof Error ? error.message : 'Login failed',
       }))
-      return false
+      return { success: false }
     }
   }, [])
 

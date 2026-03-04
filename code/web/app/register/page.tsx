@@ -7,10 +7,10 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { gameServerApi } from '@/lib/api'
+import { authApi } from '@/lib/api'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -20,6 +20,27 @@ export default function RegisterPage() {
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null)
+
+  // Debounced username availability check
+  useEffect(() => {
+    if (!username || username.length < 3) {
+      setUsernameAvailable(null)
+      return
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const res = await authApi.checkUsername(username)
+        if (res.ok) {
+          const data = await res.json()
+          setUsernameAvailable(data.available)
+        }
+      } catch {
+        setUsernameAvailable(null)
+      }
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [username])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -36,12 +57,12 @@ export default function RegisterPage() {
 
     setLoading(true)
     try {
-      const response = await gameServerApi.register(username, password, email)
+      const response = await authApi.register({ username, email, password })
       if (!response.success) {
         setError(response.message || 'Registration failed. Please try again.')
         return
       }
-      router.push('/games')
+      router.push('/verify-email-pending')
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : 'Registration failed. Please try again.'
@@ -77,6 +98,12 @@ export default function RegisterPage() {
             autoComplete="username"
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          {usernameAvailable === true && (
+            <p className="text-green-600 text-sm mt-1">Username available</p>
+          )}
+          {usernameAvailable === false && (
+            <p className="text-red-600 text-sm mt-1">Username not available</p>
+          )}
         </div>
 
         <div>

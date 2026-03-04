@@ -11,15 +11,15 @@ import Link from 'next/link'
 import { authApi } from '@/lib/api'
 
 export default function ForgotPassword() {
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!username.trim()) {
-      setResult({ success: false, message: 'Please enter your username' })
+    if (!email.trim()) {
+      setResult({ success: false, message: 'Please enter your email address' })
       return
     }
 
@@ -27,12 +27,12 @@ export default function ForgotPassword() {
     setResult(null)
 
     try {
-      const response = await authApi.forgotPassword(username.trim())
+      const response = await authApi.forgotPassword(email.trim())
       setResult(response)
 
       // Clear form on success
       if (response.success) {
-        setUsername('')
+        setEmail('')
       }
     } catch (error) {
       setResult({
@@ -50,22 +50,21 @@ export default function ForgotPassword() {
 
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <p className="mb-4 text-gray-700">
-          Enter your online profile name below and we'll send your password to the email address
-          associated with your account.
+          Enter your email address below and we&apos;ll send a password reset link to your inbox.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-              Username
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              Email address
             </label>
             <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-poker-green)]"
-              placeholder="Enter your username"
+              placeholder="Enter your email address"
               disabled={isSubmitting}
               autoFocus
             />
@@ -89,16 +88,9 @@ export default function ForgotPassword() {
             disabled={isSubmitting}
             className="w-full bg-[var(--color-poker-green)] text-white py-2 px-4 rounded-md hover:bg-[var(--color-dark-green)] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
-            {isSubmitting ? 'Sending...' : 'Send Password'}
+            {isSubmitting ? 'Sending...' : 'Send Reset Link'}
           </button>
         </form>
-      </div>
-
-      <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
-        <p className="text-blue-800 text-sm">
-          <strong>Note:</strong> For security reasons, we can only send your password if you have an
-          email address registered with your account.
-        </p>
       </div>
 
       <div className="text-center space-y-2">

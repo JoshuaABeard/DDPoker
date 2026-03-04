@@ -110,10 +110,10 @@ describe('authApi', () => {
 
   it('forgotPassword — POSTs to /api/v1/auth/forgot-password', async () => {
     const fn = mockFetch({ success: true, message: 'sent' })
-    const result = await authApi.forgotPassword('alice')
+    const result = await authApi.forgotPassword('alice@example.com')
     expect(capturedUrl(fn)).toContain('/api/v1/auth/forgot-password')
     expect(capturedMethod(fn)).toBe('POST')
-    expect(capturedBody(fn)).toMatchObject({ username: 'alice' })
+    expect(capturedBody(fn)).toMatchObject({ email: 'alice@example.com' })
     expect(result.success).toBe(true)
   })
 })

@@ -172,12 +172,12 @@ describe('authApi — game server endpoints', () => {
     )
     vi.stubGlobal('fetch', mockFetch)
 
-    await authApi.forgotPassword('alice')
+    await authApi.forgotPassword('alice@example.com')
 
     const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit]
     expect(url).toContain('/api/v1/auth/forgot-password')
     expect((init?.method ?? 'GET').toUpperCase()).toBe('POST')
-    expect(JSON.parse(init.body as string)).toMatchObject({ username: 'alice' })
+    expect(JSON.parse(init.body as string)).toMatchObject({ email: 'alice@example.com' })
   })
 
   it('changePassword — PUTs to /api/v1/auth/change-password', async () => {
