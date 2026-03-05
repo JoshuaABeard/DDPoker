@@ -42,6 +42,7 @@ import com.donohoedigital.base.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import org.apache.logging.log4j.*;
 
 import javax.swing.*;
@@ -54,7 +55,7 @@ public class ButtonDisplay extends ChainPhase implements Runnable {
     static Logger logger = LogManager.getLogger(ButtonDisplay.class);
 
     private PokerGame game_;
-    private PokerTable table_;
+    private ClientPokerTable table_;
     private static int BUTTON_DELAY = 100;
 
     /**
@@ -75,7 +76,7 @@ public class ButtonDisplay extends ChainPhase implements Runnable {
      */
     public void process() {
         game_ = (PokerGame) context_.getGame();
-        table_ = (PokerTable) game_.getCurrentTable();
+        table_ = game_.getCurrentTable();
 
         Thread tButton = new Thread(this, "ButtonDisplay");
         tButton.start();
@@ -93,10 +94,10 @@ public class ButtonDisplay extends ChainPhase implements Runnable {
     /**
      * Display button
      */
-    public static void displayButton(PokerTable table, int nSleepMillis) {
+    public static void displayButton(ClientPokerTable table, int nSleepMillis) {
         // get seat button should be at (and assoc territory)
         int nSeat = table.getButton();
-        if (nSeat == PokerTable.NO_SEAT)
+        if (nSeat == ClientPokerTable.NO_SEAT)
             return;
         final Territory t = PokerUtils.getTerritoryForTableSeat(table, nSeat);
         ApplicationError.assertNotNull(t, "No territory for seat " + nSeat);

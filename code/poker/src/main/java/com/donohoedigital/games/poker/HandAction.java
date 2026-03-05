@@ -45,6 +45,7 @@ import com.donohoedigital.comms.DataMarshal;
 import com.donohoedigital.comms.MsgState;
 import com.donohoedigital.comms.TokenizedList;
 import com.donohoedigital.config.PropertyConfig;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -387,19 +388,19 @@ public class HandAction implements DataMarshal {
 
         String sRound = "<undefined>";
         switch (nRound_) {
-            case HoldemHand.ROUND_PRE_FLOP :
+            case BettingRound.ROUND_PRE_FLOP :
                 sRound = " deal";
                 break;
-            case HoldemHand.ROUND_FLOP :
+            case BettingRound.ROUND_FLOP :
                 sRound = " flop";
                 break;
-            case HoldemHand.ROUND_TURN :
+            case BettingRound.ROUND_TURN :
                 sRound = " turn";
                 break;
-            case HoldemHand.ROUND_RIVER :
+            case BettingRound.ROUND_RIVER :
                 sRound = "river";
                 break;
-            case HoldemHand.ROUND_SHOWDOWN :
+            case BettingRound.ROUND_SHOWDOWN :
                 sRound = " show";
                 break;
         }

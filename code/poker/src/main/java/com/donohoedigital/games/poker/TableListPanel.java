@@ -33,6 +33,7 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
@@ -116,7 +117,7 @@ public class TableListPanel extends DDTabPanel implements ChangeListener, Action
         for (int i = 0; i < nNumDisplay; i++) {
             tables_[i] = new TablePanel();
             tbls_.add(tables_[i]);
-            tables_[i].updateTable((PokerTable) game_.getTable(i), isShowType());
+            tables_[i].updateTable(game_.getTables().get(i), isShowType());
         }
         base.add(tbls_, BorderLayout.CENTER);
 
@@ -166,7 +167,7 @@ public class TableListPanel extends DDTabPanel implements ChangeListener, Action
     public void stateChanged(ChangeEvent e) {
         int nStart = slider_ == null ? 0 : slider_.getValue();
         for (TablePanel table : tables_) {
-            table.updateTable((PokerTable) game_.getTable(nStart++), isShowType());
+            table.updateTable(game_.getTables().get(nStart++), isShowType());
         }
     }
 
@@ -200,7 +201,7 @@ public class TableListPanel extends DDTabPanel implements ChangeListener, Action
             ddtable.setAlign(2, SwingConstants.RIGHT);
         }
 
-        private void updateTable(PokerTable table, boolean bShowPlayerType) {
+        private void updateTable(ClientPokerTable table, boolean bShowPlayerType) {
             clabel.setText("<HTML><B><font color=yellow>" + table.getName() + "</font></B>");
 
             int nNumObs = table.getNumObservers();

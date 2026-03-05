@@ -40,6 +40,8 @@ package com.donohoedigital.games.poker;
 
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import org.apache.logging.log4j.*;
 
 /**
@@ -49,7 +51,7 @@ import org.apache.logging.log4j.*;
 public class CommunityCardPiece extends CardPiece {
     static Logger cclogger = LogManager.getLogger(CommunityCardPiece.class);
 
-    private PokerTable table_;
+    private ClientPokerTable table_;
     /**
      * Empty constructor needed for demarshalling
      */
@@ -59,7 +61,7 @@ public class CommunityCardPiece extends CardPiece {
     /**
      * Creates a new instance of CommunityCardPiece
      */
-    public CommunityCardPiece(PokerTable table, String sTerritoryPoint, int nSeq) {
+    public CommunityCardPiece(ClientPokerTable table, String sTerritoryPoint, int nSeq) {
         super(table.getGame().getGameContext(), null, sTerritoryPoint, true, nSeq);
         table_ = table;
     }
@@ -70,7 +72,7 @@ public class CommunityCardPiece extends CardPiece {
     @Override
     public Card getCard() {
         // be defensive here and check to make sure a hand and community cards exist
-        HoldemHand hhand = table_.getHoldemHand();
+        ClientHoldemHand hhand = table_.getHoldemHand();
         if (hhand == null)
             return null;
         Hand comm = hhand.getCommunity();
@@ -109,6 +111,6 @@ public class CommunityCardPiece extends CardPiece {
     @Override
     public void loadFromGameStateEntry(GameState state, GameStateEntry entry) {
         super.loadFromGameStateEntry(state, entry);
-        table_ = (PokerTable) state.getObject(entry.removeIntegerToken());
+        table_ = (ClientPokerTable) state.getObject(entry.removeIntegerToken());
     }
 }

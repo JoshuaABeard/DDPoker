@@ -72,11 +72,11 @@ public class CheckEndHand extends ChainPhase {
         return human.getChipCount() == 0 && !human.isObserver();
     }
 
-    static boolean shouldOfferRebuy(ClientPlayer human, PokerTable table) {
+    static boolean shouldOfferRebuy(ClientPlayer human, ClientPokerTable table) {
         return human.getChipCount() == 0 && !human.isObserver() && table.isRebuyAllowed(human);
     }
 
-    static GameOverResult checkGameOverStatus(PokerGame game, ClientPlayer human, PokerTable table,
+    static GameOverResult checkGameOverStatus(PokerGame game, ClientPlayer human, ClientPokerTable table,
             boolean neverBrokeCheatActive) {
         boolean bOnline = game.isOnlineGame();
 
@@ -119,7 +119,7 @@ public class CheckEndHand extends ChainPhase {
      */
     public static boolean isGameOver(PokerGame game, boolean bDoRebuyAndCleanup, PokerDirector td) {
         ClientPlayer human = game.getHumanPlayer();
-        PokerTable table = (PokerTable) game.getCurrentTable();
+        ClientPokerTable table = game.getCurrentTable();
 
         boolean bGameOver = false;
         boolean bOnline = game.isOnlineGame();

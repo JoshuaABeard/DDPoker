@@ -80,7 +80,7 @@ public class NewLevelActions extends ChainPhase implements CancelablePhase {
         EngineUtils.addCancelable(this);
 
         game_ = (PokerGame) context_.getGame();
-        PokerTable table = (PokerTable) game_.getCurrentTable();
+        ClientPokerTable table = game_.getCurrentTable();
         td_ = (PokerDirector) context_.getGameManager();
 
         TournamentProfile profile = game_.getProfile();

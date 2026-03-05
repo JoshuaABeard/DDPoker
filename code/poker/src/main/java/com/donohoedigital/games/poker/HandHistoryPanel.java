@@ -48,19 +48,20 @@ import java.sql.*;
 import java.util.*;
 import java.util.List;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
 
 public class HandHistoryPanel extends DDPanel {
 
     private String where_;
     private BindArray bindArray_;
-    private HoldemHand currentHand_;
+    private ClientHoldemHand currentHand_;
     private int pageSize_;
 
     private int handCount_;
     private int handFirst_;
 
     private int handID_;
-    private HoldemHand hhand_;
+    private ClientHoldemHand hhand_;
 
     private List<Object> hands_;
 
@@ -80,7 +81,7 @@ public class HandHistoryPanel extends DDPanel {
     private ImageIcon icon_ = ImageConfig.getImageIcon("ddlogo20");
 
     public HandHistoryPanel(GameContext context, String sStyle, String where, BindArray bindArray,
-            HoldemHand currentHand, int pageSize) {
+            ClientHoldemHand currentHand, int pageSize) {
         context_ = context;
         pageSize_ = pageSize;
 
@@ -332,7 +333,7 @@ public class HandHistoryPanel extends DDPanel {
         return sb.toString();
     }
 
-    private String getHist(List<HandAction> hist, int nRound, HoldemHand hhand, boolean bAnte) {
+    private String getHist(List<HandAction> hist, int nRound, ClientHoldemHand hhand, boolean bAnte) {
         StringBuilder sb = new StringBuilder();
         ClientPlayer p;
         int nNum = 0;
@@ -423,8 +424,8 @@ public class HandHistoryPanel extends DDPanel {
             if (hhand_ == o)
                 return;
             handID_ = -1;
-            hhand_ = (HoldemHand) o;
-            showAllCheckbox_.setEnabled(!hhand_.getTable().getGame().isOnlineGame());
+            hhand_ = (ClientHoldemHand) o;
+            showAllCheckbox_.setEnabled(!hhand_.getClientTable().getGame().isOnlineGame());
         }
 
         checkButtons();
@@ -463,7 +464,7 @@ public class HandHistoryPanel extends DDPanel {
                 display_.setText(
                         "<html><body>" + PokerDatabase.getHandListHTML((Integer) getItem()) + "</body></html>");
             } else {
-                display_.setText("<html><body>" + ((HoldemHand) o).getHandListHTML() + "</body></html>");
+                display_.setText("<html><body>" + ((ClientHoldemHand) o).getHandListHTML() + "</body></html>");
             }
         }
     }

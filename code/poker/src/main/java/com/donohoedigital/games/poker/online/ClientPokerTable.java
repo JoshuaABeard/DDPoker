@@ -37,6 +37,9 @@ package com.donohoedigital.games.poker.online;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.event.PokerTableListener;
+import com.donohoedigital.games.poker.model.TournamentProfile;
+
+import java.util.List;
 
 /**
  * Read-only view of a poker table for Swing UI components.
@@ -170,6 +173,90 @@ public interface ClientPokerTable {
      *            {@code true} to mark the table as removed
      */
     void setRemoved(boolean b);
+
+    /**
+     * Returns the number of observers (spectators) at this table.
+     */
+    int getNumObservers();
+
+    /**
+     * Returns the observer at the given index.
+     */
+    ClientPlayer getObserver(int index);
+
+    /**
+     * Returns {@code true} if the given player is allowed to rebuy.
+     */
+    boolean isRebuyAllowed(ClientPlayer player);
+
+    /**
+     * Returns {@code true} if the given player is allowed to rebuy at the given
+     * level.
+     */
+    boolean isRebuyAllowed(ClientPlayer player, int nLevel);
+
+    /** Returns {@code true} if the rebuy period is over for the given player. */
+    boolean isRebuyDone(ClientPlayer player);
+
+    /** Returns {@code true} if the given player is allowed to add on. */
+    boolean isAddonAllowed(ClientPlayer player);
+
+    /** Returns the list of players who rebuyed during the current level. */
+    List<ClientPlayer> getRebuyList();
+
+    /** Returns the list of players who added on during the current level. */
+    List<ClientPlayer> getAddonList();
+
+    /** Returns the tournament profile for this table's game. */
+    TournamentProfile getProfile();
+
+    /** Sets zip (fast-forward) mode for this table. */
+    void setZipMode(boolean b);
+
+    /** Sets the dealer button to the given seat. */
+    void setButton(int nSeat);
+
+    /**
+     * Adds a player to the next available seat at this table.
+     */
+    void addPlayer(ClientPlayer player);
+
+    /**
+     * Removes the player at the given seat from this table.
+     */
+    void removePlayer(int nSeat);
+
+    /** Returns the number of open (unoccupied) seats. */
+    int getNumOpenSeats();
+
+    /** Returns {@code true} if all occupied seats contain computer players. */
+    boolean isAllComputer();
+
+    /** Adds an observer (spectator) to this table. */
+    void addObserver(ClientPlayer player);
+
+    /** Removes an observer from this table. */
+    void removeObserver(ClientPlayer player);
+
+    /** Sets the minimum chip denomination. */
+    void setMinChip(int n);
+
+    /**
+     * Notifies table listeners that display preferences have changed.
+     */
+    void prefsChanged();
+
+    /**
+     * Tells this table to skip the next automatic button move (used when the user
+     * manually repositions the button at showdown via the cheat menu).
+     */
+    void setSkipNextButtonMove(boolean b);
+
+    /**
+     * Performs a level check — adjusts blinds/antes/min-chip if the game level has
+     * changed (local games only).
+     */
+    void levelCheck(PokerGame game);
 
     // -------------------------------------------------------------------------
     // Listener management

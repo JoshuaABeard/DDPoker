@@ -35,6 +35,7 @@
 package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.poker.HandAction;
+import com.donohoedigital.games.poker.engine.Deck;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.HandSorted;
@@ -124,6 +125,12 @@ public interface ClientHoldemHand {
 
     /** Returns the total chip count across all pots. */
     int getTotalPotChipCount();
+
+    /** Returns the number of pots. */
+    int getNumPots();
+
+    /** Returns the pot at the given index as a {@link ClientPot}. */
+    ClientPot getPot(int index);
 
     // -------------------------------------------------------------------------
     // Bet / call amounts
@@ -264,6 +271,27 @@ public interface ClientHoldemHand {
     int getHistorySize();
 
     /**
+     * Returns the last non-result action (non-WIN/LOSE/OVERBET) from the history,
+     * or {@code null} if none.
+     */
+    HandAction getLastAction();
+
+    /**
+     * Returns {@code true} if the hand is uncontested (only one player with cards
+     * remaining).
+     */
+    default boolean isUncontested() {
+        return getNumWithCards() == 1;
+    }
+
+    /**
+     * Returns the HTML snippet for hand history list display.
+     */
+    default String getHandListHTML() {
+        return "";
+    }
+
+    /**
      * Returns the sum of all bets (including antes) placed by the given player
      * across all rounds in this hand.
      *
@@ -281,6 +309,85 @@ public interface ClientHoldemHand {
      *            the player
      */
     int getNumPriorRaises(ClientPlayer player);
+
+    // -------------------------------------------------------------------------
+    // Blind / ante amounts
+    // -------------------------------------------------------------------------
+
+    /** Returns the small blind amount. */
+    int getSmallBlind();
+
+    /** Returns the big blind amount. */
+    int getBigBlind();
+
+    /** Returns the ante amount. */
+    int getAnte();
+
+    // -------------------------------------------------------------------------
+    // Date / time
+    // -------------------------------------------------------------------------
+
+    /** Returns the hand start time in millis, or 0 if unknown. */
+    long getStartDate();
+
+    /** Returns the hand end time in millis, or 0 if unknown. */
+    long getEndDate();
+
+    // -------------------------------------------------------------------------
+    // Game type helpers
+    // -------------------------------------------------------------------------
+
+    /** Returns {@code true} if this hand is no-limit. */
+    boolean isNoLimit();
+
+    /** Returns {@code true} if this hand is pot-limit. */
+    boolean isPotLimit();
+
+    // -------------------------------------------------------------------------
+    // Round / action queries
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns {@code true} if there was any action in the given round.
+     *
+     * @param nRound
+     *            legacy round integer ({@code BettingRound.ROUND_*})
+     */
+    boolean isActionInRound(int nRound);
+
+    /**
+     * Returns the round in which the given player folded, as a legacy round
+     * integer.
+     *
+     * @param player
+     *            the player
+     */
+    int getFoldRound(ClientPlayer player);
+
+    /**
+     * Returns the overbet (excess chips returned) for the given player, or 0.
+     *
+     * @param player
+     *            the player
+     */
+    int getOverbet(ClientPlayer player);
+
+    /**
+     * Returns the last action type taken by the given player in the current round,
+     * or {@code HandAction#ACTION_NONE} if none. Unlike
+     * {@link #getLastAction(ClientPlayer)}, this specifically queries the current
+     * betting round only.
+     *
+     * @param player
+     *            the player
+     */
+    int getLastActionThisRound(ClientPlayer player);
+
+    /**
+     * Returns the number of pots excluding overbet pots (pots with only one
+     * eligible player).
+     */
+    int getNumPotsExcludingOverbets();
 
     // -------------------------------------------------------------------------
     // Win recording
@@ -305,4 +412,16 @@ public interface ClientHoldemHand {
      *            the player
      */
     int getWin(ClientPlayer player);
+
+    // -------------------------------------------------------------------------
+    // Deck / muck (local cheat mode only)
+    // -------------------------------------------------------------------------
+
+    /** Returns the deck used for this hand (local games only). */
+    Deck getDeck();
+
+    /**
+     * Returns the muck (folded/discarded cards) for this hand (local games only).
+     */
+    Hand getMuck();
 }

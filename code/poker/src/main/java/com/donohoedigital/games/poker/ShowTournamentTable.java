@@ -108,7 +108,7 @@ public class ShowTournamentTable extends ShowPokerTable
     private PokerIcon minChip_;
 
     // table we are monitoring
-    private volatile PokerTable table_;
+    private volatile ClientPokerTable table_;
     private PokerDirector td_;
 
     // keyboard focus indicator
@@ -593,7 +593,7 @@ public class ShowTournamentTable extends ShowPokerTable
      */
     public void sync(boolean bRepaint) {
         // match display to any loaded hands
-        HoldemHand hhand = table_.getHoldemHand();
+        ClientHoldemHand hhand = table_.getHoldemHand();
         PokerUtils.clearCards(false);
         PokerUtils.clearResults(context_, false);
         DealDisplay.syncCards(table_);
@@ -678,7 +678,7 @@ public class ShowTournamentTable extends ShowPokerTable
         game_.addPropertyChangeListener(PokerGame.PROP_CURRENT_TABLE, this);
         board_.addTerritorySelectionListener(this);
         board_.setTerritorySelectionMode(Gameboard.SELECTION_MODE_MULTIPLE);
-        trackTable((PokerTable) game_.getCurrentTable(), false);
+        trackTable(game_.getCurrentTable(), false);
     }
 
     /**
@@ -701,7 +701,7 @@ public class ShowTournamentTable extends ShowPokerTable
     /**
      * track table
      */
-    private void trackTable(PokerTable table, boolean bRepaint) {
+    private void trackTable(ClientPokerTable table, boolean bRepaint) {
         // cleanup old
         if (table_ != null)
             table_.removePokerTableListener(this, PokerTableEvent.TYPES_ALL);
@@ -763,7 +763,7 @@ public class ShowTournamentTable extends ShowPokerTable
 
         // table changed
         if (name.equals(PokerGame.PROP_CURRENT_TABLE)) {
-            trackTable((PokerTable) game_.getCurrentTable(), true);
+            trackTable(game_.getCurrentTable(), true);
         }
     }
 
@@ -782,7 +782,7 @@ public class ShowTournamentTable extends ShowPokerTable
     private class SwingIt implements Runnable {
         int nType;
         ClientPlayer p;
-        PokerTable t;
+        ClientPokerTable t;
         boolean bRepaintAll = false;
 
         SwingIt() {
@@ -799,7 +799,7 @@ public class ShowTournamentTable extends ShowPokerTable
             this.nType = nType;
         }
 
-        SwingIt(PokerTable t, int nType) {
+        SwingIt(ClientPokerTable t, int nType) {
             this.t = t;
             this.nType = nType;
         }
@@ -932,17 +932,13 @@ public class ShowTournamentTable extends ShowPokerTable
                 break;
 
             case PokerTableEvent.TYPE_BUTTON_MOVED :
-                // if button moved while dealing for button, ignore since it will
-                // be moved via a specific phase, along with the cards display
-                PokerTable pokerTable = (PokerTable) table;
-                if (pokerTable.getTableStateInt() == PokerTable.STATE_DEAL_FOR_BUTTON)
-                    break;
-                GuiUtils.invoke(new SwingIt(pokerTable, SWING_DISPLAY_BUTTON));
+                // Button moved — always display (state checking removed with PokerTable
+                // deletion)
+                GuiUtils.invoke(new SwingIt(table, SWING_DISPLAY_BUTTON));
                 break;
 
             case PokerTableEvent.TYPE_CLEANING_DONE :
-                // set null so pot is redrawn empty; called upon change *to* STATE_CLEAN
-                ((PokerTable) table).setHoldemHand(null);
+                // Pot is redrawn empty; called upon change *to* STATE_CLEAN
                 PokerUtils.setNewHand();
                 PokerUtils.clearCards(false);
                 PokerUtils.clearResults(context_, false);
@@ -1280,7 +1276,7 @@ public class ShowTournamentTable extends ShowPokerTable
         // see if no more rebuys for human. If so, remove rebuy button
         PokerGame game = (PokerGame) context_.getGame();
         ClientPlayer human = game.getHumanPlayer();
-        PokerTable table = (PokerTable) human.getTable();
+        ClientPokerTable table = human.getTable();
         if (human.isObserver() || human.isEliminated() || table.isRebuyDone(human)) {
             buttonbase_.remove(buttonRebuy_);
             buttonRebuy_ = null;
@@ -1297,7 +1293,7 @@ public class ShowTournamentTable extends ShowPokerTable
 
             // BUG 420 - don't allow rebuy when broke at showdown
             // since the user will be auto-prompted
-            HoldemHand hhand = table.getHoldemHand();
+            ClientHoldemHand hhand = table.getHoldemHand();
             if (bEnable && human.getChipCount() == 0 && hhand != null && hhand.getRound() == BettingRound.SHOWDOWN) {
                 bEnable = false;
             }
@@ -1400,7 +1396,7 @@ public class ShowTournamentTable extends ShowPokerTable
      */
     private void updatePotDisplay(boolean bRepaint) {
         boolean bSide = false;
-        HoldemHand hhand = table_.getHoldemHand();
+        ClientHoldemHand hhand = table_.getHoldemHand();
 
         if (hhand != null) {
             int nNumPots = hhand.getNumPotsExcludingOverbets();
@@ -1821,7 +1817,7 @@ public class ShowTournamentTable extends ShowPokerTable
             Point point = board_.getLastMousePoint();
             String sStyle = "PokerTable";
             ClientPlayer p = PokerUtils.getPokerPlayer(context_, t);
-            HoldemHand hhand = table_.getHoldemHand();
+            ClientHoldemHand hhand = table_.getHoldemHand();
             boolean bInHand = hhand != null && hhand.getRound() != BettingRound.SHOWDOWN;
 
             if (PokerUtils.isPot(t) || PokerUtils.isFlop(t) || p == null) {
@@ -2081,7 +2077,7 @@ public class ShowTournamentTable extends ShowPokerTable
                             player.getID(), newChips));
                 } else {
                     board_.repaintAll(); // could affect amount to call for active non-active player, so repaint all
-                    HoldemHand hhand = table_.getHoldemHand();
+                    ClientHoldemHand hhand = table_.getHoldemHand();
                     if (hhand != null) {
                         setInputMode(MODE_RECHECK, hhand, hhand.getCurrentPlayer());
                     }
@@ -2316,7 +2312,7 @@ public class ShowTournamentTable extends ShowPokerTable
                         return;
                     }
 
-                    HoldemHand hhand = table_.getHoldemHand();
+                    ClientHoldemHand hhand = table_.getHoldemHand();
                     Hand community = hhand.getCommunity();
                     Deck deck = hhand.getDeck();
 
@@ -2429,7 +2425,7 @@ public class ShowTournamentTable extends ShowPokerTable
             // if button moved at end of a hand, don't move it when
             // next hand starts because player likely wanted button
             // to start there for next hand
-            HoldemHand hhand = table_.getHoldemHand();
+            ClientHoldemHand hhand = table_.getHoldemHand();
             if (hhand != null && hhand.getRound() == BettingRound.SHOWDOWN) {
                 table_.setSkipNextButtonMove(true);
             }

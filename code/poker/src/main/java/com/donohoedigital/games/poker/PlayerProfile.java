@@ -89,7 +89,7 @@ public class PlayerProfile extends BaseProfile {
 
         // number of times each round is seen
         for (int i = 0; i < rounds_.length; i++) {
-            logger.debug("Round " + HoldemHand.getRoundName(i) + ": " + rounds_[i]);
+            logger.debug("Round " + BettingRound.getRoundName(i) + ": " + rounds_[i]);
             // flops seen - which position
             if (i == BettingRound.FLOP.toLegacy()) {
                 for (int j = 0; j < flops_.length; j++) {
@@ -106,10 +106,10 @@ public class PlayerProfile extends BaseProfile {
 
         // actions per round
         for (int i = 0; i < roundactions_.length; i++) {
-            logger.debug("Total Actions it round " + HoldemHand.getRoundName(i) + ": " + nRoundActionCnt_[i]);
+            logger.debug("Total Actions it round " + BettingRound.getRoundName(i) + ": " + nRoundActionCnt_[i]);
             for (int j = 0; j < roundactions_[0].length; j++) {
-                logger.debug("   Round " + HoldemHand.getRoundName(i) + ", Action " + HandAction.getActionName(j) + ": "
-                        + roundactions_[i][j]);
+                logger.debug("   Round " + BettingRound.getRoundName(i) + ", Action " + HandAction.getActionName(j)
+                        + ": " + roundactions_[i][j]);
             }
         }
     }

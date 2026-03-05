@@ -42,7 +42,9 @@ import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
+import com.donohoedigital.games.poker.online.ClientPot;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
@@ -96,16 +98,13 @@ public class SidePotsDialog extends DialogPhase {
     private void setPots() {
         nSide = 0;
         ClientPokerTable currentTable = game_.getCurrentTable();
-        com.donohoedigital.games.poker.online.ClientHoldemHand clientHand = currentTable != null
-                ? currentTable.getHoldemHand()
-                : null;
-        HoldemHand hhand = clientHand instanceof HoldemHand ? (HoldemHand) clientHand : null;
+        ClientHoldemHand hhand = currentTable != null ? currentTable.getHoldemHand() : null;
         if (hhand == null)
             return;
         int nNum = hhand.getNumPots();
         StringBuilder sb = new StringBuilder();
         for (int i = nNum - 1; i >= 0; i--) {
-            sb.append(getPot(hhand, i));
+            sb.append(getPot(currentTable, hhand, i));
         }
 
         html_.setText(PropertyConfig.getMessage("msg.sidepots", sb.toString()));
@@ -120,10 +119,14 @@ public class SidePotsDialog extends DialogPhase {
     /**
      * get side pot description
      */
-    private String getPot(HoldemHand hhand, int nPot) {
-        Pot p = hhand.getPot(nPot);
-        List<ClientPlayer> winners = p.getWinners();
-        int nNum = p.getNumPlayers();
+    private String getPot(ClientPokerTable table, ClientHoldemHand hhand, int nPot) {
+        ClientPot p = hhand.getPot(nPot);
+        if (p == null)
+            return "";
+
+        List<Integer> winnerIds = p.winnerPlayerIds();
+        List<Integer> eligibleIds = p.eligiblePlayerIds();
+        int nNum = eligibleIds.size();
 
         String sKey;
         if (nNum == 1) {
@@ -135,24 +138,27 @@ public class SidePotsDialog extends DialogPhase {
             nSide++;
         }
 
-        ClientPlayer pl;
+        // Resolve players from seat indices
+        List<ClientPlayer> players = new ArrayList<>();
+        for (int seatId : eligibleIds) {
+            ClientPlayer pl = table.getPlayer(seatId);
+            if (pl != null)
+                players.add(pl);
+        }
+        players.sort(ClientPlayer.SORTBYNAME);
+
         StringBuilder sb = new StringBuilder();
-        List<ClientPlayer> players = new ArrayList<ClientPlayer>(p.getPlayers());
-        Collections.sort(players, ClientPlayer.SORTBYNAME);
-        boolean bWinner;
-        for (int i = 0; i < nNum; i++) {
-            pl = players.get(i);
+        for (ClientPlayer pl : players) {
             if (pl.isFolded())
                 continue;
-            bWinner = winners.contains(pl);
+            boolean bWinner = winnerIds.contains(pl.getSeat());
             if (sb.length() > 0)
                 sb.append("<BR>");
             sb.append(PropertyConfig.getMessage(bWinner ? "msg.sidepot.player.win" : "msg.sidepot.player",
                     Utils.encodeHTML(pl.getName())));
-
         }
 
-        return PropertyConfig.getMessage("msg.sidepot", PropertyConfig.getMessage(sKey, nSide, p.getChipCount()),
+        return PropertyConfig.getMessage("msg.sidepot", PropertyConfig.getMessage(sKey, nSide, p.chips()),
                 sb.toString());
     }
 }

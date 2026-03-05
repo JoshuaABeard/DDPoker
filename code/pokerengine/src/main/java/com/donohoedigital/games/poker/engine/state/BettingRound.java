@@ -26,6 +26,17 @@ package com.donohoedigital.games.poker.engine.state;
 public enum BettingRound {
     NONE(-1), PRE_FLOP(0), FLOP(1), TURN(2), RIVER(3), SHOWDOWN(4);
 
+    /**
+     * Legacy integer constants — use these in switch statements that previously
+     * used HoldemHand.ROUND_*.
+     */
+    public static final int ROUND_NONE = -1;
+    public static final int ROUND_PRE_FLOP = 0;
+    public static final int ROUND_FLOP = 1;
+    public static final int ROUND_TURN = 2;
+    public static final int ROUND_RIVER = 3;
+    public static final int ROUND_SHOWDOWN = 4;
+
     private final int legacyValue;
 
     // O(1) lookup array: legacy values range from -1 to 4
@@ -65,5 +76,19 @@ public enum BettingRound {
      */
     public int toLegacy() {
         return legacyValue;
+    }
+
+    /**
+     * Get name for debugging (replaces HoldemHand.getRoundName).
+     */
+    public static String getRoundName(int n) {
+        return switch (n) {
+            case ROUND_PRE_FLOP -> "preflop";
+            case ROUND_FLOP -> "flop";
+            case ROUND_TURN -> "turn";
+            case ROUND_RIVER -> "river";
+            case ROUND_SHOWDOWN -> "show";
+            default -> "none: " + n;
+        };
     }
 }

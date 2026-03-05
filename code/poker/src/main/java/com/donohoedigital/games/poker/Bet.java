@@ -61,8 +61,8 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
     static Logger logger = LogManager.getLogger(Bet.class);
 
     private ClientPlayer player_;
-    private PokerTable table_;
-    private HoldemHand hhand_;
+    private ClientPokerTable table_;
+    private ClientHoldemHand hhand_;
     private PokerGame game_;
     private int nRound_;
     private boolean bSetZipModeAtEnd_ = false;
@@ -82,7 +82,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
     public void process() {
         // get player, table and current hand
         game_ = (PokerGame) context_.getGame();
-        table_ = (PokerTable) game_.getCurrentTable();
+        table_ = game_.getCurrentTable();
         hhand_ = table_.getHoldemHand();
         player_ = hhand_.getCurrentPlayer();
         nRound_ = hhand_.getRound().toLegacy();

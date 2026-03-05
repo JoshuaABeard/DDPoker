@@ -441,8 +441,8 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
         String sMsg = Utils.encodeHTML(msg_.getText(), false);
 
         msg_.setText("");
-        if (mgr_ != null && game_.getCurrentTable() instanceof PokerTable)
-            mgr_.sendChat(sMsg, (PokerTable) game_.getCurrentTable(), null);
+        if (mgr_ != null && game_.getCurrentTable() != null)
+            mgr_.sendChat(sMsg, game_.getCurrentTable(), null);
 
         displayMessage(local_.getID(), PokerConstants.CHAT_ALWAYS, sMsg, true);
     }

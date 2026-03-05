@@ -213,61 +213,58 @@ public class ImpExpParadise implements ImpExp {
             HandAction action = (HandAction) ieHand.hist.get(i);
 
             while (action.getRound() > round) {
-                switch (round++) {
-                    case HoldemHand.ROUND_PRE_FLOP :
-                        if (ieHand.community.size() >= 3) {
-                            buf.append("*** FLOP *** : [ ");
-                            buf.append(ieHand.community.getCard(0).getRankDisplaySingle());
-                            buf.append(ieHand.community.getCard(0).getSuitDisplay());
-                            buf.append(" ");
-                            buf.append(ieHand.community.getCard(1).getRankDisplaySingle());
-                            buf.append(ieHand.community.getCard(1).getSuitDisplay());
-                            buf.append(" ");
-                            buf.append(ieHand.community.getCard(2).getRankDisplaySingle());
-                            buf.append(ieHand.community.getCard(2).getSuitDisplay());
-                            buf.append(" ]");
-                            buf.append(newline);
-                        }
-                        break;
-                    case HoldemHand.ROUND_FLOP :
-                        if (ieHand.community.size() >= 4) {
-                            buf.append("*** TURN *** : [ ");
-                            buf.append(ieHand.community.getCard(0).getRankDisplaySingle());
-                            buf.append(ieHand.community.getCard(0).getSuitDisplay());
-                            buf.append(" ");
-                            buf.append(ieHand.community.getCard(1).getRankDisplaySingle());
-                            buf.append(ieHand.community.getCard(1).getSuitDisplay());
-                            buf.append(" ");
-                            buf.append(ieHand.community.getCard(2).getRankDisplaySingle());
-                            buf.append(ieHand.community.getCard(2).getSuitDisplay());
-                            buf.append(" ] [ ");
-                            buf.append(ieHand.community.getCard(3).getRankDisplaySingle());
-                            buf.append(ieHand.community.getCard(3).getSuitDisplay());
-                            buf.append(" ]");
-                            buf.append(newline);
-                        }
-                        break;
-                    case HoldemHand.ROUND_TURN :
-                        if (ieHand.community.size() >= 5) {
-                            buf.append("*** RIVER *** : [ ");
-                            buf.append(ieHand.community.getCard(0).getRankDisplaySingle());
-                            buf.append(ieHand.community.getCard(0).getSuitDisplay());
-                            buf.append(" ");
-                            buf.append(ieHand.community.getCard(1).getRankDisplaySingle());
-                            buf.append(ieHand.community.getCard(1).getSuitDisplay());
-                            buf.append(" ");
-                            buf.append(ieHand.community.getCard(2).getRankDisplaySingle());
-                            buf.append(ieHand.community.getCard(2).getSuitDisplay());
-                            buf.append(" ");
-                            buf.append(ieHand.community.getCard(3).getRankDisplaySingle());
-                            buf.append(ieHand.community.getCard(3).getSuitDisplay());
-                            buf.append(" ] [ ");
-                            buf.append(ieHand.community.getCard(4).getRankDisplaySingle());
-                            buf.append(ieHand.community.getCard(4).getSuitDisplay());
-                            buf.append(" ]");
-                            buf.append(newline);
-                        }
-                        break;
+                int currentRound = round++;
+                if (currentRound == BettingRound.ROUND_PRE_FLOP) {
+                    if (ieHand.community.size() >= 3) {
+                        buf.append("*** FLOP *** : [ ");
+                        buf.append(ieHand.community.getCard(0).getRankDisplaySingle());
+                        buf.append(ieHand.community.getCard(0).getSuitDisplay());
+                        buf.append(" ");
+                        buf.append(ieHand.community.getCard(1).getRankDisplaySingle());
+                        buf.append(ieHand.community.getCard(1).getSuitDisplay());
+                        buf.append(" ");
+                        buf.append(ieHand.community.getCard(2).getRankDisplaySingle());
+                        buf.append(ieHand.community.getCard(2).getSuitDisplay());
+                        buf.append(" ]");
+                        buf.append(newline);
+                    }
+                } else if (currentRound == BettingRound.ROUND_FLOP) {
+                    if (ieHand.community.size() >= 4) {
+                        buf.append("*** TURN *** : [ ");
+                        buf.append(ieHand.community.getCard(0).getRankDisplaySingle());
+                        buf.append(ieHand.community.getCard(0).getSuitDisplay());
+                        buf.append(" ");
+                        buf.append(ieHand.community.getCard(1).getRankDisplaySingle());
+                        buf.append(ieHand.community.getCard(1).getSuitDisplay());
+                        buf.append(" ");
+                        buf.append(ieHand.community.getCard(2).getRankDisplaySingle());
+                        buf.append(ieHand.community.getCard(2).getSuitDisplay());
+                        buf.append(" ] [ ");
+                        buf.append(ieHand.community.getCard(3).getRankDisplaySingle());
+                        buf.append(ieHand.community.getCard(3).getSuitDisplay());
+                        buf.append(" ]");
+                        buf.append(newline);
+                    }
+                } else if (currentRound == BettingRound.ROUND_TURN) {
+                    if (ieHand.community.size() >= 5) {
+                        buf.append("*** RIVER *** : [ ");
+                        buf.append(ieHand.community.getCard(0).getRankDisplaySingle());
+                        buf.append(ieHand.community.getCard(0).getSuitDisplay());
+                        buf.append(" ");
+                        buf.append(ieHand.community.getCard(1).getRankDisplaySingle());
+                        buf.append(ieHand.community.getCard(1).getSuitDisplay());
+                        buf.append(" ");
+                        buf.append(ieHand.community.getCard(2).getRankDisplaySingle());
+                        buf.append(ieHand.community.getCard(2).getSuitDisplay());
+                        buf.append(" ");
+                        buf.append(ieHand.community.getCard(3).getRankDisplaySingle());
+                        buf.append(ieHand.community.getCard(3).getSuitDisplay());
+                        buf.append(" ] [ ");
+                        buf.append(ieHand.community.getCard(4).getRankDisplaySingle());
+                        buf.append(ieHand.community.getCard(4).getSuitDisplay());
+                        buf.append(" ]");
+                        buf.append(newline);
+                    }
                 }
             }
 

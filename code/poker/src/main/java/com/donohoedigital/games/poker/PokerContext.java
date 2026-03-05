@@ -155,11 +155,11 @@ public class PokerContext extends GameContext {
         if (game == null)
             return;
 
-        PokerTable current = (PokerTable) game.getCurrentTable();
-        PokerTable t;
-        HoldemHand hhand;
+        ClientPokerTable current = game.getCurrentTable();
+        ClientPokerTable t;
+        ClientHoldemHand hhand;
         for (int i = 0; i < game.getNumTables(); i++) {
-            t = (PokerTable) game.getTable(i);
+            t = game.getTables().get(i);
             if (t.isAllComputer())
                 continue;
 
@@ -167,7 +167,7 @@ public class PokerContext extends GameContext {
                     + " when error occurred: ");
             hhand = t.getHoldemHand();
             if (hhand != null) {
-                hhand.debugPrint();
+                logger.debug("Hand in round: " + hhand.getRound());
             } else {
                 logger.debug("No hand.");
             }

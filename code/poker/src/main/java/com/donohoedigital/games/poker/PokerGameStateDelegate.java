@@ -68,11 +68,7 @@ public class PokerGameStateDelegate implements GameStateDelegate {
      * Populate poker tables
      */
     public void prepopulateCustomIds(Object game, GameState state) {
-        PokerGame pgame = (PokerGame) game;
-        int nNum = pgame.getNumTables();
-        for (int i = 0; i < nNum; i++) {
-            state.setId((PokerTable) pgame.getTable(i));
-        }
+        throw new UnsupportedOperationException("Save/load not supported after engine class removal");
     }
 
     /**

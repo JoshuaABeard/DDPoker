@@ -39,6 +39,8 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.server.*;
 import com.donohoedigital.games.poker.gameserver.SimulationResult;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
@@ -55,7 +57,7 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     private static Dimension resultsSize = new Dimension(90, 50);
 
     private GameContext context_;
-    private PokerTable table_;
+    private ClientPokerTable table_;
     private DDProgressBar progress_;
     private String STYLE;
     private SimulatorDialog sim_;
@@ -68,7 +70,7 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     /**
      * Create showdown panel
      */
-    public PokerShowdownPanel(GameContext context, SimulatorDialog sim, PokerTable table, String sStyle) {
+    public PokerShowdownPanel(GameContext context, SimulatorDialog sim, ClientPokerTable table, String sStyle) {
         super();
         context_ = context;
         setBorder(BorderFactory.createEmptyBorder(10, 10, 2, 10));
@@ -391,8 +393,8 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
 
         @Override
         public void run() {
-            HoldemHand hhand = sim_.hhand_;
-            PokerTable table = sim_.table_;
+            ClientHoldemHand hhand = sim_.hhand_;
+            ClientPokerTable table = sim_.table_;
 
             int numPlayers = numOpponents_.getSpinner().getValue() + 1;
 

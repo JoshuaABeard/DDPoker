@@ -267,32 +267,13 @@ public class PokerGameboard extends Gameboard {
             if (player != null) {
                 ClientHoldemHand hhand = table.getHoldemHand();
 
-                // coloring up mode
-                PokerTable pokerTable = (PokerTable) table;
-                if (pokerTable.isColoringUpDisplay()) {
-                    color = PokerDisplayAdapter.cCurrent_;
-                    int nAmount = 0;
-                    if (player.isWonChipRace()) {
-                        sText = PropertyConfig
-                                .getMessage(player.isBrokeChipRace() ? "msg.oddchips.broke" : "msg.oddchips.won");
-                        nAmount = pokerTable.getNextMinChip();
-                    } else {
-                        int nOdd = player.getOddChips();
-                        sText = PropertyConfig.getMessage(nOdd == 0
-                                ? "msg.oddchips.none"
-                                : (nOdd == 1 ? "msg.oddchips.sing" : "msg.oddchips.plur"), nOdd);
-                        if (nOdd > 0)
-                            nAmount = table.getMinChip();
-                    }
-
-                    nChipAmount = nAmount;
-                } else if (hhand != null) {
+                if (hhand != null) {
                     int nBet = hhand.getBet(player);
                     int nLast = hhand.getLastAction(player);
 
                     if (PokerConstants.DEBUG_EVENT_DISPLAY || TESTING(EngineConstants.TESTING_DEBUG_REPAINT)) {
                         logger.debug("repaintTerritory (with hhand) for " + player.getName() + " round: "
-                                + HoldemHand.getRoundName(hhand.getRound().toLegacy()) + " current: "
+                                + BettingRound.getRoundName(hhand.getRound().toLegacy()) + " current: "
                                 + player.isCurrentGamePlayer());
                     }
 

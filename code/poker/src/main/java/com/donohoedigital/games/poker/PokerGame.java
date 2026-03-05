@@ -361,7 +361,7 @@ public class PokerGame extends Game implements PlayerActionListener {
     @Override
     public void removeObserver(GamePlayer player) {
         ClientPlayer pokerPlayer = ((ClientPlayer) player);
-        PokerTable table = (PokerTable) pokerPlayer.getTable();
+        ClientPokerTable table = pokerPlayer.getTable();
         if (table != null)
             table.removeObserver(pokerPlayer);
         super.removeObserver(player);
@@ -596,8 +596,8 @@ public class PokerGame extends Game implements PlayerActionListener {
      */
     public GameTable getTable(int i) {
         ClientPokerTable t = tables_.get(i);
-        if (t instanceof PokerTable)
-            return (PokerTable) t;
+        if (t instanceof GameTable)
+            return (GameTable) t;
         throw new IllegalStateException(
                 "getTable(" + i + ") called on a non-engine table. " + "Use getTableByNumber() in WebSocket paths.");
     }
@@ -931,7 +931,7 @@ public class PokerGame extends Game implements PlayerActionListener {
             return false;
         }
         ClientPlayer pokerPlayer = (ClientPlayer) player;
-        return !((PokerTable) pokerPlayer.getTable()).isRebuyDone(pokerPlayer);
+        return !pokerPlayer.getTable().isRebuyDone(pokerPlayer);
     }
 
     /**
@@ -1201,7 +1201,7 @@ public class PokerGame extends Game implements PlayerActionListener {
 
         // set initial min chip now that its been set
         for (int i = 0; i < getNumTables(); i++) {
-            ((PokerTable) getTable(i)).setMinChip(getMinChip());
+            tables_.get(i).setMinChip(getMinChip());
         }
 
         // init DDMessage MsgState
@@ -1340,11 +1340,11 @@ public class PokerGame extends Game implements PlayerActionListener {
         // if host is an observer, assign to table 1
         ClientPlayer host = getHost();
         if (host.isObserver()) {
-            ((PokerTable) getTable(0)).addObserver(host);
+            tables_.get(0).addObserver(host);
         }
 
         // assign observers tables
-        PokerTable hostTable = (PokerTable) host.getTable();
+        ClientPokerTable hostTable = host.getTable();
         nNumPlayers = getNumObservers();
         ClientPlayer obs;
         for (int i = 0; i < nNumPlayers; i++) {
@@ -1360,9 +1360,7 @@ public class PokerGame extends Game implements PlayerActionListener {
      */
     private void fillSeats(List<ClientPlayer> players, int nMax, boolean bOnline) {
         int idx;
-        PokerTable table = new PokerTable(this, tables_.size() + 1);
-        table.setTableState(PokerTable.STATE_PENDING);
-        table.setPendingTableState(PokerTable.STATE_DEAL_FOR_BUTTON);
+        RemotePokerTable table = new RemotePokerTable(this, tables_.size() + 1);
         table.setMinChip(getMinChip());
 
         // num seats to fill
@@ -1617,10 +1615,10 @@ public class PokerGame extends Game implements PlayerActionListener {
         // hands aren't in sync and money could be in pots when we
         // do this calculation
         if (isOnlineGame()) {
-            PokerTable table;
-            HoldemHand hhand;
+            ClientPokerTable table;
+            ClientHoldemHand hhand;
             for (int i = getNumTables() - 1; i >= 0; i--) {
-                table = (PokerTable) getTable(i);
+                table = tables_.get(i);
                 hhand = table.getHoldemHand();
                 if (hhand == null)
                     continue;
@@ -1644,7 +1642,7 @@ public class PokerGame extends Game implements PlayerActionListener {
      */
     public void debugPrintTables(boolean bShort) {
         for (int i = 0; i < getNumTables(); i++) {
-            logger.debug(((PokerTable) getTable(i)).toString(bShort));
+            logger.debug(tables_.get(i).getName());
         }
     }
 
@@ -1997,232 +1995,27 @@ public class PokerGame extends Game implements PlayerActionListener {
             }
         }
 
-        // player saving for (save/load path: always local PokerTable, never remote)
-        PokerTable table;
-        ClientPlayer playerForSave = null;
-        boolean bSaveOtherTable = false;
-        PokerTable tableForPlayer = null;
-        int nPlayerID = pdetails.getPlayerID();
-        if (nPlayerID != PokerSaveDetails.NO_PLAYER) {
-            playerForSave = getPokerPlayerFromID(nPlayerID);
-            tableForPlayer = (PokerTable) playerForSave.getTable();
-        }
-
-        // num tables
-        int nNum = 0;
-        int nNumTables = getNumTables();
-        switch (pdetails.getSaveTables()) {
-            case SaveDetails.SAVE_ALL :
-                nNum = nNumTables;
-                if (playerForSave != null)
-                    bSaveOtherTable = true;
-                break;
-
-            case SaveDetails.SAVE_DIRTY :
-                for (int i = 0; i < nNumTables; i++) {
-                    table = (PokerTable) getTable(i);
-                    if (table.isDirty()) {
-                        nNum++;
-                        if (playerForSave != null && table != tableForPlayer)
-                            bSaveOtherTable = true;
-                    }
-                }
-                break;
-
-            case SaveDetails.SAVE_NONE :
-                nNum = 0;
-                break;
-
-        }
-        entry.addToken(nNum);
-
-        // this is used to indicate that when saving for a particular player
-        // if the playerForSave file includes table information for tables other
-        // than the player's table
-        pdetails.setOtherTableUpdate(bSaveOtherTable);
-
-        // home game cash
-        entry.addToken(nClockCash_);
-
-        // DD POKER 2.0 new fields
-        entry.addToken(sLocalIP_);
-        entry.addToken(sPublicIP_);
-        entry.addToken(nPort_);
-        entry.addToken(bPublic_);
-        entry.addToken(nOnlineMode_);
-
-        // only playerForSave current table for ALL (file loads)
-        if (pdetails.getSaveTables() == SaveDetails.SAVE_ALL && !pdetails.isSetCurrentTableToLocal()) {
-            entry.addToken(state.getId(currentTable_));
-        }
-
-        // DD Poker 2.0, BETA 5
-        entry.addToken(lastHandSaved_);
-
-        // DD Poker 2.0, FCS
-        entry.addToken(nNumOut_);
-
-        // done with this entry
-        state.addEntry(entry);
-
-        // tables (entry per)
-        switch (pdetails.getSaveTables()) {
-            case SaveDetails.SAVE_ALL :
-                for (int i = 0; i < nNumTables; i++) {
-                    table = (PokerTable) getTable(i);
-                    table.addGameStateEntry(state);
-                }
-                break;
-
-            case SaveDetails.SAVE_DIRTY :
-
-                for (int i = 0; i < nNumTables; i++) {
-                    table = (PokerTable) getTable(i);
-                    if (table.isDirty()) {
-                        table.addGameStateEntry(state);
-                    }
-                }
-                break;
-
-            case SaveDetails.SAVE_NONE :
-                break;
-
-        }
+        // Save/load code removed — PokerTable engine class no longer exists.
+        // This will be fully cleaned up in Task 18 (Remove PokerSaveGame).
+        throw new UnsupportedOperationException("Save/load not supported after engine class removal");
     }
 
     /**
-     * load poker specific data
+     * load poker specific data — disabled after engine class removal. Will be fully
+     * cleaned up in Task 18 (Remove PokerSaveGame).
      */
     @Override
     protected void loadSubclassData(GameState state) {
-        PokerSaveDetails pdetails = (PokerSaveDetails) state.getSaveDetails().getCustomInfo();
-
-        GameStateEntry entry = state.removeEntry();
-
-        // level
-        nLevel_ = entry.removeIntToken();
-        bClockMode_ = entry.removeBooleanToken();
-        clock_.demarshal(state, entry.removeStringToken());
-        id_ = entry.removeLongToken();
-        nMinChipIdx_ = entry.removeIntToken();
-        nLastMinChipIdx_ = entry.removeIntToken();
-        nExtraChips_ = entry.removeIntToken();
-
-        // profiles
-        if (pdetails.getSaveProfileData() != SaveDetails.SAVE_NONE) {
-            try {
-                // tournament profile
-                String sData = entry.removeStringToken();
-                StringReader reader = new StringReader(sData);
-                profile_ = new TournamentProfile();
-                profile_.read(reader, true);
-            } catch (IOException ioe) {
-                throw new ApplicationError(ioe);
-            }
-        }
-
-        // num tables
-        int nNum = entry.removeIntToken();
-
-        // home game
-        nClockCash_ = entry.removeIntToken();
-
-        // DD POKER 2.0 new fields
-        sLocalIP_ = entry.removeStringToken();
-        sPublicIP_ = entry.removeStringToken();
-        nPort_ = entry.removeIntToken();
-        bPublic_ = entry.removeBooleanToken();
-        int nMode = entry.removeIntToken();
-        // don't override mode if currently client
-        if (nOnlineMode_ != MODE_CLIENT) {
-            if (isGameOver())
-                nOnlineMode_ = MODE_NONE; // on load, don't allow re-joining game
-            else
-                nOnlineMode_ = nMode;
-        }
-
-        // only load current table for ALL (file loads)
-        if (pdetails.getSaveTables() == SaveDetails.SAVE_ALL && !pdetails.isSetCurrentTableToLocal()) {
-            currentTable_ = (ClientPokerTable) state.getObjectNullOkay(entry.removeIntegerToken());
-        }
-
-        // 2.0 additions
-        lastHandSaved_ = entry.removeIntToken();
-        nNumOut_ = entry.removeIntToken();
-
-        // tables (entry per)
-        if (pdetails.getSaveTables() == SaveDetails.SAVE_ALL)
-            tables_.clear(); // make sure empty on full load
-        PokerTable table;
-        for (int i = 0; i < nNum; i++) {
-            entry = state.removeEntry();
-            table = (PokerTable) entry.getObject();
-            table.loadFromGameStateEntry(this, state, entry);
-
-            // add if not already in list
-            if (!tables_.contains(table))
-                tables_.add(table);
-        }
-
-        // removed tables
-        int[] removed = pdetails.getRemovedTables();
-        if (removed != null) {
-            for (int aRemoved : removed) {
-                table = (PokerTable) getTableByNumber(aRemoved);
-                removeTable(table);
-                if (PokerConstants.DEBUG_CLEANUP_TABLE) {
-                    logger.debug("Removed on load: " + table.getName());
-                }
-            }
-        }
+        throw new UnsupportedOperationException("Save/load not supported after engine class removal");
     }
 
     /**
-     * allow subclass to do final setup after load
+     * allow subclass to do final setup after load — disabled after engine class
+     * removal. Will be fully cleaned up in Task 18 (Remove PokerSaveGame).
      */
     @Override
     protected void gameLoaded(GameState state) {
-        PokerSaveDetails pdetails = (PokerSaveDetails) state.getSaveDetails().getCustomInfo();
-
-        // if full load, make sure player 0 (host/human)'s key matches
-        // that of the game doing the load. This can not match if a different
-        // user is loading someone else's save game.
-        fixKeys(state);
-
-        // load profiles now that all players are loaded and keys are set
-        // we do this here since the AI init can look for other player's
-        // data which may not yet be loaded
-        for (int i = getNumPlayers() - 1; i >= 0; i--) {
-            getPokerPlayerAt(i).loadProfile(state);
-        }
-
-        // set disconnected flag
-        fixDisconnected(state);
-
-        // upon load make sure DDMessage MsgState is created
-        // no need to load since after gameLoaded is called,
-        // a Load event is fired.
-        initMsgState(false);
-
-        // if we are to set current table to the local players table, do so
-        if (pdetails.isSetCurrentTableToLocal()) {
-            ClientPlayer local = getLocalPlayer();
-            ApplicationError.assertNotNull(local.getTable(), "Table should not be null", local);
-            setCurrentTable(local.getTable());
-        }
-
-        // compute total chips
-        computeTotalChipsInPlay();
-
-        // if practice load, set flag so "future" hand history cleaned up
-        if (state.getFile() != null && !isOnlineGame()) {
-            setDeleteHandsAfterSaveDate(true);
-        }
-
-        // go through all tables
-        for (int i = getNumTables() - 1; i >= 0; i--) {
-            ((PokerTable) getTable(i)).gameLoaded();
-        }
+        throw new UnsupportedOperationException("Save/load not supported after engine class removal");
     }
 
     /**

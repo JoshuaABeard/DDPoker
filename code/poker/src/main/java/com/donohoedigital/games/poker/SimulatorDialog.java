@@ -46,6 +46,10 @@ import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.online.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Jun 21, 2005 Time: 7:40:20 PM
@@ -64,8 +68,8 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
     static int MENU_LOAD_MY = 4;
     static int MENU_CHANGE_SHOWALL_AI = 5;
 
-    PokerTable table_;
-    HoldemHand hhand_;
+    ClientPokerTable table_;
+    ClientHoldemHand hhand_;
     ClientPlayer my_;
     boolean bSimRunning_;
     private CardSelectorPanel selector_;
@@ -101,24 +105,27 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
 
         STYLE = gamephase_.getString("style", "default");
 
-        table_ = new PokerTable(null, 0);
-        table_.setSimulation(true);
+        RemotePokerTable remoteTable = new RemotePokerTable(null, 0);
+        table_ = remoteTable;
         ClientPlayer player;
         Hand hand;
+        List<ClientPlayer> playerOrder = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             player = new ClientPlayer(i, "Sim " + i, true);
             hand = player.newHand(Hand.TYPE_NORMAL);
             hand.addCard(new Card(CardSuit.UNKNOWN, Card.UNKNOWN));
             hand.addCard(new Card(CardSuit.UNKNOWN, Card.UNKNOWN));
-            table_.setPlayer(player, i);
+            remoteTable.setRemotePlayer(i, player);
+            playerOrder.add(player);
         }
 
         my_ = table_.getPlayer(0);
 
-        hhand_ = new HoldemHand(table_);
-        table_.setHoldemHand(hhand_);
-        table_.setButton(0);
-        hhand_.setPlayerOrder(false);
+        RemoteHoldemHand remoteHand = new RemoteHoldemHand();
+        hhand_ = remoteHand;
+        remoteTable.setRemoteHand(remoteHand);
+        remoteTable.setRemoteButton(0);
+        remoteHand.updatePlayerOrder(playerOrder);
         hand = hhand_.getCommunity();
         for (int i = 0; i < 5; i++) {
             hand.addCard(new Card(CardSuit.UNKNOWN, Card.UNKNOWN));
@@ -291,7 +298,7 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
     static class SimHandPanel extends DDPanel {
         Hand hand;
 
-        SimHandPanel(SimulatorDialog sim, PokerTable table, Hand hand) {
+        SimHandPanel(SimulatorDialog sim, ClientPokerTable table, Hand hand) {
             this.hand = hand;
             CardPanel cp;
             int nCards = hand.size();
@@ -317,11 +324,11 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
      */
     private static class SimCardPanel extends CardPanel implements MouseListener, ActionListener {
         private DDPopupMenu menu;
-        private PokerTable table;
+        private ClientPokerTable table;
         private SimulatorDialog sim;
         private Hand hand;
 
-        SimCardPanel(SimulatorDialog sim, PokerTable table, Hand hand, Card c) {
+        SimCardPanel(SimulatorDialog sim, ClientPokerTable table, Hand hand, Card c) {
             super(c, true);
             this.sim = sim;
             this.table = table;
@@ -369,9 +376,9 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
     /**
      * popup card selector
      */
-    private static void replaceCard(PokerTable table, Card replaceThis, Hand inThisHand, Card withThis,
+    private static void replaceCard(ClientPokerTable table, Card replaceThis, Hand inThisHand, Card withThis,
             SimulatorDialog repaintThis) {
-        HoldemHand hhand = table.getHoldemHand();
+        ClientHoldemHand hhand = table.getHoldemHand();
         Card duplicate = null;
         ClientPlayer p;
         // Deck deck = new Deck(true);
@@ -539,12 +546,12 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
     private void update(int nType) {
         PokerGame game = getGame();
         ClientPlayer p;
-        PokerTable table = null;
-        HoldemHand hhand = null;
+        ClientPokerTable table = null;
+        ClientHoldemHand hhand = null;
         boolean bCardsChanged = false;
 
         if (game != null) {
-            table = (PokerTable) game.getCurrentTable();
+            table = game.getCurrentTable();
             if (table != null) {
                 hhand = table.getHoldemHand();
             }
@@ -641,18 +648,12 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
                     nRound = last.getRound();
                 }
                 int nNumComm = 0;
-                switch (nRound) {
-                    case HoldemHand.ROUND_RIVER :
-                        nNumComm = 5;
-                        break;
-
-                    case HoldemHand.ROUND_TURN :
-                        nNumComm = 4;
-                        break;
-
-                    case HoldemHand.ROUND_FLOP :
-                        nNumComm = 3;
-                        break;
+                if (nRound >= BettingRound.RIVER.toLegacy()) {
+                    nNumComm = 5;
+                } else if (nRound >= BettingRound.TURN.toLegacy()) {
+                    nNumComm = 4;
+                } else if (nRound >= BettingRound.FLOP.toLegacy()) {
+                    nNumComm = 3;
                 }
 
                 nu = hhand.getCommunityForDisplay();

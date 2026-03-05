@@ -35,6 +35,7 @@
 package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.poker.HandAction;
+import com.donohoedigital.games.poker.engine.Deck;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.HandSorted;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
@@ -74,6 +75,7 @@ public class RemoteHoldemHand implements ClientHoldemHand {
     private List<ClientPlayer> remotePlayers_ = new ArrayList<>();
     private int remoteCurrentPlayerIndex_ = NO_CURRENT_PLAYER;
     private int remotePotTotal_;
+    private List<ClientPot> remotePots_ = new ArrayList<>();
     private ActionOptionsData remoteOptions_;
     private final Map<Integer, Integer> remoteBets_ = new HashMap<>();
     private final Map<Integer, Integer> remoteWins_ = new HashMap<>();
@@ -198,6 +200,18 @@ public class RemoteHoldemHand implements ClientHoldemHand {
     @Override
     public int getTotalPotChipCount() {
         return remotePotTotal_;
+    }
+
+    @Override
+    public int getNumPots() {
+        return remotePots_.size();
+    }
+
+    @Override
+    public ClientPot getPot(int index) {
+        if (index < 0 || index >= remotePots_.size())
+            return null;
+        return remotePots_.get(index);
     }
 
     // -------------------------------------------------------------------------
@@ -368,6 +382,71 @@ public class RemoteHoldemHand implements ClientHoldemHand {
         return HandAction.ACTION_NONE;
     }
 
+    /** Returns {@code null} — the remote hand has no action history. */
+    @Override
+    public HandAction getLastAction() {
+        return null;
+    }
+
+    /** Returns {@code HandAction#ACTION_NONE} — no round-specific tracking. */
+    @Override
+    public int getLastActionThisRound(ClientPlayer player) {
+        return HandAction.ACTION_NONE;
+    }
+
+    /** Returns {@code false} — no round-specific action tracking. */
+    @Override
+    public boolean isActionInRound(int nRound) {
+        return false;
+    }
+
+    /** Returns -1 — fold round tracking is not available on remote hands. */
+    @Override
+    public int getFoldRound(ClientPlayer player) {
+        return -1;
+    }
+
+    /** Returns 0 — overbet tracking is server-side. */
+    @Override
+    public int getOverbet(ClientPlayer player) {
+        return 0;
+    }
+
+    /** Returns the number of pots excluding overbet pots. */
+    @Override
+    public int getNumPotsExcludingOverbets() {
+        int count = 0;
+        for (ClientPot pot : remotePots_) {
+            if (pot.eligiblePlayerIds().size() > 1)
+                count++;
+        }
+        return count;
+    }
+
+    /** Returns {@code true} if this is no-limit. */
+    @Override
+    public boolean isNoLimit() {
+        return getGameType() == com.donohoedigital.games.poker.engine.PokerConstants.TYPE_NO_LIMIT_HOLDEM;
+    }
+
+    /** Returns {@code true} if this is pot-limit. */
+    @Override
+    public boolean isPotLimit() {
+        return getGameType() == com.donohoedigital.games.poker.engine.PokerConstants.TYPE_POT_LIMIT_HOLDEM;
+    }
+
+    /** Returns 0 — start date tracking not available on remote hands. */
+    @Override
+    public long getStartDate() {
+        return 0;
+    }
+
+    /** Returns 0 — end date tracking not available on remote hands. */
+    @Override
+    public long getEndDate() {
+        return 0;
+    }
+
     /** Returns an empty list — the remote hand has no action history. */
     @Override
     public List<HandAction> getHistoryCopy() {
@@ -436,16 +515,19 @@ public class RemoteHoldemHand implements ClientHoldemHand {
     }
 
     /** Returns the small blind amount. */
+    @Override
     public int getSmallBlind() {
         return remoteSmallBlind_;
     }
 
     /** Returns the big blind amount. */
+    @Override
     public int getBigBlind() {
         return remoteBigBlind_;
     }
 
     /** Returns the ante amount. */
+    @Override
     public int getAnte() {
         return remoteAnte_;
     }
@@ -555,5 +637,19 @@ public class RemoteHoldemHand implements ClientHoldemHand {
      */
     public int getRemoteBigBlindSeat() {
         return remoteBigBlindSeat_;
+    }
+
+    // -------------------------------------------------------------------------
+    // Deck / muck — not available for remote hands
+    // -------------------------------------------------------------------------
+
+    @Override
+    public Deck getDeck() {
+        throw new UnsupportedOperationException("Deck not available for remote hands");
+    }
+
+    @Override
+    public Hand getMuck() {
+        throw new UnsupportedOperationException("Muck not available for remote hands");
     }
 }

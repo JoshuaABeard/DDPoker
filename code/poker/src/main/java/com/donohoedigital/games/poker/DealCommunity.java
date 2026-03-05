@@ -34,6 +34,9 @@ package com.donohoedigital.games.poker;
 
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.dashboard.*;
 
 import com.donohoedigital.games.poker.CommunityCardCalculator.CommunityCardVisibility;
@@ -55,14 +58,14 @@ public class DealCommunity {
     /**
      * Make sure board cards match what is actually displayed.
      */
-    public static void syncCards(PokerTable table) {
-        HoldemHand hhand = table.getHoldemHand();
+    public static void syncCards(ClientPokerTable table) {
+        ClientHoldemHand hhand = table.getHoldemHand();
         if (hhand == null)
             return;
 
         // get last betting round and current round
         HandAction last = hhand.getLastAction();
-        int nLastBettingRound = last != null ? last.getRound() : HoldemHand.ROUND_PRE_FLOP;
+        int nLastBettingRound = last != null ? last.getRound() : BettingRound.ROUND_PRE_FLOP;
 
         int nNumWithCards = hhand.getNumWithCards();
         boolean bRabbitHunt = PokerUtils.isCheatOn(table.getGame().getGameContext(),
@@ -88,7 +91,7 @@ public class DealCommunity {
      * bDrawn - is card displayed (might be yes if show river cards is on)
      * bDrawnNormal - is card displayed normally
      */
-    private static void addCard(PokerTable table, String sTP, int c, boolean bDrawnNormal, boolean bDrawn,
+    private static void addCard(ClientPokerTable table, String sTP, int c, boolean bDrawnNormal, boolean bDrawn,
             boolean bRepaint) {
         CommunityCardPiece piece = new CommunityCardPiece(table, sTP, c);
         piece.setNotDrawn(!bDrawn);

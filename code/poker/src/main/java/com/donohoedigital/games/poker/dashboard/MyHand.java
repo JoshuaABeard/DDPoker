@@ -130,7 +130,7 @@ public class MyHand extends DashboardItem {
      *
      * @param table
      */
-    public static void cardsChanged(PokerTable table) {
+    public static void cardsChanged(ClientPokerTable table) {
         if (impl_ != null && impl_.isDisplayed() && !table.isZipMode()) {
             GuiUtils.invoke(new Runnable() {
                 public void run() {

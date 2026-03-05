@@ -37,6 +37,7 @@ import com.donohoedigital.base.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
 
 /**
@@ -53,7 +54,7 @@ public class DealDisplay {
     /**
      * Make sure cards in players hands in table match what is actually displayed.
      */
-    public static void syncCards(PokerTable table) {
+    public static void syncCards(ClientPokerTable table) {
         ClientPlayer player;
         Hand hand;
         for (int i = 0; i < PokerConstants.SEATS; i++) {

@@ -95,16 +95,11 @@ public class ImproveOdds extends Odds {
         }
 
         // river / showdown: no improvements possible
-        switch (nRound) {
-            case HoldemHand.ROUND_RIVER :
-            case HoldemHand.ROUND_SHOWDOWN :
-            default :
-                sTotal_ = "0";
-                return PropertyConfig.getMessage("msg.odds.imptype.none");
-
-            case HoldemHand.ROUND_FLOP :
-            case HoldemHand.ROUND_TURN :
-                break;
+        if (nRound == BettingRound.ROUND_FLOP || nRound == BettingRound.ROUND_TURN) {
+            // fall through to calculation below
+        } else {
+            sTotal_ = "0";
+            return PropertyConfig.getMessage("msg.odds.imptype.none");
         }
 
         // Read server-provided improvement odds

@@ -41,6 +41,7 @@ import com.donohoedigital.games.poker.engine.*;
 
 import java.util.*;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
 
 /**
  * Static display helpers for rendering showdown results on the game board.
@@ -57,7 +58,7 @@ public class Showdown {
      * Display showdown results - designed to be called multiple times, adjusting
      * for changes in options.
      */
-    static void displayShowdown(GameEngine engine, GameContext context, HoldemHand hhand) {
+    static void displayShowdown(GameEngine engine, GameContext context, ClientHoldemHand hhand) {
         PokerGame game = (PokerGame) context.getGame();
         ClientPlayer player;
         ResultsPiece piece;
@@ -214,7 +215,7 @@ public class Showdown {
     /**
      * Display all-in showdown percentages — called as community cards are revealed.
      */
-    static void displayAllin(HoldemHand hhand, boolean bAllCardsDisplayed) {
+    static void displayAllin(ClientHoldemHand hhand, boolean bAllCardsDisplayed) {
         ClientPlayer player;
         ResultsPiece piece;
         Territory t;
@@ -275,7 +276,7 @@ public class Showdown {
      * Calculate all-in win percentages for each non-folded player. Ported from
      * HandStrength.doAllInPercentages().
      */
-    private static void doAllInPercentages(HoldemHand hhand, Hand community) {
+    private static void doAllInPercentages(ClientHoldemHand hhand, Hand community) {
         int nNumPlayers = hhand.getNumPlayers();
         ClientPlayer player;
         int nComm = community.size();
@@ -341,7 +342,7 @@ public class Showdown {
         }
     }
 
-    private static void scoreAllIn(HandInfoFaster FAST, HoldemHand hhand, Hand comm) {
+    private static void scoreAllIn(HandInfoFaster FAST, ClientHoldemHand hhand, Hand comm) {
         int nNumPlayers = hhand.getNumPlayers();
         ClientPlayer player;
         int maxscore = 0;

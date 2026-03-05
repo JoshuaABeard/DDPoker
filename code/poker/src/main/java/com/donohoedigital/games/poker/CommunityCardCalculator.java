@@ -60,9 +60,10 @@ public class CommunityCardCalculator {
      * display round and game state.
      *
      * @param displayRound
-     *            current round for display purposes (HoldemHand.ROUND_* constants)
+     *            current round for display purposes (BettingRound.ROUND_*
+     *            constants)
      * @param lastBettingRound
-     *            last betting round that has occurred (HoldemHand.ROUND_*
+     *            last betting round that has occurred (BettingRound.ROUND_*
      *            constants)
      * @param numWithCards
      *            number of players who still have cards
@@ -83,18 +84,18 @@ public class CommunityCardCalculator {
         // all cases fall through on purpose — matches DealCommunity.syncCards()
         boolean bCardDealt;
         switch (displayRound) {
-            case HoldemHand.ROUND_SHOWDOWN :
-            case HoldemHand.ROUND_RIVER :
+            case BettingRound.ROUND_SHOWDOWN :
+            case BettingRound.ROUND_RIVER :
                 bCardDealt = lastBettingRound >= BettingRound.RIVER.toLegacy();
                 active[4] = true;
                 drawnNormal[4] = bDrawnNormal || bCardDealt;
                 drawn[4] = bDrawn || bCardDealt;
-            case HoldemHand.ROUND_TURN :
+            case BettingRound.ROUND_TURN :
                 bCardDealt = lastBettingRound >= BettingRound.TURN.toLegacy();
                 active[3] = true;
                 drawnNormal[3] = bDrawnNormal || bCardDealt;
                 drawn[3] = bDrawn || bCardDealt;
-            case HoldemHand.ROUND_FLOP :
+            case BettingRound.ROUND_FLOP :
                 bCardDealt = lastBettingRound >= BettingRound.FLOP.toLegacy();
                 active[2] = true;
                 active[1] = true;

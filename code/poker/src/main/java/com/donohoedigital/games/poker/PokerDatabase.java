@@ -49,6 +49,8 @@ import java.sql.*;
 import java.util.*;
 import java.util.Date;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 
 /**
  * Represents the client database(s) for storing stats, etc.
@@ -251,12 +253,12 @@ public class PokerDatabase {
         }
     }
 
-    public static int storeHandHistory(HoldemHand hhand) {
+    public static int storeHandHistory(ClientHoldemHand hhand) {
         /*
          * for (int i = 0; i < 100; ++i) { storeHandHistory2(hhand); } } public static
          * void storeHandHistory2(HoldemHand hhand) {
          */
-        PokerTable table = hhand.getTable();
+        ClientPokerTable table = hhand.getClientTable();
         PokerGame game = table.getGame();
 
         List<HandAction> history = hhand.getHistoryCopy();
@@ -282,16 +284,12 @@ public class PokerDatabase {
                     break;
                 default :
                     lastRound[seat] = action.getRound();
-                    switch (round) {
-                        case HoldemHand.ROUND_FLOP :
-                            communityCardsDealt = 3;
-                            break;
-                        case HoldemHand.ROUND_TURN :
-                            communityCardsDealt = 4;
-                            break;
-                        case HoldemHand.ROUND_RIVER :
-                            communityCardsDealt = 5;
-                            break;
+                    if (round == BettingRound.ROUND_FLOP) {
+                        communityCardsDealt = 3;
+                    } else if (round == BettingRound.ROUND_TURN) {
+                        communityCardsDealt = 4;
+                    } else if (round == BettingRound.ROUND_RIVER) {
+                        communityCardsDealt = 5;
                     }
                     break;
             }
@@ -383,8 +381,8 @@ public class PokerDatabase {
                                     + "HND_COMMUNITY_CARD_2,\n" + "HND_COMMUNITY_CARD_3,\n" + "HND_COMMUNITY_CARD_4,\n"
                                     + "HND_COMMUNITY_CARD_5\n" + ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                             Statement.RETURN_GENERATED_KEYS)) {
-                pstmt.setString(1, Integer.toString(hhand.getTable().getHandNum()));
-                pstmt.setString(2, Integer.toString(hhand.getTable().getNumber()));
+                pstmt.setString(1, Integer.toString(hhand.getClientTable().getHandNum()));
+                pstmt.setString(2, Integer.toString(hhand.getClientTable().getNumber()));
                 pstmt.setInt(3, tournamentID);
                 pstmt.setString(4, "HOLDEM");
                 pstmt.setString(5, hhand.isNoLimit() ? "NOLIMIT" : hhand.isPotLimit() ? "POTLIMIT" : "LIMIT");
