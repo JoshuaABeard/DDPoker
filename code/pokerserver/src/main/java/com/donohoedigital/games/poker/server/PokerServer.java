@@ -41,7 +41,8 @@ package com.donohoedigital.games.poker.server;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 import com.donohoedigital.games.poker.service.OnlineProfileService;
-import com.donohoedigital.games.server.EngineServer;
+import com.donohoedigital.mail.DDPostalService;
+import com.donohoedigital.server.GameServer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -58,9 +59,12 @@ import java.util.UUID;
  *
  * @author donohoe
  */
-public class PokerServer extends EngineServer {
+public class PokerServer extends GameServer {
     private static final Logger logger = LogManager.getLogger(PokerServer.class);
     private static final String ADMIN_PASSWORD_FILE = "admin-password.txt";
+
+    @Autowired
+    private DDPostalService postalService;
 
     @Autowired
     private OnlineProfileService onlineProfileService;
@@ -189,6 +193,7 @@ public class PokerServer extends EngineServer {
      */
     @Override
     protected void shutdown(boolean immediate) {
+        postalService.destroy();
         super.shutdown(immediate);
     }
 }

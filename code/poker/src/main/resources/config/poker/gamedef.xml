@@ -713,7 +713,6 @@
     <param name="options.phase" strvalue="GamePrefsDialog"/>
     <param name="info.phase" strvalue="GameInfoDialog"/>
     <param name="save.phase" strvalue="SaveGame"/>
-    <param name="deal.phase" strvalue="TD.DealButton"/>
     <param name="prizepool.phase" strvalue="PrizePoolDialog"/>
     <param name="calc.phase" strvalue="CalcTool"/>
   </phase>
@@ -745,14 +744,6 @@
     <param name="next-phase" strvalue="NONE"/>
   </phase>
 
-  <phase name="TD.WaitForDeal" class="com.donohoedigital.games.poker.WaitForDeal">
-    <param name="next-phase" strvalue="NONE"/>
-  </phase>
-
-  <phase name="TD.DealButton" class="com.donohoedigital.games.poker.DealButton">
-    <param name="next-phase" strvalue="NONE"/>
-  </phase>
-
   <phase name="TD.DealDisplayHand" class="com.donohoedigital.games.poker.DealDisplay">
     <param name="next-phase" strvalue="NONE"/>
   </phase>
@@ -765,10 +756,6 @@
     <param name="next-phase" strvalue="NONE"/>
   </phase>
 
-  <phase name="TD.PreShowdown" class="com.donohoedigital.games.poker.PreShowdown">
-    <param name="next-phase" strvalue="NONE"/>
-  </phase>
-
   <phase name="TD.Showdown" class="com.donohoedigital.games.poker.Showdown">
     <param name="next-phase" strvalue="NONE"/>
   </phase>
@@ -777,23 +764,7 @@
     <param name="next-phase" strvalue="NONE"/>
   </phase>
 
-  <phase name="TD.DisplayTableMoves" class="com.donohoedigital.games.poker.DisplayTableMoves">
-    <param name="next-phase" strvalue="NONE"/>
-  </phase>
-
   <phase name="TD.NewLevelActions" class="com.donohoedigital.games.poker.NewLevelActions">
-    <param name="next-phase" strvalue="NONE"/>
-  </phase>
-
-  <phase name="TD.ColorUp" class="com.donohoedigital.games.poker.ColorUp">
-    <param name="next-phase" strvalue="TD.DealDisplayColor"/>
-  </phase>
-
-  <phase name="TD.DealDisplayColor" class="com.donohoedigital.games.poker.DealDisplay">
-    <param name="next-phase" strvalue="TD.ColorUpFinish"/>
-  </phase>
-
-  <phase name="TD.ColorUpFinish" class="com.donohoedigital.games.poker.ColorUpFinish">
     <param name="next-phase" strvalue="NONE"/>
   </phase>
 

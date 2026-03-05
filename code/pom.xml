@@ -50,8 +50,7 @@
     <module>server</module>
     <module>gamecommon</module>
     <module>gameengine</module>
-    <module>gameserver</module>
-    <module>gametools</module>
+<module>gametools</module>
     <module>pokerengine</module>
     <module>pokergamecore</module>
     <module>pokergameserver</module>

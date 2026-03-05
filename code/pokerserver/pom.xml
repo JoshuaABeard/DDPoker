@@ -75,11 +75,6 @@
   <dependencies>
     <dependency>
       <groupId>com.donohoedigital</groupId>
-      <artifactId>gameserver</artifactId>
-      <version>3.3.0-CommunityEdition</version>
-    </dependency>
-    <dependency>
-      <groupId>com.donohoedigital</groupId>
       <artifactId>pokernetwork</artifactId>
       <version>3.3.0-CommunityEdition</version>
     </dependency>
@@ -92,6 +87,32 @@
       <groupId>com.donohoedigital</groupId>
       <artifactId>pokergameserver</artifactId>
       <version>3.3.0-CommunityEdition</version>
+    </dependency>
+    <dependency>
+      <groupId>com.donohoedigital</groupId>
+      <artifactId>mail</artifactId>
+      <version>3.3.0-CommunityEdition</version>
+    </dependency>
+    <dependency>
+      <groupId>com.donohoedigital</groupId>
+      <artifactId>server</artifactId>
+      <version>3.3.0-CommunityEdition</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-core</artifactId>
+      <version>${hibernate.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>2.3.232</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-tx</artifactId>
+      <version>${spring.version}</version>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
