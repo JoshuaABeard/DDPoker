@@ -48,8 +48,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * Tests for PokerDatabase - HSQLDB integration, hand history storage,
- * tournament persistence, and database lifecycle management.
+ * Tests for PokerDatabase - H2 integration, hand history storage, tournament
+ * persistence, and database lifecycle management.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class PokerDatabaseTest {
@@ -106,7 +106,7 @@ class PokerDatabaseTest {
     // =================================================================
 
     @Test
-    void should_StoreAndRetrieveHandHistory_When_UsingHSQLDB() {
+    void should_StoreAndRetrieveHandHistory_When_UsingH2() {
         PokerGame game = createGame();
         PokerPlayer player = createPlayer("test-player", game);
         HoldemHand hand = createHand(game, player);
