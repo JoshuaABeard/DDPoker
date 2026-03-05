@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker.dashboard;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
@@ -62,7 +63,7 @@ public class PotOdds extends Odds {
     /// display logic
     ///
 
-    protected String getDisplay(int nRound, ClientHoldemHand hhand, PokerPlayer asViewedBy, Hand hand) {
+    protected String getDisplay(int nRound, ClientHoldemHand hhand, ClientPlayer asViewedBy, Hand hand) {
         // figure out pot odds
         if (nRound != BettingRound.SHOWDOWN.toLegacy() && hhand.getCall(asViewedBy) > 0) {
             double po = hhand.getPotOdds(asViewedBy);

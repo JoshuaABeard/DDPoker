@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
@@ -85,8 +86,8 @@ public class TableListPanel extends DDTabPanel implements ChangeListener, Action
         topinfo.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
         toppanel.add(topinfo, BorderLayout.CENTER);
         setBorderLayoutGap(10, 0);
-        PokerPlayer p = game_.getLocalPlayer();
-        List<PokerPlayer> waiting = game_.getWaitList();
+        ClientPlayer p = game_.getLocalPlayer();
+        List<ClientPlayer> waiting = game_.getWaitList();
         String sWait = "";
         if (waiting != null) {
             sWait = PropertyConfig.getMessage("msg.tablesum.waiting", waiting.size());
@@ -142,7 +143,7 @@ public class TableListPanel extends DDTabPanel implements ChangeListener, Action
         // list waiting players
         if (waiting != null) {
             StringBuilder players = new StringBuilder();
-            PokerPlayer player;
+            ClientPlayer player;
             for (int i = 0; i < waiting.size(); i++) {
                 player = waiting.get(i);
                 if (i > 0)
@@ -205,7 +206,7 @@ public class TableListPanel extends DDTabPanel implements ChangeListener, Action
             int nNumObs = table.getNumObservers();
             List<ChipLeaderPanel.RankInfo> players = new ArrayList<ChipLeaderPanel.RankInfo>(
                     PokerConstants.SEATS + nNumObs);
-            PokerPlayer p;
+            ClientPlayer p;
             for (int i = 0; i < PokerConstants.SEATS; i++) {
                 p = table.getPlayer(i);
                 players.add(new ChipLeaderPanel.RankInfo(p, i + 1));

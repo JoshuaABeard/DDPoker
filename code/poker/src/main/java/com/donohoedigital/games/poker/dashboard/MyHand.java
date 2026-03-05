@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker.dashboard;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
@@ -169,7 +170,7 @@ public class MyHand extends DashboardItem {
     protected void updateMessages() {
         ClientPokerTable table = game_.getCurrentTable();
         ClientHoldemHand hhand = table.getHoldemHand();
-        PokerPlayer asViewedBy = game_.getHumanPlayer();
+        ClientPlayer asViewedBy = game_.getHumanPlayer();
         Hand hand = asViewedBy.getHand();
 
         // if no hand, or an observer

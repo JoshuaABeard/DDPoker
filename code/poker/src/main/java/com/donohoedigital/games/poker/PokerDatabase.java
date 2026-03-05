@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.db.*;
@@ -367,7 +368,7 @@ public class PokerDatabase {
             }
 
             // record results of the human
-            PokerPlayer human = game.getHumanPlayer();
+            ClientPlayer human = game.getHumanPlayer();
             storeTournamentFinish(conn, game, human);
 
             // insert hand info
@@ -431,7 +432,7 @@ public class PokerDatabase {
                 // added the pocket == null check to catch this, so current
                 // code may be okay, but semantically, should go by HoldemHand player list
                 for (int p = 0; p < numPlayers; ++p) {
-                    PokerPlayer player = hhand.getPlayerAt(p);
+                    ClientPlayer player = hhand.getPlayerAt(p);
                     Hand pocket = player.getHand();
                     int seat = player.getSeat();
 
@@ -546,7 +547,7 @@ public class PokerDatabase {
         return tournamentID;
     }
 
-    public static int storeTournamentFinish(PokerGame game, PokerPlayer player) {
+    public static int storeTournamentFinish(PokerGame game, ClientPlayer player) {
         Database database = getDatabase();
         Connection conn = database.getConnection();
 
@@ -562,7 +563,7 @@ public class PokerDatabase {
         }
     }
 
-    private static int storeTournamentFinish(Connection conn, PokerGame game, PokerPlayer player) throws SQLException {
+    private static int storeTournamentFinish(Connection conn, PokerGame game, ClientPlayer player) throws SQLException {
         int tournamentID = storeTournament(conn, game);
 
         int finishID = -1;
@@ -787,7 +788,7 @@ public class PokerDatabase {
         }
     }
 
-    public static void playerNameChanged(PokerGame game, PokerPlayer player) {
+    public static void playerNameChanged(PokerGame game, ClientPlayer player) {
         Database database = getDatabase();
         Connection conn = database.getConnection();
 
@@ -845,7 +846,7 @@ public class PokerDatabase {
         }
     }
 
-    private static int storePlayer(Connection conn, int tournamentID, PokerPlayer player) throws SQLException {
+    private static int storePlayer(Connection conn, int tournamentID, ClientPlayer player) throws SQLException {
         int playerID = -1;
 
         boolean useProfile = player.isHuman() && player.isLocallyControlled();
@@ -1182,7 +1183,7 @@ public class PokerDatabase {
                 }
             }
 
-            PokerPlayer players[] = new PokerPlayer[PokerConstants.SEATS];
+            ClientPlayer players[] = new ClientPlayer[PokerConstants.SEATS];
             int over[] = new int[PokerConstants.SEATS];
             int win[] = new int[PokerConstants.SEATS];
             int start[] = new int[PokerConstants.SEATS];
@@ -1208,7 +1209,7 @@ public class PokerDatabase {
                     while (rs.next()) {
                         int seat = rs.getInt(1);
 
-                        players[seat] = new PokerPlayer();
+                        players[seat] = new ClientPlayer();
                         start[seat] = rs.getBigDecimal(2).intValue();
                         end[seat] = rs.getBigDecimal(3).intValue();
                         players[seat].setChipCount(end[seat]);
@@ -1420,7 +1421,7 @@ public class PokerDatabase {
                     while (rs.next()) {
                         int seat = rs.getInt(1);
 
-                        ieHand.players[seat] = new PokerPlayer();
+                        ieHand.players[seat] = new ClientPlayer();
                         ieHand.players[seat].setSeat(seat);
                         ieHand.betChips[seat] = 0;
                         ieHand.startChips[seat] = rs.getBigDecimal(2).intValue();
@@ -1534,7 +1535,7 @@ public class PokerDatabase {
             boolean bShowAll, boolean bShowReason) {
         StringBuilder sb2 = new StringBuilder();
 
-        PokerPlayer p;
+        ClientPlayer p;
         HandAction action;
         int nNum = 0;
         int nPrior = 0;
@@ -1787,7 +1788,7 @@ public class PokerDatabase {
             }
         }
 
-        PokerPlayer player;
+        ClientPlayer player;
 
         HandInfoFast info = new HandInfoFast();
 

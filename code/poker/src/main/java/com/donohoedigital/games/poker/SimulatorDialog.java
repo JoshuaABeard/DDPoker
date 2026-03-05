@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
@@ -65,7 +66,7 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
 
     PokerTable table_;
     HoldemHand hhand_;
-    PokerPlayer my_;
+    ClientPlayer my_;
     boolean bSimRunning_;
     private CardSelectorPanel selector_;
     private ActionListener last_;
@@ -102,10 +103,10 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
 
         table_ = new PokerTable(null, 0);
         table_.setSimulation(true);
-        PokerPlayer player;
+        ClientPlayer player;
         Hand hand;
         for (int i = 0; i < 10; i++) {
-            player = new PokerPlayer(i, "Sim " + i, true);
+            player = new ClientPlayer(i, "Sim " + i, true);
             hand = player.newHand(Hand.TYPE_NORMAL);
             hand.addCard(new Card(CardSuit.UNKNOWN, Card.UNKNOWN));
             hand.addCard(new Card(CardSuit.UNKNOWN, Card.UNKNOWN));
@@ -372,7 +373,7 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
             SimulatorDialog repaintThis) {
         HoldemHand hhand = table.getHoldemHand();
         Card duplicate = null;
-        PokerPlayer p;
+        ClientPlayer p;
         // Deck deck = new Deck(true);
         Hand hand;
 
@@ -497,7 +498,7 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
 
         PokerGame game = getGame();
         if (game != null && !game.isClockMode()) {
-            PokerPlayer local = game.getLocalPlayer();
+            ClientPlayer local = game.getLocalPlayer();
             menu.add(new SimMenuItem("loadall", MENU_LOAD_ALL, sim));
             menu.add(new SimMenuItem(local.isObserver() ? "loadcomm" : "loadmy", MENU_LOAD_MY, sim));
             if (!game.isOnlineGame()) {
@@ -537,7 +538,7 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
      */
     private void update(int nType) {
         PokerGame game = getGame();
-        PokerPlayer p;
+        ClientPlayer p;
         PokerTable table = null;
         HoldemHand hhand = null;
         boolean bCardsChanged = false;
@@ -576,7 +577,7 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
             }
 
             // see if local player is seated (they correspond to Seat 0 at sim table)
-            PokerPlayer local = game.getLocalPlayer();
+            ClientPlayer local = game.getLocalPlayer();
             int nStartSeat = 0;
             for (int i = 0; !local.isObserver() && i < PokerConstants.SEATS; i++) {
                 p = table.getPlayer(i);

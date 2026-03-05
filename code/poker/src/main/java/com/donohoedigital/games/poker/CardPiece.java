@@ -38,6 +38,7 @@
 
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
@@ -97,7 +98,7 @@ public class CardPiece extends PokerGamePiece {
     /**
      * Creates a new instance of CardPiece
      */
-    public CardPiece(GameContext context, PokerPlayer player, String sTerritoryPoint, boolean bUp, int nSeq) {
+    public CardPiece(GameContext context, ClientPlayer player, String sTerritoryPoint, boolean bUp, int nSeq) {
         super(PokerConstants.PIECE_CARD, player, sTerritoryPoint, "card");
         context_ = context;
         bUp_ = bUp;
@@ -1047,7 +1048,7 @@ public class CardPiece extends PokerGamePiece {
      */
     @SuppressWarnings({"PublicInnerClass"})
     public static class CardImageComponent extends EmptyImageComponent {
-        PokerPlayer player;
+        ClientPlayer player;
         int nSeq;
         private boolean bShadow_ = true;
         private boolean bFill_ = true;
@@ -1059,7 +1060,7 @@ public class CardPiece extends PokerGamePiece {
             this(null, 0);
         }
 
-        public CardImageComponent(PokerPlayer player, int nSeq) {
+        public CardImageComponent(ClientPlayer player, int nSeq) {
             super((int) CARD_W, (int) CARD_H);
             this.player = player;
             this.nSeq = nSeq;

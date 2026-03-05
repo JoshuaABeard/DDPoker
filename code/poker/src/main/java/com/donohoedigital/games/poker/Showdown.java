@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.Format;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
@@ -58,7 +59,7 @@ public class Showdown {
      */
     static void displayShowdown(GameEngine engine, GameContext context, HoldemHand hhand) {
         PokerGame game = (PokerGame) context.getGame();
-        PokerPlayer player;
+        ClientPlayer player;
         ResultsPiece piece;
         Territory t;
         boolean bUncontested = hhand.isUncontested();
@@ -214,7 +215,7 @@ public class Showdown {
      * Display all-in showdown percentages — called as community cards are revealed.
      */
     static void displayAllin(HoldemHand hhand, boolean bAllCardsDisplayed) {
-        PokerPlayer player;
+        ClientPlayer player;
         ResultsPiece piece;
         Territory t;
 
@@ -276,7 +277,7 @@ public class Showdown {
      */
     private static void doAllInPercentages(HoldemHand hhand, Hand community) {
         int nNumPlayers = hhand.getNumPlayers();
-        PokerPlayer player;
+        ClientPlayer player;
         int nComm = community.size();
         int MORE = 5 - nComm;
 
@@ -342,7 +343,7 @@ public class Showdown {
 
     private static void scoreAllIn(HandInfoFaster FAST, HoldemHand hhand, Hand comm) {
         int nNumPlayers = hhand.getNumPlayers();
-        PokerPlayer player;
+        ClientPlayer player;
         int maxscore = 0;
         for (int i = 0; i < nNumPlayers; i++) {
             player = hhand.getPlayerAt(i);

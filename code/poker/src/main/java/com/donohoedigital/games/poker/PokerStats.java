@@ -38,6 +38,7 @@
 
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
 import com.donohoedigital.config.LoggingConfig;
@@ -69,7 +70,7 @@ public class PokerStats {
      * Creates a new instance of PokerStats
      */
     public PokerStats() {
-        PokerPlayer player;
+        ClientPlayer player;
 
         // create game
         TournamentProfile profile = new TournamentProfile("poker-stats");
@@ -81,7 +82,7 @@ public class PokerStats {
         table_.setMinChip(1);
         table_.setSimulation(true);
         for (int i = 0; i < SEATS; i++) {
-            player = new PokerPlayer(i, "Player " + i, false);
+            player = new ClientPlayer(i, "Player " + i, false);
             table_.setPlayer(player, i);
             game.addPlayer(player);
         }
@@ -149,7 +150,7 @@ public class PokerStats {
      */
     public boolean deal() {
         // init chips
-        PokerPlayer player;
+        ClientPlayer player;
         for (int i = 0; i < SEATS; i++) {
             player = table_.getPlayerRequired(i);
             player.setChipCount(HandStat.BET);
@@ -209,7 +210,7 @@ public class PokerStats {
 
     private void results() {
         // process results
-        PokerPlayer player;
+        ClientPlayer player;
         int nAmount;
         for (int i = 0; i < hhand_.getNumPlayers(); i++) {
             player = hhand_.getPlayerAt(i);

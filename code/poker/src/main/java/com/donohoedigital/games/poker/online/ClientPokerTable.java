@@ -35,7 +35,6 @@
 package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.poker.PokerGame;
-import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.event.PokerTableListener;
 
@@ -51,6 +50,9 @@ import com.donohoedigital.games.poker.event.PokerTableListener;
  * Methods were added incrementally by compiler-driven discovery in Task 11.
  */
 public interface ClientPokerTable {
+
+    /** Sentinel value for "no seat assigned". */
+    int NO_SEAT = -1;
 
     // -------------------------------------------------------------------------
     // Identity and structure
@@ -78,7 +80,7 @@ public interface ClientPokerTable {
      * @param nSeat
      *            0-based seat index
      */
-    PokerPlayer getPlayer(int nSeat);
+    ClientPlayer getPlayer(int nSeat);
 
     /** Returns the number of non-empty seats. */
     int getNumOccupiedSeats();

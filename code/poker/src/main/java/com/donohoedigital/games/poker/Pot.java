@@ -38,6 +38,7 @@
 
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.comms.*;
 
 import java.util.*;
@@ -55,8 +56,8 @@ public class Pot implements DataMarshal {
     private boolean bBaseAllIn_ = false;
     private int nSideBet_ = NO_SIDE; // used for side pots
     private int nRound_;
-    private List<PokerPlayer> players_ = new ArrayList<PokerPlayer>();
-    private List<PokerPlayer> winners_ = new ArrayList<PokerPlayer>();
+    private List<ClientPlayer> players_ = new ArrayList<ClientPlayer>();
+    private List<ClientPlayer> winners_ = new ArrayList<ClientPlayer>();
 
     /**
      * empty constructor for loading
@@ -99,7 +100,7 @@ public class Pot implements DataMarshal {
     /**
      * Add chips to the pot
      */
-    public void addChips(PokerPlayer player, int n) {
+    public void addChips(ClientPlayer player, int n) {
         nChips_ += n;
         addPlayer(player);
     }
@@ -107,7 +108,7 @@ public class Pot implements DataMarshal {
     /**
      * Get list of players
      */
-    public List<PokerPlayer> getPlayers() {
+    public List<ClientPlayer> getPlayers() {
         return players_;
     }
 
@@ -128,14 +129,14 @@ public class Pot implements DataMarshal {
     /**
      * Get player at
      */
-    public PokerPlayer getPlayerAt(int i) {
+    public ClientPlayer getPlayerAt(int i) {
         return players_.get(i);
     }
 
     /**
      * Add player to list if not already there
      */
-    private void addPlayer(PokerPlayer player) {
+    private void addPlayer(ClientPlayer player) {
         if (!players_.contains(player)) {
             players_.add(player);
         }
@@ -144,7 +145,7 @@ public class Pot implements DataMarshal {
     /**
      * Return whether player is involved in pot
      */
-    public boolean isInPot(PokerPlayer player) {
+    public boolean isInPot(ClientPlayer player) {
         return players_.contains(player);
     }
 
@@ -152,7 +153,7 @@ public class Pot implements DataMarshal {
      * Return whether any players in this pot are all in
      */
     private boolean hasAllInPlayer() {
-        for (PokerPlayer player : this.players_) {
+        for (ClientPlayer player : this.players_) {
             if (player.isAllIn())
                 return true;
         }
@@ -191,14 +192,14 @@ public class Pot implements DataMarshal {
     /**
      * Get list of winners
      */
-    public List<PokerPlayer> getWinners() {
+    public List<ClientPlayer> getWinners() {
         return winners_;
     }
 
     /**
      * Set winners
      */
-    public void setWinners(List<PokerPlayer> winners) {
+    public void setWinners(List<ClientPlayer> winners) {
         winners_.clear();
         winners_.addAll(winners);
     }
@@ -232,14 +233,14 @@ public class Pot implements DataMarshal {
         bBaseAllIn_ = list.removeBooleanToken();
         nSeq_ = list.removeIntToken();
         int nNum = list.removeIntToken();
-        PokerPlayer player;
+        ClientPlayer player;
         for (int i = 0; i < nNum; i++) {
-            player = (PokerPlayer) state.getObject(list.removeIntegerToken());
+            player = (ClientPlayer) state.getObject(list.removeIntegerToken());
             players_.add(player);
         }
         nNum = list.removeIntToken();
         for (int i = 0; i < nNum; i++) {
-            player = (PokerPlayer) state.getObject(list.removeIntegerToken());
+            player = (ClientPlayer) state.getObject(list.removeIntegerToken());
             winners_.add(player);
         }
     }
@@ -253,11 +254,11 @@ public class Pot implements DataMarshal {
         list.addToken(bBaseAllIn_);
         list.addToken(nSeq_);
         list.addToken(players_.size());
-        for (PokerPlayer player : players_) {
+        for (ClientPlayer player : players_) {
             list.addToken(state.getId(player));
         }
         list.addToken(winners_.size());
-        for (PokerPlayer winner : winners_) {
+        for (ClientPlayer winner : winners_) {
             list.addToken(state.getId(winner));
         }
         return list.marshal(state);

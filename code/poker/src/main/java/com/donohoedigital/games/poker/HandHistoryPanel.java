@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.db.*;
@@ -333,7 +334,7 @@ public class HandHistoryPanel extends DDPanel {
 
     private String getHist(List<HandAction> hist, int nRound, HoldemHand hhand, boolean bAnte) {
         StringBuilder sb = new StringBuilder();
-        PokerPlayer p;
+        ClientPlayer p;
         int nNum = 0;
         int nPrior = 0;
 

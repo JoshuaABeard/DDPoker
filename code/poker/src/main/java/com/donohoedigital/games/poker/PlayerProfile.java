@@ -38,6 +38,7 @@
 
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.comms.*;
 import com.donohoedigital.games.config.*;
@@ -92,7 +93,7 @@ public class PlayerProfile extends BaseProfile {
             // flops seen - which position
             if (i == BettingRound.FLOP.toLegacy()) {
                 for (int j = 0; j < flops_.length; j++) {
-                    logger.debug("   Flops called from " + PokerPlayer.getPositionName(j) + ": " + flops_[j]);
+                    logger.debug("   Flops called from " + ClientPlayer.getPositionName(j) + ": " + flops_[j]);
                 }
             }
         }
@@ -165,7 +166,7 @@ public class PlayerProfile extends BaseProfile {
         nWins_ = 0;
         nActionCnt_ = 0;
         rounds_ = new int[BettingRound.SHOWDOWN.toLegacy() + 1];
-        flops_ = new int[PokerPlayer.BIG + 1];
+        flops_ = new int[ClientPlayer.BIG + 1];
         actions_ = new int[HandAction.ACTION_RAISE + 1];
         nRoundActionCnt_ = new int[BettingRound.SHOWDOWN.toLegacy()];
         roundactions_ = new int[BettingRound.SHOWDOWN.toLegacy()][HandAction.ACTION_RAISE + 1];
@@ -336,7 +337,7 @@ public class PlayerProfile extends BaseProfile {
     /**
      * Add history and save if possible
      */
-    public void addTournamentHistory(PokerGame game, PokerPlayer player) {
+    public void addTournamentHistory(PokerGame game, ClientPlayer player) {
         PokerDatabase.storeTournamentFinish(game, player);
     }
 

@@ -233,7 +233,7 @@ public class PokerGameboard extends Gameboard {
         if (!PokerUtils.isSeat(t))
             return super.getTerritoryDisplay(t);
 
-        PokerPlayer player = PokerUtils.getPokerPlayer(context_, t);
+        ClientPlayer player = PokerUtils.getPokerPlayer(context_, t);
         if (player == null) {
             return "";
         } else {
@@ -261,7 +261,7 @@ public class PokerGameboard extends Gameboard {
             boolean bFold = false;
             String sIcon = "icon-blank";
             String sText = "";
-            PokerPlayer player = table.getPlayer(PokerUtils.getTableSeatForTerritory(table, t));
+            ClientPlayer player = table.getPlayer(PokerUtils.getTableSeatForTerritory(table, t));
             Color color = fireGetTerritoryLabelColor(t);
             int nChipAmount = 0;
             if (player != null) {

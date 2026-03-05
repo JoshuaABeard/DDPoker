@@ -32,15 +32,13 @@
  */
 package com.donohoedigital.games.poker.online;
 
-import com.donohoedigital.games.poker.*;
-
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Mar 3, 2005 Time: 9:14:11 AM To
  * change this template use File | Settings | File Templates.
  */
 public interface ChatManager {
     void sendChat(int nPlayerID, String sMessage);
-    void sendChat(String sMessage, PokerTable table, String sTestData);
+    void sendChat(String sMessage, ClientPokerTable table, String sTestData);
     void sendDirectorChat(String sMessage, Boolean bPauseClock);
     void setChatHandler(ChatHandler chat);
     void deliverChatLocal(int nType, String sMessage, int id);

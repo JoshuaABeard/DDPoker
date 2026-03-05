@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
@@ -61,8 +62,8 @@ public class ChipLeaderPanel extends DDTabPanel {
     }
 
     public void createUI() {
-        PokerPlayer p;
-        List<PokerPlayer> leaders = game_.getPlayersByRank();
+        ClientPlayer p;
+        List<ClientPlayer> leaders = game_.getPlayersByRank();
         List<RankInfo> finished = new ArrayList<RankInfo>();
         List<RankInfo> current = new ArrayList<RankInfo>();
         int nNum = leaders.size();
@@ -70,7 +71,7 @@ public class ChipLeaderPanel extends DDTabPanel {
         int min = Integer.MAX_VALUE;
         int max = 0;
         int nChips;
-        PokerPlayer human = game_.getHumanPlayer();
+        ClientPlayer human = game_.getHumanPlayer();
         int nHumanRank = 0;
         int nRank = 0;
         int nLastChips = 0;
@@ -198,10 +199,10 @@ public class ChipLeaderPanel extends DDTabPanel {
     }
 
     static class RankInfo {
-        PokerPlayer player;
+        ClientPlayer player;
         int nRank;
 
-        RankInfo(PokerPlayer player, int nRank) {
+        RankInfo(ClientPlayer player, int nRank) {
             this.player = player;
             this.nRank = nRank;
         }
@@ -255,7 +256,7 @@ public class ChipLeaderPanel extends DDTabPanel {
             fireTableDataChanged();
         }
 
-        public PokerPlayer getPokerPlayer(int r) {
+        public ClientPlayer getPokerPlayer(int r) {
             return players.get(r).player;
         }
 
@@ -282,7 +283,7 @@ public class ChipLeaderPanel extends DDTabPanel {
         }
 
         public Object getValueAt(int rowIndex, int colIndex) {
-            PokerPlayer p = getPokerPlayer(rowIndex);
+            ClientPlayer p = getPokerPlayer(rowIndex);
 
             String sValue = "[bad column]";
 
@@ -299,7 +300,7 @@ public class ChipLeaderPanel extends DDTabPanel {
                     return "";
 
                 boolean bSet = false;
-                PokerPlayer chipLocal = game.getLocalPlayer();
+                ClientPlayer chipLocal = game.getLocalPlayer();
                 if (bShowPlayerType && p != null && names[colIndex].equals(COL_NAME_PLAYERTYPE) && p.isComputer()
                         && (!game.isOnlineGame() || (game.isOnlineGame() && chipLocal != null && chipLocal.isHost()))) {
                     PlayerType ai = p.getPlayerType();

@@ -60,7 +60,7 @@ import com.donohoedigital.games.poker.engine.state.BettingRound;
 public class Bet extends ChainPhase implements PlayerActionListener, CancelablePhase {
     static Logger logger = LogManager.getLogger(Bet.class);
 
-    private PokerPlayer player_;
+    private ClientPlayer player_;
     private PokerTable table_;
     private HoldemHand hhand_;
     private PokerGame game_;
@@ -221,7 +221,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
                 // make it appear like ai is "thinking" ... even if no delay is set
                 // Future: off for now - need to think more about this, maybe make an option
                 if (false && !table_.isZipMode() && !game_.isOnlineGame() && hhand_.getRound() == BettingRound.RIVER) {
-                    PokerPlayer human = game_.getHumanPlayer();
+                    ClientPlayer human = game_.getHumanPlayer();
                     int action = hhand_.getLastActionThisRound(human);
                     if (action == HandAction.ACTION_BET || action == HandAction.ACTION_RAISE) {
                         // if human bet or raised, have ai wait 2 to 5 seconds

@@ -38,6 +38,7 @@
 
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
@@ -121,7 +122,7 @@ public class SidePotsDialog extends DialogPhase {
      */
     private String getPot(HoldemHand hhand, int nPot) {
         Pot p = hhand.getPot(nPot);
-        List<PokerPlayer> winners = p.getWinners();
+        List<ClientPlayer> winners = p.getWinners();
         int nNum = p.getNumPlayers();
 
         String sKey;
@@ -134,10 +135,10 @@ public class SidePotsDialog extends DialogPhase {
             nSide++;
         }
 
-        PokerPlayer pl;
+        ClientPlayer pl;
         StringBuilder sb = new StringBuilder();
-        List<PokerPlayer> players = new ArrayList<PokerPlayer>(p.getPlayers());
-        Collections.sort(players, PokerPlayer.SORTBYNAME);
+        List<ClientPlayer> players = new ArrayList<ClientPlayer>(p.getPlayers());
+        Collections.sort(players, ClientPlayer.SORTBYNAME);
         boolean bWinner;
         for (int i = 0; i < nNum; i++) {
             pl = players.get(i);

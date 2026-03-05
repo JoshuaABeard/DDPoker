@@ -35,7 +35,6 @@
 package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.poker.HandAction;
-import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.HandSorted;
@@ -111,13 +110,13 @@ public interface ClientHoldemHand {
      * Returns the player at the given index in hand-order, or {@code null} if out
      * of range.
      */
-    PokerPlayer getPlayerAt(int index);
+    ClientPlayer getPlayerAt(int index);
 
     /** Returns the index of the currently acting player, or -999 if none. */
     int getCurrentPlayerIndex();
 
     /** Returns the currently acting player, or {@code null} if none. */
-    PokerPlayer getCurrentPlayer();
+    ClientPlayer getCurrentPlayer();
 
     // -------------------------------------------------------------------------
     // Pot / chips
@@ -138,7 +137,7 @@ public interface ClientHoldemHand {
      * @param nRound
      *            legacy round integer ({@code HoldemHand.ROUND_*})
      */
-    int getBet(PokerPlayer player, int nRound);
+    int getBet(ClientPlayer player, int nRound);
 
     /**
      * Returns the bet placed by the given player in the current round.
@@ -146,7 +145,7 @@ public interface ClientHoldemHand {
      * @param player
      *            the player
      */
-    int getBet(PokerPlayer player);
+    int getBet(ClientPlayer player);
 
     /**
      * Returns the current highest bet in the active round (i.e., the amount the
@@ -160,7 +159,7 @@ public interface ClientHoldemHand {
      * @param player
      *            the player
      */
-    int getCall(PokerPlayer player);
+    int getCall(ClientPlayer player);
 
     /** Returns the minimum allowed bet for the current round. */
     int getMinBet();
@@ -174,7 +173,7 @@ public interface ClientHoldemHand {
      * @param player
      *            the player
      */
-    int getMaxBet(PokerPlayer player);
+    int getMaxBet(ClientPlayer player);
 
     /**
      * Returns the maximum allowed raise for the given player.
@@ -182,7 +181,7 @@ public interface ClientHoldemHand {
      * @param player
      *            the player
      */
-    int getMaxRaise(PokerPlayer player);
+    int getMaxRaise(ClientPlayer player);
 
     /**
      * Returns the minimum chip denomination for this hand (used for amount slider
@@ -210,7 +209,7 @@ public interface ClientHoldemHand {
      * @param player
      *            the player
      */
-    float getPotOdds(PokerPlayer player);
+    float getPotOdds(ClientPlayer player);
 
     // -------------------------------------------------------------------------
     // State flags
@@ -238,7 +237,7 @@ public interface ClientHoldemHand {
      * @param player
      *            the player
      */
-    boolean isFolded(PokerPlayer player);
+    boolean isFolded(ClientPlayer player);
 
     /**
      * Returns {@code true} if the given player has taken an action in the current
@@ -247,7 +246,7 @@ public interface ClientHoldemHand {
      * @param player
      *            the player
      */
-    boolean hasPlayerActed(PokerPlayer player);
+    boolean hasPlayerActed(ClientPlayer player);
 
     /**
      * Returns the last action type taken by the given player in the current round,
@@ -256,7 +255,7 @@ public interface ClientHoldemHand {
      * @param player
      *            the player
      */
-    int getLastAction(PokerPlayer player);
+    int getLastAction(ClientPlayer player);
 
     /** Returns an unmodifiable copy of the full action history for this hand. */
     List<HandAction> getHistoryCopy();
@@ -271,7 +270,7 @@ public interface ClientHoldemHand {
      * @param player
      *            the player
      */
-    int getTotalBet(PokerPlayer player);
+    int getTotalBet(ClientPlayer player);
 
     /**
      * Returns the number of raises that occurred after the given player's last
@@ -281,7 +280,7 @@ public interface ClientHoldemHand {
      * @param player
      *            the player
      */
-    int getNumPriorRaises(PokerPlayer player);
+    int getNumPriorRaises(ClientPlayer player);
 
     // -------------------------------------------------------------------------
     // Win recording
@@ -297,7 +296,7 @@ public interface ClientHoldemHand {
      * @param nPot
      *            pot index
      */
-    void wins(PokerPlayer player, int nChips, int nPot);
+    void wins(ClientPlayer player, int nChips, int nPot);
 
     /**
      * Returns the total chips won by the given player in this hand, or {@code 0}.
@@ -305,5 +304,5 @@ public interface ClientHoldemHand {
      * @param player
      *            the player
      */
-    int getWin(PokerPlayer player);
+    int getWin(ClientPlayer player);
 }

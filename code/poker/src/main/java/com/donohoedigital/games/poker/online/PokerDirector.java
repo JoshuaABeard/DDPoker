@@ -19,8 +19,6 @@ package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.engine.GameManager;
 import com.donohoedigital.games.poker.HandAction;
-import com.donohoedigital.games.poker.PokerPlayer;
-import com.donohoedigital.games.poker.PokerTable;
 
 /**
  * Combined interface for the tournament director as seen by the desktop UI.
@@ -36,7 +34,7 @@ import com.donohoedigital.games.poker.PokerTable;
  * <ul>
  * <li>{@link #setPaused(boolean)} — called from the table's right-click
  * menu</li>
- * <li>{@link #playerUpdate(PokerPlayer, String)} — called for player settings
+ * <li>{@link #playerUpdate(ClientPlayer, String)} — called for player settings
  * changes</li>
  * </ul>
  */
@@ -65,7 +63,7 @@ public interface PokerDirector extends GameManager, ChatManager {
      * @param settings
      *            serialized settings string
      */
-    void playerUpdate(PokerPlayer player, String settings);
+    void playerUpdate(ClientPlayer player, String settings);
 
     /**
      * Kicks a player from the game (owner only).
@@ -117,7 +115,7 @@ public interface PokerDirector extends GameManager, ChatManager {
      * @param table
      *            the table to deal
      */
-    void doDeal(PokerTable table);
+    void doDeal(ClientPokerTable table);
 
     /**
      * Records a rebuy decision for the given player.
@@ -137,7 +135,7 @@ public interface PokerDirector extends GameManager, ChatManager {
      * @param bPending
      *            {@code true} if the rebuy takes effect after the current hand
      */
-    void doRebuy(PokerPlayer player, int nLevel, int nAmount, int nChips, boolean bPending);
+    void doRebuy(ClientPlayer player, int nLevel, int nAmount, int nChips, boolean bPending);
 
     /**
      * Records an add-on decision for the given player.
@@ -154,5 +152,5 @@ public interface PokerDirector extends GameManager, ChatManager {
      * @param nChips
      *            the chips awarded
      */
-    void doAddon(PokerPlayer player, int nAmount, int nChips);
+    void doAddon(ClientPlayer player, int nAmount, int nChips);
 }

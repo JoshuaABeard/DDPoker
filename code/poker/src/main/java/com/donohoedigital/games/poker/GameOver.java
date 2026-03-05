@@ -38,6 +38,7 @@
 
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
@@ -74,7 +75,7 @@ public class GameOver extends DialogPhase {
         super.init(engine, context, gamephase);
 
         // record results of the human
-        PokerPlayer human = game_.getHumanPlayer();
+        ClientPlayer human = game_.getHumanPlayer();
         PlayerProfile profile = human.getProfile();
         profile.addTournamentHistory(game_, human);
     }
@@ -108,7 +109,7 @@ public class GameOver extends DialogPhase {
             getDialog().setClosable(false);
         if (bOnline_ || game_.isGameOver())
             getDialog().setIconifiable(true);
-        PokerPlayer human = game_.getHumanPlayer();
+        ClientPlayer human = game_.getHumanPlayer();
 
         // buttons
         game_.setInputMode(PokerTableInput.MODE_QUITSAVE);

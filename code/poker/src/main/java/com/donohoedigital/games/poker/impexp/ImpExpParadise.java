@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker.impexp;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.engine.HandScoreConstants;
@@ -179,12 +180,12 @@ public class ImpExpParadise implements ImpExp {
         buf.append(" is the button");
         buf.append(newline);
 
-        PokerPlayer lastPlayerLeft = null;
+        ClientPlayer lastPlayerLeft = null;
 
         int playersLeft = 0;
 
         for (int seat = 0; seat < PokerConstants.SEATS; ++seat) {
-            PokerPlayer player = ieHand.players[seat];
+            ClientPlayer player = ieHand.players[seat];
 
             if (player == null)
                 continue;
@@ -376,7 +377,7 @@ public class ImpExpParadise implements ImpExp {
         }
 
         for (int seat = 0; seat < PokerConstants.SEATS; ++seat) {
-            PokerPlayer player = ieHand.players[seat];
+            ClientPlayer player = ieHand.players[seat];
 
             if (player == null)
                 continue;
@@ -421,7 +422,7 @@ public class ImpExpParadise implements ImpExp {
         return buf.toString();
     }
 
-    private void appendPlayerName(ImpExpHand ieHand, StringBuilder buf, PokerPlayer player) {
+    private void appendPlayerName(ImpExpHand ieHand, StringBuilder buf, ClientPlayer player) {
         if (player.getSeat() == ieHand.localHumanPlayerSeat) {
             buf.append(paradisePlayerName_);
         } else {

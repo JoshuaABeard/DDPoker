@@ -39,22 +39,23 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
-import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Bridge between pokergamecore's GameEvent records and legacy PokerTableEvent
  * bitmasks. Converts new events to legacy format and dispatches on Swing EDT.
  *
- * Phase 2: Accepts PokerGame instead of PokerTable since one event bus serves
- * all tables. Extracts table from event's tableId.
+ * <p>
+ * Standalone event bus — does not extend {@code GameEventBus}. Manages its own
+ * listener list and publish method. Accepts PokerGame for table resolution.
  */
-public class SwingEventBus extends GameEventBus {
+public class SwingEventBus {
 
     private static final Logger logger = LogManager.getLogger(SwingEventBus.class);
 
     private final PokerGame game;
-    private final List<PokerTableListener> legacyListeners = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<GameEventListener> listeners = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<PokerTableListener> legacyListeners = new CopyOnWriteArrayList<>();
 
     /**
      * Create event bus for the given game.
@@ -67,14 +68,29 @@ public class SwingEventBus extends GameEventBus {
     }
 
     /**
-     * Override publish to convert and dispatch events to legacy listeners.
+     * Adds a GameEvent listener.
      */
-    @Override
+    public void addListener(GameEventListener listener) {
+        listeners.addIfAbsent(listener);
+    }
+
+    /**
+     * Removes a GameEvent listener.
+     */
+    public void removeListener(GameEventListener listener) {
+        listeners.remove(listener);
+    }
+
+    /**
+     * Publishes a GameEvent to all registered listeners and legacy listeners.
+     */
     public void publish(GameEvent event) {
         logger.debug("[SwingEventBus] publish event={} listeners={}", event.getClass().getSimpleName(),
                 legacyListeners.size());
-        // Call parent to notify pokergamecore listeners
-        super.publish(event);
+        // Notify GameEvent listeners
+        for (GameEventListener listener : listeners) {
+            listener.onEvent(event);
+        }
 
         // Convert to legacy event and dispatch on EDT
         if (!legacyListeners.isEmpty() && game != null) {
@@ -138,12 +154,12 @@ public class SwingEventBus extends GameEventBus {
                     e.oldState().toLegacy(), e.newState().toLegacy());
 
             case GameEvent.PlayerAdded e -> {
-                PokerPlayer player = game.getPokerPlayerFromID(e.playerId());
+                ClientPlayer player = game.getPokerPlayerFromID(e.playerId());
                 yield new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ADDED, table, player, e.seat());
             }
 
             case GameEvent.PlayerRemoved e -> {
-                PokerPlayer player = game.getPokerPlayerFromID(e.playerId());
+                ClientPlayer player = game.getPokerPlayerFromID(e.playerId());
                 yield new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REMOVED, table, player, e.seat());
             }
 
@@ -176,14 +192,14 @@ public class SwingEventBus extends GameEventBus {
                 new PokerTableEvent(PokerTableEvent.TYPE_CURRENT_PLAYER_CHANGED, table);
 
             case GameEvent.PlayerRebuy e -> {
-                PokerPlayer player = game.getPokerPlayerFromID(e.playerId());
+                ClientPlayer player = game.getPokerPlayerFromID(e.playerId());
                 // Rebuy needs cash, chips, pending flag - but we only have amount in event
                 yield new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REBUY, table, player,
                     e.amount(), e.amount(), false);
             }
 
             case GameEvent.PlayerAddon e -> {
-                PokerPlayer player = game.getPokerPlayerFromID(e.playerId());
+                ClientPlayer player = game.getPokerPlayerFromID(e.playerId());
                 // Addon needs cash, chips, pending flag - but we only have amount in event
                 yield new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ADDON, table, player,
                     e.amount(), e.amount(), false);

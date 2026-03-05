@@ -38,6 +38,7 @@
 
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.Utils;
 import com.donohoedigital.comms.DataCoder;
 import com.donohoedigital.comms.DataMarshal;
@@ -76,7 +77,7 @@ public class HandAction implements DataMarshal {
 
     private int nRound_;
     private int nAction_;
-    private PokerPlayer player_;
+    private ClientPlayer player_;
     private int nAmount_;
     private int nSubAmount_; // stores call portion of a raise, pot number for win/overbet, and fold type
     private boolean bAllIn_;
@@ -93,35 +94,35 @@ public class HandAction implements DataMarshal {
     /**
      * Creates a new instance of HandAction where amount defaults to 0
      */
-    public HandAction(PokerPlayer player, int nRound, int nAction) {
+    public HandAction(ClientPlayer player, int nRound, int nAction) {
         this(player, nRound, nAction, 0);
     }
 
     /**
      * Creates a new instance of HandAction where amount defaults to 0
      */
-    public HandAction(PokerPlayer player, int nRound, int nAction, String sDebug) {
+    public HandAction(ClientPlayer player, int nRound, int nAction, String sDebug) {
         this(player, nRound, nAction, 0, sDebug);
     }
 
     /**
      * Creates a new instance of HandAction
      */
-    public HandAction(PokerPlayer player, int nRound, int nAction, int nAmount) {
+    public HandAction(ClientPlayer player, int nRound, int nAction, int nAmount) {
         this(player, nRound, nAction, nAmount, null);
     }
 
     /**
      * Creates a new instance of HandAction
      */
-    public HandAction(PokerPlayer player, int nRound, int nAction, int nAmount, String sDebug) {
+    public HandAction(ClientPlayer player, int nRound, int nAction, int nAmount, String sDebug) {
         this(player, nRound, nAction, nAmount, 0, sDebug);
     }
 
     /**
      * Creates a new instance of HandAction
      */
-    public HandAction(PokerPlayer player, int nRound, int nAction, int nAmount, int nSubAmount, String sDebug) {
+    public HandAction(ClientPlayer player, int nRound, int nAction, int nAmount, int nSubAmount, String sDebug) {
         player_ = player;
         nRound_ = nRound;
         nAction_ = nAction;
@@ -136,7 +137,7 @@ public class HandAction implements DataMarshal {
             case ACTION_BET :
             case ACTION_RAISE :
                 // all in if player has no chips when the hand action is created
-                // we can check == 0 because in PokerPlayer, the chips are adjusted
+                // we can check == 0 because in ClientPlayer, the chips are adjusted
                 // before the appropriate method is called no HoldemHand, which
                 // in turn creates the HandAction
                 bAllIn_ = player.getChipCount() == 0;
@@ -150,7 +151,7 @@ public class HandAction implements DataMarshal {
     /**
      * Get player
      */
-    public PokerPlayer getPlayer() {
+    public ClientPlayer getPlayer() {
         return player_;
     }
 
@@ -344,7 +345,7 @@ public class HandAction implements DataMarshal {
         String sAction = "<undefined>";
         switch (nAction_) {
             case ACTION_BET :
-                sAction = "bet        $" + PokerPlayer.fChip.form(nAmount_);
+                sAction = "bet        $" + ClientPlayer.fChip.form(nAmount_);
                 break;
             case ACTION_CHECK :
                 sAction = "check              ";
@@ -353,29 +354,29 @@ public class HandAction implements DataMarshal {
                 sAction = "checkraise         ";
                 break; // fchip is 7 spaces, so we add that here
             case ACTION_CALL :
-                sAction = "call       $" + PokerPlayer.fChip.form(nAmount_);
+                sAction = "call       $" + ClientPlayer.fChip.form(nAmount_);
                 break;
             case ACTION_FOLD :
                 sAction = "fold               ";
                 break;
             case ACTION_RAISE :
-                sAction = "raise      $" + PokerPlayer.fChip.form(nAmount_) + " (" + nSubAmount_ + " call)";
+                sAction = "raise      $" + ClientPlayer.fChip.form(nAmount_) + " (" + nSubAmount_ + " call)";
                 break;
             case ACTION_BLIND_SM :
-                sAction = "smallblind $" + PokerPlayer.fChip.form(nAmount_);
+                sAction = "smallblind $" + ClientPlayer.fChip.form(nAmount_);
                 break;
             case ACTION_BLIND_BIG :
-                sAction = "bigblind   $" + PokerPlayer.fChip.form(nAmount_);
+                sAction = "bigblind   $" + ClientPlayer.fChip.form(nAmount_);
                 break;
             case ACTION_ANTE :
-                sAction = "ante       $" + PokerPlayer.fChip.form(nAmount_);
+                sAction = "ante       $" + ClientPlayer.fChip.form(nAmount_);
                 break;
             case ACTION_WIN :
-                sAction = "win        $" + PokerPlayer.fChip.form(nAmount_);
+                sAction = "win        $" + ClientPlayer.fChip.form(nAmount_);
                 sDebug = "Pot " + nSubAmount_;
                 break;
             case ACTION_OVERBET :
-                sAction = "overbet    $" + PokerPlayer.fChip.form(nAmount_);
+                sAction = "overbet    $" + ClientPlayer.fChip.form(nAmount_);
                 sDebug = "Pot " + nSubAmount_;
                 break;
             case ACTION_LOSE :
@@ -407,7 +408,7 @@ public class HandAction implements DataMarshal {
             return player_.getName() + ": " + sAction;
         } else {
             return player_.toStringLong() + ", " + sRound + ": " + sAction + " ("
-                    + PokerPlayer.fStringLong.form(sDebug == null ? "" : sDebug) + ")";
+                    + ClientPlayer.fStringLong.form(sDebug == null ? "" : sDebug) + ")";
         }
 
     }
@@ -486,7 +487,7 @@ public class HandAction implements DataMarshal {
         list.demarshal(state, sData);
         nRound_ = list.removeIntToken();
         nAction_ = list.removeIntToken();
-        player_ = (PokerPlayer) state.getObject(list.removeIntegerToken());
+        player_ = (ClientPlayer) state.getObject(list.removeIntegerToken());
         nAmount_ = list.removeIntToken();
         nSubAmount_ = list.removeIntToken();
         bAllIn_ = list.removeBooleanToken();

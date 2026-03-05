@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker.dashboard;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
@@ -83,7 +84,7 @@ public class ImproveOdds extends Odds {
     /**
      * get display string
      */
-    protected String getDisplay(int nRound, ClientHoldemHand hhand, PokerPlayer asViewedBy, Hand hand) {
+    protected String getDisplay(int nRound, ClientHoldemHand hhand, ClientPlayer asViewedBy, Hand hand) {
         sTotal_ = null;
 
         // pre-flop, or insufficient community cards.

@@ -68,15 +68,15 @@ public class CheckEndHand extends ChainPhase {
         CONTINUE, REBUY_OFFERED, GAME_OVER, TOURNAMENT_WON, NEVER_BROKE_ACTIVE
     }
 
-    static boolean isHumanBroke(PokerPlayer human) {
+    static boolean isHumanBroke(ClientPlayer human) {
         return human.getChipCount() == 0 && !human.isObserver();
     }
 
-    static boolean shouldOfferRebuy(PokerPlayer human, PokerTable table) {
+    static boolean shouldOfferRebuy(ClientPlayer human, PokerTable table) {
         return human.getChipCount() == 0 && !human.isObserver() && table.isRebuyAllowed(human);
     }
 
-    static GameOverResult checkGameOverStatus(PokerGame game, PokerPlayer human, PokerTable table,
+    static GameOverResult checkGameOverStatus(PokerGame game, ClientPlayer human, PokerTable table,
             boolean neverBrokeCheatActive) {
         boolean bOnline = game.isOnlineGame();
 
@@ -118,7 +118,7 @@ public class CheckEndHand extends ChainPhase {
      * Static for testing from elsewhere
      */
     public static boolean isGameOver(PokerGame game, boolean bDoRebuyAndCleanup, PokerDirector td) {
-        PokerPlayer human = game.getHumanPlayer();
+        ClientPlayer human = game.getHumanPlayer();
         PokerTable table = (PokerTable) game.getCurrentTable();
 
         boolean bGameOver = false;
@@ -140,8 +140,8 @@ public class CheckEndHand extends ChainPhase {
                             // Check if never-broke cheat should activate after rebuy declined
                             if (neverBrokeCheatActive && !bOnline) {
                                 // Transfer chips from leader (same as NEVER_BROKE_ACTIVE case below)
-                                List<PokerPlayer> rank = game.getPlayersByRank();
-                                PokerPlayer lead = rank.get(0);
+                                List<ClientPlayer> rank = game.getPlayersByRank();
+                                ClientPlayer lead = rank.get(0);
                                 int nAdd = calculateNeverBrokeTransfer(lead.getChipCount(), table.getMinChip());
                                 human.setChipCount(nAdd);
                                 lead.setChipCount(lead.getChipCount() - nAdd);
@@ -167,8 +167,8 @@ public class CheckEndHand extends ChainPhase {
             case NEVER_BROKE_ACTIVE :
                 // Transfer chips from leader to human
                 if (bDoRebuyAndCleanup) {
-                    List<PokerPlayer> rank = game.getPlayersByRank();
-                    PokerPlayer lead = rank.get(0);
+                    List<ClientPlayer> rank = game.getPlayersByRank();
+                    ClientPlayer lead = rank.get(0);
                     int nAdd = calculateNeverBrokeTransfer(lead.getChipCount(), table.getMinChip());
                     human.setChipCount(nAdd);
                     lead.setChipCount(lead.getChipCount() - nAdd);

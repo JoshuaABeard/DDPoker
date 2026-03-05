@@ -116,7 +116,7 @@ public class WebSocketTournamentDirector extends BasePhase
     // game_.players_. Built lazily on first use (see resolveGamePlayer).
     // Server IDs come from the JWT profileId (human) and sequential negatives
     // -1, -2, ... (AI), which differ from the client-assigned IDs 0, 1, 2, ...
-    private final Map<Long, PokerPlayer> serverIdToGamePlayer_ = new HashMap<>();
+    private final Map<Long, ClientPlayer> serverIdToGamePlayer_ = new HashMap<>();
 
     // Last ACTION_REQUIRED options (stored for UI query)
     private ActionOptionsData currentOptions_;
@@ -369,7 +369,7 @@ public class WebSocketTournamentDirector extends BasePhase
             int withChips = 0;
             int tableChips = 0;
             for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
-                PokerPlayer p = table.getPlayer(seat);
+                ClientPlayer p = table.getPlayer(seat);
                 if (p == null) {
                     continue;
                 }
@@ -742,7 +742,7 @@ public class WebSocketTournamentDirector extends BasePhase
         opponentTracker_.onHandStart();
         SwingUtilities.invokeLater(() -> {
             showdownStarted_ = false;
-            PokerPlayer human = game_.getHumanPlayer();
+            ClientPlayer human = game_.getHumanPlayer();
             if (human != null) {
                 human.setHandStrength(-1f);
                 human.setHandPotential(-1f);
@@ -784,9 +784,9 @@ public class WebSocketTournamentDirector extends BasePhase
             hand.updateBigBlindSeat(d.bigBlindSeat());
 
             // Reconstruct player order from seated players (seat order for the hand)
-            List<PokerPlayer> handPlayers = seatedPlayersFrom(table);
+            List<ClientPlayer> handPlayers = seatedPlayersFrom(table);
             hand.updatePlayerOrder(handPlayers);
-            hand.updateCurrentPlayer(HoldemHand.NO_CURRENT_PLAYER);
+            hand.updateCurrentPlayer(RemoteHoldemHand.NO_CURRENT_PLAYER);
 
             // Move button to dealer seat
             int oldButton = table.getButton();
@@ -815,7 +815,7 @@ public class WebSocketTournamentDirector extends BasePhase
             }
 
             // Hole cards are sent privately only to the card owner
-            PokerPlayer localPlayer = findPlayer(localPlayerId_);
+            ClientPlayer localPlayer = findPlayer(localPlayerId_);
             if (localPlayer == null) {
                 logger.debug("[HOLE_CARDS_DEALT EDT] localPlayer={} not found, skipping", localPlayerId_);
                 return;
@@ -905,7 +905,7 @@ public class WebSocketTournamentDirector extends BasePhase
 
             // Determine input mode from server options and show action buttons.
             int inputMode = determineInputMode(d.options());
-            PokerPlayer localPlayer = hand.getCurrentPlayer();
+            ClientPlayer localPlayer = hand.getCurrentPlayer();
             // Set server-provided timeout on the player so CountdownPanel displays
             // the correct remaining time rather than reading an unset (0) value.
             if (localPlayer != null && d.timeoutSeconds() > 0) {
@@ -958,7 +958,7 @@ public class WebSocketTournamentDirector extends BasePhase
             }
 
             // Update chip count and pot from server-provided post-action values
-            PokerPlayer player = findPlayer(d.playerId());
+            ClientPlayer player = findPlayer(d.playerId());
             if (player != null) {
                 // Server is authoritative — always apply the chip count from the server.
                 // The previous guard (chipCount > 0 || isFold || isBlindAnte) missed
@@ -976,7 +976,7 @@ public class WebSocketTournamentDirector extends BasePhase
             }
 
             // Advance current player (server will send ACTION_REQUIRED for next actor)
-            hand.updateCurrentPlayer(HoldemHand.NO_CURRENT_PLAYER);
+            hand.updateCurrentPlayer(RemoteHoldemHand.NO_CURRENT_PLAYER);
 
             if (player == null)
                 return;
@@ -1005,13 +1005,13 @@ public class WebSocketTournamentDirector extends BasePhase
             if (hand == null)
                 return;
 
-            hand.updateCurrentPlayer(HoldemHand.NO_CURRENT_PLAYER);
+            hand.updateCurrentPlayer(RemoteHoldemHand.NO_CURRENT_PLAYER);
 
             if (d.playerId() == localPlayerId_) {
                 game_.setInputMode(PokerTableInput.MODE_QUITSAVE);
             }
 
-            PokerPlayer player = findPlayer(d.playerId());
+            ClientPlayer player = findPlayer(d.playerId());
             String name = player != null ? player.getName() : "Player " + d.playerId();
             deliverChatLocal(PokerConstants.CHAT_2, name + " timed out", PokerConstants.CHAT_DEALER_MSG_ID);
         });
@@ -1032,7 +1032,7 @@ public class WebSocketTournamentDirector extends BasePhase
             // would be added on top, producing duplicates.
             if (d.showdownPlayers() != null) {
                 for (ShowdownPlayerData sp : d.showdownPlayers()) {
-                    PokerPlayer player = findPlayer(sp.playerId());
+                    ClientPlayer player = findPlayer(sp.playerId());
                     if (player != null && !sp.cards().isEmpty()) {
                         Hand showHand = player.getHand();
                         showHand.clear();
@@ -1052,7 +1052,7 @@ public class WebSocketTournamentDirector extends BasePhase
             if (d.winners() != null) {
                 for (WinnerData w : d.winners()) {
                     if (w.amount() > 0) {
-                        PokerPlayer winner = findPlayer(w.playerId());
+                        ClientPlayer winner = findPlayer(w.playerId());
                         if (winner != null) {
                             if (w.chipCount() != null) {
                                 winner.setChipCount(w.chipCount());
@@ -1066,7 +1066,7 @@ public class WebSocketTournamentDirector extends BasePhase
 
             recordCompletedHandResult(table, hand, d);
 
-            hand.updateCurrentPlayer(HoldemHand.NO_CURRENT_PLAYER);
+            hand.updateCurrentPlayer(RemoteHoldemHand.NO_CURRENT_PLAYER);
             hand.updatePot(0);
             hand.clearBets();
             GameEventLog.log("END_HAND", table.getNumber());
@@ -1094,7 +1094,7 @@ public class WebSocketTournamentDirector extends BasePhase
             if (hand != null && d.winnerIds() != null && d.winnerIds().length > 0) {
                 int amountEach = d.amount() / d.winnerIds().length;
                 for (long winnerId : d.winnerIds()) {
-                    PokerPlayer winner = findPlayer(winnerId);
+                    ClientPlayer winner = findPlayer(winnerId);
                     if (winner != null) {
                         hand.wins(winner, amountEach, d.potIndex());
                     }
@@ -1125,7 +1125,7 @@ public class WebSocketTournamentDirector extends BasePhase
             // displayShowdown() sees them as exposed (isCardsExposed() == true).
             if (d.showdownPlayers() != null) {
                 for (ShowdownPlayerData sp : d.showdownPlayers()) {
-                    PokerPlayer player = findPlayer(sp.playerId());
+                    ClientPlayer player = findPlayer(sp.playerId());
                     if (player != null && !sp.cards().isEmpty()) {
                         Hand showHand = player.getHand();
                         showHand.clear();
@@ -1173,7 +1173,7 @@ public class WebSocketTournamentDirector extends BasePhase
             for (RemotePokerTable table : tables_.values()) {
                 int seat = findSeat(table, d.playerId());
                 if (seat >= 0) {
-                    PokerPlayer p = table.getPlayer(seat);
+                    ClientPlayer p = table.getPlayer(seat);
                     if (p != null) {
                         p.setPlace(d.finishPosition());
                         p.setChipCount(0);
@@ -1186,7 +1186,7 @@ public class WebSocketTournamentDirector extends BasePhase
             }
             // Also update the canonical player in game_.players_ so GameOver and
             // ChipLeaderPanel read the correct place, prize, and chip count.
-            PokerPlayer gamePlayer = resolveGamePlayer(d.playerId());
+            ClientPlayer gamePlayer = resolveGamePlayer(d.playerId());
             if (gamePlayer != null) {
                 game_.applyPlayerResult(gamePlayer.getID(), d.finishPosition());
             }
@@ -1207,7 +1207,7 @@ public class WebSocketTournamentDirector extends BasePhase
             RemotePokerTable table = currentTable();
             if (table == null)
                 return;
-            PokerPlayer localPlayer = findPlayer(localPlayerId_);
+            ClientPlayer localPlayer = findPlayer(localPlayerId_);
             if (localPlayer == null)
                 return;
 
@@ -1260,7 +1260,7 @@ public class WebSocketTournamentDirector extends BasePhase
             RemotePokerTable table = currentTable();
             if (table == null)
                 return;
-            PokerPlayer localPlayer = findPlayer(localPlayerId_);
+            ClientPlayer localPlayer = findPlayer(localPlayerId_);
             if (localPlayer == null)
                 return;
 
@@ -1301,7 +1301,7 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onGameComplete(GameCompleteData d) {
         SwingUtilities.invokeLater(() -> {
-            PokerPlayer winnerGamePlayer = null;
+            ClientPlayer winnerGamePlayer = null;
             long winnerId = -1L;
 
             // Apply all final standings from the server, not just the winner.
@@ -1314,7 +1314,7 @@ public class WebSocketTournamentDirector extends BasePhase
                         continue;
                     }
 
-                    PokerPlayer gamePlayer = resolveGamePlayer(standing.playerId());
+                    ClientPlayer gamePlayer = resolveGamePlayer(standing.playerId());
                     if (gamePlayer == null && standing.playerName() != null && !standing.playerName().isBlank()) {
                         gamePlayer = findGamePlayerByName(standing.playerName());
                     }
@@ -1345,7 +1345,7 @@ public class WebSocketTournamentDirector extends BasePhase
             if (winnerId < 0) {
                 outer : for (RemotePokerTable table : tables_.values()) {
                     for (int s = 0; s < PokerConstants.SEATS; s++) {
-                        PokerPlayer p = table.getPlayer(s);
+                        ClientPlayer p = table.getPlayer(s);
                         if (p != null && p.getChipCount() > 0) {
                             winnerId = p.getID();
                             break outer;
@@ -1358,7 +1358,7 @@ public class WebSocketTournamentDirector extends BasePhase
                 for (RemotePokerTable table : tables_.values()) {
                     int seat = findSeat(table, winnerId);
                     if (seat >= 0) {
-                        PokerPlayer p = table.getPlayer(seat);
+                        ClientPlayer p = table.getPlayer(seat);
                         if (p != null)
                             p.setPlace(1);
                         table.clearSeat(seat);
@@ -1377,12 +1377,12 @@ public class WebSocketTournamentDirector extends BasePhase
         });
     }
 
-    private PokerPlayer findGamePlayerByName(String name) {
+    private ClientPlayer findGamePlayerByName(String name) {
         if (name == null || name.isBlank()) {
             return null;
         }
         for (int i = 0; i < game_.getNumPlayers(); i++) {
-            PokerPlayer p = game_.getPokerPlayerAt(i);
+            ClientPlayer p = game_.getPokerPlayerAt(i);
             if (p != null && name.equals(p.getName())) {
                 return p;
             }
@@ -1390,10 +1390,10 @@ public class WebSocketTournamentDirector extends BasePhase
         return null;
     }
 
-    private PokerPlayer findLikelyWinnerGamePlayer() {
-        PokerPlayer best = null;
+    private ClientPlayer findLikelyWinnerGamePlayer() {
+        ClientPlayer best = null;
         for (int i = 0; i < game_.getNumPlayers(); i++) {
-            PokerPlayer p = game_.getPokerPlayerAt(i);
+            ClientPlayer p = game_.getPokerPlayerAt(i);
             if (p == null) {
                 continue;
             }
@@ -1427,9 +1427,9 @@ public class WebSocketTournamentDirector extends BasePhase
                     t.clearSeat(oldSeat);
                 }
             }
-            PokerPlayer existing = table.getPlayer(d.seatIndex());
+            ClientPlayer existing = table.getPlayer(d.seatIndex());
             if (existing == null) {
-                PokerPlayer p = new PokerPlayer((int) d.playerId(), d.playerName(), d.playerId() == localPlayerId_);
+                ClientPlayer p = new ClientPlayer((int) d.playerId(), d.playerName(), d.playerId() == localPlayerId_);
                 table.setRemotePlayer(d.seatIndex(), p);
                 table.firePokerTableEvent(
                         new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ADDED, table, p, d.seatIndex()));
@@ -1452,7 +1452,7 @@ public class WebSocketTournamentDirector extends BasePhase
             for (RemotePokerTable table : tables_.values()) {
                 int seat = findSeat(table, d.playerId());
                 if (seat >= 0) {
-                    PokerPlayer p = table.getPlayer(seat);
+                    ClientPlayer p = table.getPlayer(seat);
                     table.clearSeat(seat);
                     table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REMOVED, table, p, seat));
                     break;
@@ -1468,7 +1468,7 @@ public class WebSocketTournamentDirector extends BasePhase
             for (RemotePokerTable table : tables_.values()) {
                 int seat = findSeat(table, d.playerId());
                 if (seat >= 0) {
-                    PokerPlayer p = table.getPlayer(seat);
+                    ClientPlayer p = table.getPlayer(seat);
                     table.clearSeat(seat);
                     table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REMOVED, table, p, seat));
                     break;
@@ -1484,7 +1484,7 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onPlayerDisconnected(PlayerDisconnectedData d) {
         SwingUtilities.invokeLater(() -> {
-            PokerPlayer player = findPlayer(d.playerId());
+            ClientPlayer player = findPlayer(d.playerId());
             if (player != null) {
                 // Mark as disconnected for UI display
                 player.setWaiting(true);
@@ -1499,7 +1499,7 @@ public class WebSocketTournamentDirector extends BasePhase
     private void onPlayerRebuy(PlayerRebuyData d) {
         SwingUtilities.invokeLater(() -> {
             markRebuyApplied(d.playerId(), d.addedChips());
-            PokerPlayer player = findPlayer(d.playerId());
+            ClientPlayer player = findPlayer(d.playerId());
             if (player == null)
                 return;
             // Prefer absolute chip count from server when available to prevent drift.
@@ -1518,7 +1518,7 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onPlayerAddon(PlayerAddonData d) {
         SwingUtilities.invokeLater(() -> {
-            PokerPlayer player = findPlayer(d.playerId());
+            ClientPlayer player = findPlayer(d.playerId());
             if (player == null)
                 return;
             // Prefer absolute chip count from server when available to prevent drift.
@@ -1567,7 +1567,7 @@ public class WebSocketTournamentDirector extends BasePhase
             for (RemotePokerTable table : tables_.values()) {
                 int seat = findSeat(table, d.playerId());
                 if (seat >= 0) {
-                    PokerPlayer p = table.getPlayer(seat);
+                    ClientPlayer p = table.getPlayer(seat);
                     table.clearSeat(seat);
                     table.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REMOVED, table, p, seat));
                     break;
@@ -1681,8 +1681,8 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onChipsTransferred(ServerMessageData.ChipsTransferredData d) {
         SwingUtilities.invokeLater(() -> {
-            PokerPlayer fromPlayer = findPlayer(d.fromPlayerId());
-            PokerPlayer toPlayer = findPlayer(d.toPlayerId());
+            ClientPlayer fromPlayer = findPlayer(d.fromPlayerId());
+            ClientPlayer toPlayer = findPlayer(d.toPlayerId());
             // Prefer absolute chip counts from server when available to prevent drift.
             if (fromPlayer != null) {
                 if (d.fromChipCount() != null) {
@@ -1730,7 +1730,7 @@ public class WebSocketTournamentDirector extends BasePhase
             if (d.players() == null)
                 return;
             for (ServerMessageData.AiPlayerCards pc : d.players()) {
-                PokerPlayer player = findPlayer(pc.playerId());
+                ClientPlayer player = findPlayer(pc.playerId());
                 if (player == null || pc.cards() == null || pc.cards().isEmpty())
                     continue;
                 Hand playerHand = player.getHand();
@@ -1753,7 +1753,7 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onPlayerSatOut(ServerMessageData.PlayerSatOutData d) {
         SwingUtilities.invokeLater(() -> {
-            PokerPlayer player = resolveGamePlayer(d.playerId());
+            ClientPlayer player = resolveGamePlayer(d.playerId());
             if (player != null) {
                 player.setSittingOut(true);
                 player.fireSettingsChanged();
@@ -1768,7 +1768,7 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private void onPlayerCameBack(ServerMessageData.PlayerCameBackData d) {
         SwingUtilities.invokeLater(() -> {
-            PokerPlayer player = resolveGamePlayer(d.playerId());
+            ClientPlayer player = resolveGamePlayer(d.playerId());
             if (player != null) {
                 player.setSittingOut(false);
                 player.fireSettingsChanged();
@@ -1833,7 +1833,7 @@ public class WebSocketTournamentDirector extends BasePhase
             // Find the index of the player in the hand's player order
             int newIndex = RemoteHoldemHand.NO_CURRENT_PLAYER;
             for (int i = 0; i < hand.getNumPlayers(); i++) {
-                PokerPlayer p = hand.getPlayerAt(i);
+                ClientPlayer p = hand.getPlayerAt(i);
                 if (p != null && p.getID() == d.playerId()) {
                     newIndex = i;
                     break;
@@ -1867,7 +1867,7 @@ public class WebSocketTournamentDirector extends BasePhase
     private void onAdvisorUpdate(ServerMessageData.AdvisorData d) {
         SwingUtilities.invokeLater(() -> {
             AdvisorState.update(d.improvementOdds(), d.positivePotential(), d.negativePotential(), d.equity());
-            PokerPlayer human = game_.getHumanPlayer();
+            ClientPlayer human = game_.getHumanPlayer();
             if (human != null) {
                 human.setHandStrength((float) (d.equity() / 100.0));
                 human.setHandPotential(d.positivePotential() != null ? d.positivePotential().floatValue() : -1f);
@@ -1905,7 +1905,7 @@ public class WebSocketTournamentDirector extends BasePhase
             if (table == null)
                 return;
             RemoteHoldemHand hand = table.getRemoteHand();
-            PokerPlayer player = findPlayer(localPlayerId_);
+            ClientPlayer player = findPlayer(localPlayerId_);
             game_.setInputMode(PokerTableInput.MODE_CONTINUE_LOWER, hand, player);
         });
     }
@@ -1945,7 +1945,7 @@ public class WebSocketTournamentDirector extends BasePhase
     private Map<Integer, HandResultCapture.StartPayoutSnapshot> snapshotStartPayoutBySeat(RemotePokerTable table) {
         Map<Integer, HandResultCapture.StartPayoutSnapshot> start = new HashMap<>();
         for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
-            PokerPlayer player = table.getPlayer(seat);
+            ClientPlayer player = table.getPlayer(seat);
             if (player != null) {
                 start.put(seat, new HandResultCapture.StartPayoutSnapshot(player.getID(), player.getName(),
                         player.isHuman(), player.getChipCount()));
@@ -1962,7 +1962,7 @@ public class WebSocketTournamentDirector extends BasePhase
             int remainder = d.amount() % winnerIds.length;
             for (int i = 0; i < winnerIds.length; i++) {
                 long winnerId = winnerIds[i];
-                PokerPlayer winner = findPlayer(winnerId);
+                ClientPlayer winner = findPlayer(winnerId);
                 int seat = winner != null ? winner.getSeat() : -1;
                 String name = winner != null ? winner.getName() : "player-" + winnerId;
                 int amount = baseShare + (i == 0 ? remainder : 0);
@@ -2003,7 +2003,7 @@ public class WebSocketTournamentDirector extends BasePhase
 
         List<HandResultLog.WinnerResult> winners = new ArrayList<>();
         for (Long winnerId : winnerIds) {
-            PokerPlayer winner = findPlayer(winnerId);
+            ClientPlayer winner = findPlayer(winnerId);
             int seat = winner != null ? winner.getSeat() : -1;
             String name = winner != null ? winner.getName() : "player-" + winnerId;
             int amountWon = amountWonByPlayer.getOrDefault(winnerId, 0);
@@ -2031,14 +2031,14 @@ public class WebSocketTournamentDirector extends BasePhase
         List<HandResultLog.PayoutDelta> payoutDeltas = new ArrayList<>();
         LinkedHashSet<Integer> payoutSeats = new LinkedHashSet<>(capture.startPayoutBySeat_.keySet());
         for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
-            PokerPlayer player = table.getPlayer(seat);
+            ClientPlayer player = table.getPlayer(seat);
             if (player != null) {
                 payoutSeats.add(seat);
             }
         }
 
         for (int seat : payoutSeats) {
-            PokerPlayer player = table.getPlayer(seat);
+            ClientPlayer player = table.getPlayer(seat);
             HandResultCapture.StartPayoutSnapshot start = capture.startPayoutBySeat_.get(seat);
 
             long playerId = player != null ? player.getID() : (start != null ? start.playerId() : -1L);
@@ -2117,7 +2117,7 @@ public class WebSocketTournamentDirector extends BasePhase
     }
 
     @Override
-    public void playerUpdate(PokerPlayer player, String settings) {
+    public void playerUpdate(ClientPlayer player, String settings) {
         if (player == null) {
             return;
         }
@@ -2150,12 +2150,12 @@ public class WebSocketTournamentDirector extends BasePhase
     }
 
     @Override
-    public void doDeal(PokerTable table) {
+    public void doDeal(ClientPokerTable table) {
         // Server controls dealing — no-op on the client side.
     }
 
     @Override
-    public void doRebuy(PokerPlayer player, int nLevel, int nAmount, int nChips, boolean bPending) {
+    public void doRebuy(ClientPlayer player, int nLevel, int nAmount, int nChips, boolean bPending) {
         cancelPendingRebuyDecline();
         markRebuyDecisionSent(true, nAmount, nChips, bPending);
         // Don't update chips locally — let the server's PLAYER_REBUY message be
@@ -2164,7 +2164,7 @@ public class WebSocketTournamentDirector extends BasePhase
     }
 
     @Override
-    public void doAddon(PokerPlayer player, int nAmount, int nChips) {
+    public void doAddon(ClientPlayer player, int nAmount, int nChips) {
         cancelPendingAddonDecline();
         // Don't update chips locally — let the server's PLAYER_ADDON message be
         // the sole update path to avoid double-add when onPlayerAddon() fires.
@@ -2280,7 +2280,7 @@ public class WebSocketTournamentDirector extends BasePhase
     }
 
     @Override
-    public void sendChat(String sMessage, PokerTable table, String sTestData) {
+    public void sendChat(String sMessage, ClientPokerTable table, String sTestData) {
         wsClient_.sendChat(sMessage, table != null);
     }
 
@@ -2348,10 +2348,10 @@ public class WebSocketTournamentDirector extends BasePhase
     private void applyTableData(RemotePokerTable table, TableData td) {
         logger.debug("[applyTableData] table={} seats={} round={} community={} pots={}", td.tableId(),
                 td.seats() != null ? td.seats().size() : 0, td.currentRound(), td.communityCards(), td.pots());
-        PokerPlayer[] players = new PokerPlayer[PokerConstants.SEATS];
-        int dealerSeat = PokerTable.NO_SEAT;
-        int sbSeat = PokerTable.NO_SEAT;
-        int bbSeat = PokerTable.NO_SEAT;
+        ClientPlayer[] players = new ClientPlayer[PokerConstants.SEATS];
+        int dealerSeat = ClientPokerTable.NO_SEAT;
+        int sbSeat = ClientPokerTable.NO_SEAT;
+        int bbSeat = ClientPokerTable.NO_SEAT;
         boolean localPlayerHasCards = false;
 
         if (td.seats() != null)
@@ -2367,7 +2367,7 @@ public class WebSocketTournamentDirector extends BasePhase
                 // initialized by the test harness).
                 GameEngine ge = GameEngine.getGameEngine();
                 String playerKey = (sd.playerId() == localPlayerId_ && ge != null) ? ge.getPlayerId() : null;
-                PokerPlayer p = new PokerPlayer(playerKey, (int) sd.playerId(), sd.playerName(),
+                ClientPlayer p = new ClientPlayer(playerKey, (int) sd.playerId(), sd.playerName(),
                         sd.playerId() == localPlayerId_);
                 p.setChipCount(sd.chipCount());
                 // Apply folded status from snapshot (all-in is derived from chipCount == 0)
@@ -2409,7 +2409,7 @@ public class WebSocketTournamentDirector extends BasePhase
         // If no seat has isDealer=true (e.g., between hands after a player is
         // eliminated), preserve the current button so it doesn't jump to NO_SEAT
         // and then back to the new dealer on the next HAND_STARTED.
-        int buttonToApply = dealerSeat != PokerTable.NO_SEAT ? dealerSeat : table.getButton();
+        int buttonToApply = dealerSeat != ClientPokerTable.NO_SEAT ? dealerSeat : table.getButton();
         table.updateFromState(players, buttonToApply);
 
         // Rebuild the current hand from the table snapshot
@@ -2433,7 +2433,7 @@ public class WebSocketTournamentDirector extends BasePhase
             hand.updateSmallBlindSeat(sbSeat);
             hand.updateBigBlindSeat(bbSeat);
 
-            List<PokerPlayer> handPlayers = seatedPlayersFrom(table);
+            List<ClientPlayer> handPlayers = seatedPlayersFrom(table);
             hand.updatePlayerOrder(handPlayers);
 
             // Apply per-player current-round bets from snapshot
@@ -2467,10 +2467,10 @@ public class WebSocketTournamentDirector extends BasePhase
     }
 
     /** Finds a player by server-assigned ID across all seated tables. */
-    private PokerPlayer findPlayer(long playerId) {
+    private ClientPlayer findPlayer(long playerId) {
         for (RemotePokerTable table : tables_.values()) {
             for (int s = 0; s < PokerConstants.SEATS; s++) {
-                PokerPlayer p = table.getPlayer(s);
+                ClientPlayer p = table.getPlayer(s);
                 if (p != null && p.getID() == (int) playerId)
                     return p;
             }
@@ -2481,7 +2481,7 @@ public class WebSocketTournamentDirector extends BasePhase
     /** Finds the seat index of a player by ID in a specific table. */
     private int findSeat(RemotePokerTable table, long playerId) {
         for (int s = 0; s < PokerConstants.SEATS; s++) {
-            PokerPlayer p = table.getPlayer(s);
+            ClientPlayer p = table.getPlayer(s);
             if (p != null && p.getID() == (int) playerId)
                 return s;
         }
@@ -2500,7 +2500,7 @@ public class WebSocketTournamentDirector extends BasePhase
      * {@code game_.players_}, so a direct ID lookup fails. This method bridges the
      * two ID spaces.
      */
-    private PokerPlayer resolveGamePlayer(long serverPlayerId) {
+    private ClientPlayer resolveGamePlayer(long serverPlayerId) {
         if (serverIdToGamePlayer_.isEmpty()) {
             buildServerIdToGamePlayerMap();
         }
@@ -2516,14 +2516,14 @@ public class WebSocketTournamentDirector extends BasePhase
     private void buildServerIdToGamePlayerMap() {
         // Human: server ID = localPlayerId_ → client ID = PLAYER_ID_HOST (0)
         if (localPlayerId_ != -1L) {
-            PokerPlayer human = game_.getPokerPlayerFromID(PokerConstants.PLAYER_ID_HOST);
+            ClientPlayer human = game_.getPokerPlayerFromID(PokerConstants.PLAYER_ID_HOST);
             if (human != null) {
                 serverIdToGamePlayer_.put(localPlayerId_, human);
             }
         }
         // AI players: server ID -1 → game_.players_[1], -2 → [2], ...
         for (int i = 1; i < game_.getNumPlayers(); i++) {
-            PokerPlayer ai = game_.getPokerPlayerAt(i);
+            ClientPlayer ai = game_.getPokerPlayerAt(i);
             if (ai != null) {
                 serverIdToGamePlayer_.put(-(long) i, ai);
             }
@@ -2533,18 +2533,18 @@ public class WebSocketTournamentDirector extends BasePhase
     /** Returns the index of a player (by ID) in the hand's player-order list. */
     private int indexOfPlayer(RemoteHoldemHand hand, long playerId) {
         for (int i = 0; i < hand.getNumPlayers(); i++) {
-            PokerPlayer p = hand.getPlayerAt(i);
+            ClientPlayer p = hand.getPlayerAt(i);
             if (p != null && p.getID() == (int) playerId)
                 return i;
         }
-        return HoldemHand.NO_CURRENT_PLAYER;
+        return RemoteHoldemHand.NO_CURRENT_PLAYER;
     }
 
     /** Returns all non-null seated players in seat order. */
-    private List<PokerPlayer> seatedPlayersFrom(RemotePokerTable table) {
-        List<PokerPlayer> list = new ArrayList<>();
+    private List<ClientPlayer> seatedPlayersFrom(RemotePokerTable table) {
+        List<ClientPlayer> list = new ArrayList<>();
         for (int s = 0; s < PokerConstants.SEATS; s++) {
-            PokerPlayer p = table.getPlayer(s);
+            ClientPlayer p = table.getPlayer(s);
             if (p != null)
                 list.add(p);
         }

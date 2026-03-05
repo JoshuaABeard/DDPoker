@@ -142,7 +142,7 @@ public class Rank extends DashboardItem {
             return; // check since we override superclass
 
         ClientPokerTable table = game_.getCurrentTable();
-        PokerPlayer human = game_.getHumanPlayer();
+        ClientPlayer human = game_.getHumanPlayer();
 
         int nRank = 0;
         int nWon = 0;

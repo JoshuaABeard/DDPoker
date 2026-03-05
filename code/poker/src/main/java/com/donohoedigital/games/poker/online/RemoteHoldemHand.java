@@ -35,7 +35,6 @@
 package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.poker.HandAction;
-import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.HandSorted;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
@@ -72,7 +71,7 @@ public class RemoteHoldemHand implements ClientHoldemHand {
     private BettingRound remoteRound_ = BettingRound.PRE_FLOP;
     private Hand remoteCommunity_ = new Hand();
     private HandSorted remoteCommunitySorted_ = new HandSorted(5);
-    private List<PokerPlayer> remotePlayers_ = new ArrayList<>();
+    private List<ClientPlayer> remotePlayers_ = new ArrayList<>();
     private int remoteCurrentPlayerIndex_ = NO_CURRENT_PLAYER;
     private int remotePotTotal_;
     private ActionOptionsData remoteOptions_;
@@ -165,7 +164,7 @@ public class RemoteHoldemHand implements ClientHoldemHand {
     @Override
     public int getNumWithCards() {
         int count = 0;
-        for (PokerPlayer p : remotePlayers_) {
+        for (ClientPlayer p : remotePlayers_) {
             if (!p.isFolded())
                 count++;
         }
@@ -173,7 +172,7 @@ public class RemoteHoldemHand implements ClientHoldemHand {
     }
 
     @Override
-    public PokerPlayer getPlayerAt(int index) {
+    public ClientPlayer getPlayerAt(int index) {
         if (index < 0 || index >= remotePlayers_.size())
             return null;
         return remotePlayers_.get(index);
@@ -185,7 +184,7 @@ public class RemoteHoldemHand implements ClientHoldemHand {
     }
 
     @Override
-    public PokerPlayer getCurrentPlayer() {
+    public ClientPlayer getCurrentPlayer() {
         if (remoteCurrentPlayerIndex_ < 0 || remoteCurrentPlayerIndex_ >= remotePlayers_.size()) {
             return null;
         }
@@ -207,7 +206,7 @@ public class RemoteHoldemHand implements ClientHoldemHand {
 
     /** Returns the server-provided bet for this player in the current round. */
     @Override
-    public int getBet(PokerPlayer player, int nRound) {
+    public int getBet(ClientPlayer player, int nRound) {
         return remoteBets_.getOrDefault(player.getID(), 0);
     }
 
@@ -216,7 +215,7 @@ public class RemoteHoldemHand implements ClientHoldemHand {
      * remote).
      */
     @Override
-    public int getBet(PokerPlayer player) {
+    public int getBet(ClientPlayer player) {
         return remoteBets_.getOrDefault(player.getID(), 0);
     }
 
@@ -239,7 +238,7 @@ public class RemoteHoldemHand implements ClientHoldemHand {
      * using the server-provided call amount from action options when available.
      */
     @Override
-    public int getCall(PokerPlayer player) {
+    public int getCall(ClientPlayer player) {
         if (remoteOptions_ != null) {
             return remoteOptions_.callAmount();
         }
@@ -266,7 +265,7 @@ public class RemoteHoldemHand implements ClientHoldemHand {
      * stored.
      */
     @Override
-    public int getMaxBet(PokerPlayer player) {
+    public int getMaxBet(ClientPlayer player) {
         return remoteOptions_ != null ? remoteOptions_.maxBet() : 0;
     }
 
@@ -275,7 +274,7 @@ public class RemoteHoldemHand implements ClientHoldemHand {
      * stored.
      */
     @Override
-    public int getMaxRaise(PokerPlayer player) {
+    public int getMaxRaise(ClientPlayer player) {
         return remoteOptions_ != null ? remoteOptions_.maxRaise() : 0;
     }
 
@@ -313,7 +312,7 @@ public class RemoteHoldemHand implements ClientHoldemHand {
      * server-provided call amount when action options are available.
      */
     @Override
-    public float getPotOdds(PokerPlayer player) {
+    public float getPotOdds(ClientPlayer player) {
         int nCall = getCall(player);
         int nPot = getTotalPotChipCount();
         if (nCall <= 0 || (nCall + nPot) == 0) {
@@ -350,13 +349,13 @@ public class RemoteHoldemHand implements ClientHoldemHand {
 
     /** Delegates to {@link PokerPlayer#isFolded()}. */
     @Override
-    public boolean isFolded(PokerPlayer player) {
+    public boolean isFolded(ClientPlayer player) {
         return player.isFolded();
     }
 
     /** Returns {@code false} — the remote hand has no action history. */
     @Override
-    public boolean hasPlayerActed(PokerPlayer player) {
+    public boolean hasPlayerActed(ClientPlayer player) {
         return false;
     }
 
@@ -365,7 +364,7 @@ public class RemoteHoldemHand implements ClientHoldemHand {
      * history.
      */
     @Override
-    public int getLastAction(PokerPlayer player) {
+    public int getLastAction(ClientPlayer player) {
         return HandAction.ACTION_NONE;
     }
 
@@ -383,7 +382,7 @@ public class RemoteHoldemHand implements ClientHoldemHand {
 
     /** Returns 0 — the remote hand has no action history to sum bets from. */
     @Override
-    public int getTotalBet(PokerPlayer player) {
+    public int getTotalBet(ClientPlayer player) {
         return 0;
     }
 
@@ -391,7 +390,7 @@ public class RemoteHoldemHand implements ClientHoldemHand {
      * Returns 0 — the remote hand has no action history to count prior raises from.
      */
     @Override
-    public int getNumPriorRaises(PokerPlayer player) {
+    public int getNumPriorRaises(ClientPlayer player) {
         return 0;
     }
 
@@ -404,7 +403,7 @@ public class RemoteHoldemHand implements ClientHoldemHand {
      * summed correctly.
      */
     @Override
-    public void wins(PokerPlayer player, int nChips, int nPot) {
+    public void wins(ClientPlayer player, int nChips, int nPot) {
         remoteWins_.merge(player.getID(), nChips, Integer::sum);
     }
 
@@ -412,7 +411,7 @@ public class RemoteHoldemHand implements ClientHoldemHand {
      * Returns the total chips won by this player in the current hand, or {@code 0}.
      */
     @Override
-    public int getWin(PokerPlayer player) {
+    public int getWin(ClientPlayer player) {
         return remoteWins_.getOrDefault(player.getID(), 0);
     }
 
@@ -469,7 +468,7 @@ public class RemoteHoldemHand implements ClientHoldemHand {
      * Replaces the ordered player list for this hand. The index of the current
      * player is preserved if it is still valid.
      */
-    public void updatePlayerOrder(List<PokerPlayer> players) {
+    public void updatePlayerOrder(List<ClientPlayer> players) {
         this.remotePlayers_ = new ArrayList<>(players);
         // Clamp current player index to new size
         if (remoteCurrentPlayerIndex_ >= remotePlayers_.size()) {

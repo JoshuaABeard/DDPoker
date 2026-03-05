@@ -38,6 +38,7 @@
 
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.comms.*;
 import com.donohoedigital.config.*;
@@ -118,7 +119,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     private int nSmallBlindSeat_ = -1;
     private int nBigBlindSeat_ = -1;
 
-    private final List<PokerPlayer> playerOrder_ = new ArrayList<>();
+    private final List<ClientPlayer> playerOrder_ = new ArrayList<>();
     private Hand muck_;
     private Hand community_;
     private HandSorted communitySorted_;
@@ -130,8 +131,8 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     private int potStatus_;
     private long startDate_ = 0;
     private long endDate_ = 0;
-    private final List<PokerPlayer> winners_ = new ArrayList<>(3);
-    private final List<PokerPlayer> losers_ = new ArrayList<>(5);
+    private final List<ClientPlayer> winners_ = new ArrayList<>(3);
+    private final List<ClientPlayer> losers_ = new ArrayList<>(5);
 
     /**
      * Empty for load
@@ -168,7 +169,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
             // game could be null from calctool
             PokerGame game = table.getGame();
             if (game != null && !game.isClockMode()) {
-                PokerPlayer player = game.getHumanPlayer();
+                ClientPlayer player = game.getHumanPlayer();
                 int nNum = (player.isObserver()) ? table.getHandNum() : player.getHandsPlayed();
                 seed = 9183349 + (nNum * 129L);
             }
@@ -278,7 +279,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
 
         startDate_ = System.currentTimeMillis();
 
-        dealCards(2); // do before antes/blinds so init is correct in PokerPlayer.newHand()
+        dealCards(2); // do before antes/blinds so init is correct in ClientPlayer.newHand()
         doAntes();
         doBlinds();
 
@@ -328,7 +329,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         nBigBlindSeat_ = big;
     }
 
-    private static final List<PokerPlayer> sORDER = new ArrayList<>(PokerConstants.SEATS);
+    private static final List<ClientPlayer> sORDER = new ArrayList<>(PokerConstants.SEATS);
 
     /**
      * This method is used to randomly distribute money from between players as if a
@@ -342,7 +343,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         // if (table.getNumber() != 1 &&
         // table.getNumber() != 10
         // ) return;
-        // PokerPlayer x;
+        // ClientPlayer x;
         // int nCnt = 0;
         // for (int i = 0; nCnt < 1 && i < 10; i++)
         // {
@@ -378,8 +379,8 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
 
         // init bet and ante
         int nNumPlayers = sORDER.size();
-        PokerPlayer p;
-        for (PokerPlayer pokerPlayer : sORDER) {
+        ClientPlayer p;
+        for (ClientPlayer pokerPlayer : sORDER) {
             p = pokerPlayer;
             p.newSimulatedHand();
             if (nAnte > 0)
@@ -523,7 +524,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      */
     @SuppressWarnings("SameParameterValue")
     private void dealCards(int nNumCards) {
-        PokerPlayer player;
+        ClientPlayer player;
         Hand hand;
 
         // get num seats at table with players
@@ -571,9 +572,9 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Set the order of players in this hand based on the round
      */
-    public static void setPlayerOrder(PokerTable table, List<PokerPlayer> playerOrder, int nRound,
+    public static void setPlayerOrder(PokerTable table, List<ClientPlayer> playerOrder, int nRound,
             boolean bRequireCards) {
-        PokerPlayer player;
+        ClientPlayer player;
         int nSeat;
 
         // pre-flop, betting starts after blinds
@@ -622,7 +623,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * index, null is returned. Any other non-valid indexes will throw an index out
      * of bounds exception.
      */
-    public PokerPlayer getPlayerAt(int index) {
+    public ClientPlayer getPlayerAt(int index) {
         if (index == NO_CURRENT_PLAYER)
             return null;
         return playerOrder_.get(index);
@@ -632,8 +633,8 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * Get players left in hand (not folded) and add them to the list. Skip given
      * player.
      */
-    public void getPlayersLeft(List<PokerPlayer> left, PokerPlayer player) {
-        PokerPlayer p;
+    public void getPlayersLeft(List<ClientPlayer> left, ClientPlayer player) {
+        ClientPlayer p;
         int nNum = getNumPlayers();
         for (int i = 0; i < nNum; i++) {
             p = getPlayerAt(i);
@@ -647,9 +648,9 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Get num players that act before given player (players with cards)
      */
-    public int getNumBefore(PokerPlayer player) {
+    public int getNumBefore(ClientPlayer player) {
         int nCnt = 0;
-        PokerPlayer p;
+        ClientPlayer p;
         int nNum = getNumPlayers();
         for (int i = 0; i < nNum; i++) {
             p = getPlayerAt(i);
@@ -666,10 +667,10 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Get num players that act after given player (players with cards)
      */
-    public int getNumAfter(PokerPlayer player) {
+    public int getNumAfter(ClientPlayer player) {
         int nCnt = 0;
         boolean bStartCounting = false;
-        PokerPlayer p;
+        ClientPlayer p;
         int nNum = getNumPlayers();
         for (int i = 0; i < nNum; i++) {
             p = getPlayerAt(i);
@@ -784,7 +785,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Get pot odds for given player (0 to 100)
      */
-    public float getPotOdds(PokerPlayer player) {
+    public float getPotOdds(ClientPlayer player) {
         int nCall = getCall(player);
         int nPotChips = getTotalPotChipCount();
 
@@ -795,7 +796,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
             int nChips = getTotalBet(player);
             int nPlayerChips = nChips + nCall;
             nPotChips = nChips;
-            PokerPlayer p;
+            ClientPlayer p;
 
             // for each player, get their total money in the pot. if they have
             // put more in than we can call, adjust to our max
@@ -1100,7 +1101,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * do real work, start at given index
      */
     private void playerActed(int nStart) {
-        PokerPlayer player;
+        ClientPlayer player;
 
         if (isDone()) {
             setCurrentPlayerIndex(NO_CURRENT_PLAYER);
@@ -1140,8 +1141,8 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         int nOld = nCurrentPlayerIndex_;
         nCurrentPlayerIndex_ = n;
 
-        PokerPlayer oldPlayer = nOld == NO_CURRENT_PLAYER ? null : getPlayerAt(nOld);
-        PokerPlayer newPlayer = n == NO_CURRENT_PLAYER ? null : getPlayerAt(n);
+        ClientPlayer oldPlayer = nOld == NO_CURRENT_PLAYER ? null : getPlayerAt(nOld);
+        ClientPlayer newPlayer = n == NO_CURRENT_PLAYER ? null : getPlayerAt(n);
 
         if (oldPlayer != null)
             oldPlayer.setCurrentGamePlayer(false);
@@ -1166,7 +1167,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * Returns current player (who we're waiting on) as defined by
      * getCurrentPlayerIndex(), or null if no current player
      */
-    public PokerPlayer getCurrentPlayer() {
+    public ClientPlayer getCurrentPlayer() {
         return getPlayerAt(nCurrentPlayerIndex_);
     }
 
@@ -1191,8 +1192,8 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * interface.
      */
     // Future: remove sync if decide to wait for observers in TD wait list
-    public synchronized PokerPlayer getCurrentPlayerWithInit() {
-        PokerPlayer current = getCurrentPlayer();
+    public synchronized ClientPlayer getCurrentPlayerWithInit() {
+        ClientPlayer current = getCurrentPlayer();
 
         // if current player is not defined, then this is the
         // first betting round after the deal. We init the
@@ -1227,7 +1228,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Get last action by player
      */
-    public int getLastAction(PokerPlayer player) {
+    public int getLastAction(ClientPlayer player) {
         HandAction hist = getLastHandAction(player);
 
         if (hist != null) {
@@ -1240,7 +1241,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Get last action by player in a given round
      */
-    public HandAction getLastAction(PokerPlayer player, int round) {
+    public HandAction getLastAction(ClientPlayer player, int round) {
         HandAction hist;
 
         synchronized (history_) {
@@ -1259,7 +1260,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Get last action by player
      */
-    public HandAction getLastHandAction(PokerPlayer player) {
+    public HandAction getLastHandAction(ClientPlayer player) {
         HandAction hist;
         synchronized (history_) {
             for (int i = history_.size() - 1; i >= 0; i--) {
@@ -1277,7 +1278,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * Of the actions by the player on the last round, return the one most
      * meaningful for ai: raise - bet - call - check
      */
-    public int getLastActionAI(PokerPlayer player, int nRound) {
+    public int getLastActionAI(ClientPlayer player, int nRound) {
         if (player == null)
             return HandAction.ACTION_NONE;
 
@@ -1303,7 +1304,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Get last action by player
      */
-    public int getLastActionThisRound(PokerPlayer player) {
+    public int getLastActionThisRound(ClientPlayer player) {
         HandAction hist;
         synchronized (history_) {
             for (int i = history_.size() - 1; i >= 0; i--) {
@@ -1339,7 +1340,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Get num raises prior to this player
      */
-    public int getNumPriorRaises(PokerPlayer player) {
+    public int getNumPriorRaises(ClientPlayer player) {
         int nCount = 0;
         boolean bStart = false;
         HandAction hist;
@@ -1392,7 +1393,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * get round folded
      */
-    public int getFoldRound(PokerPlayer player) {
+    public int getFoldRound(ClientPlayer player) {
         HandAction hist;
         synchronized (history_) {
             for (HandAction handAction : history_) {
@@ -1409,98 +1410,98 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * is given player folded?
      */
-    public boolean isFolded(PokerPlayer player) {
+    public boolean isFolded(ClientPlayer player) {
         return player.isFolded();
     }
 
     /**
      * Player antes
      */
-    public void ante(PokerPlayer player, int nChips) {
+    public void ante(ClientPlayer player, int nChips) {
         addToPot(player, nChips, HandAction.ACTION_ANTE, null);
     }
 
     /**
      * Player posts small blind
      */
-    public void smallblind(PokerPlayer player, int nChips) {
+    public void smallblind(ClientPlayer player, int nChips) {
         addToPot(player, nChips, HandAction.ACTION_BLIND_SM, null);
     }
 
     /**
      * Player posts big blind
      */
-    public void bigblind(PokerPlayer player, int nChips) {
+    public void bigblind(ClientPlayer player, int nChips) {
         addToPot(player, nChips, HandAction.ACTION_BLIND_BIG, null);
     }
 
     /**
      * Player folds
      */
-    public void fold(PokerPlayer player, String sDebug, int nFoldType) {
+    public void fold(ClientPlayer player, String sDebug, int nFoldType) {
         addHistory(new HandAction(player, nRound_, HandAction.ACTION_FOLD, 0, nFoldType, sDebug));
     }
 
     /**
      * Player checks
      */
-    public void check(PokerPlayer player, String sDebug) {
+    public void check(ClientPlayer player, String sDebug) {
         addHistory(new HandAction(player, nRound_, HandAction.ACTION_CHECK, 0, sDebug));
     }
 
     /**
      * Player checks with intention of raising
      */
-    public void checkraise(PokerPlayer player, String sDebug) {
+    public void checkraise(ClientPlayer player, String sDebug) {
         addHistory(new HandAction(player, nRound_, HandAction.ACTION_CHECK_RAISE, 0, sDebug));
     }
 
     /**
      * Player calls
      */
-    public void call(PokerPlayer player, int nChips, String sDebug) {
+    public void call(ClientPlayer player, int nChips, String sDebug) {
         addToPot(player, nChips, HandAction.ACTION_CALL, sDebug);
     }
 
     /**
      * Player bets
      */
-    public void bet(PokerPlayer player, int nChips, String sDebug) {
+    public void bet(ClientPlayer player, int nChips, String sDebug) {
         addToPot(player, nChips, HandAction.ACTION_BET, sDebug);
     }
 
     /**
      * Player calls and raises
      */
-    public void raise(PokerPlayer player, int nCall, int nRaise, String sDebug) {
+    public void raise(ClientPlayer player, int nCall, int nRaise, String sDebug) {
         addToPot(player, nCall + nRaise, nCall, HandAction.ACTION_RAISE, sDebug);
     }
 
     /**
      * Player wins pot
      */
-    public void wins(PokerPlayer player, int nChips, int nPot) {
+    public void wins(ClientPlayer player, int nChips, int nPot) {
         addHistory(new HandAction(player, nRound_, HandAction.ACTION_WIN, nChips, nPot, null));
     }
 
     /**
      * Player gets back overbet
      */
-    public void overbet(PokerPlayer player, int nChips, int nPot) {
+    public void overbet(ClientPlayer player, int nChips, int nPot) {
         addHistory(new HandAction(player, nRound_, HandAction.ACTION_OVERBET, nChips, nPot, null));
     }
 
     /**
      * Player loses pot
      */
-    public void lose(PokerPlayer player, int nPot) {
+    public void lose(ClientPlayer player, int nPot) {
         addHistory(new HandAction(player, nRound_, HandAction.ACTION_LOSE, 0, nPot, null));
     }
 
     /**
      * any time money is placed in the pot
      */
-    private void addToPot(PokerPlayer player, int nChips, int nAction, String sDebug) {
+    private void addToPot(ClientPlayer player, int nChips, int nAction, String sDebug) {
         addToPot(player, nChips, 0, nAction, sDebug);
     }
 
@@ -1508,7 +1509,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * add money to pot, specify nCall for RAISE action (indicates portion of nChips
      * that was the call of the previous bet)
      */
-    private void addToPot(PokerPlayer player, int nChips, int nCall, int nAction, String sDebug) {
+    private void addToPot(ClientPlayer player, int nChips, int nCall, int nAction, String sDebug) {
         if (nChips < 0) {
             debugPrint();
             ApplicationError.fail("Adding negative chips " + nChips + " debug: " + sDebug + " action: " + nAction
@@ -1540,7 +1541,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     private void calcPots() {
         // create PotInfo for each player
         List<PotInfo> info = new ArrayList<>();
-        PokerPlayer player;
+        ClientPlayer player;
         int nPlayerBet;
         int nNum = getNumPlayers();
         for (int i = 0; i < nNum; i++) {
@@ -1628,11 +1629,11 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      */
     private class PotInfo implements Comparable<PotInfo> {
         int nBet;
-        PokerPlayer player;
+        ClientPlayer player;
         int nCurrent;
         boolean bNeedSide;
 
-        public PotInfo(PokerPlayer player, int nBet) {
+        public PotInfo(ClientPlayer player, int nBet) {
             this.player = player;
             this.nBet = nBet;
             this.nCurrent = getBet();
@@ -1687,14 +1688,14 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * return current bet in front of player
      */
-    public int getBet(PokerPlayer player) {
+    public int getBet(ClientPlayer player) {
         return getBet(player, nRound_);
     }
 
     /**
      * Return bet by player for given round
      */
-    public int getBet(PokerPlayer player, int nRound) {
+    public int getBet(ClientPlayer player, int nRound) {
         // add up all bets in given round
         int nBet = 0;
         HandAction hist;
@@ -1738,7 +1739,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Return sum of all bets by player (including antes) in all rounds
      */
-    public int getTotalBet(PokerPlayer player) {
+    public int getTotalBet(ClientPlayer player) {
         // add up all bets in given round
         int nBet = 0;
         HandAction hist;
@@ -1761,7 +1762,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * return player who started betting in a round. If no bets in round yet, null
      * is returned.
      */
-    public PokerPlayer getBettor() {
+    public ClientPlayer getBettor() {
         HandAction hist;
         synchronized (history_) {
             for (HandAction handAction : history_) {
@@ -1778,7 +1779,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * return player who is big blind.
      */
-    public PokerPlayer getBigBlindPlayer() {
+    public ClientPlayer getBigBlindPlayer() {
         HandAction hist;
         synchronized (history_) {
             for (HandAction handAction : history_) {
@@ -1796,7 +1797,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * return player who last raised in a round. If no raises in round yet, null is
      * returned.
      */
-    public PokerPlayer getRaiser() {
+    public ClientPlayer getRaiser() {
         HandAction hist;
         synchronized (history_) {
             for (int i = history_.size() - 1; i >= 0; i--) {
@@ -1815,7 +1816,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * in a round or the last player to raise. If no betting happened in a round,
      * the previous rounds are searched.
      */
-    public PokerPlayer getFirstToShow() {
+    public ClientPlayer getFirstToShow() {
         HandAction saved = null;
         HandAction hist;
         synchronized (history_) {
@@ -1875,7 +1876,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * return amount ante'd by player this round
      */
-    public int getAnte(PokerPlayer player) {
+    public int getAnte(ClientPlayer player) {
         // add up all bets in this round
         int nBet = 0;
         HandAction hist;
@@ -1895,7 +1896,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * return antes/small blinds bet by this player in all rounds
      */
-    public int getAnteSmallBlind(PokerPlayer player) {
+    public int getAnteSmallBlind(ClientPlayer player) {
         // add up all bets in this round
         int nBet = 0;
         HandAction hist;
@@ -1934,8 +1935,8 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Return the maximum total bet the other active players at the table could make
      */
-    private int getMaxChipsOtherPlayers(PokerPlayer current, boolean bAddCurrentBet, boolean bSubtractCurrentCall) {
-        PokerPlayer other;
+    private int getMaxChipsOtherPlayers(ClientPlayer current, boolean bAddCurrentBet, boolean bSubtractCurrentCall) {
+        ClientPlayer other;
         int nOtherLeft;
         int nMaxOther = 0;
         int nNum = getNumPlayers();
@@ -1958,7 +1959,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Return amount needed to call
      */
-    public int getCall(PokerPlayer player) {
+    public int getCall(ClientPlayer player) {
         int nPlayerBet = getBet(player);
 
         // call is current bet less any bets already made
@@ -1996,7 +1997,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Get max bet a player can make in a round
      */
-    public int getMaxBet(PokerPlayer player) {
+    public int getMaxBet(ClientPlayer player) {
         // init
         int nLeft = player.getChipCount();
 
@@ -2024,7 +2025,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Return max raise. For limit games, returns 0 if max raises have been reached
      */
-    public int getMaxRaise(PokerPlayer player) {
+    public int getMaxRaise(ClientPlayer player) {
         if (isLimit() && getTable().getGame().getProfile().getMaxRaises(getNumWithCards(),
                 player.isComputer()) <= getNumRaises()) {
             return 0;
@@ -2089,7 +2090,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
 
         // count players that have acted
         // all players must have acted
-        PokerPlayer player;
+        ClientPlayer player;
         int nPlayersToAct = 0;
         int nPlayersActed = 0;
         int nAllIn = 0;
@@ -2156,7 +2157,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * table or gone all-in?
      */
     public boolean isPotGood() {
-        PokerPlayer player;
+        ClientPlayer player;
         int nBet = getBet();
         int nNum = getNumPlayers();
         for (int i = 0; i < nNum; i++) {
@@ -2175,7 +2176,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * Get number of players that still have cards
      */
     public int getNumWithCards() {
-        PokerPlayer player;
+        ClientPlayer player;
         int nNum = 0;
         int nNumP = getNumPlayers();
         for (int i = 0; i < nNumP; i++) {
@@ -2191,7 +2192,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * hand)
      */
     public int getNumWithChips() {
-        PokerPlayer player;
+        ClientPlayer player;
         int nNum = 0;
         int nNumP = getNumPlayers();
         for (int i = 0; i < nNumP; i++) {
@@ -2235,7 +2236,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * Has player acted this round (any check,bet,call,raise,fold except for blinds
      * and antes)
      */
-    public boolean hasPlayerActed(PokerPlayer player) {
+    public boolean hasPlayerActed(ClientPlayer player) {
         HandAction hist;
         synchronized (history_) {
             for (HandAction handAction : history_) {
@@ -2255,7 +2256,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * return winnings by player
      */
-    public int getWin(PokerPlayer player) {
+    public int getWin(ClientPlayer player) {
         // if hand was folded return 0
         if (isFolded(player))
             return 0;
@@ -2277,7 +2278,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * return total overbet returned to player
      */
-    public int getOverbet(PokerPlayer player) {
+    public int getOverbet(ClientPlayer player) {
         // if hand was folded return 0 (shortcut)
         if (isFolded(player))
             return 0;
@@ -2299,7 +2300,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * return pot result for given player
      */
-    public HandAction getPotResult(PokerPlayer player, int nPot) {
+    public HandAction getPotResult(ClientPlayer player, int nPot) {
         // if hand was folded return 0 (shortcut)
         if (isFolded(player))
             return null;
@@ -2323,7 +2324,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * Add something to history
      */
     private void addHistory(HandAction action) {
-        PokerPlayer player = action.getPlayer();
+        ClientPlayer player = action.getPlayer();
         int nAction = action.getAction();
 
         // ai debugging
@@ -2393,7 +2394,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * debug print history
      */
     private void debugPrint(HandAction action) {
-        PokerPlayer player = action.getPlayer();
+        ClientPlayer player = action.getPlayer();
         logger.debug("{}{} {}", player.isHuman() ? "HU: " : "AI: ", action.toString(false),
                 (action.getAction() == HandAction.ACTION_FOLD) ? "" : getCommunity().toString());
     }
@@ -2422,20 +2423,20 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         if (bDoWinnersLosers) {
             winners_.clear();
             losers_.clear();
-            List<PokerPlayer> localWinners = new ArrayList<>();
-            List<PokerPlayer> localLosers = new ArrayList<>();
+            List<ClientPlayer> localWinners = new ArrayList<>();
+            List<ClientPlayer> localLosers = new ArrayList<>();
 
             int nNumPots = getNumPots();
             for (int i = 0; i < nNumPots; i++) {
                 localWinners.clear();
                 localLosers.clear();
                 preResolvePot(i, localWinners, localLosers);
-                for (PokerPlayer localWinner : localWinners) {
+                for (ClientPlayer localWinner : localWinners) {
                     if (!winners_.contains(localWinner)) {
                         winners_.add(localWinner);
                     }
                 }
-                for (PokerPlayer localLoser : localLosers) {
+                for (ClientPlayer localLoser : localLosers) {
                     if (!losers_.contains(localLoser)) {
                         losers_.add(localLoser);
                     }
@@ -2467,7 +2468,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      */
     @Override
     public int getAmountToCall(GamePlayerInfo player) {
-        return getCall((PokerPlayer) player);
+        return getCall((ClientPlayer) player);
     }
 
     /**
@@ -2476,7 +2477,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      */
     @Override
     public void applyPlayerAction(GamePlayerInfo player, PlayerAction action) {
-        PokerPlayer pokerPlayer = (PokerPlayer) player;
+        ClientPlayer pokerPlayer = (ClientPlayer) player;
         int round = getRound().toLegacy();
 
         // Convert PlayerAction to HandAction
@@ -2498,7 +2499,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         };
 
         // For fold actions, mark player as folded BEFORE adding to history
-        // (matches existing PokerPlayer.fold() pattern - listeners may query isFolded
+        // (matches existing ClientPlayer.fold() pattern - listeners may query isFolded
         // during event)
         if (action.actionType() == ActionType.FOLD) {
             pokerPlayer.setFolded(true);
@@ -2521,7 +2522,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         }
 
         // end-hand housekeeping
-        PokerPlayer player;
+        ClientPlayer player;
         int nNum = getNumPlayers();
         int nLeft = getNumWithCards();
         for (int i = 0; i < nNum; i++) {
@@ -2565,7 +2566,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * record hand information in profile
      */
     @SuppressWarnings("CommentedOutCode")
-    private void recordHandInfo(PokerPlayer player, int nLeft) {
+    private void recordHandInfo(ClientPlayer player, int nLeft) {
         PlayerProfile prof = player.getProfileInitCheck();
         boolean[] bRounds = new boolean[ROUND_SHOWDOWN + 1];
         Arrays.fill(bRounds, false);
@@ -2636,9 +2637,9 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * pre-resolve pot, figuring out winners and losers who don't have to show
      */
-    private void preResolvePot(int nPotNum, List<PokerPlayer> winners, List<PokerPlayer> losers) {
+    private void preResolvePot(int nPotNum, List<ClientPlayer> winners, List<ClientPlayer> losers) {
         Pot pot = getPot(nPotNum);
-        PokerPlayer player;
+        ClientPlayer player;
 
         // get info for each player in pot.
         // This iterates in showdown order.
@@ -2673,8 +2674,8 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      */
     private void resolvePot(int nPotNum, boolean bUncontested) {
         Pot pot = getPot(nPotNum);
-        PokerPlayer player;
-        List<PokerPlayer> winners = new ArrayList<>();
+        ClientPlayer player;
+        List<ClientPlayer> winners = new ArrayList<>();
 
         // get info for each player in pot.
         // This iterates in showdown order.
@@ -2717,7 +2718,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         // winner found is closest to button for odd chips;
         // we need to fetch order as of flop since it changes
         // in showdown to order of card display)
-        List<PokerPlayer> order = new ArrayList<>();
+        List<ClientPlayer> order = new ArrayList<>();
         HoldemHand.setPlayerOrder(table_, order, BettingRound.FLOP.toLegacy(), true);
         for (int i = 0; i < nNum; i++) {
             player = order.get(i);
@@ -2748,7 +2749,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         // so odd chips allocated properly to players nearest
         // the dealer button
         int nAmount;
-        for (PokerPlayer winner : winners) {
+        for (ClientPlayer winner : winners) {
             nAmount = nShare;
 
             // closest to button is at top of list and they get extra chips
@@ -2808,7 +2809,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
                         int remainder = bountyAmount % nWinners;
 
                         for (int j = 0; j < nWinners; j++) {
-                            PokerPlayer winner = winners.get(j);
+                            ClientPlayer winner = winners.get(j);
                             int amount = share;
                             // First winner gets the remainder (if any)
                             if (j == 0) {
@@ -2885,7 +2886,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     }
 
     public String getHandListHTML() {
-        PokerPlayer player = getTable().getGame().getHumanPlayer();
+        ClientPlayer player = getTable().getGame().getHumanPlayer();
         Hand hand = (player != null && !player.isObserver()) ? player.getHand() : null;
         return ((hand != null) ? hand.toHTML() : Card.BLANK.toHTML() + Card.BLANK.toHTML()) + "&nbsp;&nbsp;"
                 + getCommunity().toHTML();
@@ -2935,7 +2936,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * <p/>
      * Note this means false will be returned if a player checked the big blind.
      */
-    public boolean paidToPlay(PokerPlayer player) {
+    public boolean paidToPlay(ClientPlayer player) {
         if (player == null)
             return false;
 
@@ -2994,7 +2995,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Returns the player's first voluntary action in a given round.
      */
-    public HandAction getFirstVoluntaryAction(PokerPlayer player, int round) {
+    public HandAction getFirstVoluntaryAction(ClientPlayer player, int round) {
         if (player == null)
             return null;
 
@@ -3028,14 +3029,14 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * Returns the player who put in the first bet or raise in a particular round,
      * or null. If withChips is true, all-in players are skipped.
      */
-    public PokerPlayer getFirstBettor(int round, boolean withChips) {
+    public ClientPlayer getFirstBettor(int round, boolean withChips) {
         HandAction hist;
 
         synchronized (history_) {
             for (HandAction handAction : history_) {
                 hist = handAction;
 
-                PokerPlayer player = hist.getPlayer();
+                ClientPlayer player = hist.getPlayer();
 
                 if ((hist.getRound() == round) && (!withChips || player.getChipCount() > 0)) {
                     switch (hist.getAction()) {
@@ -3056,7 +3057,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * Returns the player who put in the last bet or raise in a particular round, or
      * null. If withChips is true, all-in players are skipped.
      */
-    public PokerPlayer getLastBettor(int round, boolean withChips) {
+    public ClientPlayer getLastBettor(int round, boolean withChips) {
         HandAction hist;
 
         synchronized (history_) {
@@ -3065,7 +3066,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
             for (int i = size - 1; i >= 0; --i) {
                 hist = history_.get(i);
 
-                PokerPlayer player = hist.getPlayer();
+                ClientPlayer player = hist.getPlayer();
 
                 if ((hist.getRound() == round) && (!withChips || player.getChipCount() > 0)) {
                     switch (hist.getAction()) {
@@ -3109,7 +3110,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Returns true if the player could have limped on first action.
      */
-    public boolean couldLimp(PokerPlayer player) {
+    public boolean couldLimp(ClientPlayer player) {
         if (player == null)
             return false;
 
@@ -3152,7 +3153,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * opportunity to open the pot in the given round. Returns null if the player
      * didn't have the opportunity to open the pot in the given round.
      */
-    public Boolean betPot(PokerPlayer player, int round) {
+    public Boolean betPot(ClientPlayer player, int round) {
         if (player == null)
             return null;
 
@@ -3184,7 +3185,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * opportunity to raise the pot in the given round. Returns null if the player
      * didn't have the opportunity to raise the pot in the given round.
      */
-    public Boolean raisedPot(PokerPlayer player, int round) {
+    public Boolean raisedPot(ClientPlayer player, int round) {
         if (player == null)
             return null;
 
@@ -3213,7 +3214,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Returns true if the player was the first raiser pre-flop.
      */
-    public boolean wasFirstRaiserPreFlop(PokerPlayer player) {
+    public boolean wasFirstRaiserPreFlop(ClientPlayer player) {
         if (player == null)
             return false;
 
@@ -3238,7 +3239,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Returns true if the player was the last raiser pre-flop.
      */
-    public boolean wasLastRaiserPreFlop(PokerPlayer player) {
+    public boolean wasLastRaiserPreFlop(ClientPlayer player) {
         if (player == null)
             return false;
 
@@ -3264,7 +3265,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Returns true if the player was the only raiser pre-flop.
      */
-    public boolean wasOnlyRaiserPreFlop(PokerPlayer player) {
+    public boolean wasOnlyRaiserPreFlop(ClientPlayer player) {
         if (player == null)
             return false;
 
@@ -3294,7 +3295,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
     /**
      * Returns true if the player limped on first action.
      */
-    public boolean limped(PokerPlayer player) {
+    public boolean limped(ClientPlayer player) {
         HandAction firstAction = getFirstVoluntaryAction(player, ROUND_PRE_FLOP);
         int action = (firstAction != null) ? firstAction.getAction() : HandAction.ACTION_NONE;
         return couldLimp(player) && (action == HandAction.ACTION_CALL);
@@ -3306,7 +3307,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * Note this means false will be returned if a player checked the big blind.
      */
     @SuppressWarnings("unused")
-    public boolean foldedPreFlop(PokerPlayer player) {
+    public boolean foldedPreFlop(ClientPlayer player) {
         if (player == null)
             return false;
 
@@ -3382,7 +3383,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         if (player == null) {
             return null;
         }
-        PokerPlayer pokerPlayer = (PokerPlayer) player;
+        ClientPlayer pokerPlayer = (ClientPlayer) player;
         Hand hand = pokerPlayer.getHand();
         if (hand == null || hand.size() == 0) {
             return null;
@@ -3416,15 +3417,15 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         if (player == null) {
             return 0.0f;
         }
-        return getPotOdds((PokerPlayer) player);
+        return getPotOdds((ClientPlayer) player);
     }
 
     // Note: wasRaisedPreFlop() already exists at line 2906
     // Note: getFirstBettor(int, boolean) already exists at line 3033 (returns
-    // PokerPlayer which is
+    // ClientPlayer which is
     // GamePlayerInfo)
     // Note: getLastBettor(int, boolean) already exists at line 3061 (returns
-    // PokerPlayer which is
+    // ClientPlayer which is
     // GamePlayerInfo)
     /**
      * Check if player was first raiser pre-flop (GameHand interface). Overload for
@@ -3439,7 +3440,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         if (player == null) {
             return false;
         }
-        return wasFirstRaiserPreFlop((PokerPlayer) player);
+        return wasFirstRaiserPreFlop((ClientPlayer) player);
     }
 
     /**
@@ -3455,7 +3456,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         if (player == null) {
             return false;
         }
-        return wasLastRaiserPreFlop((PokerPlayer) player);
+        return wasLastRaiserPreFlop((ClientPlayer) player);
     }
 
     /**
@@ -3471,7 +3472,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         if (player == null) {
             return false;
         }
-        return wasOnlyRaiserPreFlop((PokerPlayer) player);
+        return wasOnlyRaiserPreFlop((ClientPlayer) player);
     }
 
     /**
@@ -3499,7 +3500,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         if (player == null) {
             return false;
         }
-        return paidToPlay((PokerPlayer) player);
+        return paidToPlay((ClientPlayer) player);
     }
 
     /**
@@ -3515,7 +3516,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         if (player == null) {
             return false;
         }
-        return couldLimp((PokerPlayer) player);
+        return couldLimp((ClientPlayer) player);
     }
 
     /**
@@ -3530,7 +3531,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         if (player == null) {
             return false;
         }
-        return limped((PokerPlayer) player);
+        return limped((ClientPlayer) player);
     }
 
     /**
@@ -3545,7 +3546,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         if (player == null) {
             return false;
         }
-        PokerPlayer pokerPlayer = (PokerPlayer) player;
+        ClientPlayer pokerPlayer = (ClientPlayer) player;
         int seat = pokerPlayer.getSeat();
         return seat == getSmallBlindSeat() || seat == getBigBlindSeat();
     }
@@ -3578,7 +3579,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         if (player == null) {
             return HandAction.ACTION_NONE;
         }
-        return getLastActionThisRound((PokerPlayer) player);
+        return getLastActionThisRound((ClientPlayer) player);
     }
 
     /**
@@ -3595,14 +3596,14 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
         if (player == null) {
             return HandAction.ACTION_NONE;
         }
-        HandAction action = getFirstVoluntaryAction((PokerPlayer) player, round);
+        HandAction action = getFirstVoluntaryAction((ClientPlayer) player, round);
         return action != null ? action.getAction() : HandAction.ACTION_NONE;
     }
 
     // Note: getNumLimpers() already exists at line 2969
     // Note: getNumFoldsSinceLastBet() already exists at line 3087
     // Note: getCurrentPlayerWithInit() already exists at line 1190 (returns
-    // PokerPlayer which is
+    // ClientPlayer which is
     // GamePlayerInfo)
     // Note: getAmountToCall(GamePlayerInfo) already exists at line 2468
     // Note: getMinRaise() already exists at line 2059

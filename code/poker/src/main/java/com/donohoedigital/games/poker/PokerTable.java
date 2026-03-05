@@ -38,6 +38,7 @@
 
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.comms.*;
@@ -70,7 +71,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
 
     // data
     private PokerGame game_;
-    PokerPlayer players_[] = new PokerPlayer[PokerConstants.SEATS];
+    ClientPlayer players_[] = new ClientPlayer[PokerConstants.SEATS];
     private int nNum_;
     private String sName_;
     private int nButton_ = NO_SEAT;
@@ -83,11 +84,11 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     private boolean bCurrent_ = false;
     private boolean bZipMode_ = false;
     private HoldemHand hhand_;
-    private List<PokerPlayer> waitList_ = new ArrayList<PokerPlayer>();
-    private List<PokerPlayer> addedList_ = new ArrayList<PokerPlayer>();
-    private List<PokerPlayer> addonList_ = new ArrayList<PokerPlayer>();
-    private List<PokerPlayer> rebuyList_ = new ArrayList<PokerPlayer>();
-    private List<PokerPlayer> observers_ = new ArrayList<PokerPlayer>();
+    private List<ClientPlayer> waitList_ = new ArrayList<ClientPlayer>();
+    private List<ClientPlayer> addedList_ = new ArrayList<ClientPlayer>();
+    private List<ClientPlayer> addonList_ = new ArrayList<ClientPlayer>();
+    private List<ClientPlayer> rebuyList_ = new ArrayList<ClientPlayer>();
+    private List<ClientPlayer> observers_ = new ArrayList<ClientPlayer>();
     private int nTableState_ = STATE_NONE;
     private int nPrevState_ = STATE_NONE;
     private int nPendingState_ = STATE_NONE;
@@ -324,7 +325,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * add observer
      */
-    public void addObserver(PokerPlayer p) {
+    public void addObserver(ClientPlayer p) {
         ApplicationError.assertTrue(p.isObserver(), "Player is not an observer", p);
         _addObserver(p, true);
     }
@@ -332,7 +333,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * add observer w/out isObserver check, for internal use
      */
-    private void _addObserver(PokerPlayer p, boolean bSetTable) {
+    private void _addObserver(ClientPlayer p, boolean bSetTable) {
         if (observers_.contains(p))
             return;
 
@@ -346,7 +347,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * remove observer
      */
-    public void removeObserver(PokerPlayer p) {
+    public void removeObserver(ClientPlayer p) {
         if (!observers_.contains(p))
             return;
 
@@ -358,7 +359,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * Place player in specific seat (must be empty)
      */
-    public void setPlayer(PokerPlayer p, int nSeat) {
+    public void setPlayer(ClientPlayer p, int nSeat) {
         if (players_[nSeat] != null) {
             throw new ApplicationError(ErrorCodes.ERROR_CODE_ERROR, toString() + " already has a player in seat "
                     + nSeat + ": " + players_[nSeat] + ", cannot seat: " + p, null);
@@ -395,7 +396,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * Add player to any open seat
      */
-    public void addPlayer(PokerPlayer p) {
+    public void addPlayer(ClientPlayer p) {
         if (getNumOpenSeats() == 0) {
             throw new ApplicationError(ErrorCodes.ERROR_CODE_ERROR, toString() + " has no open seat for player " + p,
                     null);
@@ -419,14 +420,14 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * Return player in given seat
      */
-    public PokerPlayer getPlayer(int nSeat) {
+    public ClientPlayer getPlayer(int nSeat) {
         return players_[nSeat];
     }
 
     /**
      * Return player in given seat (must be there otherwise exception is thrown)
      */
-    public PokerPlayer getPlayerRequired(int nSeat) {
+    public ClientPlayer getPlayerRequired(int nSeat) {
         if (players_[nSeat] == null) {
             throw new ApplicationError(ErrorCodes.ERROR_CODE_ERROR, "No player at seat " + (nSeat + 1), toString());
         }
@@ -437,10 +438,10 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
      * Return array of players sorted by last time moved, with least recently moved
      * at the top of the array
      */
-    public PokerPlayer[] getPlayersSortedByLastMove() {
+    public ClientPlayer[] getPlayersSortedByLastMove() {
         int nOcc = getNumOccupiedSeats();
-        PokerPlayer players[] = new PokerPlayer[nOcc];
-        PokerPlayer player;
+        ClientPlayer players[] = new ClientPlayer[nOcc];
+        ClientPlayer player;
         int nCnt = 0;
         for (int i = 0; i < PokerConstants.SEATS; i++) {
             player = getPlayer(i);
@@ -459,13 +460,13 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
 
     // sort players by when they last moved - smaller # hands played
     // at last moved means moved less recently
-    private static class SortByMoved implements Comparator<PokerPlayer> {
+    private static class SortByMoved implements Comparator<ClientPlayer> {
         /**
          * Compares its two arguments for order. Returns a negative integer, zero, or a
          * positive integer as the first argument is less than, equal to, or greater
          * than the second.
          */
-        public int compare(PokerPlayer p1, PokerPlayer p2) {
+        public int compare(ClientPlayer p1, ClientPlayer p2) {
             return p1.getHandsPlayedAtLastMove() - p2.getHandsPlayedAtLastMove();
         }
     }
@@ -476,7 +477,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
      */
     public int getSeatOffset() {
         int nSeat = NO_SEAT;
-        PokerPlayer player;
+        ClientPlayer player;
         for (int i = 0; i < PokerConstants.SEATS; i++) {
             player = getPlayer(i);
             if (player == null)
@@ -525,13 +526,13 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * Remove player from given seat
      */
-    public PokerPlayer removePlayer(int nSeat) {
+    public ClientPlayer removePlayer(int nSeat) {
         if (players_[nSeat] == null) {
             throw new ApplicationError(ErrorCodes.ERROR_CODE_ERROR, toString() + " has no player in seat " + nSeat,
                     null);
         }
 
-        PokerPlayer p = players_[nSeat];
+        ClientPlayer p = players_[nSeat];
         players_[nSeat] = null;
 
         // move button if button was at this player
@@ -681,7 +682,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
         nLastStateChange_ += asleepMillis;
 
         // BUG 467 - account for think bank too
-        PokerPlayer p;
+        ClientPlayer p;
         long nLast = 0;
         for (int i = 0; i < PokerConstants.SEATS; i++) {
             p = getPlayer(i);
@@ -809,7 +810,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * Get array list of observers
      */
-    public List<PokerPlayer> getObservers() {
+    public List<ClientPlayer> getObservers() {
         return observers_;
     }
 
@@ -823,14 +824,14 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * Get observer at
      */
-    public PokerPlayer getObserver(int i) {
+    public ClientPlayer getObserver(int i) {
         return observers_.get(i);
     }
 
     /**
      * Get array list of players recently added
      */
-    public List<PokerPlayer> getAddedList() {
+    public List<ClientPlayer> getAddedList() {
         return addedList_;
     }
 
@@ -848,14 +849,14 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * Get array list of players woh recently did addon
      */
-    public List<PokerPlayer> getAddonList() {
+    public List<ClientPlayer> getAddonList() {
         return addonList_;
     }
 
     /**
      * Get array list of players recently did rebuy
      */
-    public List<PokerPlayer> getRebuyList() {
+    public List<ClientPlayer> getRebuyList() {
         return rebuyList_;
     }
 
@@ -869,7 +870,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * Get array list of players we are waiting on
      */
-    public List<PokerPlayer> getWaitList() {
+    public List<ClientPlayer> getWaitList() {
         return waitList_;
     }
 
@@ -878,13 +879,13 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
      */
     @Override
     public void addWait(GamePlayerInfo player) {
-        addWait((PokerPlayer) player);
+        addWait((ClientPlayer) player);
     }
 
     /**
      * add a player to wait list
      */
-    public void addWait(PokerPlayer p) {
+    public void addWait(ClientPlayer p) {
         if (p.isDisconnected())
             logger.warn("Disconnected player added to waiting list: " + p.getName());
         if (waitList_.contains(p)) {
@@ -899,7 +900,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * remove a player from the wait list
      */
-    public void removeWait(PokerPlayer p) {
+    public void removeWait(ClientPlayer p) {
         waitList_.remove(p);
     }
 
@@ -913,7 +914,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * return true if wait list contains given player
      */
-    public boolean isWaitListMember(PokerPlayer p) {
+    public boolean isWaitListMember(ClientPlayer p) {
         return waitList_.contains(p);
     }
 
@@ -921,7 +922,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
      * Add all human players to wait list
      */
     public void addWaitAllHumans() {
-        PokerPlayer p;
+        ClientPlayer p;
         for (int i = 0; i < PokerConstants.SEATS; i++) {
             p = players_[i];
             if (p == null)
@@ -941,14 +942,14 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * Get wait list player
      */
-    public PokerPlayer getWaitPlayer(int n) {
+    public ClientPlayer getWaitPlayer(int n) {
         return waitList_.get(n);
     }
 
     /**
      * Get wait list player at position 0, null if list is empty
      */
-    public PokerPlayer getWaitPlayer() {
+    public ClientPlayer getWaitPlayer() {
         if (waitList_.isEmpty())
             return null;
         return getWaitPlayer(0);
@@ -1035,7 +1036,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
         Deck deck = new Deck(true, 0);
 
         // init
-        PokerPlayer player;
+        ClientPlayer player;
         Hand hand;
         Card card;
         Card high = null;
@@ -1207,7 +1208,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
         verifyChips();
 
         // get info
-        PokerPlayer player;
+        ClientPlayer player;
         int nMin = getNextMinChip();
         int nLastMin = getMinChip();
         int nOdd;
@@ -1263,8 +1264,8 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     public void colorUp() {
         int nMin = getNextMinChip();
         int nMinLast = getMinChip();
-        List<PokerPlayer> players = new ArrayList<PokerPlayer>();
-        PokerPlayer player;
+        List<ClientPlayer> players = new ArrayList<ClientPlayer>();
+        ClientPlayer player;
         int nTotalOdd = 0;
         int nOdd;
         int nPlayerOddTotal;
@@ -1295,7 +1296,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
         // allocate chips
         boolean bWon;
         boolean bUnevenCheck = false;
-        for (PokerPlayer p : players) {
+        for (ClientPlayer p : players) {
             player = p;
             bWon = false;
             nPlayerOddTotal = player.getOddChips() * nMinLast;
@@ -1346,7 +1347,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
         setColoringUp(false);
         setColoringUpDisplay(false); // just to be sure (even though we call it in ColorUpFinish)
 
-        PokerPlayer player;
+        ClientPlayer player;
         for (int i = 0; i < PokerConstants.SEATS; i++) {
             player = getPlayer(i);
             if (player == null)
@@ -1363,13 +1364,13 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
 
     // sort players by top card in hand - players who would
     // go broke from chip race end up at top
-    private class SortChipRace implements Comparator<PokerPlayer> {
+    private class SortChipRace implements Comparator<ClientPlayer> {
         /**
          * Compares its two arguments for order. Returns a negative integer, zero, or a
          * positive integer as the first argument is less than, equal to, or greater
          * than the second.
          */
-        public int compare(PokerPlayer p1, PokerPlayer p2) {
+        public int compare(ClientPlayer p1, ClientPlayer p2) {
             int nMinLast = getMinChip();
 
             int nOddTotal1 = p1.getOddChips() * nMinLast;
@@ -1460,7 +1461,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     public void verifyAllAIRemoved() {
         // check to make sure any ai are removed - there could
         // be ai left after a human is moved from the table
-        PokerPlayer p;
+        ClientPlayer p;
         for (int i = 0; i < PokerConstants.SEATS; i++) {
             p = getPlayer(i);
             if (p != null && p.getGameAI() != null) {
@@ -1543,7 +1544,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
      * BUG 513 - ensure chips are valid
      */
     private void verifyChips() {
-        PokerPlayer p;
+        ClientPlayer p;
         for (int i = 0; i < PokerConstants.SEATS; i++) {
             p = getPlayer(i);
             if (p == null)
@@ -1603,7 +1604,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
      *
      * @param player
      */
-    public boolean isAddonAllowed(PokerPlayer player) {
+    public boolean isAddonAllowed(ClientPlayer player) {
         // for correct display of rebuy button
         if (player.isObserver())
             return false;
@@ -1615,14 +1616,14 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * Is rebuy allowed at current level?
      */
-    public boolean isRebuyAllowed(PokerPlayer player) {
+    public boolean isRebuyAllowed(ClientPlayer player) {
         return isRebuyAllowed(player, getLevel());
     }
 
     /**
      * Is rebuy allowed at given level?
      */
-    public boolean isRebuyAllowed(PokerPlayer player, int nLevel) {
+    public boolean isRebuyAllowed(ClientPlayer player, int nLevel) {
         // for correct display of rebuy button
         if (player.isObserver())
             return false;
@@ -1686,7 +1687,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * Are rebuys done for this player?
      */
-    public boolean isRebuyDone(PokerPlayer player) {
+    public boolean isRebuyDone(ClientPlayer player) {
         // for correct display of rebuy button
         if (player.isObserver())
             return true;
@@ -1710,7 +1711,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
      * call addPendingRebuys on all players
      */
     public void addPendingRebuys() {
-        PokerPlayer player;
+        ClientPlayer player;
         for (int i = 0; i < PokerConstants.SEATS; i++) {
             player = getPlayer(i);
             if (player == null)
@@ -1732,7 +1733,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
         if (!profile.isRebuys() || nLevel > profile.getLastRebuyLevel())
             return;
 
-        PokerPlayer p;
+        ClientPlayer p;
         int nChips = profile.getRebuyChips();
         int nAmount = profile.getRebuyCost();
         for (int i = 0; i < PokerConstants.SEATS; i++) {
@@ -1759,7 +1760,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
         TournamentProfile profile = getProfile();
         addonList_.clear();
 
-        PokerPlayer p;
+        ClientPlayer p;
         int nChips = profile.getAddonChips();
         int nAmount = profile.getAddonCost();
         for (int i = 0; i < PokerConstants.SEATS; i++) {
@@ -1781,7 +1782,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * Rebuy decision logic for AI players.
      */
-    private static boolean wantsRebuy(PokerPlayer player) {
+    private static boolean wantsRebuy(ClientPlayer player) {
         int nNumRebuys = player.getNumRebuys();
         if (nNumRebuys >= 5)
             return false;
@@ -1800,7 +1801,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * Addon decision logic for AI players.
      */
-    private static boolean wantsAddon(PokerPlayer player, TournamentProfile profile) {
+    private static boolean wantsAddon(ClientPlayer player, TournamentProfile profile) {
         int nBuyin = profile.getBuyinChips();
         int nAddonPropensity = DiceRoller.rollDieInt(100);
         if (nAddonPropensity < 25)
@@ -2045,7 +2046,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * save array of players
      */
-    static void addPlayerList(MsgState state, TokenizedList entry, List<PokerPlayer> list) {
+    static void addPlayerList(MsgState state, TokenizedList entry, List<ClientPlayer> list) {
         int nNum = list.size();
         entry.addToken(nNum);
         for (int i = 0; i < nNum; i++) {
@@ -2083,10 +2084,10 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
         }
 
         // players at table
-        PokerPlayer player;
+        ClientPlayer player;
         bNewPlayers_ = false;
         for (int i = 0; i < PokerConstants.SEATS; i++) {
-            player = (PokerPlayer) state.getObjectNullOkay(entry.removeIntegerToken());
+            player = (ClientPlayer) state.getObjectNullOkay(entry.removeIntegerToken());
             if (players_[i] == null && player != null && details.getSavePlayers() == SaveDetails.SAVE_DIRTY) {
                 bNewPlayers_ = true;
             }
@@ -2110,11 +2111,11 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     /**
      * Load into array
      */
-    static void loadPlayerList(MsgState state, TokenizedList entry, List<PokerPlayer> list) {
+    static void loadPlayerList(MsgState state, TokenizedList entry, List<ClientPlayer> list) {
         int nNum = entry.removeIntToken();
         list.clear();
         for (int i = 0; i < nNum; i++) {
-            list.add((PokerPlayer) state.getObject(entry.removeIntegerToken()));
+            list.add((ClientPlayer) state.getObject(entry.removeIntegerToken()));
         }
     }
 
@@ -2124,13 +2125,13 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
     private void loadObserverList(MsgState state, TokenizedList entry) {
         // create list of players loaded
         int nNum = entry.removeIntToken();
-        List<PokerPlayer> load = new ArrayList<PokerPlayer>(nNum);
+        List<ClientPlayer> load = new ArrayList<ClientPlayer>(nNum);
         for (int i = 0; i < nNum; i++) {
-            load.add((PokerPlayer) state.getObject(entry.removeIntegerToken()));
+            load.add((ClientPlayer) state.getObject(entry.removeIntegerToken()));
         }
 
         // remove observers if not in new list
-        PokerPlayer player;
+        ClientPlayer player;
         nNum = getNumObservers();
         for (int i = nNum - 1; i >= 0; i--) {
             player = getObserver(i);
@@ -2156,7 +2157,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
      */
     public void gameLoaded() {
         for (int seat = 0; seat < PokerConstants.SEATS; ++seat) {
-            PokerPlayer player = getPlayer(seat);
+            ClientPlayer player = getPlayer(seat);
 
             if (player != null) {
                 player.gameLoaded();

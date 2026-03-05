@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker.impexp;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
 
@@ -86,7 +87,7 @@ public class ImpExpUB implements ImpExp {
         buf.append(newline);
 
         for (int seat = 0; seat < PokerConstants.SEATS; ++seat) {
-            PokerPlayer player = ieHand.players[seat];
+            ClientPlayer player = ieHand.players[seat];
 
             if (player == null)
                 continue;
@@ -214,7 +215,7 @@ public class ImpExpUB implements ImpExp {
         buf.append(newline);
 
         for (int seat = 0; seat < PokerConstants.SEATS; ++seat) {
-            PokerPlayer player = ieHand.players[seat];
+            ClientPlayer player = ieHand.players[seat];
 
             if (player == null)
                 continue;
@@ -416,7 +417,7 @@ public class ImpExpUB implements ImpExp {
         buf.append(newline);
 
         for (int seat = 0; seat < PokerConstants.SEATS; ++seat) {
-            PokerPlayer player = ieHand.players[seat];
+            ClientPlayer player = ieHand.players[seat];
 
             if (player == null)
                 continue;
