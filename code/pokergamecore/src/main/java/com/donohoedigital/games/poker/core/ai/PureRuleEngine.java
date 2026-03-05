@@ -33,8 +33,8 @@
  */
 package com.donohoedigital.games.poker.core.ai;
 
-import com.donohoedigital.games.poker.core.GamePlayerInfo;
-import com.donohoedigital.games.poker.core.PlayerAction;
+import com.donohoedigital.games.poker.engine.GamePlayerInfo;
+import com.donohoedigital.games.poker.engine.PlayerAction;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;

@@ -32,7 +32,7 @@
 package com.donohoedigital.games.poker.gameserver;
 
 import com.donohoedigital.games.poker.core.GameHand;
-import com.donohoedigital.games.poker.core.PlayerAction;
+import com.donohoedigital.games.poker.engine.PlayerAction;
 import com.donohoedigital.games.poker.core.PlayerActionProvider;
 import com.donohoedigital.games.poker.core.TournamentEngine;
 import com.donohoedigital.games.poker.gameserver.GameConfig.BlindLevel;
@@ -594,7 +594,7 @@ public class GameInstance {
      * @param action
      *            the action to submit
      */
-    public void onPlayerAction(long profileId, com.donohoedigital.games.poker.core.PlayerAction action) {
+    public void onPlayerAction(long profileId, com.donohoedigital.games.poker.engine.PlayerAction action) {
         logger.debug("[GameInstance] onPlayerAction profileId={} action={}", profileId, action);
         if (actionProvider != null) {
             actionProvider.submitAction(toIntId(profileId), action);

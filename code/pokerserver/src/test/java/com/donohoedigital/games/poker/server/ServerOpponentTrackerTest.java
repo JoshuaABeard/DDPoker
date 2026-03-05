@@ -19,7 +19,7 @@
  */
 package com.donohoedigital.games.poker.server;
 
-import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.ai.AIConstants;
 import com.donohoedigital.games.poker.core.ai.V2OpponentModel;
 import com.donohoedigital.games.poker.engine.PokerActionConstants;

@@ -21,7 +21,7 @@ package com.donohoedigital.games.poker.gameserver;
 
 import com.donohoedigital.games.poker.core.GameTable;
 import com.donohoedigital.games.poker.model.LevelAdvanceMode;
-import com.donohoedigital.games.poker.core.PlayerAction;
+import com.donohoedigital.games.poker.engine.PlayerAction;
 import com.donohoedigital.games.poker.core.PlayerActionProvider;
 import com.donohoedigital.games.poker.core.TableProcessResult;
 import com.donohoedigital.games.poker.core.TournamentEngine;

@@ -45,7 +45,7 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.core.GameHand;
-import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.GameTable;
 import com.donohoedigital.games.poker.engine.state.TableState;
 import com.donohoedigital.games.poker.event.*;

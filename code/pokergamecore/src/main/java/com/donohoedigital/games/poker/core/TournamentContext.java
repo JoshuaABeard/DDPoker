@@ -19,6 +19,8 @@
  */
 package com.donohoedigital.games.poker.core;
 
+import com.donohoedigital.games.poker.engine.GamePlayerInfo;
+
 /**
  * Interface for tournament-level operations that the core engine needs.
  * Implemented by PokerGame in Phase 2.

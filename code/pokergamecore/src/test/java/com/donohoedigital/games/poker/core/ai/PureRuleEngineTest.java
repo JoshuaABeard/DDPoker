@@ -20,9 +20,9 @@
 package com.donohoedigital.games.poker.core.ai;
 
 import com.donohoedigital.games.poker.core.GameHand;
-import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.GameTable;
-import com.donohoedigital.games.poker.core.PlayerAction;
+import com.donohoedigital.games.poker.engine.PlayerAction;
 import com.donohoedigital.games.poker.core.TournamentContext;
 import com.donohoedigital.games.poker.engine.state.ActionType;
 import com.donohoedigital.games.poker.engine.Card;

@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.GameTable;
 import com.donohoedigital.games.poker.model.LevelAdvanceMode;
 import com.donohoedigital.games.poker.core.TournamentContext;

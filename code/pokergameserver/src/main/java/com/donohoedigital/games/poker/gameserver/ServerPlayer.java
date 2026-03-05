@@ -31,7 +31,7 @@
  */
 package com.donohoedigital.games.poker.gameserver;
 
-import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**

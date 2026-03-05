@@ -40,7 +40,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 
-import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 
 /**
  * Tests for ServerPlayer. TDD: Test-first implementation.

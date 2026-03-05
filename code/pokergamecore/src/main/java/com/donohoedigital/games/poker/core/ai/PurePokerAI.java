@@ -20,8 +20,8 @@
 package com.donohoedigital.games.poker.core.ai;
 
 import com.donohoedigital.games.poker.core.ActionOptions;
-import com.donohoedigital.games.poker.core.GamePlayerInfo;
-import com.donohoedigital.games.poker.core.PlayerAction;
+import com.donohoedigital.games.poker.engine.GamePlayerInfo;
+import com.donohoedigital.games.poker.engine.PlayerAction;
 
 /**
  * Pure poker AI interface with no Swing/AWT dependencies. Suitable for both

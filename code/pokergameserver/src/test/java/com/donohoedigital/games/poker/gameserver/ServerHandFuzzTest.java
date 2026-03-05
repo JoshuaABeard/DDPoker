@@ -28,7 +28,7 @@ import java.util.Random;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.RepetitionInfo;
 
-import com.donohoedigital.games.poker.core.PlayerAction;
+import com.donohoedigital.games.poker.engine.PlayerAction;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**

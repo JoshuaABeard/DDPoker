@@ -17,7 +17,7 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.core;
+package com.donohoedigital.games.poker.engine;
 
 /**
  * Interface for player information that the core game engine needs. Implemented

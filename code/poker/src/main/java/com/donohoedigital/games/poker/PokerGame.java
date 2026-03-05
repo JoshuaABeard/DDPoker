@@ -54,7 +54,7 @@ import org.apache.logging.log4j.*;
 import java.io.*;
 import java.security.*;
 import java.util.*;
-import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.GameTable;
 import com.donohoedigital.games.poker.core.TournamentContext;
 import com.donohoedigital.games.poker.engine.state.BettingRound;

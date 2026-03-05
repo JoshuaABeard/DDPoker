@@ -23,6 +23,8 @@ import java.util.List;
 
 import com.donohoedigital.games.poker.core.event.GameEvent;
 import com.donohoedigital.games.poker.core.event.GameEventBus;
+import com.donohoedigital.games.poker.engine.GamePlayerInfo;
+import com.donohoedigital.games.poker.engine.PlayerAction;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.engine.state.TableState;
 

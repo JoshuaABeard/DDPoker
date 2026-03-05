@@ -19,6 +19,7 @@
  */
 package com.donohoedigital.games.poker.core;
 
+import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 import com.donohoedigital.games.poker.engine.state.TableState;
 
 /**

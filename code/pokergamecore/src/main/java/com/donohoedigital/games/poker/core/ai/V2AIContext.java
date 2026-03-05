@@ -34,7 +34,7 @@
  */
 package com.donohoedigital.games.poker.core.ai;
 
-import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 import com.donohoedigital.games.poker.engine.Hand;
 
 import java.util.List;

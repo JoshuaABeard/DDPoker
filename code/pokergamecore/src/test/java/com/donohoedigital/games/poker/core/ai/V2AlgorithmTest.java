@@ -19,10 +19,12 @@
  */
 package com.donohoedigital.games.poker.core.ai;
 
-import com.donohoedigital.games.poker.core.*;
+import com.donohoedigital.games.poker.core.ActionOptions;
+import com.donohoedigital.games.poker.core.GameHand;
+import com.donohoedigital.games.poker.core.TournamentContext;
+import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.engine.state.ActionType;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
-import com.donohoedigital.games.poker.engine.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;

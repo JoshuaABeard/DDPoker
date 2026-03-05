@@ -34,7 +34,7 @@ package com.donohoedigital.games.poker.gameserver;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.donohoedigital.games.poker.core.GameHand;
-import com.donohoedigital.games.poker.core.PlayerAction;
+import com.donohoedigital.games.poker.engine.PlayerAction;
 import com.donohoedigital.games.poker.core.event.GameEvent;
 import com.donohoedigital.games.poker.gameserver.GameConfig.*;
 import java.util.List;

@@ -43,7 +43,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.donohoedigital.games.poker.core.ActionOptions;
-import com.donohoedigital.games.poker.core.PlayerAction;
+import com.donohoedigital.games.poker.engine.PlayerAction;
 import com.donohoedigital.games.poker.core.PlayerActionProvider;
 import com.donohoedigital.games.poker.engine.state.ActionType;
 
@@ -433,7 +433,7 @@ class ServerPlayerActionProviderTest {
         PlayerAction nextAction = PlayerAction.fold();
 
         @Override
-        public PlayerAction getAction(com.donohoedigital.games.poker.core.GamePlayerInfo player,
+        public PlayerAction getAction(com.donohoedigital.games.poker.engine.GamePlayerInfo player,
                 ActionOptions options) {
             return nextAction;
         }
