@@ -61,11 +61,6 @@
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
-      <artifactId>gameserver</artifactId>
-      <version>3.3.0-CommunityEdition</version>
-    </dependency>
-    <dependency>
-      <groupId>com.donohoedigital</groupId>
       <artifactId>poker</artifactId>
       <version>3.3.0-CommunityEdition</version>
     </dependency>

@@ -75,11 +75,6 @@
   <dependencies>
     <dependency>
       <groupId>com.donohoedigital</groupId>
-      <artifactId>gameserver</artifactId>
-      <version>3.3.0-CommunityEdition</version>
-    </dependency>
-    <dependency>
-      <groupId>com.donohoedigital</groupId>
       <artifactId>pokernetwork</artifactId>
       <version>3.3.0-CommunityEdition</version>
     </dependency>
@@ -92,6 +87,21 @@
       <groupId>com.donohoedigital</groupId>
       <artifactId>pokergameserver</artifactId>
       <version>3.3.0-CommunityEdition</version>
+    </dependency>
+    <dependency>
+      <groupId>com.donohoedigital</groupId>
+      <artifactId>mail</artifactId>
+      <version>3.3.0-CommunityEdition</version>
+    </dependency>
+    <dependency>
+      <groupId>com.donohoedigital</groupId>
+      <artifactId>server</artifactId>
+      <version>3.3.0-CommunityEdition</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-tx</artifactId>
+      <version>${spring.version}</version>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>

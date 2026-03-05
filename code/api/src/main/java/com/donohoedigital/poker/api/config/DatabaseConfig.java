@@ -37,8 +37,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  */
 @Configuration
 @EnableTransactionManagement
-@ComponentScan(basePackages = {"com.donohoedigital.games.server.service", "com.donohoedigital.games.server.dao",
-        "com.donohoedigital.games.poker.service", "com.donohoedigital.games.poker.dao"})
+@ComponentScan(basePackages = {"com.donohoedigital.games.poker.service", "com.donohoedigital.games.poker.dao"})
 @EnableJpaRepositories(basePackages = "com.donohoedigital.games.poker.gameserver.persistence.repository")
 public class DatabaseConfig {
 
