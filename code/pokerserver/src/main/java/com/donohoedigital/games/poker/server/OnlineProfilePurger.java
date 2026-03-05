@@ -1,7 +1,7 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
- * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2003-2026  Doug Donohoe, DD Poker Community
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,8 +39,8 @@ import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.service.*;
 import org.apache.logging.log4j.*;
+import org.springframework.boot.SpringApplication;
 import org.springframework.context.*;
-import org.springframework.context.support.*;
 
 import java.util.*;
 
@@ -78,9 +78,8 @@ public class OnlineProfilePurger extends BaseCommandLineApp {
     public OnlineProfilePurger(String configName, String[] args) {
         super(configName, args);
 
-        // LEAK-BACKEND-1: Use try-with-resources to ensure ApplicationContext is closed
-        try (ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("app-context-pokertools.xml")) {
-            service = (OnlineProfileService) ctx.getBean("onlineProfileService");
+        try (ConfigurableApplicationContext ctx = SpringApplication.run(PokerServerMain.class)) {
+            service = ctx.getBean(OnlineProfileService.class);
 
             // Do the work.
             doPurge();

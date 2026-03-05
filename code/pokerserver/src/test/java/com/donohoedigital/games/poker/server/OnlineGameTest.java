@@ -33,8 +33,6 @@
 package com.donohoedigital.games.poker.server;
 
 import com.donohoedigital.base.Utils;
-import com.donohoedigital.config.ApplicationType;
-import com.donohoedigital.config.ConfigManager;
 import com.donohoedigital.db.PagedList;
 import com.donohoedigital.games.poker.dao.OnlineGameDao;
 import com.donohoedigital.games.poker.dao.OnlineProfileDao;
@@ -47,7 +45,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import com.donohoedigital.games.poker.server.config.TestConfig;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
@@ -60,7 +60,8 @@ import static org.assertj.core.api.Assertions.*;
  * Tests for OnlineGame persistence and DAO operations.
  */
 @Tag("slow")
-@SpringJUnitConfig(locations = {"/app-context-pokerservertests.xml"})
+@SpringBootTest(classes = TestConfig.class)
+@ActiveProfiles("test")
 @Transactional
 class OnlineGameTest {
     private final Logger logger = LogManager.getLogger(OnlineGameTest.class);
@@ -123,7 +124,6 @@ class OnlineGameTest {
     @Test
     @Rollback
     void should_PageCorrectly_When_FetchingGamesByMode() {
-        new ConfigManager("poker", ApplicationType.COMMAND_LINE);
         final int gameCount = 12;
         assertThat(gameCount % 4).isEqualTo(0); // must be divisible by 4
         long now = System.currentTimeMillis();

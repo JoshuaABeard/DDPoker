@@ -1,7 +1,7 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
- * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2003-2026  Doug Donohoe, DD Poker Community
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +37,8 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.service.*;
 import org.apache.logging.log4j.*;
-import org.springframework.context.support.*;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.*;
 
 import java.text.*;
 import java.time.*;
@@ -119,8 +120,8 @@ public class OnlineGamePurger extends BaseCommandLineApp {
         }
 
         // get the service from spring
-        try (ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("app-context-pokertools.xml")) {
-            service = (OnlineGameService) ctx.getBean("onlineGameService");
+        try (ConfigurableApplicationContext ctx = SpringApplication.run(PokerServerMain.class)) {
+            service = ctx.getBean(OnlineGameService.class);
 
             // Do the work.
             doPurge();

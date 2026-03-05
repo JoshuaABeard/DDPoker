@@ -1,7 +1,7 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
- * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2003-2026  Doug Donohoe, DD Poker Community
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,9 +44,12 @@ import com.donohoedigital.games.poker.service.OnlineProfileService;
 import com.donohoedigital.mail.DDPostalService;
 import com.donohoedigital.server.GameServer;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -59,6 +62,7 @@ import java.util.UUID;
  *
  * @author donohoe
  */
+@Component
 public class PokerServer extends GameServer {
     private static final Logger logger = LogManager.getLogger(PokerServer.class);
     private static final String ADMIN_PASSWORD_FILE = "admin-password.txt";
@@ -70,10 +74,13 @@ public class PokerServer extends GameServer {
     private OnlineProfileService onlineProfileService;
 
     /**
-     * Initialize and run
+     * Initialize and run. ConfigManager bean is created first by Spring, so
+     * configLoad is not needed here.
      */
+    @PostConstruct
     @Override
     public void init() {
+        setConfigLoadRequired(false);
         super.init();
         initializeAdminProfile();
         start();
@@ -191,9 +198,9 @@ public class PokerServer extends GameServer {
     /**
      * Shutdown
      */
-    @Override
-    protected void shutdown(boolean immediate) {
+    @PreDestroy
+    public void destroy() {
         postalService.destroy();
-        super.shutdown(immediate);
+        shutdown(true);
     }
 }
