@@ -20,13 +20,13 @@
 package com.donohoedigital.games.poker.model;
 
 import com.donohoedigital.comms.DMTypedHashMap;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for OnlineGame model class.
@@ -380,8 +380,8 @@ public class OnlineGameTest {
 
         String tournamentString = game.getTournamentAsString();
 
-        assertNotNull("Tournament string should not be null", tournamentString);
-        assertFalse("Tournament string should not be empty", tournamentString.isEmpty());
+        assertNotNull(tournamentString, "Tournament string should not be null");
+        assertFalse(tournamentString.isEmpty(), "Tournament string should not be empty");
     }
 
     @Test
@@ -391,7 +391,7 @@ public class OnlineGameTest {
 
         String tournamentString = game.getTournamentAsString();
 
-        assertNull("Tournament string should be null when tournament is null", tournamentString);
+        assertNull(tournamentString, "Tournament string should be null when tournament is null");
     }
 
     @Test
@@ -400,8 +400,8 @@ public class OnlineGameTest {
 
         game.setTournamentAsString(null);
 
-        assertNull("Tournament should be null", game.getTournament());
-        assertNull("Tournament string should be null", game.getTournamentAsString());
+        assertNull(game.getTournament(), "Tournament should be null");
+        assertNull(game.getTournamentAsString(), "Tournament string should be null");
     }
 
     @Test
@@ -419,8 +419,8 @@ public class OnlineGameTest {
         // Now set it on our test game
         game.setTournamentAsString(marshalledData);
 
-        assertNotNull("Tournament should not be null", game.getTournament());
-        assertEquals("Tournament name should match", "Test Tournament", game.getTournament().getName());
+        assertNotNull(game.getTournament(), "Tournament should not be null");
+        assertEquals("Test Tournament", game.getTournament().getName(), "Tournament name should match");
     }
 
     @Test
@@ -433,7 +433,7 @@ public class OnlineGameTest {
         OnlineGame game = new OnlineGame(data);
 
         // Should not throw and tournament should be null
-        assertNull("Tournament should be null", game.getTournament());
+        assertNull(game.getTournament(), "Tournament should be null");
     }
 
     @Test
@@ -448,8 +448,8 @@ public class OnlineGameTest {
         OnlineGame game = new OnlineGame(data);
 
         // Should have tournament and tournamentAsString set
-        assertNotNull("Tournament should not be null", game.getTournament());
-        assertNotNull("Tournament string should be set", game.getTournamentAsString());
+        assertNotNull(game.getTournament(), "Tournament should not be null");
+        assertNotNull(game.getTournamentAsString(), "Tournament string should be set");
     }
 
     // ===== XML Encoding Tests =====
@@ -475,8 +475,8 @@ public class OnlineGameTest {
         MockXMLEncoder encoder = new MockXMLEncoder();
         game.encodeXML(encoder);
 
-        assertTrue("Should have encoded game", encoder.objectsSet.contains("game"));
-        assertTrue("Should have encoded results", encoder.objectsSet.contains("results"));
+        assertTrue(encoder.objectsSet.contains("game"), "Should have encoded game");
+        assertTrue(encoder.objectsSet.contains("results"), "Should have encoded results");
     }
 
     @Test
@@ -496,8 +496,8 @@ public class OnlineGameTest {
         MockXMLEncoder encoder = new MockXMLEncoder();
         game.encodeXML(encoder);
 
-        assertTrue("Should have encoded game", encoder.objectsSet.contains("game"));
-        assertFalse("Should not have encoded results", encoder.objectsSet.contains("results"));
+        assertTrue(encoder.objectsSet.contains("game"), "Should have encoded game");
+        assertFalse(encoder.objectsSet.contains("results"), "Should not have encoded results");
     }
 
     @Test
@@ -517,8 +517,8 @@ public class OnlineGameTest {
         MockXMLEncoder encoder = new MockXMLEncoder();
         game.encodeXML(encoder);
 
-        assertTrue("Should have encoded game", encoder.objectsSet.contains("game"));
-        assertFalse("Should not have encoded results for empty list", encoder.objectsSet.contains("results"));
+        assertTrue(encoder.objectsSet.contains("game"), "Should have encoded game");
+        assertFalse(encoder.objectsSet.contains("results"), "Should not have encoded results for empty list");
     }
 
     @Test
@@ -542,8 +542,8 @@ public class OnlineGameTest {
         MockXMLEncoder encoder = new MockXMLEncoder();
         game.encodeXML(encoder);
 
-        assertTrue("Should have encoded game", encoder.objectsSet.contains("game"));
-        assertTrue("Should have encoded results", encoder.objectsSet.contains("results"));
+        assertTrue(encoder.objectsSet.contains("game"), "Should have encoded game");
+        assertTrue(encoder.objectsSet.contains("results"), "Should have encoded results");
     }
 
     // ===== Mock Helper Class =====

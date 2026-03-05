@@ -53,7 +53,7 @@ public class Unhide {
         try {
             BufferedReader sreader = new BufferedReader(reader);
             String sLine;
-            StringBuffer sbLine = new StringBuffer(80);
+            StringBuilder sbLine = new StringBuilder(80);
             int nEntry = -1;
             while ((sLine = sreader.readLine()) != null) {
                 nEntry++;

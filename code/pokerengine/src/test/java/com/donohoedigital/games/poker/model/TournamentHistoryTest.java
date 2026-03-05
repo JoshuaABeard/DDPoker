@@ -20,11 +20,11 @@
 package com.donohoedigital.games.poker.model;
 
 import com.donohoedigital.comms.MsgState;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Date;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for TournamentHistory model class.

@@ -202,7 +202,7 @@ public class OnlineProfile implements BaseModel<Long> {
         data_.setLongFromDate(PROFILE_MODIFY_DATE, date);
     }
 
-    @Column(name = "wpr_email_verified", nullable = false)
+    @Column(name = "wpr_email_verified", nullable = false, columnDefinition = "boolean default false")
     public boolean isEmailVerified() {
         return emailVerified;
     }
@@ -238,7 +238,7 @@ public class OnlineProfile implements BaseModel<Long> {
         this.pendingEmail = pendingEmail;
     }
 
-    @Column(name = "wpr_failed_login_attempts", nullable = false)
+    @Column(name = "wpr_failed_login_attempts", nullable = false, columnDefinition = "integer default 0")
     public int getFailedLoginAttempts() {
         return failedLoginAttempts;
     }
@@ -256,7 +256,7 @@ public class OnlineProfile implements BaseModel<Long> {
         this.lockedUntil = lockedUntil;
     }
 
-    @Column(name = "wpr_lockout_count", nullable = false)
+    @Column(name = "wpr_lockout_count", nullable = false, columnDefinition = "integer default 0")
     public int getLockoutCount() {
         return lockoutCount;
     }

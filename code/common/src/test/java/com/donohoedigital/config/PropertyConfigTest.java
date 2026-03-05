@@ -32,39 +32,42 @@
  */
 package com.donohoedigital.config;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.*;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Apr 6, 2008 Time: 4:43:12 PM To
  * change this template use File | Settings | File Templates.
  */
-public class PropertyConfigTest extends TestCase {
-    public void testLoadClient() {
+class PropertyConfigTest {
+    @Test
+    void testLoadClient() {
         System.getProperties().setProperty("user.name", "unit-tester");
         String[] modules = {"common", "testapp"};
         new PropertyConfig("testapp", modules, ApplicationType.CLIENT, null, true);
 
-        assertTrue(PropertyConfig.getRequiredBooleanProperty("test.common"));
-        assertTrue(PropertyConfig.getRequiredBooleanProperty("test.common.override"));
+        assertThat(PropertyConfig.getRequiredBooleanProperty("test.common")).isTrue();
+        assertThat(PropertyConfig.getRequiredBooleanProperty("test.common.override")).isTrue();
 
-        assertTrue(PropertyConfig.getRequiredBooleanProperty("test.boolean.true"));
-        assertFalse(PropertyConfig.getRequiredBooleanProperty("test.boolean.false"));
-        assertTrue(PropertyConfig.getRequiredBooleanProperty("test.boolean.yes"));
-        assertFalse(PropertyConfig.getRequiredBooleanProperty("test.boolean.no"));
-        assertTrue(PropertyConfig.getRequiredBooleanProperty("test.boolean.+"));
-        assertFalse(PropertyConfig.getRequiredBooleanProperty("test.boolean.-"));
-        assertTrue(PropertyConfig.getRequiredBooleanProperty("test.boolean.1"));
-        assertFalse(PropertyConfig.getRequiredBooleanProperty("test.boolean.0"));
+        assertThat(PropertyConfig.getRequiredBooleanProperty("test.boolean.true")).isTrue();
+        assertThat(PropertyConfig.getRequiredBooleanProperty("test.boolean.false")).isFalse();
+        assertThat(PropertyConfig.getRequiredBooleanProperty("test.boolean.yes")).isTrue();
+        assertThat(PropertyConfig.getRequiredBooleanProperty("test.boolean.no")).isFalse();
+        assertThat(PropertyConfig.getRequiredBooleanProperty("test.boolean.+")).isTrue();
+        assertThat(PropertyConfig.getRequiredBooleanProperty("test.boolean.-")).isFalse();
+        assertThat(PropertyConfig.getRequiredBooleanProperty("test.boolean.1")).isTrue();
+        assertThat(PropertyConfig.getRequiredBooleanProperty("test.boolean.0")).isFalse();
 
-        assertEquals(PropertyConfig.getRequiredStringProperty("test.string"), "This is a string");
-        assertEquals(PropertyConfig.getRequiredIntegerProperty("test.integer"), 42);
-        assertEquals(PropertyConfig.getRequiredDoubleProperty("test.double"), 3.14159d, .0000001d);
+        assertThat(PropertyConfig.getRequiredStringProperty("test.string")).isEqualTo("This is a string");
+        assertThat(PropertyConfig.getRequiredIntegerProperty("test.integer")).isEqualTo(42);
+        assertThat(PropertyConfig.getRequiredDoubleProperty("test.double")).isEqualTo(3.14159d, within(.0000001d));
 
-        assertEquals(PropertyConfig.getMessage("test.message"), "No replacement");
-        assertEquals(PropertyConfig.getMessage("test.message.one", "just"), "Replace just one.");
-        assertEquals(PropertyConfig.getMessage("test.message.two", "this", "that"), "Replace this and that.");
+        assertThat(PropertyConfig.getMessage("test.message")).isEqualTo("No replacement");
+        assertThat(PropertyConfig.getMessage("test.message.one", "just")).isEqualTo("Replace just one.");
+        assertThat(PropertyConfig.getMessage("test.message.two", "this", "that")).isEqualTo("Replace this and that.");
 
         // override in unit-tester.properties
-        assertTrue(PropertyConfig.getRequiredBooleanProperty("override.set"));
+        assertThat(PropertyConfig.getRequiredBooleanProperty("override.set")).isTrue();
     }
 }

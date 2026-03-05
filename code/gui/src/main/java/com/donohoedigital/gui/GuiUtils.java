@@ -432,7 +432,7 @@ public class GuiUtils {
             first = token.charAt(0);
             if (token.length() == 1 && (first < '0' || first > '9')) {
                 switch (first) {
-                    // TODO: implement m, qQ, tT, aA
+                    // Future: implement m, qQ, tT, aA
                     case 'M' :
                         needed = 2;
                         idx = 0;

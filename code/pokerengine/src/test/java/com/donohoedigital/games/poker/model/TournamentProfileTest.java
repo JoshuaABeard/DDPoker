@@ -20,11 +20,11 @@
 package com.donohoedigital.games.poker.model;
 
 import com.donohoedigital.games.poker.engine.PokerConstants;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for TournamentProfile constants and helper methods.
@@ -70,8 +70,8 @@ public class TournamentProfileTest {
         // getMaxObservers should use same max regardless of testing mode
         TournamentProfile profile = new TournamentProfile("test");
         int maxObs = profile.getMaxObservers();
-        assertTrue("Max observers should be between 0 and " + TournamentProfile.MAX_OBSERVERS,
-                maxObs >= 0 && maxObs <= TournamentProfile.MAX_OBSERVERS);
+        assertTrue(maxObs >= 0 && maxObs <= TournamentProfile.MAX_OBSERVERS,
+                "Max observers should be between 0 and " + TournamentProfile.MAX_OBSERVERS);
     }
 
     // ========== Configurable Max Online Players Tests ==========
@@ -145,11 +145,11 @@ public class TournamentProfileTest {
         imported.read(new StringReader(sw.toString()), false);
 
         // Then: settings should match
-        assertEquals("Name should match", "My Tournament", imported.getName());
-        assertEquals("Buyin chips should match", 5000, imported.getBuyinChips());
-        assertEquals("Num players should match", 20, imported.getNumPlayers());
-        assertEquals("Buyin should match", 500, imported.getBuyinCost());
-        assertEquals("Minutes per level should match", 15, imported.getDefaultMinutesPerLevel());
+        assertEquals("My Tournament", imported.getName(), "Name should match");
+        assertEquals(5000, imported.getBuyinChips(), "Buyin chips should match");
+        assertEquals(20, imported.getNumPlayers(), "Num players should match");
+        assertEquals(500, imported.getBuyinCost(), "Buyin should match");
+        assertEquals(15, imported.getDefaultMinutesPerLevel(), "Minutes per level should match");
     }
 
     @Test
@@ -166,9 +166,9 @@ public class TournamentProfileTest {
         imported.read(new StringReader(sw.toString()), false);
 
         // Then: blind structure should match
-        assertEquals("Level 1 big blind should match", original.getBigBlind(1), imported.getBigBlind(1));
-        assertEquals("Level 1 small blind should match", original.getSmallBlind(1), imported.getSmallBlind(1));
-        assertEquals("Starting depth should match", original.getStartingDepthBBs(), imported.getStartingDepthBBs());
+        assertEquals(original.getBigBlind(1), imported.getBigBlind(1), "Level 1 big blind should match");
+        assertEquals(original.getSmallBlind(1), imported.getSmallBlind(1), "Level 1 small blind should match");
+        assertEquals(original.getStartingDepthBBs(), imported.getStartingDepthBBs(), "Starting depth should match");
     }
 
     // ========== Late Registration Tests ==========
@@ -176,66 +176,66 @@ public class TournamentProfileTest {
     @Test
     public void should_DefaultToLateRegDisabled() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertFalse("Late registration should be disabled by default", profile.isLateRegEnabled());
+        assertFalse(profile.isLateRegEnabled(), "Late registration should be disabled by default");
     }
 
     @Test
     public void should_DefaultToLevel1Cutoff() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertEquals("Default cutoff should be level 1", 1, profile.getLateRegUntilLevel());
+        assertEquals(1, profile.getLateRegUntilLevel(), "Default cutoff should be level 1");
     }
 
     @Test
     public void should_DefaultToStartingChipsMode() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertEquals("Default chip mode should be starting chips", PokerConstants.LATE_REG_CHIPS_STARTING,
-                profile.getLateRegChips());
+        assertEquals(PokerConstants.LATE_REG_CHIPS_STARTING, profile.getLateRegChips(),
+                "Default chip mode should be starting chips");
     }
 
     @Test
     public void should_EnableAndDisableLateReg() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setLateRegEnabled(true);
-        assertTrue("Late registration should be enabled", profile.isLateRegEnabled());
+        assertTrue(profile.isLateRegEnabled(), "Late registration should be enabled");
 
         profile.setLateRegEnabled(false);
-        assertFalse("Late registration should be disabled", profile.isLateRegEnabled());
+        assertFalse(profile.isLateRegEnabled(), "Late registration should be disabled");
     }
 
     @Test
     public void should_SetLateRegCutoffLevel() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setLateRegUntilLevel(5);
-        assertEquals("Cutoff should be level 5", 5, profile.getLateRegUntilLevel());
+        assertEquals(5, profile.getLateRegUntilLevel(), "Cutoff should be level 5");
     }
 
     @Test
     public void should_EnforceLateRegCutoffMinimum() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setLateRegUntilLevel(0);
-        assertEquals("Cutoff should be clamped to minimum 1", 1, profile.getLateRegUntilLevel());
+        assertEquals(1, profile.getLateRegUntilLevel(), "Cutoff should be clamped to minimum 1");
     }
 
     @Test
     public void should_EnforceLateRegCutoffMaximum() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setLateRegUntilLevel(50); // Exceeds MAX_LEVELS (40)
-        assertEquals("Cutoff should be clamped to MAX_LEVELS", TournamentProfile.MAX_LEVELS,
-                profile.getLateRegUntilLevel());
+        assertEquals(TournamentProfile.MAX_LEVELS, profile.getLateRegUntilLevel(),
+                "Cutoff should be clamped to MAX_LEVELS");
     }
 
     @Test
     public void should_SetLateRegChipsToStarting() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setLateRegChips(PokerConstants.LATE_REG_CHIPS_STARTING);
-        assertEquals("Chip mode should be starting", PokerConstants.LATE_REG_CHIPS_STARTING, profile.getLateRegChips());
+        assertEquals(PokerConstants.LATE_REG_CHIPS_STARTING, profile.getLateRegChips(), "Chip mode should be starting");
     }
 
     @Test
     public void should_SetLateRegChipsToAverage() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setLateRegChips(PokerConstants.LATE_REG_CHIPS_AVERAGE);
-        assertEquals("Chip mode should be average", PokerConstants.LATE_REG_CHIPS_AVERAGE, profile.getLateRegChips());
+        assertEquals(PokerConstants.LATE_REG_CHIPS_AVERAGE, profile.getLateRegChips(), "Chip mode should be average");
     }
 
     @Test
@@ -254,9 +254,9 @@ public class TournamentProfileTest {
         imported.read(new StringReader(sw.toString()), false);
 
         // Then: late reg settings should match
-        assertTrue("Late reg should be enabled", imported.isLateRegEnabled());
-        assertEquals("Cutoff level should match", 3, imported.getLateRegUntilLevel());
-        assertEquals("Chip mode should match", PokerConstants.LATE_REG_CHIPS_AVERAGE, imported.getLateRegChips());
+        assertTrue(imported.isLateRegEnabled(), "Late reg should be enabled");
+        assertEquals(3, imported.getLateRegUntilLevel(), "Cutoff level should match");
+        assertEquals(PokerConstants.LATE_REG_CHIPS_AVERAGE, imported.getLateRegChips(), "Chip mode should match");
     }
 
     // ========== Scheduled Start Tests ==========
@@ -264,30 +264,30 @@ public class TournamentProfileTest {
     @Test
     public void should_DefaultToScheduledStartDisabled() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertFalse("Scheduled start should be disabled by default", profile.isScheduledStartEnabled());
+        assertFalse(profile.isScheduledStartEnabled(), "Scheduled start should be disabled by default");
     }
 
     @Test
     public void should_DefaultToZeroStartTime() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertEquals("Default start time should be 0", 0L, profile.getStartTime());
+        assertEquals(0L, profile.getStartTime(), "Default start time should be 0");
     }
 
     @Test
     public void should_DefaultToMinimumPlayers() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertEquals("Default minimum players should be MIN_SCHEDULED_START_PLAYERS",
-                PokerConstants.MIN_SCHEDULED_START_PLAYERS, profile.getMinPlayersForStart());
+        assertEquals(PokerConstants.MIN_SCHEDULED_START_PLAYERS, profile.getMinPlayersForStart(),
+                "Default minimum players should be MIN_SCHEDULED_START_PLAYERS");
     }
 
     @Test
     public void should_EnableAndDisableScheduledStart() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setScheduledStartEnabled(true);
-        assertTrue("Scheduled start should be enabled", profile.isScheduledStartEnabled());
+        assertTrue(profile.isScheduledStartEnabled(), "Scheduled start should be enabled");
 
         profile.setScheduledStartEnabled(false);
-        assertFalse("Scheduled start should be disabled", profile.isScheduledStartEnabled());
+        assertFalse(profile.isScheduledStartEnabled(), "Scheduled start should be disabled");
     }
 
     @Test
@@ -295,29 +295,29 @@ public class TournamentProfileTest {
         TournamentProfile profile = new TournamentProfile("test");
         long targetTime = System.currentTimeMillis() + 3600000; // 1 hour from now
         profile.setStartTime(targetTime);
-        assertEquals("Start time should match", targetTime, profile.getStartTime());
+        assertEquals(targetTime, profile.getStartTime(), "Start time should match");
     }
 
     @Test
     public void should_SetMinPlayersForStart() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setMinPlayersForStart(5);
-        assertEquals("Min players should be 5", 5, profile.getMinPlayersForStart());
+        assertEquals(5, profile.getMinPlayersForStart(), "Min players should be 5");
     }
 
     @Test
     public void should_EnforceMinPlayersMinimum() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setMinPlayersForStart(1);
-        assertEquals("Min players should be clamped to 2", 2, profile.getMinPlayersForStart());
+        assertEquals(2, profile.getMinPlayersForStart(), "Min players should be clamped to 2");
     }
 
     @Test
     public void should_EnforceMinPlayersMaximum() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setMinPlayersForStart(130); // Exceeds MAX_ONLINE_PLAYERS (120)
-        assertEquals("Min players should be clamped to MAX_ONLINE_PLAYERS", TournamentProfile.MAX_ONLINE_PLAYERS,
-                profile.getMinPlayersForStart());
+        assertEquals(TournamentProfile.MAX_ONLINE_PLAYERS, profile.getMinPlayersForStart(),
+                "Min players should be clamped to MAX_ONLINE_PLAYERS");
     }
 
     @Test
@@ -337,9 +337,9 @@ public class TournamentProfileTest {
         imported.read(new StringReader(sw.toString()), false);
 
         // Then: scheduled start settings should match
-        assertTrue("Scheduled start should be enabled", imported.isScheduledStartEnabled());
-        assertEquals("Start time should match", targetTime, imported.getStartTime());
-        assertEquals("Min players should match", 4, imported.getMinPlayersForStart());
+        assertTrue(imported.isScheduledStartEnabled(), "Scheduled start should be enabled");
+        assertEquals(targetTime, imported.getStartTime(), "Start time should match");
+        assertEquals(4, imported.getMinPlayersForStart(), "Min players should match");
     }
 
     // ========== Per-Street Timeout Tests ==========
@@ -347,10 +347,10 @@ public class TournamentProfileTest {
     @Test
     public void should_DefaultToZeroForPerStreetTimeouts() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertEquals("Pre-flop timeout should default to 0", 0, profile.getTimeoutPreflop());
-        assertEquals("Flop timeout should default to 0", 0, profile.getTimeoutFlop());
-        assertEquals("Turn timeout should default to 0", 0, profile.getTimeoutTurn());
-        assertEquals("River timeout should default to 0", 0, profile.getTimeoutRiver());
+        assertEquals(0, profile.getTimeoutPreflop(), "Pre-flop timeout should default to 0");
+        assertEquals(0, profile.getTimeoutFlop(), "Flop timeout should default to 0");
+        assertEquals(0, profile.getTimeoutTurn(), "Turn timeout should default to 0");
+        assertEquals(0, profile.getTimeoutRiver(), "River timeout should default to 0");
     }
 
     @Test
@@ -361,10 +361,10 @@ public class TournamentProfileTest {
         // All rounds should use base timeout when per-street is 0
         // Using raw constants: ROUND_PRE_FLOP=0, ROUND_FLOP=1, ROUND_TURN=2,
         // ROUND_RIVER=3
-        assertEquals("Pre-flop should use base timeout", 45, profile.getTimeoutForRound(0));
-        assertEquals("Flop should use base timeout", 45, profile.getTimeoutForRound(1));
-        assertEquals("Turn should use base timeout", 45, profile.getTimeoutForRound(2));
-        assertEquals("River should use base timeout", 45, profile.getTimeoutForRound(3));
+        assertEquals(45, profile.getTimeoutForRound(0), "Pre-flop should use base timeout");
+        assertEquals(45, profile.getTimeoutForRound(1), "Flop should use base timeout");
+        assertEquals(45, profile.getTimeoutForRound(2), "Turn should use base timeout");
+        assertEquals(45, profile.getTimeoutForRound(3), "River should use base timeout");
     }
 
     @Test
@@ -376,17 +376,17 @@ public class TournamentProfileTest {
 
         // Using raw constants: ROUND_PRE_FLOP=0, ROUND_FLOP=1, ROUND_TURN=2,
         // ROUND_RIVER=3
-        assertEquals("Pre-flop should use custom timeout", 15, profile.getTimeoutForRound(0));
-        assertEquals("Flop should fall back to base timeout", 30, profile.getTimeoutForRound(1));
-        assertEquals("Turn should fall back to base timeout", 30, profile.getTimeoutForRound(2));
-        assertEquals("River should use custom timeout", 60, profile.getTimeoutForRound(3));
+        assertEquals(15, profile.getTimeoutForRound(0), "Pre-flop should use custom timeout");
+        assertEquals(30, profile.getTimeoutForRound(1), "Flop should fall back to base timeout");
+        assertEquals(30, profile.getTimeoutForRound(2), "Turn should fall back to base timeout");
+        assertEquals(60, profile.getTimeoutForRound(3), "River should use custom timeout");
     }
 
     @Test
     public void should_EnforceMaxTimeout_ForPerStreet() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setTimeoutRiver(200); // Exceeds MAX_TIMEOUT (120)
-        assertEquals("River timeout should be clamped to MAX_TIMEOUT", 120, profile.getTimeoutRiver());
+        assertEquals(120, profile.getTimeoutRiver(), "River timeout should be clamped to MAX_TIMEOUT");
     }
 
     @Test
@@ -396,10 +396,10 @@ public class TournamentProfileTest {
         profile.setTimeoutPreflop(3); // Below MIN_TIMEOUT (5)
 
         // Getter returns the raw value (3)
-        assertEquals("Getter should return raw value", 3, profile.getTimeoutPreflop());
+        assertEquals(3, profile.getTimeoutPreflop(), "Getter should return raw value");
 
         // But getTimeoutForRound should enforce MIN_TIMEOUT
-        assertEquals("Per-street timeout below MIN_TIMEOUT should be clamped to 5", 5, profile.getTimeoutForRound(0));
+        assertEquals(5, profile.getTimeoutForRound(0), "Per-street timeout below MIN_TIMEOUT should be clamped to 5");
     }
 
     @Test
@@ -420,10 +420,10 @@ public class TournamentProfileTest {
         imported.read(new StringReader(sw.toString()), false);
 
         // Then: per-street settings should match
-        assertEquals("Pre-flop timeout should match", 15, imported.getTimeoutPreflop());
-        assertEquals("Flop timeout should match", 20, imported.getTimeoutFlop());
-        assertEquals("Turn timeout should match", 40, imported.getTimeoutTurn());
-        assertEquals("River timeout should match", 60, imported.getTimeoutRiver());
+        assertEquals(15, imported.getTimeoutPreflop(), "Pre-flop timeout should match");
+        assertEquals(20, imported.getTimeoutFlop(), "Flop timeout should match");
+        assertEquals(40, imported.getTimeoutTurn(), "Turn timeout should match");
+        assertEquals(60, imported.getTimeoutRiver(), "River timeout should match");
     }
 
     @Test
@@ -432,8 +432,8 @@ public class TournamentProfileTest {
         profile.setTimeoutSeconds(30);
 
         // ROUND_SHOWDOWN (4) and invalid rounds should use base timeout
-        assertEquals("Showdown should use base timeout", 30, profile.getTimeoutForRound(4));
-        assertEquals("Invalid round should use base timeout", 30, profile.getTimeoutForRound(999));
+        assertEquals(30, profile.getTimeoutForRound(4), "Showdown should use base timeout");
+        assertEquals(30, profile.getTimeoutForRound(999), "Invalid round should use base timeout");
     }
 
     // ========== Rebuy Configuration Tests ==========
@@ -441,66 +441,66 @@ public class TournamentProfileTest {
     @Test
     public void should_DefaultToRebuysDisabled() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertFalse("Rebuys should be disabled by default", profile.isRebuys());
+        assertFalse(profile.isRebuys(), "Rebuys should be disabled by default");
     }
 
     @Test
     public void should_EnableAndDisableRebuys() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setRebuys(true);
-        assertTrue("Rebuys should be enabled", profile.isRebuys());
+        assertTrue(profile.isRebuys(), "Rebuys should be enabled");
 
         profile.setRebuys(false);
-        assertFalse("Rebuys should be disabled", profile.isRebuys());
+        assertFalse(profile.isRebuys(), "Rebuys should be disabled");
     }
 
     @Test
     public void should_GetRebuyChipCountFromProfile() {
         TournamentProfile profile = new TournamentProfile("test");
         int rebuyChips = profile.getRebuyChipCount();
-        assertTrue("Rebuy chip count should be > 0", rebuyChips > 0);
-        assertTrue("Rebuy chip count should be reasonable", rebuyChips <= TournamentProfile.MAX_REBUY_CHIPS);
+        assertTrue(rebuyChips > 0, "Rebuy chip count should be > 0");
+        assertTrue(rebuyChips <= TournamentProfile.MAX_REBUY_CHIPS, "Rebuy chip count should be reasonable");
     }
 
     @Test
     public void should_SetRebuyChipCount() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setRebuyChipCount(3000);
-        assertEquals("Rebuy chip count should be 3000", 3000, profile.getRebuyChipCount());
+        assertEquals(3000, profile.getRebuyChipCount(), "Rebuy chip count should be 3000");
     }
 
     @Test
     public void should_EnforceMaxRebuyChips() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setRebuyChipCount(2000000);
-        assertEquals("Rebuy chips should be clamped to MAX_REBUY_CHIPS", TournamentProfile.MAX_REBUY_CHIPS,
-                profile.getRebuyChipCount());
+        assertEquals(TournamentProfile.MAX_REBUY_CHIPS, profile.getRebuyChipCount(),
+                "Rebuy chips should be clamped to MAX_REBUY_CHIPS");
     }
 
     @Test
     public void should_DefaultToRebuyLTE() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertEquals("Rebuy expression should default to LTE", PokerConstants.REBUY_LTE,
-                profile.getRebuyExpressionType());
+        assertEquals(PokerConstants.REBUY_LTE, profile.getRebuyExpressionType(),
+                "Rebuy expression should default to LTE");
     }
 
     @Test
     public void should_SetRebuyExpressionToLT() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setRebuyExpression(PokerConstants.REBUY_LT);
-        assertEquals("Rebuy expression should be LT", PokerConstants.REBUY_LT, profile.getRebuyExpressionType());
+        assertEquals(PokerConstants.REBUY_LT, profile.getRebuyExpressionType(), "Rebuy expression should be LT");
     }
 
     @Test
     public void should_DefaultRebuyCostToZero() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertEquals("Rebuy cost should default to 0", 0, profile.getRebuyCost());
+        assertEquals(0, profile.getRebuyCost(), "Rebuy cost should default to 0");
     }
 
     @Test
     public void should_DefaultRebuyChipsToZero() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertEquals("Rebuy chips should default to 0", 0, profile.getRebuyChips());
+        assertEquals(0, profile.getRebuyChips(), "Rebuy chips should default to 0");
     }
 
     @Test
@@ -516,9 +516,9 @@ public class TournamentProfileTest {
         TournamentProfile imported = new TournamentProfile();
         imported.read(new StringReader(sw.toString()), false);
 
-        assertTrue("Rebuys should be enabled", imported.isRebuys());
-        assertEquals("Rebuy chip count should match", 3000, imported.getRebuyChipCount());
-        assertEquals("Rebuy expression should match", PokerConstants.REBUY_LT, imported.getRebuyExpressionType());
+        assertTrue(imported.isRebuys(), "Rebuys should be enabled");
+        assertEquals(3000, imported.getRebuyChipCount(), "Rebuy chip count should match");
+        assertEquals(PokerConstants.REBUY_LT, imported.getRebuyExpressionType(), "Rebuy expression should match");
     }
 
     // ========== Addon Configuration Tests ==========
@@ -526,35 +526,35 @@ public class TournamentProfileTest {
     @Test
     public void should_DefaultToAddonsDisabled() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertFalse("Addons should be disabled by default", profile.isAddons());
+        assertFalse(profile.isAddons(), "Addons should be disabled by default");
     }
 
     @Test
     public void should_EnableAndDisableAddons() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setAddons(true);
-        assertTrue("Addons should be enabled", profile.isAddons());
+        assertTrue(profile.isAddons(), "Addons should be enabled");
 
         profile.setAddons(false);
-        assertFalse("Addons should be disabled", profile.isAddons());
+        assertFalse(profile.isAddons(), "Addons should be disabled");
     }
 
     @Test
     public void should_DefaultAddonCostToZero() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertEquals("Addon cost should default to 0", 0, profile.getAddonCost());
+        assertEquals(0, profile.getAddonCost(), "Addon cost should default to 0");
     }
 
     @Test
     public void should_DefaultAddonChipsToZero() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertEquals("Addon chips should default to 0", 0, profile.getAddonChips());
+        assertEquals(0, profile.getAddonChips(), "Addon chips should default to 0");
     }
 
     @Test
     public void should_DefaultAddonLevelToZero() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertEquals("Addon level should default to 0", 0, profile.getAddonLevel());
+        assertEquals(0, profile.getAddonLevel(), "Addon level should default to 0");
     }
 
     @Test
@@ -568,7 +568,7 @@ public class TournamentProfileTest {
         TournamentProfile imported = new TournamentProfile();
         imported.read(new StringReader(sw.toString()), false);
 
-        assertTrue("Addons should be enabled", imported.isAddons());
+        assertTrue(imported.isAddons(), "Addons should be enabled");
     }
 
     // ========== Online Mode Settings Tests ==========
@@ -576,43 +576,43 @@ public class TournamentProfileTest {
     @Test
     public void should_DefaultToFillWithComputer() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertTrue("Fill with computer should be enabled by default", profile.isFillComputer());
+        assertTrue(profile.isFillComputer(), "Fill with computer should be enabled by default");
     }
 
     @Test
     public void should_DefaultToDisallowDash() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertFalse("Dashboard should be disallowed by default", profile.isAllowDash());
+        assertFalse(profile.isAllowDash(), "Dashboard should be disallowed by default");
     }
 
     @Test
     public void should_DefaultToDisallowAdvisor() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertFalse("Advisor should be disallowed by default", profile.isAllowAdvisor());
+        assertFalse(profile.isAllowAdvisor(), "Advisor should be disallowed by default");
     }
 
     @Test
     public void should_DefaultToNoBootSitout() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertFalse("Boot sitout should be disabled by default", profile.isBootSitout());
+        assertFalse(profile.isBootSitout(), "Boot sitout should be disabled by default");
     }
 
     @Test
     public void should_DefaultToBootDisconnect() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertTrue("Boot disconnect should be enabled by default", profile.isBootDisconnect());
+        assertTrue(profile.isBootDisconnect(), "Boot disconnect should be enabled by default");
     }
 
     @Test
     public void should_GetBootSitoutCountDefault() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertEquals("Boot sitout count should default to 25", 25, profile.getBootSitoutCount());
+        assertEquals(25, profile.getBootSitoutCount(), "Boot sitout count should default to 25");
     }
 
     @Test
     public void should_GetBootDisconnectCountDefault() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertEquals("Boot disconnect count should default to 10", 10, profile.getBootDisconnectCount());
+        assertEquals(10, profile.getBootDisconnectCount(), "Boot disconnect count should default to 10");
     }
 
     // ========== Payout Allocation Tests ==========
@@ -620,34 +620,34 @@ public class TournamentProfileTest {
     @Test
     public void should_DefaultToAutoAllocation() {
         TournamentProfile profile = new TournamentProfile("test");
-        assertTrue("Should default to auto allocation", profile.isAllocAuto());
-        assertFalse("Should not be percent allocation", profile.isAllocPercent());
-        assertFalse("Should not be fixed allocation", profile.isAllocFixed());
-        assertFalse("Should not be satellite allocation", profile.isAllocSatellite());
+        assertTrue(profile.isAllocAuto(), "Should default to auto allocation");
+        assertFalse(profile.isAllocPercent(), "Should not be percent allocation");
+        assertFalse(profile.isAllocFixed(), "Should not be fixed allocation");
+        assertFalse(profile.isAllocSatellite(), "Should not be satellite allocation");
     }
 
     @Test
     public void should_SetPercentAllocation() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setAlloc(PokerConstants.ALLOC_PERC);
-        assertTrue("Should be percent allocation", profile.isAllocPercent());
-        assertFalse("Should not be auto allocation", profile.isAllocAuto());
+        assertTrue(profile.isAllocPercent(), "Should be percent allocation");
+        assertFalse(profile.isAllocAuto(), "Should not be auto allocation");
     }
 
     @Test
     public void should_SetFixedAllocation() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setAlloc(PokerConstants.ALLOC_AMOUNT);
-        assertTrue("Should be fixed allocation", profile.isAllocFixed());
-        assertFalse("Should not be auto allocation", profile.isAllocAuto());
+        assertTrue(profile.isAllocFixed(), "Should be fixed allocation");
+        assertFalse(profile.isAllocAuto(), "Should not be auto allocation");
     }
 
     @Test
     public void should_SetSatellitePayout() {
         TournamentProfile profile = new TournamentProfile("test");
         profile.setPayout(PokerConstants.PAYOUT_SATELLITE);
-        assertTrue("Should be satellite payout", profile.isAllocSatellite());
-        assertFalse("Should not be auto allocation", profile.isAllocAuto());
+        assertTrue(profile.isAllocSatellite(), "Should be satellite payout");
+        assertFalse(profile.isAllocAuto(), "Should not be auto allocation");
     }
 
     // ========== Integration Tests ==========
@@ -661,21 +661,21 @@ public class TournamentProfileTest {
         profile.updateNumPlayers(10);
 
         int maxSpots = profile.getMaxPayoutSpots(10);
-        assertTrue("Max payout spots should be reasonable for 10 players", maxSpots < 20);
+        assertTrue(maxSpots < 20, "Max payout spots should be reasonable for 10 players");
     }
 
     @Test
     public void should_GetDefaultHousePercent() {
         TournamentProfile profile = new TournamentProfile("test");
         int housePercent = profile.getHousePercent();
-        assertTrue("House percent should be >= 0", housePercent >= 0);
+        assertTrue(housePercent >= 0, "House percent should be >= 0");
     }
 
     @Test
     public void should_GetDefaultHouseAmount() {
         TournamentProfile profile = new TournamentProfile("test");
         int houseAmount = profile.getHouseAmount();
-        assertTrue("House amount should be >= 0", houseAmount >= 0);
+        assertTrue(houseAmount >= 0, "House amount should be >= 0");
     }
 
     @Test
@@ -689,7 +689,7 @@ public class TournamentProfileTest {
         profile.setPrizePool(totalPool, false);
 
         int prizePool = profile.getPrizePool();
-        assertTrue("Prize pool should include rebuys", prizePool >= 10000);
+        assertTrue(prizePool >= 10000, "Prize pool should include rebuys");
     }
 
     @Test
@@ -701,7 +701,7 @@ public class TournamentProfileTest {
 
         profile.fixAll();
 
-        assertEquals("Level 1 big blind should be 100", 100, profile.getBigBlind(1));
-        assertEquals("Level 2 big blind should be 200", 200, profile.getBigBlind(2));
+        assertEquals(100, profile.getBigBlind(1), "Level 1 big blind should be 100");
+        assertEquals(200, profile.getBigBlind(2), "Level 2 big blind should be 200");
     }
 }

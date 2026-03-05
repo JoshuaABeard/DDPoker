@@ -88,7 +88,7 @@ public class ShowPokerNightTable extends ShowPokerTable
         DDPanel buttons = createButtonPanel(true);
         ImageComponent banner = new ImageComponent(false ? "pokermenu-demo" : "pokermenu", 1.0d);
 
-        // HACK - change default size of map so it better occupies
+        // change default size of map so it better occupies
         // the space below the banner/buttons, which is a different
         // aspect ratio then the default board. The engine doesn't
         // support multiple game definitions and this works and

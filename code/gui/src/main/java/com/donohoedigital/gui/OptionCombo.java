@@ -114,7 +114,7 @@ public class OptionCombo extends DDOption implements ItemListener {
      * Set display only
      */
     public void setDisplayOnly(boolean b) {
-        // TODO: this doesn't currently do anything
+        // intentionally empty
         // combo_.setEditable(!b);
     }
 

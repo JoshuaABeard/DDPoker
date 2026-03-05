@@ -843,7 +843,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
                 if (hist.getRound() > nRound)
                     break;
 
-                // TODO: adjust for overbets?
+                // Future: adjust for overbets?
 
                 switch (hist.getAction()) {
                     case HandAction.ACTION_ANTE :
@@ -1190,7 +1190,7 @@ public class HoldemHand implements DataMarshal, GameHand, ClientHoldemHand {
      * Renamed from getCurrentPlayerInitIndex() to avoid conflict with GameHand
      * interface.
      */
-    // TODO: remove sync if decide to wait for observers in TD wait list
+    // Future: remove sync if decide to wait for observers in TD wait list
     public synchronized PokerPlayer getCurrentPlayerWithInit() {
         PokerPlayer current = getCurrentPlayer();
 

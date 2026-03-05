@@ -147,7 +147,7 @@ public class TerritoryPointChooser extends InternalDialog implements ActionListe
         chooser.setTerritory(t);
 
         // set visible / modal
-        chooser.showDialog(null, InternalDialog.POSITION_CENTER);// TODO - fix InternalDialog.POSITION_NOT_OBSCURED);
+        chooser.showDialog(null, InternalDialog.POSITION_NOT_OBSCURED);
         return chooser.sChoice_;
     }
 }

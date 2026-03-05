@@ -32,35 +32,17 @@
  */
 package com.donohoedigital;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.jupiter.api.*;
 
 /**
  * Unit test for simple App.
  */
-public class GuiTest extends TestCase {
-    /**
-     * Create the test case
-     *
-     * @param testName
-     *            name of the test case
-     */
-    public GuiTest(String testName) {
-        super(testName);
-    }
-
-    /**
-     * @return the suite of tests being tested
-     */
-    public static Test suite() {
-        return new TestSuite(GuiTest.class);
-    }
-
+class GuiTest {
     /**
      * Rigourous Test :-)
      */
-    public void testGui() {
-        assertTrue(true);
+    @Test
+    void testGui() {
+        // trivial smoke test
     }
 }

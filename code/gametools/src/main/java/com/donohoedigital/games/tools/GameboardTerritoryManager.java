@@ -163,7 +163,7 @@ public class GameboardTerritoryManager extends GameManager implements CustomTerr
         board_.requestFocus();
     }
 
-    // // war-aoi specific (TODO: config)
+    // // war-aoi specific (not used for poker)
     // private String INFANTRY =
     // PropertyConfig.getStringProperty("define.territoryPointType.infantry",
     // "notdefined", false);
@@ -246,7 +246,7 @@ public class GameboardTerritoryManager extends GameManager implements CustomTerr
         // }
         //
         //
-        // //war-aoi (TODO: config-driven)
+        // //war-aoi (not used for poker)
         // drawItem(board, g, t, REDSHIP, "ship.small.red");
         // drawItem(board, g, t, BLUESHIP, "ship.small.blue");
         // drawItem(board, g, t, GREENSHIP, "ship.small.green");
@@ -267,7 +267,7 @@ public class GameboardTerritoryManager extends GameManager implements CustomTerr
         // drawItem(board, g, t, EXPLORER, "explorer.small."+ sColor);
         // drawItem(board, g, t, INFANTRY, "infantry.small."+ sColor);
 
-        // poker (TODO: config-driven)
+        // poker (Future: make config-driven)
         drawItem(board, g, t, "hole1", "card", null, false, 0, 0);
         int xadjust;
         int nSeat = PokerUtils.getDisplaySeatForTerritory(t);

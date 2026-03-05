@@ -140,6 +140,17 @@
       <artifactId>h2</artifactId>
       <scope>runtime</scope>
     </dependency>
+    <!-- Spring Boot Mail (optional in pokergameserver, required here for embedded server startup) -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-mail</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-logging</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <!-- JWT (for EmbeddedGameServer.getLocalUserJwt()) -->
     <dependency>
       <groupId>io.jsonwebtoken</groupId>
@@ -173,13 +184,7 @@
       <artifactId>db</artifactId>
       <version>3.3.0-CommunityEdition</version>
     </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${junit.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <!-- JUnit 5 (Jupiter) for modern tests -->
+    <!-- JUnit 5 (Jupiter) -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
@@ -312,14 +317,15 @@
             </goals>
             <configuration>
               <rules>
-                <!-- Main poker package - actual 20.2%, threshold kept at 19% (Swing-heavy, large module) -->
+                <!-- Main poker package - actual 14.0%, Swing-heavy large module. AI core
+                     moved to pokergamecore; remaining coverage from non-Swing utilities. -->
                 <rule>
                   <element>PACKAGE</element>
                   <limits>
                     <limit>
                       <counter>INSTRUCTION</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.19</minimum>
+                      <minimum>0.13</minimum>
                     </limit>
                   </limits>
                   <includes>
@@ -334,14 +340,16 @@
                   </excludes>
                 </rule>
 
-                <!-- AI package - raised after Phase 5: actual 82.8%, threshold = actual - 3% -->
+                <!-- AI package - actual 45.6%. Core AI logic moved to pokergamecore;
+                     remaining code is Swing GUI wrappers (PlayerType, HandSelectionScheme).
+                     Threshold = actual - 3%. -->
                 <rule>
                   <element>PACKAGE</element>
                   <limits>
                     <limit>
                       <counter>INSTRUCTION</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.80</minimum>
+                      <minimum>0.43</minimum>
                     </limit>
                   </limits>
                   <includes>

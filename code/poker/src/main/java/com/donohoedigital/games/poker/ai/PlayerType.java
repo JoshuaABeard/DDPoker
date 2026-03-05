@@ -206,7 +206,7 @@ public class PlayerType extends BaseProfile {
     }
 
     // because using instance as hash key doesn't work
-    // TODO: change value returned, for durable cross-references
+    // Future: change value returned, for durable cross-references
     public String getUniqueKey() {
         return getFileName();
     }

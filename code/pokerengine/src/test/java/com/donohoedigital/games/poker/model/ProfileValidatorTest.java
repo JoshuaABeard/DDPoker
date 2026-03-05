@@ -21,9 +21,9 @@ package com.donohoedigital.games.poker.model;
 
 import com.donohoedigital.comms.DMTypedHashMap;
 import com.donohoedigital.games.poker.engine.PokerConstants;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for ProfileValidator - validates and normalizes tournament settings.
@@ -48,9 +48,9 @@ public class ProfileValidatorTest {
         validator.updateNumPlayers(20);
 
         // Then: payout spots should be reduced to max
-        assertEquals("Payout spots should be reduced to max", 5, map.getInteger("payoutspots", 0));
-        assertEquals("Players should be updated", 20, map.getInteger("numplayers", 0));
-        assertTrue("fixLevels should have been called (via fixAll)", callbacks.fixLevelsCalled);
+        assertEquals(5, map.getInteger("payoutspots", 0), "Payout spots should be reduced to max");
+        assertEquals(20, map.getInteger("numplayers", 0), "Players should be updated");
+        assertTrue(callbacks.fixLevelsCalled, "fixLevels should have been called (via fixAll)");
     }
 
     @Test
@@ -69,8 +69,8 @@ public class ProfileValidatorTest {
         validator.updateNumPlayers(20);
 
         // Then: payout percent should be reduced to max
-        assertEquals("Payout percent should be reduced to max", 30, map.getInteger("payoutperc", 0));
-        assertEquals("Players should be updated", 20, map.getInteger("numplayers", 0));
+        assertEquals(30, map.getInteger("payoutperc", 0), "Payout percent should be reduced to max");
+        assertEquals(20, map.getInteger("numplayers", 0), "Players should be updated");
     }
 
     @Test
@@ -89,7 +89,7 @@ public class ProfileValidatorTest {
         validator.updateNumPlayers(50);
 
         // Then: payout spots should remain unchanged
-        assertEquals("Payout spots should remain unchanged", 5, map.getInteger("payoutspots", 0));
+        assertEquals(5, map.getInteger("payoutspots", 0), "Payout spots should remain unchanged");
     }
 
     @Test
@@ -110,8 +110,8 @@ public class ProfileValidatorTest {
         validator.updateNumPlayers(20);
 
         // Then: should switch to auto allocation
-        assertEquals("Should switch to auto allocation", PokerConstants.ALLOC_AUTO,
-                map.getInteger("alloc", PokerConstants.ALLOC_AUTO));
+        assertEquals(PokerConstants.ALLOC_AUTO, map.getInteger("alloc", PokerConstants.ALLOC_AUTO),
+                "Should switch to auto allocation");
     }
 
     @Test
@@ -131,7 +131,7 @@ public class ProfileValidatorTest {
         validator.updateNumPlayers(50);
 
         // Then: setAutoSpots should be called
-        assertTrue("setAutoSpots should be called in auto mode", callbacks.setAutoSpotsCalled);
+        assertTrue(callbacks.setAutoSpotsCalled, "setAutoSpots should be called in auto mode");
     }
 
     @Test
@@ -149,7 +149,7 @@ public class ProfileValidatorTest {
         validator.updateNumPlayers(50);
 
         // Then: spots should remain unchanged (satellite doesn't adjust)
-        assertEquals("Satellite mode should not adjust spots", 10, map.getInteger("payoutspots", 0));
+        assertEquals(10, map.getInteger("payoutspots", 0), "Satellite mode should not adjust spots");
     }
 
     // ========== fixAll() Tests ==========
@@ -165,8 +165,8 @@ public class ProfileValidatorTest {
         validator.fixAll();
 
         // Then: both methods should be called
-        assertTrue("fixLevels should be called", callbacks.fixLevelsCalled);
-        assertTrue("fixAllocs should be called implicitly", callbacks.getNumSpotsCalled);
+        assertTrue(callbacks.fixLevelsCalled, "fixLevels should be called");
+        assertTrue(callbacks.getNumSpotsCalled, "fixAllocs should be called implicitly");
     }
 
     @Test
@@ -184,8 +184,8 @@ public class ProfileValidatorTest {
         validator.fixAll();
 
         // Then: expression should change to LTE (<=)
-        assertEquals("Rebuy expression should change to LTE when chips=0", PokerConstants.REBUY_LTE,
-                map.getInteger("rebuyexpr", PokerConstants.REBUY_LT));
+        assertEquals(PokerConstants.REBUY_LTE, map.getInteger("rebuyexpr", PokerConstants.REBUY_LT),
+                "Rebuy expression should change to LTE when chips=0");
     }
 
     @Test
@@ -203,8 +203,8 @@ public class ProfileValidatorTest {
         validator.fixAll();
 
         // Then: expression should remain LT
-        assertEquals("Rebuy expression should remain LT when chips>0", PokerConstants.REBUY_LT,
-                map.getInteger("rebuyexpr", PokerConstants.REBUY_LT));
+        assertEquals(PokerConstants.REBUY_LT, map.getInteger("rebuyexpr", PokerConstants.REBUY_LT),
+                "Rebuy expression should remain LT when chips>0");
     }
 
     @Test
@@ -222,8 +222,8 @@ public class ProfileValidatorTest {
         validator.fixAll();
 
         // Then: expression should remain LTE
-        assertEquals("Rebuy expression should remain LTE", PokerConstants.REBUY_LTE,
-                map.getInteger("rebuyexpr", PokerConstants.REBUY_LT));
+        assertEquals(PokerConstants.REBUY_LTE, map.getInteger("rebuyexpr", PokerConstants.REBUY_LT),
+                "Rebuy expression should remain LTE");
     }
 
     // ========== fixAllocs() Tests ==========
@@ -244,9 +244,9 @@ public class ProfileValidatorTest {
         validator.fixAllocs();
 
         // Then: amounts should be formatted as integers
-        assertEquals("Spot 1 should be formatted as integer", "5000", map.getString("spotamount1"));
-        assertEquals("Spot 2 should be formatted as integer", "3000", map.getString("spotamount2"));
-        assertEquals("Spot 3 should be formatted as integer", "2000", map.getString("spotamount3"));
+        assertEquals("5000", map.getString("spotamount1"), "Spot 1 should be formatted as integer");
+        assertEquals("3000", map.getString("spotamount2"), "Spot 2 should be formatted as integer");
+        assertEquals("2000", map.getString("spotamount3"), "Spot 3 should be formatted as integer");
     }
 
     @Test
@@ -265,9 +265,9 @@ public class ProfileValidatorTest {
         validator.fixAllocs();
 
         // Then: amounts should be formatted as percentages
-        assertEquals("Spot 1 should be formatted as percent", "50.5", map.getString("spotamount1"));
-        assertEquals("Spot 2 should be formatted as percent", "30.25", map.getString("spotamount2"));
-        assertEquals("Spot 3 should be formatted as percent", "19.25", map.getString("spotamount3"));
+        assertEquals("50.5", map.getString("spotamount1"), "Spot 1 should be formatted as percent");
+        assertEquals("30.25", map.getString("spotamount2"), "Spot 2 should be formatted as percent");
+        assertEquals("19.25", map.getString("spotamount3"), "Spot 3 should be formatted as percent");
     }
 
     @Test
@@ -287,8 +287,8 @@ public class ProfileValidatorTest {
         validator.fixAllocs();
 
         // Then: extra spots should be cleared
-        assertNull("Spot 4 should be cleared", map.getString("spotamount4"));
-        assertNull("Spot 5 should be cleared", map.getString("spotamount5"));
+        assertNull(map.getString("spotamount4"), "Spot 4 should be cleared");
+        assertNull(map.getString("spotamount5"), "Spot 5 should be cleared");
     }
 
     @Test
@@ -307,8 +307,8 @@ public class ProfileValidatorTest {
         validator.fixAllocs();
 
         // Then: only spot 1 should be formatted
-        assertNotNull("Spot 1 should be formatted", map.getString("spotamount1"));
-        assertNull("Spot 2 should not be formatted in satellite mode", map.getString("spotamount2"));
+        assertNotNull(map.getString("spotamount1"), "Spot 1 should be formatted");
+        assertNull(map.getString("spotamount2"), "Spot 2 should not be formatted in satellite mode");
     }
 
     // ========== Test Helper: Callbacks Implementation ==========
@@ -400,9 +400,9 @@ public class ProfileValidatorTest {
         ValidationResult result = validator.validateProfile();
 
         // Then: should warn about unreachable levels
-        assertTrue("Should warn when rebuy period ends very early", result.hasWarnings());
-        assertTrue("Should contain UNREACHABLE_LEVELS warning",
-                result.getWarnings().contains(ValidationWarning.UNREACHABLE_LEVELS));
+        assertTrue(result.hasWarnings(), "Should warn when rebuy period ends very early");
+        assertTrue(result.getWarnings().contains(ValidationWarning.UNREACHABLE_LEVELS),
+                "Should contain UNREACHABLE_LEVELS warning");
     }
 
     @Test
@@ -421,8 +421,8 @@ public class ProfileValidatorTest {
         ValidationResult result = validator.validateProfile();
 
         // Then: should not warn for normal rebuy period (>= 25% threshold)
-        assertFalse("Should not warn for normal rebuy period",
-                result.getWarnings().contains(ValidationWarning.UNREACHABLE_LEVELS));
+        assertFalse(result.getWarnings().contains(ValidationWarning.UNREACHABLE_LEVELS),
+                "Should not warn for normal rebuy period");
     }
 
     @Test
@@ -440,8 +440,8 @@ public class ProfileValidatorTest {
         ValidationResult result = validator.validateProfile();
 
         // Then: should not warn about unreachable levels
-        assertFalse("Should not warn when rebuy reaches last level",
-                result.getWarnings().contains(ValidationWarning.UNREACHABLE_LEVELS));
+        assertFalse(result.getWarnings().contains(ValidationWarning.UNREACHABLE_LEVELS),
+                "Should not warn when rebuy reaches last level");
     }
 
     @Test
@@ -458,8 +458,8 @@ public class ProfileValidatorTest {
         ValidationResult result = validator.validateProfile();
 
         // Then: should not warn (rebuys not enabled)
-        assertFalse("Should not warn when rebuys disabled",
-                result.getWarnings().contains(ValidationWarning.UNREACHABLE_LEVELS));
+        assertFalse(result.getWarnings().contains(ValidationWarning.UNREACHABLE_LEVELS),
+                "Should not warn when rebuys disabled");
     }
 
     @Test
@@ -479,8 +479,8 @@ public class ProfileValidatorTest {
         ValidationResult result = validator.validateProfile();
 
         // Then: should warn about too many spots
-        assertTrue("Should warn about too many payout spots",
-                result.getWarnings().contains(ValidationWarning.TOO_MANY_PAYOUT_SPOTS));
+        assertTrue(result.getWarnings().contains(ValidationWarning.TOO_MANY_PAYOUT_SPOTS),
+                "Should warn about too many payout spots");
     }
 
     @Test
@@ -500,8 +500,8 @@ public class ProfileValidatorTest {
         ValidationResult result = validator.validateProfile();
 
         // Then: should not warn
-        assertFalse("Should not warn when spots within player count",
-                result.getWarnings().contains(ValidationWarning.TOO_MANY_PAYOUT_SPOTS));
+        assertFalse(result.getWarnings().contains(ValidationWarning.TOO_MANY_PAYOUT_SPOTS),
+                "Should not warn when spots within player count");
     }
 
     @Test
@@ -518,8 +518,8 @@ public class ProfileValidatorTest {
         ValidationResult result = validator.validateProfile();
 
         // Then: should warn about shallow depth
-        assertTrue("Should warn about shallow starting depth",
-                result.getWarnings().contains(ValidationWarning.SHALLOW_STARTING_DEPTH));
+        assertTrue(result.getWarnings().contains(ValidationWarning.SHALLOW_STARTING_DEPTH),
+                "Should warn about shallow starting depth");
     }
 
     @Test
@@ -536,8 +536,8 @@ public class ProfileValidatorTest {
         ValidationResult result = validator.validateProfile();
 
         // Then: should not warn
-        assertFalse("Should not warn when depth >= 10BB",
-                result.getWarnings().contains(ValidationWarning.SHALLOW_STARTING_DEPTH));
+        assertFalse(result.getWarnings().contains(ValidationWarning.SHALLOW_STARTING_DEPTH),
+                "Should not warn when depth >= 10BB");
     }
 
     @Test
@@ -554,8 +554,8 @@ public class ProfileValidatorTest {
         ValidationResult result = validator.validateProfile();
 
         // Then: should not warn (can't calculate depth)
-        assertFalse("Should not warn when big blind is zero",
-                result.getWarnings().contains(ValidationWarning.SHALLOW_STARTING_DEPTH));
+        assertFalse(result.getWarnings().contains(ValidationWarning.SHALLOW_STARTING_DEPTH),
+                "Should not warn when big blind is zero");
     }
 
     @Test
@@ -572,8 +572,8 @@ public class ProfileValidatorTest {
         ValidationResult result = validator.validateProfile();
 
         // Then: should warn about excessive house take
-        assertTrue("Should warn about excessive house take",
-                result.getWarnings().contains(ValidationWarning.EXCESSIVE_HOUSE_TAKE));
+        assertTrue(result.getWarnings().contains(ValidationWarning.EXCESSIVE_HOUSE_TAKE),
+                "Should warn about excessive house take");
     }
 
     @Test
@@ -590,8 +590,8 @@ public class ProfileValidatorTest {
         ValidationResult result = validator.validateProfile();
 
         // Then: should not warn
-        assertFalse("Should not warn when house take <= 20%",
-                result.getWarnings().contains(ValidationWarning.EXCESSIVE_HOUSE_TAKE));
+        assertFalse(result.getWarnings().contains(ValidationWarning.EXCESSIVE_HOUSE_TAKE),
+                "Should not warn when house take <= 20%");
     }
 
     @Test
@@ -609,8 +609,8 @@ public class ProfileValidatorTest {
         ValidationResult result = validator.validateProfile();
 
         // Then: should warn (25% is over threshold)
-        assertTrue("Should warn about excessive house amount",
-                result.getWarnings().contains(ValidationWarning.EXCESSIVE_HOUSE_TAKE));
+        assertTrue(result.getWarnings().contains(ValidationWarning.EXCESSIVE_HOUSE_TAKE),
+                "Should warn about excessive house amount");
     }
 
     @Test
@@ -628,8 +628,8 @@ public class ProfileValidatorTest {
         ValidationResult result = validator.validateProfile();
 
         // Then: should not warn
-        assertFalse("Should not warn when house amount < 20% of buyin",
-                result.getWarnings().contains(ValidationWarning.EXCESSIVE_HOUSE_TAKE));
+        assertFalse(result.getWarnings().contains(ValidationWarning.EXCESSIVE_HOUSE_TAKE),
+                "Should not warn when house amount < 20% of buyin");
     }
 
     @Test
@@ -653,11 +653,11 @@ public class ProfileValidatorTest {
         ValidationResult result = validator.validateProfile();
 
         // Then: should return both warnings
-        assertTrue("Should have warnings", result.hasWarnings());
-        assertEquals("Should have 2 warnings", 2, result.getWarnings().size());
-        assertTrue("Should warn about payout spots",
-                result.getWarnings().contains(ValidationWarning.TOO_MANY_PAYOUT_SPOTS));
-        assertTrue("Should warn about house take",
-                result.getWarnings().contains(ValidationWarning.EXCESSIVE_HOUSE_TAKE));
+        assertTrue(result.hasWarnings(), "Should have warnings");
+        assertEquals(2, result.getWarnings().size(), "Should have 2 warnings");
+        assertTrue(result.getWarnings().contains(ValidationWarning.TOO_MANY_PAYOUT_SPOTS),
+                "Should warn about payout spots");
+        assertTrue(result.getWarnings().contains(ValidationWarning.EXCESSIVE_HOUSE_TAKE),
+                "Should warn about house take");
     }
 }

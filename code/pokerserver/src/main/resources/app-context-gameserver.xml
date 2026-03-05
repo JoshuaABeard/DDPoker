@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+  DD Poker - Source Code
+  Copyright (c) 2003-2026 Doug Donohoe
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  For the full License text, please see the LICENSE.txt file
+  in the root directory of this project.
+
+  The "DD Poker" and "Donohoe Digital" names and logos, as well as any images,
+  graphics, text, and documentation found in this repository (including but not
+  limited to written documentation, website content, and marketing materials)
+  are licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives
+  4.0 International License (CC BY-NC-ND 4.0). You may not use these assets
+  without explicit written permission for any uses not covered by this License.
+  For the full License text, please see the LICENSE-CREATIVE-COMMONS.txt file
+  in the root directory of this project.
+
+  For inquiries regarding commercial licensing of this source code or
+  the use of names, logos, images, text, or other assets, please contact
+  doug [at] donohoe [dot] info.
+  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+-->
+<!--
+  Shared Spring context for game server beans (datasource, JPA, transactions).
+  Originally lived in the gameserver module; moved here when that module was removed.
+  Imported by app-context-pokerserver.xml and app-context-pokerservertests.xml.
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+          http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+          http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd"
+>
+
+  <!-- logging bean, ideally everything depends on this so it is created first -->
+  <bean id="loggingConfig" class="com.donohoedigital.config.LoggingConfig" init-method="init">
+    <constructor-arg value="${app.name}"/>
+    <constructor-arg value="${app.type}"/>
+  </bean>
+
+  <!-- Turn on processing for @Transactional annotations -->
+  <tx:annotation-driven/>
+
+  <!-- Turn on auto scanning for DAOs (@Repository, @Service annotations) -->
+  <!-- Exclude API module package to avoid bean name conflicts in Docker
+       where all module classes share a single classpath -->
+  <!-- Exclude pokergameserver Spring Boot auto-configurations: they are designed for a
+       Spring Boot context (with @EntityScan, @EnableJpaRepositories, JWT config, etc.)
+       and must not be component-scanned into this legacy XML-based Spring context. -->
+  <context:component-scan base-package="com.donohoedigital">
+    <context:exclude-filter type="regex" expression="com\.donohoedigital\.poker\.api\..*"/>
+    <context:exclude-filter type="regex" expression="com\.donohoedigital\.games\.poker\.gameserver\..*"/>
+  </context:component-scan>
+
+  <!-- application properties -->
+  <context:property-placeholder location="classpath:application.properties"/>
+
+  <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource"
+        depends-on="loggingConfig">
+    <property name="driverClassName" value="${db.driver}"/>
+    <property name="url" value="${db.url}"/>
+    <property name="username" value="${db.user}"/>
+    <property name="password" value="${db.password}"/>
+  </bean>
+
+  <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean"
+        depends-on="loggingConfig">
+    <property name="dataSource" ref="dataSource"/>
+    <property name="persistenceXmlLocation" value="${jpa.persistence.location}"/>
+    <property name="persistenceUnitName" value="${jpa.persistence.name}"/>
+    <property name="jpaVendorAdapter">
+      <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+        <!-- controlled via log4j -->
+        <property name="showSql" value="false"/>
+        <property name="generateDdl" value="true"/>
+      </bean>
+    </property>
+    <!-- hibernate specific settings for schema generation -->
+    <property name="jpaPropertyMap">
+      <map>
+        <entry key="hibernate.hbm2ddl.auto" value="update"/>
+        <entry key="hibernate.show_sql" value="false"/>
+        <entry key="hibernate.format_sql" value="false"/>
+      </map>
+    </property>
+  </bean>
+
+  <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager" depends-on="loggingConfig">
+    <property name="entityManagerFactory" ref="entityManagerFactory"/>
+  </bean>
+
+  <!-- post-process for @PersistenceContext and exception translation -->
+  <bean class="org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor" depends-on="loggingConfig"/>
+  <bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor" depends-on="loggingConfig"/>
+
+  <!-- common beans -->
+
+</beans>

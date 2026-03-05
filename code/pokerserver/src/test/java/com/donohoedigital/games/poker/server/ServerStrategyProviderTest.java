@@ -233,7 +233,8 @@ class ServerStrategyProviderTest {
         pocket.addCard(new Card(CardSuit.SPADES, Card.ACE));
         pocket.addCard(new Card(CardSuit.HEARTS, Card.ACE));
 
-        // Currently hand-specific factors use default values (TODO in implementation)
+        // Currently hand-specific factors use default values (Future: implement
+        // hand-specific lookup)
         // So this should return same as non-hand version (with same modifier)
         float factorNoHand = provider.getStratFactor("test.factor", 0.0f, 1.0f);
         float factorWithHand = provider.getStratFactor("test.factor", pocket, 0.0f, 1.0f);

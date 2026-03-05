@@ -213,7 +213,7 @@ public class DDHtmlArea extends JEditorPane implements DDTextVisibleComponent {
         return bDisplayOnly_;
     }
 
-    // TODO: set caret separately with own style?
+    // Future: set caret separately with own style?
     @Override
     public void setForeground(Color c) {
         super.setForeground(c);

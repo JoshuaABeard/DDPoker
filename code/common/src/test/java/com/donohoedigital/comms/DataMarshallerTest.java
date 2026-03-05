@@ -32,14 +32,15 @@
  */
 package com.donohoedigital.comms;
 
-import junit.framework.*;
+import org.junit.jupiter.api.*;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Apr 4, 2008 Time: 1:37:52 PM To
  * change this template use File | Settings | File Templates.
  */
-public class DataMarshallerTest extends TestCase {
-    public void testStatic() {
+class DataMarshallerTest {
+    @Test
+    void testStatic() {
         new DataMarshaller();
     }
 }

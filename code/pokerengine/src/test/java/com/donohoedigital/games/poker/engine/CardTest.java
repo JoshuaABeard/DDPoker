@@ -21,11 +21,11 @@ package com.donohoedigital.games.poker.engine;
 
 import com.donohoedigital.comms.MsgState;
 import com.donohoedigital.config.ConfigTestHelper;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static com.donohoedigital.games.poker.engine.Card.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Comprehensive tests for Card class - the fundamental poker card
@@ -34,7 +34,7 @@ import static org.junit.Assert.*;
  */
 public class CardTest {
 
-    @BeforeClass
+    @BeforeAll
     public static void setupConfig() {
         ConfigTestHelper.initializeForTesting("poker");
     }
@@ -176,8 +176,8 @@ public class CardTest {
         assertNotNull(getRank(KING));
         assertNotNull(getRank(QUEEN));
         assertNotNull(getRank(JACK));
-        assertEquals("10", getRank(10));
-        assertEquals("2", getRank(2));
+        assertEquals(getRank(10), "10");
+        assertEquals(getRank(2), "2");
     }
 
     @Test
@@ -444,7 +444,7 @@ public class CardTest {
             String marshalled = original.marshal(state);
             Card restored = new Card();
             restored.demarshal(state, marshalled);
-            assertEquals("Failed for card: " + original, original, restored);
+            assertEquals(original, restored, "Failed for card: " + original);
         }
     }
 

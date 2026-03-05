@@ -42,6 +42,8 @@ import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.CardSuit;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.HandScoreConstants;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Pure hand evaluation logic extracted from poker module HandInfoFast. UI and
@@ -51,6 +53,8 @@ import com.donohoedigital.games.poker.engine.HandScoreConstants;
  */
 @SuppressWarnings({"FieldCanBeLocal", "unused", "StatementWithEmptyBody", "DuplicatedCode"})
 public class HandInfoFast implements HandScoreConstants {
+
+    private static final Logger logger = LogManager.getLogger(HandInfoFast.class);
 
     // num cards
     private static final int NUM_CARDS = 5;
@@ -187,7 +191,7 @@ public class HandInfoFast implements HandScoreConstants {
         try {
             return getScoreInternal(pocket, community);
         } catch (RuntimeException e) {
-            System.out.println("Caught runtime exception in getScore(" + pocket + ", " + community + ")");
+            logger.error("Caught runtime exception in getScore({}, {})", pocket, community);
 
             throw e;
         }

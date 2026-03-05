@@ -21,11 +21,11 @@ package com.donohoedigital.games.poker.engine;
 
 import com.donohoedigital.comms.MsgState;
 import com.donohoedigital.config.ConfigTestHelper;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static com.donohoedigital.games.poker.engine.Card.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Comprehensive tests for Hand class - collection of cards with poker-specific
@@ -34,7 +34,7 @@ import static org.junit.Assert.*;
  */
 public class HandTest {
 
-    @BeforeClass
+    @BeforeAll
     public static void setupConfig() {
         ConfigTestHelper.initializeForTesting("poker");
     }

@@ -50,13 +50,6 @@ class ShowTournamentTableFocusTest {
     // ========================================
 
     @Test
-    void should_ReturnTrue_When_ChatHasFocus() throws Exception {
-        // TODO: Implement test for isFocusInChat() when chat has focus
-        // This requires mocking complex Swing components
-        // For now, manual testing will verify this behavior
-    }
-
-    @Test
     void should_ReturnTrue_When_OnlineLobbyHasFocus() {
         // Test that isFocusInChat() returns true when OnlineLobby has focus
         // This will be implemented once we have the proper test infrastructure

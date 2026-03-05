@@ -20,9 +20,9 @@
 package com.donohoedigital.games.poker.model;
 
 import com.donohoedigital.comms.DMTypedHashMap;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for BlindStructure - encapsulates blind/ante access logic with
@@ -296,16 +296,19 @@ public class BlindStructureTest {
         assertEquals(0, small);
     }
 
-    @Test(expected = com.donohoedigital.base.ApplicationError.class)
+    @Test
     public void should_ThrowError_WhenGettingBlindForBreakLevel() {
-        // Given: level 1 is a break
-        DMTypedHashMap map = new DMTypedHashMap();
-        map.setString("ante1", String.valueOf(TournamentProfile.BREAK_ANTE_VALUE));
-        map.setInteger("lastlevel", 1);
+        assertThrows(com.donohoedigital.base.ApplicationError.class, () -> {
+            // Given: level 1 is a break
+            DMTypedHashMap map = new DMTypedHashMap();
+            map.setString("ante1", String.valueOf(TournamentProfile.BREAK_ANTE_VALUE));
+            map.setInteger("lastlevel", 1);
 
-        BlindStructure blinds = new BlindStructure(map);
+            BlindStructure blinds = new BlindStructure(map);
 
-        // When/Then: attempting to get blind for break should throw
-        blinds.getSmallBlind(1);
+            // When/Then: attempting to get blind for break should throw
+            blinds.getSmallBlind(1);
+
+        });
     }
 }

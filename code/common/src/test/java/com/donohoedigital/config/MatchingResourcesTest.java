@@ -32,60 +32,57 @@
  */
 package com.donohoedigital.config;
 
-import junit.framework.*;
 import org.apache.logging.log4j.*;
+import org.junit.jupiter.api.*;
 import org.springframework.core.io.*;
 
 import java.lang.annotation.*;
 import java.net.*;
 import java.util.*;
 
+import static org.assertj.core.api.Assertions.*;
+
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Apr 6, 2008 Time: 3:19:51 PM To
  * change this template use File | Settings | File Templates.
  */
-public class MatchingResourcesTest extends TestCase {
+class MatchingResourcesTest {
     Logger logger = LogManager.getLogger(MatchingResourcesTest.class);
 
-    public void testFindResources() {
+    @Test
+    void testFindResources() {
         MatchingResources mr = new MatchingResources("classpath*:com/donohoedigital/config/ConfigUtils.class");
         URL[] match = mr.getAllMatchesURL();
-        assertTrue(match.length == 1);
+        assertThat(match.length).isEqualTo(1);
 
         logger.info("URL: " + match[0]);
-        assertTrue(mr.getURL(null) == null);
+        assertThat(mr.getURL(null)).isNull();
 
         Resource[] none = new MatchingResources("classpath*:com/donohoedigital/config/NoSuchFile.class")
                 .getAllMatches();
-        assertTrue(none.length == 0);
+        assertThat(none.length).isEqualTo(0);
     }
 
-    public void testFindResource() {
+    @Test
+    void testFindResource() {
         Resource thiz = new MatchingResources("classpath*:com/donohoedigital/config/MatchingResourcesTest.class")
                 .getSingleRequiredResource();
-        assertNotNull(thiz);
+        assertThat(thiz).isNotNull();
 
         // test required
-        try {
-            new MatchingResources("classpath*:com/donohoedigital/config/NoSuchFile.class").getSingleRequiredResource();
-            fail("should have thrown exception");
-        } catch (Exception ae) {
-            logger.debug("Expected exception: " + ae.getMessage());
-        }
+        assertThatThrownBy(() -> new MatchingResources("classpath*:com/donohoedigital/config/NoSuchFile.class")
+                .getSingleRequiredResource()).isInstanceOf(Exception.class);
 
         // test multiple matches
-        try {
-            new MatchingResources("classpath*:com/donohoedigital/config/*.class").getSingleResource();
-            fail("should have thrown exception");
-        } catch (Exception ae) {
-            logger.debug("Expected exception: " + ae.getMessage());
-        }
-
+        assertThatThrownBy(
+                () -> new MatchingResources("classpath*:com/donohoedigital/config/*.class").getSingleResource())
+                        .isInstanceOf(Exception.class);
     }
 
-    public void testToString() {
+    @Test
+    void testToString() {
         MatchingResources mr = new MatchingResources("classpath*:com/donohoedigital/config/*.class");
-        assertTrue(mr.getAllMatches().length > 0);
+        assertThat(mr.getAllMatches().length).isGreaterThan(0);
 
         logger.info("URLs:\n" + mr);
     }
@@ -120,34 +117,37 @@ public class MatchingResourcesTest extends TestCase {
     private static class NoMatchTest {
     }
 
-    public void testMatchingAnno() {
+    @Test
+    void testMatchingAnno() {
         MatchingResources mr = new MatchingResources("classpath*:com/donohoedigital/config/*.class");
         Set<Class<?>> matches = mr.getAnnotatedMatches(AnnoMatchTest.class);
-        assertTrue(matches.contains(MatchTestImpl.class));
-        assertTrue(matches.contains(MatchTestSubImpl2.class));
-        assertEquals(2, matches.size());
+        assertThat(matches).contains(MatchTestImpl.class);
+        assertThat(matches).contains(MatchTestSubImpl2.class);
+        assertThat(matches).hasSize(2);
     }
 
-    public void testMatchingImpl() {
+    @Test
+    void testMatchingImpl() {
         MatchingResources mr = new MatchingResources("classpath*:com/donohoedigital/config/*.class");
         Set<Class<?>> matches = mr.getImplementingMatches(MatchTest.class);
-        assertTrue(matches.contains(MatchTestImpl.class));
-        assertTrue(matches.contains(MatchTestSubImpl.class));
-        assertTrue(matches.contains(MatchTest2Impl.class));
-        assertTrue(matches.contains(MatchTestSubImpl2.class));
-        assertTrue(matches.contains(MatchTestSubSubImpl.class));
-        assertEquals(5, matches.size());
-        assertFalse(matches.contains(NoMatchTest.class));
-        assertFalse(matches.contains(MatchTest.class));
-        assertFalse(matches.contains(MatchTest2.class));
+        assertThat(matches).contains(MatchTestImpl.class);
+        assertThat(matches).contains(MatchTestSubImpl.class);
+        assertThat(matches).contains(MatchTest2Impl.class);
+        assertThat(matches).contains(MatchTestSubImpl2.class);
+        assertThat(matches).contains(MatchTestSubSubImpl.class);
+        assertThat(matches).hasSize(5);
+        assertThat(matches).doesNotContain(NoMatchTest.class);
+        assertThat(matches).doesNotContain(MatchTest.class);
+        assertThat(matches).doesNotContain(MatchTest2.class);
     }
 
-    public void testGetSubclasses() {
+    @Test
+    void testGetSubclasses() {
         MatchingResources mr = new MatchingResources("classpath*:com/donohoedigital/config/*.class");
         Set<Class<?>> matches = mr.getSubclasses(MatchTestImpl.class);
-        assertTrue(matches.contains(MatchTestSubImpl.class));
-        assertTrue(matches.contains(MatchTestSubSubImpl.class));
-        assertTrue(matches.contains(MatchTestSubImpl2.class));
-        assertEquals(3, matches.size());
+        assertThat(matches).contains(MatchTestSubImpl.class);
+        assertThat(matches).contains(MatchTestSubSubImpl.class);
+        assertThat(matches).contains(MatchTestSubImpl2.class);
+        assertThat(matches).hasSize(3);
     }
 }

@@ -85,8 +85,8 @@ public class PokerMain extends GameEngine {
         System.setProperty("sun.java2d.noddraw", "true");
 
         // Mac: Menu Name
-        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "DD Poker"); // TODO + version?
-        System.setProperty("apple.awt.application.name", "DD Poker"); // TODO + version?
+        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "DD Poker"); // Future: append version?
+        System.setProperty("apple.awt.application.name", "DD Poker"); // Future: append version?
 
         // avoid java.lang.NullPointerException
         // at javax.swing.plaf.metal.MetalSliderUI.installUI(MetalSliderUI.java:110)
@@ -107,17 +107,18 @@ public class PokerMain extends GameEngine {
     /**
      * Run Poker
      */
-    @SuppressWarnings({"UseOfSystemOutOrSystemErr"})
     public static void main(String[] args) {
         try {
             PokerMain main = new PokerMain(APP_NAME, "poker", args);
             main.init();
         } catch (ApplicationError ae) {
-            System.err.println("Poker ending due to ApplicationError: " + ae);
+            logger.error("Poker ending due to ApplicationError: {}", ae);
             System.exit(1);
         } catch (OutOfMemoryError nomem) {
-            System.err.println("Out of memory: " + nomem);
-            System.err.println(Utils.formatExceptionText(nomem));
+            // Note: Log4j2 may also fail in OOM conditions (heap exhaustion); this is
+            // best-effort.
+            logger.error("Out of memory: {}", nomem);
+            logger.error("{}", Utils.formatExceptionText(nomem));
             System.exit(1);
         }
     }
@@ -464,9 +465,9 @@ public class PokerMain extends GameEngine {
         }
 
         if (!bShowDialog) {
-            getDefaultContext().processPhase("GamePrefs"); // TODO: active context?
+            getDefaultContext().processPhase("GamePrefs"); // Future: active context?
         } else {
-            getDefaultContext().processPhase("GamePrefsDialog"); // TODO: active context?
+            getDefaultContext().processPhase("GamePrefsDialog"); // Future: active context?
         }
     }
 

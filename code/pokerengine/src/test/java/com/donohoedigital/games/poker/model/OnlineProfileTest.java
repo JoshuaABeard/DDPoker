@@ -32,12 +32,12 @@
  */
 package com.donohoedigital.games.poker.model;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Date;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.donohoedigital.comms.DMTypedHashMap;
 
@@ -48,7 +48,7 @@ public class OnlineProfileTest {
 
     private OnlineProfile profile;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         profile = new OnlineProfile();
     }

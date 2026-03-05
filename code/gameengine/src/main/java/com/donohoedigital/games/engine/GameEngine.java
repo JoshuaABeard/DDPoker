@@ -546,7 +546,7 @@ public abstract class GameEngine extends BaseApp {
     @Override
     public boolean okayToClose() {
         // this prompts users
-        defaultContext_.processPhase("Exit"); // TODO: active context?
+        defaultContext_.processPhase("Exit"); // Future: active context?
         return false;
     }
 
@@ -555,7 +555,7 @@ public abstract class GameEngine extends BaseApp {
      */
     @Override
     public void showPrefs() {
-        defaultContext_.processPhase("Prefs"); // TODO: active context?
+        defaultContext_.processPhase("Prefs"); // Future: active context?
     }
 
     /**

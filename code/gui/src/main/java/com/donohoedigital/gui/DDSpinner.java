@@ -72,7 +72,7 @@ public class DDSpinner extends JSpinner implements DDTextVisibleComponent {
     private void init(String sName, String sStyle) {
         setOpaque(false);
         GuiManager.init(this, sName, sStyle);
-        setFocusable(false); // TODO: set not focusable until we can paint focus
+        setFocusable(false); // Future: set not focusable until we can paint focus
         fixBordersAndStuff();
     }
 

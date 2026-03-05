@@ -435,7 +435,7 @@ public class DashboardItem
         }
     }
 
-    // only one needed for all instances TODO: move to ulility
+    // only one needed for all instances; Future: move to utility
     private static final java.util.Timer timer = new java.util.Timer("Dashboard-Timer", true);
 
     /**
@@ -522,7 +522,7 @@ public class DashboardItem
     // ApplicationError.assertTrue(!bSetTableEventsImmediateNotAllowed_,
     // "Can't call after trackTableEvents called");
     //
-    // // TODO: testing to see if invokeNow removes need for this method
+    // // testing to see if invokeNow removes need for this method
     // // bTableEventsInSwing_ = false;
     // }
 

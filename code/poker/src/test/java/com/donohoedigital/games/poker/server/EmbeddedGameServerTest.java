@@ -38,6 +38,19 @@ class EmbeddedGameServerTest {
 
     private EmbeddedGameServer server;
 
+    @BeforeAll
+    static void setTestDatasource() {
+        System.setProperty("spring.datasource.url",
+                "jdbc:h2:mem:embeddedgameservertest;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
+        System.setProperty("spring.jpa.hibernate.ddl-auto", "create-drop");
+    }
+
+    @AfterAll
+    static void clearTestDatasource() {
+        System.clearProperty("spring.datasource.url");
+        System.clearProperty("spring.jpa.hibernate.ddl-auto");
+    }
+
     @BeforeEach
     void setUp() {
         server = new EmbeddedGameServer();

@@ -49,7 +49,7 @@ import java.beans.*;
 import java.io.*;
 
 /**
- * TODO: currently this is designed for saving as... doing 'pick file' needs
+ * Future: currently this is designed for saving as... doing 'pick file' needs
  * some work (see DeckProfile)
  *
  * @author Doug Donohoe

@@ -32,34 +32,37 @@
  */
 package com.donohoedigital.config;
 
-import junit.framework.*;
 import org.apache.logging.log4j.*;
+import org.junit.jupiter.api.*;
 
 import java.util.*;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Apr 7, 2008 Time: 8:28:44 AM To
  * change this template use File | Settings | File Templates.
  */
-public class DataElementConfigTest extends TestCase {
+class DataElementConfigTest {
     private static Logger logger = LogManager.getLogger(DataElementConfigTest.class);
 
     @SuppressWarnings({"SuspiciousMethodCalls"})
-    public void testLoad() {
+    @Test
+    void testLoad() {
         String[] modules = {"common", "testapp"};
         new PropertyConfig("testapp", modules, ApplicationType.CLIENT, null, true);
         DataElementConfig dec = new DataElementConfig("testapp", null);
 
         DataElement dogs = dec.get("dogs");
-        assertNotNull(dogs);
+        assertThat(dogs).isNotNull();
 
-        List<?> values = dogs.getListValues();
+        List<Object> values = new ArrayList<>(dogs.getListValues());
         for (Object o : values) {
             logger.info("Value: " + o);
         }
-        assertTrue(values.contains("tahoe"));
-        assertTrue(values.contains("dexter"));
-        assertTrue(values.contains("zorro"));
-        assertFalse(values.contains("rugby"));
+        assertThat(values).contains("tahoe");
+        assertThat(values).contains("dexter");
+        assertThat(values).contains("zorro");
+        assertThat(values).doesNotContain("rugby");
     }
 }

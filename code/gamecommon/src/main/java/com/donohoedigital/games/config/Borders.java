@@ -175,7 +175,8 @@ public class Borders extends TreeSet<Border> {
                     borderwriter = XMLWriter.CreateXMLWriter(fConfigFile, false);
                     borderwriter.printXMLHeaderLine();
                     borderwriter.printRootElementStartLine(BORDER_TAG, XMLConfigFileLoader.DDNAMESPACE,
-                            "../../xml-schema/" + BORDER_XSD, nBorderIndent); // TODO: determine path programmatically?
+                            "../../xml-schema/" + BORDER_XSD, nBorderIndent); // Future: determine path
+                                                                                // programmatically?
                     borderwriter.printNewLine();
                 }
 

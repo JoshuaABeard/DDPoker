@@ -33,28 +33,31 @@
 package com.donohoedigital.config;
 
 import com.donohoedigital.base.*;
-import junit.framework.*;
+import org.junit.jupiter.api.*;
 
 import java.awt.image.*;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Apr 7, 2008 Time: 9:49:51 AM To
  * change this template use File | Settings | File Templates.
  */
-public class ImageConfigTest extends TestCase {
+class ImageConfigTest {
     // private static Logger logger = LogManager.getLogger(ImageConfigTest.class);
 
-    public void testLoad() {
+    @Test
+    void testLoad() {
         String[] modules = {"common", "testapp"};
         new ImageConfig(modules);
 
         ImageDef def = ImageConfig.getImageDef("icon");
-        assertNotNull(def);
+        assertThat(def).isNotNull();
 
         if (!Utils.ISMAC) // doesn't play nicely on mac
         {
             BufferedImage img = def.getBufferedImage();
-            assertNotNull(img);
+            assertThat(img).isNotNull();
         }
     }
 }

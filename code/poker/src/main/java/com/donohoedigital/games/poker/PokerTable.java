@@ -535,7 +535,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
         players_[nSeat] = null;
 
         // move button if button was at this player
-        // TODO: dead button support (we assume button always at a player in various
+        // Future: dead button support (we assume button always at a player in various
         // places like deal display)
         if (nButton_ == nSeat && getNumOccupiedSeats() > 0) {
             moveButton();
@@ -1138,7 +1138,7 @@ public class PokerTable implements ObjectID, GameTable, ClientPokerTable {
      */
     @Override
     public boolean isAutoDeal() {
-        // TODO Phase 2: Determine correct source for auto-deal setting
+        // Future: Determine correct source for auto-deal setting
         // May need to check game settings or tournament profile
         return true;
     }

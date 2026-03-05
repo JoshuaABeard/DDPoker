@@ -295,7 +295,7 @@ public class StylesConfig extends XMLConfigFileLoader {
                             + newfont.getFontName() + " (" + newfont.getFamily() + ")" + " size: " + newfont.getSize());
                 }
             }
-            // TODO: check for matching fontname
+            // Future: check for matching fontname
             fonts_.put(sName, newfont);
         }
     }

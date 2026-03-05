@@ -19,9 +19,9 @@
  */
 package com.donohoedigital.games.poker.model;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for LevelAdvanceMode enum.
@@ -31,76 +31,76 @@ public class LevelAdvanceModeTest {
     @Test
     public void testEnumValues() {
         LevelAdvanceMode[] values = LevelAdvanceMode.values();
-        assertEquals("Should have 2 values", 2, values.length);
-        assertEquals("First value should be TIME", LevelAdvanceMode.TIME, values[0]);
-        assertEquals("Second value should be HANDS", LevelAdvanceMode.HANDS, values[1]);
+        assertEquals(2, values.length, "Should have 2 values");
+        assertEquals(LevelAdvanceMode.TIME, values[0], "First value should be TIME");
+        assertEquals(LevelAdvanceMode.HANDS, values[1], "Second value should be HANDS");
     }
 
     @Test
     public void testGetDisplayNameForTime() {
-        assertEquals("TIME display name should be 'Time'", "Time", LevelAdvanceMode.TIME.getDisplayName());
+        assertEquals("Time", LevelAdvanceMode.TIME.getDisplayName(), "TIME display name should be 'Time'");
     }
 
     @Test
     public void testGetDisplayNameForHands() {
-        assertEquals("HANDS display name should be 'Hands'", "Hands", LevelAdvanceMode.HANDS.getDisplayName());
+        assertEquals("Hands", LevelAdvanceMode.HANDS.getDisplayName(), "HANDS display name should be 'Hands'");
     }
 
     @Test
     public void testToStringForTime() {
-        assertEquals("TIME toString should be 'Time'", "Time", LevelAdvanceMode.TIME.toString());
+        assertEquals("Time", LevelAdvanceMode.TIME.toString(), "TIME toString should be 'Time'");
     }
 
     @Test
     public void testToStringForHands() {
-        assertEquals("HANDS toString should be 'Hands'", "Hands", LevelAdvanceMode.HANDS.toString());
+        assertEquals("Hands", LevelAdvanceMode.HANDS.toString(), "HANDS toString should be 'Hands'");
     }
 
     @Test
     public void testFromStringWithValidUpperCase() {
-        assertEquals("Should parse 'TIME'", LevelAdvanceMode.TIME, LevelAdvanceMode.fromString("TIME"));
-        assertEquals("Should parse 'HANDS'", LevelAdvanceMode.HANDS, LevelAdvanceMode.fromString("HANDS"));
+        assertEquals(LevelAdvanceMode.TIME, LevelAdvanceMode.fromString("TIME"), "Should parse 'TIME'");
+        assertEquals(LevelAdvanceMode.HANDS, LevelAdvanceMode.fromString("HANDS"), "Should parse 'HANDS'");
     }
 
     @Test
     public void testFromStringWithValidLowerCase() {
-        assertEquals("Should parse 'time' (case insensitive)", LevelAdvanceMode.TIME,
-                LevelAdvanceMode.fromString("time"));
-        assertEquals("Should parse 'hands' (case insensitive)", LevelAdvanceMode.HANDS,
-                LevelAdvanceMode.fromString("hands"));
+        assertEquals(LevelAdvanceMode.TIME, LevelAdvanceMode.fromString("time"),
+                "Should parse 'time' (case insensitive)");
+        assertEquals(LevelAdvanceMode.HANDS, LevelAdvanceMode.fromString("hands"),
+                "Should parse 'hands' (case insensitive)");
     }
 
     @Test
     public void testFromStringWithValidMixedCase() {
-        assertEquals("Should parse 'Time'", LevelAdvanceMode.TIME, LevelAdvanceMode.fromString("Time"));
-        assertEquals("Should parse 'Hands'", LevelAdvanceMode.HANDS, LevelAdvanceMode.fromString("Hands"));
+        assertEquals(LevelAdvanceMode.TIME, LevelAdvanceMode.fromString("Time"), "Should parse 'Time'");
+        assertEquals(LevelAdvanceMode.HANDS, LevelAdvanceMode.fromString("Hands"), "Should parse 'Hands'");
     }
 
     @Test
     public void testFromStringWithNull() {
-        assertEquals("Null should default to TIME", LevelAdvanceMode.TIME, LevelAdvanceMode.fromString(null));
+        assertEquals(LevelAdvanceMode.TIME, LevelAdvanceMode.fromString(null), "Null should default to TIME");
     }
 
     @Test
     public void testFromStringWithEmptyString() {
-        assertEquals("Empty string should default to TIME", LevelAdvanceMode.TIME, LevelAdvanceMode.fromString(""));
+        assertEquals(LevelAdvanceMode.TIME, LevelAdvanceMode.fromString(""), "Empty string should default to TIME");
     }
 
     @Test
     public void testFromStringWithWhitespace() {
-        assertEquals("Whitespace should default to TIME", LevelAdvanceMode.TIME, LevelAdvanceMode.fromString("   "));
+        assertEquals(LevelAdvanceMode.TIME, LevelAdvanceMode.fromString("   "), "Whitespace should default to TIME");
     }
 
     @Test
     public void testFromStringWithInvalidValue() {
-        assertEquals("Invalid value should default to TIME", LevelAdvanceMode.TIME,
-                LevelAdvanceMode.fromString("INVALID"));
-        assertEquals("Random string should default to TIME", LevelAdvanceMode.TIME, LevelAdvanceMode.fromString("xyz"));
+        assertEquals(LevelAdvanceMode.TIME, LevelAdvanceMode.fromString("INVALID"),
+                "Invalid value should default to TIME");
+        assertEquals(LevelAdvanceMode.TIME, LevelAdvanceMode.fromString("xyz"), "Random string should default to TIME");
     }
 
     @Test
     public void testValueOfMethod() {
-        assertEquals("valueOf('TIME') should work", LevelAdvanceMode.TIME, LevelAdvanceMode.valueOf("TIME"));
-        assertEquals("valueOf('HANDS') should work", LevelAdvanceMode.HANDS, LevelAdvanceMode.valueOf("HANDS"));
+        assertEquals(LevelAdvanceMode.TIME, LevelAdvanceMode.valueOf("TIME"), "valueOf('TIME') should work");
+        assertEquals(LevelAdvanceMode.HANDS, LevelAdvanceMode.valueOf("HANDS"), "valueOf('HANDS') should work");
     }
 }

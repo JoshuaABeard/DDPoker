@@ -38,13 +38,14 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Persistence;
-import junit.framework.TestCase;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.*;
 
 import java.io.FileNotFoundException;
 import java.util.List;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Mar 10, 2008 Time: 10:37:50 AM
@@ -52,9 +53,10 @@ import java.util.List;
  * Test of Hibernate/JPA without Spring.
  */
 @Tag("slow")
-public class HibernateTest extends TestCase {
+class HibernateTest {
     @SuppressWarnings({"RawUseOfParameterizedType"})
-    public void testHibernate() throws FileNotFoundException {
+    @Test
+    void testHibernate() throws FileNotFoundException {
         Logger logger = LogManager.getLogger(HibernateTest.class);
 
         // "poker" is from persistence.xml (aka the persistence unit)
@@ -92,7 +94,7 @@ public class HibernateTest extends TestCase {
         fetchTx.begin();
 
         OnlineProfile lookup = fetchEm.find(OnlineProfile.class, profile.getId());
-        assertEquals(lookup, profile);
+        assertThat(lookup).isEqualTo(profile);
 
         List profiles = fetchEm
                 .createQuery("select p from OnlineProfile p " + "where p.name like '%Hib%' " + "order by p.name asc")

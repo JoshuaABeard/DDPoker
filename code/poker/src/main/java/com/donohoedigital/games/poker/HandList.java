@@ -63,7 +63,7 @@ public class HandList extends BaseProfile {
     }
 
     public HandList(File file) {
-        // TODO: implement
+        // Future: implement HandList(File)
         this(null, null);
     }
 

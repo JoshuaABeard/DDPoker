@@ -32,10 +32,10 @@
  */
 package com.donohoedigital.games.poker.model.util;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.donohoedigital.comms.DMArrayList;
 import com.donohoedigital.comms.DMTypedHashMap;
@@ -49,7 +49,7 @@ public class OnlineGameListTest {
 
     private OnlineGameList list;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         list = new OnlineGameList();
     }

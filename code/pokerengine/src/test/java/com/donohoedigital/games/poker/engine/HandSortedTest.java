@@ -20,11 +20,11 @@
 package com.donohoedigital.games.poker.engine;
 
 import com.donohoedigital.config.ConfigTestHelper;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static com.donohoedigital.games.poker.engine.Card.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for HandSorted class - an ascending sorted hand that maintains sort
@@ -32,7 +32,7 @@ import static org.junit.Assert.*;
  */
 public class HandSortedTest {
 
-    @BeforeClass
+    @BeforeAll
     public static void setupConfig() {
         ConfigTestHelper.initializeForTesting("poker");
     }
@@ -353,13 +353,16 @@ public class HandSortedTest {
         assertEquals(0, hand.getHighestPair());
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testEmptyHandStraightDrawBug() {
-        // Production bug: hasStraightDraw() throws IndexOutOfBoundsException on empty
-        // hands
-        // This test pins down the buggy behavior as a regression marker
-        HandSorted hand = new HandSorted();
-        hand.hasStraightDraw(); // Should check size > 0 before accessing getCard(nSize - 1)
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            // Production bug: hasStraightDraw() throws IndexOutOfBoundsException on empty
+            // hands
+            // This test pins down the buggy behavior as a regression marker
+            HandSorted hand = new HandSorted();
+            hand.hasStraightDraw(); // Should check size > 0 before accessing getCard(nSize - 1)
+
+        });
     }
 
     @Test

@@ -219,7 +219,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
 
                 // encore idea - have ai pause to increase drama after human has bet - to
                 // make it appear like ai is "thinking" ... even if no delay is set
-                // TODO: off for now - need to think more about this, maybe make an option
+                // Future: off for now - need to think more about this, maybe make an option
                 if (false && !table_.isZipMode() && !game_.isOnlineGame() && hhand_.getRound() == BettingRound.RIVER) {
                     PokerPlayer human = game_.getHumanPlayer();
                     int action = hhand_.getLastActionThisRound(human);

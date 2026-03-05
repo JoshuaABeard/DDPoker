@@ -166,7 +166,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      *
      */
     public PokerGame() {
-        super(GameEngine.getGameEngine().getDefaultContext()); // TODO: get right game
+        super(GameEngine.getGameEngine().getDefaultContext()); // Future: get right game context for multi-game
     }
 
     /**

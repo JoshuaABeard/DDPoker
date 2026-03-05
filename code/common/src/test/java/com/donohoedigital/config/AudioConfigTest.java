@@ -32,17 +32,20 @@
  */
 package com.donohoedigital.config;
 
-import junit.framework.*;
+import org.junit.jupiter.api.*;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Apr 7, 2008 Time: 9:49:51 AM To
  * change this template use File | Settings | File Templates.
  */
-public class AudioConfigTest extends TestCase {
-    public void testLoad() {
+class AudioConfigTest {
+    @Test
+    void testLoad() {
         String[] modules = {"common", "testapp"};
         new AudioConfig(modules);
         AudioDef def = AudioConfig.getAudioDef("bell", true);
-        assertNotNull(def);
+        assertThat(def).isNotNull();
     }
 }

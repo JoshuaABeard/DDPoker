@@ -19,9 +19,9 @@
  */
 package com.donohoedigital.games.poker.engine;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for TournamentProfileHtml helper methods.
@@ -30,23 +30,23 @@ public class TournamentProfileHtmlTest {
 
     @Test
     public void should_DisplayFullRing_ForTenSeats() {
-        assertEquals("Full Ring, 10 per table", TournamentProfileHtml.getTableFormatDisplay(10));
+        assertEquals(TournamentProfileHtml.getTableFormatDisplay(10), "Full Ring, 10 per table");
     }
 
     @Test
     public void should_Display6Max_ForSixSeats() {
-        assertEquals("6-Max, 6 per table", TournamentProfileHtml.getTableFormatDisplay(6));
+        assertEquals(TournamentProfileHtml.getTableFormatDisplay(6), "6-Max, 6 per table");
     }
 
     @Test
     public void should_DisplayHeadsUp_ForTwoSeats() {
-        assertEquals("Heads-Up", TournamentProfileHtml.getTableFormatDisplay(2));
+        assertEquals(TournamentProfileHtml.getTableFormatDisplay(2), "Heads-Up");
     }
 
     @Test
     public void should_DisplayPerTable_ForNonStandardSeats() {
-        assertEquals("8 per table", TournamentProfileHtml.getTableFormatDisplay(8));
-        assertEquals("5 per table", TournamentProfileHtml.getTableFormatDisplay(5));
-        assertEquals("9 per table", TournamentProfileHtml.getTableFormatDisplay(9));
+        assertEquals(TournamentProfileHtml.getTableFormatDisplay(8), "8 per table");
+        assertEquals(TournamentProfileHtml.getTableFormatDisplay(5), "5 per table");
+        assertEquals(TournamentProfileHtml.getTableFormatDisplay(9), "9 per table");
     }
 }

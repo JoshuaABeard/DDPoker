@@ -77,7 +77,7 @@ public class ZipUtil extends ZipFile {
         if (zeCurrent == null)
             return null;
 
-        // TODO: what to do about loss of precision? We shouldn't have
+        // Future: what to do about loss of precision? We shouldn't have
         // files bigger than MAXINT
         byte[] bytes = new byte[(int) zeCurrent.getSize()];
         InputStream is = this.getInputStream(zeCurrent);
@@ -93,7 +93,7 @@ public class ZipUtil extends ZipFile {
         if (zeCurrent == null)
             return null;
 
-        // TODO: what to do about loss of precision? We shouldn't have
+        // Future: what to do about loss of precision? We shouldn't have
         // files bigger than MAXINT
         StringBuilder sb = new StringBuilder((int) zeCurrent.getSize());
 
@@ -113,7 +113,7 @@ public class ZipUtil extends ZipFile {
         if (zeCurrent == null)
             return null;
 
-        // TODO: what to do about loss of precision? We shouldn't have
+        // Future: what to do about loss of precision? We shouldn't have
         // files bigger than MAXINT
         Vector vLines = new Vector();
         String[] sValues;

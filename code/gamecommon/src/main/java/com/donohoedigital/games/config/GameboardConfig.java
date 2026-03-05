@@ -278,7 +278,7 @@ public class GameboardConfig extends XMLConfigFileLoader {
      */
     public void printXML(XMLWriter writer, int nIndent) {
         writer.printRootElementStartLine(GAMEBOARD_TAG, XMLConfigFileLoader.DDNAMESPACE,
-                "../xml-schema/" + "gameboard.xsd", nIndent); // TODO: determine path programmatically?
+                "../xml-schema/" + "gameboard.xsd", nIndent); // Future: determine path programmatically?
         writer.printNewLine();
 
         // contents

@@ -32,13 +32,13 @@
  */
 package com.donohoedigital.games.poker.engine;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.donohoedigital.comms.MsgState;
 import com.donohoedigital.games.config.BaseProfile;
@@ -51,7 +51,7 @@ public class PokerSaveDetailsTest {
 
     private PokerSaveDetails details;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         details = new PokerSaveDetails();
     }

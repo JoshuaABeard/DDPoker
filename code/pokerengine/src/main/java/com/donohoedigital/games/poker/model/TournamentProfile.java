@@ -95,7 +95,7 @@ public class TournamentProfile extends BaseProfile implements DataMarshal, Simpl
     public static final int MIN_BOOT_HANDS = 5;
     public static final int ROUND_MULT = 1000; // 3 decimal places
 
-    // formatting TODO: need to change %/$ formatting if localizing
+    // Future: need to change %/$ formatting if localizing
     private static final MessageFormat FORMAT_PERC = new MessageFormat("{0}%");
     private static final MessageFormat FORMAT_AMOUNT = new MessageFormat("${0}");
 

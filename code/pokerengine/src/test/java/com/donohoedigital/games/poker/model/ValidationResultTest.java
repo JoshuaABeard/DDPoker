@@ -19,12 +19,12 @@
  */
 package com.donohoedigital.games.poker.model;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.*;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for ValidationResult.
@@ -33,7 +33,7 @@ public class ValidationResultTest {
 
     private ValidationResult result;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         result = new ValidationResult();
     }
@@ -48,23 +48,23 @@ public class ValidationResultTest {
 
     @Test
     public void testHasWarningsWhenEmpty() {
-        assertFalse("Should have no warnings initially", result.hasWarnings());
+        assertFalse(result.hasWarnings(), "Should have no warnings initially");
     }
 
     @Test
     public void testHasWarningsWhenNotEmpty() {
         result.addWarning(ValidationWarning.UNREACHABLE_LEVELS, "Test message");
-        assertTrue("Should have warnings after adding", result.hasWarnings());
+        assertTrue(result.hasWarnings(), "Should have warnings after adding");
     }
 
     @Test
     public void testAddWarning() {
         result.addWarning(ValidationWarning.SHALLOW_STARTING_DEPTH, "Stack too shallow");
 
-        assertTrue("Should have warnings", result.hasWarnings());
-        assertEquals("Should have 1 warning", 1, result.getWarnings().size());
-        assertTrue("Should contain the warning",
-                result.getWarnings().contains(ValidationWarning.SHALLOW_STARTING_DEPTH));
+        assertTrue(result.hasWarnings(), "Should have warnings");
+        assertEquals(1, result.getWarnings().size(), "Should have 1 warning");
+        assertTrue(result.getWarnings().contains(ValidationWarning.SHALLOW_STARTING_DEPTH),
+                "Should contain the warning");
     }
 
     @Test
@@ -73,7 +73,7 @@ public class ValidationResultTest {
         result.addWarning(ValidationWarning.TOO_MANY_PAYOUT_SPOTS, "Message 2");
         result.addWarning(ValidationWarning.EXCESSIVE_HOUSE_TAKE, "Message 3");
 
-        assertEquals("Should have 3 warnings", 3, result.getWarnings().size());
+        assertEquals(3, result.getWarnings().size(), "Should have 3 warnings");
     }
 
     @Test
@@ -81,9 +81,9 @@ public class ValidationResultTest {
         result.addWarning(ValidationWarning.UNREACHABLE_LEVELS, "First message");
         result.addWarning(ValidationWarning.UNREACHABLE_LEVELS, "Second message");
 
-        assertEquals("Should only have 1 warning (no duplicates)", 1, result.getWarnings().size());
-        assertEquals("Should use latest message", "Second message",
-                result.getMessage(ValidationWarning.UNREACHABLE_LEVELS));
+        assertEquals(1, result.getWarnings().size(), "Should only have 1 warning (no duplicates)");
+        assertEquals("Second message", result.getMessage(ValidationWarning.UNREACHABLE_LEVELS),
+                "Should use latest message");
     }
 
     @Test
@@ -93,11 +93,11 @@ public class ValidationResultTest {
 
         List<ValidationWarning> warnings = result.getWarnings();
 
-        assertNotNull("Warnings list should not be null", warnings);
-        assertEquals("Should have 2 warnings", 2, warnings.size());
-        assertTrue("Should contain SHALLOW_STARTING_DEPTH",
-                warnings.contains(ValidationWarning.SHALLOW_STARTING_DEPTH));
-        assertTrue("Should contain EXCESSIVE_HOUSE_TAKE", warnings.contains(ValidationWarning.EXCESSIVE_HOUSE_TAKE));
+        assertNotNull(warnings, "Warnings list should not be null");
+        assertEquals(2, warnings.size(), "Should have 2 warnings");
+        assertTrue(warnings.contains(ValidationWarning.SHALLOW_STARTING_DEPTH),
+                "Should contain SHALLOW_STARTING_DEPTH");
+        assertTrue(warnings.contains(ValidationWarning.EXCESSIVE_HOUSE_TAKE), "Should contain EXCESSIVE_HOUSE_TAKE");
     }
 
     @Test
@@ -120,8 +120,8 @@ public class ValidationResultTest {
 
         String message = result.getMessage(ValidationWarning.TOO_MANY_PAYOUT_SPOTS);
 
-        assertNotNull("Message should not be null", message);
-        assertEquals("Should return correct message", "Too many payout spots configured", message);
+        assertNotNull(message, "Message should not be null");
+        assertEquals("Too many payout spots configured", message, "Should return correct message");
     }
 
     @Test
@@ -130,7 +130,7 @@ public class ValidationResultTest {
 
         String message = result.getMessage(ValidationWarning.EXCESSIVE_HOUSE_TAKE);
 
-        assertNull("Should return null for non-existent warning", message);
+        assertNull(message, "Should return null for non-existent warning");
     }
 
     @Test
@@ -140,12 +140,12 @@ public class ValidationResultTest {
 
         Map<ValidationWarning, String> messages = result.getMessages();
 
-        assertNotNull("Messages map should not be null", messages);
-        assertEquals("Should have 2 messages", 2, messages.size());
-        assertEquals("Should have correct message for UNREACHABLE_LEVELS", "Message 1",
-                messages.get(ValidationWarning.UNREACHABLE_LEVELS));
-        assertEquals("Should have correct message for SHALLOW_STARTING_DEPTH", "Message 2",
-                messages.get(ValidationWarning.SHALLOW_STARTING_DEPTH));
+        assertNotNull(messages, "Messages map should not be null");
+        assertEquals(2, messages.size(), "Should have 2 messages");
+        assertEquals("Message 1", messages.get(ValidationWarning.UNREACHABLE_LEVELS),
+                "Should have correct message for UNREACHABLE_LEVELS");
+        assertEquals("Message 2", messages.get(ValidationWarning.SHALLOW_STARTING_DEPTH),
+                "Should have correct message for SHALLOW_STARTING_DEPTH");
     }
 
     @Test
@@ -166,7 +166,7 @@ public class ValidationResultTest {
     public void testGetMessagesWhenEmpty() {
         Map<ValidationWarning, String> messages = result.getMessages();
 
-        assertNotNull("Messages map should not be null", messages);
-        assertTrue("Messages map should be empty", messages.isEmpty());
+        assertNotNull(messages, "Messages map should not be null");
+        assertTrue(messages.isEmpty(), "Messages map should be empty");
     }
 }

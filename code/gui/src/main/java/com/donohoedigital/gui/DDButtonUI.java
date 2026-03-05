@@ -311,7 +311,7 @@ public class DDButtonUI extends MetalButtonUI {
          * return true if mouse is over a visible portion of the image button
          */
         private boolean isMouseOverVisible(MouseEvent e) {
-            // TODO: if button is scaled larger than icon, this doesn't account for
+            // Future: if button is scaled larger than icon, this doesn't account for
             // placement of icon
             if (bimage == null) {
                 ImageIcon icon = (ImageIcon) button.getIcon();

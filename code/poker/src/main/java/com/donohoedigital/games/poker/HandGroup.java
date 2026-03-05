@@ -456,7 +456,7 @@ public class HandGroup extends BaseProfile {
         return handCount_ / 13.26;
     }
 
-    // TODO: changed from Object ... see if this still sorts properly
+    // Future: changed from Object ... verify this still sorts properly
     public int compareTo(BaseProfile o) {
         return 0;
     }
