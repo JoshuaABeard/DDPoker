@@ -31,9 +31,14 @@
  */
 package com.donohoedigital.games.poker.gameserver.persistence.repository;
 
+import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.donohoedigital.games.poker.model.OnlineProfile;
 
@@ -99,4 +104,47 @@ public interface OnlineProfileRepository extends JpaRepository<OnlineProfile, Lo
      * @return true if the email is in use
      */
     boolean existsByEmail(String email);
+
+    /**
+     * Find all non-retired profiles for an email, excluding a specific name.
+     *
+     * @param email
+     *            the email address
+     * @param excludeName
+     *            name to exclude from results
+     * @return list of profiles ordered by name
+     */
+    @Query("SELECT o FROM OnlineProfile o WHERE o.email = :email AND o.name <> :excludeName AND o.retired = false ORDER BY o.name")
+    List<OnlineProfile> findByEmailExcludingName(@Param("email") String email,
+            @Param("excludeName") String excludeName);
+
+    /**
+     * Search profiles with optional name filter, excluding retired profiles.
+     *
+     * @param name
+     *            name search pattern (LIKE)
+     * @param pageable
+     *            pagination
+     * @return page of matching profiles
+     */
+    @Query("SELECT o FROM OnlineProfile o WHERE o.name LIKE :name AND o.retired = false")
+    Page<OnlineProfile> searchByName(@Param("name") String name, Pageable pageable);
+
+    /**
+     * Search profiles with optional name and email filters.
+     *
+     * @param name
+     *            name search pattern (LIKE)
+     * @param email
+     *            email search pattern (LIKE)
+     * @param includeRetired
+     *            whether to include retired profiles
+     * @param pageable
+     *            pagination
+     * @return page of matching profiles
+     */
+    @Query("SELECT o FROM OnlineProfile o WHERE o.name LIKE :name AND o.email LIKE :email"
+            + " AND (:includeRetired = true OR o.retired = false)")
+    Page<OnlineProfile> searchProfiles(@Param("name") String name, @Param("email") String email,
+            @Param("includeRetired") boolean includeRetired, Pageable pageable);
 }

@@ -32,6 +32,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.donohoedigital.games.poker.gameserver.persistence.repository.OnlineProfileRepository;
 import com.donohoedigital.games.poker.gameserver.service.ProfileService;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 
@@ -44,6 +45,9 @@ class ProfileControllerTest {
 
     @MockitoBean
     private ProfileService profileService;
+
+    @MockitoBean
+    private OnlineProfileRepository profileRepository;
 
     @Test
     void testGetProfile() throws Exception {

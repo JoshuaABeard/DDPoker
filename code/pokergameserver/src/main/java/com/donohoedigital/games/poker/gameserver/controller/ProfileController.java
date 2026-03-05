@@ -19,6 +19,9 @@
  */
 package com.donohoedigital.games.poker.gameserver.controller;
 
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -26,6 +29,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,6 +40,7 @@ import jakarta.validation.Valid;
 import com.donohoedigital.games.poker.gameserver.auth.JwtAuthenticationFilter;
 import com.donohoedigital.games.poker.gameserver.dto.ChangePasswordRequest;
 import com.donohoedigital.games.poker.gameserver.dto.UpdateProfileRequest;
+import com.donohoedigital.games.poker.gameserver.persistence.repository.OnlineProfileRepository;
 import com.donohoedigital.games.poker.gameserver.service.ProfileService;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 
@@ -47,9 +52,11 @@ import com.donohoedigital.games.poker.model.OnlineProfile;
 public class ProfileController {
 
     private final ProfileService profileService;
+    private final OnlineProfileRepository profileRepository;
 
-    public ProfileController(ProfileService profileService) {
+    public ProfileController(ProfileService profileService, OnlineProfileRepository profileRepository) {
         this.profileService = profileService;
+        this.profileRepository = profileRepository;
     }
 
     @GetMapping("/{id}")
@@ -111,6 +118,51 @@ public class ProfileController {
         } catch (ProfileService.InvalidPasswordException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
+    }
+
+    /**
+     * Get a profile by display name.
+     */
+    @GetMapping("/name/{name}")
+    public ResponseEntity<OnlineProfile> getProfileByName(@PathVariable("name") String name) {
+        OnlineProfile profile = profileRepository.findByName(name).orElse(null);
+        if (profile == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(profile);
+    }
+
+    /**
+     * List all profiles (aliases) for the authenticated user's email, excluding the
+     * current profile name.
+     */
+    @GetMapping("/aliases")
+    public ResponseEntity<List<OnlineProfile>> getAliases() {
+        Long profileId = getAuthenticatedProfileId();
+        OnlineProfile profile = profileService.getProfile(profileId);
+        if (profile == null) {
+            return ResponseEntity.notFound().build();
+        }
+        List<OnlineProfile> aliases = profileRepository.findByEmailExcludingName(profile.getEmail(), profile.getName());
+        return ResponseEntity.ok(aliases);
+    }
+
+    /**
+     * Retire (soft-delete) a profile by ID. The JWT profile ID must match the path
+     * {id}.
+     */
+    @PostMapping("/{id}/retire")
+    public ResponseEntity<Map<String, Object>> retireProfile(@PathVariable("id") Long id) {
+        Long authenticatedProfileId = getAuthenticatedProfileId();
+        if (!authenticatedProfileId.equals(id)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        boolean success = profileService.deleteProfile(id);
+        if (!success) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(Map.of("success", true, "message", "Profile retired successfully"));
     }
 
     private Long getAuthenticatedProfileId() {
