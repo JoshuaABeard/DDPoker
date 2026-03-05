@@ -1,9 +1,10 @@
 # ============================================================
-# DD Poker - Production Container (Modernized Frontend)
+# DD Poker - Production Container
 #
 # Strategy:
 #   BUILD TIME: Build Next.js static export + Java modules
-#   RUNTIME: Serve static files + REST API via Spring Boot
+#   RUNTIME: Single Spring Boot process serving game server,
+#            REST API, and static web files
 #
 # Build: (from repo root, after Maven build)
 #   docker compose -f docker/docker-compose.yml build
@@ -30,7 +31,7 @@ RUN npm ci && npm run build
 RUN test -d out && echo "✓ Next.js static export built: $(du -sh out | cut -f1)"
 
 # ============================================================
-# STAGE 2: Java Runtime with API + Game Server
+# STAGE 2: Java Runtime with Game Server
 # ============================================================
 FROM eclipse-temurin:25-jdk
 
@@ -43,7 +44,7 @@ RUN mkdir -p /app/lib /app/classes /app/downloads /app/webapp /data
 WORKDIR /app
 
 # ============================================================
-# COPY COMPILED CLASSES (SERVER + API)
+# COPY COMPILED CLASSES (SERVER)
 # ============================================================
 
 # Copy compiled classes from all modules
@@ -51,65 +52,33 @@ COPY code/common/target/classes/ /app/classes/
 COPY code/mail/target/classes/ /app/classes/
 COPY code/gui/target/classes/ /app/classes/
 COPY code/db/target/classes/ /app/classes/
-COPY code/wicket/target/classes/ /app/classes/
-COPY code/jsp/target/classes/ /app/classes/
 COPY code/server/target/classes/ /app/classes/
-COPY code/udp/target/classes/ /app/classes/
 COPY code/gamecommon/target/classes/ /app/classes/
 COPY code/gameengine/target/classes/ /app/classes/
-COPY code/ddpoker/target/classes/ /app/classes/
+COPY code/gametools/target/classes/ /app/classes/
 COPY code/pokerengine/target/classes/ /app/classes/
-COPY code/pokernetwork/target/classes/ /app/classes/
-COPY code/tools/target/classes/ /app/classes/
-COPY code/gameserver/target/classes/ /app/classes/
+COPY code/pokergamecore/target/classes/ /app/classes/
+COPY code/pokergameserver/target/classes/ /app/classes/
 COPY code/pokerserver/target/classes/ /app/classes/
-
-# Copy API module classes (Spring Boot REST API)
-COPY code/api/target/classes/ /app/classes/
 
 # Copy runtime messages files
 COPY runtime/messages/ /app/runtime/messages/
 
 # Copy all dependency JARs
 COPY code/pokerserver/target/dependency/ /app/lib/
-COPY code/api/target/dependency/ /app/lib/
-
 # Remove project JARs to avoid classpath conflicts
 RUN rm -f /app/lib/pokerserver-*.jar \
-    /app/lib/api-*.jar \
-    /app/lib/gameserver-*.jar \
-    /app/lib/ddpoker-*.jar \
+    /app/lib/pokergameserver-*.jar \
+    /app/lib/pokergamecore-*.jar \
     /app/lib/pokerengine-*.jar \
-    /app/lib/pokernetwork-*.jar \
-    /app/lib/pokertools-*.jar \
-    /app/lib/tools-*.jar \
+    /app/lib/gametools-*.jar \
     /app/lib/gamecommon-*.jar \
     /app/lib/gameengine-*.jar \
     /app/lib/common-*.jar \
     /app/lib/mail-*.jar \
     /app/lib/gui-*.jar \
-    /app/lib/installer-*.jar \
     /app/lib/db-*.jar \
-    /app/lib/wicket-3.0.jar \
-    /app/lib/jsp-*.jar \
-    /app/lib/server-*.jar \
-    /app/lib/udp-*.jar \
-    /app/lib/slf4j-api-1.7.*.jar \
-    /app/lib/slf4j-simple-*.jar \
-    /app/lib/slf4j-nop-*.jar \
-    /app/lib/log4j-slf4j-impl-*.jar \
-    /app/lib/log4j-slf4j2-impl-*.jar \
-    /app/lib/log4j-to-slf4j-*.jar \
-    /app/lib/log4j-1.*.jar \
-    /app/lib/spring-core-6.1.*.jar \
-    /app/lib/spring-beans-6.1.*.jar \
-    /app/lib/spring-context-6.1.*.jar \
-    /app/lib/spring-web-6.1.*.jar \
-    /app/lib/spring-aop-6.1.*.jar \
-    /app/lib/spring-expression-6.1.*.jar \
-    /app/lib/spring-jdbc-6.1.*.jar \
-    /app/lib/spring-tx-6.1.*.jar \
-    /app/lib/spring-orm-6.1.*.jar
+    /app/lib/server-*.jar
 
 # ============================================================
 # COPY NEXT.JS STATIC EXPORT

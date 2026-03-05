@@ -40,7 +40,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import com.donohoedigital.games.poker.server.config.TestConfig;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Calendar;
@@ -53,7 +55,8 @@ import static org.assertj.core.api.Assertions.*;
  * operations.
  */
 @Tag("slow")
-@SpringJUnitConfig(locations = {"/app-context-pokerservertests.xml"})
+@SpringBootTest(classes = TestConfig.class)
+@ActiveProfiles("test")
 @Transactional
 class OnlineGameServiceTest {
     @Autowired

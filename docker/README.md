@@ -11,14 +11,15 @@ This directory contains all Docker-related files for DD Poker. DDPoker runs in a
 ┌──────────────────────────────────────────────┐
 │  Single Docker Container                     │
 │                                              │
-│  ┌──────────────┐     ┌────────────────┐     │
-│  │ pokerserver  │     │   pokerweb     │     │
-│  │ :8877 (HTTP) │     │ :8080 (Jetty)  │     │
-│  │ :11886 (UDP) │     │ Wicket web UI  │     │
-│  │ :11889 (UDP) │     │                │     │
-│  └──────┬───────┘     └───────┬────────┘     │
-│         │                     │              │
-│         ▼                     ▼              │
+│  ┌────────────────────────────────────┐      │
+│  │   pokerserver (Spring Boot)        │      │
+│  │   :8877 (game server HTTP)         │      │
+│  │   :8080 (REST API + web)           │      │
+│  │   :11886 (UDP chat)                │      │
+│  │   :11889 (UDP connection test)     │      │
+│  └──────────────┬─────────────────────┘      │
+│                 │                             │
+│                 ▼                             │
 │  ┌────────────────────────────────────┐      │
 │  │   H2 Embedded Database (default)   │      │
 │  │   file:/data/poker                 │      │
@@ -114,7 +115,7 @@ See [docker/build-with-installers.sh](./build-with-installers.sh) for the full a
 | Port | Protocol | Service | Purpose |
 |------|----------|---------|---------|
 | 8877 | TCP | pokerserver | Game API — desktop client connects here |
-| 8080 | TCP | pokerweb | Website — browse to http://localhost:8080/online |
+| 8080 | TCP | pokerserver | REST API + website — browse to http://localhost:8080/online |
 | 11886 | UDP | pokerserver | Chat server — client chat lobby |
 | 11889 | UDP | pokerserver | Connection test — client verifies connectivity |
 
@@ -151,7 +152,7 @@ Your Docker container exposes the following services:
 | Service | Port | Protocol | Purpose |
 |---------|------|----------|---------|
 | Game Server API | 8877 | TCP | Desktop client connects here for game data |
-| Web Interface | 8080 | TCP | Browse to http://localhost:8080/online |
+| REST API + Web | 8080 | TCP | Browse to http://localhost:8080/online |
 | Chat Server | 11886 | UDP | In-game chat communication |
 | Connection Test | 11889 | UDP | Client verifies connectivity |
 
@@ -419,9 +420,9 @@ docker system prune -a
 curl http://localhost:8080/online
 ```
 
-**Check if Jetty started:**
+**Check if Spring Boot started:**
 ```bash
-docker compose logs | grep -i "started.*jetty"
+docker compose logs | grep -i "started.*application"
 ```
 
 **Solutions:**
@@ -437,8 +438,7 @@ docker stats ddpoker-ddpoker-1
 ```
 
 **Current JVM settings:**
-- pokerserver: `-Xms24m -Xmx96m`
-- pokerweb: `-Xms24m -Xmx96m`
+- pokerserver: `-Xms24m -Xmx192m`
 
 **Adjust in `docker/entrypoint.sh` if needed:**
 ```bash
@@ -545,29 +545,24 @@ services:
 
 ### Base Image
 
-- **eclipse-temurin:25-jre** - Official Eclipse Temurin JRE 25 image
-- Lightweight (~300MB) with just the runtime, no build tools
+- **eclipse-temurin:25-jdk** - Official Eclipse Temurin JDK 25 image
+- Required for building the universal client JAR during image build
 
 ### What's Inside
 
 The container includes:
-- Compiled classes from all 22 DDPoker modules
+- Compiled classes from DDPoker modules
 - All runtime dependencies (JARs)
-- Embedded Jetty 12.1.6 for web interface
-- Apache Wicket 10.8.0 framework
-- H2 database 2.3.232
-- Dual-process entrypoint script
+- Spring Boot 3.5 embedded Tomcat for REST API and web
+- H2 database
+- Single-process entrypoint script
 
 ### Process Management
 
-The container runs two Java processes:
-1. **pokerserver** - Game server and chat (starts first)
-2. **pokerweb** - Embedded Jetty with Wicket webapp (starts 3 seconds later)
+The container runs a single Java process:
+- **pokerserver** - Spring Boot application providing game server, REST API, and web interface
 
-Both processes are managed by `/app/entrypoint.sh`:
-- Handles graceful shutdown on SIGTERM/SIGINT
-- If one process dies, the other is stopped
-- Proper exit code propagation
+Managed by `/app/entrypoint.sh` using `exec` for direct signal handling.
 
 ### Local Overrides
 
@@ -612,6 +607,6 @@ The DDPoker Docker deployment provides:
 ✅ Persistent data storage
 ✅ Simple `docker compose up` deployment
 ✅ Easy backup and restore
-✅ Production-ready with Jetty + Wicket
+✅ Production-ready with Spring Boot
 
 Perfect for development, testing, and production deployment!

@@ -32,6 +32,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.donohoedigital.games.poker.gameserver.persistence.repository.OnlineProfileRepository;
 import com.donohoedigital.games.poker.gameserver.service.ProfileService;
 
 /**
@@ -50,6 +51,9 @@ class ProfileControllerPasswordTest {
 
     @MockitoBean
     private ProfileService profileService;
+
+    @MockitoBean
+    private OnlineProfileRepository profileRepository;
 
     @Test
     void changePassword_ownProfile_correctOldPassword_returns200() throws Exception {

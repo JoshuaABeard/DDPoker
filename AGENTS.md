@@ -25,7 +25,6 @@ mvn clean package -DskipTests -P dev  # Build with dev GameControlServer include
 
 - Desktop: `com.donohoedigital.games.poker.PokerMain`
 - Server: `com.donohoedigital.games.poker.server.PokerServerMain`
-- REST API: `com.donohoedigital.poker.api.ApiApplication`
 
 ### Dev Control Server (automated testing via HTTP API)
 

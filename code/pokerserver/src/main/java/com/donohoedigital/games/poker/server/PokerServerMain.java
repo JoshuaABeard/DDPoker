@@ -1,7 +1,7 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
- * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2003-2026  Doug Donohoe, DD Poker Community
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,28 +32,39 @@
  */
 package com.donohoedigital.games.poker.server;
 
-import com.donohoedigital.config.ApplicationType;
-import com.donohoedigital.config.LoggingConfig;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 
+/**
+ * Spring Boot entry point for the standalone poker server.
+ *
+ * <p>
+ * Component scanning covers the legacy service/DAO packages under
+ * {@code com.donohoedigital} as well as the server config classes. The
+ * pokergameserver and api packages are excluded to avoid bean conflicts (same
+ * exclusions as the original XML config). Auto-configurations from
+ * pokergameserver are also excluded.
+ */
+@SpringBootApplication(exclude = {com.donohoedigital.games.poker.gameserver.GameServerAutoConfiguration.class,
+        com.donohoedigital.games.poker.gameserver.persistence.GameServerPersistenceAutoConfiguration.class})
+@ComponentScan(basePackages = "com.donohoedigital", excludeFilters = {
+        @ComponentScan.Filter(type = FilterType.REGEX, pattern = "com\\.donohoedigital\\.poker\\.api\\..*"),
+        @ComponentScan.Filter(type = FilterType.REGEX, pattern = "com\\.donohoedigital\\.games\\.poker\\.gameserver\\..*")})
 public class PokerServerMain {
     private static final Logger logger = LogManager.getLogger(PokerServerMain.class);
 
     public static void main(String[] argv) {
-        LoggingConfig loggingConfig = new LoggingConfig("poker", ApplicationType.SERVER);
-        loggingConfig.init();
-
         // Log version at startup
         logger.info("========================================");
         logger.info("DD Poker Server Starting");
         logger.info("Version: {}", PokerConstants.VERSION);
         logger.info("========================================");
 
-        // create application context (spring creates everything, including the "server"
-        // bean, calling init())
-        new ClassPathXmlApplicationContext("app-context-pokerserver.xml");
+        SpringApplication.run(PokerServerMain.class, argv);
     }
 }

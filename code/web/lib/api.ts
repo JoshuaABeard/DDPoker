@@ -242,7 +242,7 @@ export const playerApi = {
    * Get a player profile by ID
    */
   getProfile: async (playerId: number): Promise<PlayerProfile> => {
-    const response = await apiFetch<PlayerProfile>(`/api/players/${playerId}`)
+    const response = await apiFetch<PlayerProfile>(`/api/v1/profiles/${playerId}`)
     return response.data
   },
 
@@ -250,7 +250,7 @@ export const playerApi = {
    * Get a player profile by name
    */
   getProfileByName: async (playerName: string): Promise<PlayerProfile> => {
-    const response = await apiFetch<PlayerProfile>(`/api/players/name/${playerName}`)
+    const response = await apiFetch<PlayerProfile>(`/api/v1/profiles/name/${playerName}`)
     return response.data
   },
 
@@ -258,7 +258,7 @@ export const playerApi = {
    * Update the current user's profile
    */
   updateProfile: async (updates: Partial<PlayerProfile>): Promise<PlayerProfile> => {
-    const response = await apiFetch<PlayerProfile>('/api/players/me', {
+    const response = await apiFetch<PlayerProfile>('/api/v1/profiles/me', {
       method: 'PUT',
       body: JSON.stringify(updates),
     })
@@ -269,7 +269,7 @@ export const playerApi = {
    * Change password
    */
   changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
-    await apiFetch<void>('/api/players/me/password', {
+    await apiFetch<void>('/api/v1/profiles/me/password', {
       method: 'PUT',
       body: JSON.stringify({ currentPassword, newPassword }),
     })
@@ -284,21 +284,17 @@ export const profileApi = {
    * Get player aliases
    */
   getAliases: async (): Promise<ProfileAlias[]> => {
-    const response = await apiFetch<ProfileAlias[]>('/api/profile/aliases')
+    const response = await apiFetch<ProfileAlias[]>('/api/v1/profiles/aliases')
     return response.data
   },
 }
 
 /**
  * Game Server API — calls /api/v1/* endpoints on the pokergameserver.
- *
- * This is distinct from the legacy `/api/*` portal API. All new game
- * management (create, join, play) goes through these endpoints.
  */
 export const gameServerApi = {
   /**
    * Register a new user via the game server's JWT-based auth.
-   * (Not `authApi.register` which calls the legacy /api/auth/register.)
    */
   register: async (username: string, password: string, email: string): Promise<{ success: boolean; message?: string }> => {
     const response = await apiFetch<{ success: boolean; message?: string }>('/api/v1/auth/register', {
@@ -473,7 +469,7 @@ export const leaderboardApi = {
     if (filters?.to) params.append('to', filters.to)
     if (filters?.games) params.append('gamesLimit', filters.games.toString())
     const response = await apiFetch<{ entries: LeaderboardEntryDto[]; total: number }>(
-      `/api/leaderboard?${params}`
+      `/api/v1/leaderboard?${params}`
     )
     return response.data
   },
@@ -482,7 +478,7 @@ export const leaderboardApi = {
    * Get a player's leaderboard rank
    */
   getPlayerRank: async (playerName: string): Promise<LeaderboardEntry> => {
-    const response = await apiFetch<LeaderboardEntry>(`/api/leaderboard/player/${playerName}`)
+    const response = await apiFetch<LeaderboardEntry>(`/api/v1/leaderboard/player/${playerName}`)
     return response.data
   },
 }
@@ -509,7 +505,7 @@ export const tournamentApi = {
     if (from) params.append('from', from)
     if (to) params.append('to', to)
     const response = await apiFetch<{ history: TournamentHistoryDto[]; total: number }>(
-      `/api/history?${params}`
+      `/api/v1/history?${params}`
     )
     return response.data
   },
@@ -518,7 +514,7 @@ export const tournamentApi = {
    * Get tournament details
    */
   getDetails: async (tournamentId: number): Promise<TournamentHistoryEntry> => {
-    const response = await apiFetch<TournamentHistoryEntry>(`/api/tournaments/${tournamentId}`)
+    const response = await apiFetch<TournamentHistoryEntry>(`/api/v1/tournaments/${tournamentId}`)
     return response.data
   },
 }
@@ -528,12 +524,12 @@ export const tournamentApi = {
  */
 export const templateApi = {
   list: async (): Promise<TemplateDto[]> => {
-    const response = await apiFetch<TemplateDto[]>('/api/profile/templates')
+    const response = await apiFetch<TemplateDto[]>('/api/v1/profiles/templates')
     return response.data
   },
 
   create: async (name: string, config: object): Promise<TemplateDto> => {
-    const response = await apiFetch<TemplateDto>('/api/profile/templates', {
+    const response = await apiFetch<TemplateDto>('/api/v1/profiles/templates', {
       method: 'POST',
       body: JSON.stringify({ name, config: JSON.stringify(config) }),
     })
@@ -541,7 +537,7 @@ export const templateApi = {
   },
 
   update: async (id: number, name: string, config: object): Promise<TemplateDto> => {
-    const response = await apiFetch<TemplateDto>(`/api/profile/templates/${id}`, {
+    const response = await apiFetch<TemplateDto>(`/api/v1/profiles/templates/${id}`, {
       method: 'PUT',
       body: JSON.stringify({ name, config: JSON.stringify(config) }),
     })
@@ -549,7 +545,7 @@ export const templateApi = {
   },
 
   delete: async (id: number): Promise<void> => {
-    await apiFetch<void>(`/api/profile/templates/${id}`, { method: 'DELETE' })
+    await apiFetch<void>(`/api/v1/profiles/templates/${id}`, { method: 'DELETE' })
   },
 }
 
@@ -566,7 +562,7 @@ export const searchApi = {
       page: page.toString(),
       pageSize: pageSize.toString(),
     })
-    const response = await apiFetch<PlayerSearchDto[]>(`/api/search?${params}`)
+    const response = await apiFetch<PlayerSearchDto[]>(`/api/v1/search?${params}`)
     return response.data
   },
 }
@@ -590,7 +586,7 @@ export const hostApi = {
     if (from) params.append('from', from)
     if (to) params.append('to', to)
     const response = await apiFetch<{ hosts: HostSummary[]; total: number }>(
-      `/api/games/hosts?${params}`
+      `/api/v1/games/hosts?${params}`
     )
     return response.data
   },
@@ -616,7 +612,7 @@ export const adminApi = {
     if (filters?.pageSize) params.append('pageSize', filters.pageSize.toString())
 
     const response = await apiFetch<{ profiles: OnlineProfileDto[]; total: number }>(
-      `/api/admin/profiles?${params}`
+      `/api/v1/admin/profiles?${params}`
     )
     return response.data
   },
@@ -625,7 +621,7 @@ export const adminApi = {
    * Get banned keys list (unpaginated - backend returns all bans)
    */
   getBans: async (): Promise<{ bans: BannedKeyDto[]; total: number }> => {
-    const response = await apiFetch<BannedKeyDto[]>('/api/admin/bans')
+    const response = await apiFetch<BannedKeyDto[]>('/api/v1/admin/bans')
     return { bans: response.data, total: response.data.length }
   },
 
@@ -638,7 +634,7 @@ export const adminApi = {
     comment?: string
     until?: string
   }): Promise<BannedKeyDto> => {
-    const response = await apiFetch<BannedKeyDto>('/api/admin/bans', {
+    const response = await apiFetch<BannedKeyDto>('/api/v1/admin/bans', {
       method: 'POST',
       body: JSON.stringify(banData),
     })
@@ -649,7 +645,7 @@ export const adminApi = {
    * Remove a ban by key string (not numeric ID)
    */
   removeBan: async (key: string): Promise<void> => {
-    await apiFetch<void>(`/api/admin/bans/${encodeURIComponent(key)}`, {
+    await apiFetch<void>(`/api/v1/admin/bans/${encodeURIComponent(key)}`, {
       method: 'DELETE',
     })
   },
@@ -658,14 +654,14 @@ export const adminApi = {
    * Manually mark a profile as email-verified and clear any pending token.
    */
   verifyProfile: async (id: number): Promise<void> => {
-    await apiFetch<void>(`/api/admin/profiles/${id}/verify`, { method: 'POST' })
+    await apiFetch<void>(`/api/v1/admin/profiles/${id}/verify`, { method: 'POST' })
   },
 
   /**
    * Clear account lockout for a profile (reset failed attempts and lockout fields).
    */
   unlockProfile: async (id: number): Promise<void> => {
-    await apiFetch<void>(`/api/admin/profiles/${id}/unlock`, { method: 'POST' })
+    await apiFetch<void>(`/api/v1/admin/profiles/${id}/unlock`, { method: 'POST' })
   },
 
   /**
@@ -673,7 +669,7 @@ export const adminApi = {
    * Returns a rejected promise if the profile is already verified (400).
    */
   resendVerification: async (id: number): Promise<void> => {
-    await apiFetch<void>(`/api/admin/profiles/${id}/resend-verification`, { method: 'POST' })
+    await apiFetch<void>(`/api/v1/admin/profiles/${id}/resend-verification`, { method: 'POST' })
   },
 }
 
@@ -682,7 +678,7 @@ export const adminApi = {
  */
 export async function checkApiHealth(): Promise<boolean> {
   try {
-    await apiFetch<{ status: string }>('/api/health')
+    await apiFetch<{ status: string }>('/api/v1/health')
     return true
   } catch {
     return false

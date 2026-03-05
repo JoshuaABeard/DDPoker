@@ -89,6 +89,17 @@ public class GameServerSecurityAutoConfiguration {
                         .requestMatchers(HttpMethod.GET, "/api/v1/games", "/api/v1/games/*").permitAll() // Game
                                                                                                             // discovery
                                                                                                             // public
+                        .requestMatchers(HttpMethod.GET, "/api/v1/health").permitAll() // Health check public
+                        .requestMatchers(HttpMethod.GET, "/api/v1/downloads/**").permitAll() // Downloads public
+                        .requestMatchers(HttpMethod.GET, "/api/v1/rss/**").permitAll() // RSS feeds public
+                        .requestMatchers(HttpMethod.GET, "/api/v1/search").permitAll() // Player search public
+                        .requestMatchers(HttpMethod.GET, "/api/v1/history").permitAll() // History public
+                        .requestMatchers(HttpMethod.GET, "/api/v1/tournaments/**").permitAll() // Tournament details
+                                                                                                // public
+                        .requestMatchers(HttpMethod.GET, "/api/v1/leaderboard", "/api/v1/leaderboard/**").permitAll() // Leaderboard
+                                                                                                                        // public
+                        .requestMatchers(HttpMethod.GET, "/api/v1/profiles/name/**").permitAll() // Profile lookup by
+                                                                                                    // name public
                         .requestMatchers("/api/v1/**").authenticated() // All other API endpoints require auth
                         .anyRequest().permitAll() // Allow non-API requests
                 ).addFilterBefore(loginRateLimitFilter, UsernamePasswordAuthenticationFilter.class)

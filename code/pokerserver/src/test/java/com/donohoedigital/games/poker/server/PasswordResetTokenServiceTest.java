@@ -41,7 +41,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import com.donohoedigital.games.poker.server.config.TestConfig;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -55,7 +57,8 @@ import static org.assertj.core.api.Assertions.*;
  * the complete password reset flow.
  */
 @Tag("slow")
-@SpringJUnitConfig(locations = {"/app-context-pokerservertests.xml"})
+@SpringBootTest(classes = TestConfig.class)
+@ActiveProfiles("test")
 @Transactional
 class PasswordResetTokenServiceTest {
 

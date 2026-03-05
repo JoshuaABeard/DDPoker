@@ -748,23 +748,11 @@
     <param name="next-phase" strvalue="NONE"/>
   </phase>
 
-  <phase name="TD.Bet" class="com.donohoedigital.games.poker.Bet">
-    <param name="next-phase" strvalue="NONE"/>
-  </phase>
-
   <phase name="TD.DealCommunity" class="com.donohoedigital.games.poker.DealCommunity">
     <param name="next-phase" strvalue="NONE"/>
   </phase>
 
   <phase name="TD.Showdown" class="com.donohoedigital.games.poker.Showdown">
-    <param name="next-phase" strvalue="NONE"/>
-  </phase>
-
-  <phase name="TD.CheckEndHand" class="com.donohoedigital.games.poker.CheckEndHand">
-    <param name="next-phase" strvalue="NONE"/>
-  </phase>
-
-  <phase name="TD.NewLevelActions" class="com.donohoedigital.games.poker.NewLevelActions">
     <param name="next-phase" strvalue="NONE"/>
   </phase>
 

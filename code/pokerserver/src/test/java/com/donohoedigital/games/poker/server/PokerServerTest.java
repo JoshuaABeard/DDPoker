@@ -19,18 +19,16 @@
  */
 package com.donohoedigital.games.poker.server;
 
-import com.donohoedigital.config.ApplicationType;
-import com.donohoedigital.config.ConfigManager;
-import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.poker.model.OnlineProfile;
+import com.donohoedigital.games.poker.server.config.TestConfig;
 import com.donohoedigital.games.poker.service.OnlineProfileService;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -39,21 +37,14 @@ import static org.assertj.core.api.Assertions.*;
  * Tests for PokerServer admin profile initialization logic.
  */
 @Tag("slow")
-@SpringJUnitConfig(locations = {"/app-context-pokerservertests.xml"})
+@SpringBootTest(classes = TestConfig.class)
+@ActiveProfiles("test")
 @Transactional
 class PokerServerTest {
     @Autowired
     private OnlineProfileService profileService;
 
     private PokerServer pokerServer;
-
-    @BeforeEach
-    void setUp() {
-        // Initialize ConfigManager for tests (only once)
-        if (!PropertyConfig.isInitialized()) {
-            new ConfigManager("poker", ApplicationType.SERVER);
-        }
-    }
 
     @AfterEach
     void cleanup() {

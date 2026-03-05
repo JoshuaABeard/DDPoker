@@ -142,8 +142,7 @@ cd "$REPO_ROOT"
 # First, ensure Maven build is complete
 echo "Building Java project..."
 cd code
-# Skip api module (uses Spring Boot 3.2.2 which doesn't support Java 25)
-if ! mvn clean package -DskipTests -q -pl '!api'; then
+if ! mvn clean package -DskipTests -q; then
     echo -e "${RED}Error: Maven build failed${NC}"
     exit 1
 fi

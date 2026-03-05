@@ -1,6 +1,6 @@
 # Legacy Cleanup + API Consolidation Design
 
-**Status:** APPROVED (2026-03-05)
+**Status:** COMPLETED (2026-03-05)
 
 ## Goal
 
