@@ -26,29 +26,24 @@ DD Poker is a full-featured Texas Hold'em poker simulator originally developed b
 
 ## Module Structure
 
-The project is a Maven multi-module build with 19 modules. Build order (later modules depend on earlier ones):
+The project is a Maven multi-module build with 14 modules. Build order (later modules depend on earlier ones):
 
-| Module           | Description                                        | Artifact |
-|------------------|----------------------------------------------------|----------|
-| `common`         | Core config, logging, XML, properties, utils       | jar      |
-| `mail`           | Email sending tools                                | jar      |
-| `gui`            | GUI infrastructure extending Java Swing            | jar      |
-| `db`             | Database infrastructure extending Hibernate        | jar      |
-| `jsp`            | JSP-based email/file generation                    | jar      |
-| `server`         | Core server functionality                          | jar      |
-| `udp`            | Core UDP networking                                | jar      |
-| `tools`          | Misc business tools                                | jar      |
-| `gamecommon`     | Core game utilities (shared client/server)         | jar      |
-| `gameengine`     | Core game engine                                   | jar      |
-| `gameserver`     | Core game server                                   | jar      |
-| `gametools`      | Game building tools (border/territory managers)    | jar      |
-| `ddpoker`        | Classes in `com.ddpoker` package                   | jar      |
-| `pokerengine`    | Core poker utilities (shared client/server)        | jar      |
-| `pokergamecore`  | Server-side game engine (extracted from client)    | jar      |
-| `pokernetwork`   | Poker networking infrastructure (shared)           | jar      |
-| `poker`          | DD Poker UI / desktop client                       | jar      |
-| `pokerserver`    | DD Poker backend server                            | jar      |
-| `api`            | REST API (Spring Boot)                             | jar      |
+| Module            | Description                                                      | Artifact |
+|-------------------|------------------------------------------------------------------|----------|
+| `common`          | Core config, logging, XML, properties, utils                     | jar      |
+| `mail`            | Email sending tools                                              | jar      |
+| `gui`             | GUI infrastructure extending Java Swing                          | jar      |
+| `db`              | Database infrastructure extending Hibernate                      | jar      |
+| `server`          | Core server functionality                                        | jar      |
+| `gamecommon`      | Core game utilities (shared client/server)                       | jar      |
+| `gameengine`      | Core game engine (Swing UI framework)                            | jar      |
+| `gametools`       | Game building tools (border/territory managers)                  | jar      |
+| `pokerengine`     | Core poker utilities (shared client/server)                      | jar      |
+| `pokergamecore`   | Server-side game engine (pure logic, no Swing/Spring)            | jar      |
+| `pokergameserver` | Game server Spring Boot auto-configuration (WebSocket, REST, AI) | jar      |
+| `poker`           | DD Poker UI / desktop client                                     | jar      |
+| `pokerserver`     | DD Poker backend server                                          | jar      |
+| `api`             | REST API (Spring Boot)                                           | jar      |
 
 ## Key Entry Points
 
@@ -91,7 +86,7 @@ The project uses a layered properties system:
 ddpoker/
   .claude/                 # Agent/runtime tooling configuration
   .githooks/               # Repository git hooks (pre-commit, post-commit)
-  code/                    # All Java source (Maven multi-module, 19 modules)
+  code/                    # All Java source (Maven multi-module, 14 modules)
     pom.xml                # Parent POM
   docs/                    # Technical documentation, guides, plans, archive
   tests/
