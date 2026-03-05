@@ -2,8 +2,8 @@
 set -e
 
 # ============================================================
-# DD Poker Combined Server Entrypoint
-# Starts pokerserver and API as separate Java processes
+# DD Poker Server Entrypoint
+# Starts single Spring Boot process (pokerserver)
 # ============================================================
 
 APP_DIR=/app
@@ -66,7 +66,7 @@ if [ -n "$ADMIN_PASSWORD" ]; then
 fi
 
 echo "============================================"
-echo "  DD Poker Server Starting (Modernized)"
+echo "  DD Poker Server Starting"
 echo "============================================"
 echo "  Data directory: $DATA_DIR"
 echo "  DB Driver: ${DB_DRIVER:-org.h2.Driver}"
@@ -74,61 +74,7 @@ echo "  SMTP Host: ${SMTP_HOST:-127.0.0.1}:${SMTP_PORT:-587}"
 echo "  Admin User: ${ADMIN_USERNAME:-not configured}"
 echo "============================================"
 
-# Start pokerserver (background) - optional via SKIP_GAMESERVER env var
-if [ "$SKIP_GAMESERVER" != "true" ]; then
-  echo "[entrypoint] Starting pokerserver..."
-  java $JAVA_OPTS -Xms24m -Xmx96m \
-    -cp "$CLASSPATH" \
-    com.donohoedigital.games.poker.server.PokerServerMain &
-  SERVER_PID=$!
-  echo "[entrypoint] pokerserver PID: $SERVER_PID"
-  # Brief pause to let server initialize Spring context first
-  sleep 3
-else
-  echo "[entrypoint] Skipping pokerserver (SKIP_GAMESERVER=true)"
-  SERVER_PID=0
-fi
-
-# Start API via Spring Boot (background)
-echo "[entrypoint] Starting API (Spring Boot + Next.js)..."
-java $JAVA_OPTS -Xms24m -Xmx96m \
+# Start pokerserver (single Spring Boot process)
+exec java $JAVA_OPTS -Xms24m -Xmx192m \
   -cp "$CLASSPATH" \
-  com.donohoedigital.poker.api.ApiApplication &
-WEB_PID=$!
-echo "[entrypoint] API PID: $WEB_PID"
-
-if [ "$SKIP_GAMESERVER" != "true" ]; then
-  echo "[entrypoint] Both processes started. Waiting..."
-else
-  echo "[entrypoint] API started. Waiting..."
-fi
-
-# Trap signals for graceful shutdown
-shutdown() {
-  echo "[entrypoint] Shutting down..."
-  if [ "$SKIP_GAMESERVER" != "true" ]; then
-    kill $SERVER_PID $WEB_PID 2>/dev/null
-    wait $SERVER_PID $WEB_PID 2>/dev/null
-  else
-    kill $WEB_PID 2>/dev/null
-    wait $WEB_PID 2>/dev/null
-  fi
-  echo "[entrypoint] Shutdown complete."
-  exit 0
-}
-trap shutdown SIGTERM SIGINT
-
-# Wait for either process to exit
-# If one dies, stop the other and exit
-if [ "$SKIP_GAMESERVER" != "true" ]; then
-  wait -n $SERVER_PID $WEB_PID
-  EXIT_CODE=$?
-  echo "[entrypoint] A process exited with code $EXIT_CODE. Stopping remaining..."
-  kill $SERVER_PID $WEB_PID 2>/dev/null
-  wait $SERVER_PID $WEB_PID 2>/dev/null
-else
-  wait $WEB_PID
-  EXIT_CODE=$?
-  echo "[entrypoint] API exited with code $EXIT_CODE."
-fi
-exit $EXIT_CODE
+  com.donohoedigital.games.poker.server.PokerServerMain "$@"

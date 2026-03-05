@@ -6,7 +6,7 @@ services:
       dockerfile: docker/Dockerfile
     ports:
       - "8877:8877"       # pokerserver HTTP API (game client)
-      - "8080:8080"       # pokerweb Jetty (website)
+      - "8080:8080"       # Spring Boot web (REST API + website)
       - "11886:11886/udp" # pokerserver UDP (chat)
       - "11889:11889/udp" # pokerserver UDP (connection test)
     volumes:
