@@ -33,7 +33,7 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.comms.*;
-import com.donohoedigital.games.poker.core.PureTournamentClock;
+import com.donohoedigital.games.poker.engine.PureTournamentClock;
 
 import javax.swing.Timer;
 import java.awt.event.ActionListener;
