@@ -28,7 +28,7 @@ export default function Download() {
           <h2 className="text-2xl font-bold text-green-800 mt-0 mb-4">🪟 Windows Installer (Recommended)</h2>
           <p className="mb-4">
             <strong>
-              <a href={`/api/downloads/DDPokerCE-${version}.msi`} className="text-lg text-blue-600 hover:underline">
+              <a href={`/api/v1/downloads/DDPokerCE-${version}.msi`} className="text-lg text-blue-600 hover:underline">
                 ⬇️ Download Windows Installer
               </a>
             </strong>{' '}
@@ -62,7 +62,7 @@ export default function Download() {
           </h2>
           <p className="mb-4">
             <strong>
-              <a href={`/api/downloads/DDPokerCE-${version}.dmg`} className="text-lg text-blue-600 hover:underline">
+              <a href={`/api/v1/downloads/DDPokerCE-${version}.dmg`} className="text-lg text-blue-600 hover:underline">
                 ⬇️ Download macOS Installer
               </a>
             </strong>{' '}
@@ -101,7 +101,7 @@ export default function Download() {
               <h3 className="text-lg font-bold text-purple-700 mb-2">Debian / Ubuntu (.deb)</h3>
               <p className="mb-2">
                 <strong>
-                  <a href={`/api/downloads/ddpokerCE_${version}_amd64.deb`} className="text-blue-600 hover:underline">
+                  <a href={`/api/v1/downloads/ddpokerCE_${version}_amd64.deb`} className="text-blue-600 hover:underline">
                     ⬇️ Download .deb Package
                   </a>
                 </strong>{' '}
@@ -122,7 +122,7 @@ export default function Download() {
               <h3 className="text-lg font-bold text-purple-700 mb-2">Red Hat / Fedora (.rpm)</h3>
               <p className="mb-2">
                 <strong>
-                  <a href={`/api/downloads/ddpokerCE-${version}-1.x86_64.rpm`} className="text-blue-600 hover:underline">
+                  <a href={`/api/v1/downloads/ddpokerCE-${version}-1.x86_64.rpm`} className="text-blue-600 hover:underline">
                     ⬇️ Download .rpm Package
                   </a>
                 </strong>{' '}

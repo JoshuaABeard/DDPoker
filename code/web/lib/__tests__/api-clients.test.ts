@@ -123,30 +123,30 @@ describe('authApi', () => {
 // ---------------------------------------------------------------------------
 
 describe('playerApi', () => {
-  it('getProfile — GETs /api/players/:id', async () => {
+  it('getProfile — GETs /api/v1/profiles/:id', async () => {
     const fn = mockFetch({ id: 42, name: 'alice', isActive: true, createdAt: '2026-01-01' })
     const result = await playerApi.getProfile(42)
-    expect(capturedUrl(fn)).toContain('/api/players/42')
+    expect(capturedUrl(fn)).toContain('/api/v1/profiles/42')
     expect(result.id).toBe(42)
   })
 
-  it('getProfileByName — GETs /api/players/name/:name', async () => {
+  it('getProfileByName — GETs /api/v1/profiles/name/:name', async () => {
     const fn = mockFetch({ id: 99, name: 'bob', isActive: true, createdAt: '2026-01-01' })
     await playerApi.getProfileByName('bob')
-    expect(capturedUrl(fn)).toContain('/api/players/name/bob')
+    expect(capturedUrl(fn)).toContain('/api/v1/profiles/name/bob')
   })
 
-  it('updateProfile — PUTs to /api/players/me', async () => {
+  it('updateProfile — PUTs to /api/v1/profiles/me', async () => {
     const fn = mockFetch({ id: 1, name: 'alice updated', isActive: true, createdAt: '2026-01-01' })
     await playerApi.updateProfile({ name: 'alice updated' })
-    expect(capturedUrl(fn)).toContain('/api/players/me')
+    expect(capturedUrl(fn)).toContain('/api/v1/profiles/me')
     expect(capturedMethod(fn)).toBe('PUT')
   })
 
-  it('changePassword — PUTs to /api/players/me/password', async () => {
+  it('changePassword — PUTs to /api/v1/profiles/me/password', async () => {
     const fn = mockFetch({})
     await playerApi.changePassword('old', 'new')
-    expect(capturedUrl(fn)).toContain('/api/players/me/password')
+    expect(capturedUrl(fn)).toContain('/api/v1/profiles/me/password')
     expect(capturedMethod(fn)).toBe('PUT')
     expect(capturedBody(fn)).toMatchObject({ currentPassword: 'old', newPassword: 'new' })
   })
@@ -157,10 +157,10 @@ describe('playerApi', () => {
 // ---------------------------------------------------------------------------
 
 describe('profileApi', () => {
-  it('getAliases — GETs /api/profile/aliases', async () => {
+  it('getAliases — GETs /api/v1/profiles/aliases', async () => {
     const fn = mockFetch([{ name: 'al', createdDate: '2026-01-01' }])
     const result = await profileApi.getAliases()
-    expect(capturedUrl(fn)).toContain('/api/profile/aliases')
+    expect(capturedUrl(fn)).toContain('/api/v1/profiles/aliases')
     expect(result).toHaveLength(1)
   })
 })
@@ -271,10 +271,10 @@ describe('gameServerApi — remaining methods', () => {
 // ---------------------------------------------------------------------------
 
 describe('leaderboardApi', () => {
-  it('getLeaderboard — GETs /api/leaderboard with mode param', async () => {
+  it('getLeaderboard — GETs /api/v1/leaderboard with mode param', async () => {
     const fn = mockFetch({ entries: [], total: 0 })
     await leaderboardApi.getLeaderboard('ddr1')
-    expect(capturedUrl(fn)).toContain('/api/leaderboard')
+    expect(capturedUrl(fn)).toContain('/api/v1/leaderboard')
     expect(capturedUrl(fn)).toContain('mode=ddr1')
   })
 
@@ -285,10 +285,10 @@ describe('leaderboardApi', () => {
     expect(capturedUrl(fn)).toContain('from=2026-01-01')
   })
 
-  it('getPlayerRank — GETs /api/leaderboard/player/:name', async () => {
+  it('getPlayerRank — GETs /api/v1/leaderboard/player/:name', async () => {
     const fn = mockFetch({ rank: 1, playerName: 'alice', points: 100, gamesPlayed: 10, wins: 5, winRate: 0.5 })
     await leaderboardApi.getPlayerRank('alice')
-    expect(capturedUrl(fn)).toContain('/api/leaderboard/player/alice')
+    expect(capturedUrl(fn)).toContain('/api/v1/leaderboard/player/alice')
   })
 })
 
@@ -297,10 +297,10 @@ describe('leaderboardApi', () => {
 // ---------------------------------------------------------------------------
 
 describe('tournamentApi', () => {
-  it('getHistory — GETs /api/history with name param', async () => {
+  it('getHistory — GETs /api/v1/history with name param', async () => {
     const fn = mockFetch({ history: [], total: 0 })
     await tournamentApi.getHistory('alice')
-    expect(capturedUrl(fn)).toContain('/api/history')
+    expect(capturedUrl(fn)).toContain('/api/v1/history')
     expect(capturedUrl(fn)).toContain('name=alice')
   })
 
@@ -311,10 +311,10 @@ describe('tournamentApi', () => {
     expect(capturedUrl(fn)).toContain('to=2026-12-31')
   })
 
-  it('getDetails — GETs /api/tournaments/:id', async () => {
+  it('getDetails — GETs /api/v1/tournaments/:id', async () => {
     const fn = mockFetch({ id: 5, gameName: 'Test', placement: 1, totalPlayers: 8, prizeWon: 100, date: '2026-01-01' })
     await tournamentApi.getDetails(5)
-    expect(capturedUrl(fn)).toContain('/api/tournaments/5')
+    expect(capturedUrl(fn)).toContain('/api/v1/tournaments/5')
   })
 })
 
@@ -323,32 +323,32 @@ describe('tournamentApi', () => {
 // ---------------------------------------------------------------------------
 
 describe('templateApi', () => {
-  it('list — GETs /api/profile/templates', async () => {
+  it('list — GETs /api/v1/profiles/templates', async () => {
     const fn = mockFetch([])
     await templateApi.list()
-    expect(capturedUrl(fn)).toContain('/api/profile/templates')
+    expect(capturedUrl(fn)).toContain('/api/v1/profiles/templates')
     expect(capturedMethod(fn)).toBe('GET')
   })
 
-  it('create — POSTs to /api/profile/templates', async () => {
+  it('create — POSTs to /api/v1/profiles/templates', async () => {
     const fn = mockFetch({ id: 1, name: 'T1', config: '{}', createdDate: '', modifiedDate: '' })
     await templateApi.create('T1', { maxPlayers: 6 })
-    expect(capturedUrl(fn)).toContain('/api/profile/templates')
+    expect(capturedUrl(fn)).toContain('/api/v1/profiles/templates')
     expect(capturedMethod(fn)).toBe('POST')
     expect(capturedBody(fn)).toMatchObject({ name: 'T1' })
   })
 
-  it('update — PUTs to /api/profile/templates/:id', async () => {
+  it('update — PUTs to /api/v1/profiles/templates/:id', async () => {
     const fn = mockFetch({ id: 1, name: 'T1 Updated', config: '{}', createdDate: '', modifiedDate: '' })
     await templateApi.update(1, 'T1 Updated', { maxPlayers: 9 })
-    expect(capturedUrl(fn)).toContain('/api/profile/templates/1')
+    expect(capturedUrl(fn)).toContain('/api/v1/profiles/templates/1')
     expect(capturedMethod(fn)).toBe('PUT')
   })
 
-  it('delete — DELETEs /api/profile/templates/:id', async () => {
+  it('delete — DELETEs /api/v1/profiles/templates/:id', async () => {
     const fn = mockFetch({})
     await templateApi.delete(1)
-    expect(capturedUrl(fn)).toContain('/api/profile/templates/1')
+    expect(capturedUrl(fn)).toContain('/api/v1/profiles/templates/1')
     expect(capturedMethod(fn)).toBe('DELETE')
   })
 })
@@ -358,10 +358,10 @@ describe('templateApi', () => {
 // ---------------------------------------------------------------------------
 
 describe('searchApi', () => {
-  it('searchPlayers — GETs /api/search with name param', async () => {
+  it('searchPlayers — GETs /api/v1/search with name param', async () => {
     const fn = mockFetch([])
     await searchApi.searchPlayers('alice')
-    expect(capturedUrl(fn)).toContain('/api/search')
+    expect(capturedUrl(fn)).toContain('/api/v1/search')
     expect(capturedUrl(fn)).toContain('name=alice')
   })
 })
@@ -371,10 +371,10 @@ describe('searchApi', () => {
 // ---------------------------------------------------------------------------
 
 describe('hostApi', () => {
-  it('getHosts — GETs /api/games/hosts', async () => {
+  it('getHosts — GETs /api/v1/games/hosts', async () => {
     const fn = mockFetch({ hosts: [], total: 0 })
     await hostApi.getHosts()
-    expect(capturedUrl(fn)).toContain('/api/games/hosts')
+    expect(capturedUrl(fn)).toContain('/api/v1/games/hosts')
   })
 
   it('getHosts — appends optional filter params', async () => {
@@ -390,39 +390,39 @@ describe('hostApi', () => {
 // ---------------------------------------------------------------------------
 
 describe('adminApi', () => {
-  it('searchProfiles — GETs /api/admin/profiles', async () => {
+  it('searchProfiles — GETs /api/v1/admin/profiles', async () => {
     const fn = mockFetch({ profiles: [], total: 0 })
     await adminApi.searchProfiles({ name: 'alice', page: 0, pageSize: 20 })
-    expect(capturedUrl(fn)).toContain('/api/admin/profiles')
+    expect(capturedUrl(fn)).toContain('/api/v1/admin/profiles')
     expect(capturedUrl(fn)).toContain('name=alice')
   })
 
   it('searchProfiles — works with no filters', async () => {
     const fn = mockFetch({ profiles: [], total: 0 })
     await adminApi.searchProfiles()
-    expect(capturedUrl(fn)).toContain('/api/admin/profiles')
+    expect(capturedUrl(fn)).toContain('/api/v1/admin/profiles')
   })
 
-  it('getBans — GETs /api/admin/bans and wraps in { bans, total }', async () => {
+  it('getBans — GETs /api/v1/admin/bans and wraps in { bans, total }', async () => {
     const fn = mockFetch([{ id: 1, key: 'abc', createDate: '2026-01-01' }])
     const result = await adminApi.getBans()
-    expect(capturedUrl(fn)).toContain('/api/admin/bans')
+    expect(capturedUrl(fn)).toContain('/api/v1/admin/bans')
     expect(result.bans).toHaveLength(1)
     expect(result.total).toBe(1)
   })
 
-  it('addBan — POSTs to /api/admin/bans', async () => {
+  it('addBan — POSTs to /api/v1/admin/bans', async () => {
     const fn = mockFetch({ id: 2, key: 'xyz', createDate: '2026-01-01' })
     await adminApi.addBan({ key: 'xyz', comment: 'spammer' })
-    expect(capturedUrl(fn)).toContain('/api/admin/bans')
+    expect(capturedUrl(fn)).toContain('/api/v1/admin/bans')
     expect(capturedMethod(fn)).toBe('POST')
     expect(capturedBody(fn)).toMatchObject({ key: 'xyz', comment: 'spammer' })
   })
 
-  it('removeBan — DELETEs /api/admin/bans/:key (URL-encoded)', async () => {
+  it('removeBan — DELETEs /api/v1/admin/bans/:key (URL-encoded)', async () => {
     const fn = mockFetch({})
     await adminApi.removeBan('abc def')
-    expect(capturedUrl(fn)).toContain('/api/admin/bans/abc%20def')
+    expect(capturedUrl(fn)).toContain('/api/v1/admin/bans/abc%20def')
     expect(capturedMethod(fn)).toBe('DELETE')
   })
 })

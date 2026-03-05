@@ -23,7 +23,7 @@ export default function OnlinePortal() {
     {
       title: 'Rankings & Stats',
       links: [
-        { href: '/online/leaderboard', label: 'Leaderboard', rss: '/api/rss/leaderboard' },
+        { href: '/online/leaderboard', label: 'Leaderboard', rss: '/api/v1/rss/leaderboard' },
         { href: '/online/search', label: 'Player Search' },
       ],
     },
