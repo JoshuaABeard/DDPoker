@@ -107,17 +107,16 @@ public class PokerMain extends GameEngine {
     /**
      * Run Poker
      */
-    @SuppressWarnings({"UseOfSystemOutOrSystemErr"})
     public static void main(String[] args) {
         try {
             PokerMain main = new PokerMain(APP_NAME, "poker", args);
             main.init();
         } catch (ApplicationError ae) {
-            System.err.println("Poker ending due to ApplicationError: " + ae);
+            logger.error("Poker ending due to ApplicationError: {}", ae);
             System.exit(1);
         } catch (OutOfMemoryError nomem) {
-            System.err.println("Out of memory: " + nomem);
-            System.err.println(Utils.formatExceptionText(nomem));
+            logger.error("Out of memory: {}", nomem);
+            logger.error("{}", Utils.formatExceptionText(nomem));
             System.exit(1);
         }
     }

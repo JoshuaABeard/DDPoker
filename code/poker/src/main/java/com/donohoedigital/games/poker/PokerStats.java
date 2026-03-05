@@ -138,7 +138,7 @@ public class PokerStats {
         int nTotal = 0;
         for (int i = 0; i < stats_.size(); i++) {
             stat = getStat(i);
-            System.out.println(stat.toString());
+            logger.debug("{}", stat.toString());
             nTotal += stat.nChip;
         }
         logger.debug("TOTAL chips (should be 0): {}", nTotal);
@@ -286,7 +286,7 @@ public class PokerStats {
 
         // arg must be present
         if (args.length < 2) {
-            System.out.println("PokerStats [loops] [loops-before-remember]");
+            logger.info("PokerStats [loops] [loops-before-remember]");
             System.exit(-1);
         }
 
