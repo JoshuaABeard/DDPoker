@@ -44,12 +44,15 @@ import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
  * Test application configuration for integration tests.
  */
 @SpringBootConfiguration
-@EnableAutoConfiguration(exclude = com.donohoedigital.games.poker.gameserver.auth.GameServerSecurityAutoConfiguration.class)
+@EnableAutoConfiguration(exclude = {
+        com.donohoedigital.games.poker.gameserver.auth.GameServerSecurityAutoConfiguration.class,
+        com.donohoedigital.games.poker.gameserver.GameServerWebAutoConfiguration.class})
 @EnableWebSecurity
 @ComponentScan(basePackages = {"com.donohoedigital.games.poker.gameserver.controller",
         "com.donohoedigital.games.poker.gameserver.service"}, excludeFilters = {
                 @ComponentScan.Filter(type = FilterType.REGEX, pattern = ".*Test\\$TestConfig"),
-                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = com.donohoedigital.games.poker.gameserver.controller.TestSecurityConfiguration.class)})
+                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = com.donohoedigital.games.poker.gameserver.controller.TestSecurityConfiguration.class),
+                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = com.donohoedigital.games.poker.gameserver.controller.SimulationController.class)})
 public class TestApplication {
 
     @Bean
