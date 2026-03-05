@@ -37,17 +37,18 @@ package com.donohoedigital.games.poker;
 import static org.assertj.core.api.Assertions.*;
 
 import com.donohoedigital.games.poker.CommunityCardCalculator.CommunityCardVisibility;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class CommunityCardCalculatorTest {
 
-    // Round constants from HoldemHand
-    private static final int PRE_FLOP = HoldemHand.ROUND_PRE_FLOP; // 0
-    private static final int FLOP = HoldemHand.ROUND_FLOP; // 1
-    private static final int TURN = HoldemHand.ROUND_TURN; // 2
-    private static final int RIVER = HoldemHand.ROUND_RIVER; // 3
-    private static final int SHOWDOWN = HoldemHand.ROUND_SHOWDOWN; // 4
+    // Round constants from BettingRound
+    private static final int PRE_FLOP = BettingRound.ROUND_PRE_FLOP; // 0
+    private static final int FLOP = BettingRound.ROUND_FLOP; // 1
+    private static final int TURN = BettingRound.ROUND_TURN; // 2
+    private static final int RIVER = BettingRound.ROUND_RIVER; // 3
+    private static final int SHOWDOWN = BettingRound.ROUND_SHOWDOWN; // 4
 
     // =================================================================
     // Pre-Flop tests

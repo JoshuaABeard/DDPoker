@@ -22,6 +22,7 @@ package com.donohoedigital.games.poker.control;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.model.TournamentProfile;
@@ -169,7 +170,7 @@ class ValidateHandler extends BaseHandler {
         int playerChips = 0;
         int numSeated = 0;
         for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
-            PokerPlayer player = table.getPlayer(seat);
+            ClientPlayer player = table.getPlayer(seat);
             if (player != null) {
                 playerChips += player.getChipCount();
                 numSeated++;

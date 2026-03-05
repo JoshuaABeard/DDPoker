@@ -24,12 +24,14 @@ import com.donohoedigital.games.engine.Phase;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.ai.PlayerType;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.dashboard.DashboardAdvisor;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.PokerConstants;
+import com.donohoedigital.games.poker.core.ActionOptions;
 import com.donohoedigital.games.poker.gameserver.ActionRequest;
 import com.donohoedigital.games.poker.gameserver.ServerPlayerActionProvider;
 import com.donohoedigital.games.poker.gameserver.ServerTournamentDirector;
@@ -100,7 +102,7 @@ class StateHandler extends BaseHandler {
             ClientPokerTable currentTable = game.getCurrentTable();
             if (currentTable != null) {
                 for (int s = 0; s < PokerConstants.SEATS; s++) {
-                    PokerPlayer pp = currentTable.getPlayer(s);
+                    ClientPlayer pp = currentTable.getPlayer(s);
                     if (pp != null && puppetedIds.contains(pp.getID())) {
                         puppetedSeats.add(s);
                     }
@@ -200,7 +202,7 @@ class StateHandler extends BaseHandler {
             List<Map<String, Object>> leaders = new ArrayList<>();
             for (ClientPokerTable tbl : allTables) {
                 for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
-                    PokerPlayer p = tbl.getPlayer(seat);
+                    ClientPlayer p = tbl.getPlayer(seat);
                     if (p != null && !p.isEliminated()) {
                         Map<String, Object> entry = new LinkedHashMap<>();
                         entry.put("name", p.getName());
@@ -257,7 +259,7 @@ class StateHandler extends BaseHandler {
 
         List<Map<String, Object>> players = new ArrayList<>();
         for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
-            PokerPlayer player = table.getPlayer(seat);
+            ClientPlayer player = table.getPlayer(seat);
             if (player != null) {
                 players.add(buildPlayer(player, hand));
             }
@@ -270,7 +272,7 @@ class StateHandler extends BaseHandler {
         return t;
     }
 
-    private Map<String, Object> buildPlayer(PokerPlayer player, ClientHoldemHand hand) {
+    private Map<String, Object> buildPlayer(ClientPlayer player, ClientHoldemHand hand) {
         Map<String, Object> p = new LinkedHashMap<>();
         p.put("seat", player.getSeat());
         p.put("name", player.getName());
@@ -341,7 +343,7 @@ class StateHandler extends BaseHandler {
         int totalPlayers = Math.max(0, game.getNumPlayers());
 
         for (int i = 0; i < totalPlayers; i++) {
-            PokerPlayer player = game.getPokerPlayerAt(i);
+            ClientPlayer player = game.getPokerPlayerAt(i);
             if (player == null) {
                 continue;
             }
@@ -404,7 +406,7 @@ class StateHandler extends BaseHandler {
                 action.put("isPlayerPuppeted", true);
 
                 // Build available actions from puppet's options
-                com.donohoedigital.games.poker.core.ActionOptions opts = puppetReq.options();
+                ActionOptions opts = puppetReq.options();
                 List<String> puppetActions = new ArrayList<>();
                 if (opts.canFold()) puppetActions.add("FOLD");
                 if (opts.canCheck()) puppetActions.add("CHECK");
@@ -424,7 +426,7 @@ class StateHandler extends BaseHandler {
 
         if (!isHumanTurn) return action;
 
-        PokerPlayer human = game.getHumanPlayer();
+        ClientPlayer human = game.getHumanPlayer();
         ClientPokerTable table = game.getCurrentTable();
         ClientHoldemHand hand = table != null ? table.getHoldemHand() : null;
 
@@ -463,7 +465,7 @@ class StateHandler extends BaseHandler {
         if (actionTable != null) {
             ClientHoldemHand actionHand = actionTable.getHoldemHand();
             if (actionHand != null) {
-                PokerPlayer current = actionHand.getCurrentPlayer();
+                ClientPlayer current = actionHand.getCurrentPlayer();
                 if (current != null) {
                     action.put("currentPlayerSeat", current.getSeat());
                     action.put("currentPlayerName", current.getName());
@@ -492,7 +494,7 @@ class StateHandler extends BaseHandler {
     private Map<String, Object> buildChipConservation(ClientPokerTable table, ClientHoldemHand hand) {
         int playerTotal = 0;
         for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
-            PokerPlayer player = table.getPlayer(seat);
+            ClientPlayer player = table.getPlayer(seat);
             if (player != null) {
                 playerTotal += player.getChipCount();
             }
@@ -508,7 +510,7 @@ class StateHandler extends BaseHandler {
     private Map<String, Object> buildCurrentBets(ClientPokerTable table, ClientHoldemHand hand) {
         Map<String, Object> bets = new LinkedHashMap<>();
         for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
-            PokerPlayer player = table.getPlayer(seat);
+            ClientPlayer player = table.getPlayer(seat);
             if (player != null) {
                 int bet = hand.getBet(player);
                 if (bet > 0) {

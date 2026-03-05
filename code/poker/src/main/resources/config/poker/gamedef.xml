@@ -910,7 +910,7 @@
     </paramlist>
   </phase>
 
-  <phase name="SaveGame" extends="DisplayInfoMessage" class="com.donohoedigital.games.poker.PokerSaveGame"
+  <phase name="SaveGame" extends="DisplayInfoMessage" class="com.donohoedigital.games.engine.SaveGame"
          transient="true">
     <param name="style" strvalue="PokerStandardDialog"/>
     <param name="savemode" boolvalue="true"/>

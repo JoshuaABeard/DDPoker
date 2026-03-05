@@ -22,6 +22,8 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.comms.*;
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -272,13 +274,13 @@ class PokerDataMarshallerTest {
     @Test
     void should_RoundTripHandAction_When_FoldActionMarshalled() {
         MsgState state = new MsgState();
-        PokerPlayer player = new PokerPlayer(1, "TestPlayer", true);
+        ClientPlayer player = new ClientPlayer(1, "TestPlayer", true);
         player.setChipCount(1000);
 
         // Register player in MsgState so marshal/demarshal can reference it by ID
         Integer playerId = state.getId(player);
 
-        HandAction original = new HandAction(player, HoldemHand.ROUND_PRE_FLOP, HandAction.ACTION_FOLD);
+        HandAction original = new HandAction(player, BettingRound.ROUND_PRE_FLOP, HandAction.ACTION_FOLD);
         String marshalled = DataMarshaller.marshal(state, original);
 
         assertThat(marshalled).startsWith("?");
@@ -287,7 +289,7 @@ class PokerDataMarshallerTest {
         HandAction restored = (HandAction) DataMarshaller.demarshal(state, marshalled);
 
         assertThat(restored.getAction()).isEqualTo(HandAction.ACTION_FOLD);
-        assertThat(restored.getRound()).isEqualTo(HoldemHand.ROUND_PRE_FLOP);
+        assertThat(restored.getRound()).isEqualTo(BettingRound.ROUND_PRE_FLOP);
         assertThat(restored.getAmount()).isZero();
         assertThat(restored.getPlayer()).isSameAs(player);
     }
@@ -295,18 +297,18 @@ class PokerDataMarshallerTest {
     @Test
     void should_RoundTripHandAction_When_RaiseActionMarshalled() {
         MsgState state = new MsgState();
-        PokerPlayer player = new PokerPlayer(1, "Raiser", true);
+        ClientPlayer player = new ClientPlayer(1, "Raiser", true);
         player.setChipCount(500);
 
         state.getId(player);
 
-        HandAction original = new HandAction(player, HoldemHand.ROUND_FLOP, HandAction.ACTION_RAISE, 200, 50, null);
+        HandAction original = new HandAction(player, BettingRound.ROUND_FLOP, HandAction.ACTION_RAISE, 200, 50, null);
         String marshalled = DataMarshaller.marshal(state, original);
 
         HandAction restored = (HandAction) DataMarshaller.demarshal(state, marshalled);
 
         assertThat(restored.getAction()).isEqualTo(HandAction.ACTION_RAISE);
-        assertThat(restored.getRound()).isEqualTo(HoldemHand.ROUND_FLOP);
+        assertThat(restored.getRound()).isEqualTo(BettingRound.ROUND_FLOP);
         assertThat(restored.getAmount()).isEqualTo(200);
         assertThat(restored.getSubAmount()).isEqualTo(50);
         assertThat(restored.getPlayer()).isSameAs(player);
@@ -315,12 +317,12 @@ class PokerDataMarshallerTest {
     @Test
     void should_PreserveAllInFlag_When_AllInPlayerActionMarshalled() {
         MsgState state = new MsgState();
-        PokerPlayer player = new PokerPlayer(1, "AllInPlayer", true);
+        ClientPlayer player = new ClientPlayer(1, "AllInPlayer", true);
         player.setChipCount(0); // Zero chips means all-in when action is created
 
         state.getId(player);
 
-        HandAction original = new HandAction(player, HoldemHand.ROUND_RIVER, HandAction.ACTION_CALL, 300);
+        HandAction original = new HandAction(player, BettingRound.ROUND_RIVER, HandAction.ACTION_CALL, 300);
 
         assertThat(original.isAllIn()).isTrue();
 
@@ -334,69 +336,18 @@ class PokerDataMarshallerTest {
     @Test
     void should_PreserveDebugString_When_HandActionWithDebugMarshalled() {
         MsgState state = new MsgState();
-        PokerPlayer player = new PokerPlayer(1, "DebugPlayer", true);
+        ClientPlayer player = new ClientPlayer(1, "DebugPlayer", true);
         player.setChipCount(1000);
 
         state.getId(player);
 
-        HandAction original = new HandAction(player, HoldemHand.ROUND_TURN, HandAction.ACTION_BET, 100, "AI-decided");
+        HandAction original = new HandAction(player, BettingRound.ROUND_TURN, HandAction.ACTION_BET, 100, "AI-decided");
         String marshalled = DataMarshaller.marshal(state, original);
 
         HandAction restored = (HandAction) DataMarshaller.demarshal(state, marshalled);
 
         assertThat(restored.getDebug()).isEqualTo("AI-decided");
         assertThat(restored.getAction()).isEqualTo(HandAction.ACTION_BET);
-    }
-
-    // =================================================================
-    // Pot Round-Trip (poker-specific DataMarshal)
-    // =================================================================
-
-    @Test
-    void should_RoundTripPot_When_PotWithPlayersMarshalled() {
-        MsgState state = new MsgState();
-        PokerPlayer player1 = new PokerPlayer(1, "Player1", true);
-        PokerPlayer player2 = new PokerPlayer(2, "Player2", false);
-        player1.setChipCount(1000);
-        player2.setChipCount(800);
-
-        state.getId(player1);
-        state.getId(player2);
-
-        Pot original = new Pot(HoldemHand.ROUND_FLOP, 0);
-        original.addChips(player1, 200);
-        original.addChips(player2, 200);
-
-        String marshalled = DataMarshaller.marshal(state, original);
-
-        assertThat(marshalled).startsWith("P");
-
-        Pot restored = (Pot) DataMarshaller.demarshal(state, marshalled);
-
-        assertThat(restored.getChipCount()).isEqualTo(400);
-        assertThat(restored.getRound()).isEqualTo(HoldemHand.ROUND_FLOP);
-        assertThat(restored.getNumPlayers()).isEqualTo(2);
-        assertThat(restored.getPlayerAt(0)).isSameAs(player1);
-        assertThat(restored.getPlayerAt(1)).isSameAs(player2);
-    }
-
-    @Test
-    void should_PreserveSideBet_When_SidePotMarshalled() {
-        MsgState state = new MsgState();
-        PokerPlayer player = new PokerPlayer(1, "SidePlayer", true);
-        player.setChipCount(500);
-
-        state.getId(player);
-
-        Pot original = new Pot(HoldemHand.ROUND_PRE_FLOP, 1);
-        original.addChips(player, 100);
-        original.setSideBet(50);
-
-        String marshalled = DataMarshaller.marshal(state, original);
-        Pot restored = (Pot) DataMarshaller.demarshal(state, marshalled);
-
-        assertThat(restored.getSideBet()).isEqualTo(50);
-        assertThat(restored.getChipCount()).isEqualTo(100);
     }
 
     // =================================================================

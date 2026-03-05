@@ -55,7 +55,6 @@ import java.io.*;
 import java.security.*;
 import java.util.*;
 import com.donohoedigital.games.poker.engine.GamePlayerInfo;
-import com.donohoedigital.games.poker.core.GameTable;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
@@ -592,14 +591,10 @@ public class PokerGame extends Game implements PlayerActionListener {
     }
 
     /**
-     * Get table at index as GameTable (for save/load compatibility).
+     * Get table at index.
      */
-    public GameTable getTable(int i) {
-        ClientPokerTable t = tables_.get(i);
-        if (t instanceof GameTable)
-            return (GameTable) t;
-        throw new IllegalStateException(
-                "getTable(" + i + ") called on a non-engine table. " + "Use getTableByNumber() in WebSocket paths.");
+    public ClientPokerTable getTable(int i) {
+        return tables_.get(i);
     }
 
     /**
@@ -1995,24 +1990,15 @@ public class PokerGame extends Game implements PlayerActionListener {
             }
         }
 
-        // Save/load code removed — PokerTable engine class no longer exists.
-        // This will be fully cleaned up in Task 18 (Remove PokerSaveGame).
+        // Save/load code removed — engine classes no longer exist.
         throw new UnsupportedOperationException("Save/load not supported after engine class removal");
     }
 
-    /**
-     * load poker specific data — disabled after engine class removal. Will be fully
-     * cleaned up in Task 18 (Remove PokerSaveGame).
-     */
     @Override
     protected void loadSubclassData(GameState state) {
         throw new UnsupportedOperationException("Save/load not supported after engine class removal");
     }
 
-    /**
-     * allow subclass to do final setup after load — disabled after engine class
-     * removal. Will be fully cleaned up in Task 18 (Remove PokerSaveGame).
-     */
     @Override
     protected void gameLoaded(GameState state) {
         throw new UnsupportedOperationException("Save/load not supported after engine class removal");

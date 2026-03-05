@@ -22,23 +22,24 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.comms.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
  * Tests for HandAction - core data model for all player actions.
  */
 class HandActionTest {
 
-    private PokerPlayer player;
+    private ClientPlayer player;
 
     @BeforeEach
     void setUp() {
         new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
-        player = new PokerPlayer(1, "TestPlayer", true);
+        player = new ClientPlayer(1, "TestPlayer", true);
         player.setChipCount(1000);
     }
 

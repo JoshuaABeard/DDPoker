@@ -18,8 +18,6 @@
 package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.poker.HandAction;
-import com.donohoedigital.games.poker.HoldemHand;
-import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
@@ -46,7 +44,7 @@ class RemoteHoldemHandTest {
     void initialStateIsPreFlop() {
         assertThat(hand.getRound()).isEqualTo(BettingRound.PRE_FLOP);
         assertThat(hand.getNumPlayers()).isEqualTo(0);
-        assertThat(hand.getCurrentPlayerIndex()).isEqualTo(HoldemHand.NO_CURRENT_PLAYER);
+        assertThat(hand.getCurrentPlayerIndex()).isEqualTo(RemoteHoldemHand.NO_CURRENT_PLAYER);
         assertThat(hand.getCurrentPlayer()).isNull();
         assertThat(hand.getTotalPotChipCount()).isEqualTo(0);
     }
@@ -87,8 +85,8 @@ class RemoteHoldemHandTest {
 
     @Test
     void updatePlayerOrderAndCurrentPlayer() {
-        PokerPlayer alice = new PokerPlayer(1, "Alice", true);
-        PokerPlayer bob = new PokerPlayer(2, "Bob", false);
+        ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+        ClientPlayer bob = new ClientPlayer(2, "Bob", false);
         hand.updatePlayerOrder(List.of(alice, bob));
 
         assertThat(hand.getNumPlayers()).isEqualTo(2);
@@ -120,21 +118,21 @@ class RemoteHoldemHandTest {
 
     @Test
     void currentPlayerIndexClampsOnPlayerOrderUpdate() {
-        PokerPlayer alice = new PokerPlayer(1, "Alice", true);
-        PokerPlayer bob = new PokerPlayer(2, "Bob", false);
+        ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+        ClientPlayer bob = new ClientPlayer(2, "Bob", false);
         hand.updatePlayerOrder(List.of(alice, bob));
         hand.updateCurrentPlayer(1); // valid index
 
         // Replace with smaller list — index 1 is now out of bounds
         hand.updatePlayerOrder(List.of(alice));
 
-        assertThat(hand.getCurrentPlayerIndex()).isEqualTo(HoldemHand.NO_CURRENT_PLAYER);
+        assertThat(hand.getCurrentPlayerIndex()).isEqualTo(RemoteHoldemHand.NO_CURRENT_PLAYER);
     }
 
     @Test
     void hasPlayerActedReturnsFalseWithoutNpe() {
         // history_ is null in no-arg constructor — must not throw NPE
-        PokerPlayer alice = new PokerPlayer(1, "Alice", true);
+        ClientPlayer alice = new ClientPlayer(1, "Alice", true);
         assertThat(hand.hasPlayerActed(alice)).isFalse();
     }
 
