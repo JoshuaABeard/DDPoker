@@ -219,7 +219,9 @@ public class EmbeddedGameServer {
         JwtTokenProvider jwtProvider = context.getBean(JwtTokenProvider.class);
 
         long profileId = registerOrLogin(authService, username, password);
-        String jwt = jwtProvider.generateToken(username, profileId, false);
+        // Local embedded users are always considered email-verified — no email flow for
+        // local play
+        String jwt = jwtProvider.generateToken(username, profileId, false, true);
         cachedProfileKey_ = key;
         cachedJwt_ = jwt;
         return jwt;
