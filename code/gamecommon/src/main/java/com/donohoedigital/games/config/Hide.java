@@ -46,21 +46,21 @@ public class Hide {
     /**
      * Obfuscate save line
      */
-    public static void obfuscate(StringBuffer sb, int nEntry) {
+    public static void obfuscate(StringBuilder sb, int nEntry) {
         _fuscate(sb, nEntry, false);
     }
 
     /**
      * Deobfuscate save line
      */
-    public static void deobfuscate(StringBuffer sb, int nEntry) {
+    public static void deobfuscate(StringBuilder sb, int nEntry) {
         _fuscate(sb, nEntry, true);
     }
 
     /**
      * the logic of it all
      */
-    private static void _fuscate(StringBuffer sb, int nEntry, boolean de) {
+    private static void _fuscate(StringBuilder sb, int nEntry, boolean de) {
         char c, a, z;
         int n, rotate;
         for (int i = 0; i < sb.length(); i++) {

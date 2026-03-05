@@ -352,8 +352,9 @@ public class GameState extends MsgState implements SaveFile {
             for (int i = 0; i < entries_.size(); i++) {
                 entry = entries_.get(i);
                 entry.write(this, tempWriter);
-                Hide.obfuscate(tempWriter.getBuffer(), i);
-                writer.write(tempWriter.toString());
+                StringBuilder sbEntry = new StringBuilder(tempWriter.toString());
+                Hide.obfuscate(sbEntry, i);
+                writer.write(sbEntry.toString());
 
                 writer.write(ENTRY_ENDLINE);
                 tempWriter.getBuffer().setLength(0);
@@ -389,7 +390,7 @@ public class GameState extends MsgState implements SaveFile {
         try {
             String sLine;
             GameStateEntry entry = null;
-            StringBuffer sbLine = new StringBuffer(80);
+            StringBuilder sbLine = new StringBuilder(80);
             int nEntry = -1;
             while ((sLine = sreader.readLine()) != null) {
                 nEntry++;

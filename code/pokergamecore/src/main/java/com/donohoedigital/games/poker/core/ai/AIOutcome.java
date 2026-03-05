@@ -117,7 +117,6 @@ public class AIOutcome {
         return toHTML(0);
     }
 
-    @SuppressWarnings("StringConcatenationInsideStringBufferAppend")
     public String toHTML(int brevity) {
         StringBuilder buf = new StringBuilder();
         Tuple tuple;
