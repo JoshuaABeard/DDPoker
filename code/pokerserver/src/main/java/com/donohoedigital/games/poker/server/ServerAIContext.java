@@ -38,7 +38,7 @@ import com.donohoedigital.games.poker.core.GameHand;
 import com.donohoedigital.games.poker.core.GameTable;
 import com.donohoedigital.games.poker.core.TournamentContext;
 import com.donohoedigital.games.poker.core.ai.AIContext;
-import com.donohoedigital.games.poker.core.ai.HandInfoFast;
+import com.donohoedigital.games.poker.engine.HandInfoFast;
 import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 import com.donohoedigital.games.poker.engine.PokerActionConstants;
 import com.donohoedigital.games.poker.engine.Card;

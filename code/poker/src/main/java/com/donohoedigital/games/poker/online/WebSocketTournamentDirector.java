@@ -25,7 +25,7 @@ import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.dashboard.AdvisorState;
 import com.donohoedigital.games.poker.dashboard.AdvanceAction;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
-import com.donohoedigital.games.poker.core.ai.HandInfoFast;
+import com.donohoedigital.games.poker.engine.HandInfoFast;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.HandScoreConstants;

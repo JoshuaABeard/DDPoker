@@ -19,7 +19,7 @@
  */
 package com.donohoedigital.games.poker.control;
 
-import com.donohoedigital.games.poker.core.ai.HandInfoFast;
+import com.donohoedigital.games.poker.engine.HandInfoFast;
 import com.donohoedigital.games.poker.HandHistoryPanel;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;

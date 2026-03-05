@@ -40,7 +40,6 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.impexp.*;
 import com.donohoedigital.games.poker.model.*;
-import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 import org.apache.logging.log4j.*;
 
 import java.io.*;

@@ -33,7 +33,6 @@
 package com.donohoedigital.games.poker.impexp;
 
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.engine.HandScoreConstants;
 

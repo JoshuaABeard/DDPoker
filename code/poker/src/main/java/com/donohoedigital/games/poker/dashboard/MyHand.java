@@ -40,7 +40,6 @@ import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
-import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 import com.donohoedigital.gui.*;
 import com.zookitec.layout.*;
 

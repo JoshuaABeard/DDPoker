@@ -38,7 +38,6 @@ import com.donohoedigital.db.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.gui.*;
-import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -478,7 +477,7 @@ public class HandHistoryPanel extends DDPanel {
      * Build a short hand description from a scored HandInfoFast. Mirrors
      * HandInfoFast.toString(", ", false) from the poker module.
      */
-    public static String handDesc(com.donohoedigital.games.poker.core.ai.HandInfoFast info) {
+    public static String handDesc(com.donohoedigital.games.poker.engine.HandInfoFast info) {
         int type = info.getHandType();
         StringBuilder buf = new StringBuilder();
         buf.append(PropertyConfig.getMessage("msg.hand." + type));

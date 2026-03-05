@@ -1263,7 +1263,7 @@ public class PokerPlayer extends GamePlayer implements GamePlayerInfo {
             HandSorted sorted = getHandSorted();
             HoldemHand hhand = getHoldemHand();
             if (sorted != null && hhand != null) {
-                com.donohoedigital.games.poker.core.ai.HandInfoFast fast = new com.donohoedigital.games.poker.core.ai.HandInfoFast();
+                com.donohoedigital.games.poker.engine.HandInfoFast fast = new com.donohoedigital.games.poker.engine.HandInfoFast();
                 handScore_ = fast.getScore(sorted, hhand.getCommunitySorted());
             }
         }
