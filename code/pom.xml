@@ -56,7 +56,6 @@
     <module>pokergameserver</module>
     <module>poker</module>
     <module>pokerserver</module>
-    <module>api</module>
   </modules>
 
   <properties>

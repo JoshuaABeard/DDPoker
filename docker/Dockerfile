@@ -30,7 +30,7 @@ RUN npm ci && npm run build
 RUN test -d out && echo "✓ Next.js static export built: $(du -sh out | cut -f1)"
 
 # ============================================================
-# STAGE 2: Java Runtime with API + Game Server
+# STAGE 2: Java Runtime with Game Server
 # ============================================================
 FROM eclipse-temurin:25-jdk
 
@@ -43,7 +43,7 @@ RUN mkdir -p /app/lib /app/classes /app/downloads /app/webapp /data
 WORKDIR /app
 
 # ============================================================
-# COPY COMPILED CLASSES (SERVER + API)
+# COPY COMPILED CLASSES (SERVER)
 # ============================================================
 
 # Copy compiled classes from all modules
@@ -64,19 +64,13 @@ COPY code/tools/target/classes/ /app/classes/
 COPY code/gameserver/target/classes/ /app/classes/
 COPY code/pokerserver/target/classes/ /app/classes/
 
-# Copy API module classes (Spring Boot REST API)
-COPY code/api/target/classes/ /app/classes/
-
 # Copy runtime messages files
 COPY runtime/messages/ /app/runtime/messages/
 
 # Copy all dependency JARs
 COPY code/pokerserver/target/dependency/ /app/lib/
-COPY code/api/target/dependency/ /app/lib/
-
 # Remove project JARs to avoid classpath conflicts
 RUN rm -f /app/lib/pokerserver-*.jar \
-    /app/lib/api-*.jar \
     /app/lib/gameserver-*.jar \
     /app/lib/ddpoker-*.jar \
     /app/lib/pokerengine-*.jar \

@@ -178,8 +178,8 @@ Use this for entirely new files you created:
 These are substantial original works that warrant community copyright:
 
 **Infrastructure & Architecture:**
-- `code/api/` - Complete REST API module (Spring Boot controllers, services, DTOs)
 - `code/pokergamecore/` - Server-side game engine extracted and refactored from client
+- `code/pokergameserver/` - Game server REST API and Spring Boot auto-configuration
 - Server-hosted game logic (converted from P2P client-side)
 - Networking API and protocol improvements
 
@@ -213,7 +213,7 @@ These are substantial original works that warrant community copyright:
 **When the file didn't exist in Doug's original release:**
 
 Examples:
-- `code/api/src/main/java/com/donohoedigital/poker/api/**/*` - New REST API
+- `code/pokergameserver/src/main/java/com/donohoedigital/games/poker/gameserver/**/*` - Game server REST API
 - `code/common/src/main/java/com/donohoedigital/config/FileBasedConfigStore.java` - New config system
 - `code/common/src/main/java/com/donohoedigital/config/JsonConfigPersistence.java` - New config persistence
 - `code/pokerserver/src/main/java/com/donohoedigital/games/poker/server/AdminAuthService.java` - New admin features
