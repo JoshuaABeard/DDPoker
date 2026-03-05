@@ -115,6 +115,8 @@ public class PokerMain extends GameEngine {
             logger.error("Poker ending due to ApplicationError: {}", ae);
             System.exit(1);
         } catch (OutOfMemoryError nomem) {
+            // Note: Log4j2 may also fail in OOM conditions (heap exhaustion); this is
+            // best-effort.
             logger.error("Out of memory: {}", nomem);
             logger.error("{}", Utils.formatExceptionText(nomem));
             System.exit(1);
