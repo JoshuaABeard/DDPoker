@@ -352,6 +352,8 @@ public class GameState extends MsgState implements SaveFile {
             for (int i = 0; i < entries_.size(); i++) {
                 entry = entries_.get(i);
                 entry.write(this, tempWriter);
+                // StringWriter.getBuffer() returns StringBuffer (Java API); copy to
+                // StringBuilder for Hide
                 StringBuilder sbEntry = new StringBuilder(tempWriter.toString());
                 Hide.obfuscate(sbEntry, i);
                 writer.write(sbEntry.toString());
