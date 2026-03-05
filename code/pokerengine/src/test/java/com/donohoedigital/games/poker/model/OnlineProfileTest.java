@@ -32,12 +32,12 @@
  */
 package com.donohoedigital.games.poker.model;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Date;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.donohoedigital.comms.DMTypedHashMap;
 
@@ -48,7 +48,7 @@ public class OnlineProfileTest {
 
     private OnlineProfile profile;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         profile = new OnlineProfile();
     }
@@ -68,7 +68,7 @@ public class OnlineProfileTest {
         OnlineProfile newProfile = new OnlineProfile("TestPlayer");
 
         assertNotNull(newProfile);
-        assertEquals("TestPlayer", newProfile.getName());
+        assertEquals(newProfile.getName(), "TestPlayer");
         assertNotNull(newProfile.getData());
     }
 
@@ -80,7 +80,7 @@ public class OnlineProfileTest {
 
         OnlineProfile newProfile = new OnlineProfile(data);
 
-        assertEquals("DataPlayer", newProfile.getName());
+        assertEquals(newProfile.getName(), "DataPlayer");
         assertEquals(Long.valueOf(123L), newProfile.getId());
         assertSame(data, newProfile.getData());
     }
@@ -104,7 +104,7 @@ public class OnlineProfileTest {
     public void testSetAndGetName() {
         profile.setName("Player123");
 
-        assertEquals("Player123", profile.getName());
+        assertEquals(profile.getName(), "Player123");
     }
 
     @Test
@@ -119,7 +119,7 @@ public class OnlineProfileTest {
     public void testSetAndGetEmail() {
         profile.setEmail("test@example.com");
 
-        assertEquals("test@example.com", profile.getEmail());
+        assertEquals(profile.getEmail(), "test@example.com");
     }
 
     @Test
@@ -134,7 +134,7 @@ public class OnlineProfileTest {
     public void testSetAndGetPassword() {
         profile.setPassword("plaintext123");
 
-        assertEquals("plaintext123", profile.getPassword());
+        assertEquals(profile.getPassword(), "plaintext123");
     }
 
     @Test
@@ -142,8 +142,8 @@ public class OnlineProfileTest {
         profile.setPassword("plaintext");
         profile.setPasswordHash("hashed");
 
-        assertEquals("plaintext", profile.getPassword());
-        assertEquals("hashed", profile.getPasswordHash());
+        assertEquals(profile.getPassword(), "plaintext");
+        assertEquals(profile.getPasswordHash(), "hashed");
     }
 
     @Test
@@ -256,15 +256,15 @@ public class OnlineProfileTest {
 
     @Test
     public void testConstants() {
-        assertEquals("profileid", OnlineProfile.PROFILE_ID);
-        assertEquals("profilename", OnlineProfile.PROFILE_NAME);
-        assertEquals("profileemail", OnlineProfile.PROFILE_EMAIL);
-        assertEquals("profilepassword", OnlineProfile.PROFILE_PASSWORD);
-        assertEquals("profilepasswordhash", OnlineProfile.PROFILE_PASSWORD_HASH);
-        assertEquals("profileuuid", OnlineProfile.PROFILE_UUID);
-        assertEquals("profilecreatedate", OnlineProfile.PROFILE_CREATE_DATE);
-        assertEquals("profilemodifydate", OnlineProfile.PROFILE_MODIFY_DATE);
-        assertEquals("profileretired", OnlineProfile.PROFILE_RETIRED);
+        assertEquals(OnlineProfile.PROFILE_ID, "profileid");
+        assertEquals(OnlineProfile.PROFILE_NAME, "profilename");
+        assertEquals(OnlineProfile.PROFILE_EMAIL, "profileemail");
+        assertEquals(OnlineProfile.PROFILE_PASSWORD, "profilepassword");
+        assertEquals(OnlineProfile.PROFILE_PASSWORD_HASH, "profilepasswordhash");
+        assertEquals(OnlineProfile.PROFILE_UUID, "profileuuid");
+        assertEquals(OnlineProfile.PROFILE_CREATE_DATE, "profilecreatedate");
+        assertEquals(OnlineProfile.PROFILE_MODIFY_DATE, "profilemodifydate");
+        assertEquals(OnlineProfile.PROFILE_RETIRED, "profileretired");
     }
 
     @Test
@@ -283,11 +283,11 @@ public class OnlineProfileTest {
         profile.setModifyDate(modifyDate);
 
         assertEquals(Long.valueOf(999L), profile.getId());
-        assertEquals("FullPlayer", profile.getName());
-        assertEquals("uuid-12345", profile.getUuid());
-        assertEquals("full@example.com", profile.getEmail());
-        assertEquals("$2a$10$hash", profile.getPasswordHash());
-        assertEquals("plaintext", profile.getPassword());
+        assertEquals(profile.getName(), "FullPlayer");
+        assertEquals(profile.getUuid(), "uuid-12345");
+        assertEquals(profile.getEmail(), "full@example.com");
+        assertEquals(profile.getPasswordHash(), "$2a$10$hash");
+        assertEquals(profile.getPassword(), "plaintext");
         assertFalse(profile.isRetired());
         assertEquals(createDate, profile.getCreateDate());
         assertEquals(modifyDate, profile.getModifyDate());

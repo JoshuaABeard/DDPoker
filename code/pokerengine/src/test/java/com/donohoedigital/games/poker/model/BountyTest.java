@@ -19,9 +19,9 @@
  */
 package com.donohoedigital.games.poker.model;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for bounty/knockout tournament support in TournamentProfile.
@@ -31,14 +31,14 @@ public class BountyTest {
     @Test
     public void should_DisableBountyByDefault() {
         TournamentProfile profile = new TournamentProfile("Test");
-        assertFalse("Bounty should be disabled by default", profile.isBountyEnabled());
+        assertFalse(profile.isBountyEnabled(), "Bounty should be disabled by default");
     }
 
     @Test
     public void should_EnableBounty() {
         TournamentProfile profile = new TournamentProfile("Test");
         profile.setBountyEnabled(true);
-        assertTrue("Bounty should be enabled", profile.isBountyEnabled());
+        assertTrue(profile.isBountyEnabled(), "Bounty should be enabled");
     }
 
     @Test
@@ -84,7 +84,7 @@ public class BountyTest {
         TournamentProfile profile = new TournamentProfile("Test");
         profile.setBountyEnabled(true);
         profile.setBountyEnabled(false);
-        assertFalse("Bounty should be disabled", profile.isBountyEnabled());
+        assertFalse(profile.isBountyEnabled(), "Bounty should be disabled");
     }
 
     @Test
@@ -102,14 +102,14 @@ public class BountyTest {
     public void should_ClampNegativeBountyAmount_ToZero() {
         TournamentProfile profile = new TournamentProfile("Test");
         profile.setBountyAmount(-100);
-        assertEquals("Negative bounty should be clamped to 0", 0, profile.getBountyAmount());
+        assertEquals(0, profile.getBountyAmount(), "Negative bounty should be clamped to 0");
     }
 
     @Test
     public void should_ClampExcessiveBountyAmount_ToMax() {
         TournamentProfile profile = new TournamentProfile("Test");
         profile.setBountyAmount(99999);
-        assertEquals("Excessive bounty should be clamped to MAX_BOUNTY", TournamentProfile.MAX_BOUNTY,
-                profile.getBountyAmount());
+        assertEquals(TournamentProfile.MAX_BOUNTY, profile.getBountyAmount(),
+                "Excessive bounty should be clamped to MAX_BOUNTY");
     }
 }

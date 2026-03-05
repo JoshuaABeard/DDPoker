@@ -32,9 +32,9 @@
  */
 package com.donohoedigital.games.poker.model;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for HostSummary.
@@ -87,7 +87,7 @@ public class HostSummaryTest {
         summary.setGamesHosted(100);
         summary.setRetired(false);
 
-        assertEquals("ProHost", summary.getHostName());
+        assertEquals(summary.getHostName(), "ProHost");
         assertEquals(100, summary.getGamesHosted());
         assertFalse(summary.isRetired());
     }

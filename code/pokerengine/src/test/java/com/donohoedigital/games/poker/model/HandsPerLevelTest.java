@@ -19,9 +19,9 @@
  */
 package com.donohoedigital.games.poker.model;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for hands-per-level advancement mode.
@@ -31,41 +31,41 @@ public class HandsPerLevelTest {
     @Test
     public void should_DefaultToTimeBasedAdvancement() {
         TournamentProfile profile = new TournamentProfile("Test");
-        assertEquals("Default mode should be TIME", LevelAdvanceMode.TIME, profile.getLevelAdvanceMode());
+        assertEquals(LevelAdvanceMode.TIME, profile.getLevelAdvanceMode(), "Default mode should be TIME");
     }
 
     @Test
     public void should_AllowHandsBasedAdvancement() {
         TournamentProfile profile = new TournamentProfile("Test");
         profile.setLevelAdvanceMode(LevelAdvanceMode.HANDS);
-        assertEquals("Mode should be HANDS", LevelAdvanceMode.HANDS, profile.getLevelAdvanceMode());
+        assertEquals(LevelAdvanceMode.HANDS, profile.getLevelAdvanceMode(), "Mode should be HANDS");
     }
 
     @Test
     public void should_StoreHandsPerLevel() {
         TournamentProfile profile = new TournamentProfile("Test");
         profile.setHandsPerLevel(20);
-        assertEquals("Hands per level should be 20", 20, profile.getHandsPerLevel());
+        assertEquals(20, profile.getHandsPerLevel(), "Hands per level should be 20");
     }
 
     @Test
     public void should_DefaultHandsPerLevelTo10() {
         TournamentProfile profile = new TournamentProfile("Test");
-        assertEquals("Default hands per level should be 10", 10, profile.getHandsPerLevel());
+        assertEquals(10, profile.getHandsPerLevel(), "Default hands per level should be 10");
     }
 
     @Test
     public void should_ClampHandsPerLevelToMinimum() {
         TournamentProfile profile = new TournamentProfile("Test");
         profile.setHandsPerLevel(0);
-        assertEquals("Minimum hands per level should be 1", 1, profile.getHandsPerLevel());
+        assertEquals(1, profile.getHandsPerLevel(), "Minimum hands per level should be 1");
     }
 
     @Test
     public void should_ClampHandsPerLevelToMaximum() {
         TournamentProfile profile = new TournamentProfile("Test");
         profile.setHandsPerLevel(1000);
-        assertEquals("Maximum hands per level should be 100", 100, profile.getHandsPerLevel());
+        assertEquals(100, profile.getHandsPerLevel(), "Maximum hands per level should be 100");
     }
 
     @Test
@@ -96,6 +96,6 @@ public class HandsPerLevelTest {
         TournamentProfile profile = new TournamentProfile("Test");
         profile.setLevelAdvanceMode(null);
         // Should default to TIME
-        assertEquals("Null mode should default to TIME", LevelAdvanceMode.TIME, profile.getLevelAdvanceMode());
+        assertEquals(LevelAdvanceMode.TIME, profile.getLevelAdvanceMode(), "Null mode should default to TIME");
     }
 }

@@ -20,17 +20,17 @@
 package com.donohoedigital.games.poker.engine;
 
 import com.donohoedigital.config.ConfigTestHelper;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for CardSuit enum-like class.
  */
 public class CardSuitTest {
 
-    @BeforeClass
+    @BeforeAll
     public static void setupConfig() {
         ConfigTestHelper.initializeForTesting("poker");
     }
@@ -75,11 +75,11 @@ public class CardSuitTest {
 
     @Test
     public void testGetName() {
-        assertEquals("club", CardSuit.CLUBS.getName());
-        assertEquals("diamond", CardSuit.DIAMONDS.getName());
-        assertEquals("heart", CardSuit.HEARTS.getName());
-        assertEquals("spade", CardSuit.SPADES.getName());
-        assertEquals("unknown", CardSuit.UNKNOWN.getName());
+        assertEquals(CardSuit.CLUBS.getName(), "club");
+        assertEquals(CardSuit.DIAMONDS.getName(), "diamond");
+        assertEquals(CardSuit.HEARTS.getName(), "heart");
+        assertEquals(CardSuit.SPADES.getName(), "spade");
+        assertEquals(CardSuit.UNKNOWN.getName(), "unknown");
     }
 
     // ===== getAbbr() Tests =====
@@ -178,7 +178,7 @@ public class CardSuitTest {
         // Check all ranks are unique
         for (int i = 0; i < ranks.length; i++) {
             for (int j = i + 1; j < ranks.length; j++) {
-                assertNotEquals("Ranks should be unique", ranks[i], ranks[j]);
+                assertNotEquals(ranks[i], ranks[j], "Ranks should be unique");
             }
         }
     }
@@ -191,7 +191,7 @@ public class CardSuitTest {
         // Check all names are unique
         for (int i = 0; i < names.length; i++) {
             for (int j = i + 1; j < names.length; j++) {
-                assertNotEquals("Names should be unique", names[i], names[j]);
+                assertNotEquals(names[i], names[j], "Names should be unique");
             }
         }
     }

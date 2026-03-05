@@ -19,9 +19,9 @@
  */
 package com.donohoedigital.games.poker.model;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for PayoutDistributionCalculator - Fibonacci-based automatic payout
@@ -50,7 +50,7 @@ public class PayoutDistributionCalculatorTest {
         int[] payouts = calc.calculatePayouts(10, 10000, 100, 0, 100, 100, 9000);
 
         // Then: should have 10 entries
-        assertEquals("Should have 10 payout amounts", 10, payouts.length);
+        assertEquals(10, payouts.length, "Should have 10 payout amounts");
     }
 
     @Test
@@ -67,7 +67,7 @@ public class PayoutDistributionCalculatorTest {
             sum += payout;
         }
         int tolerance = 100 * payouts.length; // Allow rounding per spot
-        assertTrue("Sum of payouts should match pool within tolerance", Math.abs(sum - 10000) <= tolerance);
+        assertTrue(Math.abs(sum - 10000) <= tolerance, "Sum of payouts should match pool within tolerance");
     }
 
     @Test
@@ -79,7 +79,7 @@ public class PayoutDistributionCalculatorTest {
         int[] payouts = calc.calculatePayouts(10, 10000, 100, 0, 100, 100, 9000);
 
         // Then: last place (index 0) should be >= buyin
-        assertTrue("Last place should cover buyin", payouts[0] >= 100);
+        assertTrue(payouts[0] >= 100, "Last place should cover buyin");
     }
 
     @Test
@@ -93,7 +93,7 @@ public class PayoutDistributionCalculatorTest {
         // Then: first place (last index) should be the highest
         int firstPlace = payouts[payouts.length - 1];
         for (int i = 0; i < payouts.length - 1; i++) {
-            assertTrue("First place should exceed all other positions", firstPlace > payouts[i]);
+            assertTrue(firstPlace > payouts[i], "First place should exceed all other positions");
         }
     }
 
@@ -108,7 +108,7 @@ public class PayoutDistributionCalculatorTest {
         // Then: each position should pay more than the one below (or equal due to
         // rounding)
         for (int i = 1; i < payouts.length; i++) {
-            assertTrue("Higher finish should pay >= lower finish", payouts[i] >= payouts[i - 1]);
+            assertTrue(payouts[i] >= payouts[i - 1], "Higher finish should pay >= lower finish");
         }
     }
 
@@ -123,8 +123,8 @@ public class PayoutDistributionCalculatorTest {
         int[] payouts = calc.calculatePayouts(1, 5000, 50, 0, 100, 50, 4500);
 
         // Then: single winner gets entire pool
-        assertEquals("Should have 1 payout", 1, payouts.length);
-        assertEquals("Winner should get entire pool", 5000, payouts[0]);
+        assertEquals(1, payouts.length, "Should have 1 payout");
+        assertEquals(5000, payouts[0], "Winner should get entire pool");
     }
 
     @Test
@@ -136,9 +136,9 @@ public class PayoutDistributionCalculatorTest {
         int[] payouts = calc.calculatePayouts(2, 5000, 50, 0, 100, 50, 4500);
 
         // Then: should have 2 payouts, first place higher
-        assertEquals("Should have 2 payouts", 2, payouts.length);
-        assertTrue("First place should exceed second", payouts[1] > payouts[0]);
-        assertTrue("Second place should cover buyin", payouts[0] >= 50);
+        assertEquals(2, payouts.length, "Should have 2 payouts");
+        assertTrue(payouts[1] > payouts[0], "First place should exceed second");
+        assertTrue(payouts[0] >= 50, "Second place should cover buyin");
     }
 
     @Test
@@ -150,8 +150,8 @@ public class PayoutDistributionCalculatorTest {
         int[] payouts = calc.calculatePayouts(TournamentProfile.MAX_SPOTS, 1000000, 100, 0, 5625, 100, 506250);
 
         // Then: should distribute across all spots
-        assertEquals("Should have MAX_SPOTS payouts", TournamentProfile.MAX_SPOTS, payouts.length);
-        assertTrue("Last place should still cover buyin", payouts[0] >= 100);
+        assertEquals(TournamentProfile.MAX_SPOTS, payouts.length, "Should have MAX_SPOTS payouts");
+        assertTrue(payouts[0] >= 100, "Last place should still cover buyin");
     }
 
     // ========== Rebuy Logic Tests ==========
@@ -169,7 +169,7 @@ public class PayoutDistributionCalculatorTest {
         int[] withRebuys = calc.calculatePayouts(10, 20000, 100, 100, 200, 100, 18000);
 
         // Then: minimum should be higher with rebuys
-        assertTrue("Minimum payout should increase when rebuys are factored in", withRebuys[0] >= withoutRebuys[0]);
+        assertTrue(withRebuys[0] >= withoutRebuys[0], "Minimum payout should increase when rebuys are factored in");
     }
 
     // ========== Rounding Tests ==========
@@ -184,7 +184,7 @@ public class PayoutDistributionCalculatorTest {
 
         // Then: payouts should be exact dollars (no fractional amounts exist in int)
         for (int payout : payouts) {
-            assertTrue("Payout should be positive integer", payout > 0);
+            assertTrue(payout > 0, "Payout should be positive integer");
         }
     }
 
@@ -203,7 +203,7 @@ public class PayoutDistributionCalculatorTest {
                 multiplesOf10++;
             }
         }
-        assertTrue("Most payouts should be multiples of 10", multiplesOf10 >= payouts.length / 2);
+        assertTrue(multiplesOf10 >= payouts.length / 2, "Most payouts should be multiples of 10");
     }
 
     @Test
@@ -221,7 +221,7 @@ public class PayoutDistributionCalculatorTest {
                 multiplesOf100++;
             }
         }
-        assertTrue("Most payouts should be multiples of 100", multiplesOf100 >= payouts.length / 2);
+        assertTrue(multiplesOf100 >= payouts.length / 2, "Most payouts should be multiples of 100");
     }
 
     // ========== First Place Swap Tests ==========
@@ -240,7 +240,7 @@ public class PayoutDistributionCalculatorTest {
         int[] payouts = calc.calculatePayouts(2, 100, 10, 0, 10, 10, 90);
 
         // Then: first should always be >= second
-        assertTrue("First place should be >= second place", payouts[1] >= payouts[0]);
+        assertTrue(payouts[1] >= payouts[0], "First place should be >= second place");
     }
 
     // ========== Fibonacci Sequence Tests ==========
@@ -261,8 +261,8 @@ public class PayoutDistributionCalculatorTest {
         double bottomGrowthRate = (payouts[5] - payouts[0]) / (double) payouts[0];
         double topGrowthRate = (payouts[14] - payouts[5]) / (double) payouts[5];
 
-        assertTrue("Top spots should grow faster than bottom spots (Fibonacci effect)",
-                topGrowthRate > bottomGrowthRate);
+        assertTrue(topGrowthRate > bottomGrowthRate,
+                "Top spots should grow faster than bottom spots (Fibonacci effect)");
     }
 
     // ========== Property-Based Tests ==========
@@ -294,8 +294,8 @@ public class PayoutDistributionCalculatorTest {
 
             // Allow rounding tolerance proportional to number of spots
             int tolerance = Math.max(100 * spots, pool / 100);
-            assertTrue(String.format("Sum (%d) should match pool (%d) within tolerance for %d spots", sum, pool, spots),
-                    Math.abs(sum - pool) <= tolerance);
+            assertTrue(Math.abs(sum - pool) <= tolerance,
+                    String.format("Sum (%d) should match pool (%d) within tolerance for %d spots", sum, pool, spots));
         }
     }
 
@@ -307,7 +307,7 @@ public class PayoutDistributionCalculatorTest {
         int[] payouts = calc.calculatePayouts(50, 100000, 500, 0, 200, 500, 90000);
 
         for (int i = 0; i < payouts.length; i++) {
-            assertTrue(String.format("Payout at position %d should be positive", i + 1), payouts[i] > 0);
+            assertTrue(payouts[i] > 0, String.format("Payout at position %d should be positive", i + 1));
         }
     }
 
@@ -323,8 +323,8 @@ public class PayoutDistributionCalculatorTest {
 
         // Check that larger pool produces larger (or equal) payouts at all positions
         for (int i = 0; i < basePayouts.length; i++) {
-            assertTrue(String.format("Position %d should have >= payout with larger pool", i + 1),
-                    largerPayouts[i] >= basePayouts[i]);
+            assertTrue(largerPayouts[i] >= basePayouts[i],
+                    String.format("Position %d should have >= payout with larger pool", i + 1));
         }
 
         // Verify that the total distributed amount increases significantly
@@ -334,6 +334,6 @@ public class PayoutDistributionCalculatorTest {
             baseSum += basePayouts[i];
             largerSum += largerPayouts[i];
         }
-        assertTrue("Larger pool should distribute more money overall", largerSum > baseSum * 1.5);
+        assertTrue(largerSum > baseSum * 1.5, "Larger pool should distribute more money overall");
     }
 }

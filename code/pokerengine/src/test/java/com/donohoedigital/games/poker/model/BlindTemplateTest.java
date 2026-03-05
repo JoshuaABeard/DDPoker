@@ -19,9 +19,9 @@
  */
 package com.donohoedigital.games.poker.model;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for BlindTemplate - predefined blind structure templates.
@@ -30,10 +30,10 @@ public class BlindTemplateTest {
 
     @Test
     public void should_HaveCorrectDisplayNames() {
-        assertEquals("Slow (x1.5, 20min)", BlindTemplate.SLOW.getDisplayName());
-        assertEquals("Standard (x2.0, 15min)", BlindTemplate.STANDARD.getDisplayName());
-        assertEquals("Turbo (x2.0, 10min)", BlindTemplate.TURBO.getDisplayName());
-        assertEquals("Hyper (x2.0, 5min)", BlindTemplate.HYPER.getDisplayName());
+        assertEquals(BlindTemplate.SLOW.getDisplayName(), "Slow (x1.5, 20min)");
+        assertEquals(BlindTemplate.STANDARD.getDisplayName(), "Standard (x2.0, 15min)");
+        assertEquals(BlindTemplate.TURBO.getDisplayName(), "Turbo (x2.0, 10min)");
+        assertEquals(BlindTemplate.HYPER.getDisplayName(), "Hyper (x2.0, 5min)");
     }
 
     @Test
@@ -89,7 +89,7 @@ public class BlindTemplateTest {
         assertEquals(400, profile.getBigBlind(4));
 
         // Verify level 5: 400/800 with ante starting
-        assertTrue("Antes should start by level 5", profile.getAnte(5) > 0);
+        assertTrue(profile.getAnte(5) > 0, "Antes should start by level 5");
         assertEquals(400, profile.getSmallBlind(5));
         assertEquals(800, profile.getBigBlind(5));
     }
@@ -123,25 +123,25 @@ public class BlindTemplateTest {
         BlindTemplate.STANDARD.generateLevels(profile, 9, true, 3);
 
         // Verify first 3 blind levels are regular
-        assertFalse("Level 1 should not be a break", profile.isBreak(1));
-        assertFalse("Level 2 should not be a break", profile.isBreak(2));
-        assertFalse("Level 3 should not be a break", profile.isBreak(3));
+        assertFalse(profile.isBreak(1), "Level 1 should not be a break");
+        assertFalse(profile.isBreak(2), "Level 2 should not be a break");
+        assertFalse(profile.isBreak(3), "Level 3 should not be a break");
 
         // Verify break is inserted after 3 blind levels
-        assertTrue("Level 4 should be a break", profile.isBreak(4));
+        assertTrue(profile.isBreak(4), "Level 4 should be a break");
 
         // Verify next 3 blind levels are regular
-        assertFalse("Level 5 should not be a break", profile.isBreak(5));
-        assertFalse("Level 6 should not be a break", profile.isBreak(6));
-        assertFalse("Level 7 should not be a break", profile.isBreak(7));
+        assertFalse(profile.isBreak(5), "Level 5 should not be a break");
+        assertFalse(profile.isBreak(6), "Level 6 should not be a break");
+        assertFalse(profile.isBreak(7), "Level 7 should not be a break");
 
         // Verify another break after 3 more blind levels
-        assertTrue("Level 8 should be a break", profile.isBreak(8));
+        assertTrue(profile.isBreak(8), "Level 8 should be a break");
 
         // Verify final 3 blind levels are regular (no break after last level)
-        assertFalse("Level 9 should not be a break", profile.isBreak(9));
-        assertFalse("Level 10 should not be a break", profile.isBreak(10));
-        assertFalse("Level 11 should not be a break", profile.isBreak(11));
+        assertFalse(profile.isBreak(9), "Level 9 should not be a break");
+        assertFalse(profile.isBreak(10), "Level 10 should not be a break");
+        assertFalse(profile.isBreak(11), "Level 11 should not be a break");
     }
 
     @Test
@@ -152,7 +152,7 @@ public class BlindTemplateTest {
         BlindTemplate.STANDARD.generateLevels(profile, 3, true, 1);
 
         // First level should NOT be a break
-        assertFalse("Level 1 should not be a break", profile.isBreak(1));
+        assertFalse(profile.isBreak(1), "Level 1 should not be a break");
     }
 
     @Test
@@ -182,22 +182,31 @@ public class BlindTemplateTest {
         assertEquals(50, profile.getBigBlind(1)); // Not 200
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void should_ThrowException_WhenNumLevelsTooLow() {
-        TournamentProfile profile = new TournamentProfile("Test");
-        BlindTemplate.STANDARD.generateLevels(profile, 0, false, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            TournamentProfile profile = new TournamentProfile("Test");
+            BlindTemplate.STANDARD.generateLevels(profile, 0, false, 0);
+
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void should_ThrowException_WhenNumLevelsTooHigh() {
-        TournamentProfile profile = new TournamentProfile("Test");
-        BlindTemplate.STANDARD.generateLevels(profile, 41, false, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            TournamentProfile profile = new TournamentProfile("Test");
+            BlindTemplate.STANDARD.generateLevels(profile, 41, false, 0);
+
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void should_ThrowException_WhenBreakFrequencyInvalid() {
-        TournamentProfile profile = new TournamentProfile("Test");
-        BlindTemplate.STANDARD.generateLevels(profile, 5, true, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            TournamentProfile profile = new TournamentProfile("Test");
+            BlindTemplate.STANDARD.generateLevels(profile, 5, true, 0);
+
+        });
     }
 
     @Test
@@ -223,21 +232,21 @@ public class BlindTemplateTest {
         assertEquals(50, profile.getBigBlind(1));
 
         // Verify a middle level exists and progresses
-        assertTrue("Level 10 should have blinds set", profile.getBigBlind(10) > 0);
-        assertTrue("Level 10 should have higher blinds than level 1", profile.getBigBlind(10) > profile.getBigBlind(1));
+        assertTrue(profile.getBigBlind(10) > 0, "Level 10 should have blinds set");
+        assertTrue(profile.getBigBlind(10) > profile.getBigBlind(1), "Level 10 should have higher blinds than level 1");
 
         // Verify last level exists
-        assertTrue("Level 20 should have blinds set", profile.getBigBlind(20) > 0);
-        assertTrue("Level 20 should have higher blinds than level 10",
-                profile.getBigBlind(20) > profile.getBigBlind(10));
+        assertTrue(profile.getBigBlind(20) > 0, "Level 20 should have blinds set");
+        assertTrue(profile.getBigBlind(20) > profile.getBigBlind(10),
+                "Level 20 should have higher blinds than level 10");
     }
 
     @Test
     public void should_UseDisplayName_ForToString() {
-        assertEquals("Slow (x1.5, 20min)", BlindTemplate.SLOW.toString());
-        assertEquals("Standard (x2.0, 15min)", BlindTemplate.STANDARD.toString());
-        assertEquals("Turbo (x2.0, 10min)", BlindTemplate.TURBO.toString());
-        assertEquals("Hyper (x2.0, 5min)", BlindTemplate.HYPER.toString());
+        assertEquals(BlindTemplate.SLOW.toString(), "Slow (x1.5, 20min)");
+        assertEquals(BlindTemplate.STANDARD.toString(), "Standard (x2.0, 15min)");
+        assertEquals(BlindTemplate.TURBO.toString(), "Turbo (x2.0, 10min)");
+        assertEquals(BlindTemplate.HYPER.toString(), "Hyper (x2.0, 5min)");
     }
 
     @Test
@@ -253,8 +262,8 @@ public class BlindTemplateTest {
             int big = profile.getBigBlind(i);
 
             // Should be divisible by 5 at minimum
-            assertTrue("Small blind should be a nice number: " + small, small % 5 == 0 || small < 10);
-            assertTrue("Big blind should be a nice number: " + big, big % 5 == 0 || big < 10);
+            assertTrue(small % 5 == 0 || small < 10, "Small blind should be a nice number: " + small);
+            assertTrue(big % 5 == 0 || big < 10, "Big blind should be a nice number: " + big);
         }
     }
 }

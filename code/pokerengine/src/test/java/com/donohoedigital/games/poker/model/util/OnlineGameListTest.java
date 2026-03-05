@@ -32,10 +32,10 @@
  */
 package com.donohoedigital.games.poker.model.util;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.donohoedigital.comms.DMArrayList;
 import com.donohoedigital.comms.DMTypedHashMap;
@@ -49,7 +49,7 @@ public class OnlineGameListTest {
 
     private OnlineGameList list;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         list = new OnlineGameList();
     }
@@ -73,7 +73,7 @@ public class OnlineGameListTest {
 
         assertEquals(1, dmList.size());
         DMTypedHashMap data = dmList.get(0);
-        assertEquals("http://example.com/game1", data.getString(OnlineGame.WAN_URL));
+        assertEquals(data.getString(OnlineGame.WAN_URL), "http://example.com/game1");
     }
 
     @Test
@@ -92,8 +92,8 @@ public class OnlineGameListTest {
         DMArrayList<DMTypedHashMap> dmList = list.getAsDMList();
 
         assertEquals(2, dmList.size());
-        assertEquals("http://example.com/game1", dmList.get(0).getString(OnlineGame.WAN_URL));
-        assertEquals("http://example.com/game2", dmList.get(1).getString(OnlineGame.WAN_URL));
+        assertEquals(dmList.get(0).getString(OnlineGame.WAN_URL), "http://example.com/game1");
+        assertEquals(dmList.get(1).getString(OnlineGame.WAN_URL), "http://example.com/game2");
     }
 
     @Test

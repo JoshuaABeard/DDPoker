@@ -20,11 +20,11 @@
 package com.donohoedigital.games.poker.engine;
 
 import com.donohoedigital.config.ConfigTestHelper;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import static com.donohoedigital.games.poker.engine.Card.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for Deck class core functionality (dealing, removing, sorting).
@@ -32,7 +32,7 @@ import static org.junit.Assert.*;
  */
 public class DeckTest {
 
-    @BeforeClass
+    @BeforeAll
     public static void setupConfig() {
         ConfigTestHelper.initializeForTesting("poker");
     }
@@ -286,7 +286,7 @@ public class DeckTest {
         String str = deck.toString();
 
         assertNotNull(str);
-        assertEquals("", str.trim());
+        assertEquals(str.trim(), "");
     }
 
     // ===== Bug-Specific Deck Tests =====
@@ -347,7 +347,7 @@ public class DeckTest {
                     count++;
                 }
             }
-            assertEquals("Card " + card + " should appear exactly once", 1, count);
+            assertEquals(1, count, "Card " + card + " should appear exactly once");
         }
     }
 
@@ -401,6 +401,6 @@ public class DeckTest {
             }
         }
 
-        assertTrue("shuffle() should change card order", foundDifference);
+        assertTrue(foundDifference, "shuffle() should change card order");
     }
 }

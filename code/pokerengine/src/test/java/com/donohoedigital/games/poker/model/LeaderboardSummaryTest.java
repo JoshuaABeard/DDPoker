@@ -32,10 +32,10 @@
  */
 package com.donohoedigital.games.poker.model;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for LeaderboardSummary.
@@ -44,7 +44,7 @@ public class LeaderboardSummaryTest {
 
     private LeaderboardSummary summary;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         summary = new LeaderboardSummary();
     }
@@ -91,7 +91,7 @@ public class LeaderboardSummaryTest {
     @Test
     public void testSetPlayerName() {
         summary.setPlayerName("TestPlayer");
-        assertEquals("TestPlayer", summary.getPlayerName());
+        assertEquals(summary.getPlayerName(), "TestPlayer");
     }
 
     @Test
@@ -218,7 +218,7 @@ public class LeaderboardSummaryTest {
         assertEquals(99, summary.getPercentile());
         assertEquals(150, summary.getGamesPlayed());
         assertEquals(54321L, summary.getProfileId());
-        assertEquals("Champion", summary.getPlayerName());
+        assertEquals(summary.getPlayerName(), "Champion");
         assertEquals(1000, summary.getDdr1());
         assertEquals(5000, summary.getTotalBuyin());
         assertEquals(1000, summary.getTotalAddon());

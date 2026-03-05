@@ -19,14 +19,14 @@
  */
 package com.donohoedigital.games.poker.engine;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for improved deck shuffling randomness using SecureRandom
@@ -52,7 +52,7 @@ public class DeckRandomnessTest {
                 break;
             }
         }
-        assertTrue("Production decks should have at least one different card position", foundDifference);
+        assertTrue(foundDifference, "Production decks should have at least one different card position");
     }
 
     /**
@@ -68,7 +68,7 @@ public class DeckRandomnessTest {
 
         // Verify every card is in the same position
         for (int i = 0; i < 52; i++) {
-            assertTrue("Card at position " + i + " should match", deck1.get(i).equals(deck2.get(i)));
+            assertTrue(deck1.get(i).equals(deck2.get(i)), "Card at position " + i + " should match");
         }
     }
 
@@ -88,7 +88,7 @@ public class DeckRandomnessTest {
                 break;
             }
         }
-        assertTrue("Decks with different seeds should have at least one different card position", foundDifference);
+        assertTrue(foundDifference, "Decks with different seeds should have at least one different card position");
     }
 
     /**
@@ -121,8 +121,8 @@ public class DeckRandomnessTest {
 
         latch.await();
 
-        assertEquals("All threads should complete successfully", 0, failures.get());
-        assertEquals("Should have results from all threads", numThreads, deckResults.size());
+        assertEquals(0, failures.get(), "All threads should complete successfully");
+        assertEquals(numThreads, deckResults.size(), "Should have results from all threads");
 
         // At least some of the decks should be different (extremely high probability)
         // Check that not all are identical by comparing first card of each deck
@@ -134,7 +134,7 @@ public class DeckRandomnessTest {
                 break;
             }
         }
-        assertTrue("ThreadLocal SecureRandom should produce different shuffles across threads", foundDifferent);
+        assertTrue(foundDifferent, "ThreadLocal SecureRandom should produce different shuffles across threads");
     }
 
     /**
@@ -149,7 +149,7 @@ public class DeckRandomnessTest {
 
         // Verify they start identical
         for (int i = 0; i < 52; i++) {
-            assertTrue("Unshuffled decks should be identical at position " + i, deck1.get(i).equals(deck2.get(i)));
+            assertTrue(deck1.get(i).equals(deck2.get(i)), "Unshuffled decks should be identical at position " + i);
         }
 
         // Shuffle both
@@ -164,7 +164,7 @@ public class DeckRandomnessTest {
                 break;
             }
         }
-        assertTrue("shuffle() should produce non-deterministic results", foundDifference);
+        assertTrue(foundDifference, "shuffle() should produce non-deterministic results");
     }
 
     /**
@@ -198,7 +198,7 @@ public class DeckRandomnessTest {
                 break;
             }
         }
-        assertTrue("addRandom() should produce non-deterministic results (ThreadLocalRandom)", foundDifference);
+        assertTrue(foundDifference, "addRandom() should produce non-deterministic results (ThreadLocalRandom)");
     }
 
     /**
@@ -219,8 +219,8 @@ public class DeckRandomnessTest {
 
         // With SecureRandom, we expect at least half to have different first cards
         // (extremely conservative - actual probability is much higher)
-        assertTrue("Unseeded mode should produce varied shuffles, got " + uniqueFirstCards
-                + " unique first cards out of " + numDecks, uniqueFirstCards >= numDecks / 2);
+        assertTrue(uniqueFirstCards >= numDecks / 2, "Unseeded mode should produce varied shuffles, got "
+                + uniqueFirstCards + " unique first cards out of " + numDecks);
     }
 
     /**
@@ -239,6 +239,6 @@ public class DeckRandomnessTest {
                 break;
             }
         }
-        assertTrue("Seed 0 should trigger unseeded mode (SecureRandom)", foundDifference);
+        assertTrue(foundDifference, "Seed 0 should trigger unseeded mode (SecureRandom)");
     }
 }

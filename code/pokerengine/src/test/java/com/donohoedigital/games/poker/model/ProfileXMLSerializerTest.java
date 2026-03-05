@@ -20,11 +20,11 @@
 package com.donohoedigital.games.poker.model;
 
 import com.donohoedigital.games.config.AbstractPlayerList;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for ProfileXMLSerializer - XML encoding of tournament profiles.
@@ -50,11 +50,11 @@ public class ProfileXMLSerializerTest {
             serializer.encodeXML(encoder, profile);
 
             // Then: should have encoded levels, prizes, invitees, players
-            assertTrue("Should have encoded tournament", encoder.objectsSet.contains("tournamentFormat"));
-            assertTrue("Should have encoded levels", encoder.objectsSet.contains("levels"));
-            assertTrue("Should have encoded prizes", encoder.objectsSet.contains("prizes"));
-            assertTrue("Should have encoded invitees", encoder.objectsSet.contains("invitees"));
-            assertTrue("Should have encoded players", encoder.objectsSet.contains("players"));
+            assertTrue(encoder.objectsSet.contains("tournamentFormat"), "Should have encoded tournament");
+            assertTrue(encoder.objectsSet.contains("levels"), "Should have encoded levels");
+            assertTrue(encoder.objectsSet.contains("prizes"), "Should have encoded prizes");
+            assertTrue(encoder.objectsSet.contains("invitees"), "Should have encoded invitees");
+            assertTrue(encoder.objectsSet.contains("players"), "Should have encoded players");
         } catch (Exception e) {
             fail("Should not throw exception during encoding: " + e.getMessage());
         }
@@ -128,8 +128,8 @@ public class ProfileXMLSerializerTest {
         serializer.encodeXML(encoder, profile);
 
         // Then: should have processed levels including break
-        assertTrue("Should have set level object", encoder.objectsSet.contains("level"));
-        assertTrue("Should have added break tag", encoder.tagsAdded.containsKey("break"));
+        assertTrue(encoder.objectsSet.contains("level"), "Should have set level object");
+        assertTrue(encoder.tagsAdded.containsKey("break"), "Should have added break tag");
     }
 
     @Test
@@ -145,8 +145,8 @@ public class ProfileXMLSerializerTest {
         serializer.encodeXML(encoder, profile);
 
         // Then: should have encoded prize structure
-        assertTrue("Should have set prizes object", encoder.objectsSet.contains("prizes"));
-        assertTrue("Should have set prize object", encoder.objectsSet.contains("prize"));
+        assertTrue(encoder.objectsSet.contains("prizes"), "Should have set prizes object");
+        assertTrue(encoder.objectsSet.contains("prize"), "Should have set prize object");
     }
 
     @Test
@@ -161,7 +161,7 @@ public class ProfileXMLSerializerTest {
         serializer.encodeXML(encoder, profile);
 
         // Then: should still have invitees section (empty)
-        assertTrue("Should have set invitees object even when empty", encoder.objectsSet.contains("invitees"));
+        assertTrue(encoder.objectsSet.contains("invitees"), "Should have set invitees object even when empty");
     }
 
     @Test
@@ -176,7 +176,7 @@ public class ProfileXMLSerializerTest {
         serializer.encodeXML(encoder, profile);
 
         // Then: should still have players section (empty)
-        assertTrue("Should have set players object even when empty", encoder.objectsSet.contains("players"));
+        assertTrue(encoder.objectsSet.contains("players"), "Should have set players object even when empty");
     }
 
     // ========== Helper Classes ==========

@@ -32,9 +32,9 @@
  */
 package com.donohoedigital.games.poker.model;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for OnlineProfileSummary.
@@ -57,7 +57,7 @@ public class OnlineProfileSummaryTest {
     public void testConstructorWithZeroCount() {
         OnlineProfileSummary summary = new OnlineProfileSummary("Player", 0);
 
-        assertEquals("Player", summary.getName());
+        assertEquals(summary.getName(), "Player");
         assertEquals(0, summary.getCount());
     }
 
@@ -65,7 +65,7 @@ public class OnlineProfileSummaryTest {
     public void testConstructorWithNegativeCount() {
         OnlineProfileSummary summary = new OnlineProfileSummary("Player", -5);
 
-        assertEquals("Player", summary.getName());
+        assertEquals(summary.getName(), "Player");
         assertEquals(-5, summary.getCount());
     }
 

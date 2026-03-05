@@ -32,9 +32,9 @@
  */
 package com.donohoedigital.games.poker.model;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for OnlineProfilePurgeSummary.
@@ -68,7 +68,7 @@ public class OnlineProfilePurgeSummaryTest {
         summary.setOnlineProfile(profile);
 
         assertEquals(profile, summary.getOnlineProfile());
-        assertEquals("TestPlayer", summary.getOnlineProfile().getName());
+        assertEquals(summary.getOnlineProfile().getName(), "TestPlayer");
     }
 
     @Test

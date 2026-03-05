@@ -32,9 +32,9 @@
  */
 package com.donohoedigital.games.poker.model;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for OnlineProfile.Dummy enum.
@@ -53,17 +53,17 @@ public class OnlineProfileDummyTest {
 
     @Test
     public void testHumanName() {
-        assertEquals("__DUMMY__", OnlineProfile.Dummy.HUMAN.getName());
+        assertEquals(OnlineProfile.Dummy.HUMAN.getName(), "__DUMMY__");
     }
 
     @Test
     public void testAiBestName() {
-        assertEquals("__AIBEST__", OnlineProfile.Dummy.AI_BEST.getName());
+        assertEquals(OnlineProfile.Dummy.AI_BEST.getName(), "__AIBEST__");
     }
 
     @Test
     public void testAiRestName() {
-        assertEquals("__AIREST__", OnlineProfile.Dummy.AI_REST.getName());
+        assertEquals(OnlineProfile.Dummy.AI_REST.getName(), "__AIREST__");
     }
 
     @Test

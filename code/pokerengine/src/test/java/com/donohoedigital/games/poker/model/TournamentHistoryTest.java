@@ -20,11 +20,11 @@
 package com.donohoedigital.games.poker.model;
 
 import com.donohoedigital.comms.MsgState;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Date;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for TournamentHistory model class.
@@ -59,14 +59,14 @@ public class TournamentHistoryTest {
     public void testTournamentNameGetterSetter() {
         TournamentHistory history = new TournamentHistory();
         history.setTournamentName("Test Tournament");
-        assertEquals("Test Tournament", history.getTournamentName());
+        assertEquals(history.getTournamentName(), "Test Tournament");
     }
 
     @Test
     public void testPlayerNameGetterSetter() {
         TournamentHistory history = new TournamentHistory();
         history.setPlayerName("Alice");
-        assertEquals("Alice", history.getPlayerName());
+        assertEquals(history.getPlayerName(), "Alice");
     }
 
     @Test
@@ -179,7 +179,7 @@ public class TournamentHistoryTest {
     public void testTournamentTypeGetterSetter() {
         TournamentHistory history = new TournamentHistory();
         history.setTournamentType("ONLINE");
-        assertEquals("ONLINE", history.getTournamentType());
+        assertEquals(history.getTournamentType(), "ONLINE");
     }
 
     @Test

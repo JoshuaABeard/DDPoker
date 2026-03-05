@@ -32,10 +32,10 @@
  */
 package com.donohoedigital.games.poker.model.util;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.donohoedigital.games.poker.model.LeaderboardSummary;
 
@@ -49,7 +49,7 @@ public class LeaderboardSummaryListTest {
 
     private LeaderboardSummaryList list;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         list = new LeaderboardSummaryList();
     }
@@ -67,7 +67,7 @@ public class LeaderboardSummaryListTest {
         list.add(summary);
 
         assertEquals(1, list.size());
-        assertEquals("Player 1", list.get(0).getPlayerName());
+        assertEquals(list.get(0).getPlayerName(), "Player 1");
     }
 
     @Test
@@ -81,8 +81,8 @@ public class LeaderboardSummaryListTest {
         list.add(summary2);
 
         assertEquals(2, list.size());
-        assertEquals("Player 1", list.get(0).getPlayerName());
-        assertEquals("Player 2", list.get(1).getPlayerName());
+        assertEquals(list.get(0).getPlayerName(), "Player 1");
+        assertEquals(list.get(1).getPlayerName(), "Player 2");
     }
 
     @Test

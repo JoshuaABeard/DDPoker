@@ -20,9 +20,9 @@
 package com.donohoedigital.games.poker.model;
 
 import com.donohoedigital.comms.DMTypedHashMap;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for ParameterConstraints - tournament parameter limits and constraints.
@@ -39,7 +39,7 @@ public class ParameterConstraintsTest {
 
         // For 100 players, 33.33% = 33 spots
         int maxSpots = constraints.getMaxPayoutSpots(100);
-        assertEquals("Should be 33% of 100 players", 33, maxSpots);
+        assertEquals(33, maxSpots, "Should be 33% of 100 players");
     }
 
     @Test
@@ -50,7 +50,7 @@ public class ParameterConstraintsTest {
 
         // For 2000 players, 33.33% = 666, but cap at 560
         int maxSpots = constraints.getMaxPayoutSpots(2000);
-        assertEquals("Should be capped at MAX_SPOTS (560)", 560, maxSpots);
+        assertEquals(560, maxSpots, "Should be capped at MAX_SPOTS (560)");
     }
 
     @Test
@@ -61,7 +61,7 @@ public class ParameterConstraintsTest {
 
         // For 10 players, 33.33% = 3, but enforce min of 10
         int maxSpots = constraints.getMaxPayoutSpots(10);
-        assertEquals("Should be at least MIN_SPOTS (10)", 10, maxSpots);
+        assertEquals(10, maxSpots, "Should be at least MIN_SPOTS (10)");
     }
 
     @Test
@@ -71,7 +71,7 @@ public class ParameterConstraintsTest {
 
         // For 8 players, MIN_SPOTS would be 10, but cap at player count
         int maxSpots = constraints.getMaxPayoutSpots(8);
-        assertEquals("Should be capped at player count when less than MIN_SPOTS", 8, maxSpots);
+        assertEquals(8, maxSpots, "Should be capped at player count when less than MIN_SPOTS");
     }
 
     @Test
@@ -80,7 +80,7 @@ public class ParameterConstraintsTest {
         ParameterConstraints constraints = new ParameterConstraints(map);
 
         int maxSpots = constraints.getMaxPayoutSpots(0);
-        assertEquals("Should return 0 for 0 players (can't exceed player count)", 0, maxSpots);
+        assertEquals(0, maxSpots, "Should return 0 for 0 players (can't exceed player count)");
     }
 
     // ========== getMaxPayoutPercent() Tests ==========
@@ -92,7 +92,7 @@ public class ParameterConstraintsTest {
 
         // For 100 players, max spots = 33, so max % = 33%
         int maxPercent = constraints.getMaxPayoutPercent(100);
-        assertEquals("Max percent should be 33%", 33, maxPercent);
+        assertEquals(33, maxPercent, "Max percent should be 33%");
     }
 
     @Test
@@ -102,7 +102,7 @@ public class ParameterConstraintsTest {
 
         // For 2000 players, max spots = 560 (capped), so max % = 560/2000 = 28%
         int maxPercent = constraints.getMaxPayoutPercent(2000);
-        assertEquals("Max percent should be 28% when spots are capped", 28, maxPercent);
+        assertEquals(28, maxPercent, "Max percent should be 28% when spots are capped");
     }
 
     @Test
@@ -111,7 +111,7 @@ public class ParameterConstraintsTest {
         ParameterConstraints constraints = new ParameterConstraints(map);
 
         int maxPercent = constraints.getMaxPayoutPercent(0);
-        assertEquals("Should return 0% for 0 players", 0, maxPercent);
+        assertEquals(0, maxPercent, "Should return 0% for 0 players");
     }
 
     @Test
@@ -121,7 +121,7 @@ public class ParameterConstraintsTest {
 
         // For 20 players, max spots = 10 (MIN_SPOTS), so max % = 10/20 = 50%
         int maxPercent = constraints.getMaxPayoutPercent(20);
-        assertEquals("Max percent should be 50% for 20 players", 50, maxPercent);
+        assertEquals(50, maxPercent, "Max percent should be 50% for 20 players");
     }
 
     // ========== getMaxOnlinePlayers() Tests ==========
@@ -133,7 +133,7 @@ public class ParameterConstraintsTest {
 
         // MAX_ONLINE_PLAYERS = 120
         int maxOnline = constraints.getMaxOnlinePlayers(50);
-        assertEquals("Should return configured player count when below max", 50, maxOnline);
+        assertEquals(50, maxOnline, "Should return configured player count when below max");
     }
 
     @Test
@@ -143,7 +143,7 @@ public class ParameterConstraintsTest {
 
         // MAX_ONLINE_PLAYERS = 120
         int maxOnline = constraints.getMaxOnlinePlayers(200);
-        assertEquals("Should be capped at MAX_ONLINE_PLAYERS (120)", 120, maxOnline);
+        assertEquals(120, maxOnline, "Should be capped at MAX_ONLINE_PLAYERS (120)");
     }
 
     @Test
@@ -152,7 +152,7 @@ public class ParameterConstraintsTest {
         ParameterConstraints constraints = new ParameterConstraints(map);
 
         int maxOnline = constraints.getMaxOnlinePlayers(120);
-        assertEquals("Should return 120 when exactly at limit", 120, maxOnline);
+        assertEquals(120, maxOnline, "Should return 120 when exactly at limit");
     }
 
     // ========== getMaxRaises() Tests ==========
@@ -163,7 +163,7 @@ public class ParameterConstraintsTest {
         ParameterConstraints constraints = new ParameterConstraints(map);
 
         int maxRaises = constraints.getMaxRaises(2, false, true);
-        assertEquals("Should allow unlimited raises for heads-up human", Integer.MAX_VALUE, maxRaises);
+        assertEquals(Integer.MAX_VALUE, maxRaises, "Should allow unlimited raises for heads-up human");
     }
 
     @Test
@@ -173,7 +173,7 @@ public class ParameterConstraintsTest {
 
         // MAX_AI_RAISES = 4
         int maxRaises = constraints.getMaxRaises(2, true, true);
-        assertEquals("Should cap at 4 raises for heads-up computer", 4, maxRaises);
+        assertEquals(4, maxRaises, "Should cap at 4 raises for heads-up computer");
     }
 
     @Test
@@ -183,7 +183,7 @@ public class ParameterConstraintsTest {
         ParameterConstraints constraints = new ParameterConstraints(map);
 
         int maxRaises = constraints.getMaxRaises(5, false, true);
-        assertEquals("Should use configured max when not heads-up", 5, maxRaises);
+        assertEquals(5, maxRaises, "Should use configured max when not heads-up");
     }
 
     @Test
@@ -192,7 +192,7 @@ public class ParameterConstraintsTest {
         ParameterConstraints constraints = new ParameterConstraints(map);
 
         int maxRaises = constraints.getMaxRaises(5, false, false);
-        assertEquals("Should default to 3 raises", 3, maxRaises);
+        assertEquals(3, maxRaises, "Should default to 3 raises");
     }
 
     @Test
@@ -203,7 +203,7 @@ public class ParameterConstraintsTest {
 
         // MAX_AI_RAISES = 4, even if configured higher
         int maxRaises = constraints.getMaxRaises(5, true, false);
-        assertEquals("Computer should be capped at 4 raises", 4, maxRaises);
+        assertEquals(4, maxRaises, "Computer should be capped at 4 raises");
     }
 
     @Test
@@ -213,7 +213,7 @@ public class ParameterConstraintsTest {
         ParameterConstraints constraints = new ParameterConstraints(map);
 
         int maxRaises = constraints.getMaxRaises(2, false, false);
-        assertEquals("Should observe configured cap when heads-up cap not ignored", 5, maxRaises);
+        assertEquals(5, maxRaises, "Should observe configured cap when heads-up cap not ignored");
     }
 
     // ========== getMaxRebuys() Tests ==========
@@ -225,7 +225,7 @@ public class ParameterConstraintsTest {
         ParameterConstraints constraints = new ParameterConstraints(map);
 
         int maxRebuys = constraints.getMaxRebuys();
-        assertEquals("Should return configured max rebuys", 5, maxRebuys);
+        assertEquals(5, maxRebuys, "Should return configured max rebuys");
     }
 
     @Test
@@ -234,7 +234,7 @@ public class ParameterConstraintsTest {
         ParameterConstraints constraints = new ParameterConstraints(map);
 
         int maxRebuys = constraints.getMaxRebuys();
-        assertEquals("Should default to 0 rebuys", 0, maxRebuys);
+        assertEquals(0, maxRebuys, "Should default to 0 rebuys");
     }
 
     @Test
@@ -244,7 +244,7 @@ public class ParameterConstraintsTest {
         ParameterConstraints constraints = new ParameterConstraints(map);
 
         int maxRebuys = constraints.getMaxRebuys();
-        assertEquals("Should be capped at MAX_REBUYS (99)", 99, maxRebuys);
+        assertEquals(99, maxRebuys, "Should be capped at MAX_REBUYS (99)");
     }
 
     // ========== getMaxObservers() Tests ==========
@@ -255,7 +255,7 @@ public class ParameterConstraintsTest {
         ParameterConstraints constraints = new ParameterConstraints(map);
 
         int maxObservers = constraints.getMaxObservers();
-        assertEquals("Should default to 5 observers", 5, maxObservers);
+        assertEquals(5, maxObservers, "Should default to 5 observers");
     }
 
     @Test
@@ -265,7 +265,7 @@ public class ParameterConstraintsTest {
         ParameterConstraints constraints = new ParameterConstraints(map);
 
         int maxObservers = constraints.getMaxObservers();
-        assertEquals("Should return configured max observers", 15, maxObservers);
+        assertEquals(15, maxObservers, "Should return configured max observers");
     }
 
     @Test
@@ -275,7 +275,7 @@ public class ParameterConstraintsTest {
         ParameterConstraints constraints = new ParameterConstraints(map);
 
         int maxObservers = constraints.getMaxObservers();
-        assertEquals("Should be capped at MAX_OBSERVERS (30)", 30, maxObservers);
+        assertEquals(30, maxObservers, "Should be capped at MAX_OBSERVERS (30)");
     }
 
     @Test
@@ -285,6 +285,6 @@ public class ParameterConstraintsTest {
         ParameterConstraints constraints = new ParameterConstraints(map);
 
         int maxObservers = constraints.getMaxObservers();
-        assertEquals("Should allow 0 observers", 0, maxObservers);
+        assertEquals(0, maxObservers, "Should allow 0 observers");
     }
 }

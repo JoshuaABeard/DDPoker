@@ -1,7 +1,7 @@
 package com.donohoedigital.games.poker.model;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Simple test to verify password hash getter/setter works
@@ -18,8 +18,8 @@ public class OnlineProfilePasswordTest {
         profile.setPasswordHash(testHash);
 
         // Then: should be able to retrieve it
-        assertEquals("getPasswordHash() should return the value set by setPasswordHash()", testHash,
-                profile.getPasswordHash());
+        assertEquals(testHash, profile.getPasswordHash(),
+                "getPasswordHash() should return the value set by setPasswordHash()");
     }
 
     @Test
@@ -31,6 +31,6 @@ public class OnlineProfilePasswordTest {
         String hash = profile.getPasswordHash();
 
         // Then: should be null
-        assertNull("getPasswordHash() should return null when not set", hash);
+        assertNull(hash, "getPasswordHash() should return null when not set");
     }
 }
