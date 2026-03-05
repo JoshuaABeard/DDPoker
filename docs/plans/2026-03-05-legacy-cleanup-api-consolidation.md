@@ -1,5 +1,7 @@
 # Legacy Cleanup + API Consolidation Implementation Plan
 
+**Status:** COMPLETED (2026-03-05)
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Remove dead legacy code, modernize pokerserver to Spring Boot, and consolidate the standalone `api` module into the unified server process.
