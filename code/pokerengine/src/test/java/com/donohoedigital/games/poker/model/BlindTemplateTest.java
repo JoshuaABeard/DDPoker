@@ -30,10 +30,10 @@ public class BlindTemplateTest {
 
     @Test
     public void should_HaveCorrectDisplayNames() {
-        assertEquals(BlindTemplate.SLOW.getDisplayName(), "Slow (x1.5, 20min)");
-        assertEquals(BlindTemplate.STANDARD.getDisplayName(), "Standard (x2.0, 15min)");
-        assertEquals(BlindTemplate.TURBO.getDisplayName(), "Turbo (x2.0, 10min)");
-        assertEquals(BlindTemplate.HYPER.getDisplayName(), "Hyper (x2.0, 5min)");
+        assertEquals("Slow (x1.5, 20min)", BlindTemplate.SLOW.getDisplayName());
+        assertEquals("Standard (x2.0, 15min)", BlindTemplate.STANDARD.getDisplayName());
+        assertEquals("Turbo (x2.0, 10min)", BlindTemplate.TURBO.getDisplayName());
+        assertEquals("Hyper (x2.0, 5min)", BlindTemplate.HYPER.getDisplayName());
     }
 
     @Test
@@ -187,7 +187,6 @@ public class BlindTemplateTest {
         assertThrows(IllegalArgumentException.class, () -> {
             TournamentProfile profile = new TournamentProfile("Test");
             BlindTemplate.STANDARD.generateLevels(profile, 0, false, 0);
-
         });
     }
 
@@ -196,7 +195,6 @@ public class BlindTemplateTest {
         assertThrows(IllegalArgumentException.class, () -> {
             TournamentProfile profile = new TournamentProfile("Test");
             BlindTemplate.STANDARD.generateLevels(profile, 41, false, 0);
-
         });
     }
 
@@ -205,7 +203,6 @@ public class BlindTemplateTest {
         assertThrows(IllegalArgumentException.class, () -> {
             TournamentProfile profile = new TournamentProfile("Test");
             BlindTemplate.STANDARD.generateLevels(profile, 5, true, 0);
-
         });
     }
 
@@ -243,10 +240,10 @@ public class BlindTemplateTest {
 
     @Test
     public void should_UseDisplayName_ForToString() {
-        assertEquals(BlindTemplate.SLOW.toString(), "Slow (x1.5, 20min)");
-        assertEquals(BlindTemplate.STANDARD.toString(), "Standard (x2.0, 15min)");
-        assertEquals(BlindTemplate.TURBO.toString(), "Turbo (x2.0, 10min)");
-        assertEquals(BlindTemplate.HYPER.toString(), "Hyper (x2.0, 5min)");
+        assertEquals("Slow (x1.5, 20min)", BlindTemplate.SLOW.toString());
+        assertEquals("Standard (x2.0, 15min)", BlindTemplate.STANDARD.toString());
+        assertEquals("Turbo (x2.0, 10min)", BlindTemplate.TURBO.toString());
+        assertEquals("Hyper (x2.0, 5min)", BlindTemplate.HYPER.toString());
     }
 
     @Test

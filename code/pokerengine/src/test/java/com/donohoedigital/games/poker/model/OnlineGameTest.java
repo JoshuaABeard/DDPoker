@@ -51,8 +51,8 @@ public class OnlineGameTest {
 
         OnlineGame game = new OnlineGame(data);
 
-        assertEquals(game.getUrl(), "test-url");
-        assertEquals(game.getHostPlayer(), "TestPlayer");
+        assertEquals("test-url", game.getUrl());
+        assertEquals("TestPlayer", game.getHostPlayer());
     }
 
     // ===== Getters and Setters Tests =====
@@ -68,14 +68,14 @@ public class OnlineGameTest {
     public void testUrlGetterSetter() {
         OnlineGame game = new OnlineGame();
         game.setUrl("http://example.com/game/123");
-        assertEquals(game.getUrl(), "http://example.com/game/123");
+        assertEquals("http://example.com/game/123", game.getUrl());
     }
 
     @Test
     public void testHostPlayerGetterSetter() {
         OnlineGame game = new OnlineGame();
         game.setHostPlayer("Alice");
-        assertEquals(game.getHostPlayer(), "Alice");
+        assertEquals("Alice", game.getHostPlayer());
     }
 
     @Test
@@ -140,7 +140,7 @@ public class OnlineGameTest {
         game.setTournament(tournament);
 
         assertNotNull(game.getTournament());
-        assertEquals(game.getTournament().getName(), "Test Tournament");
+        assertEquals("Test Tournament", game.getTournament().getName());
     }
 
     @Test
@@ -190,8 +190,8 @@ public class OnlineGameTest {
         game1.merge(game2);
 
         // game1 should have game2's data
-        assertEquals(game1.getUrl(), "url2");
-        assertEquals(game1.getHostPlayer(), "Player2");
+        assertEquals("url2", game1.getUrl());
+        assertEquals("Player2", game1.getHostPlayer());
     }
 
     @Test
@@ -208,7 +208,7 @@ public class OnlineGameTest {
 
         game1.merge(game2);
 
-        assertEquals(game1.getUrl(), "url2");
+        assertEquals("url2", game1.getUrl());
         // Start date should be preserved (game2 didn't set it)
         assertEquals(startDate, game1.getStartDate());
     }
@@ -307,17 +307,17 @@ public class OnlineGameTest {
 
     @Test
     public void testFieldNameConstants() {
-        assertEquals(OnlineGame.WAN_ID, "id");
-        assertEquals(OnlineGame.WAN_URL, "url");
-        assertEquals(OnlineGame.WAN_HOST_PLAYER, "hostplayer");
-        assertEquals(OnlineGame.WAN_MODE, "mode");
-        assertEquals(OnlineGame.WAN_START_DATE, "startdate");
-        assertEquals(OnlineGame.WAN_END_DATE, "enddate");
-        assertEquals(OnlineGame.WAN_CREATE_DATE, "createdate");
-        assertEquals(OnlineGame.WAN_MODIFY_DATE, "modifyddate");
-        assertEquals(OnlineGame.WAN_TOURNAMENT, "profile");
-        assertEquals(OnlineGame.WAN_TOURNAMENT_NAME, "tournamentname");
-        assertEquals(OnlineGame.WAN_STATUS, "status");
+        assertEquals("id", OnlineGame.WAN_ID);
+        assertEquals("url", OnlineGame.WAN_URL);
+        assertEquals("hostplayer", OnlineGame.WAN_HOST_PLAYER);
+        assertEquals("mode", OnlineGame.WAN_MODE);
+        assertEquals("startdate", OnlineGame.WAN_START_DATE);
+        assertEquals("enddate", OnlineGame.WAN_END_DATE);
+        assertEquals("createdate", OnlineGame.WAN_CREATE_DATE);
+        assertEquals("modifyddate", OnlineGame.WAN_MODIFY_DATE);
+        assertEquals("profile", OnlineGame.WAN_TOURNAMENT);
+        assertEquals("tournamentname", OnlineGame.WAN_TOURNAMENT_NAME);
+        assertEquals("status", OnlineGame.WAN_STATUS);
     }
 
     // ===== Edge Cases =====
@@ -338,7 +338,7 @@ public class OnlineGameTest {
         OnlineGame game = new OnlineGame();
         game.setUrl("");
 
-        assertEquals(game.getUrl(), "");
+        assertEquals("", game.getUrl());
     }
 
     @Test

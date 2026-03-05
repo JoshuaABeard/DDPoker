@@ -88,8 +88,8 @@ public class TournamentHistoryListTest {
         TournamentHistoryList newList = new TournamentHistoryList(histories);
 
         assertEquals(2, newList.size());
-        assertEquals(newList.get(0).getPlayerName(), "Player 1");
-        assertEquals(newList.get(1).getPlayerName(), "Player 2");
+        assertEquals("Player 1", newList.get(0).getPlayerName());
+        assertEquals("Player 2", newList.get(1).getPlayerName());
     }
 
     @Test

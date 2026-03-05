@@ -87,7 +87,7 @@ public class HostSummaryTest {
         summary.setGamesHosted(100);
         summary.setRetired(false);
 
-        assertEquals(summary.getHostName(), "ProHost");
+        assertEquals("ProHost", summary.getHostName());
         assertEquals(100, summary.getGamesHosted());
         assertFalse(summary.isRetired());
     }

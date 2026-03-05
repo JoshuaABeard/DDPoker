@@ -91,7 +91,7 @@ public class LeaderboardSummaryTest {
     @Test
     public void testSetPlayerName() {
         summary.setPlayerName("TestPlayer");
-        assertEquals(summary.getPlayerName(), "TestPlayer");
+        assertEquals("TestPlayer", summary.getPlayerName());
     }
 
     @Test
@@ -218,7 +218,7 @@ public class LeaderboardSummaryTest {
         assertEquals(99, summary.getPercentile());
         assertEquals(150, summary.getGamesPlayed());
         assertEquals(54321L, summary.getProfileId());
-        assertEquals(summary.getPlayerName(), "Champion");
+        assertEquals("Champion", summary.getPlayerName());
         assertEquals(1000, summary.getDdr1());
         assertEquals(5000, summary.getTotalBuyin());
         assertEquals(1000, summary.getTotalAddon());

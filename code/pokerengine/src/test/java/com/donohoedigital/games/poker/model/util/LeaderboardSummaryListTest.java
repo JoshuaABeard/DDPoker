@@ -67,7 +67,7 @@ public class LeaderboardSummaryListTest {
         list.add(summary);
 
         assertEquals(1, list.size());
-        assertEquals(list.get(0).getPlayerName(), "Player 1");
+        assertEquals("Player 1", list.get(0).getPlayerName());
     }
 
     @Test
@@ -81,8 +81,8 @@ public class LeaderboardSummaryListTest {
         list.add(summary2);
 
         assertEquals(2, list.size());
-        assertEquals(list.get(0).getPlayerName(), "Player 1");
-        assertEquals(list.get(1).getPlayerName(), "Player 2");
+        assertEquals("Player 1", list.get(0).getPlayerName());
+        assertEquals("Player 2", list.get(1).getPlayerName());
     }
 
     @Test

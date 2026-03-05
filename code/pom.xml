@@ -68,7 +68,6 @@
     <spring.version>6.2.15</spring.version>
     <hibernate.version>6.6.42.Final</hibernate.version>
     <jetty.version>12.1.6</jetty.version>
-    <junit.version>4.13.2</junit.version>
     <dependency.classpath.outputFile>target/classpath.txt</dependency.classpath.outputFile>
     <!-- Property for JaCoCo argLine (set by prepare-agent goal) -->
     <argLine></argLine>

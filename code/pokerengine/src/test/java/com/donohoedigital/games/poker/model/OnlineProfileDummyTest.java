@@ -53,17 +53,17 @@ public class OnlineProfileDummyTest {
 
     @Test
     public void testHumanName() {
-        assertEquals(OnlineProfile.Dummy.HUMAN.getName(), "__DUMMY__");
+        assertEquals("__DUMMY__", OnlineProfile.Dummy.HUMAN.getName());
     }
 
     @Test
     public void testAiBestName() {
-        assertEquals(OnlineProfile.Dummy.AI_BEST.getName(), "__AIBEST__");
+        assertEquals("__AIBEST__", OnlineProfile.Dummy.AI_BEST.getName());
     }
 
     @Test
     public void testAiRestName() {
-        assertEquals(OnlineProfile.Dummy.AI_REST.getName(), "__AIREST__");
+        assertEquals("__AIREST__", OnlineProfile.Dummy.AI_REST.getName());
     }
 
     @Test

@@ -68,7 +68,7 @@ public class OnlineProfilePurgeSummaryTest {
         summary.setOnlineProfile(profile);
 
         assertEquals(profile, summary.getOnlineProfile());
-        assertEquals(summary.getOnlineProfile().getName(), "TestPlayer");
+        assertEquals("TestPlayer", summary.getOnlineProfile().getName());
     }
 
     @Test

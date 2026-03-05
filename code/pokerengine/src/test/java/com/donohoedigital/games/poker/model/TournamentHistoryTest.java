@@ -59,14 +59,14 @@ public class TournamentHistoryTest {
     public void testTournamentNameGetterSetter() {
         TournamentHistory history = new TournamentHistory();
         history.setTournamentName("Test Tournament");
-        assertEquals(history.getTournamentName(), "Test Tournament");
+        assertEquals("Test Tournament", history.getTournamentName());
     }
 
     @Test
     public void testPlayerNameGetterSetter() {
         TournamentHistory history = new TournamentHistory();
         history.setPlayerName("Alice");
-        assertEquals(history.getPlayerName(), "Alice");
+        assertEquals("Alice", history.getPlayerName());
     }
 
     @Test
@@ -179,7 +179,7 @@ public class TournamentHistoryTest {
     public void testTournamentTypeGetterSetter() {
         TournamentHistory history = new TournamentHistory();
         history.setTournamentType("ONLINE");
-        assertEquals(history.getTournamentType(), "ONLINE");
+        assertEquals("ONLINE", history.getTournamentType());
     }
 
     @Test

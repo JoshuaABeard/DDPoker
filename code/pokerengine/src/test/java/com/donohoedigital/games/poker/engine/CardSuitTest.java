@@ -75,11 +75,11 @@ public class CardSuitTest {
 
     @Test
     public void testGetName() {
-        assertEquals(CardSuit.CLUBS.getName(), "club");
-        assertEquals(CardSuit.DIAMONDS.getName(), "diamond");
-        assertEquals(CardSuit.HEARTS.getName(), "heart");
-        assertEquals(CardSuit.SPADES.getName(), "spade");
-        assertEquals(CardSuit.UNKNOWN.getName(), "unknown");
+        assertEquals("club", CardSuit.CLUBS.getName());
+        assertEquals("diamond", CardSuit.DIAMONDS.getName());
+        assertEquals("heart", CardSuit.HEARTS.getName());
+        assertEquals("spade", CardSuit.SPADES.getName());
+        assertEquals("unknown", CardSuit.UNKNOWN.getName());
     }
 
     // ===== getAbbr() Tests =====

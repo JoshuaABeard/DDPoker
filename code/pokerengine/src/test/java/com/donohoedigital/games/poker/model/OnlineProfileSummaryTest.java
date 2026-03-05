@@ -57,7 +57,7 @@ public class OnlineProfileSummaryTest {
     public void testConstructorWithZeroCount() {
         OnlineProfileSummary summary = new OnlineProfileSummary("Player", 0);
 
-        assertEquals(summary.getName(), "Player");
+        assertEquals("Player", summary.getName());
         assertEquals(0, summary.getCount());
     }
 
@@ -65,7 +65,7 @@ public class OnlineProfileSummaryTest {
     public void testConstructorWithNegativeCount() {
         OnlineProfileSummary summary = new OnlineProfileSummary("Player", -5);
 
-        assertEquals(summary.getName(), "Player");
+        assertEquals("Player", summary.getName());
         assertEquals(-5, summary.getCount());
     }
 

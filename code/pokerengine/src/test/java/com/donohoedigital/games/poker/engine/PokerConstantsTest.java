@@ -96,37 +96,37 @@ public class PokerConstantsTest {
     @Test
     public void testToStringAdminTypeMsg() {
         String result = PokerConstants.toStringAdminType(PokerConstants.CHAT_ADMIN_MSG);
-        assertEquals(result, "message");
+        assertEquals("message", result);
     }
 
     @Test
     public void testToStringAdminTypeJoin() {
         String result = PokerConstants.toStringAdminType(PokerConstants.CHAT_ADMIN_JOIN);
-        assertEquals(result, "join");
+        assertEquals("join", result);
     }
 
     @Test
     public void testToStringAdminTypeLeave() {
         String result = PokerConstants.toStringAdminType(PokerConstants.CHAT_ADMIN_LEAVE);
-        assertEquals(result, "leave");
+        assertEquals("leave", result);
     }
 
     @Test
     public void testToStringAdminTypeWelcome() {
         String result = PokerConstants.toStringAdminType(PokerConstants.CHAT_ADMIN_WELCOME);
-        assertEquals(result, "welcome");
+        assertEquals("welcome", result);
     }
 
     @Test
     public void testToStringAdminTypeError() {
         String result = PokerConstants.toStringAdminType(PokerConstants.CHAT_ADMIN_ERROR);
-        assertEquals(result, "error");
+        assertEquals("error", result);
     }
 
     @Test
     public void testToStringAdminTypeUnknown() {
         String result = PokerConstants.toStringAdminType(99);
-        assertEquals(result, "unknown-99");
+        assertEquals("unknown-99", result);
     }
 
     @Test
@@ -239,8 +239,8 @@ public class PokerConstantsTest {
     public void testOnlineConstants() {
         assertEquals(3, PokerConstants.MAX_PROFILES_PER_EMAIL);
         assertEquals(2, PokerConstants.MIN_SCHEDULED_START_PLAYERS);
-        assertEquals(PokerConstants.ONLINE_GAME_PREFIX_TCP, "n-");
-        assertEquals(PokerConstants.ONLINE_GAME_PREFIX_UDP, "u-");
+        assertEquals("n-", PokerConstants.ONLINE_GAME_PREFIX_TCP);
+        assertEquals("u-", PokerConstants.ONLINE_GAME_PREFIX_UDP);
     }
 
     @Test
@@ -261,9 +261,9 @@ public class PokerConstantsTest {
 
     @Test
     public void testContentTypeConstants() {
-        assertEquals(PokerConstants.CONTENT_TYPE_JOIN, "application/x-ddpoker-join");
-        assertEquals(PokerConstants.JOIN_FILE_EXT, "ddpokerjoin");
-        assertEquals(PokerConstants.JOIN_OBSERVER_QUERY, "?obs");
+        assertEquals("application/x-ddpoker-join", PokerConstants.CONTENT_TYPE_JOIN);
+        assertEquals("ddpokerjoin", PokerConstants.JOIN_FILE_EXT);
+        assertEquals("?obs", PokerConstants.JOIN_OBSERVER_QUERY);
     }
 
     @Test

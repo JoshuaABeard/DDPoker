@@ -286,7 +286,7 @@ public class DeckTest {
         String str = deck.toString();
 
         assertNotNull(str);
-        assertEquals(str.trim(), "");
+        assertEquals("", str.trim());
     }
 
     // ===== Bug-Specific Deck Tests =====

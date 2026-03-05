@@ -146,7 +146,7 @@ public class CardTest {
 
     @Test
     public void testRankDisplaySingle() {
-        assertEquals(DIAMONDS_T.getRankDisplaySingle(), "T");
+        assertEquals("T", DIAMONDS_T.getRankDisplaySingle());
         String aceRank = SPADES_A.getRankDisplaySingle();
         assertTrue(aceRank.contains("A") || aceRank.toLowerCase().contains("ace"));
     }

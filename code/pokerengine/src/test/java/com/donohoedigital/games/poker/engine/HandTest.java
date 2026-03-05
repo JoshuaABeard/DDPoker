@@ -540,7 +540,7 @@ public class HandTest {
         assertTrue(html.contains("DDCARD"));
 
         Hand empty = new Hand();
-        assertEquals(empty.toHTML(), "");
+        assertEquals("", empty.toHTML());
     }
 
     // ===== Serialization Tests =====
