@@ -483,7 +483,7 @@ class PublicIPDetectorTest {
         // Assert
         // Note: Current implementation doesn't explicitly reject multicast
         // This test documents current behavior
-        // TODO: Consider rejecting multicast IPs explicitly
+        // Future: Consider rejecting multicast IPs explicitly
         assertThat(actualIP).isNotNull(); // Currently accepts (may want to change)
     }
 

@@ -1825,7 +1825,7 @@ public class ShowTournamentTable extends ShowPokerTable
             boolean bInHand = hhand != null && hhand.getRound() != BettingRound.SHOWDOWN;
 
             if (PokerUtils.isPot(t) || PokerUtils.isFlop(t) || p == null) {
-                // TODO: deal when auto-deal on?
+                // Future: deal when auto-deal on?
                 if ((buttonDeal_ != null && buttonDeal_.isEnabled()) || (cardPiece != null)) {
                     menu = new DDPopupMenu();
 
@@ -2252,7 +2252,7 @@ public class ShowTournamentTable extends ShowPokerTable
                     player_.setPlayerType(playerType_);
                 }
 
-                // TODO: does this belong here or in setPokerAI?
+                // Future: does this belong here or in setPokerAI?
                 table_.firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_AI_CHANGED, table_, player_,
                         player_.getSeat()));
             }

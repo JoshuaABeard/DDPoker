@@ -191,7 +191,7 @@ public class DrawingUtil implements KeyListener, MouseMotionListener, MouseListe
         int nSize = allPoints_.size();
         int pointx, pointy;
 
-        // TODO: faster way to find point under mouse?
+        // Future: faster way to find point under mouse?
         for (int i = 0; i < nSize; i++) {
             point = allPoints_.getMapPoint(i);
             pointx = scaleToCurrentSpace(point.x_);

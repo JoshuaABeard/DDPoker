@@ -140,7 +140,7 @@ class OnlineGameTest {
             og.setStartDate(new Date(now + ((i % 4 + 1) * day)));
             og.setEndDate(new Date(now + (reverse * day * 3)));
 
-            Utils.sleepMillis(1000); // ensure different dates but TODO: review as this makes this test slow
+            Utils.sleepMillis(1000); // ensure different dates; Future: avoid sleep to speed up this test
             dao.save(og);
         }
 

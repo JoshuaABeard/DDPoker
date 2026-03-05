@@ -120,7 +120,7 @@ class PureRuleEngineTest {
         assertThat(action.actionType()).isIn(ActionType.BET, ActionType.RAISE);
     }
 
-    // TODO: Requires additional mock setup for post-flop community cards and hand
+    // Future: Requires additional mock setup for post-flop community cards and hand
     // potential
     @Test
     void execute_postFlopWithNutHand_shouldBet() {

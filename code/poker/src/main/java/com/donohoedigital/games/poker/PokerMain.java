@@ -85,8 +85,8 @@ public class PokerMain extends GameEngine {
         System.setProperty("sun.java2d.noddraw", "true");
 
         // Mac: Menu Name
-        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "DD Poker"); // TODO + version?
-        System.setProperty("apple.awt.application.name", "DD Poker"); // TODO + version?
+        System.setProperty("com.apple.mrj.application.apple.menu.about.name", "DD Poker"); // Future: append version?
+        System.setProperty("apple.awt.application.name", "DD Poker"); // Future: append version?
 
         // avoid java.lang.NullPointerException
         // at javax.swing.plaf.metal.MetalSliderUI.installUI(MetalSliderUI.java:110)
@@ -465,9 +465,9 @@ public class PokerMain extends GameEngine {
         }
 
         if (!bShowDialog) {
-            getDefaultContext().processPhase("GamePrefs"); // TODO: active context?
+            getDefaultContext().processPhase("GamePrefs"); // Future: active context?
         } else {
-            getDefaultContext().processPhase("GamePrefsDialog"); // TODO: active context?
+            getDefaultContext().processPhase("GamePrefsDialog"); // Future: active context?
         }
     }
 

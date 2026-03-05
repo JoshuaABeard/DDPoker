@@ -988,7 +988,7 @@ public class PokerDatabase {
                 try (ResultSet rs = DatabaseManager.executeQuery(pstmt)) {
                     rs.setFetchSize(page);
 
-                    // TODO: is there a way to make rs.relative() work so i don't have to loop?
+                    // Future: is there a way to make rs.relative() work so i don't have to loop?
                     for (int i = 0; i < first; ++i) {
                         rs.next();
                     }
@@ -1114,7 +1114,7 @@ public class PokerDatabase {
     /**
      * returns three strings; title, summary, details
      * <p/>
-     * TODO: use ImpExpHand
+     * Future: use ImpExpHand
      */
     public static String[] getHandAsHTML(int handID, boolean bShowAll, boolean bShowReason) {
         Database database = getDatabase();

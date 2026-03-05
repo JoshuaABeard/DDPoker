@@ -262,7 +262,7 @@ public abstract class GameManager extends BaseApp implements KeyListener, Status
     protected void moveCrosshair(MouseEvent e) {
         // move that crosshair
         xhair_.moveTo(e.getPoint().x, e.getPoint().y);
-        // TODO: repaint old/new location
+        // Future: repaint old/new location
         scrollThis_.repaint();
     }
 

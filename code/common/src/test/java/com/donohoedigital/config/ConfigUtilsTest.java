@@ -32,7 +32,7 @@
  */
 package com.donohoedigital.config;
 
-import junit.framework.*;
+import org.junit.jupiter.api.*;
 
 import java.io.*;
 import java.net.*;
@@ -41,8 +41,9 @@ import java.net.*;
  * Created by IntelliJ IDEA. User: donohoe Date: Apr 7, 2008 Time: 5:22:52 PM To
  * change this template use File | Settings | File Templates.
  */
-public class ConfigUtilsTest extends TestCase {
-    public void testCopyUrl() {
+class ConfigUtilsTest {
+    @Test
+    void testCopyUrl() {
         URL url = new MatchingResources("classpath*:com/donohoedigital/config/ConfigUtilsTest.class")
                 .getSingleRequiredResourceURL();
         File userhome = new DefaultRuntimeDirectory().getClientHome("test");
@@ -50,6 +51,6 @@ public class ConfigUtilsTest extends TestCase {
         ConfigUtils.verifyNewDirectory(userhome);
         ConfigUtils.copyUrlToFile(url, dest);
 
-        // TODO: programatically verify same (I did by hand)
+        // Future: programatically verify same (verified by hand)
     }
 }

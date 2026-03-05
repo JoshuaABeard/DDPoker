@@ -98,7 +98,7 @@ public class PokerUtils extends EngineUtils {
      */
     public static synchronized Territories getTerritories() {
         if (ts_ == null) {
-            ts_ = GameEngine.getGameEngine().getGameboardConfig().getTerritories(); // TODO: need to chagne for
+            ts_ = GameEngine.getGameEngine().getGameboardConfig().getTerritories(); // Future: need to change for
                                                                                     // multi-game
         }
         return ts_;

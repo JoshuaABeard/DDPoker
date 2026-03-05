@@ -33,18 +33,21 @@
 package com.donohoedigital.config;
 
 import com.donohoedigital.base.*;
-import junit.framework.*;
+import org.junit.jupiter.api.*;
 
 import java.awt.*;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Apr 7, 2008 Time: 9:49:51 AM To
  * change this template use File | Settings | File Templates.
  */
-public class StylesConfigTest extends TestCase {
+class StylesConfigTest {
     // private static Logger logger = LogManager.getLogger(StylesConfigTest.class);
 
-    public void testLoad() {
+    @Test
+    void testLoad() {
         if (Utils.ISMAC)
             return; // doesn't play nicely on mac
 
@@ -52,15 +55,15 @@ public class StylesConfigTest extends TestCase {
         new StylesConfig(modules);
 
         Color c = StylesConfig.getColor("black");
-        assertNotNull(c);
+        assertThat(c).isNotNull();
 
         c = StylesConfig.getColor("white");
-        assertNotNull(c);
+        assertThat(c).isNotNull();
 
         Font f = StylesConfig.getFont("lcd");
-        assertNotNull(f);
+        assertThat(f).isNotNull();
 
         f = StylesConfig.getFont("lucida");
-        assertNotNull(f);
+        assertThat(f).isNotNull();
     }
 }

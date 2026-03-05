@@ -285,7 +285,8 @@ public class GameContext {
             dialog_.setCenterComponent(comp, cFocus);
         }
 
-        // TODO: option to resize window to component (timing might not work due to fact
+        // Future: option to resize window to component (timing might not work due to
+        // fact
         // window displayed b4 this is called)
     }
 
@@ -639,7 +640,7 @@ public class GameContext {
 
         // reinit territories (clearing owners, pieces, etc.)
         if (engine_.gameconfig_ != null)
-            engine_.gameconfig_.initTerritories(); // TODO: multi-game this needs to change
+            engine_.gameconfig_.initTerritories(); // Future: multi-game this needs to change
 
         // start at beginning phase
         processPhase(sRestartPhase_, restartParams_);

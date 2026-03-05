@@ -1114,14 +1114,15 @@ public class PureRuleEngine implements AIConstants {
             return;
         }
 
-        // TODO: CONSIDER ALL-IN CALLS
+        // Future: CONSIDER ALL-IN CALLS
 
         // SPECIAL RED/DEAD ZONE STRATEGY
 
         if ((hohZone == HOH_RED) || (hohZone == HOH_DEAD)) {
-            // TODO: consider other player zones; need stronger hand with short stacks left
+            // Future: consider other player zones; need stronger hand with short stacks
+            // left
             // to act
-            // TODO: lower standards as blinds get closer
+            // Future: lower standards as blinds get closer
 
             setEligible(OUTCOME_ALL_IN, true);
 
@@ -1173,7 +1174,7 @@ public class PureRuleEngine implements AIConstants {
                         break;
                 }
 
-                // TODO: adjust small pairs and low suited connectors
+                // Future: adjust small pairs and low suited connectors
 
                 switch (hohZone) {
                     case HOH_YELLOW :
@@ -1231,15 +1232,16 @@ public class PureRuleEngine implements AIConstants {
             // CONSIDER WHETHER WE CAN PLAY AGAINST A RAISE
 
             if (potStatus == PokerConstants.RAISED_POT) {
-                // TODO: factor in opponent zone and stack size
-                // TODO: factor in pot odds and left to act
+                // Future: factor in opponent zone and stack size
+                // Future: factor in pot odds and left to act
 
                 switch (startingPosition) {
                     case POSITION_SMALL :
                     case POSITION_BIG :
                         // CONSIDER DEFENDING BLINDS
                         float stealSuspicion = state_.getStealSuspicion();
-                        // TODO: not if someone has called the raise already? * already adjusting value
+                        // Future: not if someone has called the raise already? * already adjusting
+                        // value
                         if (stealSuspicion > 0.0f) {
                             adjustOutcome(OUTCOME_CALL, FACTOR_STEAL_SUSPECTED, stealSuspicion);
                             adjustOutcome(OUTCOME_RAISE, FACTOR_STEAL_SUSPECTED, stealSuspicion);

@@ -1686,7 +1686,7 @@ public class V1Algorithm implements PurePokerAI {
      * Create a raise action with standard sizing.
      * <p>
      * Original V1Player logic: raises 3-4x big blind (75% / 25% distribution).
-     * TODO: Original had note to use pot size for post-flop, not implemented yet.
+     * Future: Original had note to use pot size for post-flop, not implemented yet.
      */
     private PlayerAction createRaise(AIContext context, GamePlayerInfo player, String reason) {
         GameHand hand = context.getCurrentHand();

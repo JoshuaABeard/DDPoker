@@ -256,7 +256,7 @@ public class Territory implements GamePieceContainer, ObjectID, Comparable {
      * Set territory type
      */
     public void setType(String sType) {
-        // TODO: validate valid type
+        // Future: validate valid type
         sType_ = sType;
 
         bEdge_ = sType_.equals(EDGE);
@@ -422,7 +422,7 @@ public class Territory implements GamePieceContainer, ObjectID, Comparable {
     }
 
     /**
-     * Return point with given type // TODO: faster way to do
+     * Return point with given type // Future: faster way to do
      * getTerritoryPoint(string)
      */
     public TerritoryPoint getTerritoryPoint(String sType) {

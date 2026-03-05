@@ -125,7 +125,7 @@ public class XMLWriter extends PrintWriter {
      * </PRE>
      */
     public void printRootElementStartLine(String sElementName, String sNamespace, String sSchemaLocation, int nIndent) {
-        // TODO: allow nonamespace schemas?
+        // Future: allow nonamespace schemas?
         int nSpaces = sElementName.length() + 2;
         StringBuilder sbSpaces = new StringBuilder(nSpaces);
         for (int i = 0; i < nSpaces; i++) {
@@ -223,7 +223,7 @@ public class XMLWriter extends PrintWriter {
      */
     public void printElement(String sElementName, Object value) {
         printElementStart(sElementName);
-        print(value.toString()); // TODO: escapes?
+        print(value.toString()); // Future: escapes?
         printElementEnd(sElementName);
     }
 
@@ -243,7 +243,7 @@ public class XMLWriter extends PrintWriter {
         print(" ");
         print(sAttrName);
         print("=\"");
-        print(value.toString()); // TODO: escapes?
+        print(value.toString()); // Future: escapes?
         print("\"");
     }
 

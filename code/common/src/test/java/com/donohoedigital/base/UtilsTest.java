@@ -32,30 +32,34 @@
  */
 package com.donohoedigital.base;
 
-import junit.framework.*;
+import org.junit.jupiter.api.*;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Apr 23, 2010 Time: 2:15:08 PM
  * To change this template use File | Settings | File Templates.
  */
-public class UtilsTest extends TestCase {
-    public void testIsOs() {
-        assertTrue(Utils.isLinux("linux"));
-        assertTrue(Utils.isLinux("LINUX"));
-        assertTrue(Utils.isMacOS("mac os x"));
-        assertTrue(Utils.isMacOS("MAC OS X"));
-        assertTrue(Utils.isWindows("Windows"));
-        assertTrue(Utils.isWindows("windows"));
+class UtilsTest {
+    @Test
+    void testIsOs() {
+        assertThat(Utils.isLinux("linux")).isTrue();
+        assertThat(Utils.isLinux("LINUX")).isTrue();
+        assertThat(Utils.isMacOS("mac os x")).isTrue();
+        assertThat(Utils.isMacOS("MAC OS X")).isTrue();
+        assertThat(Utils.isWindows("Windows")).isTrue();
+        assertThat(Utils.isWindows("windows")).isTrue();
 
-        assertFalse(Utils.isLinux("mac os x"));
-        assertFalse(Utils.isLinux("windows"));
-        assertFalse(Utils.isMacOS("linux"));
-        assertFalse(Utils.isMacOS("windows"));
-        assertFalse(Utils.isWindows("linux"));
-        assertFalse(Utils.isWindows("mac os x"));
+        assertThat(Utils.isLinux("mac os x")).isFalse();
+        assertThat(Utils.isLinux("windows")).isFalse();
+        assertThat(Utils.isMacOS("linux")).isFalse();
+        assertThat(Utils.isMacOS("windows")).isFalse();
+        assertThat(Utils.isWindows("linux")).isFalse();
+        assertThat(Utils.isWindows("mac os x")).isFalse();
     }
 
-    public void testJoin() {
-        assertEquals("a | b", Utils.joinWithDelimiter(" | ", "a", null, "b"));
+    @Test
+    void testJoin() {
+        assertThat(Utils.joinWithDelimiter(" | ", "a", null, "b")).isEqualTo("a | b");
     }
 }

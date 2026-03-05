@@ -32,17 +32,21 @@
  */
 package com.donohoedigital.config;
 
-import junit.framework.*;
-import org.apache.logging.log4j.*;
 import com.donohoedigital.base.*;
+import org.apache.logging.log4j.*;
+import org.junit.jupiter.api.*;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Apr 7, 2008 Time: 9:49:51 AM To
  * change this template use File | Settings | File Templates.
  */
-public class HelpConfigTest extends TestCase {
+class HelpConfigTest {
     private static Logger logger = LogManager.getLogger(HelpConfigTest.class);
-    public void testLoad() {
+
+    @Test
+    void testLoad() {
         if (Utils.ISMAC)
             return; // doesn't play nicely on mac
 
@@ -52,7 +56,7 @@ public class HelpConfigTest extends TestCase {
         for (int i = 1; i <= 3; i++) {
             HelpTopic ht = HelpConfig.getHelpTopic("test" + i);
             String contents = ht.getContents();
-            assertNotNull(contents);
+            assertThat(contents).isNotNull();
             logger.info("Topic " + i + ": " + contents.trim());
         }
     }

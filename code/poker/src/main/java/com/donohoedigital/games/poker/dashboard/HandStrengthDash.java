@@ -65,7 +65,7 @@ public class HandStrengthDash extends Odds {
     protected String getDisplay(int nRound, ClientHoldemHand hhand, PokerPlayer asViewedBy, Hand hand) {
         sStrength_ = null;
 
-        // TODO: pre-flop hand strength
+        // Future: pre-flop hand strength
         if (nRound == BettingRound.PRE_FLOP.toLegacy()) {
             return "";
         }

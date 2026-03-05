@@ -32,13 +32,14 @@
  */
 package com.donohoedigital.games.poker.server;
 
-import junit.framework.*;
-import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.*;
 import org.springframework.context.support.*;
 import org.springframework.context.*;
 import org.springframework.util.*;
 
 import java.io.*;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Feb 17, 2008 Time: 9:08:21 PM
@@ -46,18 +47,20 @@ import java.io.*;
  * Simple Spring test - configure logging, load app context, get a bean
  */
 @Tag("slow")
-public class ConfigTest extends TestCase {
+class ConfigTest {
     /**
      * Load app config
      */
-    public void testSpring() throws FileNotFoundException {
+    @Test
+    void testSpring() throws FileNotFoundException {
         String[] contextPaths = new String[]{"app-context-configtest.xml"};
         ApplicationContext ctx = new ClassPathXmlApplicationContext(contextPaths);
         String test = (String) ctx.getBean("test");
-        assertEquals("test bean", "Test", test);
+        assertThat(test).isEqualTo("Test");
     }
 
-    public void testTrue() {
-        assertTrue(true);
+    @Test
+    void testTrue() {
+        // trivial smoke test
     }
 }

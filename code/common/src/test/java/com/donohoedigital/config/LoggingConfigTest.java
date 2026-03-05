@@ -32,25 +32,27 @@
  */
 package com.donohoedigital.config;
 
-import junit.framework.TestCase;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.*;
 
 import java.io.File;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Oct 14, 2008 Time: 8:16:40 AM
  * To change this template use File | Settings | File Templates.
  */
-public class LoggingConfigTest extends TestCase {
+class LoggingConfigTest {
     public static final String UNITTEST_APPNAME = "unittests";
     private static final TestRuntimeDirectory runtime = new TestRuntimeDirectory();
 
     /**
      * On setup, verify no temp files exist
      */
-    @Override
-    protected void setUp() {
+    @BeforeEach
+    void setUp() {
         LoggingConfig.reset();
         checkDirectoryDoesntExist(runtime.getServerHome());
         checkDirectoryDoesntExist(runtime.getClientHome(null));
@@ -59,14 +61,15 @@ public class LoggingConfigTest extends TestCase {
     private static void checkDirectoryDoesntExist(File dir) {
         if (dir.exists()) {
             ConfigUtils.deleteDir(dir);
-            fail(" a previous test failed to clean up after itself");
+            fail("a previous test failed to clean up after itself");
         }
     }
 
     /**
      * Test client
      */
-    public void testClient() {
+    @Test
+    void testClient() {
         process(new LoggingConfig(UNITTEST_APPNAME, ApplicationType.CLIENT, runtime, false),
                 runtime.getClientHome(null), "GUI", true);
     }
@@ -74,7 +77,8 @@ public class LoggingConfigTest extends TestCase {
     /**
      * Test headless client
      */
-    public void testHeadlessClient() {
+    @Test
+    void testHeadlessClient() {
         process(new LoggingConfig(UNITTEST_APPNAME, ApplicationType.HEADLESS_CLIENT, runtime, false),
                 runtime.getClientHome(null), "GUI", true);
     }
@@ -82,7 +86,8 @@ public class LoggingConfigTest extends TestCase {
     /**
      * Test server
      */
-    public void testServer() {
+    @Test
+    void testServer() {
         process(new LoggingConfig(UNITTEST_APPNAME, ApplicationType.SERVER, runtime, false), runtime.getServerHome(),
                 "SRV", true);
     }
@@ -90,7 +95,8 @@ public class LoggingConfigTest extends TestCase {
     /**
      * Test command line
      */
-    public void testCommandLine() {
+    @Test
+    void testCommandLine() {
         process(new LoggingConfig(UNITTEST_APPNAME, ApplicationType.COMMAND_LINE, runtime, false),
                 runtime.getServerHome(), "CLI", false);
     }
@@ -98,12 +104,14 @@ public class LoggingConfigTest extends TestCase {
     /**
      * Test webapp
      */
-    public void testWebapp() {
+    @Test
+    void testWebapp() {
         process(new LoggingConfig(UNITTEST_APPNAME, ApplicationType.WEBAPP, runtime, false), runtime.getServerHome(),
                 "WEB", true);
     }
 
-    public void testOverride() {
+    @Test
+    void testOverride() {
         process(new LoggingConfig("unit-test-override", ApplicationType.HEADLESS_CLIENT, runtime, false),
                 runtime.getClientHome(null), "OVER", true);
     }
@@ -129,16 +137,16 @@ public class LoggingConfigTest extends TestCase {
 
             // inspect stdout
             String[] lines = tee.getCapturedLines();
-            assertEquals(expected, lines.length);
+            assertThat(lines.length).isEqualTo(expected);
             String line = lines[expected - 1];
-            assertTrue("should contain " + slug + " [main", line.contains(" " + slug + " [main"));
-            assertTrue("Stdout file should contain message: " + message, line.contains(message));
+            assertThat(line).as("should contain " + slug + " [main").contains(" " + slug + " [main");
+            assertThat(line).as("Stdout file should contain message: " + message).contains(message);
 
             if (verifyLogfile) {
                 ConfigUtils.verifyFile(logging.getLogFile());
                 String contents = ConfigUtils.readFile(logging.getLogFile());
-                assertTrue("should contain " + slug + " [main", contents.contains(" " + slug + " [main"));
-                assertTrue("Log file should contain message: " + message, contents.contains(message));
+                assertThat(contents).as("should contain " + slug + " [main").contains(" " + slug + " [main");
+                assertThat(contents).as("Log file should contain message: " + message).contains(message);
             }
         } finally {
             tee.restoreOriginal();
@@ -149,8 +157,8 @@ public class LoggingConfigTest extends TestCase {
     /**
      * remove temp directories
      */
-    @Override
-    protected void tearDown() {
+    @AfterEach
+    void tearDown() {
         // remove directories
         cleanup(runtime.getServerHome());
         cleanup(runtime.getClientHome(null));

@@ -37,9 +37,8 @@ import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.xml.*;
 import com.donohoedigital.base.*;
-import junit.framework.*;
 import org.apache.logging.log4j.*;
-import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.*;
 
 import java.util.*;
 
@@ -47,8 +46,9 @@ import java.util.*;
  * @author Doug Donohoe
  */
 @Tag("slow")
-public class XMLExportTest extends TestCase {
-    public void testSimpleXMLEncoder() {
+class XMLExportTest {
+    @Test
+    void testSimpleXMLEncoder() {
         // setup config manager (so we know where profiles live)
         new ConfigManager("poker", ApplicationType.COMMAND_LINE);
         Logger logger = LogManager.getLogger(XMLExportTest.class);

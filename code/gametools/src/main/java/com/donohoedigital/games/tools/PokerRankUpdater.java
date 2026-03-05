@@ -108,7 +108,6 @@ public class PokerRankUpdater extends BaseCommandLineApp {
             for (OnlineGame game : list) {
                 count++;
                 doRank(game);
-                // TODO: make sure debug off (next line)
                 // if (count > 200) System.exit(0); // DEBUG - limit to first records for
                 // testing
             }

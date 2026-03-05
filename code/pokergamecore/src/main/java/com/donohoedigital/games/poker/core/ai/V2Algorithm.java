@@ -278,7 +278,7 @@ public class V2Algorithm implements PurePokerAI, V2PlayerState, AIConstants {
 
     private void onNewHand(GamePlayerInfo player, V2AIContext context) {
         stealSuspicion = 0.0f;
-        // TODO: loadReputation() if needed
+        // Future: loadReputation() if needed
     }
 
     private void onDealtFlop(V2AIContext context) {
@@ -317,7 +317,7 @@ public class V2Algorithm implements PurePokerAI, V2PlayerState, AIConstants {
         } else {
             steam *= 0.5f;
         }
-        // TODO: saveReputation() if needed
+        // Future: saveReputation() if needed
     }
 
     /**

@@ -87,7 +87,7 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
      * underneath us
      */
     private static PokerGame getGame() {
-        return (PokerGame) GameEngine.getGameEngine().getDefaultContext().getGame(); // TODO: active context when
+        return (PokerGame) GameEngine.getGameEngine().getDefaultContext().getGame(); // Future: active context when
                                                                                         // multi-game
     }
 
@@ -256,7 +256,7 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
     }
 
     /**
-     * TODO: implement buttons
+     * Future: implement buttons
      */
     @Override
     public boolean processButton(GameButton button) {

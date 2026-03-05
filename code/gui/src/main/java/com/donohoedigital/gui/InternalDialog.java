@@ -96,7 +96,7 @@ public class InternalDialog extends JInternalFrame implements DDWindow {
         // avoid apparent memory leak in KeyboardFocusManager.newFocusOwner
         // if (Perf.isOn())
         // {
-        // TODO needed with JProfile? setRequestFocusEnabled(false);
+        // setRequestFocusEnabled(false);
         // }
 
         addInternalFrameListener(new InternalFrameAdapter() {
@@ -600,7 +600,7 @@ public class InternalDialog extends JInternalFrame implements DDWindow {
         int nY = (nScreenHeight - size.height) / 2;
 
         if (!frame_.isFullScreen()) {
-            // TODO: get programmatically
+            // Future: get title bar height programmatically
             nY -= 15; // account for windows title bar
         }
 

@@ -54,7 +54,7 @@ import com.donohoedigital.games.poker.core.state.BettingRound;
  * To change this template use File | Settings | File Templates.
  */
 public class AdvanceAction extends DashboardItem implements ActionListener {
-    private static AdvanceAction impl_; // TODO store in PokerGame or PokerContext
+    private static AdvanceAction impl_; // Future: store in PokerGame or PokerContext
 
     private DDPanel cheatbase_;
     private ArrayList buttons_ = new ArrayList();

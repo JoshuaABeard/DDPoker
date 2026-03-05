@@ -418,7 +418,7 @@ public class GameState extends MsgState implements SaveFile {
                 }
             }
 
-            // TODO: error handling bogus GameState files?
+            // Future: error handling for bogus GameState files?
 
             ConfigUtils.close(sreader);
         } catch (IOException ioe) {
@@ -604,7 +604,7 @@ public class GameState extends MsgState implements SaveFile {
             if (bDirty && !observer.isDirty())
                 continue;
 
-            // TODO: shell entry if already added observer in save file as a player
+            // Future: shell entry if already added observer in save file as a player
             observer.addGameStateEntry(this);
         }
     }
