@@ -30,13 +30,13 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.core.event;
+package com.donohoedigital.games.poker.engine.event;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
-import com.donohoedigital.games.poker.core.event.GameEvent.*;
+import com.donohoedigital.games.poker.engine.event.GameEvent.*;
 
 /** Tests for all GameEvent record types. */
 class GameEventRecordsTest {

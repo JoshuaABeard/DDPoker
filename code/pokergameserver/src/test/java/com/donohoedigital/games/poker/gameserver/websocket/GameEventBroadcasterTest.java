@@ -17,7 +17,7 @@
  */
 package com.donohoedigital.games.poker.gameserver.websocket;
 
-import com.donohoedigital.games.poker.core.event.GameEvent;
+import com.donohoedigital.games.poker.engine.event.GameEvent;
 import com.donohoedigital.games.poker.engine.state.ActionType;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Card;

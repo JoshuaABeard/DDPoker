@@ -23,7 +23,7 @@ import com.donohoedigital.games.poker.model.LevelAdvanceMode;
 import com.donohoedigital.games.poker.engine.PlayerAction;
 import com.donohoedigital.games.poker.core.PlayerActionProvider;
 import com.donohoedigital.games.poker.core.TournamentEngine;
-import com.donohoedigital.games.poker.core.event.GameEvent;
+import com.donohoedigital.games.poker.engine.event.GameEvent;
 import com.donohoedigital.games.poker.engine.state.ActionType;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.engine.state.TableState;

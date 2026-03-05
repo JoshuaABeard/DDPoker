@@ -44,7 +44,7 @@ import com.donohoedigital.games.poker.core.ActionOptions;
 import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 import com.donohoedigital.games.poker.engine.PlayerAction;
 import com.donohoedigital.games.poker.core.PlayerActionProvider;
-import com.donohoedigital.games.poker.core.event.GameEvent;
+import com.donohoedigital.games.poker.engine.event.GameEvent;
 import com.donohoedigital.games.poker.engine.state.ActionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

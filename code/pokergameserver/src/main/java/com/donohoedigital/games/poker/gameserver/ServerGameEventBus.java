@@ -19,8 +19,8 @@
  */
 package com.donohoedigital.games.poker.gameserver;
 
-import com.donohoedigital.games.poker.core.event.GameEvent;
-import com.donohoedigital.games.poker.core.event.GameEventBus;
+import com.donohoedigital.games.poker.engine.event.GameEvent;
+import com.donohoedigital.games.poker.engine.event.GameEventBus;
 
 import java.util.function.Consumer;
 import java.util.logging.Level;

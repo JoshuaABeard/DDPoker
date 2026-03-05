@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.donohoedigital.games.poker.core.event.GameEventBus;
+import com.donohoedigital.games.poker.engine.event.GameEventBus;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 import com.donohoedigital.games.poker.engine.PlayerAction;

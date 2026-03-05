@@ -22,7 +22,7 @@ package com.donohoedigital.games.poker.gameserver.persistence;
 import java.time.Instant;
 import java.util.List;
 
-import com.donohoedigital.games.poker.core.event.GameEvent;
+import com.donohoedigital.games.poker.engine.event.GameEvent;
 import com.donohoedigital.games.poker.gameserver.IGameEventStore;
 import com.donohoedigital.games.poker.gameserver.StoredEvent;
 import com.donohoedigital.games.poker.gameserver.persistence.entity.GameEventEntity;
@@ -134,7 +134,7 @@ public class DatabaseGameEventStore implements IGameEventStore {
     private GameEvent deserializeEvent(String eventType, String eventData) {
         try {
             // Reconstruct full class name from simple name
-            String className = "com.donohoedigital.games.poker.core.event.GameEvent$" + eventType;
+            String className = "com.donohoedigital.games.poker.engine.event.GameEvent$" + eventType;
             Class<?> eventClass = Class.forName(className);
             return (GameEvent) objectMapper.readValue(eventData, eventClass);
         } catch (Exception e) {

@@ -39,7 +39,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import com.donohoedigital.games.poker.core.event.GameEvent;
+import com.donohoedigital.games.poker.engine.event.GameEvent;
 import com.donohoedigital.games.poker.engine.state.TableState;
 
 /** Tests for {@link TableProcessResult}. */

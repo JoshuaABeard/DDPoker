@@ -25,7 +25,7 @@ import com.donohoedigital.games.poker.core.PlayerActionProvider;
 import com.donohoedigital.games.poker.core.TableProcessResult;
 import com.donohoedigital.games.poker.core.TournamentContext;
 import com.donohoedigital.games.poker.core.TournamentEngine;
-import com.donohoedigital.games.poker.core.event.*;
+import com.donohoedigital.games.poker.engine.event.*;
 import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 import com.donohoedigital.games.poker.engine.PlayerAction;
 import com.donohoedigital.games.poker.engine.state.*;
