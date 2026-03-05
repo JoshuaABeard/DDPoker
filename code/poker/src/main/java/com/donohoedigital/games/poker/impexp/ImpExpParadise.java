@@ -39,7 +39,7 @@ import com.donohoedigital.games.poker.engine.HandScoreConstants;
 
 import java.text.*;
 import java.util.*;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 public class ImpExpParadise implements ImpExp {
     private String paradisePlayerName_ = "DD Player";

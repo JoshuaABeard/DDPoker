@@ -38,7 +38,7 @@ import com.donohoedigital.games.poker.HandAction;
 import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.HandSorted;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData.ActionOptionsData;
 
 import java.util.ArrayList;

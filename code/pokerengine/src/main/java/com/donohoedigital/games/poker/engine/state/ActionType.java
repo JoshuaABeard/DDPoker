@@ -17,7 +17,7 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.core.state;
+package com.donohoedigital.games.poker.engine.state;
 
 /**
  * Enum representing player action types in poker. Replaces HandAction.ACTION_*

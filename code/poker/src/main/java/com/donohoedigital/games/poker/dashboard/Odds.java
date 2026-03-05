@@ -41,7 +41,7 @@ import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Mar 18, 2005 Time: 4:40:33 PM

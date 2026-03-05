@@ -19,7 +19,7 @@
  */
 package com.donohoedigital.games.poker.core;
 
-import com.donohoedigital.games.poker.core.state.TableState;
+import com.donohoedigital.games.poker.engine.state.TableState;
 
 /**
  * Interface for table operations that the core game engine needs. Implemented

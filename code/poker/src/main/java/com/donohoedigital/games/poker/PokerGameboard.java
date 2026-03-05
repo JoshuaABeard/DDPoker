@@ -51,7 +51,7 @@ import org.apache.logging.log4j.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.*;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
  *

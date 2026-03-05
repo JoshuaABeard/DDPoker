@@ -46,8 +46,8 @@ import com.donohoedigital.games.poker.core.TableProcessResult;
 import com.donohoedigital.games.poker.core.TournamentContext;
 import com.donohoedigital.games.poker.core.TournamentEngine;
 import com.donohoedigital.games.poker.core.event.GameEvent;
-import com.donohoedigital.games.poker.core.state.ActionType;
-import com.donohoedigital.games.poker.core.state.TableState;
+import com.donohoedigital.games.poker.engine.state.ActionType;
+import com.donohoedigital.games.poker.engine.state.TableState;
 import com.donohoedigital.games.poker.model.LevelAdvanceMode;
 
 /**

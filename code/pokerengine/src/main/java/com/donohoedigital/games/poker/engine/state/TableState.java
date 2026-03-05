@@ -17,51 +17,52 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.core.state;
+package com.donohoedigital.games.poker.engine.state;
 
 /**
- * Enum representing betting rounds in Texas Hold'em. Replaces
- * HoldemHand.ROUND_* integer constants (lines 73-78).
+ * Enum representing poker table states. Replaces PokerTable.STATE_* integer
+ * constants (lines 106-124).
  */
-public enum BettingRound {
-    NONE(-1), PRE_FLOP(0), FLOP(1), TURN(2), RIVER(3), SHOWDOWN(4);
+public enum TableState {
+    NONE(0), PENDING(1), DEAL_FOR_BUTTON(2), BEGIN(3), BEGIN_WAIT(4), CHECK_END_HAND(5), CLEAN(6), NEW_LEVEL_CHECK(
+            7), COLOR_UP(8), START_HAND(9), BETTING(10), COMMUNITY(11), SHOWDOWN(
+                    12), DONE(13), GAME_OVER(14), PENDING_LOAD(15), ON_HOLD(16), BREAK(17), PRE_SHOWDOWN(18);
 
     private final int legacyValue;
 
-    // O(1) lookup array: legacy values range from -1 to 4
-    private static final BettingRound[] LOOKUP = new BettingRound[6];
+    // O(1) lookup array: legacy values range from 0 to 18
+    private static final TableState[] LOOKUP = new TableState[19];
 
     static {
-        for (BettingRound br : values()) {
-            LOOKUP[br.legacyValue + 1] = br; // offset by 1 to handle -1
+        for (TableState ts : values()) {
+            LOOKUP[ts.legacyValue] = ts;
         }
     }
 
-    BettingRound(int legacyValue) {
+    TableState(int legacyValue) {
         this.legacyValue = legacyValue;
     }
 
     /**
      * Convert from legacy integer constant to enum (O(1) lookup).
      *
-     * @param round
-     *            legacy integer value (e.g., HoldemHand.ROUND_FLOP)
-     * @return corresponding BettingRound enum value
+     * @param state
+     *            legacy integer value (e.g., PokerTable.STATE_BETTING)
+     * @return corresponding TableState enum value
      * @throws IllegalArgumentException
-     *             if round value is unknown
+     *             if state value is unknown
      */
-    public static BettingRound fromLegacy(int round) {
-        int index = round + 1; // offset by 1 to handle -1
-        if (index < 0 || index >= LOOKUP.length || LOOKUP[index] == null) {
-            throw new IllegalArgumentException("Unknown betting round: " + round);
+    public static TableState fromLegacy(int state) {
+        if (state < 0 || state >= LOOKUP.length || LOOKUP[state] == null) {
+            throw new IllegalArgumentException("Unknown table state: " + state);
         }
-        return LOOKUP[index];
+        return LOOKUP[state];
     }
 
     /**
      * Convert enum to legacy integer constant.
      *
-     * @return legacy integer value (e.g., HoldemHand.ROUND_FLOP)
+     * @return legacy integer value (e.g., PokerTable.STATE_BETTING)
      */
     public int toLegacy() {
         return legacyValue;

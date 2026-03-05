@@ -18,8 +18,8 @@
 package com.donohoedigital.games.poker.gameserver.websocket;
 
 import com.donohoedigital.games.poker.core.event.GameEvent;
-import com.donohoedigital.games.poker.core.state.ActionType;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.ActionType;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.CardSuit;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
@@ -89,8 +89,8 @@ class GameEventBroadcasterTest {
         PlayerConnection p1 = makeConnectedPlayer(1L);
         PlayerConnection p2 = makeConnectedPlayer(2L);
 
-        broadcaster
-                .accept(new GameEvent.PlayerActed(0, 1, com.donohoedigital.games.poker.core.state.ActionType.FOLD, 0));
+        broadcaster.accept(
+                new GameEvent.PlayerActed(0, 1, com.donohoedigital.games.poker.engine.state.ActionType.FOLD, 0));
 
         verify(p1.getSession()).sendMessage(any(TextMessage.class));
         verify(p2.getSession()).sendMessage(any(TextMessage.class));
@@ -102,7 +102,7 @@ class GameEventBroadcasterTest {
         PlayerConnection p2 = makeConnectedPlayer(2L);
 
         broadcaster.accept(
-                new GameEvent.CommunityCardsDealt(0, com.donohoedigital.games.poker.core.state.BettingRound.FLOP));
+                new GameEvent.CommunityCardsDealt(0, com.donohoedigital.games.poker.engine.state.BettingRound.FLOP));
 
         verify(p1.getSession()).sendMessage(any(TextMessage.class));
         verify(p2.getSession()).sendMessage(any(TextMessage.class));
@@ -196,8 +196,8 @@ class GameEventBroadcasterTest {
         when(session.isOpen()).thenReturn(true);
         connectionManager.addConnection("game-1", 1L, new PlayerConnection(session, 1L, "p1", "game-1", objectMapper));
 
-        broadcaster
-                .accept(new GameEvent.PlayerActed(0, 1, com.donohoedigital.games.poker.core.state.ActionType.CHECK, 0));
+        broadcaster.accept(
+                new GameEvent.PlayerActed(0, 1, com.donohoedigital.games.poker.engine.state.ActionType.CHECK, 0));
 
         verify(session).sendMessage(argThat(msg -> {
             String json = ((TextMessage) msg).getPayload();
@@ -305,8 +305,8 @@ class GameEventBroadcasterTest {
         connectionManager.addConnection("game-1", 99L,
                 new PlayerConnection(session, 99L, "observer", "game-1", objectMapper));
 
-        broadcasterWithGame
-                .accept(new GameEvent.PlayerActed(1, 42, com.donohoedigital.games.poker.core.state.ActionType.FOLD, 0));
+        broadcasterWithGame.accept(
+                new GameEvent.PlayerActed(1, 42, com.donohoedigital.games.poker.engine.state.ActionType.FOLD, 0));
 
         verify(session).sendMessage(argThat(msg -> {
             String json = ((TextMessage) msg).getPayload();

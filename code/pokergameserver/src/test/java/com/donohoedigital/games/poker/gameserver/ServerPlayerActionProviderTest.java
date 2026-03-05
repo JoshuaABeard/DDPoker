@@ -45,7 +45,7 @@ import org.junit.jupiter.api.Test;
 import com.donohoedigital.games.poker.core.ActionOptions;
 import com.donohoedigital.games.poker.core.PlayerAction;
 import com.donohoedigital.games.poker.core.PlayerActionProvider;
-import com.donohoedigital.games.poker.core.state.ActionType;
+import com.donohoedigital.games.poker.engine.state.ActionType;
 
 /**
  * Test for ServerPlayerActionProvider - validates action routing, timeout

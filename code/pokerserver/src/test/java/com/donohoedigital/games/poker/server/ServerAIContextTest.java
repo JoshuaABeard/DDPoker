@@ -20,7 +20,7 @@
 package com.donohoedigital.games.poker.server;
 
 import com.donohoedigital.games.poker.core.*;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.CardSuit;
 import com.donohoedigital.games.poker.engine.PokerActionConstants;
@@ -543,7 +543,7 @@ class ServerAIContextTest {
         GamePlayerInfo player = mock(GamePlayerInfo.class);
 
         when(player.getID()).thenReturn(1);
-        when(hand.getRound()).thenReturn(com.donohoedigital.games.poker.core.state.BettingRound.FLOP);
+        when(hand.getRound()).thenReturn(com.donohoedigital.games.poker.engine.state.BettingRound.FLOP);
 
         ServerAIContext context = new ServerAIContext(table, hand, tournament, aiPlayer, new ServerOpponentTracker());
 
@@ -565,7 +565,7 @@ class ServerAIContextTest {
 
         when(player1.getID()).thenReturn(1);
         when(player2.getID()).thenReturn(2);
-        when(hand.getRound()).thenReturn(com.donohoedigital.games.poker.core.state.BettingRound.FLOP);
+        when(hand.getRound()).thenReturn(com.donohoedigital.games.poker.engine.state.BettingRound.FLOP);
 
         ServerAIContext context = new ServerAIContext(table, hand, tournament, aiPlayer, new ServerOpponentTracker());
 
@@ -586,8 +586,8 @@ class ServerAIContextTest {
         GamePlayerInfo player = mock(GamePlayerInfo.class);
 
         when(player.getID()).thenReturn(1);
-        when(hand1.getRound()).thenReturn(com.donohoedigital.games.poker.core.state.BettingRound.FLOP);
-        when(hand2.getRound()).thenReturn(com.donohoedigital.games.poker.core.state.BettingRound.FLOP);
+        when(hand1.getRound()).thenReturn(com.donohoedigital.games.poker.engine.state.BettingRound.FLOP);
+        when(hand2.getRound()).thenReturn(com.donohoedigital.games.poker.engine.state.BettingRound.FLOP);
 
         ServerAIContext context = new ServerAIContext(table, hand1, tournament, aiPlayer, new ServerOpponentTracker());
 
@@ -610,7 +610,7 @@ class ServerAIContextTest {
         GamePlayerInfo player = mock(GamePlayerInfo.class);
 
         when(player.getID()).thenReturn(1);
-        when(hand.getRound()).thenReturn(com.donohoedigital.games.poker.core.state.BettingRound.FLOP);
+        when(hand.getRound()).thenReturn(com.donohoedigital.games.poker.engine.state.BettingRound.FLOP);
 
         ServerAIContext context = new ServerAIContext(table, hand, tournament, aiPlayer, new ServerOpponentTracker());
 

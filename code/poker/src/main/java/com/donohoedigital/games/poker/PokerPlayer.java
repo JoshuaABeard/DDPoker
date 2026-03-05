@@ -46,7 +46,7 @@ import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.*;
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.engine.*;

@@ -47,7 +47,7 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.core.GameHand;
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.GameTable;
-import com.donohoedigital.games.poker.core.state.TableState;
+import com.donohoedigital.games.poker.engine.state.TableState;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.games.poker.ai.*;
@@ -56,7 +56,7 @@ import com.donohoedigital.games.poker.engine.*;
 import org.apache.logging.log4j.*;
 
 import java.util.*;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
  *

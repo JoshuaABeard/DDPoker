@@ -46,7 +46,7 @@ import org.apache.logging.log4j.*;
 
 import java.io.*;
 import java.util.*;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
  * @author donohoe

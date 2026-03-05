@@ -36,9 +36,9 @@ import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
-import com.donohoedigital.games.poker.core.state.ActionType;
-import com.donohoedigital.games.poker.core.state.BettingRound;
-import com.donohoedigital.games.poker.core.state.TableState;
+import com.donohoedigital.games.poker.engine.state.ActionType;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.TableState;
 
 /**
  * Tests for {@link GameEvent} sealed interface and its record implementations.

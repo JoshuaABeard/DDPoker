@@ -39,7 +39,7 @@ import com.donohoedigital.games.poker.core.GameHand;
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.GameTable;
 import com.donohoedigital.games.poker.core.TournamentContext;
-import com.donohoedigital.games.poker.core.state.TableState;
+import com.donohoedigital.games.poker.engine.state.TableState;
 
 /**
  * Server-side game table implementation. Implements GameTable without Swing

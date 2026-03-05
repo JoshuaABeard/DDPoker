@@ -23,8 +23,8 @@ import java.util.List;
 
 import com.donohoedigital.games.poker.core.event.GameEvent;
 import com.donohoedigital.games.poker.core.event.GameEventBus;
-import com.donohoedigital.games.poker.core.state.BettingRound;
-import com.donohoedigital.games.poker.core.state.TableState;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.TableState;
 
 /**
  * Core tournament state machine engine. Extracted from

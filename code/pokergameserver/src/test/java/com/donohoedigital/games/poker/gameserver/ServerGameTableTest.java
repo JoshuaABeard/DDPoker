@@ -38,7 +38,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.donohoedigital.games.poker.core.state.TableState;
+import com.donohoedigital.games.poker.engine.state.TableState;
 
 /**
  * Test for ServerGameTable - validates seat management, button movement, hand

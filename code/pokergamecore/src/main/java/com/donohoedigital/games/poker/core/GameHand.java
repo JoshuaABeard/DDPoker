@@ -19,7 +19,7 @@
  */
 package com.donohoedigital.games.poker.core;
 
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Card;
 
 import java.util.List;

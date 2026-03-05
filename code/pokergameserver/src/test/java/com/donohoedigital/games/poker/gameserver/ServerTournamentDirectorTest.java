@@ -24,9 +24,9 @@ import com.donohoedigital.games.poker.core.PlayerAction;
 import com.donohoedigital.games.poker.core.PlayerActionProvider;
 import com.donohoedigital.games.poker.core.TournamentEngine;
 import com.donohoedigital.games.poker.core.event.GameEvent;
-import com.donohoedigital.games.poker.core.state.ActionType;
-import com.donohoedigital.games.poker.core.state.BettingRound;
-import com.donohoedigital.games.poker.core.state.TableState;
+import com.donohoedigital.games.poker.engine.state.ActionType;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.TableState;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

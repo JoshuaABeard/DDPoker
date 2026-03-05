@@ -265,7 +265,8 @@ public class V1Algorithm implements PurePokerAI {
 
         // Execute check-raise if intended (matches V1Player lines 754-766)
         int amountToCall = context.getAmountToCall(player);
-        if (lastAction != null && lastAction.actionType() == com.donohoedigital.games.poker.core.state.ActionType.CHECK
+        if (lastAction != null
+                && lastAction.actionType() == com.donohoedigital.games.poker.engine.state.ActionType.CHECK
                 && checkRaiseIntent && amountToCall > 0) {
             // Reset check-raise intent now that we're executing it
             checkRaiseIntent = false;
@@ -1299,7 +1300,7 @@ public class V1Algorithm implements PurePokerAI {
     private boolean isReRaised(AIContext context, GamePlayerInfo player) {
         // Check if our last action was a raise and there's been another raise since
         if (lastAction != null
-                && lastAction.actionType() == com.donohoedigital.games.poker.core.state.ActionType.RAISE) {
+                && lastAction.actionType() == com.donohoedigital.games.poker.engine.state.ActionType.RAISE) {
             int amountToCall = context.getAmountToCall(player);
             return amountToCall > 0;
         }
@@ -1316,10 +1317,10 @@ public class V1Algorithm implements PurePokerAI {
     private boolean isRaised(AIContext context, GamePlayerInfo player) {
         // Check if our last action was call/bet/raise (meaning someone raised after us)
         if (lastAction != null) {
-            com.donohoedigital.games.poker.core.state.ActionType actionType = lastAction.actionType();
-            return actionType == com.donohoedigital.games.poker.core.state.ActionType.CALL
-                    || actionType == com.donohoedigital.games.poker.core.state.ActionType.BET
-                    || actionType == com.donohoedigital.games.poker.core.state.ActionType.RAISE;
+            com.donohoedigital.games.poker.engine.state.ActionType actionType = lastAction.actionType();
+            return actionType == com.donohoedigital.games.poker.engine.state.ActionType.CALL
+                    || actionType == com.donohoedigital.games.poker.engine.state.ActionType.BET
+                    || actionType == com.donohoedigital.games.poker.engine.state.ActionType.RAISE;
         }
         return false;
     }

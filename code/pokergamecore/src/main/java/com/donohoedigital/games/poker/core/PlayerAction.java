@@ -19,7 +19,7 @@
  */
 package com.donohoedigital.games.poker.core;
 
-import com.donohoedigital.games.poker.core.state.ActionType;
+import com.donohoedigital.games.poker.engine.state.ActionType;
 
 /**
  * A player's decision (action + amount). Immutable record returned by

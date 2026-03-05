@@ -47,7 +47,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Jun 20, 2005 Time: 9:18:45 PM

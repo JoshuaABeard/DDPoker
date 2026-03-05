@@ -48,7 +48,7 @@ import java.math.*;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
  * Represents the client database(s) for storing stats, etc.

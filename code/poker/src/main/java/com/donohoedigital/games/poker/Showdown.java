@@ -40,7 +40,7 @@ import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 
 import java.util.*;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
  * Static display helpers for rendering showdown results on the game board.

@@ -44,7 +44,7 @@ import javax.swing.*;
 import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Jun 21, 2005 Time: 7:40:20 PM

@@ -33,7 +33,7 @@
  */
 package com.donohoedigital.games.poker.core.ai;
 
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 
 import java.util.ArrayList;

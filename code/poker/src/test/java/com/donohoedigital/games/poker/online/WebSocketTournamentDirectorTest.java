@@ -23,7 +23,7 @@ import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.PokerTableInput;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;

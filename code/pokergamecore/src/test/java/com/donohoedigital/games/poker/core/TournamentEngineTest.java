@@ -38,8 +38,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.donohoedigital.games.poker.core.event.GameEventBus;
-import com.donohoedigital.games.poker.core.state.BettingRound;
-import com.donohoedigital.games.poker.core.state.TableState;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.TableState;
 import com.donohoedigital.games.poker.engine.Card;
 
 /** Tests for {@link TournamentEngine} state handlers. */
@@ -1518,7 +1518,7 @@ class TournamentEngineTest {
         assertThat(result.nextState()).isEqualTo(TableState.BETTING);
         // Fix 4: sitting-out player must be auto-folded via applyPlayerAction
         assertThat(hand.lastAction).isNotNull();
-        assertThat(hand.lastAction.actionType()).isEqualTo(com.donohoedigital.games.poker.core.state.ActionType.FOLD);
+        assertThat(hand.lastAction.actionType()).isEqualTo(com.donohoedigital.games.poker.engine.state.ActionType.FOLD);
     }
 
     @Test

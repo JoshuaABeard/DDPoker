@@ -39,7 +39,7 @@ import com.donohoedigital.games.poker.core.ActionOptions;
 import com.donohoedigital.games.poker.core.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.PlayerAction;
 import com.donohoedigital.games.poker.core.TournamentContext;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.engine.*;
 
 import java.util.function.Consumer;

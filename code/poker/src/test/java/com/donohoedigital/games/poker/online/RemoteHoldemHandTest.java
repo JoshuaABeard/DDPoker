@@ -20,7 +20,7 @@ package com.donohoedigital.games.poker.online;
 import com.donohoedigital.games.poker.HandAction;
 import com.donohoedigital.games.poker.HoldemHand;
 import com.donohoedigital.games.poker.PokerPlayer;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
 import org.junit.jupiter.api.BeforeEach;

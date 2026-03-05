@@ -30,7 +30,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ContextConfiguration;
 
 import com.donohoedigital.games.poker.core.event.GameEvent;
-import com.donohoedigital.games.poker.core.state.ActionType;
+import com.donohoedigital.games.poker.engine.state.ActionType;
 import com.donohoedigital.games.poker.gameserver.StoredEvent;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.GameEventRepository;
 

@@ -47,7 +47,7 @@ import java.awt.event.*;
 import java.sql.*;
 import java.util.*;
 import java.util.List;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 public class HandHistoryPanel extends DDPanel {
 

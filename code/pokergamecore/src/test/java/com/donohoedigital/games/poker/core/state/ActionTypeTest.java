@@ -30,7 +30,7 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.core.state;
+package com.donohoedigital.games.poker.engine.state;
 
 import static org.assertj.core.api.Assertions.*;
 

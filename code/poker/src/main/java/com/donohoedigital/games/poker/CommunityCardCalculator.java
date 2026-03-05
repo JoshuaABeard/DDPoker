@@ -21,7 +21,7 @@
  */
 package com.donohoedigital.games.poker;
 
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
  * Pure-logic calculator for community card visibility, extracted from

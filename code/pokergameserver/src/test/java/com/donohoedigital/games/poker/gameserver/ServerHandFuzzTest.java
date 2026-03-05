@@ -29,7 +29,7 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.RepetitionInfo;
 
 import com.donohoedigital.games.poker.core.PlayerAction;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
  * Fuzz testing suite for ServerHand. Generates random-but-legal game setups and

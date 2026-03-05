@@ -21,7 +21,7 @@ package com.donohoedigital.games.poker.server;
 
 import com.donohoedigital.games.poker.core.*;
 import com.donohoedigital.games.poker.core.event.*;
-import com.donohoedigital.games.poker.core.state.*;
+import com.donohoedigital.games.poker.engine.state.*;
 import com.donohoedigital.games.poker.engine.Card;
 import org.junit.jupiter.api.Test;
 
