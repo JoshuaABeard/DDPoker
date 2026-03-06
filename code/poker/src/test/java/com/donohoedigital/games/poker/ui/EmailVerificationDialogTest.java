@@ -31,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * test hooks, without creating any visible Swing windows or making network
  * calls.
  */
+@EnabledIfDisplay
 class EmailVerificationDialogTest {
 
     private static final String SERVER_URL = "http://poker.example.com:8877";

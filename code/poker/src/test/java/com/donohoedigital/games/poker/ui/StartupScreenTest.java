@@ -45,6 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * These tests exercise the screen's result transitions via the
  * {@code simulate*} test hooks, without creating any visible Swing windows.
  */
+@EnabledIfDisplay
 class StartupScreenTest {
 
     private static final String SERVER_URL = "http://poker.example.com:8877";

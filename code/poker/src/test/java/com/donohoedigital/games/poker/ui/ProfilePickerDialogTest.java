@@ -30,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * These tests exercise the dialog's result transitions via the
  * {@code simulate*} test hooks, without creating any visible Swing windows.
  */
+@EnabledIfDisplay
 class ProfilePickerDialogTest {
 
     /**

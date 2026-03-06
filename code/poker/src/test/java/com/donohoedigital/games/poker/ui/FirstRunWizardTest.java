@@ -46,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * These tests exercise the wizard's result transitions and state via the
  * {@code simulate*} test hooks, without creating any Swing windows.
  */
+@EnabledIfDisplay
 class FirstRunWizardTest {
 
     /**
