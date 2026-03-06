@@ -1,5 +1,7 @@
 # User API Consolidation Implementation Plan
 
+**Status:** COMPLETED (2026-03-06)
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Fix broken user API endpoints, eliminate sensitive data leakage, consolidate redundant frontend clients, and add server-side tournament stats.
