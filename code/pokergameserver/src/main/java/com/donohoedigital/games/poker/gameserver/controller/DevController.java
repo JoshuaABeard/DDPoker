@@ -19,11 +19,13 @@
  */
 package com.donohoedigital.games.poker.gameserver.controller;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -45,9 +47,11 @@ import com.donohoedigital.games.poker.model.OnlineProfile;
 public class DevController {
 
     private final OnlineProfileRepository profileRepository;
+    private final JdbcTemplate jdbcTemplate;
 
-    public DevController(OnlineProfileRepository profileRepository) {
+    public DevController(OnlineProfileRepository profileRepository, JdbcTemplate jdbcTemplate) {
         this.profileRepository = profileRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     /**
@@ -72,5 +76,45 @@ public class DevController {
         profileRepository.save(profile);
 
         return ResponseEntity.ok(Map.of("found", true, "verified", true, "username", username));
+    }
+
+    /**
+     * Truncate all H2 tables for test isolation.
+     *
+     * @return 200 with success status
+     */
+    @PostMapping("/reset")
+    public ResponseEntity<Map<String, Object>> resetDatabase() {
+        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
+        List<Map<String, Object>> tables = jdbcTemplate
+                .queryForList("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC'");
+        for (Map<String, Object> table : tables) {
+            String tableName = (String) table.get("TABLE_NAME");
+            jdbcTemplate.execute("TRUNCATE TABLE " + tableName);
+        }
+        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    /**
+     * Set the admin flag on a user profile.
+     *
+     * @param username
+     *            the username to make admin
+     * @return 200 with admin status if found, 404 if not found
+     */
+    @PostMapping("/make-admin")
+    public ResponseEntity<Map<String, Object>> makeAdmin(@RequestParam(name = "username") String username) {
+        Optional<OnlineProfile> maybeProfile = profileRepository.findByName(username);
+
+        if (maybeProfile.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of("found", false, "username", username));
+        }
+
+        OnlineProfile profile = maybeProfile.get();
+        profile.setAdmin(true);
+        profileRepository.save(profile);
+
+        return ResponseEntity.ok(Map.of("found", true, "admin", true, "username", username));
     }
 }

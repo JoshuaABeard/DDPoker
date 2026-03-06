@@ -111,6 +111,47 @@ class DevControllerTest {
     }
 
     // -------------------------------------------------------------------------
+    // POST /api/v1/dev/reset
+    // -------------------------------------------------------------------------
+
+    @Test
+    void resetDatabase_clearsAllData() throws Exception {
+        OnlineProfile profile = newProfile("resetuser");
+        profileRepository.save(profile);
+        assertThat(profileRepository.count()).isGreaterThan(0);
+
+        mockMvc.perform(post("/api/v1/dev/reset")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        assertThat(profileRepository.count()).isEqualTo(0);
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /api/v1/dev/make-admin
+    // -------------------------------------------------------------------------
+
+    @Test
+    void makeAdmin_setsAdminFlag() throws Exception {
+        OnlineProfile profile = newProfile("adminuser");
+        profileRepository.save(profile);
+        assertThat(profileRepository.findByName("adminuser").orElseThrow().isAdmin()).isFalse();
+
+        mockMvc.perform(post("/api/v1/dev/make-admin").param("username", "adminuser")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.found").value(true)).andExpect(jsonPath("$.admin").value(true))
+                .andExpect(jsonPath("$.username").value("adminuser"));
+
+        OnlineProfile updated = profileRepository.findByName("adminuser").orElseThrow();
+        assertThat(updated.isAdmin()).isTrue();
+    }
+
+    @Test
+    void makeAdmin_returns404ForUnknownUser() throws Exception {
+        mockMvc.perform(post("/api/v1/dev/make-admin").param("username", "no-such-user"))
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.found").value(false))
+                .andExpect(jsonPath("$.username").value("no-such-user"));
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 

@@ -69,7 +69,7 @@ export function DataTable<T>({
 
             const rowKey = keyField ? String(item[keyField]) : index
             return (
-              <tr key={rowKey} className={`${rowClass} border border-white`} aria-current={isCurrentUser ? 'row' : undefined}>
+              <tr key={rowKey} className={`${rowClass} border border-white`} aria-current={isCurrentUser ? 'true' : undefined}>
                 {columns.map((column) => (
                   <td
                     key={column.key}
