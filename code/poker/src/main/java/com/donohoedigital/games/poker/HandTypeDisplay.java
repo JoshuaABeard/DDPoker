@@ -20,8 +20,8 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.games.poker.display.ClientCard;
-import com.donohoedigital.games.poker.display.ClientHand;
 import com.donohoedigital.games.poker.display.ClientHandScoreConstants;
+import com.donohoedigital.games.poker.protocol.dto.HandEvaluationData;
 
 import com.donohoedigital.config.PropertyConfig;
 
@@ -52,7 +52,7 @@ public final class HandTypeDisplay implements ClientHandScoreConstants {
      * Returns the hand type constant for the given score.
      */
     public static int getTypeFromScore(int score) {
-        return ClientHandEval.typeFromScore(score);
+        return score / SCORE_BASE;
     }
 
     /**
@@ -61,7 +61,7 @@ public final class HandTypeDisplay implements ClientHandScoreConstants {
      */
     public static String getBestRankString(int score) {
         int[] ranks = new int[5];
-        ClientHandEval.getCardsFromScore(score, ranks);
+        getCardsFromScore(score, ranks);
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < ranks.length; i++) {
             if (ranks[i] == 0)
@@ -74,63 +74,87 @@ public final class HandTypeDisplay implements ClientHandScoreConstants {
     }
 
     /**
-     * Computes the hand score for {@code pocket} + {@code community} using hand
-     * evaluation, returning it as an int for comparison.
+     * Extract the best card ranks from a score into the given array.
      */
-    public static int getHandScore(ClientHand pocket, ClientHand community) {
-        ClientHandEval eval = new ClientHandEval();
-        return eval.score(pocket, community);
+    private static void getCardsFromScore(int score, int[] cards) {
+        int s = score % SCORE_BASE;
+        int cnt = 0;
+        for (int i = 16; i >= 0; i -= 4) {
+            int n = (s >> i) % 16;
+            if (n == 0)
+                continue;
+            if (cnt < cards.length) {
+                cards[cnt++] = n;
+            }
+        }
     }
 
     /**
      * Returns a localized display string for the hand described by the given
-     * {@code eval} after a {@link ClientHandEval#score} call.
+     * {@code HandEvaluationData}.
      *
      * <p>
      * Example: {@code toDisplayString(eval, ", ")} -> {@code "Pair,  As"}.
      */
-    public static String toDisplayString(ClientHandEval eval, String divider) {
+    public static String toDisplayString(HandEvaluationData eval, String divider) {
         ensureInit();
-        int type = eval.getHandType();
+        int type = eval.handType();
         StringBuilder buf = new StringBuilder();
         buf.append(desc_[type]);
         switch (type) {
             case HIGH_CARD :
-                buf.append(divider);
-                buf.append(PropertyConfig.getMessage("msg.handfmt." + type, rankShortSingular(eval.getHighCardRank())));
+                if (eval.highCardRank() != null) {
+                    buf.append(divider);
+                    buf.append(
+                            PropertyConfig.getMessage("msg.handfmt." + type, rankShortSingular(eval.highCardRank())));
+                }
                 break;
             case PAIR :
-                buf.append(divider);
-                buf.append(PropertyConfig.getMessage("msg.handfmt." + type, rankShortPlural(eval.getBigPairRank())));
+                if (eval.bigPairRank() != null) {
+                    buf.append(divider);
+                    buf.append(PropertyConfig.getMessage("msg.handfmt." + type, rankShortPlural(eval.bigPairRank())));
+                }
                 break;
             case TWO_PAIR :
-                buf.append(divider);
-                buf.append(PropertyConfig.getMessage("msg.handfmt." + type, rankShortPlural(eval.getBigPairRank()),
-                        rankShortPlural(eval.getSmallPairRank())));
+                if (eval.bigPairRank() != null && eval.smallPairRank() != null) {
+                    buf.append(divider);
+                    buf.append(PropertyConfig.getMessage("msg.handfmt." + type, rankShortPlural(eval.bigPairRank()),
+                            rankShortPlural(eval.smallPairRank())));
+                }
                 break;
             case TRIPS :
-                buf.append(divider);
-                buf.append(PropertyConfig.getMessage("msg.handfmt." + type, rankShortPlural(eval.getTripsRank())));
+                if (eval.tripsRank() != null) {
+                    buf.append(divider);
+                    buf.append(PropertyConfig.getMessage("msg.handfmt." + type, rankShortPlural(eval.tripsRank())));
+                }
                 break;
             case STRAIGHT :
             case STRAIGHT_FLUSH :
-                buf.append(divider);
-                buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
-                        rankShortSingular(eval.getStraightLowRank()), rankShortSingular(eval.getStraightHighRank())));
+                if (eval.straightLowRank() != null && eval.straightHighRank() != null) {
+                    buf.append(divider);
+                    buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
+                            rankShortSingular(eval.straightLowRank()), rankShortSingular(eval.straightHighRank())));
+                }
                 break;
             case FLUSH :
-                buf.append(divider);
-                buf.append(
-                        PropertyConfig.getMessage("msg.handfmt." + type, rankShortSingular(eval.getFlushHighRank())));
+                if (eval.flushHighRank() != null) {
+                    buf.append(divider);
+                    buf.append(
+                            PropertyConfig.getMessage("msg.handfmt." + type, rankShortSingular(eval.flushHighRank())));
+                }
                 break;
             case FULL_HOUSE :
-                buf.append(divider);
-                buf.append(PropertyConfig.getMessage("msg.handfmt." + type, rankShortPlural(eval.getTripsRank()),
-                        rankShortPlural(eval.getBigPairRank())));
+                if (eval.tripsRank() != null && eval.bigPairRank() != null) {
+                    buf.append(divider);
+                    buf.append(PropertyConfig.getMessage("msg.handfmt." + type, rankShortPlural(eval.tripsRank()),
+                            rankShortPlural(eval.bigPairRank())));
+                }
                 break;
             case QUADS :
-                buf.append(divider);
-                buf.append(PropertyConfig.getMessage("msg.handfmt." + type, rankShortPlural(eval.getQuadsRank())));
+                if (eval.quadsRank() != null) {
+                    buf.append(divider);
+                    buf.append(PropertyConfig.getMessage("msg.handfmt." + type, rankShortPlural(eval.quadsRank())));
+                }
                 break;
             case ROYAL_FLUSH :
                 break;

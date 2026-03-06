@@ -33,9 +33,9 @@
 package com.donohoedigital.games.poker.dashboard;
 import com.donohoedigital.games.poker.PokerClientConstants;
 import com.donohoedigital.games.poker.display.ClientHand;
-import com.donohoedigital.games.poker.ClientHandEval;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
+import com.donohoedigital.games.poker.protocol.dto.HandEvaluationData;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
@@ -60,7 +60,6 @@ public class MyHand extends DashboardItem {
     private static MyHand impl_ = null;
 
     DDHtmlArea htmlHand_;
-    ClientHandEval eval_ = new ClientHandEval();
     String sHand_;
     String sHandTitle_;
 
@@ -207,19 +206,17 @@ public class MyHand extends DashboardItem {
             if (bFold)
                 sHandTitle_ = PropertyConfig.getMessage("msg.myhand.folded.title", sHandTitle_);
         } else {
-            ClientHand allcommunity = hhand.getCommunity();
-            ClientHand community = ClientHand.empty();
-            for (int i = 0; i < nNumBoard; i++) {
-                community.add(allcommunity.getCard(i));
+            // Use server-provided hand evaluation data
+            HandEvaluationData eval = asViewedBy.getHandEval();
+            if (eval != null && eval.bestFiveCards() != null && !eval.bestFiveCards().isEmpty()) {
+                ClientHand best = ClientHand.fromStrings(eval.bestFiveCards());
+                sHand_ = PropertyConfig.getMessage("msg.myhand.postflop", best.toHTML(),
+                        HandHistoryPanel.handDesc(eval));
+                sHandTitle_ = best.toStringRank();
+            } else {
+                sHand_ = PropertyConfig.getMessage("msg.myhand.postflop", hand.toHTML(), "");
+                sHandTitle_ = hand.toStringRank();
             }
-
-            ClientHand csorted = ClientHand.fromCards(community.getCards());
-
-            // get hand
-            eval_.score(hand, community);
-            ClientHand best = ClientHandEval.getBestFive(asViewedBy.getHandSorted(), csorted);
-            sHand_ = PropertyConfig.getMessage("msg.myhand.postflop", best.toHTML(), HandHistoryPanel.handDesc(eval_));
-            sHandTitle_ = best.toStringRank();
         }
     }
 }

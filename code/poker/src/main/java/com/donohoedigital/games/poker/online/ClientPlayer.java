@@ -44,6 +44,7 @@ import com.donohoedigital.games.poker.HandAction;
 import com.donohoedigital.games.poker.PlayerProfile;
 import com.donohoedigital.games.poker.ai.PlayerType;
 import com.donohoedigital.games.poker.display.ClientHand;
+import com.donohoedigital.games.poker.protocol.dto.HandEvaluationData;
 
 import java.util.Comparator;
 
@@ -129,6 +130,7 @@ public class ClientPlayer extends GamePlayer {
     private int allInScore_;
     private int allInWin_;
     private int handScore_ = -1;
+    private HandEvaluationData handEval_;
 
     // -------------------------------------------------------------------------
     // Tournament results
@@ -519,6 +521,14 @@ public class ClientPlayer extends GamePlayer {
 
     public void setHandScore(int handScore) {
         handScore_ = handScore;
+    }
+
+    public HandEvaluationData getHandEval() {
+        return handEval_;
+    }
+
+    public void setHandEval(HandEvaluationData handEval) {
+        handEval_ = handEval;
     }
 
     // -------------------------------------------------------------------------

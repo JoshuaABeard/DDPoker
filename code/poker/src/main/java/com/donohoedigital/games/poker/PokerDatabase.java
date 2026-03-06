@@ -1543,8 +1543,6 @@ public class PokerDatabase {
         int nNum = 0;
         int nPrior = 0;
 
-        ClientHandEval info = new ClientHandEval();
-
         if (nRound == ClientBettingRound.PRE_FLOP.toLegacy()) {
             community = ClientHand.empty();
         } else if ((nRound == ClientBettingRound.FLOP.toLegacy()) && (community.size() > 3)) {
@@ -1578,9 +1576,8 @@ public class PokerDatabase {
             if (p.isCardsExposed() || bShowAll) {
                 handHTML = hand.toHTML();
 
-                if (!community.isEmpty()) {
-                    info.score(hand, community);
-                    handShown = "&nbsp;-&nbsp;" + HandHistoryPanel.handDesc(info);
+                if (!community.isEmpty() && p.getHandEval() != null) {
+                    handShown = "&nbsp;-&nbsp;" + HandHistoryPanel.handDesc(p.getHandEval());
                 }
             } else {
                 handHTML = "<DDCARD FACEUP=\"false\"><DDCARD FACEUP=\"false\">";
@@ -1794,8 +1791,6 @@ public class PokerDatabase {
 
         ClientPlayer player;
 
-        ClientHandEval info = new ClientHandEval();
-
         StringBuilder sb2 = new StringBuilder();
 
         for (int i = 0; i < hist.size(); i++) {
@@ -1821,9 +1816,8 @@ public class PokerDatabase {
             if (player.isCardsExposed() || bShowAll) {
                 handHTML = hand.toHTML();
 
-                if (!community.isEmpty()) {
-                    info.score(hand, community);
-                    handShown = "&nbsp;-&nbsp;" + HandHistoryPanel.handDesc(info);
+                if (!community.isEmpty() && player.getHandEval() != null) {
+                    handShown = "&nbsp;-&nbsp;" + HandHistoryPanel.handDesc(player.getHandEval());
                 }
             } else {
                 handHTML = "<DDCARD FACEUP=\"false\"><DDCARD FACEUP=\"false\">";

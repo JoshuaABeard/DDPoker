@@ -34,6 +34,7 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.games.poker.display.ClientHand;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
+import com.donohoedigital.games.poker.protocol.dto.HandEvaluationData;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
@@ -98,9 +99,9 @@ public class Showdown {
                         piece.setResult(ResultsPiece.ALLIN,
                                 PropertyConfig.getMessage("msg.hand.allin", player.getHand().toStringRank()));
                     } else {
-                        ClientHand best = ClientHandEval.getBestFive(player.getHandSorted(),
-                                hhand.getCommunitySorted());
-                        int type = handTypeEval(player.getHandSorted(), hhand.getCommunitySorted());
+                        HandEvaluationData eval = player.getHandEval();
+                        ClientHand best = bestFiveHand(eval);
+                        int type = eval != null ? eval.handType() : 0;
                         piece.setResult(ResultsPiece.ALLIN, PropertyConfig.getMessage("msg.hand.allin",
                                 PropertyConfig.getMessage("msg.hand." + type), best.toStringRank()));
                     }
@@ -117,8 +118,9 @@ public class Showdown {
             if (player.isFolded()) {
                 if (player.showFoldedHand()) {
                     int nRound = hhand.getFoldRound(player);
-                    ClientHand best = ClientHandEval.getBestFive(player.getHandSorted(), hhand.getCommunitySorted());
-                    int type = handTypeEval(player.getHandSorted(), hhand.getCommunitySorted());
+                    HandEvaluationData eval = player.getHandEval();
+                    ClientHand best = bestFiveHand(eval);
+                    int type = eval != null ? eval.handType() : 0;
                     String sRound = PropertyConfig.getMessage("msg.round." + nRound);
                     piece.setResult(ResultsPiece.FOLD,
                             PropertyConfig.getMessage(bShowHandTypeFold ? "msg.hand.fold" : "msg.hand.fold.noshow",
@@ -167,8 +169,9 @@ public class Showdown {
             String handTypeDesc = "";
             String bestRank = "";
             if (hhand.getCommunitySorted().size() >= 3) {
-                int type = handTypeEval(player.getHandSorted(), hhand.getCommunitySorted());
-                ClientHand best = ClientHandEval.getBestFive(player.getHandSorted(), hhand.getCommunitySorted());
+                HandEvaluationData eval = player.getHandEval();
+                int type = eval != null ? eval.handType() : 0;
+                ClientHand best = bestFiveHand(eval);
                 handTypeDesc = PropertyConfig.getMessage("msg.hand." + type);
                 bestRank = best.toStringRank();
             }
@@ -240,8 +243,9 @@ public class Showdown {
                     piece.setResult(nResult, PropertyConfig.getMessage("msg.hand.allin.pre", player.getAllInPerc(),
                             player.getHand().toStringRank()));
                 } else {
-                    ClientHand best = ClientHandEval.getBestFive(player.getHandSorted(), comm);
-                    int type = handTypeEval(player.getHandSorted(), comm);
+                    HandEvaluationData eval = player.getHandEval();
+                    ClientHand best = bestFiveHand(eval);
+                    int type = eval != null ? eval.handType() : 0;
                     piece.setResult(nResult, PropertyConfig.getMessage("msg.hand.allin", player.getAllInPerc(),
                             PropertyConfig.getMessage("msg.hand." + type), best.toStringRank()));
                 }
@@ -251,10 +255,14 @@ public class Showdown {
         PokerUtils.getPokerGameboard().repaintAll();
     }
 
-    /** Get hand type integer from hole cards and community cards. */
-    private static int handTypeEval(ClientHand hole, ClientHand community) {
-        ClientHandEval eval = new ClientHandEval();
-        int score = eval.score(hole, community);
-        return ClientHandEval.typeFromScore(score);
+    /**
+     * Convert server-provided best-five cards to a ClientHand, or empty if
+     * unavailable.
+     */
+    private static ClientHand bestFiveHand(HandEvaluationData eval) {
+        if (eval != null && eval.bestFiveCards() != null && !eval.bestFiveCards().isEmpty()) {
+            return ClientHand.fromStrings(eval.bestFiveCards());
+        }
+        return ClientHand.empty();
     }
 }

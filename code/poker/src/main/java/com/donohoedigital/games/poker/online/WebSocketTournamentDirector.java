@@ -1042,6 +1042,9 @@ public class WebSocketTournamentDirector extends BasePhase
                             if (card != null)
                                 showHand.addCard(card);
                         }
+                        if (sp.handEval() != null) {
+                            player.setHandEval(sp.handEval());
+                        }
                     }
                 }
             }
@@ -1059,6 +1062,9 @@ public class WebSocketTournamentDirector extends BasePhase
                                 winner.setChipCount(w.chipCount());
                             } else {
                                 winner.setChipCount(winner.getChipCount() + w.amount());
+                            }
+                            if (w.handEval() != null) {
+                                winner.setHandEval(w.handEval());
                             }
                         }
                     }
@@ -1136,6 +1142,9 @@ public class WebSocketTournamentDirector extends BasePhase
                                 showHand.addCard(card);
                         }
                         player.setCardsExposed(true);
+                        if (sp.handEval() != null) {
+                            player.setHandEval(sp.handEval());
+                        }
                     }
                 }
             }
@@ -1877,6 +1886,9 @@ public class WebSocketTournamentDirector extends BasePhase
             if (human != null) {
                 human.setHandStrength((float) (d.equity() / 100.0));
                 human.setHandPotential(d.positivePotential() != null ? d.positivePotential().floatValue() : -1f);
+                if (d.handEval() != null) {
+                    human.setHandEval(d.handEval());
+                }
             }
             RemotePokerTable table = currentTable();
             if (table != null) {
@@ -2016,16 +2028,11 @@ public class WebSocketTournamentDirector extends BasePhase
 
             String handClass = "UNKNOWN";
             String handDescription = "Unknown";
-            if (winner != null && hand != null && winner.getHand() != null && winner.getHand().size() >= 2
-                    && hand.getCommunity() != null && hand.getCommunity().size() >= 3) {
-                try {
-                    ClientHandEval eval = new ClientHandEval();
-                    int score = eval.score(winner.getHandSorted(), hand.getCommunitySorted());
-                    int handType = ClientHandEval.typeFromScore(score);
-                    handClass = handClassName(handType);
-                    handDescription = PropertyConfig.getMessage("msg.hand." + handType);
-                } catch (Exception e) {
-                    logger.debug("[HAND_RESULT] could not evaluate winner hand for {}", name, e);
+            if (winner != null && winner.getHandEval() != null) {
+                handClass = handClassName(winner.getHandEval().handType());
+                handDescription = winner.getHandEval().handDescription();
+                if (handDescription == null || handDescription.isEmpty()) {
+                    handDescription = PropertyConfig.getMessage("msg.hand." + winner.getHandEval().handType());
                 }
             }
 
