@@ -67,7 +67,7 @@ class EndToEndIntegrationTest {
 
         JsonNode registerResponse1 = objectMapper.readTree(registerResult1.getResponse().getContentAsString());
         String token1 = registerResponse1.get("token").asText();
-        Long profileId1 = registerResponse1.get("profileId").asLong();
+        Long profileId1 = registerResponse1.get("profile").get("id").asLong();
         assertThat(token1).isNotEmpty();
         assertThat(profileId1).isPositive();
 
@@ -80,7 +80,7 @@ class EndToEndIntegrationTest {
 
         JsonNode registerResponse2 = objectMapper.readTree(registerResult2.getResponse().getContentAsString());
         String token2 = registerResponse2.get("token").asText();
-        Long profileId2 = registerResponse2.get("profileId").asLong();
+        Long profileId2 = registerResponse2.get("profile").get("id").asLong();
 
         // 3. Login first user (verify authentication works)
         mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)

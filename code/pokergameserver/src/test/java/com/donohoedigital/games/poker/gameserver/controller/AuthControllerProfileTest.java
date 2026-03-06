@@ -36,6 +36,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.donohoedigital.games.poker.gameserver.auth.JwtProperties;
 import com.donohoedigital.games.poker.protocol.dto.ProfileResponse;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
+import com.donohoedigital.games.poker.gameserver.service.ProfileService;
 
 /**
  * Unit tests for the profile-related endpoints added to AuthController in M7
@@ -54,6 +55,9 @@ class AuthControllerProfileTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private ProfileService profileService;
 
     static class TestConfig {
         @Bean
