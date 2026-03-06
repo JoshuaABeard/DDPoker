@@ -34,7 +34,6 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
 import com.donohoedigital.games.poker.display.ClientHand;
 import com.donohoedigital.games.poker.display.ClientCard;
-import com.donohoedigital.games.poker.engine.HandInfoFast;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
@@ -1544,7 +1543,7 @@ public class PokerDatabase {
         int nNum = 0;
         int nPrior = 0;
 
-        HandInfoFast info = new HandInfoFast();
+        ClientHandEval info = new ClientHandEval();
 
         if (nRound == ClientBettingRound.PRE_FLOP.toLegacy()) {
             community = ClientHand.empty();
@@ -1580,7 +1579,7 @@ public class PokerDatabase {
                 handHTML = hand.toHTML();
 
                 if (!community.isEmpty()) {
-                    info.getScore(EngineAdapter.toHand(hand), EngineAdapter.toHand(community));
+                    info.score(hand, community);
                     handShown = "&nbsp;-&nbsp;" + HandHistoryPanel.handDesc(info);
                 }
             } else {
@@ -1795,7 +1794,7 @@ public class PokerDatabase {
 
         ClientPlayer player;
 
-        HandInfoFast info = new HandInfoFast();
+        ClientHandEval info = new ClientHandEval();
 
         StringBuilder sb2 = new StringBuilder();
 
@@ -1823,7 +1822,7 @@ public class PokerDatabase {
                 handHTML = hand.toHTML();
 
                 if (!community.isEmpty()) {
-                    info.getScore(EngineAdapter.toHand(hand), EngineAdapter.toHand(community));
+                    info.score(hand, community);
                     handShown = "&nbsp;-&nbsp;" + HandHistoryPanel.handDesc(info);
                 }
             } else {

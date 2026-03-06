@@ -48,7 +48,6 @@ import com.donohoedigital.games.poker.dashboard.*;
 import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.event.PokerTableListener;
-import com.donohoedigital.games.poker.engine.TournamentProfileHtml;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.games.poker.server.GameServerRestClient;
@@ -2565,7 +2564,7 @@ public class ShowTournamentTable extends ShowPokerTable
         SetBlinds(String sStyle, int level) {
             super(GuiManager.DEFAULT, sStyle);
             level_ = level;
-            TournamentProfileHtml html = new TournamentProfileHtml(table_.getProfile());
+            ClientTournamentProfileHtml html = new ClientTournamentProfileHtml(table_.getProfile());
             setText(html.getBlindsText("msg.menu.", level, true));
 
             if (level == game_.getLevel()) {

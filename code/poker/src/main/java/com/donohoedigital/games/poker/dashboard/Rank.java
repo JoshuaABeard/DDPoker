@@ -32,8 +32,6 @@
  */
 package com.donohoedigital.games.poker.dashboard;
 import com.donohoedigital.games.poker.PokerClientConstants;
-import com.donohoedigital.games.poker.engine.PokerSaveDetails;
-
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
@@ -107,16 +105,10 @@ public class Rank extends DashboardItem {
         String name = evt.getPropertyName();
 
         if (name.equals(PokerGame.PROP_GAME_LOADED)) {
-            // if are doing a game load where the table
-            // is not the current table,
-            // then update in case rank changed
-            GameState state = (GameState) evt.getOldValue();
-            PokerSaveDetails pdetails = (PokerSaveDetails) state.getSaveDetails().getCustomInfo();
-            if (pdetails.isOtherTableUpdate()) {
-                if (PokerClientConstants.DEBUG_CLEANUP_TABLE)
-                    logger.debug("Update display on other table update");
-                updateInfo();
-            }
+            // Game loaded — update rank in case it changed (e.g., other table update)
+            if (PokerClientConstants.DEBUG_CLEANUP_TABLE)
+                logger.debug("Update display on game loaded");
+            updateInfo();
         } else if (name.equals(PokerGame.PROP_GAME_OVER) || name.equals(PokerGame.PROP_PLAYER_FINISHED)) {
             updateInfo();
         }

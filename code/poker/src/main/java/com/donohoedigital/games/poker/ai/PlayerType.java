@@ -33,8 +33,6 @@
 package com.donohoedigital.games.poker.ai;
 import com.donohoedigital.games.poker.display.ClientHand;
 import com.donohoedigital.games.poker.display.ClientCard;
-import com.donohoedigital.games.poker.engine.PokerSaveDetails;
-
 import com.donohoedigital.base.ApplicationError;
 import com.donohoedigital.base.Utils;
 import com.donohoedigital.comms.DMTypedHashMap;
@@ -108,10 +106,10 @@ public class PlayerType extends BaseProfile {
         return getByUniqueKey(key, null);
     }
 
-    public static PlayerType getByUniqueKey(String key, PokerSaveDetails details) {
+    public static PlayerType getByUniqueKey(String key, Object details) {
         PlayerType pt = null;
         if (key != null) {
-            List<BaseProfile> types = getProfileListCached(details);
+            List<BaseProfile> types = getProfileList();
 
             for (BaseProfile type : types) {
                 PlayerType playerType = (PlayerType) type;
@@ -127,21 +125,6 @@ public class PlayerType extends BaseProfile {
             pt = getDefaultProfile(details);
         }
         return pt;
-    }
-
-    /**
-     * Get cached list of profiles from details (used when loading)
-     */
-    private static List<BaseProfile> getProfileListCached(PokerSaveDetails details) {
-        List<BaseProfile> types = null;
-        if (details != null)
-            types = details.getPlayerTypeProfiles();
-        if (types == null) {
-            types = getProfileList();
-            if (details != null)
-                details.setPlayerTypeProfiles(types);
-        }
-        return types;
     }
 
     /**
@@ -418,10 +401,10 @@ public class PlayerType extends BaseProfile {
         return getDefaultProfile(null);
     }
 
-    public static PlayerType getDefaultProfile(PokerSaveDetails details) {
+    public static PlayerType getDefaultProfile(Object details) {
         if (defaultProfile_ == null)
             synchronized (PlayerType.class) {
-                List<BaseProfile> profiles = getProfileListCached(details);
+                List<BaseProfile> profiles = getProfileList();
 
                 if (profiles.size() == 0) {
                     throw new ApplicationError("No computer player types defined!");

@@ -39,7 +39,6 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.TournamentProfileHtml;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.gui.*;
 import com.donohoedigital.config.*;
@@ -60,7 +59,7 @@ public class PrizePoolDialog extends DialogPhase implements ChangeListener {
     private DDHtmlArea html_;
     private PokerGame game_;
     private TournamentProfile profile_;
-    private TournamentProfileHtml profileHtml_;
+    private ClientTournamentProfileHtml profileHtml_;
     private DDLabel housecut_;
 
     /**
@@ -77,7 +76,7 @@ public class PrizePoolDialog extends DialogPhase implements ChangeListener {
         // init
         game_ = (PokerGame) context_.getGame();
         profile_ = game_.getProfile();
-        profileHtml_ = new TournamentProfileHtml(profile_);
+        profileHtml_ = new ClientTournamentProfileHtml(profile_);
         DDPanel base = new DDPanel();
         base.setBorderLayoutGap(5, 0);
         base.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));

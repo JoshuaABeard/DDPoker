@@ -32,8 +32,6 @@
  */
 package com.donohoedigital.games.poker;
 import com.donohoedigital.games.poker.display.ClientHand;
-import com.donohoedigital.games.poker.engine.HandInfoFast;
-import com.donohoedigital.games.poker.engine.HandUtils;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.*;
@@ -100,10 +98,9 @@ public class Showdown {
                         piece.setResult(ResultsPiece.ALLIN,
                                 PropertyConfig.getMessage("msg.hand.allin", player.getHand().toStringRank()));
                     } else {
-                        ClientHand best = EngineAdapter
-                                .toClientHand(HandUtils.getBestFive(EngineAdapter.toHandSorted(player.getHandSorted()),
-                                        EngineAdapter.toHandSorted(hhand.getCommunitySorted())));
-                        int type = handType(player.getHandSorted(), hhand.getCommunitySorted());
+                        ClientHand best = ClientHandEval.getBestFive(player.getHandSorted(),
+                                hhand.getCommunitySorted());
+                        int type = handTypeEval(player.getHandSorted(), hhand.getCommunitySorted());
                         piece.setResult(ResultsPiece.ALLIN, PropertyConfig.getMessage("msg.hand.allin",
                                 PropertyConfig.getMessage("msg.hand." + type), best.toStringRank()));
                     }
@@ -120,10 +117,8 @@ public class Showdown {
             if (player.isFolded()) {
                 if (player.showFoldedHand()) {
                     int nRound = hhand.getFoldRound(player);
-                    ClientHand best = EngineAdapter
-                            .toClientHand(HandUtils.getBestFive(EngineAdapter.toHandSorted(player.getHandSorted()),
-                                    EngineAdapter.toHandSorted(hhand.getCommunitySorted())));
-                    int type = handType(player.getHandSorted(), hhand.getCommunitySorted());
+                    ClientHand best = ClientHandEval.getBestFive(player.getHandSorted(), hhand.getCommunitySorted());
+                    int type = handTypeEval(player.getHandSorted(), hhand.getCommunitySorted());
                     String sRound = PropertyConfig.getMessage("msg.round." + nRound);
                     piece.setResult(ResultsPiece.FOLD,
                             PropertyConfig.getMessage(bShowHandTypeFold ? "msg.hand.fold" : "msg.hand.fold.noshow",
@@ -172,10 +167,8 @@ public class Showdown {
             String handTypeDesc = "";
             String bestRank = "";
             if (hhand.getCommunitySorted().size() >= 3) {
-                int type = handType(player.getHandSorted(), hhand.getCommunitySorted());
-                ClientHand best = EngineAdapter
-                        .toClientHand(HandUtils.getBestFive(EngineAdapter.toHandSorted(player.getHandSorted()),
-                                EngineAdapter.toHandSorted(hhand.getCommunitySorted())));
+                int type = handTypeEval(player.getHandSorted(), hhand.getCommunitySorted());
+                ClientHand best = ClientHandEval.getBestFive(player.getHandSorted(), hhand.getCommunitySorted());
                 handTypeDesc = PropertyConfig.getMessage("msg.hand." + type);
                 bestRank = best.toStringRank();
             }
@@ -247,9 +240,8 @@ public class Showdown {
                     piece.setResult(nResult, PropertyConfig.getMessage("msg.hand.allin.pre", player.getAllInPerc(),
                             player.getHand().toStringRank()));
                 } else {
-                    ClientHand best = EngineAdapter.toClientHand(HandUtils.getBestFive(
-                            EngineAdapter.toHandSorted(player.getHandSorted()), EngineAdapter.toHandSorted(comm)));
-                    int type = handType(player.getHandSorted(), comm);
+                    ClientHand best = ClientHandEval.getBestFive(player.getHandSorted(), comm);
+                    int type = handTypeEval(player.getHandSorted(), comm);
                     piece.setResult(nResult, PropertyConfig.getMessage("msg.hand.allin", player.getAllInPerc(),
                             PropertyConfig.getMessage("msg.hand." + type), best.toStringRank()));
                 }
@@ -260,9 +252,9 @@ public class Showdown {
     }
 
     /** Get hand type integer from hole cards and community cards. */
-    private static int handType(ClientHand hole, ClientHand community) {
-        HandInfoFast fast = new HandInfoFast();
-        int score = fast.getScore(EngineAdapter.toHand(hole), EngineAdapter.toHand(community));
-        return HandInfoFast.getTypeFromScore(score);
+    private static int handTypeEval(ClientHand hole, ClientHand community) {
+        ClientHandEval eval = new ClientHandEval();
+        int score = eval.score(hole, community);
+        return ClientHandEval.typeFromScore(score);
     }
 }

@@ -28,10 +28,7 @@ import com.donohoedigital.games.poker.dashboard.AdvisorState;
 import com.donohoedigital.games.poker.dashboard.AdvanceAction;
 import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.PokerClientConstants;
-import com.donohoedigital.games.poker.engine.Card;
-import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.engine.HandInfoFast;
-import com.donohoedigital.games.poker.engine.HandScoreConstants;
+import com.donohoedigital.games.poker.display.ClientHandScoreConstants;
 import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.protocol.message.ServerMessageData;
@@ -2022,10 +2019,9 @@ public class WebSocketTournamentDirector extends BasePhase
             if (winner != null && hand != null && winner.getHand() != null && winner.getHand().size() >= 2
                     && hand.getCommunity() != null && hand.getCommunity().size() >= 3) {
                 try {
-                    HandInfoFast fast = new HandInfoFast();
-                    int score = fast.getScore(toEngineHand(winner.getHandSorted()),
-                            toEngineHand(hand.getCommunitySorted()));
-                    int handType = HandInfoFast.getTypeFromScore(score);
+                    ClientHandEval eval = new ClientHandEval();
+                    int score = eval.score(winner.getHandSorted(), hand.getCommunitySorted());
+                    int handType = ClientHandEval.typeFromScore(score);
                     handClass = handClassName(handType);
                     handDescription = PropertyConfig.getMessage("msg.hand." + handType);
                 } catch (Exception e) {
@@ -2081,30 +2077,18 @@ public class WebSocketTournamentDirector extends BasePhase
 
     private String handClassName(int handType) {
         return switch (handType) {
-            case HandScoreConstants.ROYAL_FLUSH -> "ROYAL_FLUSH";
-            case HandScoreConstants.STRAIGHT_FLUSH -> "STRAIGHT_FLUSH";
-            case HandScoreConstants.QUADS -> "QUADS";
-            case HandScoreConstants.FULL_HOUSE -> "FULL_HOUSE";
-            case HandScoreConstants.FLUSH -> "FLUSH";
-            case HandScoreConstants.STRAIGHT -> "STRAIGHT";
-            case HandScoreConstants.TRIPS -> "TRIPS";
-            case HandScoreConstants.TWO_PAIR -> "TWO_PAIR";
-            case HandScoreConstants.PAIR -> "PAIR";
-            case HandScoreConstants.HIGH_CARD -> "HIGH_CARD";
+            case ClientHandScoreConstants.ROYAL_FLUSH -> "ROYAL_FLUSH";
+            case ClientHandScoreConstants.STRAIGHT_FLUSH -> "STRAIGHT_FLUSH";
+            case ClientHandScoreConstants.QUADS -> "QUADS";
+            case ClientHandScoreConstants.FULL_HOUSE -> "FULL_HOUSE";
+            case ClientHandScoreConstants.FLUSH -> "FLUSH";
+            case ClientHandScoreConstants.STRAIGHT -> "STRAIGHT";
+            case ClientHandScoreConstants.TRIPS -> "TRIPS";
+            case ClientHandScoreConstants.TWO_PAIR -> "TWO_PAIR";
+            case ClientHandScoreConstants.PAIR -> "PAIR";
+            case ClientHandScoreConstants.HIGH_CARD -> "HIGH_CARD";
             default -> "UNKNOWN";
         };
-    }
-
-    /**
-     * Convert a ClientHand to an engine Hand for HandInfoFast scoring.
-     */
-    private static Hand toEngineHand(ClientHand clientHand) {
-        Hand h = new Hand(clientHand.size());
-        for (int i = 0; i < clientHand.size(); i++) {
-            ClientCard cc = clientHand.getCard(i);
-            h.addCard(Card.getCard(cc.getSuit(), cc.getRank()));
-        }
-        return h;
     }
 
     // -------------------------------------------------------------------------

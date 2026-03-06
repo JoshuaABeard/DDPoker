@@ -33,9 +33,7 @@
 package com.donohoedigital.games.poker.dashboard;
 import com.donohoedigital.games.poker.PokerClientConstants;
 import com.donohoedigital.games.poker.display.ClientHand;
-import com.donohoedigital.games.poker.EngineAdapter;
-import com.donohoedigital.games.poker.engine.HandInfoFast;
-import com.donohoedigital.games.poker.engine.HandUtils;
+import com.donohoedigital.games.poker.ClientHandEval;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.*;
@@ -62,7 +60,7 @@ public class MyHand extends DashboardItem {
     private static MyHand impl_ = null;
 
     DDHtmlArea htmlHand_;
-    HandInfoFast fast_ = new HandInfoFast();
+    ClientHandEval eval_ = new ClientHandEval();
     String sHand_;
     String sHandTitle_;
 
@@ -218,10 +216,9 @@ public class MyHand extends DashboardItem {
             ClientHand csorted = ClientHand.fromCards(community.getCards());
 
             // get hand
-            fast_.getScore(EngineAdapter.toHand(hand), EngineAdapter.toHand(community));
-            ClientHand best = EngineAdapter.toClientHand(HandUtils.getBestFive(
-                    EngineAdapter.toHandSorted(asViewedBy.getHandSorted()), EngineAdapter.toHandSorted(csorted)));
-            sHand_ = PropertyConfig.getMessage("msg.myhand.postflop", best.toHTML(), HandHistoryPanel.handDesc(fast_));
+            eval_.score(hand, community);
+            ClientHand best = ClientHandEval.getBestFive(asViewedBy.getHandSorted(), csorted);
+            sHand_ = PropertyConfig.getMessage("msg.myhand.postflop", best.toHTML(), HandHistoryPanel.handDesc(eval_));
             sHandTitle_ = best.toStringRank();
         }
     }

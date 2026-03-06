@@ -38,7 +38,6 @@
 
 package com.donohoedigital.games.poker;
 import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
-import com.donohoedigital.games.poker.engine.PokerSaveDetails;
 
 import com.donohoedigital.base.*;
 import com.donohoedigital.comms.*;
@@ -1942,8 +1941,6 @@ public class PokerGame extends Game implements PlayerActionListener {
     @Override
     public SaveDetails getSaveDetails(int nInit) {
         SaveDetails details = new SaveDetails(nInit);
-        PokerSaveDetails pdetails = new PokerSaveDetails(nInit);
-        details.setCustomInfo(pdetails);
         details.setSaveTerritories(SaveDetails.SAVE_NONE); // we never save territories
         details.setSaveGameHashData(SaveDetails.SAVE_ALL); // we always save game hash data
         return details;
@@ -1963,33 +1960,6 @@ public class PokerGame extends Game implements PlayerActionListener {
      */
     @Override
     protected void saveSubclassData(GameState state) {
-        PokerSaveDetails pdetails = (PokerSaveDetails) state.getSaveDetails().getCustomInfo();
-
-        // create entry with game info (including num of entries)
-        GameStateEntry entry = new GameStateEntry(state, this, ConfigConstants.SAVE_NUM_GAMEDATA);
-
-        // info
-        entry.addToken(nLevel_);
-        entry.addToken(bClockMode_);
-        entry.addToken(clock_.marshal(state));
-        entry.addToken(id_);
-        entry.addToken(nMinChipIdx_);
-        entry.addToken(nLastMinChipIdx_);
-        entry.addToken(nExtraChips_);
-
-        // profiles
-        if (pdetails.getSaveProfileData() != SaveDetails.SAVE_NONE) {
-            try {
-                // tournament profile
-                StringWriter writer = new StringWriter();
-                profile_.write(writer);
-                entry.addToken(writer.toString());
-                writer.getBuffer().setLength(0);
-            } catch (IOException ioe) {
-                throw new ApplicationError(ioe);
-            }
-        }
-
         // Save/load code removed — engine classes no longer exist.
         throw new UnsupportedOperationException("Save/load not supported after engine class removal");
     }

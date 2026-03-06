@@ -35,8 +35,7 @@ import com.donohoedigital.games.poker.display.ClientHand;
 import com.donohoedigital.games.poker.display.ClientCard;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
-import com.donohoedigital.games.poker.engine.HandInfoFast;
-import com.donohoedigital.games.poker.engine.HandScoreConstants;
+import com.donohoedigital.games.poker.display.ClientHandScoreConstants;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.db.*;
@@ -343,7 +342,7 @@ public class HandHistoryPanel extends DDPanel {
         int nNum = 0;
         int nPrior = 0;
 
-        HandInfoFast info = new HandInfoFast();
+        ClientHandEval eval = new ClientHandEval();
 
         ClientHand community = hhand.getCommunity();
 
@@ -380,8 +379,8 @@ public class HandHistoryPanel extends DDPanel {
                 handHTML = hand.toHTML();
 
                 if (community.size() > 0) {
-                    info.getScore(EngineAdapter.toHand(hand), EngineAdapter.toHand(community));
-                    handShown = "&nbsp;-&nbsp;" + handDesc(info);
+                    eval.score(hand, community);
+                    handShown = "&nbsp;-&nbsp;" + handDesc(eval);
                 }
             } else {
                 handHTML = "<DDCARD FACEUP=\"false\"><DDCARD FACEUP=\"false\">";
@@ -480,60 +479,59 @@ public class HandHistoryPanel extends DDPanel {
     }
 
     /**
-     * Build a short hand description from a scored HandInfoFast. Mirrors
-     * HandInfoFast.toString(", ", false) from the poker module.
+     * Build a short hand description from a scored ClientHandEval.
      */
-    public static String handDesc(HandInfoFast info) {
-        int type = info.getHandType();
+    public static String handDesc(ClientHandEval eval) {
+        int type = eval.getHandType();
         StringBuilder buf = new StringBuilder();
         buf.append(PropertyConfig.getMessage("msg.hand." + type));
         String sep = ", ";
         switch (type) {
-            case HandScoreConstants.HIGH_CARD :
+            case ClientHandScoreConstants.HIGH_CARD :
                 buf.append(sep);
                 buf.append(PropertyConfig.getMessage("msg.handfmt." + type, PropertyConfig
-                        .getMessage("msg.cardrank.singular", ClientCard.getRank(info.getHighCardRank()))));
+                        .getMessage("msg.cardrank.singular", ClientCard.getRank(eval.getHighCardRank()))));
                 break;
-            case HandScoreConstants.PAIR :
+            case ClientHandScoreConstants.PAIR :
                 buf.append(sep);
                 buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
-                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(info.getBigPairRank()))));
+                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(eval.getBigPairRank()))));
                 break;
-            case HandScoreConstants.TWO_PAIR :
+            case ClientHandScoreConstants.TWO_PAIR :
                 buf.append(sep);
                 buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
-                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(info.getBigPairRank())),
-                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(info.getSmallPairRank()))));
+                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(eval.getBigPairRank())),
+                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(eval.getSmallPairRank()))));
                 break;
-            case HandScoreConstants.TRIPS :
+            case ClientHandScoreConstants.TRIPS :
                 buf.append(sep);
                 buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
-                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(info.getTripsRank()))));
+                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(eval.getTripsRank()))));
                 break;
-            case HandScoreConstants.STRAIGHT :
-            case HandScoreConstants.STRAIGHT_FLUSH :
+            case ClientHandScoreConstants.STRAIGHT :
+            case ClientHandScoreConstants.STRAIGHT_FLUSH :
                 buf.append(sep);
                 buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
                         PropertyConfig.getMessage("msg.cardrank.singular",
-                                ClientCard.getRank(info.getStraightLowRank())),
+                                ClientCard.getRank(eval.getStraightLowRank())),
                         PropertyConfig.getMessage("msg.cardrank.singular",
-                                ClientCard.getRank(info.getStraightHighRank()))));
+                                ClientCard.getRank(eval.getStraightHighRank()))));
                 break;
-            case HandScoreConstants.FLUSH :
+            case ClientHandScoreConstants.FLUSH :
                 buf.append(sep);
                 buf.append(PropertyConfig.getMessage("msg.handfmt." + type, PropertyConfig
-                        .getMessage("msg.cardrank.singular", ClientCard.getRank(info.getFlushHighRank()))));
+                        .getMessage("msg.cardrank.singular", ClientCard.getRank(eval.getFlushHighRank()))));
                 break;
-            case HandScoreConstants.FULL_HOUSE :
+            case ClientHandScoreConstants.FULL_HOUSE :
                 buf.append(sep);
                 buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
-                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(info.getTripsRank())),
-                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(info.getBigPairRank()))));
+                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(eval.getTripsRank())),
+                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(eval.getBigPairRank()))));
                 break;
-            case HandScoreConstants.QUADS :
+            case ClientHandScoreConstants.QUADS :
                 buf.append(sep);
                 buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
-                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(info.getQuadsRank()))));
+                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(eval.getQuadsRank()))));
                 break;
             default :
                 break;

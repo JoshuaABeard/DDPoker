@@ -33,7 +33,6 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
-import com.donohoedigital.games.poker.engine.TournamentProfileHtml;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
@@ -65,7 +64,7 @@ public class TournamentSummaryPanel extends DDPanel {
     private DDTabbedPane tab_;
     private String sHelpName_;
     private TournamentProfile profile_;
-    private TournamentProfileHtml profileHtml_;
+    private ClientTournamentProfileHtml profileHtml_;
     private ImageComponent ic_ = new ImageComponent("ddlogo20", 1.0d);
     private boolean bListMode_;
 
@@ -206,7 +205,7 @@ public class TournamentSummaryPanel extends DDPanel {
 
     public void updateProfile(TournamentProfile profile) {
         profile_ = profile;
-        profileHtml_ = profile_ == null ? null : new TournamentProfileHtml(profile_);
+        profileHtml_ = profile_ == null ? null : new ClientTournamentProfileHtml(profile_);
         setSummaryText();
         if (payout_ != null)
             payout_.updateProfile(profileHtml_);
@@ -348,14 +347,14 @@ public class TournamentSummaryPanel extends DDPanel {
         GameContext context;
         List<ClientPlayer> rank;
         TournamentProfile profile;
-        TournamentProfileHtml html;
+        ClientTournamentProfileHtml html;
         List<BaseProfile> playerTypes;
         String[] names;
         int[] widths;
         boolean bPayout;
         boolean bOppMix;
 
-        TournamentModel(GameContext context, TournamentProfileHtml profileHtml, String names[], int[] widths) {
+        TournamentModel(GameContext context, ClientTournamentProfileHtml profileHtml, String names[], int[] widths) {
             this.context = context;
             this.names = names;
             this.widths = widths;
@@ -364,7 +363,7 @@ public class TournamentSummaryPanel extends DDPanel {
             updateProfile(profileHtml);
         }
 
-        public void updateProfile(TournamentProfileHtml h) {
+        public void updateProfile(ClientTournamentProfileHtml h) {
             if (h == null)
                 return;
             profile = h.getProfile();

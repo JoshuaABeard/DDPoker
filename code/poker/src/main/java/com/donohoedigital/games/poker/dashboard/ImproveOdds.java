@@ -33,7 +33,7 @@
 package com.donohoedigital.games.poker.dashboard;
 import com.donohoedigital.games.poker.PokerClientConstants;
 import com.donohoedigital.games.poker.display.ClientHand;
-import com.donohoedigital.games.poker.engine.HandScoreConstants;
+import com.donohoedigital.games.poker.display.ClientHandScoreConstants;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.*;
@@ -57,9 +57,9 @@ public class ImproveOdds extends Odds {
             "STRAIGHT_FLUSH", "ROYAL_FLUSH"};
 
     // Corresponding hand type integer constants for display label lookup
-    private static final int[] HAND_TYPE_INTS = {HandScoreConstants.TRIPS, HandScoreConstants.STRAIGHT,
-            HandScoreConstants.FLUSH, HandScoreConstants.FULL_HOUSE, HandScoreConstants.QUADS,
-            HandScoreConstants.STRAIGHT_FLUSH, HandScoreConstants.ROYAL_FLUSH};
+    private static final int[] HAND_TYPE_INTS = {ClientHandScoreConstants.TRIPS, ClientHandScoreConstants.STRAIGHT,
+            ClientHandScoreConstants.FLUSH, ClientHandScoreConstants.FULL_HOUSE, ClientHandScoreConstants.QUADS,
+            ClientHandScoreConstants.STRAIGHT_FLUSH, ClientHandScoreConstants.ROYAL_FLUSH};
 
     public ImproveOdds(GameContext context) {
         super(context, "improveodds");
