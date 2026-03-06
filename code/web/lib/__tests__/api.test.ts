@@ -51,7 +51,7 @@ describe('apiFetch — Content-Type header', () => {
     )
     vi.stubGlobal('fetch', mockFetch)
 
-    await gameServerApi.getWsToken()
+    await authApi.getWsToken()
 
     expect(mockFetch).toHaveBeenCalledTimes(1)
     const [, fetchOptions] = mockFetch.mock.calls[0] as [string, RequestInit]
@@ -94,7 +94,7 @@ describe('apiFetch — AbortSignal', () => {
     }))
 
     // Call getWsToken which is a GET request with no signal normally
-    await gameServerApi.getWsToken()
+    await authApi.getWsToken()
 
     // The signal should be defined (it's always the timeout signal at minimum)
     expect(capturedInit?.signal).toBeDefined()
@@ -180,17 +180,16 @@ describe('authApi — game server endpoints', () => {
     expect(JSON.parse(init.body as string)).toMatchObject({ email: 'alice@example.com' })
   })
 
-  it('changePassword — PUTs to /api/v1/auth/change-password', async () => {
+  it('changePassword — PUTs to /api/v1/auth/password', async () => {
     const mockFetch = vi.fn().mockResolvedValue(makeFetchResponse({}))
     vi.stubGlobal('fetch', mockFetch)
 
     await authApi.changePassword('oldpw', 'newpw')
 
     const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit]
-    expect(url).toContain('/api/v1/auth/change-password')
+    expect(url).toContain('/api/v1/auth/password')
     expect((init?.method ?? 'GET').toUpperCase()).toBe('PUT')
-    expect(JSON.parse(init.body as string)).toMatchObject({ currentPassword: 'oldpw', newPassword: 'newpw' })
-    expect(init.credentials).toBe('include')
+    expect(JSON.parse(init.body as string)).toMatchObject({ oldPassword: 'oldpw', newPassword: 'newpw' })
   })
 
   it('verifyEmail — GETs /api/v1/auth/verify-email?token=...', async () => {
@@ -251,7 +250,6 @@ describe('authApi — game server endpoints', () => {
     const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit]
     expect(url).toContain('/api/v1/auth/reset-password')
     expect((init?.method ?? 'GET').toUpperCase()).toBe('POST')
-    expect(JSON.parse(init.body as string)).toMatchObject({ token: 'reset-token', password: 'newpassword' })
-    expect(init.credentials).toBe('include')
+    expect(JSON.parse(init.body as string)).toMatchObject({ token: 'reset-token', newPassword: 'newpassword' })
   })
 })

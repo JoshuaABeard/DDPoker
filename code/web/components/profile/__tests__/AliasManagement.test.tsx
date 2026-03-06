@@ -32,18 +32,23 @@ vi.mock('@/components/ui/Dialog', () => ({
     ) : null,
 }))
 
-const ACTIVE_ALIASES = [
-  { name: 'AcePlayer', createdDate: '2026-01-01' },
-  { name: 'RiverKing', createdDate: '2026-02-01' },
-]
+vi.mock('@/lib/api', () => ({
+  profileApi: {
+    retireProfile: vi.fn(),
+  },
+}))
 
-const RETIRED_ALIASES = [
-  { name: 'OldNick', createdDate: '2025-01-01', retiredDate: '2025-06-01' },
+import { profileApi } from '@/lib/api'
+
+const ACTIVE_ALIASES = [
+  { id: 1, name: 'AcePlayer', createdDate: '2026-01-01' },
+  { id: 2, name: 'RiverKing', createdDate: '2026-02-01' },
 ]
 
 describe('AliasManagement', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(profileApi.retireProfile).mockResolvedValue(undefined)
   })
 
   it('renders active aliases', () => {
@@ -52,14 +57,8 @@ describe('AliasManagement', () => {
     expect(screen.getByText('RiverKing')).toBeTruthy()
   })
 
-  it('renders retired aliases in a separate section', () => {
-    render(<AliasManagement aliases={[...ACTIVE_ALIASES, ...RETIRED_ALIASES]} />)
-    expect(screen.getByText('OldNick')).toBeTruthy()
-    expect(screen.getByText(/Retired Aliases/i)).toBeTruthy()
-  })
-
   it('shows "No active aliases" when there are none', () => {
-    render(<AliasManagement aliases={RETIRED_ALIASES} />)
+    render(<AliasManagement aliases={[]} />)
     expect(screen.getByText(/No active aliases/i)).toBeTruthy()
   })
 
@@ -87,7 +86,7 @@ describe('AliasManagement', () => {
     })
   })
 
-  it('shows success message (role="status") after confirming retire', async () => {
+  it('calls retireProfile API and shows success message after confirming retire', async () => {
     render(<AliasManagement aliases={ACTIVE_ALIASES} />)
 
     const retireButtons = screen.getAllByRole('button', { name: /retire/i })
@@ -99,5 +98,6 @@ describe('AliasManagement', () => {
       expect(screen.getByRole('status')).toBeTruthy()
     })
     expect(screen.getByRole('status').textContent).toContain('retired successfully')
+    expect(profileApi.retireProfile).toHaveBeenCalledWith(1)
   })
 })

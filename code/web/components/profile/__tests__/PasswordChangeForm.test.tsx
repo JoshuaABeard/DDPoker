@@ -10,14 +10,14 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { PasswordChangeForm } from '../PasswordChangeForm'
 
 vi.mock('@/lib/api', () => ({
-  playerApi: { changePassword: vi.fn() },
+  authApi: { changePassword: vi.fn() },
 }))
 
-import { playerApi } from '@/lib/api'
+import { authApi } from '@/lib/api'
 
 describe('PasswordChangeForm', () => {
   beforeEach(() => {
-    vi.mocked(playerApi.changePassword).mockReset()
+    vi.mocked(authApi.changePassword).mockReset()
   })
 
   it('renders 3 password fields', () => {
@@ -45,7 +45,7 @@ describe('PasswordChangeForm', () => {
       expect(screen.getByRole('alert')).toBeTruthy()
     })
     expect(screen.getByRole('alert').textContent).toContain('do not match')
-    expect(playerApi.changePassword).not.toHaveBeenCalled()
+    expect(authApi.changePassword).not.toHaveBeenCalled()
   })
 
   it('shows error and does not call API when new password is too short', async () => {
@@ -66,11 +66,11 @@ describe('PasswordChangeForm', () => {
       expect(screen.getByRole('alert')).toBeTruthy()
     })
     expect(screen.getByRole('alert').textContent).toContain('at least 8 characters')
-    expect(playerApi.changePassword).not.toHaveBeenCalled()
+    expect(authApi.changePassword).not.toHaveBeenCalled()
   })
 
   it('calls API with correct args on valid submit', async () => {
-    vi.mocked(playerApi.changePassword).mockResolvedValue(undefined)
+    vi.mocked(authApi.changePassword).mockResolvedValue(new Response(null, { status: 200 }))
     render(<PasswordChangeForm />)
 
     fireEvent.change(screen.getByLabelText(/current password/i), {
@@ -85,12 +85,12 @@ describe('PasswordChangeForm', () => {
     fireEvent.submit(screen.getByRole('button', { name: /change password/i }).closest('form')!)
 
     await waitFor(() => {
-      expect(playerApi.changePassword).toHaveBeenCalledWith('myOldPass1', 'myNewPass1')
+      expect(authApi.changePassword).toHaveBeenCalledWith('myOldPass1', 'myNewPass1')
     })
   })
 
   it('shows success message and clears fields on success', async () => {
-    vi.mocked(playerApi.changePassword).mockResolvedValue(undefined)
+    vi.mocked(authApi.changePassword).mockResolvedValue(new Response(null, { status: 200 }))
     render(<PasswordChangeForm />)
 
     fireEvent.change(screen.getByLabelText(/current password/i), {
@@ -116,7 +116,7 @@ describe('PasswordChangeForm', () => {
   })
 
   it('shows error message when API throws', async () => {
-    vi.mocked(playerApi.changePassword).mockRejectedValue(new Error('Current password is incorrect'))
+    vi.mocked(authApi.changePassword).mockRejectedValue(new Error('Current password is incorrect'))
     render(<PasswordChangeForm />)
 
     fireEvent.change(screen.getByLabelText(/current password/i), {
