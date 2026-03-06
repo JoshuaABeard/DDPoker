@@ -20,7 +20,6 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.config.ConfigTestHelper;
-import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
 import org.junit.jupiter.api.*;
 
@@ -84,8 +83,8 @@ class TournamentProfileFormatterTest {
             ConfigTestHelper.resetForTesting();
         }
 
-        private TournamentProfile createTestProfile() {
-            TournamentProfile profile = new TournamentProfile("Test Tournament");
+        private ClientTournamentProfile createTestProfile() {
+            ClientTournamentProfile profile = new ClientTournamentProfile("Test Tournament");
             profile.setNumPlayers(10);
             profile.setBuyin(100);
             profile.setBuyinChips(1000);
@@ -100,7 +99,7 @@ class TournamentProfileFormatterTest {
 
         @Test
         void should_ReturnProfile_When_PassedToConstructor() {
-            TournamentProfile profile = createTestProfile();
+            ClientTournamentProfile profile = createTestProfile();
             TournamentProfileFormatter formatter = new TournamentProfileFormatter(profile);
 
             assertThat(formatter.getProfile()).isSameAs(profile);
@@ -110,7 +109,7 @@ class TournamentProfileFormatterTest {
 
         @Test
         void should_ReturnNonEmptyHtmlSummary_When_ValidProfile() {
-            TournamentProfile profile = createTestProfile();
+            ClientTournamentProfile profile = createTestProfile();
             TournamentProfileFormatter formatter = new TournamentProfileFormatter(profile);
 
             String html = formatter.toHTMLSummary(false, null);
@@ -120,7 +119,7 @@ class TournamentProfileFormatterTest {
 
         @Test
         void should_ReturnNonEmptyHtmlSummary_When_ListMode() {
-            TournamentProfile profile = createTestProfile();
+            ClientTournamentProfile profile = createTestProfile();
             TournamentProfileFormatter formatter = new TournamentProfileFormatter(profile);
 
             String html = formatter.toHTMLSummary(true, null);
@@ -130,7 +129,7 @@ class TournamentProfileFormatterTest {
 
         @Test
         void should_CacheSummaryResult_When_CalledTwice() {
-            TournamentProfile profile = createTestProfile();
+            ClientTournamentProfile profile = createTestProfile();
             TournamentProfileFormatter formatter = new TournamentProfileFormatter(profile);
 
             String first = formatter.toHTMLSummary(false, null);
@@ -141,7 +140,7 @@ class TournamentProfileFormatterTest {
 
         @Test
         void should_RecacheSummaryResult_When_ListModeChanges() {
-            TournamentProfile profile = createTestProfile();
+            ClientTournamentProfile profile = createTestProfile();
             TournamentProfileFormatter formatter = new TournamentProfileFormatter(profile);
 
             String nonList = formatter.toHTMLSummary(false, null);
@@ -154,7 +153,7 @@ class TournamentProfileFormatterTest {
 
         @Test
         void should_ReturnNonEmptyHtmlOnline_When_ValidProfile() {
-            TournamentProfile profile = createTestProfile();
+            ClientTournamentProfile profile = createTestProfile();
             TournamentProfileFormatter formatter = new TournamentProfileFormatter(profile);
 
             String html = formatter.toHTMLOnline();
@@ -166,7 +165,7 @@ class TournamentProfileFormatterTest {
 
         @Test
         void should_ReturnNonEmptyBlindsText_When_ValidLevel() {
-            TournamentProfile profile = createTestProfile();
+            ClientTournamentProfile profile = createTestProfile();
             TournamentProfileFormatter formatter = new TournamentProfileFormatter(profile);
 
             String text = formatter.getBlindsText("msg.menu.", 1, false);
@@ -176,7 +175,7 @@ class TournamentProfileFormatterTest {
 
         @Test
         void should_ReturnBriefAmounts_When_BriefRequested() {
-            TournamentProfile profile = createTestProfile();
+            ClientTournamentProfile profile = createTestProfile();
             TournamentProfileFormatter formatter = new TournamentProfileFormatter(profile);
 
             String text = formatter.getBlindsText("msg.menu.", 1, true);
@@ -186,7 +185,7 @@ class TournamentProfileFormatterTest {
 
         @Test
         void should_IncludeAnte_When_LevelHasAnte() {
-            TournamentProfile profile = createTestProfile();
+            ClientTournamentProfile profile = createTestProfile();
             TournamentProfileFormatter formatter = new TournamentProfileFormatter(profile);
 
             String text = formatter.getBlindsText("msg.menu.", 3, false);
@@ -198,7 +197,7 @@ class TournamentProfileFormatterTest {
 
         @Test
         void should_ReturnNonEmptySpotHtml_When_ValidSpot() {
-            TournamentProfile profile = createTestProfile();
+            ClientTournamentProfile profile = createTestProfile();
             TournamentProfileFormatter formatter = new TournamentProfileFormatter(profile);
 
             String html = formatter.getSpotHTML(1, false, null);
@@ -208,7 +207,7 @@ class TournamentProfileFormatterTest {
 
         @Test
         void should_ReturnNonEmptySpotHtml_When_ShowPercAndEstimate() {
-            TournamentProfile profile = createTestProfile();
+            ClientTournamentProfile profile = createTestProfile();
             TournamentProfileFormatter formatter = new TournamentProfileFormatter(profile);
 
             String html = formatter.getSpotHTML(1, true, null);
@@ -220,7 +219,7 @@ class TournamentProfileFormatterTest {
 
         @Test
         void should_ReturnNonEmptySpotsHtml_When_ValidProfile() {
-            TournamentProfile profile = createTestProfile();
+            ClientTournamentProfile profile = createTestProfile();
             TournamentProfileFormatter formatter = new TournamentProfileFormatter(profile);
 
             String html = formatter.toHTMLSpots();
@@ -232,11 +231,11 @@ class TournamentProfileFormatterTest {
 
         @Test
         void should_IncludeRebuyInfo_When_RebuysEnabled() {
-            TournamentProfile profile = createTestProfile();
+            ClientTournamentProfile profile = createTestProfile();
             profile.setRebuys(true);
-            profile.getMap().setInteger(TournamentProfile.PARAM_REBUYCOST, 50);
-            profile.getMap().setInteger(TournamentProfile.PARAM_REBUYCHIPS, 500);
-            profile.getMap().setInteger(TournamentProfile.PARAM_REBUY_UNTIL, 3);
+            profile.getMap().setInteger(ClientTournamentProfile.PARAM_REBUYCOST, 50);
+            profile.getMap().setInteger(ClientTournamentProfile.PARAM_REBUYCHIPS, 500);
+            profile.getMap().setInteger(ClientTournamentProfile.PARAM_REBUY_UNTIL, 3);
             profile.fixAll();
             TournamentProfileFormatter formatter = new TournamentProfileFormatter(profile);
 
@@ -247,11 +246,11 @@ class TournamentProfileFormatterTest {
 
         @Test
         void should_IncludeAddonInfo_When_AddonsEnabled() {
-            TournamentProfile profile = createTestProfile();
+            ClientTournamentProfile profile = createTestProfile();
             profile.setAddons(true);
-            profile.getMap().setInteger(TournamentProfile.PARAM_ADDONCOST, 50);
-            profile.getMap().setInteger(TournamentProfile.PARAM_ADDONCHIPS, 500);
-            profile.getMap().setInteger(TournamentProfile.PARAM_ADDONLEVEL, 3);
+            profile.getMap().setInteger(ClientTournamentProfile.PARAM_ADDONCOST, 50);
+            profile.getMap().setInteger(ClientTournamentProfile.PARAM_ADDONCHIPS, 500);
+            profile.getMap().setInteger(ClientTournamentProfile.PARAM_ADDONLEVEL, 3);
             profile.fixAll();
             TournamentProfileFormatter formatter = new TournamentProfileFormatter(profile);
 
