@@ -17,7 +17,7 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.core.event;
+package com.donohoedigital.games.poker.engine.event;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

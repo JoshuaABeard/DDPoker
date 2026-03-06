@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.poker.dashboard.AdvisorState;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
@@ -67,7 +68,7 @@ public class PokerStatsPanel extends DDTabPanel {
         this(null, mode);
     }
 
-    public PokerStatsPanel(PokerPlayer player, int mode) {
+    public PokerStatsPanel(ClientPlayer player, int mode) {
         super();
 
         mode_ = mode;

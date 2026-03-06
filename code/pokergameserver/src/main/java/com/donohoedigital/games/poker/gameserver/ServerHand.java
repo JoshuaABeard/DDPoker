@@ -41,9 +41,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.donohoedigital.games.poker.core.GameHand;
-import com.donohoedigital.games.poker.core.GamePlayerInfo;
-import com.donohoedigital.games.poker.core.PlayerAction;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.GamePlayerInfo;
+import com.donohoedigital.games.poker.engine.PlayerAction;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Card;
 
 /**

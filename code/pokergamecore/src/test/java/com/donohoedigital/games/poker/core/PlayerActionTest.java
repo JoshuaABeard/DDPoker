@@ -32,7 +32,8 @@
  */
 package com.donohoedigital.games.poker.core;
 
-import com.donohoedigital.games.poker.core.state.ActionType;
+import com.donohoedigital.games.poker.engine.PlayerAction;
+import com.donohoedigital.games.poker.engine.state.ActionType;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

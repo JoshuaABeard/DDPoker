@@ -32,7 +32,7 @@
 package com.donohoedigital.games.poker.gameserver;
 
 import com.donohoedigital.games.poker.core.GameHand;
-import com.donohoedigital.games.poker.core.PlayerAction;
+import com.donohoedigital.games.poker.engine.PlayerAction;
 import com.donohoedigital.games.poker.core.PlayerActionProvider;
 import com.donohoedigital.games.poker.core.TournamentEngine;
 import com.donohoedigital.games.poker.gameserver.GameConfig.BlindLevel;
@@ -594,7 +594,7 @@ public class GameInstance {
      * @param action
      *            the action to submit
      */
-    public void onPlayerAction(long profileId, com.donohoedigital.games.poker.core.PlayerAction action) {
+    public void onPlayerAction(long profileId, com.donohoedigital.games.poker.engine.PlayerAction action) {
         logger.debug("[GameInstance] onPlayerAction profileId={} action={}", profileId, action);
         if (actionProvider != null) {
             actionProvider.submitAction(toIntId(profileId), action);
@@ -757,7 +757,7 @@ public class GameInstance {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         pendingRebuys.put(playerId, future);
         long rebuyTimeoutSeconds = properties.actionTimeoutSeconds();
-        eventBus.publish(new com.donohoedigital.games.poker.core.event.GameEvent.RebuyOffered(tableId, playerId,
+        eventBus.publish(new com.donohoedigital.games.poker.engine.event.GameEvent.RebuyOffered(tableId, playerId,
                 tournament.getRebuyCost(), tournament.getRebuyChips(), (int) rebuyTimeoutSeconds));
         try {
             if (rebuyTimeoutSeconds <= 0) {
@@ -783,7 +783,7 @@ public class GameInstance {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         pendingAddons.put(playerId, future);
         long addonTimeoutSeconds = properties.actionTimeoutSeconds();
-        eventBus.publish(new com.donohoedigital.games.poker.core.event.GameEvent.AddonOffered(tableId, playerId,
+        eventBus.publish(new com.donohoedigital.games.poker.engine.event.GameEvent.AddonOffered(tableId, playerId,
                 tournament.getAddonCost(), tournament.getAddonChips(), (int) addonTimeoutSeconds));
         try {
             if (addonTimeoutSeconds <= 0) {
@@ -823,7 +823,7 @@ public class GameInstance {
     public boolean offerNeverBroke(int playerId, int tableId) {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         pendingNeverBroke.put(playerId, future);
-        eventBus.publish(new com.donohoedigital.games.poker.core.event.GameEvent.NeverBrokeOffered(tableId, playerId,
+        eventBus.publish(new com.donohoedigital.games.poker.engine.event.GameEvent.NeverBrokeOffered(tableId, playerId,
                 properties.actionTimeoutSeconds()));
         try {
             long neverBrokeTimeout = properties.actionTimeoutSeconds();
@@ -863,7 +863,7 @@ public class GameInstance {
     public void waitForContinue(int tableId) {
         CompletableFuture<Void> future = new CompletableFuture<>();
         pendingContinue = future;
-        eventBus.publish(new com.donohoedigital.games.poker.core.event.GameEvent.AllInRunoutPaused(tableId));
+        eventBus.publish(new com.donohoedigital.games.poker.engine.event.GameEvent.AllInRunoutPaused(tableId));
         try {
             long timeoutSeconds = properties.actionTimeoutSeconds();
             if (timeoutSeconds <= 0) {

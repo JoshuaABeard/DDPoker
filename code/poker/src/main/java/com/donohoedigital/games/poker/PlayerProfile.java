@@ -38,6 +38,7 @@
 
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.comms.*;
 import com.donohoedigital.games.config.*;
@@ -46,7 +47,7 @@ import org.apache.logging.log4j.*;
 
 import java.io.*;
 import java.util.*;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
  * @author donohoe
@@ -88,11 +89,11 @@ public class PlayerProfile extends BaseProfile {
 
         // number of times each round is seen
         for (int i = 0; i < rounds_.length; i++) {
-            logger.debug("Round " + HoldemHand.getRoundName(i) + ": " + rounds_[i]);
+            logger.debug("Round " + BettingRound.getRoundName(i) + ": " + rounds_[i]);
             // flops seen - which position
             if (i == BettingRound.FLOP.toLegacy()) {
                 for (int j = 0; j < flops_.length; j++) {
-                    logger.debug("   Flops called from " + PokerPlayer.getPositionName(j) + ": " + flops_[j]);
+                    logger.debug("   Flops called from " + ClientPlayer.getPositionName(j) + ": " + flops_[j]);
                 }
             }
         }
@@ -105,10 +106,10 @@ public class PlayerProfile extends BaseProfile {
 
         // actions per round
         for (int i = 0; i < roundactions_.length; i++) {
-            logger.debug("Total Actions it round " + HoldemHand.getRoundName(i) + ": " + nRoundActionCnt_[i]);
+            logger.debug("Total Actions it round " + BettingRound.getRoundName(i) + ": " + nRoundActionCnt_[i]);
             for (int j = 0; j < roundactions_[0].length; j++) {
-                logger.debug("   Round " + HoldemHand.getRoundName(i) + ", Action " + HandAction.getActionName(j) + ": "
-                        + roundactions_[i][j]);
+                logger.debug("   Round " + BettingRound.getRoundName(i) + ", Action " + HandAction.getActionName(j)
+                        + ": " + roundactions_[i][j]);
             }
         }
     }
@@ -165,7 +166,7 @@ public class PlayerProfile extends BaseProfile {
         nWins_ = 0;
         nActionCnt_ = 0;
         rounds_ = new int[BettingRound.SHOWDOWN.toLegacy() + 1];
-        flops_ = new int[PokerPlayer.BIG + 1];
+        flops_ = new int[ClientPlayer.BIG + 1];
         actions_ = new int[HandAction.ACTION_RAISE + 1];
         nRoundActionCnt_ = new int[BettingRound.SHOWDOWN.toLegacy()];
         roundactions_ = new int[BettingRound.SHOWDOWN.toLegacy()][HandAction.ACTION_RAISE + 1];
@@ -336,7 +337,7 @@ public class PlayerProfile extends BaseProfile {
     /**
      * Add history and save if possible
      */
-    public void addTournamentHistory(PokerGame game, PokerPlayer player) {
+    public void addTournamentHistory(PokerGame game, ClientPlayer player) {
         PokerDatabase.storeTournamentFinish(game, player);
     }
 

@@ -54,15 +54,13 @@ import org.apache.logging.log4j.*;
 import java.io.*;
 import java.security.*;
 import java.util.*;
-import com.donohoedigital.games.poker.core.GamePlayerInfo;
-import com.donohoedigital.games.poker.core.GameTable;
-import com.donohoedigital.games.poker.core.TournamentContext;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.GamePlayerInfo;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
  * @author donohoe
  */
-public class PokerGame extends Game implements PlayerActionListener, TournamentContext {
+public class PokerGame extends Game implements PlayerActionListener {
     static Logger logger = LogManager.getLogger(PokerGame.class);
 
     public static final int ACTION_FOLD = 1;
@@ -215,7 +213,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
                 return "";
             return PropertyConfig.getMessage("msg.savegame.desc.o", profile_.getName(), getNumPlayers());
         } else {
-            PokerPlayer human = getHumanPlayer();
+            ClientPlayer human = getHumanPlayer();
             Integer chips = human.getChipCount();
             return PropertyConfig.getMessage("msg.savegame.desc", human.getName(), chips, profile_.getName());
         }
@@ -270,7 +268,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     @Override
     public void addPlayer(GamePlayer player) {
         players_.add(player);
-        updatePlayerList((PokerPlayer) player);
+        updatePlayerList((ClientPlayer) player);
         firePropertyChange(PROP_PLAYERS, null, player);
     }
 
@@ -281,17 +279,17 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     @Override
     public void removePlayer(GamePlayer player) {
         players_.remove(player);
-        updatePlayerList((PokerPlayer) player);
+        updatePlayerList((ClientPlayer) player);
         firePropertyChange(PROP_PLAYERS, player, null);
     }
 
     /**
      * Return copy of player list (thus it can be changed)
      */
-    public List<PokerPlayer> getPokerPlayersCopy() {
-        List<PokerPlayer> copy = new ArrayList<PokerPlayer>();
+    public List<ClientPlayer> getPokerPlayersCopy() {
+        List<ClientPlayer> copy = new ArrayList<ClientPlayer>();
         for (GamePlayer p : players_) {
-            copy.add((PokerPlayer) p);
+            copy.add((ClientPlayer) p);
         }
         return copy;
     }
@@ -299,7 +297,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     /**
      * update list of players in tournament profile based on given player
      */
-    public void updatePlayerList(PokerPlayer player) {
+    public void updatePlayerList(ClientPlayer player) {
         if (isOnlineGame() && !player.isComputer()) {
             updatePlayerList();
         }
@@ -313,7 +311,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
             List<String> list = new ArrayList<String>();
             int nNum = getNumPlayers();
             for (int i = 0; i < nNum; i++) {
-                PokerPlayer p = getPokerPlayerAt(i);
+                ClientPlayer p = getPokerPlayerAt(i);
                 if (p.isHuman() && !p.isEliminated()) {
                     list.add(p.getName());
                 }
@@ -327,15 +325,15 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     /**
      * get poker player
      */
-    public PokerPlayer getPokerPlayerAt(int n) {
-        return (PokerPlayer) getPlayerAt(n);
+    public ClientPlayer getPokerPlayerAt(int n) {
+        return (ClientPlayer) getPlayerAt(n);
     }
 
     /**
      * Get poker observer
      */
-    public PokerPlayer getPokerObserverAt(int n) {
-        return (PokerPlayer) getObserverAt(n);
+    public ClientPlayer getPokerObserverAt(int n) {
+        return (ClientPlayer) getObserverAt(n);
     }
 
     /**
@@ -361,8 +359,8 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      */
     @Override
     public void removeObserver(GamePlayer player) {
-        PokerPlayer pokerPlayer = ((PokerPlayer) player);
-        PokerTable table = (PokerTable) pokerPlayer.getTable();
+        ClientPlayer pokerPlayer = ((ClientPlayer) player);
+        ClientPokerTable table = pokerPlayer.getTable();
         if (table != null)
             table.removeObserver(pokerPlayer);
         super.removeObserver(player);
@@ -371,14 +369,13 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     /**
      * Get poker player by id. Player returned could be an observer.
      */
-    public PokerPlayer getPokerPlayerFromID(int n) {
-        return (PokerPlayer) getPlayerFromID(n, true);
+    public ClientPlayer getPokerPlayerFromID(int n) {
+        return (ClientPlayer) getPlayerFromID(n, true);
     }
 
     /**
-     * Get player by ID (TournamentContext interface method)
+     * Get player by ID.
      */
-    @Override
     public GamePlayerInfo getPlayerByID(int playerId) {
         return getPokerPlayerFromID(playerId);
     }
@@ -387,12 +384,12 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      * Get poker player by key - used in online games. Player returned could be an
      * observer.
      */
-    public PokerPlayer getPokerPlayerFromKey(String sKey) {
+    public ClientPlayer getPokerPlayerFromKey(String sKey) {
         // there should only be one (human) player
         // per key - due to logic in OnlineManager.
         // Thus, we don't check for multiple, we just
         // get the first one we find.
-        PokerPlayer p;
+        ClientPlayer p;
         int nNum = getNumPlayers();
         for (int i = 0; i < nNum; i++) {
             p = getPokerPlayerAt(i);
@@ -417,7 +414,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      * Return the human player. In online games, returns local player. In WebSocket
      * mode, finds the human-controlled player in the current table.
      */
-    public PokerPlayer getHumanPlayer() {
+    public ClientPlayer getHumanPlayer() {
         if (isOnlineGame())
             return getLocalPlayer();
         // In WebSocket mode the human player lives in RemotePokerTable.remotePlayers_,
@@ -427,7 +424,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
             ClientPokerTable table = getCurrentTable();
             if (table != null) {
                 for (int s = 0; s < PokerConstants.SEATS; s++) {
-                    PokerPlayer p = table.getPlayer(s);
+                    ClientPlayer p = table.getPlayer(s);
                     if (p != null && p.isHuman())
                         return p;
                 }
@@ -439,9 +436,9 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     /**
      * Get locally controlled player
      */
-    public PokerPlayer getLocalPlayer() {
+    public ClientPlayer getLocalPlayer() {
         String sKey = getPlayerId();
-        PokerPlayer local = getPokerPlayerFromKey(sKey);
+        ClientPlayer local = getPokerPlayerFromKey(sKey);
         ApplicationError.assertNotNull(local, "No player matching current key", sKey);
         return local;
     }
@@ -461,19 +458,19 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     /**
      * Get the host of online games
      */
-    public PokerPlayer getHost() {
+    public ClientPlayer getHost() {
         return getPokerPlayerFromID(GamePlayer.HOST_ID);
     }
 
     /**
      * Return rank of player based on chips
      */
-    public int getRank(PokerPlayer player) {
-        PokerPlayer p;
+    public int getRank(ClientPlayer player) {
+        ClientPlayer p;
         int nLastChips = 0;
         int nRank = 0;
         int nChips;
-        List<PokerPlayer> rank = getPlayersByRank();
+        List<ClientPlayer> rank = getPlayersByRank();
         for (int i = 0; i < rank.size(); i++) {
             p = rank.get(i);
             nChips = p.getChipCount();
@@ -490,8 +487,8 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     /**
      * Get sorted list of players
      */
-    public List<PokerPlayer> getPlayersByRank() {
-        List<PokerPlayer> sort = getPokerPlayersCopy();
+    public List<ClientPlayer> getPlayersByRank() {
+        List<ClientPlayer> sort = getPokerPlayersCopy();
         Collections.sort(sort, SORTCHIPS);
         return sort;
     }
@@ -500,13 +497,13 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     private static SortChips SORTCHIPS = new SortChips();
 
     // sort players by chips they have at start of hand
-    private static class SortChips implements Comparator<PokerPlayer> {
+    private static class SortChips implements Comparator<ClientPlayer> {
         /**
          * Compares its two arguments for order. Returns a negative integer, zero, or a
          * positive integer as the first argument is less than, equal to, or greater
          * than the second.
          */
-        public int compare(PokerPlayer p1, PokerPlayer p2) {
+        public int compare(ClientPlayer p1, ClientPlayer p2) {
             // reverse comparison so highest chips at top
             int diff = p2.getChipCount() - p1.getChipCount();
             if (diff != 0)
@@ -594,22 +591,10 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     }
 
     /**
-     * Get table at index (TournamentContext implementation — returns GameTable).
-     *
-     * <p>
-     * In practice and online-game paths, all table elements are {@link PokerTable}
-     * instances. In WebSocket paths, elements may be
-     * {@link com.donohoedigital.games.poker.online.RemotePokerTable} (which does
-     * not extend {@link PokerTable}); in that case, use
-     * {@link #getTableByNumber(int)} instead.
+     * Get table at index.
      */
-    @Override
-    public GameTable getTable(int i) {
-        ClientPokerTable t = tables_.get(i);
-        if (t instanceof PokerTable)
-            return (PokerTable) t;
-        throw new IllegalStateException(
-                "getTable(" + i + ") called on a non-engine table. " + "Use getTableByNumber() in WebSocket paths.");
+    public ClientPokerTable getTable(int i) {
+        return tables_.get(i);
     }
 
     /**
@@ -726,7 +711,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      * millis and profile
      */
     private void initPlayers(int n, boolean bOnline) {
-        PokerPlayer p;
+        ClientPlayer p;
         for (int i = 0; i < getNumPlayers(); i++) {
             p = getPokerPlayerAt(i);
             p.setChipCount(n);
@@ -871,7 +856,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
 
         // check all players (could be some not at a table, waiting)
         int nNumWithChips = 0;
-        PokerPlayer player;
+        ClientPlayer player;
         int nNum = getNumPlayers();
         for (int i = 0; i < nNum; i++) {
             player = getPokerPlayerAt(i);
@@ -897,7 +882,6 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     /**
      * Get big blind for a specific level
      */
-    @Override
     public int getBigBlind(int level) {
         return profile_.getBigBlind(level);
     }
@@ -912,7 +896,6 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     /**
      * Get small blind for a specific level
      */
-    @Override
     public int getSmallBlind(int level) {
         return profile_.getSmallBlind(level);
     }
@@ -927,26 +910,23 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     /**
      * Get ante for a specific level
      */
-    @Override
     public int getAnte(int level) {
         return profile_.getAnte(level);
     }
 
     /**
-     * Get starting chips for the tournament (TournamentContext interface method)
+     * Get starting chips for the tournament.
      */
-    @Override
     public int getStartingChips() {
         return profile_.getBuyinChips();
     }
 
-    @Override
     public boolean isRebuyPeriodActive(GamePlayerInfo player) {
         if (player == null) {
             return false;
         }
-        PokerPlayer pokerPlayer = (PokerPlayer) player;
-        return !((PokerTable) pokerPlayer.getTable()).isRebuyDone(pokerPlayer);
+        ClientPlayer pokerPlayer = (ClientPlayer) player;
+        return !pokerPlayer.getTable().isRebuyDone(pokerPlayer);
     }
 
     /**
@@ -957,68 +937,55 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     }
 
     /**
-     * Get default timeout in seconds for player actions (TournamentContext
-     * interface method)
+     * Get default timeout in seconds for player actions.
      */
-    @Override
     public int getTimeoutSeconds() {
         return profile_ != null ? profile_.getTimeoutSeconds() : 0;
     }
 
     /**
-     * Get timeout for a specific betting round (TournamentContext interface method)
+     * Get timeout for a specific betting round.
      */
-    @Override
     public int getTimeoutForRound(int round) {
         return profile_ != null ? profile_.getTimeoutForRound(round) : 0;
     }
 
     /**
-     * Get minimum players required for scheduled start (TournamentContext interface
-     * method)
+     * Get minimum players required for scheduled start.
      */
-    @Override
     public int getMinPlayersForScheduledStart() {
         return profile_ != null ? profile_.getMinPlayersForStart() : 0;
     }
 
     /**
-     * Get scheduled start time in milliseconds since epoch (TournamentContext
-     * interface method)
+     * Get scheduled start time in milliseconds since epoch.
      */
-    @Override
     public long getScheduledStartTime() {
         return profile_ != null ? profile_.getStartTime() : 0L;
     }
 
     /**
-     * Check if scheduled start is enabled (TournamentContext interface method)
+     * Check if scheduled start is enabled.
      */
-    @Override
     public boolean isScheduledStartEnabled() {
         return profile_ != null && profile_.isScheduledStartEnabled();
     }
 
     /**
-     * Check if this is a practice game (TournamentContext interface method)
+     * Check if this is a practice game.
      */
-    @Override
     public boolean isPractice() {
         return !isOnlineGame();
     }
 
-    /**
-     * Check if this is an online game (TournamentContext interface method)
-     */
     @Override
     public boolean isOnlineGame() {
         return super.isOnlineGame();
     }
 
     /**
-     * Check if a level is a break period (TournamentContext interface method)
+     * Check if a level is a break period.
      */
-    @Override
     public boolean isBreakLevel(int level) {
         return profile_ != null && profile_.isBreak(level);
     }
@@ -1229,7 +1196,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
 
         // set initial min chip now that its been set
         for (int i = 0; i < getNumTables(); i++) {
-            ((PokerTable) getTable(i)).setMinChip(getMinChip());
+            tables_.get(i).setMinChip(getMinChip());
         }
 
         // init DDMessage MsgState
@@ -1240,7 +1207,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      * setup the players in the game
      */
     private void setupComputerPlayers(int nNumPlayers) {
-        PokerPlayer player;
+        ClientPlayer player;
         List<String> names = new ArrayList<String>(PokerMain.getPokerMain().getNames());
         int nNumHumans = getNumPlayers();
 
@@ -1276,7 +1243,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
                 hmRoster.put(playerType.getFileName(), roster);
             }
             sName = getName(names, roster, hsUsed);
-            player = new PokerPlayer(sKey, getNextPlayerID(), sName, false);
+            player = new ClientPlayer(sKey, getNextPlayerID(), sName, false);
             player.setPlayerType(playerType);
             addPlayer(player);
         }
@@ -1347,7 +1314,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     private void assignTables(boolean bOnline) {
         tables_.clear(); // clear any stale tables from a previous setup attempt
         int nNumPlayers = getNumPlayers();
-        List<PokerPlayer> players = getPokerPlayersCopy(); // clone since we will remove players as we go
+        List<ClientPlayer> players = getPokerPlayersCopy(); // clone since we will remove players as we go
 
         // evenly distribute players across tables
         int nNumTables = nNumPlayers / getSeats();
@@ -1366,15 +1333,15 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         }
 
         // if host is an observer, assign to table 1
-        PokerPlayer host = getHost();
+        ClientPlayer host = getHost();
         if (host.isObserver()) {
-            ((PokerTable) getTable(0)).addObserver(host);
+            tables_.get(0).addObserver(host);
         }
 
         // assign observers tables
-        PokerTable hostTable = (PokerTable) host.getTable();
+        ClientPokerTable hostTable = host.getTable();
         nNumPlayers = getNumObservers();
-        PokerPlayer obs;
+        ClientPlayer obs;
         for (int i = 0; i < nNumPlayers; i++) {
             obs = getPokerObserverAt(i);
             if (obs.isHost())
@@ -1386,11 +1353,9 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     /**
      * Fill seats in a table from list of players up to max
      */
-    private void fillSeats(List<PokerPlayer> players, int nMax, boolean bOnline) {
+    private void fillSeats(List<ClientPlayer> players, int nMax, boolean bOnline) {
         int idx;
-        PokerTable table = new PokerTable(this, tables_.size() + 1);
-        table.setTableState(PokerTable.STATE_PENDING);
-        table.setPendingTableState(PokerTable.STATE_DEAL_FOR_BUTTON);
+        RemotePokerTable table = new RemotePokerTable(this, tables_.size() + 1);
         table.setMinChip(getMinChip());
 
         // num seats to fill
@@ -1398,7 +1363,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         boolean bDemo = false;
 
         // randomly assign player
-        PokerPlayer player;
+        ClientPlayer player;
         for (int i = 0; i < nOpen && i < nMax; i++) {
             // if demo, set seed so order is same
             // do in loop since adding player to table
@@ -1418,7 +1383,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
                 } else {
                     boolean bDone = false;
                     while (!bDone) {
-                        PokerPlayer peek = players.get(idx);
+                        ClientPlayer peek = players.get(idx);
                         if (peek.isHuman() && table.getNumOccupiedSeats() > 0 && !table.isAllComputer()) {
                             idx = DiceRoller.rollDieInt(players.size()) - 1;
                             logger.debug("TESTING: skip placing " + peek.getName() + " on table " + table.getName()
@@ -1447,13 +1412,13 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     /**
      * handle a player getting out of tournament
      */
-    public void playerOut(PokerPlayer player) {
+    public void playerOut(ClientPlayer player) {
         if (player == null) {
             return;
         }
 
-        PokerPlayer canonical = getPokerPlayerFromID(player.getID());
-        PokerPlayer finisher = canonical != null ? canonical : player;
+        ClientPlayer canonical = getPokerPlayerFromID(player.getID());
+        ClientPlayer finisher = canonical != null ? canonical : player;
         if (finisher.isEliminated()) {
             return;
         }
@@ -1501,7 +1466,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      * Records the server-reported result for a player in WebSocket mode.
      *
      * <p>
-     * {@code applyTableData()} creates new {@link PokerPlayer} objects in
+     * {@code applyTableData()} creates new {@link ClientPlayer} objects in
      * {@link com.donohoedigital.games.poker.online.RemotePokerTable} seats, which
      * are separate from the original objects in {@code players_}. This method
      * applies the server-provided finish position to the {@code players_} object so
@@ -1515,7 +1480,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      *            1 = winner, 2 = runner-up, etc.
      */
     public void applyPlayerResult(int playerId, int finishPosition) {
-        PokerPlayer player = getPokerPlayerFromID(playerId);
+        ClientPlayer player = getPokerPlayerFromID(playerId);
         if (player == null || finishPosition <= 0)
             return;
 
@@ -1566,15 +1531,15 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      * Get players in wait list, sorted by time added to list (longest wait on list
      * at top)
      */
-    public List<PokerPlayer> getWaitList() {
-        List<PokerPlayer> wait = null;
+    public List<ClientPlayer> getWaitList() {
+        List<ClientPlayer> wait = null;
         int nNum = getNumPlayers();
-        PokerPlayer p;
+        ClientPlayer p;
         for (int i = 0; i < nNum; i++) {
             p = getPokerPlayerAt(i);
             if (p.isWaiting()) {
                 if (wait == null)
-                    wait = new ArrayList<PokerPlayer>();
+                    wait = new ArrayList<ClientPlayer>();
                 wait.add(p);
             }
         }
@@ -1590,13 +1555,13 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     private static SortByWait SORTBYWAIT = new SortByWait();
 
     // sort players by when they were added to wait list
-    private static class SortByWait implements Comparator<PokerPlayer> {
+    private static class SortByWait implements Comparator<ClientPlayer> {
         /**
          * Compares its two arguments for order. Returns a negative integer, zero, or a
          * positive integer as the first argument is less than, equal to, or greater
          * than the second.
          */
-        public int compare(PokerPlayer p1, PokerPlayer p2) {
+        public int compare(ClientPlayer p1, ClientPlayer p2) {
             return (int) (p1.getWaitListTimeStamp() - p2.getWaitListTimeStamp());
         }
     }
@@ -1606,7 +1571,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      */
     public int getPrizePool() {
         int n = 0;
-        PokerPlayer p;
+        ClientPlayer p;
         for (int i = getNumPlayers() - 1; i >= 0; i--) {
             p = getPokerPlayerAt(i);
             n += p.getTotalSpent();
@@ -1619,7 +1584,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      */
     public int getPrizesPaid() {
         int n = 0;
-        PokerPlayer p;
+        ClientPlayer p;
         for (int i = getNumPlayers() - 1; i >= 0; i--) {
             p = getPokerPlayerAt(i);
             n += p.getPrize();
@@ -1633,7 +1598,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     public void verifyChipCount() {
         int nChips = 0;
         int nBought = 0;
-        PokerPlayer p;
+        ClientPlayer p;
         for (int i = getNumPlayers() - 1; i >= 0; i--) {
             p = getPokerPlayerAt(i);
             nChips += p.getChipCount();
@@ -1645,10 +1610,10 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         // hands aren't in sync and money could be in pots when we
         // do this calculation
         if (isOnlineGame()) {
-            PokerTable table;
-            HoldemHand hhand;
+            ClientPokerTable table;
+            ClientHoldemHand hhand;
             for (int i = getNumTables() - 1; i >= 0; i--) {
-                table = (PokerTable) getTable(i);
+                table = tables_.get(i);
                 hhand = table.getHoldemHand();
                 if (hhand == null)
                     continue;
@@ -1672,7 +1637,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      */
     public void debugPrintTables(boolean bShort) {
         for (int i = 0; i < getNumTables(); i++) {
-            logger.debug(((PokerTable) getTable(i)).toString(bShort));
+            logger.debug(tables_.get(i).getName());
         }
     }
 
@@ -1743,7 +1708,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
      */
     public boolean isAcceptingRegistrations() {
         // we must have a host
-        PokerPlayer p = getPokerPlayerFromID(PokerConstants.PLAYER_ID_HOST);
+        ClientPlayer p = getPokerPlayerFromID(PokerConstants.PLAYER_ID_HOST);
         if (p == null)
             return false;
 
@@ -2025,232 +1990,18 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
             }
         }
 
-        // player saving for (save/load path: always local PokerTable, never remote)
-        PokerTable table;
-        PokerPlayer playerForSave = null;
-        boolean bSaveOtherTable = false;
-        PokerTable tableForPlayer = null;
-        int nPlayerID = pdetails.getPlayerID();
-        if (nPlayerID != PokerSaveDetails.NO_PLAYER) {
-            playerForSave = getPokerPlayerFromID(nPlayerID);
-            tableForPlayer = (PokerTable) playerForSave.getTable();
-        }
-
-        // num tables
-        int nNum = 0;
-        int nNumTables = getNumTables();
-        switch (pdetails.getSaveTables()) {
-            case SaveDetails.SAVE_ALL :
-                nNum = nNumTables;
-                if (playerForSave != null)
-                    bSaveOtherTable = true;
-                break;
-
-            case SaveDetails.SAVE_DIRTY :
-                for (int i = 0; i < nNumTables; i++) {
-                    table = (PokerTable) getTable(i);
-                    if (table.isDirty()) {
-                        nNum++;
-                        if (playerForSave != null && table != tableForPlayer)
-                            bSaveOtherTable = true;
-                    }
-                }
-                break;
-
-            case SaveDetails.SAVE_NONE :
-                nNum = 0;
-                break;
-
-        }
-        entry.addToken(nNum);
-
-        // this is used to indicate that when saving for a particular player
-        // if the playerForSave file includes table information for tables other
-        // than the player's table
-        pdetails.setOtherTableUpdate(bSaveOtherTable);
-
-        // home game cash
-        entry.addToken(nClockCash_);
-
-        // DD POKER 2.0 new fields
-        entry.addToken(sLocalIP_);
-        entry.addToken(sPublicIP_);
-        entry.addToken(nPort_);
-        entry.addToken(bPublic_);
-        entry.addToken(nOnlineMode_);
-
-        // only playerForSave current table for ALL (file loads)
-        if (pdetails.getSaveTables() == SaveDetails.SAVE_ALL && !pdetails.isSetCurrentTableToLocal()) {
-            entry.addToken(state.getId(currentTable_));
-        }
-
-        // DD Poker 2.0, BETA 5
-        entry.addToken(lastHandSaved_);
-
-        // DD Poker 2.0, FCS
-        entry.addToken(nNumOut_);
-
-        // done with this entry
-        state.addEntry(entry);
-
-        // tables (entry per)
-        switch (pdetails.getSaveTables()) {
-            case SaveDetails.SAVE_ALL :
-                for (int i = 0; i < nNumTables; i++) {
-                    table = (PokerTable) getTable(i);
-                    table.addGameStateEntry(state);
-                }
-                break;
-
-            case SaveDetails.SAVE_DIRTY :
-
-                for (int i = 0; i < nNumTables; i++) {
-                    table = (PokerTable) getTable(i);
-                    if (table.isDirty()) {
-                        table.addGameStateEntry(state);
-                    }
-                }
-                break;
-
-            case SaveDetails.SAVE_NONE :
-                break;
-
-        }
+        // Save/load code removed — engine classes no longer exist.
+        throw new UnsupportedOperationException("Save/load not supported after engine class removal");
     }
 
-    /**
-     * load poker specific data
-     */
     @Override
     protected void loadSubclassData(GameState state) {
-        PokerSaveDetails pdetails = (PokerSaveDetails) state.getSaveDetails().getCustomInfo();
-
-        GameStateEntry entry = state.removeEntry();
-
-        // level
-        nLevel_ = entry.removeIntToken();
-        bClockMode_ = entry.removeBooleanToken();
-        clock_.demarshal(state, entry.removeStringToken());
-        id_ = entry.removeLongToken();
-        nMinChipIdx_ = entry.removeIntToken();
-        nLastMinChipIdx_ = entry.removeIntToken();
-        nExtraChips_ = entry.removeIntToken();
-
-        // profiles
-        if (pdetails.getSaveProfileData() != SaveDetails.SAVE_NONE) {
-            try {
-                // tournament profile
-                String sData = entry.removeStringToken();
-                StringReader reader = new StringReader(sData);
-                profile_ = new TournamentProfile();
-                profile_.read(reader, true);
-            } catch (IOException ioe) {
-                throw new ApplicationError(ioe);
-            }
-        }
-
-        // num tables
-        int nNum = entry.removeIntToken();
-
-        // home game
-        nClockCash_ = entry.removeIntToken();
-
-        // DD POKER 2.0 new fields
-        sLocalIP_ = entry.removeStringToken();
-        sPublicIP_ = entry.removeStringToken();
-        nPort_ = entry.removeIntToken();
-        bPublic_ = entry.removeBooleanToken();
-        int nMode = entry.removeIntToken();
-        // don't override mode if currently client
-        if (nOnlineMode_ != MODE_CLIENT) {
-            if (isGameOver())
-                nOnlineMode_ = MODE_NONE; // on load, don't allow re-joining game
-            else
-                nOnlineMode_ = nMode;
-        }
-
-        // only load current table for ALL (file loads)
-        if (pdetails.getSaveTables() == SaveDetails.SAVE_ALL && !pdetails.isSetCurrentTableToLocal()) {
-            currentTable_ = (ClientPokerTable) state.getObjectNullOkay(entry.removeIntegerToken());
-        }
-
-        // 2.0 additions
-        lastHandSaved_ = entry.removeIntToken();
-        nNumOut_ = entry.removeIntToken();
-
-        // tables (entry per)
-        if (pdetails.getSaveTables() == SaveDetails.SAVE_ALL)
-            tables_.clear(); // make sure empty on full load
-        PokerTable table;
-        for (int i = 0; i < nNum; i++) {
-            entry = state.removeEntry();
-            table = (PokerTable) entry.getObject();
-            table.loadFromGameStateEntry(this, state, entry);
-
-            // add if not already in list
-            if (!tables_.contains(table))
-                tables_.add(table);
-        }
-
-        // removed tables
-        int[] removed = pdetails.getRemovedTables();
-        if (removed != null) {
-            for (int aRemoved : removed) {
-                table = (PokerTable) getTableByNumber(aRemoved);
-                removeTable(table);
-                if (PokerConstants.DEBUG_CLEANUP_TABLE) {
-                    logger.debug("Removed on load: " + table.getName());
-                }
-            }
-        }
+        throw new UnsupportedOperationException("Save/load not supported after engine class removal");
     }
 
-    /**
-     * allow subclass to do final setup after load
-     */
     @Override
     protected void gameLoaded(GameState state) {
-        PokerSaveDetails pdetails = (PokerSaveDetails) state.getSaveDetails().getCustomInfo();
-
-        // if full load, make sure player 0 (host/human)'s key matches
-        // that of the game doing the load. This can not match if a different
-        // user is loading someone else's save game.
-        fixKeys(state);
-
-        // load profiles now that all players are loaded and keys are set
-        // we do this here since the AI init can look for other player's
-        // data which may not yet be loaded
-        for (int i = getNumPlayers() - 1; i >= 0; i--) {
-            getPokerPlayerAt(i).loadProfile(state);
-        }
-
-        // set disconnected flag
-        fixDisconnected(state);
-
-        // upon load make sure DDMessage MsgState is created
-        // no need to load since after gameLoaded is called,
-        // a Load event is fired.
-        initMsgState(false);
-
-        // if we are to set current table to the local players table, do so
-        if (pdetails.isSetCurrentTableToLocal()) {
-            PokerPlayer local = getLocalPlayer();
-            ApplicationError.assertNotNull(local.getTable(), "Table should not be null", local);
-            setCurrentTable(local.getTable());
-        }
-
-        // compute total chips
-        computeTotalChipsInPlay();
-
-        // if practice load, set flag so "future" hand history cleaned up
-        if (state.getFile() != null && !isOnlineGame()) {
-            setDeleteHandsAfterSaveDate(true);
-        }
-
-        // go through all tables
-        for (int i = getNumTables() - 1; i >= 0; i--) {
-            ((PokerTable) getTable(i)).gameLoaded();
-        }
+        throw new UnsupportedOperationException("Save/load not supported after engine class removal");
     }
 
     /**
@@ -2262,11 +2013,11 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
             return;
         }
 
-        PokerPlayer host = getPokerPlayerFromID(PokerConstants.PLAYER_ID_HOST);
+        ClientPlayer host = getPokerPlayerFromID(PokerConstants.PLAYER_ID_HOST);
         String sHostKey = host.getPlayerId();
         String sCurrentKey = getPlayerId();
         if (!sHostKey.equals(sCurrentKey)) {
-            PokerPlayer player;
+            ClientPlayer player;
             for (int i = getNumPlayers() - 1; i >= 0; i--) {
                 player = getPokerPlayerAt(i);
                 if (player.getPlayerId().equals(sHostKey)) {
@@ -2293,7 +2044,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         }
 
         // set disconnected state for players
-        PokerPlayer player;
+        ClientPlayer player;
         for (int i = getNumPlayers() - 1; i >= 0; i--) {
             player = getPokerPlayerAt(i);
             player.setDisconnected(!(player.isHost() || player.isComputer()));
@@ -2323,7 +2074,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
         setInputMode(nMode, null, null);
     }
 
-    public void setInputMode(int nMode, ClientHoldemHand hhand, PokerPlayer player) {
+    public void setInputMode(int nMode, ClientHoldemHand hhand, ClientPlayer player) {
         if (input_ != null) {
             input_.setInputMode(nMode, hhand, player);
         }
@@ -2361,7 +2112,7 @@ public class PokerGame extends Game implements PlayerActionListener, TournamentC
     public void computeTotalChipsInPlay() {
         int chips = nExtraChips_;
 
-        PokerPlayer p;
+        ClientPlayer p;
         for (int i = getNumPlayers() - 1; i >= 0; i--) {
             p = getPokerPlayerAt(i);
             chips += profile_.getBuyinChips() + (p.getAddon() == 0 ? 0 : profile_.getAddonChips())

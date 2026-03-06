@@ -22,10 +22,10 @@ package com.donohoedigital.games.poker.control;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
-import com.donohoedigital.games.poker.PokerPlayer;
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.engine.PokerConstants;
-import com.donohoedigital.games.poker.core.PlayerAction;
+import com.donohoedigital.games.poker.engine.PlayerAction;
 import com.donohoedigital.games.poker.gameserver.ServerPlayerActionProvider;
 import com.donohoedigital.games.poker.gameserver.ServerTournamentDirector;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -101,7 +101,7 @@ class PuppetActionHandler extends BaseHandler {
             return;
         }
 
-        PokerPlayer player = table.getPlayer(seat);
+        ClientPlayer player = table.getPlayer(seat);
         if (player == null) {
             sendJson(exchange, 400, Map.of("error", "BadRequest", "message", "No player at seat " + seat));
             return;

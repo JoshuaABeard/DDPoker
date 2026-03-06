@@ -51,7 +51,7 @@ import org.apache.logging.log4j.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
  *
@@ -60,9 +60,9 @@ import com.donohoedigital.games.poker.core.state.BettingRound;
 public class Bet extends ChainPhase implements PlayerActionListener, CancelablePhase {
     static Logger logger = LogManager.getLogger(Bet.class);
 
-    private PokerPlayer player_;
-    private PokerTable table_;
-    private HoldemHand hhand_;
+    private ClientPlayer player_;
+    private ClientPokerTable table_;
+    private ClientHoldemHand hhand_;
     private PokerGame game_;
     private int nRound_;
     private boolean bSetZipModeAtEnd_ = false;
@@ -82,7 +82,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
     public void process() {
         // get player, table and current hand
         game_ = (PokerGame) context_.getGame();
-        table_ = (PokerTable) game_.getCurrentTable();
+        table_ = game_.getCurrentTable();
         hhand_ = table_.getHoldemHand();
         player_ = hhand_.getCurrentPlayer();
         nRound_ = hhand_.getRound().toLegacy();
@@ -221,7 +221,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
                 // make it appear like ai is "thinking" ... even if no delay is set
                 // Future: off for now - need to think more about this, maybe make an option
                 if (false && !table_.isZipMode() && !game_.isOnlineGame() && hhand_.getRound() == BettingRound.RIVER) {
-                    PokerPlayer human = game_.getHumanPlayer();
+                    ClientPlayer human = game_.getHumanPlayer();
                     int action = hhand_.getLastActionThisRound(human);
                     if (action == HandAction.ACTION_BET || action == HandAction.ACTION_RAISE) {
                         // if human bet or raised, have ai wait 2 to 5 seconds

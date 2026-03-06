@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker.impexp;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
 
@@ -56,7 +57,7 @@ public class ImpExpHand {
     public int bigBlind;
     public int buttonSeat;
     public int localHumanPlayerSeat = -1;
-    public PokerPlayer players[] = new PokerPlayer[PokerConstants.SEATS];
+    public ClientPlayer players[] = new ClientPlayer[PokerConstants.SEATS];
     public int betChips[] = new int[PokerConstants.SEATS];
     public int overbetChips[] = new int[PokerConstants.SEATS];
     public int winChips[] = new int[PokerConstants.SEATS];

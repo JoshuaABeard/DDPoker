@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker.dashboard;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
@@ -40,7 +41,6 @@ import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
-import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 import com.donohoedigital.gui.*;
 import com.zookitec.layout.*;
 
@@ -130,7 +130,7 @@ public class MyHand extends DashboardItem {
      *
      * @param table
      */
-    public static void cardsChanged(PokerTable table) {
+    public static void cardsChanged(ClientPokerTable table) {
         if (impl_ != null && impl_.isDisplayed() && !table.isZipMode()) {
             GuiUtils.invoke(new Runnable() {
                 public void run() {
@@ -170,7 +170,7 @@ public class MyHand extends DashboardItem {
     protected void updateMessages() {
         ClientPokerTable table = game_.getCurrentTable();
         ClientHoldemHand hhand = table.getHoldemHand();
-        PokerPlayer asViewedBy = game_.getHumanPlayer();
+        ClientPlayer asViewedBy = game_.getHumanPlayer();
         Hand hand = asViewedBy.getHand();
 
         // if no hand, or an observer

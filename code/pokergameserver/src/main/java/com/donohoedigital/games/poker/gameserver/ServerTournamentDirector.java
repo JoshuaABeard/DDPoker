@@ -40,14 +40,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.donohoedigital.games.poker.core.GameHand;
-import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.GameTable;
 import com.donohoedigital.games.poker.core.TableProcessResult;
 import com.donohoedigital.games.poker.core.TournamentContext;
 import com.donohoedigital.games.poker.core.TournamentEngine;
-import com.donohoedigital.games.poker.core.event.GameEvent;
-import com.donohoedigital.games.poker.core.state.ActionType;
-import com.donohoedigital.games.poker.core.state.TableState;
+import com.donohoedigital.games.poker.engine.event.GameEvent;
+import com.donohoedigital.games.poker.engine.state.ActionType;
+import com.donohoedigital.games.poker.engine.state.TableState;
 import com.donohoedigital.games.poker.model.LevelAdvanceMode;
 
 /**
@@ -461,7 +461,7 @@ public class ServerTournamentDirector implements Runnable {
                     }
                     // Publish the first current player for this hand so clients know
                     // whose turn it is before any ACTION_REQUIRED arrives.
-                    com.donohoedigital.games.poker.core.GamePlayerInfo firstPlayer = hand.getCurrentPlayerWithInit();
+                    com.donohoedigital.games.poker.engine.GamePlayerInfo firstPlayer = hand.getCurrentPlayerWithInit();
                     if (firstPlayer != null) {
                         eventBus.publish(new GameEvent.CurrentPlayerChanged(table.getNumber(), firstPlayer.getID()));
                     }

@@ -19,7 +19,7 @@
  */
 package com.donohoedigital.games.poker.gameserver;
 
-import com.donohoedigital.games.poker.core.event.GameEvent;
+import com.donohoedigital.games.poker.engine.event.GameEvent;
 import java.time.Instant;
 
 /**

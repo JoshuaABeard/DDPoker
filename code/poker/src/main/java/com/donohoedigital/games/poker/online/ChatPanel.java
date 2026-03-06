@@ -67,7 +67,7 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
 
     private GameContext context_;
     private PokerGame game_;
-    private PokerPlayer local_;
+    private ClientPlayer local_;
     private ChatManager mgr_;
 
     protected PokerPrefsPlayerList muted_;
@@ -253,7 +253,7 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
                         public void actionPerformed(ActionEvent e) {
                             // make sure we have something to send
                             if (msg_.isValidData()) {
-                                sendChatPrivate(PokerPlayer.HOST_ID);
+                                sendChatPrivate(ClientPlayer.HOST_ID);
                             }
                         }
                     });
@@ -441,8 +441,8 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
         String sMsg = Utils.encodeHTML(msg_.getText(), false);
 
         msg_.setText("");
-        if (mgr_ != null && game_.getCurrentTable() instanceof PokerTable)
-            mgr_.sendChat(sMsg, (PokerTable) game_.getCurrentTable(), null);
+        if (mgr_ != null && game_.getCurrentTable() != null)
+            mgr_.sendChat(sMsg, game_.getCurrentTable(), null);
 
         displayMessage(local_.getID(), PokerConstants.CHAT_ALWAYS, sMsg, true);
     }
@@ -471,7 +471,8 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
     private void sendChatPrivate(int nToID) {
         ClientPokerTable localTable = local_ != null ? local_.getTable() : null;
         String tableName = localTable != null ? localTable.getName() : "";
-        String sMsg = PropertyConfig.getMessage(nToID == PokerPlayer.HOST_ID ? "msg.chat.tohost" : "msg.chat.replyhost",
+        String sMsg = PropertyConfig.getMessage(
+                nToID == ClientPlayer.HOST_ID ? "msg.chat.tohost" : "msg.chat.replyhost",
                 Utils.encodeHTML(msg_.getText()), tableName);
 
         msg_.setText("");
@@ -559,7 +560,7 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
             if (bSkip)
                 return;
         } else {
-            PokerPlayer player = game_.getPokerPlayerFromID(nFrom);
+            ClientPlayer player = game_.getPokerPlayerFromID(nFrom);
             if (player == null) {
                 logger.warn("No player for chat, id=" + nFrom + " msg=" + sMsg);
                 return;

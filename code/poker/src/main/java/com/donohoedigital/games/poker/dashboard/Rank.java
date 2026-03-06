@@ -86,16 +86,9 @@ public class Rank extends DashboardItem {
         boolean bUpdate = false;
         switch (event.getType()) {
             case PokerTableEvent.TYPE_STATE_CHANGED :
-                switch (event.getNew()) {
-                    case PokerTable.STATE_NEW_LEVEL_CHECK :
-                        // update for possible change in number player
-                        // because this occurs after cleanup.
-                        // do this only for online games because clients don't
-                        // get the PROP_PLAYER_FINISHED events
-                        bUpdate = true;
-                        break;
-
-                }
+                // update for possible change in number of players
+                // because this occurs after cleanup
+                bUpdate = true;
                 break;
 
             default :
@@ -142,7 +135,7 @@ public class Rank extends DashboardItem {
             return; // check since we override superclass
 
         ClientPokerTable table = game_.getCurrentTable();
-        PokerPlayer human = game_.getHumanPlayer();
+        ClientPlayer human = game_.getHumanPlayer();
 
         int nRank = 0;
         int nWon = 0;

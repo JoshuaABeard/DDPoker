@@ -88,14 +88,14 @@ public class ObserversDash extends DashboardItem {
      * update observer list
      */
     protected void updateInfo() {
-        PokerTable table = (PokerTable) game_.getCurrentTable();
+        ClientPokerTable table = game_.getCurrentTable();
         obsPanel_.removeAll();
 
         // inline count - it can change during update
         if (table.getNumObservers() == 0) {
             obsPanel_.add(new DashObs(0, null));
         } else {
-            PokerPlayer player;
+            ClientPlayer player;
             int cnt = 1;
             for (int i = 0; i < table.getNumObservers(); i++) {
                 player = table.getObserver(i);
@@ -112,9 +112,9 @@ public class ObserversDash extends DashboardItem {
      * class to represent an observer
      */
     private class DashObs extends DDLabel implements MouseListener {
-        PokerPlayer p;
+        ClientPlayer p;
 
-        DashObs(int num, PokerPlayer p) {
+        DashObs(int num, ClientPlayer p) {
             super(GuiManager.DEFAULT, STYLE);
             this.p = p;
 

@@ -38,6 +38,7 @@
 
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.Utils;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.db.BindArray;
@@ -144,7 +145,7 @@ public class GameInfoDialog extends DialogPhase {
             add(label, BorderLayout.NORTH);
 
             // description
-            PokerPlayer infoLocal = game_.getLocalPlayer();
+            ClientPlayer infoLocal = game_.getLocalPlayer();
             TournamentSummaryPanel sum = new TournamentSummaryPanel(context_, "TournamentSummaryDialog", null,
                     "OptionsDialog", GuiManager.DEFAULT, 1.0d, (!game_.isOnlineGame() && !game_.isClockMode())
                             || (game_.isOnlineGame() && infoLocal != null && infoLocal.isHost()),
@@ -170,12 +171,8 @@ public class GameInfoDialog extends DialogPhase {
                 clientHand = null;
             }
 
-            // HandHistoryPanel requires HoldemHand (persistence path); remote hands are
-            // never
-            // stored in the database and clientHand will be null for remote tables.
-            HoldemHand hhand = clientHand instanceof HoldemHand ? (HoldemHand) clientHand : null;
-
-            add(new HandHistoryPanel(context_, STYLE, "HND_TOURNAMENT_ID=?", bindArray, hhand, 9), BorderLayout.CENTER);
+            add(new HandHistoryPanel(context_, STYLE, "HND_TOURNAMENT_ID=?", bindArray, clientHand, 9),
+                    BorderLayout.CENTER);
         }
     }
 }

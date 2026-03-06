@@ -53,7 +53,7 @@ public class OnlineDash extends DashboardItem {
     private static final String OBSERVING = PropertyConfig.getMessage("msg.observing.title");
 
     private DDPanel base_;
-    private PokerPlayer player_;
+    private ClientPlayer player_;
     private DDCheckBox sitout_, mucklose_, muckwin_;
     private PokerDirector td_;
 
@@ -147,7 +147,7 @@ public class OnlineDash extends DashboardItem {
             case PokerTableEvent.TYPE_PLAYER_SETTINGS_CHANGED :
                 // update board if settings changed for any player at table -
                 // this single place catches all changes to setSittingOut()
-                PokerPlayer player = event.getPlayer();
+                ClientPlayer player = event.getPlayer();
                 if (player.getTable() == player_.getTable()) {
                     PokerUtils.setConnectionStatus(context_, player, false);
                 }

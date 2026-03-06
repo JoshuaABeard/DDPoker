@@ -73,7 +73,7 @@ public class ExitPoker extends BasePhase {
         // quit was clicked when a join-failure message was displayed)
         game_ = (PokerGame) context_.getGame();
         if (game_ != null && !game_.isClockMode()) {
-            PokerPlayer local = game_.getLocalPlayer();
+            ClientPlayer local = game_.getLocalPlayer();
             bCancelFromJoin_ = local != null && local.getID() == PokerConstants.PLAYER_ID_TEMP;
         }
         if (game_ != null && game_.isOnlineGame() && !bCancelFromJoin_) {
@@ -93,7 +93,7 @@ public class ExitPoker extends BasePhase {
                         sConfirm = "msg.confirm.lobby.client.exit";
                         sNoShowKey = null;
                     } else {
-                        PokerPlayer human = game_.getHumanPlayer();
+                        ClientPlayer human = game_.getHumanPlayer();
                         if (human.isObserver()) {
                             // use default message for observers and allow no-show checkbox to be
                             // displayed/used

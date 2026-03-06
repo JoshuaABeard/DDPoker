@@ -40,6 +40,8 @@ package com.donohoedigital.games.poker;
 
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.dashboard.*;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -101,10 +103,10 @@ public class GamePrefsDialog extends OptionMenuDialog {
         }
 
         // get cards for human player
-        PokerTable table = (PokerTable) game.getCurrentTable();
+        ClientPokerTable table = game.getCurrentTable();
         if (table == null)
             return;
-        HoldemHand hhand = table.getHoldemHand();
+        ClientHoldemHand hhand = table.getHoldemHand();
         if (hhand == null)
             return;
 

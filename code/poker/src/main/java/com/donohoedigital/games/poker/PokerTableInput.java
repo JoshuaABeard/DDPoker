@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 
 public interface PokerTableInput {
@@ -47,7 +48,7 @@ public interface PokerTableInput {
     int MODE_CONTINUE = 7; // for color-up
     int MODE_REBUY_CHECK = 8; // rebuy button check
 
-    void setInputMode(int nMode, ClientHoldemHand hhand, PokerPlayer player);
+    void setInputMode(int nMode, ClientHoldemHand hhand, ClientPlayer player);
 
     public int getInputMode();
 }

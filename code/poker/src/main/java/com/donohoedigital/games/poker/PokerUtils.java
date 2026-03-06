@@ -157,7 +157,7 @@ public class PokerUtils extends EngineUtils {
     /**
      * Get player at seat assoc with territory
      */
-    public static PokerPlayer getPokerPlayer(GameContext context, Territory t) {
+    public static ClientPlayer getPokerPlayer(GameContext context, Territory t) {
         if (t == null)
             return null;
         PokerGame game = (PokerGame) context.getGame();
@@ -166,7 +166,7 @@ public class PokerUtils extends EngineUtils {
         if (nDisplaySeat == -1)
             return null;
 
-        PokerPlayer p = table.getPlayer(table.getTableSeat(nDisplaySeat));
+        ClientPlayer p = table.getPlayer(table.getTableSeat(nDisplaySeat));
         if (p != null)
             return p;
 
@@ -175,7 +175,7 @@ public class PokerUtils extends EngineUtils {
         // each player's computed display seat to the territory's display seat.
         if (table.isRemoteTable()) {
             for (int i = 0; i < PokerConstants.SEATS; i++) {
-                PokerPlayer candidate = table.getPlayer(i);
+                ClientPlayer candidate = table.getPlayer(i);
                 if (candidate != null && table.getDisplaySeat(i) == nDisplaySeat)
                     return candidate;
             }
@@ -255,7 +255,7 @@ public class PokerUtils extends EngineUtils {
             if (hhand == null)
                 return false;
 
-            PokerPlayer current = hhand.getCurrentPlayer();
+            ClientPlayer current = hhand.getCurrentPlayer();
             if (current != null && t.getUserInt() == table.getDisplaySeat(current.getSeat())) {
                 return true;
             }
@@ -318,7 +318,7 @@ public class PokerUtils extends EngineUtils {
     public static void clearResults(GameContext context, boolean repaint) {
         PokerGame game = (PokerGame) context.getGame();
 
-        PokerPlayer p;
+        ClientPlayer p;
         ResultsPiece piece;
         Territory[] ts = Territory.getTerritoryArrayCached();
         for (Territory t : ts) {
@@ -341,14 +341,14 @@ public class PokerUtils extends EngineUtils {
     /**
      * disconnected/sitting out player
      */
-    public static void setConnectionStatus(GameContext context, PokerPlayer p, boolean bClearIfConnected) {
+    public static void setConnectionStatus(GameContext context, ClientPlayer p, boolean bClearIfConnected) {
         setConnectionStatus(context, p, bClearIfConnected, true);
     }
 
     /**
      * disconnected/sitting out player logic with repaint flag
      */
-    private static void setConnectionStatus(GameContext context, PokerPlayer p, boolean bClearIfConnected,
+    private static void setConnectionStatus(GameContext context, ClientPlayer p, boolean bClearIfConnected,
             boolean repaint) {
         PokerGame game = (PokerGame) context.getGame();
         ClientPokerTable table = game.getCurrentTable();
@@ -401,7 +401,7 @@ public class PokerUtils extends EngineUtils {
     /**
      * turn all cards up - return true if changed a card
      */
-    public static void showCards(PokerPlayer player, boolean bUp) {
+    public static void showCards(ClientPlayer player, boolean bUp) {
         Territory t = getTerritoryForTableSeat(player.getTable(), player.getSeat());
         List<GamePiece> cards;
         CardPiece card;
@@ -420,14 +420,14 @@ public class PokerUtils extends EngineUtils {
     /**
      * Show dialog about what ai rebought/add-on
      */
-    public static void showComputerBuys(GameContext context, PokerGame game, List<PokerPlayer> who, String sType) {
+    public static void showComputerBuys(GameContext context, PokerGame game, List<ClientPlayer> who, String sType) {
         if (who == null || who.isEmpty())
             return;
         if (TESTING(PokerConstants.TESTING_AUTOPILOT_INIT))
             return;
-        Collections.sort(who, PokerPlayer.SORTBYNAME); // sort by name
+        Collections.sort(who, ClientPlayer.SORTBYNAME); // sort by name
         StringBuilder sb = new StringBuilder();
-        PokerPlayer p;
+        ClientPlayer p;
         int nNum = who.size();
         for (int i = 0; i < nNum; i++) {
             p = who.get(i);

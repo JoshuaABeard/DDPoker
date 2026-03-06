@@ -34,7 +34,7 @@ package com.donohoedigital.games.poker.dashboard;
 
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.engine.GameContext;
-import com.donohoedigital.games.poker.PokerPlayer;
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
@@ -79,7 +79,7 @@ public class MyTable extends DashboardItem {
      */
     protected void updateInfo() {
         ClientPokerTable table = game_.getCurrentTable();
-        PokerPlayer human = game_.getHumanPlayer();
+        ClientPlayer human = game_.getHumanPlayer();
         if (table == null || human == null)
             return;
 

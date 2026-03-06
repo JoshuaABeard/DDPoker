@@ -19,11 +19,10 @@ package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.poker.GameClock;
 import com.donohoedigital.games.poker.PokerGame;
-import com.donohoedigital.games.poker.PokerPlayer;
 import com.donohoedigital.games.poker.PokerTableInput;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -272,8 +271,7 @@ class WebSocketTournamentDirectorTest {
         dispatch(ServerMessageType.ACTION_REQUIRED, payload);
 
         RemoteHoldemHand hand = requireTable().getRemoteHand();
-        assertThat(hand.getCurrentPlayerIndex())
-                .isNotEqualTo(com.donohoedigital.games.poker.HoldemHand.NO_CURRENT_PLAYER);
+        assertThat(hand.getCurrentPlayerIndex()).isNotEqualTo(RemoteHoldemHand.NO_CURRENT_PLAYER);
         assertThat(wsTD.getCurrentOptions()).isNotNull();
         assertThat(wsTD.getCurrentOptions().canFold()).isTrue();
         assertThat(wsTD.getCurrentOptions().canCall()).isTrue();
@@ -309,7 +307,7 @@ class WebSocketTournamentDirectorTest {
         // Local player is at hand index 1, not 0. getNew() must reflect that.
         assertThat(evt.getNew()).isEqualTo(1);
         // Old index was NO_CURRENT_PLAYER (-1) set by onHandStarted.
-        assertThat(evt.getOld()).isEqualTo(com.donohoedigital.games.poker.HoldemHand.NO_CURRENT_PLAYER);
+        assertThat(evt.getOld()).isEqualTo(RemoteHoldemHand.NO_CURRENT_PLAYER);
     }
 
     @Test
@@ -326,7 +324,7 @@ class WebSocketTournamentDirectorTest {
         payload.set("options", options);
         dispatch(ServerMessageType.ACTION_REQUIRED, payload);
 
-        PokerPlayer localPlayer = requireTable().getRemoteHand().getCurrentPlayer();
+        ClientPlayer localPlayer = requireTable().getRemoteHand().getCurrentPlayer();
         assertThat(localPlayer).isNotNull();
         // 30s * 1000ms = 30000ms (stored internally in 100ms increments, so readable as
         // 30000)
@@ -350,7 +348,7 @@ class WebSocketTournamentDirectorTest {
 
         RemoteHoldemHand hand = requireTable().getRemoteHand();
         assertThat(hand.getTotalPotChipCount()).isEqualTo(100);
-        assertThat(hand.getCurrentPlayerIndex()).isEqualTo(com.donohoedigital.games.poker.HoldemHand.NO_CURRENT_PLAYER);
+        assertThat(hand.getCurrentPlayerIndex()).isEqualTo(RemoteHoldemHand.NO_CURRENT_PLAYER);
     }
 
     // -------------------------------------------------------------------------
@@ -374,16 +372,14 @@ class WebSocketTournamentDirectorTest {
         dispatch(ServerMessageType.ACTION_REQUIRED, arPayload);
 
         // Verify current player is set (non-sentinel)
-        assertThat(table.getRemoteHand().getCurrentPlayerIndex())
-                .isNotEqualTo(com.donohoedigital.games.poker.HoldemHand.NO_CURRENT_PLAYER);
+        assertThat(table.getRemoteHand().getCurrentPlayerIndex()).isNotEqualTo(RemoteHoldemHand.NO_CURRENT_PLAYER);
 
         // Now timeout that player — current player must be cleared
         ObjectNode payload = mapper.createObjectNode();
         payload.put("playerId", 1L).put("autoAction", "FOLD").put("tableId", 1);
         dispatch(ServerMessageType.ACTION_TIMEOUT, payload);
 
-        assertThat(table.getRemoteHand().getCurrentPlayerIndex())
-                .isEqualTo(com.donohoedigital.games.poker.HoldemHand.NO_CURRENT_PLAYER);
+        assertThat(table.getRemoteHand().getCurrentPlayerIndex()).isEqualTo(RemoteHoldemHand.NO_CURRENT_PLAYER);
     }
 
     @Test
@@ -630,7 +626,7 @@ class WebSocketTournamentDirectorTest {
         RemotePokerTable table = requireTable();
 
         // Capture winner before GAME_COMPLETE clears the seat.
-        PokerPlayer winner = table.getPlayer(0);
+        ClientPlayer winner = table.getPlayer(0);
 
         ObjectNode payload = mapper.createObjectNode();
         payload.putArray("standings");
@@ -740,7 +736,7 @@ class WebSocketTournamentDirectorTest {
         dispatch(ServerMessageType.POT_AWARDED, payload);
 
         RemoteHoldemHand hand = table.getRemoteHand();
-        PokerPlayer winner = table.getPlayer(0);
+        ClientPlayer winner = table.getPlayer(0);
         assertThat(hand).isNotNull();
         assertThat(winner).isNotNull();
         assertThat(hand.getWin(winner)).isGreaterThan(0);
@@ -878,9 +874,9 @@ class WebSocketTournamentDirectorTest {
         dispatch(ServerMessageType.CONNECTED, connected);
 
         // Configure mock game: human at client ID 0, one AI at client ID 1.
-        PokerPlayer humanGamePlayer = Mockito.mock(PokerPlayer.class);
+        ClientPlayer humanGamePlayer = Mockito.mock(ClientPlayer.class);
         Mockito.when(humanGamePlayer.getID()).thenReturn(0);
-        PokerPlayer aiGamePlayer = Mockito.mock(PokerPlayer.class);
+        ClientPlayer aiGamePlayer = Mockito.mock(ClientPlayer.class);
         Mockito.when(aiGamePlayer.getID()).thenReturn(1);
 
         Mockito.when(mockGame.getPokerPlayerFromID(0)).thenReturn(humanGamePlayer);
@@ -909,9 +905,9 @@ class WebSocketTournamentDirectorTest {
         dispatch(ServerMessageType.CONNECTED, connected);
 
         // Configure mock game: human at client ID 0, one AI at client ID 1.
-        PokerPlayer humanGamePlayer = Mockito.mock(PokerPlayer.class);
+        ClientPlayer humanGamePlayer = Mockito.mock(ClientPlayer.class);
         Mockito.when(humanGamePlayer.getID()).thenReturn(0);
-        PokerPlayer aiGamePlayer = Mockito.mock(PokerPlayer.class);
+        ClientPlayer aiGamePlayer = Mockito.mock(ClientPlayer.class);
         Mockito.when(aiGamePlayer.getID()).thenReturn(1);
 
         Mockito.when(mockGame.getPokerPlayerFromID(0)).thenReturn(humanGamePlayer);
@@ -1568,7 +1564,7 @@ class WebSocketTournamentDirectorTest {
         RemotePokerTable table = requireTable();
 
         // Find Bob (seat 1) and verify no blank cards
-        PokerPlayer bob = table.getPlayer(1);
+        ClientPlayer bob = table.getPlayer(1);
         assertThat(bob).isNotNull();
         assertThat(bob.getHand().size()).isEqualTo(0);
     }

@@ -38,9 +38,11 @@
 
 package com.donohoedigital.games.poker.event;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.comms.*;
 import com.donohoedigital.games.poker.*;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 
 /**
@@ -83,7 +85,7 @@ public class PokerTableEvent implements DataMarshal {
     // members
     private int nType_;
     private ClientPokerTable table_;
-    private PokerPlayer player_;
+    private ClientPlayer player_;
     private HandAction action_;
     private int nOne_ = NOT_DEFINED;
     private int nTwo_ = NOT_DEFINED;
@@ -96,8 +98,8 @@ public class PokerTableEvent implements DataMarshal {
         nType_ = list.removeIntToken();
         // Safe cast: the serialized game-state path only persists PokerTable instances,
         // not RemotePokerTable. Remote tables are not deserialized via DataCoder.
-        table_ = (PokerTable) state.getObject(list.removeIntegerToken());
-        player_ = (PokerPlayer) state.getObject(list.removeIntegerToken());
+        table_ = (ClientPokerTable) state.getObject(list.removeIntegerToken());
+        player_ = (ClientPlayer) state.getObject(list.removeIntegerToken());
         action_ = (HandAction) list.removeToken();
         nOne_ = list.removeIntToken();
         nTwo_ = list.removeIntToken();
@@ -182,10 +184,10 @@ public class PokerTableEvent implements DataMarshal {
         if (action_ != null)
             sb.append(";  ACTION=").append(action_);
         if (nType_ == TYPE_STATE_CHANGED) {
-            sb.append("; old=").append(PokerTable.getStringForState(nOne_));
-            sb.append("; new=").append(PokerTable.getStringForState(nTwo_));
+            sb.append("; old=").append(nOne_);
+            sb.append("; new=").append(nTwo_);
         } else if (nType_ == TYPE_DEALER_ACTION) {
-            sb.append("; round=").append(HoldemHand.getRoundName(nOne_));
+            sb.append("; round=").append(BettingRound.getRoundName(nOne_));
         } else if (nType_ == TYPE_PLAYER_REBUY || nType_ == TYPE_PLAYER_ADDON) {
             sb.append("; cash=").append(nOne_);
             sb.append("; chips=").append(nTwo_);
@@ -218,7 +220,7 @@ public class PokerTableEvent implements DataMarshal {
     /**
      * Player added/removed events
      */
-    public PokerTableEvent(int nType, ClientPokerTable table, PokerPlayer player, int nSeat) {
+    public PokerTableEvent(int nType, ClientPokerTable table, ClientPlayer player, int nSeat) {
         this(nType, table);
         player_ = player;
         nOne_ = nSeat;
@@ -236,7 +238,7 @@ public class PokerTableEvent implements DataMarshal {
     /**
      * Player rebuy/addon events
      */
-    public PokerTableEvent(int nType, ClientPokerTable table, PokerPlayer player, int nCash, int nChips,
+    public PokerTableEvent(int nType, ClientPokerTable table, ClientPlayer player, int nCash, int nChips,
             boolean bPending) {
         this(nType, table);
         nOne_ = nCash;
@@ -279,7 +281,7 @@ public class PokerTableEvent implements DataMarshal {
     /**
      * Get poker player this event refers to. Only availble for PLAYER event types
      */
-    public PokerPlayer getPlayer() {
+    public ClientPlayer getPlayer() {
         return player_;
     }
 

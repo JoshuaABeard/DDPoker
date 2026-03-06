@@ -51,7 +51,7 @@ public class DashboardPlayerInfo extends DashboardItem implements TerritorySelec
     private DDPanel stylePanel_;
     private StyleQuadrantsGridPanel styleQuadsPanel_;
     private DDHtmlArea styleSummaryLabel_;
-    PokerPlayer last_;
+    ClientPlayer last_;
 
     public DashboardPlayerInfo(GameContext context) {
         super(context, "playerstyle");
@@ -86,7 +86,7 @@ public class DashboardPlayerInfo extends DashboardItem implements TerritorySelec
         if (!isOpen() || !isDisplayed())
             return;
 
-        PokerPlayer p;
+        ClientPlayer p;
 
         if (t == null)
             p = null;

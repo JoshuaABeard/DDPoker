@@ -19,8 +19,11 @@
  */
 package com.donohoedigital.games.poker.core.ai;
 
-import com.donohoedigital.games.poker.core.*;
+import com.donohoedigital.games.poker.core.GameHand;
+import com.donohoedigital.games.poker.core.GameTable;
+import com.donohoedigital.games.poker.core.TournamentContext;
 import com.donohoedigital.games.poker.engine.Card;
+import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 
 /**
  * Provides AI with read-only access to game state for decision making.

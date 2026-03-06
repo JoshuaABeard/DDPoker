@@ -37,10 +37,10 @@ The project is a Maven multi-module build with 13 modules. Build order (later mo
 | `gamecommon`      | Core game utilities (shared client/server)                       | jar      |
 | `gameengine`      | Core game engine (Swing UI framework)                            | jar      |
 | `gametools`       | Game building tools (border/territory managers)                  | jar      |
-| `pokerengine`     | Core poker utilities (shared client/server)                      | jar      |
+| `pokerengine`     | Core poker utilities, shared types, hand evaluation (shared client/server) | jar      |
 | `pokergamecore`   | Server-side game engine (pure logic, no Swing/Spring)            | jar      |
 | `pokergameserver` | Game server Spring Boot auto-configuration (WebSocket, REST, AI) | jar      |
-| `poker`           | DD Poker UI / desktop client                                     | jar      |
+| `poker`           | DD Poker UI / desktop client (pure rendering layer)              | jar      |
 | `pokerserver`     | DD Poker backend server                                          | jar      |
 
 ## Key Entry Points

@@ -38,6 +38,7 @@
 
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
@@ -53,14 +54,14 @@ public class ChangePlayerNameDialog extends DialogPhase implements PropertyChang
 
     public static final String PARAM_PLAYER = "player";
 
-    private PokerPlayer player_;
+    private ClientPlayer player_;
     private DDTextField playerName_;
 
     /**
      * create chat ui
      */
     public JComponent createDialogContents() {
-        player_ = (PokerPlayer) gamephase_.getObject(PARAM_PLAYER);
+        player_ = (ClientPlayer) gamephase_.getObject(PARAM_PLAYER);
         ApplicationError.assertNotNull(player_, "No 'player' in params");
 
         // contents

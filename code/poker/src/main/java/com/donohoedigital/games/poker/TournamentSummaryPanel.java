@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
@@ -345,7 +346,7 @@ public class TournamentSummaryPanel extends DDPanel {
      */
     static class TournamentModel extends DefaultTableModel {
         GameContext context;
-        List<PokerPlayer> rank;
+        List<ClientPlayer> rank;
         TournamentProfile profile;
         TournamentProfileHtml html;
         List<BaseProfile> playerTypes;
@@ -456,7 +457,7 @@ public class TournamentSummaryPanel extends DDPanel {
                 boolean bSet = false;
                 // if we have a rank list, display actual prize paid
                 if (rank != null && rowIndex < rank.size()) {
-                    PokerPlayer at = rank.get(rowIndex);
+                    ClientPlayer at = rank.get(rowIndex);
                     if (at.getPrize() > 0) {
                         PokerGame game = (PokerGame) context.getGame();
                         sValue = PropertyConfig.getMessage("msg.spot.paid",

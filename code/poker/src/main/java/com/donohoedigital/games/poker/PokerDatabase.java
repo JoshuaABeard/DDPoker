@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.db.*;
@@ -40,7 +41,6 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.impexp.*;
 import com.donohoedigital.games.poker.model.*;
-import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 import org.apache.logging.log4j.*;
 
 import java.io.*;
@@ -48,7 +48,9 @@ import java.math.*;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 
 /**
  * Represents the client database(s) for storing stats, etc.
@@ -251,12 +253,12 @@ public class PokerDatabase {
         }
     }
 
-    public static int storeHandHistory(HoldemHand hhand) {
+    public static int storeHandHistory(ClientHoldemHand hhand) {
         /*
          * for (int i = 0; i < 100; ++i) { storeHandHistory2(hhand); } } public static
          * void storeHandHistory2(HoldemHand hhand) {
          */
-        PokerTable table = hhand.getTable();
+        ClientPokerTable table = hhand.getClientTable();
         PokerGame game = table.getGame();
 
         List<HandAction> history = hhand.getHistoryCopy();
@@ -282,16 +284,12 @@ public class PokerDatabase {
                     break;
                 default :
                     lastRound[seat] = action.getRound();
-                    switch (round) {
-                        case HoldemHand.ROUND_FLOP :
-                            communityCardsDealt = 3;
-                            break;
-                        case HoldemHand.ROUND_TURN :
-                            communityCardsDealt = 4;
-                            break;
-                        case HoldemHand.ROUND_RIVER :
-                            communityCardsDealt = 5;
-                            break;
+                    if (round == BettingRound.ROUND_FLOP) {
+                        communityCardsDealt = 3;
+                    } else if (round == BettingRound.ROUND_TURN) {
+                        communityCardsDealt = 4;
+                    } else if (round == BettingRound.ROUND_RIVER) {
+                        communityCardsDealt = 5;
                     }
                     break;
             }
@@ -368,7 +366,7 @@ public class PokerDatabase {
             }
 
             // record results of the human
-            PokerPlayer human = game.getHumanPlayer();
+            ClientPlayer human = game.getHumanPlayer();
             storeTournamentFinish(conn, game, human);
 
             // insert hand info
@@ -383,8 +381,8 @@ public class PokerDatabase {
                                     + "HND_COMMUNITY_CARD_2,\n" + "HND_COMMUNITY_CARD_3,\n" + "HND_COMMUNITY_CARD_4,\n"
                                     + "HND_COMMUNITY_CARD_5\n" + ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                             Statement.RETURN_GENERATED_KEYS)) {
-                pstmt.setString(1, Integer.toString(hhand.getTable().getHandNum()));
-                pstmt.setString(2, Integer.toString(hhand.getTable().getNumber()));
+                pstmt.setString(1, Integer.toString(hhand.getClientTable().getHandNum()));
+                pstmt.setString(2, Integer.toString(hhand.getClientTable().getNumber()));
                 pstmt.setInt(3, tournamentID);
                 pstmt.setString(4, "HOLDEM");
                 pstmt.setString(5, hhand.isNoLimit() ? "NOLIMIT" : hhand.isPotLimit() ? "POTLIMIT" : "LIMIT");
@@ -432,7 +430,7 @@ public class PokerDatabase {
                 // added the pocket == null check to catch this, so current
                 // code may be okay, but semantically, should go by HoldemHand player list
                 for (int p = 0; p < numPlayers; ++p) {
-                    PokerPlayer player = hhand.getPlayerAt(p);
+                    ClientPlayer player = hhand.getPlayerAt(p);
                     Hand pocket = player.getHand();
                     int seat = player.getSeat();
 
@@ -547,7 +545,7 @@ public class PokerDatabase {
         return tournamentID;
     }
 
-    public static int storeTournamentFinish(PokerGame game, PokerPlayer player) {
+    public static int storeTournamentFinish(PokerGame game, ClientPlayer player) {
         Database database = getDatabase();
         Connection conn = database.getConnection();
 
@@ -563,7 +561,7 @@ public class PokerDatabase {
         }
     }
 
-    private static int storeTournamentFinish(Connection conn, PokerGame game, PokerPlayer player) throws SQLException {
+    private static int storeTournamentFinish(Connection conn, PokerGame game, ClientPlayer player) throws SQLException {
         int tournamentID = storeTournament(conn, game);
 
         int finishID = -1;
@@ -788,7 +786,7 @@ public class PokerDatabase {
         }
     }
 
-    public static void playerNameChanged(PokerGame game, PokerPlayer player) {
+    public static void playerNameChanged(PokerGame game, ClientPlayer player) {
         Database database = getDatabase();
         Connection conn = database.getConnection();
 
@@ -846,7 +844,7 @@ public class PokerDatabase {
         }
     }
 
-    private static int storePlayer(Connection conn, int tournamentID, PokerPlayer player) throws SQLException {
+    private static int storePlayer(Connection conn, int tournamentID, ClientPlayer player) throws SQLException {
         int playerID = -1;
 
         boolean useProfile = player.isHuman() && player.isLocallyControlled();
@@ -1183,7 +1181,7 @@ public class PokerDatabase {
                 }
             }
 
-            PokerPlayer players[] = new PokerPlayer[PokerConstants.SEATS];
+            ClientPlayer players[] = new ClientPlayer[PokerConstants.SEATS];
             int over[] = new int[PokerConstants.SEATS];
             int win[] = new int[PokerConstants.SEATS];
             int start[] = new int[PokerConstants.SEATS];
@@ -1209,7 +1207,7 @@ public class PokerDatabase {
                     while (rs.next()) {
                         int seat = rs.getInt(1);
 
-                        players[seat] = new PokerPlayer();
+                        players[seat] = new ClientPlayer();
                         start[seat] = rs.getBigDecimal(2).intValue();
                         end[seat] = rs.getBigDecimal(3).intValue();
                         players[seat].setChipCount(end[seat]);
@@ -1421,7 +1419,7 @@ public class PokerDatabase {
                     while (rs.next()) {
                         int seat = rs.getInt(1);
 
-                        ieHand.players[seat] = new PokerPlayer();
+                        ieHand.players[seat] = new ClientPlayer();
                         ieHand.players[seat].setSeat(seat);
                         ieHand.betChips[seat] = 0;
                         ieHand.startChips[seat] = rs.getBigDecimal(2).intValue();
@@ -1535,7 +1533,7 @@ public class PokerDatabase {
             boolean bShowAll, boolean bShowReason) {
         StringBuilder sb2 = new StringBuilder();
 
-        PokerPlayer p;
+        ClientPlayer p;
         HandAction action;
         int nNum = 0;
         int nPrior = 0;
@@ -1788,7 +1786,7 @@ public class PokerDatabase {
             }
         }
 
-        PokerPlayer player;
+        ClientPlayer player;
 
         HandInfoFast info = new HandInfoFast();
 

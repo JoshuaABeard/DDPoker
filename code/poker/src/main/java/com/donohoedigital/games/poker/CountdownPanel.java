@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.gui.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.engine.*;
@@ -61,7 +62,7 @@ public class CountdownPanel extends DDPanel implements ActionListener {
         game_ = game;
         clock_ = game_.getGameClock();
         setPreferredHeight(5);
-        PokerPlayer host = game_.getHost();
+        ClientPlayer host = game_.getHost();
         bSupported_ = host == null || !host.getVersion().isBefore(PokerConstants.VERSION_COUNTDOWN_CHANGED);
     }
 
@@ -116,7 +117,7 @@ public class CountdownPanel extends DDPanel implements ActionListener {
             ClientHoldemHand hh = table.getHoldemHand();
             if (hh == null)
                 return;
-            PokerPlayer player = hh.getCurrentPlayer();
+            ClientPlayer player = hh.getCurrentPlayer();
             if (player == null)
                 return;
             setTime(player.getTimeoutMillis(), player.getThinkBankMillis());

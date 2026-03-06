@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker.dashboard;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
@@ -41,7 +42,7 @@ import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Mar 18, 2005 Time: 4:40:33 PM
@@ -79,7 +80,7 @@ public abstract class Odds extends DashboardItem {
 
         switch (event.getType()) {
             case PokerTableEvent.TYPE_CURRENT_PLAYER_CHANGED :
-                PokerPlayer nu = hhand.getCurrentPlayer();
+                ClientPlayer nu = hhand.getCurrentPlayer();
                 if (nu != null && nu.isHumanControlled()) {
                     bUpdateOdds = true;
                 }
@@ -125,7 +126,7 @@ public abstract class Odds extends DashboardItem {
         // init
         ClientPokerTable table = game_.getCurrentTable();
         ClientHoldemHand hhand = table.getHoldemHand();
-        PokerPlayer asViewedBy = game_.getHumanPlayer();
+        ClientPlayer asViewedBy = game_.getHumanPlayer();
 
         // update message text and update labels
         String sOdds = updateOdds(hhand, asViewedBy, false);
@@ -135,7 +136,7 @@ public abstract class Odds extends DashboardItem {
     /**
      * Update odds display
      */
-    protected String updateOdds(ClientHoldemHand hhand, PokerPlayer asViewedBy, boolean bMouseOver) {
+    protected String updateOdds(ClientHoldemHand hhand, ClientPlayer asViewedBy, boolean bMouseOver) {
         // no hand
         if (hhand == null
         // || (!bMouseOver && asViewedBy.isHuman() &&
@@ -156,5 +157,5 @@ public abstract class Odds extends DashboardItem {
 
     }
 
-    protected abstract String getDisplay(int nRound, ClientHoldemHand hhand, PokerPlayer asViewedBy, Hand hand);
+    protected abstract String getDisplay(int nRound, ClientHoldemHand hhand, ClientPlayer asViewedBy, Hand hand);
 }

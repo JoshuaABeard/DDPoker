@@ -22,7 +22,7 @@ package com.donohoedigital.games.poker.control;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
-import com.donohoedigital.games.poker.PokerPlayer;
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.gameserver.ServerPlayerActionProvider;
@@ -72,7 +72,7 @@ class PuppetHandler extends BaseHandler {
             ClientPokerTable table = game.getCurrentTable();
             if (table != null) {
                 for (int seat = 0; seat < PokerConstants.SEATS; seat++) {
-                    PokerPlayer player = table.getPlayer(seat);
+                    ClientPlayer player = table.getPlayer(seat);
                     if (player != null && provider.isPuppeted(player.getID())) {
                         puppetedSeats.add(seat);
                     }
@@ -122,7 +122,7 @@ class PuppetHandler extends BaseHandler {
             return;
         }
 
-        PokerPlayer player = table.getPlayer(seat);
+        ClientPlayer player = table.getPlayer(seat);
         if (player == null) {
             sendJson(exchange, 400, Map.of("error", "BadRequest", "message", "No player at seat " + seat));
             return;

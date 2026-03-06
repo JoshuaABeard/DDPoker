@@ -38,7 +38,7 @@ import com.donohoedigital.games.config.Territory;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.Gameboard;
 import com.donohoedigital.games.engine.TerritorySelectionListener;
-import com.donohoedigital.games.poker.PokerPlayer;
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.PokerUtils;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
@@ -55,7 +55,7 @@ import java.awt.event.MouseEvent;
  */
 public class PlayerInfo extends DashboardItem implements TerritorySelectionListener {
     DDLabel labelInfo_;
-    PokerPlayer last_;
+    ClientPlayer last_;
 
     public PlayerInfo(GameContext context) {
         super(context, "playerinfo");
@@ -75,7 +75,7 @@ public class PlayerInfo extends DashboardItem implements TerritorySelectionListe
         if (!isOpen() || !isDisplayed())
             return;
 
-        PokerPlayer p;
+        ClientPlayer p;
 
         if (t == null)
             p = null;

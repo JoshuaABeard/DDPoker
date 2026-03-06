@@ -32,11 +32,12 @@
  */
 package com.donohoedigital.games.poker.dashboard;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 
 import java.util.Map;
@@ -83,7 +84,7 @@ public class ImproveOdds extends Odds {
     /**
      * get display string
      */
-    protected String getDisplay(int nRound, ClientHoldemHand hhand, PokerPlayer asViewedBy, Hand hand) {
+    protected String getDisplay(int nRound, ClientHoldemHand hhand, ClientPlayer asViewedBy, Hand hand) {
         sTotal_ = null;
 
         // pre-flop, or insufficient community cards.
@@ -94,16 +95,11 @@ public class ImproveOdds extends Odds {
         }
 
         // river / showdown: no improvements possible
-        switch (nRound) {
-            case HoldemHand.ROUND_RIVER :
-            case HoldemHand.ROUND_SHOWDOWN :
-            default :
-                sTotal_ = "0";
-                return PropertyConfig.getMessage("msg.odds.imptype.none");
-
-            case HoldemHand.ROUND_FLOP :
-            case HoldemHand.ROUND_TURN :
-                break;
+        if (nRound == BettingRound.ROUND_FLOP || nRound == BettingRound.ROUND_TURN) {
+            // fall through to calculation below
+        } else {
+            sTotal_ = "0";
+            return PropertyConfig.getMessage("msg.odds.imptype.none");
         }
 
         // Read server-provided improvement odds

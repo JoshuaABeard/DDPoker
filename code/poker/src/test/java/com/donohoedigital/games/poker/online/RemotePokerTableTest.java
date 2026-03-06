@@ -18,8 +18,6 @@
 package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.poker.PokerGame;
-import com.donohoedigital.games.poker.PokerPlayer;
-import com.donohoedigital.games.poker.PokerTable;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,14 +55,14 @@ class RemotePokerTableTest {
     void initialStateIsEmpty() {
         assertThat(table.getNumOccupiedSeats()).isEqualTo(0);
         assertThat(table.getHoldemHand()).isNull();
-        assertThat(table.getButton()).isEqualTo(PokerTable.NO_SEAT);
+        assertThat(table.getButton()).isEqualTo(ClientPokerTable.NO_SEAT);
     }
 
     @Test
     void updateFromStateSetsPlayers() {
-        PokerPlayer[] players = new PokerPlayer[PokerConstants.SEATS];
-        players[0] = new PokerPlayer(1, "Alice", true);
-        players[1] = new PokerPlayer(2, "Bob", false);
+        ClientPlayer[] players = new ClientPlayer[PokerConstants.SEATS];
+        players[0] = new ClientPlayer(1, "Alice", true);
+        players[1] = new ClientPlayer(2, "Bob", false);
         table.updateFromState(players, 0);
 
         assertThat(table.getPlayer(0)).isSameAs(players[0]);
@@ -76,7 +74,7 @@ class RemotePokerTableTest {
 
     @Test
     void setRemotePlayerUpdatesIndividualSeat() {
-        PokerPlayer alice = new PokerPlayer(1, "Alice", true);
+        ClientPlayer alice = new ClientPlayer(1, "Alice", true);
         table.setRemotePlayer(3, alice);
 
         assertThat(table.getPlayer(3)).isSameAs(alice);
@@ -85,7 +83,7 @@ class RemotePokerTableTest {
 
     @Test
     void clearSeatRemovesPlayer() {
-        PokerPlayer alice = new PokerPlayer(1, "Alice", true);
+        ClientPlayer alice = new ClientPlayer(1, "Alice", true);
         table.setRemotePlayer(2, alice);
         table.clearSeat(2);
 

@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import com.donohoedigital.games.poker.core.event.GameEvent;
-import com.donohoedigital.games.poker.core.state.TableState;
+import com.donohoedigital.games.poker.engine.event.GameEvent;
+import com.donohoedigital.games.poker.engine.state.TableState;
 
 /**
  * Result of processing a table state in TournamentEngine. Replaces TDreturn

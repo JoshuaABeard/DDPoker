@@ -38,6 +38,7 @@
 
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
@@ -53,7 +54,7 @@ public class PokerGamePiece extends EngineGamePiece {
 
     private String icName_;
     private ImageComponent ic_ = null;
-    protected PokerPlayer pokerplayer_;
+    protected ClientPlayer pokerplayer_;
 
     /**
      * Empty constructor needed for demarshalling
@@ -64,7 +65,7 @@ public class PokerGamePiece extends EngineGamePiece {
     /**
      * Creates a new instance of PokerGamePiece
      */
-    public PokerGamePiece(int nType, PokerPlayer player, String tpName, String sName) {
+    public PokerGamePiece(int nType, ClientPlayer player, String tpName, String sName) {
         super(nType, player, tpName, sName);
         icName_ = sName;
         pokerplayer_ = player;
@@ -96,9 +97,9 @@ public class PokerGamePiece extends EngineGamePiece {
     }
 
     /**
-     * Get player as PokerPlayer
+     * Get player as ClientPlayer
      */
-    public PokerPlayer getPokerPlayer() {
+    public ClientPlayer getPokerPlayer() {
         return pokerplayer_;
     }
 
@@ -106,7 +107,7 @@ public class PokerGamePiece extends EngineGamePiece {
      * Sets poker game player too
      */
     public void setGamePlayer(GamePlayer player) {
-        pokerplayer_ = (PokerPlayer) player;
+        pokerplayer_ = (ClientPlayer) player;
         super.setGamePlayer(player);
     }
 
@@ -166,7 +167,7 @@ public class PokerGamePiece extends EngineGamePiece {
     public void loadFromGameStateEntry(GameState state, GameStateEntry entry) {
         super.loadFromGameStateEntry(state, entry);
         setICName(getName());
-        pokerplayer_ = (PokerPlayer) getGamePlayer();
+        pokerplayer_ = (ClientPlayer) getGamePlayer();
     }
 
 }

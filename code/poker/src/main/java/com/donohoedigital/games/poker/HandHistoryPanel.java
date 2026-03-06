@@ -32,13 +32,13 @@
  */
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.db.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.gui.*;
-import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 
 import javax.swing.*;
 import javax.swing.event.*;
@@ -47,20 +47,21 @@ import java.awt.event.*;
 import java.sql.*;
 import java.util.*;
 import java.util.List;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
 
 public class HandHistoryPanel extends DDPanel {
 
     private String where_;
     private BindArray bindArray_;
-    private HoldemHand currentHand_;
+    private ClientHoldemHand currentHand_;
     private int pageSize_;
 
     private int handCount_;
     private int handFirst_;
 
     private int handID_;
-    private HoldemHand hhand_;
+    private ClientHoldemHand hhand_;
 
     private List<Object> hands_;
 
@@ -80,7 +81,7 @@ public class HandHistoryPanel extends DDPanel {
     private ImageIcon icon_ = ImageConfig.getImageIcon("ddlogo20");
 
     public HandHistoryPanel(GameContext context, String sStyle, String where, BindArray bindArray,
-            HoldemHand currentHand, int pageSize) {
+            ClientHoldemHand currentHand, int pageSize) {
         context_ = context;
         pageSize_ = pageSize;
 
@@ -332,9 +333,9 @@ public class HandHistoryPanel extends DDPanel {
         return sb.toString();
     }
 
-    private String getHist(List<HandAction> hist, int nRound, HoldemHand hhand, boolean bAnte) {
+    private String getHist(List<HandAction> hist, int nRound, ClientHoldemHand hhand, boolean bAnte) {
         StringBuilder sb = new StringBuilder();
-        PokerPlayer p;
+        ClientPlayer p;
         int nNum = 0;
         int nPrior = 0;
 
@@ -423,8 +424,8 @@ public class HandHistoryPanel extends DDPanel {
             if (hhand_ == o)
                 return;
             handID_ = -1;
-            hhand_ = (HoldemHand) o;
-            showAllCheckbox_.setEnabled(!hhand_.getTable().getGame().isOnlineGame());
+            hhand_ = (ClientHoldemHand) o;
+            showAllCheckbox_.setEnabled(!hhand_.getClientTable().getGame().isOnlineGame());
         }
 
         checkButtons();
@@ -463,7 +464,7 @@ public class HandHistoryPanel extends DDPanel {
                 display_.setText(
                         "<html><body>" + PokerDatabase.getHandListHTML((Integer) getItem()) + "</body></html>");
             } else {
-                display_.setText("<html><body>" + ((HoldemHand) o).getHandListHTML() + "</body></html>");
+                display_.setText("<html><body>" + ((ClientHoldemHand) o).getHandListHTML() + "</body></html>");
             }
         }
     }
@@ -478,7 +479,7 @@ public class HandHistoryPanel extends DDPanel {
      * Build a short hand description from a scored HandInfoFast. Mirrors
      * HandInfoFast.toString(", ", false) from the poker module.
      */
-    public static String handDesc(com.donohoedigital.games.poker.core.ai.HandInfoFast info) {
+    public static String handDesc(com.donohoedigital.games.poker.engine.HandInfoFast info) {
         int type = info.getHandType();
         StringBuilder buf = new StringBuilder();
         buf.append(PropertyConfig.getMessage("msg.hand." + type));

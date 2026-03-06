@@ -32,10 +32,12 @@
  */
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
 
 /**
@@ -52,8 +54,8 @@ public class DealDisplay {
     /**
      * Make sure cards in players hands in table match what is actually displayed.
      */
-    public static void syncCards(PokerTable table) {
-        PokerPlayer player;
+    public static void syncCards(ClientPokerTable table) {
+        ClientPlayer player;
         Hand hand;
         for (int i = 0; i < PokerConstants.SEATS; i++) {
             player = table.getPlayer(i);
@@ -73,7 +75,7 @@ public class DealDisplay {
     /**
      * Display card for given player.
      */
-    private static void displayCard(GameContext context, PokerPlayer player, int c, boolean bRepaint, int nCardDelay) {
+    private static void displayCard(GameContext context, ClientPlayer player, int c, boolean bRepaint, int nCardDelay) {
         int nSeat = player.getSeat();
         Hand hand = player.getHand();
         boolean bUp = hand.getType() != Hand.TYPE_NORMAL;

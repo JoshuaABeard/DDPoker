@@ -19,7 +19,7 @@
  */
 package com.donohoedigital.games.poker.gameserver;
 
-import com.donohoedigital.games.poker.core.GamePlayerInfo;
+import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 import com.donohoedigital.games.poker.core.GameTable;
 import com.donohoedigital.games.poker.core.TournamentContext;
 import java.util.List;

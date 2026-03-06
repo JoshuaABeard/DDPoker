@@ -171,11 +171,6 @@
     </dependency>
     <dependency>
       <groupId>com.donohoedigital</groupId>
-      <artifactId>pokergamecore</artifactId>
-      <version>3.3.0-CommunityEdition</version>
-    </dependency>
-    <dependency>
-      <groupId>com.donohoedigital</groupId>
       <artifactId>db</artifactId>
       <version>3.3.0-CommunityEdition</version>
     </dependency>
@@ -292,6 +287,31 @@
             <goals>
               <goal>copy-dependencies</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Maven Enforcer: Ban pokergamecore dependency -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>ban-pokergamecore</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <searchTransitive>false</searchTransitive>
+                  <excludes>
+                    <exclude>*:pokergamecore</exclude>
+                  </excludes>
+                  <message>poker (desktop client) must not depend on pokergamecore — all game logic is server-side</message>
+                </bannedDependencies>
+              </rules>
+            </configuration>
           </execution>
         </executions>
       </plugin>

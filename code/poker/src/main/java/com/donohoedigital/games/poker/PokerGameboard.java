@@ -51,7 +51,7 @@ import org.apache.logging.log4j.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.*;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
  *
@@ -233,7 +233,7 @@ public class PokerGameboard extends Gameboard {
         if (!PokerUtils.isSeat(t))
             return super.getTerritoryDisplay(t);
 
-        PokerPlayer player = PokerUtils.getPokerPlayer(context_, t);
+        ClientPlayer player = PokerUtils.getPokerPlayer(context_, t);
         if (player == null) {
             return "";
         } else {
@@ -261,38 +261,19 @@ public class PokerGameboard extends Gameboard {
             boolean bFold = false;
             String sIcon = "icon-blank";
             String sText = "";
-            PokerPlayer player = table.getPlayer(PokerUtils.getTableSeatForTerritory(table, t));
+            ClientPlayer player = table.getPlayer(PokerUtils.getTableSeatForTerritory(table, t));
             Color color = fireGetTerritoryLabelColor(t);
             int nChipAmount = 0;
             if (player != null) {
                 ClientHoldemHand hhand = table.getHoldemHand();
 
-                // coloring up mode
-                PokerTable pokerTable = (PokerTable) table;
-                if (pokerTable.isColoringUpDisplay()) {
-                    color = PokerDisplayAdapter.cCurrent_;
-                    int nAmount = 0;
-                    if (player.isWonChipRace()) {
-                        sText = PropertyConfig
-                                .getMessage(player.isBrokeChipRace() ? "msg.oddchips.broke" : "msg.oddchips.won");
-                        nAmount = pokerTable.getNextMinChip();
-                    } else {
-                        int nOdd = player.getOddChips();
-                        sText = PropertyConfig.getMessage(nOdd == 0
-                                ? "msg.oddchips.none"
-                                : (nOdd == 1 ? "msg.oddchips.sing" : "msg.oddchips.plur"), nOdd);
-                        if (nOdd > 0)
-                            nAmount = table.getMinChip();
-                    }
-
-                    nChipAmount = nAmount;
-                } else if (hhand != null) {
+                if (hhand != null) {
                     int nBet = hhand.getBet(player);
                     int nLast = hhand.getLastAction(player);
 
                     if (PokerConstants.DEBUG_EVENT_DISPLAY || TESTING(EngineConstants.TESTING_DEBUG_REPAINT)) {
                         logger.debug("repaintTerritory (with hhand) for " + player.getName() + " round: "
-                                + HoldemHand.getRoundName(hhand.getRound().toLegacy()) + " current: "
+                                + BettingRound.getRoundName(hhand.getRound().toLegacy()) + " current: "
                                 + player.isCurrentGamePlayer());
                     }
 

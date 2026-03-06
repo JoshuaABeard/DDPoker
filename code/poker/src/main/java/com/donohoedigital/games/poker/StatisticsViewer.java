@@ -37,6 +37,7 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.db.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.gui.*;
 
@@ -47,7 +48,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
 import java.util.List;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 public class StatisticsViewer extends BasePhase implements ActionListener {
     public static final String COL_FINISH = "finish";
@@ -634,17 +635,16 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
             return buf.toString();
         }
         public static String getRoundColumn(int nRound) {
-            switch (nRound) {
-                case HoldemHand.ROUND_PRE_FLOP :
-                    return "PLH_PREFLOP_ACTIONS";
-                case HoldemHand.ROUND_FLOP :
-                    return "PLH_FLOP_ACTIONS";
-                case HoldemHand.ROUND_TURN :
-                    return "PLH_TURN_ACTIONS";
-                case HoldemHand.ROUND_RIVER :
-                    return "PLH_RIVER_ACTIONS";
-                default :
-                    return null;
+            if (nRound == BettingRound.ROUND_PRE_FLOP) {
+                return "PLH_PREFLOP_ACTIONS";
+            } else if (nRound == BettingRound.ROUND_FLOP) {
+                return "PLH_FLOP_ACTIONS";
+            } else if (nRound == BettingRound.ROUND_TURN) {
+                return "PLH_TURN_ACTIONS";
+            } else if (nRound == BettingRound.ROUND_RIVER) {
+                return "PLH_RIVER_ACTIONS";
+            } else {
+                return null;
             }
         }
 
@@ -720,7 +720,7 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
                     "\"com.donohoedigital.games.poker.PokerDatabaseProcs.getHandClass\"(PLH_CARD_1, PLH_CARD_2)",
                     "\"com.donohoedigital.games.poker.PokerDatabaseProcs.getHandClassRank\"(PLH_CARD_1, PLH_CARD_2) DESC",
                     bindArray));
-            table_.setExporter(new TableExporter(context_, HoldemHand.getRoundName(nRound_)));
+            table_.setExporter(new TableExporter(context_, BettingRound.getRoundName(nRound_)));
         }
 
         @Override

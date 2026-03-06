@@ -36,12 +36,8 @@
  * Created on March 31, 2004, 6:00 PM
  */
 
-package com.donohoedigital.games.poker.core.ai;
+package com.donohoedigital.games.poker.engine;
 
-import com.donohoedigital.games.poker.engine.Card;
-import com.donohoedigital.games.poker.engine.CardSuit;
-import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.engine.HandScoreConstants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

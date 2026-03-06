@@ -23,7 +23,7 @@ import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
-import com.donohoedigital.games.poker.PokerPlayer;
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.PokerTableInput;
 import com.donohoedigital.games.poker.PokerUtils;
@@ -167,7 +167,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
             table = (tables != null && !tables.isEmpty()) ? tables.get(0) : null;
         }
         ClientHoldemHand hand = table != null ? table.getHoldemHand() : null;
-        PokerPlayer human = game.getHumanPlayer();
+        ClientPlayer human = game.getHumanPlayer();
         TournamentProfile profile = game.getProfile();
         int inputMode = game.getInputMode();
         boolean humanTurn = isHumanTurn(inputMode);
@@ -182,13 +182,13 @@ class UiDashboardWidgetsHandler extends BaseHandler {
                 humanTurn, handNumber, round, inputModeName, stamp.updatedAtMs(), stamp.stateSeq());
     }
 
-    private static String buildFingerprint(PokerGame game, ClientPokerTable table, ClientHoldemHand hand, PokerPlayer human,
+    private static String buildFingerprint(PokerGame game, ClientPokerTable table, ClientHoldemHand hand, ClientPlayer human,
             int inputMode, int handNumber, String round, boolean humanTurn) {
         int tableId = table != null ? table.getNumber() : -1;
         int level = Math.max(1, game.getLevel());
         int pot = hand != null ? hand.getTotalPotChipCount() : 0;
         int callAmount = (hand != null && human != null) ? hand.getCall(human) : 0;
-        PokerPlayer current = hand != null ? hand.getCurrentPlayer() : null;
+        ClientPlayer current = hand != null ? hand.getCurrentPlayer() : null;
         int currentSeat = current != null ? current.getSeat() : -1;
         int playersRemaining = game.getNumPlayers() - game.getNumPlayersOut();
         return tableId + "|" + level + "|" + handNumber + "|" + round + "|" + inputMode + "|"
@@ -312,7 +312,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
 
     private static Map<String, Object> playerInfoData(SnapshotState state, String variant) {
         Map<String, Object> data = new LinkedHashMap<>();
-        PokerPlayer human = state.human();
+        ClientPlayer human = state.human();
         PokerGame game = state.game();
 
         data.put("variant", variant);
@@ -359,7 +359,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
 
     private static Map<String, Object> handStrengthData(SnapshotState state) {
         Map<String, Object> data = new LinkedHashMap<>();
-        PokerPlayer human = state.human();
+        ClientPlayer human = state.human();
         String round = state.round();
         boolean postFlopRound = "FLOP".equals(round) || "TURN".equals(round) || "RIVER".equals(round);
 
@@ -380,7 +380,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
     private static Map<String, Object> potOddsData(SnapshotState state) {
         Map<String, Object> data = new LinkedHashMap<>();
         ClientHoldemHand hand = state.hand();
-        PokerPlayer human = state.human();
+        ClientPlayer human = state.human();
 
         if (hand == null || human == null) {
             data.put("pot", 0);
@@ -413,7 +413,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
     private static Map<String, Object> improveOddsData(SnapshotState state) {
         Map<String, Object> data = new LinkedHashMap<>();
         ClientHoldemHand hand = state.hand();
-        PokerPlayer human = state.human();
+        ClientPlayer human = state.human();
 
         int communityCards = hand != null ? hand.getCommunity().size() : 0;
         String round = state.round();
@@ -442,7 +442,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
 
     private static Map<String, Object> myHandData(SnapshotState state) {
         Map<String, Object> data = new LinkedHashMap<>();
-        PokerPlayer human = state.human();
+        ClientPlayer human = state.human();
 
         if (human == null) {
             data.put("holeCards", List.of());
@@ -463,7 +463,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
     private static Map<String, Object> myTableData(SnapshotState state) {
         Map<String, Object> data = new LinkedHashMap<>();
         ClientPokerTable table = state.table();
-        PokerPlayer human = state.human();
+        ClientPlayer human = state.human();
 
         data.put("tableId", table != null ? table.getNumber() : -1);
         data.put("dealerSeat", table != null ? table.getButton() : -1);
@@ -476,7 +476,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
     private static Map<String, Object> rankData(SnapshotState state) {
         Map<String, Object> data = new LinkedHashMap<>();
         PokerGame game = state.game();
-        PokerPlayer human = state.human();
+        ClientPlayer human = state.human();
 
         int totalPlayers = game != null ? game.getNumPlayers() : 0;
         int playersRemaining = game != null ? game.getNumPlayers() - game.getNumPlayersOut() : 0;
@@ -556,7 +556,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
         return data;
     }
 
-    private static int safeRank(PokerGame game, PokerPlayer human) {
+    private static int safeRank(PokerGame game, ClientPlayer human) {
         if (game == null || human == null || human.isObserver()) {
             return 0;
         }
@@ -626,7 +626,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
             PokerGame game,
             ClientPokerTable table,
             ClientHoldemHand hand,
-            PokerPlayer human,
+            ClientPlayer human,
             TournamentProfile profile,
             boolean humanTurn,
             int handNumber,

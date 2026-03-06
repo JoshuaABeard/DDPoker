@@ -21,6 +21,7 @@ package com.donohoedigital.games.poker;
 
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
+import com.donohoedigital.games.poker.online.ClientPokerTable;
 import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
 
@@ -229,7 +230,7 @@ class PokerUtilsTest {
 
     @Test
     void roundAmountMinChip_returnsChipsUnchanged_whenMinChipIsZero() {
-        PokerTable table = Mockito.mock(PokerTable.class);
+        ClientPokerTable table = Mockito.mock(ClientPokerTable.class);
         Mockito.when(table.getMinChip()).thenReturn(0);
 
         // Previously threw ArithmeticException (/ by zero); now returns chips unchanged
@@ -240,7 +241,7 @@ class PokerUtilsTest {
 
     @Test
     void roundAmountMinChip_roundsToNearestMultiple() {
-        PokerTable table = Mockito.mock(PokerTable.class);
+        ClientPokerTable table = Mockito.mock(ClientPokerTable.class);
         Mockito.when(table.getMinChip()).thenReturn(25);
 
         assertThat(PokerUtils.roundAmountMinChip(table, 500)).isEqualTo(500); // exact

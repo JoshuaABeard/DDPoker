@@ -22,6 +22,8 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
 import com.donohoedigital.games.poker.model.TournamentProfile;
+import com.donohoedigital.games.poker.online.ClientPlayer;
+import com.donohoedigital.games.poker.online.RemotePokerTable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -88,7 +90,7 @@ class PokerGameTest {
         // Need a human player and profile for description to work
         TournamentProfile profile = createTestProfile();
         game.setProfile(profile);
-        PokerPlayer human = createTestPlayer("Human", false);
+        ClientPlayer human = createTestPlayer("Human", false);
         game.addPlayer(human);
 
         String description = game.getDescription();
@@ -131,7 +133,7 @@ class PokerGameTest {
 
     @Test
     void should_AddPlayer_When_PlayerAdded() {
-        PokerPlayer player = createTestPlayer("TestPlayer", false);
+        ClientPlayer player = createTestPlayer("TestPlayer", false);
 
         game.addPlayer(player);
 
@@ -140,7 +142,7 @@ class PokerGameTest {
 
     @Test
     void should_RemovePlayer_When_PlayerRemoved() {
-        PokerPlayer player = createTestPlayer("TestPlayer", false);
+        ClientPlayer player = createTestPlayer("TestPlayer", false);
         game.addPlayer(player);
 
         game.removePlayer(player);
@@ -150,25 +152,25 @@ class PokerGameTest {
 
     @Test
     void should_ReturnPlayerByID_When_PlayerExists() {
-        PokerPlayer player = new PokerPlayer(42, "TestPlayer", false);
+        ClientPlayer player = new ClientPlayer(42, "TestPlayer", false);
         game.addPlayer(player);
 
-        PokerPlayer found = game.getPokerPlayerFromID(42);
+        ClientPlayer found = game.getPokerPlayerFromID(42);
 
         assertThat(found).isEqualTo(player);
     }
 
     @Test
     void should_ReturnNull_When_PlayerIDDoesNotExist() {
-        PokerPlayer found = game.getPokerPlayerFromID(999);
+        ClientPlayer found = game.getPokerPlayerFromID(999);
 
         assertThat(found).isNull();
     }
 
     @Test
-    void should_ReturnPlayersCopy_When_GetPokerPlayersCopyCalled() {
-        PokerPlayer player1 = createTestPlayer("Player1", false);
-        PokerPlayer player2 = createTestPlayer("Player2", false);
+    void should_ReturnPlayersCopy_When_GetClientPlayersCopyCalled() {
+        ClientPlayer player1 = createTestPlayer("Player1", false);
+        ClientPlayer player2 = createTestPlayer("Player2", false);
         game.addPlayer(player1);
         game.addPlayer(player2);
 
@@ -180,25 +182,25 @@ class PokerGameTest {
 
     @Test
     void should_ReturnHumanPlayer_When_HumanPlayerExists() {
-        PokerPlayer human = createTestPlayer("Human", false);
-        PokerPlayer computer = createTestPlayer("Computer", true);
+        ClientPlayer human = createTestPlayer("Human", false);
+        ClientPlayer computer = createTestPlayer("Computer", true);
         game.addPlayer(human); // Add human first
         game.addPlayer(computer);
 
-        PokerPlayer found = game.getHumanPlayer();
+        ClientPlayer found = game.getHumanPlayer();
 
         assertThat(found).isEqualTo(human);
     }
 
     @Test
     void should_ReturnNull_When_PlayerKeyDoesNotMatch() {
-        PokerPlayer player = createTestPlayer("TestPlayer", false);
+        ClientPlayer player = createTestPlayer("TestPlayer", false);
         game.addPlayer(player);
 
         // Key matching requires specific initialization that's not available in unit
         // tests
         // Test the null case instead
-        PokerPlayer found = game.getPokerPlayerFromKey("non-existent-key");
+        ClientPlayer found = game.getPokerPlayerFromKey("non-existent-key");
 
         assertThat(found).isNull();
     }
@@ -209,7 +211,7 @@ class PokerGameTest {
 
     @Test
     void should_AddTable_When_TableAdded() {
-        PokerTable table = createTestTable(1);
+        RemotePokerTable table = createTestTable(1);
 
         game.addTable(table);
 
@@ -219,7 +221,7 @@ class PokerGameTest {
 
     @Test
     void should_RemoveTable_When_TableRemoved() {
-        PokerTable table = createTestTable(1);
+        RemotePokerTable table = createTestTable(1);
         game.addTable(table);
 
         game.removeTable(table);
@@ -230,7 +232,7 @@ class PokerGameTest {
 
     @Test
     void should_SetCurrentTable_When_TableSet() {
-        PokerTable table = createTestTable(1);
+        RemotePokerTable table = createTestTable(1);
         game.addTable(table);
 
         game.setCurrentTable(table);
@@ -240,8 +242,8 @@ class PokerGameTest {
 
     @Test
     void should_ReturnTableByIndex_When_IndexValid() {
-        PokerTable table1 = createTestTable(1);
-        PokerTable table2 = createTestTable(2);
+        RemotePokerTable table1 = createTestTable(1);
+        RemotePokerTable table2 = createTestTable(2);
         game.addTable(table1);
         game.addTable(table2);
 
@@ -251,18 +253,18 @@ class PokerGameTest {
 
     @Test
     void should_ReturnTableByNumber_When_NumberMatches() {
-        PokerTable table = createTestTable(5);
+        RemotePokerTable table = createTestTable(5);
         game.addTable(table);
 
-        PokerTable found = (PokerTable) game.getTableByNumber(5);
+        RemotePokerTable found = (RemotePokerTable) game.getTableByNumber(5);
 
         assertThat(found).isEqualTo(table);
     }
 
     @Test
     void should_ReturnAllTables_When_GetTablesCalled() {
-        PokerTable table1 = createTestTable(1);
-        PokerTable table2 = createTestTable(2);
+        RemotePokerTable table1 = createTestTable(1);
+        RemotePokerTable table2 = createTestTable(2);
         game.addTable(table1);
         game.addTable(table2);
 
@@ -393,7 +395,7 @@ class PokerGameTest {
     void should_TrackPlayersOut_When_PlayerOut() {
         TournamentProfile profile = createTestProfile();
         game.setProfile(profile);
-        PokerPlayer player = createTestPlayer("OutPlayer", false);
+        ClientPlayer player = createTestPlayer("OutPlayer", false);
         game.addPlayer(player);
 
         game.playerOut(player);
@@ -437,8 +439,8 @@ class PokerGameTest {
     void should_ComputeTotalChips_When_ChipsInPlay() {
         TournamentProfile profile = createTestProfile();
         game.setProfile(profile);
-        PokerPlayer player1 = createTestPlayer("Player1", false);
-        PokerPlayer player2 = createTestPlayer("Player2", false);
+        ClientPlayer player1 = createTestPlayer("Player1", false);
+        ClientPlayer player2 = createTestPlayer("Player2", false);
         player1.setChipCount(1000);
         player2.setChipCount(1500);
         game.addPlayer(player1);
@@ -455,8 +457,8 @@ class PokerGameTest {
     void should_GetAverageStack_When_PlayersHaveChips() {
         TournamentProfile profile = createTestProfile();
         game.setProfile(profile);
-        PokerPlayer player1 = createTestPlayer("Player1", false);
-        PokerPlayer player2 = createTestPlayer("Player2", false);
+        ClientPlayer player1 = createTestPlayer("Player1", false);
+        ClientPlayer player2 = createTestPlayer("Player2", false);
         player1.setChipCount(1000);
         player2.setChipCount(1500);
         game.addPlayer(player1);
@@ -486,8 +488,8 @@ class PokerGameTest {
     void should_GetPlayerRank_When_PlayerInGame() {
         TournamentProfile profile = createTestProfile();
         game.setProfile(profile);
-        PokerPlayer player1 = createTestPlayer("Player1", false);
-        PokerPlayer player2 = createTestPlayer("Player2", false);
+        ClientPlayer player1 = createTestPlayer("Player1", false);
+        ClientPlayer player2 = createTestPlayer("Player2", false);
         player1.setChipCount(2000);
         player2.setChipCount(1000);
         game.addPlayer(player1);
@@ -503,9 +505,9 @@ class PokerGameTest {
     void should_GetPlayersByRank_When_MultiplePlayers() {
         TournamentProfile profile = createTestProfile();
         game.setProfile(profile);
-        PokerPlayer player1 = createTestPlayer("Player1", false);
-        PokerPlayer player2 = createTestPlayer("Player2", false);
-        PokerPlayer player3 = createTestPlayer("Player3", false);
+        ClientPlayer player1 = createTestPlayer("Player1", false);
+        ClientPlayer player2 = createTestPlayer("Player2", false);
+        ClientPlayer player3 = createTestPlayer("Player3", false);
         player1.setChipCount(3000);
         player2.setChipCount(2000);
         player3.setChipCount(1000);
@@ -576,7 +578,7 @@ class PokerGameTest {
     void should_VerifyChipCount_When_ChipsInPlay() {
         TournamentProfile profile = createTestProfile();
         game.setProfile(profile);
-        PokerPlayer player = createTestPlayer("Player1", false);
+        ClientPlayer player = createTestPlayer("Player1", false);
         player.setChipCount(1000);
         game.addPlayer(player);
         game.computeTotalChipsInPlay();
@@ -589,7 +591,7 @@ class PokerGameTest {
         TournamentProfile profile = createTestProfile();
         game.setProfile(profile);
 
-        PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        ClientPlayer player = new ClientPlayer(1, "Player1", false);
         player.setBuyin(100);
         game.addPlayer(player);
 
@@ -604,11 +606,11 @@ class PokerGameTest {
         TournamentProfile profile = createTestProfile();
         game.setProfile(profile);
 
-        PokerPlayer canonical = new PokerPlayer(7, "Player7", false);
+        ClientPlayer canonical = new ClientPlayer(7, "Player7", false);
         canonical.setBuyin(100);
         game.addPlayer(canonical);
 
-        PokerPlayer clone = new PokerPlayer(7, "Player7", false);
+        ClientPlayer clone = new ClientPlayer(7, "Player7", false);
         game.playerOut(clone);
 
         assertThat(canonical.isEliminated()).isTrue();
@@ -631,7 +633,7 @@ class PokerGameTest {
 
     @Test
     void should_MarkPlayerEliminated_When_ApplyPlayerResultCalled() {
-        PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        ClientPlayer player = new ClientPlayer(1, "Player1", false);
         game.addPlayer(player);
 
         game.applyPlayerResult(1, 2);
@@ -641,7 +643,7 @@ class PokerGameTest {
 
     @Test
     void should_SetFinishPosition_When_ApplyPlayerResultCalled() {
-        PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        ClientPlayer player = new ClientPlayer(1, "Player1", false);
         game.addPlayer(player);
 
         game.applyPlayerResult(1, 3);
@@ -651,7 +653,7 @@ class PokerGameTest {
 
     @Test
     void should_ZeroChips_When_FinishPositionIsNotFirst() {
-        PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        ClientPlayer player = new ClientPlayer(1, "Player1", false);
         player.setChipCount(1000);
         game.addPlayer(player);
 
@@ -662,7 +664,7 @@ class PokerGameTest {
 
     @Test
     void should_PreserveChips_When_FinishPositionIsFirst() {
-        PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        ClientPlayer player = new ClientPlayer(1, "Player1", false);
         player.setChipCount(5000);
         game.addPlayer(player);
 
@@ -673,7 +675,7 @@ class PokerGameTest {
 
     @Test
     void should_IncrementPlayersOut_When_ApplyPlayerResultCalled() {
-        PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        ClientPlayer player = new ClientPlayer(1, "Player1", false);
         game.addPlayer(player);
 
         game.applyPlayerResult(1, 2);
@@ -684,7 +686,7 @@ class PokerGameTest {
     @Test
     void should_SetZeroPrize_When_NoProfileSetInApplyPlayerResult() {
         // No profile set — prize defaults to 0
-        PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        ClientPlayer player = new ClientPlayer(1, "Player1", false);
         game.addPlayer(player);
 
         game.applyPlayerResult(1, 2);
@@ -696,7 +698,7 @@ class PokerGameTest {
     void should_SetPrizeFromProfile_When_ProfileIsSetInApplyPlayerResult() {
         TournamentProfile profile = createTestProfile();
         game.setProfile(profile);
-        PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        ClientPlayer player = new ClientPlayer(1, "Player1", false);
         player.setBuyin(100);
         game.addPlayer(player);
 
@@ -712,9 +714,9 @@ class PokerGameTest {
         TournamentProfile profile = createTestProfile();
         game.setProfile(profile);
 
-        PokerPlayer winner = new PokerPlayer(1, "Winner", false);
+        ClientPlayer winner = new ClientPlayer(1, "Winner", false);
         winner.setBuyin(100);
-        PokerPlayer runnerUp = new PokerPlayer(2, "RunnerUp", false);
+        ClientPlayer runnerUp = new ClientPlayer(2, "RunnerUp", false);
         runnerUp.setBuyin(100);
 
         game.addPlayer(winner);
@@ -729,7 +731,7 @@ class PokerGameTest {
 
     @Test
     void should_NotIncrementPlayersOut_When_ApplyPlayerResultRepeatedForSamePlayer() {
-        PokerPlayer player = new PokerPlayer(1, "Player1", false);
+        ClientPlayer player = new ClientPlayer(1, "Player1", false);
         game.addPlayer(player);
 
         game.applyPlayerResult(1, 2);
@@ -743,9 +745,9 @@ class PokerGameTest {
         TournamentProfile profile = createTestProfile();
         game.setProfile(profile);
 
-        PokerPlayer winner = new PokerPlayer(1, "Winner", false);
+        ClientPlayer winner = new ClientPlayer(1, "Winner", false);
         winner.setBuyin(100);
-        PokerPlayer runnerUp = new PokerPlayer(2, "RunnerUp", false);
+        ClientPlayer runnerUp = new ClientPlayer(2, "RunnerUp", false);
         runnerUp.setBuyin(100);
 
         game.addPlayer(winner);
@@ -830,14 +832,14 @@ class PokerGameTest {
         return profile;
     }
 
-    private PokerPlayer createTestPlayer(String name, boolean isComputer) {
-        PokerPlayer player = new PokerPlayer(0, name, isComputer);
+    private ClientPlayer createTestPlayer(String name, boolean isComputer) {
+        ClientPlayer player = new ClientPlayer(0, name, isComputer);
         player.setName(name);
         return player;
     }
 
-    private PokerTable createTestTable(int tableNumber) {
-        PokerTable table = new PokerTable(game, tableNumber);
+    private RemotePokerTable createTestTable(int tableNumber) {
+        RemotePokerTable table = new RemotePokerTable(game, tableNumber);
         return table;
     }
 }

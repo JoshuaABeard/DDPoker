@@ -17,7 +17,7 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.core;
+package com.donohoedigital.games.poker.engine;
 
 /**
  * Pure Java tournament clock with no Swing dependencies. Tracks time using

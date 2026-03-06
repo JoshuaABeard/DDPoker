@@ -38,6 +38,7 @@
 
 package com.donohoedigital.games.poker.ai.gui;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.config.GamePhase;
 import com.donohoedigital.games.engine.DialogPhase;
@@ -74,7 +75,7 @@ public class AdvisorInfoDialog extends DialogPhase {
      * Returns the current player from the active hand, or null if any link in the
      * chain (table, hand, player) is missing.
      */
-    private PokerPlayer getActivePlayer() {
+    private ClientPlayer getActivePlayer() {
         ClientPokerTable table = game_.getCurrentTable();
         if (table == null)
             return null;
@@ -101,7 +102,7 @@ public class AdvisorInfoDialog extends DialogPhase {
     public void finish() {
         super.finish();
 
-        PokerPlayer player = getActivePlayer();
+        ClientPlayer player = getActivePlayer();
         if (player == null)
             return;
         ClientPokerTable table = game_.getCurrentTable();
@@ -144,7 +145,7 @@ public class AdvisorInfoDialog extends DialogPhase {
     }
 
     private void updateResult() {
-        PokerPlayer p = getActivePlayer();
+        ClientPlayer p = getActivePlayer();
         if (p == null)
             return;
         ClientHoldemHand hhand = game_.getCurrentTable().getHoldemHand();
@@ -155,7 +156,7 @@ public class AdvisorInfoDialog extends DialogPhase {
         PlayerTypeSlidersPanel slidersPanel_;
 
         public void createUI() {
-            PokerPlayer p = getActivePlayer();
+            ClientPlayer p = getActivePlayer();
             if (p == null)
                 return;
             PlayerType playerType = p.getPlayerType();
@@ -189,7 +190,7 @@ public class AdvisorInfoDialog extends DialogPhase {
                     return;
             }
 
-            PokerPlayer p = getActivePlayer();
+            ClientPlayer p = getActivePlayer();
             if (p == null)
                 return;
             PlayerType playerType = p.getPlayerType();

@@ -30,7 +30,7 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.core.event;
+package com.donohoedigital.games.poker.engine.event;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.donohoedigital.games.poker.core.state.ActionType;
+import com.donohoedigital.games.poker.engine.state.ActionType;
 
 /** Tests for {@link GameEventBus}. */
 class GameEventBusTest {

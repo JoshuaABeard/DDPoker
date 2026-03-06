@@ -32,8 +32,10 @@
  */
 package com.donohoedigital.games.poker.impexp;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 import java.util.*;
 import java.text.*;
@@ -86,7 +88,7 @@ public class ImpExpUB implements ImpExp {
         buf.append(newline);
 
         for (int seat = 0; seat < PokerConstants.SEATS; ++seat) {
-            PokerPlayer player = ieHand.players[seat];
+            ClientPlayer player = ieHand.players[seat];
 
             if (player == null)
                 continue;
@@ -119,19 +121,15 @@ public class ImpExpUB implements ImpExp {
 
             StringBuilder active = null;
 
-            switch (action.getRound()) {
-                case HoldemHand.ROUND_PRE_FLOP :
-                    active = preflop;
-                    break;
-                case HoldemHand.ROUND_FLOP :
-                    active = flop;
-                    break;
-                case HoldemHand.ROUND_TURN :
-                    active = turn;
-                    break;
-                case HoldemHand.ROUND_RIVER :
-                    active = river;
-                    break;
+            int actionRound = action.getRound();
+            if (actionRound == BettingRound.ROUND_PRE_FLOP) {
+                active = preflop;
+            } else if (actionRound == BettingRound.ROUND_FLOP) {
+                active = flop;
+            } else if (actionRound == BettingRound.ROUND_TURN) {
+                active = turn;
+            } else if (actionRound == BettingRound.ROUND_RIVER) {
+                active = river;
             }
 
             switch (action.getAction()) {
@@ -214,7 +212,7 @@ public class ImpExpUB implements ImpExp {
         buf.append(newline);
 
         for (int seat = 0; seat < PokerConstants.SEATS; ++seat) {
-            PokerPlayer player = ieHand.players[seat];
+            ClientPlayer player = ieHand.players[seat];
 
             if (player == null)
                 continue;
@@ -416,7 +414,7 @@ public class ImpExpUB implements ImpExp {
         buf.append(newline);
 
         for (int seat = 0; seat < PokerConstants.SEATS; ++seat) {
-            PokerPlayer player = ieHand.players[seat];
+            ClientPlayer player = ieHand.players[seat];
 
             if (player == null)
                 continue;

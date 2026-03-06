@@ -32,15 +32,15 @@
  */
 package com.donohoedigital.games.poker;
 
-import com.donohoedigital.base.Format;
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.engine.*;
-import com.donohoedigital.games.poker.core.ai.HandInfoFast;
 
 import java.util.*;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.online.ClientHoldemHand;
 
 /**
  * Static display helpers for rendering showdown results on the game board.
@@ -57,9 +57,9 @@ public class Showdown {
      * Display showdown results - designed to be called multiple times, adjusting
      * for changes in options.
      */
-    static void displayShowdown(GameEngine engine, GameContext context, HoldemHand hhand) {
+    static void displayShowdown(GameEngine engine, GameContext context, ClientHoldemHand hhand) {
         PokerGame game = (PokerGame) context.getGame();
-        PokerPlayer player;
+        ClientPlayer player;
         ResultsPiece piece;
         Territory t;
         boolean bUncontested = hhand.isUncontested();
@@ -213,26 +213,14 @@ public class Showdown {
 
     /**
      * Display all-in showdown percentages — called as community cards are revealed.
+     * Uses server-provided percentage values already set on each ClientPlayer.
      */
-    static void displayAllin(HoldemHand hhand, boolean bAllCardsDisplayed) {
-        PokerPlayer player;
+    static void displayAllin(ClientHoldemHand hhand, boolean bAllCardsDisplayed) {
+        ClientPlayer player;
         ResultsPiece piece;
         Territory t;
 
-        // we know next card before we display it, so do all in
-        // percentages based on community cards before current cards
         HandSorted comm = new HandSorted(bAllCardsDisplayed ? hhand.getCommunity() : hhand.getCommunityForDisplay());
-        doAllInPercentages(hhand, comm);
-
-        int nMax = 0;
-        for (int i = 0; i < hhand.getNumPlayers(); i++) {
-            player = hhand.getPlayerAt(i);
-            if (player.isFolded())
-                continue;
-            if (player.getAllInWin() > nMax) {
-                nMax = player.getAllInWin();
-            }
-        }
 
         int nResult;
         for (int i = 0; i < hhand.getNumPlayers(); i++) {
@@ -242,8 +230,6 @@ public class Showdown {
             piece = PokerGameboard.getTerritoryInfo(t).resultpiece;
 
             nResult = ResultsPiece.ALLIN;
-            if (player.getAllInWin() == nMax)
-                nResult = ResultsPiece.WIN;
 
             if (!player.isFolded()) {
                 // when this is called, round has advanced already
@@ -267,100 +253,5 @@ public class Showdown {
         HandInfoFast fast = new HandInfoFast();
         int score = fast.getScore(hole, community);
         return HandInfoFast.getTypeFromScore(score);
-    }
-
-    private static final Format fPerc_ = new Format("%2.1f");
-
-    /**
-     * Calculate all-in win percentages for each non-folded player. Ported from
-     * HandStrength.doAllInPercentages().
-     */
-    private static void doAllInPercentages(HoldemHand hhand, Hand community) {
-        int nNumPlayers = hhand.getNumPlayers();
-        PokerPlayer player;
-        int nComm = community.size();
-        int MORE = 5 - nComm;
-
-        // too expensive to calculate all 5 card boards, so just estimate from the flop
-        if (MORE > 3)
-            MORE = 3;
-
-        HandInfoFaster FAST = new HandInfoFaster();
-        Hand commcopy = new Hand(community);
-
-        // get remaining cards (new deck less hole, community)
-        Deck deck = new Deck(false);
-        deck.removeCards(community);
-        for (int i = 0; i < nNumPlayers; i++) {
-            player = hhand.getPlayerAt(i);
-            player.clearAllInWin();
-            if (player.isFolded())
-                continue;
-            deck.removeCards(player.getHand());
-        }
-
-        int nSize = deck.size();
-        int nNumHands = 0;
-
-        for (int next1 = 0; next1 < (nSize - (MORE - 1)); next1++) {
-            if (MORE >= 1) {
-                commcopy.addCard(deck.getCard(next1));
-                if (MORE >= 2) {
-                    for (int next2 = next1 + 1; next2 < (nSize - (MORE - 2)); next2++) {
-                        commcopy.addCard(deck.getCard(next2));
-                        if (MORE >= 3) {
-                            for (int next3 = next2 + 1; next3 < (nSize - (MORE - 3)); next3++) {
-                                commcopy.addCard(deck.getCard(next3));
-                                scoreAllIn(FAST, hhand, commcopy);
-                                nNumHands++;
-                                commcopy.removeCard(commcopy.size() - 1);
-                            }
-                        } else {
-                            scoreAllIn(FAST, hhand, commcopy);
-                            nNumHands++;
-                        }
-                        commcopy.removeCard(commcopy.size() - 1);
-                    }
-                } else {
-                    scoreAllIn(FAST, hhand, commcopy);
-                    nNumHands++;
-                }
-                commcopy.removeCard(commcopy.size() - 1);
-            } else {
-                scoreAllIn(FAST, hhand, commcopy);
-                nNumHands++;
-            }
-        }
-
-        for (int i = 0; i < nNumPlayers; i++) {
-            player = hhand.getPlayerAt(i);
-            if (player.isFolded())
-                continue;
-            float d = 100.0f * (float) player.getAllInWin() / (float) nNumHands;
-            player.setAllInPerc(fPerc_.form(d));
-        }
-    }
-
-    private static void scoreAllIn(HandInfoFaster FAST, HoldemHand hhand, Hand comm) {
-        int nNumPlayers = hhand.getNumPlayers();
-        PokerPlayer player;
-        int maxscore = 0;
-        for (int i = 0; i < nNumPlayers; i++) {
-            player = hhand.getPlayerAt(i);
-            if (player.isFolded())
-                continue;
-            int score = FAST.getScore(player.getHand(), comm);
-            player.setAllInScore(score);
-            if (score > maxscore)
-                maxscore = score;
-        }
-        for (int i = 0; i < nNumPlayers; i++) {
-            player = hhand.getPlayerAt(i);
-            if (player.isFolded())
-                continue;
-            if (player.getAllInScore() == maxscore) {
-                player.addAllInWin();
-            }
-        }
     }
 }

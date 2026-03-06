@@ -80,7 +80,7 @@ public class NewLevelActions extends ChainPhase implements CancelablePhase {
         EngineUtils.addCancelable(this);
 
         game_ = (PokerGame) context_.getGame();
-        PokerTable table = (PokerTable) game_.getCurrentTable();
+        ClientPokerTable table = game_.getCurrentTable();
         td_ = (PokerDirector) context_.getGameManager();
 
         TournamentProfile profile = game_.getProfile();
@@ -89,7 +89,7 @@ public class NewLevelActions extends ChainPhase implements CancelablePhase {
 
         if (!profile.isBreak(nThisLevel)) {
             // check last human rebuy
-            PokerPlayer human = game_.getHumanPlayer();
+            ClientPlayer human = game_.getHumanPlayer();
             if (!bCanceled_ && nThisLevel == profile.getLastRebuyLevel() && table.isRebuyAllowed(human, nThisLevel)) {
                 rebuy(game_, ShowTournamentTable.REBUY_LAST, nThisLevel);
             }
@@ -144,7 +144,7 @@ public class NewLevelActions extends ChainPhase implements CancelablePhase {
      * Rebuy - return true if player did rebuy
      */
     public static boolean rebuy(PokerGame game, int nType, int nLevel) {
-        PokerPlayer player = game.getHumanPlayer();
+        ClientPlayer player = game.getHumanPlayer();
 
         // just a safety check for case where rebuy is pressed/triggered
         // before it can be removed
@@ -206,7 +206,7 @@ public class NewLevelActions extends ChainPhase implements CancelablePhase {
 
         if (TESTING(PokerConstants.TESTING_AUTOPILOT) || EngineUtils.displayCancelableConfirmationDialog(context_, sMsg,
                 "msg.windowtitle.addon", null, null, !game_.isOnlineGame() ? 0 : 10)) {
-            PokerPlayer p = game_.getHumanPlayer();
+            ClientPlayer p = game_.getHumanPlayer();
             td.doAddon(p, nCost, nChips);
         }
     }

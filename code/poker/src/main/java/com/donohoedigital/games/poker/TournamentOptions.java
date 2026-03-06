@@ -38,6 +38,7 @@
 
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
@@ -322,7 +323,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
 
         // setup human player (computer players added in TournamentOptions)
         PlayerProfile profile = PlayerProfileOptions.getDefaultProfile();
-        PokerPlayer player = new PokerPlayer(engine.getPlayerId(), game.getNextPlayerID(), profile, true);
+        ClientPlayer player = new ClientPlayer(engine.getPlayerId(), game.getNextPlayerID(), profile, true);
         player.setPlayerType(PlayerType.getAdvisor());
         game.addPlayer(player);
         return game;

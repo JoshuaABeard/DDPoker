@@ -32,6 +32,7 @@
  */
 package com.donohoedigital.games.poker.dashboard;
 
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.poker.*;
@@ -47,7 +48,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import com.donohoedigital.games.poker.core.state.BettingRound;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Jun 20, 2005 Time: 9:18:45 PM
@@ -180,7 +181,7 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
             return; // don't update if we aren't visible
 
         // if observing and already set message, nothing to update
-        PokerPlayer human = game_.getHumanPlayer();
+        ClientPlayer human = game_.getHumanPlayer();
         if (bObserverSet_) {
             // if still observer, nothing to do
             if (human.isObserver())
@@ -416,7 +417,7 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
         ClientPokerTable table = game_.getCurrentTable();
         ClientHoldemHand hhand = table.getHoldemHand();
         int nRound = hhand.getRound().toLegacy();
-        PokerPlayer human = game_.getHumanPlayer();
+        ClientPlayer human = game_.getHumanPlayer();
         int nAction;
         int nAmount = 0;
 
@@ -432,19 +433,19 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
             nAction = HandAction.ACTION_CALL;
         } else if (bet_.isSelected()) {
             nAction = HandAction.ACTION_BET;
-            nAmount = Integer.MAX_VALUE; // reduced to max bet in PokerPlayer.bet();
+            nAmount = Integer.MAX_VALUE; // reduced to max bet in ClientPlayer.bet();
         } else if (raise_.isSelected()) {
             nAction = HandAction.ACTION_RAISE;
-            nAmount = Integer.MAX_VALUE; // reduced to max raise in PokerPlayer.raise()
+            nAmount = Integer.MAX_VALUE; // reduced to max raise in ClientPlayer.raise()
         } else if (betpot_.isSelected()) {
             nAction = HandAction.ACTION_BET;
-            nAmount = Integer.MAX_VALUE; // reduced to max bet in PokerPlayer.bet();
+            nAmount = Integer.MAX_VALUE; // reduced to max bet in ClientPlayer.bet();
         } else if (raisepot_.isSelected()) {
             nAction = HandAction.ACTION_RAISE;
-            nAmount = Integer.MAX_VALUE; // reduced to max raise in PokerPlayer.raise()
+            nAmount = Integer.MAX_VALUE; // reduced to max raise in ClientPlayer.raise()
         } else if (allin_.isSelected()) {
             nAction = HandAction.ACTION_RAISE;
-            nAmount = Integer.MAX_VALUE; // reduced to max raise in PokerPlayer.raise()
+            nAmount = Integer.MAX_VALUE; // reduced to max raise in ClientPlayer.raise()
         } else {
             return null;
         }

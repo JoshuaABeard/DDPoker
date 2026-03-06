@@ -19,6 +19,8 @@ package com.donohoedigital.games.poker;
 
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
+import com.donohoedigital.games.poker.online.ClientPlayer;
+import com.donohoedigital.games.poker.online.RemotePokerTable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -63,13 +65,13 @@ class ServerDrivenAIBypassTest {
     }
 
     // =================================================================
-    // PokerPlayer.createPokerAI() bypass
+    // ClientPlayer.createPokerAI() bypass
     // =================================================================
 
     @Test
     void should_SkipAICreation_When_ComputerPlayerInServerDrivenGame() {
         game.setWebSocketConfig("game-1", "jwt", 9999);
-        PokerPlayer aiPlayer = seatPlayer(game, 0, "Computer 1", false);
+        ClientPlayer aiPlayer = seatPlayer(game, 0, "Computer 1", false);
 
         // setPlayer() triggers createPokerAI() internally, but the server-driven
         // guard should have prevented AI creation for this computer player.
@@ -79,7 +81,7 @@ class ServerDrivenAIBypassTest {
     @Test
     void should_NotSkipAICreation_When_HumanPlayerInServerDrivenGame() {
         game.setWebSocketConfig("game-1", "jwt", 9999);
-        PokerPlayer humanPlayer = seatPlayer(game, 0, "Human", true);
+        ClientPlayer humanPlayer = seatPlayer(game, 0, "Human", true);
 
         // Human player passes the server-driven guard — createPokerAI continues.
         // It may still exit for other reasons (playerType_ == null), but the
@@ -91,7 +93,7 @@ class ServerDrivenAIBypassTest {
     @Test
     void should_CreateAINormally_When_NotServerDriven() {
         // No WebSocket config — not server-driven
-        PokerPlayer aiPlayer = seatPlayer(game, 0, "Computer 1", false);
+        ClientPlayer aiPlayer = seatPlayer(game, 0, "Computer 1", false);
 
         // createPokerAI proceeds without the server-driven guard.
         // With no playerType_ set, it exits via the playerType_ == null check,
@@ -100,13 +102,13 @@ class ServerDrivenAIBypassTest {
     }
 
     // =================================================================
-    // PokerPlayer.getGameAI() bypass
+    // ClientPlayer.getGameAI() bypass
     // =================================================================
 
     @Test
     void should_ReturnNullAI_When_ComputerPlayerInServerDrivenGame() {
         game.setWebSocketConfig("game-1", "jwt", 9999);
-        PokerPlayer aiPlayer = seatPlayer(game, 0, "Computer 1", false);
+        ClientPlayer aiPlayer = seatPlayer(game, 0, "Computer 1", false);
 
         // getGameAI() should return null — server handles AI decisions
         assertThat(aiPlayer.getGameAI()).isNull();
@@ -115,7 +117,7 @@ class ServerDrivenAIBypassTest {
     @Test
     void should_NotBlockHumanAI_When_ServerDriven() {
         game.setWebSocketConfig("game-1", "jwt", 9999);
-        PokerPlayer humanPlayer = seatPlayer(game, 0, "Human", true);
+        ClientPlayer humanPlayer = seatPlayer(game, 0, "Human", true);
 
         // The server-driven guard in getGameAI() only blocks computer players.
         // Verify the human player would not be blocked by the guard condition.
@@ -128,7 +130,7 @@ class ServerDrivenAIBypassTest {
     @Test
     void should_NotBlockAI_When_NotServerDriven() {
         // No WebSocket config — not server-driven
-        PokerPlayer aiPlayer = seatPlayer(game, 0, "Computer 1", false);
+        ClientPlayer aiPlayer = seatPlayer(game, 0, "Computer 1", false);
 
         // In non-server-driven mode, the guard does not activate
         assertThat(game.isServerDriven()).isFalse();
@@ -143,18 +145,18 @@ class ServerDrivenAIBypassTest {
     @Test
     void should_BypassAIOnlyForComputers_When_MixedTableInServerDrivenMode() {
         game.setWebSocketConfig("game-1", "jwt", 9999);
-        PokerTable table = new PokerTable(game, 1);
+        RemotePokerTable table = new RemotePokerTable(game, 1);
         game.addTable(table);
         game.setCurrentTable(table);
 
-        PokerPlayer human = new PokerPlayer(1, "Human", true);
-        table.setPlayer(human, 0);
+        ClientPlayer human = new ClientPlayer(1, "Human", true);
+        table.setRemotePlayer(0, human);
 
-        PokerPlayer computer1 = new PokerPlayer(2, "Computer 1", false);
-        table.setPlayer(computer1, 1);
+        ClientPlayer computer1 = new ClientPlayer(2, "Computer 1", false);
+        table.setRemotePlayer(1, computer1);
 
-        PokerPlayer computer2 = new PokerPlayer(3, "Computer 2", false);
-        table.setPlayer(computer2, 2);
+        ClientPlayer computer2 = new ClientPlayer(3, "Computer 2", false);
+        table.setRemotePlayer(2, computer2);
 
         // Computer players: no local AI
         assertThat(computer1.getGameAI()).isNull();
@@ -172,18 +174,18 @@ class ServerDrivenAIBypassTest {
      * Creates a table, seats a player, and returns the player. The table is set as
      * the game's current table.
      */
-    private PokerPlayer seatPlayer(PokerGame g, int seat, String name, boolean isHuman) {
-        PokerTable table;
+    private ClientPlayer seatPlayer(PokerGame g, int seat, String name, boolean isHuman) {
+        RemotePokerTable table;
         if (g.getNumTables() == 0) {
-            table = new PokerTable(g, 1);
+            table = new RemotePokerTable(g, 1);
             g.addTable(table);
             g.setCurrentTable(table);
         } else {
-            table = (PokerTable) g.getCurrentTable();
+            table = (RemotePokerTable) g.getCurrentTable();
         }
 
-        PokerPlayer player = new PokerPlayer(seat + 1, name, isHuman);
-        table.setPlayer(player, seat);
+        ClientPlayer player = new ClientPlayer(seat + 1, name, isHuman);
+        table.setRemotePlayer(seat, player);
         return player;
     }
 }

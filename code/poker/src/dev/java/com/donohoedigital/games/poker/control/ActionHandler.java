@@ -26,7 +26,7 @@ import com.donohoedigital.games.poker.HandAction;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
-import com.donohoedigital.games.poker.PokerPlayer;
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.PokerTableInput;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.donohoedigital.games.poker.online.PokerDirector;
@@ -164,7 +164,7 @@ class ActionHandler extends BaseHandler {
                 PokerGame game = getGame();
                 PokerDirector director = getDirector();
                 if (game == null || director == null) return;
-                PokerPlayer human = game.getHumanPlayer();
+                ClientPlayer human = game.getHumanPlayer();
                 TournamentProfile prof = game.getProfile();
                 if (human == null || prof == null) return;
                 boolean pending = human.isInHand();
@@ -189,7 +189,7 @@ class ActionHandler extends BaseHandler {
                 PokerGame game = getGame();
                 PokerDirector director = getDirector();
                 if (game == null || director == null) return;
-                PokerPlayer human = game.getHumanPlayer();
+                ClientPlayer human = game.getHumanPlayer();
                 TournamentProfile prof = game.getProfile();
                 if (human == null || prof == null) return;
                 director.doAddon(human, prof.getAddonCost(), prof.getAddonChips());
@@ -246,7 +246,7 @@ class ActionHandler extends BaseHandler {
                 bet.doAI();
             } else if (game.getPlayerActionListener() != null) {
                 ClientHoldemHand hh = game.getCurrentTable() != null ? game.getCurrentTable().getHoldemHand() : null;
-                PokerPlayer pp = (hh == null) ? null : hh.getCurrentPlayer();
+                ClientPlayer pp = (hh == null) ? null : hh.getCurrentPlayer();
                 if (pp != null && pp.isHumanControlled()) {
                     HandAction aiAction = pp.getAction(false);
                     if (aiAction != null) {

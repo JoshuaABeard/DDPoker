@@ -20,15 +20,15 @@ package com.donohoedigital.games.poker.online;
 import com.donohoedigital.base.ApplicationError;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.poker.PokerGame;
-import com.donohoedigital.games.poker.PokerPlayer;
-import com.donohoedigital.games.poker.PokerTable;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.event.PokerTableListener;
+import com.donohoedigital.games.poker.model.TournamentProfile;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -60,9 +60,9 @@ public class RemotePokerTable implements ClientPokerTable {
     // -------------------------------------------------------------------------
     // Remote-state storage — never null after construction
     // -------------------------------------------------------------------------
-    private final PokerPlayer[] remotePlayers_ = new PokerPlayer[PokerConstants.SEATS];
+    private final ClientPlayer[] remotePlayers_ = new ClientPlayer[PokerConstants.SEATS];
     private RemoteHoldemHand remoteHand_;
-    private int remoteButton_ = PokerTable.NO_SEAT;
+    private int remoteButton_ = ClientPokerTable.NO_SEAT;
     private int nMinChip_ = 0;
     private int nHandNum_ = 0;
 
@@ -142,7 +142,7 @@ public class RemotePokerTable implements ClientPokerTable {
      * Returns the player at the given seat, or {@code null} if the seat is empty.
      */
     @Override
-    public PokerPlayer getPlayer(int nSeat) {
+    public ClientPlayer getPlayer(int nSeat) {
         if (nSeat < 0 || nSeat >= PokerConstants.SEATS)
             return null;
         return remotePlayers_[nSeat];
@@ -152,7 +152,7 @@ public class RemotePokerTable implements ClientPokerTable {
     @Override
     public int getNumOccupiedSeats() {
         int count = 0;
-        for (PokerPlayer p : remotePlayers_) {
+        for (ClientPlayer p : remotePlayers_) {
             if (p != null)
                 count++;
         }
@@ -163,6 +163,125 @@ public class RemotePokerTable implements ClientPokerTable {
     @Override
     public int getButton() {
         return remoteButton_;
+    }
+
+    /** Returns 0 — remote tables don't track observers separately. */
+    @Override
+    public int getNumObservers() {
+        return 0;
+    }
+
+    /** Returns {@code null} — remote tables don't track observers separately. */
+    @Override
+    public ClientPlayer getObserver(int index) {
+        return null;
+    }
+
+    /** Returns {@code false} — rebuy decisions are handled server-side. */
+    @Override
+    public boolean isRebuyAllowed(ClientPlayer player) {
+        return false;
+    }
+
+    /** Returns {@code false} — rebuy decisions are handled server-side. */
+    @Override
+    public boolean isRebuyAllowed(ClientPlayer player, int nLevel) {
+        return false;
+    }
+
+    /** Returns {@code true} — rebuy period tracking is server-side. */
+    @Override
+    public boolean isRebuyDone(ClientPlayer player) {
+        return true;
+    }
+
+    /** Returns {@code false} — addon decisions are handled server-side. */
+    @Override
+    public boolean isAddonAllowed(ClientPlayer player) {
+        return false;
+    }
+
+    /** Returns empty list — rebuy tracking is server-side. */
+    @Override
+    public List<ClientPlayer> getRebuyList() {
+        return Collections.emptyList();
+    }
+
+    /** Returns empty list — addon tracking is server-side. */
+    @Override
+    public List<ClientPlayer> getAddonList() {
+        return Collections.emptyList();
+    }
+
+    /** Returns the tournament profile from the game. */
+    @Override
+    public TournamentProfile getProfile() {
+        return game_ != null ? game_.getProfile() : null;
+    }
+
+    /** No-op for remote tables. */
+    @Override
+    public void setZipMode(boolean b) {
+        // Remote tables never use zip mode
+    }
+
+    /** Updates the stored button seat. */
+    @Override
+    public void setButton(int nSeat) {
+        remoteButton_ = nSeat;
+    }
+
+    /** Adds a player to the next available seat. */
+    @Override
+    public void addPlayer(ClientPlayer player) {
+        for (int i = 0; i < PokerConstants.SEATS; i++) {
+            if (remotePlayers_[i] == null) {
+                remotePlayers_[i] = player;
+                player.setTable(this, i);
+                return;
+            }
+        }
+    }
+
+    /** Removes the player at the given seat. */
+    @Override
+    public void removePlayer(int nSeat) {
+        if (nSeat >= 0 && nSeat < PokerConstants.SEATS) {
+            remotePlayers_[nSeat] = null;
+        }
+    }
+
+    /** Returns the number of empty seats. */
+    @Override
+    public int getNumOpenSeats() {
+        int count = 0;
+        for (ClientPlayer p : remotePlayers_) {
+            if (p == null)
+                count++;
+        }
+        return count;
+    }
+
+    /** Returns {@code true} if all occupied seats are computer players. */
+    @Override
+    public boolean isAllComputer() {
+        for (ClientPlayer p : remotePlayers_) {
+            if (p != null && p.isHuman())
+                return false;
+        }
+        return true;
+    }
+
+    /** No-op — observer tracking not implemented for remote tables. */
+    @Override
+    public void addObserver(ClientPlayer player) {
+        // Not tracked on remote tables
+    }
+
+    /** No-op — observer tracking not implemented for remote tables. */
+    @Override
+    public void removeObserver(ClientPlayer player) {
+        // Not tracked on remote tables
     }
 
     // -------------------------------------------------------------------------
@@ -205,16 +324,16 @@ public class RemotePokerTable implements ClientPokerTable {
      * Matches {@code PokerTable.getSeatOffset()}.
      */
     public int getSeatOffset() {
-        int nSeat = PokerTable.NO_SEAT;
+        int nSeat = ClientPokerTable.NO_SEAT;
         for (int i = 0; i < PokerConstants.SEATS; i++) {
-            PokerPlayer player = remotePlayers_[i];
+            ClientPlayer player = remotePlayers_[i];
             if (player == null)
                 continue;
             if (player.isLocallyControlled() && player.isHuman()) {
                 nSeat = i;
             }
         }
-        if (nSeat == PokerTable.NO_SEAT)
+        if (nSeat == ClientPokerTable.NO_SEAT)
             return 0;
         return 4 - nSeat; // seat 5 is index 4
     }
@@ -259,6 +378,7 @@ public class RemotePokerTable implements ClientPokerTable {
      * @param n
      *            the new minimum chip value
      */
+    @Override
     public void setMinChip(int n) {
         nMinChip_ = n;
     }
@@ -398,7 +518,7 @@ public class RemotePokerTable implements ClientPokerTable {
      * @param button
      *            dealer button seat index
      */
-    public void updateFromState(PokerPlayer[] players, int button) {
+    public void updateFromState(ClientPlayer[] players, int button) {
         int len = Math.min(players.length, remotePlayers_.length);
         for (int i = 0; i < len; i++) {
             remotePlayers_[i] = players[i];
@@ -414,7 +534,7 @@ public class RemotePokerTable implements ClientPokerTable {
     /**
      * Sets a single player in a specific seat. Does NOT fire events.
      */
-    public void setRemotePlayer(int seat, PokerPlayer player) {
+    public void setRemotePlayer(int seat, ClientPlayer player) {
         if (seat >= 0 && seat < PokerConstants.SEATS) {
             remotePlayers_[seat] = player;
         }
@@ -476,5 +596,24 @@ public class RemotePokerTable implements ClientPokerTable {
     public void fireEvent(int eventType, int value) {
         logger.debug("[RemotePokerTable] table={} fireEvent type={} value={}", getNumber(), eventType, value);
         firePokerTableEvent(new PokerTableEvent(eventType, this, value));
+    }
+
+    // -------------------------------------------------------------------------
+    // Cheat / local-game-only methods
+    // -------------------------------------------------------------------------
+
+    @Override
+    public void prefsChanged() {
+        firePokerTableEvent(new PokerTableEvent(PokerTableEvent.TYPE_PREFS_CHANGED, this));
+    }
+
+    @Override
+    public void setSkipNextButtonMove(boolean b) {
+        // No-op for remote tables — button position is controlled by the server.
+    }
+
+    @Override
+    public void levelCheck(PokerGame game) {
+        // No-op for remote tables — level changes are pushed by the server.
     }
 }

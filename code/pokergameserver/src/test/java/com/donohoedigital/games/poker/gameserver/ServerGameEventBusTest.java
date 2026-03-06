@@ -21,10 +21,10 @@ package com.donohoedigital.games.poker.gameserver;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.donohoedigital.games.poker.core.event.GameEvent;
-import com.donohoedigital.games.poker.core.event.GameEventListener;
-import com.donohoedigital.games.poker.core.state.ActionType;
-import com.donohoedigital.games.poker.core.state.TableState;
+import com.donohoedigital.games.poker.engine.event.GameEvent;
+import com.donohoedigital.games.poker.engine.event.GameEventListener;
+import com.donohoedigital.games.poker.engine.state.ActionType;
+import com.donohoedigital.games.poker.engine.state.TableState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
