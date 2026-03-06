@@ -37,7 +37,7 @@ import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+
 import com.donohoedigital.gui.*;
 import com.zookitec.layout.*;
 
@@ -160,7 +160,7 @@ public class DashboardClock extends DashboardItem implements GameClockListener {
 
         String sLevel = PropertyConfig.getMessage("msg.dash.level", nLevel);
         labelLevel_.setText(sLevel);
-        TournamentProfile profile = game_.getProfile();
+        ClientTournamentProfile profile = game_.getProfile();
 
         // break
         if (profile.isBreak(nLevel)) {

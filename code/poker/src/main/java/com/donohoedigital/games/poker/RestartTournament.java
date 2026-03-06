@@ -33,7 +33,6 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.model.*;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Feb 27, 2005 Time: 11:05:39 AM
@@ -42,7 +41,7 @@ public class RestartTournament extends ChainPhase {
     public static final String PARAM_PROFILE = "profile";
 
     public void process() {
-        TournamentProfile profile = (TournamentProfile) gamephase_.getObject(PARAM_PROFILE);
+        ClientTournamentProfile profile = (ClientTournamentProfile) gamephase_.getObject(PARAM_PROFILE);
         PokerGame game = TournamentOptions.setupPracticeGame(engine_, context_);
         game.initTournament(profile);
     }

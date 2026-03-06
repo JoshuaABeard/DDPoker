@@ -2,6 +2,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 DD Poker Community
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,16 +33,16 @@
  */
 package com.donohoedigital.games.poker;
 
-import com.donohoedigital.db.*;
 import com.donohoedigital.games.engine.*;
 
 import javax.swing.*;
 
 public class HandHistoryDialog extends DialogPhase {
     public JComponent createDialogContents() {
-        String where = (String) gamephase_.getObject("where");
-        BindArray bindArray = (BindArray) gamephase_.getObject("bindArray");
-        HandHistoryPanel panel = new HandHistoryPanel(context_, STYLE, where, bindArray, null, 14);
+        String gameId = (String) gamephase_.getObject("gameId");
+        String jwt = (String) gamephase_.getObject("jwt");
+        int port = gamephase_.getInteger("port");
+        HandHistoryPanel panel = new HandHistoryPanel(context_, STYLE, gameId, jwt, port, null, 14);
         panel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
         return panel;
     }

@@ -40,7 +40,7 @@ import com.donohoedigital.games.engine.EngineUtils;
 import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.engine.Phase;
 import com.donohoedigital.games.engine.ProfileList;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
 
@@ -253,12 +253,12 @@ public class ShowPokerNightTable extends ShowPokerTable
             clock.stop();
         }
 
-        TournamentProfile old = game_.getProfile();
+        ClientTournamentProfile old = game_.getProfile();
         int secondsRemaining = clock.getSecondsRemaining();
         boolean bUpdateSeconds = game_.getSecondsInLevel(game_.getLevel()) == secondsRemaining;
 
         // show profile
-        TournamentProfile copy = new TournamentProfile(old, old.getName());
+        ClientTournamentProfile copy = new ClientTournamentProfile(old, old.getName());
         TypedHashMap params = new TypedHashMap();
         params.setObject(ProfileList.PARAM_PROFILE, copy);
         Phase phase = context_.processPhaseNow("EditProfile.tournament", params);
@@ -484,7 +484,7 @@ public class ShowPokerNightTable extends ShowPokerTable
      * Update display
      */
     protected void updateLevel() {
-        TournamentProfile profile = game_.getProfile();
+        ClientTournamentProfile profile = game_.getProfile();
 
         // get level in game
         int nLevel = game_.getLevel();

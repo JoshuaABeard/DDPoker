@@ -18,7 +18,7 @@
 package com.donohoedigital.games.poker.server;
 
 import com.donohoedigital.games.poker.protocol.dto.SimulationResult;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+import com.donohoedigital.games.poker.ClientTournamentProfile;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,7 +42,7 @@ class GameServerRestClientTest {
     private HttpServer testServer;
     private int port;
     private GameServerRestClient client;
-    private TournamentProfile profile;
+    private ClientTournamentProfile profile;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -51,7 +51,7 @@ class GameServerRestClientTest {
         port = testServer.getAddress().getPort();
         client = new GameServerRestClient(port);
 
-        profile = new TournamentProfile("Test");
+        profile = new ClientTournamentProfile("Test");
         profile.setNumPlayers(3);
         profile.setBuyinChips(1000);
         profile.setLevel(1, 0, 10, 20, 15);

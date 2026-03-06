@@ -48,7 +48,7 @@ import com.donohoedigital.games.config.GameConfigUtils;
 import com.donohoedigital.games.config.GameState;
 import com.donohoedigital.games.config.GameStateFactory;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+
 import com.donohoedigital.games.poker.server.EmbeddedGameServer;
 import com.donohoedigital.games.poker.server.GameSaveManager;
 import com.donohoedigital.gui.DDHtmlEditorKit;
@@ -622,8 +622,8 @@ public class PokerMain extends GameEngine {
             return false;
 
         // Two: profile name and create date must be the same
-        TournamentProfile p1 = (TournamentProfile) d1.getObject(ONLINE_GAME_PROFILE);
-        TournamentProfile p2 = (TournamentProfile) d2.getObject(ONLINE_GAME_PROFILE);
+        ClientTournamentProfile p1 = (ClientTournamentProfile) d1.getObject(ONLINE_GAME_PROFILE);
+        ClientTournamentProfile p2 = (ClientTournamentProfile) d2.getObject(ONLINE_GAME_PROFILE);
 
         if (p1 == null && p2 == null)
             return true;

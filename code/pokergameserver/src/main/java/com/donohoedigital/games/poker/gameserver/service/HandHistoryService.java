@@ -40,6 +40,7 @@ import com.donohoedigital.games.poker.protocol.dto.HandActionDetailData;
 import com.donohoedigital.games.poker.protocol.dto.HandDetailData;
 import com.donohoedigital.games.poker.protocol.dto.HandExportData;
 import com.donohoedigital.games.poker.protocol.dto.HandPlayerDetailData;
+import com.donohoedigital.games.poker.protocol.dto.HandRoundStatsData;
 import com.donohoedigital.games.poker.protocol.dto.HandStatsData;
 import com.donohoedigital.games.poker.protocol.dto.HandSummaryData;
 
@@ -214,6 +215,95 @@ public class HandHistoryService {
 
         results.sort((a, b) -> Integer.compare(b.count(), a.count()));
         return results;
+    }
+
+    // Action bit constants (matching client-side PokerDatabase bit fields)
+    private static final int BIT_CHECK = 1;
+    private static final int BIT_CALL = 2;
+    private static final int BIT_BET = 4;
+    private static final int BIT_RAISE = 8;
+    private static final int BIT_RERAISE = 16;
+    private static final int BIT_FOLD = 32;
+    private static final int BIT_WIN = 64;
+
+    /**
+     * Compute per-round aggregated stats grouped by hand class.
+     *
+     * @param round
+     *            0=preflop, 1=flop, 2=turn, 3=river
+     */
+    @Transactional(readOnly = true)
+    public List<HandRoundStatsData> getRoundStats(String gameId, int round) {
+        List<HandHistoryEntity> hands = handHistoryRepository.findByGameId(gameId);
+        if (hands.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> handIds = hands.stream().map(HandHistoryEntity::getId).toList();
+        Map<Long, List<HandPlayerEntity>> playersByHand = groupPlayersByHand(handIds);
+
+        Map<String, RoundStatsAccumulator> accumulators = new HashMap<>();
+
+        for (HandHistoryEntity hand : hands) {
+            List<HandPlayerEntity> players = playersByHand.getOrDefault(hand.getId(), List.of());
+            if (players.isEmpty()) {
+                continue;
+            }
+
+            HandPlayerEntity humanPlayer = players.get(0);
+            List<String> holeCards = parseCardJson(humanPlayer.getHoleCards());
+            if (holeCards.size() < 2) {
+                continue;
+            }
+
+            int actions = getRoundActions(humanPlayer, round);
+            if (actions == 0) {
+                continue; // player did not participate in this round
+            }
+
+            String handClass = getHandClass(holeCards.get(0), holeCards.get(1));
+            RoundStatsAccumulator acc = accumulators.computeIfAbsent(handClass, k -> new RoundStatsAccumulator());
+            acc.count++;
+            if ((actions & BIT_CHECK) != 0)
+                acc.checked++;
+            if ((actions & BIT_CHECK) != 0 && (actions & BIT_RAISE) != 0)
+                acc.checkRaised++;
+            if ((actions & BIT_CALL) != 0)
+                acc.called++;
+            if ((actions & BIT_BET) != 0)
+                acc.bet++;
+            if ((actions & BIT_RAISE) != 0)
+                acc.raised++;
+            if ((actions & BIT_RERAISE) != 0)
+                acc.reraised++;
+            if ((actions & BIT_FOLD) != 0)
+                acc.folded++;
+            if ((actions & BIT_WIN) != 0)
+                acc.won++;
+        }
+
+        List<HandRoundStatsData> results = new ArrayList<>();
+        for (Map.Entry<String, RoundStatsAccumulator> entry : accumulators.entrySet()) {
+            RoundStatsAccumulator acc = entry.getValue();
+            double count = acc.count;
+            results.add(new HandRoundStatsData(entry.getKey(), acc.count, acc.checked / count * 100.0,
+                    acc.checkRaised / count * 100.0, acc.called / count * 100.0, acc.bet / count * 100.0,
+                    acc.raised / count * 100.0, acc.reraised / count * 100.0, acc.folded / count * 100.0,
+                    acc.won / count * 100.0));
+        }
+
+        results.sort((a, b) -> Integer.compare(b.count(), a.count()));
+        return results;
+    }
+
+    private static int getRoundActions(HandPlayerEntity player, int round) {
+        return switch (round) {
+            case 0 -> player.getPreflopActions();
+            case 1 -> player.getFlopActions();
+            case 2 -> player.getTurnActions();
+            case 3 -> player.getRiverActions();
+            default -> 0;
+        };
     }
 
     // ---- Mapping methods ----
@@ -414,5 +504,20 @@ public class HandHistoryService {
         int sawTurn;
         int sawRiver;
         int showdowns;
+    }
+
+    /**
+     * Accumulator for computing per-round action statistics.
+     */
+    private static class RoundStatsAccumulator {
+        int count;
+        int checked;
+        int checkRaised;
+        int called;
+        int bet;
+        int raised;
+        int reraised;
+        int folded;
+        int won;
     }
 }

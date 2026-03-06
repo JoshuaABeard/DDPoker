@@ -27,11 +27,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.donohoedigital.games.poker.gameserver.service.HandHistoryService;
 import com.donohoedigital.games.poker.protocol.dto.HandDetailData;
 import com.donohoedigital.games.poker.protocol.dto.HandExportData;
+import com.donohoedigital.games.poker.protocol.dto.HandRoundStatsData;
 import com.donohoedigital.games.poker.protocol.dto.HandStatsData;
 import com.donohoedigital.games.poker.protocol.dto.HandSummaryData;
 
@@ -73,5 +75,11 @@ public class HandHistoryController {
     @GetMapping("/export")
     public List<HandExportData> exportHands(@PathVariable("gameId") String gameId) {
         return handHistoryService.getHandsForExport(gameId);
+    }
+
+    @GetMapping("/round-stats")
+    public List<HandRoundStatsData> getRoundStats(@PathVariable("gameId") String gameId,
+            @RequestParam("round") int round) {
+        return handHistoryService.getRoundStats(gameId, round);
     }
 }

@@ -41,8 +41,9 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.comms.*;
+import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
-import com.donohoedigital.games.poker.model.*;
+import com.donohoedigital.games.poker.protocol.dto.OnlineProfileData;
 import org.apache.logging.log4j.*;
 
 import java.io.*;
@@ -316,15 +317,10 @@ public class PlayerProfile extends BaseProfile {
     }
 
     /**
-     * Create an Online Profile for the given local profile
+     * Create an Online Profile data for the given local profile
      */
-    public OnlineProfile toOnlineProfile() {
-        OnlineProfile profile = new OnlineProfile(getName());
-        profile.setPassword(getPassword());
-        // Activation removed in open source version
-        profile.setEmail(getEmail());
-
-        return profile;
+    public OnlineProfileData toOnlineProfileData() {
+        return new OnlineProfileData(null, getName(), getEmail(), null, false);
     }
 
     /**
@@ -335,31 +331,36 @@ public class PlayerProfile extends BaseProfile {
     }
 
     /**
-     * Add history and save if possible
+     * Add history and save if possible. In the thin-client architecture, tournament
+     * results are stored server-side via the WebSocket protocol. This method is now
+     * a no-op since the server handles persistence.
      */
     public void addTournamentHistory(PokerGame game, ClientPlayer player) {
-        PokerDatabase.storeTournamentFinish(game, player);
+        // Server handles tournament history persistence via WebSocket protocol
     }
 
     /**
-     * Get list of history
+     * Get list of history. Returns empty list - history is now fetched from the
+     * server REST API by the UI layer.
      */
-    public List<TournamentHistory> getHistory() {
-        return PokerDatabase.getTournamentHistory(this);
+    public List<ClientTournamentHistory> getHistory() {
+        return new ArrayList<>();
     }
 
     /**
-     * Get overall history
+     * Get overall history. Returns a default empty summary.
      */
-    public TournamentHistory getOverallHistory() {
-        return PokerDatabase.getOverallHistory(this);
+    public ClientTournamentHistory getOverallHistory() {
+        ClientTournamentHistory h = new ClientTournamentHistory();
+        h.setTournamentName(PropertyConfig.getMessage("msg.overalltourney.plural", 0));
+        return h;
     }
 
     /**
-     * test database (using during startup)
+     * test database (using during startup) - no-op, database removed
      */
     public void testDB() {
-        PokerDatabase.testConnection();
+        // No-op: client database has been removed
     }
 
     /**
@@ -368,8 +369,8 @@ public class PlayerProfile extends BaseProfile {
     public int getTotalPrizeMoneyEarned() {
         int nTotalPrize = 0;
 
-        List<TournamentHistory> history = getHistory();
-        TournamentHistory hist;
+        List<ClientTournamentHistory> history = getHistory();
+        ClientTournamentHistory hist;
         if (history.size() == 0) {
             return 0;
         } else {
@@ -390,8 +391,8 @@ public class PlayerProfile extends BaseProfile {
     public int getTotalMoneySpent() {
         int nTotalSpent = 0;
 
-        List<TournamentHistory> history = getHistory();
-        TournamentHistory hist;
+        List<ClientTournamentHistory> history = getHistory();
+        ClientTournamentHistory hist;
         if (history.size() == 0) {
             return 0;
         } else {

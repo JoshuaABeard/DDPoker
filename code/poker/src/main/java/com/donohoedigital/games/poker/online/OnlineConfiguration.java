@@ -42,10 +42,10 @@ import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.gameserver.*;
-import com.donohoedigital.games.poker.gameserver.controller.TournamentProfileConverter;
+import com.donohoedigital.games.poker.protocol.dto.GameConfigBuilder;
 import com.donohoedigital.games.poker.protocol.dto.GameConfig;
 import com.donohoedigital.games.poker.protocol.dto.GameSummary;
-import com.donohoedigital.games.poker.model.*;
+
 import com.donohoedigital.games.poker.server.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
@@ -282,9 +282,8 @@ public class OnlineConfiguration extends BasePhase implements ActionListener {
 
     private GameConfig buildGameConfig() {
         PokerGame game = (PokerGame) context_.getGame();
-        TournamentProfile profile = game.getProfile();
-        TournamentProfileConverter converter = new TournamentProfileConverter();
-        return converter.convert(profile);
+        ClientTournamentProfile profile = game.getProfile();
+        return GameConfigBuilder.fromProfile(profile.toProfileData());
     }
 
     private void setHostingControlsEnabled(boolean enabled) {

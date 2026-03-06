@@ -45,7 +45,7 @@ import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.gui.*;
 import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
-import com.donohoedigital.games.poker.model.*;
+
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
@@ -70,7 +70,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
 
     static com.donohoedigital.base.Format fPerc = new com.donohoedigital.base.Format("%1.3f");
     private javax.swing.border.Border empty_ = null;
-    private TournamentProfile profile_;
+    private ClientTournamentProfile profile_;
     private PokerGame game_; // used when editing during a tournament
     private TypedHashMap dummy_ = new TypedHashMap();
     private TypedHashMap labelignore_ = new TypedHashMap();
@@ -93,9 +93,9 @@ public class TournamentProfileDialog extends OptionMenuDialog
     private DDRadioButton buttonAuto_, buttonPerc_, buttonAmount_;
     private DDRadioButton buttonSatellite_;
     private boolean bDetailsTabReady_ = false;
-    private SpotPanel spots_[] = new SpotPanel[TournamentProfile.MAX_SPOTS];
-    private String saveA_[] = new String[TournamentProfile.MAX_SPOTS];
-    private String saveP_[] = new String[TournamentProfile.MAX_SPOTS];
+    private SpotPanel spots_[] = new SpotPanel[ClientTournamentProfile.MAX_SPOTS];
+    private String saveA_[] = new String[ClientTournamentProfile.MAX_SPOTS];
+    private String saveP_[] = new String[ClientTournamentProfile.MAX_SPOTS];
     private int nNumSpots_ = 0;
     private DDRadioButton buttonSelected_;
     private DDButton clear_;
@@ -121,7 +121,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
      * create ui
      */
     public JComponent getOptions() {
-        TournamentProfile profile = (TournamentProfile) gamephase_.getObject(ProfileList.PARAM_PROFILE);
+        ClientTournamentProfile profile = (ClientTournamentProfile) gamephase_.getObject(ProfileList.PARAM_PROFILE);
         ApplicationError.assertNotNull(profile, "No 'profile' in params");
 
         // usually null, unless editing in-tournament
@@ -133,7 +133,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
     /**
      * Get options using a specified profile
      */
-    public JComponent getOptions(TournamentProfile profile, String sStyle) {
+    public JComponent getOptions(ClientTournamentProfile profile, String sStyle) {
         STYLE = sStyle;
         profile_ = profile;
 
@@ -239,9 +239,10 @@ public class TournamentProfileDialog extends OptionMenuDialog
             name_.addPropertyChangeListener("value", TournamentProfileDialog.this);
             name_.setText(profile_.getName());
 
-            add(new OptionTextArea(null, TournamentProfile.PARAM_DESC, STYLE, null, dummy_, 500, null, 12, 450));
+            add(new OptionTextArea(null, ClientTournamentProfile.PARAM_DESC, STYLE, null, dummy_, 500, null, 12, 450));
 
-            add(new OptionTextArea(null, TournamentProfile.PARAM_GREETING, STYLE, null, dummy_, 500, null, 5, 450));
+            add(new OptionTextArea(null, ClientTournamentProfile.PARAM_GREETING, STYLE, null, dummy_, 500, null, 5,
+                    450));
 
             GuiUtils.setDDOptionLabelWidths(this);
 
@@ -312,7 +313,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
                 }
             });
 
-            OptionBoolean obs = new OptionBoolean(null, TournamentProfile.PARAM_INVITE_OBS, STYLE, dummy_, true);
+            OptionBoolean obs = new OptionBoolean(null, ClientTournamentProfile.PARAM_INVITE_OBS, STYLE, dummy_, true);
             Dimension pref = obs.getPreferredSize();
             pref.height = 15;
             obs.setPreferredSize(pref);
@@ -321,20 +322,21 @@ public class TournamentProfileDialog extends OptionMenuDialog
             db.setBorder(BorderFactory.createEmptyBorder(2, 5, 3, 0));
             db.setBorderLayoutGap(0, 10);
 
-            OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_INVITE_ONLY, STYLE, dummy_, true, db),
+            OptionMenu.add(new OptionBoolean(null, ClientTournamentProfile.PARAM_INVITE_ONLY, STYLE, dummy_, true, db),
                     players);
-            OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_ALLOW_DASH, STYLE, dummy_, true), players);
-            OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_ALLOW_ADVISOR, STYLE, dummy_, true),
+            OptionMenu.add(new OptionBoolean(null, ClientTournamentProfile.PARAM_ALLOW_DASH, STYLE, dummy_, true),
                     players);
-            OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_FILL_COMPUTER, STYLE, dummy_, true),
+            OptionMenu.add(new OptionBoolean(null, ClientTournamentProfile.PARAM_ALLOW_ADVISOR, STYLE, dummy_, true),
+                    players);
+            OptionMenu.add(new OptionBoolean(null, ClientTournamentProfile.PARAM_FILL_COMPUTER, STYLE, dummy_, true),
                     players);
             // Maximum online players
             DDLabelBorder maxPlayers = new DDLabelBorder("maxonlineplayers", STYLE);
             left.add(maxPlayers);
 
             OptionInteger maxOnlineOpt = OptionMenu
-                    .add(new OptionInteger(null, TournamentProfile.PARAM_MAX_ONLINE_PLAYERS, STYLE, dummy_, null, 2,
-                            TournamentProfile.MAX_ONLINE_PLAYERS, 50, true), maxPlayers);
+                    .add(new OptionInteger(null, ClientTournamentProfile.PARAM_MAX_ONLINE_PLAYERS, STYLE, dummy_, null,
+                            2, ClientTournamentProfile.MAX_ONLINE_PLAYERS, 50, true), maxPlayers);
             maxOnlineOpt.getSpinner().setUseBigStep(true); // Enable big step (10s)
             maxOnlinePlayers_ = maxOnlineOpt.getSpinner();
 
@@ -342,8 +344,8 @@ public class TournamentProfileDialog extends OptionMenuDialog
             left.add(observers);
 
             int nMin = (game_ != null && game_.isOnlineGame()) ? Math.max(game_.getNumObservers(), 0) : 0;
-            OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_MAX_OBSERVERS, STYLE, dummy_, null, nMin,
-                    TournamentProfile.MAX_OBSERVERS, 50, true), observers);
+            OptionMenu.add(new OptionInteger(null, ClientTournamentProfile.PARAM_MAX_OBSERVERS, STYLE, dummy_, null,
+                    nMin, ClientTournamentProfile.MAX_OBSERVERS, 50, true), observers);
 
             DDLabelBorder timeout = new DDLabelBorder("timeout", STYLE);
             left.add(timeout);
@@ -352,10 +354,10 @@ public class TournamentProfileDialog extends OptionMenuDialog
             base.setLayout(new GridLayout(0, 1, 0, 4));
             timeout.add(base, BorderLayout.CENTER);
 
-            OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_TIMEOUT, STYLE, dummy_, null,
-                    TournamentProfile.MIN_TIMEOUT, TournamentProfile.MAX_TIMEOUT, 50, true), base);
-            OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_THINKBANK, STYLE, dummy_, null, 0,
-                    TournamentProfile.MAX_THINKBANK, 50, true), base);
+            OptionMenu.add(new OptionInteger(null, ClientTournamentProfile.PARAM_TIMEOUT, STYLE, dummy_, null,
+                    ClientTournamentProfile.MIN_TIMEOUT, ClientTournamentProfile.MAX_TIMEOUT, 50, true), base);
+            OptionMenu.add(new OptionInteger(null, ClientTournamentProfile.PARAM_THINKBANK, STYLE, dummy_, null, 0,
+                    ClientTournamentProfile.MAX_THINKBANK, 50, true), base);
 
             ///
             /// advanced timeout (per-street)
@@ -366,20 +368,20 @@ public class TournamentProfileDialog extends OptionMenuDialog
             left.add(advancedTimeout);
 
             // Pre-flop timeout spinner
-            OptionInteger timeoutPreflop = new OptionInteger(null, TournamentProfile.PARAM_TIMEOUT_PREFLOP, STYLE,
-                    dummy_, null, 0, TournamentProfile.MAX_TIMEOUT, 50, true);
+            OptionInteger timeoutPreflop = new OptionInteger(null, ClientTournamentProfile.PARAM_TIMEOUT_PREFLOP, STYLE,
+                    dummy_, null, 0, ClientTournamentProfile.MAX_TIMEOUT, 50, true);
 
             // Flop timeout spinner
-            OptionInteger timeoutFlop = new OptionInteger(null, TournamentProfile.PARAM_TIMEOUT_FLOP, STYLE, dummy_,
-                    null, 0, TournamentProfile.MAX_TIMEOUT, 50, true);
+            OptionInteger timeoutFlop = new OptionInteger(null, ClientTournamentProfile.PARAM_TIMEOUT_FLOP, STYLE,
+                    dummy_, null, 0, ClientTournamentProfile.MAX_TIMEOUT, 50, true);
 
             // Turn timeout spinner
-            OptionInteger timeoutTurn = new OptionInteger(null, TournamentProfile.PARAM_TIMEOUT_TURN, STYLE, dummy_,
-                    null, 0, TournamentProfile.MAX_TIMEOUT, 50, true);
+            OptionInteger timeoutTurn = new OptionInteger(null, ClientTournamentProfile.PARAM_TIMEOUT_TURN, STYLE,
+                    dummy_, null, 0, ClientTournamentProfile.MAX_TIMEOUT, 50, true);
 
             // River timeout spinner
-            OptionInteger timeoutRiver = new OptionInteger(null, TournamentProfile.PARAM_TIMEOUT_RIVER, STYLE, dummy_,
-                    null, 0, TournamentProfile.MAX_TIMEOUT, 50, true);
+            OptionInteger timeoutRiver = new OptionInteger(null, ClientTournamentProfile.PARAM_TIMEOUT_RIVER, STYLE,
+                    dummy_, null, 0, ClientTournamentProfile.MAX_TIMEOUT, 50, true);
 
             // Panel for nested controls
             DDPanel advancedPanel = new DDPanel();
@@ -416,8 +418,8 @@ public class TournamentProfileDialog extends OptionMenuDialog
             left.add(latereg);
 
             // Cutoff level spinner
-            OptionInteger lateRegUntil = new OptionInteger(null, TournamentProfile.PARAM_LATE_REG_UNTIL, STYLE, dummy_,
-                    null, 1, TournamentProfile.MAX_LEVELS, 60);
+            OptionInteger lateRegUntil = new OptionInteger(null, ClientTournamentProfile.PARAM_LATE_REG_UNTIL, STYLE,
+                    dummy_, null, 1, ClientTournamentProfile.MAX_LEVELS, 60);
             lateRegUntil.setEditable(true);
 
             // Chip mode radio buttons
@@ -426,12 +428,12 @@ public class TournamentProfileDialog extends OptionMenuDialog
             chipModePanel.setLayout(new GridLayout(2, 1, 0, -4));
             chipModePanel.setBorder(BorderFactory.createEmptyBorder(2, 20, 3, 0));
 
-            OptionRadio startingChips = new OptionRadio(null, TournamentProfile.PARAM_LATE_REG_CHIPS, STYLE, dummy_,
-                    "latereg.chips.starting", chipModeGroup, PokerClientConstants.LATE_REG_CHIPS_STARTING);
+            OptionRadio startingChips = new OptionRadio(null, ClientTournamentProfile.PARAM_LATE_REG_CHIPS, STYLE,
+                    dummy_, "latereg.chips.starting", chipModeGroup, PokerClientConstants.LATE_REG_CHIPS_STARTING);
             OptionMenu.add(startingChips, chipModePanel);
 
-            OptionRadio averageChips = new OptionRadio(null, TournamentProfile.PARAM_LATE_REG_CHIPS, STYLE, dummy_,
-                    "latereg.chips.average", chipModeGroup, PokerClientConstants.LATE_REG_CHIPS_AVERAGE);
+            OptionRadio averageChips = new OptionRadio(null, ClientTournamentProfile.PARAM_LATE_REG_CHIPS, STYLE,
+                    dummy_, "latereg.chips.average", chipModeGroup, PokerClientConstants.LATE_REG_CHIPS_AVERAGE);
             OptionMenu.add(averageChips, chipModePanel);
 
             // Add checkbox with nested controls
@@ -439,7 +441,8 @@ public class TournamentProfileDialog extends OptionMenuDialog
             lateregDummy.setBorder(BorderFactory.createEmptyBorder(2, 5, 3, 0));
             lateregDummy.setBorderLayoutGap(0, 5);
 
-            OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_LATE_REG, STYLE, dummy_, true, lateregDummy),
+            OptionMenu.add(
+                    new OptionBoolean(null, ClientTournamentProfile.PARAM_LATE_REG, STYLE, dummy_, true, lateregDummy),
                     latereg);
 
             ///
@@ -456,8 +459,8 @@ public class TournamentProfileDialog extends OptionMenuDialog
             hoursFromNow.setEditable(true);
 
             // Minimum players spinner
-            OptionInteger minPlayers = new OptionInteger(null, TournamentProfile.PARAM_MIN_PLAYERS_START, STYLE, dummy_,
-                    null, 2, 120, 60); // Use absolute max instead of constant
+            OptionInteger minPlayers = new OptionInteger(null, ClientTournamentProfile.PARAM_MIN_PLAYERS_START, STYLE,
+                    dummy_, null, 2, 120, 60); // Use absolute max instead of constant
             minPlayers.setEditable(true);
 
             // Panel for nested controls
@@ -472,7 +475,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
             scheduledDummy.setBorder(BorderFactory.createEmptyBorder(2, 5, 3, 0));
             scheduledDummy.setBorderLayoutGap(0, 5);
 
-            OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_SCHEDULED_START, STYLE, dummy_, true,
+            OptionMenu.add(new OptionBoolean(null, ClientTournamentProfile.PARAM_SCHEDULED_START, STYLE, dummy_, true,
                     scheduledDummy), scheduledStart);
         }
     }
@@ -481,7 +484,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
      * Boot controls labelborder. Static for use from GameInfoDialog (case where
      * profile is non-null, to allow changing of profile in-game)
      */
-    public static DDLabelBorder createBootControls(String STYLE, TypedHashMap dummy, TournamentProfile profile) {
+    public static DDLabelBorder createBootControls(String STYLE, TypedHashMap dummy, ClientTournamentProfile profile) {
         DDLabelBorder bootbase = new DDLabelBorder("boot", STYLE);
         bootbase.setLayout(new GridLayout(0, 1, 0, -4));
 
@@ -489,12 +492,11 @@ public class TournamentProfileDialog extends OptionMenuDialog
         OptionBoolean disconnect, sitout;
 
         // disconnect
-        OptionInteger disconnectCount = new OptionInteger(null, TournamentProfile.PARAM_BOOT_DISCONNECT_COUNT, STYLE,
-                dummy, null, TournamentProfile.MIN_BOOT_HANDS, TournamentProfile.MAX_BOOT_HANDS, 60);
+        OptionInteger disconnectCount = new OptionInteger(null, ClientTournamentProfile.PARAM_BOOT_DISCONNECT_COUNT,
+                STYLE, dummy, null, ClientTournamentProfile.MIN_BOOT_HANDS, ClientTournamentProfile.MAX_BOOT_HANDS, 60);
         disconnectCount.setEditable(true);
-        disconnect = OptionMenu.add(
-                new OptionBoolean(null, TournamentProfile.PARAM_BOOT_DISCONNECT, STYLE, dummy, true, disconnectCount),
-                bootbase);
+        disconnect = OptionMenu.add(new OptionBoolean(null, ClientTournamentProfile.PARAM_BOOT_DISCONNECT, STYLE, dummy,
+                true, disconnectCount), bootbase);
         if (profile != null) {
             disconnectCount.setMap(profile.getMap());
             disconnectCount.resetToMap();
@@ -503,11 +505,11 @@ public class TournamentProfileDialog extends OptionMenuDialog
         }
 
         // sitout
-        OptionInteger sitoutCount = new OptionInteger(null, TournamentProfile.PARAM_BOOT_SITOUT_COUNT, STYLE, dummy,
-                null, TournamentProfile.MIN_BOOT_HANDS, TournamentProfile.MAX_BOOT_HANDS, 60);
+        OptionInteger sitoutCount = new OptionInteger(null, ClientTournamentProfile.PARAM_BOOT_SITOUT_COUNT, STYLE,
+                dummy, null, ClientTournamentProfile.MIN_BOOT_HANDS, ClientTournamentProfile.MAX_BOOT_HANDS, 60);
         sitoutCount.setEditable(true);
         sitout = OptionMenu.add(
-                new OptionBoolean(null, TournamentProfile.PARAM_BOOT_SITOUT, STYLE, dummy, true, sitoutCount),
+                new OptionBoolean(null, ClientTournamentProfile.PARAM_BOOT_SITOUT, STYLE, dummy, true, sitoutCount),
                 bootbase);
         if (profile != null) {
             sitoutCount.setMap(profile.getMap());
@@ -565,9 +567,9 @@ public class TournamentProfileDialog extends OptionMenuDialog
             // num players
             int nMax = (game_ != null && game_.isOnlineGame())
                     ? 120 // Use absolute max
-                    : TournamentProfile.MAX_PLAYERS;
+                    : ClientTournamentProfile.MAX_PLAYERS;
             int nMin = (game_ != null && game_.isOnlineGame()) ? Math.max(game_.getNumPlayers(), 2) : 2;
-            OptionInteger oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_NUM_PLAYERS, STYLE,
+            OptionInteger oi = OptionMenu.add(new OptionInteger(null, ClientTournamentProfile.PARAM_NUM_PLAYERS, STYLE,
                     dummy_, null, nMin, nMax, 75, true), quantity, BorderLayout.WEST);
             oi.getSpinner().setUseBigStep(true);
             numPlayers_ = oi.getSpinner();
@@ -577,12 +579,16 @@ public class TournamentProfileDialog extends OptionMenuDialog
             DDPanel tableFormatPanel = new DDPanel();
             tableFormatPanel.setLayout(new GridLayout(3, 1, 0, -4));
 
-            OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_TABLE_SEATS, STYLE, dummy_,
-                    "tableformat.fullring", tableFormatGroup, ProtocolConstants.SEATS_FULL_RING), tableFormatPanel);
-            OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_TABLE_SEATS, STYLE, dummy_, "tableformat.6max",
-                    tableFormatGroup, ProtocolConstants.SEATS_6MAX), tableFormatPanel);
-            OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_TABLE_SEATS, STYLE, dummy_,
-                    "tableformat.headsup", tableFormatGroup, ProtocolConstants.SEATS_HEADS_UP), tableFormatPanel);
+            OptionMenu.add(
+                    new OptionRadio(null, ClientTournamentProfile.PARAM_TABLE_SEATS, STYLE, dummy_,
+                            "tableformat.fullring", tableFormatGroup, ProtocolConstants.SEATS_FULL_RING),
+                    tableFormatPanel);
+            OptionMenu.add(new OptionRadio(null, ClientTournamentProfile.PARAM_TABLE_SEATS, STYLE, dummy_,
+                    "tableformat.6max", tableFormatGroup, ProtocolConstants.SEATS_6MAX), tableFormatPanel);
+            OptionMenu.add(
+                    new OptionRadio(null, ClientTournamentProfile.PARAM_TABLE_SEATS, STYLE, dummy_,
+                            "tableformat.headsup", tableFormatGroup, ProtocolConstants.SEATS_HEADS_UP),
+                    tableFormatPanel);
             quantity.add(tableFormatPanel, BorderLayout.CENTER);
 
             // buyin
@@ -637,13 +643,13 @@ public class TournamentProfileDialog extends OptionMenuDialog
          */
         protected boolean isValidCheck() {
             // Run validation to check for warnings (doesn't block, just displays in UI)
-            ValidationResult warnings = profile_.validateProfile();
+            ClientValidationResult warnings = profile_.validateProfile();
             if (warnings.hasWarnings()) {
                 // Build warning message from all warnings
                 StringBuilder warningText = new StringBuilder("<html>");
                 warningText.append(PropertyConfig.getMessage("msg.profile.warnings.header"));
                 warningText.append("<ul>");
-                for (ValidationWarning warning : warnings.getWarnings()) {
+                for (ClientValidationWarning warning : warnings.getWarnings()) {
                     warningText.append("<li>").append(warnings.getMessage(warning)).append("</li>");
                 }
                 warningText.append("</ul></html>");
@@ -685,21 +691,22 @@ public class TournamentProfileDialog extends OptionMenuDialog
             base.add(controls, BorderLayout.WEST);
 
             // game type
-            OptionCombo combo = new OptionCombo(null, TournamentProfile.PARAM_GAMETYPE_DEFAULT,
-                    TournamentProfile.DATA_ELEMENT_GAMETYPE, STYLE, dummy_, 80, true);
+            OptionCombo combo = new OptionCombo(null, ClientTournamentProfile.PARAM_GAMETYPE_DEFAULT,
+                    ClientTournamentProfile.DATA_ELEMENT_GAMETYPE, STYLE, dummy_, 80, true);
             controls.add(combo);
 
             // minutes per level
-            OptionInteger integer = new OptionInteger(null, TournamentProfile.PARAM_MINPERLEVEL_DEFAULT, STYLE, dummy_,
-                    null, 1, TournamentProfile.MAX_MINUTES, 50, true, true);
+            OptionInteger integer = new OptionInteger(null, ClientTournamentProfile.PARAM_MINPERLEVEL_DEFAULT, STYLE,
+                    dummy_, null, 1, ClientTournamentProfile.MAX_MINUTES, 50, true, true);
             controls.add(integer);
 
             // max raises
-            integer = new OptionInteger(null, TournamentProfile.PARAM_MAXRAISES, STYLE, dummy_, null, 1,
-                    TournamentProfile.MAX_MAX_RAISES, 35, true, true);
+            integer = new OptionInteger(null, ClientTournamentProfile.PARAM_MAXRAISES, STYLE, dummy_, null, 1,
+                    ClientTournamentProfile.MAX_MAX_RAISES, 35, true, true);
             controls.add(integer);
 
-            OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_MAXRAISES_NONE_HEADSUP, STYLE, dummy_, true),
+            OptionMenu.add(
+                    new OptionBoolean(null, ClientTournamentProfile.PARAM_MAXRAISES_NONE_HEADSUP, STYLE, dummy_, true),
                     controls);
 
             // Level advancement mode
@@ -734,8 +741,9 @@ public class TournamentProfileDialog extends OptionMenuDialog
             advancePanel.add(radioHandsMode);
 
             // Hands per level spinner (indented, conditional)
-            handsPerLevel = new OptionInteger(null, TournamentProfile.PARAM_HANDS_PER_LEVEL, STYLE, dummy_, null,
-                    TournamentProfile.MIN_HANDS_PER_LEVEL, TournamentProfile.MAX_HANDS_PER_LEVEL, 50, true, true);
+            handsPerLevel = new OptionInteger(null, ClientTournamentProfile.PARAM_HANDS_PER_LEVEL, STYLE, dummy_, null,
+                    ClientTournamentProfile.MIN_HANDS_PER_LEVEL, ClientTournamentProfile.MAX_HANDS_PER_LEVEL, 50, true,
+                    true);
             handsPerLevel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0)); // indent
             advancePanel.add(handsPerLevel);
 
@@ -772,8 +780,8 @@ public class TournamentProfileDialog extends OptionMenuDialog
             // double at end
             DDPanel doublepanel = DDPanel.CENTER();
             bottompanel.add(doublepanel, BorderLayout.NORTH);
-            OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_DOUBLE, STYLE, dummy_, true), doublepanel,
-                    null);
+            OptionMenu.add(new OptionBoolean(null, ClientTournamentProfile.PARAM_DOUBLE, STYLE, dummy_, true),
+                    doublepanel, null);
 
             // control buttons
             DDPanel buttonpanel = new DDPanel();
@@ -808,8 +816,8 @@ public class TournamentProfileDialog extends OptionMenuDialog
 
         private void initLevelAdvanceMode() {
             // Load level advance mode from profile
-            LevelAdvanceMode mode = profile_.getLevelAdvanceMode();
-            if (mode == LevelAdvanceMode.HANDS) {
+            ClientLevelAdvanceMode mode = profile_.getLevelAdvanceMode();
+            if (mode == ClientLevelAdvanceMode.HANDS) {
                 radioHandsMode.setSelected(true);
                 handsPerLevel.setEnabled(true);
             } else {
@@ -830,9 +838,9 @@ public class TournamentProfileDialog extends OptionMenuDialog
         private void saveLevelAdvanceMode() {
             // Save level advance mode to profile
             if (radioHandsMode.isSelected()) {
-                profile_.setLevelAdvanceMode(LevelAdvanceMode.HANDS);
+                profile_.setLevelAdvanceMode(ClientLevelAdvanceMode.HANDS);
             } else {
-                profile_.setLevelAdvanceMode(LevelAdvanceMode.TIME);
+                profile_.setLevelAdvanceMode(ClientLevelAdvanceMode.TIME);
             }
         }
 
@@ -853,9 +861,9 @@ public class TournamentProfileDialog extends OptionMenuDialog
             int nIndex = levelsList.getSelectedIndex();
             int size = levelsList.getItems().size();
             insertlevel.setEnabled(selected != null && (selected.canDelete() || nIndex == (size - 1))
-                    && size < TournamentProfile.MAX_LEVELS);
+                    && size < ClientTournamentProfile.MAX_LEVELS);
             insertbreak.setEnabled(selected != null && (selected.canDelete() || nIndex == (size - 1))
-                    && size < TournamentProfile.MAX_LEVELS);
+                    && size < ClientTournamentProfile.MAX_LEVELS);
             delete.setEnabled(selected != null && selected.canDelete() && size > 1);
         }
 
@@ -1005,9 +1013,9 @@ public class TournamentProfileDialog extends OptionMenuDialog
             TypedHashMap map = dialog.profile_.getMap();
             boolean bDisplayOnly = false;
             if (nNum > 0 && dialog.game_ != null && dialog.game_.getLevel() > nNum
-                    && !(map.getString(TournamentProfile.PARAM_ANTE + nNum, "").length() == 0
-                            && map.getString(TournamentProfile.PARAM_SMALL + nNum, "").length() == 0
-                            && map.getString(TournamentProfile.PARAM_BIG + nNum, "").length() == 0)) {
+                    && !(map.getString(ClientTournamentProfile.PARAM_ANTE + nNum, "").length() == 0
+                            && map.getString(ClientTournamentProfile.PARAM_SMALL + nNum, "").length() == 0
+                            && map.getString(ClientTournamentProfile.PARAM_BIG + nNum, "").length() == 0)) {
                 bDisplayOnly = true;
                 canDelete = false;
             }
@@ -1035,7 +1043,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
             // setting profile_'s map to these values
 
             // ante
-            otAnte = dialog.createText(TournamentProfile.PARAM_ANTE, sStyle, 6, 60, i, "msg.header.ante",
+            otAnte = dialog.createText(ClientTournamentProfile.PARAM_ANTE, sStyle, 6, 60, i, "msg.header.ante",
                     bBreak ? ".*" : "^[0-9]*$");
             ante = otAnte.getTextField();
             ante.addFocusListener(dialog);
@@ -1050,7 +1058,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
                 otAnte.setIgnored(true);
 
             // small
-            otSmall = dialog.createText(TournamentProfile.PARAM_SMALL, sStyle, 7, 82, i, "msg.header.small",
+            otSmall = dialog.createText(ClientTournamentProfile.PARAM_SMALL, sStyle, 7, 82, i, "msg.header.small",
                     "^[0-9]*$");
             small = otSmall.getTextField();
             small.addFocusListener(dialog);
@@ -1063,7 +1071,8 @@ public class TournamentProfileDialog extends OptionMenuDialog
                 otSmall.setIgnored(true);
 
             // big
-            otBig = dialog.createText(TournamentProfile.PARAM_BIG, sStyle, 7, 82, i, "msg.header.big", "^[0-9]*$");
+            otBig = dialog.createText(ClientTournamentProfile.PARAM_BIG, sStyle, 7, 82, i, "msg.header.big",
+                    "^[0-9]*$");
             big = otBig.getTextField();
             big.addFocusListener(dialog);
             add(otBig);
@@ -1075,7 +1084,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
                 otBig.setIgnored(true);
 
             // time
-            otMinutes = dialog.createText(TournamentProfile.PARAM_MINUTES, sStyle, 3, 60, i, "msg.header.time",
+            otMinutes = dialog.createText(ClientTournamentProfile.PARAM_MINUTES, sStyle, 3, 60, i, "msg.header.time",
                     "^[0-9]*$");
             minutes = otMinutes.getTextField();
             minutes.addFocusListener(dialog);
@@ -1090,8 +1099,8 @@ public class TournamentProfileDialog extends OptionMenuDialog
 
             // game type
             if (!bBreak) {
-                dd = dialog.createCombo(TournamentProfile.PARAM_GAMETYPE, TournamentProfile.DATA_ELEMENT_GAMETYPE,
-                        sStyle, 80, i, "msg.header.game", bDisplayOnly);
+                dd = dialog.createCombo(ClientTournamentProfile.PARAM_GAMETYPE,
+                        ClientTournamentProfile.DATA_ELEMENT_GAMETYPE, sStyle, 80, i, "msg.header.game", bDisplayOnly);
                 add(dd);
                 if (i >= 0 && !bDisplayOnly) {
                     ocGame = (OptionCombo) dd;
@@ -1112,10 +1121,10 @@ public class TournamentProfileDialog extends OptionMenuDialog
 
             int level = index + 1;
             label.setText(Integer.toString(level));
-            otAnte.setName(TournamentProfile.PARAM_ANTE + level);
-            otSmall.setName(TournamentProfile.PARAM_SMALL + level);
-            otBig.setName(TournamentProfile.PARAM_BIG + level);
-            otMinutes.setName(TournamentProfile.PARAM_MINUTES + level);
+            otAnte.setName(ClientTournamentProfile.PARAM_ANTE + level);
+            otSmall.setName(ClientTournamentProfile.PARAM_SMALL + level);
+            otBig.setName(ClientTournamentProfile.PARAM_BIG + level);
+            otMinutes.setName(ClientTournamentProfile.PARAM_MINUTES + level);
 
             if (levelitem.bBreak) {
                 int nMinutes = levelitem.dialog.profile_.getMinutes(oldlevel);
@@ -1147,11 +1156,11 @@ public class TournamentProfileDialog extends OptionMenuDialog
         DDPanel buyin = new DDPanel();
         buyin.setBorderLayoutGap(0, 5);
 
-        oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_BUYIN, STYLE, dummy_, null, 1,
-                TournamentProfile.MAX_BUY, 70, true), buyin, BorderLayout.WEST);
+        oi = OptionMenu.add(new OptionInteger(null, ClientTournamentProfile.PARAM_BUYIN, STYLE, dummy_, null, 1,
+                ClientTournamentProfile.MAX_BUY, 70, true), buyin, BorderLayout.WEST);
         buyinCost_ = oi.getSpinner();
-        oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_BUYINCHIPS, STYLE, dummy_, null, 1,
-                TournamentProfile.MAX_CHIPS, 70, true), buyin, BorderLayout.CENTER);
+        oi = OptionMenu.add(new OptionInteger(null, ClientTournamentProfile.PARAM_BUYINCHIPS, STYLE, dummy_, null, 1,
+                ClientTournamentProfile.MAX_CHIPS, 70, true), buyin, BorderLayout.CENTER);
 
         // starting depth display
         depthLabel_ = new DDLabel(GuiManager.DEFAULT, STYLE);
@@ -1172,7 +1181,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
         DDPanel rebuy = new DDPanel();
         rebuy.setBorderLayoutGap(2, 0);
 
-        ob = OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_REBUYS, STYLE, dummy_, false), rebuy,
+        ob = OptionMenu.add(new OptionBoolean(null, ClientTournamentProfile.PARAM_REBUYS, STYLE, dummy_, false), rebuy,
                 BorderLayout.NORTH);
         rebuys_ = ob.getCheckBox();
         rebuys_.addActionListener(this);
@@ -1181,22 +1190,22 @@ public class TournamentProfileDialog extends OptionMenuDialog
         rebuydata.setBorderLayoutGap(0, 5);
         rebuydata.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
         rebuy.add(GuiUtils.WEST(rebuydata), BorderLayout.CENTER);
-        oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_REBUYCOST, STYLE, dummy_, null, 1,
-                TournamentProfile.MAX_BUY, 70, true), rebuydata, BorderLayout.WEST);
+        oi = OptionMenu.add(new OptionInteger(null, ClientTournamentProfile.PARAM_REBUYCOST, STYLE, dummy_, null, 1,
+                ClientTournamentProfile.MAX_BUY, 70, true), rebuydata, BorderLayout.WEST);
         rebuyOptions_.add(oi);
-        oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_REBUYCHIPS, STYLE, dummy_, null, 1,
-                TournamentProfile.MAX_CHIPS, 70, true), rebuydata, BorderLayout.CENTER);
+        oi = OptionMenu.add(new OptionInteger(null, ClientTournamentProfile.PARAM_REBUYCHIPS, STYLE, dummy_, null, 1,
+                ClientTournamentProfile.MAX_CHIPS, 70, true), rebuydata, BorderLayout.CENTER);
         rebuyOptions_.add(oi);
 
         DDPanel rebuydata2 = new DDPanel();
         rebuydata2.setBorderLayoutGap(0, 5);
         rebuydata2.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
         rebuy.add(GuiUtils.WEST(rebuydata2), BorderLayout.SOUTH);
-        oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_REBUY_UNTIL, STYLE, dummy_, null, 1,
-                TournamentProfile.MAX_LEVELS, 45, true), rebuydata2, BorderLayout.WEST);
+        oi = OptionMenu.add(new OptionInteger(null, ClientTournamentProfile.PARAM_REBUY_UNTIL, STYLE, dummy_, null, 1,
+                ClientTournamentProfile.MAX_LEVELS, 45, true), rebuydata2, BorderLayout.WEST);
         rebuyOptions_.add(oi);
-        oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_MAXREBUYS, STYLE, dummy_, null, 0,
-                TournamentProfile.MAX_REBUYS, 45, true), rebuydata2, BorderLayout.CENTER);
+        oi = OptionMenu.add(new OptionInteger(null, ClientTournamentProfile.PARAM_MAXREBUYS, STYLE, dummy_, null, 0,
+                ClientTournamentProfile.MAX_REBUYS, 45, true), rebuydata2, BorderLayout.CENTER);
         rebuyOptions_.add(oi);
 
         DDPanel rebuydata3 = new DDPanel();
@@ -1204,16 +1213,16 @@ public class TournamentProfileDialog extends OptionMenuDialog
         rebuydata2.add(rebuydata3, BorderLayout.SOUTH);
         ButtonGroup exprgroup = new ButtonGroup();
 
-        OptionRadio radio = OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_REBUYEXPR, STYLE, dummy_,
+        OptionRadio radio = OptionMenu.add(new OptionRadio(null, ClientTournamentProfile.PARAM_REBUYEXPR, STYLE, dummy_,
                 "rebuyexpr.lte", exprgroup, PokerClientConstants.REBUY_LTE, null), rebuydata3);
         rebuyOptions_.add(radio);
-        radio = OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_REBUYEXPR, STYLE, dummy_, "rebuyexpr.lt",
-                exprgroup, PokerClientConstants.REBUY_LT, null), rebuydata3);
+        radio = OptionMenu.add(new OptionRadio(null, ClientTournamentProfile.PARAM_REBUYEXPR, STYLE, dummy_,
+                "rebuyexpr.lt", exprgroup, PokerClientConstants.REBUY_LT, null), rebuydata3);
         rebuyOptions_.add(radio);
 
         Integer nDefault = profile_.getBuyinChips();
-        oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_REBUYCHIPCNT, STYLE, dummy_, nDefault, 0,
-                TournamentProfile.MAX_REBUY_CHIPS, 80, true), rebuydata3, BorderLayout.CENTER);
+        oi = OptionMenu.add(new OptionInteger(null, ClientTournamentProfile.PARAM_REBUYCHIPCNT, STYLE, dummy_, nDefault,
+                0, ClientTournamentProfile.MAX_REBUY_CHIPS, 80, true), rebuydata3, BorderLayout.CENTER);
         rebuyOptions_.add(oi);
 
         return rebuy;
@@ -1230,7 +1239,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
         DDPanel addon = new DDPanel();
         addon.setBorderLayoutGap(2, 0);
 
-        ob = OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_ADDONS, STYLE, dummy_, false), addon,
+        ob = OptionMenu.add(new OptionBoolean(null, ClientTournamentProfile.PARAM_ADDONS, STYLE, dummy_, false), addon,
                 BorderLayout.NORTH);
         addons_ = ob.getCheckBox();
         addons_.addActionListener(this);
@@ -1239,19 +1248,19 @@ public class TournamentProfileDialog extends OptionMenuDialog
         addondata.setBorderLayoutGap(0, 5);
         addondata.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
         addon.add(GuiUtils.WEST(addondata), BorderLayout.CENTER);
-        oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_ADDONCOST, STYLE, dummy_, null, 1,
-                TournamentProfile.MAX_BUY, 70, true), addondata, BorderLayout.WEST);
+        oi = OptionMenu.add(new OptionInteger(null, ClientTournamentProfile.PARAM_ADDONCOST, STYLE, dummy_, null, 1,
+                ClientTournamentProfile.MAX_BUY, 70, true), addondata, BorderLayout.WEST);
         addonOptions_.add(oi);
-        oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_ADDONCHIPS, STYLE, dummy_, null, 1,
-                TournamentProfile.MAX_CHIPS, 70, true), addondata, BorderLayout.CENTER);
+        oi = OptionMenu.add(new OptionInteger(null, ClientTournamentProfile.PARAM_ADDONCHIPS, STYLE, dummy_, null, 1,
+                ClientTournamentProfile.MAX_CHIPS, 70, true), addondata, BorderLayout.CENTER);
         addonOptions_.add(oi);
 
         DDPanel addondata2 = new DDPanel();
         addondata2.setBorderLayoutGap(0, 5);
         addondata2.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
         addon.add(GuiUtils.WEST(addondata2), BorderLayout.SOUTH);
-        oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_ADDONLEVEL, STYLE, dummy_, null, 1,
-                TournamentProfile.MAX_LEVELS, 45, true), addondata2, BorderLayout.WEST);
+        oi = OptionMenu.add(new OptionInteger(null, ClientTournamentProfile.PARAM_ADDONLEVEL, STYLE, dummy_, null, 1,
+                ClientTournamentProfile.MAX_LEVELS, 45, true), addondata2, BorderLayout.WEST);
         addonOptions_.add(oi);
 
         return addon;
@@ -1268,7 +1277,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
         DDPanel bounty = new DDPanel();
         bounty.setBorderLayoutGap(2, 0);
 
-        ob = OptionMenu.add(new OptionBoolean(null, TournamentProfile.PARAM_BOUNTY, STYLE, dummy_, false), bounty,
+        ob = OptionMenu.add(new OptionBoolean(null, ClientTournamentProfile.PARAM_BOUNTY, STYLE, dummy_, false), bounty,
                 BorderLayout.NORTH);
         bounties_ = ob.getCheckBox();
         bounties_.addActionListener(this);
@@ -1277,8 +1286,8 @@ public class TournamentProfileDialog extends OptionMenuDialog
         bountydata.setBorderLayoutGap(0, 5);
         bountydata.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
         bounty.add(GuiUtils.WEST(bountydata), BorderLayout.CENTER);
-        oi = OptionMenu.add(new OptionInteger(null, TournamentProfile.PARAM_BOUNTY_AMOUNT, STYLE, dummy_, null, 1,
-                TournamentProfile.MAX_BOUNTY, 70, true), bountydata, BorderLayout.WEST);
+        oi = OptionMenu.add(new OptionInteger(null, ClientTournamentProfile.PARAM_BOUNTY_AMOUNT, STYLE, dummy_, null, 1,
+                ClientTournamentProfile.MAX_BOUNTY, 70, true), bountydata, BorderLayout.WEST);
         bountyOptions_.add(oi);
 
         return bounty;
@@ -1301,19 +1310,19 @@ public class TournamentProfileDialog extends OptionMenuDialog
 
         ButtonGroup payoutgroup = new ButtonGroup();
 
-        OptionInteger payoutperc = new OptionInteger(null, TournamentProfile.PARAM_PAYOUTPERC, STYLE, dummy_, null, 1,
-                TournamentProfile.MAX_PERC, 47, true);
+        OptionInteger payoutperc = new OptionInteger(null, ClientTournamentProfile.PARAM_PAYOUTPERC, STYLE, dummy_,
+                null, 1, ClientTournamentProfile.MAX_PERC, 47, true);
         spotPerc_ = payoutperc.getSpinner();
-        OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_PAYOUT, STYLE, dummy_, "payout.perc", payoutgroup,
-                PokerClientConstants.PAYOUT_PERC, payoutperc), typebase);
+        OptionMenu.add(new OptionRadio(null, ClientTournamentProfile.PARAM_PAYOUT, STYLE, dummy_, "payout.perc",
+                payoutgroup, PokerClientConstants.PAYOUT_PERC, payoutperc), typebase);
 
-        OptionInteger payoutnum = new OptionInteger(null, TournamentProfile.PARAM_PAYOUTNUM, STYLE, dummy_, null, 1,
-                TournamentProfile.MAX_SPOTS, 47, true);
+        OptionInteger payoutnum = new OptionInteger(null, ClientTournamentProfile.PARAM_PAYOUTNUM, STYLE, dummy_, null,
+                1, ClientTournamentProfile.MAX_SPOTS, 47, true);
         spotAmount_ = payoutnum.getSpinner();
-        OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_PAYOUT, STYLE, dummy_, "payout.num", payoutgroup,
-                PokerClientConstants.PAYOUT_SPOTS, payoutnum), typebase);
+        OptionMenu.add(new OptionRadio(null, ClientTournamentProfile.PARAM_PAYOUT, STYLE, dummy_, "payout.num",
+                payoutgroup, PokerClientConstants.PAYOUT_SPOTS, payoutnum), typebase);
 
-        OptionRadio radio = OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_PAYOUT, STYLE, dummy_,
+        OptionRadio radio = OptionMenu.add(new OptionRadio(null, ClientTournamentProfile.PARAM_PAYOUT, STYLE, dummy_,
                 "payout.sat", payoutgroup, PokerClientConstants.PAYOUT_SATELLITE), typebase);
         buttonSatellite_ = radio.getRadioButton();
 
@@ -1330,16 +1339,16 @@ public class TournamentProfileDialog extends OptionMenuDialog
 
         ButtonGroup housegroup = new ButtonGroup();
 
-        OptionInteger houseperc = new OptionInteger(null, TournamentProfile.PARAM_HOUSEPERC, STYLE, dummy_, null, 0,
-                TournamentProfile.MAX_HOUSE_PERC, 55, true);
-        OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_HOUSE, STYLE, dummy_, "house.perc", housegroup,
-                PokerClientConstants.HOUSE_PERC, houseperc), housebase);
+        OptionInteger houseperc = new OptionInteger(null, ClientTournamentProfile.PARAM_HOUSEPERC, STYLE, dummy_, null,
+                0, ClientTournamentProfile.MAX_HOUSE_PERC, 55, true);
+        OptionMenu.add(new OptionRadio(null, ClientTournamentProfile.PARAM_HOUSE, STYLE, dummy_, "house.perc",
+                housegroup, PokerClientConstants.HOUSE_PERC, houseperc), housebase);
 
-        OptionInteger houseamount = new OptionInteger(null, TournamentProfile.PARAM_HOUSEAMOUNT, STYLE, dummy_, null, 0,
-                TournamentProfile.MAX_HOUSE_AMOUNT, 55, true);
+        OptionInteger houseamount = new OptionInteger(null, ClientTournamentProfile.PARAM_HOUSEAMOUNT, STYLE, dummy_,
+                null, 0, ClientTournamentProfile.MAX_HOUSE_AMOUNT, 55, true);
         houseAmount_ = houseamount.getSpinner();
-        OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_HOUSE, STYLE, dummy_, "house.amount", housegroup,
-                PokerClientConstants.HOUSE_AMOUNT, houseamount), housebase);
+        OptionMenu.add(new OptionRadio(null, ClientTournamentProfile.PARAM_HOUSE, STYLE, dummy_, "house.amount",
+                housegroup, PokerClientConstants.HOUSE_AMOUNT, houseamount), housebase);
 
         return base;
     }
@@ -1363,13 +1372,13 @@ public class TournamentProfileDialog extends OptionMenuDialog
         allocbase.setLayout(new GridLayout(0, 1, 0, -4));
         left.add(allocbase, BorderLayout.NORTH);
 
-        radio = OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_ALLOC, STYLE, dummy_, "alloc.auto",
+        radio = OptionMenu.add(new OptionRadio(null, ClientTournamentProfile.PARAM_ALLOC, STYLE, dummy_, "alloc.auto",
                 buttonGroup_, PokerClientConstants.ALLOC_AUTO, null), allocbase);
         buttonAuto_ = radio.getRadioButton();
-        radio = OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_ALLOC, STYLE, dummy_, "alloc.perc",
+        radio = OptionMenu.add(new OptionRadio(null, ClientTournamentProfile.PARAM_ALLOC, STYLE, dummy_, "alloc.perc",
                 buttonGroup_, PokerClientConstants.ALLOC_PERC, null), allocbase);
         buttonPerc_ = radio.getRadioButton();
-        radio = OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_ALLOC, STYLE, dummy_, "alloc.amount",
+        radio = OptionMenu.add(new OptionRadio(null, ClientTournamentProfile.PARAM_ALLOC, STYLE, dummy_, "alloc.amount",
                 buttonGroup_, PokerClientConstants.ALLOC_AMOUNT, null), allocbase);
         buttonAmount_ = radio.getRadioButton();
 
@@ -1385,14 +1394,14 @@ public class TournamentProfileDialog extends OptionMenuDialog
         DDComboBox presetCombo = new DDComboBox("payoutpreset", STYLE);
         presetCombo.setPreferredSize(new Dimension(200, 25));
         // Add preset items
-        for (PayoutPreset preset : PayoutPreset.values()) {
+        for (ClientPayoutPreset preset : ClientPayoutPreset.values()) {
             presetCombo.addItem(preset);
         }
         presetCombo.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                PayoutPreset selected = (PayoutPreset) presetCombo.getSelectedItem();
-                if (selected != null && selected != PayoutPreset.CUSTOM) {
-                    applyPayoutPreset(selected);
+                ClientPayoutPreset selected = (ClientPayoutPreset) presetCombo.getSelectedItem();
+                if (selected != null && selected != ClientPayoutPreset.CUSTOM) {
+                    applyClientPayoutPreset(selected);
                 }
             }
         });
@@ -1450,7 +1459,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
     private void clearSpots() {
         // loop through all and calc total
         SpotPanel sp;
-        for (int i = 0; i < TournamentProfile.MAX_SPOTS; i++) {
+        for (int i = 0; i < ClientTournamentProfile.MAX_SPOTS; i++) {
             sp = spots_[i];
             if (sp == null)
                 continue;
@@ -1462,7 +1471,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
     /**
      * Apply a payout preset to the current profile
      */
-    private void applyPayoutPreset(PayoutPreset preset) {
+    private void applyClientPayoutPreset(ClientPayoutPreset preset) {
         // Apply preset to profile (sets spot percentages)
         int numSpots = profile_.getNumSpots();
         preset.applyToProfile(profile_, numSpots);
@@ -1508,7 +1517,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
         boolean bPerc = buttonPerc_.isSelected();
 
         spotsParent_.removeAll();
-        for (int i = 0; i < TournamentProfile.MAX_SPOTS; i++) {
+        for (int i = 0; i < ClientTournamentProfile.MAX_SPOTS; i++) {
             sp = spots_[i];
             if (sp == null && i < nNumSpots_) {
                 sp = new SpotPanel(i, STYLE);
@@ -1560,7 +1569,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
         // loop through all and calc total
         SpotPanel sp;
         String text;
-        for (int i = 0; i < TournamentProfile.MAX_SPOTS; i++) {
+        for (int i = 0; i < ClientTournamentProfile.MAX_SPOTS; i++) {
             sp = spots_[i];
             if (sp == null)
                 continue;
@@ -1592,7 +1601,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
 
         // loop through all and reset from new map value
         SpotPanel sp;
-        for (int i = 0; i < TournamentProfile.MAX_SPOTS; i++) {
+        for (int i = 0; i < ClientTournamentProfile.MAX_SPOTS; i++) {
             sp = spots_[i];
             if (sp == null)
                 continue;
@@ -1680,7 +1689,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
                         sb.append(c);
                 }
                 text = sb.toString();
-                d = (long) (Double.parseDouble(text) * TournamentProfile.ROUND_MULT);
+                d = (long) (Double.parseDouble(text) * ClientTournamentProfile.ROUND_MULT);
             } catch (NumberFormatException nfe) {
                 d = 0;
             }
@@ -1689,7 +1698,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
             // logger.debug(i + ": " + d + " = " + dTotal);
         }
 
-        return ((double) dTotal) / (double) TournamentProfile.ROUND_MULT;
+        return ((double) dTotal) / (double) ClientTournamentProfile.ROUND_MULT;
     }
 
     /**
@@ -1721,7 +1730,8 @@ public class TournamentProfileDialog extends OptionMenuDialog
             add(label);
 
             // amount
-            otspot = createText(TournamentProfile.PARAM_SPOTAMOUNT, sStyle, 11, 90, i, "msg.header.spotamount", "^.*$");
+            otspot = createText(ClientTournamentProfile.PARAM_SPOTAMOUNT, sStyle, 11, 90, i, "msg.header.spotamount",
+                    "^.*$");
             spot = otspot.getTextField();
             spot.addFocusListener(TournamentProfileDialog.this);
             add(otspot);
@@ -2013,7 +2023,8 @@ public class TournamentProfileDialog extends OptionMenuDialog
         spotAmount_.setMax(nMax);
         spotAmount_.setValue(nValue);
 
-        // max percentage is that which gets us closest to TournamentProfile.MAX_SPOTS
+        // max percentage is that which gets us closest to
+        // ClientTournamentProfile.MAX_SPOTS
         nMax = profile_.getMaxPayoutPercent(nNumPlayers);
         if (nMax == 0)
             nMax = 1;
@@ -2025,8 +2036,8 @@ public class TournamentProfileDialog extends OptionMenuDialog
 
         // max house take can't be more than 50% of buyin
         int nNewMax = buyinCost_.getValue() / 2;
-        if (nNewMax > TournamentProfile.MAX_HOUSE_AMOUNT)
-            nNewMax = TournamentProfile.MAX_HOUSE_AMOUNT;
+        if (nNewMax > ClientTournamentProfile.MAX_HOUSE_AMOUNT)
+            nNewMax = ClientTournamentProfile.MAX_HOUSE_AMOUNT;
         nValue = houseAmount_.getValue();
         nMax = houseAmount_.getMax();
         if (nMax > nNewMax) {

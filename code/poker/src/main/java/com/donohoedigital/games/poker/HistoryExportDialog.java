@@ -2,6 +2,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 DD Poker Community
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,12 +42,18 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.base.ApplicationError;
 import com.donohoedigital.base.Utils;
 import com.donohoedigital.config.PropertyConfig;
-import com.donohoedigital.db.BindArray;
 import com.donohoedigital.games.config.GameButton;
 import com.donohoedigital.games.engine.FileChooserDialog;
+import com.donohoedigital.games.poker.display.ClientCard;
 import com.donohoedigital.games.poker.impexp.ImpExp;
 import com.donohoedigital.games.poker.impexp.ImpExpHand;
 import com.donohoedigital.games.poker.impexp.ImpExpParadise;
+import com.donohoedigital.games.poker.online.ClientPlayer;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
+import com.donohoedigital.games.poker.protocol.dto.HandActionDetailData;
+import com.donohoedigital.games.poker.protocol.dto.HandExportData;
+import com.donohoedigital.games.poker.protocol.dto.HandPlayerDetailData;
+import com.donohoedigital.games.poker.server.GameServerRestClient;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
@@ -57,12 +64,15 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class HistoryExportDialog extends FileChooserDialog {
-    public static String PARAM_HAND_ID = "handID";
 
-    private PokerDatabase.ExportSummary exp_;
+    private String gameId_;
+    private String jwt_;
+    private int port_;
+    private List<HandExportData> exportHands_;
 
     private JComponent base_;
 
@@ -157,18 +167,33 @@ public class HistoryExportDialog extends FileChooserDialog {
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                Integer handID = (Integer) gamephase_.getObject(PARAM_HAND_ID);
+                gameId_ = (String) gamephase_.getObject("gameId");
+                jwt_ = (String) gamephase_.getObject("jwt");
+                Integer portObj = gamephase_.getInteger("port");
+                port_ = portObj != null ? portObj : 0;
 
-                if (handID != null) {
-                    exp_ = new PokerDatabase.ExportSummary();
-                    exp_.handIDs = new ArrayList();
-                    exp_.handIDs.add(handID);
-                    exp_.tournamentCount = 1;
+                Long handId = gamephase_.getLong("handId");
+
+                if (gameId_ != null && jwt_ != null && port_ > 0) {
+                    GameServerRestClient restClient = new GameServerRestClient(port_);
+                    if (handId != null && handId > 0) {
+                        // Export a single hand
+                        var detail = restClient.getHandDetail(gameId_, jwt_, handId);
+                        if (detail != null) {
+                            // Convert HandDetailData to HandExportData for consistency
+                            exportHands_ = List.of(new HandExportData(detail.handId(), detail.handNumber(), null, null,
+                                    String.valueOf(detail.tableId()), detail.gameStyle(), detail.gameType(),
+                                    detail.startDate(), detail.endDate(), detail.ante(), detail.smallBlind(),
+                                    detail.bigBlind(), null, detail.communityCards(), detail.players(),
+                                    detail.actions()));
+                        } else {
+                            exportHands_ = List.of();
+                        }
+                    } else {
+                        exportHands_ = restClient.getHandsForExport(gameId_, jwt_);
+                    }
                 } else {
-                    String where = (String) gamephase_.getObject("where");
-                    BindArray bindArray = (BindArray) gamephase_.getObject("bindArray");
-
-                    exp_ = PokerDatabase.getExportSummary(where, bindArray);
+                    exportHands_ = List.of();
                 }
 
                 ActionListener actionListener = new ActionListener() {
@@ -178,15 +203,16 @@ public class HistoryExportDialog extends FileChooserDialog {
                 };
 
                 cbxHands_.setText(PropertyConfig.getMessage(
-                        "msg.handtranscriptcount" + (exp_.handIDs.size() != 1 ? ".plural" : ".singular"),
-                        exp_.handIDs.size()));
+                        "msg.handtranscriptcount" + (exportHands_.size() != 1 ? ".plural" : ".singular"),
+                        exportHands_.size()));
                 cbxHands_.setSelected(true);
 
                 cbxHands_.addActionListener(actionListener);
 
+                // Count distinct tournaments
+                long tournamentCount = exportHands_.stream().map(HandExportData::tournamentId).distinct().count();
                 cbxTournaments_.setText(PropertyConfig.getMessage(
-                        "msg.tourneysummarycount" + (exp_.tournamentCount != 1 ? ".plural" : ".singular"),
-                        exp_.tournamentCount));
+                        "msg.tourneysummarycount" + (tournamentCount != 1 ? ".plural" : ".singular"), tournamentCount));
 
                 cbxTournaments_.addActionListener(actionListener);
 
@@ -205,19 +231,11 @@ public class HistoryExportDialog extends FileChooserDialog {
 
         if (txtSize_ != null)
             txtSize_.setText(String.valueOf(
-                    Utils.formatSizeBytes((int) ((cbxHands_.isSelected() ? (1500L * exp_.handIDs.size()) : 0)))));
+                    Utils.formatSizeBytes((int) ((cbxHands_.isSelected() ? (1500L * exportHands_.size()) : 0)))));
 
         if ((okayButton_ != null) && (cbxHands_ != null) && (cbxTournaments_ != null))
             okayButton_.setEnabled(okayButton_.isEnabled() && (cbxHands_.isSelected() || cbxTournaments_.isSelected()));
-
-        // cancelButton_.setEnabled(true);
     }
-
-    /**
-     * Focus to text field
-     *
-     * protected Component getFocusComponent() { return desc_; }
-     */
 
     /**
      * Default processButton calls closes dialog on any button press
@@ -230,12 +248,7 @@ public class HistoryExportDialog extends FileChooserDialog {
 
             new Thread("HistoryExportDialog") {
                 public void run() {
-                    ArrayList summariesExported = new ArrayList();
-
-                    ImpExpHand ieHand;
-
                     ImpExp ie = new ImpExpParadise();
-
                     ie.setPlayerName(PlayerProfileOptions.getDefaultProfile().getName());
 
                     try {
@@ -252,14 +265,17 @@ public class HistoryExportDialog extends FileChooserDialog {
 
                         Writer w = new FileWriter(path);
 
-                        for (int i = 0; i < exp_.handIDs.size() && !cancel_; ++i) {
-                            ieHand = PokerDatabase.getHandForExport((Integer) exp_.handIDs.get(i));
+                        java.util.Set<Integer> tournamentsExported = new java.util.HashSet<>();
 
-                            if (cbxTournaments_.isSelected() && (summariesExported.size() < exp_.tournamentCount)
-                                    && !summariesExported.contains(ieHand.tournamentID)) {
+                        for (int i = 0; i < exportHands_.size() && !cancel_; ++i) {
+                            HandExportData data = exportHands_.get(i);
+                            ImpExpHand ieHand = toImpExpHand(data);
+
+                            if (cbxTournaments_.isSelected() && data.tournamentId() != null
+                                    && !tournamentsExported.contains(data.tournamentId())) {
                                 w.write(ie.exportTournament(ieHand));
                                 w.write("\r\n\r\n");
-                                summariesExported.add(ieHand.tournamentID);
+                                tournamentsExported.add(data.tournamentId());
                             }
 
                             if (cbxHands_.isSelected()) {
@@ -267,7 +283,7 @@ public class HistoryExportDialog extends FileChooserDialog {
                                 w.write("\r\n\r\n");
                             }
 
-                            progressBar_.setPercentDone((i * 100) / exp_.handIDs.size());
+                            progressBar_.setPercentDone((i * 100) / exportHands_.size());
                         }
 
                         w.close();
@@ -288,6 +304,132 @@ public class HistoryExportDialog extends FileChooserDialog {
         }
 
         return true;
+    }
+
+    /**
+     * Convert a HandExportData DTO to the legacy ImpExpHand for export format
+     * compatibility.
+     */
+    private ImpExpHand toImpExpHand(HandExportData data) {
+        ImpExpHand ieHand = new ImpExpHand();
+
+        PlayerProfile profile = PlayerProfileOptions.getDefaultProfile();
+        ieHand.profileNumber = profile.getFileNumber(profile.getFile());
+        ieHand.handID = data.handId() != null ? data.handId().intValue() : 0;
+        ieHand.hndTable = data.tableId();
+        ieHand.hndNumber = String.valueOf(data.handNumber());
+        ieHand.gameStyle = data.gameStyle();
+        ieHand.gameType = data.gameType();
+        if (data.startDate() != null) {
+            ieHand.startDate.setTime(Date.from(data.startDate()));
+        }
+        if (data.endDate() != null) {
+            ieHand.endDate.setTime(Date.from(data.endDate()));
+        }
+        ieHand.ante = data.ante();
+        ieHand.smallBlind = data.smallBlind();
+        ieHand.bigBlind = data.bigBlind();
+        ieHand.tournamentID = data.tournamentId() != null ? data.tournamentId() : 0;
+        ieHand.tournamentName = data.tournamentName() != null ? data.tournamentName() : "";
+        if (data.buttonSeat() != null) {
+            ieHand.buttonSeat = data.buttonSeat();
+        }
+
+        // Community cards
+        if (data.communityCards() != null) {
+            for (String card : data.communityCards()) {
+                ieHand.community.addCard(ClientCard.getCard(card));
+            }
+        }
+
+        // Players
+        if (data.players() != null) {
+            for (HandPlayerDetailData p : data.players()) {
+                int seat = p.seatNumber();
+                ieHand.players[seat] = new ClientPlayer();
+                ieHand.players[seat].setSeat(seat);
+                ieHand.startChips[seat] = p.startChips();
+                ieHand.endChips[seat] = p.endChips();
+                ieHand.betChips[seat] = 0;
+                ieHand.players[seat].setChipCount(p.endChips());
+                if (p.holeCards() != null) {
+                    for (String card : p.holeCards()) {
+                        ieHand.players[seat].getHand().addCard(ClientCard.getCard(card));
+                    }
+                }
+                boolean folded = ((p.preflopActions() | p.flopActions() | p.turnActions() | p.riverActions()) & 32) > 0;
+                ieHand.players[seat].setFolded(folded);
+                ieHand.players[seat].setCardsExposed(p.cardsExposed());
+                ieHand.players[seat].setName(p.playerName());
+            }
+        }
+
+        // Actions
+        if (data.actions() != null) {
+            int firstBlindSeat = -1;
+            for (HandActionDetailData a : data.actions()) {
+                ClientPlayer player = null;
+                int seat = -1;
+                if (data.players() != null) {
+                    for (HandPlayerDetailData p : data.players()) {
+                        if (p.playerId() == a.playerId()) {
+                            seat = p.seatNumber();
+                            player = ieHand.players[seat];
+                            break;
+                        }
+                    }
+                }
+                if (player == null)
+                    continue;
+
+                int actionType = HandAction.decodeActionType(a.actionType());
+                HandAction action = new HandAction(player, a.round(), actionType, a.amount(), a.subAmount(), null);
+                action.setAllIn(a.allIn());
+                ieHand.hist.add(action);
+
+                switch (actionType) {
+                    case HandAction.ACTION_OVERBET :
+                        ieHand.overbetChips[seat] += a.amount();
+                        break;
+                    case HandAction.ACTION_WIN :
+                        ieHand.winChips[seat] += a.amount();
+                        break;
+                    case HandAction.ACTION_CALL :
+                    case HandAction.ACTION_BET :
+                    case HandAction.ACTION_RAISE :
+                    case HandAction.ACTION_ANTE :
+                        ieHand.betChips[seat] += a.amount();
+                        break;
+                    case HandAction.ACTION_BLIND_SM :
+                    case HandAction.ACTION_BLIND_BIG :
+                        ieHand.betChips[seat] += a.amount();
+                        if (firstBlindSeat < 0)
+                            firstBlindSeat = seat;
+                        break;
+                }
+            }
+
+            // Determine button seat if not provided
+            if (data.buttonSeat() == null && firstBlindSeat >= 0) {
+                int playerCount = 0;
+                for (int i = 0; i < ProtocolConstants.SEATS; i++) {
+                    if (ieHand.players[i] != null)
+                        playerCount++;
+                }
+                if (playerCount == 2) {
+                    ieHand.buttonSeat = firstBlindSeat;
+                } else {
+                    for (int s = firstBlindSeat - 1; s > firstBlindSeat - ProtocolConstants.SEATS; --s) {
+                        if (ieHand.players[(s + ProtocolConstants.SEATS) % ProtocolConstants.SEATS] != null) {
+                            ieHand.buttonSeat = (s + ProtocolConstants.SEATS) % ProtocolConstants.SEATS;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return ieHand;
     }
 
     protected String fixName(String sName) {

@@ -23,13 +23,13 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
-import com.donohoedigital.games.poker.model.*;
+
 import com.donohoedigital.games.poker.protocol.constants.*;
 
 import java.io.*;
 import java.util.*;
 
-import static com.donohoedigital.games.poker.model.TournamentProfile.*;
+import static com.donohoedigital.games.poker.ClientTournamentProfile.*;
 
 /**
  * Client-local tournament profile HTML formatter. Reimplements the formatting
@@ -37,18 +37,18 @@ import static com.donohoedigital.games.poker.model.TournamentProfile.*;
  * without any dependency on the pokerengine module.
  */
 public class TournamentProfileFormatter {
-    private final TournamentProfile profile;
+    private final ClientTournamentProfile profile;
 
     // cache for quick display
     private String htmlCache_;
     private String htmlSummaryCache_;
     private boolean htmlSummaryMode_ = false;
 
-    public TournamentProfileFormatter(TournamentProfile profile) {
+    public TournamentProfileFormatter(ClientTournamentProfile profile) {
         this.profile = profile;
     }
 
-    public TournamentProfile getProfile() {
+    public ClientTournamentProfile getProfile() {
         return profile;
     }
 

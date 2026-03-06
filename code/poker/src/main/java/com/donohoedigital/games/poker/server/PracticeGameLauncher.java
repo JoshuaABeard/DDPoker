@@ -17,13 +17,14 @@
  */
 package com.donohoedigital.games.poker.server;
 
+import com.donohoedigital.games.poker.ClientTournamentProfile;
 import com.donohoedigital.games.poker.PlayerProfileOptions;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PlayerProfile;
 import com.donohoedigital.games.poker.PokerUtils;
 import com.donohoedigital.games.poker.PokerClientConstants;
 import com.donohoedigital.games.poker.protocol.dto.GameConfig;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -37,7 +38,7 @@ import java.util.List;
  * Responsibilities:
  * <ol>
  * <li>Obtain the local-user JWT from {@link EmbeddedGameServer}</li>
- * <li>Post the {@link TournamentProfile} to the embedded server via
+ * <li>Post the {@link ClientTournamentProfile} to the embedded server via
  * {@link GameServerRestClient}</li>
  * <li>Store the returned {@code gameId} + JWT on the {@link PokerGame} so that
  * {@link com.donohoedigital.games.poker.online.WebSocketTournamentDirector} can
@@ -45,8 +46,8 @@ import java.util.List;
  * </ol>
  *
  * <p>
- * Call {@link #launch(TournamentProfile, PokerGame)} from the practice-game
- * setup flow (before the phase chain transitions to
+ * Call {@link #launch(ClientTournamentProfile, PokerGame)} from the
+ * practice-game setup flow (before the phase chain transitions to
  * {@code WebSocketTournamentDirector}).
  */
 public class PracticeGameLauncher {
@@ -78,7 +79,7 @@ public class PracticeGameLauncher {
      * @throws EmbeddedGameServer.EmbeddedServerStartupException
      *             if the server is not running (should have been caught at startup)
      */
-    public void launch(TournamentProfile profile, PokerGame game) {
+    public void launch(ClientTournamentProfile profile, PokerGame game) {
         if (!embeddedServer.isRunning()) {
             throw new IllegalStateException("Embedded server is not running");
         }
@@ -121,7 +122,7 @@ public class PracticeGameLauncher {
      * etc. for as many AI players as the profile requests (total players minus 1
      * for the human).
      */
-    private List<String> buildAiNames(TournamentProfile profile) {
+    private List<String> buildAiNames(ClientTournamentProfile profile) {
         int numAi = Math.max(0, profile.getNumPlayers() - 1);
         List<String> names = new ArrayList<>(numAi);
         for (int i = 1; i <= numAi; i++) {
@@ -133,7 +134,7 @@ public class PracticeGameLauncher {
     /**
      * Returns medium AI difficulty (level 4). Skill-level picker is an M6 feature.
      */
-    private int defaultSkillLevel(TournamentProfile profile) {
+    private int defaultSkillLevel(ClientTournamentProfile profile) {
         return 4;
     }
 }

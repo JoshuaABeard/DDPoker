@@ -38,8 +38,6 @@ import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.protocol.dto.GameJoinResponse;
-import com.donohoedigital.games.poker.model.*;
-import com.donohoedigital.games.poker.model.util.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
@@ -57,7 +55,7 @@ public class FindGames extends ListGames {
 
     static Logger logger = LogManager.getLogger(FindGames.class);
 
-    private OnlineGame selected_;
+    private ClientOnlineGame selected_;
     private RestGameClient restClient_;
 
     /**
@@ -84,7 +82,7 @@ public class FindGames extends ListGames {
         ListSelectionModel lsm = table_.getSelectionModel();
         int index = lsm.getMinSelectionIndex();
 
-        OnlineGame newSelection = null;
+        ClientOnlineGame newSelection = null;
 
         if (index >= 0) {
             newSelection = ((WanGameModel) model_).getGameInfo(index);
@@ -140,7 +138,7 @@ public class FindGames extends ListGames {
         ListSelectionModel selmodel = table_.getSelectionModel();
         int nNum = model_.getRowCount();
         for (int i = 0; sConnect != null && i < nNum; i++) {
-            OnlineGame game = ((WanGameModel) model_).getGameInfo(i);
+            ClientOnlineGame game = ((WanGameModel) model_).getGameInfo(i);
 
             if (sConnect.equals(game.getUrl())) {
                 selmodel.setSelectionInterval(i, i);
@@ -161,7 +159,7 @@ public class FindGames extends ListGames {
     @Override
     protected void checkButtons() {
         if (selected_ != null) {
-            start_.setEnabled(selected_.getMode() == OnlineGame.MODE_REG);
+            start_.setEnabled(selected_.getMode() == ClientOnlineGame.MODE_REG);
             obs_.setEnabled(true);
         } else {
             super.checkButtons();
@@ -288,8 +286,8 @@ public class FindGames extends ListGames {
      */
     @Override
     protected void doubleClick() {
-        OnlineGame info = ((WanGameModel) model_).getGameInfo(table_.getSelectedRow());
-        if (info.getMode() == OnlineGame.MODE_REG) {
+        ClientOnlineGame info = ((WanGameModel) model_).getGameInfo(table_.getSelectedRow());
+        if (info.getMode() == ClientOnlineGame.MODE_REG) {
             start_.doClick();
         } else {
             obs_.doClick();
@@ -298,8 +296,8 @@ public class FindGames extends ListGames {
 
     // Table columns: Name | Host | Mode | Hosting
     private static final int[] COLUMN_WIDTHS = new int[]{150, 100, 60, 80};
-    private static final String[] COLUMN_NAMES = new String[]{OnlineGame.WAN_TOURNAMENT_NAME,
-            OnlineGame.WAN_HOST_PLAYER, OnlineGame.WAN_MODE, "hostingtype"};
+    private static final String[] COLUMN_NAMES = new String[]{ClientOnlineGame.WAN_TOURNAMENT_NAME,
+            ClientOnlineGame.WAN_HOST_PLAYER, ClientOnlineGame.WAN_MODE, "hostingtype"};
 
     private static final int ROW_COUNT = 10;
 
@@ -308,16 +306,16 @@ public class FindGames extends ListGames {
      */
     private class WanGameModel extends DDPagingTableModel {
 
-        private OnlineGameList list;
+        private ClientOnlineGameList list;
 
-        public WanGameModel(OnlineGameList list) {
+        public WanGameModel(ClientOnlineGameList list) {
             this.list = list;
         }
 
         public void cleanup() {
         }
 
-        public OnlineGame getGameInfo(int r) {
+        public ClientOnlineGame getGameInfo(int r) {
             return list.get(r);
         }
 
@@ -347,18 +345,18 @@ public class FindGames extends ListGames {
         @Override
         public Object getValueAt(int rowIndex, int colIndex) {
             String sName = COLUMN_NAMES[colIndex];
-            OnlineGame game = getGameInfo(rowIndex);
+            ClientOnlineGame game = getGameInfo(rowIndex);
 
             String sValue;
-            if (sName.equals(OnlineGame.WAN_TOURNAMENT_NAME)) {
+            if (sName.equals(ClientOnlineGame.WAN_TOURNAMENT_NAME)) {
                 sValue = game.getTournament() != null ? game.getTournament().getName() : "";
-            } else if (sName.equals(OnlineGame.WAN_MODE)) {
+            } else if (sName.equals(ClientOnlineGame.WAN_MODE)) {
                 int nMode = game.getMode();
                 switch (nMode) {
-                    case OnlineGame.MODE_REG :
+                    case ClientOnlineGame.MODE_REG :
                         sValue = PropertyConfig.getMessage("msg.mode.reg");
                         break;
-                    case OnlineGame.MODE_PLAY :
+                    case ClientOnlineGame.MODE_PLAY :
                         sValue = PropertyConfig.getMessage("msg.mode.play");
                         break;
                     default :
@@ -366,9 +364,10 @@ public class FindGames extends ListGames {
                 }
             } else if (sName.equals("hostingtype")) {
                 sValue = "COMMUNITY".equals(game.getHostingType()) ? "Community" : "Server";
+            } else if (sName.equals(ClientOnlineGame.WAN_HOST_PLAYER)) {
+                sValue = game.getHostPlayer();
             } else {
-                // WAN_HOST_PLAYER and other columns via data map
-                sValue = (String) game.getData().getObject(sName);
+                sValue = null;
             }
             return "<HTML>" + Utils.encodeHTML(sValue != null ? sValue : "");
         }
@@ -478,7 +477,7 @@ public class FindGames extends ListGames {
      */
     @Override
     public DDPagingTableModel createListTableModel() {
-        OnlineGameList list = getGameList(false);
+        ClientOnlineGameList list = getGameList(false);
         return new WanGameModel(list);
     }
 
@@ -497,13 +496,13 @@ public class FindGames extends ListGames {
      *            if {@code true}, suppress any UI progress dialog
      * @return list of available games
      */
-    private OnlineGameList getGameList(boolean faceless) {
+    private ClientOnlineGameList getGameList(boolean faceless) {
         String baseUrl = getCentralServerUrl();
         String jwt = RestAuthClient.getInstance().getCachedJwt();
 
         if (baseUrl == null || jwt == null) {
             logger.warn("Central server not configured or not logged in — returning empty game list");
-            return new OnlineGameList();
+            return new ClientOnlineGameList();
         }
 
         if (restClient_ == null) {
@@ -517,7 +516,7 @@ public class FindGames extends ListGames {
             serverUri = new java.net.URI(baseUrl);
         } catch (java.net.URISyntaxException e) {
             logger.warn("Invalid central server URL: {}", baseUrl);
-            return new OnlineGameList();
+            return new ClientOnlineGameList();
         }
         String serverHost = serverUri.getHost() + (serverUri.getPort() > 0 ? ":" + serverUri.getPort() : "");
         GameSummaryConverter converter = new GameSummaryConverter(serverHost);
@@ -527,7 +526,7 @@ public class FindGames extends ListGames {
             summaries = restClient_.listGames();
         } catch (RestGameClient.RestGameClientException e) {
             logger.warn("Failed to fetch game list from central server: {}", e.getMessage());
-            return new OnlineGameList();
+            return new ClientOnlineGameList();
         }
         return converter.convertAll(summaries);
     }

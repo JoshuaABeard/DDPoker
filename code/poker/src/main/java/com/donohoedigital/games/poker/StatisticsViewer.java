@@ -2,6 +2,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 DD Poker Community
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,11 +35,13 @@ package com.donohoedigital.games.poker;
 
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
-import com.donohoedigital.db.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.display.ClientBettingRound;
-import com.donohoedigital.games.poker.model.*;
+import com.donohoedigital.games.poker.protocol.dto.HandRoundStatsData;
+import com.donohoedigital.games.poker.protocol.dto.HandStatsData;
+import com.donohoedigital.games.poker.server.GameServerRestClient;
+
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
@@ -46,9 +49,7 @@ import javax.swing.event.*;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.sql.*;
 import java.util.List;
-import com.donohoedigital.games.poker.display.ClientBettingRound;
 
 public class StatisticsViewer extends BasePhase implements ActionListener {
     public static final String COL_FINISH = "finish";
@@ -199,8 +200,8 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
     /**
      * get array of finishes
      */
-    private List<TournamentHistory> getFinishes() {
-        List<TournamentHistory> finishes = profile_.getHistory();
+    private List<ClientTournamentHistory> getFinishes() {
+        List<ClientTournamentHistory> finishes = profile_.getHistory();
         finishes.add(0, profile_.getOverallHistory());
         return finishes;
     }
@@ -248,54 +249,55 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
     private static final String[] byHandColNames_ = {"stats.cards", "stats.numhands", "stats.winpct", "stats.losepct",
             "stats.passpct", "stats.winbets", "stats.seeflop", "stats.seeturn", "stats.seeriver", "stats.seeshowdown"};
 
-    private static class ByHandModel extends DatabaseQueryTableModel {
-        public ByHandModel(String sWhere, String sGroupBy, String sOrderBy, BindArray bindArray, boolean bHands) {
-            // bHands is a hack to work around an apparent sproc bug in hsqldb
+    /**
+     * Table model backed by HandStatsData from REST API.
+     */
+    private static class ByHandModel extends DefaultTableModel {
+        private final List<HandStatsData> stats_;
 
-            super(PokerDatabase.getDatabase(), byHandColNames_, "SELECT " + (bHands
-                    ? "\"com.donohoedigital.games.poker.PokerDatabaseProcs.getHandClass\"(PLH_CARD_1, PLH_CARD_2)"
-                    : "'??'") + ',' + "COUNT(*),\n"
-                    + "CONCAT(SUM(CASE WHEN PLH_END_CHIPS > PLH_START_CHIPS THEN 1.0 ELSE 0 END) * 100 / COUNT(*),'%'),\n"
-                    + "CONCAT(SUM(CASE WHEN PLH_END_CHIPS < PLH_START_CHIPS THEN 1.0 ELSE 0 END) * 100 / COUNT(*),'%'),\n"
-                    + "CONCAT(SUM(CASE WHEN PLH_END_CHIPS = PLH_START_CHIPS THEN 1.0 ELSE 0 END) * 100 / COUNT(*),'%'),\n"
-                    + "AVG((PLH_END_CHIPS - PLH_START_CHIPS) / (1.00 * HND_BIG_BLIND)),\n"
-                    + "CONCAT(SUM(CASE WHEN BITAND(PLH_PREFLOP_ACTIONS , " + PokerDatabase.BIT_FOLD
-                    + ") <> 0 THEN 0 ELSE 1 END) * 100 / COUNT(*),'%'),\n"
-                    + "CONCAT(SUM(CASE WHEN BITAND(PLH_PREFLOP_ACTIONS , " + PokerDatabase.BIT_FOLD + ") <> 0 OR  "
-                    + "BITAND(PLH_FLOP_ACTIONS , " + PokerDatabase.BIT_FOLD
-                    + ") <> 0 THEN 0 ELSE 1 END) * 100 / COUNT(*),'%'),\n"
-                    + "CONCAT(SUM(CASE WHEN BITAND(PLH_PREFLOP_ACTIONS , " + PokerDatabase.BIT_FOLD + ") <> 0 OR "
-                    + "BITAND(PLH_FLOP_ACTIONS , " + PokerDatabase.BIT_FOLD + ") <> 0 OR "
-                    + "BITAND(PLH_TURN_ACTIONS , " + PokerDatabase.BIT_FOLD
-                    + ") <> 0 THEN 0 ELSE 1 END) * 100 / COUNT(*),'%'),\n"
-                    + "CONCAT(SUM(CASE WHEN BITAND(PLH_PREFLOP_ACTIONS , " + PokerDatabase.BIT_FOLD + ") <> 0 OR "
-                    + "BITAND(PLH_FLOP_ACTIONS , " + PokerDatabase.BIT_FOLD + ") <> 0 OR "
-                    + "BITAND(PLH_TURN_ACTIONS , " + PokerDatabase.BIT_FOLD + ") <> 0 OR "
-                    + "BITAND(PLH_RIVER_ACTIONS , " + PokerDatabase.BIT_FOLD
-                    + ") <> 0 THEN 0 ELSE 1 END) * 100 / COUNT(*),'%')\n"
-                    + "FROM TOURNAMENT_PLAYER, PLAYER_HAND, HAND\n"
-                    + "WHERE PLH_HAND_ID=HND_ID AND PLH_PLAYER_ID=TPL_ID" + (sWhere == null ? "" : "\nAND " + sWhere)
-                    + (sGroupBy == null ? "" : "\nGROUP BY " + sGroupBy)
-                    + (sOrderBy == null ? "" : "\nORDER BY " + sOrderBy), bindArray);
-        }
-
-        @Override
-        public Class<?> getColumnClass(int columnIndex) {
-            if (columnIndex == 0) {
-                return Object.class;
-            } else {
-                return Number.class;
+        public ByHandModel(List<HandStatsData> stats) {
+            stats_ = stats;
+            for (String name : byHandColNames_) {
+                addColumn(name);
             }
         }
 
         @Override
-        public Object getValueAt(int row, int column) {
-            Object v = super.getValueAt(row, column);
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
 
+        @Override
+        public int getRowCount() {
+            return stats_ == null ? 0 : stats_.size();
+        }
+
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            if (columnIndex == 0)
+                return Object.class;
+            return Number.class;
+        }
+
+        @Override
+        public Object getValueAt(int row, int column) {
+            HandStatsData s = stats_.get(row);
+            Object v = switch (column) {
+                case 0 -> s.handClass();
+                case 1 -> s.count();
+                case 2 -> formatPct(s.winPct());
+                case 3 -> formatPct(s.losePct());
+                case 4 -> formatPct(s.passPct());
+                case 5 -> String.format("%.2f", s.avgBet());
+                case 6 -> formatPct(s.flopPct());
+                case 7 -> formatPct(s.turnPct());
+                case 8 -> formatPct(s.riverPct());
+                case 9 -> formatPct(s.showdownPct());
+                default -> null;
+            };
             if ("0%".equals(v))
                 return null;
-            else
-                return v;
+            return v;
         }
     }
 
@@ -318,18 +320,41 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
             OverallModel tmodel = new OverallModel();
             tmodel.setColumnCount(2);
 
-            BindArray bindArray = new BindArray();
-            bindArray.addValue(Types.TIMESTAMP,
-                    new Timestamp(PlayerProfileOptions.getDefaultProfile().getCreateDate()));
-            TournamentHistory hist = getSelectedTournament();
-            if (hist.getGameId() != 0) {
-                bindArray.addValue(Types.INTEGER, hist.getGameId());
+            ClientTournamentHistory hist = getSelectedTournament();
+
+            // Get hand stats from REST (for overall stats like win%, etc.)
+            List<HandStatsData> handStats = List.of();
+            PokerGame.WebSocketConfig cfg = getWebSocketConfig(hist);
+            if (cfg != null) {
+                try {
+                    GameServerRestClient restClient = new GameServerRestClient(cfg.port());
+                    handStats = restClient.getHandStats(cfg.gameId(), cfg.jwt());
+                } catch (Exception ignored) {
+                    // stats unavailable
+                }
             }
-            ByHandModel dmodel = new ByHandModel(
-                    "PLH_PLAYER_ID IN (\n" + "SELECT TPL_ID FROM TOURNAMENT_PLAYER\n"
-                            + "WHERE TPL_PROFILE_CREATE_DATE=?"
-                            + (hist.getGameId() != 0 ? " AND TPL_TOURNAMENT_ID=?" : "") + ')',
-                    null, null, bindArray, false);
+
+            // Aggregate the hand stats to get overall numbers
+            int totalHands = 0;
+            int totalWins = 0;
+            int totalLosses = 0;
+            int totalPasses = 0;
+            double totalBet = 0;
+            int sawFlop = 0;
+            int sawTurn = 0;
+            int sawRiver = 0;
+            int sawShowdown = 0;
+            for (HandStatsData s : handStats) {
+                totalHands += s.count();
+                totalWins += (int) Math.round(s.winPct() * s.count() / 100.0);
+                totalLosses += (int) Math.round(s.losePct() * s.count() / 100.0);
+                totalPasses += (int) Math.round(s.passPct() * s.count() / 100.0);
+                totalBet += s.avgBet() * s.count();
+                sawFlop += (int) Math.round(s.flopPct() * s.count() / 100.0);
+                sawTurn += (int) Math.round(s.turnPct() * s.count() / 100.0);
+                sawRiver += (int) Math.round(s.riverPct() * s.count() / 100.0);
+                sawShowdown += (int) Math.round(s.showdownPct() * s.count() / 100.0);
+            }
 
             GameEngine engine = GameEngine.getGameEngine();
             String sLocale = null;
@@ -385,24 +410,23 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
                                     hist.getNumPlayers())});
                 }
             }
-            tmodel.addRow(new Object[]{PropertyConfig.getMessage("msg.handhistory.overall.numhands"),
-                    dmodel.getValueAt(0, 1)});
-            tmodel.addRow(
-                    new Object[]{PropertyConfig.getMessage("msg.handhistory.overall.winpct"), dmodel.getValueAt(0, 2)});
+            tmodel.addRow(new Object[]{PropertyConfig.getMessage("msg.handhistory.overall.numhands"), totalHands});
+            tmodel.addRow(new Object[]{PropertyConfig.getMessage("msg.handhistory.overall.winpct"),
+                    totalHands > 0 ? formatPct(totalWins * 100.0 / totalHands) : null});
             tmodel.addRow(new Object[]{PropertyConfig.getMessage("msg.handhistory.overall.losepct"),
-                    dmodel.getValueAt(0, 3)});
+                    totalHands > 0 ? formatPct(totalLosses * 100.0 / totalHands) : null});
             tmodel.addRow(new Object[]{PropertyConfig.getMessage("msg.handhistory.overall.passpct"),
-                    dmodel.getValueAt(0, 4)});
+                    totalHands > 0 ? formatPct(totalPasses * 100.0 / totalHands) : null});
             tmodel.addRow(new Object[]{PropertyConfig.getMessage("msg.handhistory.overall.winbets"),
-                    dmodel.getValueAt(0, 5)});
+                    totalHands > 0 ? String.format("%.2f", totalBet / totalHands) : null});
             tmodel.addRow(new Object[]{PropertyConfig.getMessage("msg.handhistory.overall.seeflop"),
-                    dmodel.getValueAt(0, 6)});
+                    totalHands > 0 ? formatPct(sawFlop * 100.0 / totalHands) : null});
             tmodel.addRow(new Object[]{PropertyConfig.getMessage("msg.handhistory.overall.seeturn"),
-                    dmodel.getValueAt(0, 7)});
+                    totalHands > 0 ? formatPct(sawTurn * 100.0 / totalHands) : null});
             tmodel.addRow(new Object[]{PropertyConfig.getMessage("msg.handhistory.overall.seeriver"),
-                    dmodel.getValueAt(0, 8)});
+                    totalHands > 0 ? formatPct(sawRiver * 100.0 / totalHands) : null});
             tmodel.addRow(new Object[]{PropertyConfig.getMessage("msg.handhistory.overall.seeshowdown"),
-                    dmodel.getValueAt(0, 9)});
+                    totalHands > 0 ? formatPct(sawShowdown * 100.0 / totalHands) : null});
             table_.setModel(tmodel);
             table_.setExporter(new TableExporter(context_, "overall"));
         }
@@ -427,19 +451,13 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
 
         private TypedHashMap getDetailsParams() {
             TypedHashMap params = new TypedHashMap();
-            BindArray bindArray = new BindArray();
-            bindArray.addValue(Types.TIMESTAMP,
-                    new Timestamp(PlayerProfileOptions.getDefaultProfile().getCreateDate()));
-            TournamentHistory hist = getSelectedTournament();
-            if (hist.getGameId() != 0) {
-                bindArray.addValue(Types.INTEGER, hist.getGameId());
+            ClientTournamentHistory hist = getSelectedTournament();
+            PokerGame.WebSocketConfig cfg = getWebSocketConfig(hist);
+            if (cfg != null) {
+                params.setString("gameId", cfg.gameId());
+                params.setString("jwt", cfg.jwt());
+                params.setInteger("port", cfg.port());
             }
-            params.setString("where",
-                    "HND_ID IN (SELECT PLH_HAND_ID FROM PLAYER_HAND\n" + "WHERE PLH_PLAYER_ID IN (\n"
-                            + "SELECT TPL_ID FROM TOURNAMENT_PLAYER\n" + "WHERE TPL_PROFILE_CREATE_DATE=?"
-                            + (hist.getGameId() != 0 ? " AND TPL_TOURNAMENT_ID=?" : "") + "))");
-            params.setObject("bindArray", bindArray);
-
             return params;
         }
 
@@ -450,21 +468,6 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
             table_ = scrollTable.getDDTable();
             table_.setTableHeader(null);
             table_.setRowSelectionAllowed(false);
-            /*
-             * table_.getSelectionModel().addListSelectionListener(new
-             * ListSelectionListener() { public void valueChanged(ListSelectionEvent e) {
-             * checkDetailsButton(); } }); table_.addMouseListener(new MouseListener() {
-             * public void mouseClicked(MouseEvent e) { if (e.getClickCount() == 2) {
-             * showDetails(); } }
-             *
-             * public void mousePressed(MouseEvent e) { }
-             *
-             * public void mouseReleased(MouseEvent e) { }
-             *
-             * public void mouseEntered(MouseEvent e) { }
-             *
-             * public void mouseExited(MouseEvent e) { } });
-             */
             scrollTable.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
             add(GuiUtils.CENTER(scrollTable), BorderLayout.CENTER);
             refresh();
@@ -480,18 +483,17 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
         }
 
         public void refresh() {
-            BindArray bindArray = new BindArray();
-            bindArray.addValue(Types.TIMESTAMP,
-                    new Timestamp(PlayerProfileOptions.getDefaultProfile().getCreateDate()));
-            TournamentHistory hist = getSelectedTournament();
-            if (hist.getGameId() != 0) {
-                bindArray.addValue(Types.INTEGER, hist.getGameId());
+            ClientTournamentHistory hist = getSelectedTournament();
+            List<HandStatsData> stats = List.of();
+            PokerGame.WebSocketConfig cfg = getWebSocketConfig(hist);
+            if (cfg != null) {
+                try {
+                    GameServerRestClient restClient = new GameServerRestClient(cfg.port());
+                    stats = restClient.getHandStats(cfg.gameId(), cfg.jwt());
+                } catch (Exception ignored) {
+                }
             }
-            table_.setModel(new ByHandModel(
-                    "TPL_PROFILE_CREATE_DATE=?" + (hist.getGameId() == 0 ? "" : " AND TPL_TOURNAMENT_ID=?"),
-                    "\"com.donohoedigital.games.poker.PokerDatabaseProcs.getHandClass\"(PLH_CARD_1, PLH_CARD_2)",
-                    "\"com.donohoedigital.games.poker.PokerDatabaseProcs.getHandClassRank\"(PLH_CARD_1, PLH_CARD_2) DESC",
-                    bindArray, true));
+            table_.setModel(new ByHandModel(stats));
             table_.setExporter(new TableExporter(context_, "byhand"));
         }
 
@@ -515,27 +517,13 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
 
         private TypedHashMap getDetailsParams() {
             TypedHashMap params = new TypedHashMap();
-            BindArray bindArray = new BindArray();
-            bindArray.addValue(Types.TIMESTAMP,
-                    new Timestamp(PlayerProfileOptions.getDefaultProfile().getCreateDate()));
-            TournamentHistory hist = getSelectedTournament();
-            if (hist.getGameId() != 0) {
-                bindArray.addValue(Types.INTEGER, hist.getGameId());
+            ClientTournamentHistory hist = getSelectedTournament();
+            PokerGame.WebSocketConfig cfg = getWebSocketConfig(hist);
+            if (cfg != null) {
+                params.setString("gameId", cfg.gameId());
+                params.setString("jwt", cfg.jwt());
+                params.setInteger("port", cfg.port());
             }
-            int rowcount = 0;
-            for (int i = 0; i < table_.getRowCount(); ++i) {
-                if (table_.isRowSelected(i)) {
-                    bindArray.addValue(Types.VARCHAR, table_.getValueAt(i, 0));
-                    ++rowcount;
-                }
-            }
-            params.setString("where", "HND_ID IN (SELECT PLH_HAND_ID FROM PLAYER_HAND\n"
-                    + "WHERE PLH_PLAYER_ID IN (SELECT TPL_ID FROM TOURNAMENT_PLAYER WHERE TPL_PROFILE_CREATE_DATE=?\n"
-                    + (hist.getGameId() == 0 ? "" : " AND TPL_TOURNAMENT_ID=?") + ") " + " AND "
-                    + "\"com.donohoedigital.games.poker.PokerDatabaseProcs.getHandClass\"(PLH_CARD_1, PLH_CARD_2)"
-                    + rowComparison(rowcount) + ')');
-            params.setObject("bindArray", bindArray);
-
             return params;
         }
 
@@ -587,84 +575,74 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
             "stats.roundcheckraised", "stats.roundcalled", "stats.roundbet", "stats.roundraised", "stats.roundreraised",
             "stats.roundfolded", "stats.roundwon"};
 
-    private static class ByRoundModel extends DatabaseQueryTableModel {
-        public ByRoundModel(int nRound, String sWhere, String sGroupBy, String sOrderBy, BindArray bindArray) {
-            super(PokerDatabase.getDatabase(), byRoundColNames_,
-                    "SELECT \"com.donohoedigital.games.poker.PokerDatabaseProcs.getHandClass\"(PLH_CARD_1, PLH_CARD_2),"
-                            + "COUNT(*),\n" + "CONCAT(SUM(CASE WHEN BITAND(" + getRoundColumn(nRound) + ','
-                            + PokerDatabase.BIT_CHECK + ") > 0 THEN 1 ELSE 0 END) * 100 / COUNT(*),'%'),\n"
-                            + ((nRound == ClientBettingRound.PRE_FLOP.toLegacy())
-                                    ? ""
-                                    : "CONCAT(SUM(CASE WHEN BITAND(" + getRoundColumn(nRound) + ','
-                                            + PokerDatabase.BIT_CHECK + ") > 0 AND BITAND(" + getRoundColumn(nRound)
-                                            + ',' + PokerDatabase.BIT_RAISE
-                                            + ") > 0 THEN 1 ELSE 0 END) * 100 / COUNT(*),'%'),\n")
-                            + "CONCAT(SUM(CASE WHEN BITAND(" + getRoundColumn(nRound) + ',' + PokerDatabase.BIT_CALL
-                            + ") > 0 THEN 1 ELSE 0 END) * 100 / COUNT(*),'%'),\n" + "CONCAT(SUM(CASE WHEN BITAND("
-                            + getRoundColumn(nRound) + ',' + PokerDatabase.BIT_BET
-                            + ") > 0 THEN 1 ELSE 0 END) * 100 / COUNT(*),'%'),\n" + "CONCAT(SUM(CASE WHEN BITAND("
-                            + getRoundColumn(nRound) + ',' + PokerDatabase.BIT_RAISE
-                            + ") > 0 THEN 1 ELSE 0 END) * 100 / COUNT(*),'%'),\n" + "CONCAT(SUM(CASE WHEN BITAND("
-                            + getRoundColumn(nRound) + ',' + PokerDatabase.BIT_RERAISE
-                            + ") > 0 THEN 1 ELSE 0 END) * 100 / COUNT(*),'%'),\n" + "CONCAT(SUM(CASE WHEN BITAND("
-                            + getRoundColumn(nRound) + ',' + PokerDatabase.BIT_FOLD
-                            + ") > 0 THEN 1 ELSE 0 END) * 100 / COUNT(*),'%'),\n" + "CONCAT(SUM(CASE WHEN BITAND("
-                            + getRoundColumn(nRound) + ',' + PokerDatabase.BIT_WIN
-                            + ") > 0 THEN 1 ELSE 0 END) * 100 / COUNT(*),'%')\n"
-                            + "FROM TOURNAMENT_PLAYER, PLAYER_HAND\n" + where(nRound, sWhere)
-                            + (sGroupBy == null ? "" : "\nGROUP BY " + sGroupBy)
-                            + (sOrderBy == null ? "" : "\nORDER BY " + sOrderBy),
-                    bindArray);
+    /**
+     * Table model backed by HandRoundStatsData from REST API.
+     */
+    private static class ByRoundModel extends DefaultTableModel {
+        private final List<HandRoundStatsData> stats_;
+        private final boolean preFlop_;
+
+        public ByRoundModel(List<HandRoundStatsData> stats, boolean preFlop) {
+            stats_ = stats;
+            preFlop_ = preFlop;
+            String[] names = preFlop ? byRoundPreFlopColNames_ : byRoundColNames_;
+            for (String name : names) {
+                addColumn(name);
+            }
         }
 
-        public static String where(int nRound, String sWhere) {
-            StringBuilder buf = new StringBuilder();
-
-            buf.append("\nWHERE PLH_PLAYER_ID=TPL_ID AND ");
-
-            buf.append(getRoundColumn(nRound));
-            buf.append("<>0");
-
-            if (sWhere != null) {
-                buf.append(" AND ");
-                buf.append('(');
-                buf.append(sWhere);
-                buf.append(')');
-            }
-
-            return buf.toString();
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
         }
-        public static String getRoundColumn(int nRound) {
-            if (nRound == ClientBettingRound.ROUND_PRE_FLOP) {
-                return "PLH_PREFLOP_ACTIONS";
-            } else if (nRound == ClientBettingRound.ROUND_FLOP) {
-                return "PLH_FLOP_ACTIONS";
-            } else if (nRound == ClientBettingRound.ROUND_TURN) {
-                return "PLH_TURN_ACTIONS";
-            } else if (nRound == ClientBettingRound.ROUND_RIVER) {
-                return "PLH_RIVER_ACTIONS";
-            } else {
-                return null;
-            }
+
+        @Override
+        public int getRowCount() {
+            return stats_ == null ? 0 : stats_.size();
         }
 
         @Override
         public Class<?> getColumnClass(int columnIndex) {
-            if (columnIndex == 0) {
+            if (columnIndex == 0)
                 return Object.class;
-            } else {
-                return Number.class;
-            }
+            return Number.class;
         }
 
         @Override
         public Object getValueAt(int row, int column) {
-            Object v = super.getValueAt(row, column);
-
+            HandRoundStatsData s = stats_.get(row);
+            Object v;
+            if (preFlop_) {
+                v = switch (column) {
+                    case 0 -> s.handClass();
+                    case 1 -> s.count();
+                    case 2 -> formatPct(s.checkedPct());
+                    case 3 -> formatPct(s.calledPct());
+                    case 4 -> formatPct(s.betPct());
+                    case 5 -> formatPct(s.raisedPct());
+                    case 6 -> formatPct(s.reraisedPct());
+                    case 7 -> formatPct(s.foldedPct());
+                    case 8 -> formatPct(s.wonPct());
+                    default -> null;
+                };
+            } else {
+                v = switch (column) {
+                    case 0 -> s.handClass();
+                    case 1 -> s.count();
+                    case 2 -> formatPct(s.checkedPct());
+                    case 3 -> formatPct(s.checkRaisedPct());
+                    case 4 -> formatPct(s.calledPct());
+                    case 5 -> formatPct(s.betPct());
+                    case 6 -> formatPct(s.raisedPct());
+                    case 7 -> formatPct(s.reraisedPct());
+                    case 8 -> formatPct(s.foldedPct());
+                    case 9 -> formatPct(s.wonPct());
+                    default -> null;
+                };
+            }
             if ("0%".equals(v))
                 return null;
-            else
-                return v;
+            return v;
         }
     }
 
@@ -708,18 +686,18 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
         }
 
         public void refresh() {
-            BindArray bindArray = new BindArray();
-            bindArray.addValue(Types.TIMESTAMP,
-                    new Timestamp(PlayerProfileOptions.getDefaultProfile().getCreateDate()));
-            TournamentHistory hist = getSelectedTournament();
-            if (hist.getGameId() != 0) {
-                bindArray.addValue(Types.INTEGER, hist.getGameId());
+            ClientTournamentHistory hist = getSelectedTournament();
+            boolean preFlop = (nRound_ == ClientBettingRound.PRE_FLOP.toLegacy());
+            List<HandRoundStatsData> stats = List.of();
+            PokerGame.WebSocketConfig cfg = getWebSocketConfig(hist);
+            if (cfg != null) {
+                try {
+                    GameServerRestClient restClient = new GameServerRestClient(cfg.port());
+                    stats = restClient.getRoundStats(cfg.gameId(), cfg.jwt(), nRound_);
+                } catch (Exception ignored) {
+                }
             }
-            table_.setModel(new ByRoundModel(nRound_,
-                    "TPL_PROFILE_CREATE_DATE=?" + (hist.getGameId() == 0 ? "" : " AND TPL_TOURNAMENT_ID=?"),
-                    "\"com.donohoedigital.games.poker.PokerDatabaseProcs.getHandClass\"(PLH_CARD_1, PLH_CARD_2)",
-                    "\"com.donohoedigital.games.poker.PokerDatabaseProcs.getHandClassRank\"(PLH_CARD_1, PLH_CARD_2) DESC",
-                    bindArray));
+            table_.setModel(new ByRoundModel(stats, preFlop));
             table_.setExporter(new TableExporter(context_, ClientBettingRound.getRoundName(nRound_)));
         }
 
@@ -743,37 +721,13 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
 
         private TypedHashMap getDetailsParams() {
             TypedHashMap params = new TypedHashMap();
-            BindArray bindArray = new BindArray();
-            bindArray.addValue(Types.TIMESTAMP,
-                    new Timestamp(PlayerProfileOptions.getDefaultProfile().getCreateDate()));
-            TournamentHistory hist = getSelectedTournament();
-            if (hist.getGameId() != 0) {
-                bindArray.addValue(Types.INTEGER, hist.getGameId());
+            ClientTournamentHistory hist = getSelectedTournament();
+            PokerGame.WebSocketConfig cfg = getWebSocketConfig(hist);
+            if (cfg != null) {
+                params.setString("gameId", cfg.gameId());
+                params.setString("jwt", cfg.jwt());
+                params.setInteger("port", cfg.port());
             }
-            int rowcount = 0;
-            for (int i = 0; i < table_.getRowCount(); ++i) {
-                if (table_.isRowSelected(i)) {
-                    bindArray.addValue(Types.VARCHAR, table_.getValueAt(i, 0));
-                    ++rowcount;
-                }
-            }
-            /*
-             * ArrayList hands =
-             * PokerDatabase.getHandIDs("EXISTS (SELECT * FROM PLAYER_HAND\n" +
-             * ByRoundModel.where(nRound_, "PLH_HAND_ID=HND_ID\n" +
-             * " AND PLH_PLAYER_ID IN (SELECT TPL_ID FROM TOURNAMENT_PLAYER WHERE TPL_PROFILE_CREATE_DATE=?) "
-             * + " AND " +
-             * "\"com.donohoedigital.games.poker.PokerDatabaseProcs.getHandClass\"(PLH_CARD_1, PLH_CARD_2)=?)"
-             * ), bindArray);
-             */
-            params.setString("where",
-                    "HND_ID IN (SELECT PLH_HAND_ID FROM PLAYER_HAND, TOURNAMENT_PLAYER\n" + ByRoundModel.where(nRound_,
-                            "PLH_PLAYER_ID IN (SELECT TPL_ID FROM TOURNAMENT_PLAYER WHERE TPL_PROFILE_CREATE_DATE=?"
-                                    + (hist.getGameId() == 0 ? "" : " AND TPL_TOURNAMENT_ID=?") + ") " + " AND "
-                                    + "\"com.donohoedigital.games.poker.PokerDatabaseProcs.getHandClass\"(PLH_CARD_1, PLH_CARD_2)"
-                                    + rowComparison(rowcount) + ')'));
-            params.setObject("bindArray", bindArray);
-
             return params;
         }
 
@@ -823,22 +777,22 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
      * Used by table to display tournament finishes.
      */
     static class ResultsModel extends DefaultTableModel {
-        List<TournamentHistory> finishes;
+        List<ClientTournamentHistory> finishes;
         String[] names;
         int[] widths;
 
-        public ResultsModel(List<TournamentHistory> finishes, String names[], int[] widths) {
+        public ResultsModel(List<ClientTournamentHistory> finishes, String names[], int[] widths) {
             this.finishes = finishes;
             this.names = names;
             this.widths = widths;
         }
 
-        public void updateFinishes(List<TournamentHistory> f) {
+        public void updateFinishes(List<ClientTournamentHistory> f) {
             this.finishes = f;
             fireTableDataChanged();
         }
 
-        public TournamentHistory getTournamentHistory(int r) {
+        public ClientTournamentHistory getTournamentHistory(int r) {
             return finishes.get(r);
         }
 
@@ -870,7 +824,7 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
 
         @Override
         public Object getValueAt(int rowIndex, int colIndex) {
-            TournamentHistory h = getTournamentHistory(rowIndex);
+            ClientTournamentHistory h = getTournamentHistory(rowIndex);
 
             if (h == null)
                 return null;
@@ -914,23 +868,33 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
         }
     }
 
-    private TournamentHistory getSelectedTournament() {
+    private ClientTournamentHistory getSelectedTournament() {
         int selectedTournament = finishTable_.getSelectedRow();
 
         return ((ResultsModel) finishTable_.getModel()).getTournamentHistory(selectedTournament);
     }
 
-    private String rowComparison(int rowcount) {
-        if (rowcount > 1) {
-            StringBuilder buf = new StringBuilder(" IN (");
-            for (int i = 0; i < rowcount; ++i) {
-                buf.append("?,");
-            }
-            buf.setCharAt(buf.length() - 1, ')');
-            return buf.toString();
-        } else {
-            return "=?";
-        }
+    /**
+     * Get the WebSocket config for the current game. Returns null if no active game
+     * connection exists.
+     */
+    private PokerGame.WebSocketConfig getWebSocketConfig(ClientTournamentHistory hist) {
+        GameEngine engine = GameEngine.getGameEngine();
+        if (engine == null)
+            return null;
+        GameContext ctx = engine.getDefaultContext();
+        if (ctx == null)
+            return null;
+        PokerGame game = (PokerGame) ctx.getGame();
+        if (game == null)
+            return null;
+        return game.getWebSocketConfig();
+    }
+
+    static String formatPct(double pct) {
+        if (pct == 0.0)
+            return "0%";
+        return String.format("%.0f%%", pct);
     }
 
     private static String getNumber(int nNum, boolean bBold) {

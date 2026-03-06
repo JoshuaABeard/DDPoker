@@ -24,7 +24,7 @@ import com.donohoedigital.comms.DMTypedHashMap;
 import com.donohoedigital.comms.Version;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+// ClientTournamentProfile is in the same package
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -190,7 +190,7 @@ class PokerMainTest {
 
     @Test
     void should_ReturnFalse_WhenOneGameHasProfile_AndOtherDoesNot() {
-        TournamentProfile profile1 = new TournamentProfile("Test");
+        ClientTournamentProfile profile1 = new ClientTournamentProfile("Test");
 
         DMTypedHashMap game1 = new DMTypedHashMap();
         game1.setInteger(PokerMain.ONLINE_GAME_STATUS, 1);
@@ -208,8 +208,8 @@ class PokerMainTest {
 
     @Test
     void should_ReturnFalse_WhenProfilesHaveDifferentNames() {
-        TournamentProfile profile1 = new TournamentProfile("Test1");
-        TournamentProfile profile2 = new TournamentProfile("Test2");
+        ClientTournamentProfile profile1 = new ClientTournamentProfile("Test1");
+        ClientTournamentProfile profile2 = new ClientTournamentProfile("Test2");
 
         DMTypedHashMap game1 = new DMTypedHashMap();
         game1.setInteger(PokerMain.ONLINE_GAME_STATUS, 1);
@@ -228,7 +228,7 @@ class PokerMainTest {
 
     @Test
     void should_ReturnTrue_WhenBothProfilesAreTheSameInstance() {
-        TournamentProfile profile = new TournamentProfile("Test");
+        ClientTournamentProfile profile = new ClientTournamentProfile("Test");
 
         DMTypedHashMap game1 = new DMTypedHashMap();
         game1.setInteger(PokerMain.ONLINE_GAME_STATUS, 1);
