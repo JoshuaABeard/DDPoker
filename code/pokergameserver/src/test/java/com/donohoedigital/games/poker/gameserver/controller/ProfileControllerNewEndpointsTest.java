@@ -102,6 +102,12 @@ class ProfileControllerNewEndpointsTest {
 
     @Test
     void retireProfile_ownProfile() throws Exception {
+        OnlineProfile profile = new OnlineProfile();
+        profile.setId(1L);
+        profile.setName("testuser");
+        profile.setEmail("test@example.com");
+
+        when(profileService.getProfile(1L)).thenReturn(profile);
         when(profileService.deleteProfile(1L)).thenReturn(true);
 
         mockMvc.perform(post("/api/v1/profiles/1/retire")).andExpect(status().isOk())
@@ -109,14 +115,66 @@ class ProfileControllerNewEndpointsTest {
     }
 
     @Test
+    void retireProfile_aliasWithSameEmail() throws Exception {
+        OnlineProfile authenticatedProfile = new OnlineProfile();
+        authenticatedProfile.setId(1L);
+        authenticatedProfile.setName("testuser");
+        authenticatedProfile.setEmail("test@example.com");
+
+        OnlineProfile aliasProfile = new OnlineProfile();
+        aliasProfile.setId(2L);
+        aliasProfile.setName("alias1");
+        aliasProfile.setEmail("test@example.com");
+
+        when(profileService.getProfile(1L)).thenReturn(authenticatedProfile);
+        when(profileService.getProfile(2L)).thenReturn(aliasProfile);
+        when(profileService.deleteProfile(2L)).thenReturn(true);
+
+        mockMvc.perform(post("/api/v1/profiles/2/retire")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
     void retireProfile_differentProfile_forbidden() throws Exception {
+        OnlineProfile authenticatedProfile = new OnlineProfile();
+        authenticatedProfile.setId(1L);
+        authenticatedProfile.setName("testuser");
+        authenticatedProfile.setEmail("test@example.com");
+
+        OnlineProfile otherProfile = new OnlineProfile();
+        otherProfile.setId(999L);
+        otherProfile.setName("other");
+        otherProfile.setEmail("other@example.com");
+
+        when(profileService.getProfile(1L)).thenReturn(authenticatedProfile);
+        when(profileService.getProfile(999L)).thenReturn(otherProfile);
+
         mockMvc.perform(post("/api/v1/profiles/999/retire")).andExpect(status().isForbidden());
     }
 
     @Test
     void retireProfile_notFound() throws Exception {
+        OnlineProfile profile = new OnlineProfile();
+        profile.setId(1L);
+        profile.setName("testuser");
+        profile.setEmail("test@example.com");
+
+        when(profileService.getProfile(1L)).thenReturn(profile);
         when(profileService.deleteProfile(1L)).thenReturn(false);
 
         mockMvc.perform(post("/api/v1/profiles/1/retire")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void retireProfile_targetNotFound() throws Exception {
+        OnlineProfile profile = new OnlineProfile();
+        profile.setId(1L);
+        profile.setName("testuser");
+        profile.setEmail("test@example.com");
+
+        when(profileService.getProfile(1L)).thenReturn(profile);
+        when(profileService.getProfile(999L)).thenReturn(null);
+
+        mockMvc.perform(post("/api/v1/profiles/999/retire")).andExpect(status().isNotFound());
     }
 }

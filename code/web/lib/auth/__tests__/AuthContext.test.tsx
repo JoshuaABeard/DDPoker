@@ -101,10 +101,13 @@ describe('AuthContext / AuthProvider', () => {
     it('becomes authenticated with admin status from API', async () => {
       mockGetAuthUser.mockReturnValue({ username: 'alice' })
       mockGetCurrentUser.mockResolvedValue({
-        success: true,
-        message: 'ok',
+        id: 1,
         username: 'alice',
+        email: 'alice@example.com',
+        emailVerified: true,
         admin: true,
+        retired: false,
+        createDate: '2026-01-01',
       })
 
       renderWithProvider()
@@ -147,14 +150,10 @@ describe('AuthContext / AuthProvider', () => {
     })
   })
 
-  describe('mount with API returning success:false', () => {
+  describe('mount with API returning null (invalid session)', () => {
     it('clears storage and becomes unauthenticated', async () => {
       mockGetAuthUser.mockReturnValue({ username: 'carol' })
-      mockGetCurrentUser.mockResolvedValue({
-        success: false,
-        message: 'invalid session',
-        username: undefined,
-      })
+      mockGetCurrentUser.mockResolvedValue(null)
 
       renderWithProvider()
 
@@ -173,9 +172,18 @@ describe('AuthContext / AuthProvider', () => {
       mockGetAuthUser.mockReturnValue(null)
       mockLogin.mockResolvedValue({
         success: true,
-        message: 'ok',
-        username: 'user1',
-        admin: false,
+        message: null,
+        token: null,
+        retryAfterSeconds: null,
+        profile: {
+          id: 1,
+          username: 'user1',
+          email: 'user1@example.com',
+          emailVerified: true,
+          admin: false,
+          retired: false,
+          createDate: '2026-01-01',
+        },
       })
 
       renderWithProvider()
@@ -202,6 +210,9 @@ describe('AuthContext / AuthProvider', () => {
       mockLogin.mockResolvedValue({
         success: false,
         message: 'Invalid credentials',
+        profile: null,
+        token: null,
+        retryAfterSeconds: null,
       })
 
       renderWithProvider()
@@ -249,10 +260,13 @@ describe('AuthContext / AuthProvider', () => {
     it('clears storage and resets state', async () => {
       mockGetAuthUser.mockReturnValue({ username: 'alice' })
       mockGetCurrentUser.mockResolvedValue({
-        success: true,
-        message: 'ok',
+        id: 1,
         username: 'alice',
+        email: 'alice@example.com',
+        emailVerified: true,
         admin: false,
+        retired: false,
+        createDate: '2026-01-01',
       })
       mockLogout.mockResolvedValue(undefined)
 
@@ -276,10 +290,13 @@ describe('AuthContext / AuthProvider', () => {
     it('continues with logout even when API call fails', async () => {
       mockGetAuthUser.mockReturnValue({ username: 'alice' })
       mockGetCurrentUser.mockResolvedValue({
-        success: true,
-        message: 'ok',
+        id: 1,
         username: 'alice',
+        email: 'alice@example.com',
+        emailVerified: true,
         admin: false,
+        retired: false,
+        createDate: '2026-01-01',
       })
       mockLogout.mockRejectedValue(new Error('API down'))
 
@@ -305,7 +322,7 @@ describe('AuthContext / AuthProvider', () => {
   describe('clearError', () => {
     it('nulls the error', async () => {
       mockGetAuthUser.mockReturnValue(null)
-      mockLogin.mockResolvedValue({ success: false, message: 'Bad login' })
+      mockLogin.mockResolvedValue({ success: false, message: 'Bad login', profile: null, token: null, retryAfterSeconds: null })
 
       renderWithProvider()
 

@@ -156,8 +156,21 @@ class AdminControllerTest {
         when(banRepository.save(any())).thenReturn(saved);
 
         mockMvc.perform(post("/api/v1/admin/bans").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"banType\":\"PROFILE\",\"profileId\":1}")).andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1));
+                .content("{\"banType\":\"PROFILE\",\"profileId\":1,\"reason\":\"test ban\",\"until\":\"2099-12-31\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(1));
+    }
+
+    @Test
+    void addBan_invalidBanType_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/bans").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"banType\":\"INVALID\",\"profileId\":1}")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void addBan_emailBanMissingEmail_returns400() throws Exception {
+        mockMvc.perform(
+                post("/api/v1/admin/bans").contentType(MediaType.APPLICATION_JSON).content("{\"banType\":\"EMAIL\"}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

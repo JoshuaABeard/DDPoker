@@ -18,13 +18,26 @@ vi.mock('@/lib/api', () => ({
 
 import { tournamentApi } from '@/lib/api'
 
+const MOCK_ENTRIES = [
+  { id: 1, name: 'Game 1', placement: 1, buyIn: 100, prize: 500, totalPlayers: 5, endDate: '2026-01-15' },
+  { id: 2, name: 'Game 2', placement: 3, buyIn: 100, prize: 50, totalPlayers: 6, endDate: '2026-01-20' },
+  { id: 3, name: 'Game 3', placement: 2, buyIn: 200, prize: 300, totalPlayers: 4, endDate: '2026-02-01' },
+]
+
 const MOCK_HISTORY = {
-  history: [
-    { id: 1, name: 'Game 1', placement: 1, buyIn: 100, prize: 500, totalPlayers: 5, endDate: '2026-01-15' },
-    { id: 2, name: 'Game 2', placement: 3, buyIn: 100, prize: 50, totalPlayers: 6, endDate: '2026-01-20' },
-    { id: 3, name: 'Game 3', placement: 2, buyIn: 200, prize: 300, totalPlayers: 4, endDate: '2026-02-01' },
-  ],
-  total: 3,
+  content: MOCK_ENTRIES,
+  totalElements: 3,
+  totalPages: 1,
+  stats: {
+    totalGames: 3,
+    totalWins: 1,
+    winRate: 33.33,
+    avgPlacement: 2.0,
+    totalBuyIn: 400,
+    totalPrize: 850,
+    profitLoss: 450,
+    bestFinish: 1,
+  },
 }
 
 describe('PlayerStatsSection', () => {
@@ -59,7 +72,21 @@ describe('PlayerStatsSection', () => {
   })
 
   it('shows empty state when no history', async () => {
-    vi.mocked(tournamentApi.getHistory).mockResolvedValue({ history: [], total: 0 })
+    vi.mocked(tournamentApi.getHistory).mockResolvedValue({
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+      stats: {
+        totalGames: 0,
+        totalWins: 0,
+        winRate: 0,
+        avgPlacement: 0,
+        totalBuyIn: 0,
+        totalPrize: 0,
+        profitLoss: 0,
+        bestFinish: 0,
+      },
+    })
     render(<PlayerStatsSection username="TestPlayer" />)
 
     await waitFor(() => {

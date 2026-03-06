@@ -9,8 +9,8 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { tournamentApi } from '@/lib/api'
-import { calculateTournamentStats, mapTournamentEntry } from '@/lib/mappers'
-import type { TournamentHistoryDto } from '@/lib/types'
+import { mapTournamentEntry } from '@/lib/mappers'
+import type { TournamentHistoryDto, TournamentStatsDto } from '@/lib/types'
 
 interface PlayerStatsSectionProps {
   username: string
@@ -23,6 +23,10 @@ const ROWS_PER_PAGE = 10
 
 export function PlayerStatsSection({ username }: PlayerStatsSectionProps) {
   const [history, setHistory] = useState<TournamentHistoryDto[]>([])
+  const [stats, setStats] = useState<TournamentStatsDto>({
+    totalGames: 0, totalWins: 0, totalPrize: 0, totalBuyIn: 0,
+    profitLoss: 0, bestFinish: 0, avgPlacement: 0, winRate: 0,
+  })
   const [loading, setLoading] = useState(true)
   const [sortKey, setSortKey] = useState<SortKey>('date')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
@@ -35,7 +39,8 @@ export function PlayerStatsSection({ username }: PlayerStatsSectionProps) {
       try {
         const data = await tournamentApi.getHistory(username, 0, 1000)
         if (!cancelled) {
-          setHistory(data.history)
+          setHistory(data.content)
+          setStats(data.stats)
         }
       } catch (error) {
         console.error('Failed to fetch tournament history:', error)
@@ -50,8 +55,6 @@ export function PlayerStatsSection({ username }: PlayerStatsSectionProps) {
       cancelled = true
     }
   }, [username])
-
-  const stats = useMemo(() => calculateTournamentStats(history), [history])
 
   const entries = useMemo(() => history.map(mapTournamentEntry), [history])
 

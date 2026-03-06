@@ -13,31 +13,24 @@ import { Pagination } from '@/components/data/Pagination'
 import { Dialog } from '@/components/ui/Dialog'
 import { adminApi } from '@/lib/api'
 import { toBackendPage, buildPaginationResult } from '@/lib/pagination'
-import type { BannedKeyDto } from '@/lib/types'
-
-interface BannedKey {
-  id: number
-  key: string
-  comment?: string
-  createDate: string
-  until?: string
-}
+import type { BanDto } from '@/lib/types'
 
 export default function BanListPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const currentPage = parseInt(searchParams.get('page') || '1', 10) || 1
 
-  const [bans, setBans] = useState<BannedKey[]>([])
+  const [bans, setBans] = useState<BanDto[]>([])
   const [totalPages, setTotalPages] = useState(0)
   const [totalItems, setTotalItems] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   // Add ban form state
-  const [newBanKey, setNewBanKey] = useState('')
-  const [newBanComment, setNewBanComment] = useState('')
-  const [newBanUntil, setNewBanUntil] = useState('')
+  const [banType, setBanType] = useState<'PROFILE' | 'EMAIL'>('EMAIL')
+  const [banTarget, setBanTarget] = useState('')
+  const [banReason, setBanReason] = useState('')
+  const [banUntil, setBanUntil] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Dialog state
@@ -58,17 +51,10 @@ export default function BanListPage() {
       setIsLoading(true)
       setError(null)
       const { bans: bansData, total } = await adminApi.getBans()
-      const mapped = bansData.map((b: BannedKeyDto) => ({
-        id: b.id,
-        key: b.key,
-        comment: b.comment,
-        createDate: b.createDate,
-        until: b.until,
-      }))
       // Client-side pagination since backend returns all bans
       const startIndex = (currentPage - 1) * 50
       const endIndex = startIndex + 50
-      const paginatedBans = mapped.slice(startIndex, endIndex)
+      const paginatedBans = bansData.slice(startIndex, endIndex)
       setBans(paginatedBans)
       setTotalPages(Math.ceil(total / 50))
       setTotalItems(total)
@@ -85,12 +71,12 @@ export default function BanListPage() {
 
   async function handleAddBan(e: React.FormEvent) {
     e.preventDefault()
-    if (!newBanKey.trim()) {
+    if (!banTarget.trim()) {
       setDialogState({
         isOpen: true,
         type: 'alert',
         title: 'Validation Error',
-        message: 'Key is required',
+        message: banType === 'PROFILE' ? 'Profile ID is required' : 'Email is required',
       })
       return
     }
@@ -98,13 +84,14 @@ export default function BanListPage() {
     try {
       setIsSubmitting(true)
       await adminApi.addBan({
-        key: newBanKey.trim(),
-        comment: newBanComment.trim() || undefined,
-        until: newBanUntil || undefined,
+        banType,
+        ...(banType === 'PROFILE' ? { profileId: parseInt(banTarget) } : { email: banTarget }),
+        reason: banReason || undefined,
+        until: banUntil || undefined,
       })
-      setNewBanKey('')
-      setNewBanComment('')
-      setNewBanUntil('')
+      setBanTarget('')
+      setBanReason('')
+      setBanUntil('')
       await loadBans()
     } catch (err) {
       console.error('Failed to add ban:', err)
@@ -119,19 +106,19 @@ export default function BanListPage() {
     }
   }
 
-  async function handleRemoveBan(key: string) {
+  async function handleRemoveBan(ban: BanDto) {
     setDialogState({
       isOpen: true,
       type: 'confirm',
       title: 'Remove Ban',
       message: 'Are you sure you want to remove this ban?',
-      onConfirm: () => confirmRemoveBan(key),
+      onConfirm: () => confirmRemoveBan(ban.id),
     })
   }
 
-  async function confirmRemoveBan(key: string) {
+  async function confirmRemoveBan(id: number) {
     try {
-      await adminApi.removeBan(key)
+      await adminApi.removeBan(id)
       await loadBans()
     } catch (err) {
       console.error('Failed to remove ban:', err)
@@ -148,35 +135,41 @@ export default function BanListPage() {
     {
       key: 'id',
       header: 'ID',
-      render: (ban: BannedKey) => ban.id,
+      render: (ban: BanDto) => ban.id,
       align: 'center' as const,
     },
     {
-      key: 'key',
-      header: 'Key Hash',
-      render: (ban: BannedKey) => (
-        <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-          {ban.key.length > 24 ? `${ban.key.substring(0, 24)}...` : ban.key}
-        </code>
-      ),
+      key: 'banType',
+      header: 'Type',
+      render: (ban: BanDto) => ban.banType,
     },
     {
-      key: 'comment',
-      header: 'Comment',
-      render: (ban: BannedKey) => ban.comment || '-',
+      key: 'target',
+      header: 'Target',
+      render: (ban: BanDto) =>
+        ban.banType === 'PROFILE' ? (
+          <span>Profile #{ban.profileId}</span>
+        ) : (
+          <code className="text-xs bg-gray-100 px-2 py-1 rounded">{ban.email}</code>
+        ),
     },
     {
-      key: 'createDate',
+      key: 'reason',
+      header: 'Reason',
+      render: (ban: BanDto) => ban.reason || '-',
+    },
+    {
+      key: 'createdAt',
       header: 'Banned On',
-      render: (ban: BannedKey) => {
-        const date = new Date(ban.createDate)
+      render: (ban: BanDto) => {
+        const date = new Date(ban.createdAt)
         return isNaN(date.getTime()) ? 'Unknown' : date.toLocaleDateString()
       },
     },
     {
       key: 'until',
       header: 'Expires',
-      render: (ban: BannedKey) => {
+      render: (ban: BanDto) => {
         if (!ban.until) return 'Never'
         const date = new Date(ban.until)
         return isNaN(date.getTime()) ? 'Unknown' : date.toLocaleDateString()
@@ -185,9 +178,9 @@ export default function BanListPage() {
     {
       key: 'actions',
       header: 'Actions',
-      render: (ban: BannedKey) => (
+      render: (ban: BanDto) => (
         <button
-          onClick={() => handleRemoveBan(ban.key)}
+          onClick={() => handleRemoveBan(ban)}
           className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
         >
           Remove
@@ -202,38 +195,57 @@ export default function BanListPage() {
       <h1 className="text-3xl font-bold mb-6">Ban List Management</h1>
 
       <p className="mb-6 text-gray-700">
-        View and manage banned keys. Add new bans or remove existing ones.
+        View and manage bans. Add new bans or remove existing ones.
       </p>
 
       {/* Add Ban Form */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
         <h2 className="text-xl font-bold mb-4">Add New Ban</h2>
         <form onSubmit={handleAddBan}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label htmlFor="banKey" className="block text-sm font-medium mb-1">
-                Key Hash <span className="text-red-600">*</span>
+              <label htmlFor="banType" className="block text-sm font-medium mb-1">
+                Ban Type <span className="text-red-600">*</span>
+              </label>
+              <select
+                id="banType"
+                value={banType}
+                onChange={(e) => {
+                  setBanType(e.target.value as 'PROFILE' | 'EMAIL')
+                  setBanTarget('')
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="EMAIL">Email</option>
+                <option value="PROFILE">Profile</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="banTarget" className="block text-sm font-medium mb-1">
+                {banType === 'PROFILE' ? 'Profile ID' : 'Email'}{' '}
+                <span className="text-red-600">*</span>
               </label>
               <input
-                type="text"
-                id="banKey"
-                value={newBanKey}
-                onChange={(e) => setNewBanKey(e.target.value)}
-                placeholder="Enter key hash to ban"
+                type={banType === 'PROFILE' ? 'number' : 'email'}
+                id="banTarget"
+                value={banTarget}
+                onChange={(e) => setBanTarget(e.target.value)}
+                placeholder={banType === 'PROFILE' ? 'Enter profile ID' : 'Enter email address'}
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <div>
-              <label htmlFor="banComment" className="block text-sm font-medium mb-1">
-                Comment (optional)
+              <label htmlFor="banReason" className="block text-sm font-medium mb-1">
+                Reason (optional)
               </label>
               <input
                 type="text"
-                id="banComment"
-                value={newBanComment}
-                onChange={(e) => setNewBanComment(e.target.value)}
+                id="banReason"
+                value={banReason}
+                onChange={(e) => setBanReason(e.target.value)}
                 placeholder="e.g., Cheating, spam, etc."
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -246,8 +258,8 @@ export default function BanListPage() {
               <input
                 type="date"
                 id="banUntil"
-                value={newBanUntil}
-                onChange={(e) => setNewBanUntil(e.target.value)}
+                value={banUntil}
+                onChange={(e) => setBanUntil(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <div className="text-xs text-gray-500 mt-1">Leave empty for permanent ban (2099-12-31)</div>

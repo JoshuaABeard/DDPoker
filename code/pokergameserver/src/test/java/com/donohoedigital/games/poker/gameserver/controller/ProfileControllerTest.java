@@ -19,7 +19,6 @@
  */
 package com.donohoedigital.games.poker.gameserver.controller;
 
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -28,7 +27,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -54,13 +52,11 @@ class ProfileControllerTest {
         OnlineProfile profile = new OnlineProfile();
         profile.setId(1L);
         profile.setName("testuser");
-        profile.setEmail("test@example.com");
 
         when(profileService.getProfile(1L)).thenReturn(profile);
 
         mockMvc.perform(get("/api/v1/profiles/1")).andExpect(status().isOk()).andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.name").value("testuser"))
-                .andExpect(jsonPath("$.email").value("test@example.com"));
+                .andExpect(jsonPath("$.name").value("testuser")).andExpect(jsonPath("$.createDate").doesNotExist());
     }
 
     @Test
@@ -68,33 +64,5 @@ class ProfileControllerTest {
         when(profileService.getProfile(999L)).thenReturn(null);
 
         mockMvc.perform(get("/api/v1/profiles/999")).andExpect(status().isNotFound());
-    }
-
-    @Test
-    void testUpdateProfile() throws Exception {
-        when(profileService.updateProfile(eq(1L), anyString())).thenReturn(true);
-
-        mockMvc.perform(put("/api/v1/profiles/1").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"new@example.com\"}")).andExpect(status().isOk());
-    }
-
-    @Test
-    void testUpdateProfileForbidden() throws Exception {
-        // Attempting to update a different user's profile should return 403
-        mockMvc.perform(put("/api/v1/profiles/999").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"new@example.com\"}")).andExpect(status().isForbidden());
-    }
-
-    @Test
-    void testDeleteProfile() throws Exception {
-        when(profileService.deleteProfile(1L)).thenReturn(true);
-
-        mockMvc.perform(delete("/api/v1/profiles/1")).andExpect(status().isNoContent());
-    }
-
-    @Test
-    void testDeleteProfileForbidden() throws Exception {
-        // Attempting to delete a different user's profile should return 403
-        mockMvc.perform(delete("/api/v1/profiles/999")).andExpect(status().isForbidden());
     }
 }

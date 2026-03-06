@@ -13,7 +13,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   authApi,
-  playerApi,
   profileApi,
   gameServerApi,
   leaderboardApi,
@@ -119,38 +118,8 @@ describe('authApi', () => {
 })
 
 // ---------------------------------------------------------------------------
-// playerApi
+// profileApi
 // ---------------------------------------------------------------------------
-
-describe('playerApi', () => {
-  it('getProfile — GETs /api/v1/profiles/:id', async () => {
-    const fn = mockFetch({ id: 42, name: 'alice', isActive: true, createdAt: '2026-01-01' })
-    const result = await playerApi.getProfile(42)
-    expect(capturedUrl(fn)).toContain('/api/v1/profiles/42')
-    expect(result.id).toBe(42)
-  })
-
-  it('getProfileByName — GETs /api/v1/profiles/name/:name', async () => {
-    const fn = mockFetch({ id: 99, name: 'bob', isActive: true, createdAt: '2026-01-01' })
-    await playerApi.getProfileByName('bob')
-    expect(capturedUrl(fn)).toContain('/api/v1/profiles/name/bob')
-  })
-
-  it('updateProfile — PUTs to /api/v1/profiles/me', async () => {
-    const fn = mockFetch({ id: 1, name: 'alice updated', isActive: true, createdAt: '2026-01-01' })
-    await playerApi.updateProfile({ name: 'alice updated' })
-    expect(capturedUrl(fn)).toContain('/api/v1/profiles/me')
-    expect(capturedMethod(fn)).toBe('PUT')
-  })
-
-  it('changePassword — PUTs to /api/v1/profiles/me/password', async () => {
-    const fn = mockFetch({})
-    await playerApi.changePassword('old', 'new')
-    expect(capturedUrl(fn)).toContain('/api/v1/profiles/me/password')
-    expect(capturedMethod(fn)).toBe('PUT')
-    expect(capturedBody(fn)).toMatchObject({ currentPassword: 'old', newPassword: 'new' })
-  })
-})
 
 // ---------------------------------------------------------------------------
 // profileApi
@@ -170,13 +139,6 @@ describe('profileApi', () => {
 // ---------------------------------------------------------------------------
 
 describe('gameServerApi — remaining methods', () => {
-  it('register — POSTs to /api/v1/auth/register', async () => {
-    const fn = mockFetch({ success: true })
-    await gameServerApi.register('alice', 'pw', 'a@b.com')
-    expect(capturedUrl(fn)).toContain('/api/v1/auth/register')
-    expect(capturedMethod(fn)).toBe('POST')
-  })
-
   it('listGames — GETs /api/v1/games with no params', async () => {
     const fn = mockFetch({ games: [], total: 0 })
     await gameServerApi.listGames()
@@ -412,17 +374,17 @@ describe('adminApi', () => {
   })
 
   it('addBan — POSTs to /api/v1/admin/bans', async () => {
-    const fn = mockFetch({ id: 2, key: 'xyz', createDate: '2026-01-01' })
-    await adminApi.addBan({ key: 'xyz', comment: 'spammer' })
+    const fn = mockFetch({ id: 2, banType: 'EMAIL', email: 'spam@example.com', createdAt: '2026-01-01' })
+    await adminApi.addBan({ banType: 'EMAIL', email: 'spam@example.com', reason: 'spammer' })
     expect(capturedUrl(fn)).toContain('/api/v1/admin/bans')
     expect(capturedMethod(fn)).toBe('POST')
-    expect(capturedBody(fn)).toMatchObject({ key: 'xyz', comment: 'spammer' })
+    expect(capturedBody(fn)).toMatchObject({ banType: 'EMAIL', email: 'spam@example.com', reason: 'spammer' })
   })
 
-  it('removeBan — DELETEs /api/v1/admin/bans/:key (URL-encoded)', async () => {
+  it('removeBan — DELETEs /api/v1/admin/bans/:id', async () => {
     const fn = mockFetch({})
-    await adminApi.removeBan('abc def')
-    expect(capturedUrl(fn)).toContain('/api/v1/admin/bans/abc%20def')
+    await adminApi.removeBan(42)
+    expect(capturedUrl(fn)).toContain('/api/v1/admin/bans/42')
     expect(capturedMethod(fn)).toBe('DELETE')
   })
 })

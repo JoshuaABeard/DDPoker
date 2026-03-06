@@ -26,23 +26,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid;
-
 import com.donohoedigital.games.poker.gameserver.auth.JwtAuthenticationFilter;
-import com.donohoedigital.games.poker.protocol.dto.ChangePasswordRequest;
-import com.donohoedigital.games.poker.protocol.dto.UpdateProfileRequest;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.OnlineProfileRepository;
 import com.donohoedigital.games.poker.gameserver.service.ProfileService;
 import com.donohoedigital.games.poker.model.OnlineProfile;
+import com.donohoedigital.games.poker.protocol.dto.PublicProfileResponse;
 
 /**
  * REST controller for profile management.
@@ -60,83 +54,24 @@ public class ProfileController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<OnlineProfile> getProfile(@PathVariable("id") Long id) {
+    public ResponseEntity<PublicProfileResponse> getProfile(@PathVariable("id") Long id) {
         OnlineProfile profile = profileService.getProfile(id);
         if (profile == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(profile);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Void> updateProfile(@PathVariable("id") Long id,
-            @Valid @RequestBody UpdateProfileRequest request) {
-        Long authenticatedProfileId = getAuthenticatedProfileId();
-        if (!authenticatedProfileId.equals(id)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        boolean success = profileService.updateProfile(id, request.email());
-        if (!success) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok().build();
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProfile(@PathVariable("id") Long id) {
-        Long authenticatedProfileId = getAuthenticatedProfileId();
-        if (!authenticatedProfileId.equals(id)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        boolean success = profileService.deleteProfile(id);
-        if (!success) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-    }
-
-    /**
-     * Change the authenticated user's password.
-     *
-     * <p>
-     * The JWT profile ID must match the path {id}. Returns 403 if they differ or if
-     * the old password is incorrect, to avoid revealing profile existence.
-     */
-    @PutMapping("/{id}/password")
-    public ResponseEntity<Void> changePassword(@PathVariable("id") Long id,
-            @RequestBody ChangePasswordRequest request) {
-        if (isBlank(request.oldPassword())) {
-            return ResponseEntity.badRequest().build();
-        }
-        if (isBlank(request.newPassword()) || request.newPassword().length() < 8
-                || request.newPassword().length() > 128) {
-            return ResponseEntity.badRequest().build();
-        }
-        Long authenticatedProfileId = getAuthenticatedProfileId();
-        if (!authenticatedProfileId.equals(id)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        try {
-            profileService.changePassword(id, request.oldPassword(), request.newPassword());
-            return ResponseEntity.ok().build();
-        } catch (ProfileService.InvalidPasswordException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+        return ResponseEntity.ok(toPublicProfile(profile));
     }
 
     /**
      * Get a profile by display name.
      */
     @GetMapping("/name/{name}")
-    public ResponseEntity<OnlineProfile> getProfileByName(@PathVariable("name") String name) {
+    public ResponseEntity<PublicProfileResponse> getProfileByName(@PathVariable("name") String name) {
         OnlineProfile profile = profileRepository.findByName(name).orElse(null);
         if (profile == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(profile);
+        return ResponseEntity.ok(toPublicProfile(profile));
     }
 
     /**
@@ -144,13 +79,15 @@ public class ProfileController {
      * current profile name.
      */
     @GetMapping("/aliases")
-    public ResponseEntity<List<OnlineProfile>> getAliases() {
+    public ResponseEntity<List<PublicProfileResponse>> getAliases() {
         Long profileId = getAuthenticatedProfileId();
         OnlineProfile profile = profileService.getProfile(profileId);
         if (profile == null) {
             return ResponseEntity.notFound().build();
         }
-        List<OnlineProfile> aliases = profileRepository.findByEmailExcludingName(profile.getEmail(), profile.getName());
+        List<PublicProfileResponse> aliases = profileRepository
+                .findByEmailExcludingName(profile.getEmail(), profile.getName()).stream().map(this::toPublicProfile)
+                .toList();
         return ResponseEntity.ok(aliases);
     }
 
@@ -161,7 +98,17 @@ public class ProfileController {
     @PostMapping("/{id}/retire")
     public ResponseEntity<Map<String, Object>> retireProfile(@PathVariable("id") Long id) {
         Long authenticatedProfileId = getAuthenticatedProfileId();
-        if (!authenticatedProfileId.equals(id)) {
+        OnlineProfile authenticatedProfile = profileService.getProfile(authenticatedProfileId);
+        OnlineProfile targetProfile = profileService.getProfile(id);
+
+        if (authenticatedProfile == null || targetProfile == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Allow if same profile OR same email (alias)
+        boolean isOwner = authenticatedProfileId.equals(id);
+        boolean isSameEmailAlias = authenticatedProfile.getEmail().equalsIgnoreCase(targetProfile.getEmail());
+        if (!isOwner && !isSameEmailAlias) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -172,8 +119,9 @@ public class ProfileController {
         return ResponseEntity.ok(Map.of("success", true, "message", "Profile retired successfully"));
     }
 
-    private static boolean isBlank(String s) {
-        return s == null || s.isBlank();
+    private PublicProfileResponse toPublicProfile(OnlineProfile p) {
+        return new PublicProfileResponse(p.getId(), p.getName(),
+                p.getCreateDate() != null ? p.getCreateDate().toString() : null);
     }
 
     private Long getAuthenticatedProfileId() {

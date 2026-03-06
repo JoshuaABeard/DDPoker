@@ -1,7 +1,7 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Community Edition
- * Copyright (c) 2026 Joshua Beard and contributors
+ * Copyright (c) 2026 DD Poker Community Contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,8 +19,5 @@
  */
 package com.donohoedigital.games.poker.protocol.dto;
 
-/**
- * Request DTO for updating a profile.
- */
-public record UpdateProfileRequest(String email) {
+public record PublicProfileResponse(Long id, String name, String createDate) {
 }

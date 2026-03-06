@@ -62,24 +62,6 @@ class ProfileServiceTest {
     }
 
     @Test
-    void testUpdateProfileEmail() {
-        OnlineProfile profile = createProfile("testuser", "old@example.com");
-
-        boolean success = profileService.updateProfile(profile.getId(), "new@example.com");
-
-        assertThat(success).isTrue();
-        OnlineProfile updated = profileRepository.findById(profile.getId()).orElse(null);
-        assertThat(updated).isNotNull();
-        assertThat(updated.getEmail()).isEqualTo("new@example.com");
-    }
-
-    @Test
-    void testUpdateProfileNotFound() {
-        boolean success = profileService.updateProfile(999L, "new@example.com");
-        assertThat(success).isFalse();
-    }
-
-    @Test
     void testDeleteProfile() {
         OnlineProfile profile = createProfile("testuser", "test@example.com");
 

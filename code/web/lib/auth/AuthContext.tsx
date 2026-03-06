@@ -8,7 +8,7 @@
 
 import { createContext, useCallback, useEffect, useState } from 'react'
 import { authApi } from '../api'
-import type { AuthResponse } from '../types'
+import type { LoginResponse, ProfileResponse } from '../types'
 import { clearAuthUser, getAuthUser, setAuthUser, type StoredAuthUser } from './storage'
 
 interface AuthUser {
@@ -61,14 +61,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const storedUser = getAuthUser()
       if (storedUser) {
         // Verify the session is still valid and get current admin status from API
-        const authResponse = await authApi.getCurrentUser()
-        if (authResponse && authResponse.success && authResponse.username) {
+        const profile = await authApi.getCurrentUser()
+        if (profile) {
           setState({
             user: {
-              username: authResponse.username,
-              email: authResponse.email ?? '',
-              isAdmin: authResponse.admin || false,
-              emailVerified: authResponse.emailVerified ?? false,
+              username: profile.username,
+              email: profile.email ?? '',
+              isAdmin: profile.admin || false,
+              emailVerified: profile.emailVerified ?? false,
             },
             isAuthenticated: true,
             isLoading: false,
@@ -111,20 +111,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
         rememberMe,
       })
 
-      if (response.success && response.username) {
+      if (response.success && response.profile) {
+        const p = response.profile
         // Store only username in localStorage/sessionStorage (not isAdmin)
         const storedUser: StoredAuthUser = {
-          username: response.username,
+          username: p.username,
         }
         setAuthUser(storedUser, rememberMe)
 
-        const emailVerified = response.emailVerified ?? false
+        const emailVerified = p.emailVerified ?? false
 
         // Set full user info in state (including isAdmin and emailVerified from API response)
         const user: AuthUser = {
-          username: response.username,
-          email: response.email ?? '',
-          isAdmin: response.admin || false,
+          username: p.username,
+          email: p.email ?? '',
+          isAdmin: p.admin || false,
           emailVerified,
         }
 

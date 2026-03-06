@@ -1,7 +1,7 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Community Edition
- * Copyright (c) 2026 Joshua Beard and contributors
+ * Copyright (c) 2026 DD Poker Community Contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,13 +19,7 @@
  */
 package com.donohoedigital.games.poker.protocol.dto;
 
-/**
- * Response DTO for login/register operations.
- *
- * <p>
- * When {@code retryAfterSeconds} is non-null the account is locked. The caller
- * should return HTTP 423 (Locked) with this body.
- */
-public record LoginResponse(boolean success, ProfileResponse profile, String token, String message,
-        Long retryAfterSeconds) {
+import java.time.LocalDate;
+
+public record CreateBanRequest(String banType, Long profileId, String email, String reason, LocalDate until) {
 }

@@ -36,6 +36,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.donohoedigital.games.poker.gameserver.auth.JwtProperties;
 import com.donohoedigital.games.poker.protocol.dto.ProfileResponse;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
+import com.donohoedigital.games.poker.gameserver.service.ProfileService;
 
 /**
  * Unit tests for the profile-related endpoints added to AuthController in M7
@@ -55,6 +56,9 @@ class AuthControllerProfileTest {
     @MockitoBean
     private AuthService authService;
 
+    @MockitoBean
+    private ProfileService profileService;
+
     static class TestConfig {
         @Bean
         public JwtProperties jwtProperties() {
@@ -71,11 +75,15 @@ class AuthControllerProfileTest {
     @Test
     void getMe_authenticated_returnsProfile() throws Exception {
         // TestSecurityConfiguration injects profileId=1L, username="testuser"
-        when(authService.getCurrentUser(1L)).thenReturn(new ProfileResponse(1L, "testuser", "test@example.com", false));
+        when(authService.getCurrentUser(1L)).thenReturn(
+                new ProfileResponse(1L, "testuser", "test@example.com", true, false, false, "2026-01-15T10:30:00Z"));
 
         mockMvc.perform(get("/api/v1/auth/me")).andExpect(status().isOk()).andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.username").value("testuser"))
-                .andExpect(jsonPath("$.email").value("test@example.com")).andExpect(jsonPath("$.retired").value(false));
+                .andExpect(jsonPath("$.email").value("test@example.com"))
+                .andExpect(jsonPath("$.emailVerified").value(true)).andExpect(jsonPath("$.admin").value(false))
+                .andExpect(jsonPath("$.retired").value(false))
+                .andExpect(jsonPath("$.createDate").value("2026-01-15T10:30:00Z"));
     }
 
     @Test

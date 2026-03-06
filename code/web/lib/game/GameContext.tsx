@@ -13,7 +13,7 @@
 'use client'
 
 import React, { createContext, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
-import { gameServerApi } from '@/lib/api'
+import { authApi, gameServerApi } from '@/lib/api'
 import { WebSocketClient, deriveWsProtocol } from './WebSocketClient'
 import { gameReducer, initialGameState } from './gameReducer'
 import type { GameState } from './gameReducer'
@@ -107,7 +107,7 @@ export function GameProvider({ gameId, serverBaseUrl, children }: GameProviderPr
     async function openConnection() {
       try {
         // 1. Fetch a short-lived ws-connect token
-        const { token } = await gameServerApi.getWsToken()
+        const { token } = await authApi.getWsToken()
         if (cancelled) return
 
         // 2. Join the game to get the wsUrl
@@ -139,7 +139,7 @@ export function GameProvider({ gameId, serverBaseUrl, children }: GameProviderPr
             console.error('[GameProvider] WebSocket error:', error)
           },
           tokenRefreshFn: async () => {
-            const { token } = await gameServerApi.getWsToken()
+            const { token } = await authApi.getWsToken()
             return token
           },
         })
