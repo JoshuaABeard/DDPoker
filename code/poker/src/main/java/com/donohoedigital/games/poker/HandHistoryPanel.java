@@ -31,13 +31,17 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.display.ClientHand;
+import com.donohoedigital.games.poker.display.ClientCard;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
+import com.donohoedigital.games.poker.engine.HandInfoFast;
+import com.donohoedigital.games.poker.engine.HandScoreConstants;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.db.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
@@ -47,7 +51,7 @@ import java.awt.event.*;
 import java.sql.*;
 import java.util.*;
 import java.util.List;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 
 public class HandHistoryPanel extends DDPanel {
@@ -217,7 +221,7 @@ public class HandHistoryPanel extends DDPanel {
 
         optionPanel.add(showAllPanel, BorderLayout.CENTER);
 
-        showAllCheckbox_.setSelected(PokerUtils.isCheatOn(context_, PokerConstants.OPTION_CHEAT_AIFACEUP));
+        showAllCheckbox_.setSelected(PokerUtils.isCheatOn(context_, PokerClientConstants.OPTION_CHEAT_AIFACEUP));
 
         showAllCheckbox_.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -316,17 +320,17 @@ public class HandHistoryPanel extends DDPanel {
         StringBuilder sb = new StringBuilder();
 
         if (hhand_.getAnte() > 0) {
-            sb.append(getHist(hist, BettingRound.PRE_FLOP.toLegacy(), hhand_, true));
+            sb.append(getHist(hist, ClientBettingRound.PRE_FLOP.toLegacy(), hhand_, true));
         }
-        sb.append(getHist(hist, BettingRound.PRE_FLOP.toLegacy(), hhand_, false));
-        sb.append(getHist(hist, BettingRound.FLOP.toLegacy(), hhand_, false));
-        sb.append(getHist(hist, BettingRound.TURN.toLegacy(), hhand_, false));
-        sb.append(getHist(hist, BettingRound.RIVER.toLegacy(), hhand_, false));
+        sb.append(getHist(hist, ClientBettingRound.PRE_FLOP.toLegacy(), hhand_, false));
+        sb.append(getHist(hist, ClientBettingRound.FLOP.toLegacy(), hhand_, false));
+        sb.append(getHist(hist, ClientBettingRound.TURN.toLegacy(), hhand_, false));
+        sb.append(getHist(hist, ClientBettingRound.RIVER.toLegacy(), hhand_, false));
 
         // I don't believe this will ever happen as it is now, but perhaps in the future
         // when not every hand is stored in the database, or more precisely when you can
         // view history for hands that aren't stored, for whatever reason.
-        if (hhand_.getRound() == BettingRound.SHOWDOWN) {
+        if (hhand_.getRound() == ClientBettingRound.SHOWDOWN) {
             PokerDatabase.appendShowdown(sb, hhand_.getHistoryCopy(), hhand_.getCommunity(), showAll());
         }
 
@@ -341,14 +345,14 @@ public class HandHistoryPanel extends DDPanel {
 
         HandInfoFast info = new HandInfoFast();
 
-        Hand community = hhand.getCommunity();
+        ClientHand community = hhand.getCommunity();
 
-        if (nRound == BettingRound.PRE_FLOP.toLegacy()) {
-            community = new Hand();
-        } else if ((nRound == BettingRound.FLOP.toLegacy()) && (community.size() > 3)) {
-            community = new Hand(community.getCard(0), community.getCard(1), community.getCard(2));
-        } else if ((nRound == BettingRound.TURN.toLegacy()) && (community.size() > 4)) {
-            community = new Hand(community.getCard(0), community.getCard(1), community.getCard(2),
+        if (nRound == ClientBettingRound.PRE_FLOP.toLegacy()) {
+            community = ClientHand.empty();
+        } else if ((nRound == ClientBettingRound.FLOP.toLegacy()) && (community.size() > 3)) {
+            community = ClientHand.of(community.getCard(0), community.getCard(1), community.getCard(2));
+        } else if ((nRound == ClientBettingRound.TURN.toLegacy()) && (community.size() > 4)) {
+            community = ClientHand.of(community.getCard(0), community.getCard(1), community.getCard(2),
                     community.getCard(3));
         }
 
@@ -361,7 +365,7 @@ public class HandHistoryPanel extends DDPanel {
             if (bAnte && action.getAction() != HandAction.ACTION_ANTE)
                 continue;
 
-            Hand hand = p.getHand();
+            ClientHand hand = p.getHand();
 
             String handHTML;
             String handShown = "";
@@ -376,7 +380,7 @@ public class HandHistoryPanel extends DDPanel {
                 handHTML = hand.toHTML();
 
                 if (community.size() > 0) {
-                    info.getScore(hand, community);
+                    info.getScore(EngineAdapter.toHand(hand), EngineAdapter.toHand(community));
                     handShown = "&nbsp;-&nbsp;" + handDesc(info);
                 }
             } else {
@@ -479,66 +483,57 @@ public class HandHistoryPanel extends DDPanel {
      * Build a short hand description from a scored HandInfoFast. Mirrors
      * HandInfoFast.toString(", ", false) from the poker module.
      */
-    public static String handDesc(com.donohoedigital.games.poker.engine.HandInfoFast info) {
+    public static String handDesc(HandInfoFast info) {
         int type = info.getHandType();
         StringBuilder buf = new StringBuilder();
         buf.append(PropertyConfig.getMessage("msg.hand." + type));
         String sep = ", ";
         switch (type) {
-            case com.donohoedigital.games.poker.engine.HandScoreConstants.HIGH_CARD :
+            case HandScoreConstants.HIGH_CARD :
+                buf.append(sep);
+                buf.append(PropertyConfig.getMessage("msg.handfmt." + type, PropertyConfig
+                        .getMessage("msg.cardrank.singular", ClientCard.getRank(info.getHighCardRank()))));
+                break;
+            case HandScoreConstants.PAIR :
+                buf.append(sep);
+                buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
+                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(info.getBigPairRank()))));
+                break;
+            case HandScoreConstants.TWO_PAIR :
+                buf.append(sep);
+                buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
+                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(info.getBigPairRank())),
+                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(info.getSmallPairRank()))));
+                break;
+            case HandScoreConstants.TRIPS :
+                buf.append(sep);
+                buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
+                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(info.getTripsRank()))));
+                break;
+            case HandScoreConstants.STRAIGHT :
+            case HandScoreConstants.STRAIGHT_FLUSH :
                 buf.append(sep);
                 buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
                         PropertyConfig.getMessage("msg.cardrank.singular",
-                                com.donohoedigital.games.poker.engine.Card.getRank(info.getHighCardRank()))));
-                break;
-            case com.donohoedigital.games.poker.engine.HandScoreConstants.PAIR :
-                buf.append(sep);
-                buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
-                        PropertyConfig.getMessage("msg.cardrank.plural",
-                                com.donohoedigital.games.poker.engine.Card.getRank(info.getBigPairRank()))));
-                break;
-            case com.donohoedigital.games.poker.engine.HandScoreConstants.TWO_PAIR :
-                buf.append(sep);
-                buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
-                        PropertyConfig.getMessage("msg.cardrank.plural",
-                                com.donohoedigital.games.poker.engine.Card.getRank(info.getBigPairRank())),
-                        PropertyConfig.getMessage("msg.cardrank.plural",
-                                com.donohoedigital.games.poker.engine.Card.getRank(info.getSmallPairRank()))));
-                break;
-            case com.donohoedigital.games.poker.engine.HandScoreConstants.TRIPS :
-                buf.append(sep);
-                buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
-                        PropertyConfig.getMessage("msg.cardrank.plural",
-                                com.donohoedigital.games.poker.engine.Card.getRank(info.getTripsRank()))));
-                break;
-            case com.donohoedigital.games.poker.engine.HandScoreConstants.STRAIGHT :
-            case com.donohoedigital.games.poker.engine.HandScoreConstants.STRAIGHT_FLUSH :
-                buf.append(sep);
-                buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
+                                ClientCard.getRank(info.getStraightLowRank())),
                         PropertyConfig.getMessage("msg.cardrank.singular",
-                                com.donohoedigital.games.poker.engine.Card.getRank(info.getStraightLowRank())),
-                        PropertyConfig.getMessage("msg.cardrank.singular",
-                                com.donohoedigital.games.poker.engine.Card.getRank(info.getStraightHighRank()))));
+                                ClientCard.getRank(info.getStraightHighRank()))));
                 break;
-            case com.donohoedigital.games.poker.engine.HandScoreConstants.FLUSH :
+            case HandScoreConstants.FLUSH :
+                buf.append(sep);
+                buf.append(PropertyConfig.getMessage("msg.handfmt." + type, PropertyConfig
+                        .getMessage("msg.cardrank.singular", ClientCard.getRank(info.getFlushHighRank()))));
+                break;
+            case HandScoreConstants.FULL_HOUSE :
                 buf.append(sep);
                 buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
-                        PropertyConfig.getMessage("msg.cardrank.singular",
-                                com.donohoedigital.games.poker.engine.Card.getRank(info.getFlushHighRank()))));
+                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(info.getTripsRank())),
+                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(info.getBigPairRank()))));
                 break;
-            case com.donohoedigital.games.poker.engine.HandScoreConstants.FULL_HOUSE :
+            case HandScoreConstants.QUADS :
                 buf.append(sep);
                 buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
-                        PropertyConfig.getMessage("msg.cardrank.plural",
-                                com.donohoedigital.games.poker.engine.Card.getRank(info.getTripsRank())),
-                        PropertyConfig.getMessage("msg.cardrank.plural",
-                                com.donohoedigital.games.poker.engine.Card.getRank(info.getBigPairRank()))));
-                break;
-            case com.donohoedigital.games.poker.engine.HandScoreConstants.QUADS :
-                buf.append(sep);
-                buf.append(PropertyConfig.getMessage("msg.handfmt." + type,
-                        PropertyConfig.getMessage("msg.cardrank.plural",
-                                com.donohoedigital.games.poker.engine.Card.getRank(info.getQuadsRank()))));
+                        PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(info.getQuadsRank()))));
                 break;
             default :
                 break;

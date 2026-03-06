@@ -31,11 +31,11 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.display.ClientCard;
 
 import com.donohoedigital.base.*;
 import com.donohoedigital.comms.*;
 import com.donohoedigital.games.config.*;
-import com.donohoedigital.games.poker.engine.*;
 
 import java.io.*;
 import java.util.*;
@@ -68,10 +68,10 @@ public class HandGroup extends BaseProfile {
     }
 
     private HandGroup all() {
-        for (int i = Card.TWO; i <= Card.ACE; ++i) {
+        for (int i = ClientCard.TWO; i <= ClientCard.ACE; ++i) {
             setContainsPair(i, true);
 
-            for (int j = Card.THREE; j <= Card.ACE; ++j) {
+            for (int j = ClientCard.THREE; j <= ClientCard.ACE; ++j) {
                 setContainsSuited(i, j, true);
                 setContainsOffsuit(i, j, true);
             }
@@ -86,15 +86,15 @@ public class HandGroup extends BaseProfile {
             expanded_.setDescription(sDescription_);
 
             // pairs
-            for (int rank = Card.ACE; rank >= Card.TWO; --rank) {
+            for (int rank = ClientCard.ACE; rank >= ClientCard.TWO; --rank) {
                 if (pairs_[rank]) {
                     expanded_.addAllPairs(rank);
                 }
             }
 
             // suited
-            for (int rank1 = Card.ACE; rank1 >= Card.TWO; --rank1) {
-                for (int rank2 = rank1 - 1; rank2 >= Card.TWO; --rank2) {
+            for (int rank1 = ClientCard.ACE; rank1 >= ClientCard.TWO; --rank1) {
+                for (int rank2 = rank1 - 1; rank2 >= ClientCard.TWO; --rank2) {
                     if (suited_[rank1][rank2]) {
                         expanded_.addAllSuited(rank1, rank2);
                     }
@@ -102,8 +102,8 @@ public class HandGroup extends BaseProfile {
             }
 
             // offsuit
-            for (int rank1 = Card.ACE; rank1 >= Card.TWO; --rank1) {
-                for (int rank2 = rank1 - 1; rank2 >= Card.TWO; --rank2) {
+            for (int rank1 = ClientCard.ACE; rank1 >= ClientCard.TWO; --rank1) {
+                for (int rank2 = rank1 - 1; rank2 >= ClientCard.TWO; --rank2) {
                     if (offsuit_[rank1][rank2]) {
                         expanded_.addAllUnsuited(rank1, rank2);
                     }
@@ -122,7 +122,7 @@ public class HandGroup extends BaseProfile {
             int consecutive = 0;
 
             // pairs
-            for (int rank = Card.ACE; rank >= Card.TWO; --rank) {
+            for (int rank = ClientCard.ACE; rank >= ClientCard.TWO; --rank) {
                 if (pairs_[rank]) {
                     consecutive++;
                     switch (consecutive) {
@@ -139,8 +139,8 @@ public class HandGroup extends BaseProfile {
                             break;
                     }
 
-                    buf.append(Card.getRankSingle(rank));
-                    buf.append(Card.getRankSingle(rank));
+                    buf.append(ClientCard.getRankSingle(rank));
+                    buf.append(ClientCard.getRankSingle(rank));
 
                     buf.append(", ");
                 } else {
@@ -149,10 +149,10 @@ public class HandGroup extends BaseProfile {
             }
 
             // suited
-            for (int rank1 = Card.ACE; rank1 >= Card.TWO; --rank1) {
+            for (int rank1 = ClientCard.ACE; rank1 >= ClientCard.TWO; --rank1) {
                 consecutive = 0;
 
-                for (int rank2 = rank1 - 1; rank2 >= Card.TWO; --rank2) {
+                for (int rank2 = rank1 - 1; rank2 >= ClientCard.TWO; --rank2) {
                     if (suited_[rank1][rank2]) {
                         consecutive++;
                         switch (consecutive) {
@@ -169,8 +169,8 @@ public class HandGroup extends BaseProfile {
                                 break;
                         }
 
-                        buf.append(Card.getRankSingle(rank1));
-                        buf.append(Card.getRankSingle(rank2));
+                        buf.append(ClientCard.getRankSingle(rank1));
+                        buf.append(ClientCard.getRankSingle(rank2));
                         buf.append("s, ");
                     } else {
                         consecutive = 0;
@@ -179,10 +179,10 @@ public class HandGroup extends BaseProfile {
             }
 
             // offsuit
-            for (int rank1 = Card.ACE; rank1 >= Card.TWO; --rank1) {
+            for (int rank1 = ClientCard.ACE; rank1 >= ClientCard.TWO; --rank1) {
                 consecutive = 0;
 
-                for (int rank2 = rank1 - 1; rank2 >= Card.TWO; --rank2) {
+                for (int rank2 = rank1 - 1; rank2 >= ClientCard.TWO; --rank2) {
                     if (offsuit_[rank1][rank2]) {
                         consecutive++;
                         switch (consecutive) {
@@ -199,8 +199,8 @@ public class HandGroup extends BaseProfile {
                                 break;
                         }
 
-                        buf.append(Card.getRankSingle(rank1));
-                        buf.append(Card.getRankSingle(rank2));
+                        buf.append(ClientCard.getRankSingle(rank1));
+                        buf.append(ClientCard.getRankSingle(rank2));
                         buf.append(", ");
                     } else {
                         consecutive = 0;
@@ -258,10 +258,10 @@ public class HandGroup extends BaseProfile {
             sName_ = proto.getName();
             classCount_ = proto.classCount_;
             handCount_ = proto.handCount_;
-            System.arraycopy(proto.pairs_, 0, pairs_, 0, Card.ACE + 1);
-            for (int rank = Card.TWO; rank <= Card.ACE; ++rank) {
-                System.arraycopy(proto.suited_[rank], 0, suited_[rank], 0, Card.ACE + 1);
-                System.arraycopy(proto.offsuit_[rank], 0, offsuit_[rank], 0, Card.ACE + 1);
+            System.arraycopy(proto.pairs_, 0, pairs_, 0, ClientCard.ACE + 1);
+            for (int rank = ClientCard.TWO; rank <= ClientCard.ACE; ++rank) {
+                System.arraycopy(proto.suited_[rank], 0, suited_[rank], 0, ClientCard.ACE + 1);
+                System.arraycopy(proto.offsuit_[rank], 0, offsuit_[rank], 0, ClientCard.ACE + 1);
             }
 
             // remove stuff we don't want to copy
@@ -283,7 +283,7 @@ public class HandGroup extends BaseProfile {
     public void setContains(HandGroup group, boolean b) {
         boolean changed = false;
 
-        for (int rank1 = Card.ACE; rank1 >= Card.TWO; --rank1) {
+        for (int rank1 = ClientCard.ACE; rank1 >= ClientCard.TWO; --rank1) {
             if (group.pairs_[rank1] && pairs_[rank1] != b) {
                 pairs_[rank1] = b;
                 classCount_ += (b ? 1 : -1);
@@ -291,7 +291,7 @@ public class HandGroup extends BaseProfile {
                 changed = true;
             }
 
-            for (int rank2 = rank1 - 1; rank2 >= Card.TWO; --rank2) {
+            for (int rank2 = rank1 - 1; rank2 >= ClientCard.TWO; --rank2) {
                 if (group.suited_[rank1][rank2] && suited_[rank1][rank2] != b) {
                     suited_[rank1][rank2] = b;
                     classCount_ += (b ? 1 : -1);
@@ -494,9 +494,9 @@ public class HandGroup extends BaseProfile {
     }
 
     public void clearContents() {
-        pairs_ = new boolean[Card.ACE + 1];
-        suited_ = new boolean[Card.ACE + 1][Card.ACE + 1];
-        offsuit_ = new boolean[Card.ACE + 1][Card.ACE + 1];
+        pairs_ = new boolean[ClientCard.ACE + 1];
+        suited_ = new boolean[ClientCard.ACE + 1][ClientCard.ACE + 1];
+        offsuit_ = new boolean[ClientCard.ACE + 1][ClientCard.ACE + 1];
 
         classCount_ = 0;
         handCount_ = 0;
@@ -517,13 +517,13 @@ public class HandGroup extends BaseProfile {
         group.setStrength(strength);
         String items[] = hands.split(",");
         for (String item : items) {
-            int rank1 = Card.getRank(item.charAt(0));
-            int rank2 = Card.getRank(item.charAt(1));
+            int rank1 = ClientCard.getRank(item.charAt(0));
+            int rank2 = ClientCard.getRank(item.charAt(1));
             boolean isSuited = (item.length() > 2) && ("Ss".indexOf(item.charAt(2)) >= 0);
             boolean isRange = (item.length() > 3) && (item.charAt(isSuited ? 3 : 2) == '-');
             boolean isPair = (rank1 == rank2);
             if (isRange) {
-                for (; rank2 >= Card.getRank(item.charAt(isSuited ? 5 : 4)); --rank2) {
+                for (; rank2 >= ClientCard.getRank(item.charAt(isSuited ? 5 : 4)); --rank2) {
                     if (isPair) {
                         rank1 = rank2;
                     }
@@ -554,15 +554,15 @@ public class HandGroup extends BaseProfile {
             return hashcode_;
         }
 
-        for (int rank = Card.ACE; rank >= Card.TWO; --rank) {
+        for (int rank = ClientCard.ACE; rank >= ClientCard.TWO; --rank) {
             if (pairs_[rank]) {
                 hashcode_ = (strength_ << 10) + ((rank + 32) << 5);
                 return hashcode_;
             }
         }
 
-        for (int rank1 = Card.ACE; rank1 >= Card.TWO; --rank1) {
-            for (int rank2 = Card.ACE; rank2 >= Card.TWO; --rank2) {
+        for (int rank1 = ClientCard.ACE; rank1 >= ClientCard.TWO; --rank1) {
+            for (int rank2 = ClientCard.ACE; rank2 >= ClientCard.TWO; --rank2) {
                 if (suited_[rank1][rank2]) {
                     hashcode_ = (strength_ << 10) + ((rank1 + 16) << 5) + rank2;
                     return hashcode_;
@@ -570,8 +570,8 @@ public class HandGroup extends BaseProfile {
             }
         }
 
-        for (int rank1 = Card.ACE; rank1 >= Card.TWO; --rank1) {
-            for (int rank2 = Card.ACE; rank2 >= Card.TWO; --rank2) {
+        for (int rank1 = ClientCard.ACE; rank1 >= ClientCard.TWO; --rank1) {
+            for (int rank2 = ClientCard.ACE; rank2 >= ClientCard.TWO; --rank2) {
                 if (offsuit_[rank1][rank2]) {
                     hashcode_ = (strength_ << 10) + (rank1 << 5) + rank2;
                     return hashcode_;

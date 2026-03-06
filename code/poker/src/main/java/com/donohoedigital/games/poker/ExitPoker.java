@@ -37,10 +37,10 @@
  */
 
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
 
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.online.*;
 import org.apache.logging.log4j.*;
 
@@ -74,7 +74,7 @@ public class ExitPoker extends BasePhase {
         game_ = (PokerGame) context_.getGame();
         if (game_ != null && !game_.isClockMode()) {
             ClientPlayer local = game_.getLocalPlayer();
-            bCancelFromJoin_ = local != null && local.getID() == PokerConstants.PLAYER_ID_TEMP;
+            bCancelFromJoin_ = local != null && local.getID() == ProtocolConstants.PLAYER_ID_TEMP;
         }
         if (game_ != null && game_.isOnlineGame() && !bCancelFromJoin_) {
             switch (game_.getOnlineMode()) {

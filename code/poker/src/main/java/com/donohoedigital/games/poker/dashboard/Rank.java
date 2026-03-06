@@ -31,12 +31,13 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.dashboard;
+import com.donohoedigital.games.poker.PokerClientConstants;
+import com.donohoedigital.games.poker.engine.PokerSaveDetails;
 
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.gui.*;
@@ -112,7 +113,7 @@ public class Rank extends DashboardItem {
             GameState state = (GameState) evt.getOldValue();
             PokerSaveDetails pdetails = (PokerSaveDetails) state.getSaveDetails().getCustomInfo();
             if (pdetails.isOtherTableUpdate()) {
-                if (PokerConstants.DEBUG_CLEANUP_TABLE)
+                if (PokerClientConstants.DEBUG_CLEANUP_TABLE)
                     logger.debug("Update display on other table update");
                 updateInfo();
             }

@@ -35,7 +35,6 @@ package com.donohoedigital.games.poker.dashboard;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.gui.*;
 

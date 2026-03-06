@@ -33,8 +33,8 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.games.config.*;
-import com.donohoedigital.games.poker.engine.*;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.dashboard.*;
@@ -65,11 +65,11 @@ public class DealCommunity {
 
         // get last betting round and current round
         HandAction last = hhand.getLastAction();
-        int nLastBettingRound = last != null ? last.getRound() : BettingRound.ROUND_PRE_FLOP;
+        int nLastBettingRound = last != null ? last.getRound() : ClientBettingRound.ROUND_PRE_FLOP;
 
         int nNumWithCards = hhand.getNumWithCards();
         boolean bRabbitHunt = PokerUtils.isCheatOn(table.getGame().getGameContext(),
-                PokerConstants.OPTION_CHEAT_RABBITHUNT);
+                PokerClientConstants.OPTION_CHEAT_RABBITHUNT);
 
         // all-in-showdown happening, so only show cards up to previous round
         int nRound = hhand.getRoundForDisplay();

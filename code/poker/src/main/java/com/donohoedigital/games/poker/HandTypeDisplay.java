@@ -18,12 +18,12 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.display.ClientHand;
+import com.donohoedigital.games.poker.display.ClientCard;
+import com.donohoedigital.games.poker.engine.HandInfoFast;
+import com.donohoedigital.games.poker.engine.HandScoreConstants;
 
 import com.donohoedigital.config.PropertyConfig;
-import com.donohoedigital.games.poker.engine.HandInfoFast;
-import com.donohoedigital.games.poker.engine.Card;
-import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.engine.HandScoreConstants;
 
 /**
  * Display utilities for hand types. Provides localized hand type descriptions
@@ -76,7 +76,7 @@ public final class HandTypeDisplay implements HandScoreConstants {
                 break;
             if (i > 0)
                 sb.append(' ');
-            sb.append(Card.getRank(ranks[i]));
+            sb.append(ClientCard.getRank(ranks[i]));
         }
         return sb.toString();
     }
@@ -85,9 +85,9 @@ public final class HandTypeDisplay implements HandScoreConstants {
      * Computes the hand score for {@code pocket} + {@code community} using
      * {@link HandInfoFast}, returning it as an int for comparison.
      */
-    public static int getHandScore(Hand pocket, Hand community) {
+    public static int getHandScore(ClientHand pocket, ClientHand community) {
         HandInfoFast fast = new HandInfoFast();
-        return fast.getScore(pocket, community);
+        return fast.getScore(EngineAdapter.toHand(pocket), EngineAdapter.toHand(community));
     }
 
     /**
@@ -153,12 +153,12 @@ public final class HandTypeDisplay implements HandScoreConstants {
      * Short singular rank label using {@code msg.cardrank.singular} (short form).
      */
     private static String rankShortSingular(int rank) {
-        return PropertyConfig.getMessage("msg.cardrank.singular", Card.getRank(rank));
+        return PropertyConfig.getMessage("msg.cardrank.singular", ClientCard.getRank(rank));
     }
 
     /** Short plural rank label using {@code msg.cardrank.plural} (short form). */
     private static String rankShortPlural(int rank) {
-        return PropertyConfig.getMessage("msg.cardrank.plural", Card.getRank(rank));
+        return PropertyConfig.getMessage("msg.cardrank.plural", ClientCard.getRank(rank));
     }
 
     private static synchronized void ensureInit() {

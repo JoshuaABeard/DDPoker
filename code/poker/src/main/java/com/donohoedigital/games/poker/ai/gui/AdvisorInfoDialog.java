@@ -48,7 +48,6 @@ import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.ai.PlayerType;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.donohoedigital.gui.*;

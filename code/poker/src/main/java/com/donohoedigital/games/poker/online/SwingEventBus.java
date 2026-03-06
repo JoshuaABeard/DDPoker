@@ -33,7 +33,8 @@
 package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.event.*;
+import com.donohoedigital.games.poker.engine.event.GameEvent;
+import com.donohoedigital.games.poker.engine.event.GameEventListener;
 import com.donohoedigital.games.poker.event.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

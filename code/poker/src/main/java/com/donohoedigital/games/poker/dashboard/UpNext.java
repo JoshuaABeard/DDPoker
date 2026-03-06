@@ -32,9 +32,9 @@
  */
 package com.donohoedigital.games.poker.dashboard;
 
+import com.donohoedigital.games.poker.engine.TournamentProfileHtml;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.event.*;

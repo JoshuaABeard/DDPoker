@@ -47,7 +47,7 @@ import org.apache.logging.log4j.*;
 
 import java.io.*;
 import java.util.*;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 
 /**
  * @author donohoe
@@ -89,9 +89,9 @@ public class PlayerProfile extends BaseProfile {
 
         // number of times each round is seen
         for (int i = 0; i < rounds_.length; i++) {
-            logger.debug("Round " + BettingRound.getRoundName(i) + ": " + rounds_[i]);
+            logger.debug("Round " + ClientBettingRound.getRoundName(i) + ": " + rounds_[i]);
             // flops seen - which position
-            if (i == BettingRound.FLOP.toLegacy()) {
+            if (i == ClientBettingRound.FLOP.toLegacy()) {
                 for (int j = 0; j < flops_.length; j++) {
                     logger.debug("   Flops called from " + ClientPlayer.getPositionName(j) + ": " + flops_[j]);
                 }
@@ -106,10 +106,10 @@ public class PlayerProfile extends BaseProfile {
 
         // actions per round
         for (int i = 0; i < roundactions_.length; i++) {
-            logger.debug("Total Actions it round " + BettingRound.getRoundName(i) + ": " + nRoundActionCnt_[i]);
+            logger.debug("Total Actions it round " + ClientBettingRound.getRoundName(i) + ": " + nRoundActionCnt_[i]);
             for (int j = 0; j < roundactions_[0].length; j++) {
-                logger.debug("   Round " + BettingRound.getRoundName(i) + ", Action " + HandAction.getActionName(j)
-                        + ": " + roundactions_[i][j]);
+                logger.debug("   Round " + ClientBettingRound.getRoundName(i) + ", Action "
+                        + HandAction.getActionName(j) + ": " + roundactions_[i][j]);
             }
         }
     }
@@ -165,40 +165,40 @@ public class PlayerProfile extends BaseProfile {
     public void init() {
         nWins_ = 0;
         nActionCnt_ = 0;
-        rounds_ = new int[BettingRound.SHOWDOWN.toLegacy() + 1];
+        rounds_ = new int[ClientBettingRound.SHOWDOWN.toLegacy() + 1];
         flops_ = new int[ClientPlayer.BIG + 1];
         actions_ = new int[HandAction.ACTION_RAISE + 1];
-        nRoundActionCnt_ = new int[BettingRound.SHOWDOWN.toLegacy()];
-        roundactions_ = new int[BettingRound.SHOWDOWN.toLegacy()][HandAction.ACTION_RAISE + 1];
+        nRoundActionCnt_ = new int[ClientBettingRound.SHOWDOWN.toLegacy()];
+        roundactions_ = new int[ClientBettingRound.SHOWDOWN.toLegacy()][HandAction.ACTION_RAISE + 1];
 
         // seed data with expected amount of folding, calling, raising, etc
-        roundactions_[BettingRound.PRE_FLOP.toLegacy()][HandAction.ACTION_FOLD] = 14;
-        roundactions_[BettingRound.PRE_FLOP.toLegacy()][HandAction.ACTION_CHECK] = 1;
-        roundactions_[BettingRound.PRE_FLOP.toLegacy()][HandAction.ACTION_CALL] = 3;
-        roundactions_[BettingRound.PRE_FLOP.toLegacy()][HandAction.ACTION_BET] = 0;
-        roundactions_[BettingRound.PRE_FLOP.toLegacy()][HandAction.ACTION_RAISE] = 2;
-        nRoundActionCnt_[BettingRound.PRE_FLOP.toLegacy()] = 20;
+        roundactions_[ClientBettingRound.PRE_FLOP.toLegacy()][HandAction.ACTION_FOLD] = 14;
+        roundactions_[ClientBettingRound.PRE_FLOP.toLegacy()][HandAction.ACTION_CHECK] = 1;
+        roundactions_[ClientBettingRound.PRE_FLOP.toLegacy()][HandAction.ACTION_CALL] = 3;
+        roundactions_[ClientBettingRound.PRE_FLOP.toLegacy()][HandAction.ACTION_BET] = 0;
+        roundactions_[ClientBettingRound.PRE_FLOP.toLegacy()][HandAction.ACTION_RAISE] = 2;
+        nRoundActionCnt_[ClientBettingRound.PRE_FLOP.toLegacy()] = 20;
 
-        roundactions_[BettingRound.FLOP.toLegacy()][HandAction.ACTION_FOLD] = 6;
-        roundactions_[BettingRound.FLOP.toLegacy()][HandAction.ACTION_CHECK] = 4;
-        roundactions_[BettingRound.FLOP.toLegacy()][HandAction.ACTION_CALL] = 2;
-        roundactions_[BettingRound.FLOP.toLegacy()][HandAction.ACTION_BET] = 4;
-        roundactions_[BettingRound.FLOP.toLegacy()][HandAction.ACTION_RAISE] = 4;
-        nRoundActionCnt_[BettingRound.FLOP.toLegacy()] = 20;
+        roundactions_[ClientBettingRound.FLOP.toLegacy()][HandAction.ACTION_FOLD] = 6;
+        roundactions_[ClientBettingRound.FLOP.toLegacy()][HandAction.ACTION_CHECK] = 4;
+        roundactions_[ClientBettingRound.FLOP.toLegacy()][HandAction.ACTION_CALL] = 2;
+        roundactions_[ClientBettingRound.FLOP.toLegacy()][HandAction.ACTION_BET] = 4;
+        roundactions_[ClientBettingRound.FLOP.toLegacy()][HandAction.ACTION_RAISE] = 4;
+        nRoundActionCnt_[ClientBettingRound.FLOP.toLegacy()] = 20;
 
-        roundactions_[BettingRound.TURN.toLegacy()][HandAction.ACTION_FOLD] = 6;
-        roundactions_[BettingRound.TURN.toLegacy()][HandAction.ACTION_CHECK] = 4;
-        roundactions_[BettingRound.TURN.toLegacy()][HandAction.ACTION_CALL] = 2;
-        roundactions_[BettingRound.TURN.toLegacy()][HandAction.ACTION_BET] = 4;
-        roundactions_[BettingRound.TURN.toLegacy()][HandAction.ACTION_RAISE] = 4;
-        nRoundActionCnt_[BettingRound.TURN.toLegacy()] = 20;
+        roundactions_[ClientBettingRound.TURN.toLegacy()][HandAction.ACTION_FOLD] = 6;
+        roundactions_[ClientBettingRound.TURN.toLegacy()][HandAction.ACTION_CHECK] = 4;
+        roundactions_[ClientBettingRound.TURN.toLegacy()][HandAction.ACTION_CALL] = 2;
+        roundactions_[ClientBettingRound.TURN.toLegacy()][HandAction.ACTION_BET] = 4;
+        roundactions_[ClientBettingRound.TURN.toLegacy()][HandAction.ACTION_RAISE] = 4;
+        nRoundActionCnt_[ClientBettingRound.TURN.toLegacy()] = 20;
 
-        roundactions_[BettingRound.RIVER.toLegacy()][HandAction.ACTION_FOLD] = 6;
-        roundactions_[BettingRound.RIVER.toLegacy()][HandAction.ACTION_CHECK] = 4;
-        roundactions_[BettingRound.RIVER.toLegacy()][HandAction.ACTION_CALL] = 2;
-        roundactions_[BettingRound.RIVER.toLegacy()][HandAction.ACTION_BET] = 4;
-        roundactions_[BettingRound.RIVER.toLegacy()][HandAction.ACTION_RAISE] = 4;
-        nRoundActionCnt_[BettingRound.RIVER.toLegacy()] = 20;
+        roundactions_[ClientBettingRound.RIVER.toLegacy()][HandAction.ACTION_FOLD] = 6;
+        roundactions_[ClientBettingRound.RIVER.toLegacy()][HandAction.ACTION_CHECK] = 4;
+        roundactions_[ClientBettingRound.RIVER.toLegacy()][HandAction.ACTION_CALL] = 2;
+        roundactions_[ClientBettingRound.RIVER.toLegacy()][HandAction.ACTION_BET] = 4;
+        roundactions_[ClientBettingRound.RIVER.toLegacy()][HandAction.ACTION_RAISE] = 4;
+        nRoundActionCnt_[ClientBettingRound.RIVER.toLegacy()] = 20;
 
     }
 

@@ -37,7 +37,6 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;

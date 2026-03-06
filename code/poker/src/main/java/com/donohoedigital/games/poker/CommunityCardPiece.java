@@ -37,9 +37,10 @@
  */
 
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.display.ClientHand;
+import com.donohoedigital.games.poker.display.ClientCard;
 
 import com.donohoedigital.games.config.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import org.apache.logging.log4j.*;
@@ -70,12 +71,12 @@ public class CommunityCardPiece extends CardPiece {
      * Get card
      */
     @Override
-    public Card getCard() {
+    public ClientCard getCard() {
         // be defensive here and check to make sure a hand and community cards exist
         ClientHoldemHand hhand = table_.getHoldemHand();
         if (hhand == null)
             return null;
-        Hand comm = hhand.getCommunity();
+        ClientHand comm = hhand.getCommunity();
         if (comm == null)
             return null;
         if (nSeq_ < 0 || nSeq_ >= comm.size())

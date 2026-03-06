@@ -31,13 +31,17 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.dashboard;
+import com.donohoedigital.games.poker.PokerClientConstants;
+import com.donohoedigital.games.poker.display.ClientHand;
+import com.donohoedigital.games.poker.EngineAdapter;
+import com.donohoedigital.games.poker.engine.HandInfoFast;
+import com.donohoedigital.games.poker.engine.HandUtils;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
@@ -171,7 +175,7 @@ public class MyHand extends DashboardItem {
         ClientPokerTable table = game_.getCurrentTable();
         ClientHoldemHand hhand = table.getHoldemHand();
         ClientPlayer asViewedBy = game_.getHumanPlayer();
-        Hand hand = asViewedBy.getHand();
+        ClientHand hand = asViewedBy.getHand();
 
         // if no hand, or an observer
         if (hhand == null || asViewedBy.isObserver() || hand == null) {
@@ -188,7 +192,7 @@ public class MyHand extends DashboardItem {
         CardPiece card;
         Territory flop = PokerUtils.getFlop();
         synchronized (flop.getMap()) {
-            List<GamePiece> cards = EngineUtils.getMatchingPieces(flop, PokerConstants.PIECE_CARD);
+            List<GamePiece> cards = EngineUtils.getMatchingPieces(flop, PokerClientConstants.PIECE_CARD);
             for (int i = cards.size() - 1; i >= 0; i--) {
                 card = (CardPiece) cards.get(i);
                 if (card.isVisible())
@@ -205,17 +209,18 @@ public class MyHand extends DashboardItem {
             if (bFold)
                 sHandTitle_ = PropertyConfig.getMessage("msg.myhand.folded.title", sHandTitle_);
         } else {
-            Hand allcommunity = hhand.getCommunity();
-            Hand community = new Hand();
+            ClientHand allcommunity = hhand.getCommunity();
+            ClientHand community = ClientHand.empty();
             for (int i = 0; i < nNumBoard; i++) {
                 community.add(allcommunity.getCard(i));
             }
 
-            HandSorted csorted = new HandSorted(community);
+            ClientHand csorted = ClientHand.fromCards(community.getCards());
 
             // get hand
-            fast_.getScore(hand, community);
-            Hand best = HandUtils.getBestFive(asViewedBy.getHandSorted(), csorted);
+            fast_.getScore(EngineAdapter.toHand(hand), EngineAdapter.toHand(community));
+            ClientHand best = EngineAdapter.toClientHand(HandUtils.getBestFive(
+                    EngineAdapter.toHandSorted(asViewedBy.getHandSorted()), EngineAdapter.toHandSorted(csorted)));
             sHand_ = PropertyConfig.getMessage("msg.myhand.postflop", best.toHTML(), HandHistoryPanel.handDesc(fast_));
             sHandTitle_ = best.toStringRank();
         }

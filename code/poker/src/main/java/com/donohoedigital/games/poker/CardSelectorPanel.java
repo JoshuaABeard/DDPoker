@@ -31,19 +31,19 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.display.ClientCard;
 
 import com.donohoedigital.gui.*;
 import com.donohoedigital.config.*;
-import com.donohoedigital.games.poker.engine.*;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
 public class CardSelectorPanel extends DDPanel implements ActionListener {
-    CardPiece cardPieces[][] = new CardPiece[CardSuit.SPADES_RANK + 1][Card.ACE + 1];
-    ButtonPanel cardButtons[][] = new ButtonPanel[CardSuit.SPADES_RANK + 1][Card.ACE + 1];
-    ButtonPanel unknownButtons[] = new ButtonPanel[CardSuit.SPADES_RANK + 1];
+    CardPiece cardPieces[][] = new CardPiece[ClientCard.SPADES + 1][ClientCard.ACE + 1];
+    ButtonPanel cardButtons[][] = new ButtonPanel[ClientCard.SPADES + 1][ClientCard.ACE + 1];
+    ButtonPanel unknownButtons[] = new ButtonPanel[ClientCard.SPADES + 1];
 
     private static final int INIT = -9;
     private static final int NONE = -10;
@@ -51,7 +51,7 @@ public class CardSelectorPanel extends DDPanel implements ActionListener {
     private int selectedRank_ = INIT;
     // private Deck deck_ = new Deck(false);
 
-    public CardSelectorPanel(Card current, boolean bShowUnknown) {
+    public CardSelectorPanel(ClientCard current, boolean bShowUnknown) {
         super("Card Selector", "CardSelector");
         setOpaque(true);
         setBackground(StylesConfig.getColor("PokerTable.menuitem.bg"));
@@ -66,20 +66,20 @@ public class CardSelectorPanel extends DDPanel implements ActionListener {
         // add(GuiUtils.CENTER(bottom), BorderLayout.SOUTH);
         setBorder(BorderFactory.createEmptyBorder(2, 1, 1, 1));
 
-        Card card;
+        ClientCard card;
         Dimension size = new Dimension(20, 26);
         ButtonPanel p;
-        for (int suit = 0; suit < CardSuit.NUM_SUITS; suit++) {
-            for (int rank = Card.TWO; rank <= Card.ACE; ++rank) {
-                card = Card.getCard(suit, rank);
+        for (int suit = 0; suit < 4; suit++) {
+            for (int rank = ClientCard.TWO; rank <= ClientCard.ACE; ++rank) {
+                card = ClientCard.getCard(suit, rank);
                 p = addGridElement(card, suit, rank, size, grid);
                 if (card.equals(current))
                     p.setSelected(true);
             }
             // unknown button
             if (bShowUnknown) {
-                p = addGridElement(Card.BLANK, suit, -1, size, grid);
-                if (Card.BLANK.equals(current))
+                p = addGridElement(ClientCard.BLANK, suit, -1, size, grid);
+                if (ClientCard.BLANK.equals(current))
                     p.setSelected(true);
             }
         }
@@ -93,7 +93,7 @@ public class CardSelectorPanel extends DDPanel implements ActionListener {
     // return deck_;
     // }
 
-    private ButtonPanel addGridElement(Card card, int suit, int rank, Dimension size, JComponent parent) {
+    private ButtonPanel addGridElement(ClientCard card, int suit, int rank, Dimension size, JComponent parent) {
         ButtonPanel cardButtonPanel;
         CardPiece cardPiece;
         JComponent c;
@@ -124,9 +124,9 @@ public class CardSelectorPanel extends DDPanel implements ActionListener {
     }
 
     private class CardButtonPanel extends ButtonPanel {
-        Card card;
+        ClientCard card;
         CardPiece cp;
-        CardButtonPanel(Card card, CardPiece cp) {
+        CardButtonPanel(ClientCard card, CardPiece cp) {
             super(card.getDisplay(), "CardSelector", false);
             this.card = card;
             this.cp = cp;
@@ -139,8 +139,8 @@ public class CardSelectorPanel extends DDPanel implements ActionListener {
         }
     }
 
-    public void setSelected(Card c) {
-        setSelected(c.getCardSuit().getRank(), c.getRank());
+    public void setSelected(ClientCard c) {
+        setSelected(c.getSuit(), c.getRank());
     }
 
     public void setSelected(int suit, int rank) {
@@ -151,15 +151,15 @@ public class CardSelectorPanel extends DDPanel implements ActionListener {
         }
     }
 
-    public void reinit(Card c) {
+    public void reinit(ClientCard c) {
         selectedSuit_ = INIT;
         selectedRank_ = INIT;
 
         int suit = c.getSuit();
         int rank = c.getRank();
 
-        for (int s = CardSuit.CLUBS_RANK; s <= CardSuit.SPADES_RANK; ++s) {
-            for (int r = Card.TWO; r <= Card.ACE; ++r) {
+        for (int s = ClientCard.CLUBS; s <= ClientCard.SPADES; ++s) {
+            for (int r = ClientCard.TWO; r <= ClientCard.ACE; ++r) {
                 cardButtons[s][r].mouseExited(null); // clear highlighted item too
                 if ((suit == s) && (rank == r)) {
                     cardButtons[s][r].setSelected(true);
@@ -170,20 +170,20 @@ public class CardSelectorPanel extends DDPanel implements ActionListener {
 
             if (unknownButtons[s] != null) {
                 unknownButtons[s].mouseExited(null); // clear highlighted item too
-                unknownButtons[s].setSelected(suit == CardSuit.UNKNOWN_RANK);
+                unknownButtons[s].setSelected(suit == -1);
             }
         }
     }
 
-    public Card getSelectedCard() {
+    public ClientCard getSelectedCard() {
         if (selectedSuit_ == INIT || selectedRank_ == INIT || selectedSuit_ == NONE || selectedSuit_ == NONE)
             return null;
 
-        if (selectedSuit_ == CardSuit.UNKNOWN_RANK && selectedRank_ == Card.UNKNOWN) {
-            return Card.BLANK;
+        if (selectedSuit_ == -1 && selectedRank_ == ClientCard.UNKNOWN) {
+            return ClientCard.BLANK;
         }
 
-        return Card.getCard(selectedSuit_, selectedRank_);
+        return ClientCard.getCard(selectedSuit_, selectedRank_);
     }
 
     public void actionPerformed(ActionEvent e) {

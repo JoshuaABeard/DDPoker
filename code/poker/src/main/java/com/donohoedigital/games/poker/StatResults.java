@@ -34,7 +34,6 @@ package com.donohoedigital.games.poker;
 
 import com.donohoedigital.base.Utils;
 import com.donohoedigital.config.PropertyConfig;
-import com.donohoedigital.games.poker.engine.PokerConstants;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -60,9 +59,9 @@ public class StatResults extends LinkedHashMap {
             }
 
             buf.append(PropertyConfig.getMessage("msg.simresult.row", Utils.encodeHTML(sName),
-                    result.getHole().toStringRankSuit(), PokerConstants.formatPercent(result.getWinPercent()),
-                    PokerConstants.formatPercent(result.getLosePercent()),
-                    PokerConstants.formatPercent(result.getTiePercent()), result.getHandCount()));
+                    result.getHole().toStringRankSuit(), PokerClientConstants.formatPercent(result.getWinPercent()),
+                    PokerClientConstants.formatPercent(result.getLosePercent()),
+                    PokerClientConstants.formatPercent(result.getTiePercent()), result.getHandCount()));
         }
         buf.append(PropertyConfig.getMessage("msg.simresult.footer"));
         return buf.toString();

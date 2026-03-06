@@ -37,6 +37,8 @@
  */
 
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
+import com.donohoedigital.games.poker.engine.PokerSaveDetails;
 
 import com.donohoedigital.base.*;
 import com.donohoedigital.comms.*;
@@ -45,7 +47,7 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.*;
-import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.model.LevelAdvanceMode;
 import com.donohoedigital.games.poker.online.*;
@@ -54,8 +56,7 @@ import org.apache.logging.log4j.*;
 import java.io.*;
 import java.security.*;
 import java.util.*;
-import com.donohoedigital.games.poker.engine.GamePlayerInfo;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 
 /**
  * @author donohoe
@@ -376,7 +377,7 @@ public class PokerGame extends Game implements PlayerActionListener {
     /**
      * Get player by ID.
      */
-    public GamePlayerInfo getPlayerByID(int playerId) {
+    public ClientPlayer getPlayerByID(int playerId) {
         return getPokerPlayerFromID(playerId);
     }
 
@@ -423,14 +424,14 @@ public class PokerGame extends Game implements PlayerActionListener {
         if (webSocketConfig_ != null) {
             ClientPokerTable table = getCurrentTable();
             if (table != null) {
-                for (int s = 0; s < PokerConstants.SEATS; s++) {
+                for (int s = 0; s < ProtocolConstants.SEATS; s++) {
                     ClientPlayer p = table.getPlayer(s);
                     if (p != null && p.isHuman())
                         return p;
                 }
             }
         }
-        return getPokerPlayerFromID(PokerConstants.PLAYER_ID_HOST);
+        return getPokerPlayerFromID(ProtocolConstants.PLAYER_ID_HOST);
     }
 
     /**
@@ -921,12 +922,11 @@ public class PokerGame extends Game implements PlayerActionListener {
         return profile_.getBuyinChips();
     }
 
-    public boolean isRebuyPeriodActive(GamePlayerInfo player) {
+    public boolean isRebuyPeriodActive(ClientPlayer player) {
         if (player == null) {
             return false;
         }
-        ClientPlayer pokerPlayer = (ClientPlayer) player;
-        return !pokerPlayer.getTable().isRebuyDone(pokerPlayer);
+        return !player.getTable().isRebuyDone(player);
     }
 
     /**
@@ -1076,7 +1076,7 @@ public class PokerGame extends Game implements PlayerActionListener {
      * showdown.
      */
     private int getSecondsPerHandAction() {
-        int nHandsPerHour = PokerUtils.getIntOption(PokerConstants.OPTION_HANDS_PER_HOUR);
+        int nHandsPerHour = PokerUtils.getIntOption(PokerClientConstants.OPTION_HANDS_PER_HOUR);
         int nSecondsPerHand = 3600 / nHandsPerHour;
         return nSecondsPerHand / 5;
     }
@@ -1375,7 +1375,7 @@ public class PokerGame extends Game implements PlayerActionListener {
             idx = DiceRoller.rollDieInt(players.size()) - 1;
 
             // testing with two players and more than 10 players - keep at diff tables
-            if (TESTING(PokerConstants.TESTING_SPLIT_HUMANS) && ((getNumPlayers() > 10 && getNumHumans() == 2)
+            if (TESTING(PokerClientConstants.TESTING_SPLIT_HUMANS) && ((getNumPlayers() > 10 && getNumHumans() == 2)
                     || (getNumPlayers() > 20 && getNumHumans() == 3))) {
                 if (getNumTables() == 0 && table.getNumOccupiedSeats() == 0) {
                     logger.debug("TESTING: placing host at table 1");
@@ -1620,7 +1620,7 @@ public class PokerGame extends Game implements PlayerActionListener {
 
                 // if in showdown, pot has already been allocated to players
                 // and this would result in extra chips
-                if (hhand.getRound() == BettingRound.SHOWDOWN)
+                if (hhand.getRound() == ClientBettingRound.SHOWDOWN)
                     continue;
 
                 nChips += hhand.getTotalPotChipCount();
@@ -1708,7 +1708,7 @@ public class PokerGame extends Game implements PlayerActionListener {
      */
     public boolean isAcceptingRegistrations() {
         // we must have a host
-        ClientPlayer p = getPokerPlayerFromID(PokerConstants.PLAYER_ID_HOST);
+        ClientPlayer p = getPokerPlayerFromID(ProtocolConstants.PLAYER_ID_HOST);
         if (p == null)
             return false;
 
@@ -1784,7 +1784,7 @@ public class PokerGame extends Game implements PlayerActionListener {
      * regexp which valiates a proper IP address
      */
     public String getConnectRegExp() {
-        return '^' + getConnectURL(PokerConstants.REGEXP_IP_ADDRESS) + '$';
+        return '^' + getConnectURL(PokerClientConstants.REGEXP_IP_ADDRESS) + '$';
     }
 
     /**
@@ -1793,13 +1793,13 @@ public class PokerGame extends Game implements PlayerActionListener {
     private String getConnectURL(String IP) {
         // SAMPLE: poker://192.111.2.101:11885/n-1/QPF-841
         StringBuilder sb = new StringBuilder();
-        sb.append(PokerConstants.URL_START);
+        sb.append(PokerClientConstants.URL_START);
         sb.append(IP);
         sb.append(":");
         sb.append(getPort());
         sb.append("/");
         sb.append(getOnlineGameID());
-        sb.append(PokerConstants.ID_PASS_DELIM);
+        sb.append(PokerClientConstants.ID_PASS_DELIM);
         sb.append(getOnlinePassword());
         return sb.toString();
     }
@@ -2013,7 +2013,7 @@ public class PokerGame extends Game implements PlayerActionListener {
             return;
         }
 
-        ClientPlayer host = getPokerPlayerFromID(PokerConstants.PLAYER_ID_HOST);
+        ClientPlayer host = getPokerPlayerFromID(ProtocolConstants.PLAYER_ID_HOST);
         String sHostKey = host.getPlayerId();
         String sCurrentKey = getPlayerId();
         if (!sHostKey.equals(sCurrentKey)) {

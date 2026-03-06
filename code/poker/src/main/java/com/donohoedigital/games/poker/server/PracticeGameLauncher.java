@@ -21,7 +21,7 @@ import com.donohoedigital.games.poker.PlayerProfileOptions;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PlayerProfile;
 import com.donohoedigital.games.poker.PokerUtils;
-import com.donohoedigital.games.poker.engine.PokerConstants;
+import com.donohoedigital.games.poker.PokerClientConstants;
 import com.donohoedigital.games.poker.protocol.dto.GameConfig;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import org.apache.logging.log4j.LogManager;
@@ -90,18 +90,18 @@ public class PracticeGameLauncher {
         String humanDisplayName = (playerProfile != null) ? playerProfile.getName() : null;
 
         // Read practice timing preferences
-        int aiDelayMs = PokerUtils.getIntOption(PokerConstants.OPTION_DELAY) * 100;
-        int handPauseMs = PokerUtils.getIntOption(PokerConstants.OPTION_AUTODEALHAND) * 100;
-        boolean pauseAllin = PokerUtils.isOptionOn(PokerConstants.OPTION_PAUSE_ALLIN);
+        int aiDelayMs = PokerUtils.getIntOption(PokerClientConstants.OPTION_DELAY) * 100;
+        int handPauseMs = PokerUtils.getIntOption(PokerClientConstants.OPTION_AUTODEALHAND) * 100;
+        boolean pauseAllin = PokerUtils.isOptionOn(PokerClientConstants.OPTION_PAUSE_ALLIN);
         // When pauseAllin is enabled, use the interactive callback (human clicks
         // Continue before each card reveal) rather than a fixed sleep. Pass
         // allInPauseMs=0 so the timed-sleep fallback is suppressed.
-        boolean zipModeEnabled = PokerUtils.isOptionOn(PokerConstants.OPTION_ZIP_MODE);
+        boolean zipModeEnabled = PokerUtils.isOptionOn(PokerClientConstants.OPTION_ZIP_MODE);
         // Always send AI hole cards so both "Computer Cards Face Up" and "Peek at
         // Opponents Cards" cheats work. Whether to display them face-up or face-down
         // is decided client-side at render time by DealDisplay / CardPiece.
         boolean aiFaceUp = true;
-        boolean autoDealEnabled = PokerUtils.isOptionOn(PokerConstants.OPTION_AUTODEAL);
+        boolean autoDealEnabled = PokerUtils.isOptionOn(PokerClientConstants.OPTION_AUTODEAL);
         GameConfig.PracticeConfig practiceConfig = new GameConfig.PracticeConfig(aiDelayMs, handPauseMs, 0,
                 zipModeEnabled, aiFaceUp, pauseAllin, autoDealEnabled ? null : false);
 

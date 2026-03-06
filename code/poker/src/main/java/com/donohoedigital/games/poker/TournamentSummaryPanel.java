@@ -33,12 +33,12 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
+import com.donohoedigital.games.poker.engine.TournamentProfileHtml;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.gui.*;
 
@@ -296,9 +296,9 @@ public class TournamentSummaryPanel extends DDPanel {
             int nHouseAmount = profile_.getHouseAmount();
             int nType = profile_.getHouseCutType();
 
-            if (nType == PokerConstants.HOUSE_PERC && nHousePercent > 0) {
+            if (nType == PokerClientConstants.HOUSE_PERC && nHousePercent > 0) {
                 sHouse = PropertyConfig.getMessage("msg.house.percent", nHousePercent);
-            } else if (nType == PokerConstants.HOUSE_AMOUNT && nHouseAmount > 0) {
+            } else if (nType == PokerClientConstants.HOUSE_AMOUNT && nHouseAmount > 0) {
                 sHouse = PropertyConfig.getMessage("msg.house.amount", nHouseAmount);
             } else {
                 sHouse = PropertyConfig.getMessage("msg.house.none");

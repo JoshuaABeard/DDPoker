@@ -37,13 +37,13 @@
  */
 
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
 
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
@@ -174,7 +174,7 @@ public class PokerUtils extends EngineUtils {
         // seat offset hasn't been resolved yet. Fall back to a linear scan comparing
         // each player's computed display seat to the territory's display seat.
         if (table.isRemoteTable()) {
-            for (int i = 0; i < PokerConstants.SEATS; i++) {
+            for (int i = 0; i < ProtocolConstants.SEATS; i++) {
                 ClientPlayer candidate = table.getPlayer(i);
                 if (candidate != null && table.getDisplaySeat(i) == nDisplaySeat)
                     return candidate;
@@ -195,7 +195,7 @@ public class PokerUtils extends EngineUtils {
 
         // init seat territories to seat num
         Territory t;
-        for (int i = 0; i < PokerConstants.SEATS; i++) {
+        for (int i = 0; i < ProtocolConstants.SEATS; i++) {
             t = getTerritoryForDisplaySeat(i);
             t.setUserInt(i);
         }
@@ -292,7 +292,7 @@ public class PokerUtils extends EngineUtils {
 
         GameEngine engine = GameEngine.getGameEngine();
         boolean bFoldCheck = context.getGame() != null && !context.getGame().isOnlineGame()
-                && isOptionOn(PokerConstants.OPTION_CHECKFOLD);
+                && isOptionOn(PokerClientConstants.OPTION_CHECKFOLD);
         if (bFoldCheck) {
             bFold_ = true;
         }
@@ -309,7 +309,7 @@ public class PokerUtils extends EngineUtils {
      * clear cards from all territories
      */
     public static void clearCards(boolean repaint) {
-        clearPiece(PokerConstants.PIECE_CARD, repaint);
+        clearPiece(PokerClientConstants.PIECE_CARD, repaint);
     }
 
     /**
@@ -322,7 +322,7 @@ public class PokerUtils extends EngineUtils {
         ResultsPiece piece;
         Territory[] ts = Territory.getTerritoryArrayCached();
         for (Territory t : ts) {
-            piece = (ResultsPiece) t.getGamePiece(PokerConstants.PIECE_RESULTS, null);
+            piece = (ResultsPiece) t.getGamePiece(PokerClientConstants.PIECE_RESULTS, null);
             if (piece != null) {
                 // online game - always need to check disconnected status
                 p = getPokerPlayer(context, t);
@@ -358,7 +358,7 @@ public class PokerUtils extends EngineUtils {
         boolean changed = false;
 
         Territory t = getTerritoryForTableSeat(table, p.getSeat());
-        ResultsPiece piece = (ResultsPiece) t.getGamePiece(PokerConstants.PIECE_RESULTS, null);
+        ResultsPiece piece = (ResultsPiece) t.getGamePiece(PokerClientConstants.PIECE_RESULTS, null);
         if (piece != null) {
             if (!p.isComputer() && (p.isDisconnected() || p.isSittingOut())) {
                 piece.setResult(ResultsPiece.INFO,
@@ -407,7 +407,7 @@ public class PokerUtils extends EngineUtils {
         CardPiece card;
 
         synchronized (t.getMap()) {
-            cards = EngineUtils.getMatchingPieces(t, PokerConstants.PIECE_CARD);
+            cards = EngineUtils.getMatchingPieces(t, PokerClientConstants.PIECE_CARD);
             for (GamePiece piece : cards) {
                 card = (CardPiece) piece;
                 if (card.isUp() != bUp) {
@@ -423,7 +423,7 @@ public class PokerUtils extends EngineUtils {
     public static void showComputerBuys(GameContext context, PokerGame game, List<ClientPlayer> who, String sType) {
         if (who == null || who.isEmpty())
             return;
-        if (TESTING(PokerConstants.TESTING_AUTOPILOT_INIT))
+        if (TESTING(PokerClientConstants.TESTING_AUTOPILOT_INIT))
             return;
         Collections.sort(who, ClientPlayer.SORTBYNAME); // sort by name
         StringBuilder sb = new StringBuilder();
@@ -575,8 +575,10 @@ public class PokerUtils extends EngineUtils {
 
         return PropertyConfig.getMessage(
                 nHours > 0 ? "msg.time.hour" : (nMinutes > 0) ? "msg.time.min" : "msg.time.sec", nHours,
-                (nHours > 0 ? PokerConstants.fTimeNum2.form(nMinutes) : PokerConstants.fTimeNum1.form(nMinutes)),
-                PokerConstants.fTimeNum2.form(nSecs));
+                (nHours > 0
+                        ? PokerClientConstants.fTimeNum2.form(nMinutes)
+                        : PokerClientConstants.fTimeNum1.form(nMinutes)),
+                PokerClientConstants.fTimeNum2.form(nSecs));
     }
 
     /**
@@ -657,7 +659,7 @@ public class PokerUtils extends EngineUtils {
         // check if online game, if so no cheat options
         if (context != null) {
             PokerGame game = (PokerGame) context.getGame();
-            if (game != null && game.isOnlineGame() && !TESTING(PokerConstants.TESTING_ALLOW_CHEAT_ONLINE))
+            if (game != null && game.isOnlineGame() && !TESTING(PokerClientConstants.TESTING_ALLOW_CHEAT_ONLINE))
                 return false;
         }
 
@@ -754,8 +756,8 @@ public class PokerUtils extends EngineUtils {
         }
 
         // get scale to max from prefs
-        int maxWidth = PokerUtils.getIntOption(PokerConstants.OPTION_SCREENSHOT_MAX_WIDTH);
-        int maxHeight = PokerUtils.getIntOption(PokerConstants.OPTION_SCREENSHOT_MAX_HEIGHT);
+        int maxWidth = PokerUtils.getIntOption(PokerClientConstants.OPTION_SCREENSHOT_MAX_WIDTH);
+        int maxHeight = PokerUtils.getIntOption(PokerClientConstants.OPTION_SCREENSHOT_MAX_HEIGHT);
         BufferedImage image = GuiUtils.printToImage(context.getRootComponent(), maxWidth, maxHeight);
         AudioConfig.playFX("camera");
 

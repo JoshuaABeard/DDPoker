@@ -31,9 +31,9 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.display.ClientCard;
 
 import com.donohoedigital.gui.*;
-import com.donohoedigital.games.poker.engine.*;
 
 import java.awt.*;
 
@@ -44,7 +44,7 @@ import java.awt.*;
 public class CardPanel extends DDPanel {
     protected CardPiece cp_;
 
-    public CardPanel(Card c, boolean bThumb) {
+    public CardPanel(ClientCard c, boolean bThumb) {
         cp_ = new CardPiece(null, null, null, true, 0);
         cp_.setCard(c);
         cp_.setShadow(false);

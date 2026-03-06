@@ -32,12 +32,11 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.display.ClientHand;
+import com.donohoedigital.games.poker.display.ClientCard;
 
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.engine.GameEngine;
-import com.donohoedigital.games.poker.engine.Card;
-import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.protocol.dto.SimulationResult;
 import com.donohoedigital.games.poker.server.GameServerRestClient;
 import com.donohoedigital.gui.*;
@@ -55,7 +54,7 @@ import java.util.Map;
 public class PokerSimulatorPanel extends DDTabPanel implements DDProgressFeedback {
     static Logger logger = LogManager.getLogger(PokerSimulatorPanel.class);
 
-    // Hand type display order: best to worst, matching server HAND_TYPE_NAMES
+    // ClientHand type display order: best to worst, matching server HAND_TYPE_NAMES
     private static final String[] HAND_TYPE_ORDER = {"ROYAL_FLUSH", "STRAIGHT_FLUSH", "FOUR_OF_A_KIND", "FULL_HOUSE",
             "FLUSH", "STRAIGHT", "TRIPS", "TWO_PAIR", "ONE_PAIR", "HIGH_CARD"};
 
@@ -65,8 +64,8 @@ public class PokerSimulatorPanel extends DDTabPanel implements DDProgressFeedbac
             "STRAIGHT", "Straight", "TRIPS", "Three of a Kind", "TWO_PAIR", "Two Pair", "ONE_PAIR", "One Pair",
             "HIGH_CARD", "High Card");
 
-    private Hand pocket_;
-    private Hand community_;
+    private ClientHand pocket_;
+    private ClientHand community_;
 
     private DDScrollPane scroll_;
     private DDHtmlArea htmlArea_;
@@ -147,11 +146,11 @@ public class PokerSimulatorPanel extends DDTabPanel implements DDProgressFeedbac
      * header
      */
     private void updateHeader() {
-        Hand pocket = new Hand(pocket_);
+        ClientHand pocket = ClientHand.fromCards(pocket_.getCards());
         while (pocket.size() < 2)
-            pocket.addCard(Card.BLANK);
+            pocket.addCard(ClientCard.BLANK);
 
-        Hand community = new Hand(community_);
+        ClientHand community = ClientHand.fromCards(community_.getCards());
         int nNumComm = community.size();
         String sKey;
         if (nNumComm < 3) {
@@ -160,7 +159,7 @@ public class PokerSimulatorPanel extends DDTabPanel implements DDProgressFeedbac
             sKey = nNumComm == 5 ? "msg.sim.header.show" : "msg.sim.header.post";
         }
         while (community.size() < 5)
-            community.addCard(Card.BLANK);
+            community.addCard(ClientCard.BLANK);
         nNumComm = community.size();
         header_.setText(PropertyConfig.getMessage(sKey, pocket.toHTML(), community.toHTML(), (2 + nNumComm) * 23 + 5));
     }
@@ -201,7 +200,7 @@ public class PokerSimulatorPanel extends DDTabPanel implements DDProgressFeedbac
     /**
      * update thread with given pocket/community
      */
-    public void updateStats(Hand pocket, Hand community) {
+    public void updateStats(ClientHand pocket, ClientHand community) {
         // same hand, skip update
         if (pocket_ != null && pocket.fingerprint() == pocket_.fingerprint() && community_ != null
                 && community.fingerprint() == community_.fingerprint()) {
@@ -277,7 +276,7 @@ public class PokerSimulatorPanel extends DDTabPanel implements DDProgressFeedbac
         public void run() {
             List<String> holeCards = new ArrayList<>();
             for (int i = 0; i < pocket_.size(); i++) {
-                Card c = pocket_.getCard(i);
+                ClientCard c = pocket_.getCard(i);
                 if (!c.isBlank())
                     holeCards.add(c.toStringSingle());
             }
@@ -285,7 +284,7 @@ public class PokerSimulatorPanel extends DDTabPanel implements DDProgressFeedbac
             List<String> communityCards = new ArrayList<>();
             if (community_ != null) {
                 for (int i = 0; i < community_.size(); i++) {
-                    Card c = community_.getCard(i);
+                    ClientCard c = community_.getCard(i);
                     if (!c.isBlank())
                         communityCards.add(c.toStringSingle());
                 }
@@ -313,12 +312,12 @@ public class PokerSimulatorPanel extends DDTabPanel implements DDProgressFeedbac
             // Win/tie/loss summary
             sb.append(PropertyConfig.getMessage("msg.simresult.header"));
             sb.append(PropertyConfig.getMessage("msg.simresult.row", PropertyConfig.getMessage("msg.sim.random"),
-                    pocket_.toStringRankSuit(), PokerConstants.formatPercent(result.win()),
-                    PokerConstants.formatPercent(result.loss()), PokerConstants.formatPercent(result.tie()),
+                    pocket_.toStringRankSuit(), PokerClientConstants.formatPercent(result.win()),
+                    PokerClientConstants.formatPercent(result.loss()), PokerClientConstants.formatPercent(result.tie()),
                     result.iterations()));
             sb.append(PropertyConfig.getMessage("msg.simresult.footer"));
 
-            // Hand type distribution
+            // ClientHand type distribution
             Map<String, Double> breakdown = result.playerHandTypeBreakdown();
             if (breakdown != null && !breakdown.isEmpty()) {
                 sb.append(PropertyConfig.getMessage("msg.simresult.handtype.header"));
@@ -327,7 +326,7 @@ public class PokerSimulatorPanel extends DDTabPanel implements DDProgressFeedbac
                     if (pct != null && pct > 0) {
                         String label = HAND_TYPE_LABELS.getOrDefault(key, key);
                         sb.append(PropertyConfig.getMessage("msg.simresult.handtype.row", label,
-                                PokerConstants.formatPercent(pct)));
+                                PokerClientConstants.formatPercent(pct)));
                     }
                 }
                 sb.append(PropertyConfig.getMessage("msg.simresult.handtype.footer"));

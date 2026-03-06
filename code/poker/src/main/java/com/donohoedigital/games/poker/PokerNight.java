@@ -43,7 +43,6 @@ import com.donohoedigital.config.AudioConfig;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.engine.BasePhase;
 import com.donohoedigital.games.engine.DisplayMessage;
-import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -143,7 +142,8 @@ public class PokerNight extends BasePhase implements GameClockListener {
                 int nMinBefore = game_.getMinChip();
                 game_.nextLevel();
 
-                if (PokerUtils.isOptionOn(PokerConstants.OPTION_CLOCK_COLOUP) && game_.getMinChip() > nMinBefore) {
+                if (PokerUtils.isOptionOn(PokerClientConstants.OPTION_CLOCK_COLOUP)
+                        && game_.getMinChip() > nMinBefore) {
                     sChipRace = PropertyConfig.getMessage("msg.finish.color", game_.getLastMinChip(),
                             game_.getMinChip());
                     if (bRebuy || bAddon)
@@ -177,7 +177,7 @@ public class PokerNight extends BasePhase implements GameClockListener {
                         }
                     });
                 } else {
-                    if (PokerUtils.isOptionOn(PokerConstants.OPTION_CLOCK_PAUSE)) {
+                    if (PokerUtils.isOptionOn(PokerClientConstants.OPTION_CLOCK_PAUSE)) {
                         stopClock();
                     } else {
                         startClock();

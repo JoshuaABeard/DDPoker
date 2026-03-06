@@ -31,13 +31,13 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.ai.gui;
+import com.donohoedigital.games.poker.PokerClientConstants;
 
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.ai.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
@@ -265,7 +265,7 @@ public class HandSelectionDialog extends OptionMenuDialog
         }
 
         groupsSummary_.setText(PropertyConfig.getMessage("msg.startinghands.summary", totalClassCount,
-                PokerConstants.formatPercent(totalHandCount / 13.26)));
+                PokerClientConstants.formatPercent(totalHandCount / 13.26)));
     }
 
     public void propertyChange(PropertyChangeEvent evt) {
@@ -388,7 +388,7 @@ public class HandSelectionDialog extends OptionMenuDialog
 
                 stats_.setText(
                         PropertyConfig.getMessage("msg.handgroup.summary." + (classCount == 1 ? "singular" : "plural"),
-                                classCount, PokerConstants.formatPercent(((HandGroup) item_).getPercent())));
+                                classCount, PokerClientConstants.formatPercent(((HandGroup) item_).getPercent())));
 
                 int strength = ((HandGroup) item_).getStrength();
 

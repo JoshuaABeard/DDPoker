@@ -31,6 +31,9 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.ai;
+import com.donohoedigital.games.poker.display.ClientHand;
+import com.donohoedigital.games.poker.display.ClientCard;
+import com.donohoedigital.games.poker.engine.PokerSaveDetails;
 
 import com.donohoedigital.base.ApplicationError;
 import com.donohoedigital.base.Utils;
@@ -41,10 +44,7 @@ import com.donohoedigital.games.config.SaveFile;
 import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.poker.PlayerProfile;
 import com.donohoedigital.games.poker.PlayerProfileOptions;
-import com.donohoedigital.games.poker.engine.Card;
-import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.engine.PokerConstants;
-import com.donohoedigital.games.poker.engine.PokerSaveDetails;
+import com.donohoedigital.games.poker.PokerClientConstants;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -372,7 +372,8 @@ public class PlayerType extends BaseProfile {
     }
 
     public static PlayerType setAdvisor(PlayerType profile) {
-        GameEngine.getGameEngine().getPrefsNode().put(PokerConstants.OPTION_DEFAULT_ADVISOR, profile.getUniqueKey());
+        GameEngine.getGameEngine().getPrefsNode().put(PokerClientConstants.OPTION_DEFAULT_ADVISOR,
+                profile.getUniqueKey());
 
         File advisorFile = getAdvisorFile();
 
@@ -392,7 +393,7 @@ public class PlayerType extends BaseProfile {
     }
 
     public static String getAdvisorKey() {
-        return GameEngine.getGameEngine().getPrefsNode().getString(PokerConstants.OPTION_DEFAULT_ADVISOR, null);
+        return GameEngine.getGameEngine().getPrefsNode().getString(PokerClientConstants.OPTION_DEFAULT_ADVISOR, null);
     }
 
     public static PlayerType getAdvisor() {
@@ -449,11 +450,11 @@ public class PlayerType extends BaseProfile {
         return map_.getBoolean("default", false);
     }
 
-    public float getStratFactor(String name, Hand hand, float min, float max, int mod) {
+    public float getStratFactor(String name, ClientHand hand, float min, float max, int mod) {
         return getStratFactor(name, hand, min, max, 50, mod);
     }
 
-    public float getStratFactor(String name, Hand hand, float min, float max, int defval, int mod) {
+    public float getStratFactor(String name, ClientHand hand, float min, float max, int defval, int mod) {
         float value = min
                 + (max - min) / 100.0f * Math.min(Math.max((float) getStratValue(name, hand, defval) + mod, 0f), 100f);
 
@@ -471,11 +472,11 @@ public class PlayerType extends BaseProfile {
         return min + (max - min) / 100.0f * (float) getStratValue(name, defval);
     }
 
-    public int getStratValue(String name, Hand hand) {
+    public int getStratValue(String name, ClientHand hand) {
         return getStratValue(name, hand, 50);
     }
 
-    public int getStratValue(String name, Hand hand, int defval) {
+    public int getStratValue(String name, ClientHand hand, int defval) {
         if (hand == null)
             return getStratValue(name, defval);
 
@@ -498,14 +499,14 @@ public class PlayerType extends BaseProfile {
                     key = "unsuited_high_cards";
                 }
             } else {
-                if (hand.getHighestRank() == Card.ACE) {
+                if (hand.getHighestRank() == ClientCard.ACE) {
                     if (hand.isSuited()) {
                         key = "suited_ace";
                     } else {
                         key = "unsuited_ace";
                     }
                 } else {
-                    if (hand.isConnectors(Card.TWO, Card.TEN)) {
+                    if (hand.isConnectors(ClientCard.TWO, ClientCard.TEN)) {
                         if (hand.isSuited()) {
                             key = "suited_connectors";
                         } else {

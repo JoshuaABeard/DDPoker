@@ -39,7 +39,6 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.gui.*;
-import com.donohoedigital.games.poker.engine.*;
 
 import java.awt.*;
 import java.awt.geom.*;
@@ -58,7 +57,7 @@ public class ButtonPiece extends PokerGamePiece {
      * Creates a new instance of ButtonPiece
      */
     public ButtonPiece() {
-        super(PokerConstants.PIECE_BUTTON, null, "button", "button");
+        super(PokerClientConstants.PIECE_BUTTON, null, "button", "button");
     }
 
     /**

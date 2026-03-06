@@ -38,10 +38,10 @@
 
 package com.donohoedigital.games.poker;
 
+import com.donohoedigital.games.poker.display.ClientCard;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
@@ -189,7 +189,7 @@ public class DeckProfilePanel extends DDPanel implements ChangeListener {
         public CardPreview() {
             super(null, null, null, true, 0);
             setShadow(false);
-            setCard(Card.SPADES_A);
+            setCard(ClientCard.SPADES_A);
         }
 
         public boolean drawCardUp() {

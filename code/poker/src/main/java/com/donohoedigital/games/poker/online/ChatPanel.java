@@ -37,13 +37,13 @@
  */
 
 package com.donohoedigital.games.poker.online;
+import com.donohoedigital.games.poker.PokerClientConstants;
 
 import com.donohoedigital.base.*;
 import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
@@ -201,7 +201,8 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
             }
         });
 
-        if (bAllowSend || TESTING(PokerConstants.TESTING_CHAT_PERF) || TESTING(EngineConstants.TESTING_PERFORMANCE)) {
+        if (bAllowSend || TESTING(PokerClientConstants.TESTING_CHAT_PERF)
+                || TESTING(EngineConstants.TESTING_PERFORMANCE)) {
             bottomControls_ = new DDPanel();
             bottomControls_.setBorderLayoutGap(0, 5);
             bottomControls_.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, DDScrollBar.SB_SIZE + 2));
@@ -263,7 +264,7 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
 
             buttonbase.add(clear);
 
-            if (TESTING(PokerConstants.TESTING_CHAT_PERF) || TESTING(EngineConstants.TESTING_PERFORMANCE)) {
+            if (TESTING(PokerClientConstants.TESTING_CHAT_PERF) || TESTING(EngineConstants.TESTING_PERFORMANCE)) {
                 startTest_ = new GlassButton(GuiManager.DEFAULT, "Glass");
                 startTest_.setText("Start");
                 buttonbase.add(startTest_);
@@ -329,7 +330,7 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
      * create display based on user choice
      */
     private void createDisplay(boolean bRepaint) {
-        int nOpt = PokerUtils.getIntPref(PokerConstants.OPTION_CHAT_DISPLAY, PokerConstants.DISPLAY_SPLIT);
+        int nOpt = PokerUtils.getIntPref(PokerClientConstants.OPTION_CHAT_DISPLAY, PokerClientConstants.DISPLAY_SPLIT);
         if (nDisplayOpt_ == nOpt || (!bOnlineInGame_ && center_ != null)) {
             return;
         }
@@ -340,11 +341,11 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
             remove(center_);
 
         // split
-        if (bOnlineInGame_ && nOpt == PokerConstants.DISPLAY_SPLIT) {
+        if (bOnlineInGame_ && nOpt == PokerClientConstants.DISPLAY_SPLIT) {
             center_ = new DDSplitPane(GuiManager.DEFAULT, STYLE, SwingConstants.VERTICAL, chatList_[1], chatList_[0]);
         }
         // tabs
-        else if (bOnlineInGame_ && nOpt == PokerConstants.DISPLAY_TAB) {
+        else if (bOnlineInGame_ && nOpt == PokerClientConstants.DISPLAY_TAB) {
             center_ = tab_ = new DDTabbedPane(STYLE, BEVEL_STYLE, DDTabbedPane.LEFT);
             tab_.setOpaque(false);
             tab_.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
@@ -444,7 +445,7 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
         if (mgr_ != null && game_.getCurrentTable() != null)
             mgr_.sendChat(sMsg, game_.getCurrentTable(), null);
 
-        displayMessage(local_.getID(), PokerConstants.CHAT_ALWAYS, sMsg, true);
+        displayMessage(local_.getID(), PokerClientConstants.CHAT_ALWAYS, sMsg, true);
     }
 
     /**
@@ -479,7 +480,7 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
         if (mgr_ != null)
             mgr_.sendChat(nToID, sMsg);
 
-        displayMessage(local_.getID(), PokerConstants.CHAT_PRIVATE, sMsg, true);
+        displayMessage(local_.getID(), PokerClientConstants.CHAT_PRIVATE, sMsg, true);
     }
 
     /**
@@ -524,34 +525,35 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
         String sKey;
         ChatListPanel list = chatList_[0];
 
-        if (nFrom == PokerConstants.CHAT_DIRECTOR_MSG_ID || sMsg.startsWith("tahoezorro")) {
+        if (nFrom == PokerClientConstants.CHAT_DIRECTOR_MSG_ID || sMsg.startsWith("tahoezorro")) {
             chatColor = cDirector_;
             bgColor = cDirectorBG_;
             sKey = "msg.chat.director";
-        } else if (nFrom == PokerConstants.CHAT_DEALER_MSG_ID || sMsg.startsWith("lemongulch")) {
+        } else if (nFrom == PokerClientConstants.CHAT_DEALER_MSG_ID || sMsg.startsWith("lemongulch")) {
             chatColor = cDealer_;
             bgColor = cDealerBG_;
             sKey = "msg.chat.dealer";
             boolean bSkip = false;
-            int nOpt = PokerUtils.getIntPref(PokerConstants.OPTION_CHAT_DEALER, PokerConstants.DEALER_ALL);
+            int nOpt = PokerUtils.getIntPref(PokerClientConstants.OPTION_CHAT_DEALER, PokerClientConstants.DEALER_ALL);
             switch (nType) {
-                case PokerConstants.CHAT_ALWAYS :
+                case PokerClientConstants.CHAT_ALWAYS :
                     break;
 
-                case PokerConstants.CHAT_1 :
-                    if (nOpt == PokerConstants.DEALER_NONE) {
+                case PokerClientConstants.CHAT_1 :
+                    if (nOpt == PokerClientConstants.DEALER_NONE) {
                         bSkip = true;
                     }
                     break;
 
-                case PokerConstants.CHAT_2 :
-                    if (nOpt == PokerConstants.DEALER_NONE || nOpt == PokerConstants.DEALER_NO_PLAYER_ACTION) {
+                case PokerClientConstants.CHAT_2 :
+                    if (nOpt == PokerClientConstants.DEALER_NONE
+                            || nOpt == PokerClientConstants.DEALER_NO_PLAYER_ACTION) {
                         bSkip = true;
                     }
                     break;
 
-                case PokerConstants.CHAT_TIMEOUT :
-                    if (!PokerUtils.isOptionOn(PokerConstants.OPTION_CHAT_TIMEOUT)) {
+                case PokerClientConstants.CHAT_TIMEOUT :
+                    if (!PokerUtils.isOptionOn(PokerClientConstants.OPTION_CHAT_TIMEOUT)) {
                         bSkip = true;
                     }
                     break;
@@ -567,14 +569,14 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
             }
 
             // chat - check user prefs
-            if (!bLocal && nType != PokerConstants.CHAT_PRIVATE) {
+            if (!bLocal && nType != PokerClientConstants.CHAT_PRIVATE) {
                 // observers muted?
                 if (player.isObserver()) {
-                    if (!PokerUtils.isOptionOn(PokerConstants.OPTION_CHAT_OBSERVERS))
+                    if (!PokerUtils.isOptionOn(PokerClientConstants.OPTION_CHAT_OBSERVERS))
                         return;
                 }
                 // players muted?
-                else if (!PokerUtils.isOptionOn(PokerConstants.OPTION_CHAT_PLAYERS))
+                else if (!PokerUtils.isOptionOn(PokerClientConstants.OPTION_CHAT_PLAYERS))
                     return;
 
                 // muted specifically?
@@ -588,19 +590,20 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
                 chatColor = cDDPoker_;
             }
 
-            if (nType == PokerConstants.CHAT_PRIVATE) {
+            if (nType == PokerClientConstants.CHAT_PRIVATE) {
                 sKey = player.isHost() ? "msg.chat.reply" : "msg.chat.private";
             } else {
                 sKey = player.isObserver() ? "msg.chat.obs" : "msg.chat";
             }
 
-            if (bOnlineInGame_ && nDisplayOpt_ != PokerConstants.DISPLAY_ONE)
+            if (bOnlineInGame_ && nDisplayOpt_ != PokerClientConstants.DISPLAY_ONE)
                 list = chatList_[1];
         }
 
         String sChat = PropertyConfig.getMessage(sKey, chatColor, sName, sMsg, bgColor);
 
-        displayMessage(list, sChat, (!bLocal && nType == PokerConstants.CHAT_PRIVATE && local_.isHost()) ? nFrom : -1);
+        displayMessage(list, sChat,
+                (!bLocal && nType == PokerClientConstants.CHAT_PRIVATE && local_.isHost()) ? nFrom : -1);
     }
 
     protected void displayMessage(ChatListPanel list, String sChat, int nReplyTo) {
@@ -767,7 +770,7 @@ public class ChatPanel extends DDPanel implements PropertyChangeListener, ChatHa
     private class DisplayTest implements Runnable {
         String sMsg;
         public void run() {
-            displayMessage(local_ == null ? 0 : local_.getID(), PokerConstants.CHAT_ALWAYS, sMsg, true);
+            displayMessage(local_ == null ? 0 : local_.getID(), PokerClientConstants.CHAT_ALWAYS, sMsg, true);
         }
     }
 }

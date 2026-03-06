@@ -44,14 +44,14 @@ import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.games.poker.dashboard.*;
-import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 
 /**
  *
@@ -108,7 +108,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
         game_.setPlayerActionListener(this);
 
         // debugging
-        if (TESTING(PokerConstants.TESTING_PAUSE_AI) || TESTING(PokerConstants.TESTING_FAST_SAVE)) {
+        if (TESTING(PokerClientConstants.TESTING_PAUSE_AI) || TESTING(PokerClientConstants.TESTING_FAST_SAVE)) {
             setupDebugger(this);
         }
 
@@ -116,8 +116,8 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
         // the hand is saved before any AI decisions take place. Also
         // allows saving via 'S' key at any time without having to go
         // into save menu
-        if (TESTING(PokerConstants.TESTING_FAST_SAVE)) {
-            if (hhand_.getRound() == BettingRound.PRE_FLOP) {
+        if (TESTING(PokerClientConstants.TESTING_FAST_SAVE)) {
+            if (hhand_.getRound() == ClientBettingRound.PRE_FLOP) {
                 if (!((PokerContext) context_).isFastSaveTest()) {
                     fastSave();
                     ((PokerContext) context_).setFastSaveTest(true);
@@ -154,12 +154,13 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
             }
 
             // online games - play sound if option is on
-            if (game_.isOnlineGame() && PokerUtils.isOptionOn(PokerConstants.OPTION_ONLINE_AUDIO)) {
+            if (game_.isOnlineGame() && PokerUtils.isOptionOn(PokerClientConstants.OPTION_ONLINE_AUDIO)) {
                 AudioConfig.playFX("onlineact");
             }
 
             // online games - move window to front if option is on
-            if (Utils.ISWINDOWS && game_.isOnlineGame() && PokerUtils.isOptionOn(PokerConstants.OPTION_ONLINE_FRONT)) {
+            if (Utils.ISWINDOWS && game_.isOnlineGame()
+                    && PokerUtils.isOptionOn(PokerClientConstants.OPTION_ONLINE_FRONT)) {
                 BaseFrame frame = context_.getFrame();
                 if (!frame.isFullScreen()) {
                     if (frame.isMinimized()) {
@@ -205,22 +206,23 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
 
             // if the fold key was pressed, zip along
             if (PokerUtils.isFoldKey() && !table_.isZipMode()) {
-                boolean bZip = PokerUtils.isOptionOn(PokerConstants.OPTION_ZIP_MODE);
-                if (bZip && !TESTING(PokerConstants.TESTING_DOUG_CONTROLS_AI) && !game_.isOnlineGame()) {
+                boolean bZip = PokerUtils.isOptionOn(PokerClientConstants.OPTION_ZIP_MODE);
+                if (bZip && !TESTING(PokerClientConstants.TESTING_DOUG_CONTROLS_AI) && !game_.isOnlineGame()) {
                     bSetZipModeAtEnd_ = true;
                 }
             }
 
             // do ai
-            if (!TESTING(PokerConstants.TESTING_PAUSE_AI) || table_.isZipMode()) {
+            if (!TESTING(PokerClientConstants.TESTING_PAUSE_AI) || table_.isZipMode()) {
                 int nWaitTenths = game_.isOnlineGame()
-                        ? (TESTING(PokerConstants.TESTING_ONLINE_AI_NO_WAIT) ? 0 : 10)
-                        : PokerUtils.getIntOption(PokerConstants.OPTION_DELAY);
+                        ? (TESTING(PokerClientConstants.TESTING_ONLINE_AI_NO_WAIT) ? 0 : 10)
+                        : PokerUtils.getIntOption(PokerClientConstants.OPTION_DELAY);
 
                 // encore idea - have ai pause to increase drama after human has bet - to
                 // make it appear like ai is "thinking" ... even if no delay is set
                 // Future: off for now - need to think more about this, maybe make an option
-                if (false && !table_.isZipMode() && !game_.isOnlineGame() && hhand_.getRound() == BettingRound.RIVER) {
+                if (false && !table_.isZipMode() && !game_.isOnlineGame()
+                        && hhand_.getRound() == ClientBettingRound.RIVER) {
                     ClientPlayer human = game_.getHumanPlayer();
                     int action = hhand_.getLastActionThisRound(human);
                     if (action == HandAction.ACTION_BET || action == HandAction.ACTION_RAISE) {
@@ -363,7 +365,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
 
         // cleanup listeners
         game_.setPlayerActionListener(null);
-        if (TESTING(PokerConstants.TESTING_PAUSE_AI) || TESTING(PokerConstants.TESTING_FAST_SAVE)) {
+        if (TESTING(PokerClientConstants.TESTING_PAUSE_AI) || TESTING(PokerClientConstants.TESTING_FAST_SAVE)) {
             setupDebugger(null);
         }
 
@@ -392,8 +394,9 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
      * do zip processing when human folds
      */
     private void foldHumanCheck() {
-        boolean bZip = PokerUtils.isOptionOn(PokerConstants.OPTION_ZIP_MODE);
-        if (player_.isHuman() && bZip && !TESTING(PokerConstants.TESTING_DOUG_CONTROLS_AI) && !game_.isOnlineGame()) {
+        boolean bZip = PokerUtils.isOptionOn(PokerClientConstants.OPTION_ZIP_MODE);
+        if (player_.isHuman() && bZip && !TESTING(PokerClientConstants.TESTING_DOUG_CONTROLS_AI)
+                && !game_.isOnlineGame()) {
             bSetZipModeAtEnd_ = true;
         }
     }
@@ -510,7 +513,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
 
                 switch (k.getKeyCode()) {
                     case KeyEvent.VK_N :
-                        if (TESTING(PokerConstants.TESTING_PAUSE_AI))
+                        if (TESTING(PokerClientConstants.TESTING_PAUSE_AI))
                             bet.doAI();
                         break;
 

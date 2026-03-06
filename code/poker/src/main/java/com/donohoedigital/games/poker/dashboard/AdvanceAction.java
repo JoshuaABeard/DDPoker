@@ -31,13 +31,13 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.dashboard;
+import com.donohoedigital.games.poker.display.ClientHand;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.engine.PokerConstants;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
@@ -48,7 +48,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Jun 20, 2005 Time: 9:18:45 PM
@@ -195,7 +195,7 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
         // init
         ClientPokerTable table = game_.getCurrentTable();
         ClientHoldemHand hhand = table.getHoldemHand();
-        Hand hand = human.getHand();
+        ClientHand hand = human.getHand();
 
         // if observer, just display message once
         if (human.isObserver()) {
@@ -232,7 +232,7 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
 
         // get basic info
         boolean bNoAction = human.isFolded() || human.isAllIn() || bHumanActing_
-                || hhand.getRound() == BettingRound.SHOWDOWN || hhand.getNumWithCards() == 1;
+                || hhand.getRound() == ClientBettingRound.SHOWDOWN || hhand.getNumWithCards() == 1;
         int nToCall = 0;
         int nBet = 0;
         int nMaxRaise = 0;
@@ -277,7 +277,7 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
         }
 
         // bet_
-        if (nGameType == PokerConstants.TYPE_LIMIT_HOLDEM) {
+        if (nGameType == ProtocolConstants.TYPE_LIMIT_HOLDEM) {
             bet_.setVisible(true);
             bet_.setEnabled(nMode == PokerTableInput.MODE_CHECK_BET && !bNoAction && !bActedThisRound);
             if (!bet_.isEnabled())
@@ -287,7 +287,7 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
         }
 
         // raise_
-        if (nGameType == PokerConstants.TYPE_LIMIT_HOLDEM) {
+        if (nGameType == ProtocolConstants.TYPE_LIMIT_HOLDEM) {
             raise_.setVisible(true);
             raise_.setEnabled(nMode != PokerTableInput.MODE_CHECK_BET && !bNoAction && nMaxRaise > 0);
             if (!raise_.isEnabled())
@@ -297,7 +297,7 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
         }
 
         // betpot_
-        if (nGameType == PokerConstants.TYPE_POT_LIMIT_HOLDEM) {
+        if (nGameType == ProtocolConstants.TYPE_POT_LIMIT_HOLDEM) {
             betpot_.setVisible(true);
             betpot_.setEnabled(nMode == PokerTableInput.MODE_CHECK_BET && !bNoAction && !bActedThisRound);
             if (!betpot_.isEnabled())
@@ -307,7 +307,7 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
         }
 
         // raisepot_
-        if (nGameType == PokerConstants.TYPE_POT_LIMIT_HOLDEM) {
+        if (nGameType == ProtocolConstants.TYPE_POT_LIMIT_HOLDEM) {
             raisepot_.setVisible(true);
             raisepot_.setEnabled(nMode != PokerTableInput.MODE_CHECK_BET && !bNoAction && nMaxRaise > 0);
             if (!raisepot_.isEnabled())
@@ -317,7 +317,7 @@ public class AdvanceAction extends DashboardItem implements ActionListener {
         }
 
         // allin_
-        if (nGameType == PokerConstants.TYPE_NO_LIMIT_HOLDEM) {
+        if (nGameType == ProtocolConstants.TYPE_NO_LIMIT_HOLDEM) {
             allin_.setVisible(true);
             allin_.setEnabled(!bNoAction);
         } else {

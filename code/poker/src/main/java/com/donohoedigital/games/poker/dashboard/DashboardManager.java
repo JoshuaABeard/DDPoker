@@ -31,12 +31,12 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.dashboard;
+import com.donohoedigital.games.poker.PokerClientConstants;
 
 import org.apache.logging.log4j.*;
 import com.donohoedigital.comms.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.base.*;
 
 import java.util.*;
@@ -56,7 +56,7 @@ public class DashboardManager {
     public DashboardManager(PokerGame game) {
         game_ = game;
         items_ = new ArrayList();
-        sPrefName_ = PokerConstants.PREF_DASHBOARD + "-";
+        sPrefName_ = PokerClientConstants.PREF_DASHBOARD + "-";
         if (game_.isOnlineGame()) {
             sPrefName_ += "online";
         } else if (game.isClockMode()) {

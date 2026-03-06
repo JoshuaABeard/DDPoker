@@ -47,7 +47,6 @@ import com.donohoedigital.games.config.EngineConstants;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.gui.HandSelectionManager;
 import com.donohoedigital.games.poker.ai.gui.PlayerTypeManager;
-import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.online.OnlineServerUrl;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.LogManager;
@@ -224,24 +223,25 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
             buttonbase.add(resetdialog);
             generalbase.add(buttonbase, BorderLayout.SOUTH);
 
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_LARGE_CARDS, OSTYLE, map_, true),
+            OptionMenu.add(new OptionBoolean(NODE, PokerClientConstants.OPTION_LARGE_CARDS, OSTYLE, map_, true),
                     generalbasetop);
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_FOUR_COLOR_DECK, OSTYLE, map_, true),
+            OptionMenu.add(new OptionBoolean(NODE, PokerClientConstants.OPTION_FOUR_COLOR_DECK, OSTYLE, map_, true),
                     generalbasetop);
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_STYLIZED_FACE_CARDS, OSTYLE, map_, true),
+            OptionMenu.add(new OptionBoolean(NODE, PokerClientConstants.OPTION_STYLIZED_FACE_CARDS, OSTYLE, map_, true),
                     generalbasetop);
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_HOLE_CARDS_DOWN, OSTYLE, map_, true),
+            OptionMenu.add(new OptionBoolean(NODE, PokerClientConstants.OPTION_HOLE_CARDS_DOWN, OSTYLE, map_, true),
                     generalbasetop);
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_CHECKFOLD, OSTYLE, map_, true),
+            OptionMenu.add(new OptionBoolean(NODE, PokerClientConstants.OPTION_CHECKFOLD, OSTYLE, map_, true),
                     generalbasetop);
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_RIGHT_CLICK_ONLY, OSTYLE, map_, true),
+            OptionMenu.add(new OptionBoolean(NODE, PokerClientConstants.OPTION_RIGHT_CLICK_ONLY, OSTYLE, map_, true),
                     generalbasetop);
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_DISABLE_SHORTCUTS, OSTYLE, map_, true),
+            OptionMenu.add(new OptionBoolean(NODE, PokerClientConstants.OPTION_DISABLE_SHORTCUTS, OSTYLE, map_, true),
                     generalbasetop);
 
             if (!false) // no auto update in the demo
             {
-                OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_AUTO_CHECK_UPDATE, OSTYLE, map_, true),
+                OptionMenu.add(
+                        new OptionBoolean(NODE, PokerClientConstants.OPTION_AUTO_CHECK_UPDATE, OSTYLE, map_, true),
                         generalbasetop);
             }
 
@@ -347,12 +347,12 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
             DDLabelBorder chatbase = new DDLabelBorder("chatoptions", OSTYLE);
             chatbase.setLayout(new GridLayout(0, 1, 0, GRIDADJUST1));
             ButtonGroup chatgroup = new ButtonGroup();
-            OptionMenu.add(new OptionRadio(NODE, PokerConstants.OPTION_CHAT_DEALER, OSTYLE, map_, "dealer.all",
-                    chatgroup, PokerConstants.DEALER_ALL), chatbase);
-            OptionMenu.add(new OptionRadio(NODE, PokerConstants.OPTION_CHAT_DEALER, OSTYLE, map_, "dealer.noaction",
-                    chatgroup, PokerConstants.DEALER_NO_PLAYER_ACTION), chatbase);
-            OptionMenu.add(new OptionRadio(NODE, PokerConstants.OPTION_CHAT_DEALER, OSTYLE, map_, "dealer.none",
-                    chatgroup, PokerConstants.DEALER_NONE), chatbase);
+            OptionMenu.add(new OptionRadio(NODE, PokerClientConstants.OPTION_CHAT_DEALER, OSTYLE, map_, "dealer.all",
+                    chatgroup, PokerClientConstants.DEALER_ALL), chatbase);
+            OptionMenu.add(new OptionRadio(NODE, PokerClientConstants.OPTION_CHAT_DEALER, OSTYLE, map_,
+                    "dealer.noaction", chatgroup, PokerClientConstants.DEALER_NO_PLAYER_ACTION), chatbase);
+            OptionMenu.add(new OptionRadio(NODE, PokerClientConstants.OPTION_CHAT_DEALER, OSTYLE, map_, "dealer.none",
+                    chatgroup, PokerClientConstants.DEALER_NONE), chatbase);
 
             DDPanel spacer = new DDPanel();
             spacer.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
@@ -368,12 +368,12 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
 
             screenbase.setLayout(new GridLayout(0, 1, 0, GRIDADJUST3));
 
-            oi = OptionMenu.add(new OptionInteger(NODE, PokerConstants.OPTION_SCREENSHOT_MAX_WIDTH, OSTYLE, map_, null,
-                    640, 2560, 70), screenbase);
+            oi = OptionMenu.add(new OptionInteger(NODE, PokerClientConstants.OPTION_SCREENSHOT_MAX_WIDTH, OSTYLE, map_,
+                    null, 640, 2560, 70), screenbase);
             oi.setEditable(true);
 
-            oi = OptionMenu.add(new OptionInteger(NODE, PokerConstants.OPTION_SCREENSHOT_MAX_HEIGHT, OSTYLE, map_, null,
-                    480, 1600, 70), screenbase);
+            oi = OptionMenu.add(new OptionInteger(NODE, PokerClientConstants.OPTION_SCREENSHOT_MAX_HEIGHT, OSTYLE, map_,
+                    null, 480, 1600, 70), screenbase);
             oi.setEditable(true);
 
             leftside.add(screenbase);
@@ -399,11 +399,12 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
             topside.add(practicebase, BorderLayout.WEST);
             practicebase.setLayout(new GridLayout(0, 1, 0, GRIDADJUST1));
 
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_PAUSE_ALLIN, OSTYLE, map_, true),
+            OptionMenu.add(new OptionBoolean(NODE, PokerClientConstants.OPTION_PAUSE_ALLIN, OSTYLE, map_, true),
                     practicebase);
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_PAUSE_COLOR, OSTYLE, map_, true),
+            OptionMenu.add(new OptionBoolean(NODE, PokerClientConstants.OPTION_PAUSE_COLOR, OSTYLE, map_, true),
                     practicebase);
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_ZIP_MODE, OSTYLE, map_, true), practicebase);
+            OptionMenu.add(new OptionBoolean(NODE, PokerClientConstants.OPTION_ZIP_MODE, OSTYLE, map_, true),
+                    practicebase);
 
             // delay
             OptionInteger oi;
@@ -412,18 +413,18 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
 
             delaybase.setLayout(new GridLayout(0, 1, 0, GRIDADJUST3));
 
-            oi = OptionMenu.add(new OptionInteger(NODE, PokerConstants.OPTION_DELAY, OSTYLE, map_, null, 0, 40, 55),
+            oi = OptionMenu.add(
+                    new OptionInteger(NODE, PokerClientConstants.OPTION_DELAY, OSTYLE, map_, null, 0, 40, 55),
                     delaybase);
             oi.setEditable(true);
 
             oi = OptionMenu.add(
-                    new OptionInteger(NODE, PokerConstants.OPTION_AUTODEALHAND, OSTYLE, map_, null, 0, 100, 55),
+                    new OptionInteger(NODE, PokerClientConstants.OPTION_AUTODEALHAND, OSTYLE, map_, null, 0, 100, 55),
                     delaybase);
             oi.setEditable(true);
 
-            oi = OptionMenu.add(
-                    new OptionInteger(NODE, PokerConstants.OPTION_HANDS_PER_HOUR, OSTYLE, map_, null, 10, 250, 55),
-                    delaybase);
+            oi = OptionMenu.add(new OptionInteger(NODE, PokerClientConstants.OPTION_HANDS_PER_HOUR, OSTYLE, map_, null,
+                    10, 250, 55), delaybase);
             oi.setEditable(true);
 
             // cheat
@@ -437,14 +438,19 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
 
     public static void addCheatOptions(String node, JPanel cheatbase, String ostyle, TypedHashMap map, boolean b2Cols) {
         // (indented items are in 2nd column)
-        OptionMenu.add(new OptionBoolean(node, PokerConstants.OPTION_CHEAT_POPUP, ostyle, map, true), cheatbase);
-        OptionMenu.add(new OptionBoolean(node, PokerConstants.OPTION_CHEAT_MOUSEOVER, ostyle, map, true), cheatbase);
-        OptionMenu.add(new OptionBoolean(node, PokerConstants.OPTION_CHEAT_SHOWWINNINGHAND, ostyle, map, true),
+        OptionMenu.add(new OptionBoolean(node, PokerClientConstants.OPTION_CHEAT_POPUP, ostyle, map, true), cheatbase);
+        OptionMenu.add(new OptionBoolean(node, PokerClientConstants.OPTION_CHEAT_MOUSEOVER, ostyle, map, true),
                 cheatbase);
-        OptionMenu.add(new OptionBoolean(node, PokerConstants.OPTION_CHEAT_AIFACEUP, ostyle, map, true), cheatbase);
-        OptionMenu.add(new OptionBoolean(node, PokerConstants.OPTION_CHEAT_SHOWFOLD, ostyle, map, true), cheatbase);
-        OptionMenu.add(new OptionBoolean(node, PokerConstants.OPTION_CHEAT_SHOW_MUCKED, ostyle, map, true), cheatbase);
-        OptionMenu.add(new OptionBoolean(node, PokerConstants.OPTION_CHEAT_NEVERBROKE, ostyle, map, true), cheatbase);
+        OptionMenu.add(new OptionBoolean(node, PokerClientConstants.OPTION_CHEAT_SHOWWINNINGHAND, ostyle, map, true),
+                cheatbase);
+        OptionMenu.add(new OptionBoolean(node, PokerClientConstants.OPTION_CHEAT_AIFACEUP, ostyle, map, true),
+                cheatbase);
+        OptionMenu.add(new OptionBoolean(node, PokerClientConstants.OPTION_CHEAT_SHOWFOLD, ostyle, map, true),
+                cheatbase);
+        OptionMenu.add(new OptionBoolean(node, PokerClientConstants.OPTION_CHEAT_SHOW_MUCKED, ostyle, map, true),
+                cheatbase);
+        OptionMenu.add(new OptionBoolean(node, PokerClientConstants.OPTION_CHEAT_NEVERBROKE, ostyle, map, true),
+                cheatbase);
 
         if (!b2Cols) {
             moveToEnd(cheatbase, 1);
@@ -487,12 +493,12 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
 
             OptionInteger oi;
             oi = OptionMenu.add(
-                    new OptionInteger(NODE, PokerConstants.OPTION_AUTODEALONLINE, OSTYLE, map_, null, 0, 100, 55),
+                    new OptionInteger(NODE, PokerClientConstants.OPTION_AUTODEALONLINE, OSTYLE, map_, null, 0, 100, 55),
                     delaybase);
             oi.setEditable(true);
 
             oi = OptionMenu.add(
-                    new OptionInteger(NODE, PokerConstants.OPTION_ONLINESTART, OSTYLE, map_, null, 1, 25, 55),
+                    new OptionInteger(NODE, PokerClientConstants.OPTION_ONLINESTART, OSTYLE, map_, null, 1, 25, 55),
                     delaybase);
             oi.setEditable(true);
 
@@ -506,10 +512,10 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
 
             miscoptions.setLayout(new GridLayout(0, 1, 0, GRIDADJUST1));
 
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_ONLINE_AUDIO, OSTYLE, map_, true),
+            OptionMenu.add(new OptionBoolean(NODE, PokerClientConstants.OPTION_ONLINE_AUDIO, OSTYLE, map_, true),
                     miscoptions);
             if (Utils.ISWINDOWS)
-                OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_ONLINE_FRONT, OSTYLE, map_, true),
+                OptionMenu.add(new OptionBoolean(NODE, PokerClientConstants.OPTION_ONLINE_FRONT, OSTYLE, map_, true),
                         miscoptions);
 
             // buttons
@@ -540,22 +546,26 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
             DDLabelBorder dispbase = new DDLabelBorder("chatdisplay", OSTYLE);
             dispbase.setLayout(new GridLayout(0, 1, 0, GRIDADJUST1));
             ButtonGroup chatgroup2 = new ButtonGroup();
-            OptionMenu.add(new OptionRadio(NODE, PokerConstants.OPTION_CHAT_DISPLAY, OSTYLE, map_, "display.split",
-                    chatgroup2, PokerConstants.DISPLAY_SPLIT), dispbase);
-            OptionMenu.add(new OptionRadio(NODE, PokerConstants.OPTION_CHAT_DISPLAY, OSTYLE, map_, "display.tab",
-                    chatgroup2, PokerConstants.DISPLAY_TAB), dispbase);
-            OptionMenu.add(new OptionRadio(NODE, PokerConstants.OPTION_CHAT_DISPLAY, OSTYLE, map_, "display.one",
-                    chatgroup2, PokerConstants.DISPLAY_ONE), dispbase);
+            OptionMenu.add(new OptionRadio(NODE, PokerClientConstants.OPTION_CHAT_DISPLAY, OSTYLE, map_,
+                    "display.split", chatgroup2, PokerClientConstants.DISPLAY_SPLIT), dispbase);
+            OptionMenu.add(new OptionRadio(NODE, PokerClientConstants.OPTION_CHAT_DISPLAY, OSTYLE, map_, "display.tab",
+                    chatgroup2, PokerClientConstants.DISPLAY_TAB), dispbase);
+            OptionMenu.add(new OptionRadio(NODE, PokerClientConstants.OPTION_CHAT_DISPLAY, OSTYLE, map_, "display.one",
+                    chatgroup2, PokerClientConstants.DISPLAY_ONE), dispbase);
 
             // chat options
             DDLabelBorder detailbase = new DDLabelBorder("chatdetails", OSTYLE);
             detailbase.setLayout(new GridLayout(0, 1, 0, GRIDADJUST1));
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_CHAT_PLAYERS, OSTYLE, map_, true), detailbase);
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_CHAT_OBSERVERS, OSTYLE, map_, true),
+            OptionMenu.add(new OptionBoolean(NODE, PokerClientConstants.OPTION_CHAT_PLAYERS, OSTYLE, map_, true),
                     detailbase);
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_CHAT_TIMEOUT, OSTYLE, map_, true), detailbase);
-            OptionMenu.add(new OptionInteger(NODE, PokerConstants.OPTION_CHAT_FONT_SIZE, OSTYLE, map_, null,
-                    PokerConstants.MIN_CHAT_FONT_SIZE, PokerConstants.MAX_CHAT_FONT_SIZE, 55), detailbase);
+            OptionMenu.add(new OptionBoolean(NODE, PokerClientConstants.OPTION_CHAT_OBSERVERS, OSTYLE, map_, true),
+                    detailbase);
+            OptionMenu.add(new OptionBoolean(NODE, PokerClientConstants.OPTION_CHAT_TIMEOUT, OSTYLE, map_, true),
+                    detailbase);
+            OptionMenu.add(
+                    new OptionInteger(NODE, PokerClientConstants.OPTION_CHAT_FONT_SIZE, OSTYLE, map_, null,
+                            PokerClientConstants.MIN_CHAT_FONT_SIZE, PokerClientConstants.MAX_CHAT_FONT_SIZE, 55),
+                    detailbase);
 
             // put right side together
             DDPanel rightbase = new DDPanel();
@@ -666,8 +676,10 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
             cheatbase.setLayout(new GridLayout(0, 1, 0, GRIDADJUST1));
             add(GuiUtils.WEST(cheatbase), BorderLayout.NORTH);
 
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_CLOCK_COLOUP, OSTYLE, map_, true), cheatbase);
-            OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_CLOCK_PAUSE, OSTYLE, map_, true), cheatbase);
+            OptionMenu.add(new OptionBoolean(NODE, PokerClientConstants.OPTION_CLOCK_COLOUP, OSTYLE, map_, true),
+                    cheatbase);
+            OptionMenu.add(new OptionBoolean(NODE, PokerClientConstants.OPTION_CLOCK_PAUSE, OSTYLE, map_, true),
+                    cheatbase);
         }
     }
 
@@ -692,7 +704,7 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
     }
 
     /**
-     * Hand groups
+     * ClientHand groups
      */
     private class HandGroups extends OptionTab {
         @Override
@@ -702,7 +714,7 @@ public class GamePrefsPanel extends DDPanel implements ActionListener {
     }
 
     /**
-     * Hand groups
+     * ClientHand groups
      */
     private class TableDesigns extends OptionTab {
         @Override

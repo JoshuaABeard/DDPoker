@@ -37,13 +37,14 @@
  */
 
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.display.ClientHand;
+import com.donohoedigital.games.poker.display.ClientCard;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
@@ -86,7 +87,7 @@ public class CardPiece extends PokerGamePiece {
     protected boolean bThumbnailMode_ = false;
 
     // transient
-    private Card card_ = null; // used to hard code card instead of linking to a player
+    private ClientCard card_ = null; // used to hard code card instead of linking to a player
     private boolean bLarge_ = false; // used to hard code large cards
 
     /**
@@ -99,7 +100,7 @@ public class CardPiece extends PokerGamePiece {
      * Creates a new instance of CardPiece
      */
     public CardPiece(GameContext context, ClientPlayer player, String sTerritoryPoint, boolean bUp, int nSeq) {
-        super(PokerConstants.PIECE_CARD, player, sTerritoryPoint, "card");
+        super(PokerClientConstants.PIECE_CARD, player, sTerritoryPoint, "card");
         context_ = context;
         bUp_ = bUp;
         nSeq_ = nSeq;
@@ -159,10 +160,10 @@ public class CardPiece extends PokerGamePiece {
     /**
      * Get card
      */
-    public Card getCard() {
+    public ClientCard getCard() {
         if (card_ != null)
             return card_;
-        Hand hand = pokerplayer_.getHand();
+        ClientHand hand = pokerplayer_.getHand();
         if (hand == null)
             return null;
         return hand.getCard(nSeq_);
@@ -171,7 +172,7 @@ public class CardPiece extends PokerGamePiece {
     /**
      * Set card, override any associated player
      */
-    public void setCard(Card card) {
+    public void setCard(ClientCard card) {
         card_ = card;
     }
 
@@ -179,7 +180,7 @@ public class CardPiece extends PokerGamePiece {
      * Get number of cards in hand (used to formatting layout)
      */
     public int getNumCards() {
-        Hand hand = pokerplayer_.getHand();
+        ClientHand hand = pokerplayer_.getHand();
         if (hand == null)
             return 0;
         return hand.size();
@@ -228,7 +229,7 @@ public class CardPiece extends PokerGamePiece {
         if (isTemporarilyVisible())
             return true;
 
-        boolean bMouse = PokerUtils.isCheatOn(context_, PokerConstants.OPTION_CHEAT_MOUSEOVER);
+        boolean bMouse = PokerUtils.isCheatOn(context_, PokerClientConstants.OPTION_CHEAT_MOUSEOVER);
         return bMouse && isUnderMouse();
     }
 
@@ -262,7 +263,7 @@ public class CardPiece extends PokerGamePiece {
     }
 
     /**
-     * Card stroke
+     * ClientCard stroke
      */
     public void setStroke(boolean b) {
         ic_.setStroke(b);
@@ -292,7 +293,7 @@ public class CardPiece extends PokerGamePiece {
      * large perf set?
      */
     protected boolean isLargePref() {
-        return PokerUtils.isOptionOn(PokerConstants.OPTION_LARGE_CARDS);
+        return PokerUtils.isOptionOn(PokerClientConstants.OPTION_LARGE_CARDS);
     }
 
     // image back
@@ -489,7 +490,7 @@ public class CardPiece extends PokerGamePiece {
     public void drawImageAt(Graphics2D g, ImageComponent ic, int nNum, int nHiddenNum, int nMovingNum, double x,
             double y, double width, double height, double dScale) {
         // defensive: if no card to draw, skip out
-        Card card = getCard();
+        ClientCard card = getCard();
         if (card == null)
             return;
 
@@ -571,7 +572,7 @@ public class CardPiece extends PokerGamePiece {
 
             // draw pips
             switch (card.getRank()) {
-                case Card.ACE :
+                case ClientCard.ACE :
                     drawPip(card, g, R4C2, x1, y1, width1, height1, c, 2.0);
                     break;
 
@@ -630,9 +631,9 @@ public class CardPiece extends PokerGamePiece {
                     }
                     break;
 
-                case Card.JACK :
-                case Card.QUEEN :
-                case Card.KING :
+                case ClientCard.JACK :
+                case ClientCard.QUEEN :
+                case ClientCard.KING :
                     FC.draw(g, boxx, boxy, boxwidth, boxheight);
                     break;
             }
@@ -734,7 +735,7 @@ public class CardPiece extends PokerGamePiece {
     /**
      * Get color used for suit
      */
-    private Color getSuitColor(Card card) {
+    private Color getSuitColor(ClientCard card) {
         if (!isEnabled())
             return FG_GRAY;
 
@@ -763,13 +764,13 @@ public class CardPiece extends PokerGamePiece {
      * is 4 color pref on?
      */
     protected boolean is4ColorPref() {
-        return PokerUtils.isOptionOn(PokerConstants.OPTION_FOUR_COLOR_DECK);
+        return PokerUtils.isOptionOn(PokerClientConstants.OPTION_FOUR_COLOR_DECK);
     }
 
     /**
      * draw card pip
      */
-    private void drawPip(Card card, Graphics2D g, Pos pos, double x, double y, double width, double height,
+    private void drawPip(ClientCard card, Graphics2D g, Pos pos, double x, double y, double width, double height,
             Color suitColor, double altsize) {
         double fx = (x + ((width) * pos.x));
         double fy = (y + ((height) * pos.y));
@@ -777,20 +778,20 @@ public class CardPiece extends PokerGamePiece {
         drawPip(card, g, width, height, fx, fy, RATIO_WIDTH, RATIO_HEIGHT, pos.bUpsideDown, suitColor, altsize);
     }
 
-    private void drawPip(Card card, Graphics2D g, double boundsWidth, double boundsHeight, double centerX,
+    private void drawPip(ClientCard card, Graphics2D g, double boundsWidth, double boundsHeight, double centerX,
             double centerY, double maxWidthRatio, double maxHeightRatio, boolean bUpsideDown, Color suitColor,
             double altsize) {
         GeneralPath pp = null;
 
-        if (card.getCardSuit() == CardSuit.DIAMONDS) {
+        if (card.getSuit() == ClientCard.DIAMONDS) {
             pp = diamond_;
-        } else if (card.getCardSuit() == CardSuit.SPADES) {
+        } else if (card.getSuit() == ClientCard.SPADES) {
             pp = spade_;
             altsize *= .95; // make a bit smaller
-        } else if (card.getCardSuit() == CardSuit.HEARTS) {
+        } else if (card.getSuit() == ClientCard.HEARTS) {
             pp = heart_;
             altsize *= 1.08; // heart is a bit small, so compensate here
-        } else if (card.getCardSuit() == CardSuit.CLUBS) {
+        } else if (card.getSuit() == ClientCard.CLUBS) {
             pp = club_;
             altsize *= 1.05; // make a bit bigger
         } else {
@@ -832,33 +833,33 @@ public class CardPiece extends PokerGamePiece {
     /**
      * Get a FaceCards path for card
      */
-    private FaceCards getFaceImage(Card card) {
+    private FaceCards getFaceImage(ClientCard card) {
         if (card.isFaceCard()) {
-            boolean fourColorDeck = PokerUtils.isOptionOn(PokerConstants.OPTION_FOUR_COLOR_DECK);
-            boolean stylized = PokerUtils.isOptionOn(PokerConstants.OPTION_STYLIZED_FACE_CARDS);
+            boolean fourColorDeck = PokerUtils.isOptionOn(PokerClientConstants.OPTION_FOUR_COLOR_DECK);
+            boolean stylized = PokerUtils.isOptionOn(PokerClientConstants.OPTION_STYLIZED_FACE_CARDS);
 
-            if (card.getCardSuit() == CardSuit.SPADES) {
+            if (card.getSuit() == ClientCard.SPADES) {
                 switch (card.getRank()) {
-                    case Card.JACK :
+                    case ClientCard.JACK :
                         if (stylized) {
                             return FaceCards.Style_Jack_Spades;
                         }
                         return FaceCards.J_Spades;
-                    case Card.QUEEN :
+                    case ClientCard.QUEEN :
                         if (stylized) {
                             return FaceCards.Style_Queen_Spades;
                         }
                         return FaceCards.Q_Spades;
-                    case Card.KING :
+                    case ClientCard.KING :
                         if (stylized) {
                             return FaceCards.Style_King_Spades;
                         }
                         return FaceCards.K_Spades;
                 }
             }
-            if (card.getCardSuit() == CardSuit.CLUBS) {
+            if (card.getSuit() == ClientCard.CLUBS) {
                 switch (card.getRank()) {
-                    case Card.JACK :
+                    case ClientCard.JACK :
                         if (stylized) {
                             if (fourColorDeck)
                                 return FaceCards.Style_Jack_Clubs_Grn;
@@ -866,7 +867,7 @@ public class CardPiece extends PokerGamePiece {
                                 return FaceCards.Style_Jack_Clubs_Blk;
                         }
                         return FaceCards.J_Clubs;
-                    case Card.QUEEN :
+                    case ClientCard.QUEEN :
                         if (stylized) {
                             if (fourColorDeck)
                                 return FaceCards.Style_Queen_Clubs_Grn;
@@ -874,7 +875,7 @@ public class CardPiece extends PokerGamePiece {
                                 return FaceCards.Style_Queen_Clubs_Blk;
                         }
                         return FaceCards.Q_Clubs;
-                    case Card.KING :
+                    case ClientCard.KING :
                         if (stylized) {
                             if (fourColorDeck)
                                 return FaceCards.Style_King_Clubs_Grn;
@@ -884,9 +885,9 @@ public class CardPiece extends PokerGamePiece {
                         return FaceCards.K_Clubs;
                 }
             }
-            if (card.getCardSuit() == CardSuit.DIAMONDS) {
+            if (card.getSuit() == ClientCard.DIAMONDS) {
                 switch (card.getRank()) {
-                    case Card.JACK :
+                    case ClientCard.JACK :
                         if (stylized) {
                             if (fourColorDeck)
                                 return FaceCards.Style_Jack_Diamonds_Blue;
@@ -894,7 +895,7 @@ public class CardPiece extends PokerGamePiece {
                                 return FaceCards.Style_Jack_Diamonds_Red;
                         }
                         return FaceCards.J_Diamonds;
-                    case Card.QUEEN :
+                    case ClientCard.QUEEN :
                         if (stylized) {
                             if (fourColorDeck)
                                 return FaceCards.Style_Queen_Diamonds_Blue;
@@ -902,7 +903,7 @@ public class CardPiece extends PokerGamePiece {
                                 return FaceCards.Style_Queen_Diamonds_Red;
                         }
                         return FaceCards.Q_Diamonds;
-                    case Card.KING :
+                    case ClientCard.KING :
                         if (stylized) {
                             if (fourColorDeck)
                                 return FaceCards.Style_King_Diamonds_Blue;
@@ -912,19 +913,19 @@ public class CardPiece extends PokerGamePiece {
                         return FaceCards.K_Diamonds;
                 }
             }
-            if (card.getCardSuit() == CardSuit.HEARTS) {
+            if (card.getSuit() == ClientCard.HEARTS) {
                 switch (card.getRank()) {
-                    case Card.JACK :
+                    case ClientCard.JACK :
                         if (stylized) {
                             return FaceCards.Style_Jack_Hearts;
                         }
                         return FaceCards.J_Hearts;
-                    case Card.QUEEN :
+                    case ClientCard.QUEEN :
                         if (stylized) {
                             return FaceCards.Style_Queen_Hearts;
                         }
                         return FaceCards.Q_Hearts;
-                    case Card.KING :
+                    case ClientCard.KING :
                         if (stylized) {
                             return FaceCards.Style_King_Hearts;
                         }
@@ -1140,8 +1141,8 @@ public class CardPiece extends PokerGamePiece {
                     bHighlite = true;
 
                 if (player.isWonChipRace() && !player.isBrokeChipRace()) {
-                    Hand uhand = player.getHand();
-                    HandSorted hand = player.getHandSorted();
+                    ClientHand uhand = player.getHand();
+                    ClientHand hand = player.getHandSorted();
                     if (hand.getCard(hand.size() - 1).equals(uhand.getCard(nSeq))) {
                         bHighlite = true;
                         bDouble = true;

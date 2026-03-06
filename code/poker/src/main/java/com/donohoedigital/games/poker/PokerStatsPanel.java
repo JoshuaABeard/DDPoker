@@ -31,15 +31,14 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.display.ClientHand;
+import com.donohoedigital.games.poker.display.ClientCard;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.poker.dashboard.AdvisorState;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
-import com.donohoedigital.games.poker.engine.Card;
-import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -57,8 +56,8 @@ public class PokerStatsPanel extends DDTabPanel {
 
     private DDScrollPane scroll_;
 
-    private Hand pocket_;
-    private Hand community_;
+    private ClientHand pocket_;
+    private ClientHand community_;
     private int mode_;
 
     DDHtmlArea htmlArea_;
@@ -136,13 +135,13 @@ public class PokerStatsPanel extends DDTabPanel {
                 break;
         }
 
-        Hand pocket = new Hand(pocket_);
+        ClientHand pocket = ClientHand.fromCards(pocket_.getCards());
         while (pocket.size() < 2)
-            pocket.addCard(Card.BLANK);
+            pocket.addCard(ClientCard.BLANK);
 
-        Hand community = new Hand(community_);
+        ClientHand community = ClientHand.fromCards(community_.getCards());
         while (community.size() < nMin)
-            community.addCard(Card.BLANK);
+            community.addCard(ClientCard.BLANK);
         int nNumComm = community.size();
         header_.setText(PropertyConfig.getMessage("msg.sim.header.generic", pocket.toHTML(),
                 "&nbsp;&nbsp;" + community.toHTML(), (2 + nNumComm) * 23 + 5, sMsg));
@@ -174,7 +173,7 @@ public class PokerStatsPanel extends DDTabPanel {
         if (equity == null) {
             return PropertyConfig.getMessage("msg.sim.waiting");
         }
-        return PropertyConfig.getMessage("msg.sim.equity", PokerConstants.formatPercent(equity));
+        return PropertyConfig.getMessage("msg.sim.equity", PokerClientConstants.formatPercent(equity));
     }
 
     private String buildPotentialHTML() {
@@ -183,8 +182,8 @@ public class PokerStatsPanel extends DDTabPanel {
         if (pos == null || neg == null) {
             return PropertyConfig.getMessage("msg.sim.waiting");
         }
-        return PropertyConfig.getMessage("msg.sim.potential", PokerConstants.formatPercent(pos),
-                PokerConstants.formatPercent(neg));
+        return PropertyConfig.getMessage("msg.sim.potential", PokerClientConstants.formatPercent(pos),
+                PokerClientConstants.formatPercent(neg));
     }
 
     /**
@@ -231,7 +230,7 @@ public class PokerStatsPanel extends DDTabPanel {
     /**
      * update thread with given pocket/community
      */
-    public void updateStats(Hand pocket, Hand community) {
+    public void updateStats(ClientHand pocket, ClientHand community) {
         // same hand, skip update
         if (pocket_ != null && pocket.fingerprint() == pocket_.fingerprint() && community_ != null
                 && community.fingerprint() == community_.fingerprint()) {

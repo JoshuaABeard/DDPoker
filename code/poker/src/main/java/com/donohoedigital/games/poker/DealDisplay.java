@@ -31,12 +31,13 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
+import com.donohoedigital.games.poker.display.ClientHand;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
 
@@ -56,8 +57,8 @@ public class DealDisplay {
      */
     public static void syncCards(ClientPokerTable table) {
         ClientPlayer player;
-        Hand hand;
-        for (int i = 0; i < PokerConstants.SEATS; i++) {
+        ClientHand hand;
+        for (int i = 0; i < ProtocolConstants.SEATS; i++) {
             player = table.getPlayer(i);
             if (player == null)
                 continue;
@@ -77,10 +78,10 @@ public class DealDisplay {
      */
     private static void displayCard(GameContext context, ClientPlayer player, int c, boolean bRepaint, int nCardDelay) {
         int nSeat = player.getSeat();
-        Hand hand = player.getHand();
-        boolean bUp = hand.getType() != Hand.TYPE_NORMAL;
-        boolean bDealDown = PokerUtils.isOptionOn(PokerConstants.OPTION_HOLE_CARDS_DOWN);
-        boolean bAIFaceUp = PokerUtils.isCheatOn(context, PokerConstants.OPTION_CHEAT_AIFACEUP);
+        ClientHand hand = player.getHand();
+        boolean bUp = hand.getType() != ClientHand.TYPE_NORMAL;
+        boolean bDealDown = PokerUtils.isOptionOn(PokerClientConstants.OPTION_HOLE_CARDS_DOWN);
+        boolean bAIFaceUp = PokerUtils.isCheatOn(context, PokerClientConstants.OPTION_CHEAT_AIFACEUP);
 
         // get card and create a piece around it
         Territory t;
@@ -88,7 +89,7 @@ public class DealDisplay {
                 bUp || (player.isHuman() && player.isLocallyControlled() && !bDealDown)
                         || (player.isComputer() && bAIFaceUp),
                 c);
-        if (hand.getType() == Hand.TYPE_COLOR_UP)
+        if (hand.getType() == ClientHand.TYPE_COLOR_UP)
             piece.setThumbnailMode(true);
         t = PokerUtils.getTerritoryForTableSeat(player.getTable(), nSeat);
         t.addGamePiece(piece);

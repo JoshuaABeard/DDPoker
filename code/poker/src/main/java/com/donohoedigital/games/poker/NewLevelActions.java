@@ -43,7 +43,6 @@ import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.games.poker.model.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.base.*;
 
 /**
@@ -104,7 +103,7 @@ public class NewLevelActions extends ChainPhase implements CancelablePhase {
         }
 
         // notify about new level
-        if (!TESTING(PokerConstants.TESTING_AUTOPILOT)) {
+        if (!TESTING(PokerClientConstants.TESTING_AUTOPILOT)) {
             String sMsg;
             if (profile.isBreak(nNextLevel)) {
                 sMsg = PropertyConfig.getMessage("msg.dialog.break", nNextLevel, profile.getMinutes(nNextLevel));
@@ -175,11 +174,11 @@ public class NewLevelActions extends ChainPhase implements CancelablePhase {
         String sMsg = PropertyConfig.getMessage("msg.dorebuy." + nType, nCost, nChips, prof.getLastRebuyLevel(),
                 sPending);
 
-        if (game.isOnlineGame() && PokerUtils.isOptionOn(PokerConstants.OPTION_ONLINE_AUDIO)) {
+        if (game.isOnlineGame() && PokerUtils.isOptionOn(PokerClientConstants.OPTION_ONLINE_AUDIO)) {
             AudioConfig.playFX("onlineact");
         }
 
-        if (TESTING(PokerConstants.TESTING_AUTOPILOT) || EngineUtils.displayCancelableConfirmationDialog(
+        if (TESTING(PokerClientConstants.TESTING_AUTOPILOT) || EngineUtils.displayCancelableConfirmationDialog(
                 game.getGameContext(), sMsg, "msg.windowtitle.rebuy", null, null, !game.isOnlineGame() ? 0 : 10)) {
 
             td.doRebuy(player, nLevel, nCost, nChips, bPending);
@@ -200,12 +199,12 @@ public class NewLevelActions extends ChainPhase implements CancelablePhase {
 
         String sMsg = PropertyConfig.getMessage("msg.doaddon", nCost, nChips, prof.getAddonLevel());
 
-        if (game_.isOnlineGame() && PokerUtils.isOptionOn(PokerConstants.OPTION_ONLINE_AUDIO)) {
+        if (game_.isOnlineGame() && PokerUtils.isOptionOn(PokerClientConstants.OPTION_ONLINE_AUDIO)) {
             AudioConfig.playFX("onlineact");
         }
 
-        if (TESTING(PokerConstants.TESTING_AUTOPILOT) || EngineUtils.displayCancelableConfirmationDialog(context_, sMsg,
-                "msg.windowtitle.addon", null, null, !game_.isOnlineGame() ? 0 : 10)) {
+        if (TESTING(PokerClientConstants.TESTING_AUTOPILOT) || EngineUtils.displayCancelableConfirmationDialog(context_,
+                sMsg, "msg.windowtitle.addon", null, null, !game_.isOnlineGame() ? 0 : 10)) {
             ClientPlayer p = game_.getHumanPlayer();
             td.doAddon(p, nCost, nChips);
         }

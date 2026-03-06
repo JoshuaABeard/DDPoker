@@ -21,15 +21,34 @@ package com.donohoedigital.games.poker.display;
 
 /**
  * Client-side betting round enum for the display layer. Independent of
- * pokerengine's BettingRound.
+ * pokerengine's ClientBettingRound.
  */
 public enum ClientBettingRound {
 
-    PRE_FLOP(0), FLOP(3), TURN(4), RIVER(5), SHOWDOWN(5);
+    NONE(-1, 0), PRE_FLOP(0, 0), FLOP(1, 3), TURN(2, 4), RIVER(3, 5), SHOWDOWN(4, 5);
 
+    /** Legacy integer constants matching pokerengine ClientBettingRound. */
+    public static final int ROUND_NONE = -1;
+    public static final int ROUND_PRE_FLOP = 0;
+    public static final int ROUND_FLOP = 1;
+    public static final int ROUND_TURN = 2;
+    public static final int ROUND_RIVER = 3;
+    public static final int ROUND_SHOWDOWN = 4;
+
+    private final int legacyValue;
     private final int communityCardCount;
 
-    ClientBettingRound(int communityCardCount) {
+    // O(1) lookup array: legacy values range from -1 to 4
+    private static final ClientBettingRound[] LOOKUP = new ClientBettingRound[6];
+
+    static {
+        for (ClientBettingRound br : values()) {
+            LOOKUP[br.legacyValue + 1] = br;
+        }
+    }
+
+    ClientBettingRound(int legacyValue, int communityCardCount) {
+        this.legacyValue = legacyValue;
         this.communityCardCount = communityCardCount;
     }
 
@@ -38,11 +57,41 @@ public enum ClientBettingRound {
         return communityCardCount;
     }
 
+    /** Convert to legacy integer constant. */
+    public int toLegacy() {
+        return legacyValue;
+    }
+
+    /**
+     * Convert from legacy integer constant to enum (O(1) lookup).
+     */
+    public static ClientBettingRound fromLegacy(int round) {
+        int index = round + 1;
+        if (index < 0 || index >= LOOKUP.length || LOOKUP[index] == null) {
+            throw new IllegalArgumentException("Unknown betting round: " + round);
+        }
+        return LOOKUP[index];
+    }
+
     /** Parse from a protocol string (case-insensitive). */
     public static ClientBettingRound fromString(String s) {
         if (s == null) {
             throw new IllegalArgumentException("Betting round string must not be null");
         }
         return valueOf(s.toUpperCase());
+    }
+
+    /**
+     * Get name for debugging (matches engine ClientBettingRound.getRoundName).
+     */
+    public static String getRoundName(int n) {
+        return switch (n) {
+            case ROUND_PRE_FLOP -> "preflop";
+            case ROUND_FLOP -> "flop";
+            case ROUND_TURN -> "turn";
+            case ROUND_RIVER -> "river";
+            case ROUND_SHOWDOWN -> "show";
+            default -> "none: " + n;
+        };
     }
 }

@@ -31,11 +31,12 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.impexp;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 
 import java.util.*;
 import java.text.*;
@@ -87,7 +88,7 @@ public class ImpExpUB implements ImpExp {
 
         buf.append(newline);
 
-        for (int seat = 0; seat < PokerConstants.SEATS; ++seat) {
+        for (int seat = 0; seat < ProtocolConstants.SEATS; ++seat) {
             ClientPlayer player = ieHand.players[seat];
 
             if (player == null)
@@ -122,13 +123,13 @@ public class ImpExpUB implements ImpExp {
             StringBuilder active = null;
 
             int actionRound = action.getRound();
-            if (actionRound == BettingRound.ROUND_PRE_FLOP) {
+            if (actionRound == ClientBettingRound.ROUND_PRE_FLOP) {
                 active = preflop;
-            } else if (actionRound == BettingRound.ROUND_FLOP) {
+            } else if (actionRound == ClientBettingRound.ROUND_FLOP) {
                 active = flop;
-            } else if (actionRound == BettingRound.ROUND_TURN) {
+            } else if (actionRound == ClientBettingRound.ROUND_TURN) {
                 active = turn;
-            } else if (actionRound == BettingRound.ROUND_RIVER) {
+            } else if (actionRound == ClientBettingRound.ROUND_RIVER) {
                 active = river;
             }
 
@@ -211,7 +212,7 @@ public class ImpExpUB implements ImpExp {
 
         buf.append(newline);
 
-        for (int seat = 0; seat < PokerConstants.SEATS; ++seat) {
+        for (int seat = 0; seat < ProtocolConstants.SEATS; ++seat) {
             ClientPlayer player = ieHand.players[seat];
 
             if (player == null)
@@ -344,7 +345,7 @@ public class ImpExpUB implements ImpExp {
          *
          *
          *
-         * Hand #7619556-103 Summary:
+         * ClientHand #7619556-103 Summary:
          *
          * No rake is taken for this hand. AspenX wins 2800.
          * ----------------------------------------------------------------
@@ -385,7 +386,7 @@ public class ImpExpUB implements ImpExp {
          * jacks. bluffster11 shows 5s 5d. bluffster11 has 5s 5d Ac Qs 5h: three fives.
          *
          *
-         * Hand #3667206-11279 Summary:
+         * ClientHand #3667206-11279 Summary:
          *
          * $3 is raked from a pot of $186. bluffster11 wins $183 with three fives.
          */
@@ -413,7 +414,7 @@ public class ImpExpUB implements ImpExp {
 
         buf.append(newline);
 
-        for (int seat = 0; seat < PokerConstants.SEATS; ++seat) {
+        for (int seat = 0; seat < ProtocolConstants.SEATS; ++seat) {
             ClientPlayer player = ieHand.players[seat];
 
             if (player == null)

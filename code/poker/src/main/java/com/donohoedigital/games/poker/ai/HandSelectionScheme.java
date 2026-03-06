@@ -31,12 +31,13 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.ai;
+import com.donohoedigital.games.poker.display.ClientHand;
+import com.donohoedigital.games.poker.display.ClientCard;
 
 import com.donohoedigital.base.*;
 import com.donohoedigital.comms.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
 
 import java.io.*;
 import java.util.*;
@@ -179,11 +180,11 @@ public class HandSelectionScheme extends BaseProfile {
         handgroups_.add(new HandGroup());
     }
 
-    public float getHandStrength(Hand holeCards) {
+    public float getHandStrength(ClientHand holeCards) {
         return getHandStrength(holeCards.getCard(0), holeCards.getCard(1));
     }
 
-    public float getHandStrength(Card card1, Card card2) {
+    public float getHandStrength(ClientCard card1, ClientCard card2) {
         int rank1 = card1.getRank();
         int rank2 = card2.getRank();
 

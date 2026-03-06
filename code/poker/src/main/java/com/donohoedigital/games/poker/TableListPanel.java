@@ -31,13 +31,13 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
@@ -102,7 +102,7 @@ public class TableListPanel extends DDTabPanel implements ChangeListener, Action
 
         if (!game_.isOnlineGame()) {
             String NODE = GameEngine.getGameEngine().getPrefsNodeName();
-            OptionBoolean ob = OptionMenu.add(new OptionBoolean(NODE, PokerConstants.OPTION_SHOW_PLAYER_TYPE,
+            OptionBoolean ob = OptionMenu.add(new OptionBoolean(NODE, PokerClientConstants.OPTION_SHOW_PLAYER_TYPE,
                     "OptionsDialog", new TypedHashMap(), true), toppanel, BorderLayout.EAST);
             showtype_ = ob.getCheckBox();
             showtype_.addActionListener(this);
@@ -206,9 +206,9 @@ public class TableListPanel extends DDTabPanel implements ChangeListener, Action
 
             int nNumObs = table.getNumObservers();
             List<ChipLeaderPanel.RankInfo> players = new ArrayList<ChipLeaderPanel.RankInfo>(
-                    PokerConstants.SEATS + nNumObs);
+                    ProtocolConstants.SEATS + nNumObs);
             ClientPlayer p;
-            for (int i = 0; i < PokerConstants.SEATS; i++) {
+            for (int i = 0; i < ProtocolConstants.SEATS; i++) {
                 p = table.getPlayer(i);
                 players.add(new ChipLeaderPanel.RankInfo(p, i + 1));
             }

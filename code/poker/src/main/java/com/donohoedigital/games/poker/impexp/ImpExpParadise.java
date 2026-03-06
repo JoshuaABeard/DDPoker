@@ -31,15 +31,19 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.impexp;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
+import com.donohoedigital.games.poker.display.ClientHand;
+import com.donohoedigital.games.poker.engine.HandInfoFast;
+import com.donohoedigital.games.poker.engine.HandScoreConstants;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
+import com.donohoedigital.games.poker.EngineAdapter;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
-import com.donohoedigital.games.poker.engine.HandScoreConstants;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 
 import java.text.*;
 import java.util.*;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 
 public class ImpExpParadise implements ImpExp {
     private String paradisePlayerName_ = "DD Player";
@@ -173,7 +177,7 @@ public class ImpExpParadise implements ImpExp {
         buf.append(" ");
         buf.append(ieHand.hndTable);
         buf.append("\"");
-        buf.append(" Hand #");
+        buf.append(" ClientHand #");
         buf.append(ieHand.hndNumber);
         buf.append(" -- Seat ");
         buf.append(ieHand.buttonSeat % 9 + 1);
@@ -184,7 +188,7 @@ public class ImpExpParadise implements ImpExp {
 
         int playersLeft = 0;
 
-        for (int seat = 0; seat < PokerConstants.SEATS; ++seat) {
+        for (int seat = 0; seat < ProtocolConstants.SEATS; ++seat) {
             ClientPlayer player = ieHand.players[seat];
 
             if (player == null)
@@ -207,14 +211,14 @@ public class ImpExpParadise implements ImpExp {
             }
         }
 
-        int round = BettingRound.PRE_FLOP.toLegacy();
+        int round = ClientBettingRound.PRE_FLOP.toLegacy();
 
         for (int i = 0; i < ieHand.hist.size(); ++i) {
             HandAction action = (HandAction) ieHand.hist.get(i);
 
             while (action.getRound() > round) {
                 int currentRound = round++;
-                if (currentRound == BettingRound.ROUND_PRE_FLOP) {
+                if (currentRound == ClientBettingRound.ROUND_PRE_FLOP) {
                     if (ieHand.community.size() >= 3) {
                         buf.append("*** FLOP *** : [ ");
                         buf.append(ieHand.community.getCard(0).getRankDisplaySingle());
@@ -228,7 +232,7 @@ public class ImpExpParadise implements ImpExp {
                         buf.append(" ]");
                         buf.append(newline);
                     }
-                } else if (currentRound == BettingRound.ROUND_FLOP) {
+                } else if (currentRound == ClientBettingRound.ROUND_FLOP) {
                     if (ieHand.community.size() >= 4) {
                         buf.append("*** TURN *** : [ ");
                         buf.append(ieHand.community.getCard(0).getRankDisplaySingle());
@@ -245,7 +249,7 @@ public class ImpExpParadise implements ImpExp {
                         buf.append(" ]");
                         buf.append(newline);
                     }
-                } else if (currentRound == BettingRound.ROUND_TURN) {
+                } else if (currentRound == ClientBettingRound.ROUND_TURN) {
                     if (ieHand.community.size() >= 5) {
                         buf.append("*** RIVER *** : [ ");
                         buf.append(ieHand.community.getCard(0).getRankDisplaySingle());
@@ -373,7 +377,7 @@ public class ImpExpParadise implements ImpExp {
             buf.append(newline);
         }
 
-        for (int seat = 0; seat < PokerConstants.SEATS; ++seat) {
+        for (int seat = 0; seat < ProtocolConstants.SEATS; ++seat) {
             ClientPlayer player = ieHand.players[seat];
 
             if (player == null)
@@ -438,7 +442,7 @@ public class ImpExpParadise implements ImpExp {
         for (int i = 0; i < ieHand.hist.size(); i++) {
             action = (HandAction) ieHand.hist.get(i);
 
-            if (action.getRound() != BettingRound.SHOWDOWN.toLegacy())
+            if (action.getRound() != ClientBettingRound.SHOWDOWN.toLegacy())
                 continue;
             if (action.getSubAmount() != nPot)
                 continue;
@@ -469,8 +473,8 @@ public class ImpExpParadise implements ImpExp {
     private static final String rankPName_[] = new String[]{null, null, "twos", "threes", "fours", "fives", "sixes",
             "sevens", "eights", "nines", "tens", "jacks", "queens", "kings", "aces"};
 
-    private void appendFinalHand(StringBuilder buf, Hand hand, Hand community) {
-        int score = info.getScore(hand, community);
+    private void appendFinalHand(StringBuilder buf, ClientHand hand, ClientHand community) {
+        int score = info.getScore(EngineAdapter.toHand(hand), EngineAdapter.toHand(community));
 
         switch (info.getHandType()) {
             case HandScoreConstants.ROYAL_FLUSH :

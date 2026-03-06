@@ -31,13 +31,15 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.dashboard;
+import com.donohoedigital.games.poker.PokerClientConstants;
+import com.donohoedigital.games.poker.display.ClientHand;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 
 /**
@@ -63,13 +65,13 @@ public class PotOdds extends Odds {
     /// display logic
     ///
 
-    protected String getDisplay(int nRound, ClientHoldemHand hhand, ClientPlayer asViewedBy, Hand hand) {
+    protected String getDisplay(int nRound, ClientHoldemHand hhand, ClientPlayer asViewedBy, ClientHand hand) {
         // figure out pot odds
-        if (nRound != BettingRound.SHOWDOWN.toLegacy() && hhand.getCall(asViewedBy) > 0) {
+        if (nRound != ClientBettingRound.SHOWDOWN.toLegacy() && hhand.getCall(asViewedBy) > 0) {
             double po = hhand.getPotOdds(asViewedBy);
             double oo = (100.0d - po) / po;
-            sOdds_ = PokerConstants.formatPercent(po);
-            return PropertyConfig.getMessage("msg.odds.pot", sOdds_, PokerConstants.formatPercent(oo));
+            sOdds_ = PokerClientConstants.formatPercent(po);
+            return PropertyConfig.getMessage("msg.odds.pot", sOdds_, PokerClientConstants.formatPercent(oo));
         } else {
             sOdds_ = null;
             return PropertyConfig.getMessage("msg.odds.pot.none");

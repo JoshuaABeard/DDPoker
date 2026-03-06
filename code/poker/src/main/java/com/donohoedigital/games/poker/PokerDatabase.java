@@ -31,6 +31,10 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
+import com.donohoedigital.games.poker.display.ClientHand;
+import com.donohoedigital.games.poker.display.ClientCard;
+import com.donohoedigital.games.poker.engine.HandInfoFast;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
@@ -38,7 +42,7 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.db.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.impexp.*;
 import com.donohoedigital.games.poker.model.*;
 import org.apache.logging.log4j.*;
@@ -48,7 +52,7 @@ import java.math.*;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 
@@ -265,11 +269,11 @@ public class PokerDatabase {
 
         int numPlayers = hhand.getNumPlayers();
 
-        byte[][] act = new byte[PokerConstants.SEATS][4];
+        byte[][] act = new byte[ProtocolConstants.SEATS][4];
 
         boolean bRaised = false;
 
-        int[] lastRound = new int[PokerConstants.SEATS];
+        int[] lastRound = new int[ProtocolConstants.SEATS];
 
         byte communityCardsDealt = 0;
 
@@ -284,11 +288,11 @@ public class PokerDatabase {
                     break;
                 default :
                     lastRound[seat] = action.getRound();
-                    if (round == BettingRound.ROUND_FLOP) {
+                    if (round == ClientBettingRound.ROUND_FLOP) {
                         communityCardsDealt = 3;
-                    } else if (round == BettingRound.ROUND_TURN) {
+                    } else if (round == ClientBettingRound.ROUND_TURN) {
                         communityCardsDealt = 4;
-                    } else if (round == BettingRound.ROUND_RIVER) {
+                    } else if (round == ClientBettingRound.ROUND_RIVER) {
                         communityCardsDealt = 5;
                     }
                     break;
@@ -403,7 +407,7 @@ public class PokerDatabase {
                 pstmt.setBigDecimal(10, new BigDecimal(hhand.getBigBlind()));
                 pstmt.setByte(11, (byte) communityCardsDealt);
 
-                Hand community = hhand.getCommunity();
+                ClientHand community = hhand.getCommunity();
 
                 for (int i = 0; i < 5; ++i) {
                     if (i < community.size()) {
@@ -419,7 +423,7 @@ public class PokerDatabase {
 
             // insert hand info
 
-            int[] playerID = new int[PokerConstants.SEATS];
+            int[] playerID = new int[ProtocolConstants.SEATS];
 
             try (PreparedStatement pstmt = conn.prepareStatement("INSERT INTO PLAYER_HAND (\n" + "PLH_HAND_ID,\n"
                     + "PLH_PLAYER_ID,\n" + "PLH_SEAT_NUMBER,\n" + "PLH_START_CHIPS,\n" + "PLH_END_CHIPS,\n"
@@ -431,7 +435,7 @@ public class PokerDatabase {
                 // code may be okay, but semantically, should go by HoldemHand player list
                 for (int p = 0; p < numPlayers; ++p) {
                     ClientPlayer player = hhand.getPlayerAt(p);
-                    Hand pocket = player.getHand();
+                    ClientHand pocket = player.getHand();
                     int seat = player.getSeat();
 
                     playerID[seat] = storePlayer(conn, tournamentID, player);
@@ -446,10 +450,10 @@ public class PokerDatabase {
                         pstmt.setString(i + 6, toString(pocket.getCard(i)));
                     }
 
-                    pstmt.setByte(10, act[seat][BettingRound.PRE_FLOP.toLegacy()]);
-                    pstmt.setByte(11, act[seat][BettingRound.FLOP.toLegacy()]);
-                    pstmt.setByte(12, act[seat][BettingRound.TURN.toLegacy()]);
-                    pstmt.setByte(13, act[seat][BettingRound.RIVER.toLegacy()]);
+                    pstmt.setByte(10, act[seat][ClientBettingRound.PRE_FLOP.toLegacy()]);
+                    pstmt.setByte(11, act[seat][ClientBettingRound.FLOP.toLegacy()]);
+                    pstmt.setByte(12, act[seat][ClientBettingRound.TURN.toLegacy()]);
+                    pstmt.setByte(13, act[seat][ClientBettingRound.RIVER.toLegacy()]);
                     pstmt.setBoolean(14, player.isCardsExposed() || (player.isHuman() && player.isLocallyControlled()));
 
                     pstmt.executeUpdate();
@@ -890,7 +894,7 @@ public class PokerDatabase {
     /**
      * Boy would I like to change the return from Card.toString() but I'm afraid to.
      */
-    private static String toString(Card card) {
+    private static String toString(ClientCard card) {
         return card.getRankDisplaySingle() + card.getSuitDisplay();
     }
 
@@ -1124,7 +1128,7 @@ public class PokerDatabase {
         StringBuilder details = new StringBuilder();
 
         try {
-            Hand community = new Hand();
+            ClientHand community = ClientHand.empty();
             int tournamentID;
             String hndTable;
             String hndNumber;
@@ -1162,30 +1166,30 @@ public class PokerDatabase {
                         String card;
                         card = rs.getString(12);
                         if ((card != null) && (communityCardsDealt > 0))
-                            community.addCard(Card.getCard(card));
+                            community.addCard(ClientCard.getCard(card));
                         card = rs.getString(13);
                         if ((card != null) && (communityCardsDealt > 1))
-                            community.addCard(Card.getCard(card));
+                            community.addCard(ClientCard.getCard(card));
                         card = rs.getString(14);
                         if ((card != null) && (communityCardsDealt > 2))
-                            community.addCard(Card.getCard(card));
+                            community.addCard(ClientCard.getCard(card));
                         card = rs.getString(15);
                         if ((card != null) && (communityCardsDealt > 3))
-                            community.addCard(Card.getCard(card));
+                            community.addCard(ClientCard.getCard(card));
                         card = rs.getString(16);
                         if ((card != null) && (communityCardsDealt > 4))
-                            community.addCard(Card.getCard(card));
+                            community.addCard(ClientCard.getCard(card));
                     } else {
                         return null;
                     }
                 }
             }
 
-            ClientPlayer players[] = new ClientPlayer[PokerConstants.SEATS];
-            int over[] = new int[PokerConstants.SEATS];
-            int win[] = new int[PokerConstants.SEATS];
-            int start[] = new int[PokerConstants.SEATS];
-            int end[] = new int[PokerConstants.SEATS];
+            ClientPlayer players[] = new ClientPlayer[ProtocolConstants.SEATS];
+            int over[] = new int[ProtocolConstants.SEATS];
+            int win[] = new int[ProtocolConstants.SEATS];
+            int start[] = new int[ProtocolConstants.SEATS];
+            int end[] = new int[ProtocolConstants.SEATS];
 
             try (PreparedStatement pstmt = conn.prepareStatement("SELECT DISTINCT\n" + "PLH_SEAT_NUMBER,\n"
                     + "PLH_START_CHIPS,\n" + "PLH_END_CHIPS,\n" + "PLH_CARD_1,\n" + "PLH_CARD_2,\n" + "PLH_CARD_3,\n"
@@ -1215,16 +1219,16 @@ public class PokerDatabase {
                         String card;
                         card = rs.getString(4);
                         if (card != null)
-                            players[seat].getHand().addCard(Card.getCard(card));
+                            players[seat].getHand().addCard(ClientCard.getCard(card));
                         card = rs.getString(5);
                         if (card != null)
-                            players[seat].getHand().addCard(Card.getCard(card));
+                            players[seat].getHand().addCard(ClientCard.getCard(card));
                         card = rs.getString(6);
                         if (card != null)
-                            players[seat].getHand().addCard(Card.getCard(card));
+                            players[seat].getHand().addCard(ClientCard.getCard(card));
                         card = rs.getString(7);
                         if (card != null)
-                            players[seat].getHand().addCard(Card.getCard(card));
+                            players[seat].getHand().addCard(ClientCard.getCard(card));
 
                         players[seat].setFolded(
                                 ((rs.getByte(8) | rs.getByte(9) | rs.getByte(10) | rs.getByte(11)) & BIT_FOLD) > 0);
@@ -1278,7 +1282,7 @@ public class PokerDatabase {
 
             StringBuilder sb2 = new StringBuilder();
 
-            for (int i = 0; i < PokerConstants.SEATS; ++i) {
+            for (int i = 0; i < ProtocolConstants.SEATS; ++i) {
                 int delta = end[i] - start[i];
 
                 if (delta != 0) {
@@ -1310,11 +1314,13 @@ public class PokerDatabase {
             sb2.setLength(0);
 
             if (bAnte)
-                appendHistory(details, community, hist, BettingRound.PRE_FLOP.toLegacy(), true, bShowAll, bShowReason);
-            appendHistory(details, community, hist, BettingRound.PRE_FLOP.toLegacy(), false, bShowAll, bShowReason);
-            appendHistory(details, community, hist, BettingRound.FLOP.toLegacy(), false, bShowAll, bShowReason);
-            appendHistory(details, community, hist, BettingRound.TURN.toLegacy(), false, bShowAll, bShowReason);
-            appendHistory(details, community, hist, BettingRound.RIVER.toLegacy(), false, bShowAll, bShowReason);
+                appendHistory(details, community, hist, ClientBettingRound.PRE_FLOP.toLegacy(), true, bShowAll,
+                        bShowReason);
+            appendHistory(details, community, hist, ClientBettingRound.PRE_FLOP.toLegacy(), false, bShowAll,
+                    bShowReason);
+            appendHistory(details, community, hist, ClientBettingRound.FLOP.toLegacy(), false, bShowAll, bShowReason);
+            appendHistory(details, community, hist, ClientBettingRound.TURN.toLegacy(), false, bShowAll, bShowReason);
+            appendHistory(details, community, hist, ClientBettingRound.RIVER.toLegacy(), false, bShowAll, bShowReason);
 
             appendShowdown(details, hist, community, bShowAll);
         } catch (SQLException e) {
@@ -1371,19 +1377,19 @@ public class PokerDatabase {
                         String card;
                         card = rs.getString(12);
                         if ((card != null) && (communityCardsDealt > 0))
-                            ieHand.community.addCard(Card.getCard(card));
+                            ieHand.community.addCard(ClientCard.getCard(card));
                         card = rs.getString(13);
                         if ((card != null) && (communityCardsDealt > 1))
-                            ieHand.community.addCard(Card.getCard(card));
+                            ieHand.community.addCard(ClientCard.getCard(card));
                         card = rs.getString(14);
                         if ((card != null) && (communityCardsDealt > 2))
-                            ieHand.community.addCard(Card.getCard(card));
+                            ieHand.community.addCard(ClientCard.getCard(card));
                         card = rs.getString(15);
                         if ((card != null) && (communityCardsDealt > 3))
-                            ieHand.community.addCard(Card.getCard(card));
+                            ieHand.community.addCard(ClientCard.getCard(card));
                         card = rs.getString(16);
                         if ((card != null) && (communityCardsDealt > 4))
-                            ieHand.community.addCard(Card.getCard(card));
+                            ieHand.community.addCard(ClientCard.getCard(card));
                     } else {
                         return null;
                     }
@@ -1429,16 +1435,16 @@ public class PokerDatabase {
                         String card;
                         card = rs.getString(4);
                         if (card != null)
-                            ieHand.players[seat].getHand().addCard(Card.getCard(card));
+                            ieHand.players[seat].getHand().addCard(ClientCard.getCard(card));
                         card = rs.getString(5);
                         if (card != null)
-                            ieHand.players[seat].getHand().addCard(Card.getCard(card));
+                            ieHand.players[seat].getHand().addCard(ClientCard.getCard(card));
                         card = rs.getString(6);
                         if (card != null)
-                            ieHand.players[seat].getHand().addCard(Card.getCard(card));
+                            ieHand.players[seat].getHand().addCard(ClientCard.getCard(card));
                         card = rs.getString(7);
                         if (card != null)
-                            ieHand.players[seat].getHand().addCard(Card.getCard(card));
+                            ieHand.players[seat].getHand().addCard(ClientCard.getCard(card));
 
                         ieHand.players[seat].setFolded(
                                 ((rs.getByte(8) | rs.getByte(9) | rs.getByte(10) | rs.getByte(11)) & BIT_FOLD) > 0);
@@ -1508,9 +1514,9 @@ public class PokerDatabase {
                 ieHand.buttonSeat = firstBlindSeat;
             } else {
                 // figure out where the button must have been
-                for (int seat = firstBlindSeat - 1; seat > firstBlindSeat - PokerConstants.SEATS; --seat) {
-                    if (ieHand.players[(seat + PokerConstants.SEATS) % PokerConstants.SEATS] != null) {
-                        ieHand.buttonSeat = (seat + PokerConstants.SEATS) % PokerConstants.SEATS;
+                for (int seat = firstBlindSeat - 1; seat > firstBlindSeat - ProtocolConstants.SEATS; --seat) {
+                    if (ieHand.players[(seat + ProtocolConstants.SEATS) % ProtocolConstants.SEATS] != null) {
+                        ieHand.buttonSeat = (seat + ProtocolConstants.SEATS) % ProtocolConstants.SEATS;
                         break;
                     }
                 }
@@ -1529,7 +1535,7 @@ public class PokerDatabase {
         return ieHand;
     }
 
-    private static void appendHistory(StringBuilder sb, Hand community, ArrayList hist, int nRound, boolean bAnte,
+    private static void appendHistory(StringBuilder sb, ClientHand community, ArrayList hist, int nRound, boolean bAnte,
             boolean bShowAll, boolean bShowReason) {
         StringBuilder sb2 = new StringBuilder();
 
@@ -1540,12 +1546,12 @@ public class PokerDatabase {
 
         HandInfoFast info = new HandInfoFast();
 
-        if (nRound == BettingRound.PRE_FLOP.toLegacy()) {
-            community = new Hand();
-        } else if ((nRound == BettingRound.FLOP.toLegacy()) && (community.size() > 3)) {
-            community = new Hand(community.getCard(0), community.getCard(1), community.getCard(2));
-        } else if ((nRound == BettingRound.TURN.toLegacy()) && (community.size() > 4)) {
-            community = new Hand(community.getCard(0), community.getCard(1), community.getCard(2),
+        if (nRound == ClientBettingRound.PRE_FLOP.toLegacy()) {
+            community = ClientHand.empty();
+        } else if ((nRound == ClientBettingRound.FLOP.toLegacy()) && (community.size() > 3)) {
+            community = ClientHand.of(community.getCard(0), community.getCard(1), community.getCard(2));
+        } else if ((nRound == ClientBettingRound.TURN.toLegacy()) && (community.size() > 4)) {
+            community = ClientHand.of(community.getCard(0), community.getCard(1), community.getCard(2),
                     community.getCard(3));
         }
 
@@ -1559,7 +1565,7 @@ public class PokerDatabase {
             if (bAnte && action.getAction() != HandAction.ACTION_ANTE)
                 continue;
 
-            Hand hand = p.getHandSorted();
+            ClientHand hand = p.getHandSorted();
 
             String handHTML;
             String handShown = "";
@@ -1574,7 +1580,7 @@ public class PokerDatabase {
                 handHTML = hand.toHTML();
 
                 if (!community.isEmpty()) {
-                    info.getScore(hand, community);
+                    info.getScore(EngineAdapter.toHand(hand), EngineAdapter.toHand(community));
                     handShown = "&nbsp;-&nbsp;" + HandHistoryPanel.handDesc(info);
                 }
             } else {
@@ -1699,25 +1705,25 @@ public class PokerDatabase {
 
                         String card;
 
-                        buf.append(Card.getCard(holeCards[0]).toHTML());
-                        buf.append(Card.getCard(holeCards[1]).toHTML());
+                        buf.append(ClientCard.getCard(holeCards[0]).toHTML());
+                        buf.append(ClientCard.getCard(holeCards[1]).toHTML());
                         buf.append("&nbsp;&nbsp;");
                         byte communityCardsDealt = rs.getByte(1);
                         card = rs.getString(2);
                         if ((card != null) && (communityCardsDealt > 0))
-                            buf.append(Card.getCard(card).toHTML());
+                            buf.append(ClientCard.getCard(card).toHTML());
                         card = rs.getString(3);
                         if ((card != null) && (communityCardsDealt > 1))
-                            buf.append(Card.getCard(card).toHTML());
+                            buf.append(ClientCard.getCard(card).toHTML());
                         card = rs.getString(4);
                         if ((card != null) && (communityCardsDealt > 2))
-                            buf.append(Card.getCard(card).toHTML());
+                            buf.append(ClientCard.getCard(card).toHTML());
                         card = rs.getString(5);
                         if ((card != null) && (communityCardsDealt > 3))
-                            buf.append(Card.getCard(card).toHTML());
+                            buf.append(ClientCard.getCard(card).toHTML());
                         card = rs.getString(6);
                         if ((card != null) && (communityCardsDealt > 4))
-                            buf.append(Card.getCard(card).toHTML());
+                            buf.append(ClientCard.getCard(card).toHTML());
 
                         return buf.toString();
                     }
@@ -1735,7 +1741,7 @@ public class PokerDatabase {
         return "";
     }
 
-    public static void appendShowdown(StringBuilder sb, List<HandAction> hist, Hand community, boolean bShowAll) {
+    public static void appendShowdown(StringBuilder sb, List<HandAction> hist, ClientHand community, boolean bShowAll) {
         StringBuilder sb2 = new StringBuilder();
 
         for (int i = 8; i >= 0; i--) // can have a max of 9 pots
@@ -1744,10 +1750,11 @@ public class PokerDatabase {
         }
 
         sb.append(PropertyConfig.getMessage("msg.hand.history",
-                PropertyConfig.getMessage("msg.round." + BettingRound.SHOWDOWN), sb2.toString(), community.toHTML()));
+                PropertyConfig.getMessage("msg.round." + ClientBettingRound.SHOWDOWN), sb2.toString(),
+                community.toHTML()));
     }
 
-    private static void appendShowdown(StringBuilder sb, List<HandAction> hist, Hand community, boolean bShowAll,
+    private static void appendShowdown(StringBuilder sb, List<HandAction> hist, ClientHand community, boolean bShowAll,
             int nPot) {
         HandAction action;
 
@@ -1759,7 +1766,7 @@ public class PokerDatabase {
         for (int i = 0; i < hist.size(); i++) {
             action = (HandAction) hist.get(i);
 
-            if (action.getRound() != BettingRound.SHOWDOWN.toLegacy())
+            if (action.getRound() != ClientBettingRound.SHOWDOWN.toLegacy())
                 continue;
             if (action.getSubAmount() != nPot)
                 continue;
@@ -1795,7 +1802,7 @@ public class PokerDatabase {
         for (int i = 0; i < hist.size(); i++) {
             action = (HandAction) hist.get(i);
 
-            if (action.getRound() != BettingRound.SHOWDOWN.toLegacy())
+            if (action.getRound() != ClientBettingRound.SHOWDOWN.toLegacy())
                 continue;
             if (action.getSubAmount() != nPot)
                 continue;
@@ -1807,7 +1814,7 @@ public class PokerDatabase {
                 sHeaderKey = null;
             }
 
-            Hand hand = player.getHandSorted();
+            ClientHand hand = player.getHandSorted();
 
             String handHTML;
             String handShown = "";
@@ -1816,7 +1823,7 @@ public class PokerDatabase {
                 handHTML = hand.toHTML();
 
                 if (!community.isEmpty()) {
-                    info.getScore(hand, community);
+                    info.getScore(EngineAdapter.toHand(hand), EngineAdapter.toHand(community));
                     handShown = "&nbsp;-&nbsp;" + HandHistoryPanel.handDesc(info);
                 }
             } else {

@@ -37,9 +37,9 @@
  */
 
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.display.ClientHand;
 
 import com.donohoedigital.base.*;
-import com.donohoedigital.games.poker.engine.*;
 
 /**
  *
@@ -49,7 +49,7 @@ public class HandStat implements Comparable<HandStat> {
     public int nChip;
     public int nCnt;
     public int nWon;
-    public HandSorted hand;
+    public ClientHand hand;
     public double lastExpectation_;
     public int nLastChip;
     public int nLastWon;
@@ -70,7 +70,7 @@ public class HandStat implements Comparable<HandStat> {
     /**
      * New hand stat
      */
-    public HandStat(HandSorted hand) {
+    public HandStat(ClientHand hand) {
         this.hand = hand;
         this.nChip = 0;
         this.nCnt = 0;

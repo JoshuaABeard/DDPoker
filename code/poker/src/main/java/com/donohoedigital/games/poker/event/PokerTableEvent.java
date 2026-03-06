@@ -42,7 +42,7 @@ import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.comms.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 
 /**
@@ -187,7 +187,7 @@ public class PokerTableEvent implements DataMarshal {
             sb.append("; old=").append(nOne_);
             sb.append("; new=").append(nTwo_);
         } else if (nType_ == TYPE_DEALER_ACTION) {
-            sb.append("; round=").append(BettingRound.getRoundName(nOne_));
+            sb.append("; round=").append(ClientBettingRound.getRoundName(nOne_));
         } else if (nType_ == TYPE_PLAYER_REBUY || nType_ == TYPE_PLAYER_ADDON) {
             sb.append("; cash=").append(nOne_);
             sb.append("; chips=").append(nTwo_);
@@ -256,7 +256,7 @@ public class PokerTableEvent implements DataMarshal {
     }
 
     /**
-     * Hand action events
+     * ClientHand action events
      */
     public PokerTableEvent(int nType, ClientPokerTable table, HandAction action) {
         this(nType, table);
