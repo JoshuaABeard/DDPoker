@@ -19,11 +19,12 @@ package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.base.ApplicationError;
 import com.donohoedigital.config.PropertyConfig;
+import com.donohoedigital.games.poker.ClientTournamentProfile;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.event.PokerTableListener;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -215,7 +216,7 @@ public class RemotePokerTable implements ClientPokerTable {
 
     /** Returns the tournament profile from the game. */
     @Override
-    public TournamentProfile getProfile() {
+    public ClientTournamentProfile getProfile() {
         return game_ != null ? game_.getProfile() : null;
     }
 

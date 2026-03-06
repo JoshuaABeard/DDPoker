@@ -43,7 +43,7 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.*;
-import com.donohoedigital.games.poker.model.*;
+
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
@@ -225,7 +225,6 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener {
         public void rememberProfile(BaseProfile profile) {
             super.rememberProfile(profile);
             default_ = (PlayerProfile) profile;
-            PokerDatabase.init(default_);
             if (onProfileChanged_ != null) {
                 onProfileChanged_.accept(default_);
             }
@@ -235,9 +234,6 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener {
         protected boolean deleteProfile(BaseProfile profile) {
             // If online profile, then delete on the server.
             PlayerProfile playerProfile = (PlayerProfile) profile;
-
-            // Delete on the client.
-            PokerDatabase.delete(default_);
 
             File advisorFile = PlayerType.getAdvisorFile(playerProfile);
 
@@ -311,7 +307,6 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener {
                 }
             }
 
-            PokerDatabase.init(default_);
         }
 
         return default_;
@@ -406,8 +401,8 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener {
         int nTotalSpent = 0;
 
         if (selected != null) {
-            List<TournamentHistory> history = selected.getHistory();
-            TournamentHistory hist;
+            List<ClientTournamentHistory> history = selected.getHistory();
+            ClientTournamentHistory hist;
             DDLabel label;
             DDPanel panel;
             DeleteButton button;
@@ -452,7 +447,7 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener {
         scroll_.revalidate();
     }
 
-    private String toHTML(TournamentHistory hist) {
+    private String toHTML(ClientTournamentHistory hist) {
         GameEngine engine = GameEngine.getGameEngine();
         SimpleDateFormat formatter = PropertyConfig.getDateFormat((engine != null) ? engine.getLocale() : null);
 
@@ -500,13 +495,13 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener {
 
     public static boolean deleteHistory(GameContext context, PlayerProfile profile, int nIndex) {
         {
-            TournamentHistory hist_ = profile.getHistory().get(nIndex);
+            ClientTournamentHistory hist_ = profile.getHistory().get(nIndex);
             String date = hist_.getPlace() > 0
                     ? PropertyConfig.getDateFormat(GameEngine.getGameEngine().getLocale()).format(hist_.getEndDate())
                     : PropertyConfig.getMessage("msg.hist.unfinished2");
             if (EngineUtils.displayConfirmationDialog(context, PropertyConfig.getMessage("msg.confirm.deletehist",
                     Utils.encodeHTML(hist_.getTournamentName()), date, Utils.encodeHTML(profile.getName())))) {
-                PokerDatabase.deleteTournament(profile.getHistory().remove(nIndex));
+                profile.getHistory().remove(nIndex);
                 return true;
             }
             return false;
@@ -516,7 +511,7 @@ public class PlayerProfileOptions extends BasePhase implements ChangeListener {
     public static boolean deleteAllHistory(GameContext context, PlayerProfile profile) {
         if (EngineUtils.displayConfirmationDialog(context,
                 PropertyConfig.getMessage("msg.confirm.deletehistall", Utils.encodeHTML(profile.getName())))) {
-            PokerDatabase.deleteAllTournaments(profile);
+            profile.getHistory().clear();
             return true;
         }
         return false;

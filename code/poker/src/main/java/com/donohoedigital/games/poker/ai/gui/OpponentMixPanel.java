@@ -33,7 +33,8 @@
 package com.donohoedigital.games.poker.ai.gui;
 
 import com.donohoedigital.games.config.*;
-import com.donohoedigital.games.poker.model.*;
+
+import com.donohoedigital.games.poker.ClientTournamentProfile;
 import com.donohoedigital.games.poker.ai.*;
 import com.donohoedigital.gui.*;
 
@@ -45,9 +46,9 @@ import java.util.List;
 
 public class OpponentMixPanel extends DDTabPanel {
     private ListPanel typesList_;
-    private TournamentProfile profile_;
+    private ClientTournamentProfile profile_;
 
-    public OpponentMixPanel(TournamentProfile profile) {
+    public OpponentMixPanel(ClientTournamentProfile profile) {
         profile_ = profile;
     }
 

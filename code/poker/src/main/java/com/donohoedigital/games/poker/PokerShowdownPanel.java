@@ -39,7 +39,7 @@ import com.donohoedigital.games.poker.display.ClientCard;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.server.*;
+import com.donohoedigital.games.poker.server.GameServerRestClient;
 import com.donohoedigital.games.poker.protocol.dto.SimulationResult;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;

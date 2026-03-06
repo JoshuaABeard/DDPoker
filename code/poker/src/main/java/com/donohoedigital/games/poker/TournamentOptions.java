@@ -44,7 +44,7 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.*;
-import com.donohoedigital.games.poker.model.*;
+
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
@@ -66,7 +66,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
     private MenuBackground menu_;
     private DDButton start_;
     private DDLabelBorder statsBorder_;
-    private TournamentProfile selected_ = null;
+    private ClientTournamentProfile selected_ = null;
     private ProfileList profileList_;
     private TournamentSummaryPanel summary_;
 
@@ -117,7 +117,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
         top.add(left, BorderLayout.WEST);
 
         // get current profile list and sort it
-        List<BaseProfile> profiles = TournamentProfile.getProfileList();
+        List<BaseProfile> profiles = ClientTournamentProfile.getProfileList();
         Collections.sort(profiles);
 
         // player list
@@ -171,7 +171,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
          */
         @Override
         protected BaseProfile createEmptyProfile() {
-            TournamentProfile t = new TournamentProfile();
+            ClientTournamentProfile t = new ClientTournamentProfile();
             t.setPlayerTypePercent(PlayerType.getDefaultProfile().getUniqueKey(), 100);
             return t;
         }
@@ -181,9 +181,9 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
          */
         @Override
         protected BaseProfile copyProfile(BaseProfile profile, boolean bForEdit) {
-            TournamentProfile tp = (TournamentProfile) profile;
+            ClientTournamentProfile tp = (ClientTournamentProfile) profile;
             String sName = bForEdit ? tp.getName() : PropertyConfig.getMessage("msg.copy", tp.getName());
-            return new TournamentProfile(tp, sName);
+            return new ClientTournamentProfile(tp, sName);
         }
 
         /**
@@ -231,7 +231,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
             File file = chooser.getSelectedFile();
 
             try (Reader reader = new FileReader(file)) {
-                TournamentProfile imported = new TournamentProfile();
+                ClientTournamentProfile imported = new ClientTournamentProfile();
                 imported.read(reader, false);
 
                 // handle duplicate names
@@ -369,7 +369,7 @@ public class TournamentOptions extends BasePhase implements ChangeListener, Ance
      */
     public void stateChanged(ChangeEvent e) {
         if (e.getSource() == profileList_) {
-            TournamentProfile pp = (TournamentProfile) profileList_.getSelectedProfile();
+            ClientTournamentProfile pp = (ClientTournamentProfile) profileList_.getSelectedProfile();
 
             if (pp != null) {
                 // set current selected profile and update stats label

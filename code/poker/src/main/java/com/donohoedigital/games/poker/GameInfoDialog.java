@@ -2,6 +2,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 DD Poker Community
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,12 +42,11 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.Utils;
 import com.donohoedigital.config.PropertyConfig;
-import com.donohoedigital.db.BindArray;
 import com.donohoedigital.games.config.GamePhase;
 import com.donohoedigital.games.engine.DialogPhase;
 import com.donohoedigital.games.engine.GameContext;
 import com.donohoedigital.games.engine.GameEngine;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
@@ -55,7 +55,6 @@ import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
-import java.sql.Types;
 
 /**
  *
@@ -66,7 +65,7 @@ public class GameInfoDialog extends DialogPhase {
 
     // members
     private PokerGame game_;
-    private TournamentProfile profile_;
+    private ClientTournamentProfile profile_;
     private DDTabbedPane tab_;
     private ImageComponent ic_ = new ImageComponent("ddlogo20", 1.0d);
     private boolean bLobbyMode_;
@@ -161,17 +160,17 @@ public class GameInfoDialog extends DialogPhase {
         public void createUI() {
             setPreferredSize(new Dimension(650, 363));
 
-            BindArray bindArray = new BindArray();
-            bindArray.addValue(Types.INTEGER, PokerDatabase.storeTournament(game_));
+            PokerGame.WebSocketConfig cfg = game_.getWebSocketConfig();
+            if (cfg == null) {
+                // No server connection available
+                add(new DDLabel(PropertyConfig.getMessage("msg.nohistory")), BorderLayout.CENTER);
+                return;
+            }
 
             ClientPokerTable currentTable = game_.getCurrentTable();
             ClientHoldemHand clientHand = currentTable != null ? currentTable.getHoldemHand() : null;
 
-            if (clientHand == null || clientHand.isStoredInDatabase()) {
-                clientHand = null;
-            }
-
-            add(new HandHistoryPanel(context_, STYLE, "HND_TOURNAMENT_ID=?", bindArray, clientHand, 9),
+            add(new HandHistoryPanel(context_, STYLE, cfg.gameId(), cfg.jwt(), cfg.port(), clientHand, 9),
                     BorderLayout.CENTER);
         }
     }

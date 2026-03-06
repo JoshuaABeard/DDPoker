@@ -31,6 +31,7 @@
  */
 package com.donohoedigital.games.poker.gameserver;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,10 +42,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.donohoedigital.games.poker.core.GameHand;
+import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 import com.donohoedigital.games.poker.engine.PlayerAction;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
-import com.donohoedigital.games.poker.engine.Card;
+import com.donohoedigital.games.poker.gameserver.persistence.entity.HandActionEntity;
+import com.donohoedigital.games.poker.gameserver.persistence.entity.HandHistoryEntity;
+import com.donohoedigital.games.poker.gameserver.persistence.entity.HandPlayerEntity;
+import com.donohoedigital.games.poker.gameserver.service.HandHistoryService;
+import com.donohoedigital.games.poker.gameserver.websocket.OutboundMessageConverter;
 
 /**
  * Server-side poker hand implementation. Implements GameHand without Swing
@@ -97,6 +103,13 @@ public class ServerHand implements GameHand {
     private boolean done;
     private boolean allInShowdown;
     private int potStatus; // NO_POT_ACTION, CALLED_POT, RAISED_POT, RERAISED_POT
+
+    // Hand history persistence
+    private HandHistoryService handHistoryService;
+    private String gameId;
+    private int tableId;
+    private Instant startDate;
+    private final Map<Integer, Integer> startChips = new HashMap<>(); // playerId -> chips at start
 
     // Resolution
     private List<ServerPlayer> preWinners;
@@ -182,6 +195,12 @@ public class ServerHand implements GameHand {
 
         // Initialize player order (all active players in seat order)
         initializePlayerOrder();
+
+        // Capture start chips and start time for hand history
+        startDate = Instant.now();
+        for (ServerPlayer player : playerOrder) {
+            startChips.put(player.getID(), player.getChipCount());
+        }
 
         // Post antes first
         if (anteAmount > 0) {
@@ -944,9 +963,211 @@ public class ServerHand implements GameHand {
         }
     }
 
+    /**
+     * Configure hand history persistence. Must be called before
+     * {@link #storeHandHistory()} to enable storage.
+     *
+     * @param service
+     *            the hand history service
+     * @param gameId
+     *            the game ID
+     * @param tableId
+     *            the table number
+     */
+    public void setHandHistoryService(HandHistoryService service, String gameId, int tableId) {
+        this.handHistoryService = service;
+        this.gameId = gameId;
+        this.tableId = tableId;
+    }
+
+    // Action bitflags (compatible with PokerDatabase)
+    static final int BIT_CHECK = 1;
+    static final int BIT_CALL = 2;
+    static final int BIT_BET = 4;
+    static final int BIT_RAISE = 8;
+    static final int BIT_RERAISE = 16;
+    static final int BIT_FOLD = 32;
+    static final int BIT_WIN = 64;
+
     @Override
     public void storeHandHistory() {
-        // Server uses event store instead of database hand history
+        if (handHistoryService == null || gameId == null) {
+            return;
+        }
+
+        try {
+            // Build hand history entity
+            HandHistoryEntity hand = new HandHistoryEntity();
+            hand.setTableId(tableId);
+            hand.setHandNumber(handNumber);
+            hand.setGameStyle("HOLDEM");
+            hand.setGameType("NOLIMIT");
+            hand.setStartDate(startDate);
+            hand.setEndDate(Instant.now());
+            hand.setAnte(anteAmount);
+            hand.setSmallBlind(smallBlindAmount);
+            hand.setBigBlind(bigBlindAmount);
+
+            // Community cards
+            List<String> communityStrings = new ArrayList<>();
+            for (Card card : community) {
+                communityStrings.add(OutboundMessageConverter.cardToString(card));
+            }
+            hand.setCommunityCards(toJson(communityStrings));
+            hand.setCommunityCardsDealt(computeCommunityCardsDealt());
+
+            // Build action bitflags per player per round
+            int numSeats = table.getNumSeats();
+            int[][] actionBits = new int[numSeats][4];
+            int[] lastActionRound = new int[numSeats];
+            boolean raised = false;
+            int prevRound = -1;
+
+            for (ServerHandAction action : history) {
+                int seat = action.player().getSeat();
+                int actionRound = action.round();
+
+                lastActionRound[seat] = actionRound;
+
+                // Reset re-raise tracking when the betting round changes
+                if (actionRound != prevRound) {
+                    raised = false;
+                    prevRound = actionRound;
+                }
+
+                switch (action.action()) {
+                    case ServerHandAction.ACTION_CHECK :
+                        actionBits[seat][actionRound] |= BIT_CHECK;
+                        break;
+                    case ServerHandAction.ACTION_CALL :
+                        actionBits[seat][actionRound] |= BIT_CALL;
+                        break;
+                    case ServerHandAction.ACTION_BET :
+                        actionBits[seat][actionRound] |= BIT_BET;
+                        break;
+                    case ServerHandAction.ACTION_RAISE :
+                        actionBits[seat][actionRound] |= BIT_RAISE;
+                        if (raised) {
+                            actionBits[seat][actionRound] |= BIT_RERAISE;
+                        } else {
+                            raised = true;
+                        }
+                        break;
+                    case ServerHandAction.ACTION_FOLD :
+                        actionBits[seat][actionRound] |= BIT_FOLD;
+                        break;
+                    default :
+                        break;
+                }
+            }
+
+            // Mark winners with BIT_WIN on their last round of action
+            for (PotResolutionResult result : getResolutionResults()) {
+                for (int winnerId : result.winnerIds()) {
+                    for (ServerPlayer player : playerOrder) {
+                        if (player.getID() == winnerId) {
+                            int seat = player.getSeat();
+                            actionBits[seat][lastActionRound[seat]] |= BIT_WIN;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Build player entities
+            List<HandPlayerEntity> players = new ArrayList<>();
+            for (ServerPlayer player : playerOrder) {
+                HandPlayerEntity pe = new HandPlayerEntity();
+                pe.setPlayerId(player.getID());
+                pe.setPlayerName(player.getName());
+                pe.setSeatNumber(player.getSeat());
+                pe.setStartChips(startChips.getOrDefault(player.getID(), 0));
+                pe.setEndChips(player.getChipCount());
+
+                List<Card> holeCards = playerHands.get(player.getID());
+                if (holeCards != null) {
+                    List<String> cardStrings = new ArrayList<>();
+                    for (Card card : holeCards) {
+                        cardStrings.add(OutboundMessageConverter.cardToString(card));
+                    }
+                    pe.setHoleCards(toJson(cardStrings));
+                }
+
+                int seat = player.getSeat();
+                pe.setPreflopActions(actionBits[seat][0]);
+                pe.setFlopActions(actionBits[seat][1]);
+                pe.setTurnActions(actionBits[seat][2]);
+                pe.setRiverActions(actionBits[seat][3]);
+                pe.setCardsExposed(!player.isFolded());
+
+                players.add(pe);
+            }
+
+            // Build action entities
+            List<HandActionEntity> actions = new ArrayList<>();
+            for (int i = 0; i < history.size(); i++) {
+                ServerHandAction action = history.get(i);
+                HandActionEntity ae = new HandActionEntity();
+                ae.setPlayerId(action.player().getID());
+                ae.setSequence(i);
+                ae.setRound(action.round());
+                ae.setActionType(actionTypeToString(action.action()));
+                ae.setAmount(action.amount());
+                ae.setSubAmount(action.subAmount());
+                ae.setAllIn(action.allIn());
+                actions.add(ae);
+            }
+
+            handHistoryService.storeHand(gameId, hand, players, actions);
+        } catch (Exception e) {
+            logger.warn("[ServerHand] Failed to store hand history for hand {}: {}", handNumber, e.getMessage());
+        }
+    }
+
+    private int computeCommunityCardsDealt() {
+        if (allInShowdown) {
+            return 5;
+        }
+        int dealt = 0;
+        for (ServerHandAction action : history) {
+            int actionRound = action.round();
+            if (actionRound == 1 && dealt < 3) {
+                dealt = 3;
+            } else if (actionRound == 2 && dealt < 4) {
+                dealt = 4;
+            } else if (actionRound == 3 && dealt < 5) {
+                dealt = 5;
+            }
+        }
+        return dealt;
+    }
+
+    private static String actionTypeToString(int action) {
+        switch (action) {
+            case ServerHandAction.ACTION_FOLD :
+                return "FOLD";
+            case ServerHandAction.ACTION_CHECK :
+                return "CHECK";
+            case ServerHandAction.ACTION_CALL :
+                return "CALL";
+            case ServerHandAction.ACTION_BET :
+                return "BET";
+            case ServerHandAction.ACTION_RAISE :
+                return "RAISE";
+            default :
+                return "UNKNOWN";
+        }
+    }
+
+    private static String toJson(List<String> strings) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < strings.size(); i++) {
+            if (i > 0)
+                sb.append(",");
+            sb.append("\"").append(strings.get(i)).append("\"");
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
     @Override

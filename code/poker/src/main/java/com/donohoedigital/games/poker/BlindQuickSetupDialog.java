@@ -23,7 +23,7 @@ import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.model.*;
+
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
@@ -37,7 +37,7 @@ public class BlindQuickSetupDialog extends DialogPhase implements ActionListener
 
     public static final String PARAM_PROFILE = "profile";
 
-    private TournamentProfile profile_;
+    private ClientTournamentProfile profile_;
     private DDComboBox templateCombo_;
     private DDNumberSpinner numLevelsSpinner_;
     private DDCheckBox includeBreaksCheckbox_;
@@ -48,7 +48,7 @@ public class BlindQuickSetupDialog extends DialogPhase implements ActionListener
      * Create dialog contents
      */
     public JComponent createDialogContents() {
-        profile_ = (TournamentProfile) gamephase_.getObject(PARAM_PROFILE);
+        profile_ = (ClientTournamentProfile) gamephase_.getObject(PARAM_PROFILE);
         ApplicationError.assertNotNull(profile_, "No 'profile' in params");
 
         DDPanel base = new DDPanel();
@@ -67,7 +67,7 @@ public class BlindQuickSetupDialog extends DialogPhase implements ActionListener
         // Template selection
         form.add(new DDLabel("msg.blind.template", STYLE));
         templateCombo_ = new DDComboBox("template", STYLE);
-        for (BlindTemplate template : BlindTemplate.values()) {
+        for (ClientBlindTemplate template : ClientBlindTemplate.values()) {
             templateCombo_.addItem(template);
         }
         templateCombo_.addActionListener(this);
@@ -75,7 +75,7 @@ public class BlindQuickSetupDialog extends DialogPhase implements ActionListener
 
         // Number of levels
         form.add(new DDLabel("msg.blind.numlevels", STYLE));
-        numLevelsSpinner_ = new DDNumberSpinner(15, 1, TournamentProfile.MAX_LEVELS, STYLE);
+        numLevelsSpinner_ = new DDNumberSpinner(15, 1, ClientTournamentProfile.MAX_LEVELS, STYLE);
         numLevelsSpinner_.addChangeListener(e -> updatePreview());
         form.add(numLevelsSpinner_);
 
@@ -125,7 +125,7 @@ public class BlindQuickSetupDialog extends DialogPhase implements ActionListener
      * Update the preview display
      */
     private void updatePreview() {
-        BlindTemplate template = (BlindTemplate) templateCombo_.getSelectedItem();
+        ClientBlindTemplate template = (ClientBlindTemplate) templateCombo_.getSelectedItem();
         if (template == null)
             return;
 
@@ -134,7 +134,7 @@ public class BlindQuickSetupDialog extends DialogPhase implements ActionListener
         int breakFreq = breakFrequencySpinner_.getValue();
 
         // Create temporary profile for preview
-        TournamentProfile temp = new TournamentProfile("Preview");
+        ClientTournamentProfile temp = new ClientTournamentProfile("Preview");
         template.generateLevels(temp, numLevels, includeBreaks, breakFreq);
 
         // Build preview text
@@ -143,7 +143,7 @@ public class BlindQuickSetupDialog extends DialogPhase implements ActionListener
 
         // Iterate through all generated levels, showing first 5 blind levels
         int blindLevelsShown = 0;
-        int maxLevel = TournamentProfile.MAX_LEVELS;
+        int maxLevel = ClientTournamentProfile.MAX_LEVELS;
 
         for (int level = 1; level <= maxLevel && blindLevelsShown < numLevels; level++) {
             if (temp.isBreak(level)) {
@@ -180,7 +180,7 @@ public class BlindQuickSetupDialog extends DialogPhase implements ActionListener
      */
     public boolean processButton(GameButton button) {
         if (button.getName().equals(okayButton_.getName())) {
-            BlindTemplate template = (BlindTemplate) templateCombo_.getSelectedItem();
+            ClientBlindTemplate template = (ClientBlindTemplate) templateCombo_.getSelectedItem();
             int numLevels = numLevelsSpinner_.getValue();
             boolean includeBreaks = includeBreaksCheckbox_.isSelected();
             int breakFreq = breakFrequencySpinner_.getValue();

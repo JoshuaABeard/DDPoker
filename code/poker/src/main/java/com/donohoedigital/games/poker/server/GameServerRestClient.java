@@ -17,13 +17,22 @@
  */
 package com.donohoedigital.games.poker.server;
 
-import com.donohoedigital.games.poker.protocol.dto.GameConfig;
-import com.donohoedigital.games.poker.protocol.dto.SimulationResult;
-import com.donohoedigital.games.poker.gameserver.controller.TournamentProfileConverter;
+import com.donohoedigital.games.poker.ClientTournamentProfile;
 import com.donohoedigital.games.poker.protocol.dto.CreateGameResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfigBuilder;
 import com.donohoedigital.games.poker.protocol.dto.GameListResponse;
 import com.donohoedigital.games.poker.protocol.dto.GameSummary;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+import com.donohoedigital.games.poker.protocol.dto.HandDetailData;
+import com.donohoedigital.games.poker.protocol.dto.HandExportData;
+import com.donohoedigital.games.poker.protocol.dto.HandRoundStatsData;
+import com.donohoedigital.games.poker.protocol.dto.HandStatsData;
+import com.donohoedigital.games.poker.protocol.dto.HandSummaryData;
+import com.donohoedigital.games.poker.protocol.dto.SimulationResult;
+import com.donohoedigital.games.poker.protocol.dto.TournamentProfileData;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -54,12 +63,10 @@ public class GameServerRestClient {
 
     private final int port;
     private final HttpClient http;
-    private final TournamentProfileConverter converter;
 
     public GameServerRestClient(int port) {
         this.port = port;
         this.http = HttpClient.newHttpClient();
-        this.converter = new TournamentProfileConverter();
     }
 
     /**
@@ -80,8 +87,8 @@ public class GameServerRestClient {
      * @throws GameServerClientException
      *             if the HTTP call fails or the server returns an error
      */
-    public String createPracticeGame(TournamentProfile profile, List<String> aiNames, int aiSkillLevel, String jwt,
-            String humanDisplayName) {
+    public String createPracticeGame(ClientTournamentProfile profile, List<String> aiNames, int aiSkillLevel,
+            String jwt, String humanDisplayName) {
         return createPracticeGame(profile, aiNames, aiSkillLevel, jwt, humanDisplayName, null);
     }
 
@@ -89,8 +96,8 @@ public class GameServerRestClient {
      * Create a practice game on the embedded server with practice configuration.
      *
      * <p>
-     * Converts the {@link TournamentProfile} to a {@link GameConfig}, posts it to
-     * {@code POST /api/v1/games/practice}, and returns the game ID.
+     * Converts the {@link ClientTournamentProfile} to a {@link GameConfig}, posts
+     * it to {@code POST /api/v1/games/practice}, and returns the game ID.
      *
      * @param profile
      *            tournament profile from the desktop UI
@@ -108,10 +115,11 @@ public class GameServerRestClient {
      * @throws GameServerClientException
      *             if the HTTP call fails or the server returns an error
      */
-    public String createPracticeGame(TournamentProfile profile, List<String> aiNames, int aiSkillLevel, String jwt,
-            String humanDisplayName, GameConfig.PracticeConfig practiceConfig) {
-        GameConfig config = converter.convert(profile)
-                .withAiPlayers(converter.buildAiPlayers(profile, aiNames, aiSkillLevel))
+    public String createPracticeGame(ClientTournamentProfile profile, List<String> aiNames, int aiSkillLevel,
+            String jwt, String humanDisplayName, GameConfig.PracticeConfig practiceConfig) {
+        TournamentProfileData profileData = profile.toProfileData();
+        GameConfig config = GameConfigBuilder.fromProfile(profileData)
+                .withAiPlayers(GameConfigBuilder.buildAiPlayers(profileData, aiNames, aiSkillLevel))
                 .withHumanDisplayName(humanDisplayName).withPracticeConfig(practiceConfig);
         try {
             String body = OBJECT_MAPPER.writeValueAsString(config);
@@ -388,6 +396,197 @@ public class GameServerRestClient {
         } catch (Exception e) {
             throw new GameServerClientException("Failed cheat " + action, e);
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Hand history endpoints
+    // -------------------------------------------------------------------------
+
+    /**
+     * Get hand count for a game.
+     */
+    public long getHandCount(String gameId, String jwt) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:" + port + "/api/v1/games/" + gameId + "/hands/count"))
+                    .header("Authorization", "Bearer " + jwt).GET().build();
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new GameServerClientException(
+                        "getHandCount returned " + response.statusCode() + ": " + response.body());
+            }
+            return Long.parseLong(response.body().trim());
+        } catch (GameServerClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new GameServerClientException("Failed to get hand count", e);
+        }
+    }
+
+    /**
+     * Get paginated hand summaries for a game.
+     */
+    public List<HandSummaryData> getHandSummaries(String gameId, String jwt, int page, int pageSize) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create("http://localhost:" + port + "/api/v1/games/"
+                    + gameId + "/hands?page=" + page + "&size=" + pageSize)).header("Authorization", "Bearer " + jwt)
+                    .GET().build();
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new GameServerClientException(
+                        "getHandSummaries returned " + response.statusCode() + ": " + response.body());
+            }
+            // Spring Page response wraps content in a "content" field
+            JsonNode root = OBJECT_MAPPER.readTree(response.body());
+            return OBJECT_MAPPER.convertValue(root.get("content"), new TypeReference<List<HandSummaryData>>() {
+            });
+        } catch (GameServerClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new GameServerClientException("Failed to get hand summaries", e);
+        }
+    }
+
+    /**
+     * Get full hand detail.
+     */
+    public HandDetailData getHandDetail(String gameId, String jwt, long handId) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:" + port + "/api/v1/games/" + gameId + "/hands/" + handId))
+                    .header("Authorization", "Bearer " + jwt).GET().build();
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 404) {
+                return null;
+            }
+            if (response.statusCode() != 200) {
+                throw new GameServerClientException(
+                        "getHandDetail returned " + response.statusCode() + ": " + response.body());
+            }
+            return OBJECT_MAPPER.readValue(response.body(), HandDetailData.class);
+        } catch (GameServerClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new GameServerClientException("Failed to get hand detail", e);
+        }
+    }
+
+    /**
+     * Get aggregated hand stats by hand class.
+     */
+    public List<HandStatsData> getHandStats(String gameId, String jwt) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:" + port + "/api/v1/games/" + gameId + "/hands/stats"))
+                    .header("Authorization", "Bearer " + jwt).GET().build();
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new GameServerClientException(
+                        "getHandStats returned " + response.statusCode() + ": " + response.body());
+            }
+            return OBJECT_MAPPER.readValue(response.body(), new TypeReference<List<HandStatsData>>() {
+            });
+        } catch (GameServerClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new GameServerClientException("Failed to get hand stats", e);
+        }
+    }
+
+    /**
+     * Get per-round aggregated stats by hand class.
+     *
+     * @param round
+     *            0=preflop, 1=flop, 2=turn, 3=river
+     */
+    public List<HandRoundStatsData> getRoundStats(String gameId, String jwt, int round) {
+        try {
+            HttpRequest request = HttpRequest
+                    .newBuilder().uri(URI.create("http://localhost:" + port + "/api/v1/games/" + gameId
+                            + "/hands/round-stats?round=" + round))
+                    .header("Authorization", "Bearer " + jwt).GET().build();
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new GameServerClientException(
+                        "getRoundStats returned " + response.statusCode() + ": " + response.body());
+            }
+            return OBJECT_MAPPER.readValue(response.body(), new TypeReference<List<HandRoundStatsData>>() {
+            });
+        } catch (GameServerClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new GameServerClientException("Failed to get round stats", e);
+        }
+    }
+
+    /**
+     * Get all hands for export.
+     */
+    public List<HandExportData> getHandsForExport(String gameId, String jwt) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:" + port + "/api/v1/games/" + gameId + "/hands/export"))
+                    .header("Authorization", "Bearer " + jwt).GET().build();
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new GameServerClientException(
+                        "getHandsForExport returned " + response.statusCode() + ": " + response.body());
+            }
+            return OBJECT_MAPPER.readValue(response.body(), new TypeReference<List<HandExportData>>() {
+            });
+        } catch (GameServerClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new GameServerClientException("Failed to get hands for export", e);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Tournament history endpoints
+    // -------------------------------------------------------------------------
+
+    /**
+     * Delete a single tournament history entry.
+     */
+    public void deleteHistory(String jwt, long id) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:" + port + "/api/v1/history/" + id))
+                    .header("Authorization", "Bearer " + jwt).DELETE().build();
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 204) {
+                throw new GameServerClientException(
+                        "deleteHistory returned " + response.statusCode() + ": " + response.body());
+            }
+        } catch (GameServerClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new GameServerClientException("Failed to delete history", e);
+        }
+    }
+
+    /**
+     * Delete all tournament history for a player.
+     */
+    public void deleteAllHistory(String jwt, String playerName) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:" + port + "/api/v1/history?name=" + encode(playerName)))
+                    .header("Authorization", "Bearer " + jwt).DELETE().build();
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 204) {
+                throw new GameServerClientException(
+                        "deleteAllHistory returned " + response.statusCode() + ": " + response.body());
+            }
+        } catch (GameServerClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new GameServerClientException("Failed to delete all history", e);
+        }
+    }
+
+    private static String encode(String value) {
+        return java.net.URLEncoder.encode(value, java.nio.charset.StandardCharsets.UTF_8);
     }
 
     /** Thrown when a REST call to the embedded game server fails. */

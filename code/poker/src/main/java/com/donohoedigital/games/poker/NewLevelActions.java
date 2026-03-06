@@ -42,7 +42,7 @@ import com.donohoedigital.config.*;
 import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.online.*;
-import com.donohoedigital.games.poker.model.*;
+
 import com.donohoedigital.base.*;
 
 /**
@@ -82,7 +82,7 @@ public class NewLevelActions extends ChainPhase implements CancelablePhase {
         ClientPokerTable table = game_.getCurrentTable();
         td_ = (PokerDirector) context_.getGameManager();
 
-        TournamentProfile profile = game_.getProfile();
+        ClientTournamentProfile profile = game_.getProfile();
         int nThisLevel = table.getLevel();
         int nNextLevel = nThisLevel + 1;
 
@@ -150,7 +150,7 @@ public class NewLevelActions extends ChainPhase implements CancelablePhase {
         if (player.isObserver() || player.isEliminated())
             return false;
 
-        TournamentProfile prof = game.getProfile();
+        ClientTournamentProfile prof = game.getProfile();
         PokerDirector td = (PokerDirector) game.getGameContext().getGameManager();
         int nCost = prof.getRebuyCost();
         int nChips = prof.getRebuyChips();
@@ -192,7 +192,7 @@ public class NewLevelActions extends ChainPhase implements CancelablePhase {
      * Addon
      */
     private void addon() {
-        TournamentProfile prof = game_.getProfile();
+        ClientTournamentProfile prof = game_.getProfile();
         PokerDirector td = (PokerDirector) context_.getGameManager();
         int nCost = prof.getAddonCost();
         int nChips = prof.getAddonChips();

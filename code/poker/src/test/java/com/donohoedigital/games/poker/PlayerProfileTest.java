@@ -22,7 +22,7 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
 import com.donohoedigital.games.poker.display.ClientBettingRound;
-import com.donohoedigital.games.poker.model.OnlineProfile;
+import com.donohoedigital.games.poker.protocol.dto.OnlineProfileData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -399,25 +399,25 @@ class PlayerProfileTest {
     }
 
     // =================================================================
-    // toOnlineProfile Tests
+    // toOnlineProfileData Tests
     // =================================================================
 
     @Test
-    void should_CreateOnlineProfileWithSameName_When_ToOnlineProfileCalled() {
+    void should_CreateOnlineProfileWithSameName_When_ToOnlineProfileDataCalled() {
         profile.setEmail("user@example.com");
 
-        OnlineProfile online = profile.toOnlineProfile();
+        OnlineProfileData online = profile.toOnlineProfileData();
 
-        assertThat(online.getName()).isEqualTo("TestUser");
+        assertThat(online.name()).isEqualTo("TestUser");
     }
 
     @Test
-    void should_CreateOnlineProfileWithSameEmail_When_ToOnlineProfileCalled() {
+    void should_CreateOnlineProfileWithSameEmail_When_ToOnlineProfileDataCalled() {
         profile.setEmail("user@example.com");
 
-        OnlineProfile online = profile.toOnlineProfile();
+        OnlineProfileData online = profile.toOnlineProfileData();
 
-        assertThat(online.getEmail()).isEqualTo("user@example.com");
+        assertThat(online.email()).isEqualTo("user@example.com");
     }
 
     // =================================================================

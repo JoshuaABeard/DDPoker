@@ -21,7 +21,7 @@ package com.donohoedigital.games.poker;
 
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+// ClientTournamentProfile is in the same package
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.online.RemotePokerTable;
 import org.junit.jupiter.api.BeforeEach;
@@ -88,7 +88,7 @@ class PokerGameTest {
     @Test
     void should_ReturnGameDescription_When_GetDescriptionCalled() {
         // Need a human player and profile for description to work
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
         ClientPlayer human = createTestPlayer("Human", false);
         game.addPlayer(human);
@@ -107,8 +107,8 @@ class PokerGameTest {
     }
 
     @Test
-    void should_SetTournamentProfile_When_ProfileSet() {
-        TournamentProfile profile = createTestProfile();
+    void should_SetClientTournamentProfile_When_ProfileSet() {
+        ClientTournamentProfile profile = createTestProfile();
 
         game.setProfile(profile);
 
@@ -280,7 +280,7 @@ class PokerGameTest {
 
     @Test
     void should_AdvanceLevel_When_NextLevelCalled() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
         int initialLevel = game.getLevel();
 
@@ -291,7 +291,7 @@ class PokerGameTest {
 
     @Test
     void should_DecrementLevel_When_PrevLevelCalled() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
         game.nextLevel(); // Go to level 1
         game.nextLevel(); // Go to level 2
@@ -303,7 +303,7 @@ class PokerGameTest {
 
     @Test
     void should_ChangeToSpecificLevel_When_ChangeLevelCalled() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
 
         game.changeLevel(5);
@@ -313,7 +313,7 @@ class PokerGameTest {
 
     @Test
     void should_GetBigBlind_When_LevelSet() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
         game.changeLevel(1); // Set to level 1 to get default blinds
 
@@ -325,7 +325,7 @@ class PokerGameTest {
 
     @Test
     void should_GetSmallBlind_When_LevelSet() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
         game.changeLevel(1); // Set to level 1 to get default blinds
 
@@ -337,7 +337,7 @@ class PokerGameTest {
 
     @Test
     void should_GetAnte_When_LevelSet() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
 
         int ante = game.getAnte();
@@ -347,7 +347,7 @@ class PokerGameTest {
 
     @Test
     void should_GetMinChip_When_LevelSet() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
 
         int minChip = game.getMinChip();
@@ -357,7 +357,7 @@ class PokerGameTest {
 
     @Test
     void should_IncreaseBlinds_When_LevelAdvances() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
         int initialBigBlind = game.getBigBlind();
 
@@ -373,7 +373,7 @@ class PokerGameTest {
 
     @Test
     void should_GetPrizePool_When_ProfileSet() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
 
         int prizePool = game.getPrizePool();
@@ -383,7 +383,7 @@ class PokerGameTest {
 
     @Test
     void should_GetPrizesPaid_When_TournamentActive() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
 
         int prizesPaid = game.getPrizesPaid();
@@ -393,7 +393,7 @@ class PokerGameTest {
 
     @Test
     void should_TrackPlayersOut_When_PlayerOut() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
         ClientPlayer player = createTestPlayer("OutPlayer", false);
         game.addPlayer(player);
@@ -405,7 +405,7 @@ class PokerGameTest {
 
     @Test
     void should_FinishGame_When_FinishCalled() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
 
         assertThatCode(() -> game.finish()).doesNotThrowAnyException();
@@ -422,7 +422,7 @@ class PokerGameTest {
 
     @Test
     void should_AdjustTotalChipsInPlay_When_ExtraChipsChange() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
         game.addPlayer(createTestPlayer("Player1", false));
         game.addPlayer(createTestPlayer("Player2", false));
@@ -437,7 +437,7 @@ class PokerGameTest {
 
     @Test
     void should_ComputeTotalChips_When_ChipsInPlay() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
         ClientPlayer player1 = createTestPlayer("Player1", false);
         ClientPlayer player2 = createTestPlayer("Player2", false);
@@ -455,7 +455,7 @@ class PokerGameTest {
 
     @Test
     void should_GetAverageStack_When_PlayersHaveChips() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
         ClientPlayer player1 = createTestPlayer("Player1", false);
         ClientPlayer player2 = createTestPlayer("Player2", false);
@@ -486,7 +486,7 @@ class PokerGameTest {
 
     @Test
     void should_GetPlayerRank_When_PlayerInGame() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
         ClientPlayer player1 = createTestPlayer("Player1", false);
         ClientPlayer player2 = createTestPlayer("Player2", false);
@@ -503,7 +503,7 @@ class PokerGameTest {
 
     @Test
     void should_GetPlayersByRank_When_MultiplePlayers() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
         ClientPlayer player1 = createTestPlayer("Player1", false);
         ClientPlayer player2 = createTestPlayer("Player2", false);
@@ -537,7 +537,7 @@ class PokerGameTest {
 
     @Test
     void should_GetSecondsInLevel_When_LevelQueried() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
 
         int seconds = game.getSecondsInLevel(1);
@@ -566,7 +566,7 @@ class PokerGameTest {
 
     @Test
     void should_GetSeats_When_ProfileSet() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
 
         int seats = game.getSeats();
@@ -576,7 +576,7 @@ class PokerGameTest {
 
     @Test
     void should_VerifyChipCount_When_ChipsInPlay() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
         ClientPlayer player = createTestPlayer("Player1", false);
         player.setChipCount(1000);
@@ -588,7 +588,7 @@ class PokerGameTest {
 
     @Test
     void should_NotDoubleCountPlayerOut_When_PlayerAlreadyEliminated() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
 
         ClientPlayer player = new ClientPlayer(1, "Player1", false);
@@ -603,7 +603,7 @@ class PokerGameTest {
 
     @Test
     void should_ResolveCanonicalPlayer_When_PlayerOutCalledWithCloneObject() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
 
         ClientPlayer canonical = new ClientPlayer(7, "Player7", false);
@@ -696,7 +696,7 @@ class PokerGameTest {
 
     @Test
     void should_SetPrizeFromProfile_When_ProfileIsSetInApplyPlayerResult() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
         ClientPlayer player = new ClientPlayer(1, "Player1", false);
         player.setBuyin(100);
@@ -711,7 +711,7 @@ class PokerGameTest {
 
     @Test
     void should_AllocatePrizePoolAcrossResults_When_ApplyPlayerResultCalledForAllFinishers() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
 
         ClientPlayer winner = new ClientPlayer(1, "Winner", false);
@@ -742,7 +742,7 @@ class PokerGameTest {
 
     @Test
     void should_NotOverwriteWinnerPrize_When_ApplyPlayerResultRepeatedForWinner() {
-        TournamentProfile profile = createTestProfile();
+        ClientTournamentProfile profile = createTestProfile();
         game.setProfile(profile);
 
         ClientPlayer winner = new ClientPlayer(1, "Winner", false);
@@ -825,10 +825,15 @@ class PokerGameTest {
     // Test Helper Methods
     // =================================================================
 
-    private TournamentProfile createTestProfile() {
-        TournamentProfile profile = new TournamentProfile();
+    private ClientTournamentProfile createTestProfile() {
+        ClientTournamentProfile profile = new ClientTournamentProfile();
         profile.setName("Test Tournament");
         profile.setBuyinChips(1500);
+        // Set default blind levels so level-advance tests work
+        profile.setLevel(1, 0, 10, 20, 15);
+        profile.setLevel(2, 0, 20, 40, 15);
+        profile.setLevel(3, 5, 30, 60, 15);
+        profile.fixLevels();
         return profile;
     }
 

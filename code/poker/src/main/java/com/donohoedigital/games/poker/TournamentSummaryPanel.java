@@ -38,7 +38,7 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.*;
-import com.donohoedigital.games.poker.model.*;
+
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
@@ -63,7 +63,7 @@ public class TournamentSummaryPanel extends DDPanel {
     private TournamentModel opponents_;
     private DDTabbedPane tab_;
     private String sHelpName_;
-    private TournamentProfile profile_;
+    private ClientTournamentProfile profile_;
     private TournamentProfileFormatter profileHtml_;
     private ImageComponent ic_ = new ImageComponent("ddlogo20", 1.0d);
     private boolean bListMode_;
@@ -203,7 +203,7 @@ public class TournamentSummaryPanel extends DDPanel {
         }
     }
 
-    public void updateProfile(TournamentProfile profile) {
+    public void updateProfile(ClientTournamentProfile profile) {
         profile_ = profile;
         profileHtml_ = profile_ == null ? null : new TournamentProfileFormatter(profile_);
         setSummaryText();
@@ -346,7 +346,7 @@ public class TournamentSummaryPanel extends DDPanel {
     static class TournamentModel extends DefaultTableModel {
         GameContext context;
         List<ClientPlayer> rank;
-        TournamentProfile profile;
+        ClientTournamentProfile profile;
         TournamentProfileFormatter html;
         List<BaseProfile> playerTypes;
         String[] names;

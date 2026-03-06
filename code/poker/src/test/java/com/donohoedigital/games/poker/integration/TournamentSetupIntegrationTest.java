@@ -21,7 +21,7 @@ package com.donohoedigital.games.poker.integration;
 
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+import com.donohoedigital.games.poker.ClientTournamentProfile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -43,7 +43,7 @@ public class TournamentSetupIntegrationTest {
     @Test
     void should_CreateTournament_When_ValidProfileProvided() {
         // Create a tournament profile
-        TournamentProfile tournament = new TournamentProfile("TestTournament");
+        ClientTournamentProfile tournament = new ClientTournamentProfile("TestTournament");
 
         // Verify creation
         assertThat(tournament).isNotNull();
@@ -53,7 +53,7 @@ public class TournamentSetupIntegrationTest {
     @Test
     void should_SetDefaultValues_When_TournamentCreated() {
         // Create a tournament
-        TournamentProfile tournament = new TournamentProfile("DefaultTest");
+        ClientTournamentProfile tournament = new ClientTournamentProfile("DefaultTest");
 
         // Verify defaults are set
         assertThat(tournament.getNumPlayers()).isGreaterThan(0);
@@ -63,7 +63,7 @@ public class TournamentSetupIntegrationTest {
     @Test
     void should_AllowModification_When_TournamentCreated() {
         // Create a tournament
-        TournamentProfile tournament = new TournamentProfile("ModifiableTest");
+        ClientTournamentProfile tournament = new ClientTournamentProfile("ModifiableTest");
 
         // Modify settings
         tournament.setNumPlayers(8);
@@ -77,7 +77,7 @@ public class TournamentSetupIntegrationTest {
     @Test
     void should_SaveAndLoad_When_TournamentPersisted() {
         // Create and configure tournament
-        TournamentProfile original = new TournamentProfile("PersistTest");
+        ClientTournamentProfile original = new ClientTournamentProfile("PersistTest");
         original.setNumPlayers(6);
         original.setBuyin(500);
         original.initFile();
@@ -85,7 +85,7 @@ public class TournamentSetupIntegrationTest {
         original.save();
 
         // Load from file
-        TournamentProfile loaded = new TournamentProfile(original.getFile(), true);
+        ClientTournamentProfile loaded = new ClientTournamentProfile(original.getFile(), true);
 
         // Verify loaded correctly
         assertThat(loaded.getName()).isEqualTo("PersistTest");
@@ -99,7 +99,7 @@ public class TournamentSetupIntegrationTest {
     @Test
     void should_ValidateSettings_When_CreatingTournament() {
         // Create tournament
-        TournamentProfile tournament = new TournamentProfile("ValidationTest");
+        ClientTournamentProfile tournament = new ClientTournamentProfile("ValidationTest");
 
         // Set valid values
         tournament.setNumPlayers(4);
@@ -112,7 +112,7 @@ public class TournamentSetupIntegrationTest {
     @Test
     void should_SupportMultipleBlindLevels_When_Configured() {
         // Create tournament
-        TournamentProfile tournament = new TournamentProfile("BlindLevelsTest");
+        ClientTournamentProfile tournament = new ClientTournamentProfile("BlindLevelsTest");
 
         // Verify blind structure exists (has at least 1 level)
         assertThat(tournament.getLastLevel()).isGreaterThan(0);
@@ -121,7 +121,7 @@ public class TournamentSetupIntegrationTest {
     @Test
     void should_CalculatePayouts_When_TournamentConfigured() {
         // Create tournament with specific settings
-        TournamentProfile tournament = new TournamentProfile("PayoutTest");
+        ClientTournamentProfile tournament = new ClientTournamentProfile("PayoutTest");
         tournament.setNumPlayers(9);
         tournament.setBuyin(1000);
 

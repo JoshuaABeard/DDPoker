@@ -28,8 +28,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.donohoedigital.games.poker.protocol.dto.GameSummary;
-import com.donohoedigital.games.poker.model.OnlineGame;
-import com.donohoedigital.games.poker.model.util.OnlineGameList;
 
 /**
  * Unit tests for {@link GameSummaryConverter}.
@@ -53,7 +51,7 @@ class GameSummaryConverterTest {
         GameSummary summary = buildSummary("game-abc", "Test Game", "SERVER", "WAITING_FOR_PLAYERS",
                 "ws://localhost:54321/ws/games/game-abc");
 
-        OnlineGame game = converter.convert(summary);
+        ClientOnlineGame game = converter.convert(summary);
 
         assertThat(game.getUrl()).isEqualTo("ws://" + SERVER_HOST + "/ws/games/game-abc");
     }
@@ -65,7 +63,7 @@ class GameSummaryConverterTest {
         GameSummary summary = buildSummary("game-xyz", "My Game", "SERVER", "WAITING_FOR_PLAYERS",
                 "ws://some-other-host/ws/games/game-xyz");
 
-        OnlineGame game = converter.convert(summary);
+        ClientOnlineGame game = converter.convert(summary);
 
         assertThat(game.getUrl()).startsWith("ws://" + SERVER_HOST + "/ws/games/");
     }
@@ -79,7 +77,7 @@ class GameSummaryConverterTest {
         GameSummary summary = buildSummary("community-id", "Community Game", "COMMUNITY", "WAITING_FOR_PLAYERS",
                 "ws://203.0.113.42:8765/ws/games/local-uuid");
 
-        OnlineGame game = converter.convert(summary);
+        ClientOnlineGame game = converter.convert(summary);
 
         assertThat(game.getUrl()).isEqualTo("ws://203.0.113.42:8765/ws/games/local-uuid");
     }
@@ -88,7 +86,7 @@ class GameSummaryConverterTest {
     void communityGame_nullWsUrl_fallsBackToServerHostConstruction() {
         GameSummary summary = buildSummary("community-id", "Community Game", "COMMUNITY", "WAITING_FOR_PLAYERS", null);
 
-        OnlineGame game = converter.convert(summary);
+        ClientOnlineGame game = converter.convert(summary);
 
         // When wsUrl is null, falls back to server-hosted URL construction
         assertThat(game.getUrl()).startsWith("ws://" + SERVER_HOST + "/ws/games/");
@@ -102,27 +100,27 @@ class GameSummaryConverterTest {
     void waitingForPlayers_mapToModeReg() {
         GameSummary summary = buildSummary("g1", "Game", "SERVER", "WAITING_FOR_PLAYERS", null);
 
-        OnlineGame game = converter.convert(summary);
+        ClientOnlineGame game = converter.convert(summary);
 
-        assertThat(game.getMode()).isEqualTo(OnlineGame.MODE_REG);
+        assertThat(game.getMode()).isEqualTo(ClientOnlineGame.MODE_REG);
     }
 
     @Test
     void inProgress_mapToModePlay() {
         GameSummary summary = buildSummary("g1", "Game", "SERVER", "IN_PROGRESS", null);
 
-        OnlineGame game = converter.convert(summary);
+        ClientOnlineGame game = converter.convert(summary);
 
-        assertThat(game.getMode()).isEqualTo(OnlineGame.MODE_PLAY);
+        assertThat(game.getMode()).isEqualTo(ClientOnlineGame.MODE_PLAY);
     }
 
     @Test
     void cancelled_mapToModeStop() {
         GameSummary summary = buildSummary("g1", "Game", "SERVER", "CANCELLED", null);
 
-        OnlineGame game = converter.convert(summary);
+        ClientOnlineGame game = converter.convert(summary);
 
-        assertThat(game.getMode()).isEqualTo(OnlineGame.MODE_STOP);
+        assertThat(game.getMode()).isEqualTo(ClientOnlineGame.MODE_STOP);
     }
 
     // =========================================================================
@@ -133,7 +131,7 @@ class GameSummaryConverterTest {
     void gameName_setOnTournamentProfile() {
         GameSummary summary = buildSummary("g1", "Friday Night Poker", "SERVER", "WAITING_FOR_PLAYERS", null);
 
-        OnlineGame game = converter.convert(summary);
+        ClientOnlineGame game = converter.convert(summary);
 
         assertThat(game.getTournament()).isNotNull();
         assertThat(game.getTournament().getName()).isEqualTo("Friday Night Poker");
@@ -147,7 +145,7 @@ class GameSummaryConverterTest {
     void ownerName_setAsHostPlayer() {
         GameSummary summary = buildSummary("g1", "Game", "SERVER", "WAITING_FOR_PLAYERS", null);
 
-        OnlineGame game = converter.convert(summary);
+        ClientOnlineGame game = converter.convert(summary);
 
         assertThat(game.getHostPlayer()).isEqualTo("alice");
     }
@@ -157,13 +155,13 @@ class GameSummaryConverterTest {
     // =========================================================================
 
     @Test
-    void hostingType_setOnOnlineGame() {
+    void hostingType_setOnClientOnlineGame() {
         GameSummary serverSummary = buildSummary("g1", "Game", "SERVER", "WAITING_FOR_PLAYERS", null);
         GameSummary communitySummary = buildSummary("g2", "Game", "COMMUNITY", "WAITING_FOR_PLAYERS",
                 "ws://1.2.3.4/ws");
 
-        OnlineGame serverGame = converter.convert(serverSummary);
-        OnlineGame communityGame = converter.convert(communitySummary);
+        ClientOnlineGame serverGame = converter.convert(serverSummary);
+        ClientOnlineGame communityGame = converter.convert(communitySummary);
 
         assertThat(serverGame.getHostingType()).isEqualTo("SERVER");
         assertThat(communityGame.getHostingType()).isEqualTo("COMMUNITY");
@@ -178,7 +176,7 @@ class GameSummaryConverterTest {
         List<GameSummary> summaries = List.of(buildSummary("g1", "Game 1", "SERVER", "WAITING_FOR_PLAYERS", null),
                 buildSummary("g2", "Game 2", "COMMUNITY", "IN_PROGRESS", "ws://1.2.3.4:8765/ws/games/g2"));
 
-        OnlineGameList list = converter.convertAll(summaries);
+        ClientOnlineGameList list = converter.convertAll(summaries);
 
         assertThat(list).hasSize(2);
         assertThat(list.getTotalSize()).isEqualTo(2);

@@ -43,7 +43,7 @@ import com.donohoedigital.config.AudioConfig;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.engine.BasePhase;
 import com.donohoedigital.games.engine.DisplayMessage;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -129,7 +129,7 @@ public class PokerNight extends BasePhase implements GameClockListener {
                 bell(nLeft);
             } else {
                 int nLevel = game_.getLevel();
-                TournamentProfile profile = game_.getProfile();
+                ClientTournamentProfile profile = game_.getProfile();
                 int nLastRebuy = profile.getLastRebuyLevel();
                 int nAddon = profile.getAddonLevel();
 

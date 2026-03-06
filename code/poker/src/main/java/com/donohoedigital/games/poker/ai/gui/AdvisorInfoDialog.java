@@ -49,7 +49,7 @@ import com.donohoedigital.games.poker.ai.PlayerType;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -64,7 +64,7 @@ public class AdvisorInfoDialog extends DialogPhase {
 
     // members
     private PokerGame game_;
-    private TournamentProfile profile_;
+    private ClientTournamentProfile profile_;
     private DDTabbedPane tab_;
     private DDHtmlArea resultHTML_;
 

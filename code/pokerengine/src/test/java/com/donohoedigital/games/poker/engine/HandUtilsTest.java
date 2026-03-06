@@ -32,12 +32,8 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker;
+package com.donohoedigital.games.poker.engine;
 
-import com.donohoedigital.games.poker.engine.Card;
-import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.engine.HandSorted;
-import com.donohoedigital.games.poker.engine.HandUtils;
 import org.junit.jupiter.api.Test;
 
 import static com.donohoedigital.games.poker.engine.Card.*;

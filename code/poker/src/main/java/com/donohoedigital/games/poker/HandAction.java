@@ -207,7 +207,7 @@ public class HandAction implements DataMarshal {
     }
 
     /**
-     * Used by PokerDatabase when loading history.
+     * Used when loading hand history from server.
      */
     public void setAllIn(boolean bAllIn) {
         bAllIn_ = bAllIn;

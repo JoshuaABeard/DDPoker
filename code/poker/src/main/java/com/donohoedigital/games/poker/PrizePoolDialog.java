@@ -39,7 +39,7 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.model.*;
+
 import com.donohoedigital.gui.*;
 import com.donohoedigital.config.*;
 
@@ -58,7 +58,7 @@ public class PrizePoolDialog extends DialogPhase implements ChangeListener {
     private JScrollPane scroll_;
     private DDHtmlArea html_;
     private PokerGame game_;
-    private TournamentProfile profile_;
+    private ClientTournamentProfile profile_;
     private TournamentProfileFormatter profileHtml_;
     private DDLabel housecut_;
 

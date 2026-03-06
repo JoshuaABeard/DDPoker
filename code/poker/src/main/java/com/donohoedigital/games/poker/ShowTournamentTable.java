@@ -48,7 +48,7 @@ import com.donohoedigital.games.poker.dashboard.*;
 import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.event.PokerTableListener;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+
 import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.games.poker.server.GameServerRestClient;
 import com.donohoedigital.games.poker.server.PracticeGameLauncher;
@@ -537,7 +537,7 @@ public class ShowTournamentTable extends ShowPokerTable
      */
     @Override
     protected void addDashboardItems(DashboardManager manager) {
-        TournamentProfile profile = game_.getProfile();
+        ClientTournamentProfile profile = game_.getProfile();
         boolean bDashOnline = profile.isAllowDash();
         boolean bDashAdvisor = profile.isAllowAdvisor();
 
@@ -1892,7 +1892,7 @@ public class ShowTournamentTable extends ShowPokerTable
                     }
                 }
 
-                TournamentProfile profile = game_.getProfile();
+                ClientTournamentProfile profile = game_.getProfile();
                 boolean bDashAdvisor = profile.isAllowAdvisor();
 
                 if (!game_.isOnlineGame() || bDashAdvisor) {
@@ -2048,8 +2048,6 @@ public class ShowTournamentTable extends ShowPokerTable
                     String newName = player.getName();
                     submitCheat(() -> new GameServerRestClient(cfg.port()).cheatName(cfg.gameId(), cfg.jwt(),
                             player.getID(), newName));
-                } else {
-                    PokerDatabase.playerNameChanged(game_, player);
                 }
             }
         }
@@ -2544,11 +2542,11 @@ public class ShowTournamentTable extends ShowPokerTable
         title.setDisplayMode(DDMenuItem.MODE_TITLE);
         menu.add(title);
 
-        TournamentProfile profile = table_.getProfile();
+        ClientTournamentProfile profile = table_.getProfile();
 
         int levels = profile.getLastLevel();
 
-        for (int i = 1; (i <= levels) || (i <= TournamentProfile.MAX_LEVELS && profile.isDoubleAfterLastLevel()
+        for (int i = 1; (i <= levels) || (i <= ClientTournamentProfile.MAX_LEVELS && profile.isDoubleAfterLastLevel()
                 && (profile.getBigBlind(i) * 4 < game_.getTotalChipsInPlay())); ++i) {
             if (profile.isBreak(i))
                 continue;

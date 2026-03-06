@@ -2,6 +2,7 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
  * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 DD Poker Community
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,40 +32,45 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
+
 import com.donohoedigital.games.poker.display.ClientHand;
 import com.donohoedigital.games.poker.display.ClientCard;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.display.ClientHandScoreConstants;
+import com.donohoedigital.games.poker.protocol.dto.HandActionDetailData;
+import com.donohoedigital.games.poker.protocol.dto.HandDetailData;
 import com.donohoedigital.games.poker.protocol.dto.HandEvaluationData;
+import com.donohoedigital.games.poker.protocol.dto.HandPlayerDetailData;
+import com.donohoedigital.games.poker.protocol.dto.HandSummaryData;
+import com.donohoedigital.games.poker.server.GameServerRestClient;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
-import com.donohoedigital.db.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.display.ClientBettingRound;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
 import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.sql.*;
 import java.util.*;
 import java.util.List;
-import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 
 public class HandHistoryPanel extends DDPanel {
 
-    private String where_;
-    private BindArray bindArray_;
+    private String gameId_;
+    private String jwt_;
+    private int port_;
     private ClientHoldemHand currentHand_;
     private int pageSize_;
 
     private int handCount_;
     private int handFirst_;
 
-    private int handID_;
+    private long selectedHandId_;
     private ClientHoldemHand hhand_;
 
     private List<Object> hands_;
@@ -84,27 +90,17 @@ public class HandHistoryPanel extends DDPanel {
     private DDButton exportButton_;
     private ImageIcon icon_ = ImageConfig.getImageIcon("ddlogo20");
 
-    public HandHistoryPanel(GameContext context, String sStyle, String where, BindArray bindArray,
+    public HandHistoryPanel(GameContext context, String sStyle, String gameId, String jwt, int port,
             ClientHoldemHand currentHand, int pageSize) {
         context_ = context;
         pageSize_ = pageSize;
-
-        where_ = where;
-        bindArray_ = bindArray;
+        gameId_ = gameId;
+        jwt_ = jwt;
+        port_ = port;
         currentHand_ = currentHand;
 
-        /*
-         * if (true) { where_ +=
-         * " AND 0.5 < (SELECT MAX(ABS(PLH_END_CHIPS - PLH_START_CHIPS) / PLH_START_CHIPS) FROM PLAYER_HAND WHERE PLH_HAND_ID=HND_ID)"
-         * ; }
-         */
-
-        if (currentHand_ != null) {
-            where_ += " AND HND_START_DATE < ?";
-            bindArray_.addValue(Types.TIMESTAMP, new Timestamp(currentHand_.getStartDate()));
-        }
-
-        handCount_ = PokerDatabase.getHandCount(where_, bindArray_);
+        GameServerRestClient restClient = new GameServerRestClient(port_);
+        handCount_ = (int) restClient.getHandCount(gameId_, jwt_);
 
         if (currentHand_ != null) {
             ++handCount_;
@@ -257,14 +253,29 @@ public class HandHistoryPanel extends DDPanel {
     private void checkButtons() {
         pageDownButton_.setEnabled(handFirst_ > 0);
         pageUpButton_.setEnabled(handFirst_ < handCount_ - pageSize_);
-        exportButton_.setEnabled(handID_ >= 0 && handCount_ > 0);
+        exportButton_.setEnabled(selectedHandId_ >= 0 && handCount_ > 0);
     }
 
     private void setHands() {
-        List<Integer> hands = PokerDatabase.getHandIDs(where_, bindArray_, handFirst_, pageSize_);
-        hands_ = new ArrayList<Object>(hands.size());
-        for (int i = hands.size() - 1; i >= 0; --i) {
-            hands_.add(hands.get(i));
+        GameServerRestClient restClient = new GameServerRestClient(port_);
+
+        // Compute the page number for the REST API.
+        // handFirst_ is 0-based offset; REST uses page numbers.
+        // Hands come from server in descending order, but we want ascending display.
+        int dbHandCount = currentHand_ != null ? handCount_ - 1 : handCount_;
+        int adjustedFirst = Math.max(handFirst_, 0);
+
+        // The server returns hands in descending order. We need to map our ascending
+        // offset to a descending page. For ascending offset 'first' with page size 'n'
+        // from total 'T', the descending page is: (T - first - n) / n
+        // But simpler: request the right page and reverse.
+        int page = adjustedFirst / pageSize_;
+        List<HandSummaryData> summaries = restClient.getHandSummaries(gameId_, jwt_, page, pageSize_);
+
+        hands_ = new ArrayList<>(summaries.size());
+        // Server returns descending order; reverse for display (newest first at top)
+        for (int i = summaries.size() - 1; i >= 0; --i) {
+            hands_.add(summaries.get(i));
         }
 
         if ((currentHand_ != null) && (handFirst_ + pageSize_ >= handCount_)) {
@@ -273,7 +284,7 @@ public class HandHistoryPanel extends DDPanel {
 
         handsList_.setItems(hands_);
 
-        if (hands_.size() == 0) {
+        if (hands_.isEmpty()) {
             titleLabel_.setText(PropertyConfig.getMessage("msg.nohistory"));
             pagingLabel_.setText("");
             detailsHtmlArea_.setText("");
@@ -290,7 +301,7 @@ public class HandHistoryPanel extends DDPanel {
     }
 
     private void setHistoryText() {
-        if (handID_ < 0) {
+        if (selectedHandId_ < 0) {
             titleLabel_.setText(PropertyConfig.getMessage("msg.currenthand"));
             detailsHtmlArea_.setText(getCurrentHistoryText());
 
@@ -298,7 +309,7 @@ public class HandHistoryPanel extends DDPanel {
                 tabs_.removeTabAt(1);
             }
         } else {
-            String[] handHTML = PokerDatabase.getHandAsHTML(handID_, showAll(), showReason());
+            String[] handHTML = getHandAsHTML(selectedHandId_, showAll(), showReason());
             titleLabel_.setText(handHTML[0]);
             summaryHtmlArea_.setText(handHTML[1]);
             detailsHtmlArea_.setText(handHTML[2]);
@@ -327,11 +338,8 @@ public class HandHistoryPanel extends DDPanel {
         sb.append(getHist(hist, ClientBettingRound.TURN.toLegacy(), hhand_, false));
         sb.append(getHist(hist, ClientBettingRound.RIVER.toLegacy(), hhand_, false));
 
-        // I don't believe this will ever happen as it is now, but perhaps in the future
-        // when not every hand is stored in the database, or more precisely when you can
-        // view history for hands that aren't stored, for whatever reason.
         if (hhand_.getRound() == ClientBettingRound.SHOWDOWN) {
-            PokerDatabase.appendShowdown(sb, hhand_.getHistoryCopy(), hhand_.getCommunity(), showAll());
+            appendShowdown(sb, hhand_.getHistoryCopy(), hhand_.getCommunity(), showAll());
         }
 
         return sb.toString();
@@ -367,7 +375,7 @@ public class HandHistoryPanel extends DDPanel {
 
             String handHTML;
             String handShown = "";
-            String sReason = showReason() ? PokerDatabase.decodeReason(action.getDebug()) : null;
+            String sReason = showReason() ? decodeReason(action.getDebug()) : null;
 
             if (sReason == null)
                 sReason = "";
@@ -415,16 +423,17 @@ public class HandHistoryPanel extends DDPanel {
 
         Object o = hands_.get(index);
 
-        if (o instanceof Integer) {
-            if (handID_ == (Integer) o)
+        if (o instanceof HandSummaryData summary) {
+            if (selectedHandId_ == summary.handId())
                 return;
-            handID_ = (Integer) o;
+            selectedHandId_ = summary.handId();
             hhand_ = null;
-            showAllCheckbox_.setEnabled(PokerDatabase.isPracticeHand(handID_));
+            // Practice games always allow show-all
+            showAllCheckbox_.setEnabled(true);
         } else {
             if (hhand_ == o)
                 return;
-            handID_ = -1;
+            selectedHandId_ = -1;
             hhand_ = (ClientHoldemHand) o;
             showAllCheckbox_.setEnabled(!hhand_.getClientTable().getGame().isOnlineGame());
         }
@@ -461,18 +470,327 @@ public class HandHistoryPanel extends DDPanel {
         public void update() {
             Object o = getItem();
 
-            if (o instanceof Integer) {
-                display_.setText(
-                        "<html><body>" + PokerDatabase.getHandListHTML((Integer) getItem()) + "</body></html>");
+            if (o instanceof HandSummaryData summary) {
+                display_.setText("<html><body>" + buildHandListHTML(summary) + "</body></html>");
             } else {
                 display_.setText("<html><body>" + ((ClientHoldemHand) o).getHandListHTML() + "</body></html>");
             }
         }
     }
 
+    /**
+     * Build HTML for the hand list item from a HandSummaryData.
+     */
+    static String buildHandListHTML(HandSummaryData summary) {
+        StringBuilder buf = new StringBuilder();
+        List<String> holeCards = summary.holeCards();
+        if (holeCards != null && holeCards.size() >= 2) {
+            buf.append(ClientCard.getCard(holeCards.get(0)).toHTML());
+            buf.append(ClientCard.getCard(holeCards.get(1)).toHTML());
+        } else {
+            buf.append("<DDCARD FACEUP=\"false\"><DDCARD FACEUP=\"false\">");
+        }
+        buf.append("&nbsp;&nbsp;");
+        List<String> community = summary.communityCards();
+        if (community != null) {
+            for (String card : community) {
+                buf.append(ClientCard.getCard(card).toHTML());
+            }
+        }
+        return buf.toString();
+    }
+
+    /**
+     * Build hand detail HTML from the REST API, returning [title, summary,
+     * details].
+     */
+    private String[] getHandAsHTML(long handId, boolean bShowAll, boolean bShowReason) {
+        GameServerRestClient restClient = new GameServerRestClient(port_);
+        HandDetailData detail = restClient.getHandDetail(gameId_, jwt_, handId);
+        if (detail == null) {
+            return new String[]{"", "", ""};
+        }
+
+        // Build community cards
+        ClientHand community = ClientHand.empty();
+        if (detail.communityCards() != null) {
+            int dealt = detail.communityCardsDealt();
+            List<String> cards = detail.communityCards();
+            for (int i = 0; i < cards.size() && i < dealt; i++) {
+                community.addCard(ClientCard.getCard(cards.get(i)));
+            }
+        }
+
+        // Build player data
+        ClientPlayer[] players = new ClientPlayer[ProtocolConstants.SEATS];
+        int[] start = new int[ProtocolConstants.SEATS];
+        int[] end = new int[ProtocolConstants.SEATS];
+
+        for (HandPlayerDetailData p : detail.players()) {
+            int seat = p.seatNumber();
+            players[seat] = new ClientPlayer();
+            start[seat] = p.startChips();
+            end[seat] = p.endChips();
+            players[seat].setChipCount(end[seat]);
+            List<String> holeCards = p.holeCards();
+            if (holeCards != null) {
+                for (String card : holeCards) {
+                    players[seat].getHand().addCard(ClientCard.getCard(card));
+                }
+            }
+            boolean folded = ((p.preflopActions() | p.flopActions() | p.turnActions() | p.riverActions()) & 32) > 0;
+            players[seat].setFolded(folded);
+            players[seat].setCardsExposed(p.cardsExposed());
+            players[seat].setName(p.playerName());
+        }
+
+        // Build action history
+        ArrayList<HandAction> hist = new ArrayList<>();
+        boolean bAnte = false;
+
+        for (HandActionDetailData a : detail.actions()) {
+            // Find the player by matching playerId to seat
+            ClientPlayer player = null;
+            for (HandPlayerDetailData p : detail.players()) {
+                if (p.playerId() == a.playerId()) {
+                    player = players[p.seatNumber()];
+                    break;
+                }
+            }
+            if (player == null)
+                continue;
+
+            int actionType = HandAction.decodeActionType(a.actionType());
+            HandAction action = new HandAction(player, a.round(), actionType, a.amount(), a.subAmount(), null);
+            action.setAllIn(a.allIn());
+            hist.add(action);
+
+            if (actionType == HandAction.ACTION_ANTE) {
+                bAnte = true;
+            }
+        }
+
+        // Title
+        String title = PropertyConfig.getMessage("msg.handhist.title",
+                new Object[]{String.valueOf(detail.tableId()), String.valueOf(detail.handNumber())});
+
+        // Summary
+        StringBuilder sb2 = new StringBuilder();
+        for (int i = 0; i < ProtocolConstants.SEATS; ++i) {
+            int delta = end[i] - start[i];
+            if (delta != 0) {
+                sb2.append(PropertyConfig.getMessage("msg.handhist.chipdelta", players[i].getName(),
+                        PropertyConfig.getMessage("msg.handhist." + ((delta > 0) ? "wonchips" : "lostchips")),
+                        Math.abs(delta),
+                        (players[i].getChipCount() == 0)
+                                ? PropertyConfig.getMessage("msg.handhist.busted")
+                                : "&nbsp;"));
+            }
+        }
+
+        String unit = PropertyConfig.getMessage("msg.chipunit.cash");
+        String gameStyle = detail.gameStyle() != null ? detail.gameStyle() : "HOLDEM";
+        String gameType = detail.gameType() != null ? detail.gameType() : "NOLIMIT";
+
+        Object[] oParams = new Object[]{sb2.toString(),
+                PropertyConfig.getMessage("msg.gamestyle." + gameStyle.toLowerCase()),
+                PropertyConfig.getMessage("list.gameType." + gameType.toLowerCase()), (detail.ante() > 0) ? unit : "",
+                (detail.ante() > 0) ? detail.ante() : (Object) PropertyConfig.getMessage("msg.forcedbet.none"), unit,
+                detail.smallBlind(), unit, detail.bigBlind(),
+                (detail.startDate() != null)
+                        ? java.util.Date.from(detail.startDate())
+                        : (Object) PropertyConfig.getMessage("msg.value.unknown"),
+                (detail.endDate() != null)
+                        ? PropertyConfig.getMessage("msg.handhist.enddate", java.util.Date.from(detail.endDate()))
+                        : ""};
+
+        String summary = PropertyConfig.getMessage("msg.handhist.summary", oParams);
+
+        // Details
+        StringBuilder details = new StringBuilder();
+        if (bAnte)
+            appendHistory(details, community, hist, ClientBettingRound.PRE_FLOP.toLegacy(), true, bShowAll,
+                    bShowReason);
+        appendHistory(details, community, hist, ClientBettingRound.PRE_FLOP.toLegacy(), false, bShowAll, bShowReason);
+        appendHistory(details, community, hist, ClientBettingRound.FLOP.toLegacy(), false, bShowAll, bShowReason);
+        appendHistory(details, community, hist, ClientBettingRound.TURN.toLegacy(), false, bShowAll, bShowReason);
+        appendHistory(details, community, hist, ClientBettingRound.RIVER.toLegacy(), false, bShowAll, bShowReason);
+        appendShowdown(details, hist, community, bShowAll);
+
+        return new String[]{title, summary, details.toString()};
+    }
+
+    private static void appendHistory(StringBuilder sb, ClientHand community, ArrayList<HandAction> hist, int nRound,
+            boolean bAnte, boolean bShowAll, boolean bShowReason) {
+        StringBuilder sb2 = new StringBuilder();
+
+        ClientPlayer p;
+        HandAction action;
+        int nNum = 0;
+        int nPrior = 0;
+
+        if (nRound == ClientBettingRound.PRE_FLOP.toLegacy()) {
+            community = ClientHand.empty();
+        } else if ((nRound == ClientBettingRound.FLOP.toLegacy()) && (community.size() > 3)) {
+            community = ClientHand.of(community.getCard(0), community.getCard(1), community.getCard(2));
+        } else if ((nRound == ClientBettingRound.TURN.toLegacy()) && (community.size() > 4)) {
+            community = ClientHand.of(community.getCard(0), community.getCard(1), community.getCard(2),
+                    community.getCard(3));
+        }
+
+        for (int i = 0; i < hist.size(); i++) {
+            action = hist.get(i);
+            p = action.getPlayer();
+
+            // must be from this round
+            if (action.getRound() != nRound || (!bAnte && action.getAction() == HandAction.ACTION_ANTE))
+                continue;
+            if (bAnte && action.getAction() != HandAction.ACTION_ANTE)
+                continue;
+
+            ClientHand hand = p.getHandSorted();
+
+            String handHTML;
+            String handShown = "";
+            String sReason = (bShowAll && bShowReason) ? decodeReason(action.getDebug()) : null;
+
+            if (sReason == null)
+                sReason = "";
+            else
+                sReason = " " + PropertyConfig.getMessage("msg.hist.reason", sReason);
+
+            if (p.isCardsExposed() || bShowAll) {
+                handHTML = hand.toHTML();
+
+                if (!community.isEmpty() && p.getHandEval() != null) {
+                    handShown = "&nbsp;-&nbsp;" + handDesc(p.getHandEval());
+                }
+            } else {
+                handHTML = "<DDCARD FACEUP=\"false\"><DDCARD FACEUP=\"false\">";
+            }
+
+            String sSnippet = action.getHTMLSnippet("msg.handhist", nPrior, null);
+
+            // get right raise icon
+            if (action.getAction() == HandAction.ACTION_RAISE) {
+                nPrior++;
+            }
+
+            // count actions added
+            nNum++;
+
+            // append message
+            sb2.append(PropertyConfig.getMessage("msg.hist.x", Utils.encodeHTML(p.getName()), sSnippet, handHTML,
+                    handShown, sReason));
+            sb2.append("\n");
+        }
+
+        if (nNum != 0) {
+            // if doing antes, change round (match client.properties)
+            if (bAnte)
+                nRound = 9;
+
+            sb.append(PropertyConfig.getMessage("msg.hand.history", PropertyConfig.getMessage("msg.round." + nRound),
+                    sb2.toString(), community.toHTML()));
+        }
+    }
+
+    static void appendShowdown(StringBuilder sb, List<HandAction> hist, ClientHand community, boolean bShowAll) {
+        StringBuilder sb2 = new StringBuilder();
+
+        for (int i = 8; i >= 0; i--) // can have a max of 9 pots
+        {
+            appendShowdown(sb2, hist, community, bShowAll, i);
+        }
+
+        sb.append(PropertyConfig.getMessage("msg.hand.history",
+                PropertyConfig.getMessage("msg.round." + ClientBettingRound.SHOWDOWN), sb2.toString(),
+                community.toHTML()));
+    }
+
+    private static void appendShowdown(StringBuilder sb, List<HandAction> hist, ClientHand community, boolean bShowAll,
+            int nPot) {
+        int nNum = 0;
+        int potTotal = 0;
+
+        for (HandAction action : hist) {
+            if (action.getRound() != ClientBettingRound.SHOWDOWN.toLegacy())
+                continue;
+            if (action.getSubAmount() != nPot)
+                continue;
+
+            if (action.getAction() == HandAction.ACTION_WIN) {
+                potTotal += action.getAmount();
+            }
+            nNum++;
+        }
+
+        if (nNum == 0) {
+            return;
+        }
+
+        String sHeaderKey = null;
+
+        if ((sb.length() > 0) || nPot > 0) {
+            if (nPot == 0) {
+                sHeaderKey = "msg.handhist.pot.main";
+            } else {
+                sHeaderKey = "msg.handhist.pot.side";
+            }
+        }
+
+        StringBuilder sb2 = new StringBuilder();
+
+        for (HandAction action : hist) {
+            if (action.getRound() != ClientBettingRound.SHOWDOWN.toLegacy())
+                continue;
+            if (action.getSubAmount() != nPot)
+                continue;
+
+            ClientPlayer player = action.getPlayer();
+
+            if (action.getAction() == HandAction.ACTION_OVERBET) {
+                sHeaderKey = null;
+            }
+
+            ClientHand hand = player.getHandSorted();
+
+            String handHTML;
+            String handShown = "";
+
+            if (player.isCardsExposed() || bShowAll) {
+                handHTML = hand.toHTML();
+
+                if (!community.isEmpty() && player.getHandEval() != null) {
+                    handShown = "&nbsp;-&nbsp;" + handDesc(player.getHandEval());
+                }
+            } else {
+                handHTML = "<DDCARD FACEUP=\"false\"><DDCARD FACEUP=\"false\">";
+            }
+
+            String sSnippet = action.getHTMLSnippet("msg.handhist", 0, null);
+
+            sb2.append(PropertyConfig.getMessage("msg.hist.x", Utils.encodeHTML(player.getName()), sSnippet, handHTML,
+                    handShown, ""));
+            sb2.append("\n");
+        }
+
+        if (sHeaderKey != null) {
+            String sHeader = PropertyConfig.getMessage(sHeaderKey, nPot, potTotal);
+            sb.append(PropertyConfig.getMessage("msg.handhist.pot", sHeader, sb2.toString()));
+        } else {
+            sb.append(sb2.toString());
+        }
+    }
+
     private void export() {
         TypedHashMap params = new TypedHashMap();
-        params.setObject(HistoryExportDialog.PARAM_HAND_ID, handID_);
+        params.setString("gameId", gameId_);
+        params.setString("jwt", jwt_);
+        params.setInteger("port", port_);
+        if (selectedHandId_ > 0) {
+            params.setLong("handId", selectedHandId_);
+        }
         context_.processPhaseNow("HistoryExportDialog", params);
     }
 
@@ -552,5 +870,21 @@ public class HandHistoryPanel extends DDPanel {
                 break;
         }
         return buf.toString();
+    }
+
+    static String decodeReason(String sReason) {
+        if (sReason == null) {
+            return null;
+        }
+
+        if (sReason.startsWith("V1:")) {
+            return null;
+        }
+
+        try {
+            return PropertyConfig.getMessage("msg.aioutcome." + sReason);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

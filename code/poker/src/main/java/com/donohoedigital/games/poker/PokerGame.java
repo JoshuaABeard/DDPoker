@@ -47,8 +47,7 @@ import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.*;
 import com.donohoedigital.games.poker.display.ClientBettingRound;
-import com.donohoedigital.games.poker.model.*;
-import com.donohoedigital.games.poker.model.LevelAdvanceMode;
+
 import com.donohoedigital.games.poker.online.*;
 import org.apache.logging.log4j.*;
 
@@ -105,7 +104,7 @@ public class PokerGame extends Game implements PlayerActionListener {
 
     // game info
     private DMArrayList<ClientPokerTable> tables_ = new DMArrayList<ClientPokerTable>();
-    private TournamentProfile profile_;
+    private ClientTournamentProfile profile_;
     private int nLevel_ = 0;
     private boolean bClockMode_ = false;
     private boolean bSimulatorMode_ = false;
@@ -755,7 +754,7 @@ public class PokerGame extends Game implements PlayerActionListener {
         // from this level up to remaining levels, figure out smallest max chip to
         // cover all antes/blinds
         int nAnte, nBig, nSmall;
-        for (int i = nLevel; i <= Math.max(nLevel, TournamentProfile.MAX_LEVELS); i++) {
+        for (int i = nLevel; i <= Math.max(nLevel, ClientTournamentProfile.MAX_LEVELS); i++) {
             if (profile_.isBreak(i))
                 continue;
             nAnte = profile_.getAnte(i);
@@ -931,7 +930,7 @@ public class PokerGame extends Game implements PlayerActionListener {
     /**
      * Get profile
      */
-    public TournamentProfile getProfile() {
+    public ClientTournamentProfile getProfile() {
         return profile_;
     }
 
@@ -992,8 +991,8 @@ public class PokerGame extends Game implements PlayerActionListener {
     /**
      * Set profile
      */
-    public void setProfile(TournamentProfile profile) {
-        TournamentProfile old = profile_;
+    public void setProfile(ClientTournamentProfile profile) {
+        ClientTournamentProfile old = profile_;
         profile_ = profile;
         nLastPool_ = -1;
         firePropertyChange(PROP_PROFILE, old, profile_);
@@ -1056,7 +1055,7 @@ public class PokerGame extends Game implements PlayerActionListener {
      * @return true if level should advance
      */
     public boolean shouldAdvanceLevelByHands() {
-        if (profile_ == null || profile_.getLevelAdvanceMode() != LevelAdvanceMode.HANDS) {
+        if (profile_ == null || profile_.getLevelAdvanceMode() != ClientLevelAdvanceMode.HANDS) {
             return false;
         }
         return nHandsInLevel_ >= profile_.getHandsPerLevel();
@@ -1146,7 +1145,7 @@ public class PokerGame extends Game implements PlayerActionListener {
      * done - setupTournament needs to be called explicitly after all players have
      * joined the game.
      */
-    public void initTournament(TournamentProfile profile) {
+    public void initTournament(ClientTournamentProfile profile) {
         // id used to uniquely identify a tournament in player profiles
         id_ = Utils.getCurrentTimeStamp();
         nLevel_ = 0;
@@ -1301,7 +1300,7 @@ public class PokerGame extends Game implements PlayerActionListener {
     }
 
     /**
-     * Get # seats at table (call-through to TournamentProfile)
+     * Get # seats at table (call-through to ClientTournamentProfile)
      */
     public int getSeats() {
         return profile_.getSeats();

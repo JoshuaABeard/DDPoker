@@ -34,10 +34,10 @@
  */
 package com.donohoedigital.games.poker.online;
 
+import com.donohoedigital.games.poker.ClientTournamentProfile;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.event.PokerTableListener;
-import com.donohoedigital.games.poker.model.TournamentProfile;
 
 import java.util.List;
 
@@ -208,7 +208,7 @@ public interface ClientPokerTable {
     List<ClientPlayer> getAddonList();
 
     /** Returns the tournament profile for this table's game. */
-    TournamentProfile getProfile();
+    ClientTournamentProfile getProfile();
 
     /** Sets zip (fast-forward) mode for this table. */
     void setZipMode(boolean b);

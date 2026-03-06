@@ -57,6 +57,22 @@ public class ProtocolConstants {
     /** Limit Texas Hold'em. */
     public static final int TYPE_LIMIT_HOLDEM = 3;
 
+    // Game type data element string values (used in profile and display)
+
+    /** Data element value for No-Limit Hold'em. */
+    public static final String DE_NO_LIMIT_HOLDEM = "nolimit";
+
+    /** Data element value for Pot-Limit Hold'em. */
+    public static final String DE_POT_LIMIT_HOLDEM = "potlimit";
+
+    /** Data element value for Limit Hold'em. */
+    public static final String DE_LIMIT_HOLDEM = "limit";
+
+    // Scheduled start
+
+    /** Minimum players required for scheduled start. */
+    public static final int MIN_SCHEDULED_START_PLAYERS = 2;
+
     // Player IDs
 
     /** Player ID for the host of an online game. */

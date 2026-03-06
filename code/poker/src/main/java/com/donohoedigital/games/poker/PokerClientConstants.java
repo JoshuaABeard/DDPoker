@@ -191,6 +191,7 @@ public class PokerClientConstants {
     public static final boolean DEBUG_EVENT_DISPLAY = false;
     public static final boolean DEBUG_CLEANUP_TABLE = false;
 
+    public static final String TESTING_LEVELS = "settings.debug.levels";
     public static final String TESTING_DOUG_CONTROLS_AI = "settings.debug.dougcontrolsai";
     public static final String TESTING_PAUSE_AI = "settings.debug.pauseai";
     public static final String TESTING_AUTOPILOT_INIT = "settings.debug.autopilot";

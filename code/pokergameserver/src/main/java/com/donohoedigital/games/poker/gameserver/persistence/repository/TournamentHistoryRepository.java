@@ -20,10 +20,12 @@
 package com.donohoedigital.games.poker.gameserver.persistence.repository;
 
 import java.util.Date;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -48,4 +50,17 @@ public interface TournamentHistoryRepository extends JpaRepository<TournamentHis
      */
     @Query("SELECT t FROM TournamentHistory t WHERE t.onlineGame.id = :gameId ORDER BY t.place")
     Page<TournamentHistory> findByGameId(@Param("gameId") Long gameId, Pageable pageable);
+
+    /**
+     * Find all tournament histories for a profile (unpaged, for stats computation).
+     */
+    @Query("SELECT t FROM TournamentHistory t WHERE t.profile.id = :profileId ORDER BY t.endDate DESC")
+    List<TournamentHistory> findAllByProfileId(@Param("profileId") Long profileId);
+
+    /**
+     * Delete all tournament histories for a profile.
+     */
+    @Modifying
+    @Query("DELETE FROM TournamentHistory t WHERE t.profile.id = :profileId")
+    void deleteByProfileId(@Param("profileId") Long profileId);
 }

@@ -19,16 +19,14 @@
  */
 package com.donohoedigital.games.poker.online;
 
+import com.donohoedigital.games.poker.ClientTournamentProfile;
 import com.donohoedigital.games.poker.protocol.dto.GameSummary;
-import com.donohoedigital.games.poker.model.OnlineGame;
-import com.donohoedigital.games.poker.model.TournamentProfile;
-import com.donohoedigital.games.poker.model.util.OnlineGameList;
 
 import java.util.List;
 
 /**
  * Converts server-side {@link GameSummary} DTOs into desktop-side
- * {@link OnlineGame} objects for display in the game list table.
+ * {@link ClientOnlineGame} objects for display in the game list table.
  *
  * <p>
  * The WebSocket URL is constructed as:
@@ -53,15 +51,15 @@ public class GameSummaryConverter {
     }
 
     /**
-     * Convert a single {@link GameSummary} to an {@link OnlineGame} for the list
-     * model.
+     * Convert a single {@link GameSummary} to an {@link ClientOnlineGame} for the
+     * list model.
      */
-    public OnlineGame convert(GameSummary summary) {
-        OnlineGame game = new OnlineGame();
+    public ClientOnlineGame convert(GameSummary summary) {
+        ClientOnlineGame game = new ClientOnlineGame();
 
-        // Game name via TournamentProfile (display only — no full profile data
+        // Game name via ClientTournamentProfile (display only — no full profile data
         // available)
-        TournamentProfile profile = new TournamentProfile(summary.name());
+        ClientTournamentProfile profile = new ClientTournamentProfile(summary.name());
         game.setTournament(profile);
 
         // Host player
@@ -71,13 +69,13 @@ public class GameSummaryConverter {
         int mode;
         switch (summary.status()) {
             case "WAITING_FOR_PLAYERS" :
-                mode = OnlineGame.MODE_REG;
+                mode = ClientOnlineGame.MODE_REG;
                 break;
             case "IN_PROGRESS" :
-                mode = OnlineGame.MODE_PLAY;
+                mode = ClientOnlineGame.MODE_PLAY;
                 break;
             default :
-                mode = OnlineGame.MODE_STOP;
+                mode = ClientOnlineGame.MODE_STOP;
         }
         game.setMode(mode);
 
@@ -97,10 +95,10 @@ public class GameSummaryConverter {
     }
 
     /**
-     * Convert a list of summaries to an {@link OnlineGameList}.
+     * Convert a list of summaries to an {@link ClientOnlineGameList}.
      */
-    public OnlineGameList convertAll(List<GameSummary> summaries) {
-        OnlineGameList list = new OnlineGameList();
+    public ClientOnlineGameList convertAll(List<GameSummary> summaries) {
+        ClientOnlineGameList list = new ClientOnlineGameList();
         for (GameSummary s : summaries) {
             list.add(convert(s));
         }
