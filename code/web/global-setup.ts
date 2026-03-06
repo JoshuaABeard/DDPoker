@@ -137,7 +137,7 @@ export default async function globalSetup(): Promise<void> {
       env: {
         ...process.env,
         NEXT_PUBLIC_GAME_SERVER_URL: GAME_SERVER_URL,
-        NEXT_PUBLIC_API_BASE_URL: `${GAME_SERVER_URL}/api/v1`,
+        NEXT_PUBLIC_API_BASE_URL: GAME_SERVER_URL,
       },
     })
   }
@@ -154,7 +154,7 @@ export default async function globalSetup(): Promise<void> {
       env: {
         ...process.env,
         NEXT_PUBLIC_GAME_SERVER_URL: GAME_SERVER_URL,
-        NEXT_PUBLIC_API_BASE_URL: `${GAME_SERVER_URL}/api/v1`,
+        NEXT_PUBLIC_API_BASE_URL: GAME_SERVER_URL,
       },
     })
 
