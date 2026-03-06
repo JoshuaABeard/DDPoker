@@ -181,13 +181,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
             int nBet = hhand_.getBet();
 
             // Determine input mode based on betting state
-            int inputMode;
-            if (nToCall == 0) {
-                inputMode = (nBet == 0) ? PokerTableInput.MODE_CHECK_BET : PokerTableInput.MODE_CHECK_RAISE;
-            } else {
-                inputMode = PokerTableInput.MODE_CALL_RAISE;
-            }
-            game_.setInputMode(inputMode, hhand_, player_);
+            game_.setInputMode(BetCalculator.determineInputMode(nToCall, nBet), hhand_, player_);
         }
         // Computer controlled player at active table
         else {
@@ -415,15 +409,7 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
     private HandAction betRaise(int nAmount) {
         // bet/raise by appropriate amount (in case user typed in value not
         // a multiple of min chip)
-        int nMinChip = table_.getMinChip();
-        int nOdd = nAmount % nMinChip;
-        int nNewAmount = nAmount;
-        if (nOdd != 0) {
-            nNewAmount = nAmount - nOdd;
-            if ((float) nOdd >= (nMinChip / 2.0f)) {
-                nNewAmount += nMinChip;
-            }
-        }
+        int nNewAmount = BetCalculator.roundToMinChip(nAmount, table_.getMinChip());
 
         if (nNewAmount != nAmount) {
             String sMsg = PropertyConfig.getMessage("msg.betodd", table_.getMinChip(), nAmount, nNewAmount);
@@ -439,11 +425,9 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
             }
         }
 
-        if (game_.getInputMode() == PokerTableInput.MODE_CHECK_BET) {
-            return new HandAction(player_, nRound_, HandAction.ACTION_BET, nAmount, "betbtn");
-        } else {
-            return new HandAction(player_, nRound_, HandAction.ACTION_RAISE, nAmount, "raisebtn");
-        }
+        int action = BetCalculator.determineBetOrRaise(game_.getInputMode());
+        String sDebug = (action == HandAction.ACTION_BET) ? "betbtn" : "raisebtn";
+        return new HandAction(player_, nRound_, action, nAmount, sDebug);
     }
 
     /**
@@ -451,12 +435,9 @@ public class Bet extends ChainPhase implements PlayerActionListener, CancelableP
      */
     private HandAction checkCall() {
         // check or call
-        if ((game_.getInputMode() == PokerTableInput.MODE_CHECK_BET
-                || game_.getInputMode() == PokerTableInput.MODE_CHECK_RAISE)) {
-            return new HandAction(player_, nRound_, HandAction.ACTION_CHECK, "checkbtn");
-        } else {
-            return new HandAction(player_, nRound_, HandAction.ACTION_CALL, "callbtn");
-        }
+        int action = BetCalculator.determineCheckOrCall(game_.getInputMode());
+        String sDebug = (action == HandAction.ACTION_CHECK) ? "checkbtn" : "callbtn";
+        return new HandAction(player_, nRound_, action, sDebug);
     }
 
     /////
