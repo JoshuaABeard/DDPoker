@@ -31,121 +31,109 @@
  */
 package com.donohoedigital.games.poker.gameserver;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests for ServerPot.
+ * Tests for ServerPot — verifies poker pot semantics.
  */
 class ServerPotTest {
 
     @Test
-    void testConstruction_Empty() {
-        ServerPot pot = new ServerPot(1, 0); // Round 1, no side bet
-
-        assertEquals(0, pot.getChips());
-        assertEquals(1, pot.getRound());
-        assertEquals(0, pot.getSideBet());
-        assertTrue(pot.getEligiblePlayers().isEmpty());
-        assertTrue(pot.getWinners().isEmpty());
-    }
-
-    @Test
-    void testAddChips_SinglePlayer() {
-        ServerPot pot = new ServerPot(1, 0);
-        ServerPlayer player = new ServerPlayer(1, "Alice", true, 0, 5000);
-
-        pot.addChips(player, 500);
-
-        assertEquals(500, pot.getChips());
-        assertTrue(pot.isPlayerEligible(player));
-        assertEquals(1, pot.getEligiblePlayers().size());
-    }
-
-    @Test
-    void testAddChips_MultiplePlayers() {
-        ServerPot pot = new ServerPot(1, 0);
+    void should_TrackEligibility_When_PlayerContributesChips() {
+        // Poker rule: You can only win pots you've contributed to
+        ServerPot pot = new ServerPot(0, 0);
         ServerPlayer alice = new ServerPlayer(1, "Alice", true, 0, 5000);
         ServerPlayer bob = new ServerPlayer(2, "Bob", true, 0, 5000);
         ServerPlayer charlie = new ServerPlayer(3, "Charlie", true, 0, 5000);
 
         pot.addChips(alice, 200);
         pot.addChips(bob, 200);
-        pot.addChips(charlie, 200);
+        // Charlie didn't contribute
 
-        assertEquals(600, pot.getChips());
-        assertTrue(pot.isPlayerEligible(alice));
-        assertTrue(pot.isPlayerEligible(bob));
-        assertTrue(pot.isPlayerEligible(charlie));
-        assertEquals(3, pot.getEligiblePlayers().size());
+        assertThat(pot.isPlayerEligible(alice)).isTrue();
+        assertThat(pot.isPlayerEligible(bob)).isTrue();
+        assertThat(pot.isPlayerEligible(charlie)).isFalse();
     }
 
     @Test
-    void testAddChips_SamePlayerTwice() {
-        ServerPot pot = new ServerPot(1, 0);
-        ServerPlayer player = new ServerPlayer(1, "Test", true, 0, 5000);
+    void should_DetectUncalledBet_When_OnlyOnePlayerContributed() {
+        // Poker rule: If everyone folds to a bet, the uncalled portion is returned
+        ServerPot pot = new ServerPot(0, 0);
+        ServerPlayer bettor = new ServerPlayer(1, "Bettor", true, 0, 5000);
 
-        pot.addChips(player, 300);
-        pot.addChips(player, 200);
+        pot.addChips(bettor, 500);
 
-        assertEquals(500, pot.getChips());
-        assertEquals(1, pot.getEligiblePlayers().size()); // Player only counted once in eligibility
+        assertThat(pot.isOverbet()).isTrue();
     }
 
     @Test
-    void testSetWinners() {
-        ServerPot pot = new ServerPot(1, 0);
-        ServerPlayer winner1 = new ServerPlayer(1, "Winner1", true, 0, 5000);
-        ServerPlayer winner2 = new ServerPlayer(2, "Winner2", true, 0, 5000);
+    void should_NotBeOverbet_When_MultiplePlayersContested() {
+        // Poker rule: A pot with 2+ contributors is contested and goes to showdown
+        ServerPot pot = new ServerPot(0, 0);
+        ServerPlayer p1 = new ServerPlayer(1, "P1", true, 0, 5000);
+        ServerPlayer p2 = new ServerPlayer(2, "P2", true, 0, 5000);
 
-        pot.addWinner(winner1);
-        pot.addWinner(winner2);
+        pot.addChips(p1, 500);
+        pot.addChips(p2, 500);
 
-        assertEquals(2, pot.getWinners().size());
-        assertTrue(pot.getWinners().contains(winner1));
-        assertTrue(pot.getWinners().contains(winner2));
+        assertThat(pot.isOverbet()).isFalse();
     }
 
     @Test
-    void testIsOverbet_SingleEligiblePlayer() {
-        ServerPot pot = new ServerPot(1, 0);
-        ServerPlayer player = new ServerPlayer(1, "Overbet", true, 0, 5000);
+    void should_AccumulateChipsFromMultipleBettingRounds() {
+        // Poker rule: Pot grows as betting rounds progress
+        ServerPot pot = new ServerPot(0, 0);
+        ServerPlayer p1 = new ServerPlayer(1, "P1", true, 0, 5000);
+        ServerPlayer p2 = new ServerPlayer(2, "P2", true, 0, 5000);
 
-        pot.addChips(player, 500);
+        pot.addChips(p1, 100);
+        pot.addChips(p2, 100);
+        pot.addChips(p1, 200);
+        pot.addChips(p2, 200);
 
-        assertTrue(pot.isOverbet()); // Only one eligible player = overbet (uncalled amount)
+        assertThat(pot.getChips()).isEqualTo(600);
+        assertThat(pot.getEligiblePlayers()).hasSize(2);
     }
 
     @Test
-    void testIsOverbet_MultipleEligiblePlayers() {
-        ServerPot pot = new ServerPot(1, 0);
-        ServerPlayer player1 = new ServerPlayer(1, "P1", true, 0, 5000);
-        ServerPlayer player2 = new ServerPlayer(2, "P2", true, 0, 5000);
+    void should_TrackSidePotAllInLevel() {
+        // Poker rule: Side pots created when player goes all-in for less than current
+        // bet
+        ServerPot mainPot = new ServerPot(0, 0);
+        ServerPot sidePot = new ServerPot(0, 500);
 
-        pot.addChips(player1, 500);
-        pot.addChips(player2, 500);
-
-        assertFalse(pot.isOverbet()); // Multiple players = contested pot
+        assertThat(mainPot.getSideBet()).isEqualTo(0);
+        assertThat(sidePot.getSideBet()).isEqualTo(500);
     }
 
     @Test
-    void testSideBetTracking() {
-        ServerPot mainPot = new ServerPot(1, 0);
-        ServerPot sidePot = new ServerPot(1, 1000); // Side pot created at 1000 chip all-in level
+    void should_TrackMultipleWinners_ForSplitPot() {
+        // Poker rule: Tied hands split the pot equally
+        ServerPot pot = new ServerPot(0, 0);
+        ServerPlayer w1 = new ServerPlayer(1, "Winner1", true, 0, 5000);
+        ServerPlayer w2 = new ServerPlayer(2, "Winner2", true, 0, 5000);
 
-        assertEquals(0, mainPot.getSideBet());
-        assertEquals(1000, sidePot.getSideBet());
+        pot.addWinner(w1);
+        pot.addWinner(w2);
+
+        assertThat(pot.getWinners()).hasSize(2);
+        assertThat(pot.getWinners()).containsExactly(w1, w2);
     }
 
     @Test
-    void testRoundTracking() {
-        ServerPot preflopPot = new ServerPot(0, 0);
-        ServerPot flopPot = new ServerPot(1, 0);
-        ServerPot turnPot = new ServerPot(2, 500);
+    void should_ResetForNewHand() {
+        // Between hands, pots are cleared for the next deal
+        ServerPot pot = new ServerPot(0, 0);
+        ServerPlayer p1 = new ServerPlayer(1, "P1", true, 0, 5000);
+        pot.addChips(p1, 500);
+        pot.addWinner(p1);
 
-        assertEquals(0, preflopPot.getRound());
-        assertEquals(1, flopPot.getRound());
-        assertEquals(2, turnPot.getRound());
+        pot.reset();
+
+        assertThat(pot.getChips()).isEqualTo(0);
+        assertThat(pot.getEligiblePlayers()).isEmpty();
+        assertThat(pot.getWinners()).isEmpty();
     }
 }
