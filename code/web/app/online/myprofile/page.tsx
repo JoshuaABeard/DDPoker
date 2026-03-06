@@ -18,7 +18,7 @@ import { PlayerStatsSection } from '@/components/profile/PlayerStatsSection'
 export default function MyProfilePage() {
   const { user, isLoading, isAuthenticated } = useAuth()
   const [aliases, setAliases] = useState<
-    Array<{ name: string; createdDate: string; retiredDate?: string }>
+    Array<{ id: number; name: string; createdDate: string }>
   >([])
 
   useEffect(() => {
@@ -28,9 +28,9 @@ export default function MyProfilePage() {
           const data = await profileApi.getAliases()
           setAliases(
             data.map((a) => ({
+              id: a.id,
               name: a.name,
-              createdDate: a.createdDate,
-              retiredDate: a.retiredDate,
+              createdDate: a.createDate,
             }))
           )
         } catch (error) {

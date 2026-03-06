@@ -8,11 +8,12 @@
 
 import { useState } from 'react'
 import { Dialog } from '@/components/ui/Dialog'
+import { profileApi } from '@/lib/api'
 
 interface Alias {
+  id: number
   name: string
   createdDate: string
-  retiredDate?: string
 }
 
 interface AliasManagementProps {
@@ -32,17 +33,15 @@ export function AliasManagement({ aliases }: AliasManagementProps) {
   }
 
   const confirmRetire = async () => {
-    const aliasName = dialogState.aliasName
+    const alias = aliases.find((a) => a.name === dialogState.aliasName)
+    if (!alias) return
 
     setIsLoading(true)
     setMessage(null)
 
     try {
-      // TODO: Replace with actual API call
-      // await profileApi.retireAlias(aliasName)
-
-      setMessage({ type: 'success', text: `Alias "${aliasName}" retired successfully` })
-      // In real implementation, would refresh the alias list
+      await profileApi.retireProfile(alias.id)
+      setMessage({ type: 'success', text: `Alias "${alias.name}" retired successfully` })
     } catch (error) {
       setMessage({
         type: 'error',
@@ -53,8 +52,7 @@ export function AliasManagement({ aliases }: AliasManagementProps) {
     }
   }
 
-  const activeAliases = aliases.filter((a) => !a.retiredDate)
-  const retiredAliases = aliases.filter((a) => a.retiredDate)
+  const activeAliases = aliases
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -102,22 +100,6 @@ export function AliasManagement({ aliases }: AliasManagementProps) {
           </div>
         )}
       </div>
-
-      {retiredAliases.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Retired Aliases</h3>
-          <div className="space-y-2">
-            {retiredAliases.map((alias) => (
-              <div key={alias.name} className="p-3 border border-gray-300 rounded bg-gray-50">
-                <div className="font-medium text-gray-600">{alias.name}</div>
-                <div className="text-xs text-gray-500">
-                  Retired: {alias.retiredDate && new Date(alias.retiredDate).toLocaleDateString()}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <Dialog
         isOpen={dialogState.isOpen}

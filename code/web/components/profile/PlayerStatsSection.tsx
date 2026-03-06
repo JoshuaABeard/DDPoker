@@ -35,7 +35,7 @@ export function PlayerStatsSection({ username }: PlayerStatsSectionProps) {
       try {
         const data = await tournamentApi.getHistory(username, 0, 1000)
         if (!cancelled) {
-          setHistory(data.history)
+          setHistory(data.content)
         }
       } catch (error) {
         console.error('Failed to fetch tournament history:', error)

@@ -11,9 +11,9 @@ import { DataTable } from '@/components/data/DataTable'
 import { Pagination } from '@/components/data/Pagination'
 import { FilterForm } from '@/components/filters/FilterForm'
 import { tournamentApi } from '@/lib/api'
-import { mapTournamentEntry, calculateTournamentStats } from '@/lib/mappers'
+import { mapTournamentEntry } from '@/lib/mappers'
 import { toBackendPage, buildPaginationResult } from '@/lib/pagination'
-import type { TournamentStats } from '@/lib/types'
+import type { TournamentStatsDtoDto } from '@/lib/types'
 
 export const metadata: Metadata = {
   title: 'Tournament History - DD Poker',
@@ -39,24 +39,22 @@ async function getTournamentHistory(
   filters: { begin?: string; end?: string }
 ): Promise<{
   entries: TournamentEntry[]
-  stats: TournamentStats
+  stats: TournamentStatsDto
   totalPages: number
   totalItems: number
 }> {
   try {
     const backendPage = toBackendPage(page)
-    const { history, total } = await tournamentApi.getHistory(
+    const data = await tournamentApi.getHistory(
       playerName,
       backendPage,
       50,
       filters.begin,
       filters.end
     )
-    const mapped = history.map(mapTournamentEntry)
-    // LIMITATION: Stats calculated from current page only, not full history
-    // TODO: Backend should return aggregate stats, or fetch all history (page=0, pageSize=total)
-    const stats = calculateTournamentStats(history)
-    const result = buildPaginationResult(mapped, total, page, 50)
+    const mapped = data.content.map(mapTournamentEntry)
+    const stats = data.stats
+    const result = buildPaginationResult(mapped, data.totalElements, page, 50)
     return {
       entries: result.data,
       stats,
