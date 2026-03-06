@@ -44,6 +44,15 @@ public interface TournamentHistoryRepository extends JpaRepository<TournamentHis
             @Param("to") Date to, Pageable pageable);
 
     /**
+     * Aggregate tournament statistics for a player profile.
+     */
+    @Query("SELECT COUNT(t), " + "SUM(CASE WHEN t.place = 1 THEN 1 ELSE 0 END), " + "COALESCE(SUM(t.prize), 0), "
+            + "COALESCE(SUM(t.buyin), 0), " + "COALESCE(MIN(t.place), 0), "
+            + "COALESCE(AVG(CAST(t.place AS double)), 0) " + "FROM TournamentHistory t WHERE t.profile.id = :profileId"
+            + " AND (:from IS NULL OR t.endDate >= :from)" + " AND (:to IS NULL OR t.endDate <= :to)")
+    Object[] aggregateStats(@Param("profileId") Long profileId, @Param("from") Date from, @Param("to") Date to);
+
+    /**
      * Find all tournament histories for a specific game, ordered by place.
      */
     @Query("SELECT t FROM TournamentHistory t WHERE t.onlineGame.id = :gameId ORDER BY t.place")

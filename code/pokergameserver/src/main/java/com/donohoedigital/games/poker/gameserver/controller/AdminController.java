@@ -42,6 +42,7 @@ import com.donohoedigital.games.poker.gameserver.persistence.repository.BanRepos
 import com.donohoedigital.games.poker.gameserver.persistence.repository.OnlineProfileRepository;
 import com.donohoedigital.games.poker.gameserver.service.EmailService;
 import com.donohoedigital.games.poker.model.OnlineProfile;
+import com.donohoedigital.games.poker.protocol.dto.CreateBanRequest;
 
 /**
  * Admin endpoints - profile search and account management.
@@ -153,7 +154,28 @@ public class AdminController {
      * Add a ban.
      */
     @PostMapping("/bans")
-    public ResponseEntity<BanEntity> addBan(@RequestBody BanEntity ban) {
+    public ResponseEntity<BanEntity> addBan(@RequestBody CreateBanRequest request) {
+        BanEntity.BanType banType;
+        try {
+            banType = BanEntity.BanType.valueOf(request.banType());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        if (banType == BanEntity.BanType.PROFILE && request.profileId() == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (banType == BanEntity.BanType.EMAIL && (request.email() == null || request.email().isBlank())) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        BanEntity ban = new BanEntity();
+        ban.setBanType(banType);
+        ban.setProfileId(request.profileId());
+        ban.setEmail(request.email());
+        ban.setReason(request.reason());
+        ban.setUntil(request.until());
+
         BanEntity saved = banRepository.save(ban);
         return ResponseEntity.ok(saved);
     }

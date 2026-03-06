@@ -20,6 +20,8 @@
 package com.donohoedigital.games.poker.gameserver.controller;
 
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -35,6 +37,7 @@ import com.donohoedigital.games.poker.gameserver.persistence.repository.OnlinePr
 import com.donohoedigital.games.poker.gameserver.persistence.repository.TournamentHistoryRepository;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 import com.donohoedigital.games.poker.model.TournamentHistory;
+import com.donohoedigital.games.poker.protocol.dto.TournamentStatsDto;
 
 /**
  * Tournament history endpoints - player statistics and tournament details.
@@ -52,10 +55,10 @@ public class HistoryController {
     }
 
     /**
-     * Get tournament history for a player by name.
+     * Get tournament history for a player by name, including aggregate stats.
      */
     @GetMapping("/history")
-    public ResponseEntity<Page<TournamentHistory>> getHistory(@RequestParam("name") String name,
+    public ResponseEntity<Map<String, Object>> getHistory(@RequestParam("name") String name,
             @RequestParam(name = "from", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date from,
             @RequestParam(name = "to", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date to,
             @RequestParam(name = "page", defaultValue = "0") int page,
@@ -68,7 +71,28 @@ public class HistoryController {
 
         Page<TournamentHistory> history = historyRepository.findByProfileId(profile.getId(), from, to,
                 PageRequest.of(page, pageSize));
-        return ResponseEntity.ok(history);
+
+        Object[] agg = historyRepository.aggregateStats(profile.getId(), from, to);
+        long totalGames = ((Number) agg[0]).longValue();
+        long totalWins = ((Number) agg[1]).longValue();
+        int totalPrize = ((Number) agg[2]).intValue();
+        int totalBuyIn = ((Number) agg[3]).intValue();
+        int bestFinish = ((Number) agg[4]).intValue();
+        double avgPlacement = ((Number) agg[5]).doubleValue();
+        double winRate = totalGames > 0 ? (totalWins * 100.0 / totalGames) : 0;
+
+        TournamentStatsDto stats = new TournamentStatsDto((int) totalGames, (int) totalWins, totalPrize, totalBuyIn,
+                totalPrize - totalBuyIn, bestFinish, avgPlacement, winRate);
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("content", history.getContent());
+        response.put("totalElements", history.getTotalElements());
+        response.put("totalPages", history.getTotalPages());
+        response.put("number", history.getNumber());
+        response.put("size", history.getSize());
+        response.put("stats", stats);
+
+        return ResponseEntity.ok(response);
     }
 
     /**

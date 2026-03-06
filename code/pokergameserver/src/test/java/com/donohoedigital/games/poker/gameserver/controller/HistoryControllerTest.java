@@ -67,9 +67,16 @@ class HistoryControllerTest {
         when(profileRepository.findByName("player1")).thenReturn(Optional.of(profile));
         when(historyRepository.findByProfileId(eq(1L), isNull(), isNull(), any()))
                 .thenReturn(new PageImpl<>(List.of(h)));
+        when(historyRepository.aggregateStats(eq(1L), isNull(), isNull()))
+                .thenReturn(new Object[]{1L, 1L, 1000, 100, 1, 1.0});
 
         mockMvc.perform(get("/api/v1/history").param("name", "player1")).andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].id").value(10));
+                .andExpect(jsonPath("$.content[0].id").value(10)).andExpect(jsonPath("$.stats.totalGames").value(1))
+                .andExpect(jsonPath("$.stats.totalWins").value(1)).andExpect(jsonPath("$.stats.totalPrize").value(1000))
+                .andExpect(jsonPath("$.stats.totalBuyIn").value(100))
+                .andExpect(jsonPath("$.stats.profitLoss").value(900)).andExpect(jsonPath("$.stats.bestFinish").value(1))
+                .andExpect(jsonPath("$.stats.avgPlacement").value(1.0))
+                .andExpect(jsonPath("$.stats.winRate").value(100.0));
     }
 
     @Test
