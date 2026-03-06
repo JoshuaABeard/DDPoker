@@ -297,9 +297,23 @@
       <strvalue>hostonline:OnlineTournamentOptions</strvalue>
       <strvalue>joinonline:FindGames</strvalue>
       <strvalue>loadgameonline:LoadOnlineGameMenu</strvalue>
+      <strvalue>account:AccountManagement</strvalue>
       <strvalue>website:LaunchOnlineWebsite</strvalue>
       <strvalue>forums:LaunchOnlineForums</strvalue>
       <strvalue>helpdetail:Help:online</strvalue>
+      <strvalue>cancelprev:PreviousPhase</strvalue>
+    </paramlist>
+  </phase>
+
+  <!-- ACCOUNT MANAGEMENT -->
+  <phase name="AccountManagement" class="com.donohoedigital.games.poker.online.AccountManagement" extends="Menu">
+    <param name="menubox-title" boolvalue="true"/>
+    <param name="menubox-title-prop" strvalue="msg.title.AccountManagement"/>
+    <param name="menubox-help-name" strvalue="accountmanagement"/>
+    <param name="default-button" strvalue="changepassword"/>
+    <paramlist name="buttons">
+      <strvalue>changepassword</strvalue>
+      <strvalue>changeemail</strvalue>
       <strvalue>cancelprev:PreviousPhase</strvalue>
     </paramlist>
   </phase>
