@@ -47,6 +47,7 @@ import org.springframework.stereotype.Service;
 
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.HandScoreConstants;
+import com.donohoedigital.games.poker.protocol.dto.SimulationResult;
 
 /**
  * Poker equity simulation service. Supports Monte Carlo and exhaustive

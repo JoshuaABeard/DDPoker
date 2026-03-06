@@ -17,10 +17,25 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
+package com.donohoedigital.games.poker.protocol.dto;
+
+import java.time.Instant;
+import java.util.List;
 
 /**
- * Request DTO for updating a profile.
+ * Public game summary returned by the lobby listing API.
+ *
+ * <p>
+ * wsUrl is null for private games in list view; returned in GameJoinResponse
+ * after successful join.
+ * </p>
  */
-public record UpdateProfileRequest(String email) {
+public record GameSummary(String gameId, String name, String hostingType, // "SERVER" | "COMMUNITY"
+        String status, // GameInstanceState name
+        String ownerName, int playerCount, int maxPlayers, boolean isPrivate, // true if passwordHash is non-null
+        String wsUrl, // null for private games in list view
+        BlindsSummary blinds, Instant createdAt, Instant startedAt, List<LobbyPlayerInfo> players) {
+    /** Blind level amounts extracted from the game profile. */
+    public record BlindsSummary(int smallBlind, int bigBlind, int ante) {
+    }
 }

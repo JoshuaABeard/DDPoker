@@ -1,7 +1,7 @@
 /*
- * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+ * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Community Edition
- * Copyright (c) 2026 Joshua Beard and contributors
+ * Copyright (c) 2026 DD Poker Community
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,17 +15,12 @@
  *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+ * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
+package com.donohoedigital.games.poker.protocol.dto;
 
 /**
- * Response DTO for the verify-email operation.
- *
- * <p>
- * On success {@code success} is true and {@code token} contains a fresh JWT
- * with {@code emailVerified=true}. On failure {@code success} is false,
- * {@code token} is null, and {@code message} describes the error.
+ * Request DTO for changing an authenticated user's password.
  */
-public record VerifyEmailResponse(boolean success, String token, String message) {
+public record ChangePasswordRequest(String oldPassword, String newPassword) {
 }

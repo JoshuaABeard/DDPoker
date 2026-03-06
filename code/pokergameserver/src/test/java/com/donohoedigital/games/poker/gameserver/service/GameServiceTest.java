@@ -29,13 +29,13 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ContextConfiguration;
 
-import com.donohoedigital.games.poker.gameserver.GameConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig;
 import com.donohoedigital.games.poker.gameserver.GameInstanceState;
 import com.donohoedigital.games.poker.gameserver.GameServerException;
-import com.donohoedigital.games.poker.gameserver.dto.CommunityGameRegisterRequest;
-import com.donohoedigital.games.poker.gameserver.dto.GameJoinResponse;
-import com.donohoedigital.games.poker.gameserver.dto.GameListResponse;
-import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
+import com.donohoedigital.games.poker.protocol.dto.CommunityGameRegisterRequest;
+import com.donohoedigital.games.poker.protocol.dto.GameJoinResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameListResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameSummary;
 import com.donohoedigital.games.poker.gameserver.persistence.TestJpaConfiguration;
 import com.donohoedigital.games.poker.gameserver.persistence.entity.GameInstanceEntity;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.GameEventRepository;

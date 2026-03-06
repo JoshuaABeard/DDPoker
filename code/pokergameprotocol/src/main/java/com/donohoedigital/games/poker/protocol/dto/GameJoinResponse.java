@@ -17,13 +17,15 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
+package com.donohoedigital.games.poker.protocol.dto;
 
 /**
- * A player entry shown in the pre-game lobby.
- *
- * <p>
- * role is either {@code "PLAYER"} or {@code "AI"}.
+ * Returned after a successful join or observe. Contains the WebSocket URL to
+ * connect to and an optional scoped token.
  */
-public record LobbyPlayerInfo(String name, String role) {
+public record GameJoinResponse(String wsUrl, String gameId, String token) {
+    /** Constructor for join responses (no extra token needed). */
+    public GameJoinResponse(String wsUrl, String gameId) {
+        this(wsUrl, gameId, null);
+    }
 }

@@ -1,7 +1,7 @@
 /*
- * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+ * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Community Edition
- * Copyright (c) 2026 DD Poker Community
+ * Copyright (c) 2026 Joshua Beard and contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,12 +15,14 @@
  *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+ * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
+package com.donohoedigital.games.poker.protocol.dto;
+
+import java.util.Date;
 
 /**
- * Response DTO for the current authenticated user (GET /api/v1/auth/me).
+ * Response DTO for tournament templates.
  */
-public record ProfileResponse(Long id, String username, String email, boolean retired) {
+public record TemplateResponse(Long id, String name, String config, Date createdDate, Date modifiedDate) {
 }

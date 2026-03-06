@@ -1,5 +1,5 @@
 /*
- * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+ * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Community Edition
  * Copyright (c) 2026 Joshua Beard and contributors
  *
@@ -15,12 +15,12 @@
  *
  * For the full License text, please see the LICENSE.txt file
  * in the root directory of this project.
- * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+ * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
+package com.donohoedigital.games.poker.protocol.dto;
 
 /**
- * Standard error response DTO.
+ * Request DTO for user registration.
  */
-public record ErrorResponse(String code, String message) {
+public record RegisterRequest(String username, String password, String email) {
 }

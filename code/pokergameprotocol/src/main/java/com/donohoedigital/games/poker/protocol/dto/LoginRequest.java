@@ -17,12 +17,10 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
-
-import jakarta.validation.constraints.NotBlank;
+package com.donohoedigital.games.poker.protocol.dto;
 
 /**
  * Request DTO for user login.
  */
-public record LoginRequest(@NotBlank String username, @NotBlank String password, boolean rememberMe) {
+public record LoginRequest(String username, String password, boolean rememberMe) {
 }

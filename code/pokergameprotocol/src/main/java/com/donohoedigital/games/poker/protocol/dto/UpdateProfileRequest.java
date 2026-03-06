@@ -17,14 +17,10 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
+package com.donohoedigital.games.poker.protocol.dto;
 
 /**
- * Response DTO for the request-email-change operation.
- *
- * <p>
- * On success {@code success} is true. On failure {@code success} is false and
- * {@code message} describes the error.
+ * Request DTO for updating a profile.
  */
-public record RequestEmailChangeResponse(boolean success, String message) {
+public record UpdateProfileRequest(String email) {
 }

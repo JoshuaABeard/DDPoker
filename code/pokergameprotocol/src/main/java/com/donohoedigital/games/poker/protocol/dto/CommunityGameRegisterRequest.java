@@ -17,17 +17,11 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
+package com.donohoedigital.games.poker.protocol.dto;
 
-import com.donohoedigital.games.poker.gameserver.GameConfig;
-
-/**
- * Request body for PUT /api/v1/games/{id}/settings. Null fields = no change.
- */
-public record GameSettingsRequest(String name, Integer maxPlayers, GameConfig profile, String password // empty string =
-                                                                                                        // remove
-                                                                                                        // password;
-                                                                                                        // null = no
-                                                                                                        // change
+/** Request body for POST /api/v1/games/community. */
+public record CommunityGameRegisterRequest(String name, String wsUrl, GameConfig profile, String password // null =
+                                                                                                            // public
+                                                                                                            // game
 ) {
 }

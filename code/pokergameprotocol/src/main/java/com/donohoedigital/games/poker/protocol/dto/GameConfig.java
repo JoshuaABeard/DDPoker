@@ -29,7 +29,7 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver;
+package com.donohoedigital.games.poker.protocol.dto;
 
 import java.time.Instant;
 import java.util.List;

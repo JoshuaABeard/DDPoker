@@ -17,14 +17,14 @@
  */
 package com.donohoedigital.games.poker.gameserver.integration;
 
-import com.donohoedigital.games.poker.gameserver.GameConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.BlindLevel;
-import com.donohoedigital.games.poker.gameserver.GameConfig.LevelAdvanceMode;
-import com.donohoedigital.games.poker.gameserver.GameConfig.PayoutConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.TimeoutConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.BootConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.InviteConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.BettingConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.BlindLevel;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.LevelAdvanceMode;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.PayoutConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.TimeoutConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.BootConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.InviteConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.BettingConfig;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
 import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;

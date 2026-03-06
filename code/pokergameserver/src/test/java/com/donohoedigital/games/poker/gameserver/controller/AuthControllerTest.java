@@ -34,10 +34,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.donohoedigital.games.poker.gameserver.auth.JwtProperties;
-import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
-import com.donohoedigital.games.poker.gameserver.dto.RequestEmailChangeResponse;
-import com.donohoedigital.games.poker.gameserver.dto.ResendVerificationResponse;
-import com.donohoedigital.games.poker.gameserver.dto.VerifyEmailResponse;
+import com.donohoedigital.games.poker.protocol.dto.LoginResponse;
+import com.donohoedigital.games.poker.protocol.dto.RequestEmailChangeResponse;
+import com.donohoedigital.games.poker.protocol.dto.ResendVerificationResponse;
+import com.donohoedigital.games.poker.protocol.dto.VerifyEmailResponse;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
 
 @WebMvcTest

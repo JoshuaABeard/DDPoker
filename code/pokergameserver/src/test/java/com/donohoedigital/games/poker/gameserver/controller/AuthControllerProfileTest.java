@@ -34,7 +34,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.donohoedigital.games.poker.gameserver.auth.JwtProperties;
-import com.donohoedigital.games.poker.gameserver.dto.ProfileResponse;
+import com.donohoedigital.games.poker.protocol.dto.ProfileResponse;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
 
 /**

@@ -38,7 +38,7 @@ import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.PokerConstants;
-import com.donohoedigital.games.poker.gameserver.SimulationResult;
+import com.donohoedigital.games.poker.protocol.dto.SimulationResult;
 import com.donohoedigital.games.poker.server.GameServerRestClient;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.LogManager;

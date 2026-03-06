@@ -35,7 +35,7 @@
 package com.donohoedigital.games.poker.ui;
 
 import com.donohoedigital.games.poker.PlayerProfile;
-import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
+import com.donohoedigital.games.poker.protocol.dto.LoginResponse;
 import com.donohoedigital.games.poker.online.OnlineServerUrl;
 import com.donohoedigital.games.poker.online.RestAuthClient;
 import org.apache.logging.log4j.LogManager;

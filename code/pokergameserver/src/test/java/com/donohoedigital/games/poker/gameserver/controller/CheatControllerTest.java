@@ -17,8 +17,8 @@
  */
 package com.donohoedigital.games.poker.gameserver.controller;
 
-import com.donohoedigital.games.poker.gameserver.GameConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.PracticeConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.PracticeConfig;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
 import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.ServerGameEventBus;

@@ -17,13 +17,10 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+package com.donohoedigital.games.poker.protocol.dto;
 
 /**
- * Request DTO for completing a password reset using a one-time token.
+ * Response DTO for the current authenticated user (GET /api/v1/auth/me).
  */
-public record ResetPasswordRequest(@NotBlank String token, @NotBlank @Size(min = 8, max = 128) String newPassword) {
+public record ProfileResponse(Long id, String username, String email, boolean retired) {
 }

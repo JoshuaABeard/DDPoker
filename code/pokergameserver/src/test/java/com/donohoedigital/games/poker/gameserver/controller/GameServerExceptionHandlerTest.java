@@ -43,7 +43,7 @@ import org.springframework.http.ResponseEntity;
 
 import com.donohoedigital.games.poker.gameserver.GameServerException;
 import com.donohoedigital.games.poker.gameserver.GameServerException.ErrorCode;
-import com.donohoedigital.games.poker.gameserver.dto.ErrorResponse;
+import com.donohoedigital.games.poker.protocol.dto.ErrorResponse;
 
 /**
  * Unit tests for {@link GameServerExceptionHandler}.

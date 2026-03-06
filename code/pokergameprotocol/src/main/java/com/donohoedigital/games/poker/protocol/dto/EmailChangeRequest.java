@@ -17,16 +17,10 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
+package com.donohoedigital.games.poker.protocol.dto;
 
-import com.donohoedigital.games.poker.gameserver.GameConfig;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-
-/** Request body for POST /api/v1/games/community. */
-public record CommunityGameRegisterRequest(@NotBlank String name,
-        @NotBlank @Pattern(regexp = "wss?://.+", message = "wsUrl must be a valid WebSocket URL (ws:// or wss://)") String wsUrl,
-        @Valid GameConfig profile, String password // null = public game
-) {
+/**
+ * Request DTO for the change-email endpoint.
+ */
+public record EmailChangeRequest(String email) {
 }

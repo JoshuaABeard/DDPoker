@@ -17,10 +17,14 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
+package com.donohoedigital.games.poker.protocol.dto;
 
-import jakarta.validation.constraints.NotNull;
-
-/** Request body for POST /api/v1/games/{id}/kick. */
-public record KickRequest(@NotNull Long profileId) {
+/**
+ * Response DTO for the request-email-change operation.
+ *
+ * <p>
+ * On success {@code success} is true. On failure {@code success} is false and
+ * {@code message} describes the error.
+ */
+public record RequestEmailChangeResponse(boolean success, String message) {
 }

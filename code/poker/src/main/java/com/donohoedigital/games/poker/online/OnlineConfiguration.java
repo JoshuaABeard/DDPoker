@@ -43,7 +43,7 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.gameserver.*;
 import com.donohoedigital.games.poker.gameserver.controller.TournamentProfileConverter;
-import com.donohoedigital.games.poker.gameserver.dto.*;
+import com.donohoedigital.games.poker.protocol.dto.*;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.server.*;
 import com.donohoedigital.gui.*;

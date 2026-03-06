@@ -17,15 +17,15 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
+package com.donohoedigital.games.poker.protocol.dto;
 
 /**
- * Returned after a successful join or observe. Contains the WebSocket URL to
- * connect to and an optional scoped token.
+ * Response DTO for the verify-email operation.
+ *
+ * <p>
+ * On success {@code success} is true and {@code token} contains a fresh JWT
+ * with {@code emailVerified=true}. On failure {@code success} is false,
+ * {@code token} is null, and {@code message} describes the error.
  */
-public record GameJoinResponse(String wsUrl, String gameId, String token) {
-    /** Constructor for join responses (no extra token needed). */
-    public GameJoinResponse(String wsUrl, String gameId) {
-        this(wsUrl, gameId, null);
-    }
+public record VerifyEmailResponse(boolean success, String token, String message) {
 }

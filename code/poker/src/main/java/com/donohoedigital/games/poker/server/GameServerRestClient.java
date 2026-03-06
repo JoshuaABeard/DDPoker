@@ -17,12 +17,12 @@
  */
 package com.donohoedigital.games.poker.server;
 
-import com.donohoedigital.games.poker.gameserver.GameConfig;
-import com.donohoedigital.games.poker.gameserver.SimulationResult;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig;
+import com.donohoedigital.games.poker.protocol.dto.SimulationResult;
 import com.donohoedigital.games.poker.gameserver.controller.TournamentProfileConverter;
-import com.donohoedigital.games.poker.gameserver.dto.CreateGameResponse;
-import com.donohoedigital.games.poker.gameserver.dto.GameListResponse;
-import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
+import com.donohoedigital.games.poker.protocol.dto.CreateGameResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameListResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameSummary;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;

@@ -37,8 +37,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.donohoedigital.games.poker.gameserver.auth.JwtAuthenticationFilter;
-import com.donohoedigital.games.poker.gameserver.dto.TemplateRequest;
-import com.donohoedigital.games.poker.gameserver.dto.TemplateResponse;
+import com.donohoedigital.games.poker.protocol.dto.TemplateRequest;
+import com.donohoedigital.games.poker.protocol.dto.TemplateResponse;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.TournamentTemplateRepository;
 import com.donohoedigital.games.poker.gameserver.service.ProfileService;
 import com.donohoedigital.games.poker.model.TournamentTemplate;

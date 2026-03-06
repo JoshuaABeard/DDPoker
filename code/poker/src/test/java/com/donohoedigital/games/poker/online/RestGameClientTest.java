@@ -32,7 +32,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
+import com.donohoedigital.games.poker.protocol.dto.GameSummary;
 import com.sun.net.httpserver.HttpServer;
 
 class RestGameClientTest {

@@ -17,10 +17,10 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
+package com.donohoedigital.games.poker.protocol.dto;
 
-/**
- * Request DTO for creating/updating tournament templates.
- */
-public record TemplateRequest(String name, String config) {
+import java.util.List;
+
+/** Paginated lobby listing response. */
+public record GameListResponse(List<GameSummary> games, int total, int page, int pageSize) {
 }

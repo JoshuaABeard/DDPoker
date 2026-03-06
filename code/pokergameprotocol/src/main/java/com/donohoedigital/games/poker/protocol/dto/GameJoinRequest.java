@@ -17,15 +17,9 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
+package com.donohoedigital.games.poker.protocol.dto;
 
-/**
- * Response DTO for login/register operations.
- *
- * <p>
- * When {@code retryAfterSeconds} is non-null the account is locked. The caller
- * should return HTTP 423 (Locked) with this body.
- */
-public record LoginResponse(boolean success, String token, Long profileId, String username, String email,
-        boolean emailVerified, String message, Long retryAfterSeconds) {
+/** Request body for POST /api/v1/games/{id}/join. */
+public record GameJoinRequest(String password // null or omitted for public games
+) {
 }

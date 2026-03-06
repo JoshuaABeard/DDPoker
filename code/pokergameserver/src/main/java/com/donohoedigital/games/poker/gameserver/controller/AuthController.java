@@ -40,17 +40,17 @@ import jakarta.validation.Valid;
 
 import com.donohoedigital.games.poker.gameserver.auth.JwtAuthenticationFilter;
 import com.donohoedigital.games.poker.gameserver.auth.JwtProperties;
-import com.donohoedigital.games.poker.gameserver.dto.EmailChangeRequest;
-import com.donohoedigital.games.poker.gameserver.dto.ForgotPasswordRequest;
-import com.donohoedigital.games.poker.gameserver.dto.LoginRequest;
-import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
-import com.donohoedigital.games.poker.gameserver.dto.ProfileResponse;
-import com.donohoedigital.games.poker.gameserver.dto.RegisterRequest;
-import com.donohoedigital.games.poker.gameserver.dto.RequestEmailChangeResponse;
-import com.donohoedigital.games.poker.gameserver.dto.ResendVerificationResponse;
-import com.donohoedigital.games.poker.gameserver.dto.ResetPasswordRequest;
-import com.donohoedigital.games.poker.gameserver.dto.UsernameCheckResponse;
-import com.donohoedigital.games.poker.gameserver.dto.VerifyEmailResponse;
+import com.donohoedigital.games.poker.protocol.dto.EmailChangeRequest;
+import com.donohoedigital.games.poker.protocol.dto.ForgotPasswordRequest;
+import com.donohoedigital.games.poker.protocol.dto.LoginRequest;
+import com.donohoedigital.games.poker.protocol.dto.LoginResponse;
+import com.donohoedigital.games.poker.protocol.dto.ProfileResponse;
+import com.donohoedigital.games.poker.protocol.dto.RegisterRequest;
+import com.donohoedigital.games.poker.protocol.dto.RequestEmailChangeResponse;
+import com.donohoedigital.games.poker.protocol.dto.ResendVerificationResponse;
+import com.donohoedigital.games.poker.protocol.dto.ResetPasswordRequest;
+import com.donohoedigital.games.poker.protocol.dto.UsernameCheckResponse;
+import com.donohoedigital.games.poker.protocol.dto.VerifyEmailResponse;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
 
 /**
@@ -159,7 +159,10 @@ public class AuthController {
      * desktop UI. Other profiles return 503 since email delivery is not configured.
      */
     @PostMapping("/forgot-password")
-    public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+    public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        if (isBlank(request.email())) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Email is required"));
+        }
 
         if (!isDevOrEmbedded()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
@@ -177,7 +180,14 @@ public class AuthController {
      * Completes a password reset using a one-time token.
      */
     @PostMapping("/reset-password")
-    public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+    public ResponseEntity<Map<String, String>> resetPassword(@RequestBody ResetPasswordRequest request) {
+        if (isBlank(request.token())) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Token is required"));
+        }
+        if (isBlank(request.newPassword()) || request.newPassword().length() < 8
+                || request.newPassword().length() > 128) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Password must be between 8 and 128 characters"));
+        }
         try {
             authService.resetPassword(request.token(), request.newPassword());
             return ResponseEntity.ok(Map.of());
@@ -232,8 +242,11 @@ public class AuthController {
      * validation failure or service error.
      */
     @PutMapping("/email")
-    public ResponseEntity<RequestEmailChangeResponse> changeEmail(@Valid @RequestBody EmailChangeRequest request,
+    public ResponseEntity<RequestEmailChangeResponse> changeEmail(@RequestBody EmailChangeRequest request,
             Authentication authentication) {
+        if (isBlank(request.email())) {
+            return ResponseEntity.badRequest().body(new RequestEmailChangeResponse(false, "Email is required"));
+        }
         String username = authentication.getName();
         RequestEmailChangeResponse result = authService.requestEmailChange(username, request.email());
         if (result.success()) {
@@ -292,6 +305,10 @@ public class AuthController {
         ResponseCookie cookie = ResponseCookie.from(cookieName, token).httpOnly(true).secure(false).path("/")
                 .maxAge(7 * 24 * 60 * 60).sameSite("Strict").build();
         response.addHeader("Set-Cookie", cookie.toString());
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.isBlank();
     }
 
     private void clearAuthCookie(HttpServletResponse response) {

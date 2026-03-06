@@ -33,7 +33,8 @@ package com.donohoedigital.games.poker.gameserver;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.donohoedigital.games.poker.gameserver.GameConfig.*;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.*;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

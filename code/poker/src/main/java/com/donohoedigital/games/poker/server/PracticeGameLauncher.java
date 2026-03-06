@@ -22,7 +22,7 @@ import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PlayerProfile;
 import com.donohoedigital.games.poker.PokerUtils;
 import com.donohoedigital.games.poker.engine.PokerConstants;
-import com.donohoedigital.games.poker.gameserver.GameConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

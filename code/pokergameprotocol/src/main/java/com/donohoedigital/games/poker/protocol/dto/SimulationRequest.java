@@ -32,25 +32,17 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver;
+package com.donohoedigital.games.poker.protocol.dto;
 
 import java.util.List;
-import java.util.Map;
 
 /**
- * Result of a poker equity simulation (Monte Carlo or exhaustive).
+ * Request DTO for poker equity simulation.
  *
  * <p>
- * {@code win}, {@code tie}, {@code loss}, {@code opponentResults}, and
- * {@code playerHandTypeBreakdown} contain the simulation percentages for the
- * player against opponents.
+ * Provide either {@code iterations} (100-100000) for Monte Carlo mode, or
+ * {@code exhaustive=true} to enumerate all possible board completions.
  */
-public record SimulationResult(double win, double tie, double loss, int iterations,
-        List<OpponentResult> opponentResults, Map<String, Double> playerHandTypeBreakdown) {
-
-    /**
-     * Per-opponent result breakdown.
-     */
-    public record OpponentResult(double win, double tie, double loss) {
-    }
+public record SimulationRequest(List<String> holeCards, List<String> communityCards, int numOpponents,
+        Integer iterations, List<List<String>> knownOpponentHands, Boolean exhaustive) {
 }

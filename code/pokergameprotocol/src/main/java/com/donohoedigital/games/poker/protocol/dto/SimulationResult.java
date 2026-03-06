@@ -32,22 +32,25 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
+package com.donohoedigital.games.poker.protocol.dto;
 
 import java.util.List;
-
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Size;
+import java.util.Map;
 
 /**
- * Request DTO for poker equity simulation.
+ * Result of a poker equity simulation (Monte Carlo or exhaustive).
  *
  * <p>
- * Provide either {@code iterations} (100-100000) for Monte Carlo mode, or
- * {@code exhaustive=true} to enumerate all possible board completions.
+ * {@code win}, {@code tie}, {@code loss}, {@code opponentResults}, and
+ * {@code playerHandTypeBreakdown} contain the simulation percentages for the
+ * player against opponents.
  */
-public record SimulationRequest(@Size(min = 2, max = 2) List<String> holeCards,
-        @Size(max = 5) List<String> communityCards, @Min(1) @Max(9) int numOpponents,
-        @Min(100) @Max(100000) Integer iterations, List<List<String>> knownOpponentHands, Boolean exhaustive) {
+public record SimulationResult(double win, double tie, double loss, int iterations,
+        List<OpponentResult> opponentResults, Map<String, Double> playerHandTypeBreakdown) {
+
+    /**
+     * Per-opponent result breakdown.
+     */
+    public record OpponentResult(double win, double tie, double loss) {
+    }
 }

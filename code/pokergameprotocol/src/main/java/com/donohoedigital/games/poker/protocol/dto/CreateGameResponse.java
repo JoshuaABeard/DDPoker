@@ -17,12 +17,10 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
-
-import java.util.Date;
+package com.donohoedigital.games.poker.protocol.dto;
 
 /**
- * Response DTO for tournament templates.
+ * Response DTO for game creation.
  */
-public record TemplateResponse(Long id, String name, String config, Date createdDate, Date modifiedDate) {
+public record CreateGameResponse(String gameId) {
 }

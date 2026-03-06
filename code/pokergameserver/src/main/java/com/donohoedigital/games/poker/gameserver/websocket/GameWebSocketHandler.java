@@ -39,7 +39,7 @@ import com.donohoedigital.games.poker.gameserver.GameStateSnapshot;
 import com.donohoedigital.games.poker.gameserver.ServerGameEventBus;
 import com.donohoedigital.games.poker.gameserver.ServerPlayerSession;
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
-import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
+import com.donohoedigital.games.poker.protocol.dto.GameSummary;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
 import com.donohoedigital.games.poker.gameserver.service.GameService;
 import com.donohoedigital.games.poker.protocol.message.ServerMessage;

@@ -17,10 +17,10 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
+package com.donohoedigital.games.poker.protocol.dto;
 
 /**
- * Response DTO for game creation.
+ * Request DTO for creating/updating tournament templates.
  */
-public record CreateGameResponse(String gameId) {
+public record TemplateRequest(String name, String config) {
 }

@@ -17,7 +17,7 @@
  */
 package com.donohoedigital.games.poker.server;
 
-import com.donohoedigital.games.poker.gameserver.SimulationResult;
+import com.donohoedigital.games.poker.protocol.dto.SimulationResult;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;

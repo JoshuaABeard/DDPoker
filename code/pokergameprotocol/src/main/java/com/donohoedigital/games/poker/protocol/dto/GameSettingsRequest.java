@@ -17,9 +17,15 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
+package com.donohoedigital.games.poker.protocol.dto;
 
-/** Request body for POST /api/v1/games/{id}/join. */
-public record GameJoinRequest(String password // null or omitted for public games
+/**
+ * Request body for PUT /api/v1/games/{id}/settings. Null fields = no change.
+ */
+public record GameSettingsRequest(String name, Integer maxPlayers, GameConfig profile, String password // empty string =
+                                                                                                        // remove
+                                                                                                        // password;
+                                                                                                        // null = no
+                                                                                                        // change
 ) {
 }

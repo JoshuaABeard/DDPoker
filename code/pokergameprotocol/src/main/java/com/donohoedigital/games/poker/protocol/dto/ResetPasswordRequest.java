@@ -1,7 +1,7 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Community Edition
- * Copyright (c) 2026 Joshua Beard and contributors
+ * Copyright (c) 2026 DD Poker Community
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,17 +17,10 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
-
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+package com.donohoedigital.games.poker.protocol.dto;
 
 /**
- * Request DTO for user registration.
+ * Request DTO for completing a password reset using a one-time token.
  */
-public record RegisterRequest(
-        @NotBlank @Size(min = 3, max = 50) @Pattern(regexp = "^[a-zA-Z0-9_-]+$", message = "Username may only contain letters, numbers, underscores and hyphens") String username,
-        @NotBlank @Size(min = 8, max = 128) String password, @NotBlank @Email String email) {
+public record ResetPasswordRequest(String token, String newPassword) {
 }

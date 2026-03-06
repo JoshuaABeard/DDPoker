@@ -17,15 +17,15 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.gameserver.dto;
+package com.donohoedigital.games.poker.protocol.dto;
 
 /**
- * Response DTO for the resend-verification operation.
+ * Response DTO for login/register operations.
  *
  * <p>
- * On success {@code success} is true. On failure {@code success} is false and
- * {@code message} describes the error. {@code rateLimited} is true when the
- * failure is specifically due to the resend rate limit being exceeded.
+ * When {@code retryAfterSeconds} is non-null the account is locked. The caller
+ * should return HTTP 423 (Locked) with this body.
  */
-public record ResendVerificationResponse(boolean success, boolean rateLimited, String message) {
+public record LoginResponse(boolean success, String token, Long profileId, String username, String email,
+        boolean emailVerified, String message, Long retryAfterSeconds) {
 }

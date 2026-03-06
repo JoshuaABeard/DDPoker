@@ -17,7 +17,7 @@
  */
 package com.donohoedigital.games.poker.server;
 
-import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
+import com.donohoedigital.games.poker.protocol.dto.GameSummary;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

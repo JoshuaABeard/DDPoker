@@ -9,7 +9,7 @@ import com.donohoedigital.games.poker.PokerGame.WebSocketConfig;
 import com.donohoedigital.games.poker.PokerMain;
 import com.donohoedigital.games.poker.online.RestAuthClient;
 import com.donohoedigital.games.poker.online.RestGameClient;
-import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
+import com.donohoedigital.games.poker.protocol.dto.GameSummary;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.util.Map;
