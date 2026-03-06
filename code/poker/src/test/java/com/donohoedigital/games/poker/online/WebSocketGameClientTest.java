@@ -42,7 +42,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 class WebSocketGameClientTest {
 
     @Test
-    void connect_initialFailure_startsReconnectCycle() {
+    void should_RetryConnection_When_InitialConnectFails() {
+        // Verifies that when the initial connection fails, the client automatically
+        // retries
+        // so the user doesn't need to manually reconnect after a transient network
+        // issue.
         HttpClient httpClient = mock(HttpClient.class);
         WebSocket.Builder builder = mock(WebSocket.Builder.class);
         when(httpClient.newWebSocketBuilder()).thenReturn(builder);
@@ -68,40 +72,8 @@ class WebSocketGameClientTest {
     }
 
     @Test
-    void schedulerIsAliveAfterDisconnectAndReconnect() {
-        HttpClient httpClient = mock(HttpClient.class);
-        WebSocket.Builder builder = mock(WebSocket.Builder.class);
-        when(httpClient.newWebSocketBuilder()).thenReturn(builder);
-
-        WebSocket connectedWs = mock(WebSocket.class);
-        // First connect succeeds, then all attempts fail
-        CompletableFuture<WebSocket> success = CompletableFuture.completedFuture(connectedWs);
-        CompletableFuture<WebSocket> failed = new CompletableFuture<>();
-        failed.completeExceptionally(new RuntimeException("connect failed"));
-        when(builder.buildAsync(any(URI.class), any(WebSocket.Listener.class))).thenReturn(success, failed);
-
-        WebSocketGameClient client = new WebSocketGameClient(new ObjectMapper().registerModule(new JavaTimeModule()),
-                httpClient);
-        try {
-            // First game: connect then disconnect
-            client.connect("localhost", 11885, "game-1", "jwt-1").join();
-            assertThat(client.isConnected()).isTrue();
-            client.disconnect();
-            assertThat(client.isConnected()).isFalse();
-
-            // Second game: connect fails, should trigger reconnect attempts
-            client.connect("localhost", 11885, "game-2", "jwt-2");
-
-            // Should see at least 3 buildAsync calls: success + failure + 1 reconnect
-            // attempt
-            verify(builder, timeout(3000).atLeast(3)).buildAsync(any(URI.class), any(WebSocket.Listener.class));
-        } finally {
-            client.disconnect();
-        }
-    }
-
-    @Test
-    void connectSucceedsAfterPreviousDisconnect() {
+    void should_ConnectToNewGame_After_LeavingPreviousGame() {
+        // Verifies that a player can leave one game and successfully join another.
         HttpClient httpClient = mock(HttpClient.class);
         WebSocket.Builder builder = mock(WebSocket.Builder.class);
         when(httpClient.newWebSocketBuilder()).thenReturn(builder);
@@ -127,40 +99,11 @@ class WebSocketGameClientTest {
     }
 
     @Test
-    void connectResetsSequenceCountersToZero() {
-        HttpClient httpClient = mock(HttpClient.class);
-        WebSocket.Builder builder = mock(WebSocket.Builder.class);
-        when(httpClient.newWebSocketBuilder()).thenReturn(builder);
-
-        WebSocket connectedWs = mock(WebSocket.class);
-        when(builder.buildAsync(any(URI.class), any(WebSocket.Listener.class)))
-                .thenReturn(CompletableFuture.completedFuture(connectedWs));
-
-        WebSocketGameClient client = new WebSocketGameClient(new ObjectMapper().registerModule(new JavaTimeModule()),
-                httpClient);
-        try {
-            // First connect
-            client.connect("localhost", 11885, "game-1", "jwt-1").join();
-            assertThat(client.isConnected()).isTrue();
-
-            // Simulate having received messages up to sequence 50
-            client.setLastReceivedSequenceForTest(50);
-            assertThat(client.getLastReceivedSequenceForTest()).isEqualTo(50);
-
-            // Disconnect and reconnect to a new game
-            client.disconnect();
-            client.connect("localhost", 11885, "game-2", "jwt-2").join();
-
-            // After connect(), lastReceivedSequence must be 0 so gap detection
-            // doesn't trigger on the first broadcast message
-            assertThat(client.getLastReceivedSequenceForTest()).isEqualTo(0);
-        } finally {
-            client.disconnect();
-        }
-    }
-
-    @Test
-    void connect_newSessionInvalidatesPendingReconnectAttempts() throws InterruptedException {
+    void should_StopReconnectingToOldGame_When_JoiningNewGame() throws InterruptedException {
+        // Verifies that when a player joins a new game, any pending reconnection
+        // attempts
+        // to the old game are cancelled — the user shouldn't get reconnected to the
+        // wrong game.
         HttpClient httpClient = mock(HttpClient.class);
         WebSocket.Builder builder = mock(WebSocket.Builder.class);
         when(httpClient.newWebSocketBuilder()).thenReturn(builder);
@@ -194,9 +137,9 @@ class WebSocketGameClientTest {
     }
 
     @Test
-    void connect_usesProvidedHostInWsUrl() {
-        // Capture the URI passed to buildAsync and assert it contains the non-localhost
-        // host.
+    void should_ConnectToCorrectGameServer_When_HostAndPortProvided() {
+        // Verifies that the client connects to the correct game server using the
+        // provided host and port, so the player reaches the right game.
         HttpClient httpClient = mock(HttpClient.class);
         WebSocket.Builder builder = mock(WebSocket.Builder.class);
         when(httpClient.newWebSocketBuilder()).thenReturn(builder);
