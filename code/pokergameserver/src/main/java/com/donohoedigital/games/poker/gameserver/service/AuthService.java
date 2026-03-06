@@ -124,16 +124,16 @@ public class AuthService {
     public LoginResponse register(String username, String password, String email) {
         // Password strength validation
         if (password.length() < 8 || password.length() > 128) {
-            return new LoginResponse(false, null, null, null, null, false, "Password must be 8-128 characters", null);
+            return new LoginResponse(false, null, null, "Password must be 8-128 characters", null);
         }
         if (banService.isEmailBanned(email)) {
-            return new LoginResponse(false, null, null, null, null, false, "This email address is banned", null);
+            return new LoginResponse(false, null, null, "This email address is banned", null);
         }
         if (profileRepository.existsByName(username)) {
-            return new LoginResponse(false, null, null, null, null, false, "Username already exists", null);
+            return new LoginResponse(false, null, null, "Username already exists", null);
         }
         if (profileRepository.existsByEmail(email)) {
-            return new LoginResponse(false, null, null, null, null, false, "Email already in use", null);
+            return new LoginResponse(false, null, null, "Email already in use", null);
         }
 
         OnlineProfile profile = new OnlineProfile();
@@ -159,8 +159,10 @@ public class AuthService {
         }
 
         // New registrations are always unverified
+        ProfileResponse profileDto = new ProfileResponse(profile.getId(), username, email, false, false, false,
+                profile.getCreateDate() != null ? profile.getCreateDate().toString() : null);
         String token = tokenProvider.generateToken(username, profile.getId(), false, false);
-        return new LoginResponse(true, token, profile.getId(), username, email, false, null, null);
+        return new LoginResponse(true, profileDto, token, null, null);
     }
 
     private String generateVerificationToken() {
@@ -211,7 +213,7 @@ public class AuthService {
     public LoginResponse login(String username, String password, boolean rememberMe) {
         OnlineProfile profile = profileRepository.findByName(username).orElse(null);
         if (profile == null) {
-            return new LoginResponse(false, null, null, null, null, false, "Invalid username or password", null);
+            return new LoginResponse(false, null, null, "Invalid username or password", null);
         }
 
         long now = System.currentTimeMillis();
@@ -219,7 +221,7 @@ public class AuthService {
         // STEP 1: Check if account is currently locked
         if (profile.getLockedUntil() != null && now < profile.getLockedUntil()) {
             long retryAfterSeconds = (profile.getLockedUntil() - now) / 1000;
-            return new LoginResponse(false, null, null, null, null, false, "Account is locked", retryAfterSeconds);
+            return new LoginResponse(false, null, null, "Account is locked", retryAfterSeconds);
         }
 
         // STEP 2: Auto-unlock if lock period has elapsed — clear lockedUntil, keep
@@ -243,18 +245,18 @@ public class AuthService {
                 long retryAfterSeconds = lockDurationMs == Long.MAX_VALUE
                         ? Long.MAX_VALUE / 1000
                         : lockDurationMs / 1000;
-                return new LoginResponse(false, null, null, null, null, false, "Account is locked", retryAfterSeconds);
+                return new LoginResponse(false, null, null, "Account is locked", retryAfterSeconds);
             }
             profileRepository.save(profile);
-            return new LoginResponse(false, null, null, null, null, false, "Invalid username or password", null);
+            return new LoginResponse(false, null, null, "Invalid username or password", null);
         }
 
         // Password correct — check retired/banned before resetting counters
         if (profile.isRetired()) {
-            return new LoginResponse(false, null, null, null, null, false, "This account has been retired", null);
+            return new LoginResponse(false, null, null, "This account has been retired", null);
         }
         if (banService.isProfileBanned(profile.getId())) {
-            return new LoginResponse(false, null, null, null, null, false, "This account is banned", null);
+            return new LoginResponse(false, null, null, "This account is banned", null);
         }
 
         // STEP 3 success: reset counters
@@ -264,8 +266,11 @@ public class AuthService {
         profileRepository.save(profile);
 
         boolean emailVerified = profile.isEmailVerified();
+        ProfileResponse profileDto = new ProfileResponse(profile.getId(), username, profile.getEmail(), emailVerified,
+                false, profile.isRetired(),
+                profile.getCreateDate() != null ? profile.getCreateDate().toString() : null);
         String token = tokenProvider.generateToken(username, profile.getId(), rememberMe, emailVerified);
-        return new LoginResponse(true, token, profile.getId(), username, profile.getEmail(), emailVerified, null, null);
+        return new LoginResponse(true, profileDto, token, null, null);
     }
 
     /**

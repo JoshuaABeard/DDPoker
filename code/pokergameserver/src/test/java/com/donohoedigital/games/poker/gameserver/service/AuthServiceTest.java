@@ -106,7 +106,8 @@ class AuthServiceTest {
 
         assertThat(response.success()).isTrue();
         assertThat(response.token()).isNotNull();
-        assertThat(response.profileId()).isNotNull();
+        assertThat(response.profile()).isNotNull();
+        assertThat(response.profile().id()).isNotNull();
 
         // Verify profile was created
         OnlineProfile profile = profileRepository.findByName("newuser").orElse(null);
@@ -144,8 +145,8 @@ class AuthServiceTest {
 
         assertThat(response.success()).isTrue();
         assertThat(response.token()).isNotNull();
-        assertThat(response.profileId()).isEqualTo(profile.getId());
-        assertThat(response.username()).isEqualTo("testuser");
+        assertThat(response.profile().id()).isEqualTo(profile.getId());
+        assertThat(response.profile().username()).isEqualTo("testuser");
     }
 
     @Test
@@ -448,7 +449,7 @@ class AuthServiceTest {
         LoginResponse response = authService.register("verifyfalseuser", "validpass3", "verifyfalse@example.com");
 
         assertThat(response.success()).isTrue();
-        assertThat(response.emailVerified()).isFalse();
+        assertThat(response.profile().emailVerified()).isFalse();
     }
 
     @Test

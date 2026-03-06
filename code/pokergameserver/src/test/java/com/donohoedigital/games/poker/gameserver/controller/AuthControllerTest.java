@@ -35,6 +35,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.donohoedigital.games.poker.gameserver.auth.JwtProperties;
 import com.donohoedigital.games.poker.protocol.dto.LoginResponse;
+import com.donohoedigital.games.poker.protocol.dto.ProfileResponse;
 import com.donohoedigital.games.poker.protocol.dto.RequestEmailChangeResponse;
 import com.donohoedigital.games.poker.protocol.dto.ResendVerificationResponse;
 import com.donohoedigital.games.poker.protocol.dto.VerifyEmailResponse;
@@ -61,20 +62,21 @@ class AuthControllerTest {
 
     @Test
     void testRegisterSuccess() throws Exception {
-        when(authService.register(anyString(), anyString(), anyString())).thenReturn(
-                new LoginResponse(true, "test-token", 1L, "testuser", "testuser@example.com", false, null, null));
+        when(authService.register(anyString(), anyString(), anyString())).thenReturn(new LoginResponse(true,
+                new ProfileResponse(1L, "testuser", "testuser@example.com", false, false, false, null), "test-token",
+                null, null));
 
         mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\":\"testuser\",\"password\":\"password123\",\"email\":\"test@example.com\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.token").value("test-token")).andExpect(jsonPath("$.profileId").value(1))
-                .andExpect(jsonPath("$.username").value("testuser")).andExpect(cookie().exists("DDPoker-JWT"));
+                .andExpect(jsonPath("$.token").value("test-token")).andExpect(jsonPath("$.profile.id").value(1))
+                .andExpect(jsonPath("$.profile.username").value("testuser")).andExpect(cookie().exists("DDPoker-JWT"));
     }
 
     @Test
     void testRegisterFailure() throws Exception {
         when(authService.register(anyString(), anyString(), anyString()))
-                .thenReturn(new LoginResponse(false, null, null, null, null, false, "Username already exists", null));
+                .thenReturn(new LoginResponse(false, null, null, "Username already exists", null));
 
         mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\":\"existing\",\"password\":\"password\",\"email\":\"test@example.com\"}"))
@@ -84,20 +86,21 @@ class AuthControllerTest {
 
     @Test
     void testLoginSuccess() throws Exception {
-        when(authService.login(anyString(), anyString(), anyBoolean())).thenReturn(
-                new LoginResponse(true, "test-token", 1L, "testuser", "testuser@example.com", true, null, null));
+        when(authService.login(anyString(), anyString(), anyBoolean())).thenReturn(new LoginResponse(true,
+                new ProfileResponse(1L, "testuser", "testuser@example.com", true, false, false, null), "test-token",
+                null, null));
 
         mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\":\"testuser\",\"password\":\"password123\",\"rememberMe\":false}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.token").value("test-token")).andExpect(jsonPath("$.profileId").value(1))
-                .andExpect(jsonPath("$.username").value("testuser")).andExpect(cookie().exists("DDPoker-JWT"));
+                .andExpect(jsonPath("$.token").value("test-token")).andExpect(jsonPath("$.profile.id").value(1))
+                .andExpect(jsonPath("$.profile.username").value("testuser")).andExpect(cookie().exists("DDPoker-JWT"));
     }
 
     @Test
     void testLoginFailure() throws Exception {
-        when(authService.login(anyString(), anyString(), anyBoolean())).thenReturn(
-                new LoginResponse(false, null, null, null, null, false, "Invalid username or password", null));
+        when(authService.login(anyString(), anyString(), anyBoolean()))
+                .thenReturn(new LoginResponse(false, null, null, "Invalid username or password", null));
 
         mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\":\"testuser\",\"password\":\"wrongpass\",\"rememberMe\":false}"))
@@ -108,7 +111,7 @@ class AuthControllerTest {
     @Test
     void login_whenAccountLocked_returns423() throws Exception {
         when(authService.login(anyString(), anyString(), anyBoolean()))
-                .thenReturn(new LoginResponse(false, null, null, null, null, false, null, 120L));
+                .thenReturn(new LoginResponse(false, null, null, null, 120L));
 
         mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\":\"testuser\",\"password\":\"password123\"}")).andExpect(status().isLocked());
