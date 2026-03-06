@@ -71,7 +71,8 @@ class AuthControllerProfileTest {
     @Test
     void getMe_authenticated_returnsProfile() throws Exception {
         // TestSecurityConfiguration injects profileId=1L, username="testuser"
-        when(authService.getCurrentUser(1L)).thenReturn(new ProfileResponse(1L, "testuser", "test@example.com", false));
+        when(authService.getCurrentUser(1L))
+                .thenReturn(new ProfileResponse(1L, "testuser", "test@example.com", false, true, false));
 
         mockMvc.perform(get("/api/v1/auth/me")).andExpect(status().isOk()).andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.username").value("testuser"))

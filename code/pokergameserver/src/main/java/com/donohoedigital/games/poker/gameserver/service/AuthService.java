@@ -276,8 +276,8 @@ public class AuthService {
      * @return profile DTO, or null if not found
      */
     public ProfileResponse getCurrentUser(Long profileId) {
-        return profileRepository.findById(profileId)
-                .map(p -> new ProfileResponse(p.getId(), p.getName(), p.getEmail(), p.isRetired())).orElse(null);
+        return profileRepository.findById(profileId).map(p -> new ProfileResponse(p.getId(), p.getName(), p.getEmail(),
+                p.isRetired(), p.isEmailVerified(), p.isAdmin())).orElse(null);
     }
 
     /**

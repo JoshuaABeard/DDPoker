@@ -48,6 +48,7 @@ public class OnlineProfile implements BaseModel<Long> {
     private DMTypedHashMap data_;
 
     private boolean emailVerified = false;
+    private boolean admin = false;
     private String emailVerificationToken;
     private Long emailVerificationTokenExpiry;
     private String pendingEmail;
@@ -209,6 +210,15 @@ public class OnlineProfile implements BaseModel<Long> {
 
     public void setEmailVerified(boolean emailVerified) {
         this.emailVerified = emailVerified;
+    }
+
+    @Column(name = "wpr_admin", nullable = false, columnDefinition = "boolean default false")
+    public boolean isAdmin() {
+        return admin;
+    }
+
+    public void setAdmin(boolean admin) {
+        this.admin = admin;
     }
 
     @Column(name = "wpr_email_verification_token", unique = true)

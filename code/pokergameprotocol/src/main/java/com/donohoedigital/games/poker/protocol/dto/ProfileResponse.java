@@ -22,5 +22,6 @@ package com.donohoedigital.games.poker.protocol.dto;
 /**
  * Response DTO for the current authenticated user (GET /api/v1/auth/me).
  */
-public record ProfileResponse(Long id, String username, String email, boolean retired) {
+public record ProfileResponse(Long id, String username, String email, boolean retired, boolean emailVerified,
+        boolean admin) {
 }
