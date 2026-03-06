@@ -20,9 +20,9 @@ package com.donohoedigital.games.poker.gameserver.websocket;
 import com.donohoedigital.games.poker.core.ActionOptions;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.gameserver.GameStateSnapshot;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
+import com.donohoedigital.games.poker.protocol.message.ServerMessage;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageData;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageType;
 
 import java.util.Arrays;
 import java.util.Collections;

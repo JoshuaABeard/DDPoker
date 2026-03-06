@@ -77,6 +77,13 @@
       <version>3.3.0-CommunityEdition</version>
     </dependency>
 
+    <!-- Protocol DTOs and message types (shared client/server contract) -->
+    <dependency>
+      <groupId>com.donohoedigital</groupId>
+      <artifactId>pokergameprotocol</artifactId>
+      <version>3.3.0-CommunityEdition</version>
+    </dependency>
+
     <!-- Embedded game server (Spring Boot) -->
     <dependency>
       <groupId>com.donohoedigital</groupId>

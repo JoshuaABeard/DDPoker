@@ -17,8 +17,8 @@
  */
 package com.donohoedigital.games.poker.online;
 
-import com.donohoedigital.games.poker.gameserver.websocket.message.ClientMessageType;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
+import com.donohoedigital.games.poker.protocol.message.ClientMessageType;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;

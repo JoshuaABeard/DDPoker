@@ -28,6 +28,12 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.donohoedigital.games.poker.protocol.message.ClientMessage;
+import com.donohoedigital.games.poker.protocol.message.ClientMessageData;
+import com.donohoedigital.games.poker.protocol.message.ClientMessageType;
+import com.donohoedigital.games.poker.protocol.message.ServerMessage;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageData;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;

@@ -15,7 +15,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  * ============================================================================================
  */
-package com.donohoedigital.games.poker.gameserver.websocket.message;
+package com.donohoedigital.games.poker.protocol.message;
 
 /**
  * Sealed interface hierarchy for client-to-server message payloads.

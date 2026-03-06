@@ -40,7 +40,7 @@ import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
 import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
 import com.donohoedigital.games.poker.gameserver.dto.LobbyPlayerInfo;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageData;
 import com.donohoedigital.games.poker.server.*;
 import com.donohoedigital.gui.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -287,7 +287,7 @@ public class Lobby extends BasePhase {
         if (d.updatedSettings() == null) {
             return;
         }
-        GameSummary s = d.updatedSettings();
+        ServerMessageData.LobbySettingsData s = d.updatedSettings();
         logger.debug("[LOBBY] settings changed: name={} maxPlayers={} blinds={}", s.name(), s.maxPlayers(), s.blinds());
         // Update the window title if the game name changed.
         String titleKey = bHost_ ? "msg.title.Lobby.Host" : "msg.title.Lobby.Player";

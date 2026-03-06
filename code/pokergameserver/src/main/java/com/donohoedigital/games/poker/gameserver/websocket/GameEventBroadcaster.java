@@ -25,9 +25,9 @@ import com.donohoedigital.games.poker.gameserver.ServerGameTable;
 import com.donohoedigital.games.poker.gameserver.ServerHand;
 import com.donohoedigital.games.poker.gameserver.ServerPlayer;
 import com.donohoedigital.games.poker.gameserver.ServerTournamentContext;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
+import com.donohoedigital.games.poker.protocol.message.ServerMessage;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageData;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

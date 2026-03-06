@@ -42,10 +42,10 @@ import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
 import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
 import com.donohoedigital.games.poker.gameserver.service.GameService;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData.LobbyPlayerData;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
+import com.donohoedigital.games.poker.protocol.message.ServerMessage;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageData;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageData.LobbyPlayerData;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 
@@ -480,9 +480,13 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
                         s.isAI(), s.isAI() ? String.valueOf(s.getSkillLevel()) : null))
                 .toList();
 
+        ServerMessageData.BlindsData blinds = summary.blinds() != null
+                ? new ServerMessageData.BlindsData(summary.blinds().smallBlind(), summary.blinds().bigBlind(),
+                        summary.blinds().ante())
+                : null;
         ServerMessageData.LobbyStateData data = new ServerMessageData.LobbyStateData(gameId, summary.name(),
                 summary.hostingType(), summary.ownerName(), ownerProfileId, summary.maxPlayers(), summary.isPrivate(),
-                players, summary.blinds());
+                players, blinds);
 
         connection.sendMessage(ServerMessage.of(ServerMessageType.LOBBY_STATE, gameId, data));
     }

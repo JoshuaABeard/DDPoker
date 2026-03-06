@@ -39,7 +39,7 @@ import com.donohoedigital.games.poker.engine.Deck;
 import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.HandSorted;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData.ActionOptionsData;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageData.ActionOptionsData;
 
 import java.util.ArrayList;
 import java.util.Collections;

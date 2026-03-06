@@ -50,7 +50,7 @@ import com.donohoedigital.games.poker.gameserver.persistence.entity.GameInstance
 import com.donohoedigital.games.poker.gameserver.persistence.repository.GameEventRepository;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.GameInstanceRepository;
 import com.donohoedigital.games.poker.gameserver.websocket.LobbyBroadcaster;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData.LobbyPlayerData;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageData.LobbyPlayerData;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**

@@ -15,12 +15,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  * ============================================================================================
  */
-package com.donohoedigital.games.poker.gameserver.websocket.message;
+package com.donohoedigital.games.poker.protocol.message;
 
 import java.util.List;
 import java.util.Map;
-
-import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
 
 /**
  * Sealed interface hierarchy for server-to-client message payloads.
@@ -236,7 +234,7 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
      */
     record LobbyStateData(String gameId, String name, String hostingType, String ownerName, long ownerProfileId,
             int maxPlayers, boolean isPrivate, List<LobbyPlayerData> players,
-            GameSummary.BlindsSummary blinds) implements ServerMessageData {
+            BlindsData blinds) implements ServerMessageData {
     }
 
     /** A player joined the lobby. Broadcast to all existing lobby connections. */
@@ -251,8 +249,20 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
     record LobbyPlayerKickedData(LobbyPlayerData player) implements ServerMessageData {
     }
 
-    /** Owner updated game settings. Broadcast to all lobby connections. */
-    record LobbySettingsChangedData(GameSummary updatedSettings) implements ServerMessageData {
+    /**
+     * Owner updated game settings. Broadcast to all lobby connections. Contains a
+     * self-contained snapshot of the updated settings.
+     */
+    record LobbySettingsChangedData(LobbySettingsData updatedSettings) implements ServerMessageData {
+    }
+
+    /**
+     * Self-contained lobby settings snapshot, sent when the owner changes game
+     * settings. Contains the same fields as GameSummary that are relevant for lobby
+     * settings display.
+     */
+    record LobbySettingsData(String gameId, String name, String hostingType, String status, String ownerName,
+            int playerCount, int maxPlayers, boolean isPrivate, BlindsData blinds) {
     }
 
     /** Owner started the game; lobby transitions to active gameplay. */
