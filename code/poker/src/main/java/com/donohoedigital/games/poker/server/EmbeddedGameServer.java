@@ -20,10 +20,10 @@ package com.donohoedigital.games.poker.server;
 import com.donohoedigital.config.FilePrefs;
 import com.donohoedigital.games.poker.PlayerProfile;
 import com.donohoedigital.games.poker.PlayerProfileOptions;
-import com.donohoedigital.games.poker.gameserver.auth.JwtKeyManager;
-import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
+import com.donohoedigital.games.poker.protocol.dto.LoginRequest;
 import com.donohoedigital.games.poker.protocol.dto.LoginResponse;
-import com.donohoedigital.games.poker.gameserver.service.AuthService;
+import com.donohoedigital.games.poker.protocol.dto.RegisterRequest;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.boot.SpringApplication;
@@ -31,11 +31,13 @@ import org.springframework.boot.web.server.WebServer;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
-import java.security.KeyPair;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.util.Base64;
 import java.util.Properties;
 
@@ -214,14 +216,7 @@ public class EmbeddedGameServer {
 
         String username = deriveServerUsername(profile);
         String password = deriveServerPassword(profile);
-
-        AuthService authService = context.getBean(AuthService.class);
-        JwtTokenProvider jwtProvider = context.getBean(JwtTokenProvider.class);
-
-        long profileId = registerOrLogin(authService, username, password);
-        // Local embedded users are always considered email-verified — no email flow for
-        // local play
-        String jwt = jwtProvider.generateToken(username, profileId, false, true);
+        String jwt = registerOrLoginViaRest(username, password);
         cachedProfileKey_ = key;
         cachedJwt_ = jwt;
         return jwt;
@@ -275,15 +270,26 @@ public class EmbeddedGameServer {
 
     /**
      * Generates the RSA key pair and saves it to {@code <config-dir>/jwt/} if it
-     * does not exist.
+     * does not exist. Inlined to avoid a compile-time dependency on
+     * {@code pokergameserver}'s {@code JwtKeyManager}.
      */
     private void ensureJwtKeys() throws Exception {
         Files.createDirectories(JWT_DIR);
         if (!Files.exists(PRIVATE_KEY_PATH) || !Files.exists(PUBLIC_KEY_PATH)) {
             logger.info("Generating RSA key pair for JWT auth at {}", JWT_DIR);
-            KeyPair keyPair = JwtKeyManager.generateKeyPair();
-            JwtKeyManager.savePrivateKey(keyPair.getPrivate(), PRIVATE_KEY_PATH);
-            JwtKeyManager.savePublicKey(keyPair.getPublic(), PUBLIC_KEY_PATH);
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+            generator.initialize(2048);
+            KeyPair keyPair = generator.generateKeyPair();
+
+            String privatePem = "-----BEGIN PRIVATE KEY-----\n"
+                    + Base64.getMimeEncoder(64, "\n".getBytes()).encodeToString(keyPair.getPrivate().getEncoded())
+                    + "\n-----END PRIVATE KEY-----\n";
+            Files.writeString(PRIVATE_KEY_PATH, privatePem);
+
+            String publicPem = "-----BEGIN PUBLIC KEY-----\n"
+                    + Base64.getMimeEncoder(64, "\n".getBytes()).encodeToString(keyPair.getPublic().getEncoded())
+                    + "\n-----END PUBLIC KEY-----\n";
+            Files.writeString(PUBLIC_KEY_PATH, publicPem);
         }
     }
 
@@ -345,22 +351,58 @@ public class EmbeddedGameServer {
     }
 
     /**
-     * Registers the local user in H2, or logs in if already registered. Returns the
-     * profile ID.
+     * Registers the local user via the auth REST API, or logs in if already
+     * registered. Returns the JWT token from the response.
      */
-    private long registerOrLogin(AuthService authService, String username, String password) {
+    private String registerOrLoginViaRest(String username, String password) {
+        String baseUrl = "http://localhost:" + port + "/api/v1/auth";
+        HttpClient http = HttpClient.newHttpClient();
+        ObjectMapper mapper = new ObjectMapper();
+
+        // Try register first
         try {
             String email = username + "@local.ddpoker";
-            LoginResponse response = authService.register(username, password, email);
-            return response.profileId();
-        } catch (Exception e) {
-            // Username already exists — log in with stored credentials
-            try {
-                LoginResponse response = authService.login(username, password, false);
-                return response.profileId();
-            } catch (Exception loginEx) {
-                throw new IllegalStateException("Could not register or log in local user '" + username + "'", loginEx);
+            RegisterRequest registerReq = new RegisterRequest(username, password, email);
+            String body = mapper.writeValueAsString(registerReq);
+
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(baseUrl + "/register"))
+                    .header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(body)).build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 201 || response.statusCode() == 200) {
+                LoginResponse loginResp = mapper.readValue(response.body(), LoginResponse.class);
+                if (loginResp.success() && loginResp.token() != null) {
+                    return loginResp.token();
+                }
             }
+            // Fall through to login on any non-success (e.g. 409 Conflict)
+        } catch (Exception e) {
+            logger.debug("Register failed for '{}', trying login: {}", username, e.getMessage());
+        }
+
+        // Register failed (username exists) — try login
+        try {
+            LoginRequest loginReq = new LoginRequest(username, password, false);
+            String body = mapper.writeValueAsString(loginReq);
+
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(baseUrl + "/login"))
+                    .header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(body)).build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                LoginResponse loginResp = mapper.readValue(response.body(), LoginResponse.class);
+                if (loginResp.success() && loginResp.token() != null) {
+                    return loginResp.token();
+                }
+                throw new IllegalStateException(
+                        "Login returned success=false for '" + username + "': " + loginResp.message());
+            }
+            throw new IllegalStateException(
+                    "Login returned HTTP " + response.statusCode() + " for '" + username + "': " + response.body());
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not register or log in local user '" + username + "'", e);
         }
     }
 
