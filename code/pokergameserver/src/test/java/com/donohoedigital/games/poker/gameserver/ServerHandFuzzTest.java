@@ -22,12 +22,14 @@ package com.donohoedigital.games.poker.gameserver;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.RepetitionInfo;
 
+import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.PlayerAction;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
 
@@ -784,6 +786,85 @@ class ServerHandFuzzTest {
             playOneHand(hand, players, rng);
             assertInvariants(hand, players, expectedTotal, h + 1, seed);
         }
+    }
+
+    /**
+     * 2-4 players, all check/call to showdown. After resolution, independently
+     * evaluate each player's hand with {@link HandInfoFast} and verify that pot
+     * winners have the highest (or tied-highest) hand score.
+     */
+    @RepeatedTest(200)
+    void fuzz_winnerHasBestHand_showdown(RepetitionInfo info) {
+        long seed = BASE_SEED + 100000 + info.getCurrentRepetition();
+        Random rng = new Random(seed);
+
+        int numPlayers = 2 + rng.nextInt(3); // 2-4
+        int bigBlind = 100;
+        int smallBlind = 50;
+        int stack = 2000;
+
+        List<ServerPlayer> players = new ArrayList<>();
+        for (int i = 0; i < numPlayers; i++) {
+            ServerPlayer p = new ServerPlayer(i + 1, "P" + (i + 1), false, 0, stack);
+            p.setSeat(i);
+            players.add(p);
+        }
+
+        int button = rng.nextInt(numPlayers);
+        int[] blinds = blindSeats(button, numPlayers);
+
+        MockServerGameTable table = setupTable(players, button);
+        ServerHand hand = new ServerHand(table, 1, smallBlind, bigBlind, 0, button, blinds[0], blinds[1]);
+
+        // Play passive so all players reach showdown
+        playOneHandPassive(hand, players);
+
+        // Get community cards
+        Card[] communityCards = hand.getCommunityCards();
+        assertNotNull(communityCards, "Community cards should exist after showdown (seed=" + seed + ")");
+
+        // Independently evaluate each player's hand using HandInfoFast
+        int bestScore = -1;
+        List<ServerPlayer> expectedWinners = new ArrayList<>();
+
+        for (ServerPlayer player : players) {
+            assertFalse(hand.wasPlayerFolded(player.getID()),
+                    "No player should have folded in passive play (seed=" + seed + ")");
+
+            Card[] holeCards = hand.getPlayerCards(player);
+            assertNotNull(holeCards, player.getName() + " should have hole cards (seed=" + seed + ")");
+
+            // Independently evaluate with a fresh ServerHandEvaluator instance
+            ServerHandEvaluator evaluator = new ServerHandEvaluator();
+            int score = evaluator.getScore(Arrays.asList(holeCards), Arrays.asList(communityCards));
+
+            if (score > bestScore) {
+                bestScore = score;
+                expectedWinners.clear();
+                expectedWinners.add(player);
+            } else if (score == bestScore) {
+                expectedWinners.add(player);
+            }
+        }
+
+        // Collect actual winners from resolution results (recorded before pot.reset()
+        // clears winner lists). Resolution results exclude overbet (uncalled bet) pots.
+        List<ServerPlayer> actualWinners = new ArrayList<>();
+        for (ServerHand.PotResolutionResult result : hand.getResolutionResults()) {
+            for (int winnerId : result.winnerIds()) {
+                ServerPlayer winner = players.stream().filter(p -> p.getID() == winnerId).findFirst().orElseThrow();
+                if (!actualWinners.contains(winner)) {
+                    actualWinners.add(winner);
+                }
+            }
+        }
+
+        // Sort both lists by seat for stable comparison
+        expectedWinners.sort((a, b) -> Integer.compare(a.getSeat(), b.getSeat()));
+        actualWinners.sort((a, b) -> Integer.compare(a.getSeat(), b.getSeat()));
+
+        assertEquals(expectedWinners, actualWinners,
+                "Pot winners should be the player(s) with the best hand (seed=" + seed + ")");
     }
 
     /**
