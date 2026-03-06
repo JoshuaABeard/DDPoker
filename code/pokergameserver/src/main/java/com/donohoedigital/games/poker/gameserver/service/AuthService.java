@@ -277,7 +277,9 @@ public class AuthService {
      */
     public ProfileResponse getCurrentUser(Long profileId) {
         return profileRepository.findById(profileId)
-                .map(p -> new ProfileResponse(p.getId(), p.getName(), p.getEmail(), p.isRetired())).orElse(null);
+                .map(p -> new ProfileResponse(p.getId(), p.getName(), p.getEmail(), p.isEmailVerified(), false,
+                        p.isRetired(), p.getCreateDate() != null ? p.getCreateDate().toString() : null))
+                .orElse(null);
     }
 
     /**

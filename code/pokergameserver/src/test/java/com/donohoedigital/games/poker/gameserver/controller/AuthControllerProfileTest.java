@@ -71,11 +71,15 @@ class AuthControllerProfileTest {
     @Test
     void getMe_authenticated_returnsProfile() throws Exception {
         // TestSecurityConfiguration injects profileId=1L, username="testuser"
-        when(authService.getCurrentUser(1L)).thenReturn(new ProfileResponse(1L, "testuser", "test@example.com", false));
+        when(authService.getCurrentUser(1L)).thenReturn(
+                new ProfileResponse(1L, "testuser", "test@example.com", true, false, false, "2026-01-15T10:30:00Z"));
 
         mockMvc.perform(get("/api/v1/auth/me")).andExpect(status().isOk()).andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.username").value("testuser"))
-                .andExpect(jsonPath("$.email").value("test@example.com")).andExpect(jsonPath("$.retired").value(false));
+                .andExpect(jsonPath("$.email").value("test@example.com"))
+                .andExpect(jsonPath("$.emailVerified").value(true)).andExpect(jsonPath("$.admin").value(false))
+                .andExpect(jsonPath("$.retired").value(false))
+                .andExpect(jsonPath("$.createDate").value("2026-01-15T10:30:00Z"));
     }
 
     @Test
