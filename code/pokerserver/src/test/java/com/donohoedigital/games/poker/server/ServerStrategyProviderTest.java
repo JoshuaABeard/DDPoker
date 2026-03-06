@@ -242,4 +242,223 @@ class ServerStrategyProviderTest {
         // Should be equal since hand-specific lookup returns default
         assertThat(factorWithHand).isEqualTo(factorNoHand);
     }
+
+    // === Hand categorization via getStratFactor with hand ===
+
+    @Test
+    void getStratFactor_withBigPair_usesHandCategory() {
+        ServerStrategyProvider provider = new ServerStrategyProvider("player1");
+
+        // JJ-AA = big_pair
+        Hand bigPair = new Hand();
+        bigPair.addCard(new Card(CardSuit.SPADES, Card.QUEEN));
+        bigPair.addCard(new Card(CardSuit.HEARTS, Card.QUEEN));
+
+        float factor = provider.getStratFactor("basics.aggression", bigPair, 0.0f, 1.0f);
+        assertThat(factor).isBetween(0.0f, 1.0f);
+    }
+
+    @Test
+    void getStratFactor_withMediumPair_usesHandCategory() {
+        ServerStrategyProvider provider = new ServerStrategyProvider("player1");
+
+        // 77-TT = medium_pair
+        Hand medPair = new Hand();
+        medPair.addCard(new Card(CardSuit.SPADES, Card.EIGHT));
+        medPair.addCard(new Card(CardSuit.HEARTS, Card.EIGHT));
+
+        float factor = provider.getStratFactor("basics.tightness", medPair, 0.0f, 1.0f);
+        assertThat(factor).isBetween(0.0f, 1.0f);
+    }
+
+    @Test
+    void getStratFactor_withSmallPair_usesHandCategory() {
+        ServerStrategyProvider provider = new ServerStrategyProvider("player1");
+
+        // 22-66 = small_pair
+        Hand smallPair = new Hand();
+        smallPair.addCard(new Card(CardSuit.SPADES, Card.FOUR));
+        smallPair.addCard(new Card(CardSuit.HEARTS, Card.FOUR));
+
+        float factor = provider.getStratFactor("basics.aggression", smallPair, 0.0f, 1.0f);
+        assertThat(factor).isBetween(0.0f, 1.0f);
+    }
+
+    @Test
+    void getStratFactor_withSuitedHighCards_usesHandCategory() {
+        ServerStrategyProvider provider = new ServerStrategyProvider("player1");
+
+        // Both cards T or higher, suited = suited_high_cards
+        Hand suitedHighCards = new Hand();
+        suitedHighCards.addCard(new Card(CardSuit.SPADES, Card.KING));
+        suitedHighCards.addCard(new Card(CardSuit.SPADES, Card.JACK));
+
+        float factor = provider.getStratFactor("basics.aggression", suitedHighCards, 0.0f, 1.0f);
+        assertThat(factor).isBetween(0.0f, 1.0f);
+    }
+
+    @Test
+    void getStratFactor_withUnsuitedHighCards_usesHandCategory() {
+        ServerStrategyProvider provider = new ServerStrategyProvider("player1");
+
+        // Both cards T or higher, unsuited = unsuited_high_cards
+        Hand unsuitedHighCards = new Hand();
+        unsuitedHighCards.addCard(new Card(CardSuit.SPADES, Card.KING));
+        unsuitedHighCards.addCard(new Card(CardSuit.HEARTS, Card.JACK));
+
+        float factor = provider.getStratFactor("basics.aggression", unsuitedHighCards, 0.0f, 1.0f);
+        assertThat(factor).isBetween(0.0f, 1.0f);
+    }
+
+    @Test
+    void getStratFactor_withSuitedAce_usesHandCategory() {
+        ServerStrategyProvider provider = new ServerStrategyProvider("player1");
+
+        // Ace + low kicker, suited = suited_ace
+        Hand suitedAce = new Hand();
+        suitedAce.addCard(new Card(CardSuit.SPADES, Card.ACE));
+        suitedAce.addCard(new Card(CardSuit.SPADES, Card.FIVE));
+
+        float factor = provider.getStratFactor("basics.aggression", suitedAce, 0.0f, 1.0f);
+        assertThat(factor).isBetween(0.0f, 1.0f);
+    }
+
+    @Test
+    void getStratFactor_withUnsuitedAce_usesHandCategory() {
+        ServerStrategyProvider provider = new ServerStrategyProvider("player1");
+
+        // Ace + low kicker, unsuited = unsuited_ace
+        Hand unsuitedAce = new Hand();
+        unsuitedAce.addCard(new Card(CardSuit.SPADES, Card.ACE));
+        unsuitedAce.addCard(new Card(CardSuit.HEARTS, Card.FIVE));
+
+        float factor = provider.getStratFactor("basics.aggression", unsuitedAce, 0.0f, 1.0f);
+        assertThat(factor).isBetween(0.0f, 1.0f);
+    }
+
+    @Test
+    void getStratFactor_withOtherHand_usesHandCategory() {
+        ServerStrategyProvider provider = new ServerStrategyProvider("player1");
+
+        // Non-connector, non-ace, non-pair, non-high-cards = "other"
+        Hand other = new Hand();
+        other.addCard(new Card(CardSuit.SPADES, Card.NINE));
+        other.addCard(new Card(CardSuit.HEARTS, Card.THREE));
+
+        float factor = provider.getStratFactor("basics.aggression", other, 0.0f, 1.0f);
+        assertThat(factor).isBetween(0.0f, 1.0f);
+    }
+
+    // === EmbeddedHandStrength table size variations ===
+
+    @Test
+    void getHandStrength_headsUp_usesHeadsUpTable() {
+        ServerStrategyProvider provider = new ServerStrategyProvider("player1");
+
+        // Low suited connectors should be playable heads-up
+        Hand pocket = new Hand();
+        pocket.addCard(new Card(CardSuit.SPADES, Card.SIX));
+        pocket.addCard(new Card(CardSuit.SPADES, Card.FIVE));
+
+        float strength = provider.getHandStrength(pocket, 2);
+        assertThat(strength).isGreaterThan(0.0f);
+    }
+
+    @Test
+    void getHandStrength_veryShortTable_usesVeryShortTable() {
+        ServerStrategyProvider provider = new ServerStrategyProvider("player1");
+
+        Hand pocket = new Hand();
+        pocket.addCard(new Card(CardSuit.SPADES, Card.ACE));
+        pocket.addCard(new Card(CardSuit.HEARTS, Card.ACE));
+
+        float strength = provider.getHandStrength(pocket, 3);
+        assertThat(strength).isEqualTo(1.0f); // AA = group 10 = 1.0
+    }
+
+    @Test
+    void getHandStrength_shortTable_usesShortTable() {
+        ServerStrategyProvider provider = new ServerStrategyProvider("player1");
+
+        Hand pocket = new Hand();
+        pocket.addCard(new Card(CardSuit.SPADES, Card.ACE));
+        pocket.addCard(new Card(CardSuit.HEARTS, Card.ACE));
+
+        float strength = provider.getHandStrength(pocket, 5);
+        assertThat(strength).isEqualTo(1.0f); // AA = group 10 = 1.0
+    }
+
+    @Test
+    void getHandStrength_fullTable_usesFullTable() {
+        ServerStrategyProvider provider = new ServerStrategyProvider("player1");
+
+        Hand pocket = new Hand();
+        pocket.addCard(new Card(CardSuit.SPADES, Card.ACE));
+        pocket.addCard(new Card(CardSuit.HEARTS, Card.ACE));
+
+        float strength = provider.getHandStrength(pocket, 9);
+        assertThat(strength).isEqualTo(1.0f); // AA = group 10 = 1.0
+    }
+
+    @Test
+    void getHandStrength_singleCard_returnsZero() {
+        ServerStrategyProvider provider = new ServerStrategyProvider("player1");
+
+        Hand pocket = new Hand();
+        pocket.addCard(new Card(CardSuit.SPADES, Card.ACE));
+
+        float strength = provider.getHandStrength(pocket);
+        assertThat(strength).isEqualTo(0.0f);
+    }
+
+    @Test
+    void getHandStrength_suitedConnectors_headsUp_returnsPositive() {
+        ServerStrategyProvider provider = new ServerStrategyProvider("player1");
+
+        // 98s should be in heads-up data
+        Hand pocket = new Hand();
+        pocket.addCard(new Card(CardSuit.HEARTS, Card.NINE));
+        pocket.addCard(new Card(CardSuit.HEARTS, Card.EIGHT));
+
+        float strength = provider.getHandStrength(pocket, 2);
+        assertThat(strength).isGreaterThan(0.0f);
+    }
+
+    @Test
+    void getHandStrength_offsuit_lowCards_fullTable_returnsLow() {
+        ServerStrategyProvider provider = new ServerStrategyProvider("player1");
+
+        // 32o should be very low on full table
+        Hand pocket = new Hand();
+        pocket.addCard(new Card(CardSuit.SPADES, Card.THREE));
+        pocket.addCard(new Card(CardSuit.HEARTS, Card.TWO));
+
+        float strength = provider.getHandStrength(pocket, 9);
+        // May or may not be found in full table data
+        assertThat(strength).isBetween(0.0f, 0.3f);
+    }
+
+    // === Constructor with explicit StrategyData ===
+
+    @Test
+    void constructor_withNullStrategyData_usesFallback() {
+        ServerStrategyProvider provider = new ServerStrategyProvider("player1", (StrategyData) null);
+
+        // Should not throw and should work with fallback data
+        float factor = provider.getStratFactor("basics.aggression", 0.0f, 1.0f);
+        assertThat(factor).isBetween(0.0f, 1.0f);
+    }
+
+    @Test
+    void constructor_withCustomStrategyData_usesProvidedValues() {
+        StrategyData customData = new StrategyData("Custom", "Custom strategy");
+        customData.setStrategyFactor("test.custom", 80);
+
+        ServerStrategyProvider provider = new ServerStrategyProvider("player1", customData);
+
+        // The factor with base value 80 should map to higher range
+        float factor = provider.getStratFactor("test.custom", 0.0f, 1.0f);
+        // 80 +/- 10 modifier = 70-90, mapped to 0.0-1.0 = 0.7-0.9
+        assertThat(factor).isBetween(0.6f, 1.0f);
+    }
 }

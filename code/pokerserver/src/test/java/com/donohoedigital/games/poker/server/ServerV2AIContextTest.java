@@ -758,4 +758,842 @@ class ServerV2AIContextTest {
         // Other player is big blind
         assertThat(context.getStartingPositionCategory(other)).isEqualTo(AIConstants.POSITION_BIG);
     }
+
+    // === Null/edge-case guards ===
+
+    @Test
+    void getHohM_nullPlayer_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, tournament, aiPlayer, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getHohM(null)).isEqualTo(0.0f);
+    }
+
+    @Test
+    void getHohM_zeroCostPerRound_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        when(table.getLevel()).thenReturn(0);
+        when(table.getNumOccupiedSeats()).thenReturn(2);
+        when(tournament.getSmallBlind(0)).thenReturn(0);
+        when(tournament.getBigBlind(0)).thenReturn(0);
+        when(tournament.getAnte(0)).thenReturn(0);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, tournament, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getHohM(player)).isEqualTo(0.0f);
+    }
+
+    @Test
+    void getHohQ_returnsRatioOfMToAverageM() {
+        GameTable table = mock(GameTable.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo p1 = mock(GamePlayerInfo.class);
+        GamePlayerInfo p2 = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        when(table.getLevel()).thenReturn(1);
+        when(table.getNumOccupiedSeats()).thenReturn(2);
+        when(table.getSeats()).thenReturn(2);
+        when(tournament.getSmallBlind(1)).thenReturn(10);
+        when(tournament.getBigBlind(1)).thenReturn(20);
+        when(tournament.getAnte(1)).thenReturn(0);
+
+        // p1 has 600 chips (M=20), p2 has 300 chips (M=10), avg M=15
+        when(p1.getChipCount()).thenReturn(600);
+        when(p2.getChipCount()).thenReturn(300);
+        when(table.getPlayer(0)).thenReturn(p1);
+        when(table.getPlayer(1)).thenReturn(p2);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, tournament, p1, strategy,
+                new ServerOpponentTracker());
+
+        float q = context.getHohQ(p1);
+        // Q = M(p1)/avgM = 20/15 = 1.333
+        assertThat(q).isCloseTo(1.333f, within(0.01f));
+    }
+
+    @Test
+    void getHohZone_orangeZone() {
+        GameTable table = mock(GameTable.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        when(table.getLevel()).thenReturn(1);
+        when(table.getNumOccupiedSeats()).thenReturn(2);
+        when(tournament.getSmallBlind(1)).thenReturn(50);
+        when(tournament.getBigBlind(1)).thenReturn(100);
+        when(tournament.getAnte(1)).thenReturn(0);
+        when(player.getChipCount()).thenReturn(1000); // M = 6.67
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, tournament, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getHohZone(player)).isEqualTo(2); // orange
+    }
+
+    @Test
+    void getHohZone_yellowZone() {
+        GameTable table = mock(GameTable.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        when(table.getLevel()).thenReturn(1);
+        when(table.getNumOccupiedSeats()).thenReturn(2);
+        when(tournament.getSmallBlind(1)).thenReturn(50);
+        when(tournament.getBigBlind(1)).thenReturn(100);
+        when(tournament.getAnte(1)).thenReturn(0);
+        when(player.getChipCount()).thenReturn(2000); // M = 13.33
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, tournament, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getHohZone(player)).isEqualTo(3); // yellow
+    }
+
+    @Test
+    void getTableAverageHohM_nullTable_returnsZero() {
+        StrategyProvider strategy = mock(StrategyProvider.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(null, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getTableAverageHohM()).isEqualTo(0.0f);
+    }
+
+    // === GameHand delegation methods (null hand returns defaults) ===
+
+    @Test
+    void wasRaisedPreFlop_nullHand_returnsFalse() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.wasRaisedPreFlop()).isFalse();
+    }
+
+    @Test
+    void wasRaisedPreFlop_delegatesToHand() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        when(hand.wasRaisedPreFlop()).thenReturn(true);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, hand, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.wasRaisedPreFlop()).isTrue();
+    }
+
+    @Test
+    void wasFirstRaiserPreFlop_nullHand_returnsFalse() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.wasFirstRaiserPreFlop(player)).isFalse();
+    }
+
+    @Test
+    void wasLastRaiserPreFlop_nullHand_returnsFalse() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.wasLastRaiserPreFlop(player)).isFalse();
+    }
+
+    @Test
+    void wasOnlyRaiserPreFlop_nullHand_returnsFalse() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.wasOnlyRaiserPreFlop(player)).isFalse();
+    }
+
+    @Test
+    void getFirstBettor_nullHand_returnsNull() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getFirstBettor(0, true)).isNull();
+    }
+
+    @Test
+    void getFirstVoluntaryAction_nullHand_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getFirstVoluntaryAction(player, 0)).isEqualTo(0);
+    }
+
+    @Test
+    void wasPotAction_nullHand_returnsFalse() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.wasPotAction(0)).isFalse();
+    }
+
+    @Test
+    void getPotStatus_nullHand_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getPotStatus()).isEqualTo(0);
+    }
+
+    @Test
+    void getLastActionThisRound_nullHand_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getLastActionThisRound(player)).isEqualTo(0);
+    }
+
+    @Test
+    void getMinRaise_nullHand_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getMinRaise()).isEqualTo(0);
+    }
+
+    @Test
+    void getPotOdds_nullHand_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getPotOdds(player)).isEqualTo(0.0f);
+    }
+
+    @Test
+    void paidToPlay_nullHand_returnsFalse() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.paidToPlay(player)).isFalse();
+    }
+
+    @Test
+    void couldLimp_nullHand_returnsFalse() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.couldLimp(player)).isFalse();
+    }
+
+    @Test
+    void limped_nullHand_returnsFalse() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.limped(player)).isFalse();
+    }
+
+    @Test
+    void getBigBlind_nullTournament_returnsZero() {
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(null, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getBigBlind()).isEqualTo(0);
+    }
+
+    @Test
+    void getBigBlind_delegatesToTournament() {
+        GameTable table = mock(GameTable.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        when(table.getLevel()).thenReturn(3);
+        when(tournament.getBigBlind(3)).thenReturn(200);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, tournament, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getBigBlind()).isEqualTo(200);
+    }
+
+    @Test
+    void getMinChip_nullTable_returnsOne() {
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(null, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getMinChip()).isEqualTo(1);
+    }
+
+    @Test
+    void getMinChip_delegatesToTable() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        when(table.getMinChip()).thenReturn(25);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getMinChip()).isEqualTo(25);
+    }
+
+    @Test
+    void getCall_nullHand_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getCall(player)).isEqualTo(0);
+    }
+
+    @Test
+    void getTotalPotChipCount_nullHand_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getTotalPotChipCount()).isEqualTo(0);
+    }
+
+    @Test
+    void getCommunity_nullHand_returnsNull() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getCommunity()).isNull();
+    }
+
+    @Test
+    void getPocketCards_nullHand_returnsNull() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getPocketCards(player)).isNull();
+    }
+
+    @Test
+    void getPocketCards_nullPlayer_returnsNull() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, hand, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getPocketCards(null)).isNull();
+    }
+
+    @Test
+    void getNumLimpers_nullHand_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getNumLimpers()).isEqualTo(0);
+    }
+
+    @Test
+    void hasActedThisRound_nullHand_returnsFalse() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.hasActedThisRound(player)).isFalse();
+    }
+
+    @Test
+    void getLastBettor_nullHand_returnsNull() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getLastBettor(1, false)).isNull();
+    }
+
+    @Test
+    void getNumFoldsSinceLastBet_nullHand_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getNumFoldsSinceLastBet()).isEqualTo(0);
+    }
+
+    @Test
+    void isBlind_nullHand_returnsFalse() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.isBlind(player)).isFalse();
+    }
+
+    @Test
+    void getNumPlayersWithCards_nullHand_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getNumPlayersWithCards()).isEqualTo(0);
+    }
+
+    @Test
+    void getNumPlayersAtTable_nullTable_returnsZero() {
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(null, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getNumPlayersAtTable()).isEqualTo(0);
+    }
+
+    @Test
+    void getNumPlayersAtTable_delegatesToTable() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        when(table.getSeats()).thenReturn(9);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getNumPlayersAtTable()).isEqualTo(9);
+    }
+
+    @Test
+    void getPlayerAt_nullTable_returnsNull() {
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(null, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getPlayerAt(0)).isNull();
+    }
+
+    @Test
+    void getPlayersLeft_nullTable_returnsEmptyList() {
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(null, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getPlayersLeft(player)).isEmpty();
+    }
+
+    @Test
+    void getSeat_nullPlayer_returnsNegative() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getSeat(null)).isEqualTo(-1);
+    }
+
+    @Test
+    void getSeat_nullTable_returnsNegative() {
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(null, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getSeat(player)).isEqualTo(-1);
+    }
+
+    @Test
+    void getChipCountAtStart_nullOpponentTracker_returnsCurrentChipCount() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        when(player.getChipCount()).thenReturn(5000);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy, null);
+
+        assertThat(context.getChipCountAtStart(player)).isEqualTo(5000);
+    }
+
+    @Test
+    void getChipCountAtStart_nullPlayer_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getChipCountAtStart(null)).isEqualTo(0);
+    }
+
+    @Test
+    void getHandsBeforeBigBlind_nullPlayer_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getHandsBeforeBigBlind(null)).isEqualTo(0);
+    }
+
+    @Test
+    void getConsecutiveHandsUnpaid_alwaysReturnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getConsecutiveHandsUnpaid(player)).isEqualTo(0);
+    }
+
+    @Test
+    void getSelfModel_returnsModelForAiPlayer() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, hand, tournament, aiPlayer, strategy,
+                new ServerOpponentTracker());
+
+        var model = context.getSelfModel();
+        assertThat(model).isNotNull();
+    }
+
+    @Test
+    void getOpponentModel_nullPlayer_returnsStubModel() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, aiPlayer, strategy,
+                new ServerOpponentTracker());
+
+        var model = context.getOpponentModel(null);
+        assertThat(model).isNotNull();
+        assertThat(model.getHandsPlayed()).isEqualTo(0);
+    }
+
+    @Test
+    void getOpponentModel_nullTracker_returnsStubModel() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+        GamePlayerInfo opponent = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, aiPlayer, strategy, null);
+
+        var model = context.getOpponentModel(opponent);
+        assertThat(model).isNotNull();
+        // Stub model returns defaults
+        assertThat(model.getPreFlopAggression(0, 0.5f)).isEqualTo(0.5f);
+        assertThat(model.getActPostFlop(0, 0.3f)).isEqualTo(0.3f);
+        assertThat(model.getCheckFoldPostFlop(0, 0.2f)).isEqualTo(0.2f);
+        assertThat(model.getOpenPostFlop(0, 0.1f)).isEqualTo(0.1f);
+        assertThat(model.getRaisePostFlop(0, 0.4f)).isEqualTo(0.4f);
+        assertThat(model.getHandsPaidPercent(0.5f)).isEqualTo(0.5f);
+        assertThat(model.getHandsLimpedPercent(0.1f)).isEqualTo(0.1f);
+        assertThat(model.getHandsFoldedUnraisedPercent(0.2f)).isEqualTo(0.2f);
+        assertThat(model.getOverbetFrequency(0.05f)).isEqualTo(0.05f);
+        assertThat(model.getBetFoldFrequency(0.1f)).isEqualTo(0.1f);
+        assertThat(model.getHandsRaisedPreFlopPercent(0.3f)).isEqualTo(0.3f);
+        assertThat(model.isOverbetPotPostFlop()).isFalse();
+        model.setOverbetPotPostFlop(true);
+        assertThat(model.isOverbetPotPostFlop()).isTrue();
+    }
+
+    @Test
+    void getHandScore_nullPocket_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getHandScore(null, new Hand(0))).isEqualTo(0);
+    }
+
+    @Test
+    void getHandScore_validCards_returnsPositiveScore() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        Hand pocket = new Hand(new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.ACE));
+        Hand community = new Hand(new Card(CardSuit.CLUBS, Card.KING), new Card(CardSuit.DIAMONDS, Card.QUEEN),
+                new Card(CardSuit.SPADES, Card.JACK));
+
+        int score = context.getHandScore(pocket, community);
+        assertThat(score).isGreaterThan(0);
+    }
+
+    @Test
+    void getRawHandStrength_preFlop_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        Hand pocket = new Hand(new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.ACE));
+        Hand community = new Hand(1);
+        community.addCard(new Card(CardSuit.CLUBS, Card.KING)); // only 1 card
+
+        assertThat(context.getRawHandStrength(pocket, community)).isEqualTo(0.0f);
+    }
+
+    @Test
+    void getBiasedRawHandStrength_nullCommunity_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getBiasedRawHandStrength(0, null)).isEqualTo(0.0f);
+    }
+
+    @Test
+    void getBiasedRawHandStrength_nullPlayer_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        when(table.getPlayer(5)).thenReturn(null);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        Hand community = new Hand(new Card(CardSuit.CLUBS, Card.SEVEN), new Card(CardSuit.DIAMONDS, Card.FIVE),
+                new Card(CardSuit.SPADES, Card.TWO));
+
+        assertThat(context.getBiasedRawHandStrength(5, community)).isEqualTo(0.0f);
+    }
+
+    @Test
+    void getBiasedEffectiveHandStrength_nullCommunity_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getBiasedEffectiveHandStrength(0, null)).isEqualTo(0.0f);
+    }
+
+    @Test
+    void getBiasedEffectiveHandStrength_riverCommunity_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        // 5-card community (river) returns 0 for effective hand strength
+        Hand community = new Hand(new Card(CardSuit.CLUBS, Card.SEVEN), new Card(CardSuit.DIAMONDS, Card.FIVE),
+                new Card(CardSuit.SPADES, Card.TWO), new Card(CardSuit.HEARTS, Card.THREE),
+                new Card(CardSuit.CLUBS, Card.FOUR));
+
+        assertThat(context.getBiasedEffectiveHandStrength(0, community)).isEqualTo(0.0f);
+    }
+
+    @Test
+    void getStartingPositionCategory_nullPlayer_returnsEarly() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getStartingPositionCategory(null)).isEqualTo(AIConstants.POSITION_EARLY);
+    }
+
+    @Test
+    void getPostFlopPositionCategory_nullPlayer_returnsMiddle() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getPostFlopPositionCategory(null)).isEqualTo(2);
+    }
+
+    @Test
+    void getStartingOrder_nullPlayer_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        assertThat(context.getStartingOrder(null)).isEqualTo(0);
+    }
+
+    @Test
+    void getDrawCounts_smallCommunity_returnZero() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        Hand pocket = new Hand(new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.KING));
+        Hand tooSmall = new Hand(2);
+        tooSmall.addCard(new Card(CardSuit.CLUBS, Card.TWO));
+        tooSmall.addCard(new Card(CardSuit.DIAMONDS, Card.THREE));
+
+        assertThat(context.getNutFlushCount(pocket, tooSmall)).isEqualTo(0);
+        assertThat(context.getNonNutFlushCount(pocket, tooSmall)).isEqualTo(0);
+        assertThat(context.getNutStraightCount(pocket, tooSmall)).isEqualTo(0);
+        assertThat(context.getNonNutStraightCount(pocket, tooSmall)).isEqualTo(0);
+    }
+
+    @Test
+    void getDrawCounts_turnCommunity_enumeratesOneCard() {
+        GameTable table = mock(GameTable.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        StrategyProvider strategy = mock(StrategyProvider.class);
+
+        ServerV2AIContext context = new ServerV2AIContext(table, null, null, player, strategy,
+                new ServerOpponentTracker());
+
+        // Flush draw on turn (4 cards on board)
+        Hand pocket = new Hand(new Card(CardSuit.HEARTS, Card.ACE), new Card(CardSuit.HEARTS, Card.KING));
+        Hand community = new Hand(new Card(CardSuit.HEARTS, Card.QUEEN), new Card(CardSuit.HEARTS, Card.JACK),
+                new Card(CardSuit.SPADES, Card.TWO), new Card(CardSuit.CLUBS, Card.THREE));
+
+        // Should be able to enumerate without errors
+        int nutFlush = context.getNutFlushCount(pocket, community);
+        assertThat(nutFlush).isGreaterThanOrEqualTo(0);
+    }
 }

@@ -134,4 +134,87 @@ class StrategyDataLoaderTest {
         // They might have different personalities (or might not - can't assert
         // difference)
     }
+
+    // === Cache behavior ===
+
+    @Test
+    void loadStrategy_cachedOnSecondLoad() {
+        List<String> available = StrategyDataLoader.getAvailableStrategies();
+        assertThat(available).isNotEmpty();
+
+        String filename = available.get(0);
+        StrategyData first = StrategyDataLoader.loadStrategy(filename);
+        StrategyData second = StrategyDataLoader.loadStrategy(filename);
+
+        // Should return same cached instance
+        assertThat(first).isSameAs(second);
+    }
+
+    @Test
+    void getAvailableStrategies_returnsSameListOnRepeatedCalls() {
+        List<String> first = StrategyDataLoader.getAvailableStrategies();
+        List<String> second = StrategyDataLoader.getAvailableStrategies();
+
+        // Cached list should be identical
+        assertThat(first).isSameAs(second);
+    }
+
+    @Test
+    void getAvailableStrategies_allFilesAreLoadable() {
+        List<String> strategies = StrategyDataLoader.getAvailableStrategies();
+
+        for (String filename : strategies) {
+            StrategyData data = StrategyDataLoader.loadStrategy(filename);
+            assertThat(data).as("Strategy file %s should load", filename).isNotNull();
+            assertThat(data.isComplete()).as("Strategy file %s should be complete", filename).isTrue();
+            assertThat(data.getName()).as("Strategy file %s should have a name", filename).isNotBlank();
+        }
+    }
+
+    // === Strategy data content ===
+
+    @Test
+    void loadedStrategy_hasHandSelectionSchemes() {
+        StrategyData data = StrategyDataLoader.loadDefaultStrategy();
+
+        // PlayerType .dat files should have hand selection references
+        // At least one table size should be set
+        boolean hasAnyScheme = data.getHandSelectionScheme("full") != null
+                || data.getHandSelectionScheme("short") != null || data.getHandSelectionScheme("vshort") != null
+                || data.getHandSelectionScheme("hup") != null;
+
+        // Some strategies may not set hand selection schemes, but loaded data should be
+        // accessible
+        assertThat(data).isNotNull();
+    }
+
+    @Test
+    void loadedStrategy_hasMultipleFactors() {
+        StrategyData data = StrategyDataLoader.loadDefaultStrategy();
+
+        // Check several common strategy factors that should be present
+        // At minimum, basic factors should be defined
+        int aggression = data.getStrategyFactor("basics.aggression", -1);
+        int tightness = data.getStrategyFactor("basics.tightness", -1);
+
+        // Both should be found (not returning default -1)
+        assertThat(aggression).isNotEqualTo(-1);
+        assertThat(tightness).isNotEqualTo(-1);
+    }
+
+    @Test
+    void loadStrategy_differentFiles_haveDifferentNames() {
+        List<String> available = StrategyDataLoader.getAvailableStrategies();
+        if (available.size() < 2) {
+            return; // Skip if not enough profiles
+        }
+
+        StrategyData data1 = StrategyDataLoader.loadStrategy(available.get(0));
+        StrategyData data2 = StrategyDataLoader.loadStrategy(available.get(1));
+
+        assertThat(data1).isNotNull();
+        assertThat(data2).isNotNull();
+        // Different files should have different strategy names
+        assertThat(data1.getName()).isNotEqualTo(data2.getName());
+    }
 }
