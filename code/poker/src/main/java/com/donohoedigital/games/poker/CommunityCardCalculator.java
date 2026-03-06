@@ -21,7 +21,7 @@
  */
 package com.donohoedigital.games.poker;
 
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 
 /**
  * Pure-logic calculator for community card visibility, extracted from
@@ -60,10 +60,10 @@ public class CommunityCardCalculator {
      * display round and game state.
      *
      * @param displayRound
-     *            current round for display purposes (BettingRound.ROUND_*
+     *            current round for display purposes (ClientBettingRound.ROUND_*
      *            constants)
      * @param lastBettingRound
-     *            last betting round that has occurred (BettingRound.ROUND_*
+     *            last betting round that has occurred (ClientBettingRound.ROUND_*
      *            constants)
      * @param numWithCards
      *            number of players who still have cards
@@ -84,19 +84,19 @@ public class CommunityCardCalculator {
         // all cases fall through on purpose — matches DealCommunity.syncCards()
         boolean bCardDealt;
         switch (displayRound) {
-            case BettingRound.ROUND_SHOWDOWN :
-            case BettingRound.ROUND_RIVER :
-                bCardDealt = lastBettingRound >= BettingRound.RIVER.toLegacy();
+            case ClientBettingRound.ROUND_SHOWDOWN :
+            case ClientBettingRound.ROUND_RIVER :
+                bCardDealt = lastBettingRound >= ClientBettingRound.RIVER.toLegacy();
                 active[4] = true;
                 drawnNormal[4] = bDrawnNormal || bCardDealt;
                 drawn[4] = bDrawn || bCardDealt;
-            case BettingRound.ROUND_TURN :
-                bCardDealt = lastBettingRound >= BettingRound.TURN.toLegacy();
+            case ClientBettingRound.ROUND_TURN :
+                bCardDealt = lastBettingRound >= ClientBettingRound.TURN.toLegacy();
                 active[3] = true;
                 drawnNormal[3] = bDrawnNormal || bCardDealt;
                 drawn[3] = bDrawn || bCardDealt;
-            case BettingRound.ROUND_FLOP :
-                bCardDealt = lastBettingRound >= BettingRound.FLOP.toLegacy();
+            case ClientBettingRound.ROUND_FLOP :
+                bCardDealt = lastBettingRound >= ClientBettingRound.FLOP.toLegacy();
                 active[2] = true;
                 active[1] = true;
                 active[0] = true;

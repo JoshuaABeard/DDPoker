@@ -19,10 +19,10 @@
  */
 package com.donohoedigital.games.poker.gameserver.websocket;
 
-import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
+import com.donohoedigital.games.poker.protocol.dto.GameSummary;
+import com.donohoedigital.games.poker.protocol.message.ServerMessage;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageData;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageType;
 
 /**
  * Spring-managed broadcaster for lobby-phase WebSocket messages.
@@ -60,9 +60,21 @@ public class LobbyBroadcaster {
     }
 
     public void broadcastLobbySettingsChanged(String gameId, GameSummary updatedSettings) {
+        ServerMessageData.LobbySettingsData settings = toLobbySettingsData(updatedSettings);
         ServerMessage msg = ServerMessage.of(ServerMessageType.LOBBY_SETTINGS_CHANGED, gameId,
-                new ServerMessageData.LobbySettingsChangedData(updatedSettings));
+                new ServerMessageData.LobbySettingsChangedData(settings));
         connectionManager.broadcastToGame(gameId, msg);
+    }
+
+    private static ServerMessageData.LobbySettingsData toLobbySettingsData(GameSummary s) {
+        if (s == null) {
+            return null;
+        }
+        ServerMessageData.BlindsData blinds = s.blinds() != null
+                ? new ServerMessageData.BlindsData(s.blinds().smallBlind(), s.blinds().bigBlind(), s.blinds().ante())
+                : null;
+        return new ServerMessageData.LobbySettingsData(s.gameId(), s.name(), s.hostingType(), s.status(), s.ownerName(),
+                s.playerCount(), s.maxPlayers(), s.isPrivate(), blinds);
     }
 
     public void broadcastLobbyGameStarting(String gameId, int startingInSeconds) {

@@ -35,8 +35,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
-import com.donohoedigital.games.poker.gameserver.dto.ProfileResponse;
+import com.donohoedigital.games.poker.protocol.dto.LoginResponse;
+import com.donohoedigital.games.poker.protocol.dto.ProfileResponse;
 import com.sun.net.httpserver.HttpServer;
 
 /**

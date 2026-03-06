@@ -31,10 +31,11 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.display.ClientHand;
+import com.donohoedigital.games.poker.display.ClientCard;
 
 import com.donohoedigital.comms.*;
 import com.donohoedigital.games.config.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.base.*;
 
 import java.io.*;
@@ -91,36 +92,36 @@ public class HandList extends BaseProfile {
 
     public void addAllPairs(int rank) {
 
-        Card c = Card.getCard(CardSuit.CLUBS, rank);
-        Card d = Card.getCard(CardSuit.DIAMONDS, rank);
-        Card h = Card.getCard(CardSuit.HEARTS, rank);
-        Card s = Card.getCard(CardSuit.SPADES, rank);
+        ClientCard c = ClientCard.getCard(ClientCard.CLUBS, rank);
+        ClientCard d = ClientCard.getCard(ClientCard.DIAMONDS, rank);
+        ClientCard h = ClientCard.getCard(ClientCard.HEARTS, rank);
+        ClientCard s = ClientCard.getCard(ClientCard.SPADES, rank);
 
-        add(new HandSorted(c, d));
-        add(new HandSorted(c, h));
-        add(new HandSorted(c, s));
-        add(new HandSorted(d, h));
-        add(new HandSorted(d, s));
-        add(new HandSorted(h, s));
+        add(ClientHand.of(c, d));
+        add(ClientHand.of(c, h));
+        add(ClientHand.of(c, s));
+        add(ClientHand.of(d, h));
+        add(ClientHand.of(d, s));
+        add(ClientHand.of(h, s));
 
         ++count_;
     }
 
     public void removeAllPairs(int rank) {
-        Card c = Card.getCard(CardSuit.CLUBS, rank);
-        Card d = Card.getCard(CardSuit.DIAMONDS, rank);
-        Card h = Card.getCard(CardSuit.HEARTS, rank);
-        Card s = Card.getCard(CardSuit.SPADES, rank);
+        ClientCard c = ClientCard.getCard(ClientCard.CLUBS, rank);
+        ClientCard d = ClientCard.getCard(ClientCard.DIAMONDS, rank);
+        ClientCard h = ClientCard.getCard(ClientCard.HEARTS, rank);
+        ClientCard s = ClientCard.getCard(ClientCard.SPADES, rank);
 
         if (containsAny(rank, rank))
             --count_;
 
-        remove(new HandSorted(c, d));
-        remove(new HandSorted(c, h));
-        remove(new HandSorted(c, s));
-        remove(new HandSorted(d, h));
-        remove(new HandSorted(d, s));
-        remove(new HandSorted(h, s));
+        remove(ClientHand.of(c, d));
+        remove(ClientHand.of(c, h));
+        remove(ClientHand.of(c, s));
+        remove(ClientHand.of(d, h));
+        remove(ClientHand.of(d, s));
+        remove(ClientHand.of(h, s));
     }
 
     public void addAllPairs(int rank1, int rank2) {
@@ -142,20 +143,20 @@ public class HandList extends BaseProfile {
             return;
         }
 
-        Card c1 = Card.getCard(CardSuit.CLUBS, rank1);
-        Card d1 = Card.getCard(CardSuit.DIAMONDS, rank1);
-        Card h1 = Card.getCard(CardSuit.HEARTS, rank1);
-        Card s1 = Card.getCard(CardSuit.SPADES, rank1);
+        ClientCard c1 = ClientCard.getCard(ClientCard.CLUBS, rank1);
+        ClientCard d1 = ClientCard.getCard(ClientCard.DIAMONDS, rank1);
+        ClientCard h1 = ClientCard.getCard(ClientCard.HEARTS, rank1);
+        ClientCard s1 = ClientCard.getCard(ClientCard.SPADES, rank1);
 
-        Card c2 = Card.getCard(CardSuit.CLUBS, rank2);
-        Card d2 = Card.getCard(CardSuit.DIAMONDS, rank2);
-        Card h2 = Card.getCard(CardSuit.HEARTS, rank2);
-        Card s2 = Card.getCard(CardSuit.SPADES, rank2);
+        ClientCard c2 = ClientCard.getCard(ClientCard.CLUBS, rank2);
+        ClientCard d2 = ClientCard.getCard(ClientCard.DIAMONDS, rank2);
+        ClientCard h2 = ClientCard.getCard(ClientCard.HEARTS, rank2);
+        ClientCard s2 = ClientCard.getCard(ClientCard.SPADES, rank2);
 
-        add(new HandSorted(c1, c2));
-        add(new HandSorted(d1, d2));
-        add(new HandSorted(h1, h2));
-        add(new HandSorted(s1, s2));
+        add(ClientHand.of(c1, c2));
+        add(ClientHand.of(d1, d2));
+        add(ClientHand.of(h1, h2));
+        add(ClientHand.of(s1, s2));
 
         ++count_;
     }
@@ -167,23 +168,23 @@ public class HandList extends BaseProfile {
             return;
         }
 
-        Card c1 = Card.getCard(CardSuit.CLUBS, rank1);
-        Card d1 = Card.getCard(CardSuit.DIAMONDS, rank1);
-        Card h1 = Card.getCard(CardSuit.HEARTS, rank1);
-        Card s1 = Card.getCard(CardSuit.SPADES, rank1);
+        ClientCard c1 = ClientCard.getCard(ClientCard.CLUBS, rank1);
+        ClientCard d1 = ClientCard.getCard(ClientCard.DIAMONDS, rank1);
+        ClientCard h1 = ClientCard.getCard(ClientCard.HEARTS, rank1);
+        ClientCard s1 = ClientCard.getCard(ClientCard.SPADES, rank1);
 
-        Card c2 = Card.getCard(CardSuit.CLUBS, rank2);
-        Card d2 = Card.getCard(CardSuit.DIAMONDS, rank2);
-        Card h2 = Card.getCard(CardSuit.HEARTS, rank2);
-        Card s2 = Card.getCard(CardSuit.SPADES, rank2);
+        ClientCard c2 = ClientCard.getCard(ClientCard.CLUBS, rank2);
+        ClientCard d2 = ClientCard.getCard(ClientCard.DIAMONDS, rank2);
+        ClientCard h2 = ClientCard.getCard(ClientCard.HEARTS, rank2);
+        ClientCard s2 = ClientCard.getCard(ClientCard.SPADES, rank2);
 
         if (containsAny(rank1, rank2, true))
             --count_;
 
-        remove(new HandSorted(c1, c2));
-        remove(new HandSorted(d1, d2));
-        remove(new HandSorted(h1, h2));
-        remove(new HandSorted(s1, s2));
+        remove(ClientHand.of(c1, c2));
+        remove(ClientHand.of(d1, d2));
+        remove(ClientHand.of(h1, h2));
+        remove(ClientHand.of(s1, s2));
     }
 
     public void addAllUnsuited(int rank1, int rank2) {
@@ -194,31 +195,31 @@ public class HandList extends BaseProfile {
             return;
         }
 
-        Card c1 = Card.getCard(CardSuit.CLUBS, rank1);
-        Card d1 = Card.getCard(CardSuit.DIAMONDS, rank1);
-        Card h1 = Card.getCard(CardSuit.HEARTS, rank1);
-        Card s1 = Card.getCard(CardSuit.SPADES, rank1);
+        ClientCard c1 = ClientCard.getCard(ClientCard.CLUBS, rank1);
+        ClientCard d1 = ClientCard.getCard(ClientCard.DIAMONDS, rank1);
+        ClientCard h1 = ClientCard.getCard(ClientCard.HEARTS, rank1);
+        ClientCard s1 = ClientCard.getCard(ClientCard.SPADES, rank1);
 
-        Card c2 = Card.getCard(CardSuit.CLUBS, rank2);
-        Card d2 = Card.getCard(CardSuit.DIAMONDS, rank2);
-        Card h2 = Card.getCard(CardSuit.HEARTS, rank2);
-        Card s2 = Card.getCard(CardSuit.SPADES, rank2);
+        ClientCard c2 = ClientCard.getCard(ClientCard.CLUBS, rank2);
+        ClientCard d2 = ClientCard.getCard(ClientCard.DIAMONDS, rank2);
+        ClientCard h2 = ClientCard.getCard(ClientCard.HEARTS, rank2);
+        ClientCard s2 = ClientCard.getCard(ClientCard.SPADES, rank2);
 
-        add(new HandSorted(c1, d2));
-        add(new HandSorted(c1, h2));
-        add(new HandSorted(c1, s2));
+        add(ClientHand.of(c1, d2));
+        add(ClientHand.of(c1, h2));
+        add(ClientHand.of(c1, s2));
 
-        add(new HandSorted(d1, c2));
-        add(new HandSorted(d1, h2));
-        add(new HandSorted(d1, s2));
+        add(ClientHand.of(d1, c2));
+        add(ClientHand.of(d1, h2));
+        add(ClientHand.of(d1, s2));
 
-        add(new HandSorted(h1, c2));
-        add(new HandSorted(h1, d2));
-        add(new HandSorted(h1, s2));
+        add(ClientHand.of(h1, c2));
+        add(ClientHand.of(h1, d2));
+        add(ClientHand.of(h1, s2));
 
-        add(new HandSorted(s1, c2));
-        add(new HandSorted(s1, d2));
-        add(new HandSorted(s1, h2));
+        add(ClientHand.of(s1, c2));
+        add(ClientHand.of(s1, d2));
+        add(ClientHand.of(s1, h2));
 
         ++count_;
     }
@@ -231,34 +232,34 @@ public class HandList extends BaseProfile {
             return;
         }
 
-        Card c1 = Card.getCard(CardSuit.CLUBS, rank1);
-        Card d1 = Card.getCard(CardSuit.DIAMONDS, rank1);
-        Card h1 = Card.getCard(CardSuit.HEARTS, rank1);
-        Card s1 = Card.getCard(CardSuit.SPADES, rank1);
+        ClientCard c1 = ClientCard.getCard(ClientCard.CLUBS, rank1);
+        ClientCard d1 = ClientCard.getCard(ClientCard.DIAMONDS, rank1);
+        ClientCard h1 = ClientCard.getCard(ClientCard.HEARTS, rank1);
+        ClientCard s1 = ClientCard.getCard(ClientCard.SPADES, rank1);
 
-        Card c2 = Card.getCard(CardSuit.CLUBS, rank2);
-        Card d2 = Card.getCard(CardSuit.DIAMONDS, rank2);
-        Card h2 = Card.getCard(CardSuit.HEARTS, rank2);
-        Card s2 = Card.getCard(CardSuit.SPADES, rank2);
+        ClientCard c2 = ClientCard.getCard(ClientCard.CLUBS, rank2);
+        ClientCard d2 = ClientCard.getCard(ClientCard.DIAMONDS, rank2);
+        ClientCard h2 = ClientCard.getCard(ClientCard.HEARTS, rank2);
+        ClientCard s2 = ClientCard.getCard(ClientCard.SPADES, rank2);
 
         if (containsAny(rank1, rank2, false))
             --count_;
 
-        remove(new HandSorted(c1, d2));
-        remove(new HandSorted(c1, h2));
-        remove(new HandSorted(c1, s2));
+        remove(ClientHand.of(c1, d2));
+        remove(ClientHand.of(c1, h2));
+        remove(ClientHand.of(c1, s2));
 
-        remove(new HandSorted(d1, c2));
-        remove(new HandSorted(d1, h2));
-        remove(new HandSorted(d1, s2));
+        remove(ClientHand.of(d1, c2));
+        remove(ClientHand.of(d1, h2));
+        remove(ClientHand.of(d1, s2));
 
-        remove(new HandSorted(h1, c2));
-        remove(new HandSorted(h1, d2));
-        remove(new HandSorted(h1, s2));
+        remove(ClientHand.of(h1, c2));
+        remove(ClientHand.of(h1, d2));
+        remove(ClientHand.of(h1, s2));
 
-        remove(new HandSorted(s1, c2));
-        remove(new HandSorted(s1, d2));
-        remove(new HandSorted(s1, h2));
+        remove(ClientHand.of(s1, c2));
+        remove(ClientHand.of(s1, d2));
+        remove(ClientHand.of(s1, h2));
     }
 
     public void addAll(int rank1, int rank2) {
@@ -269,42 +270,42 @@ public class HandList extends BaseProfile {
             return;
         }
 
-        Card c1 = Card.getCard(CardSuit.CLUBS, rank1);
-        Card d1 = Card.getCard(CardSuit.DIAMONDS, rank1);
-        Card h1 = Card.getCard(CardSuit.HEARTS, rank1);
-        Card s1 = Card.getCard(CardSuit.SPADES, rank1);
+        ClientCard c1 = ClientCard.getCard(ClientCard.CLUBS, rank1);
+        ClientCard d1 = ClientCard.getCard(ClientCard.DIAMONDS, rank1);
+        ClientCard h1 = ClientCard.getCard(ClientCard.HEARTS, rank1);
+        ClientCard s1 = ClientCard.getCard(ClientCard.SPADES, rank1);
 
-        Card c2 = Card.getCard(CardSuit.CLUBS, rank2);
-        Card d2 = Card.getCard(CardSuit.DIAMONDS, rank2);
-        Card h2 = Card.getCard(CardSuit.HEARTS, rank2);
-        Card s2 = Card.getCard(CardSuit.SPADES, rank2);
+        ClientCard c2 = ClientCard.getCard(ClientCard.CLUBS, rank2);
+        ClientCard d2 = ClientCard.getCard(ClientCard.DIAMONDS, rank2);
+        ClientCard h2 = ClientCard.getCard(ClientCard.HEARTS, rank2);
+        ClientCard s2 = ClientCard.getCard(ClientCard.SPADES, rank2);
 
-        add(new HandSorted(c1, c2));
-        add(new HandSorted(c1, d2));
-        add(new HandSorted(c1, h2));
-        add(new HandSorted(c1, s2));
+        add(ClientHand.of(c1, c2));
+        add(ClientHand.of(c1, d2));
+        add(ClientHand.of(c1, h2));
+        add(ClientHand.of(c1, s2));
 
-        add(new HandSorted(d1, c2));
-        add(new HandSorted(d1, d2));
-        add(new HandSorted(d1, h2));
-        add(new HandSorted(d1, s2));
+        add(ClientHand.of(d1, c2));
+        add(ClientHand.of(d1, d2));
+        add(ClientHand.of(d1, h2));
+        add(ClientHand.of(d1, s2));
 
-        add(new HandSorted(h1, c2));
-        add(new HandSorted(h1, d2));
-        add(new HandSorted(h1, h2));
-        add(new HandSorted(h1, s2));
+        add(ClientHand.of(h1, c2));
+        add(ClientHand.of(h1, d2));
+        add(ClientHand.of(h1, h2));
+        add(ClientHand.of(h1, s2));
 
-        add(new HandSorted(s1, c2));
-        add(new HandSorted(s1, d2));
-        add(new HandSorted(s1, h2));
-        add(new HandSorted(s1, s2));
+        add(ClientHand.of(s1, c2));
+        add(ClientHand.of(s1, d2));
+        add(ClientHand.of(s1, h2));
+        add(ClientHand.of(s1, s2));
     }
 
-    public void add(HandSorted hand) {
+    public void add(ClientHand hand) {
         alHands_.add(hand);
     }
 
-    public void remove(HandSorted hand) {
+    public void remove(ClientHand hand) {
         alHands_.remove(hand);
     }
 
@@ -337,8 +338,8 @@ public class HandList extends BaseProfile {
         return null;
     }
 
-    public HandSorted get(int index) {
-        return (HandSorted) alHands_.get(index);
+    public ClientHand get(int index) {
+        return (ClientHand) alHands_.get(index);
     }
 
     public int size() {
@@ -390,9 +391,9 @@ public class HandList extends BaseProfile {
 
     public boolean containsAny(int rank1, int rank2) {
         for (int i = size() - 1; i >= 0; --i) {
-            Hand hand = get(i);
-            Card card1 = hand.getCard(0);
-            Card card2 = hand.getCard(1);
+            ClientHand hand = get(i);
+            ClientCard card1 = hand.getCard(0);
+            ClientCard card2 = hand.getCard(1);
             if (((card1.getRank() == rank1) && (card2.getRank() == rank2))
                     || ((card1.getRank() == rank2) && (card2.getRank() == rank1))) {
                 return true;
@@ -403,10 +404,10 @@ public class HandList extends BaseProfile {
 
     public boolean containsAny(int rank1, int rank2, boolean suited) {
         for (int i = size() - 1; i >= 0; --i) {
-            Hand hand = get(i);
-            Card card1 = hand.getCard(0);
-            Card card2 = hand.getCard(1);
-            if (((card1.getCardSuit().getRank() == card2.getCardSuit().getRank()) == suited)
+            ClientHand hand = get(i);
+            ClientCard card1 = hand.getCard(0);
+            ClientCard card2 = hand.getCard(1);
+            if (((card1.getSuit() == card2.getSuit()) == suited)
                     && (((card1.getRank() == rank1) && (card2.getRank() == rank2))
                             || ((card1.getRank() == rank2) && (card2.getRank() == rank1)))) {
                 return true;

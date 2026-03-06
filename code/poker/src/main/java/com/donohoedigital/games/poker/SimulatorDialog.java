@@ -31,13 +31,16 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
+import com.donohoedigital.games.poker.display.ClientHand;
+import com.donohoedigital.games.poker.display.ClientCard;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
 
@@ -45,7 +48,7 @@ import javax.swing.*;
 import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.online.*;
 
 import java.util.ArrayList;
@@ -108,13 +111,13 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
         RemotePokerTable remoteTable = new RemotePokerTable(null, 0);
         table_ = remoteTable;
         ClientPlayer player;
-        Hand hand;
+        ClientHand hand;
         List<ClientPlayer> playerOrder = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             player = new ClientPlayer(i, "Sim " + i, true);
-            hand = player.newHand(Hand.TYPE_NORMAL);
-            hand.addCard(new Card(CardSuit.UNKNOWN, Card.UNKNOWN));
-            hand.addCard(new Card(CardSuit.UNKNOWN, Card.UNKNOWN));
+            hand = player.newHand(ClientHand.TYPE_NORMAL);
+            hand.addCard(new ClientCard(-1, ClientCard.UNKNOWN));
+            hand.addCard(new ClientCard(-1, ClientCard.UNKNOWN));
             remoteTable.setRemotePlayer(i, player);
             playerOrder.add(player);
         }
@@ -128,7 +131,7 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
         remoteHand.updatePlayerOrder(playerOrder);
         hand = hhand_.getCommunity();
         for (int i = 0; i < 5; i++) {
-            hand.addCard(new Card(CardSuit.UNKNOWN, Card.UNKNOWN));
+            hand.addCard(new ClientCard(-1, ClientCard.UNKNOWN));
         }
 
         createDialogContents();
@@ -296,9 +299,9 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
      * UI representation of a hand
      */
     static class SimHandPanel extends DDPanel {
-        Hand hand;
+        ClientHand hand;
 
-        SimHandPanel(SimulatorDialog sim, ClientPokerTable table, Hand hand) {
+        SimHandPanel(SimulatorDialog sim, ClientPokerTable table, ClientHand hand) {
             this.hand = hand;
             CardPanel cp;
             int nCards = hand.size();
@@ -326,9 +329,9 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
         private DDPopupMenu menu;
         private ClientPokerTable table;
         private SimulatorDialog sim;
-        private Hand hand;
+        private ClientHand hand;
 
-        SimCardPanel(SimulatorDialog sim, ClientPokerTable table, Hand hand, Card c) {
+        SimCardPanel(SimulatorDialog sim, ClientPokerTable table, ClientHand hand, ClientCard c) {
             super(c, true);
             this.sim = sim;
             this.table = table;
@@ -344,7 +347,7 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
             if (sim.bSimRunning_)
                 return;
             if (e.isControlDown()) {
-                replaceCard(table, getCardPiece().getCard(), hand, Card.BLANK, sim);
+                replaceCard(table, getCardPiece().getCard(), hand, ClientCard.BLANK, sim);
             } else {
                 menu = selectCard(this, e.getPoint(), getCardPiece(), this, sim);
             }
@@ -354,7 +357,7 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
             menu.setVisible(false);
             menu = null;
             CardSelectorPanel cardSelector = (CardSelectorPanel) e.getSource();
-            Card selectedCard = cardSelector.getSelectedCard();
+            ClientCard selectedCard = cardSelector.getSelectedCard();
             if (selectedCard != null && !selectedCard.equals(getCardPiece().getCard())) {
                 replaceCard(table, getCardPiece().getCard(), hand, selectedCard, sim);
             }
@@ -376,49 +379,39 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
     /**
      * popup card selector
      */
-    private static void replaceCard(ClientPokerTable table, Card replaceThis, Hand inThisHand, Card withThis,
-            SimulatorDialog repaintThis) {
+    private static void replaceCard(ClientPokerTable table, ClientCard replaceThis, ClientHand inThisHand,
+            ClientCard withThis, SimulatorDialog repaintThis) {
         ClientHoldemHand hhand = table.getHoldemHand();
-        Card duplicate = null;
         ClientPlayer p;
-        // Deck deck = new Deck(true);
-        Hand hand;
+        ClientHand hand;
 
-        if (!withThis.equals(Card.BLANK)) {
+        if (!withThis.equals(ClientCard.BLANK)) {
             // go through all players, see if replacement card is in use and remove
             // existing cards from deck (in case we need a replacement)
-            for (int i = 0; i < PokerConstants.SEATS; i++) {
+            for (int i = 0; i < ProtocolConstants.SEATS; i++) {
                 p = table.getPlayer(i);
                 hand = p.getHand();
-                if (hand.containsCard(withThis)) {
-                    ApplicationError.assertTrue(duplicate == null, "Found two of same card in multiple hands",
-                            withThis);
-                    // logger.debug("Duplicate of " + withThis + " found in " + p.getName());
-                    duplicate = hand.getCard(hand.indexOf(withThis));
+                int dupIdx = hand.indexOf(withThis);
+                if (dupIdx >= 0) {
+                    hand.setCard(dupIdx, ClientCard.BLANK);
                     hand.cardsChanged();
                 }
             }
 
             // ditto for community
             hand = hhand.getCommunity();
-            if (hand.containsCard(withThis)) {
-                ApplicationError.assertTrue(duplicate == null, "Found two of same card in multiple hands", withThis);
-                // logger.debug("Duplicate of " + withThis + " found in board");
-                duplicate = hand.getCard(hand.indexOf(withThis));
+            int dupIdx = hand.indexOf(withThis);
+            if (dupIdx >= 0) {
+                hand.setCard(dupIdx, ClientCard.BLANK);
                 hand.cardsChanged();
-            }
-
-            // if we have a duplicate, change it to blank
-            if (duplicate != null) {
-                // logger.debug("duplicate replaced with blank");
-                duplicate.setValue(Card.BLANK);
             }
         }
 
-        // change value of replacement
-        replaceThis.setValue(withThis);
-
-        // recalc fingerprint
+        // replace the card in the hand
+        int replaceIdx = inThisHand.indexOf(replaceThis);
+        if (replaceIdx >= 0) {
+            inThisHand.setCard(replaceIdx, withThis);
+        }
         inThisHand.cardsChanged();
 
         // repaint
@@ -441,8 +434,8 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
         if (bCardsChanged)
             bCustomized_ = true;
 
-        Hand pocket = copyHandNoBlank(my_.getHand());
-        Hand community = copyHandNoBlank(hhand_.getCommunity());
+        ClientHand pocket = copyHandNoBlank(my_.getHand());
+        ClientHand community = copyHandNoBlank(hhand_.getCommunity());
 
         if (showdown_.isSelectedTab())
             showdown_.updateDisplay(bCardsChanged);
@@ -462,14 +455,11 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
     /**
      * copy all cards with new instances of cards to avoid change issues
      */
-    private Hand copyHandNoBlank(Hand hand) {
-        Hand copy = new Hand();
-        Card c;
+    private ClientHand copyHandNoBlank(ClientHand hand) {
+        ClientHand copy = ClientHand.empty();
         for (int i = 0; i < hand.size(); i++) {
             if (!hand.getCard(i).isBlank()) {
-                c = new Card();
-                c.setValue(hand.getCard(i));
-                copy.addCard(c);
+                copy.addCard(hand.getCard(i));
             }
         }
         return copy;
@@ -558,25 +548,25 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
         }
 
         if (nType == MENU_CLEAR_ALL) {
-            for (int i = 0; i < PokerConstants.SEATS; i++) {
+            for (int i = 0; i < ProtocolConstants.SEATS; i++) {
                 p = table_.getPlayer(i);
-                bCardsChanged |= changeCard(p.getHand(), 0, Card.BLANK);
-                bCardsChanged |= changeCard(p.getHand(), 1, Card.BLANK);
+                bCardsChanged |= changeCard(p.getHand(), 0, ClientCard.BLANK);
+                bCardsChanged |= changeCard(p.getHand(), 1, ClientCard.BLANK);
             }
-            Hand comm = hhand_.getCommunity();
+            ClientHand comm = hhand_.getCommunity();
             for (int i = 0; i < 5; i++) {
-                bCardsChanged |= changeCard(comm, i, Card.BLANK);
+                bCardsChanged |= changeCard(comm, i, ClientCard.BLANK);
             }
         } else if (nType == MENU_CLEAR_OPP) {
-            for (int i = 1; i < PokerConstants.SEATS; i++) {
+            for (int i = 1; i < ProtocolConstants.SEATS; i++) {
                 p = table_.getPlayer(i);
-                bCardsChanged |= changeCard(p.getHand(), 0, Card.BLANK);
-                bCardsChanged |= changeCard(p.getHand(), 1, Card.BLANK);
+                bCardsChanged |= changeCard(p.getHand(), 0, ClientCard.BLANK);
+                bCardsChanged |= changeCard(p.getHand(), 1, ClientCard.BLANK);
             }
         } else if (nType == MENU_CLEAR_BOARD) {
-            Hand comm = hhand_.getCommunity();
+            ClientHand comm = hhand_.getCommunity();
             for (int i = 0; i < 5; i++) {
-                bCardsChanged |= changeCard(comm, i, Card.BLANK);
+                bCardsChanged |= changeCard(comm, i, ClientCard.BLANK);
             }
         } else if (hhand != null) {
             if (nType == MENU_CHANGE_SHOWALL_AI) {
@@ -586,7 +576,7 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
             // see if local player is seated (they correspond to Seat 0 at sim table)
             ClientPlayer local = game.getLocalPlayer();
             int nStartSeat = 0;
-            for (int i = 0; !local.isObserver() && i < PokerConstants.SEATS; i++) {
+            for (int i = 0; !local.isObserver() && i < ProtocolConstants.SEATS; i++) {
                 p = table.getPlayer(i);
                 if (p == local) {
                     nStartSeat = p.getSeat();
@@ -594,16 +584,16 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
             }
 
             int nUpdateIndex = 0;
-            Hand nu;
+            ClientHand nu;
             int nSeat = nStartSeat;
             int nNum = (nType == MENU_LOAD_ALL || nType == MENU_CHANGE_SHOWALL_AI)
-                    ? PokerConstants.SEATS
+                    ? ProtocolConstants.SEATS
                     : (local.isObserver() ? 0 : 1); // LOAD_MY
             for (int i = 0; i < nNum; i++) {
                 nu = null;
                 p = table.getPlayer(nSeat);
                 nSeat++;
-                if (nSeat == PokerConstants.SEATS)
+                if (nSeat == ProtocolConstants.SEATS)
                     nSeat = 0;
                 if (p != null && (p == local || !p.isFolded())) {
                     nu = p.getHand();
@@ -615,7 +605,7 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
                     if (p.isCardsExposed())
                         bShowBlank = false;
                     if (nu != null && i > (local.isObserver() ? -1 : 0) && bShowBlank) {
-                        nu = new Hand(Card.BLANK, Card.BLANK);
+                        nu = ClientHand.of(ClientCard.BLANK, ClientCard.BLANK);
                     }
                 }
 
@@ -630,10 +620,10 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
 
             // set remaining players to unknown
             if (nType == MENU_LOAD_ALL) {
-                for (int i = nUpdateIndex; i < PokerConstants.SEATS; i++) {
+                for (int i = nUpdateIndex; i < ProtocolConstants.SEATS; i++) {
                     p = table_.getPlayer(i);
-                    bCardsChanged |= changeCard(p.getHand(), 0, Card.BLANK);
-                    bCardsChanged |= changeCard(p.getHand(), 1, Card.BLANK);
+                    bCardsChanged |= changeCard(p.getHand(), 0, ClientCard.BLANK);
+                    bCardsChanged |= changeCard(p.getHand(), 1, ClientCard.BLANK);
                 }
             }
 
@@ -643,26 +633,26 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
             // board
             if (nType == MENU_LOAD_ALL || nType == MENU_LOAD_MY) {
                 int nRound = hhand.getRound().toLegacy();
-                if (nRound == BettingRound.SHOWDOWN.toLegacy()) {
+                if (nRound == ClientBettingRound.SHOWDOWN.toLegacy()) {
                     HandAction last = hhand.getLastAction();
                     nRound = last.getRound();
                 }
                 int nNumComm = 0;
-                if (nRound >= BettingRound.RIVER.toLegacy()) {
+                if (nRound >= ClientBettingRound.RIVER.toLegacy()) {
                     nNumComm = 5;
-                } else if (nRound >= BettingRound.TURN.toLegacy()) {
+                } else if (nRound >= ClientBettingRound.TURN.toLegacy()) {
                     nNumComm = 4;
-                } else if (nRound >= BettingRound.FLOP.toLegacy()) {
+                } else if (nRound >= ClientBettingRound.FLOP.toLegacy()) {
                     nNumComm = 3;
                 }
 
                 nu = hhand.getCommunityForDisplay();
-                Card c;
+                ClientCard c;
                 for (int i = 0; i < 5; i++) {
                     if (i < nu.size() && i < nNumComm) {
                         c = nu.getCard(i);
                     } else {
-                        c = Card.BLANK;
+                        c = ClientCard.BLANK;
                     }
                     bCardsChanged |= changeCard(hhand_.getCommunity(), i, c);
                 }
@@ -676,11 +666,10 @@ public class SimulatorDialog extends BasePhase implements ChangeListener {
         }
     }
 
-    private boolean changeCard(Hand hand, int i, Card c) {
-        Card old = hand.getCard(i);
+    private boolean changeCard(ClientHand hand, int i, ClientCard c) {
+        ClientCard old = hand.getCard(i);
         if (!old.equals(c)) {
-            old.setValue(c);
-            hand.cardsChanged();// for fingerprint
+            hand.setCard(i, c);
             return true;
         }
         return false;

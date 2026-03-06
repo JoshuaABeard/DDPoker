@@ -17,12 +17,12 @@
  */
 package com.donohoedigital.games.poker.gameserver.controller;
 
-import com.donohoedigital.games.poker.gameserver.GameConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.AIPlayerConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.AIPlayerConfig;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
 import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.auth.JwtAuthenticationFilter;
-import com.donohoedigital.games.poker.gameserver.dto.CreateGameResponse;
+import com.donohoedigital.games.poker.protocol.dto.CreateGameResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;

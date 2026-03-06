@@ -22,7 +22,7 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.comms.*;
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -280,7 +280,7 @@ class PokerDataMarshallerTest {
         // Register player in MsgState so marshal/demarshal can reference it by ID
         Integer playerId = state.getId(player);
 
-        HandAction original = new HandAction(player, BettingRound.ROUND_PRE_FLOP, HandAction.ACTION_FOLD);
+        HandAction original = new HandAction(player, ClientBettingRound.ROUND_PRE_FLOP, HandAction.ACTION_FOLD);
         String marshalled = DataMarshaller.marshal(state, original);
 
         assertThat(marshalled).startsWith("?");
@@ -289,7 +289,7 @@ class PokerDataMarshallerTest {
         HandAction restored = (HandAction) DataMarshaller.demarshal(state, marshalled);
 
         assertThat(restored.getAction()).isEqualTo(HandAction.ACTION_FOLD);
-        assertThat(restored.getRound()).isEqualTo(BettingRound.ROUND_PRE_FLOP);
+        assertThat(restored.getRound()).isEqualTo(ClientBettingRound.ROUND_PRE_FLOP);
         assertThat(restored.getAmount()).isZero();
         assertThat(restored.getPlayer()).isSameAs(player);
     }
@@ -302,13 +302,14 @@ class PokerDataMarshallerTest {
 
         state.getId(player);
 
-        HandAction original = new HandAction(player, BettingRound.ROUND_FLOP, HandAction.ACTION_RAISE, 200, 50, null);
+        HandAction original = new HandAction(player, ClientBettingRound.ROUND_FLOP, HandAction.ACTION_RAISE, 200, 50,
+                null);
         String marshalled = DataMarshaller.marshal(state, original);
 
         HandAction restored = (HandAction) DataMarshaller.demarshal(state, marshalled);
 
         assertThat(restored.getAction()).isEqualTo(HandAction.ACTION_RAISE);
-        assertThat(restored.getRound()).isEqualTo(BettingRound.ROUND_FLOP);
+        assertThat(restored.getRound()).isEqualTo(ClientBettingRound.ROUND_FLOP);
         assertThat(restored.getAmount()).isEqualTo(200);
         assertThat(restored.getSubAmount()).isEqualTo(50);
         assertThat(restored.getPlayer()).isSameAs(player);
@@ -322,7 +323,7 @@ class PokerDataMarshallerTest {
 
         state.getId(player);
 
-        HandAction original = new HandAction(player, BettingRound.ROUND_RIVER, HandAction.ACTION_CALL, 300);
+        HandAction original = new HandAction(player, ClientBettingRound.ROUND_RIVER, HandAction.ACTION_CALL, 300);
 
         assertThat(original.isAllIn()).isTrue();
 
@@ -341,7 +342,8 @@ class PokerDataMarshallerTest {
 
         state.getId(player);
 
-        HandAction original = new HandAction(player, BettingRound.ROUND_TURN, HandAction.ACTION_BET, 100, "AI-decided");
+        HandAction original = new HandAction(player, ClientBettingRound.ROUND_TURN, HandAction.ACTION_BET, 100,
+                "AI-decided");
         String marshalled = DataMarshaller.marshal(state, original);
 
         HandAction restored = (HandAction) DataMarshaller.demarshal(state, marshalled);

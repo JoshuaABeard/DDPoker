@@ -31,13 +31,15 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.dashboard;
+import com.donohoedigital.games.poker.PokerClientConstants;
+import com.donohoedigital.games.poker.display.ClientHand;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 
 /**
@@ -63,21 +65,21 @@ public class HandStrengthDash extends Odds {
     /// display logic
     ///
 
-    protected String getDisplay(int nRound, ClientHoldemHand hhand, ClientPlayer asViewedBy, Hand hand) {
+    protected String getDisplay(int nRound, ClientHoldemHand hhand, ClientPlayer asViewedBy, ClientHand hand) {
         sStrength_ = null;
 
         // Future: pre-flop hand strength
-        if (nRound == BettingRound.PRE_FLOP.toLegacy()) {
+        if (nRound == ClientBettingRound.PRE_FLOP.toLegacy()) {
             return "";
         }
 
-        if (nRound == BettingRound.SHOWDOWN.toLegacy()) {
+        if (nRound == ClientBettingRound.SHOWDOWN.toLegacy()) {
             return PropertyConfig.getMessage("msg.odds.hs.over");
         }
 
         // hand strength
         double dStrength = asViewedBy.getHandStrength() * 100.0d;
-        sStrength_ = PokerConstants.formatPercent(dStrength);
+        sStrength_ = PokerClientConstants.formatPercent(dStrength);
         return PropertyConfig.getMessage("msg.odds.hs", sStrength_);
     }
 }

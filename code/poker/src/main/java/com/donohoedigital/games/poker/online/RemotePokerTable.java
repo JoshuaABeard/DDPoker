@@ -20,7 +20,7 @@ package com.donohoedigital.games.poker.online;
 import com.donohoedigital.base.ApplicationError;
 import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.poker.PokerGame;
-import com.donohoedigital.games.poker.engine.PokerConstants;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.event.PokerTableListener;
 import com.donohoedigital.games.poker.model.TournamentProfile;
@@ -60,7 +60,7 @@ public class RemotePokerTable implements ClientPokerTable {
     // -------------------------------------------------------------------------
     // Remote-state storage — never null after construction
     // -------------------------------------------------------------------------
-    private final ClientPlayer[] remotePlayers_ = new ClientPlayer[PokerConstants.SEATS];
+    private final ClientPlayer[] remotePlayers_ = new ClientPlayer[ProtocolConstants.SEATS];
     private RemoteHoldemHand remoteHand_;
     private int remoteButton_ = ClientPokerTable.NO_SEAT;
     private int nMinChip_ = 0;
@@ -143,7 +143,7 @@ public class RemotePokerTable implements ClientPokerTable {
      */
     @Override
     public ClientPlayer getPlayer(int nSeat) {
-        if (nSeat < 0 || nSeat >= PokerConstants.SEATS)
+        if (nSeat < 0 || nSeat >= ProtocolConstants.SEATS)
             return null;
         return remotePlayers_[nSeat];
     }
@@ -234,7 +234,7 @@ public class RemotePokerTable implements ClientPokerTable {
     /** Adds a player to the next available seat. */
     @Override
     public void addPlayer(ClientPlayer player) {
-        for (int i = 0; i < PokerConstants.SEATS; i++) {
+        for (int i = 0; i < ProtocolConstants.SEATS; i++) {
             if (remotePlayers_[i] == null) {
                 remotePlayers_[i] = player;
                 player.setTable(this, i);
@@ -246,7 +246,7 @@ public class RemotePokerTable implements ClientPokerTable {
     /** Removes the player at the given seat. */
     @Override
     public void removePlayer(int nSeat) {
-        if (nSeat >= 0 && nSeat < PokerConstants.SEATS) {
+        if (nSeat >= 0 && nSeat < ProtocolConstants.SEATS) {
             remotePlayers_[nSeat] = null;
         }
     }
@@ -296,10 +296,10 @@ public class RemotePokerTable implements ClientPokerTable {
     @Override
     public int getDisplaySeat(int nSeat) {
         nSeat += getSeatOffset();
-        if (nSeat >= PokerConstants.SEATS) {
-            nSeat -= PokerConstants.SEATS;
+        if (nSeat >= ProtocolConstants.SEATS) {
+            nSeat -= ProtocolConstants.SEATS;
         } else if (nSeat < 0) {
-            nSeat += PokerConstants.SEATS;
+            nSeat += ProtocolConstants.SEATS;
         }
         return nSeat;
     }
@@ -311,10 +311,10 @@ public class RemotePokerTable implements ClientPokerTable {
     @Override
     public int getTableSeat(int nDisplaySeat) {
         nDisplaySeat -= getSeatOffset();
-        if (nDisplaySeat >= PokerConstants.SEATS) {
-            nDisplaySeat -= PokerConstants.SEATS;
+        if (nDisplaySeat >= ProtocolConstants.SEATS) {
+            nDisplaySeat -= ProtocolConstants.SEATS;
         } else if (nDisplaySeat < 0) {
-            nDisplaySeat += PokerConstants.SEATS;
+            nDisplaySeat += ProtocolConstants.SEATS;
         }
         return nDisplaySeat;
     }
@@ -325,7 +325,7 @@ public class RemotePokerTable implements ClientPokerTable {
      */
     public int getSeatOffset() {
         int nSeat = ClientPokerTable.NO_SEAT;
-        for (int i = 0; i < PokerConstants.SEATS; i++) {
+        for (int i = 0; i < ProtocolConstants.SEATS; i++) {
             ClientPlayer player = remotePlayers_[i];
             if (player == null)
                 continue;
@@ -535,7 +535,7 @@ public class RemotePokerTable implements ClientPokerTable {
      * Sets a single player in a specific seat. Does NOT fire events.
      */
     public void setRemotePlayer(int seat, ClientPlayer player) {
-        if (seat >= 0 && seat < PokerConstants.SEATS) {
+        if (seat >= 0 && seat < ProtocolConstants.SEATS) {
             remotePlayers_[seat] = player;
         }
     }
@@ -544,7 +544,7 @@ public class RemotePokerTable implements ClientPokerTable {
      * Clears a specific seat (player left/was eliminated). Does NOT fire events.
      */
     public void clearSeat(int seat) {
-        if (seat >= 0 && seat < PokerConstants.SEATS) {
+        if (seat >= 0 && seat < ProtocolConstants.SEATS) {
             remotePlayers_[seat] = null;
         }
     }

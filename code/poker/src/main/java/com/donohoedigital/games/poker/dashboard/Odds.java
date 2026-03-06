@@ -31,18 +31,19 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.dashboard;
+import com.donohoedigital.games.poker.display.ClientHand;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 
 /**
  * Created by IntelliJ IDEA. User: donohoe Date: Mar 18, 2005 Time: 4:40:33 PM
@@ -140,16 +141,16 @@ public abstract class Odds extends DashboardItem {
         // no hand
         if (hhand == null
         // || (!bMouseOver && asViewedBy.isHuman() &&
-        // engine.getPrefsNode().getBooleanOption(PokerConstants.OPTION_HOLE_CARDS_DOWN))
+        // engine.getPrefsNode().getBooleanOption(PokerClientConstants.OPTION_HOLE_CARDS_DOWN))
         ) {
             return "";
         }
 
         // if folded or pre-flop
-        Hand hand = asViewedBy.getHand();
+        ClientHand hand = asViewedBy.getHand();
         int nRound = hhand.getRound().toLegacy();
         if (asViewedBy.isFolded() || asViewedBy.isObserver() || hand == null
-                || (nRound == BettingRound.SHOWDOWN.toLegacy() && hhand.getNumWithCards() == 1)) {
+                || (nRound == ClientBettingRound.SHOWDOWN.toLegacy() && hhand.getNumWithCards() == 1)) {
             return "";
         }
 
@@ -157,5 +158,5 @@ public abstract class Odds extends DashboardItem {
 
     }
 
-    protected abstract String getDisplay(int nRound, ClientHoldemHand hhand, ClientPlayer asViewedBy, Hand hand);
+    protected abstract String getDisplay(int nRound, ClientHoldemHand hhand, ClientPlayer asViewedBy, ClientHand hand);
 }

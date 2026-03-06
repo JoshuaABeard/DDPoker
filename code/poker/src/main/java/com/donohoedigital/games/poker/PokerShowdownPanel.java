@@ -32,13 +32,15 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
+import com.donohoedigital.games.poker.display.ClientHand;
+import com.donohoedigital.games.poker.display.ClientCard;
 
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.server.*;
-import com.donohoedigital.games.poker.gameserver.SimulationResult;
+import com.donohoedigital.games.poker.protocol.dto.SimulationResult;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.gui.*;
@@ -200,7 +202,7 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
         opponents.setLayout(new GridLayout(2, 5, 10, 10));
         SimulatorDialog.SimHandPanel cards;
 
-        for (int i = 0; i < PokerConstants.SEATS; i++) {
+        for (int i = 0; i < ProtocolConstants.SEATS; i++) {
             cards = new SimulatorDialog.SimHandPanel(sim_, table_, table_.getPlayer(i).getHand());
             DDLabelBorder boardcards = new ShowBorder(i == 0 ? "myhand" : "opponent", cards, i);
             opponents.add(boardcards);
@@ -265,7 +267,7 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
     private void updateNumOpponents() {
         int nNum = numOpponents_.getSpinner().getValue();
         ShowBorder show;
-        for (int i = 0; i < PokerConstants.SEATS; i++) {
+        for (int i = 0; i < ProtocolConstants.SEATS; i++) {
             show = (ShowBorder) opponents_.get(i);
             show.setEnabled(i <= nNum);
         }
@@ -290,7 +292,7 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
      */
     private void clearResults() {
         progress_.setPercentDone(0);
-        for (int i = 0; i < PokerConstants.SEATS; i++) {
+        for (int i = 0; i < ProtocolConstants.SEATS; i++) {
             setResults(i, "");
         }
     }
@@ -400,18 +402,18 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
 
             // Player 0 hole cards (non-blank)
             List<String> holeCards = new ArrayList<>();
-            Hand playerHand = table.getPlayer(0).getHand();
+            ClientHand playerHand = table.getPlayer(0).getHand();
             for (int i = 0; i < playerHand.size(); i++) {
-                Card c = playerHand.getCard(i);
+                ClientCard c = playerHand.getCard(i);
                 if (!c.isBlank())
                     holeCards.add(c.toStringSingle());
             }
 
             // Community cards (non-blank)
             List<String> communityCards = new ArrayList<>();
-            Hand community = hhand.getCommunity();
+            ClientHand community = hhand.getCommunity();
             for (int i = 0; i < community.size(); i++) {
-                Card c = community.getCard(i);
+                ClientCard c = community.getCard(i);
                 if (!c.isBlank())
                     communityCards.add(c.toStringSingle());
             }
@@ -419,10 +421,10 @@ public class PokerShowdownPanel extends DDTabPanel implements DDProgressFeedback
             // Known opponent hands (non-blank pairs only)
             List<List<String>> knownOpponentHands = new ArrayList<>();
             for (int i = 1; i < numPlayers; i++) {
-                Hand oppHand = table.getPlayer(i).getHand();
+                ClientHand oppHand = table.getPlayer(i).getHand();
                 List<String> oppCards = new ArrayList<>();
                 for (int j = 0; j < oppHand.size(); j++) {
-                    Card c = oppHand.getCard(j);
+                    ClientCard c = oppHand.getCard(j);
                     if (!c.isBlank())
                         oppCards.add(c.toStringSingle());
                 }

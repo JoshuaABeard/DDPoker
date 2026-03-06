@@ -57,6 +57,13 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- Protocol DTOs and message types (shared client/server contract) -->
+        <dependency>
+            <groupId>com.donohoedigital</groupId>
+            <artifactId>pokergameprotocol</artifactId>
+            <version>3.3.0-CommunityEdition</version>
+        </dependency>
+
         <!-- Core game logic (Swing-free) -->
         <dependency>
             <groupId>com.donohoedigital</groupId>

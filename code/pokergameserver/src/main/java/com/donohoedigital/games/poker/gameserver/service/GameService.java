@@ -33,24 +33,24 @@ import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.PostConstruct;
 
-import com.donohoedigital.games.poker.gameserver.GameConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
 import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.GameInstanceState;
 import com.donohoedigital.games.poker.gameserver.GameServerException;
 import com.donohoedigital.games.poker.gameserver.GameServerProperties;
 import com.donohoedigital.games.poker.gameserver.GameServerException.ErrorCode;
-import com.donohoedigital.games.poker.gameserver.dto.CommunityGameRegisterRequest;
-import com.donohoedigital.games.poker.gameserver.dto.GameJoinResponse;
-import com.donohoedigital.games.poker.gameserver.dto.GameListResponse;
-import com.donohoedigital.games.poker.gameserver.dto.GameSettingsRequest;
-import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
-import com.donohoedigital.games.poker.gameserver.dto.GameSummary.BlindsSummary;
+import com.donohoedigital.games.poker.protocol.dto.CommunityGameRegisterRequest;
+import com.donohoedigital.games.poker.protocol.dto.GameJoinResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameListResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameSettingsRequest;
+import com.donohoedigital.games.poker.protocol.dto.GameSummary;
+import com.donohoedigital.games.poker.protocol.dto.GameSummary.BlindsSummary;
 import com.donohoedigital.games.poker.gameserver.persistence.entity.GameInstanceEntity;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.GameEventRepository;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.GameInstanceRepository;
 import com.donohoedigital.games.poker.gameserver.websocket.LobbyBroadcaster;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData.LobbyPlayerData;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageData.LobbyPlayerData;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -235,7 +235,7 @@ public class GameService {
         if (entity == null) {
             return null;
         }
-        List<com.donohoedigital.games.poker.gameserver.dto.LobbyPlayerInfo> players = java.util.Collections.emptyList();
+        List<com.donohoedigital.games.poker.protocol.dto.LobbyPlayerInfo> players = java.util.Collections.emptyList();
         if (gameInstanceManager != null) {
             GameInstance instance = gameInstanceManager.getGame(gameId);
             if (instance != null) {
@@ -494,7 +494,7 @@ public class GameService {
     }
 
     private GameSummary toSummaryWithPlayers(GameInstanceEntity e,
-            List<com.donohoedigital.games.poker.gameserver.dto.LobbyPlayerInfo> players) {
+            List<com.donohoedigital.games.poker.protocol.dto.LobbyPlayerInfo> players) {
         boolean isPrivate = e.getPasswordHash() != null;
         String wsUrl = isPrivate ? null : e.getWsUrl();
         BlindsSummary blinds = parseBlinds(e.getProfileData());

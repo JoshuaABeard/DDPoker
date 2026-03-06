@@ -35,7 +35,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.donohoedigital.games.poker.gameserver.PokerSimulationService;
-import com.donohoedigital.games.poker.gameserver.SimulationResult;
+import com.donohoedigital.games.poker.protocol.dto.SimulationResult;
 
 @WebMvcTest
 @Import({TestSecurityConfiguration.class, SimulationController.class})

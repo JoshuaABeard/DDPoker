@@ -24,7 +24,6 @@ import com.donohoedigital.comms.DMTypedHashMap;
 import com.donohoedigital.comms.Version;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import org.junit.jupiter.api.*;
 
@@ -53,7 +52,7 @@ class PokerMainTest {
     void should_ReturnPokerConstantsVersion_WhenGetVersion() {
         Version version = pokerMain.getVersion();
 
-        assertThat(version).isEqualTo(PokerConstants.VERSION);
+        assertThat(version).isEqualTo(PokerClientConstants.VERSION);
     }
 
     @Test
@@ -100,7 +99,7 @@ class PokerMainTest {
     @Test
     void should_ReturnTrue_WhenMessageIsValid() {
         DDMessage message = new DDMessage(0);
-        message.setVersion(PokerConstants.VERSION);
+        message.setVersion(PokerClientConstants.VERSION);
 
         boolean valid = pokerMain.isValid(message);
 

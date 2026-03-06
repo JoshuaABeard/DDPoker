@@ -38,8 +38,8 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
 import com.donohoedigital.games.poker.gameserver.auth.JwtAuthenticationFilter;
-import com.donohoedigital.games.poker.gameserver.dto.ChangePasswordRequest;
-import com.donohoedigital.games.poker.gameserver.dto.UpdateProfileRequest;
+import com.donohoedigital.games.poker.protocol.dto.ChangePasswordRequest;
+import com.donohoedigital.games.poker.protocol.dto.UpdateProfileRequest;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.OnlineProfileRepository;
 import com.donohoedigital.games.poker.gameserver.service.ProfileService;
 import com.donohoedigital.games.poker.model.OnlineProfile;
@@ -106,7 +106,14 @@ public class ProfileController {
      */
     @PutMapping("/{id}/password")
     public ResponseEntity<Void> changePassword(@PathVariable("id") Long id,
-            @Valid @RequestBody ChangePasswordRequest request) {
+            @RequestBody ChangePasswordRequest request) {
+        if (isBlank(request.oldPassword())) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (isBlank(request.newPassword()) || request.newPassword().length() < 8
+                || request.newPassword().length() > 128) {
+            return ResponseEntity.badRequest().build();
+        }
         Long authenticatedProfileId = getAuthenticatedProfileId();
         if (!authenticatedProfileId.equals(id)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -163,6 +170,10 @@ public class ProfileController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(Map.of("success", true, "message", "Profile retired successfully"));
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.isBlank();
     }
 
     private Long getAuthenticatedProfileId() {

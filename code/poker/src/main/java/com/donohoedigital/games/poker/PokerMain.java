@@ -48,7 +48,6 @@ import com.donohoedigital.games.config.GameConfigUtils;
 import com.donohoedigital.games.config.GameState;
 import com.donohoedigital.games.config.GameStateFactory;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.donohoedigital.games.poker.server.EmbeddedGameServer;
 import com.donohoedigital.games.poker.server.GameSaveManager;
@@ -94,7 +93,7 @@ public class PokerMain extends GameEngine {
 
         // initialize logging before anything else (need version string for log file
         // directory)
-        Utils.setVersionString(PokerConstants.VERSION.getMajorAsString());
+        Utils.setVersionString(PokerClientConstants.VERSION.getMajorAsString());
         LoggingConfig loggingConfig = new LoggingConfig(APP_NAME, ApplicationType.CLIENT);
         loggingConfig.init();
         logger = LogManager.getLogger(PokerMain.class);
@@ -149,7 +148,7 @@ public class PokerMain extends GameEngine {
      */
     public PokerMain(String sConfigName, String sMainModule, String[] args, boolean bHeadless, boolean bLoadNames)
             throws ApplicationError {
-        super(sConfigName, sMainModule, PokerConstants.VERSION.getMajorAsString(), args, bHeadless);
+        super(sConfigName, sMainModule, PokerClientConstants.VERSION.getMajorAsString(), args, bHeadless);
         this.bLoadNames = bLoadNames;
     }
 
@@ -312,7 +311,7 @@ public class PokerMain extends GameEngine {
      */
     @Override
     public Version getVersion() {
-        return PokerConstants.VERSION;
+        return PokerClientConstants.VERSION;
     }
 
     /**
@@ -342,7 +341,7 @@ public class PokerMain extends GameEngine {
 
             // if first attempt failed, try again after 3 seconds to see
             // if lock clears
-            Utils.sleepMillis(PokerConstants.PROFILE_RETRY_MILLIS);
+            Utils.sleepMillis(PokerClientConstants.PROFILE_RETRY_MILLIS);
         }
 
         try {
@@ -478,7 +477,7 @@ public class PokerMain extends GameEngine {
     @Override
     protected Dimension getStartingSize() {
         DisplayMode mode = frame_.getDisplayMode();
-        int height = Math.max(DESIRED_MIN_HEIGHT, mode.getHeight() - PokerConstants.VERTICAL_SCREEN_FREE_SPACE);
+        int height = Math.max(DESIRED_MIN_HEIGHT, mode.getHeight() - PokerClientConstants.VERTICAL_SCREEN_FREE_SPACE);
         int width = Math.max(DESIRED_MIN_WIDTH, (DESIRED_MIN_WIDTH * height) / DESIRED_MIN_HEIGHT);
         return new Dimension(width, height);
     }

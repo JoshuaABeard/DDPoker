@@ -31,10 +31,10 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.display.ClientCard;
 
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.ai.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
@@ -46,7 +46,7 @@ import java.util.List;
 public class HandGroupGridPanel extends DDPanel implements ActionListener, KeyListener, FocusListener {
     // static Logger logger = LogManager.getLogger(HandGroupGridPanel.class);
 
-    private HandButton handButtons[][] = new HandButton[Card.ACE + 1][Card.ACE + 1];
+    private HandButton handButtons[][] = new HandButton[ClientCard.ACE + 1][ClientCard.ACE + 1];
     private DDLabel summaryLabel_;
 
     private HandGroup group_ = null;
@@ -69,8 +69,8 @@ public class HandGroupGridPanel extends DDPanel implements ActionListener, KeyLi
         JPanel gridPanel = new DDPanel(GuiManager.DEFAULT, "HandGroupGrid");
         gridPanel.setLayout(new GridLayout(13, 13));
 
-        for (int rank1 = Card.ACE; rank1 >= Card.TWO; --rank1) {
-            for (int rank2 = Card.ACE; rank2 >= Card.TWO; --rank2) {
+        for (int rank1 = ClientCard.ACE; rank1 >= ClientCard.TWO; --rank1) {
+            for (int rank2 = ClientCard.ACE; rank2 >= ClientCard.TWO; --rank2) {
                 HandButton button = new HandButton(rank1, rank2, bLabels);
                 button.addActionListener(this);
                 gridPanel.add(button);
@@ -78,8 +78,8 @@ public class HandGroupGridPanel extends DDPanel implements ActionListener, KeyLi
             }
         }
 
-        FIRST = handButtons[Card.ACE][Card.ACE];
-        LAST = handButtons[Card.TWO][Card.TWO];
+        FIRST = handButtons[ClientCard.ACE][ClientCard.ACE];
+        LAST = handButtons[ClientCard.TWO][ClientCard.TWO];
 
         summaryLabel_ = new DDLabel("blank", "HandGroupDetails");
         summaryLabel_.setBorder(BorderFactory.createEmptyBorder(2, 3, 2, 3));
@@ -109,8 +109,8 @@ public class HandGroupGridPanel extends DDPanel implements ActionListener, KeyLi
 
         group_ = group;
 
-        for (int rank1 = Card.ACE; rank1 >= Card.TWO; --rank1) {
-            for (int rank2 = Card.ACE; rank2 >= Card.TWO; --rank2) {
+        for (int rank1 = ClientCard.ACE; rank1 >= ClientCard.TWO; --rank1) {
+            for (int rank2 = ClientCard.ACE; rank2 >= ClientCard.TWO; --rank2) {
                 boolean toggled = (group != null) && group.contains(rank1, rank2, (rank2 < rank1));
 
                 if (toggled)
@@ -151,14 +151,14 @@ public class HandGroupGridPanel extends DDPanel implements ActionListener, KeyLi
         } else {
             summaryLabel_
                     .setText(PropertyConfig.getMessage("msg.handgroup.summary." + (count_ == 1 ? "singular" : "plural"),
-                            count_, PokerConstants.formatPercent(group_.getPercent())));
+                            count_, PokerClientConstants.formatPercent(group_.getPercent())));
         }
     }
 
     public void setEnabled(boolean bEnabled) {
         bEnabled_ = bEnabled;
-        for (int rank1 = Card.ACE; rank1 >= Card.TWO; --rank1) {
-            for (int rank2 = Card.ACE; rank2 >= Card.TWO; --rank2) {
+        for (int rank1 = ClientCard.ACE; rank1 >= ClientCard.TWO; --rank1) {
+            for (int rank2 = ClientCard.ACE; rank2 >= ClientCard.TWO; --rank2) {
                 handButtons[rank1][rank2].setEnabled(bEnabled_);
             }
         }
@@ -270,14 +270,14 @@ public class HandGroupGridPanel extends DDPanel implements ActionListener, KeyLi
                 break;
         }
 
-        if (x > Card.ACE)
-            x = Card.TWO;
-        if (x < Card.TWO)
-            x = Card.ACE;
-        if (y > Card.ACE)
-            y = Card.TWO;
-        if (y < Card.TWO)
-            y = Card.ACE;
+        if (x > ClientCard.ACE)
+            x = ClientCard.TWO;
+        if (x < ClientCard.TWO)
+            x = ClientCard.ACE;
+        if (y > ClientCard.ACE)
+            y = ClientCard.TWO;
+        if (y < ClientCard.TWO)
+            y = ClientCard.ACE;
 
         lastFocusX_ = x;
         lastFocusY_ = y;
@@ -332,9 +332,9 @@ public class HandGroupGridPanel extends DDPanel implements ActionListener, KeyLi
                 String label;
 
                 if (suited) {
-                    label = Card.getRankSingle(rank1) + Card.getRankSingle(rank2) + "s";
+                    label = ClientCard.getRankSingle(rank1) + ClientCard.getRankSingle(rank2) + "s";
                 } else {
-                    label = Card.getRankSingle(rank2) + Card.getRankSingle(rank1);
+                    label = ClientCard.getRankSingle(rank2) + ClientCard.getRankSingle(rank1);
                 }
 
                 setText(label);

@@ -20,7 +20,7 @@ package com.donohoedigital.games.poker.online;
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
 import com.donohoedigital.games.poker.PokerGame;
-import com.donohoedigital.games.poker.engine.PokerConstants;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.event.PokerTableListener;
 import org.junit.jupiter.api.BeforeAll;
@@ -61,7 +61,7 @@ class RemotePokerTableTest {
 
     @Test
     void updateFromStateSetsPlayers() {
-        ClientPlayer[] players = new ClientPlayer[PokerConstants.SEATS];
+        ClientPlayer[] players = new ClientPlayer[ProtocolConstants.SEATS];
         players[0] = new ClientPlayer(1, "Alice", true);
         players[1] = new ClientPlayer(2, "Bob", false);
         table.updateFromState(players, 0);
@@ -121,8 +121,8 @@ class RemotePokerTableTest {
     @Test
     void getPlayerBoundsCheck() {
         assertThat(table.getPlayer(-1)).isNull();
-        assertThat(table.getPlayer(PokerConstants.SEATS)).isNull();
-        assertThat(table.getPlayer(PokerConstants.SEATS - 1)).isNull(); // empty seat
+        assertThat(table.getPlayer(ProtocolConstants.SEATS)).isNull();
+        assertThat(table.getPlayer(ProtocolConstants.SEATS - 1)).isNull(); // empty seat
     }
 
     // -------------------------------------------------------------------------

@@ -33,7 +33,6 @@
 package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.event.*;
 import com.donohoedigital.games.poker.event.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,19 +41,19 @@ import javax.swing.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Bridge between pokergamecore's GameEvent records and legacy PokerTableEvent
- * bitmasks. Converts new events to legacy format and dispatches on Swing EDT.
+ * Swing EDT event dispatcher for PokerTableEvents. Dispatches legacy
+ * PokerTableEvents to registered listeners on the Swing EDT thread.
  *
  * <p>
- * Standalone event bus — does not extend {@code GameEventBus}. Manages its own
- * listener list and publish method. Accepts PokerGame for table resolution.
+ * Standalone event bus — manages its own listener list and publish method.
+ * Accepts PokerGame for table resolution.
+ * </p>
  */
 public class SwingEventBus {
 
     private static final Logger logger = LogManager.getLogger(SwingEventBus.class);
 
     private final PokerGame game;
-    private final CopyOnWriteArrayList<GameEventListener> listeners = new CopyOnWriteArrayList<>();
     private final CopyOnWriteArrayList<PokerTableListener> legacyListeners = new CopyOnWriteArrayList<>();
 
     /**
@@ -68,42 +67,16 @@ public class SwingEventBus {
     }
 
     /**
-     * Adds a GameEvent listener.
+     * Publishes a PokerTableEvent to all registered listeners on the Swing EDT.
      */
-    public void addListener(GameEventListener listener) {
-        listeners.addIfAbsent(listener);
-    }
-
-    /**
-     * Removes a GameEvent listener.
-     */
-    public void removeListener(GameEventListener listener) {
-        listeners.remove(listener);
-    }
-
-    /**
-     * Publishes a GameEvent to all registered listeners and legacy listeners.
-     */
-    public void publish(GameEvent event) {
-        logger.debug("[SwingEventBus] publish event={} listeners={}", event.getClass().getSimpleName(),
-                legacyListeners.size());
-        // Notify GameEvent listeners
-        for (GameEventListener listener : listeners) {
-            listener.onEvent(event);
-        }
-
-        // Convert to legacy event and dispatch on EDT
-        if (!legacyListeners.isEmpty() && game != null) {
-            PokerTableEvent legacyEvent = convertToLegacy(event);
-            logger.debug("[SwingEventBus] converted to legacy={}",
-                    legacyEvent != null ? legacyEvent.getTypeAsString() : "null");
-            if (legacyEvent != null) {
-                SwingUtilities.invokeLater(() -> {
-                    for (PokerTableListener listener : legacyListeners) {
-                        listener.tableEventOccurred(legacyEvent);
-                    }
-                });
-            }
+    public void publish(PokerTableEvent event) {
+        logger.debug("[SwingEventBus] publish event={} listeners={}", event.getTypeAsString(), legacyListeners.size());
+        if (!legacyListeners.isEmpty()) {
+            SwingUtilities.invokeLater(() -> {
+                for (PokerTableListener listener : legacyListeners) {
+                    listener.tableEventOccurred(event);
+                }
+            });
         }
     }
 
@@ -119,161 +92,5 @@ public class SwingEventBus {
      */
     public void removeLegacyListener(PokerTableListener listener) {
         legacyListeners.remove(listener);
-    }
-
-    /**
-     * Convert GameEvent record to legacy PokerTableEvent.
-     * Extracts table from event's tableId field.
-     */
-    private PokerTableEvent convertToLegacy(GameEvent event) {
-        // Extract table ID from event (most events have tableId)
-        int tableId = getTableId(event);
-        ClientPokerTable table = tableId >= 0 && game != null ? game.getTableByNumber(tableId) : null;
-
-        if (table == null) {
-            return null; // Can't convert without table
-        }
-
-        return switch (event) {
-            case GameEvent.HandStarted e ->
-                new PokerTableEvent(PokerTableEvent.TYPE_NEW_HAND, table);
-
-            case GameEvent.PlayerActed e ->
-                // PlayerActed needs HandAction, but we don't have it in the event
-                // For now, just emit a basic event
-                new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ACTION, table);
-
-            case GameEvent.CommunityCardsDealt e ->
-                new PokerTableEvent(PokerTableEvent.TYPE_DEALER_ACTION, table);
-
-            case GameEvent.HandCompleted e ->
-                new PokerTableEvent(PokerTableEvent.TYPE_END_HAND, table);
-
-            case GameEvent.TableStateChanged e ->
-                new PokerTableEvent(PokerTableEvent.TYPE_STATE_CHANGED, table,
-                    e.oldState().toLegacy(), e.newState().toLegacy());
-
-            case GameEvent.PlayerAdded e -> {
-                ClientPlayer player = game.getPokerPlayerFromID(e.playerId());
-                yield new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ADDED, table, player, e.seat());
-            }
-
-            case GameEvent.PlayerRemoved e -> {
-                ClientPlayer player = game.getPokerPlayerFromID(e.playerId());
-                yield new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REMOVED, table, player, e.seat());
-            }
-
-            case GameEvent.LevelChanged e ->
-                new PokerTableEvent(PokerTableEvent.TYPE_LEVEL_CHANGED, table, e.newLevel());
-
-            case GameEvent.ButtonMoved e ->
-                new PokerTableEvent(PokerTableEvent.TYPE_BUTTON_MOVED, table, e.newSeat());
-
-            case GameEvent.ShowdownStarted e ->
-                new PokerTableEvent(PokerTableEvent.TYPE_DEALER_ACTION, table);
-
-            case GameEvent.PotAwarded e ->
-                new PokerTableEvent(PokerTableEvent.TYPE_END_HAND, table);
-
-            case GameEvent.TournamentCompleted e ->
-                null; // No direct legacy equivalent
-
-            case GameEvent.BreakStarted e ->
-                new PokerTableEvent(PokerTableEvent.TYPE_STATE_CHANGED, table);
-
-            case GameEvent.BreakEnded e ->
-                new PokerTableEvent(PokerTableEvent.TYPE_STATE_CHANGED, table);
-
-            case GameEvent.ColorUpCompleted e ->
-                new PokerTableEvent(PokerTableEvent.TYPE_STATE_CHANGED, table);
-
-            case GameEvent.CurrentPlayerChanged e ->
-                // Current player changed needs basic event
-                new PokerTableEvent(PokerTableEvent.TYPE_CURRENT_PLAYER_CHANGED, table);
-
-            case GameEvent.PlayerRebuy e -> {
-                ClientPlayer player = game.getPokerPlayerFromID(e.playerId());
-                // Rebuy needs cash, chips, pending flag - but we only have amount in event
-                yield new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_REBUY, table, player,
-                    e.amount(), e.amount(), false);
-            }
-
-            case GameEvent.PlayerAddon e -> {
-                ClientPlayer player = game.getPokerPlayerFromID(e.playerId());
-                // Addon needs cash, chips, pending flag - but we only have amount in event
-                yield new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_ADDON, table, player,
-                    e.amount(), e.amount(), false);
-            }
-
-            case GameEvent.ObserverAdded e ->
-                new PokerTableEvent(PokerTableEvent.TYPE_OBSERVER_ADDED, table);
-
-            case GameEvent.ObserverRemoved e ->
-                new PokerTableEvent(PokerTableEvent.TYPE_OBSERVER_REMOVED, table);
-
-            case GameEvent.CleaningDone e ->
-                new PokerTableEvent(PokerTableEvent.TYPE_CLEANING_DONE, table);
-
-            case GameEvent.PlayerEliminated e ->
-                null; // No direct legacy equivalent
-
-            case GameEvent.ActionTimeout ignored ->
-                null; // Client handles ACTION_TIMEOUT via WebSocket message, not legacy event
-
-            case GameEvent.RebuyOffered ignored ->
-                null; // Client handles REBUY_OFFERED via WebSocket message
-
-            case GameEvent.AddonOffered ignored ->
-                null; // Client handles ADDON_OFFERED via WebSocket message
-
-            case GameEvent.NeverBrokeOffered ignored ->
-                null; // Client handles NEVER_BROKE_OFFERED via WebSocket message
-
-case GameEvent.ChipsTransferred e ->
-                new PokerTableEvent(PokerTableEvent.TYPE_PLAYER_CHIPS_CHANGED, table);
-
-            case GameEvent.ColorUpStarted e ->
-                new PokerTableEvent(PokerTableEvent.TYPE_STATE_CHANGED, table);
-
-            case GameEvent.AllInRunoutPaused ignored ->
-                null; // Client handles CONTINUE_RUNOUT via WebSocket message
-        };
-    }
-
-    /**
-     * Extract table ID from event record.
-     */
-    private int getTableId(GameEvent event) {
-        return switch (event) {
-            case GameEvent.HandStarted e -> e.tableId();
-            case GameEvent.PlayerActed e -> e.tableId();
-            case GameEvent.CommunityCardsDealt e -> e.tableId();
-            case GameEvent.HandCompleted e -> e.tableId();
-            case GameEvent.TableStateChanged e -> e.tableId();
-            case GameEvent.PlayerAdded e -> e.tableId();
-            case GameEvent.PlayerRemoved e -> e.tableId();
-            case GameEvent.ButtonMoved e -> e.tableId();
-            case GameEvent.ShowdownStarted e -> e.tableId();
-            case GameEvent.PotAwarded e -> e.tableId();
-            case GameEvent.BreakStarted e -> e.tableId();
-            case GameEvent.BreakEnded e -> e.tableId();
-            case GameEvent.ColorUpCompleted e -> e.tableId();
-            case GameEvent.CurrentPlayerChanged e -> e.tableId();
-            case GameEvent.PlayerRebuy e -> e.tableId();
-            case GameEvent.PlayerAddon e -> e.tableId();
-            case GameEvent.ObserverAdded e -> e.tableId();
-            case GameEvent.ObserverRemoved e -> e.tableId();
-            case GameEvent.CleaningDone e -> e.tableId();
-            case GameEvent.LevelChanged e -> -1; // No tableId for game-level events
-            case GameEvent.TournamentCompleted e -> -1; // No tableId for game-level events
-            case GameEvent.PlayerEliminated e -> e.tableId();
-            case GameEvent.ActionTimeout e -> -1; // No tableId for timeout events
-            case GameEvent.RebuyOffered e -> e.tableId();
-            case GameEvent.AddonOffered e -> e.tableId();
-            case GameEvent.NeverBrokeOffered e -> e.tableId();
-case GameEvent.ChipsTransferred e -> e.tableId();
-            case GameEvent.ColorUpStarted e -> e.tableId();
-            case GameEvent.AllInRunoutPaused e -> e.tableId();
-        };
     }
 }

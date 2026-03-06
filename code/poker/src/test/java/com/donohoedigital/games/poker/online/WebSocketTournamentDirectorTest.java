@@ -20,9 +20,9 @@ package com.donohoedigital.games.poker.online;
 import com.donohoedigital.games.poker.GameClock;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerTableInput;
-import com.donohoedigital.games.poker.engine.PokerConstants;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.PokerClientConstants;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageType;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -181,7 +181,7 @@ class WebSocketTournamentDirectorTest {
         dispatch(ServerMessageType.HAND_STARTED, handStarted(0, 1, 2));
 
         assertThat(table.getRemoteHand()).isNotNull();
-        assertThat(table.getRemoteHand().getRound()).isEqualTo(BettingRound.PRE_FLOP);
+        assertThat(table.getRemoteHand().getRound()).isEqualTo(ClientBettingRound.PRE_FLOP);
         assertThat(table.getButton()).isEqualTo(0);
     }
 
@@ -248,7 +248,7 @@ class WebSocketTournamentDirectorTest {
         dispatch(ServerMessageType.COMMUNITY_CARDS_DEALT, payload);
 
         RemoteHoldemHand hand = requireTable().getRemoteHand();
-        assertThat(hand.getRound()).isEqualTo(BettingRound.FLOP);
+        assertThat(hand.getRound()).isEqualTo(ClientBettingRound.FLOP);
         assertThat(hand.getCommunity().size()).isEqualTo(3);
     }
 
@@ -701,7 +701,7 @@ class WebSocketTournamentDirectorTest {
         dispatch(ServerMessageType.SHOWDOWN_STARTED, payload);
 
         RemoteHoldemHand hand = requireTable().getRemoteHand();
-        assertThat(hand.getRound()).isEqualTo(BettingRound.SHOWDOWN);
+        assertThat(hand.getRound()).isEqualTo(ClientBettingRound.SHOWDOWN);
     }
 
     // -------------------------------------------------------------------------
@@ -778,7 +778,7 @@ class WebSocketTournamentDirectorTest {
         payload.putArray("winnerIds").add(1L);
         dispatch(ServerMessageType.POT_AWARDED, payload);
 
-        assertThat(hand.getRound()).isNotEqualTo(BettingRound.SHOWDOWN);
+        assertThat(hand.getRound()).isNotEqualTo(ClientBettingRound.SHOWDOWN);
     }
 
     @Test
@@ -798,7 +798,7 @@ class WebSocketTournamentDirectorTest {
         payload.putArray("winnerIds").add(1L);
         dispatch(ServerMessageType.POT_AWARDED, payload);
 
-        assertThat(hand.getRound()).isEqualTo(BettingRound.SHOWDOWN);
+        assertThat(hand.getRound()).isEqualTo(ClientBettingRound.SHOWDOWN);
     }
 
     @Test
@@ -822,7 +822,7 @@ class WebSocketTournamentDirectorTest {
         payload.putArray("winnerIds").add(1L);
         dispatch(ServerMessageType.POT_AWARDED, payload);
 
-        assertThat(table.getRemoteHand().getRound()).isNotEqualTo(BettingRound.SHOWDOWN);
+        assertThat(table.getRemoteHand().getRound()).isNotEqualTo(ClientBettingRound.SHOWDOWN);
     }
 
     // -------------------------------------------------------------------------
@@ -1263,8 +1263,8 @@ class WebSocketTournamentDirectorTest {
         dispatch(ServerMessageType.PLAYER_ACTED, payload);
 
         assertThat(received).hasSize(1);
-        assertThat(received.get(0)[0]).isEqualTo(PokerConstants.CHAT_DEALER_MSG_ID);
-        assertThat(received.get(0)[1]).isEqualTo(PokerConstants.CHAT_2);
+        assertThat(received.get(0)[0]).isEqualTo(PokerClientConstants.CHAT_DEALER_MSG_ID);
+        assertThat(received.get(0)[1]).isEqualTo(PokerClientConstants.CHAT_2);
     }
 
     @Test
@@ -1281,8 +1281,8 @@ class WebSocketTournamentDirectorTest {
         dispatch(ServerMessageType.ACTION_TIMEOUT, payload);
 
         assertThat(received).hasSize(1);
-        assertThat(received.get(0)[0]).isEqualTo(PokerConstants.CHAT_DEALER_MSG_ID);
-        assertThat(received.get(0)[1]).isEqualTo(PokerConstants.CHAT_2);
+        assertThat(received.get(0)[0]).isEqualTo(PokerClientConstants.CHAT_DEALER_MSG_ID);
+        assertThat(received.get(0)[1]).isEqualTo(PokerClientConstants.CHAT_2);
     }
 
     // -------------------------------------------------------------------------

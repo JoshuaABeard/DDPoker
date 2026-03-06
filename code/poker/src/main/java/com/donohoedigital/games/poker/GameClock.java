@@ -33,19 +33,15 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.comms.*;
-import com.donohoedigital.games.poker.engine.PureTournamentClock;
 
 import javax.swing.Timer;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
 /**
- * Swing-based game clock that extends javax.swing.Timer for UI updates while
- * delegating time tracking to PureTournamentClock (which has no Swing
- * dependencies).
- *
- * Phase 4: Modified to use PureTournamentClock for time tracking, keeping Swing
- * Timer only for UI tick events.
+ * Swing-based game clock that extends javax.swing.Timer for UI updates. Tracks
+ * time internally using System.currentTimeMillis() without depending on any
+ * engine classes.
  */
 @DataCoder('c')
 public class GameClock extends Timer implements ActionListener, DataMarshal {
@@ -54,8 +50,10 @@ public class GameClock extends Timer implements ActionListener, DataMarshal {
     private static final int ACTION_STOP = 2;
     private static final int ACTION_SET = 3;
 
-    // Pure time tracking (no Swing dependencies)
-    private final PureTournamentClock pureClock;
+    // Time tracking state (inlined from PureTournamentClock)
+    private long millisRemaining_;
+    private boolean clockRunning_;
+    private long tickBeginTime_;
 
     // UI state (transient)
     private boolean bFlash_;
@@ -64,7 +62,9 @@ public class GameClock extends Timer implements ActionListener, DataMarshal {
     public GameClock() {
         super(1000, null);
         addActionListener(this);
-        this.pureClock = new PureTournamentClock();
+        this.millisRemaining_ = 0;
+        this.clockRunning_ = false;
+        this.tickBeginTime_ = 0;
     }
 
     public void setFlash(boolean b) {
@@ -76,15 +76,16 @@ public class GameClock extends Timer implements ActionListener, DataMarshal {
     }
 
     public int getSecondsRemaining() {
-        return pureClock.getSecondsRemaining();
+        return (int) (millisRemaining_ / 1000);
     }
 
     public boolean isExpired() {
-        return pureClock.isExpired();
+        return millisRemaining_ <= 0;
     }
 
     public synchronized void setSecondsRemaining(int n) {
-        pureClock.setSecondsRemaining(n);
+        tickBeginTime_ = System.currentTimeMillis();
+        millisRemaining_ = n * 1000L;
         this.fireActionPerformed(new ActionEvent(this, ACTION_SET, null, System.currentTimeMillis(), 0));
     }
 
@@ -104,7 +105,10 @@ public class GameClock extends Timer implements ActionListener, DataMarshal {
 
     public void start() {
         if (!isRunning()) {
-            pureClock.start();
+            if (!clockRunning_) {
+                tickBeginTime_ = System.currentTimeMillis();
+                clockRunning_ = true;
+            }
             super.start(); // Start Swing Timer for UI ticks
             this.fireActionPerformed(new ActionEvent(this, ACTION_START, null, System.currentTimeMillis(), 0));
         }
@@ -112,8 +116,8 @@ public class GameClock extends Timer implements ActionListener, DataMarshal {
 
     public void stop() {
         if (isRunning()) {
-            pureClock.tick(); // Update time before stopping
-            pureClock.stop();
+            tickClock(); // Update time before stopping
+            clockRunning_ = false;
             super.stop(); // Stop Swing Timer
             this.fireActionPerformed(new ActionEvent(this, ACTION_STOP, null, System.currentTimeMillis(), 0));
         }
@@ -129,12 +133,11 @@ public class GameClock extends Timer implements ActionListener, DataMarshal {
 
     public synchronized void actionPerformed(ActionEvent e) {
         if (e.getID() == ACTION_TICK) {
-            // Delegate time tracking to pureClock
-            pureClock.tick();
+            tickClock();
 
             // Stop clock if expired (fires ACTION_STOP event to listeners)
-            if (pureClock.isExpired()) {
-                stop(); // Calls stop() to fire event, matches original behavior
+            if (millisRemaining_ <= 0) {
+                stop();
             }
         }
 
@@ -175,8 +178,9 @@ public class GameClock extends Timer implements ActionListener, DataMarshal {
         long millisRemaining = list.removeLongToken();
         boolean wasRunning = list.removeBooleanToken();
 
-        // Set time via pureClock (preserves millisecond precision)
-        pureClock.setMillisRemaining(millisRemaining);
+        // Set time (preserves millisecond precision)
+        tickBeginTime_ = System.currentTimeMillis();
+        millisRemaining_ = millisRemaining;
 
         // Restore running state
         if (wasRunning) {
@@ -186,9 +190,24 @@ public class GameClock extends Timer implements ActionListener, DataMarshal {
 
     public String marshal(MsgState state) {
         TokenizedList list = new TokenizedList();
-        list.addToken(pureClock.getMillisRemaining());
+        list.addToken(millisRemaining_);
         list.addToken(isRunning());
         return list.marshal(state);
+    }
+
+    /** Update remaining time based on wall clock elapsed since last tick. */
+    private void tickClock() {
+        if (!clockRunning_)
+            return;
+        long now = System.currentTimeMillis();
+        long elapsed = now - tickBeginTime_;
+        if (elapsed >= millisRemaining_) {
+            millisRemaining_ = 0;
+            clockRunning_ = false;
+        } else {
+            millisRemaining_ -= elapsed;
+        }
+        tickBeginTime_ = now;
     }
 
 }

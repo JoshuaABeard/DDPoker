@@ -31,15 +31,17 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.display.ClientHand;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
+import com.donohoedigital.games.poker.protocol.dto.HandEvaluationData;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 
 import java.util.*;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 
 /**
@@ -63,12 +65,12 @@ public class Showdown {
         ResultsPiece piece;
         Territory t;
         boolean bUncontested = hhand.isUncontested();
-        boolean bShowRiver = PokerUtils.isCheatOn(context, PokerConstants.OPTION_CHEAT_RABBITHUNT);
-        boolean bShowWin = PokerUtils.isCheatOn(context, PokerConstants.OPTION_CHEAT_SHOWWINNINGHAND);
-        boolean bShowMuck = PokerUtils.isCheatOn(context, PokerConstants.OPTION_CHEAT_SHOW_MUCKED);
-        boolean bHumanUp = !PokerUtils.isOptionOn(PokerConstants.OPTION_HOLE_CARDS_DOWN);
-        boolean bAIFaceUp = PokerUtils.isCheatOn(context, PokerConstants.OPTION_CHEAT_AIFACEUP);
-        boolean bSeenRiver = hhand.isActionInRound(BettingRound.RIVER.toLegacy());
+        boolean bShowRiver = PokerUtils.isCheatOn(context, PokerClientConstants.OPTION_CHEAT_RABBITHUNT);
+        boolean bShowWin = PokerUtils.isCheatOn(context, PokerClientConstants.OPTION_CHEAT_SHOWWINNINGHAND);
+        boolean bShowMuck = PokerUtils.isCheatOn(context, PokerClientConstants.OPTION_CHEAT_SHOW_MUCKED);
+        boolean bHumanUp = !PokerUtils.isOptionOn(PokerClientConstants.OPTION_HOLE_CARDS_DOWN);
+        boolean bAIFaceUp = PokerUtils.isCheatOn(context, PokerClientConstants.OPTION_CHEAT_AIFACEUP);
+        boolean bSeenRiver = hhand.isActionInRound(ClientBettingRound.RIVER.toLegacy());
         boolean bShowCards;
         boolean bShowHandType = !bUncontested || ((bShowRiver || bSeenRiver) && bShowWin);
         boolean bShowHandTypeFold = !bUncontested || bShowRiver || bSeenRiver;
@@ -91,14 +93,15 @@ public class Showdown {
             piece = PokerGameboard.getTerritoryInfo(t).resultpiece;
 
             // all-in showdown, just show current hand
-            if (hhand.getRound().toLegacy() < BettingRound.SHOWDOWN.toLegacy()) {
+            if (hhand.getRound().toLegacy() < ClientBettingRound.SHOWDOWN.toLegacy()) {
                 if (!player.isFolded()) {
-                    if (hhand.getRound() == BettingRound.PRE_FLOP) {
+                    if (hhand.getRound() == ClientBettingRound.PRE_FLOP) {
                         piece.setResult(ResultsPiece.ALLIN,
                                 PropertyConfig.getMessage("msg.hand.allin", player.getHand().toStringRank()));
                     } else {
-                        Hand best = HandUtils.getBestFive(player.getHandSorted(), hhand.getCommunitySorted());
-                        int type = handType(player.getHandSorted(), hhand.getCommunitySorted());
+                        HandEvaluationData eval = player.getHandEval();
+                        ClientHand best = bestFiveHand(eval);
+                        int type = eval != null ? eval.handType() : 0;
                         piece.setResult(ResultsPiece.ALLIN, PropertyConfig.getMessage("msg.hand.allin",
                                 PropertyConfig.getMessage("msg.hand." + type), best.toStringRank()));
                     }
@@ -115,8 +118,9 @@ public class Showdown {
             if (player.isFolded()) {
                 if (player.showFoldedHand()) {
                     int nRound = hhand.getFoldRound(player);
-                    Hand best = HandUtils.getBestFive(player.getHandSorted(), hhand.getCommunitySorted());
-                    int type = handType(player.getHandSorted(), hhand.getCommunitySorted());
+                    HandEvaluationData eval = player.getHandEval();
+                    ClientHand best = bestFiveHand(eval);
+                    int type = eval != null ? eval.handType() : 0;
                     String sRound = PropertyConfig.getMessage("msg.round." + nRound);
                     piece.setResult(ResultsPiece.FOLD,
                             PropertyConfig.getMessage(bShowHandTypeFold ? "msg.hand.fold" : "msg.hand.fold.noshow",
@@ -165,8 +169,9 @@ public class Showdown {
             String handTypeDesc = "";
             String bestRank = "";
             if (hhand.getCommunitySorted().size() >= 3) {
-                int type = handType(player.getHandSorted(), hhand.getCommunitySorted());
-                Hand best = HandUtils.getBestFive(player.getHandSorted(), hhand.getCommunitySorted());
+                HandEvaluationData eval = player.getHandEval();
+                int type = eval != null ? eval.handType() : 0;
+                ClientHand best = bestFiveHand(eval);
                 handTypeDesc = PropertyConfig.getMessage("msg.hand." + type);
                 bestRank = best.toStringRank();
             }
@@ -201,7 +206,7 @@ public class Showdown {
         List<GamePiece> cards;
         CardPiece card;
         synchronized (flop.getMap()) {
-            cards = EngineUtils.getMatchingPieces(flop, PokerConstants.PIECE_CARD);
+            cards = EngineUtils.getMatchingPieces(flop, PokerClientConstants.PIECE_CARD);
             for (GamePiece gp : cards) {
                 card = (CardPiece) gp;
                 card.setNotDrawn(!card.isDrawnNormal() && !bShowRiver);
@@ -220,7 +225,8 @@ public class Showdown {
         ResultsPiece piece;
         Territory t;
 
-        HandSorted comm = new HandSorted(bAllCardsDisplayed ? hhand.getCommunity() : hhand.getCommunityForDisplay());
+        ClientHand comm = ClientHand
+                .fromCards((bAllCardsDisplayed ? hhand.getCommunity() : hhand.getCommunityForDisplay()).getCards());
 
         int nResult;
         for (int i = 0; i < hhand.getNumPlayers(); i++) {
@@ -233,12 +239,13 @@ public class Showdown {
 
             if (!player.isFolded()) {
                 // when this is called, round has advanced already
-                if (hhand.getRound() == BettingRound.FLOP) {
+                if (hhand.getRound() == ClientBettingRound.FLOP) {
                     piece.setResult(nResult, PropertyConfig.getMessage("msg.hand.allin.pre", player.getAllInPerc(),
                             player.getHand().toStringRank()));
                 } else {
-                    Hand best = HandUtils.getBestFive(player.getHandSorted(), new HandSorted(comm));
-                    int type = handType(player.getHandSorted(), new HandSorted(comm));
+                    HandEvaluationData eval = player.getHandEval();
+                    ClientHand best = bestFiveHand(eval);
+                    int type = eval != null ? eval.handType() : 0;
                     piece.setResult(nResult, PropertyConfig.getMessage("msg.hand.allin", player.getAllInPerc(),
                             PropertyConfig.getMessage("msg.hand." + type), best.toStringRank()));
                 }
@@ -248,10 +255,14 @@ public class Showdown {
         PokerUtils.getPokerGameboard().repaintAll();
     }
 
-    /** Get hand type integer from hole cards and community cards. */
-    private static int handType(HandSorted hole, HandSorted community) {
-        HandInfoFast fast = new HandInfoFast();
-        int score = fast.getScore(hole, community);
-        return HandInfoFast.getTypeFromScore(score);
+    /**
+     * Convert server-provided best-five cards to a ClientHand, or empty if
+     * unavailable.
+     */
+    private static ClientHand bestFiveHand(HandEvaluationData eval) {
+        if (eval != null && eval.bestFiveCards() != null && !eval.bestFiveCards().isEmpty()) {
+            return ClientHand.fromStrings(eval.bestFiveCards());
+        }
+        return ClientHand.empty();
     }
 }

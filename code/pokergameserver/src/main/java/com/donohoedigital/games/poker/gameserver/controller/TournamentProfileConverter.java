@@ -18,21 +18,21 @@
 package com.donohoedigital.games.poker.gameserver.controller;
 
 import com.donohoedigital.games.poker.engine.PokerConstants;
-import com.donohoedigital.games.poker.gameserver.GameConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.AddonConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.AIPlayerConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.BettingConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.BlindLevel;
-import com.donohoedigital.games.poker.gameserver.GameConfig.BootConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.BountyConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.HouseConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.InviteConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.LateRegistrationConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.LevelAdvanceMode;
-import com.donohoedigital.games.poker.gameserver.GameConfig.PayoutConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.RebuyConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.ScheduledStartConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.TimeoutConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.AddonConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.AIPlayerConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.BettingConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.BlindLevel;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.BootConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.BountyConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.HouseConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.InviteConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.LateRegistrationConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.LevelAdvanceMode;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.PayoutConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.RebuyConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.ScheduledStartConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.TimeoutConfig;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 
 import java.time.Instant;

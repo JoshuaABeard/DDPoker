@@ -38,17 +38,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 
-import com.donohoedigital.games.poker.gameserver.GameConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig;
 import com.donohoedigital.games.poker.gameserver.GameInstanceState;
 import com.donohoedigital.games.poker.gameserver.auth.JwtAuthenticationFilter.JwtAuthenticationToken;
-import com.donohoedigital.games.poker.gameserver.dto.CommunityGameRegisterRequest;
-import com.donohoedigital.games.poker.gameserver.dto.CreateGameResponse;
-import com.donohoedigital.games.poker.gameserver.dto.GameJoinRequest;
-import com.donohoedigital.games.poker.gameserver.dto.GameJoinResponse;
-import com.donohoedigital.games.poker.gameserver.dto.GameListResponse;
-import com.donohoedigital.games.poker.gameserver.dto.GameSettingsRequest;
-import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
-import com.donohoedigital.games.poker.gameserver.dto.KickRequest;
+import com.donohoedigital.games.poker.protocol.dto.CommunityGameRegisterRequest;
+import com.donohoedigital.games.poker.protocol.dto.CreateGameResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameJoinRequest;
+import com.donohoedigital.games.poker.protocol.dto.GameJoinResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameListResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameSettingsRequest;
+import com.donohoedigital.games.poker.protocol.dto.GameSummary;
+import com.donohoedigital.games.poker.protocol.dto.KickRequest;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
 import com.donohoedigital.games.poker.gameserver.service.GameService;
 

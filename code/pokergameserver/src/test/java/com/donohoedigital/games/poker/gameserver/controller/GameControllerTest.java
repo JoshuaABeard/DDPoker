@@ -37,9 +37,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.donohoedigital.games.poker.gameserver.GameServerException;
 import com.donohoedigital.games.poker.gameserver.GameServerException.ErrorCode;
-import com.donohoedigital.games.poker.gameserver.dto.GameJoinResponse;
-import com.donohoedigital.games.poker.gameserver.dto.GameListResponse;
-import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
+import com.donohoedigital.games.poker.protocol.dto.GameJoinResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameListResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameSummary;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
 import com.donohoedigital.games.poker.gameserver.service.GameService;
 

@@ -33,12 +33,12 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.online;
+import com.donohoedigital.games.poker.PokerClientConstants;
 
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
 import org.apache.logging.log4j.*;
 
 import java.awt.event.*;
@@ -73,7 +73,7 @@ public class HostStart extends ChainPhase implements ActionListener {
         game_ = (PokerGame) context_.getGame();
 
         // countdown delay from options
-        DELAY = PokerUtils.getIntOption(PokerConstants.OPTION_ONLINESTART);
+        DELAY = PokerUtils.getIntOption(PokerClientConstants.OPTION_ONLINESTART);
         DELAY_SECS = ONE_SEC * DELAY;
         elapsed_ = 0;
 

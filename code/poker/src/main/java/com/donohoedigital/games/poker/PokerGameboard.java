@@ -37,13 +37,13 @@
  */
 
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 
 import com.donohoedigital.base.*;
 import static com.donohoedigital.config.DebugConfig.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.online.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
@@ -51,7 +51,6 @@ import org.apache.logging.log4j.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.*;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
 
 /**
  *
@@ -271,9 +270,9 @@ public class PokerGameboard extends Gameboard {
                     int nBet = hhand.getBet(player);
                     int nLast = hhand.getLastAction(player);
 
-                    if (PokerConstants.DEBUG_EVENT_DISPLAY || TESTING(EngineConstants.TESTING_DEBUG_REPAINT)) {
+                    if (PokerClientConstants.DEBUG_EVENT_DISPLAY || TESTING(EngineConstants.TESTING_DEBUG_REPAINT)) {
                         logger.debug("repaintTerritory (with hhand) for " + player.getName() + " round: "
-                                + BettingRound.getRoundName(hhand.getRound().toLegacy()) + " current: "
+                                + ClientBettingRound.getRoundName(hhand.getRound().toLegacy()) + " current: "
                                 + player.isCurrentGamePlayer());
                     }
 
@@ -358,7 +357,7 @@ public class PokerGameboard extends Gameboard {
                         }
                     }
                     // no bet, not current player, player not acted but all in
-                    else if (player.isAllIn() && hhand.getRound().toLegacy() < BettingRound.SHOWDOWN.toLegacy()) {
+                    else if (player.isAllIn() && hhand.getRound().toLegacy() < ClientBettingRound.SHOWDOWN.toLegacy()) {
                         if (player.getAllInPerc() == null) {
                             sText = PropertyConfig.getMessage("msg.allin");
                             sIcon = "icon-allin";
@@ -369,7 +368,7 @@ public class PokerGameboard extends Gameboard {
             info.bet.setText(sText);
             info.bet.setForeground(color);
 
-            if (PokerConstants.DEBUG_EVENT_DISPLAY || TESTING(EngineConstants.TESTING_DEBUG_REPAINT)) {
+            if (PokerClientConstants.DEBUG_EVENT_DISPLAY || TESTING(EngineConstants.TESTING_DEBUG_REPAINT)) {
                 logger.debug(player == null ? "null" : player.getName() + " text: " + sText + ", icon: " + sIcon);
             }
 

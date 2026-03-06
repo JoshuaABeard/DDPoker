@@ -44,7 +44,7 @@ import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.engine.Phase;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerUtils;
-import com.donohoedigital.games.poker.engine.PokerConstants;
+import com.donohoedigital.games.poker.PokerClientConstants;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -478,7 +478,7 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
         sb.append("</BODY></HTML>\n");
 
         // hash
-        String sHash = SecurityUtils.getMD5Hash(sb.toString(), PokerConstants.CHAT_BYTES);
+        String sHash = SecurityUtils.getMD5Hash(sb.toString(), PokerClientConstants.CHAT_BYTES);
         sb.append("<!-- " + sHash + " -->");
 
         return sb.toString();
@@ -523,8 +523,8 @@ class ChatListPanel extends ListPanel implements MouseListener, MouseMotionListe
             // Apply user-configured chat font size to prototype only
             // (subsequent items inherit the font size via shared stylesheet)
             if (panel.styleproto_ == null) {
-                int fontSize = PokerUtils.getIntPref(PokerConstants.OPTION_CHAT_FONT_SIZE,
-                        PokerConstants.DEFAULT_CHAT_FONT_SIZE);
+                int fontSize = PokerUtils.getIntPref(PokerClientConstants.OPTION_CHAT_FONT_SIZE,
+                        PokerClientConstants.DEFAULT_CHAT_FONT_SIZE);
                 Font currentFont = html_.getFont();
                 if (currentFont.getSize() != fontSize) {
                     html_.setFont(currentFont.deriveFont((float) fontSize));

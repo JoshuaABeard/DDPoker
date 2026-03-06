@@ -32,9 +32,9 @@
  */
 package com.donohoedigital.games.poker.dashboard;
 
+import com.donohoedigital.games.poker.TournamentProfileFormatter;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.event.*;
@@ -94,7 +94,7 @@ public class UpNext extends DashboardItem {
         // next level for this
         nLevel++;
         TournamentProfile profile = game_.getProfile();
-        TournamentProfileHtml html = new TournamentProfileHtml(profile);
+        TournamentProfileFormatter html = new TournamentProfileFormatter(profile);
 
         // break
         if (profile.isBreak(nLevel)) {

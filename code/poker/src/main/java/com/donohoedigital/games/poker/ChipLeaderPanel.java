@@ -37,7 +37,6 @@ import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
@@ -163,8 +162,8 @@ public class ChipLeaderPanel extends DDTabPanel {
                 double multavg = (double) chip / (double) avg;
                 double bbavg = (double) chip / (double) big;
 
-                details = PropertyConfig.getMessage("msg.mystats", chip, PokerConstants.formatPercent(perc),
-                        PokerConstants.formatPercent(multavg), PokerConstants.formatPercent(bbavg),
+                details = PropertyConfig.getMessage("msg.mystats", chip, PokerClientConstants.formatPercent(perc),
+                        PokerClientConstants.formatPercent(multavg), PokerClientConstants.formatPercent(bbavg),
                         PropertyConfig.getPlace(nHumanRank), left);
             } else if (human.getPlace() > 0) {
                 details = PropertyConfig.getMessage("msg.mystats2", PropertyConfig.getPlace(nHumanRank), num);

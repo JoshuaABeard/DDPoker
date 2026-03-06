@@ -25,23 +25,24 @@ DD Poker is a full-featured Texas Hold'em poker simulator originally developed b
 
 ## Module Structure
 
-The project is a Maven multi-module build with 13 modules. Build order (later modules depend on earlier ones):
+The project is a Maven multi-module build with 14 modules. Build order (later modules depend on earlier ones):
 
-| Module            | Description                                                      | Artifact |
-|-------------------|------------------------------------------------------------------|----------|
-| `common`          | Core config, logging, XML, properties, utils                     | jar      |
-| `mail`            | Email sending tools                                              | jar      |
-| `gui`             | GUI infrastructure extending Java Swing                          | jar      |
-| `db`              | Database infrastructure extending Hibernate                      | jar      |
-| `server`          | Core server functionality                                        | jar      |
-| `gamecommon`      | Core game utilities (shared client/server)                       | jar      |
-| `gameengine`      | Core game engine (Swing UI framework)                            | jar      |
-| `gametools`       | Game building tools (border/territory managers)                  | jar      |
-| `pokerengine`     | Core poker utilities, shared types, hand evaluation (shared client/server) | jar      |
-| `pokergamecore`   | Server-side game engine (pure logic, no Swing/Spring)            | jar      |
-| `pokergameserver` | Game server Spring Boot auto-configuration (WebSocket, REST, AI) | jar      |
-| `poker`           | DD Poker UI / desktop client (pure rendering layer)              | jar      |
-| `pokerserver`     | DD Poker backend server                                          | jar      |
+| Module               | Description                                                      | Artifact |
+|----------------------|------------------------------------------------------------------|----------|
+| `common`             | Core config, logging, XML, properties, utils                     | jar      |
+| `mail`               | Email sending tools                                              | jar      |
+| `gui`                | GUI infrastructure extending Java Swing                          | jar      |
+| `db`                 | Database infrastructure extending Hibernate                      | jar      |
+| `server`             | Core server functionality                                        | jar      |
+| `gamecommon`         | Core game utilities (shared client/server)                       | jar      |
+| `gameengine`         | Core game engine (Swing UI framework)                            | jar      |
+| `gametools`          | Game building tools (border/territory managers)                  | jar      |
+| `pokerengine`        | Core poker utilities, shared types, hand evaluation (server-side)| jar      |
+| `pokergamecore`      | Server-side game engine (pure logic, no Swing/Spring)            | jar      |
+| `pokergameprotocol`  | Client-server protocol DTOs (WebSocket messages, REST DTOs)      | jar      |
+| `pokergameserver`    | Game server Spring Boot auto-configuration (WebSocket, REST, AI) | jar      |
+| `poker`              | DD Poker UI / desktop client (pure rendering layer)              | jar      |
+| `pokerserver`        | DD Poker backend server                                          | jar      |
 
 ## Key Entry Points
 

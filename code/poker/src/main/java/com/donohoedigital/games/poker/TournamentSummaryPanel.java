@@ -38,7 +38,6 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.gui.*;
 
@@ -65,7 +64,7 @@ public class TournamentSummaryPanel extends DDPanel {
     private DDTabbedPane tab_;
     private String sHelpName_;
     private TournamentProfile profile_;
-    private TournamentProfileHtml profileHtml_;
+    private TournamentProfileFormatter profileHtml_;
     private ImageComponent ic_ = new ImageComponent("ddlogo20", 1.0d);
     private boolean bListMode_;
 
@@ -206,7 +205,7 @@ public class TournamentSummaryPanel extends DDPanel {
 
     public void updateProfile(TournamentProfile profile) {
         profile_ = profile;
-        profileHtml_ = profile_ == null ? null : new TournamentProfileHtml(profile_);
+        profileHtml_ = profile_ == null ? null : new TournamentProfileFormatter(profile_);
         setSummaryText();
         if (payout_ != null)
             payout_.updateProfile(profileHtml_);
@@ -296,9 +295,9 @@ public class TournamentSummaryPanel extends DDPanel {
             int nHouseAmount = profile_.getHouseAmount();
             int nType = profile_.getHouseCutType();
 
-            if (nType == PokerConstants.HOUSE_PERC && nHousePercent > 0) {
+            if (nType == PokerClientConstants.HOUSE_PERC && nHousePercent > 0) {
                 sHouse = PropertyConfig.getMessage("msg.house.percent", nHousePercent);
-            } else if (nType == PokerConstants.HOUSE_AMOUNT && nHouseAmount > 0) {
+            } else if (nType == PokerClientConstants.HOUSE_AMOUNT && nHouseAmount > 0) {
                 sHouse = PropertyConfig.getMessage("msg.house.amount", nHouseAmount);
             } else {
                 sHouse = PropertyConfig.getMessage("msg.house.none");
@@ -348,14 +347,14 @@ public class TournamentSummaryPanel extends DDPanel {
         GameContext context;
         List<ClientPlayer> rank;
         TournamentProfile profile;
-        TournamentProfileHtml html;
+        TournamentProfileFormatter html;
         List<BaseProfile> playerTypes;
         String[] names;
         int[] widths;
         boolean bPayout;
         boolean bOppMix;
 
-        TournamentModel(GameContext context, TournamentProfileHtml profileHtml, String names[], int[] widths) {
+        TournamentModel(GameContext context, TournamentProfileFormatter profileHtml, String names[], int[] widths) {
             this.context = context;
             this.names = names;
             this.widths = widths;
@@ -364,7 +363,7 @@ public class TournamentSummaryPanel extends DDPanel {
             updateProfile(profileHtml);
         }
 
-        public void updateProfile(TournamentProfileHtml h) {
+        public void updateProfile(TournamentProfileFormatter h) {
             if (h == null)
                 return;
             profile = h.getProfile();

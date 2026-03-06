@@ -37,11 +37,11 @@
  */
 
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
 
 import com.donohoedigital.base.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import org.apache.logging.log4j.*;
 
@@ -129,9 +129,9 @@ public class ButtonDisplay extends ChainPhase implements Runnable {
     private static ButtonPiece getButton() {
         Territory t;
         ButtonPiece piece;
-        for (int i = 0; i < PokerConstants.SEATS; i++) {
+        for (int i = 0; i < ProtocolConstants.SEATS; i++) {
             t = PokerUtils.getTerritoryForDisplaySeat(i);
-            piece = (ButtonPiece) t.getGamePiece(PokerConstants.PIECE_BUTTON, null);
+            piece = (ButtonPiece) t.getGamePiece(PokerClientConstants.PIECE_BUTTON, null);
             if (piece != null) {
                 return piece;
             }

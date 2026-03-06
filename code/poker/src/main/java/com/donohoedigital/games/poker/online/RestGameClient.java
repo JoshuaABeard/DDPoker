@@ -19,12 +19,12 @@
  */
 package com.donohoedigital.games.poker.online;
 
-import com.donohoedigital.games.poker.gameserver.GameConfig;
-import com.donohoedigital.games.poker.gameserver.dto.CommunityGameRegisterRequest;
-import com.donohoedigital.games.poker.gameserver.dto.CreateGameResponse;
-import com.donohoedigital.games.poker.gameserver.dto.GameJoinResponse;
-import com.donohoedigital.games.poker.gameserver.dto.GameListResponse;
-import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig;
+import com.donohoedigital.games.poker.protocol.dto.CommunityGameRegisterRequest;
+import com.donohoedigital.games.poker.protocol.dto.CreateGameResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameJoinResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameListResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameSummary;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;

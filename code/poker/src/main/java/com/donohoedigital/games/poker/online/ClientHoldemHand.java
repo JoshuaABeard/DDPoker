@@ -35,10 +35,8 @@
 package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.poker.HandAction;
-import com.donohoedigital.games.poker.engine.Deck;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
-import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.engine.HandSorted;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
+import com.donohoedigital.games.poker.display.ClientHand;
 
 import java.util.List;
 
@@ -71,7 +69,7 @@ public interface ClientHoldemHand {
     // -------------------------------------------------------------------------
 
     /** Returns the current betting round. */
-    BettingRound getRound();
+    ClientBettingRound getRound();
 
     /**
      * Returns the legacy {@code int} constant for the current round (for code that
@@ -84,16 +82,16 @@ public interface ClientHoldemHand {
     // -------------------------------------------------------------------------
 
     /** Returns the community cards. */
-    Hand getCommunity();
+    ClientHand getCommunity();
 
     /**
      * Returns the community cards adjusted for all-in showdown display (only cards
      * up to the previously completed round are shown).
      */
-    Hand getCommunityForDisplay();
+    ClientHand getCommunityForDisplay();
 
     /** Returns the community cards as a sorted hand. */
-    HandSorted getCommunitySorted();
+    ClientHand getCommunitySorted();
 
     // -------------------------------------------------------------------------
     // Players
@@ -202,7 +200,7 @@ public interface ClientHoldemHand {
 
     /**
      * Returns the game type constant (e.g.
-     * {@code PokerConstants.TYPE_NO_LIMIT_HOLDEM}).
+     * {@code ProtocolConstants.TYPE_NO_LIMIT_HOLDEM}).
      */
     int getGameType();
 
@@ -351,7 +349,7 @@ public interface ClientHoldemHand {
      * Returns {@code true} if there was any action in the given round.
      *
      * @param nRound
-     *            legacy round integer ({@code BettingRound.ROUND_*})
+     *            legacy round integer ({@code ClientBettingRound.ROUND_*})
      */
     boolean isActionInRound(int nRound);
 
@@ -417,11 +415,8 @@ public interface ClientHoldemHand {
     // Deck / muck (local cheat mode only)
     // -------------------------------------------------------------------------
 
-    /** Returns the deck used for this hand (local games only). */
-    Deck getDeck();
-
     /**
      * Returns the muck (folded/discarded cards) for this hand (local games only).
      */
-    Hand getMuck();
+    ClientHand getMuck();
 }

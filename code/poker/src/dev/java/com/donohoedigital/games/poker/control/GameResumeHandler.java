@@ -24,7 +24,7 @@ import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
 import com.donohoedigital.games.poker.TournamentOptions;
-import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
+import com.donohoedigital.games.poker.protocol.dto.GameSummary;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.donohoedigital.games.poker.server.GameSaveManager;
 import com.fasterxml.jackson.databind.JsonNode;

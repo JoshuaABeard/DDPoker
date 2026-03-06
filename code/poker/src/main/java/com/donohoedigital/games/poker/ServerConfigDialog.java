@@ -23,7 +23,6 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.EngineConstants;
 import com.donohoedigital.games.config.GameButton;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.gui.*;
 
 import javax.swing.*;
@@ -120,7 +119,7 @@ public class ServerConfigDialog extends DialogPhase {
                 // from)
                 String node = Prefs.NODE_OPTIONS + PokerMain.getPokerMain().getPrefsNodeName();
                 Prefs.getUserPrefs(node).put(EngineConstants.OPTION_ONLINE_SERVER, server);
-                Prefs.getUserPrefs(node).put(PokerConstants.OPTION_ONLINE_CHAT, chat);
+                Prefs.getUserPrefs(node).put(PokerClientConstants.OPTION_ONLINE_CHAT, chat);
                 Prefs.getUserPrefs(node).putBoolean(EngineConstants.OPTION_ONLINE_ENABLED, true);
 
                 // Flush preferences to ensure they're saved

@@ -40,7 +40,6 @@ package com.donohoedigital.games.poker;
 
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.gui.*;
 
 import java.awt.*;
@@ -96,7 +95,7 @@ public class ResultsPiece extends PokerGamePiece {
      * Creates a new instance of ResultsPiece
      */
     public ResultsPiece() {
-        super(PokerConstants.PIECE_RESULTS, null, CardPiece.POINT_HOLE1, "results");
+        super(PokerClientConstants.PIECE_RESULTS, null, CardPiece.POINT_HOLE1, "results");
         setResult(HIDDEN, "");
     }
 

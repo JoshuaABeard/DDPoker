@@ -42,9 +42,9 @@ import static org.mockito.Mockito.verify;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageType;
+import com.donohoedigital.games.poker.protocol.dto.GameSummary;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageData;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageType;
 
 /**
  * Unit tests for {@link LobbyBroadcaster}.

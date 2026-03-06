@@ -19,7 +19,7 @@
  */
 package com.donohoedigital.games.poker.online;
 
-import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
+import com.donohoedigital.games.poker.protocol.dto.GameSummary;
 import com.donohoedigital.games.poker.model.OnlineGame;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.donohoedigital.games.poker.model.util.OnlineGameList;

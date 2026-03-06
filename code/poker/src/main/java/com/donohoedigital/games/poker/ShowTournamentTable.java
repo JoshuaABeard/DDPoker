@@ -31,6 +31,8 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
+import com.donohoedigital.games.poker.display.ClientCard;
 
 import com.donohoedigital.base.ApplicationError;
 import com.donohoedigital.base.ErrorCodes;
@@ -41,9 +43,9 @@ import com.donohoedigital.config.PropertyConfig;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.PlayerType;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.dashboard.*;
-import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.event.PokerTableEvent;
 import com.donohoedigital.games.poker.event.PokerTableListener;
 import com.donohoedigital.games.poker.model.TournamentProfile;
@@ -176,7 +178,7 @@ public class ShowTournamentTable extends ShowPokerTable
         // double height = ((width * prefh) / prefw);
         double icond = 1.45f / 42.0f;
         PokerGameboard.TerritoryInfo info;
-        for (int i = 0; i < PokerConstants.SEATS; i++) {
+        for (int i = 0; i < ProtocolConstants.SEATS; i++) {
             t = PokerUtils.getTerritoryForDisplaySeat(i);
             info = new PokerGameboard.TerritoryInfo();
             PokerGameboard.setTerritoryInfo(t, info);
@@ -207,7 +209,7 @@ public class ShowTournamentTable extends ShowPokerTable
             info.result = result;
 
             // add result piece if not there already (could be there from loaded game)
-            info.resultpiece = (ResultsPiece) t.getGamePiece(PokerConstants.PIECE_RESULTS, null);
+            info.resultpiece = (ResultsPiece) t.getGamePiece(PokerClientConstants.PIECE_RESULTS, null);
             if (info.resultpiece == null) {
                 info.resultpiece = new ResultsPiece();
                 t.addGamePiece(info.resultpiece);
@@ -285,7 +287,7 @@ public class ShowTournamentTable extends ShowPokerTable
         buttonbase_.add(focus_);
 
         // deal
-        if (!game_.isOnlineGame() || TESTING(PokerConstants.TESTING_ONLINE_AUTO_DEAL_OFF)) {
+        if (!game_.isOnlineGame() || TESTING(PokerClientConstants.TESTING_ONLINE_AUTO_DEAL_OFF)) {
             buttonDeal_ = new PokerGlassButton(getGameButton("deal"));
             buttonbase_.add(buttonDeal_);
         }
@@ -313,7 +315,7 @@ public class ShowTournamentTable extends ShowPokerTable
             });
         }
 
-        if (TESTING(PokerConstants.TESTING_TEST_CASE)) {
+        if (TESTING(PokerClientConstants.TESTING_TEST_CASE)) {
             buttonTestCase_ = new GlassButton("testcase", "GlassBig");
             buttonbase_.add(buttonTestCase_);
             buttonTestCase_.addActionListener(new ActionListener() {
@@ -603,7 +605,7 @@ public class ShowTournamentTable extends ShowPokerTable
         updateMinChip(false);
         if (hhand != null) {
             // if showdown, redisplay in case options changed regarding what to display
-            if (hhand.getRound() == BettingRound.SHOWDOWN) {
+            if (hhand.getRound() == ClientBettingRound.SHOWDOWN) {
                 Showdown.displayShowdown(engine_, context_, hhand);
             }
         }
@@ -650,7 +652,7 @@ public class ShowTournamentTable extends ShowPokerTable
         PokerUtils.setChat(chat_);
 
         // autopilot message
-        if (TESTING(PokerConstants.TESTING_AUTOPILOT_INIT) && !TESTING(PokerConstants.TESTING_AUTOPILOT)) {
+        if (TESTING(PokerClientConstants.TESTING_AUTOPILOT_INIT) && !TESTING(PokerClientConstants.TESTING_AUTOPILOT)) {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     EngineUtils.displayInformationDialog(context_,
@@ -721,7 +723,7 @@ public class ShowTournamentTable extends ShowPokerTable
             // repaint board to reflect new table if directed to do so
             if (bRepaint) {
                 GuiUtils.invoke(new SwingIt(SWING_SYNC));
-                if (table_ != null && !TESTING(PokerConstants.TESTING_AUTOPILOT)) {
+                if (table_ != null && !TESTING(PokerClientConstants.TESTING_AUTOPILOT)) {
                     final ClientPlayer human = game_.getHumanPlayer();
                     final String sMsg = PropertyConfig.getMessage(
                             human.isObserver()
@@ -862,7 +864,7 @@ public class ShowTournamentTable extends ShowPokerTable
         ClientPokerTable table = event.getTable();
         ClientHoldemHand hhand = table.getHoldemHand();
 
-        if (PokerConstants.DEBUG_EVENT_DISPLAY)
+        if (PokerClientConstants.DEBUG_EVENT_DISPLAY)
             logger.debug("Event received: " + event.toString());
         switch (event.getType()) {
             // new players added, repaint all
@@ -1040,7 +1042,7 @@ public class ShowTournamentTable extends ShowPokerTable
             return;
 
         // get fold check pref
-        boolean bFoldCheck = PokerUtils.isOptionOn(PokerConstants.OPTION_CHECKFOLD);
+        boolean bFoldCheck = PokerUtils.isOptionOn(PokerClientConstants.OPTION_CHECKFOLD);
 
         boolean bAllowContinueLower = false;
         boolean bAllowContinue = false;
@@ -1146,7 +1148,7 @@ public class ShowTournamentTable extends ShowPokerTable
         }
 
         boolean bRevalidate = false;
-        if (nGameType == PokerConstants.TYPE_NO_LIMIT_HOLDEM) {
+        if (nGameType == ProtocolConstants.TYPE_NO_LIMIT_HOLDEM) {
             bAllIn_ = true;
             bBetPot_ = false;
             buttonAllInBetPot_.rename("allin");
@@ -1159,7 +1161,7 @@ public class ShowTournamentTable extends ShowPokerTable
                 bRevalidate = true;
             }
 
-        } else if (nGameType == PokerConstants.TYPE_POT_LIMIT_HOLDEM) {
+        } else if (nGameType == ProtocolConstants.TYPE_POT_LIMIT_HOLDEM) {
             bAllIn_ = false;
             bBetPot_ = true;
             buttonAllInBetPot_.rename("betpot");
@@ -1294,7 +1296,8 @@ public class ShowTournamentTable extends ShowPokerTable
             // BUG 420 - don't allow rebuy when broke at showdown
             // since the user will be auto-prompted
             ClientHoldemHand hhand = table.getHoldemHand();
-            if (bEnable && human.getChipCount() == 0 && hhand != null && hhand.getRound() == BettingRound.SHOWDOWN) {
+            if (bEnable && human.getChipCount() == 0 && hhand != null
+                    && hhand.getRound() == ClientBettingRound.SHOWDOWN) {
                 bEnable = false;
             }
         }
@@ -1473,7 +1476,7 @@ public class ShowTournamentTable extends ShowPokerTable
     @Override
     protected boolean handleKeyPressed(KeyEvent event) {
         // get disable shortcuts pref
-        boolean bDisableShortcuts = PokerUtils.isOptionOn(PokerConstants.OPTION_DISABLE_SHORTCUTS);
+        boolean bDisableShortcuts = PokerUtils.isOptionOn(PokerClientConstants.OPTION_DISABLE_SHORTCUTS);
 
         int key = event.getKeyCode();
 
@@ -1558,9 +1561,9 @@ public class ShowTournamentTable extends ShowPokerTable
 
                 case KeyEvent.VK_F5 :
                 case KeyEvent.VK_F9 :
-                    if (TESTING(PokerConstants.TESTING_AUTOPILOT_INIT)) {
-                        TOGGLE(PokerConstants.TESTING_AUTOPILOT);
-                        if (TESTING(PokerConstants.TESTING_AUTOPILOT)) {
+                    if (TESTING(PokerClientConstants.TESTING_AUTOPILOT_INIT)) {
+                        TOGGLE(PokerClientConstants.TESTING_AUTOPILOT);
+                        if (TESTING(PokerClientConstants.TESTING_AUTOPILOT)) {
                             EngineUtils.displayInformationDialog(context_, "Autopilot will resume with next deal.");
                         } else {
                             EngineUtils.displayInformationDialog(context_, "Autopilot paused.");
@@ -1753,8 +1756,8 @@ public class ShowTournamentTable extends ShowPokerTable
                     return;
 
                 GameEngine engine = GameEngine.getGameEngine();
-                boolean bAIPeek = PokerUtils.isCheatOn(context_, PokerConstants.OPTION_CHEAT_MOUSEOVER);
-                boolean bHoleFaceDown = PokerUtils.isOptionOn(PokerConstants.OPTION_HOLE_CARDS_DOWN);
+                boolean bAIPeek = PokerUtils.isCheatOn(context_, PokerClientConstants.OPTION_CHEAT_MOUSEOVER);
+                boolean bHoleFaceDown = PokerUtils.isOptionOn(PokerClientConstants.OPTION_HOLE_CARDS_DOWN);
 
                 ClientPlayer player = card.getPokerPlayer();
                 if (!card.isUp() && (bAIPeek || (player.isHuman() && bHoleFaceDown && player.isLocallyControlled()))) {
@@ -1789,7 +1792,7 @@ public class ShowTournamentTable extends ShowPokerTable
      * Determine which territories we create menus for
      */
     public boolean allowTerritorySelection(Territory t, MouseEvent e) {
-        return GuiUtils.isPopupTrigger(e, !PokerUtils.isOptionOn(PokerConstants.OPTION_RIGHT_CLICK_ONLY));
+        return GuiUtils.isPopupTrigger(e, !PokerUtils.isOptionOn(PokerClientConstants.OPTION_RIGHT_CLICK_ONLY));
     }
 
     // menu
@@ -1804,8 +1807,8 @@ public class ShowTournamentTable extends ShowPokerTable
     public void territorySelected(Territory t, MouseEvent e) {
         DDPopupMenu menu = null;
 
-        boolean bShowCheatItems = PokerUtils.isCheatOn(context_, PokerConstants.OPTION_CHEAT_POPUP)
-                && (!game_.isOnlineGame() || TESTING(PokerConstants.TESTING_ALLOW_CHEAT_ONLINE));
+        boolean bShowCheatItems = PokerUtils.isCheatOn(context_, PokerClientConstants.OPTION_CHEAT_POPUP)
+                && (!game_.isOnlineGame() || TESTING(PokerClientConstants.TESTING_ALLOW_CHEAT_ONLINE));
 
         GamePiece gamePiece = PokerUtils.getPokerGameboard().getGamePieceUnderMouse();
         CardPiece cardPiece = (gamePiece instanceof CardPiece) ? (CardPiece) gamePiece : null;
@@ -1818,7 +1821,7 @@ public class ShowTournamentTable extends ShowPokerTable
             String sStyle = "PokerTable";
             ClientPlayer p = PokerUtils.getPokerPlayer(context_, t);
             ClientHoldemHand hhand = table_.getHoldemHand();
-            boolean bInHand = hhand != null && hhand.getRound() != BettingRound.SHOWDOWN;
+            boolean bInHand = hhand != null && hhand.getRound() != ClientBettingRound.SHOWDOWN;
 
             if (PokerUtils.isPot(t) || PokerUtils.isFlop(t) || p == null) {
                 // Future: deal when auto-deal on?
@@ -1840,8 +1843,8 @@ public class ShowTournamentTable extends ShowPokerTable
                         // THERE ARE SOME DEFINITE ISSUES WITH ALLOWING THIS, INCLUDING MIN CHIP STUFF,
                         // AND THE SHEER SIZE OF THE MENU, SO IT'S JUST IMPLEMENTED FOR TESTING PURPOSES
                         // RIGHT NOW
-                        if (TESTING(PokerConstants.TESTING_ALLOW_CHANGE_LEVEL) && (table_.getHoldemHand() == null
-                                || table_.getHoldemHand().getRound() == BettingRound.SHOWDOWN)) {
+                        if (TESTING(PokerClientConstants.TESTING_ALLOW_CHANGE_LEVEL) && (table_.getHoldemHand() == null
+                                || table_.getHoldemHand().getRound() == ClientBettingRound.SHOWDOWN)) {
                             menu.add(new ChangeBlinds(sStyle, point));
                         }
                     }
@@ -1912,7 +1915,7 @@ public class ShowTournamentTable extends ShowPokerTable
                     menu.add(new MoveButton(sStyle, t, table_.getButton() != nSeat));
 
                     if (p.isComputer() && (table_.getHoldemHand() == null
-                            || table_.getHoldemHand().getRound() == BettingRound.SHOWDOWN)) {
+                            || table_.getHoldemHand().getRound() == ClientBettingRound.SHOWDOWN)) {
                         menu.add(new RemovePlayer(sStyle, t));
                     }
                 }
@@ -2117,12 +2120,12 @@ public class ShowTournamentTable extends ShowPokerTable
                     game.addExtraChips(-chips);
                     Territory seat = PokerUtils.getTerritoryForTableSeat(table_, nSeat);
                     synchronized (seat.getMap()) {
-                        List<GamePiece> pieces = EngineUtils.getMatchingPieces(seat, PokerConstants.PIECE_CARD);
+                        List<GamePiece> pieces = EngineUtils.getMatchingPieces(seat, PokerClientConstants.PIECE_CARD);
                         for (GamePiece piece : pieces) {
                             seat.removeGamePiece(piece);
                         }
                     }
-                    ResultsPiece piece = (ResultsPiece) seat.getGamePiece(PokerConstants.PIECE_RESULTS, null);
+                    ResultsPiece piece = (ResultsPiece) seat.getGamePiece(PokerClientConstants.PIECE_RESULTS, null);
                     if (piece != null) {
                         piece.setResult(ResultsPiece.HIDDEN, "");
                     }
@@ -2296,89 +2299,21 @@ public class ShowTournamentTable extends ShowPokerTable
         cardSelector.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 CardSelectorPanel cs = (CardSelectorPanel) e.getSource();
-                Card selectedCard = cs.getSelectedCard();
+                ClientCard selectedCard = cs.getSelectedCard();
 
                 if (selectedCard != null && !selectedCard.equals(cardPiece.getCard())
-                        && !selectedCard.equals(Card.BLANK)) {
+                        && !selectedCard.equals(ClientCard.BLANK)) {
+                    // Card changes are always submitted via the server REST API
                     PokerGame.WebSocketConfig cfg = game_.getWebSocketConfig();
-                    if (cfg != null) {
-                        String location = (player == null)
-                                ? "COMMUNITY:" + cardPiece.getCardIndex()
-                                : "PLAYER:" + player.getID() + ":" + cardPiece.getCardIndex();
-                        String cardStr = selectedCard.toStringSingle();
-                        submitCheat(() -> new GameServerRestClient(cfg.port()).cheatCard(cfg.gameId(), cfg.jwt(),
-                                location, cardStr));
-                        menu_.setVisible(false);
-                        return;
+                    if (cfg == null) {
+                        throw new IllegalStateException("Card change requires WebSocket connection");
                     }
-
-                    ClientHoldemHand hhand = table_.getHoldemHand();
-                    Hand community = hhand.getCommunity();
-                    Deck deck = hhand.getDeck();
-
-                    Hand hand = null;
-                    Territory t = null;
-
-                    // figure out if the selected card is already in play
-
-                    int cardIndex = community.indexOf(selectedCard);
-
-                    if (cardIndex >= 0) {
-                        hand = community;
-                        t = PokerUtils.getFlop();
-                    } else {
-                        Hand muck = hhand.getMuck();
-
-                        cardIndex = muck.indexOf(selectedCard);
-
-                        if (cardIndex >= 0) {
-                            hand = muck;
-                        } else {
-                            for (int seat = 0; seat < 10; ++seat) {
-                                ClientPlayer pp = table_.getPlayer(seat);
-
-                                if (pp != null) {
-                                    if (pp.getHand() != null) {
-                                        cardIndex = pp.getHand().indexOf(selectedCard);
-
-                                        if (cardIndex >= 0) {
-                                            hand = pp.getHand();
-                                            t = PokerUtils.getTerritoryForTableSeat(table_, pp.getSeat());
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // if the selected card is in play, replace it with a new card from the deck
-                    if ((hand != null) && (cardIndex >= 0)) {
-                        hand.setCard(cardIndex, deck.nextCard());
-                        board_.repaintTerritory(t);
-                    }
-                    // card not in play, in the deck, so remove it from the deck (yeah, sam, think
-                    // of this case?)
-                    else {
-                        deck.removeCard(selectedCard);
-                    }
-
-                    cardIndex = cardPiece.getCardIndex();
-
-                    hand = (player == null) ? community : player.getHand();
-
-                    // put the card we're replacing back in the deck
-                    deck.addRandom(hand.getCard(cardIndex));
-
-                    // set the new cards
-                    hand.setCard(cardIndex, selectedCard);
-
-                    if (hhand != null && hhand.isAllInShowdown()) {
-                        // if we are changing a card after all have been displayed (when pause after
-                        // deal is on, need to do showdown based on actual comm cards)
-                        int n = EngineUtils.getMatchingPiecesCount(PokerUtils.getFlop(), PokerConstants.PIECE_CARD);
-                        Showdown.displayAllin(hhand, n == 5);
-                    }
+                    String location = (player == null)
+                            ? "COMMUNITY:" + cardPiece.getCardIndex()
+                            : "PLAYER:" + player.getID() + ":" + cardPiece.getCardIndex();
+                    String cardStr = selectedCard.toStringSingle();
+                    submitCheat(() -> new GameServerRestClient(cfg.port()).cheatCard(cfg.gameId(), cfg.jwt(), location,
+                            cardStr));
                 }
 
                 menu_.setVisible(false);
@@ -2426,7 +2361,7 @@ public class ShowTournamentTable extends ShowPokerTable
             // next hand starts because player likely wanted button
             // to start there for next hand
             ClientHoldemHand hhand = table_.getHoldemHand();
-            if (hhand != null && hhand.getRound() == BettingRound.SHOWDOWN) {
+            if (hhand != null && hhand.getRound() == ClientBettingRound.SHOWDOWN) {
                 table_.setSkipNextButtonMove(true);
             }
         }
@@ -2499,10 +2434,10 @@ public class ShowTournamentTable extends ShowPokerTable
             else
                 muted.add(player.getName(), player.getPlayerId(), true);
 
-            chat.deliverChatLocal(PokerConstants.CHAT_ALWAYS,
+            chat.deliverChatLocal(PokerClientConstants.CHAT_ALWAYS,
                     PropertyConfig.getMessage(bMuted ? "msg.chat.unmuted" : "msg.chat.muted",
                             Utils.encodeHTML(player.getName())),
-                    bFromLobby ? PokerConstants.CHAT_DIRECTOR_MSG_ID : PokerConstants.CHAT_DEALER_MSG_ID);
+                    bFromLobby ? PokerClientConstants.CHAT_DIRECTOR_MSG_ID : PokerClientConstants.CHAT_DEALER_MSG_ID);
         }
     }
 
@@ -2547,10 +2482,12 @@ public class ShowTournamentTable extends ShowPokerTable
                 else
                     banned.add(player.getName(), player.getPlayerId(), true);
 
-                chat.deliverChatLocal(PokerConstants.CHAT_ALWAYS, PropertyConfig.getMessage(
+                chat.deliverChatLocal(PokerClientConstants.CHAT_ALWAYS, PropertyConfig.getMessage(
                         bBanNow ? "msg.chat.banned" : (bBanned ? "msg.chat.unbanned.ingame" : "msg.chat.banned.ingame"),
                         Utils.encodeHTML(player.getName())),
-                        bFromLobby ? PokerConstants.CHAT_DIRECTOR_MSG_ID : PokerConstants.CHAT_DEALER_MSG_ID);
+                        bFromLobby
+                                ? PokerClientConstants.CHAT_DIRECTOR_MSG_ID
+                                : PokerClientConstants.CHAT_DEALER_MSG_ID);
 
                 if (bBanNow && kickAction != null) {
                     kickAction.run();
@@ -2627,7 +2564,7 @@ public class ShowTournamentTable extends ShowPokerTable
         SetBlinds(String sStyle, int level) {
             super(GuiManager.DEFAULT, sStyle);
             level_ = level;
-            TournamentProfileHtml html = new TournamentProfileHtml(table_.getProfile());
+            TournamentProfileFormatter html = new TournamentProfileFormatter(table_.getProfile());
             setText(html.getBlindsText("msg.menu.", level, true));
 
             if (level == game_.getLevel()) {

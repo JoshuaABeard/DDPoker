@@ -37,7 +37,7 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.db.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.gui.*;
 
@@ -48,7 +48,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
 import java.util.List;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 
 public class StatisticsViewer extends BasePhase implements ActionListener {
     public static final String COL_FINISH = "finish";
@@ -166,13 +166,13 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
         tabs_.addTab(PropertyConfig.getMessage("msg.handhistory.overall"), ic, new OverallPanel(), null);
         tabs_.addTab(PropertyConfig.getMessage("msg.handhistory.byhand"), ic, new ByHandPanel(), null);
         tabs_.addTab(PropertyConfig.getMessage("msg.handhistory.preflop"), ic,
-                new ByRoundPanel(BettingRound.PRE_FLOP.toLegacy()), null);
+                new ByRoundPanel(ClientBettingRound.PRE_FLOP.toLegacy()), null);
         tabs_.addTab(PropertyConfig.getMessage("msg.handhistory.flop"), ic,
-                new ByRoundPanel(BettingRound.FLOP.toLegacy()), null);
+                new ByRoundPanel(ClientBettingRound.FLOP.toLegacy()), null);
         tabs_.addTab(PropertyConfig.getMessage("msg.handhistory.turn"), ic,
-                new ByRoundPanel(BettingRound.TURN.toLegacy()), null);
+                new ByRoundPanel(ClientBettingRound.TURN.toLegacy()), null);
         tabs_.addTab(PropertyConfig.getMessage("msg.handhistory.river"), ic,
-                new ByRoundPanel(BettingRound.RIVER.toLegacy()), null);
+                new ByRoundPanel(ClientBettingRound.RIVER.toLegacy()), null);
 
         finishTable_.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
@@ -593,7 +593,7 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
                     "SELECT \"com.donohoedigital.games.poker.PokerDatabaseProcs.getHandClass\"(PLH_CARD_1, PLH_CARD_2),"
                             + "COUNT(*),\n" + "CONCAT(SUM(CASE WHEN BITAND(" + getRoundColumn(nRound) + ','
                             + PokerDatabase.BIT_CHECK + ") > 0 THEN 1 ELSE 0 END) * 100 / COUNT(*),'%'),\n"
-                            + ((nRound == BettingRound.PRE_FLOP.toLegacy())
+                            + ((nRound == ClientBettingRound.PRE_FLOP.toLegacy())
                                     ? ""
                                     : "CONCAT(SUM(CASE WHEN BITAND(" + getRoundColumn(nRound) + ','
                                             + PokerDatabase.BIT_CHECK + ") > 0 AND BITAND(" + getRoundColumn(nRound)
@@ -635,13 +635,13 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
             return buf.toString();
         }
         public static String getRoundColumn(int nRound) {
-            if (nRound == BettingRound.ROUND_PRE_FLOP) {
+            if (nRound == ClientBettingRound.ROUND_PRE_FLOP) {
                 return "PLH_PREFLOP_ACTIONS";
-            } else if (nRound == BettingRound.ROUND_FLOP) {
+            } else if (nRound == ClientBettingRound.ROUND_FLOP) {
                 return "PLH_FLOP_ACTIONS";
-            } else if (nRound == BettingRound.ROUND_TURN) {
+            } else if (nRound == ClientBettingRound.ROUND_TURN) {
                 return "PLH_TURN_ACTIONS";
-            } else if (nRound == BettingRound.ROUND_RIVER) {
+            } else if (nRound == ClientBettingRound.ROUND_RIVER) {
                 return "PLH_RIVER_ACTIONS";
             } else {
                 return null;
@@ -720,7 +720,7 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
                     "\"com.donohoedigital.games.poker.PokerDatabaseProcs.getHandClass\"(PLH_CARD_1, PLH_CARD_2)",
                     "\"com.donohoedigital.games.poker.PokerDatabaseProcs.getHandClassRank\"(PLH_CARD_1, PLH_CARD_2) DESC",
                     bindArray));
-            table_.setExporter(new TableExporter(context_, BettingRound.getRoundName(nRound_)));
+            table_.setExporter(new TableExporter(context_, ClientBettingRound.getRoundName(nRound_)));
         }
 
         @Override
@@ -780,8 +780,8 @@ public class StatisticsViewer extends BasePhase implements ActionListener {
         @Override
         public void createUI() {
             DDScrollTable scrollTable = new DDScrollTable("stats", "PokerPrefsPlayerList", "BrushedMetal",
-                    (nRound_ == BettingRound.PRE_FLOP.toLegacy()) ? byRoundPreFlopColNames_ : byRoundColNames_,
-                    (nRound_ == BettingRound.PRE_FLOP.toLegacy())
+                    (nRound_ == ClientBettingRound.PRE_FLOP.toLegacy()) ? byRoundPreFlopColNames_ : byRoundColNames_,
+                    (nRound_ == ClientBettingRound.PRE_FLOP.toLegacy())
                             ? new int[]{30, 30, 40, 40, 40, 40, 40, 40, 40}
                             : new int[]{30, 30, 40, 40, 40, 40, 40, 40, 40, 40});
 

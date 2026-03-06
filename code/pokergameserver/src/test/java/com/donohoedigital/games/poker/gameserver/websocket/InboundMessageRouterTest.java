@@ -21,7 +21,7 @@ import com.donohoedigital.games.poker.engine.PlayerAction;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
 import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.GameInstanceState;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage;
+import com.donohoedigital.games.poker.protocol.message.ServerMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -36,8 +36,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.donohoedigital.games.poker.gameserver.dto.GameListResponse;
-import com.donohoedigital.games.poker.gameserver.dto.GameSummary;
+import com.donohoedigital.games.poker.protocol.dto.GameListResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameSummary;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
 import com.donohoedigital.games.poker.gameserver.service.GameService;
 
@@ -128,7 +128,7 @@ class GameControllerSecurityTest {
     @Test
     void joinGame_withAuth_returns200() throws Exception {
         when(gameService.joinGame(eq("game-123"), any())).thenReturn(
-                new com.donohoedigital.games.poker.gameserver.dto.GameJoinResponse("ws://localhost/ws/games/game-123",
+                new com.donohoedigital.games.poker.protocol.dto.GameJoinResponse("ws://localhost/ws/games/game-123",
                         "game-123"));
 
         mockMvc.perform(post("/api/v1/games/game-123/join").header("Authorization", "Bearer test-token"))

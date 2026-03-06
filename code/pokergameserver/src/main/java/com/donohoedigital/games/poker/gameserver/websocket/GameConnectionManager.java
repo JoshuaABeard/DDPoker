@@ -17,7 +17,7 @@
  */
 package com.donohoedigital.games.poker.gameserver.websocket;
 
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage;
+import com.donohoedigital.games.poker.protocol.message.ServerMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

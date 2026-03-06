@@ -31,10 +31,9 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.display.ClientHand;
 
 import com.donohoedigital.config.PropertyConfig;
-import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.engine.PokerConstants;
 
 public class StatResult {
     int win_, lose_, tie_;
@@ -45,7 +44,7 @@ public class StatResult {
     private double winOrTiePercent_;
     private int handCount_;
     private String name_;
-    private Hand hole_;
+    private ClientHand hole_;
 
     // retain 3 decimal places of precision,
     // so when displaying 2 places, rounding is proper
@@ -56,7 +55,7 @@ public class StatResult {
 
     }
 
-    public StatResult(Hand hole, HandList handList, int win, int lose, int tie) {
+    public StatResult(ClientHand hole, HandList handList, int win, int lose, int tie) {
         win_ = win;
         lose_ = lose;
         tie_ = tie;
@@ -108,7 +107,7 @@ public class StatResult {
             calcTotal();
     }
 
-    public Hand getHole() {
+    public ClientHand getHole() {
         return hole_;
     }
     public double getWinPercent() {
@@ -141,8 +140,9 @@ public class StatResult {
     }
 
     public String toHTML(String sKey) {
-        return PropertyConfig.getMessage(sKey, PokerConstants.formatPercent(winPercent_),
-                PokerConstants.formatPercent(tiePercent_), PokerConstants.formatPercent(losePercent_), handCount_);
+        return PropertyConfig.getMessage(sKey, PokerClientConstants.formatPercent(winPercent_),
+                PokerClientConstants.formatPercent(tiePercent_), PokerClientConstants.formatPercent(losePercent_),
+                handCount_);
     }
 
     public String toString() {

@@ -44,7 +44,7 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.ai.gui.*;
-import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.gui.*;
 import org.apache.logging.log4j.*;
@@ -427,11 +427,11 @@ public class TournamentProfileDialog extends OptionMenuDialog
             chipModePanel.setBorder(BorderFactory.createEmptyBorder(2, 20, 3, 0));
 
             OptionRadio startingChips = new OptionRadio(null, TournamentProfile.PARAM_LATE_REG_CHIPS, STYLE, dummy_,
-                    "latereg.chips.starting", chipModeGroup, PokerConstants.LATE_REG_CHIPS_STARTING);
+                    "latereg.chips.starting", chipModeGroup, PokerClientConstants.LATE_REG_CHIPS_STARTING);
             OptionMenu.add(startingChips, chipModePanel);
 
             OptionRadio averageChips = new OptionRadio(null, TournamentProfile.PARAM_LATE_REG_CHIPS, STYLE, dummy_,
-                    "latereg.chips.average", chipModeGroup, PokerConstants.LATE_REG_CHIPS_AVERAGE);
+                    "latereg.chips.average", chipModeGroup, PokerClientConstants.LATE_REG_CHIPS_AVERAGE);
             OptionMenu.add(averageChips, chipModePanel);
 
             // Add checkbox with nested controls
@@ -578,11 +578,11 @@ public class TournamentProfileDialog extends OptionMenuDialog
             tableFormatPanel.setLayout(new GridLayout(3, 1, 0, -4));
 
             OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_TABLE_SEATS, STYLE, dummy_,
-                    "tableformat.fullring", tableFormatGroup, PokerConstants.SEATS_FULL_RING), tableFormatPanel);
+                    "tableformat.fullring", tableFormatGroup, ProtocolConstants.SEATS_FULL_RING), tableFormatPanel);
             OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_TABLE_SEATS, STYLE, dummy_, "tableformat.6max",
-                    tableFormatGroup, PokerConstants.SEATS_6MAX), tableFormatPanel);
+                    tableFormatGroup, ProtocolConstants.SEATS_6MAX), tableFormatPanel);
             OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_TABLE_SEATS, STYLE, dummy_,
-                    "tableformat.headsup", tableFormatGroup, PokerConstants.SEATS_HEADS_UP), tableFormatPanel);
+                    "tableformat.headsup", tableFormatGroup, ProtocolConstants.SEATS_HEADS_UP), tableFormatPanel);
             quantity.add(tableFormatPanel, BorderLayout.CENTER);
 
             // buyin
@@ -1205,10 +1205,10 @@ public class TournamentProfileDialog extends OptionMenuDialog
         ButtonGroup exprgroup = new ButtonGroup();
 
         OptionRadio radio = OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_REBUYEXPR, STYLE, dummy_,
-                "rebuyexpr.lte", exprgroup, PokerConstants.REBUY_LTE, null), rebuydata3);
+                "rebuyexpr.lte", exprgroup, PokerClientConstants.REBUY_LTE, null), rebuydata3);
         rebuyOptions_.add(radio);
         radio = OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_REBUYEXPR, STYLE, dummy_, "rebuyexpr.lt",
-                exprgroup, PokerConstants.REBUY_LT, null), rebuydata3);
+                exprgroup, PokerClientConstants.REBUY_LT, null), rebuydata3);
         rebuyOptions_.add(radio);
 
         Integer nDefault = profile_.getBuyinChips();
@@ -1305,16 +1305,16 @@ public class TournamentProfileDialog extends OptionMenuDialog
                 TournamentProfile.MAX_PERC, 47, true);
         spotPerc_ = payoutperc.getSpinner();
         OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_PAYOUT, STYLE, dummy_, "payout.perc", payoutgroup,
-                PokerConstants.PAYOUT_PERC, payoutperc), typebase);
+                PokerClientConstants.PAYOUT_PERC, payoutperc), typebase);
 
         OptionInteger payoutnum = new OptionInteger(null, TournamentProfile.PARAM_PAYOUTNUM, STYLE, dummy_, null, 1,
                 TournamentProfile.MAX_SPOTS, 47, true);
         spotAmount_ = payoutnum.getSpinner();
         OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_PAYOUT, STYLE, dummy_, "payout.num", payoutgroup,
-                PokerConstants.PAYOUT_SPOTS, payoutnum), typebase);
+                PokerClientConstants.PAYOUT_SPOTS, payoutnum), typebase);
 
         OptionRadio radio = OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_PAYOUT, STYLE, dummy_,
-                "payout.sat", payoutgroup, PokerConstants.PAYOUT_SATELLITE), typebase);
+                "payout.sat", payoutgroup, PokerClientConstants.PAYOUT_SATELLITE), typebase);
         buttonSatellite_ = radio.getRadioButton();
 
         // sep
@@ -1333,13 +1333,13 @@ public class TournamentProfileDialog extends OptionMenuDialog
         OptionInteger houseperc = new OptionInteger(null, TournamentProfile.PARAM_HOUSEPERC, STYLE, dummy_, null, 0,
                 TournamentProfile.MAX_HOUSE_PERC, 55, true);
         OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_HOUSE, STYLE, dummy_, "house.perc", housegroup,
-                PokerConstants.HOUSE_PERC, houseperc), housebase);
+                PokerClientConstants.HOUSE_PERC, houseperc), housebase);
 
         OptionInteger houseamount = new OptionInteger(null, TournamentProfile.PARAM_HOUSEAMOUNT, STYLE, dummy_, null, 0,
                 TournamentProfile.MAX_HOUSE_AMOUNT, 55, true);
         houseAmount_ = houseamount.getSpinner();
         OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_HOUSE, STYLE, dummy_, "house.amount", housegroup,
-                PokerConstants.HOUSE_AMOUNT, houseamount), housebase);
+                PokerClientConstants.HOUSE_AMOUNT, houseamount), housebase);
 
         return base;
     }
@@ -1364,13 +1364,13 @@ public class TournamentProfileDialog extends OptionMenuDialog
         left.add(allocbase, BorderLayout.NORTH);
 
         radio = OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_ALLOC, STYLE, dummy_, "alloc.auto",
-                buttonGroup_, PokerConstants.ALLOC_AUTO, null), allocbase);
+                buttonGroup_, PokerClientConstants.ALLOC_AUTO, null), allocbase);
         buttonAuto_ = radio.getRadioButton();
         radio = OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_ALLOC, STYLE, dummy_, "alloc.perc",
-                buttonGroup_, PokerConstants.ALLOC_PERC, null), allocbase);
+                buttonGroup_, PokerClientConstants.ALLOC_PERC, null), allocbase);
         buttonPerc_ = radio.getRadioButton();
         radio = OptionMenu.add(new OptionRadio(null, TournamentProfile.PARAM_ALLOC, STYLE, dummy_, "alloc.amount",
-                buttonGroup_, PokerConstants.ALLOC_AMOUNT, null), allocbase);
+                buttonGroup_, PokerClientConstants.ALLOC_AMOUNT, null), allocbase);
         buttonAmount_ = radio.getRadioButton();
 
         // payout preset dropdown
@@ -1535,7 +1535,7 @@ public class TournamentProfileDialog extends OptionMenuDialog
                 else if (bPerc)
                     sp.spot.setRegExp("^([0-9\\,]*\\.?)\\%?|([0-9]*\\.([0-9][0-9][0-9]|[0-9][0-9]|[0-9]))\\%?$");
                 else
-                    sp.spot.setRegExp(PokerConstants.REGEXP_DOLLAR_AMOUNT);
+                    sp.spot.setRegExp(PokerClientConstants.REGEXP_DOLLAR_AMOUNT);
                 spotsParent_.add(sp);
             } else {
                 // set hidden items disabled for validation reasons

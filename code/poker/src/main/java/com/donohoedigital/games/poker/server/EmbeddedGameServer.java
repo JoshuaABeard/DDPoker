@@ -22,7 +22,7 @@ import com.donohoedigital.games.poker.PlayerProfile;
 import com.donohoedigital.games.poker.PlayerProfileOptions;
 import com.donohoedigital.games.poker.gameserver.auth.JwtKeyManager;
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
-import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
+import com.donohoedigital.games.poker.protocol.dto.LoginResponse;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

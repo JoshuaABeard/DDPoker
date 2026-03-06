@@ -7,7 +7,7 @@ package com.donohoedigital.games.poker.control;
 import com.donohoedigital.config.Prefs;
 import com.donohoedigital.games.config.EngineConstants;
 import com.donohoedigital.games.poker.PokerMain;
-import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
+import com.donohoedigital.games.poker.protocol.dto.LoginResponse;
 import com.donohoedigital.games.poker.online.OnlineServerUrl;
 import com.donohoedigital.games.poker.online.RestAuthClient;
 import com.fasterxml.jackson.databind.JsonNode;

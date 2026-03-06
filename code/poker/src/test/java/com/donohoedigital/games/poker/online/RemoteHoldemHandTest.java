@@ -18,11 +18,10 @@
 package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.poker.HandAction;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
-import com.donohoedigital.games.poker.engine.Card;
-import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.engine.HandSorted;
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData.ActionOptionsData;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
+import com.donohoedigital.games.poker.display.ClientCard;
+import com.donohoedigital.games.poker.display.ClientHand;
+import com.donohoedigital.games.poker.protocol.message.ServerMessageData.ActionOptionsData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -46,7 +45,7 @@ class RemoteHoldemHandTest {
 
     @Test
     void initialStateIsPreFlop() {
-        assertThat(hand.getRound()).isEqualTo(BettingRound.PRE_FLOP);
+        assertThat(hand.getRound()).isEqualTo(ClientBettingRound.PRE_FLOP);
         assertThat(hand.getNumPlayers()).isEqualTo(0);
         assertThat(hand.getCurrentPlayerIndex()).isEqualTo(RemoteHoldemHand.NO_CURRENT_PLAYER);
         assertThat(hand.getCurrentPlayer()).isNull();
@@ -55,24 +54,23 @@ class RemoteHoldemHandTest {
 
     @Test
     void updateRoundChangesRound() {
-        hand.updateRound(BettingRound.FLOP);
-        assertThat(hand.getRound()).isEqualTo(BettingRound.FLOP);
+        hand.updateRound(ClientBettingRound.FLOP);
+        assertThat(hand.getRound()).isEqualTo(ClientBettingRound.FLOP);
 
-        hand.updateRound(BettingRound.TURN);
-        assertThat(hand.getRound()).isEqualTo(BettingRound.TURN);
+        hand.updateRound(ClientBettingRound.TURN);
+        assertThat(hand.getRound()).isEqualTo(ClientBettingRound.TURN);
 
-        hand.updateRound(BettingRound.RIVER);
-        assertThat(hand.getRound()).isEqualTo(BettingRound.RIVER);
+        hand.updateRound(ClientBettingRound.RIVER);
+        assertThat(hand.getRound()).isEqualTo(ClientBettingRound.RIVER);
     }
 
     @Test
     void updateCommunityStoresCommunity() {
-        Hand community = new Hand();
-        // Cards as strings like "Ah" = Ace of Hearts; use index-based constructor for
-        // portability
-        community.addCard(Card.getCard("Ah"));
-        community.addCard(Card.getCard("Kd"));
-        community.addCard(Card.getCard("2c"));
+        ClientHand community = ClientHand.empty();
+        // Cards as strings like "Ah" = Ace of Hearts
+        community.addCard(ClientCard.getCard("Ah"));
+        community.addCard(ClientCard.getCard("Kd"));
+        community.addCard(ClientCard.getCard("2c"));
 
         hand.updateCommunity(community);
 

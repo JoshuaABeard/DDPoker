@@ -31,15 +31,14 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker;
-
-import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.display.ClientCard;
 
 public class CardThumbnail extends CardPiece {
     public CardThumbnail() {
-        this(Card.BLANK);
+        this(ClientCard.BLANK);
     }
 
-    public CardThumbnail(Card card) {
+    public CardThumbnail(ClientCard card) {
         super(null, null, null, true, 0);
         setThumbnailMode(true);
         setShadow(false);

@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.donohoedigital.games.poker.gameserver.GameServerException;
 import com.donohoedigital.games.poker.gameserver.GameServerException.ErrorCode;
-import com.donohoedigital.games.poker.gameserver.dto.ErrorResponse;
+import com.donohoedigital.games.poker.protocol.dto.ErrorResponse;
 
 /**
  * Global exception handler for consistent error responses across all REST

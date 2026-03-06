@@ -44,7 +44,6 @@ import com.donohoedigital.games.comms.EngineMessage;
 import com.donohoedigital.games.config.EngineConstants;
 import com.donohoedigital.games.config.GameButton;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.gui.*;
 import com.zookitec.layout.ComponentEF;
 import com.zookitec.layout.ExplicitConstraints;
@@ -245,7 +244,7 @@ public class PokerStartMenu extends StartMenu {
 
         // Preform message check the first time the start menu is displayed.
         if (enabled && messageCheck && profile_ != null
-                && PokerUtils.isOptionOn(PokerConstants.OPTION_AUTO_CHECK_UPDATE)) {
+                && PokerUtils.isOptionOn(PokerClientConstants.OPTION_AUTO_CHECK_UPDATE)) {
             String LASTMSG_KEY = "lastmsg";
 
             // get last msg key and check for update

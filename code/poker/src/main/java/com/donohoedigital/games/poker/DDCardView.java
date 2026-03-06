@@ -36,10 +36,10 @@
  * Created on March 29, 2003, 3:42 PM
  */
 package com.donohoedigital.games.poker;
+import com.donohoedigital.games.poker.display.ClientCard;
 
 import org.apache.logging.log4j.*;
 import com.donohoedigital.gui.*;
-import com.donohoedigital.games.poker.engine.*;
 
 import javax.swing.text.*;
 import java.awt.*;
@@ -49,7 +49,7 @@ public class DDCardView extends DDView {
 
     private static CardThumbnail piece_ = new CardThumbnail();
 
-    private Card card_;
+    private ClientCard card_;
     private int border_ = 1;
     public static final int HEIGHT = 26;
     public static final int WIDTH = 20;
@@ -60,9 +60,9 @@ public class DDCardView extends DDView {
         String card = (String) getElement().getAttributes().getAttribute("card");
 
         if (card != null) {
-            card_ = Card.getCard(card);
+            card_ = ClientCard.getCard(card);
         } else {
-            card_ = Card.BLANK;
+            card_ = ClientCard.BLANK;
         }
     }
 
@@ -73,7 +73,7 @@ public class DDCardView extends DDView {
         Rectangle rect = (a instanceof Rectangle) ? (Rectangle) a : a.getBounds();
 
         piece_.setCard(card_);
-        piece_.setUp(card_ != Card.BLANK);
+        piece_.setUp(card_ != ClientCard.BLANK);
 
         piece_.drawImageAt((Graphics2D) g, piece_.getImageComponent(), 0, 0, 0, rect.x + border_, rect.y + border_,
                 rect.width - border_ * 2, rect.height - border_ * 2, 1.0d);

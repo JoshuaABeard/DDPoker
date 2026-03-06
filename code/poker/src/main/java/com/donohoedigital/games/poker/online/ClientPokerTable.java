@@ -116,7 +116,7 @@ public interface ClientPokerTable {
     int getTableSeat(int nDisplaySeat);
 
     // -------------------------------------------------------------------------
-    // Hand access
+    // ClientHand access
     // -------------------------------------------------------------------------
 
     /** Returns the current hand, or {@code null} if no hand is in progress. */

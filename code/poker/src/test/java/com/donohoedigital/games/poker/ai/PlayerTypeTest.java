@@ -22,9 +22,8 @@ package com.donohoedigital.games.poker.ai;
 import com.donohoedigital.comms.DMTypedHashMap;
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
-import com.donohoedigital.games.poker.engine.Card;
-import com.donohoedigital.games.poker.engine.CardSuit;
-import com.donohoedigital.games.poker.engine.Hand;
+import com.donohoedigital.games.poker.display.ClientCard;
+import com.donohoedigital.games.poker.display.ClientHand;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -436,9 +435,9 @@ class PlayerTypeTest {
     void should_ReturnStratFactorWithHand_When_HandProvided() {
         PlayerType playerType = new PlayerType("Test");
         playerType.setStratValue("position", 5);
-        Hand hand = new Hand();
-        hand.addCard(new com.donohoedigital.games.poker.engine.Card(CardSuit.HEARTS, Card.ACE));
-        hand.addCard(new com.donohoedigital.games.poker.engine.Card(CardSuit.SPADES, Card.KING));
+        ClientHand hand = ClientHand.empty();
+        hand.addCard(ClientCard.getCard(ClientCard.HEARTS, ClientCard.ACE));
+        hand.addCard(ClientCard.getCard(ClientCard.SPADES, ClientCard.KING));
 
         float factor = playerType.getStratFactor("position", hand, 0.5f, 1.5f, 1);
 

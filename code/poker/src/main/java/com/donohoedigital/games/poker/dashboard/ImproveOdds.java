@@ -31,13 +31,16 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.dashboard;
+import com.donohoedigital.games.poker.PokerClientConstants;
+import com.donohoedigital.games.poker.display.ClientHand;
+import com.donohoedigital.games.poker.display.ClientHandScoreConstants;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 
 import java.util.Map;
@@ -54,9 +57,9 @@ public class ImproveOdds extends Odds {
             "STRAIGHT_FLUSH", "ROYAL_FLUSH"};
 
     // Corresponding hand type integer constants for display label lookup
-    private static final int[] HAND_TYPE_INTS = {HandScoreConstants.TRIPS, HandScoreConstants.STRAIGHT,
-            HandScoreConstants.FLUSH, HandScoreConstants.FULL_HOUSE, HandScoreConstants.QUADS,
-            HandScoreConstants.STRAIGHT_FLUSH, HandScoreConstants.ROYAL_FLUSH};
+    private static final int[] HAND_TYPE_INTS = {ClientHandScoreConstants.TRIPS, ClientHandScoreConstants.STRAIGHT,
+            ClientHandScoreConstants.FLUSH, ClientHandScoreConstants.FULL_HOUSE, ClientHandScoreConstants.QUADS,
+            ClientHandScoreConstants.STRAIGHT_FLUSH, ClientHandScoreConstants.ROYAL_FLUSH};
 
     public ImproveOdds(GameContext context) {
         super(context, "improveodds");
@@ -84,18 +87,18 @@ public class ImproveOdds extends Odds {
     /**
      * get display string
      */
-    protected String getDisplay(int nRound, ClientHoldemHand hhand, ClientPlayer asViewedBy, Hand hand) {
+    protected String getDisplay(int nRound, ClientHoldemHand hhand, ClientPlayer asViewedBy, ClientHand hand) {
         sTotal_ = null;
 
         // pre-flop, or insufficient community cards.
-        Hand community = hhand.getCommunityForDisplay();
+        ClientHand community = hhand.getCommunityForDisplay();
         nRound = hhand.getRoundForDisplay();
-        if (nRound == BettingRound.PRE_FLOP.toLegacy() || community.size() < 3) {
+        if (nRound == ClientBettingRound.PRE_FLOP.toLegacy() || community.size() < 3) {
             return "";
         }
 
         // river / showdown: no improvements possible
-        if (nRound == BettingRound.ROUND_FLOP || nRound == BettingRound.ROUND_TURN) {
+        if (nRound == ClientBettingRound.ROUND_FLOP || nRound == ClientBettingRound.ROUND_TURN) {
             // fall through to calculation below
         } else {
             sTotal_ = "0";
@@ -124,12 +127,12 @@ public class ImproveOdds extends Odds {
             nCnt++;
             dTotal += d;
             sb.append(PropertyConfig.getMessage("msg.odds.imptype",
-                    PropertyConfig.getMessage("msg.hand." + HAND_TYPE_INTS[i]), PokerConstants.formatPercent(d)));
+                    PropertyConfig.getMessage("msg.hand." + HAND_TYPE_INTS[i]), PokerClientConstants.formatPercent(d)));
         }
 
         if (sb.length() > 0) {
             sb.insert(0, PropertyConfig.getMessage("msg.odds.table.start"));
-            sTotal_ = PokerConstants.formatPercent(dTotal);
+            sTotal_ = PokerClientConstants.formatPercent(dTotal);
             if (nCnt > 1) {
                 sb.append(PropertyConfig.getMessage("msg.odds.total", sTotal_));
             }

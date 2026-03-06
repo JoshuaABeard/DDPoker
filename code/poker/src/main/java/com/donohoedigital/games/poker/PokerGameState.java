@@ -39,7 +39,6 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.games.config.*;
-import com.donohoedigital.games.poker.engine.*;
 
 import java.beans.*;
 import java.io.*;
@@ -89,11 +88,11 @@ public class PokerGameState extends GameState implements PropertyChangeListener 
     }
 
     /**
-     * Return out starting id (see note in PokerConstants.java)
+     * Return out starting id (see note in PokerClientConstants.java)
      */
     @Override
     protected int getStartId() {
-        return PokerConstants.START_OTHER_ID;
+        return PokerClientConstants.START_OTHER_ID;
     }
 
     ////

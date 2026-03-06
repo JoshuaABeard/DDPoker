@@ -31,15 +31,16 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.impexp;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
+import com.donohoedigital.games.poker.display.ClientHand;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
 
 import java.util.*;
 
 public class ImpExpHand {
-    public Hand community = new Hand();
+    public ClientHand community = ClientHand.empty();
     public int profileNumber;
     public int handID;
     public int tournamentID;
@@ -57,11 +58,11 @@ public class ImpExpHand {
     public int bigBlind;
     public int buttonSeat;
     public int localHumanPlayerSeat = -1;
-    public ClientPlayer players[] = new ClientPlayer[PokerConstants.SEATS];
-    public int betChips[] = new int[PokerConstants.SEATS];
-    public int overbetChips[] = new int[PokerConstants.SEATS];
-    public int winChips[] = new int[PokerConstants.SEATS];
-    public int startChips[] = new int[PokerConstants.SEATS];
-    public int endChips[] = new int[PokerConstants.SEATS];
+    public ClientPlayer players[] = new ClientPlayer[ProtocolConstants.SEATS];
+    public int betChips[] = new int[ProtocolConstants.SEATS];
+    public int overbetChips[] = new int[ProtocolConstants.SEATS];
+    public int winChips[] = new int[ProtocolConstants.SEATS];
+    public int startChips[] = new int[ProtocolConstants.SEATS];
+    public int endChips[] = new int[ProtocolConstants.SEATS];
     public ArrayList hist = new ArrayList();
 }

@@ -31,20 +31,20 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.impexp;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
+import com.donohoedigital.games.poker.display.ClientHandScoreConstants;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
-import com.donohoedigital.games.poker.engine.HandScoreConstants;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
+import com.donohoedigital.games.poker.protocol.dto.HandEvaluationData;
 
 import java.text.*;
 import java.util.*;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 
 public class ImpExpParadise implements ImpExp {
     private String paradisePlayerName_ = "DD Player";
-
-    private final HandInfoFast info = new HandInfoFast();
 
     private NumberFormat chipAmountFormat = NumberFormat.getInstance(Locale.US);
 
@@ -173,7 +173,7 @@ public class ImpExpParadise implements ImpExp {
         buf.append(" ");
         buf.append(ieHand.hndTable);
         buf.append("\"");
-        buf.append(" Hand #");
+        buf.append(" ClientHand #");
         buf.append(ieHand.hndNumber);
         buf.append(" -- Seat ");
         buf.append(ieHand.buttonSeat % 9 + 1);
@@ -184,7 +184,7 @@ public class ImpExpParadise implements ImpExp {
 
         int playersLeft = 0;
 
-        for (int seat = 0; seat < PokerConstants.SEATS; ++seat) {
+        for (int seat = 0; seat < ProtocolConstants.SEATS; ++seat) {
             ClientPlayer player = ieHand.players[seat];
 
             if (player == null)
@@ -207,14 +207,14 @@ public class ImpExpParadise implements ImpExp {
             }
         }
 
-        int round = BettingRound.PRE_FLOP.toLegacy();
+        int round = ClientBettingRound.PRE_FLOP.toLegacy();
 
         for (int i = 0; i < ieHand.hist.size(); ++i) {
             HandAction action = (HandAction) ieHand.hist.get(i);
 
             while (action.getRound() > round) {
                 int currentRound = round++;
-                if (currentRound == BettingRound.ROUND_PRE_FLOP) {
+                if (currentRound == ClientBettingRound.ROUND_PRE_FLOP) {
                     if (ieHand.community.size() >= 3) {
                         buf.append("*** FLOP *** : [ ");
                         buf.append(ieHand.community.getCard(0).getRankDisplaySingle());
@@ -228,7 +228,7 @@ public class ImpExpParadise implements ImpExp {
                         buf.append(" ]");
                         buf.append(newline);
                     }
-                } else if (currentRound == BettingRound.ROUND_FLOP) {
+                } else if (currentRound == ClientBettingRound.ROUND_FLOP) {
                     if (ieHand.community.size() >= 4) {
                         buf.append("*** TURN *** : [ ");
                         buf.append(ieHand.community.getCard(0).getRankDisplaySingle());
@@ -245,7 +245,7 @@ public class ImpExpParadise implements ImpExp {
                         buf.append(" ]");
                         buf.append(newline);
                     }
-                } else if (currentRound == BettingRound.ROUND_TURN) {
+                } else if (currentRound == ClientBettingRound.ROUND_TURN) {
                     if (ieHand.community.size() >= 5) {
                         buf.append("*** RIVER *** : [ ");
                         buf.append(ieHand.community.getCard(0).getRankDisplaySingle());
@@ -373,7 +373,7 @@ public class ImpExpParadise implements ImpExp {
             buf.append(newline);
         }
 
-        for (int seat = 0; seat < PokerConstants.SEATS; ++seat) {
+        for (int seat = 0; seat < ProtocolConstants.SEATS; ++seat) {
             ClientPlayer player = ieHand.players[seat];
 
             if (player == null)
@@ -406,7 +406,7 @@ public class ImpExpParadise implements ImpExp {
                 buf.append(player.getHand().getCard(1).getRankDisplaySingle());
                 buf.append(player.getHand().getCard(1).getSuitDisplay());
                 buf.append(" ] (");
-                appendFinalHand(buf, ieHand.community, player.getHand());
+                appendFinalHand(buf, player);
                 buf.append(")");
             }
 
@@ -438,7 +438,7 @@ public class ImpExpParadise implements ImpExp {
         for (int i = 0; i < ieHand.hist.size(); i++) {
             action = (HandAction) ieHand.hist.get(i);
 
-            if (action.getRound() != BettingRound.SHOWDOWN.toLegacy())
+            if (action.getRound() != ClientBettingRound.SHOWDOWN.toLegacy())
                 continue;
             if (action.getSubAmount() != nPot)
                 continue;
@@ -469,57 +469,61 @@ public class ImpExpParadise implements ImpExp {
     private static final String rankPName_[] = new String[]{null, null, "twos", "threes", "fours", "fives", "sixes",
             "sevens", "eights", "nines", "tens", "jacks", "queens", "kings", "aces"};
 
-    private void appendFinalHand(StringBuilder buf, Hand hand, Hand community) {
-        int score = info.getScore(hand, community);
+    private void appendFinalHand(StringBuilder buf, ClientPlayer player) {
+        HandEvaluationData eval = player.getHandEval();
+        if (eval == null) {
+            buf.append("a hand");
+            return;
+        }
 
-        switch (info.getHandType()) {
-            case HandScoreConstants.ROYAL_FLUSH :
+        switch (eval.handType()) {
+            case ClientHandScoreConstants.ROYAL_FLUSH :
                 buf.append("a royal flush");
                 break;
-            case HandScoreConstants.STRAIGHT_FLUSH :
+            case ClientHandScoreConstants.STRAIGHT_FLUSH :
                 buf.append("a straight flush, ");
-                buf.append(rankName_[info.getStraightLowRank()]);
+                buf.append(rankName_[eval.straightLowRank()]);
                 buf.append(" to ");
-                buf.append(rankName_[info.getStraightHighRank()]);
+                buf.append(rankName_[eval.straightHighRank()]);
                 break;
-            case HandScoreConstants.QUADS :
+            case ClientHandScoreConstants.QUADS :
                 buf.append("four of a kind, ");
-                buf.append(rankPName_[info.getQuadsRank()]);
+                buf.append(rankPName_[eval.quadsRank()]);
                 break;
-            case HandScoreConstants.FULL_HOUSE :
+            case ClientHandScoreConstants.FULL_HOUSE :
                 buf.append("a full house, ");
-                buf.append(rankPName_[info.getTripsRank()]);
+                buf.append(rankPName_[eval.tripsRank()]);
                 buf.append(" full of ");
-                buf.append(rankPName_[info.getBigPairRank()]);
+                buf.append(rankPName_[eval.bigPairRank()]);
                 break;
-            case HandScoreConstants.FLUSH :
+            case ClientHandScoreConstants.FLUSH :
                 buf.append("a flush, ");
-                buf.append(rankName_[info.getFlushHighRank()]);
+                buf.append(rankName_[eval.flushHighRank()]);
                 buf.append(" high");
                 break;
-            case HandScoreConstants.STRAIGHT :
+            case ClientHandScoreConstants.STRAIGHT :
                 buf.append("a straight, ");
-                buf.append(rankName_[info.getStraightLowRank()]);
+                buf.append(rankName_[eval.straightLowRank()]);
                 buf.append(" to ");
-                buf.append(rankName_[info.getStraightHighRank()]);
+                buf.append(rankName_[eval.straightHighRank()]);
                 break;
-            case HandScoreConstants.TRIPS :
+            case ClientHandScoreConstants.TRIPS :
                 buf.append("three of a kind, ");
-                buf.append(rankPName_[info.getTripsRank()]);
+                buf.append(rankPName_[eval.tripsRank()]);
                 break;
-            case HandScoreConstants.TWO_PAIR :
+            case ClientHandScoreConstants.TWO_PAIR :
                 buf.append("two pair, ");
-                buf.append(rankPName_[info.getBigPairRank()]);
+                buf.append(rankPName_[eval.bigPairRank()]);
                 buf.append(" and ");
-                buf.append(rankPName_[info.getSmallPairRank()]);
+                buf.append(rankPName_[eval.smallPairRank()]);
                 break;
-            case HandScoreConstants.PAIR :
+            case ClientHandScoreConstants.PAIR :
                 buf.append("a pair of ");
-                buf.append(rankPName_[info.getBigPairRank()]);
+                buf.append(rankPName_[eval.bigPairRank()]);
                 break;
-            case HandScoreConstants.HIGH_CARD :
+            case ClientHandScoreConstants.HIGH_CARD :
                 buf.append("high card ");
-                buf.append(rankName_[info.getHighCardRank()]);
+                buf.append(rankName_[eval.highCardRank()]);
                 break;
         }
     }

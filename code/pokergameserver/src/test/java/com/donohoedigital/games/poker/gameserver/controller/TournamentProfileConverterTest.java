@@ -17,9 +17,9 @@
  */
 package com.donohoedigital.games.poker.gameserver.controller;
 
-import com.donohoedigital.games.poker.gameserver.GameConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.AIPlayerConfig;
-import com.donohoedigital.games.poker.gameserver.GameConfig.BlindLevel;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.AIPlayerConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.BlindLevel;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

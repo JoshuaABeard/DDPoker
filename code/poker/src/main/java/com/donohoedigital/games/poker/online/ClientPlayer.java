@@ -41,11 +41,10 @@ import com.donohoedigital.games.config.GamePlayer;
 import com.donohoedigital.games.config.GameState;
 import com.donohoedigital.games.engine.GameEngine;
 import com.donohoedigital.games.poker.HandAction;
-import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 import com.donohoedigital.games.poker.PlayerProfile;
 import com.donohoedigital.games.poker.ai.PlayerType;
-import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.engine.HandSorted;
+import com.donohoedigital.games.poker.display.ClientHand;
+import com.donohoedigital.games.poker.protocol.dto.HandEvaluationData;
 
 import java.util.Comparator;
 
@@ -63,7 +62,7 @@ import java.util.Comparator;
  * participate in the existing game framework infrastructure (property change
  * listeners, player ID management, etc.).
  */
-public class ClientPlayer extends GamePlayer implements GamePlayerInfo {
+public class ClientPlayer extends GamePlayer {
 
     // -------------------------------------------------------------------------
     // Constants (migrated from PokerPlayer)
@@ -121,8 +120,8 @@ public class ClientPlayer extends GamePlayer implements GamePlayerInfo {
     // -------------------------------------------------------------------------
     // Cards
     // -------------------------------------------------------------------------
-    private Hand hand_ = new Hand();
-    private HandSorted handSorted_;
+    private ClientHand hand_ = ClientHand.empty();
+    private ClientHand handSorted_;
 
     // -------------------------------------------------------------------------
     // Display info (server-calculated)
@@ -131,6 +130,7 @@ public class ClientPlayer extends GamePlayer implements GamePlayerInfo {
     private int allInScore_;
     private int allInWin_;
     private int handScore_ = -1;
+    private HandEvaluationData handEval_;
 
     // -------------------------------------------------------------------------
     // Tournament results
@@ -432,8 +432,8 @@ public class ClientPlayer extends GamePlayer implements GamePlayerInfo {
     /**
      * Creates a new hand for this player (e.g., for deal-high or color-up display).
      */
-    public Hand newHand(char type) {
-        hand_ = new Hand(type);
+    public ClientHand newHand(char type) {
+        hand_ = ClientHand.ofType(type);
         handSorted_ = null;
         return hand_;
     }
@@ -464,13 +464,13 @@ public class ClientPlayer extends GamePlayer implements GamePlayerInfo {
     // Cards
     // -------------------------------------------------------------------------
 
-    public Hand getHand() {
+    public ClientHand getHand() {
         return hand_;
     }
 
-    public HandSorted getHandSorted() {
+    public ClientHand getHandSorted() {
         if (handSorted_ == null || handSorted_.fingerprint() != hand_.fingerprint()) {
-            handSorted_ = new HandSorted(hand_);
+            handSorted_ = hand_.sorted();
         }
         return handSorted_;
     }
@@ -521,6 +521,14 @@ public class ClientPlayer extends GamePlayer implements GamePlayerInfo {
 
     public void setHandScore(int handScore) {
         handScore_ = handScore;
+    }
+
+    public HandEvaluationData getHandEval() {
+        return handEval_;
+    }
+
+    public void setHandEval(HandEvaluationData handEval) {
+        handEval_ = handEval;
     }
 
     // -------------------------------------------------------------------------
@@ -688,7 +696,6 @@ public class ClientPlayer extends GamePlayer implements GamePlayerInfo {
         timeoutMillis_ = timeoutMillis;
     }
 
-    @Override
     public void setTimeoutMessageSecondsLeft(int seconds) {
         // display-only — no-op on client
     }
@@ -758,7 +765,7 @@ public class ClientPlayer extends GamePlayer implements GamePlayerInfo {
     }
 
     // -------------------------------------------------------------------------
-    // Hand strength (for dashboard display)
+    // ClientHand strength (for dashboard display)
     // -------------------------------------------------------------------------
 
     public float getHandStrength() {

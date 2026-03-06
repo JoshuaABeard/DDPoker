@@ -31,13 +31,15 @@
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
 package com.donohoedigital.games.poker.dashboard;
+import com.donohoedigital.games.poker.PokerClientConstants;
+import com.donohoedigital.games.poker.display.ClientHand;
 
 import com.donohoedigital.games.poker.online.ClientPlayer;
+import com.donohoedigital.games.poker.protocol.dto.HandEvaluationData;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.engine.*;
 import com.donohoedigital.games.poker.event.*;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
@@ -58,7 +60,6 @@ public class MyHand extends DashboardItem {
     private static MyHand impl_ = null;
 
     DDHtmlArea htmlHand_;
-    HandInfoFast fast_ = new HandInfoFast();
     String sHand_;
     String sHandTitle_;
 
@@ -171,7 +172,7 @@ public class MyHand extends DashboardItem {
         ClientPokerTable table = game_.getCurrentTable();
         ClientHoldemHand hhand = table.getHoldemHand();
         ClientPlayer asViewedBy = game_.getHumanPlayer();
-        Hand hand = asViewedBy.getHand();
+        ClientHand hand = asViewedBy.getHand();
 
         // if no hand, or an observer
         if (hhand == null || asViewedBy.isObserver() || hand == null) {
@@ -188,7 +189,7 @@ public class MyHand extends DashboardItem {
         CardPiece card;
         Territory flop = PokerUtils.getFlop();
         synchronized (flop.getMap()) {
-            List<GamePiece> cards = EngineUtils.getMatchingPieces(flop, PokerConstants.PIECE_CARD);
+            List<GamePiece> cards = EngineUtils.getMatchingPieces(flop, PokerClientConstants.PIECE_CARD);
             for (int i = cards.size() - 1; i >= 0; i--) {
                 card = (CardPiece) cards.get(i);
                 if (card.isVisible())
@@ -205,19 +206,17 @@ public class MyHand extends DashboardItem {
             if (bFold)
                 sHandTitle_ = PropertyConfig.getMessage("msg.myhand.folded.title", sHandTitle_);
         } else {
-            Hand allcommunity = hhand.getCommunity();
-            Hand community = new Hand();
-            for (int i = 0; i < nNumBoard; i++) {
-                community.add(allcommunity.getCard(i));
+            // Use server-provided hand evaluation data
+            HandEvaluationData eval = asViewedBy.getHandEval();
+            if (eval != null && eval.bestFiveCards() != null && !eval.bestFiveCards().isEmpty()) {
+                ClientHand best = ClientHand.fromStrings(eval.bestFiveCards());
+                sHand_ = PropertyConfig.getMessage("msg.myhand.postflop", best.toHTML(),
+                        HandHistoryPanel.handDesc(eval));
+                sHandTitle_ = best.toStringRank();
+            } else {
+                sHand_ = PropertyConfig.getMessage("msg.myhand.postflop", hand.toHTML(), "");
+                sHandTitle_ = hand.toStringRank();
             }
-
-            HandSorted csorted = new HandSorted(community);
-
-            // get hand
-            fast_.getScore(hand, community);
-            Hand best = HandUtils.getBestFive(asViewedBy.getHandSorted(), csorted);
-            sHand_ = PropertyConfig.getMessage("msg.myhand.postflop", best.toHTML(), HandHistoryPanel.handDesc(fast_));
-            sHandTitle_ = best.toStringRank();
         }
     }
 }

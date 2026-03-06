@@ -35,11 +35,11 @@ import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
-import com.donohoedigital.games.poker.gameserver.dto.LoginResponse;
-import com.donohoedigital.games.poker.gameserver.dto.ProfileResponse;
-import com.donohoedigital.games.poker.gameserver.dto.RequestEmailChangeResponse;
-import com.donohoedigital.games.poker.gameserver.dto.ResendVerificationResponse;
-import com.donohoedigital.games.poker.gameserver.dto.VerifyEmailResponse;
+import com.donohoedigital.games.poker.protocol.dto.LoginResponse;
+import com.donohoedigital.games.poker.protocol.dto.ProfileResponse;
+import com.donohoedigital.games.poker.protocol.dto.RequestEmailChangeResponse;
+import com.donohoedigital.games.poker.protocol.dto.ResendVerificationResponse;
+import com.donohoedigital.games.poker.protocol.dto.VerifyEmailResponse;
 import com.donohoedigital.games.poker.model.PasswordResetToken;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.OnlineProfileRepository;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.PasswordResetTokenRepository;

@@ -17,7 +17,7 @@
  */
 package com.donohoedigital.games.poker.gameserver.websocket;
 
-import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessage;
+import com.donohoedigital.games.poker.protocol.message.ServerMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;

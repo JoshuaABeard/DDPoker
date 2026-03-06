@@ -37,7 +37,7 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
-import com.donohoedigital.games.poker.gameserver.dto.GameJoinResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameJoinResponse;
 import com.donohoedigital.games.poker.model.*;
 import com.donohoedigital.games.poker.model.util.*;
 import com.donohoedigital.gui.*;
@@ -522,7 +522,7 @@ public class FindGames extends ListGames {
         String serverHost = serverUri.getHost() + (serverUri.getPort() > 0 ? ":" + serverUri.getPort() : "");
         GameSummaryConverter converter = new GameSummaryConverter(serverHost);
 
-        List<com.donohoedigital.games.poker.gameserver.dto.GameSummary> summaries;
+        List<com.donohoedigital.games.poker.protocol.dto.GameSummary> summaries;
         try {
             summaries = restClient_.listGames();
         } catch (RestGameClient.RestGameClientException e) {
