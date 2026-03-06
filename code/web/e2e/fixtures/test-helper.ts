@@ -85,6 +85,27 @@ export const api = {
     return token
   },
 
+  /**
+   * Login via API and return the JWT token. Useful for setting up auth
+   * in the browser context without going through the UI.
+   */
+  async login(
+    username: string,
+    password: string,
+  ): Promise<{ token: string }> {
+    const res = await fetch(`${GAME_SERVER_URL}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    })
+    if (!res.ok) throw new Error(`Login failed: ${res.status} ${await res.text()}`)
+    // Extract JWT from Set-Cookie header
+    const setCookie = res.headers.get('set-cookie') || ''
+    const match = setCookie.match(/DDPoker-JWT=([^;]+)/)
+    const token = match ? match[1] : ''
+    return { token }
+  },
+
   async getForgotPasswordToken(email: string): Promise<string> {
     const res = await fetch(`${GAME_SERVER_URL}/api/v1/auth/forgot-password`, {
       method: 'POST',
@@ -98,11 +119,37 @@ export const api = {
 }
 
 export const ui = {
+  /**
+   * Log in via UI form. After the form submits (which sets the JWT cookie on the
+   * game server origin), copy the cookie to the Next.js origin so the middleware
+   * sees it. This is necessary because in E2E mode the game server (port 8877)
+   * and Next.js (port 3000) are on different origins.
+   */
   async login(page: Page, username: string, password: string): Promise<void> {
     await page.goto('/login')
     await page.getByLabel('Username').fill(username)
     await page.getByLabel('Password').fill(password)
     await page.getByRole('button', { name: /log in/i }).click()
+
+    // Wait for the login API call to complete and cookie to be set
+    await page.waitForTimeout(1000)
+
+    // Copy DDPoker-JWT cookie from game server origin to Next.js origin
+    const cookies = await page.context().cookies(GAME_SERVER_URL)
+    const jwt = cookies.find((c) => c.name === 'DDPoker-JWT')
+    if (jwt) {
+      await page.context().addCookies([
+        {
+          name: jwt.name,
+          value: jwt.value,
+          domain: 'localhost',
+          path: '/',
+          httpOnly: jwt.httpOnly,
+          secure: jwt.secure,
+          sameSite: jwt.sameSite,
+        },
+      ])
+    }
   },
 
   async register(page: Page, username: string, email: string, password: string): Promise<void> {
