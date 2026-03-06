@@ -17,6 +17,8 @@
  */
 package com.donohoedigital.games.poker.protocol.message;
 
+import com.donohoedigital.games.poker.protocol.dto.HandEvaluationData;
+
 import java.util.List;
 import java.util.Map;
 
@@ -205,11 +207,12 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
      * Winner of a pot. {@code chipCount} is the absolute chip count after the win
      * (null if unavailable).
      */
-    record WinnerData(long playerId, int amount, String hand, List<String> cards, int potIndex, Integer chipCount) {
+    record WinnerData(long playerId, int amount, String hand, List<String> cards, int potIndex, Integer chipCount,
+            HandEvaluationData handEval) {
     }
 
     /** Showdown player (all cards revealed). */
-    record ShowdownPlayerData(long playerId, List<String> cards, String handDescription) {
+    record ShowdownPlayerData(long playerId, List<String> cards, String handDescription, HandEvaluationData handEval) {
     }
 
     /** Final standings entry. */
@@ -347,6 +350,7 @@ public sealed interface ServerMessageData permits ServerMessageData.ConnectedDat
     /** Advisor data sent privately to human players after hand state changes. */
     record AdvisorData(Integer handRank, String handDescription, double equity, double potOdds, String recommendation,
             String startingHandCategory, String startingHandNotation, Map<String, Double> improvementOdds,
-            Double positivePotential, Double negativePotential) implements ServerMessageData {
+            Double positivePotential, Double negativePotential,
+            HandEvaluationData handEval) implements ServerMessageData {
     }
 }

@@ -128,7 +128,7 @@ class ServerMessageSerializationTest {
         // ShowdownStartedData now carries showdown player cards so the client
         // can reveal hole cards before displayShowdown() runs.
         var showdownPlayers = java.util.List
-                .of(new ServerMessageData.ShowdownPlayerData(7L, java.util.List.of("Ah", "Kd"), ""));
+                .of(new ServerMessageData.ShowdownPlayerData(7L, java.util.List.of("Ah", "Kd"), "", null));
         ServerMessageData.ShowdownStartedData data = new ServerMessageData.ShowdownStartedData(1, showdownPlayers);
         ServerMessage message = ServerMessage.of(ServerMessageType.SHOWDOWN_STARTED, "game-xyz", data);
 
@@ -197,7 +197,7 @@ class ServerMessageSerializationTest {
     @Test
     void winnerData_serializesCorrectly() throws Exception {
         ServerMessageData.WinnerData winner = new ServerMessageData.WinnerData(7L, 1200, "Pair of Aces",
-                List.of("Ah", "As"), 0, 6200);
+                List.of("Ah", "As"), 0, 6200, null);
 
         ServerMessage message = ServerMessage.of(ServerMessageType.HAND_COMPLETE, "g",
                 new ServerMessageData.HandCompleteData(5, List.of(winner), List.of(), 1));

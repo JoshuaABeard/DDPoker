@@ -19,12 +19,14 @@ package com.donohoedigital.games.poker.gameserver.websocket;
 
 import com.donohoedigital.games.poker.core.TournamentContext;
 import com.donohoedigital.games.poker.engine.event.GameEvent;
+import com.donohoedigital.games.poker.gameserver.HandEvaluationHelper;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
 import com.donohoedigital.games.poker.gameserver.GameStateSnapshot;
 import com.donohoedigital.games.poker.gameserver.ServerGameTable;
 import com.donohoedigital.games.poker.gameserver.ServerHand;
 import com.donohoedigital.games.poker.gameserver.ServerPlayer;
 import com.donohoedigital.games.poker.gameserver.ServerTournamentContext;
+import com.donohoedigital.games.poker.protocol.dto.HandEvaluationData;
 import com.donohoedigital.games.poker.protocol.message.ServerMessage;
 import com.donohoedigital.games.poker.protocol.message.ServerMessageData;
 import com.donohoedigital.games.poker.protocol.message.ServerMessageType;
@@ -309,6 +311,9 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                         handNum = sgt.getHandNum();
                         ServerHand hand = (ServerHand) sgt.getHoldemHand();
                         if (hand != null) {
+                            Card[] communityCards = hand.getCommunityCards();
+                            List<Card> communityList = communityCards != null
+                                    ? List.of(communityCards) : List.of();
                             List<ServerHand.PotResolutionResult> results = hand.getResolutionResults();
                             if (!results.isEmpty()) {
                                 List<ServerMessageData.WinnerData> w = new ArrayList<>();
@@ -316,8 +321,13 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                                     int share = r.winnerIds().length > 0 ? r.amount() / r.winnerIds().length : 0;
                                     for (int wid : r.winnerIds()) {
                                         Integer winnerChips = lookupPlayerChipsAtTable(sgt, wid);
-                                        w.add(new ServerMessageData.WinnerData(wid, share, "", List.of(),
-                                                r.potIndex(), winnerChips));
+                                        List<Card> winnerHole = hand.getPlayerCards(wid);
+                                        HandEvaluationData winnerHandEval = HandEvaluationHelper
+                                                .evaluate(winnerHole, communityList);
+                                        w.add(new ServerMessageData.WinnerData(wid, share,
+                                                winnerHandEval.handDescription(),
+                                                winnerHandEval.bestFiveCards(),
+                                                r.potIndex(), winnerChips, winnerHandEval));
                                     }
                                 }
                                 winners = w;
@@ -332,12 +342,18 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                                 }
                             }
                             if (allWithCards.size() > 1) {
+                                final List<Card> commList = communityList;
                                 showdownPlayers = allWithCards.stream()
-                                        .map(sp -> new ServerMessageData.ShowdownPlayerData(
-                                                sp.getID(),
-                                                OutboundMessageConverter.cardsToList(
-                                                        hand.getPlayerCards(sp.getID()).toArray(new Card[0])),
-                                                sp.getName()))
+                                        .map(sp -> {
+                                            List<Card> playerCards = hand.getPlayerCards(sp.getID());
+                                            HandEvaluationData eval = HandEvaluationHelper
+                                                    .evaluate(playerCards, commList);
+                                            return new ServerMessageData.ShowdownPlayerData(
+                                                    sp.getID(),
+                                                    OutboundMessageConverter.cardsToList(
+                                                            playerCards.toArray(new Card[0])),
+                                                    eval.handDescription(), eval);
+                                        })
                                         .toList();
                             }
                         }
@@ -361,13 +377,20 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                     if (gt instanceof ServerGameTable sgt) {
                         ServerHand hand = (ServerHand) sgt.getHoldemHand();
                         if (hand != null) {
+                            Card[] showdownCommunity = hand.getCommunityCards();
+                            List<Card> showdownCommList = showdownCommunity != null
+                                    ? List.of(showdownCommunity) : List.of();
                             List<ServerMessageData.ShowdownPlayerData> sp = new ArrayList<>();
                             for (int s = 0; s < sgt.getNumSeats(); s++) {
                                 ServerPlayer player = sgt.getPlayer(s);
                                 if (player != null && !player.isFolded()) {
+                                    List<Card> playerCards = hand.getPlayerCards(player.getID());
                                     List<String> cards = OutboundMessageConverter.cardsToList(
-                                            hand.getPlayerCards(player.getID()).toArray(new Card[0]));
-                                    sp.add(new ServerMessageData.ShowdownPlayerData(player.getID(), cards, ""));
+                                            playerCards.toArray(new Card[0]));
+                                    HandEvaluationData eval = HandEvaluationHelper
+                                            .evaluate(playerCards, showdownCommList);
+                                    sp.add(new ServerMessageData.ShowdownPlayerData(
+                                            player.getID(), cards, eval.handDescription(), eval));
                                 }
                             }
                             showdownPlayers = sp;
@@ -751,14 +774,17 @@ public class GameEventBroadcaster implements Consumer<GameEvent> {
                 numOpponents = 1;
             }
 
-            AdvisorResult result = advisorService.compute(holeCards.toArray(new Card[0]), communityCards, potSize,
-                    callAmount, numOpponents, ADVISOR_ITERATIONS);
+            Card[] holeCardsArray = holeCards.toArray(new Card[0]);
+            AdvisorResult result = advisorService.compute(holeCardsArray, communityCards, potSize, callAmount,
+                    numOpponents, ADVISOR_ITERATIONS);
+
+            HandEvaluationData handEval = HandEvaluationHelper.evaluate(holeCardsArray, communityCards);
 
             ServerMessage advisorMsg = ServerMessage.of(ServerMessageType.ADVISOR_UPDATE, gameId,
                     new ServerMessageData.AdvisorData(result.handRank(), result.handDescription(), result.equity(),
                             result.potOdds(), result.recommendation(), result.startingHandCategory(),
                             result.startingHandNotation(), result.improvementOdds(), result.positivePotential(),
-                            result.negativePotential()));
+                            result.negativePotential(), handEval));
 
             // Send privately to this human player
             connectionManager.sendToPlayer(gameId, human.getID(), advisorMsg);
