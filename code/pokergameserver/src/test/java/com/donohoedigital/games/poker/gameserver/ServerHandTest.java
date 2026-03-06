@@ -1056,6 +1056,259 @@ class ServerHandTest {
         assertEquals(1500, totalChips, "Chip conservation must hold");
     }
 
+    // =================================================================
+    // Pot Distribution Intent Tests — verify correct winner and amounts
+    // =================================================================
+
+    @Test
+    void should_AwardFullPot_When_BestHandWinsShowdown() {
+        // 3 players each put in 100 (pot = 300). Alice has the best hand (AA).
+        // Verify Alice gains 200 net, Bob and Charlie each lose 100.
+        ServerDeck deck = new ServerDeck(List.of(Card.SPADES_A, Card.HEARTS_A, // Alice (seat 0) — AA
+                Card.DIAMONDS_2, Card.DIAMONDS_3, // Bob (seat 1) — 23
+                Card.CLUBS_4, Card.CLUBS_5, // Charlie (seat 2) — 45
+                Card.DIAMONDS_9, // burn before flop
+                Card.SPADES_T, Card.CLUBS_J, Card.DIAMONDS_Q, // flop
+                Card.HEARTS_9, // burn before turn
+                Card.HEARTS_3, // turn
+                Card.CLUBS_9, // burn before river
+                Card.CLUBS_6)); // river
+
+        // button=0 (Alice), sbSeat=1 (Bob), bbSeat=2 (Charlie), blinds 50/100
+        ServerHand hand = new ServerHand(table, 1, 50, 100, 0, 0, 1, 2, deck);
+        hand.deal();
+
+        // Pre-flop: Alice (button/UTG in 3-handed) calls 100
+        hand.applyPlayerAction(alice, PlayerAction.call());
+        // Bob (SB, 50 posted) calls 50 more to complete 100
+        hand.applyPlayerAction(bob, PlayerAction.call());
+        // Charlie (BB, 100 posted) checks
+        hand.applyPlayerAction(charlie, PlayerAction.check());
+
+        // Pot = 300 (100 from each). Advance through all streets to showdown.
+        while (hand.getRound() != BettingRound.SHOWDOWN) {
+            hand.advanceRound();
+        }
+        hand.resolve();
+
+        // Alice (AA) wins the pot of 300 → 5000 - 100 + 300 = 5200
+        assertEquals(5200, alice.getChipCount(), "Alice (AA) should win the full pot: 5000 - 100 + 300 = 5200");
+        // Bob loses 100 → 4900
+        assertEquals(4900, bob.getChipCount(), "Bob should lose his 100 contribution");
+        // Charlie loses 100 → 4900
+        assertEquals(4900, charlie.getChipCount(), "Charlie should lose his 100 contribution");
+
+        // Chip conservation
+        int total = alice.getChipCount() + bob.getChipCount() + charlie.getChipCount();
+        assertEquals(15000, total, "Chip conservation must hold");
+    }
+
+    @Test
+    void should_SplitPotEvenly_When_TwoPlayersHaveIdenticalHands() {
+        // 3 players, Alice and Bob both have AK (different suits), Charlie has junk.
+        // Alice and Bob split the pot; Charlie loses his contribution.
+        ServerDeck deck = new ServerDeck(List.of(Card.SPADES_A, Card.SPADES_K, // Alice (seat 0) — AKs
+                Card.HEARTS_A, Card.HEARTS_K, // Bob (seat 1) — AKh
+                Card.DIAMONDS_2, Card.DIAMONDS_3, // Charlie (seat 2) — junk
+                Card.CLUBS_9, // burn before flop
+                Card.CLUBS_T, Card.DIAMONDS_J, Card.CLUBS_8, // flop
+                Card.HEARTS_9, // burn before turn
+                Card.SPADES_5, // turn
+                Card.DIAMONDS_9, // burn before river
+                Card.CLUBS_6)); // river — board: T J 8 5 6, best 5 for AK = A K J T 8
+
+        // button=0 (Alice), sbSeat=1 (Bob), bbSeat=2 (Charlie), blinds 50/100
+        ServerHand hand = new ServerHand(table, 1, 50, 100, 0, 0, 1, 2, deck);
+        hand.deal();
+
+        // Pre-flop: all call/check to 100 each (pot = 300)
+        hand.applyPlayerAction(alice, PlayerAction.call());
+        hand.applyPlayerAction(bob, PlayerAction.call());
+        hand.applyPlayerAction(charlie, PlayerAction.check());
+
+        while (hand.getRound() != BettingRound.SHOWDOWN) {
+            hand.advanceRound();
+        }
+        hand.resolve();
+
+        // Pot = 300. Alice and Bob split → 150 each. Net: each gains 50.
+        assertEquals(5050, alice.getChipCount(), "Alice should get half the pot (5000 - 100 + 150 = 5050)");
+        assertEquals(5050, bob.getChipCount(), "Bob should get half the pot (5000 - 100 + 150 = 5050)");
+        assertEquals(4900, charlie.getChipCount(), "Charlie should lose his 100 contribution");
+
+        int total = alice.getChipCount() + bob.getChipCount() + charlie.getChipCount();
+        assertEquals(15000, total, "Chip conservation must hold");
+    }
+
+    @Test
+    void should_ReturnUncalledBet_When_AllFoldToLastBettor() {
+        // Alice raises to 500, Bob and Charlie fold.
+        // Alice should win the blinds (150) and get her uncalled raise back.
+        // Net: Alice gains 150 (the blinds), Bob loses 50 (SB), Charlie loses 100 (BB).
+        ServerHand hand = new ServerHand(table, 1, 50, 100, 0, 0, 1, 2);
+        hand.deal();
+
+        // Pre-flop: Alice raises to 500
+        hand.applyPlayerAction(alice, PlayerAction.raise(500));
+        // Bob folds
+        hand.applyPlayerAction(bob, PlayerAction.fold());
+        // Charlie folds
+        hand.applyPlayerAction(charlie, PlayerAction.fold());
+
+        hand.resolve();
+
+        // Alice wins uncontested: she invested 500, pot = 500 + 50 + 100 = 650.
+        // After resolve: Alice = 5000 - 500 + 650 = 5150.
+        assertEquals(5150, alice.getChipCount(), "Alice should win the blinds: 5000 - 500 + 650 = 5150");
+        // Bob lost SB (50)
+        assertEquals(4950, bob.getChipCount(), "Bob should have 5000 - 50 = 4950 after folding");
+        // Charlie lost BB (100)
+        assertEquals(4900, charlie.getChipCount(), "Charlie should have 5000 - 100 = 4900 after folding");
+
+        // Chip conservation
+        int total = alice.getChipCount() + bob.getChipCount() + charlie.getChipCount();
+        assertEquals(15000, total, "Chip conservation must hold");
+    }
+
+    @Test
+    void should_CreateCorrectSidePot_When_ShortStackGoesAllIn() {
+        // Player A has 100 chips (short), Players B and C have 500 each.
+        // All go all-in. Main pot = 300 (100 from each), side pot from B and C extras.
+        // A has the best hand (AA) and wins main pot.
+        // B has KK (beats C's QQ) and wins side pot.
+        ServerPlayer shortAlice = new ServerPlayer(10, "ShortAlice", true, 0, 100);
+        ServerPlayer bigBob = new ServerPlayer(11, "BigBob", true, 0, 500);
+        ServerPlayer bigCharlie = new ServerPlayer(12, "BigCharlie", true, 0, 500);
+        shortAlice.setSeat(0);
+        bigBob.setSeat(1);
+        bigCharlie.setSeat(2);
+
+        MockServerGameTable t3 = new MockServerGameTable(3);
+        t3.addPlayer(shortAlice, 0);
+        t3.addPlayer(bigBob, 1);
+        t3.addPlayer(bigCharlie, 2);
+
+        // ShortAlice (AA) > BigBob (KK) > BigCharlie (QQ)
+        // Board: 2♠5♣8♦3♥6♣ — no straights, no flushes
+        ServerDeck deck = new ServerDeck(List.of(Card.SPADES_A, Card.HEARTS_A, // ShortAlice (seat 0) — AA
+                Card.SPADES_K, Card.HEARTS_K, // BigBob (seat 1) — KK
+                Card.SPADES_Q, Card.HEARTS_Q, // BigCharlie (seat 2) — QQ
+                Card.DIAMONDS_9, // burn before flop
+                Card.SPADES_2, Card.CLUBS_5, Card.DIAMONDS_8, // flop
+                Card.HEARTS_9, // burn before turn
+                Card.HEARTS_3, // turn
+                Card.CLUBS_9, // burn before river
+                Card.CLUBS_6)); // river
+
+        // button=0 (ShortAlice), sbSeat=1 (BigBob), bbSeat=2 (BigCharlie), blinds 10/20
+        ServerHand hand = new ServerHand(t3, 1, 10, 20, 0, 0, 1, 2, deck);
+        hand.deal();
+
+        // ShortAlice (button/UTG) raises all-in 100
+        hand.applyPlayerAction(shortAlice, PlayerAction.raise(100));
+        // BigBob (SB) raises all-in 500
+        hand.applyPlayerAction(bigBob, PlayerAction.raise(490));
+        // BigCharlie (BB) calls all-in
+        hand.applyPlayerAction(bigCharlie, PlayerAction.call());
+
+        while (hand.getRound() != BettingRound.SHOWDOWN) {
+            hand.advanceRound();
+        }
+        hand.resolve();
+
+        // Main pot: 3 × 100 = 300 → ShortAlice (AA) wins
+        assertEquals(300, shortAlice.getChipCount(), "ShortAlice (AA) wins main pot (3 × 100 = 300)");
+        // Side pot: 2 × 400 = 800 → BigBob (KK) wins
+        assertEquals(800, bigBob.getChipCount(), "BigBob (KK) wins side pot (2 × 400 = 800)");
+        // BigCharlie loses everything
+        assertEquals(0, bigCharlie.getChipCount(), "BigCharlie (QQ) loses everything");
+
+        // Chip conservation: 100 + 500 + 500 = 1100
+        int total = shortAlice.getChipCount() + bigBob.getChipCount() + bigCharlie.getChipCount();
+        assertEquals(1100, total, "Chip conservation must hold");
+    }
+
+    @Test
+    void should_HandleOddChipInSplitPot() {
+        // 3 players each put in 100 (pot = 300). Two players tie.
+        // 300 / 2 = 150 each — divides evenly, but let's create a scenario where
+        // the pot is 301 (odd) by using antes. With ante=1 from 3 players (3 total)
+        // + blinds 49/98 + calls to 98 each = 3 + 49 + 98 + 98 + 49 + 0 = 297.
+        // Actually, simpler: 3 antes of 1 = 3, each calls to 100 total → pot = 303.
+        // 303 / 2 = 151 remainder 1. One winner gets 152, the other gets 151.
+        // Total distributed = 303. Chip conservation holds.
+
+        // Use ante=1, blinds 50/100 → pot after deal = 3 + 50 + 100 = 153
+        // Alice calls 100, Bob calls 50 more (to 100), Charlie checks (100 already)
+        // Pot = 3 (antes) + 100 + 100 + 100 = 303. 303/2 = 151.5 → 152 and 151.
+        ServerDeck deck = new ServerDeck(List.of(Card.SPADES_A, Card.SPADES_K, // Alice (seat 0) — AKs
+                Card.HEARTS_A, Card.HEARTS_K, // Bob (seat 1) — AKh
+                Card.DIAMONDS_2, Card.DIAMONDS_3, // Charlie (seat 2) — junk
+                Card.CLUBS_9, // burn before flop
+                Card.CLUBS_T, Card.DIAMONDS_J, Card.CLUBS_8, // flop
+                Card.HEARTS_9, // burn before turn
+                Card.SPADES_5, // turn
+                Card.DIAMONDS_9, // burn before river
+                Card.CLUBS_6)); // river
+
+        // Reset players to known chip counts for this test
+        ServerPlayer a = new ServerPlayer(10, "OddA", true, 0, 5000);
+        ServerPlayer b = new ServerPlayer(11, "OddB", true, 0, 5000);
+        ServerPlayer c = new ServerPlayer(12, "OddC", true, 0, 5000);
+        a.setSeat(0);
+        b.setSeat(1);
+        c.setSeat(2);
+        MockServerGameTable t3 = new MockServerGameTable(3);
+        t3.addPlayer(a, 0);
+        t3.addPlayer(b, 1);
+        t3.addPlayer(c, 2);
+
+        // ante=1, blinds 50/100, button=0, sb=1, bb=2
+        ServerHand hand = new ServerHand(t3, 1, 50, 100, 1, 0, 1, 2, deck);
+        hand.deal();
+
+        // Pot after deal = 3 (antes) + 50 (sb) + 100 (bb) = 153
+        // Alice calls 100, Bob calls 50 more, Charlie checks
+        hand.applyPlayerAction(a, PlayerAction.call());
+        hand.applyPlayerAction(b, PlayerAction.call());
+        hand.applyPlayerAction(c, PlayerAction.check());
+
+        // Antes count toward each player's bet:
+        // Alice: ante(1) → calls 99 more to reach 100. Total in = 100.
+        // Bob: ante(1) + SB(50) = 51 → calls 49 more to reach 100. Total in = 100.
+        // Charlie: ante(1) + BB(100) = 101 → checks. Total in = 101.
+        // Pot = 100 + 100 + 101 = 301 (odd number for split test)
+        assertEquals(301, hand.getPotSize(), "Pot should be 301 (antes count toward bets)");
+
+        while (hand.getRound() != BettingRound.SHOWDOWN) {
+            hand.advanceRound();
+        }
+        hand.resolve();
+
+        // Alice and Bob have identical hands (AK), Charlie loses.
+        // 301 / 2 = 150 remainder 1. Total distributed must equal 301.
+        // Alice put in 100, Bob put in 100, Charlie put in 101.
+        int aNet = a.getChipCount() - 5000;
+        int bNet = b.getChipCount() - 5000;
+        int cNet = c.getChipCount() - 5000;
+
+        // Charlie loses his 101
+        assertEquals(-101, cNet, "Charlie should lose 101 (ante + BB)");
+
+        // Total net should be zero (chip conservation)
+        assertEquals(0, aNet + bNet + cNet, "Net changes must sum to zero");
+
+        // The two winners share 301: one gets 151, the other 150
+        assertTrue(
+                (a.getChipCount() == 5051 && b.getChipCount() == 5050)
+                        || (a.getChipCount() == 5050 && b.getChipCount() == 5051),
+                "Odd chip should go to one winner: Alice=" + a.getChipCount() + " Bob=" + b.getChipCount());
+
+        // Chip conservation
+        int total = a.getChipCount() + b.getChipCount() + c.getChipCount();
+        assertEquals(15000, total, "Chip conservation must hold");
+    }
+
     /**
      * Mock table for testing. Implements ServerHand.MockTable interface.
      */
