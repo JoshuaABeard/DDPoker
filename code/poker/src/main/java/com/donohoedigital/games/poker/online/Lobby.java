@@ -38,8 +38,8 @@ import com.donohoedigital.config.*;
 import com.donohoedigital.games.config.*;
 import com.donohoedigital.games.engine.*;
 import com.donohoedigital.games.poker.*;
+import com.donohoedigital.games.poker.protocol.dto.GameSettingsRequest;
 import com.donohoedigital.games.poker.protocol.dto.GameSummary;
-import com.donohoedigital.games.poker.protocol.dto.LobbyPlayerInfo;
 import com.donohoedigital.games.poker.protocol.message.ServerMessageData;
 import com.donohoedigital.gui.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -74,6 +74,7 @@ public class Lobby extends BasePhase {
     private DDButton start_;
     private DDButton cancel_;
     private DDButton edit_;
+    private DDButton kick_;
 
     // game state
     private PokerGame game_;
@@ -134,7 +135,7 @@ public class Lobby extends BasePhase {
         menubox.add(buttonbox_, BorderLayout.SOUTH);
         if (bHost_) {
             start_ = buttonbox_.getDefaultButton();
-            edit_ = buttonbox_.getButton("edit");
+            edit_ = buttonbox_.getButton("editonlinegame");
         }
         cancel_ = buttonbox_.getButtonStartsWith("cancel");
 
@@ -169,6 +170,14 @@ public class Lobby extends BasePhase {
         playerTable_.setModel(playerModel_);
         playerTable_.setShowHorizontalLines(true);
         playersBorder.add(scroll, BorderLayout.CENTER);
+
+        // kick button (host only) — below the player table
+        if (bHost_) {
+            kick_ = new GlassButton("lobby.kick", "Glass");
+            kick_.setText(PropertyConfig.getMessage("msg.lobby.kick"));
+            kick_.addActionListener(e -> doKickPlayer());
+            playersBorder.add(GuiUtils.WEST(kick_), BorderLayout.SOUTH);
+        }
 
         // URL panel (south of center)
         DDPanel urlPanel = createURLPanel();
@@ -275,10 +284,7 @@ public class Lobby extends BasePhase {
 
     private void updateFromLobbyState(ServerMessageData.LobbyStateData d) {
         if (d.players() != null) {
-            List<LobbyPlayerInfo> players = d.players().stream()
-                    .map(lp -> new LobbyPlayerInfo(lp.name(), lp.isOwner() ? "Host" : (lp.isAI() ? "AI" : "Player")))
-                    .toList();
-            playerModel_.update(players);
+            playerModel_.updateFromLobbyPlayerData(d.players());
         }
     }
 
@@ -303,8 +309,7 @@ public class Lobby extends BasePhase {
         if (player == null) {
             return;
         }
-        String role = player.isOwner() ? "Host" : (player.isAI() ? "AI" : "Player");
-        playerModel_.addPlayer(new LobbyPlayerInfo(player.name(), role));
+        playerModel_.addLobbyPlayer(player);
     }
 
     private void removeLobbyPlayer(ServerMessageData.LobbyPlayerData player) {
@@ -359,13 +364,12 @@ public class Lobby extends BasePhase {
         Thread t = new Thread(() -> {
             try {
                 GameSummary summary = restClient_.getGameSummary(gameId_);
-                List<LobbyPlayerInfo> players = summary.players() != null ? summary.players() : Collections.emptyList();
                 SwingUtilities.invokeLater(() -> {
                     if (pollTimer_ == null) {
                         return;
                     }
 
-                    playerModel_.update(players);
+                    playerModel_.updateFromGameSummary(summary);
 
                     // if game has started and we're the host waiting to transition
                     if ("IN_PROGRESS".equals(summary.status()) && bStarting_) {
@@ -399,6 +403,9 @@ public class Lobby extends BasePhase {
             if (edit_ != null) {
                 edit_.setEnabled(false);
             }
+            if (kick_ != null) {
+                kick_.setEnabled(false);
+            }
             bStarting_ = true;
             // call startGame on server in background
             Thread t = new Thread(() -> {
@@ -412,6 +419,8 @@ public class Lobby extends BasePhase {
                         cancel_.setEnabled(true);
                         if (edit_ != null)
                             edit_.setEnabled(true);
+                        if (kick_ != null)
+                            kick_.setEnabled(true);
                         EngineUtils.displayInformationDialog(context_,
                                 PropertyConfig.getMessage("msg.lobby.startfail", ex.getMessage()));
                     });
@@ -419,6 +428,12 @@ public class Lobby extends BasePhase {
             }, "LobbyStart");
             t.setDaemon(true);
             t.start();
+            return false;
+        }
+
+        // edit settings (host only)
+        if (edit_ != null && button.getName().equals(edit_.getName())) {
+            doEditSettings();
             return false;
         }
 
@@ -451,6 +466,112 @@ public class Lobby extends BasePhase {
         }
 
         return true;
+    }
+
+    // =========================================================================
+    // Kick player
+    // =========================================================================
+
+    private void doKickPlayer() {
+        int row = playerTable_.getSelectedRow();
+        if (row < 0) {
+            EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.lobby.kick.noselection"));
+            return;
+        }
+
+        ServerMessageData.LobbyPlayerData player = playerModel_.getPlayerAt(row);
+        if (player == null) {
+            return;
+        }
+
+        // cannot kick the host
+        if (player.isOwner()) {
+            EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.lobby.kick.ishost"));
+            return;
+        }
+
+        String sMsg = PropertyConfig.getMessage("msg.lobby.kick.confirm", player.name());
+        if (!EngineUtils.displayConfirmationDialog(context_, sMsg)) {
+            return;
+        }
+
+        if (restClient_ == null || gameId_ == null) {
+            return;
+        }
+
+        long profileId = player.profileId();
+        kick_.setEnabled(false);
+        Thread t = new Thread(() -> {
+            try {
+                restClient_.kickPlayer(gameId_, profileId);
+            } catch (Exception ex) {
+                logger.error("Failed to kick player: {}", ex.getMessage());
+                SwingUtilities.invokeLater(() -> EngineUtils.displayInformationDialog(context_,
+                        PropertyConfig.getMessage("msg.lobby.kick.fail", ex.getMessage())));
+            } finally {
+                SwingUtilities.invokeLater(() -> kick_.setEnabled(true));
+            }
+        }, "LobbyKick");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    // =========================================================================
+    // Edit settings
+    // =========================================================================
+
+    private void doEditSettings() {
+        if (restClient_ == null || gameId_ == null) {
+            return;
+        }
+
+        // simple input dialog for game name
+        String currentName = "";
+        Component parent = menu_ != null ? menu_ : null;
+        String newName = (String) JOptionPane.showInputDialog(parent,
+                PropertyConfig.getMessage("msg.lobby.edit.name.prompt"),
+                PropertyConfig.getMessage("msg.lobby.edit.title"), JOptionPane.PLAIN_MESSAGE, null, null, currentName);
+
+        if (newName == null) {
+            return; // user cancelled
+        }
+
+        String maxPlayersStr = (String) JOptionPane.showInputDialog(parent,
+                PropertyConfig.getMessage("msg.lobby.edit.maxplayers.prompt"),
+                PropertyConfig.getMessage("msg.lobby.edit.title"), JOptionPane.PLAIN_MESSAGE, null, null, "");
+
+        Integer maxPlayers = null;
+        if (maxPlayersStr != null && !maxPlayersStr.isBlank()) {
+            try {
+                maxPlayers = Integer.parseInt(maxPlayersStr.trim());
+            } catch (NumberFormatException ex) {
+                EngineUtils.displayInformationDialog(context_, PropertyConfig.getMessage("msg.lobby.edit.invalidmax"));
+                return;
+            }
+        }
+
+        GameSettingsRequest request = new GameSettingsRequest(newName.isBlank() ? null : newName.trim(), maxPlayers,
+                null, null);
+
+        if (edit_ != null) {
+            edit_.setEnabled(false);
+        }
+        Thread t = new Thread(() -> {
+            try {
+                restClient_.updateSettings(gameId_, request);
+            } catch (Exception ex) {
+                logger.error("Failed to update settings: {}", ex.getMessage());
+                SwingUtilities.invokeLater(() -> EngineUtils.displayInformationDialog(context_,
+                        PropertyConfig.getMessage("msg.lobby.edit.fail", ex.getMessage())));
+            } finally {
+                SwingUtilities.invokeLater(() -> {
+                    if (edit_ != null)
+                        edit_.setEnabled(true);
+                });
+            }
+        }, "LobbyEditSettings");
+        t.setDaemon(true);
+        t.start();
     }
 
     // =========================================================================
@@ -501,25 +622,68 @@ public class Lobby extends BasePhase {
     // PlayerModel — updated by WebSocket events or REST poll fallback
     // =========================================================================
 
-    private class PlayerModel extends AbstractTableModel {
+    /**
+     * Table model for the lobby player list. Stores
+     * {@link ServerMessageData.LobbyPlayerData} when populated via WebSocket (which
+     * includes profileId for kick operations), or falls back to name/role-only
+     * entries from REST polling.
+     */
+    static class PlayerModel extends AbstractTableModel {
 
-        private List<LobbyPlayerInfo> players_ = Collections.emptyList();
+        private List<ServerMessageData.LobbyPlayerData> players_ = Collections.emptyList();
 
-        void update(List<LobbyPlayerInfo> newPlayers) {
+        /** Replace all players from a WebSocket LOBBY_STATE message. */
+        void updateFromLobbyPlayerData(List<ServerMessageData.LobbyPlayerData> newPlayers) {
             players_ = new ArrayList<>(newPlayers);
             fireTableDataChanged();
         }
 
-        void addPlayer(LobbyPlayerInfo player) {
+        /**
+         * Replace all players from a REST poll GameSummary (no profileId available).
+         */
+        void updateFromGameSummary(GameSummary summary) {
+            List<com.donohoedigital.games.poker.protocol.dto.LobbyPlayerInfo> infos = summary.players();
+            if (infos == null) {
+                players_ = Collections.emptyList();
+            } else {
+                players_ = new ArrayList<>();
+                for (com.donohoedigital.games.poker.protocol.dto.LobbyPlayerInfo info : infos) {
+                    boolean isHost = "Host".equals(info.role());
+                    boolean isAI = "AI".equals(info.role());
+                    players_.add(new ServerMessageData.LobbyPlayerData(0, info.name(), isHost, isAI, null));
+                }
+            }
+            fireTableDataChanged();
+        }
+
+        /** Add a single player from a LOBBY_PLAYER_JOINED message. */
+        void addLobbyPlayer(ServerMessageData.LobbyPlayerData player) {
             players_ = new ArrayList<>(players_);
             players_.add(player);
             fireTableDataChanged();
         }
 
+        /** Remove a player by name (used for both leave and kick). */
         void removePlayer(String name) {
             players_ = new ArrayList<>(players_);
             players_.removeIf(p -> p.name().equals(name));
             fireTableDataChanged();
+        }
+
+        /**
+         * Get the full player data at the given row index, or null if out of bounds.
+         */
+        ServerMessageData.LobbyPlayerData getPlayerAt(int row) {
+            if (row < 0 || row >= players_.size()) {
+                return null;
+            }
+            return players_.get(row);
+        }
+
+        /** Get the profileId for the player at the given row, or -1 if unavailable. */
+        long getProfileIdAtRow(int row) {
+            ServerMessageData.LobbyPlayerData player = getPlayerAt(row);
+            return player != null ? player.profileId() : -1;
         }
 
         @Override
@@ -534,14 +698,14 @@ public class Lobby extends BasePhase {
 
         @Override
         public Object getValueAt(int rowIndex, int colIndex) {
-            LobbyPlayerInfo info = players_.get(rowIndex);
+            ServerMessageData.LobbyPlayerData player = players_.get(rowIndex);
             switch (colIndex) {
                 case 0 :
                     return rowIndex + 1;
                 case 1 :
-                    return info.name();
+                    return player.name();
                 case 2 :
-                    return info.role();
+                    return player.isOwner() ? "Host" : (player.isAI() ? "AI" : "Player");
                 default :
                     return "";
             }
