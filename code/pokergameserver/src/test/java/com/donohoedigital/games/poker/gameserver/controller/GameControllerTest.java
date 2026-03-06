@@ -35,6 +35,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.GameServerException;
 import com.donohoedigital.games.poker.gameserver.GameServerException.ErrorCode;
 import com.donohoedigital.games.poker.protocol.dto.GameJoinResponse;
@@ -56,6 +57,9 @@ class GameControllerTest {
     @MockitoBean
     private AuthService authService;
 
+    @MockitoBean
+    private GameInstanceManager gameInstanceManager;
+
     // =========================================================================
     // POST /api/v1/games — createGame
     // =========================================================================
@@ -63,6 +67,10 @@ class GameControllerTest {
     @Test
     void testCreateGame() throws Exception {
         when(gameService.createGame(any(), anyLong(), anyString())).thenReturn("game-123");
+        com.donohoedigital.games.poker.gameserver.GameInstance mockInstance = mock(
+                com.donohoedigital.games.poker.gameserver.GameInstance.class);
+        when(mockInstance.getGameId()).thenReturn("game-123");
+        when(gameInstanceManager.createGameWithId(eq("game-123"), anyLong(), any())).thenReturn(mockInstance);
 
         mockMvc.perform(post("/api/v1/games").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Test Game\",\"description\":\"Test\",\"greeting\":\"Hi\",\"maxPlayers\":9,"
@@ -71,6 +79,16 @@ class GameControllerTest {
                         + "\"doubleAfterLastLevel\":true,\"defaultGameType\":\"NOLIMIT_HOLDEM\",\"levelAdvanceMode\":\"TIME\","
                         + "\"handsPerLevel\":10,\"defaultMinutesPerLevel\":15,\"allowDash\":false,\"allowAdvisor\":false}"))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.gameId").value("game-123"));
+
+        // Verify controller passes deserialized config fields and auth user to service
+        verify(gameService).createGame(argThat(config -> "Test Game".equals(config.name()) && config.maxPlayers() == 9
+                && config.startingChips() == 1000), eq(1L), eq("testuser"));
+
+        // Verify in-memory game instance is created, transitioned, and host added
+        verify(gameInstanceManager).createGameWithId(eq("game-123"), eq(1L),
+                argThat(config -> "Test Game".equals(config.name())));
+        verify(mockInstance).transitionToWaitingForPlayers();
+        verify(mockInstance).addPlayer(eq(1L), eq("testuser"), eq(false), eq(0));
     }
 
     // =========================================================================
@@ -86,6 +104,10 @@ class GameControllerTest {
                 .content("{\"name\":\"Community Game\",\"wsUrl\":\"ws://1.2.3.4:8765/ws/games/local\"}"))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.gameId").value("game-456"))
                 .andExpect(jsonPath("$.hostingType").value("COMMUNITY"));
+
+        // Verify controller passes auth user and deserialized request to service
+        verify(gameService).registerCommunityGame(eq(1L), eq("testuser"), argThat(
+                req -> "Community Game".equals(req.name()) && "ws://1.2.3.4:8765/ws/games/local".equals(req.wsUrl())));
     }
 
     // =========================================================================
@@ -99,6 +121,9 @@ class GameControllerTest {
 
         mockMvc.perform(post("/api/v1/games/game-123/join")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.wsUrl").value("ws://localhost/ws/games/game-123"));
+
+        // Verify null body results in null password passed to service
+        verify(gameService).joinGame(eq("game-123"), isNull());
     }
 
     @Test
@@ -109,6 +134,9 @@ class GameControllerTest {
         mockMvc.perform(post("/api/v1/games/game-123/join").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"password\":\"secret\"}")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.wsUrl").value("ws://localhost/ws/games/game-123"));
+
+        // Verify exact password from request body is passed to service
+        verify(gameService).joinGame(eq("game-123"), eq("secret"));
     }
 
     @Test
@@ -130,6 +158,9 @@ class GameControllerTest {
 
         mockMvc.perform(post("/api/v1/games/game-123/start")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.gameId").value("game-123"));
+
+        // Verify path variable and auth profileId are passed to service
+        verify(gameService).startGame(eq("game-123"), eq(1L));
     }
 
     @Test
@@ -159,6 +190,9 @@ class GameControllerTest {
         mockMvc.perform(get("/api/v1/games/game-123")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.gameId").value("game-123")).andExpect(jsonPath("$.name").value("Test Game"))
                 .andExpect(jsonPath("$.hostingType").value("SERVER"));
+
+        // Verify path variable is passed to service
+        verify(gameService).getGameSummary(eq("game-123"));
     }
 
     @Test
@@ -183,6 +217,10 @@ class GameControllerTest {
                 .andExpect(jsonPath("$.games[0].gameId").value("game-1"))
                 .andExpect(jsonPath("$.games[1].hostingType").value("COMMUNITY"))
                 .andExpect(jsonPath("$.total").value(2));
+
+        // Verify default query params are passed through (no filters, page=0,
+        // pageSize=50)
+        verify(gameService).listGames(isNull(), isNull(), isNull(), eq(0), eq(50));
     }
 
     @Test
@@ -203,6 +241,9 @@ class GameControllerTest {
         doNothing().when(gameService).cancelGame(eq("game-123"), anyLong());
 
         mockMvc.perform(delete("/api/v1/games/game-123")).andExpect(status().isNoContent());
+
+        // Verify path variable and auth profileId are passed to service
+        verify(gameService).cancelGame(eq("game-123"), eq(1L));
     }
 
     @Test
@@ -222,6 +263,9 @@ class GameControllerTest {
         doNothing().when(gameService).heartbeat(eq("game-123"), anyLong());
 
         mockMvc.perform(post("/api/v1/games/game-123/heartbeat")).andExpect(status().isOk());
+
+        // Verify path variable and auth profileId are passed to service
+        verify(gameService).heartbeat(eq("game-123"), eq(1L));
     }
 
     // =========================================================================
