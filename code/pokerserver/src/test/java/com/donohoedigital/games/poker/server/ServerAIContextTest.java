@@ -26,6 +26,7 @@ import com.donohoedigital.games.poker.engine.GamePlayerInfo;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.CardSuit;
+import com.donohoedigital.games.poker.engine.HandScoreConstants;
 import com.donohoedigital.games.poker.engine.PokerActionConstants;
 import org.junit.jupiter.api.Test;
 
@@ -652,5 +653,580 @@ class ServerAIContextTest {
         int raiseFreq = context.getOpponentRaiseFrequency(opponent, 0);
         // 5 raises out of 5 hands = 100%
         assertThat(raiseFreq).isEqualTo(100);
+    }
+
+    // ========== Hand Evaluation Tests ==========
+
+    @Test
+    void evaluateHandRank_pair_returnsCorrectRank() {
+        ServerAIContext context = createContext();
+
+        Card[] hole = {new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.ACE)};
+        Card[] community = {new Card(CardSuit.CLUBS, Card.TWO), new Card(CardSuit.DIAMONDS, Card.SEVEN),
+                new Card(CardSuit.HEARTS, Card.NINE)};
+
+        int rank = context.evaluateHandRank(hole, community);
+
+        assertThat(rank).isEqualTo(HandScoreConstants.PAIR);
+    }
+
+    @Test
+    void evaluateHandRank_flush_returnsCorrectRank() {
+        ServerAIContext context = createContext();
+
+        Card[] hole = {new Card(CardSuit.HEARTS, Card.ACE), new Card(CardSuit.HEARTS, Card.KING)};
+        Card[] community = {new Card(CardSuit.HEARTS, Card.TWO), new Card(CardSuit.HEARTS, Card.SEVEN),
+                new Card(CardSuit.HEARTS, Card.NINE)};
+
+        int rank = context.evaluateHandRank(hole, community);
+
+        assertThat(rank).isEqualTo(HandScoreConstants.FLUSH);
+    }
+
+    @Test
+    void evaluateHandRank_straight_returnsCorrectRank() {
+        ServerAIContext context = createContext();
+
+        Card[] hole = {new Card(CardSuit.SPADES, Card.FIVE), new Card(CardSuit.HEARTS, Card.SIX)};
+        Card[] community = {new Card(CardSuit.CLUBS, Card.SEVEN), new Card(CardSuit.DIAMONDS, Card.EIGHT),
+                new Card(CardSuit.HEARTS, Card.NINE)};
+
+        int rank = context.evaluateHandRank(hole, community);
+
+        assertThat(rank).isEqualTo(HandScoreConstants.STRAIGHT);
+    }
+
+    @Test
+    void evaluateHandScore_betterPair_hasHigherScore() {
+        ServerAIContext context = createContext();
+
+        Card[] community = {new Card(CardSuit.CLUBS, Card.TWO), new Card(CardSuit.DIAMONDS, Card.SEVEN),
+                new Card(CardSuit.HEARTS, Card.NINE)};
+
+        Card[] aces = {new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.ACE)};
+        Card[] twos = {new Card(CardSuit.SPADES, Card.TWO), new Card(CardSuit.HEARTS, Card.THREE)};
+
+        long aceScore = context.evaluateHandScore(aces, community);
+        long twoScore = context.evaluateHandScore(twos, community);
+
+        assertThat(aceScore).isGreaterThan(twoScore);
+    }
+
+    // ========== Board Analysis Tests ==========
+
+    @Test
+    void hasFlushDraw_twoSuited_returnsTrue() {
+        ServerAIContext context = createContext();
+
+        Card[] community = {new Card(CardSuit.HEARTS, Card.TWO), new Card(CardSuit.HEARTS, Card.SEVEN),
+                new Card(CardSuit.CLUBS, Card.NINE)};
+
+        assertThat(context.hasFlushDraw(community)).isTrue();
+    }
+
+    @Test
+    void hasFlushDraw_threeSuited_returnsFalse() {
+        ServerAIContext context = createContext();
+
+        // Three suited is threeFlush, not a "draw"
+        Card[] community = {new Card(CardSuit.HEARTS, Card.TWO), new Card(CardSuit.HEARTS, Card.SEVEN),
+                new Card(CardSuit.HEARTS, Card.NINE)};
+
+        assertThat(context.hasFlushDraw(community)).isFalse();
+    }
+
+    @Test
+    void hasFlushDraw_noSuited_returnsFalse() {
+        ServerAIContext context = createContext();
+
+        Card[] community = {new Card(CardSuit.HEARTS, Card.TWO), new Card(CardSuit.CLUBS, Card.SEVEN),
+                new Card(CardSuit.DIAMONDS, Card.NINE)};
+
+        assertThat(context.hasFlushDraw(community)).isFalse();
+    }
+
+    @Test
+    void hasFlushDraw_nullCards_returnsFalse() {
+        ServerAIContext context = createContext();
+
+        assertThat(context.hasFlushDraw(null)).isFalse();
+    }
+
+    @Test
+    void hasFlushDraw_fewerThanTwoCards_returnsFalse() {
+        ServerAIContext context = createContext();
+
+        Card[] community = {new Card(CardSuit.HEARTS, Card.TWO)};
+        assertThat(context.hasFlushDraw(community)).isFalse();
+    }
+
+    @Test
+    void hasStraightDraw_connectedCards_returnsTrue() {
+        ServerAIContext context = createContext();
+
+        Card[] community = {new Card(CardSuit.HEARTS, Card.FIVE), new Card(CardSuit.CLUBS, Card.SIX),
+                new Card(CardSuit.DIAMONDS, Card.SEVEN)};
+
+        assertThat(context.hasStraightDraw(community)).isTrue();
+    }
+
+    @Test
+    void hasStraightDraw_nullCards_returnsFalse() {
+        ServerAIContext context = createContext();
+
+        assertThat(context.hasStraightDraw(null)).isFalse();
+    }
+
+    @Test
+    void hasStraightDraw_fewerThanThreeCards_returnsFalse() {
+        ServerAIContext context = createContext();
+
+        Card[] community = {new Card(CardSuit.HEARTS, Card.FIVE), new Card(CardSuit.CLUBS, Card.SIX)};
+        assertThat(context.hasStraightDraw(community)).isFalse();
+    }
+
+    // ========== getMajorSuit Tests ==========
+
+    @Test
+    void getMajorSuit_flush_returnsSuit() {
+        ServerAIContext context = createContext();
+
+        Card[] hole = {new Card(CardSuit.HEARTS, Card.ACE), new Card(CardSuit.HEARTS, Card.KING)};
+        Card[] community = {new Card(CardSuit.HEARTS, Card.TWO), new Card(CardSuit.HEARTS, Card.SEVEN),
+                new Card(CardSuit.HEARTS, Card.NINE)};
+
+        int suit = context.getMajorSuit(hole, community);
+
+        assertThat(suit).isEqualTo(CardSuit.HEARTS.getRank());
+    }
+
+    @Test
+    void getMajorSuit_noFlush_returnsNegativeOne() {
+        ServerAIContext context = createContext();
+
+        Card[] hole = {new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.KING)};
+        Card[] community = {new Card(CardSuit.CLUBS, Card.TWO), new Card(CardSuit.DIAMONDS, Card.SEVEN),
+                new Card(CardSuit.HEARTS, Card.NINE)};
+
+        int suit = context.getMajorSuit(hole, community);
+
+        assertThat(suit).isEqualTo(-1);
+    }
+
+    // ========== isHoleCardInvolved Tests ==========
+
+    @Test
+    void isHoleCardInvolved_pairWithHoleCard_returnsTrue() {
+        ServerAIContext context = createContext();
+
+        Card[] hole = {new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.KING)};
+        Card[] community = {new Card(CardSuit.CLUBS, Card.ACE), new Card(CardSuit.DIAMONDS, Card.SEVEN),
+                new Card(CardSuit.HEARTS, Card.NINE)};
+
+        assertThat(context.isHoleCardInvolved(hole, community)).isTrue();
+    }
+
+    @Test
+    void isHoleCardInvolved_boardPairOnly_returnsFalse() {
+        ServerAIContext context = createContext();
+
+        Card[] hole = {new Card(CardSuit.SPADES, Card.TWO), new Card(CardSuit.HEARTS, Card.THREE)};
+        Card[] community = {new Card(CardSuit.CLUBS, Card.ACE), new Card(CardSuit.DIAMONDS, Card.ACE),
+                new Card(CardSuit.HEARTS, Card.NINE)};
+
+        assertThat(context.isHoleCardInvolved(hole, community)).isFalse();
+    }
+
+    @Test
+    void isHoleCardInvolved_nullHole_returnsFalse() {
+        ServerAIContext context = createContext();
+
+        Card[] community = {new Card(CardSuit.CLUBS, Card.ACE), new Card(CardSuit.DIAMONDS, Card.ACE),
+                new Card(CardSuit.HEARTS, Card.NINE)};
+
+        assertThat(context.isHoleCardInvolved(null, community)).isFalse();
+    }
+
+    @Test
+    void isHoleCardInvolved_emptyHole_returnsFalse() {
+        ServerAIContext context = createContext();
+
+        Card[] community = {new Card(CardSuit.CLUBS, Card.ACE), new Card(CardSuit.DIAMONDS, Card.ACE),
+                new Card(CardSuit.HEARTS, Card.NINE)};
+
+        assertThat(context.isHoleCardInvolved(new Card[0], community)).isFalse();
+    }
+
+    // ========== getBest5CardRanks Tests ==========
+
+    @Test
+    void getBest5CardRanks_returnsRankedArray() {
+        ServerAIContext context = createContext();
+
+        Card[] hole = {new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.KING)};
+        Card[] community = {new Card(CardSuit.CLUBS, Card.QUEEN), new Card(CardSuit.DIAMONDS, Card.JACK),
+                new Card(CardSuit.HEARTS, Card.TEN)};
+
+        int[] ranks = context.getBest5CardRanks(hole, community);
+
+        assertThat(ranks).isNotNull();
+        assertThat(ranks).hasSize(5);
+        // Should include Ace as highest card in straight (A-K-Q-J-10)
+        assertThat(ranks[0]).isEqualTo(Card.ACE);
+    }
+
+    // ========== getBest5Cards Tests ==========
+
+    @Test
+    void getBest5Cards_returnsCardArray() {
+        ServerAIContext context = createContext();
+
+        Card[] hole = {new Card(CardSuit.SPADES, Card.ACE), new Card(CardSuit.HEARTS, Card.ACE)};
+        Card[] community = {new Card(CardSuit.CLUBS, Card.TWO), new Card(CardSuit.DIAMONDS, Card.SEVEN),
+                new Card(CardSuit.HEARTS, Card.NINE)};
+
+        Card[] best5 = context.getBest5Cards(hole, community);
+
+        assertThat(best5).isNotNull();
+        assertThat(best5).hasSize(5);
+    }
+
+    // ========== isRebuyPeriodActive Tests ==========
+
+    @Test
+    void isRebuyPeriodActive_delegatesToTournament() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+
+        when(tournament.isRebuyPeriodActive(aiPlayer)).thenReturn(true);
+
+        ServerAIContext context = new ServerAIContext(table, hand, tournament, aiPlayer, new ServerOpponentTracker());
+
+        assertThat(context.isRebuyPeriodActive()).isTrue();
+    }
+
+    @Test
+    void isRebuyPeriodActive_nullTournament_returnsFalse() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+
+        ServerAIContext context = new ServerAIContext(table, hand, null, aiPlayer, new ServerOpponentTracker());
+
+        assertThat(context.isRebuyPeriodActive()).isFalse();
+    }
+
+    @Test
+    void isRebuyPeriodActive_nullPlayer_returnsFalse() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+
+        ServerAIContext context = new ServerAIContext(table, hand, tournament, null, new ServerOpponentTracker());
+
+        assertThat(context.isRebuyPeriodActive()).isFalse();
+    }
+
+    // ========== Opponent Bet Frequency Tests ==========
+
+    @Test
+    void getOpponentBetFrequency_preFlop_returnsDefault() {
+        ServerAIContext context = createContext();
+        GamePlayerInfo opponent = mock(GamePlayerInfo.class);
+        when(opponent.getID()).thenReturn(2);
+
+        // Pre-flop has no "bet" concept, only raise
+        int betFreq = context.getOpponentBetFrequency(opponent, 0);
+        assertThat(betFreq).isEqualTo(50);
+    }
+
+    @Test
+    void getOpponentBetFrequency_postFlop_usesTrackerData() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+        GamePlayerInfo opponent = mock(GamePlayerInfo.class);
+
+        when(opponent.getID()).thenReturn(2);
+
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        ServerAIContext context = new ServerAIContext(table, hand, tournament, aiPlayer, tracker);
+
+        // Simulate opponent betting on flop
+        for (int i = 0; i < 4; i++) {
+            tracker.onHandStart(opponent, 1000);
+            tracker.onPlayerAction(opponent, PokerActionConstants.ACTION_BET, 100, 1, 2);
+            tracker.onHandEnd(opponent);
+        }
+        tracker.onHandStart(opponent, 1000);
+        tracker.onPlayerAction(opponent, PokerActionConstants.ACTION_CHECK, 0, 1, 2);
+        tracker.onHandEnd(opponent);
+
+        int betFreq = context.getOpponentBetFrequency(opponent, 1);
+        // 4 opens out of 5 flop rounds = 80%
+        assertThat(betFreq).isEqualTo(80);
+    }
+
+    @Test
+    void getOpponentRaiseFrequency_nullOpponent_returnsDefault() {
+        ServerAIContext context = createContext();
+
+        assertThat(context.getOpponentRaiseFrequency(null, 0)).isEqualTo(50);
+    }
+
+    @Test
+    void getOpponentBetFrequency_nullOpponent_returnsDefault() {
+        ServerAIContext context = createContext();
+
+        assertThat(context.getOpponentBetFrequency(null, 1)).isEqualTo(50);
+    }
+
+    @Test
+    void getOpponentRaiseFrequency_postFlop_usesTrackerData() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+        GamePlayerInfo opponent = mock(GamePlayerInfo.class);
+
+        when(opponent.getID()).thenReturn(2);
+
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        ServerAIContext context = new ServerAIContext(table, hand, tournament, aiPlayer, tracker);
+
+        // Simulate opponent raising on flop
+        for (int i = 0; i < 3; i++) {
+            tracker.onHandStart(opponent, 1000);
+            tracker.onPlayerAction(opponent, PokerActionConstants.ACTION_RAISE, 200, 1, 2);
+            tracker.onHandEnd(opponent);
+        }
+        for (int i = 0; i < 2; i++) {
+            tracker.onHandStart(opponent, 1000);
+            tracker.onPlayerAction(opponent, PokerActionConstants.ACTION_CHECK, 0, 1, 2);
+            tracker.onHandEnd(opponent);
+        }
+
+        int raiseFreq = context.getOpponentRaiseFrequency(opponent, 1);
+        // 3 raises out of 5 flop rounds = 60%
+        assertThat(raiseFreq).isEqualTo(60);
+    }
+
+    // ========== Position Edge Cases ==========
+
+    @Test
+    void getPosition_buttonPlayer_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+
+        when(table.getButton()).thenReturn(3);
+        when(table.getSeats()).thenReturn(9);
+        when(table.getSeat(player)).thenReturn(3); // On button
+
+        ServerAIContext context = new ServerAIContext(table, hand, tournament, aiPlayer, new ServerOpponentTracker());
+
+        assertThat(context.getPosition(player)).isEqualTo(0);
+    }
+
+    @Test
+    void isButton_nullPlayer_returnsFalse() {
+        ServerAIContext context = createContext();
+
+        assertThat(context.isButton(null)).isFalse();
+    }
+
+    @Test
+    void isSmallBlind_nullPlayer_returnsFalse() {
+        ServerAIContext context = createContext();
+
+        assertThat(context.isSmallBlind(null)).isFalse();
+    }
+
+    @Test
+    void isBigBlind_nullPlayer_returnsFalse() {
+        ServerAIContext context = createContext();
+
+        assertThat(context.isBigBlind(null)).isFalse();
+    }
+
+    @Test
+    void getPosition_nullPlayer_returnsZero() {
+        ServerAIContext context = createContext();
+
+        assertThat(context.getPosition(null)).isEqualTo(0);
+    }
+
+    // ========== Action Tracking Edge Cases ==========
+
+    @Test
+    void getLastActionInRound_nullPlayer_returnsNone() {
+        ServerAIContext context = createContext();
+
+        assertThat(context.getLastActionInRound(null, 0)).isEqualTo(0);
+    }
+
+    @Test
+    void getLastActionInRound_untrackedPlayer_returnsNone() {
+        ServerAIContext context = createContext();
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        when(player.getID()).thenReturn(99);
+
+        assertThat(context.getLastActionInRound(player, 0)).isEqualTo(0);
+    }
+
+    @Test
+    void getLastActionInRound_outOfBoundsRound_returnsNone() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+
+        when(player.getID()).thenReturn(1);
+
+        ServerAIContext context = new ServerAIContext(table, hand, tournament, aiPlayer, new ServerOpponentTracker());
+        context.onPlayerAction(player, PokerActionConstants.ACTION_BET, 100, 1);
+
+        assertThat(context.getLastActionInRound(player, -1)).isEqualTo(0);
+        assertThat(context.getLastActionInRound(player, 4)).isEqualTo(0);
+    }
+
+    // ========== getAmountBetThisRound Edge Cases ==========
+
+    @Test
+    void getAmountBetThisRound_nullPlayer_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+
+        when(hand.getRound()).thenReturn(BettingRound.FLOP);
+
+        ServerAIContext context = new ServerAIContext(table, hand, tournament, aiPlayer, new ServerOpponentTracker());
+
+        assertThat(context.getAmountBetThisRound(null)).isEqualTo(0);
+    }
+
+    @Test
+    void getAmountBetThisRound_untrackedPlayer_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+        GamePlayerInfo untracked = mock(GamePlayerInfo.class);
+
+        when(untracked.getID()).thenReturn(99);
+        when(hand.getRound()).thenReturn(BettingRound.FLOP);
+
+        ServerAIContext context = new ServerAIContext(table, hand, tournament, aiPlayer, new ServerOpponentTracker());
+
+        assertThat(context.getAmountBetThisRound(untracked)).isEqualTo(0);
+    }
+
+    // ========== Null Dependency Edge Cases ==========
+
+    @Test
+    void getNumPlayersYetToAct_nullHand_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+
+        ServerAIContext context = new ServerAIContext(table, null, tournament, aiPlayer, new ServerOpponentTracker());
+
+        assertThat(context.getNumPlayersYetToAct(player)).isEqualTo(0);
+    }
+
+    @Test
+    void getNumPlayersYetToAct_nullPlayer_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+
+        ServerAIContext context = new ServerAIContext(table, hand, tournament, aiPlayer, new ServerOpponentTracker());
+
+        assertThat(context.getNumPlayersYetToAct(null)).isEqualTo(0);
+    }
+
+    @Test
+    void getNumPlayersWhoActed_nullHand_returnsZero() {
+        GameTable table = mock(GameTable.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+
+        ServerAIContext context = new ServerAIContext(table, null, tournament, aiPlayer, new ServerOpponentTracker());
+
+        assertThat(context.getNumPlayersWhoActed(player)).isEqualTo(0);
+    }
+
+    // ========== getTable / getTournament Accessors ==========
+
+    @Test
+    void getTable_returnsSameInstance() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+
+        ServerAIContext context = new ServerAIContext(table, hand, tournament, aiPlayer, new ServerOpponentTracker());
+
+        assertThat(context.getTable()).isSameAs(table);
+    }
+
+    @Test
+    void getTournament_returnsSameInstance() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+
+        ServerAIContext context = new ServerAIContext(table, hand, tournament, aiPlayer, new ServerOpponentTracker());
+
+        assertThat(context.getTournament()).isSameAs(tournament);
+    }
+
+    // ========== onPlayerAction only tracks bets/raises for lastBetAmount
+    // ==========
+
+    @Test
+    void getLastBetAmount_callDoesNotUpdate() {
+        ServerAIContext context = createContext();
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        when(player.getID()).thenReturn(1);
+
+        context.onPlayerAction(player, PokerActionConstants.ACTION_BET, 100, 1);
+        context.onPlayerAction(player, PokerActionConstants.ACTION_CALL, 200, 1);
+
+        // Call should not update lastBetAmount
+        assertThat(context.getLastBetAmount()).isEqualTo(100);
+    }
+
+    @Test
+    void getLastBetAmount_foldDoesNotUpdate() {
+        ServerAIContext context = createContext();
+        GamePlayerInfo player = mock(GamePlayerInfo.class);
+        when(player.getID()).thenReturn(1);
+
+        context.onPlayerAction(player, PokerActionConstants.ACTION_BET, 100, 1);
+        context.onPlayerAction(player, PokerActionConstants.ACTION_FOLD, 0, 1);
+
+        assertThat(context.getLastBetAmount()).isEqualTo(100);
+    }
+
+    // ========== Helper ==========
+
+    private ServerAIContext createContext() {
+        GameTable table = mock(GameTable.class);
+        GameHand hand = mock(GameHand.class);
+        TournamentContext tournament = mock(TournamentContext.class);
+        GamePlayerInfo aiPlayer = mock(GamePlayerInfo.class);
+        return new ServerAIContext(table, hand, tournament, aiPlayer, new ServerOpponentTracker());
     }
 }

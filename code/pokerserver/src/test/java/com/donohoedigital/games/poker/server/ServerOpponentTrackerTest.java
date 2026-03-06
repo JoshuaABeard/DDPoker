@@ -531,6 +531,331 @@ class ServerOpponentTrackerTest {
         assertThat(callerModel.getHandsLimpedPercent(0.0f)).isCloseTo(0.5f, within(0.01f));
     }
 
+    // === Chip Count Tests ===
+
+    @Test
+    void chipCountAtStart_untrackedPlayer_returnsZero() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+
+        assertThat(tracker.getChipCountAtStart(999)).isEqualTo(0);
+    }
+
+    @Test
+    void chipCountAtStart_updatedPerHand() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo player = createMockPlayer(1);
+
+        tracker.onHandStart(player, 1000);
+        assertThat(tracker.getChipCountAtStart(1)).isEqualTo(1000);
+
+        tracker.onHandEnd(player);
+        tracker.onHandStart(player, 750);
+        assertThat(tracker.getChipCountAtStart(1)).isEqualTo(750);
+    }
+
+    // === Hand End Edge Cases ===
+
+    @Test
+    void onHandEnd_doubleCall_doesNotDoubleIncrement() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo player = createMockPlayer(1);
+
+        tracker.onHandStart(player, 1000);
+        tracker.onPlayerAction(player, PokerActionConstants.ACTION_CALL, 100, 0, 2);
+        tracker.onHandEnd(player);
+        tracker.onHandEnd(player); // Double call
+
+        V2OpponentModel model = tracker.getModel(1);
+        assertThat(model.getHandsPlayed()).isEqualTo(1);
+    }
+
+    // === Action Without Hand Start ===
+
+    @Test
+    void onPlayerAction_withoutHandStart_ignoredGracefully() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo player = createMockPlayer(1);
+
+        // No onHandStart call — action should be silently ignored
+        tracker.onPlayerAction(player, PokerActionConstants.ACTION_RAISE, 100, 0, 2);
+
+        V2OpponentModel model = tracker.getModel(1);
+        assertThat(model.getHandsPlayed()).isEqualTo(0);
+    }
+
+    @Test
+    void onOverbet_withoutHandStart_ignoredGracefully() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo player = createMockPlayer(1);
+
+        tracker.onOverbet(player);
+
+        // No crash and default model returned
+        V2OpponentModel model = tracker.getModel(1);
+        assertThat(model.getHandsPlayed()).isEqualTo(0);
+    }
+
+    @Test
+    void onBetFold_withoutHandStart_ignoredGracefully() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo player = createMockPlayer(1);
+
+        tracker.onBetFold(player);
+
+        V2OpponentModel model = tracker.getModel(1);
+        assertThat(model.getHandsPlayed()).isEqualTo(0);
+    }
+
+    // === Hands Before Big Blind ===
+
+    @Test
+    void handsBeforeBigBlind_playerAtBBSeat_returnsZero() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+
+        // Button at seat 0, BB at seat 2; player at seat 2
+        int hands = tracker.getHandsBeforeBigBlind(2, 0, 9);
+        assertThat(hands).isEqualTo(0);
+    }
+
+    @Test
+    void handsBeforeBigBlind_playerOneAfterBB_returns1() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+
+        // Button at seat 0, BB at seat 2; player at seat 1
+        // distance = (2 - 1 + 9) % 9 = 1
+        int hands = tracker.getHandsBeforeBigBlind(1, 0, 9);
+        assertThat(hands).isEqualTo(1);
+    }
+
+    @Test
+    void handsBeforeBigBlind_wrapsAround() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+
+        // Button at seat 7, BB at seat 0 (7+2 mod 9 = 0); player at seat 5
+        // distance = (0 - 5 + 9) % 9 = 4
+        int hands = tracker.getHandsBeforeBigBlind(5, 7, 9);
+        assertThat(hands).isEqualTo(4);
+    }
+
+    // === Post-Flop Open and Raise Frequency ===
+
+    @Test
+    void postFlopOpen_updatesFrequency() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo player = createMockPlayer(1);
+
+        // Open bet on flop 2 times, check 3 times
+        for (int i = 0; i < 2; i++) {
+            tracker.onHandStart(player, 1000);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_BET, 100, 1, 2);
+            tracker.onHandEnd(player);
+        }
+        for (int i = 0; i < 3; i++) {
+            tracker.onHandStart(player, 1000);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_CHECK, 0, 1, 2);
+            tracker.onHandEnd(player);
+        }
+
+        V2OpponentModel model = tracker.getModel(1);
+        // 2 opens out of 5 flop rounds = 40%
+        float openPercent = model.getOpenPostFlop(1, 0.0f);
+        assertThat(openPercent).isCloseTo(0.4f, within(0.01f));
+    }
+
+    @Test
+    void postFlopRaise_updatesFrequency() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo player = createMockPlayer(1);
+
+        // Raise on turn 1 time, check 4 times
+        tracker.onHandStart(player, 1000);
+        tracker.onPlayerAction(player, PokerActionConstants.ACTION_RAISE, 200, 2, 2);
+        tracker.onHandEnd(player);
+
+        for (int i = 0; i < 4; i++) {
+            tracker.onHandStart(player, 1000);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_CHECK, 0, 2, 2);
+            tracker.onHandEnd(player);
+        }
+
+        V2OpponentModel model = tracker.getModel(1);
+        // 1 raise out of 5 turn rounds = 20%
+        float raisePercent = model.getRaisePostFlop(2, 0.0f);
+        assertThat(raisePercent).isCloseTo(0.2f, within(0.01f));
+    }
+
+    // === Default Value Tests ===
+
+    @Test
+    void model_returnsDefaults_whenNoData() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+
+        V2OpponentModel model = tracker.getModel(999);
+
+        assertThat(model.getPreFlopTightness(0, 0.5f)).isEqualTo(0.5f);
+        assertThat(model.getPreFlopAggression(0, 0.5f)).isEqualTo(0.5f);
+        assertThat(model.getActPostFlop(1, 0.3f)).isEqualTo(0.3f);
+        assertThat(model.getCheckFoldPostFlop(1, 0.2f)).isEqualTo(0.2f);
+        assertThat(model.getOpenPostFlop(1, 0.4f)).isEqualTo(0.4f);
+        assertThat(model.getRaisePostFlop(1, 0.1f)).isEqualTo(0.1f);
+        assertThat(model.getHandsPaidPercent(0.5f)).isEqualTo(0.5f);
+        assertThat(model.getHandsLimpedPercent(0.5f)).isEqualTo(0.5f);
+        assertThat(model.getHandsFoldedUnraisedPercent(0.5f)).isEqualTo(0.5f);
+        assertThat(model.getOverbetFrequency(0.1f)).isEqualTo(0.1f);
+        assertThat(model.getBetFoldFrequency(0.1f)).isEqualTo(0.1f);
+        assertThat(model.getHandsRaisedPreFlopPercent(0.5f)).isEqualTo(0.5f);
+    }
+
+    @Test
+    void model_returnsDefaults_forInvalidPositionCategory() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+
+        V2OpponentModel model = tracker.getModel(999);
+
+        assertThat(model.getPreFlopTightness(-1, 0.5f)).isEqualTo(0.5f);
+        assertThat(model.getPreFlopTightness(6, 0.5f)).isEqualTo(0.5f);
+        assertThat(model.getPreFlopAggression(-1, 0.5f)).isEqualTo(0.5f);
+        assertThat(model.getPreFlopAggression(6, 0.5f)).isEqualTo(0.5f);
+    }
+
+    @Test
+    void model_returnsDefaults_forInvalidPostFlopRound() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+
+        V2OpponentModel model = tracker.getModel(999);
+
+        assertThat(model.getActPostFlop(0, 0.3f)).isEqualTo(0.3f); // round 0 = preflop, invalid for post-flop
+        assertThat(model.getActPostFlop(4, 0.3f)).isEqualTo(0.3f); // round 4 doesn't exist
+    }
+
+    // === Overbet Pot Post-Flop Flag ===
+
+    @Test
+    void overbetPotPostFlop_defaultFalse() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+
+        V2OpponentModel model = tracker.getModel(1);
+        assertThat(model.isOverbetPotPostFlop()).isFalse();
+    }
+
+    @Test
+    void overbetPotPostFlop_canBeToggled() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+
+        V2OpponentModel model = tracker.getModel(1);
+        model.setOverbetPotPostFlop(true);
+        assertThat(model.isOverbetPotPostFlop()).isTrue();
+
+        model.setOverbetPotPostFlop(false);
+        assertThat(model.isOverbetPotPostFlop()).isFalse();
+    }
+
+    // === Hands Paid Percent ===
+
+    @Test
+    void handsPaidPercent_countsRaisesAndCalls() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo player = createMockPlayer(1);
+
+        // 2 raises + 1 call out of 5 hands = 60%
+        for (int i = 0; i < 2; i++) {
+            tracker.onHandStart(player, 1000);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_RAISE, 100, 0, 2);
+            tracker.onHandEnd(player);
+        }
+        tracker.onHandStart(player, 1000);
+        tracker.onPlayerAction(player, PokerActionConstants.ACTION_CALL, 100, 0, 2);
+        tracker.onHandEnd(player);
+        for (int i = 0; i < 2; i++) {
+            tracker.onHandStart(player, 1000);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_FOLD, 0, 0, 2);
+            tracker.onHandEnd(player);
+        }
+
+        V2OpponentModel model = tracker.getModel(1);
+        assertThat(model.getHandsPaidPercent(0.0f)).isCloseTo(0.6f, within(0.01f));
+    }
+
+    // === Pre-Flop Tightness and Aggression ===
+
+    @Test
+    void preFlopTightness_calculatedAsOneMinusVPIP() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo player = createMockPlayer(1);
+
+        // At position 2 (late): 2 raises + 1 call + 2 folds = VPIP 3/5 = 0.6, tightness
+        // = 0.4
+        for (int i = 0; i < 2; i++) {
+            tracker.onHandStart(player, 1000);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_RAISE, 100, 0, 2);
+            tracker.onHandEnd(player);
+        }
+        tracker.onHandStart(player, 1000);
+        tracker.onPlayerAction(player, PokerActionConstants.ACTION_CALL, 100, 0, 2);
+        tracker.onHandEnd(player);
+        for (int i = 0; i < 2; i++) {
+            tracker.onHandStart(player, 1000);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_FOLD, 0, 0, 2);
+            tracker.onHandEnd(player);
+        }
+
+        V2OpponentModel model = tracker.getModel(1);
+        float tightness = model.getPreFlopTightness(2, 0.5f);
+        assertThat(tightness).isCloseTo(0.4f, within(0.01f));
+    }
+
+    @Test
+    void preFlopAggression_calculatedAsRaiseOverVoluntary() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo player = createMockPlayer(1);
+
+        // At position 2: 2 raises + 3 calls = aggression = 2/5 = 0.4
+        for (int i = 0; i < 2; i++) {
+            tracker.onHandStart(player, 1000);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_RAISE, 100, 0, 2);
+            tracker.onHandEnd(player);
+        }
+        for (int i = 0; i < 3; i++) {
+            tracker.onHandStart(player, 1000);
+            tracker.onPlayerAction(player, PokerActionConstants.ACTION_CALL, 100, 0, 2);
+            tracker.onHandEnd(player);
+        }
+
+        V2OpponentModel model = tracker.getModel(1);
+        float aggression = model.getPreFlopAggression(2, 0.5f);
+        assertThat(aggression).isCloseTo(0.4f, within(0.01f));
+    }
+
+    // === Invalid Position Clamping ===
+
+    @Test
+    void positionCategory_negativeValue_clampedToZero() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo player = createMockPlayer(1);
+
+        tracker.onHandStart(player, 1000);
+        tracker.onPlayerAction(player, PokerActionConstants.ACTION_RAISE, 100, 0, -1);
+        tracker.onHandEnd(player);
+
+        V2OpponentModel model = tracker.getModel(1);
+        // Should have been clamped to position 0
+        assertThat(model.getPreFlopTightness(0, 0.5f)).isCloseTo(0.0f, within(0.01f));
+    }
+
+    @Test
+    void positionCategory_tooLarge_clampedToZero() {
+        ServerOpponentTracker tracker = new ServerOpponentTracker();
+        GamePlayerInfo player = createMockPlayer(1);
+
+        tracker.onHandStart(player, 1000);
+        tracker.onPlayerAction(player, PokerActionConstants.ACTION_RAISE, 100, 0, 10);
+        tracker.onHandEnd(player);
+
+        V2OpponentModel model = tracker.getModel(1);
+        // Should have been clamped to position 0
+        assertThat(model.getPreFlopTightness(0, 0.5f)).isCloseTo(0.0f, within(0.01f));
+    }
+
     // === Helper Methods ===
 
     private GamePlayerInfo createMockPlayer(int id) {
