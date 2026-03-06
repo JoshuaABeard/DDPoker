@@ -8,21 +8,21 @@ import { config, getApiUrl, GAME_SERVER_URL } from './config'
 import type {
   ApiError,
   ApiResponse,
-  AuthResponse,
-  BannedKeyDto,
+  BanDto,
   HostSummary,
   LeaderboardEntry,
   LeaderboardEntryDto,
   LoginRequest,
+  LoginResponse,
   OnlineProfileDto,
-  PaginatedResponse,
-  PlayerProfile,
   PlayerSearchDto,
-  ProfileAlias,
+  ProfileResponse,
+  PublicProfileResponse,
   RegisterRequest,
   TemplateDto,
   TournamentHistoryDto,
   TournamentHistoryEntry,
+  TournamentStatsDto,
 } from './types'
 import type {
   GameConfigDto,
@@ -133,53 +133,47 @@ async function apiFetchRaw(
  * Authentication API — all calls go to the game server at GAME_SERVER_URL.
  */
 export const authApi = {
-  /**
-   * Log in a user
-   */
-  login: async (credentials: LoginRequest): Promise<AuthResponse> => {
-    const response = await apiFetch<AuthResponse>('/api/v1/auth/login', {
+  login: async (credentials: LoginRequest): Promise<LoginResponse> => {
+    const response = await apiFetch<LoginResponse>('/api/v1/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     })
     return response.data
   },
 
-  /**
-   * Register a new user
-   */
-  register: async (userData: RegisterRequest): Promise<AuthResponse> => {
-    const response = await apiFetch<AuthResponse>('/api/v1/auth/register', {
+  register: async (userData: RegisterRequest): Promise<LoginResponse> => {
+    const response = await apiFetch<LoginResponse>('/api/v1/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
     })
     return response.data
   },
 
-  /**
-   * Log out the current user
-   */
   logout: async (): Promise<void> => {
-    await apiFetch<void>('/api/v1/auth/logout', {
-      method: 'POST',
-    })
+    await apiFetch<void>('/api/v1/auth/logout', { method: 'POST' })
   },
 
-  /**
-   * Get the current user's profile
-   */
-  getCurrentUser: async (): Promise<AuthResponse | null> => {
+  getCurrentUser: async (): Promise<ProfileResponse | null> => {
     try {
-      const response = await apiFetch<AuthResponse>('/api/v1/auth/me')
+      const response = await apiFetch<ProfileResponse>('/api/v1/auth/me')
       return response.data
-    } catch (error) {
-      console.error('Failed to get current user:', error)
+    } catch {
       return null
     }
   },
 
-  /**
-   * Request password reset - sends a reset email to the user
-   */
+  changePassword: (oldPassword: string, newPassword: string): Promise<Response> =>
+    apiFetchRaw('/api/v1/auth/password', {
+      method: 'PUT',
+      body: JSON.stringify({ oldPassword, newPassword }),
+    }),
+
+  changeEmail: (email: string): Promise<Response> =>
+    apiFetchRaw('/api/v1/auth/email', {
+      method: 'PUT',
+      body: JSON.stringify({ email }),
+    }),
+
   forgotPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
     const response = await apiFetch<{ success: boolean; message: string }>('/api/v1/auth/forgot-password', {
       method: 'POST',
@@ -188,91 +182,24 @@ export const authApi = {
     return response.data
   },
 
-  /**
-   * Change the current user's password
-   */
-  changePassword: (currentPassword: string, newPassword: string): Promise<Response> =>
-    apiFetchRaw('/api/v1/auth/change-password', {
-      method: 'PUT',
-      body: JSON.stringify({ currentPassword, newPassword }),
+  resetPassword: (token: string, newPassword: string): Promise<Response> =>
+    apiFetchRaw('/api/v1/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
     }),
 
-  /**
-   * Verify the user's email address using the token from the verification email
-   */
   verifyEmail: (token: string): Promise<Response> =>
     apiFetchRaw(`/api/v1/auth/verify-email?token=${encodeURIComponent(token)}`),
 
-  /**
-   * Resend the email verification message to the current user
-   */
   resendVerification: (): Promise<Response> =>
     apiFetchRaw('/api/v1/auth/resend-verification', { method: 'POST' }),
 
-  /**
-   * Check whether a username is available
-   */
   checkUsername: (username: string): Promise<Response> =>
     apiFetchRaw(`/api/v1/auth/check-username?username=${encodeURIComponent(username)}`),
 
-  /**
-   * Request an email address change
-   */
-  changeEmail: (email: string): Promise<Response> =>
-    apiFetchRaw('/api/v1/auth/email', {
-      method: 'PUT',
-      body: JSON.stringify({ email }),
-    }),
-
-  /**
-   * Reset the user's password using a reset token
-   */
-  resetPassword: (token: string, password: string): Promise<Response> =>
-    apiFetchRaw('/api/v1/auth/reset-password', {
-      method: 'POST',
-      body: JSON.stringify({ token, password }),
-    }),
-}
-
-/**
- * Player API
- */
-export const playerApi = {
-  /**
-   * Get a player profile by ID
-   */
-  getProfile: async (playerId: number): Promise<PlayerProfile> => {
-    const response = await apiFetch<PlayerProfile>(`/api/v1/profiles/${playerId}`)
+  getWsToken: async (): Promise<WsTokenResponseDto> => {
+    const response = await apiFetch<WsTokenResponseDto>('/api/v1/auth/ws-token')
     return response.data
-  },
-
-  /**
-   * Get a player profile by name
-   */
-  getProfileByName: async (playerName: string): Promise<PlayerProfile> => {
-    const response = await apiFetch<PlayerProfile>(`/api/v1/profiles/name/${playerName}`)
-    return response.data
-  },
-
-  /**
-   * Update the current user's profile
-   */
-  updateProfile: async (updates: Partial<PlayerProfile>): Promise<PlayerProfile> => {
-    const response = await apiFetch<PlayerProfile>('/api/v1/profiles/me', {
-      method: 'PUT',
-      body: JSON.stringify(updates),
-    })
-    return response.data
-  },
-
-  /**
-   * Change password
-   */
-  changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
-    await apiFetch<void>('/api/v1/profiles/me/password', {
-      method: 'PUT',
-      body: JSON.stringify({ currentPassword, newPassword }),
-    })
   },
 }
 
@@ -280,12 +207,23 @@ export const playerApi = {
  * Profile API
  */
 export const profileApi = {
-  /**
-   * Get player aliases
-   */
-  getAliases: async (): Promise<ProfileAlias[]> => {
-    const response = await apiFetch<ProfileAlias[]>('/api/v1/profiles/aliases')
+  getProfile: async (id: number): Promise<PublicProfileResponse> => {
+    const response = await apiFetch<PublicProfileResponse>(`/api/v1/profiles/${id}`)
     return response.data
+  },
+
+  getProfileByName: async (name: string): Promise<PublicProfileResponse> => {
+    const response = await apiFetch<PublicProfileResponse>(`/api/v1/profiles/name/${name}`)
+    return response.data
+  },
+
+  getAliases: async (): Promise<PublicProfileResponse[]> => {
+    const response = await apiFetch<PublicProfileResponse[]>('/api/v1/profiles/aliases')
+    return response.data
+  },
+
+  retireProfile: async (id: number): Promise<void> => {
+    await apiFetch<void>(`/api/v1/profiles/${id}/retire`, { method: 'POST' })
   },
 }
 
@@ -293,26 +231,6 @@ export const profileApi = {
  * Game Server API — calls /api/v1/* endpoints on the pokergameserver.
  */
 export const gameServerApi = {
-  /**
-   * Register a new user via the game server's JWT-based auth.
-   */
-  register: async (username: string, password: string, email: string): Promise<{ success: boolean; message?: string }> => {
-    const response = await apiFetch<{ success: boolean; message?: string }>('/api/v1/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ username, password, email }),
-    })
-    return response.data
-  },
-
-  /**
-   * Get a short-lived WebSocket connect token (60s, single-use).
-   * Must be called just before opening the WebSocket connection.
-   */
-  getWsToken: async (): Promise<WsTokenResponseDto> => {
-    const response = await apiFetch<WsTokenResponseDto>('/api/v1/auth/ws-token')
-    return response.data
-  },
-
   /**
    * List games with optional status filter.
    * @param status Filter: 'WAITING_FOR_PLAYERS' | 'IN_PROGRESS' | 'COMPLETED' (omit for all)
@@ -496,7 +414,7 @@ export const tournamentApi = {
     pageSize = 50,
     from?: string,
     to?: string
-  ): Promise<{ history: TournamentHistoryDto[]; total: number }> => {
+  ): Promise<{ content: TournamentHistoryDto[]; totalElements: number; totalPages: number; stats: TournamentStatsDto }> => {
     const params = new URLSearchParams({
       name: playerName,
       page: page.toString(),
@@ -504,7 +422,7 @@ export const tournamentApi = {
     })
     if (from) params.append('from', from)
     if (to) params.append('to', to)
-    const response = await apiFetch<{ history: TournamentHistoryDto[]; total: number }>(
+    const response = await apiFetch<{ content: TournamentHistoryDto[]; totalElements: number; totalPages: number; stats: TournamentStatsDto }>(
       `/api/v1/history?${params}`
     )
     return response.data
@@ -617,37 +535,27 @@ export const adminApi = {
     return response.data
   },
 
-  /**
-   * Get banned keys list (unpaginated - backend returns all bans)
-   */
-  getBans: async (): Promise<{ bans: BannedKeyDto[]; total: number }> => {
-    const response = await apiFetch<BannedKeyDto[]>('/api/v1/admin/bans')
+  getBans: async (): Promise<{ bans: BanDto[]; total: number }> => {
+    const response = await apiFetch<BanDto[]>('/api/v1/admin/bans')
     return { bans: response.data, total: response.data.length }
   },
 
-  /**
-   * Add a new ban
-   * Backend expects: { key: string, until?: Date, comment?: string }
-   */
   addBan: async (banData: {
-    key: string
-    comment?: string
+    banType: 'PROFILE' | 'EMAIL'
+    profileId?: number
+    email?: string
+    reason?: string
     until?: string
-  }): Promise<BannedKeyDto> => {
-    const response = await apiFetch<BannedKeyDto>('/api/v1/admin/bans', {
+  }): Promise<BanDto> => {
+    const response = await apiFetch<BanDto>('/api/v1/admin/bans', {
       method: 'POST',
       body: JSON.stringify(banData),
     })
     return response.data
   },
 
-  /**
-   * Remove a ban by key string (not numeric ID)
-   */
-  removeBan: async (key: string): Promise<void> => {
-    await apiFetch<void>(`/api/v1/admin/bans/${encodeURIComponent(key)}`, {
-      method: 'DELETE',
-    })
+  removeBan: async (id: number): Promise<void> => {
+    await apiFetch<void>(`/api/v1/admin/bans/${id}`, { method: 'DELETE' })
   },
 
   /**
