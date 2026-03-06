@@ -14,27 +14,50 @@ export interface ApiResponse<T> {
 }
 
 /**
- * Player profile information
+ * Profile returned by /auth/me (own profile, includes private fields)
  */
-export interface PlayerProfile {
+export interface ProfileResponse {
   id: number
-  name: string
-  email?: string
-  createdAt: string
-  lastLogin?: string
-  isActive: boolean
-  stats?: PlayerStats
+  username: string
+  email: string
+  emailVerified: boolean
+  admin: boolean
+  retired: boolean
+  createDate: string
 }
 
 /**
- * Player statistics
+ * Response from login/register endpoints
  */
-export interface PlayerStats {
-  gamesPlayed: number
-  gamesWon: number
-  totalChips: number
-  biggestWin?: number
-  tournamentPoints?: number
+export interface LoginResponse {
+  success: boolean
+  profile: ProfileResponse | null
+  token: string | null
+  message: string | null
+  retryAfterSeconds: number | null
+}
+
+/**
+ * Public profile (no email, no admin flag)
+ */
+export interface PublicProfileResponse {
+  id: number
+  name: string
+  createDate: string
+}
+
+/**
+ * Tournament statistics summary
+ */
+export interface TournamentStatsDto {
+  totalGames: number
+  totalWins: number
+  totalPrize: number
+  totalBuyIn: number
+  profitLoss: number
+  bestFinish: number
+  avgPlacement: number
+  winRate: number
 }
 
 /**
@@ -70,17 +93,6 @@ export interface LoginRequest {
   rememberMe: boolean
 }
 
-export interface AuthResponse {
-  success: boolean
-  message: string | null
-  username?: string
-  email?: string
-  emailVerified?: boolean
-  admin?: boolean
-  profileId?: number
-  retryAfterSeconds?: number | null
-}
-
 export interface RegisterRequest {
   username: string
   email: string
@@ -114,29 +126,6 @@ export interface HostSummary {
   playerName: string
   gamesHosted: number
   lastHosted?: string
-}
-
-/**
- * Player alias information
- */
-export interface ProfileAlias {
-  name: string
-  createdDate: string
-  retiredDate?: string
-}
-
-/**
- * Tournament statistics
- */
-export interface TournamentStats {
-  totalGames: number
-  totalWins: number
-  totalPrize: number
-  totalBuyIn: number
-  profitLoss: number
-  bestFinish: number
-  avgPlacement: number
-  winRate: number
 }
 
 /**
@@ -189,12 +178,14 @@ export interface OnlineProfileDto {
   lockedUntil?: number | null
 }
 
-export interface BannedKeyDto {
+export interface BanDto {
   id: number
-  key: string
-  comment?: string
-  createDate: string
-  until?: string
+  banType: 'PROFILE' | 'EMAIL'
+  profileId: number | null
+  email: string | null
+  reason: string | null
+  until: string | null
+  createdAt: string
 }
 
 export interface HostSummaryDto {
